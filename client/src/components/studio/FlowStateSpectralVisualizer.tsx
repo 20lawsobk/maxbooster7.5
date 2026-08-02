@@ -220,7 +220,7 @@ function cleanupWebGL(
 }
 
 export function FlowStateSpectralVisualizer({
-  audioContext,
+  _audioContext,
   analyserNode,
   isPlaying,
   width = 400,

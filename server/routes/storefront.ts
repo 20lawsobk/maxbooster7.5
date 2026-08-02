@@ -668,7 +668,7 @@ router?.post("/subscribe/:tierId", async (req, res) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
 
-    let stripeCustomerId = (user as Record<string, unknown>)
+    let stripeCustomerId = (user as unknown as Record<string, unknown>)
       .stripeCustomerId as string | undefined;
     if (!stripeCustomerId) {
       const customer = await stripe?.customers.create({
@@ -1445,7 +1445,7 @@ router?.post("/:id/checkout", async (req, res) => {
         id: listing.id,
         title: listing.title,
         priceCents,
-        genre: listing.genre,
+        genre: (listing as any).genre,
       };
     });
 
@@ -1496,7 +1496,7 @@ router?.post("/:id/checkout", async (req, res) => {
           bogoResult?.discountedItems.some((d) => d?.index === index);
         const itemLicense =
           isBogo && bogoLicenseType ? bogoLicenseType : licenseType;
-        let desc = `${validListings[index].genre || "Beat"} - ${itemLicense} license`;
+        let desc = `${(validListings[index] as any).genre || "Beat"} - ${itemLicense} license`;
 
         if (bogoResult?.freeItemIndices.includes(index)) {
           unitAmount = 0;
@@ -1892,7 +1892,7 @@ router?.post(
         return res.status(400).json({ error: "No audio file provided" });
 
       const ext = path?.extname(req.file.originalname) || ".mp3";
-      const filename = `${Date?.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
+      const filename = `${Date?.now()}-${(crypto as any)?.randomBytes(8).toString("hex")}${ext}`;
 
       const audioResult = await hybridStorageService?.upload(
         req.user!.id,
@@ -2092,7 +2092,7 @@ function applyBogoToCart(
   }
 
   const sortedPromos = [...promotions].sort(
-    (a, b) => (a?.priority || 0) - (b?.priority || 0),
+    (a, b) => ((a as any)?.priority || 0) - ((b as any)?.priority || 0),
   );
 
   let bestResult: BogoResult = {
@@ -2104,44 +2104,44 @@ function applyBogoToCart(
   };
 
   for (const promo of sortedPromos) {
-    if (promo?.maxRedemptions && promo?.redemptionCount >= promo?.maxRedemptions)
+    if ((promo as any)?.maxRedemptions && (promo as any)?.redemptionCount >= (promo as any)?.maxRedemptions)
       continue;
 
-    if (promo?.perCustomerLimit && customerRedemptions) {
-      const customerUses = customerRedemptions?.get(promo?.id) || 0;
-      if (customerUses >= promo?.perCustomerLimit) continue;
+    if ((promo as any)?.perCustomerLimit && customerRedemptions) {
+      const customerUses = customerRedemptions?.get((promo as any)?.id) || 0;
+      if (customerUses >= (promo as any)?.perCustomerLimit) continue;
     }
 
     if (
-      promo?.buyLicenseType &&
+      (promo as any)?.buyLicenseType &&
       cartLicenseType &&
-      promo?.buyLicenseType !== cartLicenseType
+      (promo as any)?.buyLicenseType !== cartLicenseType
     ) {
       continue;
     }
 
-    const totalNeeded = promo?.buyQuantity + promo?.getQuantity;
+    const totalNeeded = (promo as any)?.buyQuantity + (promo as any)?.getQuantity;
 
     let eligibleItems: Array<{ index: number; priceCents: number }>;
     if (
-      promo?.appliesTo === "specific" &&
-      promo?.applicableListingIds?.length > 0
+      (promo as any)?.appliesTo === "specific" &&
+      (promo as any)?.applicableListingIds?.length > 0
     ) {
       eligibleItems = cartListings
         .map((l, i) => ({ index: i, priceCents: l.priceCents, id: l.id }))
         .filter((item) =>
-          promo?.applicableListingIds.includes(
+          (promo as any)?.applicableListingIds.includes(
             (item as Record<string, unknown>).id,
           ),
         );
     } else if (
-      promo?.appliesTo === "genre" &&
-      promo?.applicableGenres?.length > 0
+      (promo as any)?.appliesTo === "genre" &&
+      (promo as any)?.applicableGenres?.length > 0
     ) {
       eligibleItems = cartListings
         .map((l, i) => ({ index: i, priceCents: l.priceCents, genre: l.genre }))
         .filter((item) =>
-          promo?.applicableGenres.includes(
+          (promo as any)?.applicableGenres.includes(
             (item as Record<string, unknown>).genre,
           ),
         );
@@ -2162,13 +2162,13 @@ function applyBogoToCart(
     const freeIndices: number[] = [];
     const discountedItems: { index: number; discountPercent: number }[] = [];
     let savings = 0;
-    const discountPercent = promo?.getDiscountPercent;
+    const discountPercent = (promo as any)?.getDiscountPercent;
 
     for (let setIdx = 0; setIdx < setsApplicable; setIdx++) {
       const setStart = setIdx * totalNeeded;
       const freeOrDiscounted = sorted?.slice(
         setStart,
-        setStart + promo?.getQuantity,
+        setStart + (promo as any)?.getQuantity,
       );
 
       for (const item of freeOrDiscounted) {
@@ -2183,23 +2183,23 @@ function applyBogoToCart(
     }
 
     if (savings > bestResult?.totalSavingsCents) {
-      const buyLabel = promo?.buyLicenseType
-        ? `${promo?.buyQuantity} ${promo?.buyLicenseType}`
-        : `${promo?.buyQuantity}`;
-      const getLabel = promo?.bogoLicenseType
-        ? `${promo?.getQuantity} ${promo?.bogoLicenseType}`
-        : `${promo?.getQuantity}`;
+      const buyLabel = (promo as any)?.buyLicenseType
+        ? `${(promo as any)?.buyQuantity} ${(promo as any)?.buyLicenseType}`
+        : `${(promo as any)?.buyQuantity}`;
+      const getLabel = (promo as any)?.bogoLicenseType
+        ? `${(promo as any)?.getQuantity} ${(promo as any)?.bogoLicenseType}`
+        : `${(promo as any)?.getQuantity}`;
       let summary: string;
       if (discountPercent === 100) {
         summary =
           setsApplicable > 1
-            ? `${promo?.name}: Buy ${buyLabel}, Get ${getLabel} FREE! (${setsApplicable}x applied)`
-            : `${promo?.name}: Buy ${buyLabel}, Get ${getLabel} FREE!`;
+            ? `${(promo as any)?.name}: Buy ${buyLabel}, Get ${getLabel} FREE! (${setsApplicable}x applied)`
+            : `${(promo as any)?.name}: Buy ${buyLabel}, Get ${getLabel} FREE!`;
       } else {
         summary =
           setsApplicable > 1
-            ? `${promo?.name}: Buy ${buyLabel}, Get ${getLabel} at ${discountPercent}% off! (${setsApplicable}x applied)`
-            : `${promo?.name}: Buy ${buyLabel}, Get ${getLabel} at ${discountPercent}% off!`;
+            ? `${(promo as any)?.name}: Buy ${buyLabel}, Get ${getLabel} at ${discountPercent}% off! (${setsApplicable}x applied)`
+            : `${(promo as any)?.name}: Buy ${buyLabel}, Get ${getLabel} at ${discountPercent}% off!`;
       }
       bestResult = {
         appliedPromotion: promo,
@@ -2495,7 +2495,7 @@ router?.post("/:id/checkout/preview", async (req, res) => {
           priceCents = l?.discountPriceCents;
         }
       }
-      return { id: l.id, title: l.title, priceCents, genre: l.genre };
+      return { id: l.id, title: l.title, priceCents, genre: (l as any).genre };
     });
 
     const activePromos = await db

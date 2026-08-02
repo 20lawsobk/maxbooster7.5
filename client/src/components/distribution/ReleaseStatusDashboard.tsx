@@ -163,7 +163,7 @@ export function ReleaseStatusDashboard({
 }: ReleaseStatusDashboardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedPlatform, setSelectedPlatform] =
+  const [_selectedPlatform, setSelectedPlatform] =
     useState<PlatformStatus | null>(null);
 
   // Fetch release status

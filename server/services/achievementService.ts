@@ -175,9 +175,9 @@ class AchievementService {
       const userProgress = progressMap?.get(achievement?.id);
       return {
         ...achievement,
-        progress: userProgress.progress || 0,
+        progress: userProgress!.progress || 0,
         unlocked: !!userProgress?.unlockedAt,
-        unlockedAt: userProgress.unlockedAt || null,
+        unlockedAt: userProgress!.unlockedAt || null,
       };
     });
   }

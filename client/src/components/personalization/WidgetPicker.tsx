@@ -228,7 +228,7 @@ const categories = [
 export function WidgetPicker({
   selectedWidgets,
   onWidgetToggle,
-  onWidgetAdd,
+  _onWidgetAdd,
   maxWidgets = 12,
   showCategories = true,
   compact = false,

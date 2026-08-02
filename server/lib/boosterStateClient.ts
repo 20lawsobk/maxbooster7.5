@@ -63,7 +63,7 @@ export class BoosterStateClient {
 
   async get(key: string): Promise<string | null> {
     const data = await post("/kv/get", { key });
-    return data?.value ?? null;
+    return (data as any)?.value ?? null;
   }
 
   async set(key: string, value: string): Promise<void> {
@@ -88,17 +88,17 @@ export class BoosterStateClient {
       }
     }
     const data = await post("/kv/del", { keys: flatKeys });
-    return data?.deleted ?? 0;
+    return (data as any)?.deleted ?? 0;
   }
 
   async exists(key: string): Promise<number> {
     const data = await post("/kv/exists", { key });
-    return data?.exists ? 1 : 0;
+    return (data as any)?.exists ? 1 : 0;
   }
 
   async incr(key: string): Promise<number> {
     const data = await post("/kv/incr", { key });
-    return data?.value ?? 0;
+    return (data as any)?.value ?? 0;
   }
 
   async expire(key: string, seconds: number): Promise<void> {
@@ -107,7 +107,7 @@ export class BoosterStateClient {
 
   async keys(pattern: string): Promise<string[]> {
     const data = await post("/kv/keys", { pattern });
-    return data?.keys ?? [];
+    return (data as any)?.keys ?? [];
   }
 
   async zAdd(
@@ -119,7 +119,7 @@ export class BoosterStateClient {
 
   async zCard(key: string): Promise<number> {
     const data = await post("/zset/card", { key });
-    return data?.count ?? 0;
+    return (data as any)?.count ?? 0;
   }
 
   async zRange(
@@ -132,9 +132,9 @@ export class BoosterStateClient {
       key,
       start,
       end,
-      rev: options.REV ?? false,
+      rev: options!.REV ?? false,
     });
-    return data?.values ?? [];
+    return (data as any)?.values ?? [];
   }
 
   async zRemRangeByScore(
@@ -147,7 +147,7 @@ export class BoosterStateClient {
       min: String(min),
       max: String(max),
     });
-    return data?.removed ?? 0;
+    return (data as any)?.removed ?? 0;
   }
 
   async queuePush(
@@ -156,14 +156,14 @@ export class BoosterStateClient {
     priority?: number,
   ): Promise<string | null> {
     const result = await post("/queue/push", { queue, data, priority });
-    return result?.id ?? null;
+    return (result as any)?.id ?? null;
   }
 
   async queuePop(
     queue: string,
   ): Promise<{ id: string; data: Record<string, unknown> } | null> {
     const result = await post("/queue/pop", { queue });
-    return result?.item ?? null;
+    return (result as any)?.item ?? null;
   }
 
   async rateTake(
@@ -176,7 +176,7 @@ export class BoosterStateClient {
     if (capacity !== undefined) body.capacity = capacity;
     if (refillPerSec !== undefined) body.refill_per_sec = refillPerSec;
     const data = await post("/rate/take", body);
-    return { allowed: data.allowed ?? true, remaining: data.remaining ?? 0 };
+    return { allowed: (data as any).allowed ?? true, remaining: (data as any).remaining ?? 0 };
   }
 
   async quit(): Promise<void> {

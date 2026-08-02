@@ -62,7 +62,7 @@ export class EppParser {
       : [resp?.result];
     const firstResult = resultArr[0] ?? {};
     const code = Number(firstResult["@code"] ?? 0);
-    const msg: string = firstResult?.msg ?? "";
+    const msg: string = (firstResult as any)?.msg ?? "";
 
     return {
       code,

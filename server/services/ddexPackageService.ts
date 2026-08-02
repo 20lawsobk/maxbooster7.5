@@ -55,7 +55,7 @@ interface RoyaltySplit {
 }
 
 export class DDEXPackageService {
-  private static readonly MESSAGE_SCHEMA_VERSION = "ern/43";
+  private static readonly _MESSAGE_SCHEMA_VERSION = "ern/43";
 
   async generateDDEXXML(
     release: ReleaseMetadata,
@@ -69,7 +69,7 @@ export class DDEXPackageService {
       {
         "xmlns:ernm": "http://ddex.net/xml/ern/43",
         "xmlns:xs": "http://www.w3.org/2001/XMLSchema-instance",
-        MessageSchemaVersionId: this.MESSAGE_SCHEMA_VERSION,
+        MessageSchemaVersionId: (this as any).MESSAGE_SCHEMA_VERSION,
         LanguageAndScriptCode: "en",
       },
     );

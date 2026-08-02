@@ -296,7 +296,7 @@ async function analyzeMusicStage(
   audioPath: string,
   brief: CreativeBrief,
 ): Promise<MusicMeta> {
-  logger.info("[CreativeModel] Stage 1: Music analysis", { audioPath });
+  logger.info({ audioPath }, "[CreativeModel] Stage 1: Music analysis");
 
   try {
     const raw = (await maxcorePost("/audio/analyze", {
@@ -331,9 +331,9 @@ async function analyzeMusicStage(
   } catch (err) {
     // MaxCore-only fail-explicit contract: never substitute fabricated local
     // analysis (fixed 120bpm / C major) for a failed MaxCore call.
-    logger.warn("[CreativeModel] Music analysis — MaxCore call failed", {
+    logger.warn({
       err,
-    });
+    }, "[CreativeModel] Music analysis — MaxCore call failed");
     const { AIUnavailableError } = await import("../lib/aiSource.js");
     throw new AIUnavailableError("music analysis");
   }
@@ -544,11 +544,11 @@ async function precomputeMusicalIntelligence(
     Boolean,
   ) as import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatAlignmentOutput[];
 
-  logger.info("[CreativeModel] Musical intelligence pre-computed", {
-    plannerBeatCount: plannerSuggestion.optimalBeatCount,
+  logger.info({
+    plannerBeatCount: plannerSuggestion!.optimalBeatCount,
     stylesComputed: styleMap.size,
     alignmentsComputed: alignmentMap.length,
-  });
+  }, "[CreativeModel] Musical intelligence pre-computed");
 
   return {
     plannerSuggestion,
@@ -785,9 +785,9 @@ async function scriptStage(
     const { AIUnavailableError } = await import("../lib/aiSource.js");
     throw new AIUnavailableError("script generation");
   } catch (err) {
-    logger.warn("[CreativeModel] Script generation — MaxCore call failed", {
+    logger.warn({
       err,
-    });
+    }, "[CreativeModel] Script generation — MaxCore call failed");
     const { AIUnavailableError } = await import("../lib/aiSource.js");
     if (err instanceof AIUnavailableError) throw err;
     throw new AIUnavailableError("script generation");
@@ -802,9 +802,9 @@ async function keyframesStage(
   musicMeta: MusicMeta,
   ctx: CreativeContext,
 ): Promise<string[]> {
-  logger.info("[CreativeModel] Stage 4: Keyframe generation", {
+  logger.info({
     beatCount: plan.beats.length,
-  });
+  }, "[CreativeModel] Stage 4: Keyframe generation");
 
   const totalBeats = plan?.beats.length;
   const isVertical = ["tiktok", "reels", "shorts"].includes(brief?.platform);
@@ -881,9 +881,9 @@ async function keyframesStage(
           style_confidence: primaryProb,
         });
         return (
-          raw?.url ??
-          raw?.image_url ??
-          raw?.path ??
+          (raw as any)?.url ??
+          (raw as any)?.image_url ??
+          (raw as any)?.path ??
           `keyframe_${i}_${selectedStyle}`
         );
       } catch {
@@ -997,8 +997,8 @@ Only override a beat's timing or transition if there is a strong narrative reaso
 // ─── Stage 6: Video Assembly ───────────────────────────────────────────────────
 
 async function assemblyStage(
-  keyframePaths: string[],
-  timing: AlignedTimeline,
+  _keyframePaths: string[],
+  _timing: AlignedTimeline,
   _audioPath: string,
   brief: CreativeBrief,
   musicMeta: MusicMeta,
@@ -1129,13 +1129,13 @@ async function assemblyStage(
       while (Date?.now() < deadline) {
         await new Promise((r) => setTimeout(r, 5_000));
         const poll = await maxcoreGet(`/video-job/${jobResp?.job_id}`);
-        if (poll?.status === "done" && poll?.url) {
+        if ((poll as any)?.status === "done" && (poll as any)?.url) {
           logger.info(
-            `[CreativeModel] Stage 6: MaxCore job done → ${poll?.url}`,
+            `[CreativeModel] Stage 6: MaxCore job done → ${(poll as any)?.url}`,
           );
-          return poll?.url;
+          return (poll as any)?.url;
         }
-        if (poll?.status === "failed") {
+        if ((poll as any)?.status === "failed") {
           logger.warn(
             `[CreativeModel] Stage 6: MaxCore job ${jobResp?.job_id} failed`,
           );
@@ -1249,12 +1249,12 @@ async function scoringStage(
         Math.abs(maxcore?.conversionScore - local?.conversionScore)) /
         3;
 
-    logger.info("[CreativeModel] Scoring blended", {
+    logger.info({
       maxcore,
       local,
       agreement: agreement.toFixed(2),
       method: "blended",
-    });
+    }, "[CreativeModel] Scoring blended");
 
     return {
       watchTimeScore: clamp(
@@ -1304,7 +1304,7 @@ async function feedbackStage(
   scores: EngagementScores,
   realMetrics?: Partial<AnalyticsData>,
 ): Promise<void> {
-  logger.info("[CreativeModel] Stage 8: Feedback loop", { assetId });
+  logger.info({ assetId }, "[CreativeModel] Stage 8: Feedback loop");
 
   const postData: PostData = {
     platform: brief.platform,
@@ -1331,7 +1331,7 @@ async function feedbackStage(
       analytics,
     );
   } catch (err) {
-    logger.warn("[CreativeModel] Feedback loop non-fatal error", { err });
+    logger.warn({ err }, "[CreativeModel] Feedback loop non-fatal error");
   }
 }
 
@@ -1350,11 +1350,11 @@ export async function generateCreativePackage(
   const { brief, audioPath, userId } = opts;
   const assetId = opts?.assetId ?? `creative_${randomUUID()}`;
 
-  logger.info("[CreativeModel] Pipeline start", {
+  logger.info({
     assetId,
     platform: brief.platform,
     goal: brief.goal,
-  });
+  }, "[CreativeModel] Pipeline start");
 
   // Stage 1: Music analysis
   const musicMeta = await analyzeMusicStage(audioPath, brief);
@@ -1412,7 +1412,7 @@ export async function generateCreativePackage(
     generatedAt: new Date().toISOString(),
   };
 
-  logger.info("[CreativeModel] Pipeline complete", { assetId, scores });
+  logger.info({ assetId, scores }, "[CreativeModel] Pipeline complete");
   return pkg;
 }
 

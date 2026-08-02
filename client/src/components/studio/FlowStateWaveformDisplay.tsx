@@ -59,12 +59,12 @@ function hashString(str: string): number {
 
 export function FlowStateWaveformDisplay({
   clips,
-  trackId,
+  _trackId,
   trackColor = "#3b82f6",
   duration,
   currentTime = 0,
   zoom = 100,
-  isPlaying = false,
+  _isPlaying = false,
   onClipSelect,
   onClipMove,
   onClipResize,

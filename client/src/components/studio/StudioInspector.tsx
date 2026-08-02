@@ -30,7 +30,7 @@ export function StudioInspector({
   collapsed,
   onToggleCollapse,
   selectedTrack,
-  tracks,
+  _tracks,
   onTrackUpdate,
 }: StudioInspectorProps) {
   if (collapsed) {

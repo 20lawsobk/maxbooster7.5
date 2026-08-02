@@ -121,7 +121,7 @@ export class LabelGridService {
     } catch (error) {
       logger.warn(
         "[LABELGRID] Authentication failed:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error("Failed to authenticate with LabelGrid");
     }
@@ -158,19 +158,19 @@ export class LabelGridService {
         id: release.id,
         upc: release.upc || (await this.generateUPC()),
         title: release.title,
-        artist: release.artist,
-        label: release.label || "Max Booster Records",
+        artist: (release as any).artist,
+        label: (release as any).label || "Max Booster Records",
         releaseDate:
-          release.releaseDate.toISOString() || new Date().toISOString(),
+          release.releaseDate!.toISOString() || new Date().toISOString(),
         tracks: await this.prepareTracks(release, audioFiles),
         territories: this.getTargetTerritories(release),
         platforms: this.getTargetPlatforms(release),
         metadata: {
-          genre: release.genre,
+          genre: (release as any).genre,
           language: "en",
-          copyrightHolder: release.copyrightHolder || release.artist,
+          copyrightHolder: (release as any).copyrightHolder || (release as any).artist,
           copyrightYear: new Date().getFullYear(),
-          parentalAdvisory: release.explicit || false,
+          parentalAdvisory: (release as any).explicit || false,
         },
       };
 
@@ -189,7 +189,7 @@ export class LabelGridService {
       const labelGridId = response.data.id;
 
       // Store mapping in database
-      await storage.updateRelease(release.id, release.userId, {
+      await (storage as any).updateRelease(release.id, release.userId, {
         distributionId: labelGridId,
         distributionStatus: "processing",
         submittedAt: new Date(),
@@ -202,10 +202,10 @@ export class LabelGridService {
     } catch (error: unknown) {
       logger.warn(
         "[LABELGRID] Failed to create release:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error(
-        `Distribution failed: ${error.response.data.message || error.message}`,
+        `Distribution failed: ${(error as any).response.data.message || (error as Error).message}`,
       );
     }
   }
@@ -220,7 +220,7 @@ export class LabelGridService {
     const tracks: LabelGridTrack[] = [];
 
     // Get tracks from database
-    const releaseTracks = await storage.getReleaseTracks(release.id);
+    const releaseTracks = await (storage as any).getReleaseTracks(release.id);
 
     for (const track of releaseTracks) {
       const audioUrl = audioFiles.get(track.id);
@@ -231,11 +231,11 @@ export class LabelGridService {
       tracks.push({
         isrc: track.isrc || (await this.generateISRC(track.id)),
         title: track.title,
-        artist: track.artist || release.artist,
+        artist: track.artist || (release as any).artist,
         duration: track.duration || 0,
         audioFileUrl: audioUrl,
         metadata: {
-          genre: track.genre || release.genre,
+          genre: track.genre || (release as any).genre,
           mood: track.mood,
           tempo: track.tempo,
           key: track.key,
@@ -266,11 +266,11 @@ export class LabelGridService {
 
       const statuses: DistributionStatus[] = response.data.platforms.map(
         (p: unknown) => ({
-          platform: p.name,
-          status: p.status,
-          deliveredAt: p.deliveredAt ? new Date(p.deliveredAt) : undefined,
-          liveAt: p.liveAt ? new Date(p.liveAt) : undefined,
-          error: p.error,
+          platform: (p as Error).name,
+          status: (p as any).status,
+          deliveredAt: (p as any).deliveredAt ? new Date((p as any).deliveredAt) : undefined,
+          liveAt: (p as any).liveAt ? new Date((p as any).liveAt) : undefined,
+          error: (p as any).error,
         }),
       );
 
@@ -278,7 +278,7 @@ export class LabelGridService {
     } catch (error: unknown) {
       logger.warn(
         "[LABELGRID] Failed to get status:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error("Failed to retrieve distribution status");
     }
@@ -304,7 +304,7 @@ export class LabelGridService {
     } catch (error: unknown) {
       logger.warn(
         "[LABELGRID] Failed to update release:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error("Failed to update release");
     }
@@ -337,7 +337,7 @@ export class LabelGridService {
     } catch (error: unknown) {
       logger.warn(
         "[LABELGRID] Failed to request takedown:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error("Failed to request takedown");
     }
@@ -364,7 +364,7 @@ export class LabelGridService {
     } catch (error: unknown) {
       logger.warn(
         "[LABELGRID] Failed to get earnings:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error("Failed to retrieve earnings report");
     }
@@ -436,7 +436,7 @@ export class LabelGridService {
    */
   private getTargetTerritories(release: Release): string[] {
     // Default to worldwide distribution
-    return release.territories || ["WW"]; // WW = Worldwide
+    return (release as any).territories || ["WW"]; // WW = Worldwide
   }
 
   /**
@@ -445,7 +445,7 @@ export class LabelGridService {
   private getTargetPlatforms(release: Release): string[] {
     // All 34 platforms by default
     return (
-      release?.platforms || [
+      (release as any)?.platforms || [
         "spotify",
         "apple-music",
         "youtube-music",
@@ -539,15 +539,15 @@ export class LabelGridService {
     error?: string,
   ): Promise<void> {
     // Update platform-specific status in database
-    const release = await storage?.getReleaseByDistributionId(releaseId);
+    const release = await (storage as any)?.getReleaseByDistributionId(releaseId);
     if (release) {
       const platforms = (release?.platforms as unknown[]) || [];
-      const platformIndex = platforms?.findIndex((p) => p?.name === platform);
+      const platformIndex = platforms?.findIndex((p) => (p as any)?.name === platform);
 
       if (platformIndex >= 0) {
-        platforms[platformIndex].status = status;
-        platforms[platformIndex].error = error;
-        platforms[platformIndex].updatedAt = new Date();
+        (platforms as any)[platformIndex].status = status;
+        (platforms as any)[platformIndex].error = error;
+        (platforms as any)[platformIndex].updatedAt = new Date();
       } else {
         platforms?.push({
           name: platform,
@@ -557,7 +557,7 @@ export class LabelGridService {
         });
       }
 
-      await storage?.updateRelease(release?.id, release?.userId, { platforms });
+      await (storage as any)?.updateRelease(release?.id, release?.userId, { platforms });
     }
   }
 
@@ -620,7 +620,7 @@ export class LabelGridService {
     try {
       const { db } = await import("../db.js");
       const { dspAnalytics } = await import("../../shared/schema.js");
-      const release = await storage?.getReleaseByDistributionId(releaseId);
+      const release = await (storage as any)?.getReleaseByDistributionId(releaseId);
       await db?.insert(dspAnalytics).values({
         userId: release.userId ?? null,
         releaseId: release.id ?? releaseId,

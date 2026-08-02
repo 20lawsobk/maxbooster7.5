@@ -83,8 +83,8 @@ async function getEncryptionKey(): Promise<Buffer> {
     `SELECT value FROM platform_settings WHERE key = $1`,
     [ENCRYPTION_KEY_SETTING],
   );
-  if (existing?.rows[0]?.value) {
-    const parsed = parseKeyHex(existing?.rows[0].value);
+  if ((existing as any)?.rows[0]?.value) {
+    const parsed = parseKeyHex((existing as any)?.rows[0].value);
     if (!parsed) {
       throw new Error(
         `[acme] platform_settings['${ENCRYPTION_KEY_SETTING}'] is malformed — expected 64 hex chars. Manual repair required.`,
@@ -108,14 +108,14 @@ async function getEncryptionKey(): Promise<Buffer> {
     ],
   );
 
-  let canonical = insert?.rows[0]?.value ?? null;
+  let canonical = (insert as any)?.rows[0]?.value ?? null;
   if (!canonical) {
     // Lost the race — another process inserted first. Re-read the winner.
     const reread = await pool?.query<{ value: string }>(
       `SELECT value FROM platform_settings WHERE key = $1`,
       [ENCRYPTION_KEY_SETTING],
     );
-    canonical = reread?.rows[0]?.value ?? null;
+    canonical = (reread as any)?.rows[0]?.value ?? null;
   }
   if (!canonical) {
     throw new Error(
@@ -474,14 +474,14 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
     // Defensive: if the row vanished between precondition and now (rare —
     // domain detached mid-issuance), surface it loudly rather than silently
     // discarding a successfully issued cert.
-    if (updateRes.rowCount !== 1) {
+    if ((updateRes as any).rowCount !== 1) {
       logger.error(
-        { host: normalized, rowCount: updateRes.rowCount },
+        { host: normalized, rowCount: (updateRes as any).rowCount },
         "[acme] cert issued but storefront_hosts row missing/changed — cert was not persisted",
       );
       return {
         status: "failed",
-        reason: `cert issued but persist UPDATE affected ${updateRes.rowCount} rows (expected 1)`,
+        reason: `cert issued but persist UPDATE affected ${(updateRes as any).rowCount} rows (expected 1)`,
       };
     }
 
@@ -712,7 +712,7 @@ export async function activateAcmePersistValidation(
     [zoneInfo.zoneId, zoneInfo.userId, zoneInfo.rootDomain, recordValue],
   );
 
-  if (result.rowCount === 0) {
+  if ((result as any).rowCount === 0) {
     // Row already exists — update it if value changed
     const upd = await pool.query(
       `UPDATE dns_zone_records
@@ -724,7 +724,7 @@ export async function activateAcmePersistValidation(
     await pool.query(`UPDATE dns_zones SET updated_at = now() WHERE id = $1`, [
       zoneInfo?.zoneId,
     ]);
-    const status = (upd?.rowCount ?? 0) > 0 ? "written" : "unchanged";
+    const status = ((upd as any)?.rowCount ?? 0) > 0 ? "written" : "unchanged";
     logger.info(
       { domain: rootDomain, status },
       "[acme/persist] _validation-persist TXT",

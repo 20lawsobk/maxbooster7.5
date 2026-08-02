@@ -703,8 +703,8 @@ async function setupAdmin() {
 
     process.exit(0);
   } catch (error) {
-    console?.error("❌ Failed to setup admin account:", error?.message);
-    console?.error(error?.stack);
+    console?.error("❌ Failed to setup admin account:", (error as any)?.message);
+    console?.error((error as any)?.stack);
     process.exit(1);
   }
 }

@@ -197,7 +197,7 @@ class StructuredLogger {
       return {
         message: error.message,
         stack: error.stack,
-        code: (error as Record<string, unknown>).code,
+        code: (error as unknown as Record<string, unknown>).code,
       };
     }
     if (typeof error === "string") {

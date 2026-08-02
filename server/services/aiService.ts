@@ -395,8 +395,8 @@ export class AIService {
       ),
       valence: this.calculateValenceFromProfile(genreProfile, bufferHash),
       instrumentalness:
-        genreProfile?.instrumentalness + ((bufferHash % 20) - 10) / 100,
-      acousticness: genreProfile.acousticness + ((bufferHash % 15) - 7) / 100,
+        (genreProfile as any)?.instrumentalness + ((bufferHash % 20) - 10) / 100,
+      acousticness: (genreProfile as any).acousticness + ((bufferHash % 15) - 7) / 100,
       stems: this.detectStemsFromBuffer(audioData, bufferHash),
     };
   }
@@ -493,7 +493,7 @@ export class AIService {
   }
 
   private calculateEnergyFromProfile(profile: unknown, hash: number): number {
-    const [min, max] = profile?.energyRange;
+    const [min, max] = (profile as any)?.energyRange;
     return min + ((hash % 100) / 100) * (max - min);
   }
 
@@ -501,12 +501,12 @@ export class AIService {
     profile: unknown,
     hash: number,
   ): number {
-    const [min, max] = profile?.danceabilityRange;
+    const [min, max] = (profile as any)?.danceabilityRange;
     return min + (((hash >> 8) % 100) / 100) * (max - min);
   }
 
   private calculateValenceFromProfile(profile: unknown, hash: number): number {
-    const [min, max] = profile?.valence;
+    const [min, max] = (profile as any)?.valence;
     return min + (((hash >> 16) % 100) / 100) * (max - min);
   }
 
@@ -569,7 +569,7 @@ export class AIService {
       conversion: 0.6,
     };
 
-    const genreScore = genreMultipliers[musicData?.genre?.toLowerCase()] || 0.7;
+    const genreScore = genreMultipliers[(musicData as any)?.genre?.toLowerCase()] || 0.7;
     const campaignScore = campaignMultipliers[config?.campaignType] || 0.6;
     const audienceScore =
       config?.targetAudience.interests?.length > 3 ? 0.8 : 0.6;
@@ -590,35 +590,35 @@ export class AIService {
 
     switch (config?.campaignType) {
       case "viral":
-        primary = `🔥 Everyone's talking about ${musicData.title} by ${musicData.artist} - Join the movement that's taking ${config?.targetAudience.location} by storm!`;
+        primary = `🔥 Everyone's talking about ${(musicData as any).title} by ${(musicData as any).artist} - Join the movement that's taking ${config?.targetAudience.location} by storm!`;
         variations = [
-          `💯 ${config?.targetAudience.location} can't stop playing ${musicData.title} - See what the hype is about`,
-          `🎵 The track ${primaryInterest} fans have been waiting for: ${musicData.title} is HERE`,
-          `⚡ ${musicData.artist} drops ${musicData.title} and it's everything ${ageSegment} music lovers needed`,
+          `💯 ${config?.targetAudience.location} can't stop playing ${(musicData as any).title} - See what the hype is about`,
+          `🎵 The track ${primaryInterest} fans have been waiting for: ${(musicData as any).title} is HERE`,
+          `⚡ ${(musicData as any).artist} drops ${(musicData as any).title} and it's everything ${ageSegment} music lovers needed`,
         ];
         break;
       case "engagement":
-        primary = `🎧 ${primaryInterest} meets perfection in ${musicData?.title} by ${musicData?.artist} - What's your favorite moment?`;
+        primary = `🎧 ${primaryInterest} meets perfection in ${(musicData as any)?.title} by ${(musicData as any)?.artist} - What's your favorite moment?`;
         variations = [
-          `💬 Tell us: How does ${musicData.title} make you feel? ${musicData.artist} wants to know!`,
-          `🔄 Share your ${musicData.title} moment - ${config.targetAudience.location} is listening`,
-          `❤️ React if ${musicData.title} by ${musicData.artist} hits different for ${ageSegment} listeners`,
+          `💬 Tell us: How does ${(musicData as any).title} make you feel? ${(musicData as any).artist} wants to know!`,
+          `🔄 Share your ${(musicData as any).title} moment - ${config.targetAudience.location} is listening`,
+          `❤️ React if ${(musicData as any).title} by ${(musicData as any).artist} hits different for ${ageSegment} listeners`,
         ];
         break;
       case "awareness":
-        primary = `✨ Discover ${musicData.artist}, the ${musicData.genre} artist ${config.targetAudience.location} is talking about. Start with ${musicData.title}`;
+        primary = `✨ Discover ${(musicData as any).artist}, the ${(musicData as any).genre} artist ${config.targetAudience.location} is talking about. Start with ${(musicData as any).title}`;
         variations = [
-          `🎵 New to ${musicData.artist}? ${musicData.title} is the perfect introduction to their sound`,
-          `📻 ${config.targetAudience.location} radio is playing ${musicData.title} - Meet the artist behind the music`,
-          `🌟 ${musicData.artist} brings fresh ${musicData.genre} to ${ageSegment} audiences with ${musicData.title}`,
+          `🎵 New to ${(musicData as any).artist}? ${(musicData as any).title} is the perfect introduction to their sound`,
+          `📻 ${config.targetAudience.location} radio is playing ${(musicData as any).title} - Meet the artist behind the music`,
+          `🌟 ${(musicData as any).artist} brings fresh ${(musicData as any).genre} to ${ageSegment} audiences with ${(musicData as any).title}`,
         ];
         break;
       case "conversion":
-        primary = `🎯 Stream ${musicData.title} by ${musicData.artist} now - Available on all platforms. Your ${primaryInterest} playlist needs this.`;
+        primary = `🎯 Stream ${(musicData as any).title} by ${(musicData as any).artist} now - Available on all platforms. Your ${primaryInterest} playlist needs this.`;
         variations = [
-          `⬇️ Download ${musicData.title} today - ${musicData.artist} delivers exactly what ${ageSegment} listeners want`,
-          `🔗 Add ${musicData.title} to your library - ${config.targetAudience.location} fans are already streaming`,
-          `💾 Save ${musicData.title} by ${musicData.artist} - The ${musicData.genre} hit that's changing playlists`,
+          `⬇️ Download ${(musicData as any).title} today - ${(musicData as any).artist} delivers exactly what ${ageSegment} listeners want`,
+          `🔗 Add ${(musicData as any).title} to your library - ${config.targetAudience.location} fans are already streaming`,
+          `💾 Save ${(musicData as any).title} by ${(musicData as any).artist} - The ${(musicData as any).genre} hit that's changing playlists`,
         ];
         break;
     }

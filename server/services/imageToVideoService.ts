@@ -410,7 +410,7 @@ async function applyAudioToVideo(
   try {
     await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 120_000 });
   } catch (err) {
-    const errMsg = err.message || String(err);
+    const errMsg = (err as Error).message || String(err);
     if (/No such filter|Invalid option|filter.*not found/i.test(errMsg)) {
       logger.warn(
         "[ImageToVideo] Complex audio filters failed, retrying with safe chain",
@@ -630,7 +630,7 @@ export async function imageToMusicVideo(
     opts.template && TEMPLATE_STYLES[opts.template]
       ? opts.template
       : "cinematic_promo";
-  const style = TEMPLATE_STYLES[templateKey] as Record<string, unknown>;
+  const style = TEMPLATE_STYLES[templateKey] as unknown as Record<string, unknown>;
   const ratio =
     opts.aspect_ratio || PLATFORM_RATIOS[opts.platform || "tiktok"] || "9:16";
   const [width, height] = ASPECT_RATIOS[ratio] || [1080, 1920];
@@ -675,7 +675,7 @@ export async function imageToMusicVideo(
       } catch (e) {
         logger.warn(
           "[ImageToVideo] Beat analysis failed, using equal durations:",
-          e.message,
+          (e as Error).message,
         );
         const perScene = totalDur / imagePaths.length;
         sceneDurations = imagePaths.map(() => perScene);
@@ -800,7 +800,7 @@ export async function imageToMusicVideo(
         scenePaths,
         sceneDurations,
         videoPath,
-        transition,
+        (transition as string),
         transitionDur,
       );
     }
@@ -873,10 +873,10 @@ export async function imageToMusicVideo(
     };
   } catch (err) {
     cleanup(...tempFiles);
-    logger.warn("[ImageToVideo] Render failed:", err.stderr || err.message);
+    logger.warn("[ImageToVideo] Render failed:", (err as any).stderr || (err as Error).message);
     return {
       success: false,
-      error: `Music video render failed: ${err.message || "FFmpeg error"}`,
+      error: `Music video render failed: ${(err as Error).message || "FFmpeg error"}`,
     };
   }
 }

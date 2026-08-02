@@ -49,7 +49,7 @@ const FFT_SIZES = [512, 1024, 2048, 4096, 8192, 16384] as const;
 const WINDOW_TYPES = ["hanning", "hamming", "blackman", "kaiser"] as const;
 
 export function SpectralProcessor({
-  trackId,
+  _trackId,
   audioBuffer,
   onProcessComplete,
   onBandSelect,
@@ -81,7 +81,7 @@ export function SpectralProcessor({
   const [brushIntensity, setBrushIntensity] = useState(0.5);
   const [isLocked, setIsLocked] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
+  const [_viewOffset, _setViewOffset] = useState({ x: 0, y: 0 });
 
   const [spectralParams, setSpectralParams] = useState({
     noiseReduction: 0,

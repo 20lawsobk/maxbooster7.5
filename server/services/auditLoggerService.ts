@@ -112,12 +112,12 @@ export class AuditLoggerService {
       this.lastHash = hash;
 
       if (entry?.riskLevel === "high" || entry?.riskLevel === "critical") {
-        logger.warn(`🔒 High-risk audit event: ${entry?.action}`, {
+        logger.warn({
           userId: entry.userId,
           resourceType: entry.resourceType,
           resourceId: entry.resourceId,
           riskLevel: entry.riskLevel,
-        });
+        }, `🔒 High-risk audit event: ${entry?.action}`);
       }
 
       return auditLog;
@@ -590,7 +590,7 @@ export class AuditLoggerService {
 
       const riskLevelStats = await db
         .select({
-          riskLevel: auditLogs.riskLevel,
+          riskLevel: auditLogs.risk,
           count: sql<number>`count(*)::int`,
         })
         .from(auditLogs)

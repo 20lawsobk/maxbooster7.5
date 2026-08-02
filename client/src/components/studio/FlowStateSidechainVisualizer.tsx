@@ -99,7 +99,7 @@ const CONNECTION_TYPES = [
 
 export function FlowStateSidechainVisualizer({
   tracks = DEFAULT_TRACKS,
-  onUpdateConnection,
+  _onUpdateConnection,
   className,
 }: FlowStateSidechainVisualizerProps) {
   const { toast } = useToast();
@@ -162,7 +162,7 @@ export function FlowStateSidechainVisualizer({
   const [newConnectionType, setNewConnectionType] =
     useState<SidechainConnection["type"]>("compressor");
   const [showLabels, setShowLabels] = useState(true);
-  const [showInactive, setShowInactive] = useState(true);
+  const [showInactive, _setShowInactive] = useState(true);
   const [animateConnections, setAnimateConnections] = useState(true);
   const [gainReduction, setGainReduction] = useState<Record<string, number>>(
     {},

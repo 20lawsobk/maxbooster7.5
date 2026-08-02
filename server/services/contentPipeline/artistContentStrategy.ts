@@ -183,8 +183,8 @@ const VERTICAL_GENERATORS: Record<ArtistContentVertical, VerticalGenerator> = {
       ? `${ctx?.artistName} LIVE — ${ctx?.upcomingEvents[0].city ?? ctx?.upcomingEvents[0].name}`
       : `${ctx?.artistName} — Live Dates Announced`,
     hook: `We're bringing the ${ctx.mood} ${ctx.genre} energy LIVE. 🎤`,
-    caption: ctx.upcomingEvents[0]
-      ? `LIVE:\n\n📍 ${ctx.upcomingEvents[0].venue ?? ctx.upcomingEvents[0].name}\n📅 ${ctx.upcomingEvents[0].date}\n🏙️ ${ctx.upcomingEvents[0].city ?? ""}\n\nTickets available now — link in bio. Don't sleep on this. 🎵`
+    caption: ctx.upcomingEvents![0]
+      ? `LIVE:\n\n📍 ${ctx.upcomingEvents![0].venue ?? ctx.upcomingEvents![0].name}\n📅 ${ctx.upcomingEvents![0].date}\n🏙️ ${ctx.upcomingEvents![0].city ?? ""}\n\nTickets available now — link in bio. Don't sleep on this. 🎵`
       : `Live shows are coming.\n\nDates dropping soon. Follow and turn on notifications so you don't miss the announcement.\n\n${ctx.mood.charAt(0).toUpperCase() + ctx.mood.slice(1)} ${ctx.genre} energy — live and unfiltered. 🔥`,
     cta: "Get Tickets",
     hashtags: buildArtistHashtags(ctx, "live_event", platform),
@@ -207,7 +207,7 @@ const VERTICAL_GENERATORS: Record<ArtistContentVertical, VerticalGenerator> = {
   collaboration: (ctx, platform) => ({
     vertical: "collaboration",
     platform,
-    headline: `${ctx.artistName} × ${ctx.collaborators[0] ?? "Special Guest"} — New Music`,
+    headline: `${ctx.artistName} × ${ctx.collaborators![0] ?? "Special Guest"} — New Music`,
     hook: `Two artists. One record. And it sounds exactly how you'd hope. 🔥`,
     caption: `${ctx?.artistName} × ${ctx?.collaborators?.[0] ?? "Special Guest"} — "${ctx.trackTitle ?? "New Collab"}"\n\nWhen two different worlds collide, this is what happens.\n\n${ctx?.mood.charAt(0).toUpperCase() + ctx?.mood.slice(1)} ${ctx?.genre} energy × something completely new.\n\nOut ${ctx?.releaseDate ?? "now"}. Stream it — link in bio. 🎵`,
     cta: "Stream the Collab",

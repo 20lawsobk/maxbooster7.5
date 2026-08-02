@@ -184,7 +184,7 @@ export default function Storefront() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  const [selectedTier, setSelectedTier] = useState<MembershipTier | null>(null);
+  const [_selectedTier, _setSelectedTier] = useState<MembershipTier | null>(null);
   const [cart, setCart] = useState<string[]>([]);
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [userRatingValue, setUserRatingValue] = useState(0);

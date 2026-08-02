@@ -95,12 +95,12 @@ export function CreativeAutomation() {
   const variants: CreativeVariant[] =
     abTests.length > 0 ? abTests[0].variants : [];
 
-  const [activeTest, setActiveTest] = useState<ABTest | null>(null);
+  const [activeTest, _setActiveTest] = useState<ABTest | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [autoOptimize, setAutoOptimize] = useState(true);
   const [autoWinnerSelection, setAutoWinnerSelection] = useState(true);
   const [confidenceThreshold, setConfidenceThreshold] = useState(95);
-  const [selectedVariant, setSelectedVariant] =
+  const [_selectedVariant, _setSelectedVariant] =
     useState<CreativeVariant | null>(null);
   const [aiConfig, setAiConfig] = useState<AIGenerationConfig>({
     baseContent: "",

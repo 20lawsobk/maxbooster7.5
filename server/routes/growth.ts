@@ -109,7 +109,7 @@ const shadowbanCheckSchema = z.object({
 router?.post(
   "/score-viral",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { content } = scoreViralSchema?.parse(req.body);
@@ -134,7 +134,7 @@ router?.post(
         score,
       });
     } catch (error) {
-      logger.warn("Error in score-viral:", error?.message);
+      logger.warn("Error in score-viral:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -143,7 +143,7 @@ router?.post(
 router?.post(
   "/predict-potential",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { content } = scoreViralSchema?.parse(req.body);
@@ -163,7 +163,7 @@ router?.post(
         category: potential >= 80 ? "high" : potential >= 50 ? "medium" : "low",
       });
     } catch (error) {
-      logger.warn("Error in predict-potential:", error?.message);
+      logger.warn("Error in predict-potential:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -172,7 +172,7 @@ router?.post(
 router?.post(
   "/suggest-improvements",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { content } = scoreViralSchema?.parse(req.body);
@@ -191,7 +191,7 @@ router?.post(
         improvements,
       });
     } catch (error) {
-      logger.warn("Error in suggest-improvements:", error?.message);
+      logger.warn("Error in suggest-improvements:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -200,7 +200,7 @@ router?.post(
 router?.post(
   "/compare-variants",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { variants } = compareVariantsSchema?.parse(req.body);
@@ -219,7 +219,7 @@ router?.post(
         comparison,
       });
     } catch (error) {
-      logger.warn("Error in compare-variants:", error?.message);
+      logger.warn("Error in compare-variants:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -228,7 +228,7 @@ router?.post(
 router?.get(
   "/optimal-timing/:platform",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { platform } = req.params;
@@ -261,7 +261,7 @@ router?.get(
         timing,
       });
     } catch (error) {
-      logger.warn("Error in optimal-timing:", error?.message);
+      logger.warn("Error in optimal-timing:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -270,7 +270,7 @@ router?.get(
 router?.get(
   "/optimal-timing-all",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const { timezone = "America/New_York" } = req.query;
 
@@ -284,7 +284,7 @@ router?.get(
         timings: allTimings,
       });
     } catch (error) {
-      logger.warn("Error in optimal-timing-all:", error?.message);
+      logger.warn("Error in optimal-timing-all:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -293,7 +293,7 @@ router?.get(
 router?.post(
   "/timing-recommendation",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const { platform, timezone, targetDate } = timingSchema?.parse(req.body);
 
@@ -310,7 +310,7 @@ router?.post(
         recommendation,
       });
     } catch (error) {
-      logger.warn("Error in timing-recommendation:", error?.message);
+      logger.warn("Error in timing-recommendation:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -319,7 +319,7 @@ router?.post(
 router?.post(
   "/audience-patterns",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { platform } = req.body;
@@ -334,7 +334,7 @@ router?.post(
         patterns,
       });
     } catch (error) {
-      logger.warn("Error in audience-patterns:", error?.message);
+      logger.warn("Error in audience-patterns:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -343,7 +343,7 @@ router?.post(
 router?.get(
   "/competitor-timing/:platform",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const { platform } = req.params;
 
@@ -355,7 +355,7 @@ router?.get(
         competitorTiming,
       });
     } catch (error) {
-      logger.warn("Error in competitor-timing:", error?.message);
+      logger.warn("Error in competitor-timing:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -364,7 +364,7 @@ router?.get(
 router?.post(
   "/posting-schedule",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const {
         platforms,
@@ -387,7 +387,7 @@ router?.post(
         schedule,
       });
     } catch (error) {
-      logger.warn("Error in posting-schedule:", error?.message);
+      logger.warn("Error in posting-schedule:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -396,7 +396,7 @@ router?.post(
 router?.post(
   "/generate-variants",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { content, count } = generateVariantsSchema?.parse(req.body);
@@ -408,7 +408,7 @@ router?.post(
       };
 
       const result = await contentVariantGeneratorService?.generateVariants(
-        contentData as Record<string, unknown>,
+        contentData as unknown as Record<string, unknown>,
         count,
       );
 
@@ -421,7 +421,7 @@ router?.post(
         ...result,
       });
     } catch (error) {
-      logger.warn("Error in generate-variants:", error?.message);
+      logger.warn("Error in generate-variants:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -430,7 +430,7 @@ router?.post(
 router?.post(
   "/generate-caption-variants",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const { caption, count = 5 } = req.body;
 
@@ -449,7 +449,7 @@ router?.post(
         variants,
       });
     } catch (error) {
-      logger.warn("Error in generate-caption-variants:", error?.message);
+      logger.warn("Error in generate-caption-variants:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -458,7 +458,7 @@ router?.post(
 router?.post(
   "/generate-hashtag-sets",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const { content, count = 5 } = generateVariantsSchema?.parse(req.body);
 
@@ -473,7 +473,7 @@ router?.post(
         hashtagSets,
       });
     } catch (error) {
-      logger.warn("Error in generate-hashtag-sets:", error?.message);
+      logger.warn("Error in generate-hashtag-sets:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -482,7 +482,7 @@ router?.post(
 router?.post(
   "/generate-hooks",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const { content } = scoreViralSchema?.parse(req.body);
 
@@ -495,7 +495,7 @@ router?.post(
         hooks,
       });
     } catch (error) {
-      logger.warn("Error in generate-hooks:", error?.message);
+      logger.warn("Error in generate-hooks:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -504,7 +504,7 @@ router?.post(
 router?.post(
   "/create-ab-test",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { content, variantCount = 2 } = req.body;
@@ -536,7 +536,7 @@ router?.post(
         ...abTest,
       });
     } catch (error) {
-      logger.warn("Error in create-ab-test:", error?.message);
+      logger.warn("Error in create-ab-test:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -545,7 +545,7 @@ router?.post(
 router?.post(
   "/algorithm-health",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { platform, recentMetrics } = algorithmHealthSchema?.parse(req.body);
@@ -561,7 +561,7 @@ router?.post(
         health,
       });
     } catch (error) {
-      logger.warn("Error in algorithm-health:", error?.message);
+      logger.warn("Error in algorithm-health:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -570,7 +570,7 @@ router?.post(
 router?.get(
   "/algorithm-health/:platform",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { platform } = req.params;
@@ -601,7 +601,7 @@ router?.get(
         health,
       });
     } catch (error) {
-      logger.warn("Error in algorithm-health by platform:", error?.message);
+      logger.warn("Error in algorithm-health by platform:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -610,7 +610,7 @@ router?.get(
 router?.post(
   "/shadowban-check",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { platform, recentMetrics } = shadowbanCheckSchema?.parse(req.body);
@@ -630,7 +630,7 @@ router?.post(
         result,
       });
     } catch (error) {
-      logger.warn("Error in shadowban-check:", error?.message);
+      logger.warn("Error in shadowban-check:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -639,7 +639,7 @@ router?.post(
 router?.get(
   "/engagement-patterns/:platform",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { platform } = req.params;
@@ -654,7 +654,7 @@ router?.get(
         patterns,
       });
     } catch (error) {
-      logger.warn("Error in engagement-patterns:", error?.message);
+      logger.warn("Error in engagement-patterns:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -663,7 +663,7 @@ router?.get(
 router?.get(
   "/platform-profile/:platform",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const { platform } = req.params;
 
@@ -675,7 +675,7 @@ router?.get(
         profile,
       });
     } catch (error) {
-      logger.warn("Error in platform-profile:", error?.message);
+      logger.warn("Error in platform-profile:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -684,7 +684,7 @@ router?.get(
 router?.get(
   "/algorithm-insights/:platform",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { platform } = req.params;
@@ -699,7 +699,7 @@ router?.get(
         insights,
       });
     } catch (error) {
-      logger.warn("Error in algorithm-insights:", error?.message);
+      logger.warn("Error in algorithm-insights:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -708,7 +708,7 @@ router?.get(
 router?.get(
   "/dashboard",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { timezone = "America/New_York" } = req.query;
@@ -804,7 +804,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger.warn("Error in dashboard:", error?.message);
+      logger.warn("Error in dashboard:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -813,7 +813,7 @@ router?.get(
 router?.get(
   "/summary",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
 
@@ -846,7 +846,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger.warn("Error in summary:", error?.message);
+      logger.warn("Error in summary:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),

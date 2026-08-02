@@ -166,7 +166,7 @@ function getClientIP(req: Request): string {
   // only when the socket originates from a verified Cloudflare IP range, preventing spoofing).
   // Fall back to req.ip which respects Express trust proxy configuration.
   return (
-    (req as Record<string, unknown>).realClientIp ||
+    (req as unknown as Record<string, unknown>).realClientIp ||
     req.ip ||
     req.socket.remoteAddress ||
     "unknown"
@@ -204,14 +204,14 @@ async function slidingWindowCheck(
       (async () => {
         // PDIM does not support ZREMRANGEBYSCORE; use ZCOUNT to count only
         // in-window members (scores >= windowStart) without pruning old entries.
-        const requestCount: number = await redis?.zcount(
+        const requestCount: number = await (redis as any)?.zcount(
           redisKey,
           windowStart,
           "+inf",
         );
 
         if (requestCount >= maxRequests) {
-          const oldest: string[] = await redis?.zrange(redisKey, 0, 0);
+          const oldest: string[] = await (redis as any)?.zrange(redisKey, 0, 0);
           let resetAt = now + windowMs;
 
           if (oldest?.length > 0) {
@@ -223,9 +223,9 @@ async function slidingWindowCheck(
         }
 
         const requestId = `${now}:${randomBytes(4).toString("hex")}`;
-        await redis?.zadd(redisKey, now, requestId);
+        await (redis as any)?.zadd(redisKey, now, requestId);
         // fire-and-forget expire — doesn't need to block the response
-        redis?.expire(redisKey, Math.ceil(windowMs / 1000) + 60).catch(() => {});
+        (redis as any)?.expire(redisKey, Math.ceil(windowMs / 1000) + 60).catch(() => {});
 
         return {
           allowed: true,
@@ -695,7 +695,7 @@ export async function getRateLimitStatus(
     const windowStart = now - config?.windowMs;
     const redisKey = `${REDIS_KEY_PREFIX}${key}`;
 
-    const count: number = await redis?.zcount(redisKey, windowStart, "+inf");
+    const count: number = await (redis as any)?.zcount(redisKey, windowStart, "+inf");
 
     return {
       remaining: Math.max(0, config?.max - count),
@@ -742,7 +742,7 @@ export async function resetRateLimit(
 
   try {
     const redisKey = `${REDIS_KEY_PREFIX}${key}`;
-    await redis?.del(redisKey);
+    await (redis as any)?.del(redisKey);
     return true;
   } catch (error) {
     logger.warn({ err: error }, "Error resetting rate limit:");

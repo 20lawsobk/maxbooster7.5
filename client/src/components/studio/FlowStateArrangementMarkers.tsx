@@ -268,7 +268,7 @@ export function FlowStateArrangementMarkers({
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingMarker, setEditingMarker] = useState<Marker | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [_isPlaying, _setIsPlaying] = useState(false);
   const [loopMarker, setLoopMarker] = useState<string | null>(null);
 
   const currentMarker = useMemo(

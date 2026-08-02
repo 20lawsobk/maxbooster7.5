@@ -504,8 +504,8 @@ export class StatusPageService {
 
     if (existing?.length > 0) {
       const metric = existing[0];
-      const newTotal = (metric?.totalChecks || 0) + 1;
-      const newSuccessful = (metric?.successfulChecks || 0) + (isUp ? 1 : 0);
+      const newTotal = ((metric as any)?.totalChecks || 0) + 1;
+      const newSuccessful = ((metric as any)?.successfulChecks || 0) + (isUp ? 1 : 0);
       const newPercentage = (newSuccessful / newTotal) * 100;
 
       await db
@@ -582,8 +582,8 @@ export class StatusPageService {
     const subscribers = await this.getSubscribers();
 
     const relevantSubscribers = subscribers?.filter((s) => {
-      if (incident?.isScheduled) return s?.notifyMaintenance;
-      return s?.notifyIncidents;
+      if ((incident as any)?.isScheduled) return (s as any)?.notifyMaintenance;
+      return (s as any)?.notifyIncidents;
     });
 
     const subject =
@@ -597,17 +597,17 @@ export class StatusPageService {
 
     for (const subscriber of relevantSubscribers) {
       try {
-        await emailService?.sendEmail({
+        await (emailService as any)?.sendEmail({
           to: subscriber.email,
           subject,
           html: `
             <h2>${incident?.title}</h2>
             <p><strong>Status:</strong> ${statusLabel}</p>
-            <p><strong>Impact:</strong> ${incident?.impact}</p>
-            <p>${incident?.message}</p>
+            <p><strong>Impact:</strong> ${(incident as any)?.impact}</p>
+            <p>${(incident as any)?.message}</p>
             <hr>
             <p><small>
-              <a href="/status/unsubscribe?token=${subscriber.unsubscribeToken}">Unsubscribe</a> from status updates
+              <a href="/status/unsubscribe?token=${(subscriber as any).unsubscribeToken}">Unsubscribe</a> from status updates
             </small></p>
           `,
         });
@@ -628,13 +628,13 @@ export class StatusPageService {
     subscriber: StatusPageSubscriber,
   ): Promise<void> {
     try {
-      await emailService?.sendEmail({
+      await (emailService as any)?.sendEmail({
         to: subscriber.email,
         subject: "Verify your status page subscription",
         html: `
           <h2>Confirm your subscription</h2>
           <p>Please click the link below to verify your email and start receiving status updates:</p>
-          <p><a href="/status/verify?token=${subscriber.verificationToken}">Verify Email</a></p>
+          <p><a href="/status/verify?token=${(subscriber as any).verificationToken}">Verify Email</a></p>
         `,
       });
     } catch (error) {

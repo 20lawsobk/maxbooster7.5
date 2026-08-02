@@ -87,7 +87,7 @@ async function getGeoReader(): Promise<unknown> {
       const reader = await maxmind.open(GEODB_PATH);
       // Only write back if no hot-swap happened while we were loading
       if (geoReaderGeneration === myGeneration) {
-        geoReader = reader as Record<string, unknown>;
+        geoReader = reader as unknown as Record<string, unknown>;
         logger.info(`[GeoDNS] GeoIP database loaded from ${GEODB_PATH}`);
       }
       return geoReader;
@@ -147,7 +147,7 @@ export async function lookupGeo(ip: string): Promise<GeoResult | null> {
   if (!reader) return null;
 
   try {
-    const result = reader.get(ip);
+    const result = (reader as any).get(ip);
     if (!result) return { ip };
 
     const continent = result.continent.code as string | undefined;
@@ -379,7 +379,7 @@ export async function reloadGeoReader(): Promise<boolean> {
     const newReader = await maxmind.open(GEODB_PATH);
     // Guard against two concurrent reloadGeoReader() calls racing each other
     if (geoReaderGeneration === swapGeneration) {
-      geoReader = newReader as Record<string, unknown>;
+      geoReader = newReader as unknown as Record<string, unknown>;
       logger.info(`[GeoDNS] Hot-swap complete — new database loaded from ${GEODB_PATH}`);
       return true;
     } else {

@@ -46,7 +46,7 @@ async function pgSessionGet(sid: string): Promise<session.SessionData | null> {
     const rows = await db.execute(sql`
       SELECT sess FROM pg_sessions WHERE sid = ${sid} AND expire > ${Date.now()}
     `);
-    const r = (rows as { rows?: unknown[] }).rows ?? (rows as unknown[]);
+    const r = (rows as { rows?: unknown[] }).rows ?? (rows as unknown as unknown[]);
     if (!Array.isArray(r) || r.length === 0) return null;
     const row = r[0] as Record<string, unknown>;
     const raw = row.sess as string | null;

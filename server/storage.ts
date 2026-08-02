@@ -63,9 +63,9 @@ export class DatabaseStorage implements IStorage {
         return await fn();
       } catch (err) {
         lastErr = err;
-        const msg = err?.message ?? "";
-        const causeMsg = err?.cause?.message ?? "";
-        const causeCode = err?.cause?.code ?? err?.code ?? "";
+        const msg = (err as any)?.message ?? "";
+        const causeMsg = (err as any)?.cause?.message ?? "";
+        const causeCode = (err as any)?.cause?.code ?? (err as any)?.code ?? "";
         const permanentCodes = new Set([
           "42703",
           "42P01",
@@ -104,7 +104,7 @@ export class DatabaseStorage implements IStorage {
           "| code:",
           causeCode || "none",
           "| causeDetail:",
-          JSON.stringify(err?.cause ?? null),
+          JSON.stringify((err as any)?.cause ?? null),
         );
         throw err;
       }
@@ -419,9 +419,9 @@ export class DatabaseStorage implements IStorage {
             : "social",
         content:
           typeof content === "string" ? content : JSON.stringify(content),
-        scheduledAt: scheduledTime ? new Date(scheduledTime) : null,
+        scheduledAt: scheduledTime ? new Date(scheduledTime as any) : null,
         status: post.status || "scheduled",
-        mediaUrls: Array.isArray(content?.mediaUrls) ? content?.mediaUrls : [],
+        mediaUrls: Array.isArray((content as any)?.mediaUrls) ? (content as any)?.mediaUrls : [],
         engagement: {
           _autopilotMeta: true,
           platforms: platforms || [],
@@ -517,7 +517,7 @@ export class DatabaseStorage implements IStorage {
     if (content !== undefined)
       updateValues.content =
         typeof content === "string" ? content : JSON.stringify(content);
-    if (scheduledTime) updateValues.scheduledAt = new Date(scheduledTime);
+    if (scheduledTime) updateValues.scheduledAt = new Date(scheduledTime as any);
     if (results !== undefined) updateValues.engagement = results;
     if (
       updateValues?.status === "completed" ||
@@ -836,7 +836,7 @@ export class DatabaseStorage implements IStorage {
         const contentObj = meta?.content || parsedContent || {};
         const titleText =
           (typeof contentObj === "object"
-            ? contentObj?.text || contentObj?.caption
+            ? (contentObj as any)?.text || (contentObj as any)?.caption
             : null) ||
           rawContent ||
           "Autopilot post";
@@ -853,7 +853,7 @@ export class DatabaseStorage implements IStorage {
           id: p.id,
           userId: p.userId,
           title,
-          contentType: contentObj.mediaType || "text",
+          contentType: (contentObj as any).mediaType || "text",
           platform: meta.platforms?.[0] || p?.platform || "social",
           platforms: meta.platforms || [p?.platform].filter(Boolean),
           scheduledAt: p.scheduledAt,
@@ -1234,13 +1234,13 @@ export class DatabaseStorage implements IStorage {
             ((a?.performance as Record<string, unknown>)?.clicks || 0) /
             Math.max(
               1,
-              (a?.performance as Record<string, unknown>)?.impressions || 1,
+              ((a?.performance as Record<string, unknown>)?.impressions || 1 as number),
             );
           const bRate =
             ((b?.performance as Record<string, unknown>)?.clicks || 0) /
             Math.max(
               1,
-              (b?.performance as Record<string, unknown>)?.impressions || 1,
+              ((b?.performance as Record<string, unknown>)?.impressions || 1 as number),
             );
           return bRate > aRate ? b : a;
         });
@@ -1386,8 +1386,8 @@ export class DatabaseStorage implements IStorage {
           campaignName: c.name,
           date: c.startDate,
           budget: c.budget || 0,
-          spend: perf.spend || 0,
-          pacing: perf.spend && c?.budget ? (perf?.spend / c?.budget) * 100 : 0,
+          spend: perf!.spend || 0,
+          pacing: perf!.spend && c?.budget ? (perf?.spend / c?.budget) * 100 : 0,
         });
       }
     });
@@ -1408,8 +1408,8 @@ export class DatabaseStorage implements IStorage {
         platform: a.platform || "unknown",
         streams: a.streams || 0,
         revenue: a.revenue || 0,
-        source: meta.source || "organic",
-        campaign: meta.campaign || null,
+        source: meta!.source || "organic",
+        campaign: meta!.campaign || null,
       };
     });
   }
@@ -1528,7 +1528,7 @@ export class DatabaseStorage implements IStorage {
       .limit(50);
 
     const totalEngagements = recentPosts?.reduce((sum, p) => {
-      const meta = p?.metadata as Record<string, any> | null;
+      const meta = (p as any)?.metadata as Record<string, any> | null;
       return (
         sum +
         (meta?.likes || 0) +
@@ -1538,7 +1538,7 @@ export class DatabaseStorage implements IStorage {
       );
     }, 0);
     const totalReach = recentPosts?.reduce((sum, p) => {
-      const meta = p?.metadata as Record<string, any> | null;
+      const meta = (p as any)?.metadata as Record<string, any> | null;
       return sum + (meta?.reach || meta?.impressions || 0);
     }, 0);
     const engagementRate =
@@ -1587,7 +1587,7 @@ export class DatabaseStorage implements IStorage {
         content: p.content,
         platform: p.platform,
         analyzedAt: p.createdAt,
-        features: eng.features || {},
+        features: eng!.features || {},
         performance: eng || {},
       };
     });
@@ -2225,9 +2225,9 @@ export class DatabaseStorage implements IStorage {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    const releaseDispatches = await this._loadDispatches(data?.releaseId);
+    const releaseDispatches = await this._loadDispatches((data?.releaseId as string));
     releaseDispatches?.push(dispatch);
-    await this._saveDispatches(data?.releaseId, releaseDispatches);
+    await this._saveDispatches((data?.releaseId as string), releaseDispatches);
     return dispatch;
   }
 
@@ -2413,8 +2413,8 @@ export class DatabaseStorage implements IStorage {
     return trends?.map((t) => ({
       date: t.date,
       streams: t.streams || 0,
-      listeners: t.listeners || 0,
-      saves: t.saves || 0,
+      listeners: (t as any).listeners || 0,
+      saves: (t as any).saves || 0,
     }));
   }
 
@@ -2425,11 +2425,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(analytics?.userId, userId))
       .limit(1);
 
-    if (data?.length === 0 || !data[0].topCountries) {
+    if (data?.length === 0 || (!data[0] as any).topCountries) {
       return [];
     }
 
-    return (data[0].topCountries as unknown[]) || [];
+    return ((data[0] as any).topCountries as unknown[]) || [];
   }
 
   async getPayoutHistory(userId: string): Promise<any[]> {

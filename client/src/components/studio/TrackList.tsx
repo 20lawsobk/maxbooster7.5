@@ -247,7 +247,7 @@ const SortableTrackRow = memo(function SortableTrackRow({
   onClipSelect,
   selectedClipId,
   onOpenTrackPlugins,
-  isSelected,
+  _isSelected,
 }: SortableTrackRowProps) {
   const {
     attributes,
@@ -823,11 +823,11 @@ export function TrackList({
   onAddTrack,
   onReorderTracks,
   selectedTrackId,
-  onTrackSelect,
+  _onTrackSelect,
   onOpenTrackPlugins,
-  zoom,
-  currentTime,
-  isPlaying,
+  _zoom,
+  _currentTime,
+  _isPlaying,
 }: TrackListProps) {
   useEffect(() => {
     logger.info("TrackList render - trackClips size:", trackClips.size);

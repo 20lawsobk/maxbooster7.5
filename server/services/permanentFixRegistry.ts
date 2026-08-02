@@ -172,15 +172,15 @@ class PermanentFixRegistry {
       const { getPdimClient } = await import("../lib/pdimClient.js");
       const client = getPdimClient();
       this._pdimGet = (k) =>
-        (client as Record<string, unknown>).get(k).catch(() => null);
+        (client as unknown as Record<string, unknown>).get(k).catch(() => null);
       this._pdimSet = async (k, v) => {
-        await (client as Record<string, unknown>).set(k, v).catch(() => {});
+        await (client as unknown as Record<string, unknown>).set(k, v).catch(() => {});
       };
       this._pdimLpush = async (k, v) => {
-        await (client as Record<string, unknown>).lpush(k, v).catch(() => {});
+        await (client as unknown as Record<string, unknown>).lpush(k, v).catch(() => {});
       };
       this._pdimLtrim = async (k, s, e) => {
-        await (client as Record<string, unknown>)
+        await (client as unknown as Record<string, unknown>)
           .ltrim(k, s, e)
           .catch(() => {});
       };
@@ -309,7 +309,7 @@ class PermanentFixRegistry {
         }
       }
     } catch (err) {
-      logger.warn(`[PermanentFixer] Failed to load overrides: ${err?.message}`);
+      logger.warn(`[PermanentFixer] Failed to load overrides: ${(err as any)?.message}`);
     }
 
     // Start background timers (after data is loaded)
@@ -324,7 +324,7 @@ class PermanentFixRegistry {
     this._aimdPersistTimer = setInterval(() => {
       this._persistAimdGap().catch(() => {});
     }, AIMD_PERSIST_INTERVAL_MS);
-    (this._aimdPersistTimer as Record<string, unknown>).unref?.();
+    (this._aimdPersistTimer as unknown as Record<string, unknown>).unref?.();
   }
 
   private async _persistAimdGap(): Promise<void> {
@@ -354,7 +354,7 @@ class PermanentFixRegistry {
     this._deEscalationTimer = setTimeout(async () => {
       await this._runDeEscalationCheck();
     }, DEESCALATION_WINDOW_MS);
-    (this._deEscalationTimer as Record<string, unknown>).unref?.();
+    (this._deEscalationTimer as unknown as Record<string, unknown>).unref?.();
   }
 
   private async _runDeEscalationCheck(): Promise<void> {
@@ -392,7 +392,7 @@ class PermanentFixRegistry {
 
       if (newValue === current) continue;
 
-      (this._overrides as Record<string, unknown>)[target.key] = newValue;
+      (this._overrides as unknown as Record<string, unknown>)[target.key] = newValue;
       this._deEscalationsAllTime++;
       this._escalationsAllTime++; // counts toward all-time (it's a change event)
 
@@ -499,7 +499,7 @@ class PermanentFixRegistry {
       return;
     }
 
-    (this._overrides as Record<string, unknown>)[target.key] = newValue;
+    (this._overrides as unknown as Record<string, unknown>)[target.key] = newValue;
     this._escalationsThisSession++;
     this._escalationsAllTime++;
 

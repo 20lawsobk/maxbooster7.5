@@ -91,7 +91,7 @@ router?.post(
       const { alertId } = req.params;
       const success = await analyticsAlertService?.markAlertAsRead(
         userId,
-        alertId,
+        (alertId as string),
       );
 
       return res.json({
@@ -115,7 +115,7 @@ router?.post(
       }
 
       const { alertId } = req.params;
-      const success = await analyticsAlertService?.dismissAlert(userId, alertId);
+      const success = await analyticsAlertService?.dismissAlert(userId, (alertId as string));
 
       return res.json({
         success,

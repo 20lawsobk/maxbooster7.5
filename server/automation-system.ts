@@ -51,7 +51,7 @@ export class AutomationSystem extends EventEmitter {
   private conditions: Map<string, Condition> = new Map();
   private isRunning: boolean = false;
   private automationMetrics: AutomationMetrics;
-  private scheduledTasks: Map<string, cron.ScheduledTask> = new Map();
+  private _scheduledTasks: Map<string, cron.ScheduledTask> = new Map();
   private webhookHandlers: Map<
     string,
     Array<{ callback: Function; secret?: string }>
@@ -147,14 +147,14 @@ export class AutomationSystem extends EventEmitter {
           let userId: string | undefined = params?.userId;
           if (!userId && params?.to) {
             const storage = await loadStorage();
-            const u = await storage?.getUserByEmail?.(params?.to);
+            const u = await (storage as any)?.getUserByEmail?.(params?.to);
             userId = u?.id;
           }
           if (!userId) throw new Error("no userId resolvable for email");
-          if (typeof notif?.send !== "function") {
+          if (typeof (notif as any)?.send !== "function") {
             throw new Error("notificationService.send unavailable");
           }
-          await notif?.send({
+          await (notif as any)?.send({
             userId,
             type: params.template || "system",
             title: params.subject,
@@ -164,7 +164,7 @@ export class AutomationSystem extends EventEmitter {
           return { success: true, message: "Email sent successfully" };
         } catch (e) {
           logger.warn({ err: e }, "send-email action failed");
-          return { success: false, message: e.message ?? "send-email failed" };
+          return { success: false, message: (e as Error).message ?? "send-email failed" };
         }
       },
     });
@@ -181,7 +181,7 @@ export class AutomationSystem extends EventEmitter {
         logger.info(`📱 Posting to social media: ${platforms?.join(", ")}`);
         try {
           const svc = await loadAutoPostingService();
-          if (!svc?.schedulePost) {
+          if ((!svc as any)?.schedulePost) {
             throw new Error("autoPostingService.schedulePost unavailable");
           }
           // autoPostingServiceV2?.schedulePost signature:
@@ -189,17 +189,17 @@ export class AutomationSystem extends EventEmitter {
           const text =
             typeof params?.content === "string"
               ? params?.content
-              : (params?.content?.text ?? params?.content?.caption ?? "");
+              : ((params?.content as any)?.text ?? (params?.content as any)?.caption ?? "");
           const postContent = {
             text,
-            hashtags: params.content?.hashtags,
-            mediaUrl: params.media ?? params?.content?.mediaUrl,
-            mediaType: params.content?.mediaType,
+            hashtags: (params.content as any)?.hashtags,
+            mediaUrl: params.media ?? (params?.content as any)?.mediaUrl,
+            mediaType: (params.content as any)?.mediaType,
           };
           const scheduledTime = params?.schedule
-            ? new Date(params?.schedule)
+            ? new Date(params?.schedule as any)
             : new Date();
-          const r = await svc?.schedulePost(
+          const r = await (svc as any)?.schedulePost(
             params?.userId,
             platforms,
             postContent,
@@ -214,7 +214,7 @@ export class AutomationSystem extends EventEmitter {
           logger.warn({ err: e }, "post-social-media action failed");
           return {
             success: false,
-            message: e.message ?? "post-social-media failed",
+            message: (e as Error).message ?? "post-social-media failed",
           };
         }
       },
@@ -232,9 +232,9 @@ export class AutomationSystem extends EventEmitter {
         logger.info(`🎵 Distributing music to ${platforms?.join(", ")}`);
         try {
           const dist = await loadDistributionService();
-          if (!dist?.distributeRelease)
+          if ((!dist as any)?.distributeRelease)
             throw new Error("distributionService unavailable");
-          const r = await dist?.distributeRelease(
+          const r = await (dist as any)?.distributeRelease(
             params?.releaseId,
             params?.userId,
           );
@@ -247,7 +247,7 @@ export class AutomationSystem extends EventEmitter {
           logger.warn({ err: e }, "distribute-music action failed");
           return {
             success: false,
-            message: e.message ?? "distribute-music failed",
+            message: (e as Error).message ?? "distribute-music failed",
           };
         }
       },
@@ -325,13 +325,13 @@ export class AutomationSystem extends EventEmitter {
         logger.info(`🔔 Sending notification: ${params?.title}`);
         try {
           const notif = await loadNotificationService();
-          if (!notif?.send)
+          if ((!notif as any)?.send)
             throw new Error("notificationService.send unavailable");
           const recipients: string[] = Array.isArray(params?.recipients)
             ? params?.recipients
             : [params?.recipients].filter(Boolean);
           for (const userId of recipients) {
-            await notif?.send({
+            await (notif as any)?.send({
               userId,
               type: params.type ?? "system",
               title: params.title,
@@ -348,7 +348,7 @@ export class AutomationSystem extends EventEmitter {
           logger.warn({ err: e }, "send-notification action failed");
           return {
             success: false,
-            message: e.message ?? "send-notification failed",
+            message: (e as Error).message ?? "send-notification failed",
           };
         }
       },
@@ -545,8 +545,8 @@ export class AutomationSystem extends EventEmitter {
         return task;
       },
       stop: (trigger) => {
-        if (trigger instanceof cron.ScheduledTask) {
-          trigger?.stop();
+        if (trigger instanceof (cron as any).ScheduledTask) {
+          (trigger as any)?.stop();
         }
       },
     });
@@ -561,8 +561,8 @@ export class AutomationSystem extends EventEmitter {
         return { eventType: params.eventType, callback };
       },
       stop: (trigger) => {
-        if (trigger && trigger?.eventType) {
-          this.off(trigger?.eventType, trigger?.callback);
+        if (trigger && (trigger as any)?.eventType) {
+          this.off((trigger as any)?.eventType, (trigger as any)?.callback);
         }
       },
     });
@@ -592,13 +592,13 @@ export class AutomationSystem extends EventEmitter {
         return { webhookId, handler };
       },
       stop: (trigger) => {
-        if (!trigger?.webhookId) return;
-        const list = this.webhookHandlers.get(trigger?.webhookId) || [];
+        if ((!trigger as any)?.webhookId) return;
+        const list = this.webhookHandlers.get((trigger as any)?.webhookId) || [];
         const next = list?.filter(
-          (h: Record<string, unknown>) => h !== trigger?.handler,
+          (h: Record<string, unknown>) => h !== (trigger as any)?.handler,
         );
-        if (next?.length === 0) this.webhookHandlers.delete(trigger?.webhookId);
-        else this.webhookHandlers.set(trigger?.webhookId, next);
+        if (next?.length === 0) this.webhookHandlers.delete((trigger as any)?.webhookId);
+        else this.webhookHandlers.set((trigger as any)?.webhookId, next);
       },
     });
   }
@@ -622,7 +622,7 @@ export class AutomationSystem extends EventEmitter {
 
   // Monitor workflows
   private monitorWorkflows(): void {
-    for (const [id, workflow] of this.workflows) {
+    for (const [_id, workflow] of this.workflows) {
       if (workflow?.status === "active") {
         this.checkWorkflowTriggers(workflow);
       }
@@ -631,7 +631,7 @@ export class AutomationSystem extends EventEmitter {
 
   // Execute workflows
   private async executeWorkflows(): Promise<void> {
-    for (const [id, workflow] of this.workflows) {
+    for (const [_id, workflow] of this.workflows) {
       if (
         workflow?.status === "triggered" &&
         workflow?.nextAction < workflow?.actions.length

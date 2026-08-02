@@ -418,7 +418,7 @@ router.delete(
             {
               type: "user_left_session",
               userId: req.user!.id,
-              displayName: user.displayName || "User",
+              displayName: user!.displayName || "User",
               message: "You left the session",
             },
           ],

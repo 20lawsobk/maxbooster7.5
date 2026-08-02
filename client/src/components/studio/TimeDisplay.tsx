@@ -262,7 +262,7 @@ export function TimeDisplay({
 
 function DigitGroup({
   value,
-  label,
+  _label,
   size,
 }: {
   value: string;
@@ -318,7 +318,7 @@ export function TempoDisplay({
   tempo,
   onTempoChange,
   timeSignature,
-  onTimeSignatureChange,
+  _onTimeSignatureChange,
   size = "md",
 }: TempoDisplayProps) {
   const sizeClasses = {

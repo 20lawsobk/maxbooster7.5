@@ -293,7 +293,7 @@ export class MultisampleSynth implements SynthesizerEngine {
             const harmEnv = Math.exp(-t * layer?.decay * h * 0.4);
             value += (Math.sin(2 * Math.PI * freq * h * t) * harmEnv) / h;
           }
-          (sample as Record<string, unknown>).buffer[i] = value * env;
+          (sample as unknown as Record<string, unknown>).buffer[i] = value * env;
         }
 
         this.samples.push({
@@ -410,7 +410,7 @@ export class GranularSamplerSynth implements SynthesizerEngine {
         const env = Math.exp(-t * 0.5 * h * 0.3);
         value += (Math.sin(2 * Math.PI * 440 * h * t) * env) / h;
       }
-      (this.sample as Record<string, unknown>).buffer[i] = value * 0.5;
+      (this.sample as unknown as Record<string, unknown>).buffer[i] = value * 0.5;
     }
 
     for (let i = 0; i < 12; i++) {
@@ -699,7 +699,7 @@ export class SlicerSynth implements SynthesizerEngine {
         } else {
           value = Math.sin(2 * Math.PI * freq * t) * env;
         }
-        (sample as Record<string, unknown>).buffer[i] = value;
+        (sample as unknown as Record<string, unknown>).buffer[i] = value;
       }
       this.samples.push(sample);
     }
@@ -847,7 +847,7 @@ export class ROMplerSynth implements SynthesizerEngine {
             break;
         }
 
-        (sample as Record<string, unknown>).buffer[i] = value;
+        (sample as unknown as Record<string, unknown>).buffer[i] = value;
       }
 
       this.samples.push({
@@ -957,7 +957,7 @@ export class LooperSynth implements SynthesizerEngine {
       value += Math.sin(2 * Math.PI * 880 * t) * 0.15 * Math.sin(loopPhase * 2);
       value += Math.sin(2 * Math.PI * 660 * t) * 0.1 * Math.sin(loopPhase * 3);
 
-      (this.loopBuffer as Record<string, unknown>).buffer[i] = value;
+      (this.loopBuffer as unknown as Record<string, unknown>).buffer[i] = value;
     }
 
     this.player = new SamplePlayer(this.loopBuffer);
@@ -1051,7 +1051,7 @@ export class TextureSamplerSynth implements SynthesizerEngine {
         const rand2 = Math.random() * 2 - 1;
         const filtered = rand1 * 0.3 + rand2 * 0.7;
         const shaped = Math.tanh(filtered * 2) * 0.5;
-        (sample as Record<string, unknown>).buffer[i] = shaped;
+        (sample as unknown as Record<string, unknown>).buffer[i] = shaped;
       }
 
       this.samples.push(sample);

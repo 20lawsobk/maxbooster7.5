@@ -267,7 +267,7 @@ export function StudioBrowser({
                   .filter(
                     (file) =>
                       !searchQuery ||
-                      file.name
+                      (file as Error).name
                         ?.toLowerCase()
                         .includes(searchQuery.toLowerCase()),
                   )
@@ -295,7 +295,7 @@ export function StudioBrowser({
                           style={{ color: "var(--studio-text-muted)" }}
                         />
                         <span className="truncate">
-                          {file.name || `File ${index + 1}`}
+                          {(file as Error).name || `File ${index + 1}`}
                         </span>
                       </div>
                     </button>
@@ -502,7 +502,7 @@ export function StudioBrowser({
                   .filter(
                     (sample) =>
                       !searchQuery ||
-                      sample.name
+                      (sample as Error).name
                         ?.toLowerCase()
                         .includes(searchQuery.toLowerCase()),
                   )
@@ -530,7 +530,7 @@ export function StudioBrowser({
                           style={{ color: "var(--studio-text-muted)" }}
                         />
                         <span className="truncate">
-                          {sample.name || `Sample ${index + 1}`}
+                          {(sample as Error).name || `Sample ${index + 1}`}
                         </span>
                       </div>
                     </button>

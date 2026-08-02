@@ -161,7 +161,7 @@ export function EarningsReconciliation() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedStatement, setSelectedStatement] =
     useState<RoyaltyStatement | null>(null);
-  const [selectedPayout, setSelectedPayout] = useState<PayoutRecord | null>(
+  const [_selectedPayout, _setSelectedPayout] = useState<PayoutRecord | null>(
     null,
   );
   const [payoutAmount, setPayoutAmount] = useState("");

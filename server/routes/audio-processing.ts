@@ -683,7 +683,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger.warn("Error in audio capabilities:", error?.message);
+      logger.warn("Error in audio capabilities:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   },
@@ -724,7 +724,7 @@ router?.post(
       }
       return res.json({ success: true, ...result?.data });
     } catch (error) {
-      logger.warn("Audio file analysis error:", error?.message);
+      logger.warn("Audio file analysis error:", (error as any)?.message);
       res.status(500).json({ error: "Audio analysis failed" });
     }
   },
@@ -740,7 +740,7 @@ router?.get("/analysis-features", async (_req: Request, res: Response) => {
     const result = await pythonAIService?.getAudioFeatureInfo();
     return res.json(result?.data ?? { available: false });
   } catch (error) {
-    res.json({ available: false, error: error.message });
+    res.json({ available: false, error: (error as Error).message });
   }
 });
 
@@ -771,7 +771,7 @@ router?.post("/transcribe", requireAuth, async (req: Request, res: Response) => 
     }
     return res.json(result?.data);
   } catch (error) {
-    logger.warn("MIDI transcription error:", error?.message);
+    logger.warn("MIDI transcription error:", (error as any)?.message);
     res.status(500).json({ error: "MIDI transcription failed" });
   }
 });

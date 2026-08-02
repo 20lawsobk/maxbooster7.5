@@ -454,7 +454,7 @@ router?.get(
 
       res.json({
         valid: isValid,
-        expiresAt: expiresAt.toISOString(),
+        expiresAt: expiresAt!.toISOString(),
         secondsRemaining,
         concurrentSessions: Number(sessionCount[0]?.count || 1),
         outcome: isValid ? "session_valid" : "session_expired",
@@ -512,13 +512,13 @@ router?.get(
 
         return {
           platform: account.platform,
-          platformName: account.platformName || account?.platform,
+          platformName: (account as any).platformName || account?.platform,
           status,
           action,
-          tokenExpiresAt: tokenExpiresAt.toISOString(),
+          tokenExpiresAt: tokenExpiresAt!.toISOString(),
           expiresInSeconds,
-          lastRefreshed: account.lastRefreshedAt?.toISOString(),
-          scopes: account.scopes || [],
+          lastRefreshed: (account as any).lastRefreshedAt?.toISOString(),
+          scopes: (account as any).scopes || [],
           outcome:
             status === "connected"
               ? "token_valid"
@@ -793,7 +793,7 @@ router?.post(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user! as any).id;
       const [user] = await db
         .select()
         .from(users)
@@ -821,7 +821,7 @@ router?.post(
       const verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
       try {
-        await emailService?.sendEmail({
+        await (emailService as any)?.sendEmail({
           to: user.email,
           subject: "Verify your Max Booster email",
           html: `<h2>Email Verification</h2><p>Click the link below to verify your email address:</p><p><a href="${verificationUrl}">Verify Email</a></p><p>This link expires in 24 hours.</p>`,
@@ -891,7 +891,7 @@ router?.get(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user! as any).id;
       const [user] = await db
         .select({ emailVerified: users.emailVerified })
         .from(users)

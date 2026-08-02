@@ -774,7 +774,7 @@ class PluginHostService {
     left: Float32Array,
     right: Float32Array,
     params: Record<string, number | boolean | string>,
-    _sampleRate: number,
+    sampleRate: number,
   ): void {
     const outputGain = Math.pow(10, ((params?.outputGain as number) || 0) / 20);
 
@@ -788,7 +788,7 @@ class PluginHostService {
     left: Float32Array,
     right: Float32Array,
     params: Record<string, number | boolean | string>,
-    _sampleRate: number,
+    sampleRate: number,
   ): void {
     const ceiling = Math.pow(10, ((params?.ceiling as number) || -0.3) / 20);
     const threshold = Math.pow(10, ((params?.threshold as number) || -6) / 20);
@@ -892,7 +892,7 @@ class PluginHostService {
     left: Float32Array,
     right: Float32Array,
     params: Record<string, number | boolean | string>,
-    _sampleRate: number,
+    sampleRate: number,
   ): void {
     const mode = (params?.mode as string) || "tube";
     const drive = (params?.drive as number) || 0.5;

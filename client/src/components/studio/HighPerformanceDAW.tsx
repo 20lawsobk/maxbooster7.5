@@ -1083,7 +1083,7 @@ interface SignalPathMixerProps {
 function SignalPathMixer({
   selectedTrack,
   onTogglePlugin,
-  onAddPlugin,
+  _onAddPlugin,
   onRemovePlugin,
   onOpenPlugin,
   onOpenBrowser,

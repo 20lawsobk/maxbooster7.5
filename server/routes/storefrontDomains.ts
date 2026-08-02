@@ -34,12 +34,12 @@ async function getUserDomainUsage(
      ) combined`,
     [userId],
   );
-  const total = uniqueResult?.rows[0]?.n ?? 0;
+  const total = (uniqueResult as any)?.rows[0]?.n ?? 0;
   const zonesResult = await pool?.query(
     "SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1",
     [userId],
   );
-  const zones = zonesResult?.rows[0]?.n ?? 0;
+  const zones = (zonesResult as any)?.rows[0]?.n ?? 0;
   return { zones, claimed: 0, total };
 }
 
@@ -48,7 +48,7 @@ async function userHasActiveSubscription(userId: string): Promise<boolean> {
     `SELECT subscription_status, role FROM users WHERE id = $1 LIMIT 1`,
     [userId],
   );
-  const user = result?.rows[0];
+  const user = (result as any)?.rows[0];
   if (!user) return false;
   if (user?.role === "admin") return true;
   return ["active", "trialing"].includes(user?.subscription_status ?? "");
@@ -106,7 +106,7 @@ router?.get("/resolve/:label", async (req, res) => {
     if (!row) return res.status(404).json({ ok: false, error: "Not found." });
     return res.json({ ok: true, slug: row.slug, label });
   } catch (err) {
-    logger.warn("[domains] resolve error:", err);
+    logger.warn({ err: err }, "[domains] resolve error:");
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
@@ -147,7 +147,7 @@ router?.post("/custom/request", async (req, res) => {
       return res
         .status(404)
         .json({ ok: false, error: "Storefront not found." });
-    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+    if (sf?.userId !== (req.user as unknown as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const { attachDomainToStorefront } = await import(
@@ -155,7 +155,7 @@ router?.post("/custom/request", async (req, res) => {
     );
     const result = await attachDomainToStorefront(
       storefrontId,
-      (req.user as Record<string, unknown>).id,
+      ((req.user as unknown as Record<string, unknown>).id as string),
       domResult?.normalized,
     );
 
@@ -172,7 +172,7 @@ router?.post("/custom/request", async (req, res) => {
     });
   } catch (err) {
     logger.warn({ err }, "[storefrontDomains] custom/request error");
-    const msg: string = err?.message || "";
+    const msg: string = (err as any)?.message || "";
     const status =
       msg?.includes("already active") ||
       msg?.includes("already being set up") ||
@@ -224,7 +224,7 @@ router?.post("/custom/verify", async (req, res) => {
         .from(storefronts)
         .where(eq(storefronts?.id, row?.storefrontId))
         .limit(1);
-      if (sf?.userId !== (req.user as Record<string, unknown>).id)
+      if (sf?.userId !== (req.user as unknown as Record<string, unknown>).id)
         return res.status(403).json({ ok: false, error: "Unauthorized." });
 
       resolvedId = row?.id;
@@ -249,7 +249,7 @@ router?.post("/custom/verify", async (req, res) => {
         .from(storefronts)
         .where(eq(storefronts?.id, row?.storefrontId))
         .limit(1);
-      if (sf?.userId !== (req.user as Record<string, unknown>).id)
+      if (sf?.userId !== (req.user as unknown as Record<string, unknown>).id)
         return res.status(403).json({ ok: false, error: "Unauthorized." });
 
       resolvedId = row?.id;
@@ -277,7 +277,7 @@ router?.post("/custom/verify", async (req, res) => {
       .json({
         ok: false,
         verified: false,
-        error: err.message || "Internal error.",
+        error: (err as Error).message || "Internal error.",
       });
   }
 });
@@ -291,20 +291,20 @@ router?.post("/storefront/:storefrontId/publish", async (req, res) => {
       return res.status(401).json({ ok: false, error: "Unauthorized." });
     await publishStorefront(
       req.params.storefrontId,
-      (req.user as Record<string, unknown>).id,
+      ((req.user as unknown as Record<string, unknown>).id as string),
     );
     return res.json({ ok: true, status: "live" });
   } catch (err) {
-    logger.warn("[storefrontDomains] publish error:", err);
+    logger.warn({ err: err }, "[storefrontDomains] publish error:");
     const status =
-      err?.message === "Unauthorized."
+      (err as any)?.message === "Unauthorized."
         ? 403
-        : err?.message === "Storefront not found."
+        : (err as any)?.message === "Storefront not found."
           ? 404
           : 500;
     return res
       .status(status)
-      .json({ ok: false, error: err.message || "Internal error." });
+      .json({ ok: false, error: (err as Error).message || "Internal error." });
   }
 });
 
@@ -314,20 +314,20 @@ router?.post("/storefront/:storefrontId/unpublish", async (req, res) => {
       return res.status(401).json({ ok: false, error: "Unauthorized." });
     await unpublishStorefront(
       req.params.storefrontId,
-      (req.user as Record<string, unknown>).id,
+      ((req.user as unknown as Record<string, unknown>).id as string),
     );
     return res.json({ ok: true, status: "draft" });
   } catch (err) {
-    logger.warn("[storefrontDomains] unpublish error:", err);
+    logger.warn({ err: err }, "[storefrontDomains] unpublish error:");
     const status =
-      err?.message === "Unauthorized."
+      (err as any)?.message === "Unauthorized."
         ? 403
-        : err?.message === "Storefront not found."
+        : (err as any)?.message === "Storefront not found."
           ? 404
           : 500;
     return res
       .status(status)
-      .json({ ok: false, error: err.message || "Internal error." });
+      .json({ ok: false, error: (err as Error).message || "Internal error." });
   }
 });
 
@@ -375,7 +375,7 @@ router.post("/platform/check", async (req, res) => {
     }
     return res.json({ ok: true, available: true, domain });
   } catch (err) {
-    logger.warn("[domains] platform check error:", err);
+    logger.warn({ err: err }, "[domains] platform check error:");
     return res
       .status(500)
       .json({ ok: false, available: false, error: "Internal error." });
@@ -411,7 +411,7 @@ router.get("/registry/:domain", async (req, res) => {
       managedBy: `Max Booster DNS (${BASE_DOMAIN})`,
     });
   } catch (err) {
-    logger.warn("[domains] registry lookup error:", err);
+    logger.warn({ err: err }, "[domains] registry lookup error:");
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
@@ -422,7 +422,7 @@ router.post("/platform/claim", async (req, res) => {
   try {
     if (!req.isAuthenticated())
       return res.status(401).json({ ok: false, error: "Unauthorized." });
-    const userId = (req.user as Record<string, unknown>).id;
+    const userId = (req.user as unknown as Record<string, unknown>).id;
 
     const { sld, tld, storefrontId } = req.body;
     if (!storefrontId) {
@@ -575,10 +575,10 @@ router.post("/platform/claim", async (req, res) => {
     );
     return res.json({ ok: true, domain, url: `https://${domain}` });
   } catch (err) {
-    logger.warn("[domains] platform claim error:", err);
+    logger.warn({ err: err }, "[domains] platform claim error:");
     return res
       .status(500)
-      .json({ ok: false, error: err.message || "Internal error." });
+      .json({ ok: false, error: (err as Error).message || "Internal error." });
   }
 });
 
@@ -606,7 +606,7 @@ router.get("/platform/:storefrontId", async (req, res) => {
       status: row.status ?? null,
     });
   } catch (err) {
-    logger.warn("[domains] platform get error:", err);
+    logger.warn({ err: err }, "[domains] platform get error:");
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
@@ -748,7 +748,7 @@ router?.get("/propagation", async (req, res) => {
     logger.warn({ err }, "[domains] propagation check error");
     return res
       .status(500)
-      .json({ ok: false, error: err.message || "Propagation check failed." });
+      .json({ ok: false, error: (err as Error).message || "Propagation check failed." });
   }
 });
 
@@ -797,7 +797,7 @@ router?.get("/propagation/setup", async (req, res) => {
     logger.warn({ err }, "[domains] propagation setup check error");
     return res
       .status(500)
-      .json({ ok: false, error: err.message || "Propagation check failed." });
+      .json({ ok: false, error: (err as Error).message || "Propagation check failed." });
   }
 });
 
@@ -827,7 +827,7 @@ router?.get("/domain-status/:domainId", async (req, res) => {
       .from(storefronts)
       .where(eq(storefronts?.id, domainRow?.storefrontId))
       .limit(1);
-    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+    if (sf?.userId !== (req.user as unknown as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const { getDomainStatus } = await import(
@@ -837,10 +837,10 @@ router?.get("/domain-status/:domainId", async (req, res) => {
     return res.json({ ok: true, ...status });
   } catch (err) {
     logger.warn({ err }, "[domains] domain-status error");
-    const code = err?.message === "Domain not found" ? 404 : 500;
+    const code = (err as any)?.message === "Domain not found" ? 404 : 500;
     return res
       .status(code)
-      .json({ ok: false, error: err.message || "Internal error." });
+      .json({ ok: false, error: (err as Error).message || "Internal error." });
   }
 });
 
@@ -891,7 +891,7 @@ router?.post("/storefront/:storefrontId/attach-domain", async (req, res) => {
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
 
-    if (!sf || sf?.userId !== (req.user as Record<string, unknown>).id) {
+    if (!sf || sf?.userId !== (req.user as unknown as Record<string, unknown>).id) {
       return res
         .status(403)
         .json({ ok: false, error: "Storefront not found or access denied." });
@@ -902,7 +902,7 @@ router?.post("/storefront/:storefrontId/attach-domain", async (req, res) => {
     );
     const result = await attachDomainToStorefront(
       storefrontId,
-      (req.user as Record<string, unknown>).id,
+      ((req.user as unknown as Record<string, unknown>).id as string),
       domain,
     );
 
@@ -913,7 +913,7 @@ router?.post("/storefront/:storefrontId/attach-domain", async (req, res) => {
     return res.status(201).json({ ok: true, ...result });
   } catch (err) {
     logger.warn({ err }, "[storefrontDomains] attach-domain error");
-    const msg: string = err?.message || "";
+    const msg: string = (err as any)?.message || "";
     const status =
       msg?.includes("already active") ||
       msg?.includes("already being set up") ||
@@ -953,7 +953,7 @@ router?.post("/custom/verify-status/:domainId", async (req, res) => {
       .from(storefronts)
       .where(eq(storefronts?.id, domainRow?.storefrontId))
       .limit(1);
-    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+    if (sf?.userId !== (req.user as unknown as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const { verifyStorefrontDomain } = await import(
@@ -965,7 +965,7 @@ router?.post("/custom/verify-status/:domainId", async (req, res) => {
     logger.warn({ err }, "[storefrontDomains] verify-status error");
     return res
       .status(500)
-      .json({ ok: false, error: err.message || "Internal error." });
+      .json({ ok: false, error: (err as Error).message || "Internal error." });
   }
 });
 
@@ -996,7 +996,7 @@ router?.delete("/custom/detach/:domainId", async (req, res) => {
       .from(storefronts)
       .where(eq(storefronts?.id, domainRow?.storefrontId))
       .limit(1);
-    if (!sf || sf?.userId !== (req.user as Record<string, unknown>).id) {
+    if (!sf || sf?.userId !== (req.user as unknown as Record<string, unknown>).id) {
       return res.status(403).json({ ok: false, error: "Access denied." });
     }
 
@@ -1009,7 +1009,7 @@ router?.delete("/custom/detach/:domainId", async (req, res) => {
     logger.warn({ err }, "[storefrontDomains] detach error");
     return res
       .status(500)
-      .json({ ok: false, error: err.message || "Internal error." });
+      .json({ ok: false, error: (err as Error).message || "Internal error." });
   }
 });
 

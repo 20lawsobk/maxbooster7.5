@@ -428,7 +428,7 @@ export class SSOService {
 
       const allowedDomains = config?.allowedDomains as string[];
       if (allowedDomains?.length > 0) {
-        const emailDomain = email?.split("@")[1];
+        const emailDomain = (email as any)?.split("@")[1];
         if (!allowedDomains?.includes(emailDomain)) {
           return { success: false, error: "Email domain not allowed" };
         }
@@ -532,7 +532,7 @@ export class SSOService {
 
       const allowedDomains = config?.allowedDomains as string[];
       if (allowedDomains?.length > 0) {
-        const emailDomain = email?.split("@")[1];
+        const emailDomain = (email as any)?.split("@")[1];
         if (!allowedDomains?.includes(emailDomain)) {
           return { success: false, error: "Email domain not allowed" };
         }
@@ -722,10 +722,10 @@ export class SSOService {
       }
 
       const updates: Record<string, unknown> = {};
-      if (scimUser.name.givenName) updates.firstName = scimUser?.name.givenName;
+      if (scimUser.name!.givenName) updates.firstName = scimUser?.name.givenName;
       if (scimUser?.name?.familyName)
         updates.lastName = scimUser?.name.familyName;
-      if (scimUser.emails[0].value) updates.email = scimUser?.emails[0].value;
+      if (scimUser.emails![0].value) updates.email = scimUser?.emails[0].value;
 
       if (Object.keys(updates).length > 0) {
         await db

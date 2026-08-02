@@ -70,7 +70,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
       await session?.connectAndLogin();
       return { ok: true };
     } catch (err) {
-      return { ok: false, message: err.message };
+      return { ok: false, message: (err as Error).message };
     }
   }
 
@@ -202,7 +202,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
       registryId: infData.roid,
       autoRenew: true, // EPP doesn't always expose this directly in info
       locked: !!infData?.status?.find?.((s: Record<string, unknown>) =>
-        s["@_s"]?.includes("Prohibited"),
+        (s["@_s"] as any)?.includes("Prohibited"),
       ),
     };
   }

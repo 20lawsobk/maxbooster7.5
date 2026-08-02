@@ -85,7 +85,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingPromo, setEditingPromo] = useState<BogoPromotion | null>(null);
-  const [selectedPreset, setSelectedPreset] = useState("");
+  const [_selectedPreset, setSelectedPreset] = useState("");
 
   const [form, setForm] = useState({
     name: "",

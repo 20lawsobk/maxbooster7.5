@@ -89,7 +89,7 @@ interface PenTestResponse {
 
 export default function SecurityDashboard() {
   const { user, isLoading: authLoading } = useRequireAdmin();
-  const [refreshInterval, setRefreshInterval] = useState(30000);
+  const [refreshInterval, _setRefreshInterval] = useState(30000);
 
   const {
     data: securityMetrics,

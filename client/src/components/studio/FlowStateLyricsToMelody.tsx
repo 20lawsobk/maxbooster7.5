@@ -113,7 +113,7 @@ const analyzeLyrics = (text: string): LyricLine[] => {
 export function FlowStateLyricsToMelody({
   onExportMelody,
   currentKey = "C",
-  currentTempo = 120,
+  _currentTempo = 120,
   className,
 }: FlowStateLyricsToMelodyProps) {
   const { toast } = useToast();

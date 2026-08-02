@@ -39,7 +39,7 @@ export class ZstdEngine {
 
     if (dict) {
       (opts?.params as Record<string, unknown>)[
-        zlibConstants.ZSTD_c_enableDedupSequences
+        (zlibConstants as any).ZSTD_c_enableDedupSequences
       ] = 1;
     }
 

@@ -204,7 +204,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
       ]);
     } catch (e) {
       logger.warn(
-        { fqdn, err: e.message },
+        { fqdn, err: (e as Error).message },
         "[InternalRegistrar] DNS zone removal on release failed (non-fatal)",
       );
     }
@@ -251,7 +251,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
       await db.select({ id: claimedDomains.id }).from(claimedDomains).limit(1);
       return { ok: true, message: "Internal DB registry reachable" };
     } catch (e) {
-      return { ok: false, message: e.message };
+      return { ok: false, message: (e as Error).message };
     }
   }
 
@@ -267,7 +267,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
         "SELECT id FROM dns_zones WHERE domain = $1 LIMIT 1",
         [fqdn],
       );
-      if (existing.rows.length > 0) return;
+      if ((existing as any).rows.length > 0) return;
 
       const { rows } = await pool.query(
         `INSERT INTO dns_zones (user_id, domain, status, is_verified, nameserver1, nameserver2)
@@ -291,7 +291,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
       logger.info({ fqdn, zoneId }, "[InternalRegistrar] DNS zone ensured");
     } catch (e) {
       logger.warn(
-        { fqdn, err: e.message },
+        { fqdn, err: (e as Error).message },
         "[InternalRegistrar] _ensureDnsZone failed (non-fatal)",
       );
     }

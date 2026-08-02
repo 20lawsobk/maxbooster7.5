@@ -54,24 +54,24 @@ export class StripeService {
         throw new Error("User not found");
       }
 
-      if (user?.stripeSubscriptionId && tier !== "lifetime") {
+      if ((user as any)?.stripeSubscriptionId && tier !== "lifetime") {
         const result = await executeStripeOperation(
           () =>
-            stripe?.subscriptions.retrieve(user?.stripeSubscriptionId!, {
+            stripe?.subscriptions.retrieve((user as any)?.stripeSubscriptionId!, {
               expand: ["latest_invoice.payment_intent"],
             }),
-          { cacheKey: `subscription:${user?.stripeSubscriptionId}` },
+          { cacheKey: `subscription:${(user as any)?.stripeSubscriptionId}` },
         );
         const subscription = result?.data;
         const latestInvoice =
           subscription?.latest_invoice as Stripe.Invoice | null;
         const paymentIntent = latestInvoice
-          ? ((latestInvoice as Record<string, unknown>)
+          ? ((latestInvoice as unknown as Record<string, unknown>)
               .payment_intent as Stripe.PaymentIntent | null)
           : null;
         return {
           subscriptionId: subscription.id,
-          clientSecret: paymentIntent.client_secret,
+          clientSecret: paymentIntent!.client_secret,
         };
       }
 
@@ -90,7 +90,7 @@ export class StripeService {
           }),
         );
         customerId = result?.data.id;
-        await storage?.updateUserStripeInfo(userId, customerId, null);
+        await (storage as any)?.updateUserStripeInfo(userId, customerId, null);
       }
 
       // Get price ID based on tier
@@ -124,17 +124,17 @@ export class StripeService {
         );
         const subscription = result?.data;
 
-        await storage?.updateUserStripeInfo(userId, customerId, subscription?.id);
+        await (storage as any)?.updateUserStripeInfo(userId, customerId, subscription?.id);
 
         const latestInvoice =
           subscription?.latest_invoice as Stripe.Invoice | null;
         const paymentIntent = latestInvoice
-          ? ((latestInvoice as Record<string, unknown>)
+          ? ((latestInvoice as unknown as Record<string, unknown>)
               .payment_intent as Stripe.PaymentIntent | null)
           : null;
         return {
           subscriptionId: subscription.id,
-          clientSecret: paymentIntent.client_secret,
+          clientSecret: paymentIntent!.client_secret,
         };
       }
     } catch (error: unknown) {
@@ -308,14 +308,14 @@ export class StripeService {
   }
 
   private async handleSubscriptionPayment(invoice: Stripe.Invoice) {
-    const invoiceSubscription = (invoice as Record<string, unknown>)
+    const invoiceSubscription = (invoice as unknown as Record<string, unknown>)
       .subscription;
     if (invoice?.customer && invoiceSubscription) {
       const customerId = invoice?.customer as string;
       const subscriptionId =
         typeof invoiceSubscription === "string"
           ? invoiceSubscription
-          : invoiceSubscription?.id;
+          : (invoiceSubscription as any)?.id;
 
       // Find user by Stripe customer ID — direct indexed lookup (avoids getAllUsers)
       const [user] = await db
@@ -552,7 +552,7 @@ export class StripeService {
    */
   async handleRefundWebhook(refund: Stripe.Refund) {
     try {
-      const refundId = refund.metadata.refundId;
+      const refundId = refund.metadata!.refundId;
       if (!refundId) {
         logger.warn(
           { stripeRefundId: refund.id },

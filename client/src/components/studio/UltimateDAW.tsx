@@ -186,7 +186,7 @@ function ArrangeBarRuler({
 
 export function UltimateDAW({
   projectId,
-  projectName = "Untitled",
+  _projectName = "Untitled",
   onSave,
   onExport,
 }: UltimateDAWProps) {
@@ -198,7 +198,7 @@ export function UltimateDAW({
   const { forceSave,  loadProjectData } =
     useProjectSync(projectId);
   const [mode, setMode] = useState<FlowStateMode>("create");
-  const [isLoadingProject, setIsLoadingProject] = useState(false);
+  const [_isLoadingProject, setIsLoadingProject] = useState(false);
   const projectLoadedRef = useRef<string | null>(null);
   const playbackRafRef = useRef<number | null>(null);
   const playbackStartTimeRef = useRef<number>(0);
@@ -207,7 +207,7 @@ export function UltimateDAW({
   const [activeTool, setActiveTool] = useState("pointer");
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [showPluginBrowser, setShowPluginBrowser] = useState(false);
-  const [showMixer, setShowMixer] = useState(true);
+  const [showMixer, _setShowMixer] = useState(true);
   const [showSpectral, setShowSpectral] = useState(false);
   const [showAddTrack, setShowAddTrack] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -218,8 +218,8 @@ export function UltimateDAW({
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [isAIMixing, setIsAIMixing] = useState(false);
   const [isAIMastering, setIsAIMastering] = useState(false);
-  const [musicalKey, setMusicalKey] = useState("C");
-  const [scale, setScale] = useState("minor");
+  const [musicalKey, _setMusicalKey] = useState("C");
+  const [scale, _setScale] = useState("minor");
   const [dragOverTrackId, setDragOverTrackId] = useState<string | null>(null);
   const [uploadingTrackId, setUploadingTrackId] = useState<string | null>(null);
 
@@ -282,7 +282,7 @@ export function UltimateDAW({
     } catch (error) {
       toast({
         title: "Mix Failed",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     } finally {
@@ -304,7 +304,7 @@ export function UltimateDAW({
     } catch (error) {
       toast({
         title: "Master Failed",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     } finally {
@@ -335,7 +335,7 @@ export function UltimateDAW({
       } catch (error) {
         toast({
           title: "Generation Failed",
-          description: error.message,
+          description: (error as Error).message,
           variant: "destructive",
         });
       }
@@ -364,7 +364,7 @@ export function UltimateDAW({
       } catch (error) {
         toast({
           title: "Generation Failed",
-          description: error.message,
+          description: (error as Error).message,
           variant: "destructive",
         });
       }
@@ -395,7 +395,7 @@ export function UltimateDAW({
       } catch (error) {
         toast({
           title: "Generation Failed",
-          description: error.message,
+          description: (error as Error).message,
           variant: "destructive",
         });
       }
@@ -423,7 +423,7 @@ export function UltimateDAW({
     } catch (error) {
       toast({
         title: "Generation Failed",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     }
@@ -554,7 +554,7 @@ export function UltimateDAW({
       } catch (err) {
         toast({
           title: "Upload failed",
-          description: err.message,
+          description: (err as Error).message,
           variant: "destructive",
         });
       } finally {
@@ -1432,7 +1432,7 @@ export function UltimateDAW({
               className="flex-shrink-0 border-l border-zinc-800/50 bg-zinc-900/50 overflow-hidden"
             >
               <PluginBrowser
-                onSelectPlugin={(plugin) => {
+                onSelectPlugin={(plugin: any) => {
                   if (selectedTrackId) {
                     store.addPlugin(selectedTrackId, {
                       pluginId: plugin.id,

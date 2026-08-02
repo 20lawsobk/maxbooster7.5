@@ -434,9 +434,9 @@ export class SelfHealingSecuritySystem {
 
       const failedTests = testResults.filter((t) => !t.passed);
       if (failedTests.length > 0) {
-        logger.warn(`Penetration test: ${failedTests.length} tests failed`, {
+        logger.warn({
           failedTests,
-        });
+        }, `Penetration test: ${failedTests.length} tests failed`);
       }
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error in penetration test simulation:");
@@ -498,10 +498,10 @@ export class SelfHealingSecuritySystem {
         recommendation: "Implement all OWASP recommended security headers",
       });
 
-      logger.info("Security configuration audit completed", {
+      logger.info({
         findings: auditFindings.length,
         warnings: auditFindings.filter((f) => f.status === "warning").length,
-      });
+      }, "Security configuration audit completed");
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error in security configuration audit:");
     }
@@ -541,11 +541,11 @@ export class SelfHealingSecuritySystem {
       // Update security metrics
       this.securityMetrics.lastScan = Date.now();
 
-      logger.debug("Threat database updated", {
+      logger.debug({
         totalPatterns: this.threatPatterns.length,
         recentThreats: this.recentThreats.length,
         highFrequencyThreats: highFrequencyThreats.length,
-      });
+      }, "Threat database updated");
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error updating threat database:");
     }
@@ -1193,7 +1193,7 @@ export class SelfHealingSecuritySystem {
         "unknown",
       requestPath: req.path,
       requestMethod: req.method,
-      userId: (req as Record<string, unknown>).user.id,
+      userId: (req as unknown as Record<string, unknown>).user.id,
       threatType: "unknown",
       severity: "medium",
     };
@@ -1251,7 +1251,7 @@ export class SelfHealingSecuritySystem {
   private healDetectedThreats(): void {
     // Process active healing processes
     Array.from(this.healingProcesses.entries()).forEach(
-      ([threatId, process]) => {
+      ([_threatId, process]) => {
         if (
           process.status === "active" &&
           Date.now() - process.startTime > 30000
@@ -1367,8 +1367,8 @@ export class SelfHealingSecuritySystem {
         };
       } else {
         // Analyze deviations from established baseline
-        const loginTimes = (profile.loginTimes as number[]) || [];
-        const devices = (profile.devices as Record<string, unknown>[]) || [];
+        const loginTimes = ((profile as any).loginTimes as number[]) || [];
+        const devices = ((profile as any).devices as Record<string, unknown>[]) || [];
 
         // Check login time deviation
         const avgLoginTime =
@@ -1404,7 +1404,7 @@ export class SelfHealingSecuritySystem {
       // Log inference run for AI governance
       await db.insert(inferenceRuns).values({
         modelId: model.id,
-        versionId: model.currentVersionId!,
+        versionId: (model as any).currentVersionId!,
         userId,
         inferenceType: "behavior_analysis",
         inputData: {
@@ -1565,7 +1565,7 @@ export class SelfHealingSecuritySystem {
       // Log inference
       await db.insert(inferenceRuns).values({
         modelId: model.id,
-        versionId: model.currentVersionId!,
+        versionId: (model as any).currentVersionId!,
         userId,
         inferenceType: "anomaly_detection",
         inputData: features,
@@ -1637,7 +1637,7 @@ export class SelfHealingSecuritySystem {
         /%[0-9a-f]{2}/gi,
       ];
 
-      const obfuscationDetected = obfuscationPatterns.some((pattern) => {
+      const _obfuscationDetected = obfuscationPatterns.some((pattern) => {
         if (pattern.test(payloadStr)) {
           signatures.push(`Obfuscation: ${pattern.toString()}`);
           patternScore += 0.2;
@@ -1692,7 +1692,7 @@ export class SelfHealingSecuritySystem {
       // Log inference
       await db.insert(inferenceRuns).values({
         modelId: model.id,
-        versionId: model.currentVersionId!,
+        versionId: (model as any).currentVersionId!,
         inferenceType: "zero_day_prediction",
         inputData: { payloadSample: payloadStr.substring(0, 500), source },
         outputData: {
@@ -1806,10 +1806,10 @@ export class SelfHealingSecuritySystem {
       } as Record<string, boolean>;
 
       for (const test of tests) {
-        const testStart = Date.now();
+        const _testStart = Date.now();
         const protected_ = securityConfig[test.type] ?? true;
         const vulnerable = !protected_;
-        const vulnerabilityScore = 0; // No real exploit attempted — configuration audit only
+        const _vulnerabilityScore = 0; // No real exploit attempted — configuration audit only
 
         results.push({
           testType: test.type,
@@ -1830,7 +1830,7 @@ export class SelfHealingSecuritySystem {
       // Log inference
       await db.insert(inferenceRuns).values({
         modelId: model.id,
-        versionId: model.currentVersionId!,
+        versionId: (model as any).currentVersionId!,
         inferenceType: "penetration_testing",
         inputData: { targetEndpoint, frequency, testCount: tests.length },
         outputData: {
@@ -1864,7 +1864,7 @@ export class SelfHealingSecuritySystem {
    */
   public async generateComplianceReport(
     standard: "SOC2" | "GDPR" | "PCI-DSS",
-    dateRange: { startDate: Date; endDate: Date },
+    _dateRange: { startDate: Date; endDate: Date },
   ): Promise<{
     reportId: string;
     complianceScore: number;
@@ -2019,37 +2019,37 @@ export class SelfHealingSecuritySystem {
       });
 
       // Get anomalies from last 24 hours
-      const anomalies = await db.query.securityAnomalies.findMany({
-        where: (anomalies, { gte }) => gte(anomalies.detectedAt, oneDayAgo),
+      const anomalies = await (db.query as any).securityAnomalies.findMany({
+        where: (anomalies: any, { gte }) => gte(anomalies.detectedAt, oneDayAgo),
       });
 
       // Get latest pen test results
-      const penTests = await db.query.securityPenTestResults.findMany({
-        orderBy: (tests, { desc }) => [desc(tests.executedAt)],
+      const penTests = await (db.query as any).securityPenTestResults.findMany({
+        orderBy: (tests: any, { desc }) => [desc(tests.executedAt)],
         limit: 1,
       });
 
       const vulnerabilitiesFound = penTests.reduce(
-        (sum, test) => sum + (test.vulnerabilityDetected ? 1 : 0),
+        (sum: any, test: any) => sum + (test.vulnerabilityDetected ? 1 : 0),
         0,
       );
 
       // Get latest compliance reports
       const complianceReports =
-        await db.query.securityComplianceReports.findMany({
-          orderBy: (reports, { desc }) => [desc(reports.generatedAt)],
+        await (db.query as any).securityComplianceReports.findMany({
+          orderBy: (reports: any, { desc }) => [desc(reports.generatedAt)],
           limit: 10,
         });
 
       const complianceStatus = {
         SOC2:
-          complianceReports.find((r) => r.standard === "SOC2")
+          complianceReports.find((r: any) => r.standard === "SOC2")
             .complianceScore || 0,
         GDPR:
-          complianceReports.find((r) => r.standard === "GDPR")
+          complianceReports.find((r: any) => r.standard === "GDPR")
             .complianceScore || 0,
         "PCI-DSS":
-          complianceReports.find((r) => r.standard === "PCI-DSS")
+          complianceReports.find((r: any) => r.standard === "PCI-DSS")
             .complianceScore || 0,
       };
 
@@ -2059,8 +2059,8 @@ export class SelfHealingSecuritySystem {
         where: (threats, { gte }) => gte(threats.detectedAt, sevenDaysAgo),
       });
 
-      const anomaliesLast7Days = await db.query.securityAnomalies.findMany({
-        where: (anomalies, { gte }) => gte(anomalies.detectedAt, sevenDaysAgo),
+      const anomaliesLast7Days = await (db.query as any).securityAnomalies.findMany({
+        where: (anomalies: any, { gte }) => gte(anomalies.detectedAt, sevenDaysAgo),
       });
 
       // Aggregate by day
@@ -2068,11 +2068,11 @@ export class SelfHealingSecuritySystem {
       const anomaliesByDay = new Map<string, number>();
 
       threatsLast7Days.forEach((threat) => {
-        const day = threat.detectedAt.toISOString().split("T")[0];
+        const day = threat.detectedAt!.toISOString().split("T")[0];
         threatsByDay.set(day, (threatsByDay.get(day) || 0) + 1);
       });
 
-      anomaliesLast7Days.forEach((anomaly) => {
+      anomaliesLast7Days.forEach((anomaly: any) => {
         const day = anomaly.detectedAt.toISOString().split("T")[0];
         anomaliesByDay.set(day, (anomaliesByDay.get(day) || 0) + 1);
       });
@@ -2099,13 +2099,13 @@ export class SelfHealingSecuritySystem {
           .slice(0, 5)
           .map((t) => ({
             severity: t.severity,
-            message: t.details,
+            message: (t as any).details,
             timestamp: t.detectedAt,
           })),
         ...anomalies
-          .filter((a) => a.autoBlocked)
+          .filter((a: any) => a.autoBlocked)
           .slice(0, 3)
-          .map((a) => ({
+          .map((a: any) => ({
             severity: "high",
             message: a.explanation || "Anomaly auto-blocked",
             timestamp: a.detectedAt,

@@ -24,9 +24,9 @@ export class AdvertisingNormalizationService {
     }
 
     const [patternRaw, peaksRaw, globalRaw] = await Promise?.all([
-      redis?.get(`mb:ads:${artistId}:patterns`),
-      redis?.lrange(`mb:ads:${artistId}:peaks`, 0, -1),
-      redis?.lrange("mb:ads:global:peaks", 0, -1),
+      (redis as any)?.get(`mb:ads:${artistId}:patterns`),
+      (redis as any)?.lrange(`mb:ads:${artistId}:peaks`, 0, -1),
+      (redis as any)?.lrange("mb:ads:global:peaks", 0, -1),
     ]);
 
     return {
@@ -95,18 +95,18 @@ export class AdvertisingNormalizationService {
 
       variants[platform] = {
         text: this.optimizeText(
-          creative?.normalizedContent || creative?.rawContent || "",
+          (creative as any)?.normalizedContent || (creative as any)?.rawContent || "",
           platform,
           limits,
         ),
         hashtags: this.extractAndOptimizeHashtags(
-          creative?.rawContent || "",
+          (creative as any)?.rawContent || "",
           limits?.hashtagMax,
           platform,
         ),
-        mediaUrls: creative.assetUrls || [],
+        mediaUrls: (creative as any).assetUrls || [],
         aspectRatio:
-          limits?.imageRatio || (limits as Record<string, unknown>).videoRatio,
+          (limits as any)?.imageRatio || (limits as Record<string, unknown>).videoRatio,
         callToAction: this.generateCTA(platform, pdim?.patterns),
         optimalPostTime: this.calculateOptimalPostTime(
           platform,
@@ -114,7 +114,7 @@ export class AdvertisingNormalizationService {
           pdim?.globalPeaks,
         ),
         engagementHooks: this.generateEngagementHooks(
-          creative?.rawContent || "",
+          (creative as any)?.rawContent || "",
           platform,
           pdim?.patterns,
         ),
@@ -177,8 +177,8 @@ export class AdvertisingNormalizationService {
   ): string {
     // Truncate to optimal length for engagement
     let optimized =
-      text?.length > limits?.optimalLength
-        ? text?.substring(0, limits?.optimalLength - 3) + "..."
+      text?.length > (limits as any)?.optimalLength
+        ? text?.substring(0, (limits as any)?.optimalLength - 3) + "..."
         : text;
 
     // Add platform-specific formatting
@@ -295,14 +295,14 @@ export class AdvertisingNormalizationService {
     globalPeaks: unknown[] = [],
   ): string {
     const artistPeak = peaks?.find(
-      (p) => p?.platform === platform || p?.platforms?.includes(platform),
+      (p) => (p as any)?.platform === platform || (p as any)?.platforms?.includes(platform),
     );
-    if (artistPeak?.window) return artistPeak?.window;
+    if ((artistPeak as any)?.window) return (artistPeak as any)?.window;
 
     const globalPeak = globalPeaks?.find(
-      (p) => p?.platform === platform || p?.platforms?.includes(platform),
+      (p) => (p as any)?.platform === platform || (p as any)?.platforms?.includes(platform),
     );
-    if (globalPeak?.window) return globalPeak?.window;
+    if ((globalPeak as any)?.window) return (globalPeak as any)?.window;
 
     const optimalTimes: Record<string, string> = {
       instagram: "11:00 AM - 1:00 PM weekdays",

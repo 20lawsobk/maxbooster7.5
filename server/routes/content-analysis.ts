@@ -109,15 +109,15 @@ const requirePremium = async (
 ) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
+      return (res.status as any)(401).json({ error: "Authentication required" });
     }
 
     const user = await db?.query.users?.findFirst({
-      where: eq(users?.id, req.user.id),
+      where: eq(users?.id, (req.user as any).id),
     });
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return (res.status as any)(404).json({ error: "User not found" });
     }
 
     // Only paid subscribers (monthly/yearly/lifetime) and admins can access
@@ -125,12 +125,12 @@ const requirePremium = async (
     if (
       (user?.subscriptionTier && paidTiers?.includes(user?.subscriptionTier)) ||
       user?.role === "admin" ||
-      user?.isAdmin
+      (user as any)?.isAdmin
     ) {
       return next();
     }
 
-    return res.status(403).json({
+    return (res.status as any)(403).json({
       error: "Paid subscription required",
       message:
         "Content analysis features require a paid subscription. Upgrade to access multimodal AI analysis.",
@@ -138,7 +138,7 @@ const requirePremium = async (
     });
   } catch (error) {
     logger.warn({ err: error }, "Premium check error:");
-    res.status(500).json({ error: "Failed to verify subscription" });
+    (res.status as any)(500).json({ error: "Failed to verify subscription" });
   }
 };
 

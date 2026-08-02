@@ -363,10 +363,10 @@ class SocialQueueService {
     }
 
     return {
-      total: batch.totalPosts,
-      processed: batch.processedPosts,
-      successful: batch.successfulPosts,
-      failed: batch.failedPosts,
+      total: (batch as any).totalPosts,
+      processed: (batch as any).processedPosts,
+      successful: (batch as any).successfulPosts,
+      failed: (batch as any).failedPosts,
       status: batch.status,
     };
   }
@@ -394,7 +394,7 @@ class SocialQueueService {
       where: eq(scheduledPostBatches?.id, batchId),
     });
 
-    if (batch && batch?.processedPosts >= batch?.totalPosts) {
+    if (batch && (batch as any)?.processedPosts >= (batch as any)?.totalPosts) {
       await db
         .update(scheduledPostBatches)
         .set({
@@ -471,7 +471,7 @@ class SocialQueueService {
     if (!post) return;
 
     const platform = (post.platform as string) || "twitter";
-    const socialAccountId = (post.socialAccountId as string) ?? post.userId ?? "unknown";
+    const socialAccountId = ((post as any).socialAccountId as string) ?? post.userId ?? "unknown";
 
     await this.addSocialPostJob(
       {

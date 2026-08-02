@@ -106,7 +106,7 @@ export function VideoTrack({
   const [clips, setClips] = useState<VideoClip[]>(initialClips);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [markers, setMarkers] = useState<VideoMarker[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
+  const [_isDragging, _setIsDragging] = useState(false);
   const [isDraggingClip, setIsDraggingClip] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [isResizing, setIsResizing] = useState<"start" | "end" | null>(null);

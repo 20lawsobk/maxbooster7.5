@@ -156,7 +156,7 @@ class VSTPluginBridge extends EventEmitter {
     userId: string;
   }): Promise<boolean> {
     try {
-      logger.info("Desktop app connection request:", connectionInfo);
+      logger.info(connectionInfo, "Desktop app connection request:");
       this.desktopConnection = {
         sessionId: connectionInfo.sessionId,
         userId: connectionInfo.userId,
@@ -195,7 +195,7 @@ class VSTPluginBridge extends EventEmitter {
     };
 
     try {
-      logger.info("Starting VST plugin scan...", { paths: scanPaths });
+      logger.info({ paths: scanPaths }, "Starting VST plugin scan...");
       this.emit("scanStart", { paths: scanPaths });
 
       for (const scanPath of scanPaths) {
@@ -207,7 +207,7 @@ class VSTPluginBridge extends EventEmitter {
           result?.plugins.push(...plugins?.plugins);
           result?.errors.push(...plugins?.errors);
         } catch (error) {
-          result?.errors.push({ path: scanPath, error: error.message });
+          result?.errors.push({ path: scanPath, error: (error as Error).message });
         }
       }
 
@@ -218,12 +218,12 @@ class VSTPluginBridge extends EventEmitter {
       this.lastScanTime = new Date();
       result.scanTime = Date?.now() - startTime;
 
-      logger.info("VST plugin scan completed", {
+      logger.info({
         scanned: result.scanned,
         valid: result.valid,
         invalid: result.invalid,
         scanTime: result.scanTime,
-      });
+      }, "VST plugin scan completed");
 
       this.emit("scanComplete", result);
       return result;
@@ -1210,10 +1210,10 @@ class VSTPluginBridge extends EventEmitter {
     this.instances.set(instance?.id, instance);
     this.emit("instanceCreated", instance);
 
-    logger.info("VST instance created:", {
+    logger.info({
       instanceId: instance.id,
       pluginName: plugin.name,
-    });
+    }, "VST instance created:");
     return instance;
   }
 
@@ -1225,7 +1225,7 @@ class VSTPluginBridge extends EventEmitter {
 
     this.instances.delete(instanceId);
     this.emit("instanceDeleted", { instanceId });
-    logger.info("VST instance deleted:", { instanceId });
+    logger.info({ instanceId }, "VST instance deleted:");
   }
 
   getInstance(instanceId: string): VSTInstance | undefined {
@@ -1297,15 +1297,15 @@ class VSTPluginBridge extends EventEmitter {
       throw new Error(`Invalid program index: ${programIndex}`);
     }
 
-    logger.info("VST program loaded:", {
+    logger.info({
       instanceId,
       program: plugin.programs[programIndex],
-    });
-    this.emit("programChanged", {
+    }, "VST program loaded:");
+    this.emit({
       instanceId,
       programIndex,
       programName: plugin.programs[programIndex],
-    });
+    }, "programChanged");
   }
 
   async openEditor(instanceId: string): Promise<{ windowId: string }> {

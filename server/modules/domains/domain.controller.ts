@@ -175,7 +175,7 @@ export async function reserveManaged(req: Request, res: Response) {
       return res
         .status(404)
         .json({ ok: false, error: "Storefront not found." });
-    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+    if (sf?.userId !== (req.user as unknown as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const label = labelResult?.normalized;
@@ -296,7 +296,7 @@ export async function requestCustomDomain(req: Request, res: Response) {
       return res
         .status(404)
         .json({ ok: false, error: "Storefront not found." });
-    if (sf.userId !== (req.user as Record<string, unknown>).id)
+    if (sf.userId !== (req.user as unknown as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const domain = domResult.normalized;
@@ -347,7 +347,7 @@ export async function requestCustomDomain(req: Request, res: Response) {
       },
     });
   } catch (err) {
-    logger.warn("[domains] requestCustomDomain error:", err);
+    logger.warn({ err: err }, "[domains] requestCustomDomain error:");
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
@@ -381,7 +381,7 @@ export async function verifyCustomDomain(req: Request, res: Response) {
       .where(eq(storefronts.id, record.storefrontId))
       .limit(1);
 
-    if (sf.userId !== (req.user as Record<string, unknown>).id)
+    if (sf.userId !== (req.user as unknown as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const txtName = `_maxbooster.${domain}`;
@@ -449,7 +449,7 @@ export async function verifyCustomDomain(req: Request, res: Response) {
     logger.info(`[domains] Custom domain verified and activated: ${domain}`);
     return res.json({ ok: true, verified: true, domain });
   } catch (err) {
-    logger.warn("[domains] verifyCustomDomain error:", err);
+    logger.warn({ err: err }, "[domains] verifyCustomDomain error:");
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
@@ -472,7 +472,7 @@ export async function listDomains(req: Request, res: Response) {
       return res
         .status(404)
         .json({ ok: false, error: "Storefront not found." });
-    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+    if (sf?.userId !== (req.user as unknown as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const domains = await db
@@ -482,7 +482,7 @@ export async function listDomains(req: Request, res: Response) {
 
     return res.json({ ok: true, domains });
   } catch (err) {
-    logger.warn("[domains] listDomains error:", err);
+    logger.warn({ err: err }, "[domains] listDomains error:");
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
@@ -508,7 +508,7 @@ export async function deleteDomain(req: Request, res: Response) {
       .where(eq(storefronts?.id, record?.storefrontId))
       .limit(1);
 
-    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+    if (sf?.userId !== (req.user as unknown as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     await db
@@ -530,7 +530,7 @@ export async function deleteDomain(req: Request, res: Response) {
 
     return res.json({ ok: true });
   } catch (err) {
-    logger.warn("[domains] deleteDomain error:", err);
+    logger.warn({ err: err }, "[domains] deleteDomain error:");
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }

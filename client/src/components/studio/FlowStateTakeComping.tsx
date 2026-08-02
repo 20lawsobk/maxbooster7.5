@@ -63,7 +63,7 @@ const generateWaveform = (seed: number): number[] => {
 
 export function FlowStateTakeComping({
   projectId,
-  trackId,
+  _trackId,
   trackName = "Lead Vocals",
   duration = 16,
   onExportComp,
@@ -243,9 +243,9 @@ export function FlowStateTakeComping({
   }, [takeGroups]);
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [currentTime, _setCurrentTime] = useState(0);
   const [expandedTakes, setExpandedTakes] = useState<string[]>(["t2"]);
-  const [isSelecting, setIsSelecting] = useState(false);
+  const [_isSelecting, _setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState<number | null>(null);
   const [soloTake, setSoloTake] = useState<string | null>(null);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);

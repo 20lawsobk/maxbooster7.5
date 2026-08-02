@@ -929,8 +929,8 @@ class AdvancedAnalyticsService {
         const totalStreams = geoRows?.reduce((s, r) => s + Number(r?.streams), 0);
         data = geoRows?.map((r, i) => ({
           location:
-            r?.metadata?.country ||
-            r?.metadata?.region ||
+            (r?.metadata as any)?.country ||
+            (r?.metadata as any)?.region ||
             r?.platform ||
             `Market ${i + 1}`,
           listeners: Number(r?.listeners),

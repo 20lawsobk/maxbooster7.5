@@ -231,7 +231,7 @@ class StemExportService {
 
       await db
         .update(stemExports)
-        .set({ status: "processing", progress: 0 })
+        .set({ status: "processing" })
         .where(eq(stemExports?.id, exportId));
 
       const individualFiles: IndividualStemFile[] = [];
@@ -246,7 +246,6 @@ class StemExportService {
         await db
           .update(stemExports)
           .set({
-            progress,
             currentTrack: track.name,
           })
           .where(eq(stemExports?.id, exportId));
@@ -268,7 +267,6 @@ class StemExportService {
         await db
           .update(stemExports)
           .set({
-            progress: 95,
             currentTrack: "Master Bus",
           })
           .where(eq(stemExports?.id, exportId));
@@ -301,7 +299,6 @@ class StemExportService {
         .update(stemExports)
         .set({
           status: "completed",
-          progress: 100,
           currentTrack: null,
           individualFiles,
           totalDuration,
@@ -333,7 +330,7 @@ class StemExportService {
       try {
         await fsPromises?.rm(tempDir, { recursive: true, force: true });
       } catch (cleanupError: unknown) {
-        logger.warn("Failed to cleanup temp directory:", cleanupError);
+        logger.warn(cleanupError, "Failed to cleanup temp directory:");
       }
     }
   }
@@ -352,7 +349,7 @@ class StemExportService {
       return emptyFile;
     }
 
-    const sanitizedName = this.sanitizeFileName(track?.name);
+    const sanitizedName = this.sanitizeFileName((track?.name as string));
     const extension = this.FORMAT_EXTENSIONS[options?.format];
     const fileName = `${sanitizedName}.${extension}`;
     const outputPath = path?.join(tempDir, fileName);
@@ -407,7 +404,7 @@ class StemExportService {
         "FFmpeg is not available - stem export features are disabled",
       );
     }
-    const sanitizedName = this.sanitizeFileName(track?.name);
+    const sanitizedName = this.sanitizeFileName((track?.name as string));
     const extension = this.FORMAT_EXTENSIONS[options?.format];
     const fileName = `${sanitizedName}.${extension}`;
     const outputPath = path?.join(tempDir, fileName);
@@ -459,10 +456,10 @@ class StemExportService {
     }
     let inputPath: string;
 
-    if (clip?.filePath?.startsWith("/") || clip?.filePath?.startsWith("./")) {
+    if ((clip?.filePath as any)?.startsWith("/") || (clip?.filePath as any)?.startsWith("./")) {
       inputPath = clip?.filePath;
     } else if (clip?.filePath) {
-      const buffer = await storageService?.downloadFile(clip?.filePath);
+      const buffer = await storageService?.downloadFile((clip?.filePath as string));
       inputPath = path?.join(os?.tmpdir(), `clip_${clip?.id}.wav`);
       await fsPromises?.writeFile(inputPath, buffer);
     } else {
@@ -489,7 +486,7 @@ class StemExportService {
 
   private async mixAndRenderClips(
     clips: unknown[],
-    track: Record<string, unknown>,
+    _track: Record<string, unknown>,
     outputPath: string,
     options: StemExportOptions,
   ): Promise<void> {
@@ -502,16 +499,16 @@ class StemExportService {
     const tempClipPaths: string[] = [];
 
     for (const clip of clips) {
-      if (clip?.filePath) {
+      if ((clip as any)?.filePath) {
         let clipPath: string;
 
-        if (clip?.filePath.startsWith("/") || clip?.filePath.startsWith("./")) {
-          clipPath = clip?.filePath;
+        if ((clip as any)?.filePath.startsWith("/") || (clip as any)?.filePath.startsWith("./")) {
+          clipPath = (clip as any)?.filePath;
         } else {
-          const buffer = await storageService?.downloadFile(clip?.filePath);
+          const buffer = await storageService?.downloadFile((clip as any)?.filePath);
           clipPath = path?.join(
             os?.tmpdir(),
-            `clip_${clip?.id}_${randomUUID()}.wav`,
+            `clip_${(clip as any)?.id}_${randomUUID()}.wav`,
           );
           await fsPromises?.writeFile(clipPath, buffer);
         }
@@ -533,7 +530,7 @@ class StemExportService {
     }
 
     await new Promise<void>((resolve, reject) => {
-      let command = ffmpeg();
+      let command = ffmpeg!();
 
       tempClipPaths?.forEach((clipPath) => {
         command = command?.input(clipPath);
@@ -625,7 +622,7 @@ class StemExportService {
     const outputPath = path?.join(tempDir, fileName);
 
     await new Promise<void>((resolve, reject) => {
-      let command = ffmpeg();
+      let command = ffmpeg!();
 
       trackStemPaths?.forEach((stemPath) => {
         command = command?.input(stemPath);
@@ -810,7 +807,7 @@ class StemExportService {
       return 0;
     }
     return new Promise((resolve, _reject) => {
-      ffmpeg?.ffprobe(filePath, (err, metadata) => {
+      ffmpeg?.ffprobe(filePath, (err: any, metadata: any) => {
         if (err) {
           resolve(0);
           return;

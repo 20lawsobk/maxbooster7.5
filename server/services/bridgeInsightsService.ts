@@ -69,7 +69,7 @@ class BridgeInsightsService {
         .limit(TOP_K_PATTERNS);
 
       if (patterns?.length === 0) {
-        logger.info("No social patterns found for user", { userId });
+        logger.info({ userId }, "No social patterns found for user");
         return null;
       }
 
@@ -114,18 +114,18 @@ class BridgeInsightsService {
         topTracksByImpact,
       };
 
-      logger.info("Generated social-to-organic insights", {
+      logger.info({
         userId,
         hookCount: topHooks.length,
         trackCount: topTracksByImpact.length,
-      });
+      }, "Generated social-to-organic insights");
 
       return insights;
     } catch (error) {
-      logger.warn("Error generating social-to-organic insights", {
+      logger.warn({
         userId,
         error,
-      });
+      }, "Error generating social-to-organic insights");
       return null;
     }
   }
@@ -147,7 +147,7 @@ class BridgeInsightsService {
         .limit(TOP_K_CHANNELS);
 
       if (assets?.length === 0 && channels?.length === 0) {
-        logger.info("No organic assets or channels found for user", { userId });
+        logger.info({ userId }, "No organic assets or channels found for user");
         return null;
       }
 
@@ -228,19 +228,19 @@ class BridgeInsightsService {
         highValueIntents,
       };
 
-      logger.info("Generated organic-to-social insights", {
+      logger.info({
         userId,
         assetTypeCount: topAssetTypes.length,
         channelCount: topChannels.length,
         intentCount: highValueIntents.length,
-      });
+      }, "Generated organic-to-social insights");
 
       return insights;
     } catch (error) {
-      logger.warn("Error generating organic-to-social insights", {
+      logger.warn({
         userId,
         error,
-      });
+      }, "Error generating organic-to-social insights");
       return null;
     }
   }
@@ -269,20 +269,20 @@ class BridgeInsightsService {
           id: randomBytes(8).toString("hex"),
           userId,
           insightType,
-          topHooks: topHooks as Record<string, unknown>,
-          topTracksByImpact: topTracksByImpact as Record<string, unknown>,
+          topHooks: topHooks as unknown as Record<string, unknown>,
+          topTracksByImpact: topTracksByImpact as unknown as Record<string, unknown>,
           generatedAt: new Date(),
         })
         .returning();
 
-      logger.info("Saved cross-insight", {
+      logger.info({
         userId,
         insightType,
         insightId: inserted.id,
-      });
+      }, "Saved cross-insight");
       return inserted;
     } catch (error) {
-      logger.warn("Error saving cross-insight", { userId, error });
+      logger.warn({ userId, error }, "Error saving cross-insight");
       return null;
     }
   }
@@ -303,7 +303,7 @@ class BridgeInsightsService {
 
       return insight ?? null;
     } catch (error) {
-      logger.warn("Error fetching latest insights", { userId, type, error });
+      logger.warn({ userId, type, error }, "Error fetching latest insights");
       return null;
     }
   }
@@ -345,18 +345,18 @@ class BridgeInsightsService {
       const uniqueTypes = [...new Set(biasedTypes)];
       const uniqueTopics = [...new Set(biasedTopics)];
 
-      logger.info("Applied social insights to organic strategy", {
+      logger.info({
         userId,
         biasedTypeCount: uniqueTypes.length,
         biasedTopicCount: uniqueTopics.length,
-      });
+      }, "Applied social insights to organic strategy");
 
       return {
         biasedTypes: uniqueTypes,
         biasedTopics: uniqueTopics,
       };
     } catch (error) {
-      logger.warn("Error applying insights to organic", { userId, error });
+      logger.warn({ userId, error }, "Error applying insights to organic");
       return { biasedTypes: [], biasedTopics: [] };
     }
   }
@@ -413,18 +413,18 @@ class BridgeInsightsService {
       const uniqueFormats = [...new Set(recommendedFormats)];
       const uniqueTones = [...new Set(recommendedTones)];
 
-      logger.info("Applied organic insights to social strategy", {
+      logger.info({
         userId,
         formatCount: uniqueFormats.length,
         toneCount: uniqueTones.length,
-      });
+      }, "Applied organic insights to social strategy");
 
       return {
         recommendedFormats: uniqueFormats,
         recommendedTones: uniqueTones,
       };
     } catch (error) {
-      logger.warn("Error applying insights to social", { userId, error });
+      logger.warn({ userId, error }, "Error applying insights to social");
       return { recommendedFormats: [], recommendedTones: [] };
     }
   }
@@ -434,7 +434,7 @@ class BridgeInsightsService {
     organicToSocial: AutopilotCrossInsight | null;
   }> {
     try {
-      logger.info("Starting cross-insights sync", { userId });
+      logger.info({ userId }, "Starting cross-insights sync");
 
       const [socialToOrganicInsights, organicToSocialInsights] =
         await Promise?.all([
@@ -459,18 +459,18 @@ class BridgeInsightsService {
         );
       }
 
-      logger.info("Completed cross-insights sync", {
+      logger.info({
         userId,
         hasSocialToOrganic: !!savedSocialToOrganic,
         hasOrganicToSocial: !!savedOrganicToSocial,
-      });
+      }, "Completed cross-insights sync");
 
       return {
         socialToOrganic: savedSocialToOrganic,
         organicToSocial: savedOrganicToSocial,
       };
     } catch (error) {
-      logger.warn("Error syncing cross-insights", { userId, error });
+      logger.warn({ userId, error }, "Error syncing cross-insights");
       return {
         socialToOrganic: null,
         organicToSocial: null,
@@ -526,7 +526,7 @@ class BridgeInsightsService {
         insightCount: allInsights.length,
       };
     } catch (error) {
-      logger.warn("Error fetching insights summary", { userId, error });
+      logger.warn({ userId, error }, "Error fetching insights summary");
       return {
         userId,
         socialToOrganic: null,

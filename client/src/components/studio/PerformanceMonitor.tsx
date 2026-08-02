@@ -12,9 +12,9 @@ interface PerformanceMonitorProps {
 export function PerformanceMonitor({
   cpuUsage,
   showCPUWarning,
-  onFreezeTrack,
-  onUnfreezeTrack,
-  freezingTrackId,
+  _onFreezeTrack,
+  _onUnfreezeTrack,
+  _freezingTrackId,
 }: PerformanceMonitorProps) {
   return (
     <div className="flex items-center gap-2">

@@ -6,7 +6,7 @@
 
 import { BUSINESS_CONFIG } from "../config/businessConfig";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
-import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import { requireMaxCore, _AIUnavailableError } from "../lib/aiSource.js";
 
 interface ChatMessage {
   role: "user" | "assistant" | "system";
@@ -303,7 +303,7 @@ class AIHelpDeskService {
     message: string,
     category: string | undefined,
     intent: string,
-    context: ConversationContext,
+    _context: ConversationContext,
   ): HelpDeskResponse {
     const { helpDesk, company } = BUSINESS_CONFIG;
 
@@ -326,17 +326,17 @@ class AIHelpDeskService {
       const lowerMessage = message.toLowerCase();
 
       if (lowerMessage.includes("how") || lowerMessage.includes("start")) {
-        bestResponse = responses.howTo || responses[responseKeys[0]];
+        bestResponse = (responses as any).howTo || responses[responseKeys[0]];
       } else if (
         lowerMessage.includes("time") ||
         lowerMessage.includes("long")
       ) {
-        bestResponse = responses.timeline || responses[responseKeys[0]];
+        bestResponse = (responses as any).timeline || responses[responseKeys[0]];
       } else if (
         lowerMessage.includes("need") ||
         lowerMessage.includes("require")
       ) {
-        bestResponse = responses.requirements || responses[responseKeys[0]];
+        bestResponse = (responses as any).requirements || responses[responseKeys[0]];
       }
 
       return {

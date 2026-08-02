@@ -94,7 +94,7 @@ export function OrganicReachDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
+  const [_selectedPlatform, _setSelectedPlatform] = useState<string>("all");
 
   const fetchDashboardData = async () => {
     try {

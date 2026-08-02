@@ -670,6 +670,8 @@ export const queryClient = new QueryClient({
         status?: number;
       };
       if (apiError?.status === 401 || apiError?.status === 403) return;
+      // 404 = route doesn't exist; not a user-actionable error — suppress toast
+      if (apiError?.status === 404) return;
       // Suppress toast for background refetch failures — the query already has
       // stale data displayed and re-showing a red banner while the user is
       // typing/pasting is disruptive and misleading.  Only surface the error

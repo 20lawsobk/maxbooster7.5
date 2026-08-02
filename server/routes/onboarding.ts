@@ -84,7 +84,7 @@ router?.get("/tasks", requireAuth, async (_req, res) => {
 });
 
 router?.post("/seed", requireAuth, async (req, res) => {
-  if (!req.user?.isAdmin) {
+  if ((!req.user as any)?.isAdmin) {
     return res.status(403).json({ error: "Forbidden" });
   }
   try {
@@ -362,14 +362,14 @@ router?.get("/first-actions", requireAuth, async (req, res) => {
     res.json({
       celebrations,
       pending: {
-        first_track_upload: !celebrations?.first_track_upload,
-        first_post_scheduled: !celebrations?.first_post_scheduled,
-        first_beat_listed: !celebrations?.first_beat_listed,
-        first_payout: !celebrations?.first_payout,
-        first_collaboration: !celebrations?.first_collaboration,
-        first_release: !celebrations?.first_release,
-        profile_complete: !celebrations?.profile_complete,
-        social_connected: !celebrations?.social_connected,
+        first_track_upload: (!celebrations as any)?.first_track_upload,
+        first_post_scheduled: (!celebrations as any)?.first_post_scheduled,
+        first_beat_listed: (!celebrations as any)?.first_beat_listed,
+        first_payout: (!celebrations as any)?.first_payout,
+        first_collaboration: (!celebrations as any)?.first_collaboration,
+        first_release: (!celebrations as any)?.first_release,
+        profile_complete: (!celebrations as any)?.profile_complete,
+        social_connected: (!celebrations as any)?.social_connected,
       },
     });
   } catch (error) {
@@ -718,11 +718,11 @@ router?.get("/profile/completion", requireAuth, async (req, res) => {
 
     const completion = {
       emailVerified: user.emailVerified || false,
-      artistType: onboardingData.artistType || null,
-      genres: onboardingData.genres || [],
+      artistType: (onboardingData as any).artistType || null,
+      genres: (onboardingData as any).genres || [],
       hasPhoto: !!user?.avatarUrl,
       bio: user.bio || null,
-      socialLinks: onboardingData.socialLinks || [],
+      socialLinks: (onboardingData as any).socialLinks || [],
     };
 
     let completedSteps = 0;

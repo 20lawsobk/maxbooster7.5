@@ -53,7 +53,7 @@ const BRANCH_COLORS = [
 ];
 
 export function FlowStateVersionBranches({
-  projectName = "My Project",
+  _projectName = "My Project",
   onSwitchBranch,
   onMergeBranch,
   className,

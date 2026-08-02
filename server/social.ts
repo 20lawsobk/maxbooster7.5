@@ -133,9 +133,9 @@ export class SocialMediaService {
       const metrics = me?.data.public_metrics;
       return {
         platform: "Twitter",
-        followers: metrics.followers_count || 0,
-        posts: metrics.tweet_count || 0,
-        reach: metrics.listed_count || 0,
+        followers: metrics!.followers_count || 0,
+        posts: metrics!.tweet_count || 0,
+        reach: metrics!.listed_count || 0,
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
@@ -333,9 +333,9 @@ export class SocialMediaService {
 
       const insights = insightsResponse?.data.data || [];
       const followersMetric = insights?.find(
-        (m: unknown) => m?.name === "followers_count",
+        (m: unknown) => (m as any)?.name === "followers_count",
       );
-      const likesMetric = insights?.find((m: unknown) => m?.name === "likes");
+      const likesMetric = insights?.find((m: unknown) => (m as any)?.name === "likes");
 
       return {
         platform: "Threads",
@@ -608,17 +608,17 @@ export class SocialMediaService {
             break;
 
           default:
-            results.errors.push(
+            results.errors!.push(
               `Platform ${platform} is not supported for direct posting`,
             );
         }
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        results.errors.push(`Failed to post to ${platform}: ${msg}`);
+        results.errors!.push(`Failed to post to ${platform}: ${msg}`);
       }
     }
 
-    results.success = results.errors.length === 0;
+    results.success = results.errors!.length === 0;
     return results;
   }
 
@@ -903,7 +903,7 @@ export class SocialMediaService {
       }
     } catch (error: unknown) {
       throw new Error(
-        `Failed to post to Threads: ${error?.response?.data?.error?.message || error?.message}`,
+        `Failed to post to Threads: ${(error as any)?.response?.data?.error?.message || (error as any)?.message}`,
       );
     }
   }

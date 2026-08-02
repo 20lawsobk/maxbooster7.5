@@ -57,9 +57,9 @@ const TOOLS: {
 ];
 
 export function FlowStateSpectralEditor({
-  audioUrl,
+  _audioUrl,
   duration = 30,
-  onExport,
+  _onExport,
   className,
 }: FlowStateSpectralEditorProps) {
   const { toast } = useToast();
@@ -68,7 +68,7 @@ export function FlowStateSpectralEditor({
   const [activeTool, setActiveTool] = useState<SpectralTool>("select");
   const [brushSize, setBrushSize] = useState([20]);
   const [brushIntensity, setBrushIntensity] = useState([80]);
-  const [zoom, setZoom] = useState(1);
+  const [_zoom, setZoom] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [selection, setSelection] = useState<SpectralSelection | null>(null);

@@ -125,11 +125,11 @@ export class MetricsService {
       for (const rule of activeRules) {
         const endTime = new Date();
         const startTime = new Date(
-          endTime?.getTime() - (rule?.durationSecs || 300) * 1000,
+          endTime?.getTime() - ((rule as any)?.durationSecs || 300) * 1000,
         );
 
         const metrics = await this.getMetrics(
-          rule?.metricName,
+          (rule as any)?.metricName,
           startTime,
           endTime,
         );
@@ -172,7 +172,7 @@ export class MetricsService {
               ruleId: rule.id,
               status: "triggered",
               context: {
-                metricName: rule.metricName,
+                metricName: (rule as any).metricName,
                 value: latestValue,
                 threshold,
                 condition: rule.condition,

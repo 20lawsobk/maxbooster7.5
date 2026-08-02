@@ -48,7 +48,7 @@ const getPasswordStrength = (password: string): PasswordStrength => {
 };
 
 export default function ResetPassword() {
-  const [, navigate] = useLocation();
+  const [, _navigate] = useLocation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

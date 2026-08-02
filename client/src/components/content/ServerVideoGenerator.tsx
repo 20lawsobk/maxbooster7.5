@@ -365,7 +365,7 @@ export function ServerVideoGenerator({
   const [studioHook, setStudioHook] = useState("");
   const [studioArtistStyle, setStudioArtistStyle] = useState("");
   const [isAnalyzingBeat, setIsAnalyzingBeat] = useState(false);
-  const [studioMvJobId, setStudioMvJobId] = useState<string | null>(null);
+  const [_studioMvJobId, setStudioMvJobId] = useState<string | null>(null);
 
   // Common state
   const [aspectRatio, setAspectRatio] = useState(

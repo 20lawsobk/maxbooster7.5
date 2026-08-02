@@ -347,7 +347,7 @@ router?.post("/", requireAuth, async (req, res) => {
       .values({
         userId: req.user!.id,
         name,
-        description: description.trim() ?? "",
+        description: description!.trim() ?? "",
         triggerEvent,
         triggerConditions: triggerConditions ?? {},
         actions,

@@ -429,7 +429,7 @@ class MelodyPatternService {
       "[MelodyPattern] Initializing comprehensive pattern library...",
     );
 
-    for (const [category, genreData] of Object.entries(GENRES)) {
+    for (const [_category, genreData] of Object.entries(GENRES)) {
       for (const genre of genreData?.genres) {
         for (const instrument of INSTRUMENTS?.melodic) {
           const key = `${genre}_${instrument}`;
@@ -988,7 +988,7 @@ class MelodyPatternService {
     return chordRoot + (isMinor ? "m" : "");
   }
 
-  private getVoicing(chord: string, key: string): number[] {
+  private getVoicing(chord: string, _key: string): number[] {
     const root = chord
       .replace("m", "")
       .replace("7", "")

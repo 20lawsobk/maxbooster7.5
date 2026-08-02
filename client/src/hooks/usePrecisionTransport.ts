@@ -58,8 +58,8 @@ export function usePrecisionTransport(): [
   const [metronomeEnabled, setMetronomeEnabled] = useState(
     transport?.metronomeEnabled,
   );
-  const [loopStart, setLoopStart] = useState(transport?.loopStart);
-  const [loopEnd, setLoopEnd] = useState(transport?.loopEnd);
+  const [_loopStart, setLoopStart] = useState(transport?.loopStart);
+  const [_loopEnd, setLoopEnd] = useState(transport?.loopEnd);
 
   useEffect(() => {
     const engine = audioEngineRef?.current;

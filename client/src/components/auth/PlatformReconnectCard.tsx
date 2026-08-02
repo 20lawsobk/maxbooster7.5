@@ -94,7 +94,7 @@ interface PlatformReconnectCardProps {
 export function PlatformReconnectCard({
   platform,
   onReauthorize,
-  onRefresh,
+  _onRefresh,
   compact = false,
 }: PlatformReconnectCardProps) {
   const { toast } = useToast();

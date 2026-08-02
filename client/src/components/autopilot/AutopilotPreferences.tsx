@@ -167,7 +167,7 @@ export function AutopilotPreferences() {
   const [preferences, setPreferences] =
     useState<AutopilotPreferencesData>(defaultPreferences);
   const [newHashtag, setNewHashtag] = useState("");
-  const [newTheme, setNewTheme] = useState("");
+  const [_newTheme, _setNewTheme] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["autopilot-preferences"],

@@ -287,7 +287,7 @@ function rdataToIP(rdata: Buffer): string {
 }
 
 // Decode NS/CNAME/SOA name from rdata (first name field)
-function rdataToName(buf: Buffer, rdata: Buffer, _rdataOffset: number): string {
+function rdataToName(_buf: Buffer, rdata: Buffer, _rdataOffset: number): string {
   // rdata offsets are relative to the full packet buffer
   // We get the rdata slice, but parseName needs the full buffer + absolute offset
   // Since we're working with slices, parse inline
@@ -507,7 +507,7 @@ async function resolveIterative(
   }
 
   logger.warn(
-    { name, type, depth, err: lastErr.message },
+    { name, type, depth, err: lastErr!.message },
     "[Resolver] All NS failed",
   );
   return { rcode: 2, answers: [], authority: [], negative: false };
@@ -543,7 +543,7 @@ export async function resolveRecursive(
     };
   } catch (err) {
     logger.warn(
-      { name, type, err: err.message },
+      { name, type, err: (err as Error).message },
       "[Resolver] resolveRecursive error",
     );
     return { rcode: 2, answers: [], negative: false };

@@ -213,7 +213,7 @@ class AnalyticsAlertService {
       const previousCityMap = new Map<string, number>();
 
       for (const record of currentData) {
-        const geography = record?.geography as Record<string, unknown>;
+        const geography = (record as any)?.geography as Record<string, unknown>;
         if (!geography?.cities) continue;
         for (const city of geography?.cities) {
           if (!city?.name || !city?.streams) continue;
@@ -238,7 +238,7 @@ class AnalyticsAlertService {
       }
 
       for (const record of previousData) {
-        const geography = record?.geography as Record<string, unknown>;
+        const geography = (record as any)?.geography as Record<string, unknown>;
         if (!geography?.cities) continue;
         for (const city of geography?.cities) {
           if (!city?.name || !city?.streams) continue;

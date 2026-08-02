@@ -171,7 +171,7 @@ class DatabaseLogTransport {
       this.consecutiveFailures++;
 
       const pgCode =
-        (error as Record<string, unknown>)?.cause?.code ??
+        ((error as Record<string, unknown>)?.cause as any)?.code ??
         (error as Record<string, unknown>)?.code ??
         "";
 
@@ -246,7 +246,7 @@ class DatabaseLogTransport {
         return;
       }
       const pgDetail =
-        (error as Record<string, unknown>)?.cause?.detail ??
+        ((error as Record<string, unknown>)?.cause as any)?.detail ??
         (error as Record<string, unknown>)?.detail ??
         "";
       const errMsg =

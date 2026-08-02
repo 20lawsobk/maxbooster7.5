@@ -70,23 +70,23 @@ const DEFAULT_SECTION_NAMES = [
 
 export function ArrangerTrack({
   sections,
-  bpm,
-  timeSignature,
+  _bpm,
+  _timeSignature,
   pixelsPerBar,
   scrollOffset,
   onSectionAdd,
   onSectionUpdate,
   onSectionDelete,
   onSectionDuplicate,
-  onSectionMove,
-  onSectionResize,
+  _onSectionMove,
+  _onSectionResize,
   visible = true,
   onToggleVisibility,
 }: ArrangerTrackProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [resizingId, setResizingId] = useState<string | null>(null);
+  const [_draggingId, setDraggingId] = useState<string | null>(null);
+  const [_resizingId, setResizingId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleDoubleClick = (e: React.MouseEvent) => {

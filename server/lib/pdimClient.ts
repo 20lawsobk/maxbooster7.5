@@ -838,7 +838,7 @@ export class PdimRedisClient extends EventEmitter {
     }
   }
 
-  private async exec(command: (string | number | null)[]): Promise<unknown> {
+  private async exec<T = unknown>(command: (string | number | null)[]): Promise<T> {
     const [cmd, ...rawArgs] = command;
     // The PDIM server validates all args as strings — coerce numbers/nulls
     const args = rawArgs?.map((a) => (a === null ? "" : String(a)));
@@ -1019,9 +1019,9 @@ export class PdimRedisClient extends EventEmitter {
         // (ECONNREFUSED, etc.) trip the circuit breaker.
         const isTimeout =
           !counted &&
-          (err?.name === "TimeoutError" || err?.name === "AbortError");
+          ((err as any)?.name === "TimeoutError" || (err as any)?.name === "AbortError");
         const isCircuitMsg =
-          !counted && err?.message.startsWith("[PDIM] Circuit");
+          !counted && (err as any)?.message.startsWith("[PDIM] Circuit");
         if (!counted && !isTimeout && !isCircuitMsg) {
           cbRecord503();
         } else if (isTimeout) {
@@ -1040,7 +1040,7 @@ export class PdimRedisClient extends EventEmitter {
           //
           // Timeout/AbortErrors flood when PDIM is overwhelmed (many callers each
           // get a 4 s abort): use the same dedup suppression as HTTP status errors.
-          _logNetworkError(cmd, err.message.slice(0, 200));
+          _logNetworkError(cmd, (err as Error).message.slice(0, 200));
         }
         cbHalfOpenFailed(); // release HALF_OPEN probe slot so next interval can retry
         throw err;
@@ -1341,9 +1341,9 @@ export class PdimRedisClient extends EventEmitter {
         // slow PDIM responses should not trip the circuit breaker.
         const isTimeout =
           !counted &&
-          (err?.name === "TimeoutError" || err?.name === "AbortError");
+          ((err as any)?.name === "TimeoutError" || (err as any)?.name === "AbortError");
         const isCircuitMsg =
-          !counted && err?.message?.startsWith("[PDIM] Circuit");
+          !counted && (err as any)?.message?.startsWith("[PDIM] Circuit");
         if (!counted && !isTimeout && !isCircuitMsg) {
           cbRecord503();
         } else if (isTimeout) {

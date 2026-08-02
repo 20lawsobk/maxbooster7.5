@@ -537,7 +537,7 @@ class CustomAIEngine {
     const existing = this.modelParameters.get(modelType) || {};
     const updated = { ...existing, ...parameters };
     this.modelParameters.set(modelType, updated);
-    logger.info(`🔧 Updated ${modelType} parameters:`, parameters);
+    logger.info(parameters, `🔧 Updated ${modelType} parameters:`);
   }
 
   getModelParameters(modelType: string): ModelParameters | undefined {
@@ -905,7 +905,7 @@ class CustomAIEngine {
       confidence:
         keyConfidenceThreshold +
         (confVariance / 1000) * (1 - keyConfidenceThreshold),
-      trendAligned: recentTrends.length > 0,
+      trendAligned: (recentTrends.length as any) > 0,
     };
 
     this.recordPerformance("music_analysis", {
@@ -959,20 +959,20 @@ class CustomAIEngine {
     };
 
     const platformSpecific = platformOpts[platform] || {};
-    const boostFactor = platformSpecific.boostFactor || 1.0;
+    const boostFactor = (platformSpecific as any).boostFactor || 1.0;
 
     const recommendation = {
       bestPostingTime:
         optimalTimes[
-          seededIndex(`posting-time:${platform}`, optimalTimes.length)
+          seededIndex(`posting-time:${platform}`, (optimalTimes.length as number))
         ],
       contentFormat: this.selectContentFormat(
         contentMix,
-        platformSpecific.contentFormatPriority,
+        (platformSpecific as any).contentFormatPriority,
         platform,
       ),
       expectedEngagement: (0.05 * boostFactor).toFixed(4),
-      platformOptimized: !!platformSpecific.adjustedTiming,
+      platformOptimized: (!!platformSpecific as any).adjustedTiming,
       engagementHooks: modelParams.engagementHooks || [],
     };
 

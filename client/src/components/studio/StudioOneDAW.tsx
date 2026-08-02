@@ -115,9 +115,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [livePosition, setLivePosition] = useState(0);
-  const [showInspector, setShowInspector] = useState(true);
+  const [_showInspector, setShowInspector] = useState(true);
   const [showEditor, setShowEditor] = useState(false);
-  const [showMixer, setShowMixer] = useState(false);
+  const [_showMixer, setShowMixer] = useState(false);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const copiedClipRef = useRef<{
@@ -131,7 +131,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const projectLoadedRef = useRef<string | null>(null);
 
   const [showPluginBrowser, setShowPluginBrowser] = useState(false);
-  const [pluginFilter, setPluginFilter] = useState<PluginFilter>("all");
+  const [_pluginFilter, setPluginFilter] = useState<PluginFilter>("all");
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [showMusicGenerator, setShowMusicGenerator] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -166,8 +166,8 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const [isAIMixing, setIsAIMixing] = useState(false);
   const [isAIMastering, setIsAIMastering] = useState(false);
-  const [musicalKey, setMusicalKey] = useState("C");
-  const [musicalScale, setMusicalScale] = useState("minor");
+  const [musicalKey, _setMusicalKey] = useState("C");
+  const [musicalScale, _setMusicalScale] = useState("minor");
 
   const [punchIn, setPunchIn] = useState(false);
   const [punchOut, setPunchOut] = useState(false);
@@ -196,7 +196,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [showAudioDevices, setShowAudioDevices] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const [clipEditParams, setClipEditParams] = useState<
+  const [_clipEditParams, _setClipEditParams] = useState<
     Record<
       string,
       {
@@ -209,10 +209,10 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       }
     >
   >({});
-  const [showTimeStretchDialog, setShowTimeStretchDialog] = useState<
+  const [_showTimeStretchDialog, _setShowTimeStretchDialog] = useState<
     string | null
   >(null);
-  const [showPitchShiftDialog, setShowPitchShiftDialog] = useState<
+  const [_showPitchShiftDialog, _setShowPitchShiftDialog] = useState<
     string | null
   >(null);
   const {
@@ -1292,7 +1292,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     } catch (error) {
       toast({
         title: "Save Failed",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     }
@@ -1310,7 +1310,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     } catch (error) {
       toast({
         title: "Mix Failed",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     } finally {
@@ -1332,7 +1332,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     } catch (error) {
       toast({
         title: "Master Failed",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     } finally {
@@ -1363,7 +1363,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       } catch (error) {
         toast({
           title: "Generation Failed",
-          description: error.message,
+          description: (error as Error).message,
           variant: "destructive",
         });
       }
@@ -1392,7 +1392,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       } catch (error) {
         toast({
           title: "Generation Failed",
-          description: error.message,
+          description: (error as Error).message,
           variant: "destructive",
         });
       }
@@ -1423,7 +1423,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       } catch (error) {
         toast({
           title: "Generation Failed",
-          description: error.message,
+          description: (error as Error).message,
           variant: "destructive",
         });
       }
@@ -1451,7 +1451,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     } catch (error) {
       toast({
         title: "Generation Failed",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     }
@@ -1480,7 +1480,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       } catch (error) {
         toast({
           title: "Generation Failed",
-          description: error.message,
+          description: (error as Error).message,
           variant: "destructive",
         });
       }
@@ -4021,7 +4021,7 @@ interface TrackLaneProps {
 
 function TrackLane({
   track,
-  index,
+  _index,
   isSelected,
   selectedClipId,
   zoom,
@@ -5607,7 +5607,7 @@ interface NodeGraphViewProps {
 
 function NodeGraphView({
   tracks,
-  masterTrack,
+  _masterTrack,
   selectedTrackId,
   onSelectTrack,
   onOpenPlugins,
@@ -5773,7 +5773,7 @@ function FlowView({
   onOpenTimeline,
   onOpenNodeGraph,
   projectName,
-  livePosition,
+  _livePosition,
   isPlaying,
 }: FlowViewProps) {
   return (

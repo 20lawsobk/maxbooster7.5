@@ -294,7 +294,7 @@ router?.put("/users/:userId", async (req, res) => {
 
     await db?.update(users).set(updateData).where(eq(users?.id, userId));
 
-    logger.info(`Admin ${req.user?.email} updated user ${userId}:`, updateData);
+    logger.info(updateData, `Admin ${req.user?.email} updated user ${userId}:`);
 
     res.json({ success: true, message: "User updated" });
 
@@ -541,7 +541,7 @@ router?.get("/settings", async (_req, res) => {
     settings?.forEach((s) => {
       const key = s?.key.replace("platform.", "");
       try {
-        settingsMap[key] = JSON.parse(s?.value);
+        settingsMap[key] = JSON.parse((s?.value as string));
       } catch {
         settingsMap[key] = s?.value;
       }

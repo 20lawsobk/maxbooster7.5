@@ -713,7 +713,7 @@ router.post(
         userId,
         historicalPosts,
       );
-      res.json({ brandVoice, score: brandVoice.consistency || 0.85 });
+      res.json({ brandVoice, score: (brandVoice as any).consistency || 0.85 });
     } catch (error) {
       logger.warn({ err: error }, "Analyze brand voice error:");
       res.status(aiErrorStatus(error)).json({ error: "Failed to analyze brand voice" });
@@ -1187,7 +1187,7 @@ router.post(
         try {
           const ua = await analyzeUrl(embeddedUrl);
           if (ua && !ua.error) {
-            inlineUrlAnalysis = ua as Record<string, unknown>;
+            inlineUrlAnalysis = ua as unknown as Record<string, unknown>;
             logger.info(
               `[socialAI] Inline URL analyzed: ${embeddedUrl} → ${ua.content_type} / "${ua.title}"`,
             );
@@ -1382,7 +1382,7 @@ router.post(
         return res.status(500).json({ error: result.error });
       }
 
-      const data = result.data as Record<string, unknown>;
+      const data = result.data as unknown as Record<string, unknown>;
       const hook: string = data.hook || "";
       const body: string = data.body || "";
       const cta: string = data.cta || "";

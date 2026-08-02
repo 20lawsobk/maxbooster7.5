@@ -405,14 +405,14 @@ export class AIMusicService {
 
       const track = await this.getTrackByIdSafe(trackId);
       if (track) {
-        await storage?.updateStudioTrackEffects(
+        await (storage as any)?.updateStudioTrackEffects(
           track?.id,
           track?.projectId,
           appliedSettings,
         );
       }
 
-      const clips = await storage?.getTrackAudioClips(trackId);
+      const clips = await (storage as any)?.getTrackAudioClips(trackId);
       if (clips?.length > 0) {
         const primaryClip = clips[0];
         const inputPath = path?.join(process.cwd(), primaryClip?.filePath);
@@ -436,7 +436,7 @@ export class AIMusicService {
 
           outputFilePath = `/uploads/processed/${processedFilename}`;
 
-          await storage?.updateTrackProcessedAudio(
+          await (storage as any)?.updateTrackProcessedAudio(
             track?.id,
             track?.projectId,
             outputFilePath,
@@ -552,7 +552,7 @@ export class AIMusicService {
       ffmpeg(inputPath)
         .audioFilters(filters?.length > 0 ? filters : ["anull"])
         .toFormat("wav")
-        .on("error", (err) => {
+        .on("error", (err: any) => {
           logger.warn({ err: err }, "FFmpeg processing error:");
           reject(err);
         })
@@ -674,7 +674,7 @@ export class AIMusicService {
     }
 
     if (track) {
-      await storage?.updateStudioTrackEffects(
+      await (storage as any)?.updateStudioTrackEffects(
         track?.id,
         track?.projectId,
         currentEffects,
@@ -744,10 +744,10 @@ export class AIMusicService {
           .audioFilters("loudnorm=print_format=json")
           .outputFormat("null")
           .output("-")
-          .on("stderr", (line) => {
+          .on("stderr", (line: any) => {
             stderrOutput += line + "\n";
           })
-          .on("error", (err) => {
+          .on("error", (err: any) => {
             logger.warn({ err: err }, "FFmpeg loudness measurement error:");
             reject(err);
           })
@@ -780,7 +780,7 @@ export class AIMusicService {
                 loudnessRange,
               });
             } catch (parseError: unknown) {
-              logger.warn("Error parsing loudness JSON:", parseError);
+              logger.warn(parseError, "Error parsing loudness JSON:");
               reject(parseError);
             }
           })
@@ -869,7 +869,7 @@ export class AIMusicService {
       }
 
       const track = await this.getTrackByIdSafe(trackId);
-      const clips = await storage?.getTrackAudioClips(trackId);
+      const clips = await (storage as any)?.getTrackAudioClips(trackId);
       if (clips?.length > 0) {
         const primaryClip = clips[0];
         const inputPath = path?.join(process.cwd(), primaryClip?.filePath);
@@ -898,7 +898,7 @@ export class AIMusicService {
 
           outputFilePath = `/uploads/normalized/${normalizedFilename}`;
 
-          await storage?.updateTrackProcessedAudio(
+          await (storage as any)?.updateTrackProcessedAudio(
             track?.id,
             track?.projectId,
             outputFilePath,
@@ -967,7 +967,7 @@ export class AIMusicService {
           `loudnorm=I=${targetLUFS}:TP=-1.5:LRA=11:measured_I=${measuredLUFS}:measured_LRA=11:measured_TP=-2.0:measured_thresh=-33.0:linear=true`,
         ])
         .toFormat("wav")
-        .on("error", (err) => {
+        .on("error", (err: any) => {
           logger.warn({ err: err }, "FFmpeg normalization error:");
           reject(err);
         })
@@ -2187,7 +2187,7 @@ export class AIMusicService {
 
   private async loadTrackAudio(trackId: string): Promise<Buffer> {
     try {
-      const clips = await storage?.getTrackAudioClips(trackId);
+      const clips = await (storage as any)?.getTrackAudioClips(trackId);
 
       if (clips?.length === 0) {
         throw new Error(`No audio clips found for track ${trackId}`);
@@ -2258,7 +2258,7 @@ export class AIMusicService {
         .toFormat("wav")
         .audioChannels(2)
         .audioFrequency(48000)
-        .on("error", (err) => {
+        .on("error", (err: any) => {
           logger.warn({ err: err }, "FFmpeg conversion error:");
           reject(err);
         })
@@ -2538,19 +2538,19 @@ export class AIMusicService {
 
   private async getTrackByIdSafe(trackId: string): Promise<any | null> {
     try {
-      const tracks = await storage?.getProjectTracks(trackId);
+      const tracks = await (storage as any)?.getProjectTracks(trackId);
 
       if (tracks?.length > 0) {
         return tracks[0];
       }
 
-      const allProjects = await storage?.getAllProjects({
+      const allProjects = await (storage as any)?.getAllProjects({
         page: 1,
         limit: 1000,
       });
       for (const project of allProjects?.data) {
-        const projectTracks = await storage?.getProjectTracks(project?.id);
-        const track = projectTracks?.find((t) => t?.id === trackId);
+        const projectTracks = await (storage as any)?.getProjectTracks(project?.id);
+        const track = projectTracks?.find((t: any) => t?.id === trackId);
         if (track) {
           return track;
         }
@@ -2628,7 +2628,7 @@ export class AIMusicService {
         confidence,
       );
 
-      await storage?.createExplanationLog({
+      await (storage as any)?.createExplanationLog({
         inferenceId: inferenceRun.id,
         explanationType: "feature_importance",
         featureImportance: this.calculateFeatureImportance(
@@ -2657,12 +2657,12 @@ export class AIMusicService {
   ): string {
     const explanations: Record<string, string> = {
       stem_separation: `Separated audio into ${Object.keys(output).length} stems with ${(confidence * 100).toFixed(1)}% overall confidence using frequency-based analysis`,
-      preset_retrieval: `Retrieved ${output?.displayName} preset optimized for ${input?.genre} with professional mixing parameters`,
-      preset_application: `Applied ${input?.genre} preset at ${input?.intensity}% intensity with ${output?.suggestions?.length || 0} AI-generated suggestions`,
-      reference_analysis: `Analyzed reference track: ${output?.loudnessMetrics.integrated?.toFixed(1)} LUFS integrated loudness, ${output?.dynamicRange.toFixed(1)}dB dynamic range`,
-      reference_matching: `Generated ${output?.suggestions?.length || 0} specific adjustments to match reference with ${(confidence * 100).toFixed(1)}% confidence`,
-      loudness_measurement: `Measured ITU-R BS.1770-4 loudness: ${output?.integrated.toFixed(1)} LUFS integrated, ${output?.truePeak.toFixed(1)}dB true peak`,
-      loudness_normalization: `Normalized to ${input?.targetLUFS} LUFS with ${output?.appliedGain >= 0 ? "+" : ""}${output?.appliedGain.toFixed(1)}dB gain adjustment`,
+      preset_retrieval: `Retrieved ${(output as any)?.displayName} preset optimized for ${(input as any)?.genre} with professional mixing parameters`,
+      preset_application: `Applied ${(input as any)?.genre} preset at ${(input as any)?.intensity}% intensity with ${(output as any)?.suggestions?.length || 0} AI-generated suggestions`,
+      reference_analysis: `Analyzed reference track: ${(output as any)?.loudnessMetrics.integrated?.toFixed(1)} LUFS integrated loudness, ${(output as any)?.dynamicRange.toFixed(1)}dB dynamic range`,
+      reference_matching: `Generated ${(output as any)?.suggestions?.length || 0} specific adjustments to match reference with ${(confidence * 100).toFixed(1)}% confidence`,
+      loudness_measurement: `Measured ITU-R BS.1770-4 loudness: ${(output as any)?.integrated.toFixed(1)} LUFS integrated, ${(output as any)?.truePeak.toFixed(1)}dB true peak`,
+      loudness_normalization: `Normalized to ${(input as any)?.targetLUFS} LUFS with ${(output as any)?.appliedGain >= 0 ? "+" : ""}${(output as any)?.appliedGain.toFixed(1)}dB gain adjustment`,
     };
 
     return (
@@ -2673,7 +2673,7 @@ export class AIMusicService {
 
   private calculateFeatureImportance(
     type: string,
-    output: unknown,
+    _output: unknown,
   ): Record<string, number> {
     const importance: Record<string, Record<string, number>> = {
       stem_separation: {
@@ -2708,7 +2708,7 @@ export class AIMusicService {
   private generateDecisionPath(
     _type: string,
     _input: unknown,
-    output: unknown,
+    _output: unknown,
   ): unknown[] {
     return [
       { step: 1, action: "Input validation", result: "success" },

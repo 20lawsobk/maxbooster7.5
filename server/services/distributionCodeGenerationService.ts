@@ -12,7 +12,7 @@ export async function generateISRC(
     timestamp: Date.now(),
   };
 
-  const isrc = await storage?.generateISRC(userId, trackId, metadata);
+  const isrc = await (storage as any)?.generateISRC(userId, trackId, metadata);
 
   return isrc;
 }
@@ -27,7 +27,7 @@ export async function generateUPC(
     timestamp: Date.now(),
   };
 
-  const upc = await storage?.generateUPC(userId, releaseId, metadata);
+  const upc = await (storage as any)?.generateUPC(userId, releaseId, metadata);
 
   return upc;
 }
@@ -50,7 +50,7 @@ export async function verifyISRC(isrc: string): Promise<{
     };
   }
 
-  const record = await storage?.getISRC(isrc);
+  const record = await (storage as any)?.getISRC(isrc);
 
   if (!record) {
     return {
@@ -99,7 +99,7 @@ export async function verifyUPC(upc: string): Promise<{
     };
   }
 
-  const record = await storage?.getUPC(upc);
+  const record = await (storage as any)?.getUPC(upc);
 
   if (!record) {
     return {

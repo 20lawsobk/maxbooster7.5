@@ -117,7 +117,7 @@ function ModeSection({
 export function FaderFlip({
   channelId,
   faderFlip,
-  onValueChange,
+  _onValueChange,
   compact = false,
   showGlobalControls = true,
 }: FaderFlipProps) {

@@ -68,7 +68,7 @@ export function SimpleAreaChart({
   color = "blue",
   height = 200,
   showLabels = true,
-  formatValue = (v) => v.toLocaleString(),
+  _formatValue = (v) => v.toLocaleString(),
 }: SimpleAreaChartProps) {
   if (!data || data.length === 0) return null;
 

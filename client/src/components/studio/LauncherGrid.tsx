@@ -45,7 +45,7 @@ interface LauncherGridProps {
 
 function ClipCell({
   clip,
-  trackColor,
+  _trackColor,
   onClick,
   onAddClick,
 }: {

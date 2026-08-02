@@ -221,7 +221,7 @@ class QueueMonitor {
             systemMetrics,
           );
         } catch (error) {
-          logger.debug("Failed to collect metrics snapshot:", error);
+          logger.debug({ err: error }, "Failed to collect metrics snapshot:");
         }
       }
     }, this.MONITORING_INTERVAL);

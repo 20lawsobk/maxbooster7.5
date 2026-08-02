@@ -68,7 +68,7 @@ const frequencyToNote = (frequency: number): { note: number; name: string } => {
 
 export function FlowStateIdeaCapture({
   onMidiExport,
-  onSaveIdea,
+  _onSaveIdea,
   className,
 }: FlowStateIdeaCaptureProps) {
   const { toast } = useToast();

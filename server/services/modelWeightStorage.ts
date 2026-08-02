@@ -57,7 +57,7 @@ class ModelWeightStorage {
 
     if (this.pocket) {
       try {
-        const data = await this.pocket.read(this.pocketPath(name));
+        const data = await (this as any).pocket.read(this.pocketPath(name));
         if (data && data?.length > 0) {
           await this._writeLocalFile(name, data);
           logger.info(
@@ -82,7 +82,7 @@ class ModelWeightStorage {
 
     if (this.pocket) {
       try {
-        await this.pocket.write(this.pocketPath(name), buf);
+        await (this as any).pocket.write(this.pocketPath(name), buf);
         logger.info(
           `[WeightStorage] ${name} stored in Pocket Dimension (${Math.round(buf?.length / 1024)} KB uncompressed)`,
         );

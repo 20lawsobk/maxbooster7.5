@@ -283,7 +283,7 @@ class MemoryManager extends EventEmitter {
 
     // Clear caches that might be holding memory
     if ((global as Record<string, unknown>).memoryCache) {
-      (global as Record<string, unknown>).memoryCache?.clear();
+      ((global as Record<string, unknown>).memoryCache as any)?.clear();
       logger.info("🧹 Cleared global memory cache");
     }
 
@@ -351,10 +351,10 @@ class MemoryManager extends EventEmitter {
   // Configuration methods
   setThresholds(thresholds: Partial<MemoryThresholds>): void {
     this.thresholds = { ...this.thresholds, ...thresholds };
-    logger.info("🔧 Memory thresholds updated:", {
+    logger.info({
       warningMB: Math.round(this.thresholds.warning / 1024 / 1024),
       criticalMB: Math.round(this.thresholds.critical / 1024 / 1024),
-    });
+    }, "🔧 Memory thresholds updated:");
   }
 
   enableLeakDetection(enabled: boolean): void {

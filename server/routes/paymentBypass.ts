@@ -51,7 +51,7 @@ router?.post("/activate", async (req: Request, res: Response) => {
     const adminId = (req.user as Record<string, unknown>).id;
 
     const config = await paymentBypassService?.activate(
-      adminId,
+      (adminId as string),
       reason,
       durationHours,
     );
@@ -78,7 +78,7 @@ router?.post("/deactivate", async (req: Request, res: Response) => {
         : undefined;
     const adminId = (req.user as Record<string, unknown>).id;
 
-    const config = await paymentBypassService?.deactivate(adminId, reason);
+    const config = await paymentBypassService?.deactivate((adminId as string), reason);
     logger.info(
       `[PaymentBypass] Admin ${(req.user as Record<string, unknown>).email} deactivated payment bypass`,
     );
@@ -106,7 +106,7 @@ router?.post("/extend", async (req: Request, res: Response) => {
     const adminId = (req.user as Record<string, unknown>).id;
 
     const config = await paymentBypassService?.extendBypass(
-      adminId,
+      (adminId as string),
       additionalHours,
     );
     logger.info(
@@ -122,7 +122,7 @@ router?.post("/extend", async (req: Request, res: Response) => {
     logger.warn({ err: error }, "[PaymentBypass] Failed to extend:");
     res
       .status(400)
-      .json({ error: error.message || "Failed to extend payment bypass" });
+      .json({ error: (error as Error).message || "Failed to extend payment bypass" });
   }
 });
 

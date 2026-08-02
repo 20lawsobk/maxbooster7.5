@@ -221,7 +221,7 @@ export class PocketSimulationStorage {
     if (this.samplePool.size >= this.MAX_SAMPLE_SIZE) {
       return false;
     }
-    this.samplePool.set(user?.id, user);
+    this.samplePool.set((user?.id as string), user);
     return true;
   }
 
@@ -331,7 +331,7 @@ export class PocketSimulationStorage {
       memoryUsers: this.samplePool.size,
       aggregateUsers: this.aggregateUsers.total,
       snapshotCount: this.snapshotCount,
-      compressionRatio: pocketStats.compressionRatio || 1,
+      compressionRatio: pocketStats!.compressionRatio || 1,
       estimatedMemorySavings: `${savings?.toFixed(1)}%`,
     };
   }

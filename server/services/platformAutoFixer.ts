@@ -254,7 +254,7 @@ class PlatformAutoFixer extends EventEmitter {
       await this.runFullScan();
       this._scheduleNextScan();
     }, this.currentProbeIntervalMs);
-    (this.probeTimer as Record<string, unknown>).unref?.();
+    (this.probeTimer as unknown as Record<string, unknown>).unref?.();
   }
 
   private _adjustProbeInterval(): void {
@@ -483,7 +483,7 @@ class PlatformAutoFixer extends EventEmitter {
 
     try {
       const { pool } = await import("../db.js");
-      const p = pool as Record<string, unknown>;
+      const p = pool as unknown as Record<string, unknown>;
       const total = p.totalCount ?? 0;
       const idle = p.idleCount ?? 0;
       const waiting = p.waitingCount ?? 0;
@@ -491,7 +491,7 @@ class PlatformAutoFixer extends EventEmitter {
       // Ping with timeout
       const pingStart = Date.now();
       await Promise.race([
-        p.query("SELECT 1"),
+        (p.query as any)("SELECT 1"),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error("DB ping timeout")), 8_000),
         ),
@@ -518,7 +518,7 @@ class PlatformAutoFixer extends EventEmitter {
       }
     } catch (err) {
       status = "critical";
-      message = `DB probe failed: ${err.message}`;
+      message = `DB probe failed: ${(err as Error).message}`;
 
       // Exponential backoff: 10 s, 20 s, 40 s, 80 s, then cap at 120 s.
       // This prevents the 5-second critical-interval from firing repeated
@@ -531,7 +531,7 @@ class PlatformAutoFixer extends EventEmitter {
       this._dbNextAllowedProbeAt = Date.now() + backoffMs;
 
       details = {
-        error: err.message,
+        error: (err as Error).message,
         consecutiveFailures: this._dbConsecutiveFailures,
         backoffMs,
       };
@@ -687,10 +687,10 @@ class PlatformAutoFixer extends EventEmitter {
       // Any probe failure resets the consecutive-success streak so a
       // subsequent success starts counting from 1, not from a stale value.
       this._pdimConsecutiveProbeSuccesses = 0;
-      const msg = (err?.message ?? "") as string;
+      const msg = ((err as any)?.message ?? "") as string;
       if (
-        err?.name === "AbortError" ||
-        err?.name === "TimeoutError" ||
+        (err as any)?.name === "AbortError" ||
+        (err as any)?.name === "TimeoutError" ||
         msg?.includes("timed out")
       ) {
         // Timeout means PDIM may be cold-starting (Replit app sleep/wake cycle).
@@ -1012,7 +1012,7 @@ class PlatformAutoFixer extends EventEmitter {
       // DB keep-alive intervals, autopilot schedulers, and realtime servers that each hold handles.
       // A baseline of 1200 handles is normal at runtime. Alarm at 3000 (genuine leak territory).
       const listenerCount =
-        (process as Record<string, unknown>)._getActiveHandles?.()?.length ?? 0;
+        (process as unknown as Record<string, unknown>)._getActiveHandles?.()?.length ?? 0;
       details.activeHandles = listenerCount;
       if (listenerCount > 3000) {
         status = status === "healthy" ? "degraded" : status;
@@ -1042,7 +1042,7 @@ class PlatformAutoFixer extends EventEmitter {
       }
     } catch (err) {
       status = "unknown";
-      message = `Entropy probe error: ${err?.message}`;
+      message = `Entropy probe error: ${(err as any)?.message}`;
     }
 
     return this.result("entropy", status, Date?.now() - t0, message, details);
@@ -1261,7 +1261,7 @@ class PlatformAutoFixer extends EventEmitter {
           } catch (err) {
             logger.warn(
               "[PlatformAutoFixer] Session store reconnect failed:",
-              err?.message,
+              (err as any)?.message,
             );
           }
         },
@@ -1657,7 +1657,7 @@ class PlatformAutoFixer extends EventEmitter {
       const { pool } = await import("../db.js");
       const t0 = Date?.now();
       await Promise?.race([
-        (pool as Record<string, unknown>).query("SELECT 1"),
+        (pool as unknown as Record<string, unknown>).query("SELECT 1"),
         new Promise<never>((_, r) =>
           setTimeout(() => r(new Error("stress timeout")), STRESS_TIMEOUT_MS),
         ),
@@ -1670,7 +1670,7 @@ class PlatformAutoFixer extends EventEmitter {
             `Pre-warming connection pool.`,
         );
         // Fire a second no-op query to pre-warm the next connection slot
-        await (pool as Record<string, unknown>).query("SELECT 1").catch(() => {
+        await (pool as unknown as Record<string, unknown>).query("SELECT 1").catch(() => {
           /* ignore */
         });
         this._threatsNeutralized++;
@@ -1824,7 +1824,7 @@ class PlatformAutoFixer extends EventEmitter {
         const { distributedCache } = await import(
           "../infrastructure/distributedCache.js"
         );
-        await (distributedCache as Record<string, unknown>).evictExpired?.();
+        await (distributedCache as unknown as Record<string, unknown>).evictExpired?.();
         logger.info(
           "[PlatformAutoFixer] 🎯 OFFENSIVE: Cache eviction triggered to slow heap growth",
         );
@@ -2095,9 +2095,9 @@ export function platformFixerMiddleware(
   res: Record<string, unknown>,
   next: () => void,
 ): void {
-  res.on("finish", () => {
-    const route = req.route?.path ?? req.path ?? "unknown";
-    recordRouteRequest(route, res.statusCode);
+  (res.on as any)("finish", () => {
+    const route = (req.route as any)?.path ?? req.path ?? "unknown";
+    recordRouteRequest(route, (res.statusCode as number));
   });
   next();
 }

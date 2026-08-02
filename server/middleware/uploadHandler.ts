@@ -437,33 +437,33 @@ export const handleUploadError = (
   if (error instanceof multer.MulterError) {
     switch (error?.code) {
       case "LIMIT_FILE_SIZE":
-        return res.status(413).json({
+        return (res as any).status(413).json({
           message: "File too large. Maximum size is 200MB.",
           code: "FILE_TOO_LARGE",
         });
       case "LIMIT_FILE_COUNT":
-        return res.status(413).json({
+        return (res as any).status(413).json({
           message: "Too many files. Maximum is 10 files per request.",
           code: "TOO_MANY_FILES",
         });
       case "LIMIT_UNEXPECTED_FILE":
-        return res.status(400).json({
+        return (res as any).status(400).json({
           message: "Unexpected field name for file upload.",
           code: "UNEXPECTED_FIELD",
         });
       default:
-        return res.status(400).json({
+        return (res as any).status(400).json({
           message: error.message,
           code: "UPLOAD_ERROR",
         });
     }
   } else if (error) {
-    return res.status(400).json({
+    return (res as any).status(400).json({
       message: error instanceof Error ? error?.message : "Upload failed",
       code: "UPLOAD_ERROR",
     });
   }
-  next();
+  (next as any)();
 };
 
 export async function storeUploadedFile(
@@ -489,22 +489,22 @@ export async function storeUploadedFile(
       );
 
       if (!validation?.valid) {
-        logger.warn("Upload security validation failed", {
+        logger.warn({
           filename: file.originalname,
           category: uploadCategory,
           error: validation.error,
           userId,
-        });
+        }, "Upload security validation failed");
         throw new Error(validation?.error || "File validation failed");
       }
     }
 
     if (!verifyMagicBytes(file?.buffer, file?.mimetype)) {
-      logger.warn("Magic bytes verification failed during storage", {
+      logger.warn({
         filename: file.originalname,
         mimetype: file.mimetype,
         userId,
-      });
+      }, "Magic bytes verification failed during storage");
       throw new Error("File content does not match declared type");
     }
 
@@ -528,7 +528,7 @@ export async function storeUploadedFile(
         finalMimetype = processed?.mimeType;
         wasProcessed = true;
 
-        logger.info("Image processed for upload", {
+        logger.info({
           originalSize: file.buffer.length,
           processedSize: processed.processedSize,
           format: processed.format,
@@ -536,13 +536,13 @@ export async function storeUploadedFile(
           metadataStripped: processed.metadataStripped,
           userId,
           category: uploadCategory,
-        });
+        }, "Image processed for upload");
       } catch (processingError) {
-        logger.warn("Image processing failed, using original", {
+        logger.warn({
           error: processingError,
           filename: file.originalname,
           userId,
-        });
+        }, "Image processing failed, using original");
       }
     }
 

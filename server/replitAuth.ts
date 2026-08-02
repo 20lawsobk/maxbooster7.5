@@ -49,19 +49,19 @@ function updateUserSession(
   user: unknown,
   tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
 ) {
-  user.claims = tokens?.claims();
-  user.access_token = tokens?.access_token;
-  user.refresh_token = tokens?.refresh_token;
-  user.expires_at = user?.claims?.exp;
+  (user as any).claims = tokens?.claims();
+  (user as any).access_token = tokens?.access_token;
+  (user as any).refresh_token = tokens?.refresh_token;
+  (user as any).expires_at = (user as any)?.claims?.exp;
 }
 
 async function upsertUser(claims: unknown) {
-  await storage?.upsertUser({
-    id: claims["sub"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
-    profileImageUrl: claims["profile_image_url"],
+  await (storage as any)?.upsertUser({
+    id: (claims as any)["sub"],
+    email: (claims as any)["email"],
+    firstName: (claims as any)["first_name"],
+    lastName: (claims as any)["last_name"],
+    profileImageUrl: (claims as any)["profile_image_url"],
   });
 }
 
@@ -145,7 +145,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   try {
     const config = await getOidcConfig();
-    const tokenResponse = await client?.refreshTokenGrant(config, refreshToken);
+    const tokenResponse = await client?.refreshTokenGrant(config, (refreshToken as string));
     updateUserSession(user, tokenResponse);
     return next();
   } catch (error: unknown) {

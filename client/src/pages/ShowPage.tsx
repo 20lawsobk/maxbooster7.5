@@ -96,8 +96,8 @@ export default function ShowPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAddSongDialog, setShowAddSongDialog] = useState(false);
-  const [showEditSongDialog, setShowEditSongDialog] = useState(false);
-  const [editingSong, setEditingSong] = useState<SetlistSong | null>(null);
+  const [_showEditSongDialog, _setShowEditSongDialog] = useState(false);
+  const [_editingSong, _setEditingSong] = useState<SetlistSong | null>(null);
   const [teleprompterVisible, setTeleprompterVisible] = useState(true);
   const [effectsPanelVisible, setEffectsPanelVisible] = useState(true);
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
@@ -106,10 +106,10 @@ export default function ShowPage() {
   const [clickTrackOutput, setClickTrackOutput] = useState<string>("default");
   const [mainOutput, setMainOutput] = useState<string>("default");
   const [remoteControlEnabled, setRemoteControlEnabled] = useState(false);
-  const [connectedDevices, setConnectedDevices] = useState<RemoteDevice[]>([]);
+  const [connectedDevices, _setConnectedDevices] = useState<RemoteDevice[]>([]);
   const [teleprompterFontSize, setTeleprompterFontSize] = useState(32);
-  const [teleprompterScrollSpeed, setTeleprompterScrollSpeed] = useState(1);
-  const [emergencyStopActive, setEmergencyStopActive] = useState(false);
+  const [_teleprompterScrollSpeed, _setTeleprompterScrollSpeed] = useState(1);
+  const [_emergencyStopActive, setEmergencyStopActive] = useState(false);
 
   const [setlist, setSetlist] = useState<SetlistSong[]>([
     {

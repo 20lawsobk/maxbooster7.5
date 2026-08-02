@@ -124,7 +124,7 @@ export function FlowStateStudioPro({
     return () => setCurrentProjectId(null);
   }, [projectId, setCurrentProjectId]);
 
-  const [showAIPanel, setShowAIPanel] = useState(true);
+  const [showAIPanel, _setShowAIPanel] = useState(true);
   const [showMixer, setShowMixer] = useState(false);
   const [showPluginChain, setShowPluginChain] = useState(false);
   const [show3DWorkspace, setShow3DWorkspace] = useState(false);
@@ -1266,7 +1266,7 @@ export function FlowStateStudioPro({
         isOpen={showAIGeneratorDialog}
         onClose={() => setShowAIGeneratorDialog(false)}
         projectId={projectId ? parseInt(projectId) : 0}
-        onGenerated={(_params) => {
+        onGenerated={(_params: any) => {
           setShowAIGeneratorDialog(false);
         }}
       />

@@ -88,7 +88,7 @@ export class DMCAService {
         status: "pending",
         contentId: submission.contentId,
         contentType: submission.contentType,
-        contentOwnerId: contentOwner.id,
+        contentOwnerId: contentOwner!.id,
         claimantName: submission.claimantName,
         claimantEmail: submission.claimantEmail,
         claimantAddress: submission.claimantAddress,
@@ -103,7 +103,7 @@ export class DMCAService {
       })
       .returning();
 
-    logger.info(`DMCA notice submitted: ${notice?.id}, type: ${notice?.type}`);
+    logger.info(`DMCA notice submitted: ${notice?.id}, type: ${(notice as any)?.type}`);
 
     await this.notifyContentOwner(notice);
     await this.notifyAdministrators(notice);
@@ -242,7 +242,7 @@ export class DMCAService {
         ),
       );
 
-    const [updatedNotice] = await db
+    const [_updatedNotice] = await db
       .update(dmcaNotices)
       .set({
         status: "restored",
@@ -577,7 +577,7 @@ export class DMCAService {
         .limit(1);
 
       if (user?.email) {
-        await emailService?.sendEmail({
+        await (emailService as any)?.sendEmail({
           to: user.email,
           subject: "DMCA Notice Received for Your Content",
           html: `
@@ -607,7 +607,7 @@ export class DMCAService {
     originalNotice: DMCANotice,
   ): Promise<void> {
     try {
-      await emailService?.sendEmail({
+      await (emailService as any)?.sendEmail({
         to: originalNotice.claimantEmail,
         subject: "Counter-Notification Received for Your DMCA Claim",
         html: `
@@ -643,7 +643,7 @@ export class DMCAService {
         .limit(1);
 
       if (user?.email) {
-        await emailService?.sendEmail({
+        await (emailService as any)?.sendEmail({
           to: user.email,
           subject: "Final Warning: Account Termination Risk",
           html: `
@@ -668,7 +668,7 @@ export class DMCAService {
         .limit(1);
 
       if (user?.email) {
-        await emailService?.sendEmail({
+        await (emailService as any)?.sendEmail({
           to: user.email,
           subject: "Account Terminated - Repeat Infringer Policy",
           html: `

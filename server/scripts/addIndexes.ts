@@ -170,7 +170,7 @@ async function run() {
       console?.log(`  ✓ ${idx?.name}`);
       created++;
     } catch (err) {
-      console?.error(`  ✗ ${idx?.name}: ${err?.message}`);
+      console?.error(`  ✗ ${idx?.name}: ${(err as any)?.message}`);
       failed++;
     }
   }

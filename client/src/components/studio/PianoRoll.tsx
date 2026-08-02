@@ -75,7 +75,7 @@ const EXPRESSION_LANE_HEIGHT = 60;
 type ExpressionLaneType = "pitchBend" | "pressure" | "slide";
 
 export function PianoRoll({
-  trackId,
+  _trackId,
   notes,
   onNotesChange,
   isPlaying = false,
@@ -87,8 +87,8 @@ export function PianoRoll({
   const [zoom, setZoom] = useState(100);
   const [snapValue, setSnapValue] = useState<number>(0.25);
   const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
+  const [_isDragging, _setIsDragging] = useState(false);
+  const [_dragStart, _setDragStart] = useState<{ x: number; y: number } | null>(
     null,
   );
 
@@ -108,7 +108,7 @@ export function PianoRoll({
   });
 
   const [showExpressionLanes, setShowExpressionLanes] = useState(true);
-  const [activeExpressionLane, setActiveExpressionLane] =
+  const [_activeExpressionLane, _setActiveExpressionLane] =
     useState<ExpressionLaneType>("pitchBend");
   const [editingExpressionNote, setEditingExpressionNote] = useState<
     string | null

@@ -571,7 +571,7 @@ export class PythonAIService {
       const data = await response?.json();
       return { success: true, data };
     } catch (e) {
-      return { success: false, error: `Audio analysis error: ${e?.message}` };
+      return { success: false, error: `Audio analysis error: ${(e as any)?.message}` };
     }
   }
 
@@ -618,7 +618,7 @@ export class PythonAIService {
     } catch (e) {
       return {
         success: false,
-        error: `MIDI transcription error: ${e?.message}`,
+        error: `MIDI transcription error: ${(e as any)?.message}`,
       };
     }
   }

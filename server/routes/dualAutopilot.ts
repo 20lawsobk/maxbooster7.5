@@ -542,7 +542,7 @@ router?.post("/organic/assets", requireAuth, async (req, res) => {
     const parsed = createAssetSchema?.parse(req.body);
 
     const asset = await organicCompoundingService?.createAsset(userId, {
-      id: undefined as Record<string, unknown>,
+      id: undefined as unknown as Record<string, unknown>,
       ...parsed,
     });
 
@@ -648,7 +648,7 @@ router?.post("/organic/channels", requireAuth, async (req, res) => {
     const parsed = createChannelSchema?.parse(req.body);
 
     const channel = await organicCompoundingService?.createChannel(userId, {
-      id: undefined as Record<string, unknown>,
+      id: undefined as unknown as Record<string, unknown>,
       ...parsed,
     });
 

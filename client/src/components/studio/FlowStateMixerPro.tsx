@@ -216,7 +216,7 @@ function ChannelStrip({
   onOpenPlugin,
 }: ChannelStripProps) {
   const [isDraggingFader, setIsDraggingFader] = useState(false);
-  const [isDraggingPan, setIsDraggingPan] = useState(false);
+  const [_isDraggingPan, _setIsDraggingPan] = useState(false);
   const faderRef = useRef<HTMLDivElement>(null);
   const panRef = useRef<HTMLDivElement>(null);
 

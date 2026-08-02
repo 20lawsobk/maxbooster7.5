@@ -91,7 +91,7 @@ export default function PowerFeatureSpotlight({
 }: PowerFeatureSpotlightProps) {
   const queryClient = useQueryClient();
   const [dismissed, setDismissed] = useState(false);
-  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
+  const [_currentFeatureIndex, _setCurrentFeatureIndex] = useState(0);
 
   const { data: seenFeaturesData } = useQuery<{ seenFeatures: string[] }>({
     queryKey: ["/api/users/seen-features"],

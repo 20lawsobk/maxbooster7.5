@@ -107,7 +107,7 @@ router?.post("/", requireAuth, async (req, res) => {
         .status(400)
         .json({
           error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
+          details: (error as unknown as Record<string, unknown>).flatten(),
         });
     }
     res.status(500).json({ error: "Failed to create radio pitch" });
@@ -145,7 +145,7 @@ router?.put("/:id", requireAuth, async (req, res) => {
         .status(400)
         .json({
           error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
+          details: (error as unknown as Record<string, unknown>).flatten(),
         });
     }
     res.status(500).json({ error: "Failed to update radio pitch" });
@@ -198,7 +198,7 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
         .status(400)
         .json({
           error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
+          details: (error as unknown as Record<string, unknown>).flatten(),
         });
     }
     res.status(500).json({ error: "Failed to update radio pitch status" });

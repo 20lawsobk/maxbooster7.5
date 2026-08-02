@@ -559,7 +559,7 @@ export class SocialAmplificationService {
 
       logger.info(`[ORGANIC POST - ${platform?.toUpperCase()}] 🚀`);
       logger.info(
-        `  Caption: "${content.caption.substring(0, 60) || autonomousContent.text.substring(0, 60)}..."`,
+        `  Caption: "${content.caption!.substring(0, 60) || autonomousContent.text.substring(0, 60)}..."`,
       );
       logger.info(
         `  Projected Reach: ${postResult?.metrics.reach?.toLocaleString()}`,
@@ -1052,7 +1052,7 @@ export class SocialAmplificationService {
         cascadeLevels,
         viralityTrend: this.calculateViralityTrend(tracking, viralCoefficient),
         peakViralityAt:
-          currentPhase === "viral" ? new Date() : tracking.peakViralityAt,
+          currentPhase === "viral" ? new Date() : tracking!.peakViralityAt,
         currentPhase,
         projectedFinalReach,
       };
@@ -1697,28 +1697,28 @@ export class SocialAmplificationService {
       .sort((a: KeyNode, b: KeyNode) => b?.centrality - a?.centrality);
   }
 
-  private calculateClusteringCoefficient(networkData: NetworkData): number {
+  private calculateClusteringCoefficient(_networkData: NetworkData): number {
     return 0.3 + Math.random() * 0.4;
   }
 
   private calculateBetweennessCentrality(
     _userId: string,
-    networkData: NetworkData,
+    _networkData: NetworkData,
   ): number {
     return 0.2 + Math.random() * 0.6;
   }
 
-  private calculateReachMultiplier(networkData: NetworkData): number {
+  private calculateReachMultiplier(_networkData: NetworkData): number {
     return 1.5 + Math.random() * 2.5;
   }
 
-  private calculateEigenvectorCentrality(networkData: NetworkData): number {
+  private calculateEigenvectorCentrality(_networkData: NetworkData): number {
     return 0.4 + Math.random() * 0.5;
   }
 
   private generateConnectionStrategies(
     connections: number,
-    networkData: NetworkData,
+    _networkData: NetworkData,
     keyNodes: KeyNode[],
   ): string[] {
     const strategies: string[] = [];
@@ -1790,7 +1790,7 @@ export class SocialAmplificationService {
     const user = await storageExt?.getUser(userId);
     return {
       userId,
-      username: user.username || "user",
+      username: user!.username || "user",
       niche: "music",
       followerCount: 5000 + Math.random() * 45000,
       engagementRate: 0.03 + Math.random() * 0.05,
@@ -1799,8 +1799,8 @@ export class SocialAmplificationService {
 
   private async findCollaborationProspects(
     _userId: string,
-    userProfile: UserProfile,
-    userNetwork: NetworkData,
+    _userProfile: UserProfile,
+    _userNetwork: NetworkData,
     _goal: string,
   ): Promise<CollaborationProspect[]> {
     const numProspects = Math.floor(10 + Math.random() * 30);

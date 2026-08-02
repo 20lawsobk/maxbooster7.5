@@ -160,7 +160,7 @@ export function FlowStateClipLauncher({
   const [currentScene, setCurrentScene] = useState<string | null>(null);
   const [quantize, setQuantize] = useState("1 Bar");
   const [tempo, setTempo] = useState(120);
-  const [selectedClip, setSelectedClip] = useState<string | null>(null);
+  const [_selectedClip, _setSelectedClip] = useState<string | null>(null);
 
   const triggerClip = useCallback(
     (trackId: string, slotId: string) => {

@@ -44,7 +44,7 @@ interface LauncherPanelProps {
 
 function ClipCell({
   clip,
-  trackColor,
+  _trackColor,
   onTrigger,
   onStop,
   onAddClick,

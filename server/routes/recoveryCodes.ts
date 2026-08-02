@@ -72,7 +72,7 @@ async function saveStore(
 
 router?.get("/status", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const store = await getStore(userId);
 
     if (!store) {
@@ -100,7 +100,7 @@ router?.get("/status", async (req: Request, res: Response) => {
 
 router?.post("/generate", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
 
     const rawCodes: string[] = [];
     for (let i = 0; i < 10; i++) {
@@ -131,7 +131,7 @@ router?.post("/generate", async (req: Request, res: Response) => {
 
 router?.post("/verify", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const { code } = req.body;
 
     if (!code || typeof code !== "string") {

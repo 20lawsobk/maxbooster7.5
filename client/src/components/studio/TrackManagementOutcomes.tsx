@@ -114,7 +114,7 @@ const COLORS = [
 ];
 
 export function TrackManagementOutcomes({
-  tracks,
+  _tracks,
   onAddTrack,
   onDeleteTrack,
   onDuplicateTrack,

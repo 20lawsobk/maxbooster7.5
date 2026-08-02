@@ -166,7 +166,6 @@ router?.put(
         .update(warpMarkers)
         .set({
           ...updates,
-          updatedAt: new Date(),
         })
         .where(eq(warpMarkers?.id, markerId))
         .returning();

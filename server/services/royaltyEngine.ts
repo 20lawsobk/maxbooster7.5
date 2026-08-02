@@ -810,7 +810,7 @@ export class RoyaltyEngine {
     const conditions = [eq(royaltyStatements?.userId, userId)];
     if (options?.status)
       conditions?.push(
-        eq(royaltyStatements?.status, options?.status as Record<string, unknown>),
+        eq(royaltyStatements?.status, options?.status as unknown as Record<string, unknown>),
       );
 
     return await db

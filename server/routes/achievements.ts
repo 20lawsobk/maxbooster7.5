@@ -11,7 +11,7 @@ router?.get("/", requireAuth, async (_req: Request, res: Response) => {
     const achievements = await achievementService?.getAllAchievements();
     return res.json(achievements);
   } catch (error) {
-    logger.warn("Error fetching achievements:", error?.message || error);
+    logger.warn("Error fetching achievements:", (error as any)?.message || error);
     return res.status(500).json({ error: "Failed to fetch achievements" });
   }
 });
@@ -23,7 +23,7 @@ router?.get("/user", requireAuth, async (req: Request, res: Response) => {
     );
     return res.json(achievements);
   } catch (error) {
-    logger.warn("Error fetching user achievements:", error?.message || error);
+    logger.warn("Error fetching user achievements:", (error as any)?.message || error);
     return res.status(500).json({ error: "Failed to fetch user achievements" });
   }
 });
@@ -37,7 +37,7 @@ router?.get("/unnotified", requireAuth, async (req: Request, res: Response) => {
   } catch (error) {
     logger.warn(
       "Error fetching unnotified achievements:",
-      error?.message || error,
+      (error as any)?.message || error,
     );
     return res
       .status(500)
@@ -59,7 +59,7 @@ router?.post(
     } catch (error) {
       logger.warn(
         "Error marking achievement notified:",
-        error?.message || error,
+        (error as any)?.message || error,
       );
       return res
         .status(500)
@@ -79,7 +79,7 @@ router?.get("/leaderboard", requireAuth, async (req: Request, res: Response) => 
     );
     return res.json(leaderboard);
   } catch (error) {
-    logger.warn("Error fetching leaderboard:", error?.message || error);
+    logger.warn("Error fetching leaderboard:", (error as any)?.message || error);
     return res.status(500).json({ error: "Failed to fetch leaderboard" });
   }
 });
@@ -89,7 +89,7 @@ router?.get("/streaks", requireAuth, async (req: Request, res: Response) => {
     const streaks = await achievementService?.getUserStreaks(req.user!.id);
     return res.json(streaks);
   } catch (error) {
-    logger.warn("Error fetching streaks:", error?.message || error);
+    logger.warn("Error fetching streaks:", (error as any)?.message || error);
     return res.status(500).json({ error: "Failed to fetch streaks" });
   }
 });
@@ -106,7 +106,7 @@ router?.post(
       );
       return res.json(streak);
     } catch (error) {
-      logger.warn("Error updating streak:", error?.message || error);
+      logger.warn("Error updating streak:", (error as any)?.message || error);
       return res.status(500).json({ error: "Failed to update streak" });
     }
   },

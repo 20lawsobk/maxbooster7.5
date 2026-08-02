@@ -128,12 +128,12 @@ export class PresenceManager {
       const redis = await getRedisClient();
       if (redis) {
         const redisKey = this.getRedisKey(projectId);
-        const allPresence = await redis?.hGetAll(redisKey);
+        const allPresence = await (redis as any)?.hGetAll(redisKey);
 
         for (const [fieldKey, _value] of Object.entries(allPresence)) {
           if (fieldKey?.startsWith(userId)) {
             if (!connectionId || fieldKey === `${userId}:${connectionId}`) {
-              await redis?.hDel(redisKey, fieldKey);
+              await (redis as any)?.hDel(redisKey, fieldKey);
             }
           }
         }
@@ -236,11 +236,11 @@ export class PresenceManager {
       const redis = await getRedisClient();
       if (redis) {
         const redisKey = this.getRedisKey(projectId);
-        const allPresence = await redis?.hGetAll(redisKey);
+        const allPresence = await (redis as any)?.hGetAll(redisKey);
 
         for (const value of Object.values(allPresence)) {
           try {
-            const presence: PresenceState = JSON.parse(value);
+            const presence: PresenceState = JSON.parse((value as string));
             if (!seen?.has(presence?.userId)) {
               seen?.add(presence?.userId);
               collaborators?.push({
@@ -311,8 +311,8 @@ export class PresenceManager {
       const redis = await getRedisClient();
       if (redis) {
         const redisKey = this.getRedisKey(projectId);
-        await redis?.hSet(redisKey, fieldKey, JSON.stringify(presence));
-        await redis?.expire(redisKey, 3600);
+        await (redis as any)?.hSet(redisKey, fieldKey, JSON.stringify(presence));
+        await (redis as any)?.expire(redisKey, 3600);
       }
     } catch (error) {
       logger.warn(
@@ -338,7 +338,7 @@ export class PresenceManager {
       const redis = await getRedisClient();
       if (redis) {
         const redisKey = this.getRedisKey(projectId);
-        const data = await redis?.hGet(redisKey, fieldKey);
+        const data = await (redis as any)?.hGet(redisKey, fieldKey);
         if (data) {
           return JSON.parse(data);
         }
@@ -404,20 +404,20 @@ export class PresenceManager {
       const redis = await getRedisClient();
       if (redis) {
         const redisKey = this.getRedisKey(projectId);
-        const allPresence = await redis?.hGetAll(redisKey);
+        const allPresence = await (redis as any)?.hGetAll(redisKey);
 
         for (const [fieldKey, value] of Object.entries(allPresence)) {
           try {
-            const presence: PresenceState = JSON.parse(value);
+            const presence: PresenceState = JSON.parse((value as string));
             if (now - presence?.lastActivity > STALE_TIMEOUT_MS) {
-              await redis?.hDel(redisKey, fieldKey);
+              await (redis as any)?.hDel(redisKey, fieldKey);
               staleUsers?.push(presence?.userId);
               logger.info(
                 `[Presence] Cleaned up stale presence for user ${presence?.userId}`,
               );
             }
           } catch (e) {
-            await redis?.hDel(redisKey, fieldKey);
+            await (redis as any)?.hDel(redisKey, fieldKey);
           }
         }
       }

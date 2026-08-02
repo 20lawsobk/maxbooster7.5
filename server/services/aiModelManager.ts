@@ -120,7 +120,7 @@ class AIModelManager {
           // Re-train on the base history to rebuild TF platform models and mark isTrained=true.
           // deserializeMetadata only restores scalers/stats — the TF weights are not persisted,
           // so we must run trainOnUserEngagementData to build them and flip isTrained.
-          const baseHistory = baseState?.state.trainingHistory;
+          const baseHistory = (baseState?.state as any).trainingHistory;
           if (Array.isArray(baseHistory) && baseHistory?.length >= 50) {
             await model?.trainOnUserEngagementData(baseHistory);
             await this.persistSocialModel(userId, model);
@@ -579,7 +579,7 @@ class AIModelManager {
         typeof model?.setWeights === "function"
       ) {
         const tf = await import("@tensorflow/tfjs");
-        const tensorWeights = weights?.tensors.map(
+        const tensorWeights = (weights?.tensors as any).map(
           (w: Record<string, unknown>) => tf?.tensor(w?.data, w?.shape, w?.dtype),
         );
         await model?.setWeights(tensorWeights);

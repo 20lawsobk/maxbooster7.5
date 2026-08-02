@@ -516,7 +516,7 @@ function EQSection({
 }
 
 function CompressorSection({
-  params,
+  _params,
   values,
   onChange,
   color,
@@ -613,7 +613,7 @@ function CompressorSection({
 }
 
 function ReverbSection({
-  params,
+  _params,
   values,
   onChange,
   color,
@@ -732,7 +732,7 @@ function ReverbSection({
 }
 
 function DelaySection({
-  params,
+  _params,
   values,
   onChange,
   color,
@@ -871,8 +871,8 @@ function DelaySection({
 }
 
 function SynthSection({
-  plugin,
-  params,
+  _plugin,
+  _params,
   values,
   onChange,
   color,
@@ -1104,7 +1104,7 @@ function GenericSection({
 
 function PluginDialogContent({
   plugin,
-  instanceId,
+  _instanceId,
   values,
   bypassed,
   onClose,

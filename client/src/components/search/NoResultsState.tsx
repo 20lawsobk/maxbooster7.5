@@ -326,7 +326,7 @@ export function NoResultsState({
 export function NoResultsInline({
   query,
   onSuggestionClick,
-  context = "global",
+  _context = "global",
 }: {
   query: string;
   onSuggestionClick?: (suggestion: string) => void;

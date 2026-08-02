@@ -79,12 +79,12 @@ export class InstantPayoutService {
         })
         .returning();
 
-      logger.info("Ledger entry recorded", {
+      logger.info({
         entryId: entry.id,
         userId: data.userId,
         type: data.entryType,
         amountCents: data.amountCents,
-      });
+      }, "Ledger entry recorded");
 
       return entry?.id;
     } catch (error: unknown) {
@@ -218,12 +218,12 @@ export class InstantPayoutService {
 
       if (!approved) {
         reason = `Risk score ${score} exceeds threshold. Flags: ${flags?.join(", ")}`;
-        logger.warn("Payout risk check failed", {
+        logger.warn({
           userId,
           amount,
           score,
           flags,
-        });
+        }, "Payout risk check failed");
       }
 
       return { score, flags, approved, reason };
@@ -293,11 +293,11 @@ export class InstantPayoutService {
       };
     } catch (error: unknown) {
       // Log the full error for observability
-      logger.warn("Error calculating available balance:", {
+      logger.warn({
         userId,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-      });
+      }, "Error calculating available balance:");
 
       // Re-throw for proper error handling - caller should handle gracefully
       throw new Error("Failed to calculate available balance");
@@ -312,10 +312,10 @@ export class InstantPayoutService {
   async updateAvailableBalance(userId: string, amount: number): Promise<void> {
     // Balance is calculated dynamically from orders and payouts tables
     // No need to update a column - this is intentionally a no-op
-    logger.info("Balance update requested for user - calculated dynamically", {
+    logger.info({
       userId,
       amount,
-    });
+    }, "Balance update requested for user - calculated dynamically");
   }
 
   /**
@@ -379,7 +379,7 @@ export class InstantPayoutService {
       logger.warn({ err: error }, "Error verifying Stripe account:");
       return {
         verified: false,
-        error: error.message || "Failed to verify Stripe account",
+        error: (error as Error).message || "Failed to verify Stripe account",
       };
     }
   }
@@ -454,7 +454,7 @@ export class InstantPayoutService {
       return accountLink?.url;
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error creating account link:");
-      throw new Error(error?.message || "Failed to create account link");
+      throw new Error((error as any)?.message || "Failed to create account link");
     }
   }
 
@@ -520,12 +520,12 @@ export class InstantPayoutService {
         .returning();
 
       // Log metadata for audit purposes
-      logger.info("Payout record created", {
+      logger.info({
         payoutId: payoutRecord.id,
         orderId,
         platformFee,
         platformFeePercentage,
-      });
+      }, "Payout record created");
 
       try {
         // Create TRANSFER from platform to seller's connected account
@@ -552,11 +552,11 @@ export class InstantPayoutService {
           .where(eq(instantPayouts?.id, payoutRecord?.id));
 
         // Log transfer details for audit purposes
-        logger.info("Payout transfer initiated", {
+        logger.info({
           payoutId: payoutRecord.id,
           transferId: transfer.id,
           orderId,
-        });
+        }, "Payout transfer initiated");
 
         // Log payout for audit (balance is calculated dynamically from orders/payouts tables)
         logger.info(
@@ -597,11 +597,11 @@ export class InstantPayoutService {
             : String(stripeError);
 
         // Log failure reason for audit (not stored in DB - column doesn't exist)
-        logger.warn("Payout transfer failed", {
+        logger.warn({
           payoutId: payoutRecord.id,
           orderId,
           failureReason: errorMessage,
-        });
+        }, "Payout transfer failed");
 
         // Update payout record as failed
         await db
@@ -633,7 +633,7 @@ export class InstantPayoutService {
       logger.warn({ err: error }, "Error creating instant transfer:");
       return {
         success: false,
-        error: error.message || "Failed to create transfer",
+        error: (error as Error).message || "Failed to create transfer",
       };
     }
   }
@@ -705,11 +705,11 @@ export class InstantPayoutService {
       // Perform risk assessment
       const riskAssessment = await this.assessPayoutRisk(userId, amount);
       if (!riskAssessment.approved) {
-        logger.warn("Payout blocked by risk assessment", {
+        logger.warn({
           userId,
           amount,
           riskAssessment,
-        });
+        }, "Payout blocked by risk assessment");
 
         await db.insert(notifications).values({
           userId,
@@ -954,11 +954,11 @@ export class InstantPayoutService {
             },
           });
 
-          logger.info("Split transfer created:", {
+          logger.info({
             orderId,
             userId: split.userId,
             amount: splitAmount,
-          });
+          }, "Split transfer created:");
         } catch (transferError: unknown) {
           const errorMsg = (transferError as Error).message;
           errors.push(`Failed to transfer to ${split.userId}: ${errorMsg}`);
@@ -1173,10 +1173,10 @@ export class InstantPayoutService {
             if (stripePayout?.status !== payout?.status) {
               // Log failure reason for audit (not stored in DB - column doesn't exist)
               if (stripePayout.failure_message) {
-                logger.warn("Payout failure from Stripe", {
+                logger.warn({
                   payoutId,
                   failureReason: stripePayout.failure_message,
-                });
+                }, "Payout failure from Stripe");
               }
 
               await db
@@ -1195,7 +1195,7 @@ export class InstantPayoutService {
             }
           }
         } catch (stripeError: unknown) {
-          logger.warn("Error checking Stripe payout status:", stripeError);
+          logger.warn(stripeError, "Error checking Stripe payout status:");
         }
       }
 
@@ -1236,7 +1236,7 @@ export class InstantPayoutService {
       switch (event.type) {
         case "transfer.created":
           status = "in_transit";
-          logger.info("Transfer created:", transfer.id);
+          logger.info({ value: transfer.id }, "Transfer created:");
           break;
 
         case "transfer.paid":
@@ -1259,16 +1259,16 @@ export class InstantPayoutService {
 
         case "transfer.failed":
           status = "failed";
-          failureReason = transfer.failure_message || "Transfer failed";
+          failureReason = (transfer as any).failure_message || "Transfer failed";
 
           // Log transfer failure for audit (balance is calculated dynamically from orders/payouts tables)
-          logger.info("Transfer failed - balance calculated dynamically", {
+          logger.info({
             userId: payoutRecord.userId,
             amount: payoutRecord.amountCents / 100,
             payoutId: payoutRecord.id,
             transferId: transfer.id,
             operation: "transfer_failed_balance_restored",
-          });
+          }, "Transfer failed - balance calculated dynamically");
 
           // Send failure notification
           await db.insert(notifications).values({
@@ -1288,13 +1288,13 @@ export class InstantPayoutService {
           status = "refunded";
 
           // Log transfer reversal for audit (balance is calculated dynamically from orders/payouts tables)
-          logger.info("Transfer reversed - balance calculated dynamically", {
+          logger.info({
             userId: payoutRecord.userId,
             amount: payoutRecord.amountCents / 100,
             payoutId: payoutRecord.id,
             transferId: transfer.id,
             operation: "transfer_reversed_balance_restored",
-          });
+          }, "Transfer reversed - balance calculated dynamically");
 
           // Send notification
           await db.insert(notifications).values({
@@ -1312,11 +1312,11 @@ export class InstantPayoutService {
 
       // Log failure reason for audit (not stored in DB - column doesn't exist)
       if (failureReason) {
-        logger.warn("Transfer webhook failure", {
+        logger.warn({
           payoutId: payoutRecord.id,
           transferId: transfer.id,
           failureReason,
-        });
+        }, "Transfer webhook failure");
       }
 
       // Update payout record
@@ -1348,7 +1348,7 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!user) {
-        logger.info("User not found for account webhook:", account?.id);
+        logger.info({ value: account?.id }, "User not found for account webhook:");
         return;
       }
 
@@ -1428,7 +1428,7 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!payoutRecord) {
-        logger.info("Payout record not found for webhook:", payout?.id);
+        logger.info({ value: payout?.id }, "Payout record not found for webhook:");
         return;
       }
 
@@ -1460,14 +1460,14 @@ export class InstantPayoutService {
           failureReason = payout?.failure_message || "Unknown error";
 
           // Log payout failure for audit (balance is calculated dynamically from orders/payouts tables)
-          logger.info("Payout failed - balance calculated dynamically", {
+          logger.info({
             userId: payoutRecord.userId,
             amount: payoutRecord.amountCents / 100,
             payoutId: payoutRecord.id,
             stripePayoutId: payout.id,
             failureReason,
             operation: "payout_failed_balance_restored",
-          });
+          }, "Payout failed - balance calculated dynamically");
 
           // Send failure notification
           await db?.insert(notifications).values({
@@ -1486,23 +1486,23 @@ export class InstantPayoutService {
           status = "cancelled";
 
           // Log payout cancellation for audit (balance is calculated dynamically from orders/payouts tables)
-          logger.info("Payout canceled - balance calculated dynamically", {
+          logger.info({
             userId: payoutRecord.userId,
             amount: payoutRecord.amountCents / 100,
             payoutId: payoutRecord.id,
             stripePayoutId: payout.id,
             operation: "payout_canceled_balance_restored",
-          });
+          }, "Payout canceled - balance calculated dynamically");
           break;
       }
 
       // Log failure reason for audit (not stored in DB - column doesn't exist)
       if (failureReason) {
-        logger.warn("Payout webhook failure", {
+        logger.warn({
           payoutId: payoutRecord.id,
           stripePayoutId: payout.id,
           failureReason,
-        });
+        }, "Payout webhook failure");
       }
 
       // Update payout record
@@ -1561,12 +1561,12 @@ export class InstantPayoutService {
         },
       });
 
-      logger.info("Destination charge created:", {
+      logger.info({
         orderId,
         sellerId,
         amount,
         platformFee,
-      });
+      }, "Destination charge created:");
 
       return {
         success: true,
@@ -1576,7 +1576,7 @@ export class InstantPayoutService {
       logger.warn({ err: error }, "Error creating destination charge:");
       return {
         success: false,
-        error: error.message || "Failed to create destination charge",
+        error: (error as Error).message || "Failed to create destination charge",
       };
     }
   }
@@ -1630,14 +1630,14 @@ export class InstantPayoutService {
           });
 
           transfers.push(transfer.id);
-          logger.info("Split transfer created:", {
+          logger.info({
             orderId,
             userId: split.userId,
             amount: splitAmount,
-          });
+          }, "Split transfer created:");
         } catch (transferError: unknown) {
           errors.push(
-            `Failed to transfer to ${split.userId}: ${transferError.message}`,
+            `Failed to transfer to ${split.userId}: ${(transferError as Error).message}`,
           );
         }
       }
@@ -1651,7 +1651,7 @@ export class InstantPayoutService {
       logger.warn({ err: error }, "Error creating split payment:");
       return {
         success: false,
-        errors: [error.message || "Failed to create split payment"],
+        errors: [(error as Error).message || "Failed to create split payment"],
       };
     }
   }
@@ -1679,7 +1679,7 @@ export class InstantPayoutService {
       return { url: loginLink.url };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error creating dashboard link:");
-      return { error: error.message || "Failed to create dashboard link" };
+      return { error: (error as Error).message || "Failed to create dashboard link" };
     }
   }
 

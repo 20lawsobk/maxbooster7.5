@@ -157,7 +157,7 @@ export function CreativeVariantGenerator() {
     },
   ];
 
-  const [activeTest, setActiveTest] = useState<ABTest | null>(null);
+  const [activeTest, _setActiveTest] = useState<ABTest | null>(null);
   const [autoOptimize, setAutoOptimize] = useState(true);
   const [bulkCount, setBulkCount] = useState(5);
   const [bulkTopic, setBulkTopic] = useState("");

@@ -58,9 +58,9 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
           app: "max-booster",
         },
       });
-      logger.info("✅ Created Stripe product:", product?.id);
+      logger.info({ value: product?.id }, "✅ Created Stripe product:");
     } else {
-      logger.info("✅ Found existing Stripe product:", product?.id);
+      logger.info({ value: product?.id }, "✅ Found existing Stripe product:");
     }
 
     // Check existing prices for this product
@@ -81,7 +81,7 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
       );
 
       if (existing) {
-        logger.info(`✅ Found existing ${type} price:`, existing?.id);
+        logger.info({ value: existing?.id }, `✅ Found existing ${type} price:`);
         return existing?.id;
       }
 
@@ -121,14 +121,14 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
     };
 
     logger.info("✅ Stripe setup complete:");
-    logger.info("   Monthly ($49):", monthlyPriceId);
-    logger.info("   Yearly ($468):", yearlyPriceId);
-    logger.info("   Lifetime ($699):", lifetimePriceId);
+    logger.info({ value: monthlyPriceId }, "   Monthly ($49):");
+    logger.info({ value: yearlyPriceId }, "   Yearly ($468):");
+    logger.info({ value: lifetimePriceId }, "   Lifetime ($699):");
 
     return cachedPriceIds;
   } catch (error: unknown) {
     const message = error instanceof Error ? error?.message : String(error);
-    logger.warn("❌ Error setting up Stripe products/prices:", message);
+    logger.warn({ value: message }, "❌ Error setting up Stripe products/prices:");
     // Do NOT cache placeholder IDs here — Stripe is configured but had a transient
     // error. Leaving cachedPriceIds as null forces a retry on the next call and
     // ensures billing routes surface a clear 500 rather than silently using stale IDs.

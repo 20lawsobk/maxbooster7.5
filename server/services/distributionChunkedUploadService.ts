@@ -21,7 +21,7 @@ export async function initializeSession(
 ): Promise<{ sessionId: string; totalChunks: number; chunkSize: number }> {
   const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
 
-  const session = await storage?.createUploadSession({
+  const session = await (storage as any)?.createUploadSession({
     userId,
     filename,
     totalSize,
@@ -47,7 +47,7 @@ export async function uploadChunk(
   chunkData: Buffer,
   chunkHash: string,
 ): Promise<{ success: boolean; uploadedChunks: number; totalChunks: number }> {
-  const session = await storage?.getUploadSession(sessionId);
+  const session = await (storage as any)?.getUploadSession(sessionId);
 
   if (!session) {
     throw new Error("Upload session not found");
@@ -75,7 +75,7 @@ export async function uploadChunk(
 
   const existingChunks = session?.chunks || [];
   const chunkExists = existingChunks?.some(
-    (c: unknown) => c?.index === chunkIndex,
+    (c: unknown) => (c as any)?.index === chunkIndex,
   );
 
   if (!chunkExists) {
@@ -87,7 +87,7 @@ export async function uploadChunk(
     });
   }
 
-  const updatedSession = await storage?.updateUploadSession(sessionId, {
+  const updatedSession = await (storage as any)?.updateUploadSession(sessionId, {
     chunks: existingChunks,
     uploadedChunks: existingChunks.length,
     status: "uploading",
@@ -107,7 +107,7 @@ export async function getSessionStatus(sessionId: string): Promise<{
   progress: number;
   filename: string;
 }> {
-  const session = await storage?.getUploadSession(sessionId);
+  const session = await (storage as any)?.getUploadSession(sessionId);
 
   if (!session) {
     throw new Error("Upload session not found");
@@ -129,7 +129,7 @@ export async function finalizeUpload(sessionId: string): Promise<{
   filePath: string;
   fileHash: string;
 }> {
-  const session = await storage?.getUploadSession(sessionId);
+  const session = await (storage as any)?.getUploadSession(sessionId);
 
   if (!session) {
     throw new Error("Upload session not found");
@@ -143,7 +143,7 @@ export async function finalizeUpload(sessionId: string): Promise<{
   const tempAssemblyPath = path?.join(sessionDir, "assembled_file");
 
   const chunks = [...(session?.chunks || [])].sort(
-    (a: unknown, b: unknown) => a?.index - b?.index,
+    (a: unknown, b: unknown) => (a as any)?.index - (b as any)?.index,
   );
   const writeStream = await fs?.open(tempAssemblyPath, "w");
   const hash = crypto?.createHash("sha256");
@@ -188,7 +188,7 @@ export async function finalizeUpload(sessionId: string): Promise<{
       "application/octet-stream",
     );
 
-    await storage?.updateUploadSession(sessionId, {
+    await (storage as any)?.updateUploadSession(sessionId, {
       status: "completed",
       finalPath: storageKey,
       fileHash,
@@ -208,7 +208,7 @@ export async function finalizeUpload(sessionId: string): Promise<{
   } catch (error: unknown) {
     await writeStream?.close();
 
-    await storage?.updateUploadSession(sessionId, {
+    await (storage as any)?.updateUploadSession(sessionId, {
       status: "failed",
       error: error instanceof Error ? error?.message : "Unknown error",
     });
@@ -218,7 +218,7 @@ export async function finalizeUpload(sessionId: string): Promise<{
 }
 
 export async function abortUpload(sessionId: string): Promise<void> {
-  const session = await storage?.getUploadSession(sessionId);
+  const session = await (storage as any)?.getUploadSession(sessionId);
 
   if (!session) {
     throw new Error("Upload session not found");
@@ -227,7 +227,7 @@ export async function abortUpload(sessionId: string): Promise<void> {
   const sessionDir = path?.join(TEMP_DIR, sessionId);
   await fs?.rm(sessionDir, { recursive: true, force: true }).catch(() => {});
 
-  await storage?.updateUploadSession(sessionId, {
+  await (storage as any)?.updateUploadSession(sessionId, {
     status: "aborted",
   });
 }
@@ -237,7 +237,7 @@ export async function resumeUpload(sessionId: string): Promise<{
   uploadedChunks: number;
   totalChunks: number;
 }> {
-  const session = await storage?.getUploadSession(sessionId);
+  const session = await (storage as any)?.getUploadSession(sessionId);
 
   if (!session) {
     throw new Error("Upload session not found");
@@ -251,7 +251,7 @@ export async function resumeUpload(sessionId: string): Promise<{
     throw new Error("Upload session was aborted");
   }
 
-  const uploadedIndices = (session?.chunks || []).map((c: unknown) => c?.index);
+  const uploadedIndices = (session?.chunks || []).map((c: unknown) => (c as any)?.index);
   const missingChunks = [];
 
   for (let i = 0; i < session?.totalChunks; i++) {

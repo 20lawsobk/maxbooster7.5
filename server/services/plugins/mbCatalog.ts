@@ -20831,7 +20831,7 @@ export const MB_PLUGINS: PluginDefinition[] = [
     slug: "mb-maximizer",
     name: "MB Maximizer",
     category: "effect",
-    type: "maximizer" as Record<string, unknown>,
+    type: "maximizer" as unknown as Record<string, unknown>,
     version: "2.0.0",
     description:
       "Loudness maximizer with ISP detection and transient preservation — iZotope Ozone Maximizer class",
@@ -30695,7 +30695,7 @@ export const MB_PLUGINS: PluginDefinition[] = [
     slug: "mb-spring-reverb",
     name: "MB Spring Reverb",
     category: "effect",
-    type: "spring" as Record<string, unknown>,
+    type: "spring" as unknown as Record<string, unknown>,
     version: "2.0.0",
     description:
       "Classic spring reverb emulation with drip and splash — Fender/AKG BX20 class",
@@ -35691,7 +35691,7 @@ export const MB_PLUGINS: PluginDefinition[] = [
     slug: "mb-transient-shaper",
     name: "MB Transient Shaper",
     category: "effect",
-    type: "transient-shaper" as Record<string, unknown>,
+    type: "transient-shaper" as unknown as Record<string, unknown>,
     version: "2.0.0",
     description:
       "Attack and sustain control for drums and percussive sounds — SPL Transient Designer class",

@@ -150,10 +150,10 @@ const SATURATION_MODELS: {
 ];
 
 export function AnalogWarmthProcessor({
-  trackId,
+  _trackId,
   audioContext,
-  inputNode,
-  outputNode,
+  _inputNode,
+  _outputNode,
   onConfigChange,
   className = "",
 }: AnalogWarmthProcessorProps) {
@@ -165,7 +165,7 @@ export function AnalogWarmthProcessor({
 
   const [config, setConfig] = useState<AnalogWarmthConfig>(defaultConfig);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [_showSettings, _setShowSettings] = useState(false);
   const [currentHarmonics, setCurrentHarmonics] = useState<number[]>([]);
 
   useEffect(() => {

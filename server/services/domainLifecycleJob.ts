@@ -117,7 +117,7 @@ async function _autoRenewDueSoon(now: Date, threshold: Date): Promise<void> {
       );
     } catch (e) {
       logger.warn(
-        { domain: row.domain, err: e.message },
+        { domain: row.domain, err: (e as Error).message },
         "[DomainLifecycle] auto-renewal failed",
       );
       // If renewal fails, domain will naturally transition to grace on next run
@@ -202,7 +202,7 @@ async function _cleanUpExpiredZones(): Promise<void> {
       );
     } catch (e) {
       logger.warn(
-        { domain: row.domain, err: e.message },
+        { domain: row.domain, err: (e as Error).message },
         "[DomainLifecycle] DNS zone removal failed (non-fatal)",
       );
     }
@@ -228,7 +228,7 @@ export function startDomainLifecycleJob(): void {
       try {
         await runDomainLifecycleChecks();
       } catch (e) {
-        logger.warn({ err: e.message }, "[DomainLifecycle] startup run failed");
+        logger.warn({ err: (e as Error).message }, "[DomainLifecycle] startup run failed");
       }
     },
     2 * 60 * 1000,
@@ -238,7 +238,7 @@ export function startDomainLifecycleJob(): void {
     try {
       await runDomainLifecycleChecks();
     } catch (e) {
-      logger.warn({ err: e.message }, "[DomainLifecycle] scheduled run failed");
+      logger.warn({ err: (e as Error).message }, "[DomainLifecycle] scheduled run failed");
     }
   }, INTERVAL_MS);
 

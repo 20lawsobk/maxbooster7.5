@@ -32,7 +32,7 @@ export class LoggingService {
       stackTrace: stackTrace || null,
     };
 
-    return storage?.createLogEvent(logData);
+    return (storage as any)?.createLogEvent(logData);
   }
 
   async logDebug(
@@ -116,7 +116,7 @@ export class LoggingService {
     filters: LogFilters,
     limit: number = 100,
   ): Promise<LogEvent[]> {
-    return storage?.queryLogs(filters, limit);
+    return (storage as any)?.queryLogs(filters, limit);
   }
 
   async cleanupOldLogs(): Promise<void> {
@@ -125,7 +125,7 @@ export class LoggingService {
       retentionDate?.getDate() - LoggingService.LOG_RETENTION_DAYS,
     );
 
-    await storage?.queryLogs(
+    await (storage as any)?.queryLogs(
       {
         endTime: retentionDate,
       },

@@ -189,7 +189,7 @@ export function AutomationLane({
   const [isDragging, setIsDragging] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("pointer");
   const [isTouching, setIsTouching] = useState(false);
   const [pencilPoints, setPencilPoints] = useState<

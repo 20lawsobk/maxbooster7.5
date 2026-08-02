@@ -183,7 +183,7 @@ const createDefaultPattern = (): DrumPattern => ({
 });
 
 export function DrumEditor({
-  trackId,
+  _trackId,
   pattern: initialPattern,
   onPatternChange,
   isPlaying = false,

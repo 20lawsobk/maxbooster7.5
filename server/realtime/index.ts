@@ -73,7 +73,7 @@ async function authenticateFromSession(
             return;
           }
 
-          const userId = session?.passport?.user || session?.userId;
+          const userId = (session?.passport as any)?.user || session?.userId;
           resolve(userId || null);
         },
       );
@@ -96,7 +96,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
   // Server-level error handler: prevents protocol/handshake errors from becoming
   // uncaughtExceptions that crash the process.
   notificationWss?.on("error", (err: Error) => {
-    logger.warn("[WS] Notification server error:", err?.message);
+    logger.warn({ value: err?.message }, "[WS] Notification server error:");
   });
 
   httpServer?.on("upgrade", async (request, socket, head) => {

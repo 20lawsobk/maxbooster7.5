@@ -225,7 +225,7 @@ export class StudioCollabServer {
               ? sessionId?.slice(2).split(".")[0]
               : sessionId?.split(".")[0];
 
-            const sessionData = await redis?.get(
+            const sessionData = await (redis as any)?.get(
               `maxbooster:sess:${cleanSessionId}`,
             );
 
@@ -306,7 +306,7 @@ export class StudioCollabServer {
     projectId: string,
   ): Promise<boolean> {
     try {
-      const project = await storage?.getStudioProject(projectId);
+      const project = await (storage as any)?.getStudioProject(projectId);
       if (!project) {
         return false;
       }
@@ -315,7 +315,7 @@ export class StudioCollabServer {
         return true;
       }
 
-      const collaborators = await storage?.getProjectCollaborators?.(projectId);
+      const collaborators = await (storage as any)?.getProjectCollaborators?.(projectId);
       if (collaborators?.some((c: { userId: string }) => c?.userId === userId)) {
         return true;
       }
@@ -652,7 +652,7 @@ export class StudioCollabServer {
 
   private startPingInterval(): void {
     this.pingInterval = setInterval(() => {
-      for (const [projectId, projectClients] of this.clients.entries()) {
+      for (const [_projectId, projectClients] of this.clients.entries()) {
         for (const client of projectClients) {
           if (!client?.isAlive) {
             logger.warn(
@@ -723,7 +723,7 @@ export class StudioCollabServer {
       this.awarenessInterval = null;
     }
 
-    for (const [projectId, projectClients] of this.clients.entries()) {
+    for (const [_projectId, projectClients] of this.clients.entries()) {
       for (const client of projectClients) {
         this.sendToClient(client?.ws, {
           type: "server:shutdown",
@@ -735,7 +735,7 @@ export class StudioCollabServer {
 
     this.clients.clear();
 
-    for (const [projectId, doc] of this.documents.entries()) {
+    for (const [projectId, _doc] of this.documents.entries()) {
       await yjsService?.unloadDocument(projectId, false);
     }
     this.documents.clear();

@@ -72,15 +72,15 @@ interface CollaborationOutcomesProps {
 
 
 export function CollaborationOutcomes({
-  projectId,
+  _projectId,
   currentUserId,
   collaborators,
   syncState,
   outcomes,
   onResolveConflict,
   onSaveSession,
-  onInvite,
-  onRemoveCollaborator,
+  _onInvite,
+  _onRemoveCollaborator,
   className,
 }: CollaborationOutcomesProps) {
   const { toast } = useToast();

@@ -511,7 +511,7 @@ class RevenueForecastService {
 
   private generateTips(
     currentMonthly: number,
-    projectedMonthly: number,
+    _projectedMonthly: number,
     growthRate: number,
   ): string[] {
     const tips: string[] = [];

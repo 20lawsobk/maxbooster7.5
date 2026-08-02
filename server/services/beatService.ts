@@ -9,7 +9,7 @@ export class BeatService {
     licenseType: "standard" | "exclusive",
   ) {
     try {
-      const beat = await storage?.getBeat(beatId);
+      const beat = await (storage as any)?.getBeat(beatId);
       if (!beat) {
         throw new Error("Beat not found");
       }
@@ -54,7 +54,7 @@ export class BeatService {
   ) {
     try {
       // Create sale record
-      const sale = await storage?.createBeatSale({
+      const sale = await (storage as any)?.createBeatSale({
         beatId,
         buyerId,
         sellerId,
@@ -65,7 +65,7 @@ export class BeatService {
 
       // If exclusive license, mark beat as sold
       if (licenseType === "exclusive") {
-        await storage?.updateBeat(beatId, { isExclusiveSold: true });
+        await (storage as any)?.updateBeat(beatId, { isExclusiveSold: true });
       }
 
       // Generate license agreement
@@ -106,7 +106,7 @@ export class BeatService {
           };
 
     return {
-      id: `license_${sale?.id}`,
+      id: `license_${(sale as any)?.id}`,
       terms,
       generatedAt: new Date(),
     };
@@ -114,7 +114,7 @@ export class BeatService {
 
   async getBeatAnalytics(beatId: string, userId: string) {
     try {
-      const analytics = await storage?.getBeatAnalytics(beatId, userId);
+      const analytics = await (storage as any)?.getBeatAnalytics(beatId, userId);
       return analytics;
     } catch (error: unknown) {
       logger.warn({ err: error }, "Beat analytics error:");

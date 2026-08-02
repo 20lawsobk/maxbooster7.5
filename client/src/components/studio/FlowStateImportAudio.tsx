@@ -71,7 +71,7 @@ export function FlowStateImportAudio({
   const queryClient = useQueryClient();
 
   const uploadMutation = useMutation({
-    mutationFn: async ({ file, fileId }: { file: File; fileId: string }) => {
+    mutationFn: async ({ file, _fileId }: { file: File; fileId: string }) => {
       if (!projectId) throw new Error("No project selected");
       return uploadAudioFile(file, projectId);
     },

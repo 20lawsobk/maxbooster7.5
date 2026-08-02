@@ -85,7 +85,7 @@ export interface AnimatedContentProps {
 export function AnimatedContent({
   children,
   enterAnimation = "animate-fade-in",
-  exitAnimation = "animate-fade-out",
+  _exitAnimation = "animate-fade-out",
   className = "",
   isVisible = true,
 }: AnimatedContentProps) {

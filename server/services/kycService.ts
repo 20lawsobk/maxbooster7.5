@@ -674,7 +674,7 @@ export class KYCService {
         documents?.length,
       ),
       submittedAt: metadata.submittedAt,
-      reviewStartedAt: metadata.reviewStartedAt,
+      reviewStartedAt: (metadata as any).reviewStartedAt,
       rejectionReason: metadata.rejectionReason,
       resubmissionRequired,
       documentChecklist,
@@ -912,19 +912,19 @@ export class KYCService {
           verificationType: v.verificationType,
           status: v.status,
           level: metadata.level || "basic",
-          firstName: individualInfo.firstName,
-          lastName: individualInfo.lastName,
-          businessName: businessInfo.businessName,
-          dateOfBirth: individualInfo.dateOfBirth,
-          nationality: individualInfo.nationality,
-          address: individualInfo.address || businessInfo?.address,
-          city: individualInfo.city || businessInfo?.city,
-          state: individualInfo.state || businessInfo?.state,
-          postalCode: individualInfo.postalCode || businessInfo?.postalCode,
-          country: individualInfo.country || businessInfo?.country,
-          taxIdNumber: individualInfo.taxIdNumber || businessInfo?.taxIdNumber,
-          businessType: businessInfo.businessType,
-          businessRegistrationNumber: businessInfo.businessRegistrationNumber,
+          firstName: individualInfo!.firstName,
+          lastName: individualInfo!.lastName,
+          businessName: businessInfo!.businessName,
+          dateOfBirth: individualInfo!.dateOfBirth,
+          nationality: individualInfo!.nationality,
+          address: individualInfo!.address || businessInfo?.address,
+          city: individualInfo!.city || businessInfo?.city,
+          state: individualInfo!.state || businessInfo?.state,
+          postalCode: individualInfo!.postalCode || businessInfo?.postalCode,
+          country: individualInfo!.country || businessInfo?.country,
+          taxIdNumber: individualInfo!.taxIdNumber || businessInfo?.taxIdNumber,
+          businessType: businessInfo!.businessType,
+          businessRegistrationNumber: businessInfo!.businessRegistrationNumber,
           submittedAt: metadata.submittedAt,
           createdAt: v.createdAt,
           user: { email: v.userEmail, username: v.username },
@@ -1178,7 +1178,7 @@ export class KYCService {
       const level = getLevel(verification);
 
       if (user?.email) {
-        await emailService?.sendEmail({
+        await (emailService as any)?.sendEmail({
           to: user.email,
           subject: "Identity Verification Complete",
           html: `
@@ -1207,7 +1207,7 @@ export class KYCService {
       const metadata = getMetadata(verification);
 
       if (user?.email) {
-        await emailService?.sendEmail({
+        await (emailService as any)?.sendEmail({
           to: user.email,
           subject: "Identity Verification Update Required",
           html: `

@@ -253,7 +253,7 @@ class CatalogImporter {
     if (releaseMatch) {
       const row: ImportRow = {
         title: releaseMatch[1].trim(),
-        artist: artistMatch[1].trim() || "Unknown Artist",
+        artist: artistMatch![1].trim() || "Unknown Artist",
       };
 
       if (upcMatch) {
@@ -561,7 +561,7 @@ class CatalogImporter {
         completedAt: new Date(),
         importedTracks: result.successfulRows,
         progress: 100,
-        errors: result.errors as Record<string, unknown>,
+        errors: result.errors as unknown as Record<string, unknown>,
       })
       .where(eq(catalogImportJobs.id, jobId));
 

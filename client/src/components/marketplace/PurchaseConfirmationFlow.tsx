@@ -57,7 +57,7 @@ export function PurchaseConfirmationFlow({
   const [agreedToLicense, setAgreedToLicense] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
-  const [processing, setProcessing] = useState(false);
+  const [_processing, setProcessing] = useState(false);
   const [result, setResult] = useState<{
     downloadUrl?: string;
     licenseUrl?: string;

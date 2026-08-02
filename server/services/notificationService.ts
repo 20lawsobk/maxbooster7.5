@@ -51,7 +51,7 @@ class NotificationService {
       });
 
       if (!user) {
-        logger.warn("User not found:", userId);
+        logger.warn({ value: userId }, "User not found:");
         return;
       }
 
@@ -134,13 +134,13 @@ class NotificationService {
 
     try {
       await this.resend.emails?.send({
-        to: user.email,
+        to: (user as any).email,
         from: fromEmail,
         subject: template.subject,
         text: template.text,
         html: template.html,
       });
-      logger.info(`📧 Email sent to ${user?.email}`);
+      logger.info(`📧 Email sent to ${(user as any)?.email}`);
     } catch (error: unknown) {
       logger.warn("Resend error:", (error as Error)?.message || error);
     }
@@ -163,16 +163,16 @@ class NotificationService {
       let richPayload;
       if (type) {
         const ctx = {
-          actorName: metadata.actorName,
-          contentTitle: metadata.contentTitle || title,
-          contentPreview: metadata.contentPreview || message,
-          platform: metadata.platform,
+          actorName: metadata!.actorName,
+          contentTitle: metadata!.contentTitle || title,
+          contentPreview: metadata!.contentPreview || message,
+          platform: metadata!.platform,
           url: link,
-          imageUrl: metadata.imageUrl,
-          location: metadata.location,
-          count: metadata.count,
-          milestone: metadata.milestone,
-          amount: metadata.amount,
+          imageUrl: metadata!.imageUrl,
+          location: metadata!.location,
+          count: metadata!.count,
+          milestone: metadata!.milestone,
+          amount: metadata!.amount,
         };
         richPayload = buildPushPayload(type, ctx);
       } else {
@@ -198,8 +198,8 @@ class NotificationService {
       }
 
       const result = await webPushService?.sendRichToUser(
-        (user as Record<string, unknown>).id,
-        richPayload as Record<string, unknown>,
+        ((user as Record<string, unknown>).id as string),
+        richPayload as unknown as Record<string, unknown>,
       );
       if (result?.sent > 0) {
         logger.info(

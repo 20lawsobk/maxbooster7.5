@@ -280,7 +280,7 @@ export function FeatureUsageTracker({
               </Badge>
             </div>
             <div className="flex flex-wrap gap-2">
-              {hiddenFeatures.map((featureId) => (
+              {hiddenFeatures.map((featureId: any) => (
                 <Badge
                   key={featureId}
                   variant="secondary"

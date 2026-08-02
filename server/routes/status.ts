@@ -62,7 +62,7 @@ router?.get("/", async (_req, res) => {
 
 router?.get("/services", async (req, res) => {
   try {
-    const publicOnly = req.query.all !== "true" || !req.user?.isAdmin;
+    const publicOnly = req.query.all !== "true" || (!req.user as any)?.isAdmin;
     const services = await statusPageService?.getAllServices(publicOnly);
 
     res.json({ services });
@@ -250,7 +250,7 @@ router?.get("/unsubscribe", async (req, res) => {
 
 router?.post("/admin/services", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -280,7 +280,7 @@ router?.post("/admin/services", async (req, res) => {
 
 router?.put("/admin/services/:serviceId", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -302,7 +302,7 @@ router?.put("/admin/services/:serviceId", async (req, res) => {
 
 router?.put("/admin/services/:serviceId/status", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -336,7 +336,7 @@ router?.put("/admin/services/:serviceId/status", async (req, res) => {
         try {
           const statusLabel = status?.replace(/_/g, " ");
           await notificationService?.sendAdminHealthAlertNotification(
-            (service as Record<string, unknown>)?.name || serviceId,
+            ((service as Record<string, unknown>)?.name || serviceId as string),
             statusLabel,
           );
         } catch (err) {
@@ -356,7 +356,7 @@ router?.put("/admin/services/:serviceId/status", async (req, res) => {
 
 router?.post("/admin/incidents", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -390,7 +390,7 @@ router?.post("/admin/incidents", async (req, res) => {
 
 router?.put("/admin/incidents/:incidentId", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -425,7 +425,7 @@ router?.put("/admin/incidents/:incidentId", async (req, res) => {
 
 router?.post("/admin/initialize", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 

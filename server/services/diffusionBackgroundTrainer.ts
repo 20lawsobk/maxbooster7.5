@@ -30,7 +30,7 @@ import os from "os";
 import { fileURLToPath } from "url";
 import { logger } from "../logger.js";
 
-const __metaUrl = (import.meta as Record<string, unknown>)?.url as
+const __metaUrl = (import.meta as unknown as Record<string, unknown>)?.url as
   | string
   | undefined;
 const __filename = __metaUrl

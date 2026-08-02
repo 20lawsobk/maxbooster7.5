@@ -98,7 +98,6 @@ class CohortAnalyticsService {
       .update(listenerCohorts)
       .set({
         ...retentionData,
-        updatedAt: new Date(),
       })
       .where(eq(listenerCohorts?.id, cohortId));
   }

@@ -417,7 +417,7 @@ export class DistributionService {
     externalId?: string;
   }): Promise<void> {
     try {
-      logger.info("DSP Webhook received:", payload);
+      logger.info(payload, "DSP Webhook received:");
 
       // Validate required fields before proceeding
       const provider = String(payload.provider ?? "").trim();
@@ -431,11 +431,11 @@ export class DistributionService {
         : undefined;
 
       if (!provider || !releaseId || !rawStatus) {
-        logger.warn("DSP Webhook: missing required fields", {
+        logger.warn({
           provider,
           releaseId,
           rawStatus,
-        });
+        }, "DSP Webhook: missing required fields");
         return;
       }
 
@@ -471,10 +471,10 @@ export class DistributionService {
         const d = new Date(liveDate);
         parsedLiveDate = isNaN(d.getTime()) ? undefined : d;
         if (!parsedLiveDate) {
-          logger.warn("DSP Webhook: invalid liveDate value, ignoring", {
+          logger.warn({
             liveDate,
             provider,
-          });
+          }, "DSP Webhook: invalid liveDate value, ignoring");
         }
       }
 
@@ -493,7 +493,7 @@ export class DistributionService {
         .returning();
 
       if (!updatedRows.length) {
-        logger.warn("DSP Webhook: release not found", { releaseId, provider });
+        logger.warn({ releaseId, provider }, "DSP Webhook: release not found");
         return;
       }
 
@@ -542,11 +542,11 @@ export class DistributionService {
         );
       }
 
-      logger.info("DSP Webhook processed successfully", {
+      logger.info({
         releaseId,
         provider,
         internalStatus,
-      });
+      }, "DSP Webhook processed successfully");
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error handling DSP webhook:");
       throw new Error("Failed to handle DSP webhook");

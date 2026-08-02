@@ -219,11 +219,11 @@ export class AdvertisingDispatchService {
                 result?.postId,
                 campaign,
               );
-              calendarEntries?.push(calendarEntry?.id);
+              calendarEntries?.push((calendarEntry as any)?.id);
             } catch (err: unknown) {
               logger.warn({ err: err }, "Failed to create calendar entry:");
               errors?.push(
-                `Calendar entry failed for ${result?.platform}: ${err?.message}`,
+                `Calendar entry failed for ${result?.platform}: ${(err as any)?.message}`,
               );
             }
 
@@ -302,7 +302,7 @@ export class AdvertisingDispatchService {
         .set({
           status: successfulPosts > 0 ? "active" : "draft",
           organicMetrics: organicMetrics as Record<string, unknown>,
-          connectedPlatforms: platformsToUse as Record<string, unknown>,
+          connectedPlatforms: platformsToUse as unknown as Record<string, unknown>,
         })
         .where(eq(adCampaigns?.id, campaignId));
 
@@ -324,7 +324,7 @@ export class AdvertisingDispatchService {
         success: false,
         message: "Campaign activation failed",
         error:
-          error?.message ||
+          (error as any)?.message ||
           "An unexpected error occurred during campaign activation",
       };
     }
@@ -359,7 +359,7 @@ export class AdvertisingDispatchService {
       const organicMetrics = campaign?.organicMetrics as Record<string, unknown>;
 
       if (!organicMetrics || !organicMetrics?.posts) {
-        logger.info("No organic posts to track for campaign", campaignId);
+        logger.info({ value: campaignId }, "No organic posts to track for campaign");
         return;
       }
 
@@ -405,7 +405,7 @@ export class AdvertisingDispatchService {
         } catch (err: unknown) {
           logger.warn(
             `Failed to collect engagement for ${post?.platform} post ${post?.postId}:`,
-            err?.message,
+            (err as any)?.message,
           );
           updatedPosts?.push(post); // Keep existing data
         }
@@ -483,15 +483,15 @@ export class AdvertisingDispatchService {
       .insert(contentCalendar)
       .values({
         userId,
-        title: `${campaign?.name} - ${platform}`,
+        title: `${(campaign as any)?.name} - ${platform}`,
         scheduledFor: new Date(), // Already published
-        platforms: [platform] as Record<string, unknown>,
+        platforms: [platform] as unknown as Record<string, unknown>,
         status: "published",
         postType: "campaign_post",
-        content: creative?.description || creative?.headline || "",
-        mediaUrls: (creative?.mediaUrl ? [creative.mediaUrl] : null) as Record<string, unknown>,
+        content: (creative as any)?.description || (creative as any)?.headline || "",
+        mediaUrls: ((creative as unknown as any)?.mediaUrl ? [(creative as any).mediaUrl] : null) as Record<string, unknown>,
         hashtags: this.extractHashtags(
-          creative?.description || creative?.headline || "",
+          (creative as any)?.description || (creative as any)?.headline || "",
         ) as Record<string, unknown>,
         publishedAt: new Date(),
       })
@@ -521,7 +521,7 @@ export class AdvertisingDispatchService {
   private calculateOrganicBoost(engagement: unknown): number {
     // Organic posts typically get 100-300% more engagement per impression than paid ads
     // This is a simplified calculation
-    const engagementRate = engagement?.engagementRate || 0;
+    const engagementRate = (engagement as any)?.engagementRate || 0;
     const avgPaidAdEngagementRate = 0.01; // 1% baseline for paid ads
 
     if (engagementRate > avgPaidAdEngagementRate) {
@@ -587,18 +587,18 @@ export class AdvertisingDispatchService {
     platform: string,
     variant: unknown,
     userId: string,
-    campaign: unknown,
+    _campaign: unknown,
   ): Promise<unknown> {
     try {
       // Prepare content from variant
       const content = {
-        text: variant.content || variant?.normalizedContent || "",
-        body: variant.content || variant?.normalizedContent || "",
+        text: (variant as any).content || (variant as any)?.normalizedContent || "",
+        body: (variant as any).content || (variant as any)?.normalizedContent || "",
         mediaUrl:
-          variant?.assetUrls && variant?.assetUrls.length > 0
-            ? variant?.assetUrls[0]
+          (variant as any)?.assetUrls && (variant as any)?.assetUrls.length > 0
+            ? (variant as any)?.assetUrls[0]
             : null,
-        hashtags: this.extractHashtags(variant?.content || ""),
+        hashtags: this.extractHashtags((variant as any)?.content || ""),
       };
 
       // Post using platformAPI
@@ -612,7 +612,7 @@ export class AdvertisingDispatchService {
       if (result?.success && result?.postId) {
         // Log success
         await storage?.createAdDeliveryLog({
-          variantId: variant.id,
+          variantId: (variant as any).id,
           platform: result.platform,
           platformAdId: result.postId,
           deliveryStatus: "active",
@@ -637,10 +637,10 @@ export class AdvertisingDispatchService {
     } catch (error: unknown) {
       // Log failure
       await storage?.createAdDeliveryLog({
-        variantId: variant.id,
+        variantId: (variant as any).id,
         platform,
         deliveryStatus: "failed",
-        errorMessage: error.message,
+        errorMessage: (error as Error).message,
         retryCount: 1,
       });
       throw error;

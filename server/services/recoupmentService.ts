@@ -106,7 +106,7 @@ export class RecoupmentService {
     account: RecoupmentAccount,
   ): RecoupmentNotification[] {
     const notifications: RecoupmentNotification[] = [];
-    const advanceAmount = Number(account?.advanceAmount);
+    const advanceAmount = Number((account as any)?.advanceAmount);
     const recoupedAmount = Number(account?.recoupedAmount);
     const percentageRecouped = (recoupedAmount / advanceAmount) * 100;
 
@@ -125,8 +125,8 @@ export class RecoupmentService {
           notificationSent: false,
           message:
             threshold === 100
-              ? `Congratulations! Your advance for "${account.accountName}" has been fully recouped.`
-              : `Your advance for "${account.accountName}" is ${threshold}% recouped.`,
+              ? `Congratulations! Your advance for "${(account as any).accountName}" has been fully recouped.`
+              : `Your advance for "${(account as any).accountName}" is ${threshold}% recouped.`,
         });
       }
     }
@@ -315,8 +315,8 @@ export class RecoupmentService {
     } else if (input?.mode === "oldest_first") {
       const sortedAccounts = accounts?.sort(
         (a, b) =>
-          new Date(a?.effectiveDate).getTime() -
-          new Date(b?.effectiveDate).getTime(),
+          new Date((a as any)?.effectiveDate).getTime() -
+          new Date((b as any)?.effectiveDate).getTime(),
       );
 
       let remainingAmount = input?.totalAmount;
@@ -370,7 +370,7 @@ export class RecoupmentService {
     const account = await this.getAccountById(accountId);
     if (!account) return null;
 
-    const advanceAmount = Number(account?.advanceAmount);
+    const advanceAmount = Number((account as any)?.advanceAmount);
     const recoupedAmount = Number(account?.recoupedAmount);
     const percentageRecouped =
       advanceAmount > 0 ? (recoupedAmount / advanceAmount) * 100 : 0;
@@ -409,7 +409,7 @@ export class RecoupmentService {
       );
     }
 
-    const currentTerms = (account?.terms as Record<string, unknown>) || {};
+    const currentTerms = ((account as any)?.terms as Record<string, unknown>) || {};
     const updatedTerms = {
       ...currentTerms,
       postRecoupmentSplits,
@@ -447,7 +447,7 @@ export class RecoupmentService {
     };
 
     const existingTransactions =
-      (account?.transactions as RecoupmentTransaction[]) || [];
+      ((account as any)?.transactions as RecoupmentTransaction[]) || [];
     const updatedTransactions = [...existingTransactions, writeOffTransaction];
 
     const [updated] = await db
@@ -475,7 +475,7 @@ export class RecoupmentService {
     if (balance <= 0) {
       return {
         accountId: account.id,
-        accountName: account.accountName,
+        accountName: (account as any).accountName,
         previousBalance: 0,
         amountApplied: 0,
         newBalance: 0,
@@ -502,7 +502,7 @@ export class RecoupmentService {
     };
 
     const existingTransactions =
-      (account?.transactions as RecoupmentTransaction[]) || [];
+      ((account as any)?.transactions as RecoupmentTransaction[]) || [];
     const updatedTransactions = [...existingTransactions, newTransaction];
 
     await db
@@ -523,7 +523,7 @@ export class RecoupmentService {
 
     return {
       accountId: account.id,
-      accountName: account.accountName,
+      accountName: (account as any).accountName,
       previousBalance: balance,
       amountApplied: amountToRecoup,
       newBalance: Math.max(0, newBalance),
@@ -609,7 +609,7 @@ export class RecoupmentService {
     };
 
     const existingTransactions =
-      (account?.transactions as RecoupmentTransaction[]) || [];
+      ((account as any)?.transactions as RecoupmentTransaction[]) || [];
     const updatedTransactions = [...existingTransactions, newTransaction];
 
     const isActive = newBalance > 0;
@@ -650,7 +650,7 @@ export class RecoupmentService {
       0,
     );
     const totalAdvanced = accounts?.reduce(
-      (sum, acc) => sum + Number(acc?.advanceAmount),
+      (sum, acc) => sum + Number((acc as any)?.advanceAmount),
       0,
     );
     const totalRecouped = accounts?.reduce(
@@ -714,7 +714,7 @@ export class RecoupmentService {
     let averageMonthlyRecoupment = 0;
     if (paidStatements?.length > 0) {
       const totalRecoupment = paidStatements?.reduce(
-        (sum, stmt) => sum + Number(stmt?.recoupmentDeductions),
+        (sum, stmt) => sum + Number((stmt as any)?.recoupmentDeductions),
         0,
       );
       averageMonthlyRecoupment = totalRecoupment / paidStatements?.length;
@@ -745,7 +745,7 @@ export class RecoupmentService {
       return [];
     }
 
-    return (account?.transactions as RecoupmentTransaction[]) || [];
+    return ((account as any)?.transactions as RecoupmentTransaction[]) || [];
   }
 
   async deactivateAccount(

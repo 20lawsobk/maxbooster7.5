@@ -966,7 +966,7 @@ class TaxFormService {
     doc?.text("RECIPIENT'S name", margin, y);
     y += 5;
     doc.setFont("helvetica", "normal");
-    doc.text(recipientInfo.name || "", margin, y);
+    doc.text(recipientInfo!.name || "", margin, y);
     y += 8;
 
     doc.setFont("helvetica", "bold");
@@ -1059,7 +1059,7 @@ class TaxFormService {
       ["Net Earnings", formatCurrency(summary?.netEarnings)],
     ];
 
-    (doc as Record<string, unknown>).autoTable({
+    (doc as unknown as Record<string, unknown>).autoTable({
       startY: y,
       body: summaryData,
       theme: "plain",
@@ -1070,7 +1070,7 @@ class TaxFormService {
       },
     });
 
-    y = (doc as Record<string, unknown>).lastAutoTable?.finalY + 15;
+    y = ((doc as unknown as Record<string, unknown>).lastAutoTable as any)?.finalY + 15;
 
     doc?.setFontSize(12);
     doc?.setFont("helvetica", "bold");
@@ -1086,7 +1086,7 @@ class TaxFormService {
       formatCurrency(s?.netAmount),
     ]);
 
-    (doc as Record<string, unknown>).autoTable({
+    (doc as unknown as Record<string, unknown>).autoTable({
       startY: y,
       head: [["Source", "Description", "Gross", "Fees", "Withholding", "Net"]],
       body: sourceData,
@@ -1101,7 +1101,7 @@ class TaxFormService {
       },
     });
 
-    y = (doc as Record<string, unknown>).lastAutoTable?.finalY + 15;
+    y = ((doc as unknown as Record<string, unknown>).lastAutoTable as any)?.finalY + 15;
 
     if (summary?.forms.length > 0) {
       doc?.setFontSize(12);
@@ -1117,7 +1117,7 @@ class TaxFormService {
           : "Not signed",
       ]);
 
-      (doc as Record<string, unknown>).autoTable({
+      (doc as unknown as Record<string, unknown>).autoTable({
         startY: y,
         head: [["Form Type", "Status", "Signed Date"]],
         body: formData,

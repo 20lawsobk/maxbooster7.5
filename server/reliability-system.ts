@@ -88,7 +88,7 @@ class MaxBooster247System extends EventEmitter {
         code === "ECONNRESET" ||
         code === "ECONNABORTED" ||
         /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|Connection|Command timed out|Connection is closed|AbortError|fetch failed|Failed to fetch|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds/i?.test(
-          msg,
+          (msg as string),
         );
       if (isNonFatal) {
         return; // instrument?.ts already logs these as warnings
@@ -361,15 +361,15 @@ class MaxBooster247System extends EventEmitter {
     return {
       status: health.status === "running" ? "healthy" : "unhealthy",
       checks: {
-        memory: health.performance.memoryMB < 1000 ? "pass" : "warn",
-        uptime: health.uptime.hours > 0.01 ? "pass" : "warn",
-        errors: health.performance.successRate > 95 ? "pass" : "fail",
+        memory: (health.performance as any).memoryMB < 1000 ? "pass" : "warn",
+        uptime: (health.uptime as any).hours > 0.01 ? "pass" : "warn",
+        errors: (health.performance as any).successRate > 95 ? "pass" : "fail",
       },
       info: {
-        uptime_hours: health.uptime.hours,
-        memory_mb: health.performance.memoryMB,
-        success_rate: health.performance.successRate,
-        restart_count: health.reliability.restartCount,
+        uptime_hours: (health.uptime as any).hours,
+        memory_mb: (health.performance as any).memoryMB,
+        success_rate: (health.performance as any).successRate,
+        restart_count: (health.reliability as any).restartCount,
       },
     };
   }

@@ -100,9 +100,7 @@ function getQualitySettings(
     }
     bitrate = undefined; // Lossless = no bitrate limit
   } else {
-    bitrate = presetConfig[
-      formatLower as keyof typeof presetConfig.low
-    ] as number;
+    bitrate = (presetConfig as any)[formatLower] as number;
     if (!bitrate) {
       throw new Error(`Format ${format} not supported for preset ${preset}`);
     }
@@ -211,8 +209,8 @@ export async function convertAudioFile(
       command
         .on("codecData", (data: unknown) => {
           // Get total duration for progress calculation
-          if (data?.duration) {
-            const timeParts = data?.duration.split(":");
+          if ((data as any)?.duration) {
+            const timeParts = (data as any)?.duration.split(":");
             duration =
               parseInt(timeParts[0]) * 3600 +
               parseInt(timeParts[1]) * 60 +
@@ -220,8 +218,8 @@ export async function convertAudioFile(
           }
         })
         .on("progress", async (progress: unknown) => {
-          if (duration > 0 && progress?.timemark) {
-            const timeParts = progress?.timemark.split(":");
+          if (duration > 0 && (progress as any)?.timemark) {
+            const timeParts = (progress as any)?.timemark.split(":");
             const currentTime =
               parseInt(timeParts[0]) * 3600 +
               parseInt(timeParts[1]) * 60 +
@@ -233,7 +231,7 @@ export async function convertAudioFile(
 
             // Update progress in database
             try {
-              await storage?.updateConversion(conversionId, {
+              await (storage as any)?.updateConversion(conversionId, {
                 progress: percentage,
               });
             } catch (err: unknown) {
@@ -247,7 +245,7 @@ export async function convertAudioFile(
         .on("end", async () => {
           // Update to 100% and mark as completed
           try {
-            await storage?.updateConversion(conversionId, {
+            await (storage as any)?.updateConversion(conversionId, {
               progress: 100,
               status: "completed",
               outputFilePath: relativeOutputPath,
@@ -262,13 +260,13 @@ export async function convertAudioFile(
         .on("error", async (err: Error) => {
           // Update status to failed with error message
           try {
-            await storage?.updateConversion(conversionId, {
+            await (storage as any)?.updateConversion(conversionId, {
               status: "failed",
               errorMessage: err.message,
               completedAt: new Date(),
             });
           } catch (updateErr: unknown) {
-            logger.warn("Failed to update conversion error:", updateErr);
+            logger.warn(updateErr, "Failed to update conversion error:");
           }
           activeProcesses?.delete(conversionId);
           reject(err);
@@ -280,7 +278,7 @@ export async function convertAudioFile(
     });
   } catch (error: unknown) {
     // Update database with error
-    await storage?.updateConversion(conversionId, {
+    await (storage as any)?.updateConversion(conversionId, {
       status: "failed",
       errorMessage: error instanceof Error ? error?.message : "Unknown error",
       completedAt: new Date(),
@@ -298,7 +296,7 @@ export async function processConversion(
 ): Promise<void> {
   try {
     // Get conversion details from database
-    const conversion = await storage?.getConversion(conversionId);
+    const conversion = await (storage as any)?.getConversion(conversionId);
     if (!conversion) {
       throw new Error(`Conversion ${conversionId} not found`);
     }
@@ -312,7 +310,7 @@ export async function processConversion(
     }
 
     // Update status to processing
-    await storage?.updateConversion(conversionId, { status: "processing" });
+    await (storage as any)?.updateConversion(conversionId, { status: "processing" });
 
     // Execute conversion
     await convertAudioFile(
@@ -383,7 +381,7 @@ export async function cancelConversion(
   }
 
   // Update database status
-  await storage?.updateConversion(conversionId, {
+  await (storage as any)?.updateConversion(conversionId, {
     status: "cancelled",
     completedAt: new Date(),
   });
@@ -392,7 +390,7 @@ export async function cancelConversion(
   conversionQueue?.delete(conversionId);
 
   // Clean up partial output file if it exists
-  const conversion = await storage?.getConversion(conversionId);
+  const conversion = await (storage as any)?.getConversion(conversionId);
   if (conversion?.outputFilePath) {
     try {
       const fullPath = path?.join(process.cwd(), conversion?.outputFilePath);

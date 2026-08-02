@@ -164,7 +164,7 @@ export function ModulationMatrix({
   ]);
 
   const [routes, setRoutes] = useState<ModulationRoute[]>([]);
-  const [selectedSource, setSelectedSource] = useState<string | null>(null);
+  const [_selectedSource, _setSelectedSource] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [expandedSection, setExpandedSection] = useState<
     "lfos" | "envelopes" | "routes" | null

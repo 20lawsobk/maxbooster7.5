@@ -131,7 +131,7 @@ class ProcessMonitor extends EventEmitter {
       // the alert list with false-positive critical entries.
       if (
         /ECONNREFUSED|ECONNRESET|ECONNABORTED|EPIPE|Command timed out|Connection is closed|AbortError|fetch failed|Failed to fetch|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds|PDIM.*Circuit|script timeout/i?.test(
-          msg,
+          (msg as string),
         )
       ) {
         return;

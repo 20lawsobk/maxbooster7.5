@@ -284,7 +284,7 @@ export function AIMusicGenerator({
     } catch (error) {
       toast({
         title: "Generation Failed",
-        description: error.message || "Failed to generate music",
+        description: (error as Error).message || "Failed to generate music",
         variant: "destructive",
       });
     } finally {
@@ -429,7 +429,7 @@ export function AIMusicGenerator({
     } catch (error) {
       toast({
         title: "Arrangement Failed",
-        description: error.message || "Failed to generate full arrangement",
+        description: (error as Error).message || "Failed to generate full arrangement",
         variant: "destructive",
       });
     } finally {

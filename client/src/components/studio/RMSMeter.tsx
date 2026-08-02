@@ -131,7 +131,7 @@ export function RMSMeter({
       let x1 = 0,
         x2 = 0,
         y1 = 0,
-        y2 = 0;
+        _y2 = 0;
       for (let i = 0; i < data.length; i++) {
         const x0 = data[i];
         const y0 =

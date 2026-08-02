@@ -66,7 +66,7 @@ const generateWaveform = (): number[] => {
 };
 
 export function FlowStateBeatSlicer({
-  audioUrl,
+  _audioUrl,
   duration = 4,
   bpm = 120,
   onExportSlices,

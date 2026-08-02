@@ -106,7 +106,7 @@ router?.post("/", requireAuth, async (req, res) => {
         .status(400)
         .json({
           error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
+          details: (error as unknown as Record<string, unknown>).flatten(),
         });
     }
     res.status(500).json({ error: "Failed to create venue contact" });
@@ -143,7 +143,7 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
         .status(400)
         .json({
           error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
+          details: (error as unknown as Record<string, unknown>).flatten(),
         });
     }
     res.status(500).json({ error: "Failed to update venue contact" });

@@ -155,10 +155,10 @@ interface TimelineRulerProps {
 }
 
 function TimelineRuler({
-  zoomLevel,
+  _zoomLevel,
   scrollX,
   totalBars,
-  bpm,
+  _bpm,
   pixelsPerBar,
 }: TimelineRulerProps) {
   const rulerHeight = 20;
@@ -220,17 +220,17 @@ interface ResponsiveTrackRowProps {
 }
 
 export function ResponsiveTrackRow({
-  id,
+  _id,
   name,
   color,
   selected,
   mute,
   solo,
-  armed,
+  _armed,
   onSelect,
   onMuteToggle,
   onSoloToggle,
-  onArmedToggle,
+  _onArmedToggle,
   children,
   className,
 }: ResponsiveTrackRowProps) {

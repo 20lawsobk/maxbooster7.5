@@ -80,7 +80,7 @@ router?.post(
       logger.warn({ err: err }, "[POST /multimodal/generate]");
       return res
         .status(500)
-        .json({ error: err.message || "Generation failed" });
+        .json({ error: (err as Error).message || "Generation failed" });
     }
   },
 );

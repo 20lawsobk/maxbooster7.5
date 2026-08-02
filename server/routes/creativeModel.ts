@@ -35,7 +35,7 @@ const router = Router();
 
 function requireAuth(req: Request, res: Response): number | null {
   const userId =
-    (req.session as Record<string, unknown>)?.userId ??
+    (req.session as unknown as Record<string, unknown>)?.userId ??
     (req.user as Record<string, unknown>)?.id;
   if (!userId) {
     res.status(401).json({ error: "Authentication required" });
@@ -96,10 +96,10 @@ router?.post("/generate", async (req: Request, res: Response) => {
     });
     res.json({ success: true, data: pkg });
   } catch (err) {
-    logger.warn("[CreativeModel] /generate error", { err });
+    logger.warn({ err }, "[CreativeModel] /generate error");
     res
       .status(aiErrorStatus(err))
-      .json({ error: "Creative generation failed", detail: err.message });
+      .json({ error: "Creative generation failed", detail: (err as Error).message });
   }
 });
 
@@ -120,8 +120,8 @@ router?.post("/plan", async (req: Request, res: Response) => {
     const result = await planCreative(brief, audioPath);
     res.json({ success: true, data: result });
   } catch (err) {
-    logger.warn("[CreativeModel] /plan error", { err });
-    res.status(aiErrorStatus(err)).json({ error: "Planning failed", detail: err.message });
+    logger.warn({ err }, "[CreativeModel] /plan error");
+    res.status(aiErrorStatus(err)).json({ error: "Planning failed", detail: (err as Error).message });
   }
 });
 
@@ -150,8 +150,8 @@ router?.post("/score", async (req: Request, res: Response) => {
     const scores = await scoreCreative(brief, plan, script);
     res.json({ success: true, data: scores });
   } catch (err) {
-    logger.warn("[CreativeModel] /score error", { err });
-    res.status(aiErrorStatus(err)).json({ error: "Scoring failed", detail: err.message });
+    logger.warn({ err }, "[CreativeModel] /score error");
+    res.status(aiErrorStatus(err)).json({ error: "Scoring failed", detail: (err as Error).message });
   }
 });
 
@@ -182,10 +182,10 @@ router?.post("/feedback", async (req: Request, res: Response) => {
     await submitFeedback(assetId, userId, brief, scores, metrics ?? {});
     res.json({ success: true });
   } catch (err) {
-    logger.warn("[CreativeModel] /feedback error", { err });
+    logger.warn({ err }, "[CreativeModel] /feedback error");
     res
       .status(aiErrorStatus(err))
-      .json({ error: "Feedback submission failed", detail: err.message });
+      .json({ error: "Feedback submission failed", detail: (err as Error).message });
   }
 });
 

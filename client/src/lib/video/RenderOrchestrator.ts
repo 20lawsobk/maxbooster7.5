@@ -875,7 +875,7 @@ export class RenderOrchestrator {
     frameNumber: number,
     timestamp: number,
   ) => void {
-    return (canvas, frameNumber, timestamp) => {
+    return (canvas, _frameNumber, timestamp) => {
       this.renderFrame(timestamp);
 
       const targetCtx = canvas?.getContext("2d");

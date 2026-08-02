@@ -143,7 +143,7 @@ router.get("/history", async (req: Request, res: Response) => {
 
     return res.json({ messages, hasMore, total, conversationId: convId });
   } catch (error) {
-    logger.warn("[assistant] Error fetching history:", error.message);
+    logger.warn("[assistant] Error fetching history:", (error as Error).message);
     return res.json({
       messages: [],
       hasMore: false,
@@ -237,7 +237,7 @@ router.post(
         assistantMessageId,
       });
     } catch (error) {
-      logger.warn("[assistant] Error processing chat:", error?.message);
+      logger.warn("[assistant] Error processing chat:", (error as any)?.message);
       return res
         .status(500)
         .json({ error: "Failed to process your message. Please try again." });
@@ -273,7 +273,7 @@ router?.delete("/history", async (req: Request, res: Response) => {
 
     return res.json({ success: true });
   } catch (error) {
-    logger.warn("[assistant] Error clearing history:", error?.message);
+    logger.warn("[assistant] Error clearing history:", (error as any)?.message);
     return res.status(500).json({ error: "Failed to clear history" });
   }
 });

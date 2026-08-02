@@ -21,7 +21,7 @@ import { pocketManager, PocketDimension } from "../pocket-dimension/index.js";
 import { createHash } from "crypto";
 import { logger } from "../logger.js";
 import { getPdimClient } from "../lib/pdimClient.js";
-import { Client as ReplitObjectStorageClient } from "@replit/object-storage";
+import { Client as _ReplitObjectStorageClient } from "@replit/object-storage";
 
 const COLD_TIER_THRESHOLD_DAYS = 30;
 const COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
@@ -160,7 +160,7 @@ export class HybridStorageService {
         );
       } catch (e) {
         logger.warn(
-          `[HybridStorage] Pocket Dimension unavailable: ${e?.message}`,
+          `[HybridStorage] Pocket Dimension unavailable: ${(e as any)?.message}`,
         );
         this.coldPocket = null;
       }
@@ -613,7 +613,7 @@ export class HybridStorageService {
     }
   }
 
-  private async scheduleTierUp(key: string, data: Buffer): Promise<void> {
+  private async scheduleTierUp(_key: string, _data: Buffer): Promise<void> {
     // PDIM-only: tier-up to Replit Object Storage is disabled.
     // All files remain in Pocket Dimension.
   }

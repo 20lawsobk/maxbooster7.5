@@ -183,7 +183,7 @@ class PlatformCapsuleBuilder {
 
     // Get compression stats
     const stats = this.pocket.getStats();
-    const compressionRatio = stats?.compressedSize / stats?.originalSize;
+    const compressionRatio = stats?.compressedSize / (stats as any)?.originalSize;
 
     // Create metadata - IMPORTANT: hash the exact same string that was written
     const metadata: CapsuleMetadata = {
@@ -444,8 +444,8 @@ class PlatformCapsuleBuilder {
       })),
       directories,
       entryPoint: packageJson.main || "server/index.ts",
-      buildCommand: packageJson.scripts.build,
-      startCommand: packageJson.scripts.start || "npm start",
+      buildCommand: (packageJson.scripts as any).build,
+      startCommand: (packageJson.scripts as any).start || "npm start",
       environment: {
         NODE_ENV: "production",
       },

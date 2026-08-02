@@ -847,12 +847,12 @@ router.post(
           })
           .returning();
 
-        logger.info("Recording uploaded and persisted", {
+        logger.info({
           clipId,
           trackId,
           projectId,
           userId,
-        });
+        }, "Recording uploaded and persisted");
 
         return res.status(201).json({
           success: true,
@@ -1523,7 +1523,7 @@ router.post("/tracks", requireAuth, async (req: Request, res: Response) => {
             .values({
               id: data.projectId,
               userId: userId,
-              name: regularProject.name || "Untitled",
+              name: (regularProject as any).name || "Untitled",
               metadata: {},
             })
             .returning();
@@ -1636,7 +1636,7 @@ router.get(
         filePath: clip.audioUrl, // audioUrl stored in DB, but frontend expects filePath
         startTime: clip.startTime || 0,
         duration: clip.duration || 0,
-        offset: clip.offset || 0,
+        offset: (clip as any).offset || 0,
         gain: clip.gain || 1,
         fadeIn: clip.fadeIn || 0,
         fadeOut: clip.fadeOut || 0,
@@ -1720,7 +1720,7 @@ router.patch(
               .values({
                 id: track.projectId,
                 userId: userId,
-                name: regularProject.name || "Untitled",
+                name: (regularProject as any).name || "Untitled",
                 metadata: {},
               })
               .returning();
@@ -1895,12 +1895,12 @@ router.post(
         })
         .returning();
 
-      logger.info("Audio clip uploaded successfully", {
+      logger.info({
         clipId,
         trackId,
         projectId,
         userId,
-      });
+      }, "Audio clip uploaded successfully");
 
       res.status(201).json({
         success: true,
@@ -1944,7 +1944,6 @@ router.patch(
         .update(audioClips)
         .set({
           ...data,
-          updatedAt: new Date(),
         })
         .where(eq(audioClips.id, clipId))
         .returning();
@@ -2066,17 +2065,17 @@ router.put(
         (metadata.automation as Record<string, unknown[]>) || {};
       automation[parameter] = points;
 
-      const [updated] = await db
+      const [_updated] = await db
         .update(studioTracks)
         .set({ metadata: { ...metadata, automation } })
         .where(eq(studioTracks.id, trackId))
         .returning();
 
-      logger.info("Automation saved", {
+      logger.info({
         trackId,
         parameter,
         pointCount: points.length,
-      });
+      }, "Automation saved");
       res.json({ success: true, points });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error saving automation:");
@@ -2670,7 +2669,7 @@ router.post(
   handleUploadError,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const file = req.file;
       const projectId = req.body.projectId;
 
@@ -2682,14 +2681,14 @@ router.post(
 
       const storedFile = await storeUploadedFile(file, userId, "audio");
 
-      logger.info("Audio file uploaded to studio", {
+      logger.info({
         fileId,
         originalName: file.originalname,
         size: file.size,
         mimeType: file.mimetype,
         url: storedFile.url,
         projectId,
-      });
+      }, "Audio file uploaded to studio");
 
       let track = null;
       let clip = null;
@@ -2747,11 +2746,11 @@ router.post(
 
           clip = newClip;
 
-          logger.info("Created track and audio clip for uploaded file", {
+          logger.info({
             trackId,
             clipId,
             projectId,
-          });
+          }, "Created track and audio clip for uploaded file");
         }
       }
 
@@ -2840,11 +2839,11 @@ router.post(
         })
         .returning();
 
-      logger.info("Created track from pre-assembled URL", {
+      logger.info({
         trackId,
         clipId,
         projectId,
-      });
+      }, "Created track from pre-assembled URL");
 
       res.json({ success: true, track: newTrack, clip: newClip });
     } catch (error: unknown) {
@@ -3212,7 +3211,7 @@ router.get(
       const folders = tracks.filter((t) => t.trackType === "folder");
       const childTracks = tracks.filter((t) => t.trackType !== "folder");
       const metadata =
-        (studioProject.metadata as Record<string, unknown>) || {};
+        (studioProject!.metadata as Record<string, unknown>) || {};
       const trackFolders = metadata.trackFolders || {};
 
       const foldersWithChildren = folders.map((folder) => ({
@@ -3678,7 +3677,7 @@ router.post(
 
       // Store in project metadata
       const mixSnapshots = metadata.mixSnapshots || [];
-      mixSnapshots.push(snapshot);
+      (mixSnapshots as any).push(snapshot);
 
       await db
         .update(studioProjects)
@@ -3735,13 +3734,13 @@ router.get(
       const mixSnapshots = metadata.mixSnapshots || [];
 
       // Return summaries (without full track state data for list view)
-      const summaries = mixSnapshots.map((s: Record<string, unknown>) => ({
+      const summaries = (mixSnapshots as any).map((s: Record<string, unknown>) => ({
         id: s.id,
         name: s.name,
         description: s.description,
         createdAt: s.createdAt,
         autoSave: s.autoSave,
-        trackCount: s.trackStates.length || 0,
+        trackCount: (s.trackStates as any).length || 0,
       }));
 
       res.json({ snapshots: summaries });
@@ -3776,7 +3775,7 @@ router.get(
 
       const metadata = (project.metadata as Record<string, unknown>) || {};
       const mixSnapshots = metadata.mixSnapshots || [];
-      const snapshot = mixSnapshots.find(
+      const snapshot = (mixSnapshots as any).find(
         (s: Record<string, unknown>) => s.id === snapshotId,
       );
 
@@ -3818,7 +3817,7 @@ router.post(
 
       const metadata = (project.metadata as Record<string, unknown>) || {};
       const mixSnapshots = metadata.mixSnapshots || [];
-      const snapshot = mixSnapshots.find(
+      const snapshot = (mixSnapshots as any).find(
         (s: Record<string, unknown>) => s.id === snapshotId,
       );
 
@@ -3922,7 +3921,7 @@ router.patch(
 
       const metadata = (project.metadata as Record<string, unknown>) || {};
       const mixSnapshots = metadata.mixSnapshots || [];
-      const snapshotIndex = mixSnapshots.findIndex(
+      const snapshotIndex = (mixSnapshots as any).findIndex(
         (s: Record<string, unknown>) => s.id === snapshotId,
       );
 
@@ -3989,7 +3988,7 @@ router.delete(
 
       const metadata = (project.metadata as Record<string, unknown>) || {};
       const mixSnapshots = metadata.mixSnapshots || [];
-      const snapshotIndex = mixSnapshots.findIndex(
+      const snapshotIndex = (mixSnapshots as any).findIndex(
         (s: Record<string, unknown>) => s.id === snapshotId,
       );
 
@@ -3998,7 +3997,7 @@ router.delete(
       }
 
       const deletedName = mixSnapshots[snapshotIndex].name;
-      mixSnapshots.splice(snapshotIndex, 1);
+      (mixSnapshots as any).splice(snapshotIndex, 1);
 
       await db
         .update(studioProjects)
@@ -4047,10 +4046,10 @@ router.get(
       const metadata = (project.metadata as Record<string, unknown>) || {};
       const mixSnapshots = metadata.mixSnapshots || [];
 
-      const snapshot1 = mixSnapshots.find(
+      const snapshot1 = (mixSnapshots as any).find(
         (s: Record<string, unknown>) => s.id === snapshotId,
       );
-      const snapshot2 = mixSnapshots.find(
+      const snapshot2 = (mixSnapshots as any).find(
         (s: Record<string, unknown>) => s.id === compareSnapshotId,
       );
 
@@ -4212,7 +4211,7 @@ router.get(
         const plugins = (track?.plugins as unknown[] | null) || [];
         totalPlugins += plugins?.length;
         for (const plugin of plugins) {
-          const name = plugin?.name || "Unknown";
+          const name = (plugin as any)?.name || "Unknown";
           pluginCounts[name] = (pluginCounts[name] || 0) + 1;
         }
       }
@@ -4242,13 +4241,13 @@ router.get(
           totalDurationFormatted: formatDuration(totalDuration),
         },
         mixing: {
-          busCount: mixBusConfig.busses?.length || 0,
-          snapshotCount: mixSnapshots.length,
+          busCount: (mixBusConfig as any).busses?.length || 0,
+          snapshotCount: (mixSnapshots as any).length,
           latestSnapshot:
-            mixSnapshots?.length > 0
+            (mixSnapshots as any)?.length > 0
               ? {
-                  name: mixSnapshots[mixSnapshots?.length - 1].name,
-                  createdAt: mixSnapshots[mixSnapshots?.length - 1].createdAt,
+                  name: mixSnapshots[(mixSnapshots as any)?.length - 1].name,
+                  createdAt: mixSnapshots[(mixSnapshots as any)?.length - 1].createdAt,
                 }
               : null,
         },
@@ -4616,11 +4615,11 @@ router.get(
         // User profile
         user: {
           id: userId,
-          name: user.username || user.email || "Artist",
-          email: user.email,
-          avatar: user.avatarUrl,
-          subscriptionTier: user.subscriptionTier || "free",
-          createdAt: user.createdAt,
+          name: user!.username || user!.email || "Artist",
+          email: user!.email,
+          avatar: user!.avatarUrl,
+          subscriptionTier: user!.subscriptionTier || "free",
+          createdAt: user!.createdAt,
         },
 
         // Learning & demos
@@ -4942,10 +4941,10 @@ router.post(
         "folder",
         "midi",
       ];
-      const validatedTrackLayout = trackLayout?.map(
+      const validatedTrackLayout = (trackLayout as any)?.map(
         (track: Record<string, unknown>) => ({
           name: String(track?.name || "Untitled Track").slice(0, 100),
-          trackType: validTrackTypes.includes(track?.trackType)
+          trackType: validTrackTypes.includes((track?.trackType as string))
             ? track?.trackType
             : "audio",
           color:
@@ -5078,7 +5077,7 @@ router.post(
         });
       } catch (innerError) {
         // Cleanup on failure: remove partially created records
-        logger.warn("Error during project creation, cleaning up:", innerError);
+        logger.warn(innerError, "Error during project creation, cleaning up:");
         try {
           await db
             .delete(studioTracks)
@@ -5088,7 +5087,7 @@ router.post(
             .where(eq(studioProjects.id, projectId));
           await db.delete(projects).where(eq(projects.id, projectId));
         } catch (cleanupError) {
-          logger.warn("Error during cleanup:", cleanupError);
+          logger.warn(cleanupError, "Error during cleanup:");
         }
         throw innerError;
       }
@@ -5129,7 +5128,7 @@ router.get(
       res.json({
         ...template,
         trackLayout: templateData.trackLayout || [],
-        trackCount: (templateData?.trackLayout || []).length,
+        trackCount: ((templateData?.trackLayout || []) as any).length,
         hasMixBusConfig: !!templateData?.mixBusConfig,
         tags: templateData.tags || [],
       });
@@ -5512,7 +5511,7 @@ router.post(
         where: eq(users.id, userId),
       });
 
-      if (user.role !== "admin") {
+      if (user!.role !== "admin") {
         return res.status(403).json({ error: "Admin access required" });
       }
 
@@ -5588,7 +5587,7 @@ router.get(
         where: eq(users.id, userId),
       });
 
-      if (user.role !== "admin") {
+      if (user!.role !== "admin") {
         return res.status(403).json({ error: "Admin access required" });
       }
 

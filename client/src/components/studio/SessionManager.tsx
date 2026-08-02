@@ -99,7 +99,7 @@ const formatDate = (date: Date): string => {
 export function SessionManager({
   isOpen,
   onClose,
-  projectId,
+  _projectId,
   versions = [],
   snapshots = [],
   scratchPads = [],

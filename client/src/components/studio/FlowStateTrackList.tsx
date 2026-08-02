@@ -31,7 +31,7 @@ export function FlowStateTrackList({
   onUpdateTrack,
   currentTime,
   zoom,
-  isPlaying,
+  _isPlaying,
 }: FlowStateTrackListProps) {
   const [expandedTracks, setExpandedTracks] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);

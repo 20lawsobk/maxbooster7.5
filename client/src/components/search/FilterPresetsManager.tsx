@@ -59,7 +59,7 @@ interface FilterPresetsManagerProps {
 export function FilterPresetsManager({
   currentFilters,
   onApplyPreset,
-  onSavePreset,
+  _onSavePreset,
   context = "global",
   className,
   compact = false,

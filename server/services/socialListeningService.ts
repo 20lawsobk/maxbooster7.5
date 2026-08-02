@@ -299,14 +299,14 @@ class SocialListeningService {
           type: "mention",
           content: tweet.text,
           authorId: tweet.author_id || "",
-          authorName: author.name || "Unknown",
+          authorName: author!.name || "Unknown",
           authorHandle: `@${author?.username || "unknown"}`,
-          authorFollowers: author.public_metrics?.followers_count || 0,
-          authorVerified: author.verified || false,
+          authorFollowers: author!.public_metrics?.followers_count || 0,
+          authorVerified: author!.verified || false,
           url: `https://twitter.com/${author?.username}/status/${tweet.id}`,
           timestamp: new Date(tweet?.created_at || Date?.now()),
           sentiment,
-          reach: author.public_metrics?.followers_count || 0,
+          reach: author!.public_metrics?.followers_count || 0,
           engagement: {
             likes: tweet.public_metrics?.like_count || 0,
             comments: tweet.public_metrics?.reply_count || 0,
@@ -639,7 +639,7 @@ class SocialListeningService {
         id: randomBytes(8).toString("hex"),
         topic: data.topic,
         hashtag: data.hashtag,
-        category: data.category as Record<string, unknown>,
+        category: data.category as unknown as Record<string, unknown>,
         volume: Math.floor(Math.random() * 100000) + 10000,
         volumeChange: Math.floor(Math.random() * 200) - 50,
         sentiment: Math.random() > 0.3 ? "positive" : "neutral",
@@ -901,10 +901,10 @@ class SocialListeningService {
     }
     this.trackedKeywords.set(newQuery?.id, newQuery);
 
-    logger.info(`Listening query added for user ${userId}`, {
+    logger.info({
       queryId: newQuery.id,
       type: query.type,
-    });
+    }, `Listening query added for user ${userId}`);
 
     return newQuery;
   }

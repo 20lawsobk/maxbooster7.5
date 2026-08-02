@@ -204,7 +204,7 @@ export class CustomAIEngine {
 
     const result = {
       modelId: model[0].id,
-      versionId: model[0].currentVersionId!,
+      versionId: (model[0] as any).currentVersionId!,
     };
 
     this.modelCache.set(modelName, result);
@@ -308,7 +308,7 @@ export class CustomAIEngine {
         trendDirection:
           trend > 0.05 ? "upward" : trend < -0.05 ? "downward" : "stable",
         metadata: {
-          seasonalPeriod: seasonality.period || null,
+          seasonalPeriod: seasonality!.period || null,
           trendSlope: trend,
           historicalDataPoints: historicalData.length,
         },
@@ -1196,7 +1196,7 @@ export class CustomAIEngine {
 
   private generateRetentionRecommendations(
     riskFactors: Array<{ factor: string; importance: number; value: unknown }>,
-    features: ChurnFeatures,
+    _features: ChurnFeatures,
   ): AIRecommendation[] {
     const recommendations: AIRecommendation[] = [];
 
@@ -1298,7 +1298,7 @@ export class CustomAIEngine {
     };
   }
 
-  private detectSeasonality(data: number[]): number {
+  private detectSeasonality(_data: number[]): number {
     return 1.0;
   }
 
@@ -1333,7 +1333,7 @@ export class CustomAIEngine {
 
   private async calculateRevenueBreakdown(
     _userId: string,
-    forecastDate: Date,
+    _forecastDate: Date,
   ): Promise<RevenueBreakdown> {
     return {
       byPlan: { basic: 100, premium: 250, enterprise: 500 },
@@ -1567,7 +1567,7 @@ export class CustomAIEngine {
 
   private async compareToBenchmarks(
     _userId: string,
-    stats: UserStats,
+    _stats: UserStats,
   ): Promise<Benchmarks> {
     return {
       revenuePercentile: 75,

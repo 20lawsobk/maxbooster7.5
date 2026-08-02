@@ -330,7 +330,7 @@ export async function analyzeReferenceVoice(
 
     return { estimatedPitch, estimatedTempo, energy, suggestedProfileId };
   } catch (e) {
-    logger.warn("[VoiceSynth] Reference analysis failed:", e?.message);
+    logger.warn("[VoiceSynth] Reference analysis failed:", (e as any)?.message);
     return {
       estimatedPitch: "medium",
       estimatedTempo: "medium",
@@ -521,7 +521,7 @@ export async function synthesizeSegments(
     // MaxCore unavailability must propagate explicitly, not collapse into a
     // soft success:false result.
     if (err instanceof AIUnavailableError) throw err;
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: (err as Error).message || String(err) };
   } finally {
     // Clean up temp segment files
     for (const f of tempFiles) {

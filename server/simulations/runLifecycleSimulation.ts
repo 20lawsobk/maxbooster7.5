@@ -118,9 +118,9 @@ function generateReport(result: Record<string, unknown>): string {
   const { config, finalMetrics, kpis, systemTests, recommendations } = result;
 
   const testStatus =
-    systemTests?.failed === 0
+    (systemTests as any)?.failed === 0
       ? "✅ ALL TESTS PASSED"
-      : systemTests?.criticalIssues.length > 0
+      : (systemTests as any)?.criticalIssues.length > 0
         ? "❌ CRITICAL ISSUES FOUND"
         : "⚠️ WARNINGS DETECTED";
 
@@ -128,7 +128,7 @@ function generateReport(result: Record<string, unknown>): string {
 
 ## Executive Summary
 
-**Period:** ${config?.periodName} (${config?.daysToSimulate} simulated days)
+**Period:** ${(config as any)?.periodName} (${(config as any)?.daysToSimulate} simulated days)
 **Status:** ${testStatus}
 **Generated:** ${new Date().toISOString()}
 **Acceleration:** 98% (real time: ${(result?.realDuration / 1000 / 60).toFixed(1)} minutes)
@@ -139,13 +139,13 @@ function generateReport(result: Record<string, unknown>): string {
 
 | Metric | Passed | Failed | Warnings |
 |--------|--------|--------|----------|
-| System Tests | ${systemTests?.passed} | ${systemTests?.failed} | ${systemTests?.warnings} |
+| System Tests | ${(systemTests as any)?.passed} | ${(systemTests as any)?.failed} | ${(systemTests as any)?.warnings} |
 
 ${
-  systemTests?.criticalIssues.length > 0
+  (systemTests as any)?.criticalIssues.length > 0
     ? `
 ### Critical Issues
-${systemTests?.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join("\n")}
+${(systemTests as any)?.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join("\n")}
 `
     : ""
 }
@@ -156,52 +156,52 @@ ${systemTests?.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join("\n"
 
 | KPI | Value | Status |
 |-----|-------|--------|
-| User Growth Rate | ${kpis?.userGrowthRate.toFixed(1)}% | ${kpis?.userGrowthRate > 0 ? "✅" : "❌"} |
-| Revenue Growth Rate | ${kpis?.revenueGrowthRate.toFixed(1)}% | ${kpis?.revenueGrowthRate > 0 ? "✅" : "❌"} |
-| Churn Rate | ${kpis?.churnRate.toFixed(2)}% | ${kpis?.churnRate < 5 ? "✅" : kpis?.churnRate < 10 ? "⚠️" : "❌"} |
-| LTV | $${kpis?.ltv.toFixed(2)} | ${kpis?.ltv > 100 ? "✅" : "⚠️"} |
-| LTV/CAC Ratio | ${(kpis?.ltv / kpis?.cac).toFixed(2)} | ${kpis?.ltv / kpis?.cac > 3 ? "✅" : kpis?.ltv / kpis?.cac > 1 ? "⚠️" : "❌"} |
-| Viral Coefficient | ${kpis?.viralCoefficient.toFixed(2)} | ${kpis?.viralCoefficient > 0.5 ? "✅" : "⚠️"} |
-| NPS Score | ${kpis?.nps.toFixed(0)} | ${kpis?.nps > 50 ? "✅" : kpis?.nps > 0 ? "⚠️" : "❌"} |
-| System Uptime | ${kpis?.systemUptime.toFixed(2)}% | ${kpis?.systemUptime > 99.9 ? "✅" : kpis?.systemUptime > 99 ? "⚠️" : "❌"} |
-| Autonomous Efficiency | ${kpis?.autonomousEfficiency.toFixed(1)}% | ${kpis?.autonomousEfficiency > 90 ? "✅" : "⚠️"} |
+| User Growth Rate | ${(kpis as any)?.userGrowthRate.toFixed(1)}% | ${(kpis as any)?.userGrowthRate > 0 ? "✅" : "❌"} |
+| Revenue Growth Rate | ${(kpis as any)?.revenueGrowthRate.toFixed(1)}% | ${(kpis as any)?.revenueGrowthRate > 0 ? "✅" : "❌"} |
+| Churn Rate | ${(kpis as any)?.churnRate.toFixed(2)}% | ${(kpis as any)?.churnRate < 5 ? "✅" : (kpis as any)?.churnRate < 10 ? "⚠️" : "❌"} |
+| LTV | $${(kpis as any)?.ltv.toFixed(2)} | ${(kpis as any)?.ltv > 100 ? "✅" : "⚠️"} |
+| LTV/CAC Ratio | ${((kpis as any)?.ltv / (kpis as any)?.cac).toFixed(2)} | ${(kpis as any)?.ltv / (kpis as any)?.cac > 3 ? "✅" : (kpis as any)?.ltv / (kpis as any)?.cac > 1 ? "⚠️" : "❌"} |
+| Viral Coefficient | ${(kpis as any)?.viralCoefficient.toFixed(2)} | ${(kpis as any)?.viralCoefficient > 0.5 ? "✅" : "⚠️"} |
+| NPS Score | ${(kpis as any)?.nps.toFixed(0)} | ${(kpis as any)?.nps > 50 ? "✅" : (kpis as any)?.nps > 0 ? "⚠️" : "❌"} |
+| System Uptime | ${(kpis as any)?.systemUptime.toFixed(2)}% | ${(kpis as any)?.systemUptime > 99.9 ? "✅" : (kpis as any)?.systemUptime > 99 ? "⚠️" : "❌"} |
+| Autonomous Efficiency | ${(kpis as any)?.autonomousEfficiency.toFixed(1)}% | ${(kpis as any)?.autonomousEfficiency > 90 ? "✅" : "⚠️"} |
 
 ---
 
 ## Final Metrics
 
 ### Users
-- **Total Users:** ${finalMetrics?.users.total?.toLocaleString()}
-- **Active Users:** ${finalMetrics?.users.active?.toLocaleString()}
-- **Free:** ${finalMetrics?.users.byTier?.free} | **Basic:** ${finalMetrics?.users.byTier?.basic} | **Pro:** ${finalMetrics?.users.byTier?.pro} | **Enterprise:** ${finalMetrics?.users.byTier?.enterprise}
+- **Total Users:** ${(finalMetrics as any)?.users.total?.toLocaleString()}
+- **Active Users:** ${(finalMetrics as any)?.users.active?.toLocaleString()}
+- **Free:** ${(finalMetrics as any)?.users.byTier?.free} | **Basic:** ${(finalMetrics as any)?.users.byTier?.basic} | **Pro:** ${(finalMetrics as any)?.users.byTier?.pro} | **Enterprise:** ${(finalMetrics as any)?.users.byTier?.enterprise}
 
 ### Revenue
-- **MRR:** $${finalMetrics?.revenue.mrr?.toFixed(2)}
-- **ARR:** $${finalMetrics?.revenue.arr?.toFixed(2)}
-- **Lifetime Revenue:** $${finalMetrics?.revenue.lifetime?.toFixed(2)}
+- **MRR:** $${(finalMetrics as any)?.revenue.mrr?.toFixed(2)}
+- **ARR:** $${(finalMetrics as any)?.revenue.arr?.toFixed(2)}
+- **Lifetime Revenue:** $${(finalMetrics as any)?.revenue.lifetime?.toFixed(2)}
 
 ### Content & Streams
-- **Total Streams:** ${finalMetrics?.streams.total?.toLocaleString()}
-- **Viral Releases:** ${finalMetrics?.streams.viralReleases}
-- **Avg Streams/Release:** ${finalMetrics?.streams.avgPerRelease?.toFixed(0)}
+- **Total Streams:** ${(finalMetrics as any)?.streams.total?.toLocaleString()}
+- **Viral Releases:** ${(finalMetrics as any)?.streams.viralReleases}
+- **Avg Streams/Release:** ${(finalMetrics as any)?.streams.avgPerRelease?.toFixed(0)}
 
 ### Platform Health
-- **Uptime:** ${finalMetrics?.platform.uptime?.toFixed(2)}%
-- **Response Time:** ${finalMetrics?.platform.responseTime}ms
-- **Error Rate:** ${(finalMetrics?.platform.errorRate * 100).toFixed(3)}%
+- **Uptime:** ${(finalMetrics as any)?.platform.uptime?.toFixed(2)}%
+- **Response Time:** ${(finalMetrics as any)?.platform.responseTime}ms
+- **Error Rate:** ${((finalMetrics as any)?.platform.errorRate * 100).toFixed(3)}%
 
 ### Autonomous Systems Performance
-- **Posts Auto-Published:** ${finalMetrics?.autonomous.postsAutoPublished?.toLocaleString()}
-- **Campaigns Auto-Launched:** ${finalMetrics?.autonomous.campaignsAutoLaunched?.toLocaleString()}
-- **Releases Auto-Distributed:** ${finalMetrics?.autonomous.releasesAutoDistributed?.toLocaleString()}
-- **AI Decisions Made:** ${finalMetrics?.autonomous.decisionsAutoMade?.toLocaleString()}
-- **Human Interventions Required:** ${finalMetrics?.autonomous.interventionsRequired}
+- **Posts Auto-Published:** ${(finalMetrics as any)?.autonomous.postsAutoPublished?.toLocaleString()}
+- **Campaigns Auto-Launched:** ${(finalMetrics as any)?.autonomous.campaignsAutoLaunched?.toLocaleString()}
+- **Releases Auto-Distributed:** ${(finalMetrics as any)?.autonomous.releasesAutoDistributed?.toLocaleString()}
+- **AI Decisions Made:** ${(finalMetrics as any)?.autonomous.decisionsAutoMade?.toLocaleString()}
+- **Human Interventions Required:** ${(finalMetrics as any)?.autonomous.interventionsRequired}
 
 ---
 
 ## Recommendations
 
-${recommendations?.map((rec: string, i: number) => `${i + 1}. ${rec}`).join("\n")}
+${(recommendations as any)?.map((rec: string, i: number) => `${i + 1}. ${rec}`).join("\n")}
 
 ---
 

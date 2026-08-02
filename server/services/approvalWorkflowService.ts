@@ -389,7 +389,7 @@ export class ApprovalWorkflowService {
         await this.notifyRequester(request, "rejected", comment);
       } else {
         const nextStepNumber = stepNumber + 1;
-        if (nextStepNumber >= request?.totalSteps!) {
+        if (nextStepNumber >= (request as any)?.totalSteps!) {
           await db
             .update(approvalRequests)
             .set({
@@ -612,10 +612,10 @@ export class ApprovalWorkflowService {
         .limit(100);
 
       for (const request of overdueRequests) {
-        const workflow = await this.getWorkflow(request?.workflowId);
+        const workflow = await this.getWorkflow((request as any)?.workflowId);
         if (!workflow) continue;
 
-        const escalationPolicy = workflow?.escalationPolicy as EscalationPolicy;
+        const escalationPolicy = (workflow as any)?.escalationPolicy as EscalationPolicy;
         if (escalationPolicy?.enabled) {
           await this.escalateRequest(request?.id, escalationPolicy);
         }

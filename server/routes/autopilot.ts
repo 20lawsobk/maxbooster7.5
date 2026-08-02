@@ -108,18 +108,18 @@ router?.get("/status", requireAuth, async (req, res) => {
           .limit(10),
       ]).catch(() => [[], [], [], [], []]);
 
-    const totalGenerated = Number((totalGenRow as unknown[])[0]?.value ?? 0);
-    const totalPublished = Number((publishedRow as unknown[])[0]?.value ?? 0);
-    const pendingCount = Number((pendingRow as unknown[])[0]?.value ?? 0);
-    const nextScheduledJob = (nextJobRow as unknown[])[0]?.value ?? null;
+    const totalGenerated = Number(((totalGenRow as unknown[])[0] as any)?.value ?? 0);
+    const totalPublished = Number(((publishedRow as unknown[])[0] as any)?.value ?? 0);
+    const pendingCount = Number(((pendingRow as unknown[])[0] as any)?.value ?? 0);
+    const nextScheduledJob = ((nextJobRow as unknown[])[0] as any)?.value ?? null;
 
     const recentActivity = (recentRows as unknown[]).map(
       (row: Record<string, unknown>) => {
-        const isPast = row?.postingTime && new Date(row?.postingTime) < now;
-        const isFuture = row?.postingTime && new Date(row?.postingTime) >= now;
+        const isPast = row?.postingTime && new Date(row?.postingTime as any) < now;
+        const isFuture = row?.postingTime && new Date(row?.postingTime as any) >= now;
         return {
           status: isPast ? "completed" : isFuture ? "scheduled" : "pending",
-          title: `${row?.type ? row?.type.charAt(0).toUpperCase() + row?.type.slice(1) : "Content"} on ${row?.platform || "social media"}`,
+          title: `${row?.type ? (row?.type as any).charAt(0).toUpperCase() + (row?.type as any).slice(1) : "Content"} on ${row?.platform || "social media"}`,
           description:
             `${row?.format || "text"} • ${row?.hookType || ""} hook • ${row?.tone || ""} tone`
               .replace(/• {2,}/g, "• ")
@@ -525,7 +525,7 @@ router?.post("/train", requireAuth, async (req, res) => {
     try {
       if (enrichedCampaigns?.length >= 30) {
         advertisingResult =
-          await advertisingModel?.trainOnHistoricalCampaigns(enrichedCampaigns);
+          await (advertisingModel as any)?.trainOnHistoricalCampaigns(enrichedCampaigns);
         logger.info(
           `✅ Advertising autopilot trained: ${advertisingResult?.campaignsProcessed} campaigns`,
         );

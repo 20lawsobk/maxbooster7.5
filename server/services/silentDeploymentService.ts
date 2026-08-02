@@ -284,7 +284,7 @@ class SilentDeploymentService extends EventEmitter {
     outcome: string,
   ): Promise<void> {
     try {
-      await storage?.createOptimizationTask({
+      await (storage as any)?.createOptimizationTask({
         taskType: "silent_deployment",
         status: record.rolledBack
           ? "rolled_back"

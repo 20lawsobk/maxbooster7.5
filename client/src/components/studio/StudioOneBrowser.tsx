@@ -254,7 +254,7 @@ function FileTreeItem({
 }
 
 function WaveformPreview({
-  duration = 4,
+  _duration = 4,
   progress = 0,
 }: {
   duration?: number;

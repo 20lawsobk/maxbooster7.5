@@ -144,7 +144,7 @@ function CollapsibleSection({
 }
 
 export function ChannelOverview({
-  trackId,
+  _trackId,
   trackName,
   trackColor,
   trackType,
@@ -170,7 +170,7 @@ export function ChannelOverview({
   onInsertRemove,
   onSendLevelChange,
   onSendMuteToggle,
-  onSendPreFaderToggle,
+  _onSendPreFaderToggle,
   onIOChange,
   onDuplicate,
   onDelete,

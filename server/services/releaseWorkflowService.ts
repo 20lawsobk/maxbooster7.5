@@ -140,8 +140,8 @@ class ReleaseWorkflowService {
           requestType,
           previousStatus: currentStatus,
           newStatus: targetStatus,
-          reason: options.reason,
-          metadata: options.metadata,
+          reason: options!.reason,
+          metadata: options!.metadata,
           status: "completed",
           processedBy: userId,
           processedAt: new Date(),
@@ -446,7 +446,7 @@ class ReleaseWorkflowService {
 
       const previousData = {
         title: release[0].title,
-        artist: release[0].artist,
+        artist: (release[0] as any).artist,
         metadata: release[0].metadata,
       };
 

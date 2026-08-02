@@ -314,7 +314,7 @@ export async function registerRoutes(
         ...safeUser
       } = req.user!;
       if (safeUser.email === "demo@maxbooster.ai") {
-        safeUser.isDemo = true;
+        (safeUser as any).isDemo = true;
       }
       return res.json(safeUser);
     }
@@ -649,7 +649,7 @@ export async function registerRoutes(
   // Auth: Inactivity heartbeat — called by the frontend whenever the user is active.
   // Rolling session auto-extends the cookie. No DB update needed.
   app.post("/api/auth/heartbeat", (req: Request, res: Response) => {
-    const userId = req.session.userId || req.user.id;
+    const userId = req.session.userId || req.user!.id;
     if (!userId) {
       return res.status(401).json({ ok: false });
     }
@@ -659,7 +659,7 @@ export async function registerRoutes(
 
   // Auth: Session refresh heartbeat (keeps session alive, renews CSRF)
   app.post("/api/auth/refresh-token", async (req: Request, res: Response) => {
-    const userId = req.session.userId || req.user.id;
+    const userId = req.session.userId || req.user!.id;
 
     if (!userId) {
       return res.status(401).json({
@@ -1031,7 +1031,7 @@ export async function registerRoutes(
           );
           const redisClient = await getRedisClient();
           if (redisClient) {
-            await redisClient.del(`maxbooster:sess:${sessionId}`);
+            await (redisClient as any).del(`maxbooster:sess:${sessionId}`);
           }
         } catch (redisError) {
           logger.warn({ err: redisError }, "Redis session deletion skipped");
@@ -1072,7 +1072,7 @@ export async function registerRoutes(
                 );
                 const redisClient = await getRedisClient();
                 if (redisClient) {
-                  await redisClient.del(`maxbooster:sess:${session.id}`);
+                  await (redisClient as any).del(`maxbooster:sess:${session.id}`);
                 }
               } catch (redisError) {
                 // Redis deletion is best-effort
@@ -1120,7 +1120,7 @@ export async function registerRoutes(
                 );
                 const redisClient = await getRedisClient();
                 if (redisClient) {
-                  await redisClient.del(`maxbooster:sess:${session.id}`);
+                  await (redisClient as any).del(`maxbooster:sess:${session.id}`);
                 }
               } catch (redisError) {}
             }
@@ -1173,7 +1173,7 @@ export async function registerRoutes(
         return {
           id: event.id,
           timestamp:
-            event.detectedAt.toISOString() || new Date().toISOString(),
+            event.detectedAt!.toISOString() || new Date().toISOString(),
           ipAddress: metadata.ipAddress || indicators.ipAddress || "Unknown",
           location: metadata.location || indicators.location || "Unknown",
           device:
@@ -1225,16 +1225,19 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      // Return user's privacy settings from their profile
+      // Return user's privacy settings from their profile.
+      // NOTE: these preference columns are not in the users table yet — the
+      // values below are the served defaults (kept identical to prior runtime).
+      const u = req.user as any;
       const settings = {
-        profileVisibility: req.user.profileVisibility || "public",
-        showEmail: req.user.showEmail ?? false,
-        showLocation: req.user.showLocation ?? true,
-        allowMessages: req.user.allowMessages ?? true,
-        allowSearchIndexing: req.user.allowSearchIndexing ?? true,
+        profileVisibility: u.profileVisibility || "public",
+        showEmail: u.showEmail ?? false,
+        showLocation: u.showLocation ?? true,
+        allowMessages: u.allowMessages ?? true,
+        allowSearchIndexing: u.allowSearchIndexing ?? true,
         gdprDataProcessing: true, // Required for service
-        gdprMarketing: req.user.gdprMarketing ?? false,
-        gdprAnalytics: req.user.gdprAnalytics ?? true,
+        gdprMarketing: u.gdprMarketing ?? false,
+        gdprAnalytics: u.gdprAnalytics ?? true,
       };
       return res.json(settings);
     } catch (error) {
@@ -1304,7 +1307,7 @@ export async function registerRoutes(
         // For now, simulate immediate completion
         setTimeout(async () => {
           try {
-            await storage.updateUser(req.user.id, {
+            await storage.updateUser(req.user!.id, {
               dataExportStatus: "ready",
               dataExportExpiresAt: new Date(
                 Date.now() + 7 * 24 * 60 * 60 * 1000,
@@ -1399,7 +1402,7 @@ export async function registerRoutes(
                 );
                 const redisClient = await getRedisClient();
                 if (redisClient) {
-                  await redisClient.del(`maxbooster:sess:${session.id}`);
+                  await (redisClient as any).del(`maxbooster:sess:${session.id}`);
                 }
               } catch (redisError) {
                 // Redis deletion is best-effort
@@ -3068,7 +3071,7 @@ export async function registerRoutes(
       }
       try {
         const user = await storage.getUser(req.user.id);
-        const savedPrefs = user.notificationSettings as Record<
+        const savedPrefs = user!.notificationSettings as Record<
           string,
           unknown
         > | null;
@@ -3313,7 +3316,6 @@ export async function registerRoutes(
                   ...currentSettings,
                   push: { ...currentPush, enabled: true },
                 },
-                updatedAt: new Date(),
               })
               .where(eq(users.id, req.user.id));
           }
@@ -3505,7 +3507,7 @@ export async function registerRoutes(
           // Store the normalized phone number (code is managed by Twilio — no DB storage needed)
           const user = await storage.getUser(req.user.id);
           const currentSettings =
-            (user.notificationSettings as Record<string, unknown>) || {};
+            (user!.notificationSettings as Record<string, unknown>) || {};
           await storage.updateUser(req.user.id, {
             notificationSettings: {
               ...currentSettings,
@@ -3545,7 +3547,7 @@ export async function registerRoutes(
 
           const user = await storage.getUser(req.user.id);
           const currentSettings =
-            (user.notificationSettings as Record<string, unknown>) || {};
+            (user!.notificationSettings as Record<string, unknown>) || {};
           await storage.updateUser(req.user.id, {
             notificationSettings: {
               ...currentSettings,
@@ -3572,7 +3574,7 @@ export async function registerRoutes(
         // 🔧 Dev/demo fallback — no Twilio credentials configured
         const user = await storage.getUser(req.user.id);
         const currentSettings =
-          (user.notificationSettings as Record<string, unknown>) || {};
+          (user!.notificationSettings as Record<string, unknown>) || {};
         await storage.updateUser(req.user.id, {
           notificationSettings: {
             ...currentSettings,
@@ -3643,7 +3645,7 @@ export async function registerRoutes(
         // Resolve phone: prefer what was sent, fall back to what's stored
         const user = await storage.getUser(req.user.id);
         const currentSettings =
-          (user.notificationSettings as Record<string, unknown>) || {};
+          (user!.notificationSettings as Record<string, unknown>) || {};
         const smsSettings =
           (currentSettings.sms as Record<string, unknown>) || {};
         const storedPhone = smsSettings.phoneNumber as string | undefined;
@@ -3911,7 +3913,7 @@ export async function registerRoutes(
               .status(413)
               .json({ message: "File too large. Maximum size is 500MB." });
           }
-          if (errMsg.includes("Invalid file type")) {
+          if (errMsg!.includes("Invalid file type")) {
             return res.status(400).json({ message: errMsg });
           }
           return res.status(400).json({ message: errMsg || "Upload failed" });
@@ -4970,9 +4972,9 @@ export async function registerRoutes(
         }
         return res.json({
           id: pocketId,
-          totalSize: pocket.totalBytes || 0,
-          fileCount: pocket.fileCount || 0,
-          lastUpdated: pocket.lastAccessedAt || new Date(),
+          totalSize: pocket!.totalBytes || 0,
+          fileCount: pocket!.fileCount || 0,
+          lastUpdated: pocket!.lastAccessedAt || new Date(),
         });
       } catch (error) {
         logger.warn({ err: error }, "Pocket stats error");
@@ -5163,7 +5165,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const seenFeatures = req.user.onboardingData.seenFeatures || [];
+      const seenFeatures = (req.user.onboardingData as any).seenFeatures || [];
       return res.json({ seenFeatures });
     } catch (error) {
       logger.warn({ err: error }, "Get seen features error");
@@ -5184,7 +5186,7 @@ export async function registerRoutes(
           return res.status(400).json({ message: "Feature ID is required" });
         }
         const currentOnboardingData = req.user.onboardingData || {};
-        const seenFeatures = currentOnboardingData.seenFeatures || [];
+        const seenFeatures = (currentOnboardingData as any).seenFeatures || [];
         if (!seenFeatures.includes(featureId)) {
           seenFeatures.push(featureId);
         }
@@ -5490,7 +5492,7 @@ export async function registerRoutes(
       }
       try {
         const user = req.user!;
-        const prefs = user.preferences.payout || {};
+        const prefs = (user.preferences as any).payout || {};
         const methods = [];
         if (user.stripeConnectedAccountId) {
           methods.push({
@@ -5543,7 +5545,7 @@ export async function registerRoutes(
         const currentPrefs = user.preferences || {};
         const updated = {
           ...currentPrefs,
-          payout: { ...(currentPrefs.payout || {}) },
+          payout: { ...((currentPrefs as any).payout || {}) },
         };
         if (type === "paypal" && paypalEmail)
           updated.payout.paypalEmail = paypalEmail;
@@ -5572,7 +5574,7 @@ export async function registerRoutes(
       }
       try {
         const user = req.user!;
-        const prefs = user.preferences.payoutSettings || {};
+        const prefs = (user.preferences as any).payoutSettings || {};
 
         // Pull the latest submitted tax form to surface taxCountry / taxId
         const [latestTaxForm] = await db
@@ -5588,7 +5590,7 @@ export async function registerRoutes(
 
         const taxFormData = latestTaxForm.formData as Record<string, unknown>;
         const taxCountry =
-          taxFormData.taxCountry ?? taxFormData.address.country ?? null;
+          taxFormData.taxCountry ?? (taxFormData.address as any).country ?? null;
         const taxId = taxFormData.taxId
           ? "***-**-" + String(taxFormData.taxId).slice(-4)
           : null;
@@ -5598,7 +5600,7 @@ export async function registerRoutes(
           payoutSchedule: prefs.payoutSchedule ?? "monthly",
           preferredMethod: prefs.preferredMethod ?? null,
           stripeConnected: !!user.stripeConnectedAccountId,
-          paypalEmail: user.preferences.payout.paypalEmail ?? null,
+          paypalEmail: (user.preferences as any).payout.paypalEmail ?? null,
           taxCountry,
           taxId,
           taxFormType: latestTaxForm.formType ?? null,
@@ -5626,7 +5628,7 @@ export async function registerRoutes(
         const updated = {
           ...currentPrefs,
           payoutSettings: {
-            ...(currentPrefs.payoutSettings || {}),
+            ...((currentPrefs as any).payoutSettings || {}),
             ...(minimumPayout != null && { minimumPayout }),
             ...(payoutSchedule && { payoutSchedule }),
             ...(preferredMethod && { preferredMethod }),
@@ -5838,7 +5840,7 @@ export async function registerRoutes(
         const csvBody = safeRows
           .map(
             (r) =>
-              `${r.createdAt.toISOString()},${r.platform || ""},${r.releaseId},${r.amount},${r.currency || "usd"},${r.streamCount || 0},${r.status}`,
+              `${r.createdAt!.toISOString()},${r.platform || ""},${r.releaseId},${r.amount},${r.currency || "usd"},${r.streamCount || 0},${r.status}`,
           )
           .join("\n");
         const csv = csvHeader + csvBody;
@@ -6147,7 +6149,7 @@ export async function registerRoutes(
       const invoice = subscription.latest_invoice as Stripe.Invoice;
       const pi = invoice.payment_intent as Stripe.PaymentIntent | null;
 
-      if (!pi.client_secret) {
+      if (!pi!.client_secret) {
         logger.warn(
           { subscriptionId: subscription.id },
           "[create-subscription] No client_secret in subscription invoice PI",
@@ -6158,7 +6160,7 @@ export async function registerRoutes(
       }
 
       return res.json({
-        clientSecret: pi.client_secret,
+        clientSecret: pi!.client_secret,
         subscriptionId: subscription.id,
         type: "subscription",
       });
@@ -7033,13 +7035,13 @@ export async function registerRoutes(
         try {
           app.use(path, result.value);
         } catch (e) {
-          log(`Warning: Failed to mount ${name} - ${e.message}`);
+          log(`Warning: Failed to mount ${name} - ${(e as Error).message}`);
         }
       } else if (result.type === "function" && result.value) {
         try {
           result.value(app);
         } catch (e) {
-          log(`Warning: Failed to setup ${name} - ${e.message}`);
+          log(`Warning: Failed to setup ${name} - ${(e as Error).message}`);
         }
       }
     }
@@ -7392,8 +7394,8 @@ export async function registerRoutes(
         }
 
         const email = session.customer_email;
-        const username = session.metadata.username;
-        const tier = session.metadata.tier || "monthly";
+        const username = session.metadata!.username;
+        const tier = session.metadata!.tier || "monthly";
 
         if (!email || !username) {
           return res
@@ -7451,8 +7453,8 @@ export async function registerRoutes(
         const user = await storage.createUser({
           email,
           password: hashedPassword,
-          firstName: session.metadata.firstName || "",
-          lastName: session.metadata.lastName || "",
+          firstName: session.metadata!.firstName || "",
+          lastName: session.metadata!.lastName || "",
           subscriptionTier: tier,
           subscriptionEndsAt,
         });
@@ -7484,7 +7486,7 @@ export async function registerRoutes(
           "Error completing registration after payment:",
         );
 
-        if (error.type === "StripeInvalidRequestError") {
+        if ((error as any).type === "StripeInvalidRequestError") {
           return res
             .status(400)
             .json({ error: "Invalid payment session. Please try again." });

@@ -171,13 +171,13 @@ export function SubmissionStatusTracker({
   releaseId,
   releaseTitle,
   onRetry,
-  onCancel,
+  _onCancel,
 }: SubmissionStatusTrackerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedPlatform, setSelectedPlatform] =
     useState<PlatformSubmissionStatus | null>(null);
-  const [showErrorDetails, setShowErrorDetails] = useState(false);
+  const [_showErrorDetails, _setShowErrorDetails] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "all" | "live" | "processing" | "failed"
   >("all");

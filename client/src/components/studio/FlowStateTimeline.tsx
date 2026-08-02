@@ -31,7 +31,7 @@ export function FlowStateTimeline({
   zoom,
   onTimeChange,
   onZoomChange,
-  onLoopChange,
+  _onLoopChange,
   onLoopToggle,
 }: FlowStateTimelineProps) {
   const rulerRef = useRef<HTMLDivElement>(null);

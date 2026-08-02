@@ -118,8 +118,8 @@ async function pdimRpc(
       },
     };
   } catch (err) {
-    logger.warn(`[MaxCore] PDIM RPC error for ${action}: ${err?.message}`);
-    return { ok: false, status: 503, data: { error: String(err?.message) } };
+    logger.warn(`[MaxCore] PDIM RPC error for ${action}: ${(err as any)?.message}`);
+    return { ok: false, status: 503, data: { error: String((err as any)?.message) } };
   }
 }
 
@@ -145,7 +145,7 @@ async function httpPeer(
     const data = await res.json().catch(() => null);
     return { ok: res.ok, status: res.status, data };
   } catch (err) {
-    const offline = err?.name === "AbortError" || err?.code === "ECONNREFUSED";
+    const offline = (err as any)?.name === "AbortError" || (err as any)?.code === "ECONNREFUSED";
     return {
       ok: false,
       status: offline ? 503 : 500,
@@ -189,7 +189,7 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  if (!req.user || (req.user as Record<string, unknown>).role !== "admin") {
+  if (!req.user || (req.user as unknown as Record<string, unknown>).role !== "admin") {
     return res.status(403).json({ error: "Admin access required" });
   }
   next();
@@ -214,7 +214,7 @@ router?.get("/health", async (_req, res) => {
       const pong = await pdimExec(PEER_CFG, "PING", []);
       return res.json({ ok: true, mode: "pdim", ping: pong });
     } catch (err) {
-      return res.status(503).json({ ok: false, error: String(err?.message) });
+      return res.status(503).json({ ok: false, error: String((err as any)?.message) });
     }
   }
   send(res, await peer("GET", "/health"));
@@ -266,8 +266,8 @@ router?.post("/train/trigger-session", async (_req, res) => {
       keys: ["mbs:training:session", "mbs:downloads"],
     });
   } catch (err) {
-    logger.warn(`[MaxCore] trigger-session PDIM push failed: ${err?.message}`);
-    return res.status(500).json({ ok: false, error: err.message });
+    logger.warn(`[MaxCore] trigger-session PDIM push failed: ${(err as any)?.message}`);
+    return res.status(500).json({ ok: false, error: (err as Error).message });
   }
 });
 
@@ -430,8 +430,8 @@ router?.post("/downloader/start", async (_req, res) => {
       keys: ["mbs:downloads", "mbs:training:session"],
     });
   } catch (err) {
-    logger.warn(`[MaxCore] Failed to push to main PDIM: ${err?.message}`);
-    res.status(500).json({ ok: false, error: err.message });
+    logger.warn(`[MaxCore] Failed to push to main PDIM: ${(err as any)?.message}`);
+    res.status(500).json({ ok: false, error: (err as Error).message });
   }
 });
 
@@ -709,9 +709,9 @@ router?.post("/ai-jobs/push-all", async (_req, res) => {
       results?.push({ key: k, ok: true });
       pushed++;
     } catch (err) {
-      results?.push({ key: k, ok: false, error: err.message });
+      results?.push({ key: k, ok: false, error: (err as Error).message });
       failed++;
-      logger.warn(`[MaxCore] ai-jobs/push-all failed for ${k}: ${err?.message}`);
+      logger.warn(`[MaxCore] ai-jobs/push-all failed for ${k}: ${(err as any)?.message}`);
     }
   }
 

@@ -49,7 +49,7 @@ const contentSchema = z.object({
 router?.get(
   "/viral-score/:contentId",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const { contentId } = req.params;
 
@@ -61,7 +61,7 @@ router?.get(
         contentId,
       });
     } catch (error) {
-      logger.warn("Error in get viral-score:", error?.message);
+      logger.warn("Error in get viral-score:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -70,7 +70,7 @@ router?.get(
 router?.post(
   "/viral-score",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { content } = req.body;
@@ -92,10 +92,10 @@ router?.post(
         overall: score.overall,
         breakdown: {
           emotionalImpact: score.factors.emotionalResonance,
-          trendAlignment: score.factors.trendRelevance,
-          formatOptimization: score.factors.contentStructure,
-          timingScore: score.factors.timingScore,
-          engagementPotential: score.factors.engagementHooks,
+          trendAlignment: (score.factors as any).trendRelevance,
+          formatOptimization: (score.factors as any).contentStructure,
+          timingScore: (score.factors as any).timingScore,
+          engagementPotential: (score.factors as any).engagementHooks,
         },
         recommendations: score.recommendations,
         predictedReach: {
@@ -110,7 +110,7 @@ router?.post(
         score: transformedScore,
       });
     } catch (error) {
-      logger.warn("Error in post viral-score:", error?.message);
+      logger.warn("Error in post viral-score:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -119,7 +119,7 @@ router?.post(
 router?.get(
   "/optimal-timing/:platform",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { platform } = req.params;
@@ -153,7 +153,7 @@ router?.get(
             (slot?.audienceActive * slot?.score) / 100,
           ),
         })),
-        avoidTimes: timing.avoidTimes || [
+        avoidTimes: (timing as any).avoidTimes || [
           { dayOfWeek: 0, hour: 3, reason: "Very low engagement period" },
           { dayOfWeek: 0, hour: 4, reason: "Very low engagement period" },
           { dayOfWeek: 1, hour: 2, reason: "Early morning - low activity" },
@@ -166,7 +166,7 @@ router?.get(
         timing: transformedTiming,
       });
     } catch (error) {
-      logger.warn("Error in optimal-timing:", error?.message);
+      logger.warn("Error in optimal-timing:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -175,7 +175,7 @@ router?.get(
 router?.get(
   "/reach-dashboard",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { timezone = "America/New_York" } = req.query;
@@ -294,7 +294,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger.warn("Error in reach-dashboard:", error?.message);
+      logger.warn("Error in reach-dashboard:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -303,7 +303,7 @@ router?.get(
 router?.post(
   "/generate-variants",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { content, count = 5 } = req.body;
@@ -357,7 +357,7 @@ router?.post(
         statisticalConfidence: Math.min(95, 60 + variants?.length * 7),
       });
     } catch (error) {
-      logger.warn("Error in generate-variants:", error?.message);
+      logger.warn("Error in generate-variants:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -366,7 +366,7 @@ router?.post(
 router?.get(
   "/algorithm-insights",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { platform = "instagram" } = req.query;
@@ -410,7 +410,7 @@ router?.get(
           algorithmHealth: health,
           contentPreferences: platformProfile.contentPreferences,
           engagementPatterns: patterns,
-          algorithmTips: insights.tips,
+          algorithmTips: (insights as any).tips,
           benchmarks: insights.benchmarks,
           optimizationStrategies: [
             "Post during peak engagement windows",
@@ -436,7 +436,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger.warn("Error in algorithm-insights:", error?.message);
+      logger.warn("Error in algorithm-insights:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -445,7 +445,7 @@ router?.get(
 router?.get(
   "/algorithm-insights/:platform",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { platform } = req.params;
@@ -472,7 +472,7 @@ router?.get(
         insights,
       });
     } catch (error) {
-      logger.warn("Error in algorithm-insights by platform:", error?.message);
+      logger.warn("Error in algorithm-insights by platform:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -481,7 +481,7 @@ router?.get(
 router?.get(
   "/dashboard",
   requireAuth,
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: any, res: any) => {
     try {
 
       res.json({
@@ -499,7 +499,7 @@ router?.get(
         alerts: [],
       });
     } catch (error) {
-      logger.warn("Error in organic dashboard:", error?.message);
+      logger.warn("Error in organic dashboard:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -508,7 +508,7 @@ router?.get(
 router?.get(
   "/stats",
   requireAuth,
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: any, res: any) => {
     try {
 
       res.json({
@@ -518,7 +518,7 @@ router?.get(
         viralPosts: 0,
       });
     } catch (error) {
-      logger.warn("Error in organic stats:", error?.message);
+      logger.warn("Error in organic stats:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -527,7 +527,7 @@ router?.get(
 router?.get(
   "/metrics",
   requireAuth,
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: any, res: any) => {
     try {
 
       res.json({
@@ -538,7 +538,7 @@ router?.get(
         viralScore: null,
       });
     } catch (error) {
-      logger.warn("Error in organic metrics:", error?.message);
+      logger.warn("Error in organic metrics:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -547,14 +547,14 @@ router?.get(
 router?.get(
   "/recommendations",
   requireAuth,
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: any, res: any) => {
     try {
 
       res.json({
         recommendations: [],
       });
     } catch (error) {
-      logger.warn("Error in organic recommendations:", error?.message);
+      logger.warn("Error in organic recommendations:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),

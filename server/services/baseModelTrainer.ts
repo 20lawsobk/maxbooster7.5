@@ -32,9 +32,9 @@ function pick<T>(arr: readonly T[]): T {
 
 function makeSyntheticPosts(count: number): SocialPost[] {
   const posts: SocialPost[] = [];
-  const contentFactors = ENGAGEMENT_PREDICTION_FEATURES?.contentFactors;
-  const temporalFactors = ENGAGEMENT_PREDICTION_FEATURES?.temporalFactors;
-  const musicFactors = ENGAGEMENT_PREDICTION_FEATURES?.musicSpecificFactors;
+  const contentFactors = (ENGAGEMENT_PREDICTION_FEATURES as any)?.contentFactors;
+  const temporalFactors = (ENGAGEMENT_PREDICTION_FEATURES as any)?.temporalFactors;
+  const musicFactors = (ENGAGEMENT_PREDICTION_FEATURES as any)?.musicSpecificFactors;
 
   for (let i = 0; i < count; i++) {
     const platform = pick(PLATFORMS);
@@ -43,7 +43,7 @@ function makeSyntheticPosts(count: number): SocialPost[] {
     const isPeak = Math.random() > 0.4;
     const hour = isPeak ? pick(peakHours) : randInt(0, 23);
     const postedAt = new Date(Date?.now() - randInt(0, 90) * 24 * 3600 * 1000);
-    postedAt?.setHours(hour);
+    postedAt?.setHours((hour as number));
 
     const hashtagCount = randInt(
       contentFactors?.hashtagCount.optimal?.min,
@@ -191,7 +191,7 @@ function makeOrganicAsAdsCampaigns(count: number): OrganicCampaign[] {
   const campaigns: OrganicCampaign[] = [];
   const funnelStages = ["awareness", "consideration", "conversion"] as const;
   const burstSequence =
-    ORGANIC_AS_ADS_PATTERNS?.crossPlatformBurstStrategy.sequencing;
+    (ORGANIC_AS_ADS_PATTERNS as any)?.crossPlatformBurstStrategy.sequencing;
   const burstPlatforms = [
     burstSequence?.t0.platform,
     burstSequence?.t2h.platform,
@@ -240,13 +240,13 @@ function makeOrganicAsAdsCampaigns(count: number): OrganicCampaign[] {
 
     // Conversions: organic converts better (higher trust) than paid
     const organicCVR =
-      PAID_AD_BENCHMARKS?.performanceVsOrganic.conversionComparison?.organicCVR;
+      (PAID_AD_BENCHMARKS as any)?.performanceVsOrganic.conversionComparison?.organicCVR;
     const conversions = Math.round(
       clicks * rand(organicCVR * 0.7, organicCVR * 1.4),
     );
 
     // Funnel stage determines content type and CTA pattern
-    const funnelConfig = ORGANIC_AS_ADS_PATTERNS?.funnelReplication[funnelStage];
+    const funnelConfig = (ORGANIC_AS_ADS_PATTERNS as any)?.funnelReplication[funnelStage];
     const callToAction =
       funnelStage === "conversion"
         ? "Stream Now"
@@ -352,8 +352,8 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
     "carousel",
     "text",
   ];
-  const instaBenchmarks = PAID_AD_BENCHMARKS?.platformMetrics.meta_instagram;
-  const tiktokBenchmarks = PAID_AD_BENCHMARKS?.platformMetrics.tiktok_ads;
+  const instaBenchmarks = (PAID_AD_BENCHMARKS?.platformMetrics as any).meta_instagram;
+  const tiktokBenchmarks = (PAID_AD_BENCHMARKS?.platformMetrics as any).tiktok_ads;
 
   for (let i = 0; i < count; i++) {
     const isPrimarilyInstagram = Math.random() > 0.4;
@@ -656,7 +656,7 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
     > = {};
     for (const genre of genres) {
       hookCorpus[genre] = [];
-      const genreData = GENRE_VIRAL_HOOKS[genre] as Record<
+      const genreData = GENRE_VIRAL_HOOKS[genre] as unknown as Record<
         string,
         readonly string[]
       >;
@@ -726,7 +726,7 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
 
     if (videoEngagementMatrix) {
       for (const [genre, rates] of Object.entries(videoEngagementMatrix)) {
-        const r = rates as Record<string, number>;
+        const r = rates as unknown as Record<string, number>;
         const avgEngagement = ((r?.likeRate ?? 0) + (r?.commentRate ?? 0) + (r?.shareRate ?? 0)) / 3;
         totalVideoSamples++;
         logger.debug(
@@ -736,7 +736,7 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
     }
 
     const hookBoostFactors = audioSignals
-      ? Object.entries(audioSignals as Record<string, Record<string, number>>).map(([signal, data]) => ({
+      ? Object.entries(audioSignals as unknown as Record<string, Record<string, number>>).map(([signal, data]) => ({
           signal,
           engagementBoost: (data as Record<string, number>).engagementBoost,
           shareabilityBoost: (data as Record<string, number>).shareabilityBoost,
@@ -747,17 +747,17 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
       `[BaseTrainer] Phase 3 complete: ${totalVideoSamples} video genre profiles, ${hookBoostFactors.length} audio signal boost factors loaded`,
     );
     if (harmonyLift) {
-      const hl = harmonyLift as Record<string, Record<string, number>>;
+      const hl = harmonyLift as unknown as Record<string, Record<string, number>>;
       logger.info(
         `[BaseTrainer]   HarmonySet beat-sync lift: +${((hl.beatSyncedEditing?.retentionLift ?? 0) * 100).toFixed(0)}% retention, +${((hl.beatSyncedEditing?.shareabilityLift ?? 0) * 100).toFixed(0)}% shareability`,
       );
     }
     if (audioSignals) {
-      const as_ = audioSignals as Record<string, Record<string, number>>;
+      const as_ = audioSignals as unknown as Record<string, Record<string, number>>;
       logger.info(`[BaseTrainer]   AudioSet drop signal: ${as_.dropPresent?.engagementBoost?.toFixed?.(2) ?? "n/a"}x engagement boost`);
     }
     if (videoFeatures) {
-      const vf = videoFeatures as Record<string, number>;
+      const vf = videoFeatures as unknown as Record<string, number>;
       logger.info(`[BaseTrainer]   YouTube-8M hook-first-3s importance: ${((vf.hookInFirst3Seconds ?? 0) * 100).toFixed(0)}%`);
     }
 
@@ -1083,7 +1083,7 @@ async function trainCreativePlannerBase(): Promise<boolean> {
     return true;
   } catch (err) {
     logger.warn(
-      `[BaseTrainer] CreativePlannerModel training failed: ${err?.message}`,
+      `[BaseTrainer] CreativePlannerModel training failed: ${(err as any)?.message}`,
     );
     return false;
   }
@@ -1124,7 +1124,7 @@ async function trainBeatSyncAlignmentBase(): Promise<boolean> {
     return true;
   } catch (err) {
     logger.warn(
-      `[BaseTrainer] BeatSyncAlignmentModel training failed: ${err?.message}`,
+      `[BaseTrainer] BeatSyncAlignmentModel training failed: ${(err as any)?.message}`,
     );
     return false;
   }
@@ -1165,7 +1165,7 @@ async function trainVideoCreativeScorerBase(): Promise<boolean> {
     return true;
   } catch (err) {
     logger.warn(
-      `[BaseTrainer] VideoCreativeScorer training failed: ${err?.message}`,
+      `[BaseTrainer] VideoCreativeScorer training failed: ${(err as any)?.message}`,
     );
     return false;
   }
@@ -1206,7 +1206,7 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
     return true;
   } catch (err) {
     logger.warn(
-      `[BaseTrainer] KeyframeStyleSelector training failed: ${err?.message}`,
+      `[BaseTrainer] KeyframeStyleSelector training failed: ${(err as any)?.message}`,
     );
     return false;
   }

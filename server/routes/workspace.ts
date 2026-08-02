@@ -47,7 +47,7 @@ const requireWorkspaceMember = async (
     }
     next();
   } catch (error) {
-    logger.warn("Error in workspace member check:", error?.message);
+    logger.warn("Error in workspace member check:", (error as any)?.message);
     res.status(500).json({ error: "Failed to process request" });
   }
 };
@@ -70,7 +70,7 @@ const requireWorkspaceAdmin = async (
     }
     next();
   } catch (error) {
-    logger.warn("Error in workspace admin check:", error?.message);
+    logger.warn("Error in workspace admin check:", (error as any)?.message);
     res.status(500).json({ error: "Failed to process request" });
   }
 };

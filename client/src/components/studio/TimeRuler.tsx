@@ -23,7 +23,7 @@ export function TimeRuler({
   const { currentTime, zoom, snapEnabled, snapResolution } = useStudioStore();
   const rulerRef = useRef<HTMLDivElement>(null);
 
-  const [numerator, denominator] = timeSignature.split("/").map(Number);
+  const [numerator, _denominator] = timeSignature.split("/").map(Number);
 
   // Calculate visible time range based on zoom
   const visibleDuration = duration / zoom;

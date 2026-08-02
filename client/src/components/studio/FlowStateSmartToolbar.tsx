@@ -104,8 +104,8 @@ const AUTOMATION_ACTIONS: ToolbarAction[] = [
 
 export function FlowStateSmartToolbar({
   selectionType,
-  selectedTrackId,
-  selectedClipId,
+  _selectedTrackId,
+  _selectedClipId,
   onAction,
 }: FlowStateSmartToolbarProps) {
   const actions = useMemo(() => {

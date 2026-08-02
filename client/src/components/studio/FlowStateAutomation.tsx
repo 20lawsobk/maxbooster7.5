@@ -74,7 +74,7 @@ export function FlowStateAutomation({
   zoom = 100,
   snapEnabled = true,
   snapValue = 0.25,
-  isPlaying = false,
+  _isPlaying = false,
 }: FlowStateAutomationProps) {
   const { toast } = useToast();
   const [selectedLaneId, setSelectedLaneId] = useState<string | null>(

@@ -114,7 +114,7 @@ export class LoadTestFramework extends EventEmitter {
       const duration = Date?.now() - startTime;
       this.responseTimes.push(duration);
       this.failCount++;
-      const errorKey = error?.code || error?.message || "Unknown";
+      const errorKey = (error as any)?.code || (error as any)?.message || "Unknown";
       this.errors.set(errorKey, (this.errors.get(errorKey) || 0) + 1);
     }
   }
@@ -232,8 +232,7 @@ export class ScalabilityTester {
 
     for (const profile of this.scaleProfiles) {
       logger.info({ scale: profile?.name,
-        simulatedUsers: this.formatNumber(profile?.multiplier) }, `Testing at ${profile?.name} scale`);// FIXED
-      });
+        simulatedUsers: this.formatNumber(profile?.multiplier) }, `Testing at ${profile?.name} scale`);
 
       const actualConcurrentUsers = Math.min(profile?.users, 1000);
 
@@ -376,7 +375,7 @@ export class ScalabilityTester {
   }
 
   private printResults(result: ScaleTestResult): void {
-    logger.info(`Results for ${result?.scale} scale`, {
+    logger.info({
       simulatedUsers: this.formatNumber(result?.simulatedUsers),
       totalRequests: this.formatNumber(result?.results.totalRequests),
       successRate: `${((1 - result?.results.errorRate) * 100).toFixed(2)}%`,
@@ -387,7 +386,7 @@ export class ScalabilityTester {
       status: result.passed ? "PASSED" : "NEEDS OPTIMIZATION",
       bottlenecks: result.bottlenecks,
       recommendations: result.recommendations,
-    });
+    }, `Results for ${result?.scale} scale`);
   }
 
   private formatNumber(num: number): string {

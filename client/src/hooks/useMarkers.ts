@@ -21,7 +21,7 @@ export function useMarkers(projectId: string | null) {
     },
     enabled: !!projectId,
     staleTime: 30000, // 30 seconds
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       // Sync markers from API to Zustand store
       if (data?.markers) {
         const currentMarkerIds = new Set(markers?.map((m) => m?.id));

@@ -39,7 +39,7 @@ class QueryCache {
   async get<T>(key: string): Promise<T | null> {
     try {
       const redis = await getRedisClient();
-      const cached = await redis.get(`qcache:${key}`);
+      const cached = await (redis as any).get(`qcache:${key}`);
       return cached ? (JSON.parse(cached) as T) : null;
     } catch (err) {
       warnOnce("get", err);
@@ -55,7 +55,7 @@ class QueryCache {
     const ttl = ttlSeconds ?? DEFAULT_TTL;
     try {
       const redis = await getRedisClient();
-      await redis?.setex(`qcache:${key}`, ttl, JSON.stringify(data));
+      await (redis as any)?.setex(`qcache:${key}`, ttl, JSON.stringify(data));
     } catch (err) {
       warnOnce("set", err);
     }
@@ -84,7 +84,7 @@ class QueryCache {
   async invalidate(key: string): Promise<void> {
     try {
       const redis = await getRedisClient();
-      await redis?.del(`qcache:${key}`);
+      await (redis as any)?.del(`qcache:${key}`);
     } catch (err) {
       warnOnce("invalidate", err);
     }
@@ -96,9 +96,9 @@ class QueryCache {
   async invalidatePattern(pattern: string): Promise<void> {
     try {
       const redis = await getRedisClient();
-      const keys = await redis?.keys(`qcache:${pattern}`);
+      const keys = await (redis as any)?.keys(`qcache:${pattern}`);
       if (keys?.length > 0) {
-        await redis?.del(...keys);
+        await (redis as any)?.del(...keys);
       }
     } catch (err) {
       warnOnce("invalidatePattern", err);
@@ -111,9 +111,9 @@ class QueryCache {
   async clear(): Promise<void> {
     try {
       const redis = await getRedisClient();
-      const keys = await redis?.keys("qcache:*");
+      const keys = await (redis as any)?.keys("qcache:*");
       if (keys?.length > 0) {
-        await redis?.del(...keys);
+        await (redis as any)?.del(...keys);
       }
     } catch (err) {
       warnOnce("clear", err);

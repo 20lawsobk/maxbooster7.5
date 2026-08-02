@@ -343,7 +343,7 @@ class HyperLearningEngine extends EventEmitter {
         competitive?.insightsFound || 0,
         emergent?.length || 0,
         abTests?.length || 0,
-        adaptations?.length || 0,
+        (adaptations as any)?.length || 0,
       );
 
       this.learningMetrics.actualProcessingTimeMs += actualTimeMs;
@@ -481,7 +481,7 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.contentText) continue;
-      const length = post?.contentText.length;
+      const length = (post?.contentText as any).length;
       const bucket = Math.floor(length / 50) * 50;
       const key = `${bucket}-${bucket + 50}`;
 
@@ -533,9 +533,9 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.contentText) continue;
-      const emojis = post?.contentText.match(emojiRegex) || [];
+      const emojis = (post?.contentText as any).match(emojiRegex) || [];
       const density =
-        emojis?.length / Math.max(1, post?.contentText.length / 100);
+        emojis?.length / Math.max(1, (post?.contentText as any).length / 100);
       const bucket = Math.round(density);
       const key = `${bucket}`;
 
@@ -588,7 +588,7 @@ class HyperLearningEngine extends EventEmitter {
       )
         continue;
 
-      const text = post?.contentText.toLowerCase();
+      const text = (post?.contentText as any).toLowerCase();
       const firstHashtag = post?.hashtags[0]?.toLowerCase();
       if (!firstHashtag) continue;
 
@@ -648,7 +648,7 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.createdAt) continue;
-      const date = new Date(post?.createdAt);
+      const date = new Date(post?.createdAt as any);
       const minute = Math.floor(date?.getMinutes() / 15) * 15;
 
       if (!minuteBuckets?.has(minute)) {
@@ -721,7 +721,7 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.contentText) continue;
-      const text = post?.contentText.trim();
+      const text = (post?.contentText as any).trim();
 
       let matchedHook = "generic";
       for (const hook of hookPatterns) {
@@ -774,7 +774,7 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.contentText) continue;
-      const breaks = (post?.contentText.match(/\n/g) || []).length;
+      const breaks = ((post?.contentText as any).match(/\n/g) || []).length;
       const bucket = Math.min(breaks, 10);
 
       if (!breakBuckets?.has(bucket)) {
@@ -829,7 +829,7 @@ class HyperLearningEngine extends EventEmitter {
 
       for (const post of data) {
         if (!post?.contentText) continue;
-        const matches = post?.contentText.match(pType?.regex) || [];
+        const matches = (post?.contentText as any).match(pType?.regex) || [];
         const bucket = Math.min(matches?.length, 5);
 
         if (!buckets?.has(bucket)) {
@@ -879,17 +879,17 @@ class HyperLearningEngine extends EventEmitter {
       const text = post?.contentText;
 
       let numberType = "none";
-      if (/^\d+[\.\):]/.test(text)) {
+      if (/^\d+[\.\):]/.test((text as string))) {
         numberType = "list_format";
-      } else if (/\d+%/.test(text)) {
+      } else if (/\d+%/.test((text as string))) {
         numberType = "percentage";
-      } else if (/\$\d+|\d+\s*(k|m|b|million|billion)/i?.test(text)) {
+      } else if (/\$\d+|\d+\s*(k|m|b|million|billion)/i?.test((text as string))) {
         numberType = "money_or_scale";
       } else if (
-        /\d+\s*(days?|weeks?|months?|years?|hours?|minutes?)/i?.test(text)
+        /\d+\s*(days?|weeks?|months?|years?|hours?|minutes?)/i?.test((text as string))
       ) {
         numberType = "time_reference";
-      } else if (/\d+/.test(text)) {
+      } else if (/\d+/.test((text as string))) {
         numberType = "general_number";
       }
 
@@ -953,11 +953,11 @@ class HyperLearningEngine extends EventEmitter {
     for (const post of data) {
       if (!post?.contentText) continue;
       const text = post?.contentText;
-      const textLength = text?.length;
+      const textLength = (text as any)?.length;
 
       let ctaPosition = "none";
       for (const cta of ctaPatterns) {
-        const match = text?.match(cta);
+        const match = (text as any)?.match(cta);
         if (match && match?.index !== undefined) {
           const position = match?.index / textLength;
           if (position < 0.25) ctaPosition = "start";
@@ -1046,7 +1046,7 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post.contentText) continue;
-      const text = post.contentText.toLowerCase();
+      const text = (post.contentText as any).toLowerCase();
 
       const positiveCount = positiveWords.filter((w) =>
         text.includes(w),
@@ -1175,14 +1175,14 @@ class HyperLearningEngine extends EventEmitter {
         .toLowerCase()
         .replace(/[^a-z\s]/g, "")
         .split(/\s+/)
-        .filter((w) => w.length > 3 && !stopWords.has(w));
+        .filter((w: any) => w.length > 3 && !stopWords.has(w));
 
       const uniqueWords = [...new Set(words)];
       for (const word of uniqueWords) {
-        if (!wordEngagement.has(word)) {
-          wordEngagement.set(word, { engagement: 0, count: 0 });
+        if (!wordEngagement.has((word as string))) {
+          wordEngagement.set((word as string), { engagement: 0, count: 0 });
         }
-        const b = wordEngagement.get(word)!;
+        const b = wordEngagement.get((word as string))!;
         b.engagement += post.engagementRate || 0;
         b.count++;
       }
@@ -1240,7 +1240,7 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post.createdAt) continue;
-      const date = new Date(post.createdAt);
+      const date = new Date(post.createdAt as any);
       const dayOfMonth = date.getDate();
       const weekOfMonth = Math.ceil(dayOfMonth / 7);
 
@@ -1303,10 +1303,10 @@ class HyperLearningEngine extends EventEmitter {
     for (const post of data) {
       const mediaType = post.mediaType || "text_only";
 
-      if (!mediaTypes.has(mediaType)) {
-        mediaTypes.set(mediaType, { engagement: 0, count: 0 });
+      if (!mediaTypes.has((mediaType as string))) {
+        mediaTypes.set((mediaType as string), { engagement: 0, count: 0 });
       }
-      const b = mediaTypes.get(mediaType)!;
+      const b = mediaTypes.get((mediaType as string))!;
       b.engagement += post.engagementRate || 0;
       b.count++;
     }

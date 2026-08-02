@@ -8,7 +8,7 @@ const router = Router();
 
 router?.get("/defaults", requireAuth, async (req: Request, res: Response) => {
   try {
-    const defaults = await personalizationService?.getDefaults(req.user.id);
+    const defaults = await personalizationService?.getDefaults(req.user!.id);
     return res.json(defaults);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching defaults:");
@@ -20,14 +20,14 @@ router?.put("/defaults", requireAuth, async (req: Request, res: Response) => {
   try {
     const { artistType, careerStage, primaryGoals, genres, enabledFeatures } =
       req.body;
-    await personalizationService?.updateDefaults(req.user.id, {
+    await personalizationService?.updateDefaults(req.user!.id, {
       artistType,
       careerStage,
       primaryGoals,
       genres,
       enabledFeatures,
     });
-    await smartDefaultsService?.applyArtistTypeDefaults(req.user.id, artistType);
+    await smartDefaultsService?.applyArtistTypeDefaults(req.user!.id, artistType);
     return res.json({ success: true });
   } catch (error) {
     logger.warn({ err: error }, "Error updating defaults:");
@@ -38,7 +38,7 @@ router?.put("/defaults", requireAuth, async (req: Request, res: Response) => {
 router?.get("/preferences", requireAuth, async (req: Request, res: Response) => {
   try {
     const preferences = await personalizationService?.getPreferences(
-      req.user.id,
+      req.user!.id,
     );
     return res.json(preferences);
   } catch (error) {
@@ -50,8 +50,8 @@ router?.get("/preferences", requireAuth, async (req: Request, res: Response) => 
 router?.put("/preferences", requireAuth, async (req: Request, res: Response) => {
   try {
     const preferences = req.body;
-    await personalizationService?.updatePreferences(req.user.id, preferences);
-    await smartDefaultsService?.updatePreferences(req.user.id, preferences);
+    await personalizationService?.updatePreferences(req.user!.id, preferences);
+    await smartDefaultsService?.updatePreferences(req.user!.id, preferences);
     return res.json({ success: true });
   } catch (error) {
     logger.warn({ err: error }, "Error updating preferences:");
@@ -61,7 +61,7 @@ router?.put("/preferences", requireAuth, async (req: Request, res: Response) => 
 
 router?.get("/suggestions", requireAuth, async (req: Request, res: Response) => {
   try {
-    const suggestions = await smartDefaultsService?.getSuggestions(req.user.id);
+    const suggestions = await smartDefaultsService?.getSuggestions(req.user!.id);
     return res.json(suggestions);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching suggestions:");
@@ -74,7 +74,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const layout = await smartDefaultsService?.getDashboardLayout(req.user.id);
+      const layout = await smartDefaultsService?.getDashboardLayout(req.user!.id);
       return res.json(layout);
     } catch (error) {
       logger.warn({ err: error }, "Error fetching dashboard layout:");
@@ -91,7 +91,7 @@ router?.put(
   async (req: Request, res: Response) => {
     try {
       const { name, widgets } = req.body;
-      await personalizationService?.updateDashboardLayout(req.user.id, {
+      await personalizationService?.updateDashboardLayout(req.user!.id, {
         name,
         widgets,
       });
@@ -111,7 +111,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const presets = await personalizationService?.getLayoutPresets(
-        req.user.id,
+        req.user!.id,
       );
       return res.json(presets);
     } catch (error) {
@@ -133,7 +133,7 @@ router?.post(
           .json({ error: "Name and widgetIds are required" });
       }
       const preset = await personalizationService?.createLayoutPreset(
-        req.user.id,
+        req.user!.id,
         { name, widgetIds },
       );
       return res.json(preset);
@@ -152,7 +152,7 @@ router?.get(
       const platform = (req.query.platform as string) || "all";
       const contentType = (req.query.contentType as string) || "post";
       const schedule = await smartDefaultsService?.getSmartSchedule(
-        req.user.id,
+        req.user!.id,
         platform,
         contentType,
       );
@@ -174,7 +174,7 @@ router?.post(
         return res.status(400).json({ error: "Suggestion ID is required" });
       }
       await personalizationService?.applyScheduleSuggestion(
-        req.user.id,
+        req.user!.id,
         suggestionId,
         platform,
       );
@@ -190,7 +190,7 @@ router?.post(
 
 router?.get("/next-action", requireAuth, async (req: Request, res: Response) => {
   try {
-    const nextAction = await personalizationService?.getNextAction(req.user.id);
+    const nextAction = await personalizationService?.getNextAction(req.user!.id);
     return res.json(nextAction);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching next action:");
@@ -205,7 +205,7 @@ router?.get(
     try {
       const artistType = (req.query.artistType as string) || "solo";
       const settings = await smartDefaultsService?.getRecommendedSettings(
-        req.user.id,
+        req.user!.id,
         artistType as string,
       );
       return res.json(settings);
@@ -224,7 +224,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const analysis = await smartDefaultsService?.analyzeUserBehavior(
-        req.user.id,
+        req.user!.id,
       );
       return res.json(analysis);
     } catch (error) {
@@ -240,7 +240,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const schedule = await smartDefaultsService?.predictOptimalSchedule(
-        req.user.id,
+        req.user!.id,
       );
       return res.json(schedule);
     } catch (error) {
@@ -261,7 +261,7 @@ router?.post(
       if (!feature) {
         return res.status(400).json({ error: "Feature name is required" });
       }
-      await smartDefaultsService?.trackFeatureUsage(req.user.id, feature);
+      await smartDefaultsService?.trackFeatureUsage(req.user!.id, feature);
       return res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Error tracking feature usage:");
@@ -281,7 +281,7 @@ router?.post(
           .status(400)
           .json({ error: "Event type and target are required" });
       }
-      await personalizationService?.trackInteraction(req.user.id, {
+      await personalizationService?.trackInteraction(req.user!.id, {
         ...event,
         timestamp: event.timestamp || new Date(),
       });
@@ -305,7 +305,7 @@ router?.post(
           .json({ error: "Interactions array is required" });
       }
       await personalizationService?.trackBatchInteractions(
-        req.user.id,
+        req.user!.id,
         interactions,
       );
       return res.json({ success: true });
@@ -330,7 +330,7 @@ router?.post(
           .json({ error: "Widget ID and duration are required" });
       }
       await personalizationService?.trackWidgetView(
-        req.user.id,
+        req.user!.id,
         widgetId,
         duration,
       );
@@ -348,7 +348,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const recommendations = await personalizationService?.getRecommendations(
-        req.user.id,
+        req.user!.id,
       );
       return res.json(recommendations);
     } catch (error) {
@@ -364,7 +364,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const featureUsage = await personalizationService?.getFeatureUsage(
-        req.user.id,
+        req.user!.id,
       );
       return res.json(featureUsage);
     } catch (error) {
@@ -384,7 +384,7 @@ router?.put(
         return res.status(400).json({ error: "Feature ID is required" });
       }
       await personalizationService?.updateFeaturePriority(
-        req.user.id,
+        req.user!.id,
         featureId,
         { isVisible, priority },
       );
@@ -403,8 +403,8 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      await personalizationService?.getPreferences(req.user.id);
-      await personalizationService?.updatePreferences(req.user.id, {
+      await personalizationService?.getPreferences(req.user!.id);
+      await personalizationService?.updatePreferences(req.user!.id, {
         hiddenFeatures: [],
         featurePreferences: {},
       });
@@ -441,7 +441,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const state = await personalizationService?.getLearningState(req.user.id);
+      const state = await personalizationService?.getLearningState(req.user!.id);
       return res.json(state);
     } catch (error) {
       logger.warn({ err: error }, "Error fetching learning state:");
@@ -456,7 +456,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const insights = await personalizationService?.getLearningInsights(
-        req.user.id,
+        req.user!.id,
       );
       return res.json(insights);
     } catch (error) {
@@ -474,7 +474,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const patterns = await personalizationService?.getInteractionPatterns(
-        req.user.id,
+        req.user!.id,
       );
       return res.json(patterns);
     } catch (error) {
@@ -492,7 +492,7 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { insightId } = req.params;
-      await personalizationService?.applyInsight(req.user.id, insightId);
+      await personalizationService?.applyInsight(req.user!.id, insightId);
       return res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Error applying insight:");
@@ -507,7 +507,7 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { insightId } = req.params;
-      await personalizationService?.dismissInsight(req.user.id, insightId);
+      await personalizationService?.dismissInsight(req.user!.id, insightId);
       return res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Error dismissing insight:");
@@ -521,7 +521,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      await personalizationService?.resetLearning(req.user.id);
+      await personalizationService?.resetLearning(req.user!.id);
       return res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Error resetting learning:");
@@ -539,11 +539,11 @@ router?.post(
 
       if (type === "artistType") {
         await personalizationService?.applyArtistTypeDefaults(
-          req.user.id,
+          req.user!.id,
           value,
         );
       } else if (type === "genre") {
-        await personalizationService?.applyGenreDefaults(req.user.id, value);
+        await personalizationService?.applyGenreDefaults(req.user!.id, value);
       } else {
         return res
           .status(400)
@@ -563,7 +563,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      await personalizationService?.resetToDefaults(req.user.id);
+      await personalizationService?.resetToDefaults(req.user!.id);
       return res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Error resetting to defaults:");
@@ -579,7 +579,7 @@ router?.put(
     try {
       const { widgetId } = req.params;
       const updates = req.body;
-      await personalizationService?.updateWidget(req.user.id, widgetId, updates);
+      await personalizationService?.updateWidget(req.user!.id, widgetId, updates);
       return res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Error updating widget:");

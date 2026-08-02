@@ -1052,7 +1052,7 @@ export function FlowStateInstrumentDialog({
   onReset,
 }: FlowStateInstrumentDialogProps) {
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
-  const [showPresets, setShowPresets] = useState(false);
+  const [_showPresets, setShowPresets] = useState(false);
 
   const info = instrument ? INSTRUMENT_INFO[instrument.type] : null;
   const presets = instrument ? INSTRUMENT_PRESETS[instrument.type] : [];

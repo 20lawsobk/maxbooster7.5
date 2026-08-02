@@ -56,7 +56,7 @@ router?.post("/:postId/submit", async (req: AuthenticatedRequest, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req.params;
+    const { postId } = (req as any).params;
 
     const validatedData = submitForReviewSchema?.parse({ postId });
 
@@ -106,8 +106,8 @@ router?.post("/:postId/approve", async (req: AuthenticatedRequest, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req.params;
-    const { comment } = req.body;
+    const { postId } = (req as any).params;
+    const { comment } = (req as any).body;
 
     const validatedData = approvePostSchema?.parse({ postId, comment });
 
@@ -158,8 +158,8 @@ router?.post("/:postId/reject", async (req: AuthenticatedRequest, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req.params;
-    const { reason, comment } = req.body;
+    const { postId } = (req as any).params;
+    const { reason, comment } = (req as any).body;
 
     const validatedData = rejectPostSchema?.parse({ postId, reason, comment });
 
@@ -178,7 +178,7 @@ router?.post("/:postId/reject", async (req: AuthenticatedRequest, res) => {
       validatedData?.postId,
       req.user.id,
       validatedData?.reason,
-      validatedData?.comment,
+      (validatedData as any)?.comment,
     );
 
     if (!result?.success) {
@@ -211,8 +211,8 @@ router?.post("/:postId/schedule", async (req: AuthenticatedRequest, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req.params;
-    const { scheduledAt, comment } = req.body;
+    const { postId } = (req as any).params;
+    const { scheduledAt, comment } = (req as any).body;
 
     if (!scheduledAt) {
       return res.status(400).json({
@@ -261,8 +261,8 @@ router?.post("/:postId/publish", async (req: AuthenticatedRequest, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req.params;
-    const { comment } = req.body;
+    const { postId } = (req as any).params;
+    const { comment } = (req as any).body;
 
     const hasPermission = await approvalService?.checkPermission(
       req.user.id,
@@ -303,7 +303,7 @@ router?.get("/history/:postId", async (req: AuthenticatedRequest, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req.params;
+    const { postId } = (req as any).params;
 
     const history = await approvalService?.getApprovalHistory(postId);
 
@@ -324,7 +324,7 @@ router?.get("/my-posts", async (req: AuthenticatedRequest, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { status } = req.query;
+    const { status } = (req as any).query;
     const posts = await approvalService?.getUserPosts(
       req.user.id,
       status as Record<string, unknown>,
@@ -387,9 +387,9 @@ router?.get("/history", async (req: AuthenticatedRequest, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
     const userId = req.user.id;
-    const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10), 200);
+    const limit = Math.min(parseInt(String((req as any).query.limit ?? "50"), 10), 200);
     const offset = Math.min(
-      Math.max(parseInt(String(req.query.offset ?? "0"), 10), 0),
+      Math.max(parseInt(String((req as any).query.offset ?? "0"), 10), 0),
       100_000,
     );
 

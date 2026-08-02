@@ -147,7 +147,7 @@ const genreTemplates = {
 };
 
 // Musical note frequencies (A4 = 440Hz)
-const NOTE_FREQUENCIES: Record<string, number> = {
+const _NOTE_FREQUENCIES: Record<string, number> = {
   C: 261.63,
   "C#": 277.18,
   Db: 277.18,
@@ -491,7 +491,7 @@ export async function analyzeAudioForGeneration(
     const wav = new WaveFile.WaveFile(audioBuffer);
 
     // Get audio samples for analysis
-    const samplesData = wav?.getSamples(true) as Record<string, unknown>;
+    const samplesData = wav?.getSamples(true) as unknown as Record<string, unknown>;
     const samples =
       samplesData instanceof Float32Array
         ? samplesData

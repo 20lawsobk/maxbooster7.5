@@ -48,8 +48,8 @@ export default function MobileLyricsPanel({
   onSectionsChange,
   onActiveSectionChange,
   currentTime = 0,
-  onSeek,
-  isPlaying = false,
+  _onSeek,
+  _isPlaying = false,
 }: MobileLyricsPanelProps) {
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
   const activeSection =

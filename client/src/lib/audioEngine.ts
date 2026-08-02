@@ -232,7 +232,7 @@ class AudioEngine {
   // AudioWorklet state
 
   // Aux sends and returns
-  private auxBuses = new Map<
+  private _auxBuses = new Map<
     string,
     {
       gainNode: GainNode;
@@ -242,13 +242,13 @@ class AudioEngine {
   >();
 
   // Bus groups
-  private busGroups = new Map<string, BusGroup>();
+  private _busGroups = new Map<string, BusGroup>();
 
   // Automation lanes
-  private automationLanes = new Map<string, AutomationLane[]>();
+  private _automationLanes = new Map<string, AutomationLane[]>();
 
   // Sidechain configurations
-  private sidechainConfigs = new Map<string, SidechainConfig>();
+  private _sidechainConfigs = new Map<string, SidechainConfig>();
 
   // Buffer management
   private bufferCache = new Map<string, BufferCacheEntry>();
@@ -1971,7 +1971,7 @@ class AudioEngine {
     }
   }
 
-  private delayEffects = new Map<
+  private _delayEffects = new Map<
     string,
     {
       delayNode: DelayNode;
@@ -1982,7 +1982,7 @@ class AudioEngine {
     }
   >();
 
-  private distortionEffects = new Map<
+  private _distortionEffects = new Map<
     string,
     {
       waveshaper: WaveShaperNode;
@@ -1993,7 +1993,7 @@ class AudioEngine {
     }
   >();
 
-  private chorusEffects = new Map<
+  private _chorusEffects = new Map<
     string,
     {
       delayNode: DelayNode;
@@ -2005,7 +2005,7 @@ class AudioEngine {
     }
   >();
 
-  private flangerEffects = new Map<
+  private _flangerEffects = new Map<
     string,
     {
       delayNode: DelayNode;
@@ -2024,7 +2024,7 @@ class AudioEngine {
     }
   >();
 
-  private phaserEffects = new Map<
+  private _phaserEffects = new Map<
     string,
     {
       allpassFilters: BiquadFilterNode[];

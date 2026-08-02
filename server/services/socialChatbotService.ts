@@ -552,14 +552,14 @@ class SocialChatbotService {
       this.storeMessageInHistory(message);
 
       const responseId = randomBytes(8).toString("hex");
-      logger.info(`Chatbot response generated for user ${userId}`, {
+      logger.info({
         responseId,
         platform: message.platform,
         intent: intent.intent,
         confidence,
         requiresHumanReview,
         responseTime: Date.now() - startTime,
-      });
+      }, `Chatbot response generated for user ${userId}`);
 
       return {
         id: responseId,
@@ -780,10 +780,10 @@ class SocialChatbotService {
 
     this.knowledgeBase.set(newEntry?.id, newEntry);
 
-    logger.info(`Knowledge base entry added by user ${userId}`, {
+    logger.info({
       entryId: newEntry.id,
       category: entry.category,
-    });
+    }, `Knowledge base entry added by user ${userId}`);
 
     return newEntry;
   }

@@ -84,7 +84,7 @@ router?.post("/releases/submit", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch release submit error:", error?.message || error);
+    logger.warn("Batch release submit error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -130,7 +130,7 @@ router?.post("/releases/takedown", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch release takedown error:", error?.message || error);
+    logger.warn("Batch release takedown error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -184,7 +184,7 @@ router?.put("/releases/update", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch release update error:", error?.message || error);
+    logger.warn("Batch release update error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -230,7 +230,7 @@ router?.post("/releases/delete", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch release delete error:", error?.message || error);
+    logger.warn("Batch release delete error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -277,7 +277,7 @@ router?.post("/posts/schedule", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch post schedule error:", error?.message || error);
+    logger.warn("Batch post schedule error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -320,7 +320,7 @@ router?.post("/posts/delete", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch post delete error:", error?.message || error);
+    logger.warn("Batch post delete error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -372,7 +372,7 @@ router?.put("/posts/update", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch post update error:", error?.message || error);
+    logger.warn("Batch post update error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -421,7 +421,7 @@ router?.post("/files/delete", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch file delete error:", error?.message || error);
+    logger.warn("Batch file delete error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -471,7 +471,7 @@ router?.post("/files/move", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch file move error:", error?.message || error);
+    logger.warn("Batch file move error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -528,7 +528,7 @@ router?.post("/files/download", async (req: Request, res: Response) => {
       downloadUrl,
     });
   } catch (error) {
-    logger.warn("Batch file download error:", error?.message || error);
+    logger.warn("Batch file download error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -585,7 +585,7 @@ router?.put("/files/update", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch file update error:", error?.message || error);
+    logger.warn("Batch file update error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -639,7 +639,7 @@ router?.put("/marketplace/update", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch marketplace update error:", error?.message || error);
+    logger.warn("Batch marketplace update error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -683,7 +683,7 @@ router?.post("/marketplace/delete", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch marketplace delete error:", error?.message || error);
+    logger.warn("Batch marketplace delete error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -740,7 +740,7 @@ router?.post("/analytics/export", async (req: Request, res: Response) => {
       downloadUrl: `/api/batch/analytics/export/${exportId}/download`,
     });
   } catch (error) {
-    logger.warn("Batch analytics export error:", error?.message || error);
+    logger.warn("Batch analytics export error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -791,7 +791,7 @@ router?.get(
       );
       res.send(csvLines?.join("\n"));
     } catch (error) {
-      logger.warn("Analytics export download error:", error?.message || error);
+      logger.warn("Analytics export download error:", (error as any)?.message || error);
       res.status(500).json({ error: "Failed to process request" });
     }
   },
@@ -846,7 +846,7 @@ router?.post("/analytics/compare", async (req: Request, res: Response) => {
       comparisonData,
     });
   } catch (error) {
-    logger.warn("Batch analytics compare error:", error?.message || error);
+    logger.warn("Batch analytics compare error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -928,7 +928,7 @@ router?.post("/tracks/move", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch track move error:", error?.message || error);
+    logger.warn("Batch track move error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -977,7 +977,7 @@ router?.post("/tracks/tag", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch track tag error:", error?.message || error);
+    logger.warn("Batch track tag error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -1043,7 +1043,7 @@ router?.post("/tracks/export", async (req: Request, res: Response) => {
       jobId: exportRecord.id,
     });
   } catch (error) {
-    logger.warn("Batch track export error:", error?.message || error);
+    logger.warn("Batch track export error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -1084,7 +1084,7 @@ router?.post("/tracks/delete", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch track delete error:", error?.message || error);
+    logger.warn("Batch track delete error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -1139,7 +1139,7 @@ router?.put("/beats/update", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch beat update error:", error?.message || error);
+    logger.warn("Batch beat update error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -1183,7 +1183,7 @@ router?.post("/beats/delete", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch beat delete error:", error?.message || error);
+    logger.warn("Batch beat delete error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -1230,7 +1230,7 @@ router?.post("/posts/approve", async (req: Request, res: Response) => {
 
     res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger.warn("Batch post approve error:", error?.message || error);
+    logger.warn("Batch post approve error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -1260,7 +1260,7 @@ router?.get("/progress/:jobId", async (req: Request, res: Response) => {
       elapsedMs: Date.now() - job?.startTime,
     });
   } catch (error) {
-    logger.warn("Get batch progress error:", error?.message || error);
+    logger.warn("Get batch progress error:", (error as any)?.message || error);
     res.status(500).json({ error: "Failed to process request" });
   }
 });

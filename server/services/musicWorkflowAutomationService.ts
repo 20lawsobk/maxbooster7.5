@@ -1275,7 +1275,7 @@ class MusicWorkflowAutomationService {
 
     if (config?.sendEmail && eventData?.newMemberEmail) {
       try {
-        await emailService?.sendEmail({
+        await (emailService as any)?.sendEmail({
           to: eventData.newMemberEmail,
           subject: `You've been added to "${projectName}"`,
           html: `
@@ -1696,7 +1696,7 @@ class MusicWorkflowAutomationService {
         const note =
           config?.personalNote ||
           `Thank you for your purchase! I appreciate your support.`;
-        await emailService?.sendEmail({
+        await (emailService as any)?.sendEmail({
           to: buyerEmail,
           subject: `Thank you for purchasing "${productName}"`,
           html: `
@@ -1884,7 +1884,7 @@ class MusicWorkflowAutomationService {
         seed: Math.floor(Date?.now() / 10000),
       });
       pressReleaseDraft =
-        aiResult?.data?.caption || aiResult?.data?.content || "";
+        aiResult?.data?.caption || (aiResult?.data as any)?.content || "";
       if (pressReleaseDraft) {
         actions?.push(`AI press release drafted (${tone} tone)`);
       }
@@ -2109,7 +2109,7 @@ class MusicWorkflowAutomationService {
     // Send the actual follow-up email to the booking contact
     if (config.sendEmail && contactEmail) {
       try {
-        await emailService.sendEmail({
+        await (emailService as any).sendEmail({
           to: String(contactEmail),
           subject: `Booking Inquiry Follow-Up — ${venueName}`,
           html: `
@@ -2244,7 +2244,7 @@ class MusicWorkflowAutomationService {
       for (const target of syncTargets) {
         if (!target.email) continue;
         try {
-          await emailService.sendEmail({
+          await (emailService as any).sendEmail({
             to: target.email,
             subject: `Sync Licensing Submission: "${releaseTitle}" by ${artistName}`,
             html: `

@@ -243,7 +243,7 @@ export function SearchFilters({
   };
 
   const activeFilterCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== "" && value !== false,
+    ([_key, value]) => value !== undefined && value !== "" && value !== false,
   ).length;
 
   const presets: FilterPreset[] = presetsData?.presets || [];

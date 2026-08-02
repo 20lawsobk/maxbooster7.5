@@ -210,7 +210,7 @@ interface CrossPlatformComparisonProps {
 }
 
 export function CrossPlatformComparison({
-  userId,
+  _userId,
   timeRange = "30d",
   onTimeRangeChange,
 }: CrossPlatformComparisonProps) {

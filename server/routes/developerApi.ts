@@ -116,8 +116,8 @@ router?.get("/keys", async (req: Request, res: Response) => {
       apiKeys: apiKeys.map((key) => ({
         id: key.id,
         keyName: key.keyName,
-        apiKeyPreview: key.apiKeyPreview,
-        tier: key.tier,
+        apiKeyPreview: (key as any).apiKeyPreview,
+        tier: (key as any).tier,
         rateLimit: key.rateLimit,
         isActive: key.isActive,
         lastUsedAt: key.lastUsedAt,
@@ -141,14 +141,14 @@ router?.get("/keys", async (req: Request, res: Response) => {
 router.delete("/keys/:keyId", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
-    if (!req.user.id) {
+    if (!req.user!.id) {
       return res.status(401).json({
         error: "Unauthorized",
         message: "You must be logged in to revoke API keys",
       });
     }
 
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const keyId = req.params.keyId;
 
     if (!keyId) {
@@ -168,7 +168,7 @@ router.delete("/keys/:keyId", async (req: Request, res: Response) => {
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error revoking API key:");
 
-    if (error.message === "API key not found or unauthorized") {
+    if ((error as Error).message === "API key not found or unauthorized") {
       return res.status(404).json({
         error: "Not Found",
         message: "API key not found or you do not have permission to revoke it",
@@ -285,8 +285,8 @@ router?.get("/usage/:keyId", async (req: Request, res: Response) => {
       success: true,
       apiKey: {
         id: apiKey.id,
-        keyName: apiKey.keyName,
-        tier: apiKey.tier,
+        keyName: (apiKey as any).keyName,
+        tier: (apiKey as any).tier,
         rateLimit: apiKey.rateLimit,
       },
       timeRange: {
@@ -411,7 +411,7 @@ print(data)
       },
     });
   } catch (error) {
-    logger.warn("Error in developer docs:", error?.message);
+    logger.warn("Error in developer docs:", (error as any)?.message);
     res.status(500).json({ error: "Failed to process request" });
   }
 });

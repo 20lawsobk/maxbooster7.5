@@ -30,10 +30,10 @@ async function runTest(
       section,
       test: testName,
       status: "fail",
-      message: error.message,
+      message: (error as Error).message,
       duration,
     });
-    logger.warn(`  ❌ ${testName}: ${error?.message}`);
+    logger.warn(`  ❌ ${testName}: ${(error as any)?.message}`);
   }
 }
 
@@ -521,7 +521,7 @@ async function runAllTests() {
 }
 
 runAllTests()
-  .then(({ passed, failed }) => {
+  .then(({ _passed, failed }) => {
     if (failed > 0) {
       process.exit(1);
     }

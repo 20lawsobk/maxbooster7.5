@@ -806,9 +806,9 @@ export function generateSimulationReport(
     {
       name: "Long-term Adaptation",
       condition:
-        longTermResults.yearLongSimulation.continuousAdaptation ?? false,
+        longTermResults.yearLongSimulation!.continuousAdaptation ?? false,
       requirement: "50+ scenarios, continuous",
-      actual: `${longTermResults.totalScenarios} scenarios, ${longTermResults.yearLongSimulation.continuousAdaptation ? "continuous" : "degraded"}`,
+      actual: `${longTermResults.totalScenarios} scenarios, ${longTermResults.yearLongSimulation!.continuousAdaptation ? "continuous" : "degraded"}`,
     },
   ];
 

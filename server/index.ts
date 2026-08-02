@@ -163,7 +163,7 @@ try {
   logger.info("✅ Mandatory safety middleware applied");
 } catch (error) {
   logger.warn("❌ CRITICAL: Failed to apply mandatory safety middleware");
-  logger.warn(`   └─ Error: ${error?.message}`);
+  logger.warn(`   └─ Error: ${(error as any)?.message}`);
   process.exit(1);
 }
 
@@ -626,7 +626,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     );
     chainErrorAutoFixer?.start();
   } catch (e) {
-    logger.warn(`[ChainFixer] Failed to start: ${e?.message}`);
+    logger.warn(`[ChainFixer] Failed to start: ${(e as any)?.message}`);
   }
 
   // Start platform auto-fixer — proactive subsystem health probing + runtime patching.
@@ -646,7 +646,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     }
     app?.use(platformFixerMiddleware);
   } catch (e) {
-    logger.warn(`[PlatformAutoFixer] Failed to start: ${e?.message}`);
+    logger.warn(`[PlatformAutoFixer] Failed to start: ${(e as any)?.message}`);
   }
 
   // Load permanent overrides — restores improvements accumulated across prior sessions.
@@ -659,7 +659,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       );
       await permanentFixRegistry?.loadPermanentOverrides();
     } catch (e) {
-      logger.warn(`[PermanentFixer] Failed to load overrides: ${e?.message}`);
+      logger.warn(`[PermanentFixer] Failed to load overrides: ${(e as any)?.message}`);
     }
   }, 8_000);
 
@@ -729,7 +729,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       "✅ CSRF protection enabled (double-submit cookie, with safe exemptions)",
     );
   } catch (e) {
-    logger.warn(`⚠️  CSRF middleware failed to load: ${e?.message}`);
+    logger.warn(`⚠️  CSRF middleware failed to load: ${(e as any)?.message}`);
   }
 
   // Verify read replica once at startup. On failure dbRead is permanently
@@ -737,7 +737,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   try {
     await verifyReadReplica();
   } catch (e) {
-    logger.warn(`[db] Failed to run replica verification: ${e?.message}`);
+    logger.warn(`[db] Failed to run replica verification: ${(e as any)?.message}`);
   }
 
   // ========================================
@@ -751,7 +751,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       );
     }
   } catch (error) {
-    logger.warn("⚠️ Safety systems initialization error:", error?.message);
+    logger.warn("⚠️ Safety systems initialization error:", (error as any)?.message);
   }
 
   // Ensure optional modules finished loading (they ran concurrently with the
@@ -760,8 +760,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
   // Initialize monitoring services
   try {
-    if (metricsCollector?.start) {
-      metricsCollector?.start();
+    if ((metricsCollector as any)?.start) {
+      (metricsCollector as any)?.start();
       logger.info("Metrics collector started");
     }
   } catch (e) {
@@ -769,8 +769,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    if (alertingService?.start) {
-      alertingService?.start();
+    if ((alertingService as any)?.start) {
+      (alertingService as any)?.start();
       logger.info("Alerting service started");
     }
   } catch (e) {
@@ -778,8 +778,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    if (capacityMonitor?.start) {
-      capacityMonitor?.start();
+    if ((capacityMonitor as any)?.start) {
+      (capacityMonitor as any)?.start();
       logger.info("Capacity monitor started");
     }
   } catch (e) {
@@ -828,7 +828,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     startDomainVerificationWorker();
     logger.info("Domain verification worker started");
   } catch (e) {
-    logger.warn(`Domain verification worker unavailable: ${e?.message}`);
+    logger.warn(`Domain verification worker unavailable: ${(e as any)?.message}`);
   }
 
   // Domain lifecycle job — manages expiry states, auto-renewal, and grace periods.
@@ -840,7 +840,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     startDomainLifecycleJob();
     logger.info("[domainVerify] Domain lifecycle job started");
   } catch (e) {
-    logger.warn(`Domain lifecycle job unavailable: ${e?.message}`);
+    logger.warn(`Domain lifecycle job unavailable: ${(e as any)?.message}`);
   }
 
   // ── Backfill: mark existing Max Booster-registered domain zones as verified ──
@@ -864,7 +864,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       );
     }
   } catch (e) {
-    logger.warn(`[domainVerify] Backfill skipped: ${e?.message}`);
+    logger.warn(`[domainVerify] Backfill skipped: ${(e as any)?.message}`);
   }
 
   // Initialize TensorFlow worker pool — keeps inference off the HTTP event loop
@@ -876,10 +876,10 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       const { mlModelRegistry } = await import("./services/mlModelRegistry.js");
       await tfWorkerPool?.loadAllModels(mlModelRegistry);
     } catch (modelErr) {
-      logger.warn(`[TFWorkerPool] Model preload skipped: ${modelErr?.message}`);
+      logger.warn(`[TFWorkerPool] Model preload skipped: ${(modelErr as any)?.message}`);
     }
   } catch (e) {
-    logger.warn(`[TFWorkerPool] Initialization skipped: ${e?.message}`);
+    logger.warn(`[TFWorkerPool] Initialization skipped: ${(e as any)?.message}`);
   }
 
   // Autonomous systems initialization is deferred to after server starts
@@ -1010,8 +1010,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         route,
         status_code: String(res.statusCode),
       };
-      httpRequestDuration.observe(labels, durationSecs);
-      httpRequestTotal.inc(labels);
+      (httpRequestDuration as any).observe(labels, durationSecs);
+      (httpRequestTotal as any).inc(labels);
     });
     next();
   });
@@ -1172,7 +1172,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
           );
           await advertisingDispatchService?.collectAllActiveEngagement();
         } catch (e) {
-          logger.warn("[Engagement] Refresh failed (non-fatal):", e?.message);
+          logger.warn("[Engagement] Refresh failed (non-fatal):", (e as any)?.message);
         }
       },
       8 * 60 * 60 * 1000,
@@ -1207,7 +1207,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     const seoRoutes = (await import("./routes/seo.js")).default;
     app?.use(seoRoutes);
   } catch (e) {
-    logger.warn(`⚠️ SEO routes not available: ${e?.message}`);
+    logger.warn(`⚠️ SEO routes not available: ${(e as any)?.message}`);
   }
 
   // ── Platform Subdomain Router ────────────────────────────────────────────────
@@ -1416,7 +1416,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       }
     } catch (e) {
       logger.warn(
-        `⚠️ Distributed cache connect failed (non-fatal, in-memory fallback active): ${e.message}`,
+        `⚠️ Distributed cache connect failed (non-fatal, in-memory fallback active): ${(e as Error).message}`,
       );
     }
 
@@ -1428,7 +1428,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         `   Monthly: ${priceIds.monthly} | Yearly: ${priceIds.yearly} | Lifetime: ${priceIds.lifetime}`,
       );
     } catch (e) {
-      logger.warn(`❌ Failed to initialize Stripe prices: ${e.message}`);
+      logger.warn(`❌ Failed to initialize Stripe prices: ${(e as Error).message}`);
     }
 
     // 0b. Admin account seeding — idempotent, safe to run after listen
@@ -1437,7 +1437,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       await initializeAdmin();
       logger.info("✅ Admin account initialized");
     } catch (e) {
-      logger.warn(`❌ Failed to initialize admin: ${e.message}`);
+      logger.warn(`❌ Failed to initialize admin: ${(e as Error).message}`);
     }
 
     // 0c. Onboarding task seeding
@@ -1448,7 +1448,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       await onboardingService.seedDefaultTasks();
       await onboardingService.ensureAITasksExist();
     } catch (e) {
-      logger.warn(`⚠️ Could not seed onboarding tasks: ${e.message}`);
+      logger.warn(`⚠️ Could not seed onboarding tasks: ${(e as Error).message}`);
     }
 
     // 0d. Hybrid Storage System (Replit hot + Pocket Dimension cold)
@@ -1474,7 +1474,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
               );
             }
           } catch (e) {
-            logger.warn(`[Storage] Auto-tiering error: ${e?.message}`);
+            logger.warn(`[Storage] Auto-tiering error: ${(e as any)?.message}`);
           }
         }, autoTierInterval);
         logger.info(
@@ -1482,7 +1482,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         );
       }
     } catch (e) {
-      logger.warn(`⚠️ [Storage] Hybrid Storage init: ${e?.message}`);
+      logger.warn(`⚠️ [Storage] Hybrid Storage init: ${(e as any)?.message}`);
     }
 
     // 0e. Pocket Dimension Fabric (Distributed storage layer + Auto-cluster)
@@ -1497,7 +1497,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         resume: () => autoClusterManager?.start(),
       });
     } catch (e) {
-      logger.warn(`⚠️ [PocketFabric] Fabric init: ${e?.message}`);
+      logger.warn(`⚠️ [PocketFabric] Fabric init: ${(e as any)?.message}`);
     }
 
     // 1. Autonomous Service (Core)
@@ -1537,7 +1537,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         });
       }
     } catch (e) {
-      logger.warn(`⚠️ [Autonomy] Autonomous Service: ${e?.message}`);
+      logger.warn(`⚠️ [Autonomy] Autonomous Service: ${(e as any)?.message}`);
     }
 
     // 2. Automation System
@@ -1552,17 +1552,17 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         logger.info("✅ [Autonomy] Automation System initialized");
         killSwitch?.registerSystem("automation-system", {
           kill: () => {
-            (system as Record<string, unknown>)._killSwitchPaused = true;
+            (system as unknown as Record<string, unknown>)._killSwitchPaused = true;
             logger.warn("[AutomationSystem] Paused by kill switch");
           },
           resume: () => {
-            (system as Record<string, unknown>)._killSwitchPaused = false;
+            (system as unknown as Record<string, unknown>)._killSwitchPaused = false;
             logger.info("[AutomationSystem] Resumed");
           },
         });
       }
     } catch (e) {
-      logger.warn(`⚠️ [Autonomy] Automation System: ${e?.message}`);
+      logger.warn(`⚠️ [Autonomy] Automation System: ${(e as any)?.message}`);
     }
 
     // 3. Autonomous Updates Orchestrator
@@ -1593,7 +1593,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         });
       }
     } catch (e) {
-      logger.warn(`⚠️ [Autonomy] Autonomous Updates: ${e?.message}`);
+      logger.warn(`⚠️ [Autonomy] Autonomous Updates: ${(e as any)?.message}`);
     }
 
     // 4-9. Other autonomous modules — load in parallel then register with kill switch
@@ -1618,7 +1618,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
             if (
               typeof mod?.autonomousAutopilot.stopAutonomousMode === "function"
             )
-              mod?.autonomousAutopilot.stopAutonomousMode();
+              (mod?.autonomousAutopilot as any).stopAutonomousMode();
           },
           resume: () => {
             logger.info(
@@ -1666,11 +1666,11 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         killSwitch?.registerSystem("auto-posting-v1", {
           kill: () => {
             if (typeof mod?.autoPostingService.pause === "function")
-              mod?.autoPostingService.pause();
+              (mod?.autoPostingService as any).pause();
           },
           resume: () => {
             if (typeof mod?.autoPostingService.resume === "function")
-              mod?.autoPostingService.resume();
+              (mod?.autoPostingService as any).resume();
           },
         });
       }
@@ -1689,11 +1689,11 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         killSwitch?.registerSystem("auto-posting-v2", {
           kill: () => {
             if (typeof mod?.autoPostingServiceV2.pause === "function")
-              mod?.autoPostingServiceV2.pause();
+              (mod?.autoPostingServiceV2 as any).pause();
           },
           resume: () => {
             if (typeof mod?.autoPostingServiceV2.resume === "function")
-              mod?.autoPostingServiceV2.resume();
+              (mod?.autoPostingServiceV2 as any).resume();
           },
         });
       }
@@ -1735,11 +1735,11 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         killSwitch?.registerSystem("autopilot-publisher", {
           kill: () => {
             if (typeof mod?.autopilotPublisher.stopScheduler === "function")
-              mod?.autopilotPublisher.stopScheduler();
+              (mod?.autopilotPublisher as any).stopScheduler();
           },
           resume: () => {
             if (typeof mod?.autopilotPublisher.startScheduler === "function")
-              mod?.autopilotPublisher.startScheduler();
+              (mod?.autopilotPublisher as any).startScheduler();
           },
         });
       }
@@ -1913,7 +1913,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     ]);
     logger.info("[Shutdown] BullMQ workers drained");
   } catch (err) {
-    logger.warn("[Shutdown] BullMQ drain error (non-fatal):", err?.message);
+    logger.warn("[Shutdown] BullMQ drain error (non-fatal):", (err as any)?.message);
   }
 
   try {

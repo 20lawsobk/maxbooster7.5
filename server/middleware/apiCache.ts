@@ -58,11 +58,11 @@ function generateETag(body: unknown): string {
 
 // ── User-ID extraction ────────────────────────────────────────────────────────
 function extractUserIdFromRequest(req: Request): string {
-  const user = (req as Record<string, unknown>).user;
+  const user = (req as unknown as Record<string, unknown>).user;
   if (user && typeof user === "object" && "id" in user)
     return String((user as { id: unknown }).id);
 
-  const sess = req.session as Record<string, unknown> | undefined;
+  const sess = req.session as unknown as Record<string, unknown> | undefined;
   const sessionUid =
     sess?.userId ??
     (sess?.passport as Record<string, unknown> | undefined)?.user;
@@ -172,7 +172,7 @@ export class APIResponseCache {
   private processedUsers = new Map<string, number>(); // userId → last ts cleared for
   private lastPatternCleared = 0; // newest pattern ts processed
   // Adaptive poller state — replaced fixed setInterval with setTimeout loop.
-  private _pollTimer: ReturnType<typeof setTimeout> | null = null;
+  private pollTimer: ReturnType<typeof setTimeout> | null = null;
   private _pollIntervalMs = POLL_MIN_MS;
   private _pollRunning = false;
 
@@ -271,15 +271,15 @@ export class APIResponseCache {
 
   stopPoller(): void {
     this._pollRunning = false;
-    if (this._pollTimer !== null) {
-      clearTimeout(this._pollTimer);
-      this._pollTimer = null;
+    if (this.pollTimer !== null) {
+      clearTimeout(this.pollTimer);
+      this.pollTimer = null;
     }
   }
 
   private _scheduleNextPoll(): void {
     if (!this._pollRunning) return;
-    this._pollTimer = setTimeout(() => void this._runAdaptiveTick(), this._pollIntervalMs);
+    this.pollTimer = setTimeout(() => void this._runAdaptiveTick(), this._pollIntervalMs);
   }
 
   private async _runAdaptiveTick(): Promise<void> {

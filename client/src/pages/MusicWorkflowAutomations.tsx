@@ -498,7 +498,7 @@ function StatsBar({
 
 function OverviewTab({
   automations,
-  stats,
+  _stats,
 }: {
   automations: WorkflowTemplate[];
   stats?: AutomationStats;

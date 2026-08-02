@@ -222,7 +222,7 @@ const LyricLineRow = memo(function LyricLineRow({
   showTimestamps,
   showChords,
   showPerformer,
-  tapMode,
+  _tapMode,
   sectionColor,
   sectionBg,
   fontSizeClass,
@@ -455,7 +455,7 @@ const SectionView = memo(function SectionView({
 export function LyricsPanel({
   isPlaying,
   playheadPosition,
-  tempo,
+  _tempo,
   onSeek,
   defaultHeight = 300,
   sections,

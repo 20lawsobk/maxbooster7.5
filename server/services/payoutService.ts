@@ -203,7 +203,7 @@ export class PayoutService {
       .insert(systemSettings)
       .values({
         key: `payment_prefs:${preferences?.userId}`,
-        value: preferences as Record<string, unknown>,
+        value: preferences as unknown as Record<string, unknown>,
       })
       .onConflictDoUpdate({
         target: systemSettings.key,
@@ -245,7 +245,7 @@ export class PayoutService {
     );
 
     const available = statements?.reduce(
-      (sum, s) => sum + Number(s?.payableAmount),
+      (sum, s) => sum + Number((s as any)?.payableAmount),
       0,
     );
     const pending = pendingPayouts?.reduce((sum, p) => sum + p?.amount, 0);

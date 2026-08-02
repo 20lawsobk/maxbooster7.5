@@ -187,7 +187,7 @@ class DesktopPushService {
         sent++;
       } catch (error) {
         failed++;
-        if (error?.statusCode === 410 || error?.statusCode === 404) {
+        if ((error as any)?.statusCode === 410 || (error as any)?.statusCode === 404) {
           logger.info(
             `🖥️ Removing expired desktop subscription: ${sub?.endpoint.substring(0, 60)}...`,
           );
@@ -198,7 +198,7 @@ class DesktopPushService {
         } else {
           logger.warn(
             `🖥️ Desktop push failed for sub ${sub?.id}:`,
-            error?.statusCode || error?.message,
+            (error as any)?.statusCode || (error as any)?.message,
           );
         }
       }

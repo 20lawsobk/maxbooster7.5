@@ -59,7 +59,7 @@ export function ensureVenv(): void {
       });
       process.stdout.write("[Python] venv created and packages installed\n");
     } catch (e) {
-      process.stderr.write(`[Python] Could not create venv: ${e?.message}\n`);
+      process.stderr.write(`[Python] Could not create venv: ${(e as any)?.message}\n`);
     }
   }
 }

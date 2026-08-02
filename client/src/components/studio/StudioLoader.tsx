@@ -38,7 +38,7 @@ interface StudioLoaderProps {
   userId?: string;
 }
 
-export function StudioLoader({ children, userId }: StudioLoaderProps) {
+export function StudioLoader({ children, _userId }: StudioLoaderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useRouter();
@@ -76,7 +76,7 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
     queryKey: ["/api/studio/projects"],
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-    onError: (error) => {
+    onError: (error: any) => {
       captureException(error, {
         component: "StudioLoader",
         action: "load-projects",
@@ -100,7 +100,7 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
     queryKey: ["/api/studio/samples"],
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    onError: (error) => {
+    onError: (error: any) => {
       // Don't capture sample loading errors as they're not critical
       setErrorState((prev) => ({ ...prev, samples: error as Error }));
     },

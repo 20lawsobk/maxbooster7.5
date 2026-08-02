@@ -35,7 +35,7 @@ const widgetComponents: Record<
 };
 
 export function PersonalizedDashboard({
-  userId,
+  _userId,
   onNavigate,
 }: PersonalizedDashboardProps) {
   const {
@@ -109,7 +109,7 @@ export function PersonalizedDashboard({
 }
 
 function WidgetWrapper({
-  widget,
+  _widget,
   children,
 }: {
   widget: WidgetConfig;
@@ -251,7 +251,7 @@ function NextReleaseWidget({ size }: { size: "small" | "medium" | "large" }) {
   );
 }
 
-function AICoachWidget({ size }: { size: "small" | "medium" | "large" }) {
+function AICoachWidget({ _size }: { size: "small" | "medium" | "large" }) {
   const { data: insights } = useQuery({
     queryKey: ["/api/ai/insights"],
     staleTime: 10 * 60 * 1000,
@@ -286,7 +286,7 @@ function AICoachWidget({ size }: { size: "small" | "medium" | "large" }) {
   );
 }
 
-function QuickActionsWidget({ size }: { size: "small" | "medium" | "large" }) {
+function QuickActionsWidget({ _size }: { size: "small" | "medium" | "large" }) {
   const actions = [
     { label: "Upload Track", icon: Upload, path: "/studio" },
     { label: "View Analytics", icon: BarChart3, path: "/analytics" },
@@ -388,7 +388,7 @@ function CollaborationsWidget({
   );
 }
 
-function NotificationsWidget({ size }: { size: "small" | "medium" | "large" }) {
+function NotificationsWidget({ _size }: { size: "small" | "medium" | "large" }) {
   return (
     <Card>
       <CardHeader>
@@ -407,7 +407,7 @@ function NotificationsWidget({ size }: { size: "small" | "medium" | "large" }) {
   );
 }
 
-function AchievementsWidget({ size }: { size: "small" | "medium" | "large" }) {
+function AchievementsWidget({ _size }: { size: "small" | "medium" | "large" }) {
   return (
     <Card>
       <CardHeader>
@@ -424,7 +424,7 @@ function AchievementsWidget({ size }: { size: "small" | "medium" | "large" }) {
   );
 }
 
-function GoalsWidget({ size }: { size: "small" | "medium" | "large" }) {
+function GoalsWidget({ _size }: { size: "small" | "medium" | "large" }) {
   return (
     <Card>
       <CardHeader>

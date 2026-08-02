@@ -194,7 +194,7 @@ export class AutopilotEngine extends EventEmitter {
       this.pruneCompletedJobs();
     }, 60000); // Check every minute
 
-    logger.info("Autopilot started with config:", this.config);
+    logger.info(this.config, "Autopilot started with config:");
   }
 
   /** Remove completed/failed jobs older than 24 h to prevent the Map growing unbounded. */
@@ -426,7 +426,7 @@ export class AutopilotEngine extends EventEmitter {
       const posting = platform
         ? evolutionRegistry.getPostingOptimization(platform)
         : null;
-      const priority = posting.contentFormatPriority;
+      const priority = posting!.contentFormatPriority;
       if (priority && priority.length > 0) {
         let best: string | undefined;
         let bestRank = Infinity;
@@ -509,7 +509,7 @@ export class AutopilotEngine extends EventEmitter {
       // This would call your actual AI service
       // Optional advanced-URL-parser brief from configured source links.
       // Undefined when no sourceUrls configured ⇒ unchanged topic-only behavior.
-      const urlBrief = await this.resolveUrlBrief(topic, job.platform);
+      const urlBrief = await this.resolveUrlBrief((topic as string), job.platform);
 
       const generatedContent = await this.generateContentForAutopilot({
         topic,
@@ -568,7 +568,7 @@ export class AutopilotEngine extends EventEmitter {
         [job.platform],
         this.userId,
       );
-      const successfulResults = results.filter((r: unknown) => r.success);
+      const successfulResults = results.filter((r: unknown) => (r as any).success);
 
       if (successfulResults.length > 0) {
         content.status = "published";
@@ -616,7 +616,7 @@ export class AutopilotEngine extends EventEmitter {
 
     // Collect real engagement data
     const analytics = await platformAPI.collectEngagementData(
-      postId,
+      (postId as string),
       job.platform,
       this.userId,
     );
@@ -630,8 +630,8 @@ export class AutopilotEngine extends EventEmitter {
       // Recover publish context from the durable map captured at publish time.
       // (The content was shift()-ed off contentQueue at publish, so a queue
       // lookup here would miss and fall back to synthetic now-2h / undefined.)
-      const ctx = this.publishContext.get(contentId);
-      this.performanceData.set(contentId, {
+      const ctx = this.publishContext.get((contentId as string));
+      this.performanceData.set((contentId as string), {
         platform: job.platform,
         engagement: analytics,
         timestamp: new Date(),
@@ -653,7 +653,7 @@ export class AutopilotEngine extends EventEmitter {
       // entries are reclaimed there.
 
       // Learn from performance
-      await this.learnFromPerformance(contentId, analytics);
+      await this.learnFromPerformance((contentId as string), analytics);
 
       this.emit("performanceAnalyzed", { job, analytics });
     }
@@ -890,12 +890,12 @@ export class AutopilotEngine extends EventEmitter {
         {
           platform,
           contentType: String(cached?.contentType ?? "social_post"),
-          hookType: cached.hookType ? String(cached?.hookType) : undefined,
+          hookType: cached!.hookType ? String(cached?.hookType) : undefined,
           hashtags: Array.isArray(cached?.hashtags)
             ? (cached!.hashtags as string[])
             : [],
-          contentText: cached.text ? String(cached?.text) : undefined,
-          postId: cached.postId ? String(cached?.postId) : undefined,
+          contentText: cached!.text ? String(cached?.text) : undefined,
+          postId: cached!.postId ? String(cached?.postId) : undefined,
           postedAt:
             cached?.publishedAt instanceof Date
               ? (cached?.publishedAt as Date)

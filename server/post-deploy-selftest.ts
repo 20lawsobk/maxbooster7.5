@@ -94,9 +94,9 @@ class PostDeploySelfTest {
       const client = await getRedisClient();
 
       const testKey = `selftest:${Date?.now()}`;
-      await client?.setex(testKey, 10, "test");
-      const value = await client?.get(testKey);
-      await client?.del(testKey);
+      await (client as any)?.setex(testKey, 10, "test");
+      const value = await (client as any)?.get(testKey);
+      await (client as any)?.del(testKey);
 
       return {
         name: "pdim",

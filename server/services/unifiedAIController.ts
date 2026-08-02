@@ -572,14 +572,14 @@ export class UnifiedAIController {
       // MaxCore is the ONLY source — throw explicitly (HTTP 503) when it returns
       // nothing rather than falling through to a "please retry" local response.
       const mc = requireMaxCore(
-        mcRaw?.caption || mcRaw?.hook ? mcRaw : null,
+        (mcRaw as any)?.caption || (mcRaw as any)?.hook ? mcRaw : null,
         "unified AI",
       );
 
       {
         const caption =
-          mc?.caption ||
-          `${mc?.hook}\n\n${mc?.body || ""}\n\n${mc?.cta || ""}`.trim();
+          (mc as any)?.caption ||
+          `${(mc as any)?.hook}\n\n${(mc as any)?.body || ""}\n\n${(mc as any)?.cta || ""}`.trim();
 
         // ── Enrich hashtags with artist-specific keywords ─────────────────────
         // MaxCore always returns generic platform hashtags (#fyp, #viral, etc.).
@@ -590,7 +590,7 @@ export class UnifiedAIController {
         // spaces, or is longer than 40 chars — these are enriched topic strings
         // that MaxCore occasionally echoes back as hashtags rather than real tags.
         const mcHashtags: string[] = (
-          Array.isArray(mc?.hashtags) ? mc?.hashtags : []
+          Array.isArray((mc as any)?.hashtags) ? (mc as any)?.hashtags : []
         ).filter(
           (h: string) =>
             typeof h === "string" &&
@@ -626,16 +626,16 @@ export class UnifiedAIController {
             caption,
             hashtags: enrichedHashtags.length ? enrichedHashtags : mcHashtags,
             tone: options.tone || "energetic",
-            toneMatch: mc.confidence || 0.95,
+            toneMatch: (mc as any).confidence || 0.95,
             platform: mappedPlatform,
             charCount: caption.length,
-            hook: mc.hook,
-            body: mc.body,
-            cta: mc.cta,
+            hook: (mc as any).hook,
+            body: (mc as any).body,
+            cta: (mc as any).cta,
           } as CaptionResult,
           processingTimeMs: Date.now() - startTime,
           source: "MaxCoreAI",
-          confidence: mc.confidence || 0.95,
+          confidence: (mc as any).confidence || 0.95,
         };
       }
     } catch (error) {
@@ -1052,7 +1052,7 @@ export class UnifiedAIController {
         this.timeSeriesModels.set(modelKey, model);
       }
 
-      if (!model?.isModelTrained()) {
+      if ((!model as any)?.isModelTrained()) {
         const { inputs, labels } = model?.prepareTrainingData(
           options?.historicalData,
           options?.timestamps,
@@ -1198,7 +1198,7 @@ export class UnifiedAIController {
         "adOptimizationEngine",
         async () => {
           return (
-            (this.adOptimizationEngine as Record<string, unknown>).isTrained ??
+            (this.adOptimizationEngine as unknown as Record<string, unknown>).isTrained ??
             true
           );
         },
@@ -1327,7 +1327,7 @@ export class UnifiedAIController {
   }): Promise<UnifiedAIResult<unknown>> {
     const startTime = Date?.now();
     try {
-      const result = await this.adEngine.optimizePersonalAdNetwork(
+      const result = await (this as any).adEngine.optimizePersonalAdNetwork(
         options?.profiles,
         options?.content,
         options?.goals,
@@ -1357,7 +1357,7 @@ export class UnifiedAIController {
   ): Promise<UnifiedAIResult<unknown>> {
     const startTime = Date?.now();
     try {
-      const analysis = this.adEngine.calculateOrganicROI(results);
+      const analysis = (this as any).adEngine.calculateOrganicROI(results);
       return {
         success: true,
         data: analysis,
@@ -1385,7 +1385,7 @@ export class UnifiedAIController {
   }): Promise<UnifiedAIResult<unknown>> {
     const startTime = Date?.now();
     try {
-      const schedule = this.adEngine.generateOrganicSchedule(
+      const schedule = (this as any).adEngine.generateOrganicSchedule(
         options?.profiles,
         options?.contentQueue,
         options?.goals,
@@ -1416,15 +1416,15 @@ export class UnifiedAIController {
       let profiles: unknown[] = [];
 
       if (userId) {
-        const socialAccounts = await storage?.getUserSocialAccounts(userId);
+        const socialAccounts = await (storage as any)?.getUserSocialAccounts(userId);
         if (socialAccounts && socialAccounts?.length > 0) {
           profiles = socialAccounts?.map((account: Record<string, unknown>) => ({
             id: account.id?.toString() || account?.platformUserId || "",
             platform: account.platform,
             username: account.username || account?.profileName || "user",
-            followers: account.followers || account?.metrics?.followers || 0,
+            followers: account.followers || (account?.metrics as any)?.followers || 0,
             engagementRate:
-              account?.engagementRate || account?.metrics?.engagementRate || 0.03,
+              account?.engagementRate || (account?.metrics as any)?.engagementRate || 0.03,
             isActive: account.isActive !== false,
           }));
         }
@@ -1462,7 +1462,7 @@ export class UnifiedAIController {
         );
       }
 
-      const result = await this.adEngine.optimizePersonalAdNetwork(
+      const result = await (this as any).adEngine.optimizePersonalAdNetwork(
         profiles,
         {
           id: userId || "demo",

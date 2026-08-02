@@ -66,8 +66,8 @@ const requireAuth = (
   res: Record<string, unknown>,
   next: Record<string, unknown>,
 ) => {
-  if (!req.isAuthenticated())
-    return res.status(401).json({ ok: false, error: "Unauthorized." });
+  if (!(req.isAuthenticated as any)())
+    return (res.status as any)(401).json({ ok: false, error: "Unauthorized." });
   next();
 };
 
@@ -140,7 +140,7 @@ router.get("/whois/:domain", async (req, res) => {
       status: rows[0].status,
     });
   } catch (err) {
-    logger.error({ err: err.message, domain }, "[WHOIS] lookup error");
+    logger.error({ err: (err as Error).message, domain }, "[WHOIS] lookup error");
     return res.status(500).json({ ok: false, error: "WHOIS lookup failed." });
   }
 });
@@ -260,17 +260,17 @@ router.post("/claim", async (req, res) => {
 
     // Enforce quota + subscription (throws on violation)
     try {
-      await enforceQuota(userId);
+      await enforceQuota((userId as string));
     } catch (e) {
       return res
         .status(403)
-        .json({ ok: false, error: e.message, code: e.code });
+        .json({ ok: false, error: (e as Error).message, code: ((e as Error) as any).code });
     }
 
     const isPlatformSubdomain = domainLower.endsWith(`.${PLATFORM_DOMAIN}`);
 
     // Build contact profile from user account data
-    const contact = await buildContactProfile(userId);
+    const contact = await buildContactProfile((userId as string));
 
     // Register via RegistrarService
     const registrar = getRegistrarProvider();
@@ -297,7 +297,7 @@ router.post("/claim", async (req, res) => {
           .update(storefronts)
           .set({ customDomain: domainLower, isCustomDomainActive: true })
           .where(eq(storefronts.id, storefrontId));
-      } catch (sfErr: Record<string, unknown>) {
+      } catch (sfErr: any) {
         logger.warn(
           { err: sfErr, storefrontId },
           "[domainRegistrar] storefront update failed (non-fatal)",
@@ -310,7 +310,7 @@ router.post("/claim", async (req, res) => {
       await emitDomainEvent(
         "DomainRegistered",
         record.id,
-        userId,
+        (userId as string),
         domainLower,
         {
           isPlatformSubdomain,
@@ -321,7 +321,7 @@ router.post("/claim", async (req, res) => {
       );
     }
 
-    logClaim(domainLower, userId);
+    logClaim(domainLower, (userId as string));
 
     return res.status(201).json({
       ok: true,
@@ -333,10 +333,10 @@ router.post("/claim", async (req, res) => {
     });
   } catch (err) {
     logger.warn({ err }, "[domainRegistrar] claim error");
-    const httpStatus = err.message.includes("already") ? 409 : 500;
+    const httpStatus = (err as Error).message.includes("already") ? 409 : 500;
     return res
       .status(httpStatus)
-      .json({ ok: false, error: err.message || "Registration failed." });
+      .json({ ok: false, error: (err as Error).message || "Registration failed." });
   }
 });
 
@@ -351,7 +351,7 @@ router?.get("/my-domains", async (req, res) => {
       .where(eq(claimedDomains?.userId, userId))
       .orderBy(claimedDomains?.createdAt);
 
-    const quota = await getDomainQuota(userId);
+    const quota = await getDomainQuota((userId as string));
 
     return res.json({ ok: true, domains, quota });
   } catch (err) {
@@ -388,7 +388,7 @@ router?.get("/my-domains/:id", async (req, res) => {
 router?.post("/my-domains/:id/release", async (req, res) => {
   try {
     const userId = (req.user as Record<string, unknown>).id;
-    await softReleaseDomain(req.params.id, userId);
+    await softReleaseDomain(req.params.id, (userId as string));
 
     return res.json({
       ok: true,
@@ -397,14 +397,14 @@ router?.post("/my-domains/:id/release", async (req, res) => {
     });
   } catch (err) {
     logger.warn({ err }, "[domainRegistrar] release error");
-    const status = err?.message?.includes("Forbidden")
+    const status = (err as any)?.message?.includes("Forbidden")
       ? 403
-      : err?.message?.includes("not found")
+      : (err as any)?.message?.includes("not found")
         ? 404
-        : err?.message?.includes("already released")
+        : (err as any)?.message?.includes("already released")
           ? 409
           : 500;
-    return res.status(status).json({ ok: false, error: err.message });
+    return res.status(status).json({ ok: false, error: (err as Error).message });
   }
 });
 
@@ -448,7 +448,7 @@ router?.post("/my-domains/:id/renew", async (req, res) => {
     logger.warn({ err }, "[domainRegistrar] renew error");
     return res
       .status(500)
-      .json({ ok: false, error: err.message || "Renewal failed." });
+      .json({ ok: false, error: (err as Error).message || "Renewal failed." });
   }
 });
 
@@ -504,7 +504,7 @@ router?.delete("/my-domains/:id", async (req, res) => {
         "DELETE FROM dns_zones WHERE domain = $1 AND user_id = $2",
         [row?.domain, userId],
       );
-    } catch (zoneErr: Record<string, unknown>) {
+    } catch (zoneErr: any) {
       logger.warn(
         { err: zoneErr },
         "[domainRegistrar] DNS zone cleanup failed (non-fatal)",
@@ -531,7 +531,7 @@ router?.get("/contacts", async (req, res) => {
 
     // If none exist, derive one from the user account
     if (contacts?.length === 0) {
-      const derived = await buildContactProfile(userId);
+      const derived = await buildContactProfile((userId as string));
       return res.json({ ok: true, contacts: [], derived });
     }
 
@@ -589,7 +589,7 @@ router?.put("/contacts", async (req, res) => {
     await emitDomainEvent(
       "DomainContactUpdated",
       "contact",
-      userId,
+      (userId as string),
       "_profile",
       { name, email },
     );

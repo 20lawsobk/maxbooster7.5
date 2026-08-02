@@ -96,7 +96,7 @@ export class Rebalancer {
     const loc = await this.chunkIndex.getChunkLocation(chunkId);
     if (loc) {
       const newNodeIds = [
-        ...loc?.nodeIds.filter((id) => id !== fromNodeId),
+        ...loc?.nodeIds.filter((id: any) => id !== fromNodeId),
         toNodeId,
       ];
       await this.chunkIndex.putChunkLocation({ ...loc, nodeIds: newNodeIds });

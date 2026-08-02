@@ -21,7 +21,7 @@ import { sql } from "drizzle-orm";
 import { logger } from "./logger.js";
 import { isProductionEnv } from "./lib/envHelpers.js";
 
-const __metaUrl = (import.meta as Record<string, unknown>)?.url as
+const __metaUrl = (import.meta as unknown as Record<string, unknown>)?.url as
   | string
   | undefined;
 const __filename = __metaUrl
@@ -244,7 +244,7 @@ class StartupProbeManager {
     logger.info("🔍 Running startup probes...");
 
     // Run probes in parallel
-    const [dbReady, redisReady, tfReady] = await Promise.all([
+    const [_dbReady, _redisReady, _tfReady] = await Promise.all([
       this.checkDatabase(),
       this.checkRedis(),
       this.checkTensorFlow(),

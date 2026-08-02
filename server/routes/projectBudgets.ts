@@ -91,10 +91,10 @@ router?.post("/", requireAuth, async (req, res) => {
     res.status(201).json(item);
   } catch (error) {
     logger.warn({ err: error }, "[ProjectBudgets] Failed to create:");
-    if (error?.name === "ZodError") {
+    if ((error as any)?.name === "ZodError") {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.flatten() });
+        .json({ error: "Validation error", details: (error as any).flatten() });
     }
     res.status(500).json({ error: "Failed to create project budget" });
   }
@@ -127,10 +127,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
     res.json(item);
   } catch (error) {
     logger.warn({ err: error }, "[ProjectBudgets] Failed to update:");
-    if (error?.name === "ZodError") {
+    if ((error as any)?.name === "ZodError") {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.flatten() });
+        .json({ error: "Validation error", details: (error as any).flatten() });
     }
     res.status(500).json({ error: "Failed to update project budget" });
   }
@@ -186,10 +186,10 @@ router?.post("/:id/items", requireAuth, async (req, res) => {
     res.status(201).json(item);
   } catch (error) {
     logger.warn({ err: error }, "[ProjectBudgets] Failed to create line item:");
-    if (error?.name === "ZodError") {
+    if ((error as any)?.name === "ZodError") {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.flatten() });
+        .json({ error: "Validation error", details: (error as any).flatten() });
     }
     res.status(500).json({ error: "Failed to create budget line item" });
   }
@@ -226,10 +226,10 @@ router?.put("/items/:id", requireAuth, async (req, res) => {
     res.json(item);
   } catch (error) {
     logger.warn({ err: error }, "[ProjectBudgets] Failed to update line item:");
-    if (error?.name === "ZodError") {
+    if ((error as any)?.name === "ZodError") {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.flatten() });
+        .json({ error: "Validation error", details: (error as any).flatten() });
     }
     res.status(500).json({ error: "Failed to update budget line item" });
   }

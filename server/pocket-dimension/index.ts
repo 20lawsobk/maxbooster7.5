@@ -247,7 +247,7 @@ export class PocketDimension extends EventEmitter {
       }
       // If no metadata in PDIM, start fresh (new dimension)
     } catch (error) {
-      if (error?.message?.includes("keyfile")) {
+      if ((error as any)?.message?.includes("keyfile")) {
         throw error;
       }
       // New dimension, start fresh
@@ -488,18 +488,18 @@ export class PocketDimension extends EventEmitter {
     const nested = new PocketDimension({
       id: `${this.id}/${dimensionPath}`,
       name: dimensionPath,
-      encryptionKey: config.encryptionKey,
-      chunkSize: config.chunkSize || this.chunkSize,
-      maxRecursionDepth: config.maxRecursionDepth || this.maxRecursionDepth,
-      compressionLevel: config.compressionLevel || this.compressionLevel,
+      encryptionKey: config!.encryptionKey,
+      chunkSize: config!.chunkSize || this.chunkSize,
+      maxRecursionDepth: config!.maxRecursionDepth || this.maxRecursionDepth,
+      compressionLevel: config!.compressionLevel || this.compressionLevel,
       enableDeduplication:
         config?.enableDeduplication ?? this.enableDeduplication,
-      enableVersioning: config.enableVersioning ?? this.enableVersioning,
+      enableVersioning: config!.enableVersioning ?? this.enableVersioning,
       storagePath: this.storagePath,
     });
 
-    (nested as Record<string, unknown>).currentDepth = this.currentDepth + 1;
-    (nested as Record<string, unknown>).metadata.parentDimension = this.id;
+    (nested as unknown as Record<string, unknown>).currentDepth = this.currentDepth + 1;
+    (nested as unknown as Record<string, unknown>).metadata.parentDimension = this.id;
 
     await nested?.open();
     this.nestedDimensions.set(dimensionPath, nested);
@@ -779,13 +779,13 @@ export class PocketDimensionManager {
 
     const dimension = new PocketDimension({
       id,
-      name: config.name || id,
-      encryptionKey: config.encryptionKey,
-      chunkSize: config.chunkSize,
-      maxRecursionDepth: config.maxRecursionDepth,
-      compressionLevel: config.compressionLevel,
-      enableDeduplication: config.enableDeduplication,
-      enableVersioning: config.enableVersioning,
+      name: config!.name || id,
+      encryptionKey: config!.encryptionKey,
+      chunkSize: config!.chunkSize,
+      maxRecursionDepth: config!.maxRecursionDepth,
+      compressionLevel: config!.compressionLevel,
+      enableDeduplication: config!.enableDeduplication,
+      enableVersioning: config!.enableVersioning,
       storagePath: this.storagePath,
     });
 
@@ -796,7 +796,7 @@ export class PocketDimensionManager {
     return new Proxy(dimension, {
       get: (target, prop: string) => {
         if (prop in target) {
-          const value = (target as Record<string, unknown>)[prop];
+          const value = (target as unknown as Record<string, unknown>)[prop];
           return typeof value === "function" ? value?.bind(target) : value;
         }
         // Bracket accessor for paths
@@ -804,7 +804,7 @@ export class PocketDimensionManager {
       },
       set: (target, prop: string, value: Buffer | string) => {
         if (prop in target) {
-          (target as Record<string, unknown>)[prop] = value;
+          (target as unknown as Record<string, unknown>)[prop] = value;
           return true;
         }
         target?.write(prop, value);

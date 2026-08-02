@@ -316,7 +316,7 @@ export function PluginRack({
   onPluginsChange,
   maxPlugins = 8,
 }: PluginRackProps) {
-  const [draggedPlugin, setDraggedPlugin] = useState<string | null>(null);
+  const [_draggedPlugin, _setDraggedPlugin] = useState<string | null>(null);
   const [controlDialogOpen, setControlDialogOpen] = useState(false);
   const [selectedPluginForControl, setSelectedPluginForControl] =
     useState<PluginInstance | null>(null);

@@ -680,17 +680,17 @@ const SECURITY_RULES: SecurityRule[] = [
       /sleep\(/i,
       /benchmark\(/i,
     ],
-    explain: (indicators, threatLevel, requestCount) => ({
+    explain: (indicators, threatLevel, _requestCount) => ({
       intentLabel:
         "SQL injection — attempting to extract data or execute database commands.",
       attackStage: "exploitation",
       sophistication: indicators.some((i) =>
-        /sleep|benchmark|waitfor/i?.test(i?.source),
+        /sleep|benchmark|waitfor/i?.test((i as any)?.source),
       )
         ? "targeted"
         : "automated",
       sophisticationLabel: indicators.some((i) =>
-        /sleep|benchmark|waitfor/i?.test(i?.source),
+        /sleep|benchmark|waitfor/i?.test((i as any)?.source),
       )
         ? "Targeted: time-based blind injection suggests a skilled attacker."
         : "Automated: pattern matches a standard SQLmap or similar scanner.",
@@ -720,7 +720,7 @@ const SECURITY_RULES: SecurityRule[] = [
     name: "XSS Injection Attempt",
     threatTypes: ["xss"],
     indicators: [/<script/i, /javascript:/i, /onerror=/i, /onload=/i],
-    explain: (indicators, threatLevel, requestCount) => ({
+    explain: (_indicators, threatLevel, _requestCount) => ({
       intentLabel:
         "Cross-site scripting — attempting to inject client-side code into responses.",
       attackStage: "exploitation",
@@ -752,7 +752,7 @@ const SECURITY_RULES: SecurityRule[] = [
     name: "Path Traversal Attempt",
     threatTypes: ["path_traversal"],
     indicators: [/\.\.\//i, /%2e%2e/i, /etc\/passwd/i, /windows\/system32/i],
-    explain: (indicators, threatLevel, requestCount) => ({
+    explain: (_indicators, threatLevel, _requestCount) => ({
       intentLabel:
         "Path traversal — attempting to read files outside the web root.",
       attackStage: "exploitation",
@@ -778,7 +778,7 @@ const SECURITY_RULES: SecurityRule[] = [
     name: "Volumetric DoS / DDoS",
     threatTypes: ["ddos", "rate_abuse"],
     indicators: [/rate?.limit/i, /too many request/i],
-    explain: (indicators, threatLevel, requestCount) => ({
+    explain: (_indicators, threatLevel, requestCount) => ({
       intentLabel:
         "Volumetric denial of service — flooding with requests to exhaust server capacity.",
       attackStage: "exploitation",
@@ -810,7 +810,7 @@ const SECURITY_RULES: SecurityRule[] = [
     name: "Unclassified Threat",
     threatTypes: ["unknown"],
     indicators: [],
-    explain: (indicators, threatLevel, requestCount) => ({
+    explain: (_indicators, threatLevel, _requestCount) => ({
       intentLabel:
         "Unclassified threat — does not match known attack pattern taxonomy.",
       attackStage: "reconnaissance",

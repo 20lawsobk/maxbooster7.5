@@ -277,7 +277,7 @@ class DatabasePerformanceTest {
       const executionTime = Date?.now() - startTime;
 
       const totalRecords = results?.reduce(
-        (sum, result) => sum + result?.length,
+        (sum: any, result: any) => sum + result?.length,
         0,
       );
 

@@ -47,7 +47,7 @@ interface GlobalSearchProps {
 
 export function GlobalSearch({
   onSearch,
-  onResultClick,
+  _onResultClick,
   placeholder = "Search beats, artists, projects...",
   className,
   showTrending = true,

@@ -233,7 +233,7 @@ export class SocialOAuthService {
           // already called inside refreshAccessToken.  Just log at debug level to
           // avoid noisy warn spam for a condition that is already being handled.
           const msg = (error as Record<string, unknown>)?.message ?? "";
-          if (msg?.includes("revoked") || msg?.includes("Token revoked")) {
+          if ((msg as any)?.includes("revoked") || (msg as any)?.includes("Token revoked")) {
             logger.info(
               `[SocialOAuth] Proactive refresh: token revoked for ${account?.userId}:${account?.platform} — platform disconnected`,
             );
@@ -266,12 +266,12 @@ export class SocialOAuthService {
     ];
 
     const errorMessage =
-      error?.response?.data?.error_description ||
-      error?.response?.data?.error ||
+      (error as any)?.response?.data?.error_description ||
+      (error as any)?.response?.data?.error ||
       error?.message ||
       "";
 
-    const statusCode = error?.response?.status;
+    const statusCode = (error as any)?.response?.status;
 
     // 401 with specific error messages typically means revoked
     if (
@@ -341,8 +341,8 @@ export class SocialOAuthService {
     }
 
     // Check if token is expired or expiring soon
-    if (tokens?.expiresAt) {
-      const expiresAt = new Date(tokens?.expiresAt).getTime();
+    if ((tokens as any)?.expiresAt) {
+      const expiresAt = new Date((tokens as any)?.expiresAt).getTime();
       const now = Date?.now();
 
       if (expiresAt <= now + TOKEN_REFRESH_BUFFER_MS) {
@@ -362,7 +362,7 @@ export class SocialOAuthService {
       }
     }
 
-    return tokens?.accessToken;
+    return (tokens as any)?.accessToken;
   }
 
   /**
@@ -638,7 +638,7 @@ export class SocialOAuthService {
     } catch (error: unknown) {
       logger.warn(
         `OAuth token exchange failed for ${platform}:`,
-        error?.response?.data || error?.message,
+        (error as any)?.response?.data || (error as any)?.message,
       );
       throw new Error(`Failed to connect ${platform} account`);
     }
@@ -663,10 +663,10 @@ export class SocialOAuthService {
       if (!refreshToken) {
         // Get refresh token from database if not provided
         const tokens = await this.getStoredTokens(userId, platform);
-        if (!tokens?.refreshToken) {
+        if ((!tokens as any)?.refreshToken) {
           throw new Error("No refresh token available");
         }
-        refreshToken = tokens?.refreshToken;
+        refreshToken = (tokens as any)?.refreshToken;
       }
 
       const isTikTok = platform === "tiktok" || platform === "tiktok_sandbox";
@@ -720,8 +720,8 @@ export class SocialOAuthService {
       };
     } catch (error: unknown) {
       // Surface the actual API error (e?.g. Google's invalid_grant) in the log
-      const apiError = (error as Record<string, unknown>)?.response?.data;
-      const httpStatus = (error as Record<string, unknown>)?.response?.status;
+      const apiError = ((error as Record<string, unknown>)?.response as any)?.data;
+      const httpStatus = ((error as Record<string, unknown>)?.response as any)?.status;
       const errDetail = apiError
         ? JSON.stringify(apiError)
         : ((error as Record<string, unknown>)?.message ?? "unknown error");

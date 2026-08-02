@@ -1061,7 +1061,7 @@ router.post("/purchase", async (req: Request, res: Response) => {
     // Sending them here would cause premature and duplicate notifications.
   } catch (error) {
     logger.warn({ err: error }, "Error initiating purchase:");
-    const msg = error.message || "Failed to initiate purchase";
+    const msg = (error as Error).message || "Failed to initiate purchase";
     if (msg.includes("not found") || msg.includes("Not found")) {
       return res.status(404).json({ error: msg });
     }
@@ -1167,8 +1167,8 @@ router.get(
       const snapshot = order.licenseSnapshot as Record<string, unknown>;
       const beatTitle = listing.title || "Unknown Beat";
       const producerName =
-        seller.displayName || seller.username || "Producer";
-      const buyerName = buyer.displayName || buyer.username || "Buyer";
+        (seller as any).displayName || seller.username || "Producer";
+      const buyerName = (buyer as any).displayName || buyer.username || "Buyer";
       const purchaseDate = order.createdAt
         ? new Date(order.createdAt).toLocaleDateString("en-US", {
             year: "numeric",
@@ -1178,7 +1178,7 @@ router.get(
         : new Date().toLocaleDateString();
       const amountPaid = `$${(order.amount || 0).toFixed(2)}`;
       const fileFormats =
-        snapshot.fileFormats.map((f: string) => f.toUpperCase()).join(", ") ||
+        (snapshot.fileFormats as any).map((f: string) => f.toUpperCase()).join(", ") ||
         template.fileFormats;
 
       const isExclusive = licenseType === "exclusive";
@@ -1292,7 +1292,7 @@ router.get("/escrow", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
+    const userId = (req.user as unknown as Record<string, unknown>).id;
     const escrowOrders = await db
       .select()
       .from(orders)
@@ -1332,7 +1332,7 @@ router.get("/affiliates", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
+    const userId = (req.user as unknown as Record<string, unknown>).id;
     const settingKey = `affiliates:${userId}`;
     const [row] = await db
       .select()
@@ -1354,8 +1354,8 @@ router.get("/contracts", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
-    const contracts = await storage.getContractTemplates(userId);
+    const userId = (req.user as unknown as Record<string, unknown>).id;
+    const contracts = await storage.getContractTemplates((userId as string));
     res.json(contracts);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching contracts:");
@@ -1369,9 +1369,9 @@ router.get("/contracts/:id", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
+    const userId = (req.user as unknown as Record<string, unknown>).id;
     const { id } = req.params;
-    const contract = await storage.getContractTemplateByUser(id, userId);
+    const contract = await storage.getContractTemplateByUser(id, (userId as string));
 
     if (!contract) {
       return res.status(404).json({ error: "Contract not found" });
@@ -1390,7 +1390,7 @@ router.patch("/contracts/:id", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
+    const userId = (req.user as unknown as Record<string, unknown>).id;
     const { id } = req.params;
 
     const parsed = contractSchema.partial().safeParse(req.body);
@@ -1400,7 +1400,7 @@ router.patch("/contracts/:id", async (req: Request, res: Response) => {
         .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
-    const contract = await storage.getContractTemplateByUser(id, userId);
+    const contract = await storage.getContractTemplateByUser(id, (userId as string));
     if (!contract) {
       return res.status(404).json({ error: "Contract not found" });
     }
@@ -1423,10 +1423,10 @@ router.delete("/contracts/:id", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
+    const userId = (req.user as unknown as Record<string, unknown>).id;
     const { id } = req.params;
 
-    const contract = await storage.getContractTemplateByUser(id, userId);
+    const contract = await storage.getContractTemplateByUser(id, (userId as string));
     if (!contract) {
       return res.status(404).json({ error: "Contract not found" });
     }
@@ -1509,7 +1509,7 @@ router.get("/collaborations", async (req: Request, res: Response) => {
         budget: meta.budget || null,
         status: project.status || "pending",
         messages: meta.messages || [],
-        createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
+        createdAt: (project.createdAt as any)?.toISOString() || new Date().toISOString(),
       };
     });
 
@@ -1625,10 +1625,10 @@ router?.post(
               );
               if (analysis?.success && analysis?.data) {
                 const updateData: Record<string, unknown> = {};
-                if (!tempo && analysis?.data.bpm)
-                  updateData.bpm = Math.round(analysis?.data.bpm);
-                if (!key && analysis?.data.key)
-                  updateData.key = analysis?.data.key;
+                if (!tempo && (analysis?.data as any).bpm)
+                  updateData.bpm = Math.round((analysis?.data as any).bpm);
+                if (!key && (analysis?.data as any).key)
+                  updateData.key = (analysis?.data as any).key;
                 if (Object.keys(updateData).length > 0) {
                   await db
                     .update(listings)
@@ -1641,7 +1641,7 @@ router?.post(
               }
             }
           } catch (tagErr) {
-            logger.warn("[AutoTag] Failed to auto-tag beat:", tagErr);
+            logger.warn(tagErr, "[AutoTag] Failed to auto-tag beat:");
           } finally {
             fsPromises?.unlink(tmpPath).catch(() => {
               /* intentional: temp-file cleanup */
@@ -1656,7 +1656,7 @@ router?.post(
           await notificationService?.sendAdminMarketplaceReviewNotification(
             title,
             listing?.id,
-            (req.user as Record<string, unknown>)?.email || "unknown",
+            ((req.user as unknown as Record<string, unknown>)?.email || "unknown" as string),
           );
         } catch (err) {
           logger.warn(
@@ -1671,8 +1671,8 @@ router?.post(
         try {
           const producerId = req.user!.id;
           const producerName =
-            (req.user as Record<string, unknown>)?.firstName ||
-            (req.user as Record<string, unknown>)?.username ||
+            (req.user as unknown as Record<string, unknown>)?.firstName ||
+            (req.user as unknown as Record<string, unknown>)?.username ||
             "A producer you follow";
           const followers =
             await discoveryAlgorithmService?.getProducerFollowers(producerId);
@@ -1717,7 +1717,7 @@ router?.post(
             );
           }
         } catch (notifyError) {
-          logger.warn("Error notifying followers about new beat:", notifyError);
+          logger.warn(notifyError, "Error notifying followers about new beat:");
         }
       })();
 
@@ -1738,7 +1738,7 @@ router?.post(
                 `mp3=${!!sepResult.mp3Url} stems=${sepResult?.stemsAvailable}`,
             );
           } catch (sepErr) {
-            logger.warn("[AudioSeparator] Processing failed:", sepErr);
+            logger.warn(sepErr, "[AudioSeparator] Processing failed:");
           }
         });
       }
@@ -2009,8 +2009,8 @@ router?.put(
       res.json(updatedListing);
     } catch (error) {
       logger.warn({ err: error }, "Error updating listing:");
-      if (error?.message === "Not authorized to update this listing") {
-        return res.status(403).json({ error: error.message });
+      if ((error as any)?.message === "Not authorized to update this listing") {
+        return res.status(403).json({ error: (error as any).message });
       }
       res.status(500).json({ error: "Failed to update beat" });
     }
@@ -2028,11 +2028,11 @@ router?.delete("/listings/:id", async (req: Request, res: Response) => {
     res.json({ success: true, message: "Beat deleted successfully" });
   } catch (error) {
     logger.warn({ err: error }, "Error deleting listing:");
-    if (error?.message === "Not authorized to delete this listing") {
-      return res.status(403).json({ error: error.message });
+    if ((error as any)?.message === "Not authorized to delete this listing") {
+      return res.status(403).json({ error: (error as any).message });
     }
-    if (error?.message === "Listing not found") {
-      return res.status(404).json({ error: error.message });
+    if ((error as any)?.message === "Listing not found") {
+      return res.status(404).json({ error: (error as any).message });
     }
     res.status(500).json({ error: "Failed to delete beat" });
   }
@@ -2117,7 +2117,7 @@ router?.post("/affiliates", async (req: Request, res: Response) => {
     }
     const { name, email, commissionRate } = parsed?.data;
 
-    const userId = (req.user as Record<string, unknown>).id;
+    const userId = (req.user as unknown as Record<string, unknown>).id;
     const settingKey = `affiliates:${userId}`;
     const [existing] = await db
       .select()
@@ -2167,7 +2167,7 @@ router?.post("/contracts", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
+    const userId = (req.user as unknown as Record<string, unknown>).id;
     const parsed = contractSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res.status(400).json({ error: parsed.error.issues[0].message });
@@ -2206,7 +2206,7 @@ router?.post("/collaborations", async (req: Request, res: Response) => {
 
     const fromUser = {
       id: userId,
-      name: (req.user as Record<string, unknown>)?.username || "User",
+      name: (req.user as unknown as Record<string, unknown>)?.username || "User",
       avatar: "",
     };
     const messages = message

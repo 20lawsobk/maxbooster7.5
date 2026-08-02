@@ -238,7 +238,7 @@ export async function rateLimitApiKey(
 
       next();
     } catch (redisError: unknown) {
-      logger.warn("Redis rate limiting error — request blocked:", redisError);
+      logger.warn(redisError, "Redis rate limiting error — request blocked:");
       return res.status(503).json({
         error: "Service Unavailable",
         message:
@@ -474,7 +474,7 @@ export async function getUserApiUsageStats(userId: string, days: number = 30) {
         return {
           keyId: key.id,
           keyName: key.keyName,
-          tier: key.tier,
+          tier: (key as any).tier,
           ...stats,
         };
       }),

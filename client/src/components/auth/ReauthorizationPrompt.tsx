@@ -132,7 +132,7 @@ export function ReauthorizationPrompt({
       onSuccess?.();
       onOpenChange(false);
     } catch (err) {
-      setError(err.message || "Incorrect password. Please try again.");
+      setError((err as Error).message || "Incorrect password. Please try again.");
     } finally {
       setIsLoading(false);
     }

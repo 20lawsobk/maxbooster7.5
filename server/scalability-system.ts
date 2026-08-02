@@ -265,22 +265,22 @@ export class ScalabilitySystem {
 
     // Performance analysis
     if (cpuUsage > 80) {
-      logger.info("⚠️ High CPU usage detected:", cpuUsage + "%");
+      logger.info({ value: cpuUsage + "%" }, "⚠️ High CPU usage detected:");
       await this.optimizeCPU();
     }
 
     if (memoryUsage > 85) {
-      logger.info("⚠️ High memory usage detected:", memoryUsage + "%");
+      logger.info({ value: memoryUsage + "%" }, "⚠️ High memory usage detected:");
       await this.optimizeMemory();
     }
 
     if (cacheHitRate < 70) {
-      logger.info("⚠️ Low cache hit rate detected:", cacheHitRate + "%");
+      logger.info({ value: cacheHitRate + "%" }, "⚠️ Low cache hit rate detected:");
       await this.optimizeCache();
     }
 
     if (errorRate > 5) {
-      logger.info("⚠️ High error rate detected:", errorRate + "%");
+      logger.info({ value: errorRate + "%" }, "⚠️ High error rate detected:");
       await this.optimizeErrorHandling();
     }
   }

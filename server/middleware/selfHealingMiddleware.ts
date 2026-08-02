@@ -67,7 +67,7 @@ export function selfHealingSecurityMiddleware(
     source: {
       ip,
       userAgent: req.headers["user-agent"],
-      userId: (req as Record<string, unknown>).user?.id,
+      userId: ((req as unknown as Record<string, unknown>).user as any)?.id,
       sessionId: req.sessionID,
     },
     payload: {
@@ -94,7 +94,7 @@ export function selfHealingSecurityMiddleware(
         source: {
           ip,
           userAgent: req.headers["user-agent"],
-          userId: (req as Record<string, unknown>).user?.id,
+          userId: ((req as unknown as Record<string, unknown>).user as any)?.id,
           sessionId: req.sessionID,
         },
         payload: {

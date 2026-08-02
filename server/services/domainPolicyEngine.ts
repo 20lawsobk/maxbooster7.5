@@ -146,7 +146,7 @@ export async function softReleaseDomain(
     await getRegistrarProvider().releaseDomain(row.domain);
   } catch (e) {
     logger.warn(
-      { domainId, err: e.message },
+      { domainId, err: (e as Error).message },
       "[PolicyEngine] registrar.releaseDomain failed — updating DB only",
     );
     await db
@@ -295,7 +295,7 @@ export async function emitDomainEvent(
   } catch (e) {
     // Event ledger failures must never block the main operation
     logger.warn(
-      { eventType, domainId, err: e.message },
+      { eventType, domainId, err: (e as Error).message },
       "[PolicyEngine] emitDomainEvent failed (non-fatal)",
     );
   }

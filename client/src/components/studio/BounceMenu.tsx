@@ -68,7 +68,7 @@ interface BounceOptions {
 export function BounceMenu({
   selectedClipIds = [],
   selectedTrackId,
-  projectId,
+  _projectId,
   onBounceSelection,
   onBounceToNewTrack,
   onTransformToRendered,

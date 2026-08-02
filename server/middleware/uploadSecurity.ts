@@ -296,9 +296,9 @@ export function validateUpload(
   const sanitizedFilename = sanitizeFilename(file.originalname);
 
   if (isSvgBlocked(file.mimetype, file.originalname, category)) {
-    logger.warn(`Blocked SVG upload attempt for ${category}`, {
+    logger.warn({
       filename: file.originalname,
-    });
+    }, `Blocked SVG upload attempt for ${category}`);
     return {
       valid: false,
       error: "SVG files are not allowed for security reasons",
@@ -329,11 +329,11 @@ export function validateUpload(
 
   if (file.buffer && file.buffer.length > 0) {
     if (!verifyMagicBytes(file.buffer, file.mimetype)) {
-      logger.warn("Magic bytes verification failed", {
+      logger.warn({
         filename: file.originalname,
         mimetype: file.mimetype,
         bufferStart: file.buffer.slice(0, 16).toString("hex"),
-      });
+      }, "Magic bytes verification failed");
       return {
         valid: false,
         error:
@@ -362,19 +362,19 @@ export function createUploadValidator(category: UploadCategory) {
     for (const file of files) {
       const result = validateUpload(file, category);
       if (!result.valid) {
-        logger.warn("Upload validation failed", {
+        logger.warn({
           category,
           filename: file.originalname,
           error: result.error,
-          userId: (req as Record<string, unknown>).user.id,
-        });
+          userId: (req as unknown as Record<string, unknown>).user.id,
+        }, "Upload validation failed");
         return res.status(400).json({
           success: false,
           error: result.error,
           code: "UPLOAD_VALIDATION_FAILED",
         });
       }
-      (file as Record<string, unknown>).sanitizedFilename =
+      (file as unknown as Record<string, unknown>).sanitizedFilename =
         result.sanitizedFilename;
     }
 
@@ -429,11 +429,11 @@ export async function validateFileBuffer(
   }
 
   if (!verifyMagicBytes(buffer, mimeType)) {
-    logger.warn("Magic bytes verification failed", {
+    logger.warn({
       filename,
       mimetype: mimeType,
       bufferStart: buffer.slice(0, 16).toString("hex"),
-    });
+    }, "Magic bytes verification failed");
     return {
       valid: false,
       error: "File content does not match declared type (magic bytes mismatch)",

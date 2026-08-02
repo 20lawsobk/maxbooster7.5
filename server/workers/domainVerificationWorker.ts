@@ -74,7 +74,7 @@ async function runVerificationTick(): Promise<void> {
        LIMIT $1`,
       [BATCH_SIZE],
     );
-    rows = result?.rows;
+    rows = (result as any)?.rows;
   } catch (err) {
     logger.warn({ err }, "[domainVerify] failed to query pending domains");
     return;
@@ -145,8 +145,8 @@ export function startDomainVerificationWorker(): void {
   }, POLL_INTERVAL_MS);
 
   // Unref so the worker doesn't prevent clean process shutdown
-  if ((intervalHandle as Record<string, unknown>).unref)
-    (intervalHandle as Record<string, unknown>).unref();
+  if ((intervalHandle as unknown as Record<string, unknown>).unref)
+    (intervalHandle as unknown as Record<string, unknown>).unref();
 
   logger.info(
     { intervalMs: POLL_INTERVAL_MS, batchSize: BATCH_SIZE },

@@ -26,7 +26,7 @@ interface FlowStateMixerProps {
 
 export function FlowStateMixer({
   tracks = [],
-  projectId,
+  _projectId,
   onVolumeChange = () => {},
   onPanChange = () => {},
   onMuteToggle = () => {},
@@ -82,7 +82,7 @@ interface MixerChannelProps {
 function MixerChannel({
   track,
   onVolumeChange,
-  onPanChange,
+  _onPanChange,
   onMuteToggle,
   onSoloToggle,
 }: MixerChannelProps) {

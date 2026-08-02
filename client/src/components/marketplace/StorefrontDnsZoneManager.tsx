@@ -596,7 +596,7 @@ function DnsZoneEditor({
     } catch (e) {
       toast({
         title: "Export failed",
-        description: e.message,
+        description: (e as Error).message,
         variant: "destructive",
       });
     } finally {

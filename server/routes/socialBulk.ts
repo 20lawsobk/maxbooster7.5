@@ -47,8 +47,8 @@ router?.post("/validate", requireAuth, async (req, res) => {
     // Batch-load all referenced socialAccountIds in a single query (avoid N+1)
     const referencedAccountIds = [
       ...new Set(
-        validatedData?.posts
-          .map((p) => p?.socialAccountId)
+        (validatedData as any)?.posts
+          .map((p: any) => p?.socialAccountId)
           .filter(Boolean) as string[],
       ),
     ];
@@ -67,8 +67,8 @@ router?.post("/validate", requireAuth, async (req, res) => {
       for (const a of ownedAccounts) ownedAccountIdSet?.add(a?.id);
     }
 
-    for (let i = 0; i < validatedData?.posts.length; i++) {
-      const post = validatedData?.posts[i];
+    for (let i = 0; i < (validatedData as any)?.posts.length; i++) {
+      const post = (validatedData as any)?.posts[i];
       const platform = (post?.platform || "").toLowerCase();
 
       if (!post?.platform || post?.platform.trim() === "") {
@@ -138,7 +138,7 @@ router?.post("/validate", requireAuth, async (req, res) => {
 
     return res.json({
       valid: errors.length === 0,
-      totalPosts: validatedData.posts.length,
+      totalPosts: (validatedData as any).posts.length,
       errors,
       warnings,
     });
@@ -158,11 +158,11 @@ router?.post("/schedule", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const validatedData = bulkSchedulePostSchema?.parse(req.body);
 
-    if (validatedData?.posts.length === 0) {
+    if ((validatedData as any)?.posts.length === 0) {
       return res.status(400).json({ error: "At least one post is required" });
     }
 
-    if (validatedData?.posts.length > 500) {
+    if ((validatedData as any)?.posts.length > 500) {
       return res
         .status(400)
         .json({ error: "Batch size exceeds maximum of 500 posts" });
@@ -173,8 +173,8 @@ router?.post("/schedule", requireAuth, async (req, res) => {
       field: string;
       message: string;
     }> = [];
-    for (let i = 0; i < validatedData?.posts.length; i++) {
-      const post = validatedData?.posts[i];
+    for (let i = 0; i < (validatedData as any)?.posts.length; i++) {
+      const post = (validatedData as any)?.posts[i];
       if (!post?.content || post?.content.trim() === "") {
         validationErrors?.push({
           index: i,
@@ -192,8 +192,8 @@ router?.post("/schedule", requireAuth, async (req, res) => {
     // Verify social account ownership in a single batch query
     const accountIds = [
       ...new Set(
-        validatedData?.posts
-          .map((p) => p?.socialAccountId)
+        (validatedData as any)?.posts
+          .map((p: any) => p?.socialAccountId)
           .filter(Boolean) as string[],
       ),
     ];
@@ -209,8 +209,8 @@ router?.post("/schedule", requireAuth, async (req, res) => {
         )
         .limit(100);
       const ownedIds = new Set(ownedAccounts?.map((a) => a?.id));
-      const badIndex = validatedData?.posts.findIndex(
-        (p) => p?.socialAccountId && !ownedIds?.has(p?.socialAccountId),
+      const badIndex = (validatedData as any)?.posts.findIndex(
+        (p: any) => p?.socialAccountId && !ownedIds?.has(p?.socialAccountId),
       );
       if (badIndex !== -1) {
         return res.status(403).json({
@@ -223,8 +223,8 @@ router?.post("/schedule", requireAuth, async (req, res) => {
     // Verify campaign ownership in a single batch query
     const campaignIds = [
       ...new Set(
-        validatedData?.posts
-          .map((p) => p?.campaignId)
+        (validatedData as any)?.posts
+          .map((p: any) => p?.campaignId)
           .filter(Boolean) as string[],
       ),
     ];
@@ -240,8 +240,8 @@ router?.post("/schedule", requireAuth, async (req, res) => {
         )
         .limit(100);
       const ownedCampaignIds = new Set(ownedCampaigns?.map((c) => c?.id));
-      const badCampaignIndex = validatedData?.posts.findIndex(
-        (p) => p?.campaignId && !ownedCampaignIds?.has(p?.campaignId),
+      const badCampaignIndex = (validatedData as any)?.posts.findIndex(
+        (p: any) => p?.campaignId && !ownedCampaignIds?.has(p?.campaignId),
       );
       if (badCampaignIndex !== -1) {
         return res.status(403).json({
@@ -252,7 +252,7 @@ router?.post("/schedule", requireAuth, async (req, res) => {
     }
 
     // Determine campaignId: use existing one from posts, or create a new campaign
-    let defaultCampaignId = validatedData?.posts[0]?.campaignId;
+    let defaultCampaignId = (validatedData as any)?.posts[0]?.campaignId;
     if (!defaultCampaignId) {
       // Insert campaign first and retrieve its generated ID
       const [newCampaign] = await db
@@ -260,7 +260,7 @@ router?.post("/schedule", requireAuth, async (req, res) => {
         .values({
           userId,
           name: `Bulk Schedule - ${new Date().toISOString()}`,
-          platforms: [...new Set(validatedData?.posts.map((p) => p?.platform))],
+          platforms: [...new Set((validatedData as any)?.posts.map((p: any) => p?.platform))],
           status: "active",
         })
         .returning({ id: socialCampaigns.id });
@@ -271,16 +271,16 @@ router?.post("/schedule", requireAuth, async (req, res) => {
       .insert(scheduledPostBatches)
       .values({
         userId,
-        totalPosts: validatedData.posts.length,
+        totalPosts: (validatedData as any).posts.length,
         processedPosts: 0,
         successfulPosts: 0,
         failedPosts: 0,
         status: "processing",
-        metadata: validatedData.metadata || {},
+        metadata: (validatedData as any).metadata || {},
       })
       .returning();
 
-    const postsToInsert = validatedData?.posts.map((post) => ({
+    const postsToInsert = (validatedData as any)?.posts.map((post: any) => ({
       userId,
       campaignId: post.campaignId || defaultCampaignId,
       batchId: batch.id,
@@ -309,7 +309,7 @@ router?.post("/schedule", requireAuth, async (req, res) => {
             platform: post.platform,
             content: post.content || "",
             mediaUrls: (post?.mediaUrls as string[]) || [],
-            socialAccountId: post.socialAccountId,
+            socialAccountId: (post as any).socialAccountId,
             campaignId: post.campaignId,
             scheduledAt: post.scheduledAt || undefined,
           },
@@ -322,7 +322,7 @@ router?.post("/schedule", requireAuth, async (req, res) => {
       success: true,
       batchId: batch.id,
       campaignId: defaultCampaignId,
-      totalPosts: validatedData.posts.length,
+      totalPosts: (validatedData as any).posts.length,
       message: "Batch scheduled successfully",
     });
   } catch (error: unknown) {
@@ -376,13 +376,13 @@ router?.get("/status/:batchId", requireAuth, async (req, res) => {
     return res.json({
       batchId: batch.id,
       status: batch.status,
-      totalPosts: batch.totalPosts,
-      processedPosts: batch.processedPosts,
-      successfulPosts: batch.successfulPosts,
-      failedPosts: batch.failedPosts,
+      totalPosts: (batch as any).totalPosts,
+      processedPosts: (batch as any).processedPosts,
+      successfulPosts: (batch as any).successfulPosts,
+      failedPosts: (batch as any).failedPosts,
       statusBreakdown,
       createdAt: batch.createdAt,
-      updatedAt: batch.updatedAt,
+      updatedAt: (batch as any).updatedAt,
       completedAt: batch.completedAt,
       queueStats,
       posts: batchPosts.map((post) => ({
@@ -391,7 +391,7 @@ router?.get("/status/:batchId", requireAuth, async (req, res) => {
         status: post.status,
         scheduledAt: post.scheduledAt,
         publishedAt: post.publishedAt,
-        error: post.error,
+        error: (post as any).error,
       })),
     });
   } catch (error: unknown) {
@@ -446,13 +446,13 @@ router?.get("/batches", requireAuth, async (req, res) => {
       pageSize,
       batches: batches.map((batch) => ({
         id: batch.id,
-        totalPosts: batch.totalPosts,
-        processedPosts: batch.processedPosts,
-        successfulPosts: batch.successfulPosts,
-        failedPosts: batch.failedPosts,
+        totalPosts: (batch as any).totalPosts,
+        processedPosts: (batch as any).processedPosts,
+        successfulPosts: (batch as any).successfulPosts,
+        failedPosts: (batch as any).failedPosts,
         status: batch.status,
         createdAt: batch.createdAt,
-        updatedAt: batch.updatedAt,
+        updatedAt: (batch as any).updatedAt,
         completedAt: batch.completedAt,
       })),
     });
@@ -467,8 +467,8 @@ router?.get("/status", requireAuth, async (_req, res) => {
     const queueStats = await socialQueueService?.getQueueStats();
     return res.json({
       status: "ready",
-      queuedPosts: queueStats.waiting ?? 0,
-      processingPosts: queueStats.active ?? 0,
+      queuedPosts: (queueStats as any).waiting ?? 0,
+      processingPosts: (queueStats as any).active ?? 0,
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Get bulk status error:");

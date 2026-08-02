@@ -73,10 +73,10 @@ export class HnsAuctionManager {
         auctionState = "opening";
         logger.info({ name: cleanName, txHash }, "[HNS] Auction opened");
       } catch (err) {
-        error = err?.message;
+        error = (err as any)?.message;
         auctionState = "failed";
         logger.warn(
-          { name: cleanName, err: err.message },
+          { name: cleanName, err: (err as Error).message },
           "[HNS] Failed to open auction",
         );
       }
@@ -132,7 +132,7 @@ export class HnsAuctionManager {
     } catch (err) {
       await db
         .update(hnsAuctions)
-        .set({ state: "failed", error: err.message, updatedAt: new Date() })
+        .set({ state: "failed", error: (err as Error).message, updatedAt: new Date() })
         .where(eq(hnsAuctions?.id, auctionId));
       throw err;
     }
@@ -162,7 +162,7 @@ export class HnsAuctionManager {
     } catch (err) {
       await db
         .update(hnsAuctions)
-        .set({ state: "failed", error: err.message, updatedAt: new Date() })
+        .set({ state: "failed", error: (err as Error).message, updatedAt: new Date() })
         .where(eq(hnsAuctions?.id, auctionId));
       throw err;
     }
@@ -205,7 +205,7 @@ export class HnsAuctionManager {
     } catch (err) {
       await db
         .update(hnsAuctions)
-        .set({ state: "failed", error: err.message, updatedAt: new Date() })
+        .set({ state: "failed", error: (err as Error).message, updatedAt: new Date() })
         .where(eq(hnsAuctions?.id, auctionId));
       throw err;
     }

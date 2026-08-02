@@ -25,7 +25,7 @@ export function LEDMeter({
   width = 24,
   height = 200,
   segments = 30,
-  orientation = "vertical",
+  _orientation = "vertical",
   stereo = false,
   leftLevel,
   rightLevel,

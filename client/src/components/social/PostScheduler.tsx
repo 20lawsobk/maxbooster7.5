@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
 
-export function PostScheduler({ posts }: { posts?: unknown[] }) {
+export function PostScheduler({ _posts }: { posts?: unknown[] }) {
   return (
     <Card>
       <CardHeader>

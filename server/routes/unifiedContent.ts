@@ -143,7 +143,7 @@ router?.post("/", requireAuth, async (req: Request, res: Response) => {
 
   try {
     logger.info(
-      `[UnifiedContent] Full pipeline triggered by user=${req.user.id ?? "unknown"} artist="${input.artistName}"`,
+      `[UnifiedContent] Full pipeline triggered by user=${req.user!.id ?? "unknown"} artist="${input.artistName}"`,
     );
     const pkg = await unifiedContentOrchestrator?.generate(input);
 
@@ -159,9 +159,9 @@ router?.post("/", requireAuth, async (req: Request, res: Response) => {
       bulkSchedulePayload: pkg.bulkSchedulePayload,
     });
   } catch (err) {
-    logger.warn(`[UnifiedContent] Pipeline error: ${(err as Error).message}`, {
+    logger.warn({
       stack: (err as Error).stack,
-    });
+    }, `[UnifiedContent] Pipeline error: ${(err as Error).message}`);
     res
       .status(500)
       .json({

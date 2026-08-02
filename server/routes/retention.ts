@@ -58,7 +58,7 @@ router?.post("/nps", requireAuth, async (req: Record<string, unknown>, res) => {
     }
 
     const { score, comment, triggerContext } = parsed?.data;
-    const userId = req.user!.id;
+    const userId = (req.user! as any).id;
 
     await db?.insert(npsResponses).values({
       userId,
@@ -97,7 +97,7 @@ router?.post(
           });
       }
 
-      const userId = req.user!.id;
+      const userId = (req.user! as any).id;
 
       await db?.insert(cancellationFeedback).values({
         userId,
@@ -127,7 +127,7 @@ router?.post(
         return res.status(400).json({ error: "Invalid event data" });
       }
 
-      const userId = req.user!.id;
+      const userId = (req.user! as any).id;
 
       await pushFeatureEvent({
         userId,
@@ -149,7 +149,7 @@ router?.get(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user! as any).id;
 
       const [existing] = await db
         .select()
@@ -181,7 +181,7 @@ router?.get(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      if (req.user?.role !== "admin")
+      if ((req.user as any)?.role !== "admin")
         return res.status(403).json({ error: "Forbidden" });
 
       const atRisk = await db

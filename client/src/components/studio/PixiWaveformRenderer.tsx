@@ -118,7 +118,7 @@ export const PixiWaveformRenderer = forwardRef<
     onClipClick,
     onClipDrag,
     backgroundColor = "#1a1a1a",
-    waveformColor = "#4ade80",
+    _waveformColor = "#4ade80",
     playheadColor = "#ef4444",
     className,
   },

@@ -175,7 +175,7 @@ export function LicenseComparisonCard({
   onSelectLicense,
   onPurchase,
   beatTitle,
-  beatPrice,
+  _beatPrice,
   className,
   compact = false,
 }: LicenseComparisonCardProps) {
