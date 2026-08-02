@@ -1,0 +1,96 @@
+{
+  "phases": {
+    "ts-server": {
+      "status": "applied",
+      "at": "2026-08-02T20:50:53.930Z",
+      "note": "native fixed=0 skipped=315; external=fix-ts2551-rename-back.mjs,fix-ts2769.mjs,fix-ts2345.mjs,fix-ts2339-cast.mjs; syntax-restored=1",
+      "snapshot": "ts-server-1785703851828",
+      "nativeFixed": 0,
+      "syntaxRestored": [
+        "server/routes/studio.ts"
+      ]
+    },
+    "verify-server": {
+      "status": "rolled-back",
+      "at": "2026-08-02T21:06:24.973Z",
+      "note": "count rose 2352 → 2388; restored 45 files — re-run verify"
+    },
+    "imports": {
+      "status": "applied",
+      "at": "2026-08-02T20:50:54.222Z",
+      "note": "rewritten=31 ambiguous=5 (bare-module diags left to policy) syntax-restored=0"
+    },
+    "schema": {
+      "status": "applied",
+      "at": "2026-08-02T20:50:54.997Z",
+      "note": "pairs=146 inDb=0 removedWriteKeys=66 latentReads=185 syntax-restored=3"
+    },
+    "runtime": {
+      "status": "passed",
+      "at": "2026-08-02T20:54:36.307Z",
+      "note": "/api/ready:200 /:200 /api/auth/user:404"
+    },
+    "audit": {
+      "status": "measured",
+      "at": "2026-08-02T20:53:19.906Z",
+      "note": "critical=0 high=3 moderate=7 low=0 (report-only; installs are managed manually in this repo)"
+    },
+    "lint": {
+      "status": "measured",
+      "at": "2026-08-02T20:53:51.730Z",
+      "note": "errors=921; top rules: no-unsafe-optional-chaining:451 no-division-by-zero/no-division-by-zero:393 @typescript-eslint/no-non-null-asserted-optional-chain:50 @typescript-eslint/no-unused-expressions:24 no-dupe-else-if:1 no-self-assign:1 no-script-url:1"
+    }
+  },
+  "counts": {
+    "server": {
+      "total": 2352,
+      "parser": 0,
+      "top": [
+        [
+          "TS2322",
+          480
+        ],
+        [
+          "TS2769",
+          354
+        ],
+        [
+          "TS2345",
+          290
+        ],
+        [
+          "TS2339",
+          223
+        ],
+        [
+          "TS6133",
+          178
+        ],
+        [
+          "TS2365",
+          95
+        ],
+        [
+          "TS2353",
+          72
+        ],
+        [
+          "TS18046",
+          63
+        ],
+        [
+          "TS2305",
+          62
+        ],
+        [
+          "TS2571",
+          59
+        ]
+      ],
+      "at": "2026-08-02T20:52:32.220Z"
+    }
+  },
+  "lastSnapshot": {
+    "server": "schema-1785703854638"
+  }
+}

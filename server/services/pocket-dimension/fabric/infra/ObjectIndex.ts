@@ -1,8 +1,8 @@
-import { db } from "../../../db.js";
+import { db } from "../../../../db.js";
 import { fabricObjects } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import type { FabricObject, ObjectId, VolumeId, ChunkId } from "../types.js";
+import type { FabricObject, ObjectId, VolumeId, ChunkId } from "../compression/types.js";
 
 export class ObjectIndex {
   async putObject(

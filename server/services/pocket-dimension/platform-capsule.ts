@@ -16,7 +16,7 @@
  * - Optional encryption for secure distribution
  */
 
-import { logger } from "../logger";
+import { logger } from "../../logger";
 import { pocketManager, PocketDimension } from "./index.js";
 import { createHash } from "crypto";
 import { promises as fs } from "fs";

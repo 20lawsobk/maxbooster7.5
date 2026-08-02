@@ -1,4 +1,4 @@
-import { PocketStorageService } from "./PocketStorageService.js";
+import { PocketStorageService } from "../../../pocket-dimension/fabric/PocketStorageService.js";
 import { PocketRegistry } from "./infra/PocketRegistry.js";
 import { VolumeRegistry } from "./infra/VolumeRegistry.js";
 import { ObjectIndex } from "./infra/ObjectIndex.js";
@@ -12,12 +12,12 @@ import {
 } from "./control/AutoClusterManager.js";
 import { PocketDimensionChunkStore } from "./storage/PocketDimensionChunkStore.js";
 import type { ChunkStore } from "./storage/ChunkStore.js";
-import type { NodeId } from "./types.js";
-import { logger } from "../../logger.js";
+import type { NodeId } from "./compression/types.js";
+import { logger } from "../../../logger.js";
 
-export type { PocketStorageService } from "./PocketStorageService.js";
+export type { PocketStorageService } from "../../../pocket-dimension/fabric/PocketStorageService.js";
 export type { ChunkStore } from "./storage/ChunkStore.js";
-export * from "./types.js";
+export * from "./compression/types.js";
 export {
   AutoClusterManager,
   DEFAULT_RULES,

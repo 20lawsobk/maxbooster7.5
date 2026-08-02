@@ -2,8 +2,8 @@ import type { NodeRegistry } from "../infra/NodeRegistry.js";
 import type { ChunkIndex } from "../infra/ChunkIndex.js";
 import type { ChunkStore } from "../storage/ChunkStore.js";
 import type { PlacementStrategy } from "./PlacementStrategy.js";
-import type { NodeId, ChunkId } from "../types.js";
-import { logger } from "../../../logger.js";
+import type { NodeId, ChunkId } from "../compression/types.js";
+import { logger } from "../../../../logger.js";
 
 export class Rebalancer {
   private running = false;

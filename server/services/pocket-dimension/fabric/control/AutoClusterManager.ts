@@ -2,9 +2,9 @@ import type { NodeRegistry } from "../infra/NodeRegistry.js";
 import type { ChunkIndex } from "../infra/ChunkIndex.js";
 import type { PlacementStrategy } from "./PlacementStrategy.js";
 import type { ChunkStore } from "../storage/ChunkStore.js";
-import type { NodeId, FabricStorageNode } from "../types.js";
+import type { NodeId, FabricStorageNode } from "../compression/types.js";
 import { Rebalancer } from "./Rebalancer.js";
-import { logger } from "../../../logger.js";
+import { logger } from "../../../../logger.js";
 
 export interface ClusterRules {
   minNodes: number;
