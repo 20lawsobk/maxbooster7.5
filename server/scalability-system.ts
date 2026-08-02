@@ -77,8 +77,14 @@ export class ScalabilitySystem {
     if (cluster?.isMaster) {
       logger.info(`🔄 Master process ${process.pid} is running`);
 
-      // Fork workers
-      for (let i = 0; i < numCPUs; i++) {
+      // Fork workers — cap at MAX_WORKERS (default 4) to avoid memory exhaustion
+      // on high-core-count hosts.  A 16-core machine forking 16 workers can
+      // easily exhaust the 512 MB container limit.
+      const workerCount = Math.min(
+        numCPUs,
+        parseInt(process.env.MAX_WORKERS || "4", 10),
+      );
+      for (let i = 0; i < workerCount; i++) {
         cluster?.fork();
       }
 

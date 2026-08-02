@@ -7151,19 +7151,32 @@ export async function registerRoutes(
     res.set("Cache-Control", "no-cache, no-store, must-revalidate");
     try {
       const { healthRegistry } = await import("./lib/healthRegistry.js");
-      const result = await healthRegistry.checkAll();
+      const { responseTimeTracker } = await import("./services/monitoringService.js");
+      const [result, rtStats] = await Promise.all([
+        healthRegistry.checkAll(),
+        Promise.resolve(responseTimeTracker.getStats()),
+      ]);
       const code = result.status === "down" ? 503 : 200;
       res.status(code).json({
         status: result.status,
         timestamp: new Date().toISOString(),
         buildId: BUILD_ID,
         subsystems: result.subsystems,
+        latency: {
+          avgMs:   Math.round(rtStats.avg),
+          p95Ms:   Math.round(rtStats.p95),
+          p99Ms:   Math.round(rtStats.p99),
+          minMs:   Math.round(rtStats.min),
+          maxMs:   Math.round(rtStats.max),
+          samples: rtStats.count,
+          windowSec: 300,
+        },
       });
     } catch (err) {
       res.status(503).json({
         status: "down",
         timestamp: new Date().toISOString(),
-        error: err.message ?? "health check failed",
+        error: (err as Error).message ?? "health check failed",
       });
     }
   };
