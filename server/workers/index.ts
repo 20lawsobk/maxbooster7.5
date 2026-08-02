@@ -262,7 +262,7 @@ process.on("unhandledRejection", (reason: Record<string, unknown>) => {
     );
   if (isNonFatal) return; // circuit breaker / ChainFixer already handles these
   // Log but do NOT shut down — BullMQ retries handle job-level failures.
-  logger.warn("❌ Unhandled rejection (workers):", msg);
+  logger.warn({ rejection: msg }, "❌ Unhandled rejection (workers)");
 });
 
 /**

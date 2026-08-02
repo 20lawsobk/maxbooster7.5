@@ -391,7 +391,7 @@ export class FeatureStore {
 
     const timestamp = event.timestamp;
     const hour = timestamp.getHours();
-    const day = timestamp.toLocaleDateString("en-US", { weekday: "lowercase" });
+    const day = timestamp.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
 
     const qualityScore = event.feedback.quality;
     const learningRate = 0.1;

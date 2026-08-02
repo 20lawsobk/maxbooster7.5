@@ -193,7 +193,7 @@ export function getRecommendedBufferSize(
   sampleRate: SampleRate,
   latencyTarget: "recording" | "mixing" | "mastering",
 ): BufferSize {
-  const target = LATENCY_TARGETS[latencyTarget];
+  const target = LATENCY_TARGETS[latencyTarget.toUpperCase() as keyof typeof LATENCY_TARGETS];
 
   if (sampleRate >= SAMPLE_RATES.SR_96000) {
     return target.bufferSize === BUFFER_SIZES.ULTRA_LOW_LATENCY

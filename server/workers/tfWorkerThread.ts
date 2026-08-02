@@ -45,7 +45,10 @@ parentPort?.on(
       }
 
       const start = Date?.now();
-      const output = model?.predict(inputTensor) as Record<string, unknown>;
+      const output = model?.predict(inputTensor) as {
+        data: () => Promise<Float32Array>;
+        dispose: () => void;
+      };
       const result = await output?.data();
       const durationMs = Date?.now() - start;
 
@@ -54,7 +57,8 @@ parentPort?.on(
 
       parentPort!.postMessage({ id, result: Array.from(result), durationMs });
     } catch (err) {
-      parentPort!.postMessage({ id, error: err.message || String(err) });
+      const e = err as Error;
+      parentPort!.postMessage({ id, error: e.message || String(err) });
     }
   },
 );
