@@ -1,4 +1,4 @@
-import { db } from "../../../db.js";
+import { db } from "../../../../db.js";
 import { fabricStorageNodes } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -7,7 +7,7 @@ import type {
   NodeId,
   BackendType,
   CostTier,
-} from "../types.js";
+} from "../compression/types.js";
 
 export class NodeRegistry {
   async registerNode(

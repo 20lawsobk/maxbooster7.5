@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import DatabaseOptimizer from "../database/optimize-database";
+import DatabaseOptimizer from "./optimize-database";
 import { logger } from "./logger.js";
 
 async function main() {

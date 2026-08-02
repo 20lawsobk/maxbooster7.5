@@ -1954,8 +1954,8 @@ router.get(
             userId,
             projectId: (release as any).projectId || undefined,
             date: new Date(),
-            totalStreams: analytics.streams,
-            totalRevenue: analytics.revenue.toString(),
+            totalStreams: (analytics as any).streams,
+            totalRevenue: (analytics as any).revenue.toString(),
             platformData: analytics.platforms,
             trackData: analytics.timeline,
           });

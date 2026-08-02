@@ -1,0 +1,1215 @@
+{
+  "errors": 921,
+  "top": [
+    [
+      "no-unsafe-optional-chaining",
+      451
+    ],
+    [
+      "no-division-by-zero/no-division-by-zero",
+      393
+    ],
+    [
+      "@typescript-eslint/no-non-null-asserted-optional-chain",
+      50
+    ],
+    [
+      "@typescript-eslint/no-unused-expressions",
+      24
+    ],
+    [
+      "no-dupe-else-if",
+      1
+    ],
+    [
+      "no-self-assign",
+      1
+    ],
+    [
+      "no-script-url",
+      1
+    ]
+  ],
+  "files": [
+    {
+      "file": "server/audit-system.ts",
+      "errors": 12
+    },
+    {
+      "file": "server/automation-system.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/autonomous-autopilot.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/autonomous-updates.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/cluster.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/database-performance-test.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/db.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/index.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/infrastructure/autoScaling.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/infrastructure/distributedCache.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/lib/cachedHealthCheck.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/middleware/apiCache.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/middleware/cachingLayer.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/middleware/cloudflare.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/middleware/rateLimiter.ts",
+      "errors": 11
+    },
+    {
+      "file": "server/middleware/requestQueue.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/monitoring/alertingService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/pocket-dimension/fabric/PocketStorageService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/pocket-dimension/fabric/compression/CompressionProfileRouter.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/pocket-dimension/fabric/compression/DeltaEngine.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/pocket-dimension/fabric/compression/SemanticArchiver.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/pocket-dimension/fabric/control/AutoClusterManager.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/pocket-dimension/fabric/control/Rebalancer.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/pocket-dimension/fabric/index.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/pocket-dimension/index.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/realtime/presenceManager.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/realtime/studioCollabServer.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/reliability-system.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/reliability/database-resilience.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/reliability/memory-manager.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/reliability/reliability-coordinator.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/routes/admin.ts",
+      "errors": 8
+    },
+    {
+      "file": "server/routes/admin/index.ts",
+      "errors": 12
+    },
+    {
+      "file": "server/routes/advertising.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/routes/advertisingAutopilot.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/analytics-internal.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/routes/api/certifiedAnalytics.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/api/v1/analytics.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/artistProfiles.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/audio-processing.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/routes/audit.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/autoUpdates.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/autonomousSocial.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/autopilot-learning.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/autopilot.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/batch.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/billing.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/routes/bootstrap.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/careerCoach.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/routes/collaboration.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/routes/customWorkflows.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/developerApi.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/routes/distribution.ts",
+      "errors": 9
+    },
+    {
+      "file": "server/routes/dns.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/dnsManager.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/executiveDashboard.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/export.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/fanCampaigns.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/fanHub.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/growth.ts",
+      "errors": 13
+    },
+    {
+      "file": "server/routes/helpDesk.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/routes/hns.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/routes/labelSubmissions.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/routes/logs.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/marketplace.ts",
+      "errors": 7
+    },
+    {
+      "file": "server/routes/merch.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/monitoring.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/musicWorkflowAutomations.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/offline.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/onboarding.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/organic.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/routes/payouts.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/playlistPitching.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/pressKit.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/projectBudgets.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/publishing.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/radioPitches.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/retention.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/revenueForecast.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/sampleClearances.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/security.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/routes/selfHealingApi.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/socialMedia.ts",
+      "errors": 13
+    },
+    {
+      "file": "server/routes/storage.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/storefront.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/studio.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/studioComping.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/studioGeneration.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/routes/support.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/sync.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/syncLicensing.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/testing.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/routes/undo.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/venues.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/routes/vstBridge.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/safety/auditLogger.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/safety/refundHandler.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/safety/stripeWebhookSecurity.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/scalability-system.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/security-system.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/seed/distributionPlatforms.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/seed/initializeAIContentModels.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/seed/initializeAIInsightsModels.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/seed/initializeAIMusicModels.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/self-evolution-engine.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/achievementService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/acmeClient.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/advancedAnalyticsService.ts",
+      "errors": 6
+    },
+    {
+      "file": "server/services/advancedSocialAIService.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/advertisingAIService.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/advertisingDispatchService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/advertisingNormalizationService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/aiAnalyticsService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/aiContentService.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/aiInsightsEngine.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/aiMusicService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/aiService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/aiTranslationService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/algorithmIntelligence.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/analyticsAlertService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/approvalWorkflowService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/artistProfileService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/artistProgressService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/audioSeparatorService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/audioService.ts",
+      "errors": 9
+    },
+    {
+      "file": "server/services/autonomousJobScheduler.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/autopilotCoordinatorService.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/services/autopilotLearningService.ts",
+      "errors": 6
+    },
+    {
+      "file": "server/services/autopilotPublisher.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/backup/databaseBackupService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/baseModelTrainer.ts",
+      "errors": 6
+    },
+    {
+      "file": "server/services/beatSyncService.ts",
+      "errors": 7
+    },
+    {
+      "file": "server/services/bridgeInsightsService.ts",
+      "errors": 7
+    },
+    {
+      "file": "server/services/careerCoachService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/catalogImporter.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/catalogMigrationService.ts",
+      "errors": 7
+    },
+    {
+      "file": "server/services/collaborationService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/competitorBenchmarkService.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/services/compingService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/complianceService.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/services/contentAnalysisService.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/services/contentPipeline/contentTypeGenerators.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/contentPipeline/maxBoosterContentStrategy.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/contentPipeline/schedulingMetadataBuilder.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/contentQualityPipeline.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/contentVariantGenerator.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/contractTemplateService.ts",
+      "errors": 6
+    },
+    {
+      "file": "server/services/creativeModelService.ts",
+      "errors": 6
+    },
+    {
+      "file": "server/services/crossPlatformSyncService.ts",
+      "errors": 12
+    },
+    {
+      "file": "server/services/customerHealthScoreService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/diffusionVideoService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/distributionDataTransferService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/distributionService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/dmcaService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/dnsPropagationCheck.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/dnsServer.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/dnssec.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/domainLifecycleJob.ts",
+      "errors": 7
+    },
+    {
+      "file": "server/services/domainPolicyEngine.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/dsp/delayEngines.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/dsp/instruments/fmSynthEngines.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/dsp/instruments/padsEngines.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/dsp/instruments/pianoEngines.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/dsp/instruments/samplerEngines.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/dsp/instruments/stringsEngines.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/dsp/instruments/wavetableSynthEngines.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/dspAnalyticsService.ts",
+      "errors": 7
+    },
+    {
+      "file": "server/services/dspPolicyChecker.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/services/dynamicTrendsService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/featureEventBuffer.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/hybridStorageService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/hyperLearningEngine.ts",
+      "errors": 28
+    },
+    {
+      "file": "server/services/imageToVideoService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/industryMonitorService.ts",
+      "errors": 6
+    },
+    {
+      "file": "server/services/instantPayoutService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/invoiceService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/jwtAuthService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/labelCopyLinter.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/marketplaceService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/maxcoreDiffusionSceneService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/maxcoreScoreCalibrator.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/services/melodyPatternService.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/services/microtonalService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/midiGeneratorService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/midiTransformService.ts",
+      "errors": 6
+    },
+    {
+      "file": "server/services/mlModelRegistry.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/monitoringService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/multimodalGenerationService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/musicIndustryContextFilter.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/notificationDispatcher.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/offlineModeService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/onboardingService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/organicCompoundingService.ts",
+      "errors": 6
+    },
+    {
+      "file": "server/services/permanentFixRegistry.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/personalizationService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/platformAutoFixer.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/services/playlistAttributionService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/plugins/fullCatalog.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/plugins/pluginEnrichment.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/pocket-dimension/fabric/compression/CompressionProfileRouter.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/pocket-dimension/fabric/compression/DeltaEngine.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/pocket-dimension/fabric/compression/SemanticArchiver.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/pocket-dimension/fabric/control/AutoClusterManager.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/pocket-dimension/fabric/control/Rebalancer.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/pocket-dimension/fabric/index.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/pocket-dimension/fabric/storage/ReplitChunkStore.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/pocket-dimension/index.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/queueService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/reEngagementService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/recoupmentService.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/recursiveResolver.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/registrar/MaxBoosterRegistrarProvider.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/registrar/index.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/releaseCountdownService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/releaseScheduler.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/releaseWorkflow.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/revenueForecastService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/revenueForecaster.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/royaltiesCSVImportService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/royaltyEngine.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/royaltyExports.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/securityMonitoringService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/securityService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/selfHealingSecurityEngine.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/smartDefaultsEngine.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/smartDefaultsService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/socialAmplificationService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/socialChatbotService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/socialListeningService.ts",
+      "errors": 6
+    },
+    {
+      "file": "server/services/socialOAuthService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/socialQueueService.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/socialService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/socialSyncService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/statusPageService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/stemExportService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/storefrontDnsService.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/stripeService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/studioService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/timingOptimizer.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/unifiedAIController.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/unifiedContentOrchestrator.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/services/userPocketDimensionService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/services/userPreferencesService.ts",
+      "errors": 5
+    },
+    {
+      "file": "server/services/vstPluginBridge.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/services/waveformCacheService.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/services/workspaceService.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/simulations/adBoosterSimulation.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/simulations/autonomousUpgradeSimulation.ts",
+      "errors": 4
+    },
+    {
+      "file": "server/simulations/pocket-storage-adapter.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/simulations/realLifeSimulation.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/simulations/runLifecycleSimulation.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/social.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/storage.ts",
+      "errors": 14
+    },
+    {
+      "file": "server/subatomic/index.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/testing-system.ts",
+      "errors": 16
+    },
+    {
+      "file": "server/tests/e2e-comprehensive.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/tests/load-testing/loadTestFramework.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/tests/load-testing/runLoadTests.ts",
+      "errors": 2
+    },
+    {
+      "file": "server/tests/load-testing/simpleLoadTest.ts",
+      "errors": 1
+    },
+    {
+      "file": "server/ultra-quality-engine.ts",
+      "errors": 3
+    },
+    {
+      "file": "server/utils/safeCalculations.ts",
+      "errors": 3
+    },
+    {
+      "file": "shared/ml/algorithms/IsolationForest.ts",
+      "errors": 1
+    },
+    {
+      "file": "shared/ml/audio/AdvancedMusicAI.ts",
+      "errors": 2
+    },
+    {
+      "file": "shared/ml/audio/AudioFeatureExtractor.ts",
+      "errors": 14
+    },
+    {
+      "file": "shared/ml/audio/IntelligentMasteringEngine.ts",
+      "errors": 12
+    },
+    {
+      "file": "shared/ml/audio/SynthesizerEngine.ts",
+      "errors": 3
+    },
+    {
+      "file": "shared/ml/audio/TextToSynthAI.ts",
+      "errors": 1
+    },
+    {
+      "file": "shared/ml/coordination/AdvertisingRuleEngine.ts",
+      "errors": 1
+    },
+    {
+      "file": "shared/ml/coordination/AutopilotCoordinator.ts",
+      "errors": 2
+    },
+    {
+      "file": "shared/ml/coordination/FeatureStore.ts",
+      "errors": 5
+    },
+    {
+      "file": "shared/ml/models/AdOptimizationEngine.ts",
+      "errors": 11
+    },
+    {
+      "file": "shared/ml/models/AdvancedTimeSeriesModel.ts",
+      "errors": 12
+    },
+    {
+      "file": "shared/ml/models/AdvertisingAutopilotAI.ts",
+      "errors": 15
+    },
+    {
+      "file": "shared/ml/models/AdvertisingAutopilotAI_v3.ts",
+      "errors": 15
+    },
+    {
+      "file": "shared/ml/models/AnomalyDetectionModel.ts",
+      "errors": 4
+    },
+    {
+      "file": "shared/ml/models/BPMDetectionModel.ts",
+      "errors": 3
+    },
+    {
+      "file": "shared/ml/models/BrandVoiceAnalyzer.ts",
+      "errors": 17
+    },
+    {
+      "file": "shared/ml/models/ChurnPredictionModel.ts",
+      "errors": 1
+    },
+    {
+      "file": "shared/ml/models/ContentPatternLearner.ts",
+      "errors": 5
+    },
+    {
+      "file": "shared/ml/models/EngagementPredictionModel.ts",
+      "errors": 2
+    },
+    {
+      "file": "shared/ml/models/GenreClassificationModel.ts",
+      "errors": 4
+    },
+    {
+      "file": "shared/ml/models/IntelligentMixingModel.ts",
+      "errors": 5
+    },
+    {
+      "file": "shared/ml/models/KeyframeStyleSelector.ts",
+      "errors": 2
+    },
+    {
+      "file": "shared/ml/models/RecommendationEngine.ts",
+      "errors": 5
+    },
+    {
+      "file": "shared/ml/models/SocialAutopilotEngine.ts",
+      "errors": 3
+    },
+    {
+      "file": "shared/ml/models/SocialMediaAutopilotAI.ts",
+      "errors": 21
+    },
+    {
+      "file": "shared/ml/models/TimeSeriesForecastModel.ts",
+      "errors": 4
+    },
+    {
+      "file": "shared/ml/nlp/ContentGenerator.ts",
+      "errors": 7
+    },
+    {
+      "file": "shared/ml/nlp/SentimentAnalyzer.ts",
+      "errors": 6
+    },
+    {
+      "file": "shared/ml/social/AdvancedSocialAI.ts",
+      "errors": 4
+    },
+    {
+      "file": "shared/ml/statistics/core.ts",
+      "errors": 2
+    },
+    {
+      "file": "shared/ml/statistics/timeseries.ts",
+      "errors": 2
+    },
+    {
+      "file": "shared/ml/utils/tensor.ts",
+      "errors": 3
+    }
+  ]
+}

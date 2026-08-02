@@ -3,7 +3,7 @@ import type {
   ChunkId,
   PocketPolicy,
   FabricStorageNode,
-} from "../types.js";
+} from "../compression/types.js";
 import type { NodeRegistry } from "../infra/NodeRegistry.js";
 
 export interface PlacementDecision {

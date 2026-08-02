@@ -275,8 +275,8 @@ class DSPAnalyticsService {
               totalRevenue += spotifySlice.revenue || 0;
             } else {
               // Release has no platform breakdown — use totals as a proxy
-              totalStreams += analytics.streams || 0;
-              totalRevenue += analytics.revenue || 0;
+              totalStreams += (analytics as any).streams || 0;
+              totalRevenue += (analytics as any).revenue || 0;
             }
           } catch (err) {
             logger.warn(

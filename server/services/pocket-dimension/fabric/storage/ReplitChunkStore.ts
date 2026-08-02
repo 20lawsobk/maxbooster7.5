@@ -1,6 +1,6 @@
 import type { ChunkStore } from "./ChunkStore.js";
-import type { ChunkId } from "../types.js";
-import { logger } from "../../../logger.js";
+import type { ChunkId } from "../compression/types.js";
+import { logger } from "../../../../logger.js";
 
 const CHUNK_PREFIX = "fabric-chunks/";
 

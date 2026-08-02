@@ -53,6 +53,7 @@ See `.env.example` for the full list of 300+ optional variables (Stripe, SendGri
 | `npm run lint:fix` | ESLint auto-fix |
 | `npm run fix` | ESLint --fix + Prettier --write |
 | `npm run db:push` | Sync Drizzle schema to NEON_DATABASE_URL |
+| `node scripts/fix-all.mjs --phase <p>` | Resumable fix-all pipeline (ts-server/ts-client/verify/imports/schema/runtime/audit/lint/summary); state+reports in `reports/fix-all/`; exits 1 while work is outstanding |
 | `npm run bootstrap:admin` | Create the initial admin user |
 
 ---

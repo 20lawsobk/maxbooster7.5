@@ -1,6 +1,6 @@
 # Server Typecheck Fix-All Report
 
-Mode: apply-postflight
+Mode: apply-preflight
 Total diagnostics: 2458
 Parser errors: no
 Classified: 2458/2458

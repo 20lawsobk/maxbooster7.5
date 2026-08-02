@@ -61,3 +61,5 @@
 - [MaxCore crash-on-wake instability](maxcore-crash-on-wake.md) — wakes 1-5 min then hard-crashes ~30s under render load; keep-alive pings don't help; fix must be on the MaxCore Repl
 - [Beat loop self-optimization](beat-loop-self-optimization.md) — genre pick, price factor, and batch size now revenue-weighted from cycle history; optimizers must return applied:boolean so claims stay honest
 - [audit_logs column: risk not severity](audit-logs-risk-column.md) — cleanupAuditLog query used `severity` but table has `risk` (low/medium/high/critical); fix: `AND risk != 'critical'`
+- [TS6133 autofix hazards](ts6133-autofix-hazards.md) — only params/array-destructures are prefix-safe; writes don't count as reads (class props/lets break); use `{ x: _x }` for shorthand
+- [fix-all pipeline design](fix-all-pipeline.md) — resumable phase-per-invocation (5-min shell cap), esbuild syntax gate + snapshots, import fixes surface new TS2305, honest nonzero exit

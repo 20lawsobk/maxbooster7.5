@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-08-02T20:25:38.529Z",
-  "mode": "apply-postflight",
+  "generatedAt": "2026-08-02T20:35:41.797Z",
+  "mode": "apply-preflight",
   "total": 2458,
   "parserErrors": false,
   "coverage": {

@@ -751,8 +751,8 @@ export class AutonomousAutopilot extends EventEmitter {
     for (const post of recentPosts) {
       await this.analyzeContentPerformance(
         (post.contentId as string),
-        post.postId,
-        post.platform,
+        (post.postId as string),
+        (post.platform as string),
       );
     }
   }
