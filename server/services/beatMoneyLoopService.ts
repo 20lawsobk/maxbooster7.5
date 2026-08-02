@@ -593,6 +593,15 @@ class BeatMoneyLoopService {
         { err },
         `[BeatMoneyLoop] ❌ Cycle ${cycleId} failed after ${durationMs}ms: ${msg}`,
       );
+      // Surface to Sentry so operators are alerted to unexpected cycle failures.
+      import("../instrument.js")
+        .then(({ captureSentryException }) => {
+          captureSentryException(err instanceof Error ? err : new Error(msg), {
+            cycleId,
+            durationMs,
+          });
+        })
+        .catch(() => { /* instrument not yet loaded — non-fatal */ });
       const nextCadence = this._computeNextCadenceMs(
         null,
         /* failed */ true,

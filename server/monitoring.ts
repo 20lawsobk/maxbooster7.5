@@ -145,7 +145,7 @@ export function metricsMiddleware(
     metrics?.trackAPICall(endpoint, duration, res.statusCode);
     responseTimeTracker.record(duration);
 
-    // Log slow requests
+    // Log slow requests and bump Prometheus counter (>5 s threshold)
     if (duration > 3000) {
       logger.warn("🐌 Slow request", {
         method: req.method,
@@ -153,6 +153,14 @@ export function metricsMiddleware(
         duration,
         statusCode: res.statusCode,
       });
+    }
+    if (duration > 5000) {
+      // Lazy import avoids circular-dep risk at module-load time.
+      import("./routes/prometheus.js")
+        .then(({ slowRequestsTotal }) => {
+          slowRequestsTotal.inc({ method: req.method, route: endpoint });
+        })
+        .catch(() => { /* prom registry not yet loaded — non-fatal */ });
     }
   });
 
