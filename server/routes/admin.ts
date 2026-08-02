@@ -4,6 +4,7 @@ import { db, pool } from "../db.js";
 import { users, projects, releases, analytics, orders, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema.js";
 import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
+import { Sentry } from "../instrument.js";
 import { killSwitch } from "../safety/killSwitch.js";
 import * as os from "os";
 import rateLimit from "express-rate-limit";
@@ -1425,6 +1426,75 @@ adminRouter.post("/intelligence/analyze", (req, res) => {
   } catch (err) {
     logger.warn({ err }, "[IntelligenceRoute] /analyze error");
     res.status(500).json({ error: "Intelligence layer unavailable" });
+  }
+});
+
+// ── Sentry smoke-test ─────────────────────────────────────────────────────────
+// POST /api/admin/sentry-test
+// Admin-only endpoint that fires a controlled captureMessage so operators can
+// verify the Sentry DSN is valid and events are arriving in the dashboard
+// before relying on alerting in production.
+//
+// Response shape:
+//   { dispatched: true,  flushed: true,  mode: "production" }  — event sent & flushed
+//   { dispatched: true,  flushed: false, mode: "production" }  — sent but flush timed out
+//   { dispatched: false, flushed: false, mode: "production", reason: "..." } — Sentry unavailable
+//   { dispatched: false, flushed: false, mode: "development" } — Sentry intentionally off in dev
+adminRouter.post("/sentry-test", async (_req: Request, res: Response) => {
+  const isProduction =
+    process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
+
+  if (!isProduction) {
+    logger.info("[SentryTest] Sentry is disabled in development — smoke-test skipped");
+    return res.json({
+      dispatched: false,
+      flushed: false,
+      mode: "development",
+      message: "Sentry is intentionally disabled outside production. Deploy to verify the pipeline.",
+    });
+  }
+
+  if (!Sentry) {
+    logger.warn("[SentryTest] @sentry/node unavailable — cannot dispatch smoke-test");
+    return res.status(503).json({
+      dispatched: false,
+      flushed: false,
+      mode: "production",
+      reason: "@sentry/node unavailable — check installation and restart the server",
+    });
+  }
+
+  try {
+    Sentry.captureMessage("sentry-smoke-test", {
+      level: "info",
+      extra: { triggeredBy: "admin-sentry-test", timestamp: new Date().toISOString() },
+    });
+    logger.info("[SentryTest] captureMessage dispatched, flushing…");
+
+    const flushed = await Sentry.flush(5000).catch(() => false);
+
+    if (flushed) {
+      logger.info("[SentryTest] Sentry dispatch confirmed — event flushed successfully");
+    } else {
+      logger.warn("[SentryTest] Sentry flush timed out — event may still be queued");
+    }
+
+    return res.json({
+      dispatched: true,
+      flushed: !!flushed,
+      mode: "production",
+      message: flushed
+        ? "Sentry dispatch confirmed. Check your Sentry project for the 'sentry-smoke-test' event."
+        : "Event dispatched but flush timed out — it may still arrive. Check your Sentry project.",
+    });
+  } catch (err) {
+    logger.warn({ err }, "[SentryTest] Unexpected error during smoke-test");
+    return res.status(500).json({
+      dispatched: false,
+      flushed: false,
+      mode: "production",
+      reason: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 
