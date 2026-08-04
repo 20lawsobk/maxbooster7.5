@@ -740,7 +740,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           const { distributedCache } = await import(
             "./distributedCacheService.js"
           );
-          await distributedCache.evictExpired();
+          await (distributedCache as Record<string, unknown>).evictExpired?.();
           logger.info(
             "[ChainFixer] Cache evicted to reduce storage pressure after filesystem error",
           );
@@ -841,7 +841,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           const { distributedCache } = await import(
             "./distributedCacheService.js"
           );
-          await distributedCache.flush();
+          await (distributedCache as Record<string, unknown>)?.flush?.();
         } catch {
           /* non-critical */
         }
@@ -1013,13 +1013,13 @@ class ChainErrorAutoFixer extends EventEmitter {
       autoFix: async () => {
         // Open PDIM circuit briefly to let the event loop drain.
         try {
-          const { cbIsOpen, cbForceClose } = await import(
+          const { cbIsOpen, cbForceOpen } = await import(
             "../lib/pdimCircuitBreaker.js"
           );
           if (!cbIsOpen()) {
-            cbForceClose();
+            cbForceOpen?.(10_000);
             logger.warn(
-              "[ChainFixer] EIO static-asset read — reset PDIM circuit state before recovery",
+              "[ChainFixer] EIO static-asset read — forced PDIM circuit open 10 s to drain event loop",
             );
           }
         } catch {
@@ -1141,7 +1141,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     let matched = false;
 
     for (const pattern of this.patterns) {
-      if (!pattern?.levels.includes(entry?.level))
+      if (!pattern?.levels.includes(entry?.level as unknown as Record<string, unknown>))
         continue;
       if (!pattern?.matchers.some((r) => r?.test(msg))) continue;
       matched = true;
@@ -1189,7 +1189,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           });
           // Non-fatal known errors — swallow them so the default handler never fires
           if (pattern?.severity === "low" || pattern?.severity === "medium") {
-            process.emit("_chainFixerAbsorbed", err);
+            process.emit("_chainFixerAbsorbed" as unknown as Record<string, unknown>, err);
           }
         }
       }
@@ -1465,7 +1465,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       if (!st?.suppressed) continue;
       // Only reset if the pattern hasn't fired in the last 6 h (it genuinely went quiet).
       const lastFire =
-        this.adaptiveCooldown.get(pattern.id)?.recentFires.slice(-1)[0] ??
+        this.adaptiveCooldown.get(pattern.id).recentFires.slice(-1)[0] ??
         st.lastFix;
       if (now - lastFire > 6 * 60 * 60_000) {
         this.resetPattern(pattern.id);
@@ -1646,9 +1646,8 @@ class ChainErrorAutoFixer extends EventEmitter {
         const { autonomousService } = await import("./autonomousService.js");
         const status = autonomousService?.getStatus();
         const now = Date?.now();
-        const lastActivity = Number(
-          (status as Record<string, unknown>).lastActivityAt ?? 0,
-        );
+        const lastActivity =
+          (status as Record<string, unknown>).lastActivityAt ?? 0;
         const stalledMs = lastActivity > 0 ? now - lastActivity : 0;
         // If supposedly running but no activity for > 10 min, it has silently stalled
         if (status?.isRunning && stalledMs > 10 * 60_000) {

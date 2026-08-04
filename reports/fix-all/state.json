@@ -17,8 +17,8 @@
     },
     "imports": {
       "status": "applied",
-      "at": "2026-08-02T20:50:54.222Z",
-      "note": "rewritten=31 ambiguous=5 (bare-module diags left to policy) syntax-restored=0"
+      "at": "2026-08-04T03:52:01.273Z",
+      "note": "rewritten=0 ambiguous=5 (bare-module diags left to policy) syntax-restored=0"
     },
     "schema": {
       "status": "applied",
@@ -91,6 +91,6 @@
     }
   },
   "lastSnapshot": {
-    "server": "schema-1785703854638"
+    "server": "imports-1785815521041"
   }
 }

@@ -1207,30 +1207,24 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>,
   ) {
-    const trackName =
-      typeof eventData.trackName === "string"
-        ? eventData.trackName
-        : "your track";
-    const trackId =
-      typeof eventData.trackId === "string" ? eventData.trackId : undefined;
+    const { trackName = "your track", trackId } = eventData;
     const actions: string[] = [];
 
-    if (config?.generateISRC && trackId) {
+    if (config?.generateISRC) {
       try {
-        const { generateISRC } = await import(
-          "./distributionCodeGenerationService.js"
+        const { codeGenerationService } = await import(
+          "./codeGenerationService.js"
         );
-        const isrc = await generateISRC(
+        const result = await codeGenerationService?.generateISRC(
           userId,
           trackId,
-          ((eventData as Record<string, unknown>).artist as string | undefined) ??
-            "",
+          (eventData as Record<string, unknown>).artist as string | undefined,
           trackName,
         );
         actions?.push(
-          isrc
-            ? `ISRC ${isrc} assigned`
-            : "ISRC generation skipped",
+          result?.isrc
+            ? `ISRC ${result?.isrc} assigned`
+            : "ISRC generation skipped (no track id)",
         );
       } catch (err) {
         logger.warn(
@@ -1239,8 +1233,6 @@ class MusicWorkflowAutomationService {
         );
         actions?.push("ISRC generation failed (will retry on next event)");
       }
-    } else if (config?.generateISRC) {
-      actions?.push("ISRC generation skipped (no track id)");
     }
     if (config?.suggestGenre) {
       actions?.push("Genre/mood tag suggestions queued for next AI cycle");
