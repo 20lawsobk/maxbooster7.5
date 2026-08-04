@@ -838,8 +838,8 @@ export class PdimRedisClient extends EventEmitter {
     }
   }
 
-  private async exec<T = unknown>(command: (string | number | null)[]): Promise<T> {
-    const [cmd, ...rawArgs] = command;
+  private exec<T = unknown>(command: unknown[]): Promise<T> {
+    const [cmd, ...rawArgs] = command as (string | number | null)[];
     // The PDIM server validates all args as strings — coerce numbers/nulls
     const args = rawArgs?.map((a) => (a === null ? "" : String(a)));
 
@@ -1046,7 +1046,7 @@ export class PdimRedisClient extends EventEmitter {
         throw err;
       }
       // Note: no finally/_freePdimSlot needed — _enqueueExec handles the chain gap
-    });
+    }) as unknown as Promise<T>;
   }
 
   pipeline(): Pipeline {

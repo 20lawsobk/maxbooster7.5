@@ -106,7 +106,7 @@ const SAFE_AXIOS_AGENTS = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Optional sharp support with graceful fallback
-let sharpModule: typeof import("sharp") | null = null;
+let sharpModule: typeof import("sharp") | null | false = null;
 let _sharpAvailable = false;
 
 async function getSharp() {
@@ -404,9 +404,7 @@ export class ContentAnalysisService {
   /**
    * Build custom image classification model
    */
-  private buildImageClassificationModel(): Promise<
-    import("@tensorflow/tfjs").LayersModel
-  > {
+  private buildImageClassificationModel(): import("@tensorflow/tfjs").LayersModel | null {
     if (!isTensorFlowAvailable() || !tf) {
       return null;
     }
@@ -441,9 +439,7 @@ export class ContentAnalysisService {
   /**
    * Build custom face detection model
    */
-  private buildFaceDetectionModel(): Promise<
-    import("@tensorflow/tfjs").LayersModel
-  > {
+  private buildFaceDetectionModel(): import("@tensorflow/tfjs").LayersModel | null {
     if (!isTensorFlowAvailable() || !tf) {
       return null;
     }
@@ -475,9 +471,7 @@ export class ContentAnalysisService {
   /**
    * Build custom text detection model
    */
-  private buildTextDetectionModel(): Promise<
-    import("@tensorflow/tfjs").LayersModel
-  > {
+  private buildTextDetectionModel(): import("@tensorflow/tfjs").LayersModel | null {
     if (!isTensorFlowAvailable() || !tf) {
       return null;
     }
@@ -887,7 +881,7 @@ export class ContentAnalysisService {
         string,
         unknown
       >;
-      const hasFacesProbability = (await prediction?.data())[0];
+      const hasFacesProbability = ((await (prediction?.data as () => Promise<number[]>)()) as number[])[0];
 
       imageTensor?.dispose();
       prediction?.dispose();

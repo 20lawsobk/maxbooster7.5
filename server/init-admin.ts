@@ -1613,7 +1613,10 @@ export async function seedDSPProviders() {
 
     logger.info(`✅ Seeded/activated ${dspList.length} DSP providers`);
   } catch (error) {
-    logger.warn("Failed to seed DSP providers:", (error as Error).message);
+    logger.warn(
+      { err: (error as Error).message },
+      "Failed to seed DSP providers:",
+    );
   }
 }
 

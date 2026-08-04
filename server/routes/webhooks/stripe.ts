@@ -111,9 +111,7 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
         );
       }
     } catch (storefrontError) {
-      logger.warn(
-        "[Stripe] Failed to update storefront orders:",
-        storefrontError,
+      logger.warn({ detail: storefrontError }, "[Stripe] Failed to update storefront orders:",
       );
     }
   }
@@ -162,9 +160,7 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
         );
       }
     } catch (membershipError) {
-      logger.warn(
-        "[Stripe] Failed to activate storefront membership:",
-        membershipError,
+      logger.warn({ detail: membershipError }, "[Stripe] Failed to activate storefront membership:",
       );
     }
   }

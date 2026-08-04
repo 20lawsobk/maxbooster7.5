@@ -116,9 +116,7 @@ class EmailService {
 
   async sendInvitationEmail(data: InvitationEmailData): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn(
-        "⚠️  SendGrid not initialized, skipping invitation email to:",
-        data?.to,
+      logger.warn({ detail: data?.to }, "⚠️  SendGrid not initialized, skipping invitation email to:",
       );
       return false;
     }
@@ -792,9 +790,7 @@ If you did not expect this invitation, you can safely ignore this email.
     from?: string;
   }): Promise<boolean> {
     if (!this.isInitialized) {
-      logger.warn(
-        "⚠️  SendGrid not initialized — skipping email to:",
-        options?.to,
+      logger.warn({ detail: options?.to }, "⚠️  SendGrid not initialized — skipping email to:",
       );
       return false;
     }

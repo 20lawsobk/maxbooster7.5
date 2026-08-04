@@ -383,8 +383,8 @@ export class DistributedRateLimiter {
         ) {
           _lastRateLimitCongestionWarnAt = now;
           logger.warn(
+            { err: (err as Error).message },
             "[RateLimit] PDIM unavailable — using in-process fallback counter:",
-            (err as Error).message,
           );
         }
         result = _localRateCheck(

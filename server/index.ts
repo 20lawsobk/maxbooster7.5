@@ -1063,8 +1063,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     logger.info(`📱 Mobile Push Service mode: ${mobilePushService.getMode()}`);
   } catch (e) {
     logger.warn(
+      { err: (e as Error).message },
       "[MobilePush] Failed to initialize at startup:",
-      (e as Error).message,
     );
   }
   try {
@@ -1076,8 +1076,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     );
   } catch (e) {
     logger.warn(
+      { err: (e as Error).message },
       "[DesktopPush] Failed to initialize at startup:",
-      (e as Error).message,
     );
   }
 

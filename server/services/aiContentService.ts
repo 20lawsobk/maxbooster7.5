@@ -213,7 +213,7 @@ export class AIContentService {
           executionTimeMs,
           success: true,
           requestId: randomBytes(8).toString("hex"),
-        })
+        } as any)
         .returning();
 
       return inference?.id;
@@ -233,7 +233,7 @@ export class AIContentService {
         confidence: (explanation as any).confidence || 0.85,
         humanReadable: (explanation as any).text || "Content generated using AI model",
         visualizationData: (explanation as any).viz || {},
-      });
+      } as any);
     } catch (error: unknown) {
       logger.warn({ err: error }, "Failed to log explanation:");
     }
@@ -514,16 +514,17 @@ export class AIContentService {
             postsAnalyzed: historicalPosts.length,
             lastAnalyzedAt: new Date(),
             updatedAt: new Date(),
-          })
+          } as any)
           .where(eq(userBrandVoices?.userId, userId));
       } else {
         await db?.insert(userBrandVoices).values({
           userId,
+          voiceName: "ai_generated",
           voiceProfile: profile as unknown as Record<string, unknown>,
           confidenceScore: profile.confidenceScore,
           postsAnalyzed: historicalPosts.length,
           lastAnalyzedAt: new Date(),
-        });
+        } as any);
       }
     } catch (error: unknown) {
       logger.warn({ err: error }, "Failed to save brand voice:");
@@ -821,7 +822,7 @@ export class AIContentService {
               .map((h) => h?.hashtag)
               .slice(0, 5),
             lastUpdated: new Date(),
-          });
+          } as any);
         }
       }
     } catch (error: unknown) {
@@ -920,7 +921,7 @@ export class AIContentService {
             engagementScore: pattern.score,
             sampleSize: 100,
             lastCalculated: new Date(),
-          });
+          } as any);
         }
       } catch (error: unknown) {
         logger.warn({ err: error }, "Failed to save posting time:");
@@ -1235,8 +1236,8 @@ export class AIContentService {
       }
     } catch (scriptErr) {
       logger.warn(
-        "[ContentService] Video script generation failed, renderer will use topic as script:",
-        scriptErr,
+        { err: scriptErr },
+        "[ContentService] Video script generation failed, renderer will use topic as script",
       );
     }
 

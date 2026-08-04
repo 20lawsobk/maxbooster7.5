@@ -1071,7 +1071,7 @@ router?.get(
           platform: "instagram",
           tone: "energetic",
           genre: ((user as Record<string, unknown>)?.genre as string) || "music",
-          artist_name:
+          artistName:
             ((user as Record<string, unknown>)?.artistName as string) || "",
           includeHashtags: true,
           extraContext:
@@ -2929,8 +2929,8 @@ router?.get(
           }
         } catch (spotifyErr) {
           logger.warn(
+            { err: spotifyErr },
             "[Analytics] Spotify artist stats fetch failed:",
-            spotifyErr,
           );
         }
       }
@@ -4493,8 +4493,8 @@ router.post(
   requireAuth,
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     audioUpload.single("audio")(
-      req as unknown as Record<string, unknown>,
-      res as unknown as Record<string, unknown>,
+      req as unknown as import("express").Request,
+      res as unknown as import("express").Response,
       next,
     );
   },
@@ -4571,8 +4571,8 @@ router.post(
   requireAuth,
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     artworkUpload.single("image")(
-      req as unknown as Record<string, unknown>,
-      res as unknown as Record<string, unknown>,
+      req as unknown as import("express").Request,
+      res as unknown as import("express").Response,
       next,
     );
   },
@@ -4678,8 +4678,8 @@ router.post(
   (req, res, next) => {
     // mediaUpload → disk storage so referenceAudioPath has a real file path for FFmpeg
     mediaUpload.single("reference_audio")(
-      req as unknown as Record<string, unknown>,
-      res as unknown as Record<string, unknown>,
+      req as unknown as import("express").Request,
+      res as unknown as import("express").Response,
       next,
     );
   },
@@ -4810,8 +4810,8 @@ router.post(
   requireAuthOnly,
   (req, res, next) => {
     mediaUpload.single("audio")(
-      req as unknown as Record<string, unknown>,
-      res as unknown as Record<string, unknown>,
+      req as unknown as import("express").Request,
+      res as unknown as import("express").Response,
       next,
     );
   },
@@ -4851,8 +4851,8 @@ router.post(
   (req, res, next) => {
     // mediaUpload → disk storage gives us a real file path for FFmpeg analysis
     mediaUpload.single("audio")(
-      req as unknown as Record<string, unknown>,
-      res as unknown as Record<string, unknown>,
+      req as unknown as import("express").Request,
+      res as unknown as import("express").Response,
       next,
     );
   },
@@ -4915,8 +4915,8 @@ router.post(
   requireAuthOnly,
   (req, res, next) => {
     mediaUpload.fields([{ name: "audio", maxCount: 1 }])(
-      req as unknown as Record<string, unknown>,
-      res as unknown as Record<string, unknown>,
+      req as unknown as import("express").Request,
+      res as unknown as import("express").Response,
       next,
     );
   },
@@ -4986,7 +4986,7 @@ router.post(
       { name: "images", maxCount: 10 },
       { name: "audio", maxCount: 1 },
       { name: "reference_voice", maxCount: 1 },
-    ])(req as unknown as Record<string, unknown>, res as unknown as Record<string, unknown>, next);
+    ])(req as unknown as import("express").Request, res as unknown as import("express").Response, next);
   },
   async (req: AuthenticatedRequest, res: Response) => {
     const jobId = `mvjob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;

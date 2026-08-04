@@ -74,8 +74,8 @@ export async function admissionControl(
     ) {
       _lastAdmissionCongestionWarnAt = now;
       logger.warn(
+        { err: (err as Error).message },
         "[AdmissionControl] PDIM unavailable — using in-process fallback counter:",
-        (err as Error).message,
       );
     }
     usingLocalFallback = true;

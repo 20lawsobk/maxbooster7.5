@@ -219,7 +219,7 @@ export class HnsAuctionManager {
     if (!row) throw new Error("Auction not found");
 
     const info = await this.client.getNameInfo(row?.name);
-    let newState: AuctionState = row?.state;
+    let newState: AuctionState = row?.state as AuctionState;
 
     switch (info?.state) {
       case "OPENING":
@@ -282,17 +282,17 @@ export class HnsAuctionManager {
 
   private rowToRecord(row: Record<string, unknown>): AuctionRecord {
     return {
-      id: row.id,
-      userId: row.userId,
-      name: row.name,
-      bidHNS: row.bidHns,
-      lockupHNS: row.lockupHns,
+      id: row.id as string,
+      userId: row.userId as string,
+      name: row.name as string,
+      bidHNS: row.bidHns as number,
+      lockupHNS: row.lockupHns as number,
       state: row.state as AuctionState,
-      txHash: row.txHash ?? undefined,
-      nameHash: row.nameHash ?? undefined,
-      error: row.error ?? undefined,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      txHash: (row.txHash as string | undefined | null) ?? undefined,
+      nameHash: (row.nameHash as string | undefined | null) ?? undefined,
+      error: (row.error as string | undefined | null) ?? undefined,
+      createdAt: row.createdAt as Date,
+      updatedAt: row.updatedAt as Date,
     };
   }
 }

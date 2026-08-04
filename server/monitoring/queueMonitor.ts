@@ -185,9 +185,7 @@ class QueueMonitor {
 
   setAlertThresholds(thresholds: Partial<AlertThresholds>): void {
     this.alertThresholds = { ...this.alertThresholds, ...thresholds };
-    logger.info(
-      "📊 Queue monitor alert thresholds updated:",
-      this.alertThresholds,
+    logger.info({ detail: this.alertThresholds }, "📊 Queue monitor alert thresholds updated:",
     );
   }
 

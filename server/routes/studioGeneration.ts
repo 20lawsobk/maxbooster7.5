@@ -787,9 +787,7 @@ router?.post(
       try {
         result = JSON.parse(stdout?.trim());
       } catch {
-        logger.warn(
-          "[audio-to-melody] Invalid JSON from pitch tracker. stderr:",
-          stderr,
+        logger.warn({ detail: stderr }, "[audio-to-melody] Invalid JSON from pitch tracker. stderr:",
         );
         return res
           .status(500)

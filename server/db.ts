@@ -224,9 +224,7 @@ export const pool = new InstrumentedPool({
 // which may not forward arbitrary startup options to the backend.
 pool?.on("connect", (client: Record<string, unknown>) => {
   (client.query as any)("SET statement_timeout = '30000'").catch((err: Error) => {
-    logger.warn(
-      "[DB] Failed to set statement_timeout on new connection:",
-      err?.message,
+    logger.warn({ err: err?.message }, "[DB] Failed to set statement_timeout on new connection:",
     );
   });
 });

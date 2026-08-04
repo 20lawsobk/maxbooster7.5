@@ -58,8 +58,8 @@ export class SelfHealingSecuritySystem {
   };
   private healingProcesses: Map<string, HealingProcess> = new Map();
   private securityRules: SecurityRule[] = [];
-  private anomalyDetector: AnomalyDetector;
-  private autoHealer: AutoHealer;
+  private _anomalyDetector: AnomalyDetector;
+  private _autoHealer: AutoHealer;
   private ipTracker: Map<string, IPThreatInfo> = new Map();
   private currentRequestContext: RequestContext | null = null;
   private recentThreats: Array<{ type: string; timestamp: number }> = [];
@@ -84,8 +84,8 @@ export class SelfHealingSecuritySystem {
   };
 
   private constructor() {
-    this.anomalyDetector = new AnomalyDetector();
-    this.autoHealer = new AutoHealer();
+    this._anomalyDetector = new AnomalyDetector();
+    this._autoHealer = new AutoHealer();
     this.initializeSecurityRules();
     this.initializeAIModels();
     this.startSecurityMonitoring();
@@ -132,7 +132,7 @@ export class SelfHealingSecuritySystem {
             ...model,
             isActive: true,
             isBeta: false,
-          });
+          } as any);
           logger.info(`✅ AI Model registered: ${model?.modelName}`);
         }
       }
@@ -360,8 +360,8 @@ export class SelfHealingSecuritySystem {
       // Log vulnerabilities found
       if (vulnerabilities?.length > 0) {
         logger.warn(
-          `Vulnerability assessment found ${vulnerabilities?.length} issues`,
           { vulnerabilities },
+          `Vulnerability assessment found ${vulnerabilities?.length} issues`,
         );
         this.securityMetrics.suspiciousActivities += vulnerabilities?.length;
       }
@@ -1105,9 +1105,13 @@ export class SelfHealingSecuritySystem {
     threatType: string;
     severity: string;
     sourceIp?: string;
+    source?: string;
+    ipAddress?: string;
     userId?: string;
     path?: string;
+    requestPath?: string;
     method?: string;
+    requestMethod?: string;
     details?: string;
     blocked?: boolean;
     healed?: boolean;
@@ -1193,7 +1197,7 @@ export class SelfHealingSecuritySystem {
         "unknown",
       requestPath: req.path,
       requestMethod: req.method,
-      userId: (req as unknown as Record<string, unknown>).user.id,
+      userId: ((req as unknown as Record<string, unknown>).user as any)?.id,
       threatType: "unknown",
       severity: "medium",
     };
@@ -1421,7 +1425,7 @@ export class SelfHealingSecuritySystem {
         confidenceScore: profile.baselineEstablished ? 0.85 : 0.5,
         executionTimeMs: Date.now() - startTime,
         success: true,
-      });
+      } as any);
 
       // Log explanation for explainability
       if (deviations.length > 0) {
@@ -1431,7 +1435,7 @@ export class SelfHealingSecuritySystem {
               and(eq(runs.modelId, model.id), eq(runs.userId, userId)),
             orderBy: (runs, { desc }) => [desc(runs.createdAt)],
           })
-        ).id;
+        )?.id;
 
         if (inferenceId) {
           await db.insert(explanationLogs).values({
@@ -1453,7 +1457,7 @@ export class SelfHealingSecuritySystem {
             },
             humanReadable: `User risk score: ${riskScore}/100. Deviations: ${deviations.join(", ")}`,
             confidence: 0.85,
-          });
+          } as any);
         }
       }
 
@@ -1577,7 +1581,7 @@ export class SelfHealingSecuritySystem {
         confidenceScore: 0.9,
         executionTimeMs: Date.now() - startTime,
         success: true,
-      });
+      } as any);
 
       return {
         isAnomaly,
@@ -1703,7 +1707,7 @@ export class SelfHealingSecuritySystem {
         confidenceScore: 0.8,
         executionTimeMs: Date.now() - startTime,
         success: true,
-      });
+      } as any);
 
       return {
         threatLevel,
@@ -1841,7 +1845,7 @@ export class SelfHealingSecuritySystem {
         confidenceScore: 0.95,
         executionTimeMs: Date.now() - startTime,
         success: true,
-      });
+      } as any);
 
       return {
         testId,
@@ -2015,7 +2019,7 @@ export class SelfHealingSecuritySystem {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
       const threats = await db.query.securityThreats.findMany({
-        where: (threats, { gte }) => gte(threats.detectedAt, oneDayAgo),
+        where: (threats: any, { gte }: any) => gte(threats.detectedAt, oneDayAgo),
       });
 
       // Get anomalies from last 24 hours
@@ -2056,7 +2060,7 @@ export class SelfHealingSecuritySystem {
       // Generate trend data (last 7 days)
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const threatsLast7Days = await db.query.securityThreats.findMany({
-        where: (threats, { gte }) => gte(threats.detectedAt, sevenDaysAgo),
+        where: (threats: any, { gte }: any) => gte(threats.detectedAt, sevenDaysAgo),
       });
 
       const anomaliesLast7Days = await (db.query as any).securityAnomalies.findMany({

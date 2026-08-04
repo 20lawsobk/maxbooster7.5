@@ -148,9 +148,7 @@ export async function flushFeatureEvents(): Promise<number> {
     );
     return payloads?.length;
   } catch (insertErr) {
-    logger.warn(
-      `[FeatureEventBuffer] Insert failed for batch ${batchId}, restoring to buffer:`,
-      insertErr,
+    logger.warn({ detail: insertErr }, `[FeatureEventBuffer] Insert failed for batch ${batchId}, restoring to buffer:`,
     );
     // Restore items to the front of the buffer (reverse order to preserve sequence)
     let restored = 0;
@@ -159,9 +157,7 @@ export async function flushFeatureEvents(): Promise<number> {
         await redis?.lpush(BUFFER_KEY, JSON.stringify(payloads[i]));
         restored++;
       } catch (restoreErr) {
-        logger.warn(
-          `[FeatureEventBuffer] Lost event during restore (index ${i}):`,
-          restoreErr,
+        logger.warn({ detail: restoreErr }, `[FeatureEventBuffer] Lost event during restore (index ${i}):`,
         );
       }
     }

@@ -2226,9 +2226,7 @@ export class AIMusicService {
 
         return audioBuffer;
       } catch (metadataError: unknown) {
-        logger.warn(
-          "Could not parse audio metadata, assuming WAV format:",
-          metadataError,
+        logger.warn({ detail: metadataError }, "Could not parse audio metadata, assuming WAV format:",
         );
         return audioBuffer;
       }

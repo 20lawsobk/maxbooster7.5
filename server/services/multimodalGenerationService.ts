@@ -4,7 +4,7 @@ import { promises as fsPromises } from "fs";
 import { logger } from "../logger.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
 import { generateAudio as generateLocalAudio } from "./audioGeneratorService.js";
-import { _sharpImageService } from "./sharpImageService.js";
+import { sharpImageService as _sharpImageService } from "./sharpImageService.js";
 import { db } from "../db.js";
 import { eq } from "drizzle-orm";
 import { autopilotPreferences, userBrandVoices } from "@shared/schema";
@@ -186,8 +186,8 @@ async function mirrorRemoteAssetLocally(
     return `/generated-content/${kind}/${filename}`;
   } catch (err) {
     logger.warn(
-      `[MultimodalGen] Failed to mirror ${kind} asset locally — using remote URL:`,
-      err instanceof Error ? err.message : String(err),
+      { err },
+      `[MultimodalGen] Failed to mirror ${kind} asset locally — using remote URL: ${err instanceof Error ? err.message : String(err)}`,
     );
     return absolute;
   }
@@ -297,8 +297,8 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
     return data;
   } catch (err) {
     logger.warn(
-      "[MultimodalGen] fetchUserContext DB error (non-fatal):",
-      (err as Error)?.message ?? String(err),
+      { err },
+      `[MultimodalGen] fetchUserContext DB error (non-fatal): ${(err as Error)?.message ?? String(err)}`,
     );
     return emptyUserContext();
   }
@@ -1970,7 +1970,7 @@ function buildCopyFromContext(
   }
 }
 
-async function localAnalyzeUrl(
+async function _localAnalyzeUrl(
   url: string,
   req: GenerationRequest,
   platformRulesSubset: Record<string, PlatformRules>,
@@ -2059,9 +2059,7 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
         `[MultimodalGen] Pre-fetched URL metadata: title="${prefetchedMeta.title ?? ""}" siteName="${prefetchedMeta.siteName ?? ""}"`,
       );
     } catch (fetchErr) {
-      logger.debug(
-        "[MultimodalGen] URL pre-fetch failed (non-fatal):",
-        fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
+      logger.debug({ err: fetchErr instanceof Error ? fetchErr.message : String(fetchErr) }, "[MultimodalGen] URL pre-fetch failed (non-fatal):",
       );
     }
   }
@@ -2096,8 +2094,8 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
   } catch (err) {
     // MaxCore is the sole AI source — no local fallback.
     logger.warn(
-      "[MultimodalGen] MaxCore /analyze unavailable:",
-      err instanceof Error ? err.message : String(err),
+      { err },
+      `[MultimodalGen] MaxCore /analyze unavailable: ${err instanceof Error ? err.message : String(err)}`,
     );
     throw new AIUnavailableError("multimodal content analysis");
   }
@@ -2392,7 +2390,7 @@ function buildLocalTextAssets(
     google_business: (h, b, c, _a, _tags) => `${h}\n\n${b}\n\n${c}`,
   };
 
-  return rawSlots.map((slot: Record<string, unknown>) => {
+  return (rawSlots as Record<string, unknown>[]).map((slot) => {
     const platform = (slot.platform ?? req.platforms[0]) as Platform;
     const rules = platform ? getRules(platform) : null;
 
@@ -2443,7 +2441,7 @@ const textWorker = {
     req: GenerationRequest,
   ): Promise<GeneratedAsset[]> {
     const packSpec = req.packId ? (PACK_DEFINITIONS[req.packId] ?? null) : null;
-    const rawSlots =
+    const rawSlots: Record<string, unknown>[] =
       step.params!.slots ||
       (step.params!.platform
         ? [
@@ -2463,7 +2461,7 @@ const textWorker = {
             },
           ]);
 
-    rawSlots.map((slot: Record<string, unknown>) => ({
+    rawSlots.map((slot) => ({
       ...slot,
       platformRules: getRules(slot.platform as Platform).text ?? null,
     }));
@@ -2647,7 +2645,7 @@ const textWorker = {
       const perSlotResults = await Promise.allSettled(
         rawSlots.map(async (slot: Record<string, unknown>) => {
           const platform: string =
-            slot.platform ?? req.platforms[0] ?? "instagram";
+            (slot.platform as string) ?? req.platforms[0] ?? "instagram";
           const mc = await maxcorePost(
             "/generate/content",
             {
@@ -2727,8 +2725,8 @@ const textWorker = {
       );
     } catch (err) {
       logger.warn(
-        "[MultimodalGen] /generate/content text worker error:",
-        err instanceof Error ? err.message : String(err),
+        { err },
+        `[MultimodalGen] /generate/content text worker error: ${err instanceof Error ? err.message : String(err)}`,
       );
       // Attempt local fallback even on unexpected errors
       try {
@@ -2741,10 +2739,8 @@ const textWorker = {
         }
       } catch (fallbackErr) {
         logger.warn(
-          "[MultimodalGen] Local text fallback also failed:",
-          fallbackErr instanceof Error
-            ? fallbackErr.message
-            : String(fallbackErr),
+          { err: fallbackErr },
+          `[MultimodalGen] Local text fallback also failed: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`,
         );
       }
     }
@@ -2809,7 +2805,7 @@ function enrichTextAssetMetadata(
         lines
           .map((l, i) => ({ l, i }))
           .filter(({ l }) => ctaKw.test(l))
-          .pop().i ?? -1;
+          .pop()?.i ?? -1;
       if (ctaIdx > 0) {
         cta = lines.slice(ctaIdx).join("\n").trim();
         body = lines.slice(0, ctaIdx).join("\n").trim();
@@ -3046,7 +3042,7 @@ const imageWorker = {
     }));
 
     const mapOutputs = (outputs: unknown[]) =>
-      outputs.map((o: Record<string, unknown>) => ({
+      (outputs as Record<string, unknown>[]).map((o) => ({
         id: randomUUID(),
         modality: "image" as OutputModality,
         payload: o.url || o.src || "",
@@ -3091,8 +3087,8 @@ const imageWorker = {
       if (outputs.length > 0) return mapOutputs(outputs);
     } catch (err) {
       logger.warn(
-        "[MultimodalGen] MaxCore /generate/image unavailable, using local fallback:",
-        err instanceof Error ? err.message : String(err),
+        { err },
+        `[MultimodalGen] MaxCore /generate/image unavailable, using local fallback: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
 
@@ -3200,8 +3196,8 @@ const audioWorker = {
       }
     } catch (err) {
       logger.warn(
-        "[MultimodalGen] MaxCore /generate/audio unavailable — falling back to local audio generator:",
-        err instanceof Error ? err.message : String(err),
+        { err },
+        `[MultimodalGen] MaxCore /generate/audio unavailable — falling back to local audio generator: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
 
@@ -3248,13 +3244,13 @@ const audioWorker = {
       }
 
       logger.warn(
-        "[MultimodalGen] Local audio generator returned no file:",
-        audioResult.error,
+        { err: audioResult.error },
+        "[MultimodalGen] Local audio generator returned no file",
       );
     } catch (localErr) {
       logger.warn(
-        "[MultimodalGen] Local audio generator threw:",
-        localErr instanceof Error ? localErr.message : String(localErr),
+        { err: localErr },
+        `[MultimodalGen] Local audio generator threw: ${localErr instanceof Error ? localErr.message : String(localErr)}`,
       );
     }
 
@@ -3302,7 +3298,7 @@ export async function handleGeneration(
     `[MultimodalGen] Starting generation: id=${req.id}, pack=${req.packId ?? "none"}, platforms=${req.platforms.join(",")}`,
   );
 
-  const normalized = await normalizeInput(req);
+  const normalized = await normalizeInput(req) as Record<string, unknown>;
   const plan = await planTasks(normalized, req);
 
   const stepOutputs = new Map<string, GeneratedAsset[]>();
@@ -3337,8 +3333,8 @@ export async function handleGeneration(
           );
         } catch (err) {
           logger.warn(
-            `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets:`,
-            err instanceof Error ? err?.message : String(err),
+            { err },
+            `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets: ${err instanceof Error ? err?.message : String(err)}`,
           );
           stepOutputs?.set(step?.id, []);
         }
@@ -3368,8 +3364,8 @@ export async function handleGeneration(
       );
     } catch (err) {
       logger.warn(
-        `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets:`,
-        err instanceof Error ? err?.message : String(err),
+        { err },
+        `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets: ${err instanceof Error ? err?.message : String(err)}`,
       );
       stepOutputs?.set(step?.id, []);
     }

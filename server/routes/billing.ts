@@ -23,7 +23,7 @@
  * - RATE_LIMITED: 429 - Too many requests
  */
 
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
 import { db } from "../db";
 import { users, workspaceAuditLog } from "@shared/schema";
@@ -51,14 +51,14 @@ if (!stripeSecretKey) {
 
 const stripe = stripeSecretKey
   ? new Stripe(stripeSecretKey, {
-      apiVersion: "2026-01-28.clover",
+      apiVersion: "2026-02-25.clover",
     })
   : null;
 
 const requireStripe = (
   _req: Request,
   res: Response,
-  next: Record<string, unknown>,
+  next: NextFunction,
 ) => {
   if (!stripe) {
     return res.status(503).json({
@@ -146,10 +146,11 @@ interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     email: string;
-    stripeCustomerId?: string;
-    subscriptionTier?: string;
-    subscriptionStatus?: string;
+    stripeCustomerId?: string | null;
+    subscriptionTier?: string | null;
+    subscriptionStatus?: string | null;
     subscriptionEndsAt?: Date | null;
+    [key: string]: unknown;
   };
 }
 
@@ -824,8 +825,7 @@ router?.post(
         await db
           .update(users)
           .set({ subscriptionStatus: "canceled" })
-          .where(eq(users?.id, userId))
-          .limit(1);
+          .where(eq(users?.id, userId));
 
         logger.info(
           `[Billing] Subscription ${subscription?.id} cancelled immediately for user ${userId}`,
@@ -958,8 +958,7 @@ router?.post(
       await db
         .update(users)
         .set({ subscriptionStatus: "active" })
-        .where(eq(users?.id, userId))
-        .limit(1);
+        .where(eq(users?.id, userId));
 
       logger.info(
         `[Billing] Subscription ${subscription?.id} reactivated for user ${userId}`,
@@ -1338,8 +1337,7 @@ router?.post(
           await db
             .update(users)
             .set({ subscriptionStatus: "active" })
-            .where(eq(users?.id, userId))
-            .limit(1);
+            .where(eq(users?.id, userId));
 
           logger.info(`[Billing] Payment retry successful for user ${userId}`);
 
@@ -1501,8 +1499,7 @@ router?.post(
           await db
             .update(users)
             .set({ subscriptionStatus: "active" })
-            .where(eq(users?.id, userId))
-            .limit(1);
+            .where(eq(users?.id, userId));
         }
 
         logger.info(`[Billing] 3DS confirmation successful for user ${userId}`);
@@ -1531,8 +1528,7 @@ router?.post(
             await db
               .update(users)
               .set({ subscriptionStatus: "active" })
-              .where(eq(users?.id, userId))
-              .limit(1);
+              .where(eq(users?.id, userId));
 
             return res.json({
               success: true,

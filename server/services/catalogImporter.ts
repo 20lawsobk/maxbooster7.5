@@ -27,7 +27,7 @@ export interface ImportRow {
   duration?: number;
   isExplicit?: boolean;
   language?: string;
-  [key: string]: Record<string, unknown>;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface ImportResult {
@@ -200,7 +200,7 @@ class CatalogImporter {
       .replace(/\s+/g, "_");
   }
 
-  private parseValue(field: string, value: string): Record<string, unknown> {
+  private parseValue(field: string, value: string): string | number | boolean | undefined {
     switch (field) {
       case "trackNumber":
       case "duration":
@@ -283,7 +283,7 @@ class CatalogImporter {
 
   async parseXLSX(buffer: Buffer): Promise<ImportRow[]> {
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(buffer);
+    await workbook.xlsx.load(buffer as any);
     const sheet = workbook.worksheets[0];
 
     if (!sheet) {
@@ -692,7 +692,7 @@ class CatalogImporter {
       .select()
       .from(catalogImportRows)
       .where(eq(catalogImportRows.jobId, jobId))
-      .orderBy(catalogImportRows.rowNumber);
+      .orderBy(catalogImportRows.createdAt);
   }
 
   getSupportedFormats(): {

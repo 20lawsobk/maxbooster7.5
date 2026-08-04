@@ -649,7 +649,7 @@ export async function stopDNSServer(): Promise<void> {
     running = false;
     logger.info("[DNS] Nameserver stopped.");
   } catch (err) {
-    logger.warn("[DNS] Error stopping DNS server:", (err as Error).message);
+    logger.warn({ err }, `[DNS] Error stopping DNS server: ${(err as Error).message}`);
   }
 }
 
@@ -875,7 +875,7 @@ async function buildDnskeyResponse(
   queryBuf: Buffer,
   zone: string,
 ): Promise<DohQueryResult> {
-  const dnsPacket = (await import("dns-packet")).default;
+  const dnsPacket = ((await import("dns-packet" as any)) as any).default;
   const txId = parseTxId(queryBuf);
   const qname = parseQueryName(queryBuf);
 
@@ -952,7 +952,7 @@ async function buildDSResponse(
   queryBuf: Buffer,
   zone: string,
 ): Promise<DohQueryResult> {
-  const dnsPacket = (await import("dns-packet")).default;
+  const dnsPacket = ((await import("dns-packet" as any)) as any).default;
   const txId = parseTxId(queryBuf);
   const qname = parseQueryName(queryBuf);
   const isAuth = await isAuthoritative(qname);

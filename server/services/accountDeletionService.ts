@@ -121,9 +121,7 @@ export class AccountDeletionService {
       );
 
       if (results?.failed > 0) {
-        logger.warn(
-          `⚠️ ${results?.failed} account deletions failed:`,
-          results?.errors,
+        logger.warn({ detail: results?.errors }, `⚠️ ${results?.failed} account deletions failed:`,
         );
       }
 

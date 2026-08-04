@@ -41,7 +41,7 @@ async function initializeFfmpeg() {
     try {
       const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic?.default) {
-        ffmpeg?.setFfmpegPath(ffmpegStatic?.default);
+        (ffmpeg as any)?.setFfmpegPath(ffmpegStatic?.default);
       }
     } catch {
       logger.warn("ffmpeg-static not available, using system ffmpeg");
@@ -241,8 +241,6 @@ class StemExportService {
 
       for (let i = 0; i < tracks?.length; i++) {
         const track = tracks[i];
-        const _progress = Math.round(((i + 1) / totalTracks) * 90);
-
         await db
           .update(stemExports)
           .set({
@@ -341,7 +339,7 @@ class StemExportService {
     tempDir: string,
   ): Promise<IndividualStemFile | null> {
     const clips = await db?.query.audioClips?.findMany({
-      where: eq(audioClips?.trackId, track?.id),
+      where: eq(audioClips?.trackId, track?.id as string),
     });
 
     if (clips?.length === 0) {
@@ -377,8 +375,8 @@ class StemExportService {
       const duration = await this.getAudioDuration(outputPath);
 
       return {
-        trackId: track.id,
-        trackName: track.name,
+        trackId: track.id as string,
+        trackName: track.name as string,
         fileName,
         storageKey,
         fileSize: stats.size,
@@ -410,7 +408,7 @@ class StemExportService {
     const outputPath = path?.join(tempDir, fileName);
 
     await new Promise<void>((resolve, reject) => {
-      ffmpeg()
+      (ffmpeg as any)()
         .input("anullsrc=r=" + (options.sampleRate || 48000) + ":cl=stereo")
         .inputFormat("lavfi")
         .duration(1)
@@ -434,8 +432,8 @@ class StemExportService {
     const stats = await fsPromises?.stat(outputPath);
 
     return {
-      trackId: track.id,
-      trackName: track.name,
+      trackId: track.id as string,
+      trackName: track.name as string,
       fileName,
       storageKey,
       fileSize: stats.size,
@@ -457,7 +455,7 @@ class StemExportService {
     let inputPath: string;
 
     if ((clip?.filePath as any)?.startsWith("/") || (clip?.filePath as any)?.startsWith("./")) {
-      inputPath = clip?.filePath;
+      inputPath = clip?.filePath as string;
     } else if (clip?.filePath) {
       const buffer = await storageService?.downloadFile((clip?.filePath as string));
       inputPath = path?.join(os?.tmpdir(), `clip_${clip?.id}.wav`);
@@ -467,7 +465,7 @@ class StemExportService {
     }
 
     await new Promise<void>((resolve, reject) => {
-      let command = ffmpeg(inputPath)
+      let command = (ffmpeg as any)(inputPath)
         .audioCodec(this.getAudioCodec(options?.format, options?.bitDepth))
         .audioFrequency(options?.sampleRate || 48000)
         .audioChannels(2);
@@ -530,7 +528,7 @@ class StemExportService {
     }
 
     await new Promise<void>((resolve, reject) => {
-      let command = ffmpeg!();
+      let command = (ffmpeg as any)!();
 
       tempClipPaths?.forEach((clipPath) => {
         command = command?.input(clipPath);
@@ -574,7 +572,7 @@ class StemExportService {
     const tracks = await db?.query.studioTracks?.findMany({
       where: and(
         eq(studioTracks?.projectId, projectId),
-        eq(studioTracks?.mute, false),
+        eq(studioTracks?.isMuted, false),
       ),
     });
 
@@ -622,7 +620,7 @@ class StemExportService {
     const outputPath = path?.join(tempDir, fileName);
 
     await new Promise<void>((resolve, reject) => {
-      let command = ffmpeg!();
+      let command = (ffmpeg as any)!();
 
       trackStemPaths?.forEach((stemPath) => {
         command = command?.input(stemPath);
@@ -709,7 +707,7 @@ class StemExportService {
     }
 
     await new Promise<void>((resolve, reject) => {
-      ffmpeg(filePath)
+      (ffmpeg as any)(filePath)
         .audioFilters(filterOptions)
         .audioCodec(this.getAudioCodec(options?.format, options?.bitDepth))
         .audioFrequency(options?.sampleRate || 48000)
@@ -807,7 +805,7 @@ class StemExportService {
       return 0;
     }
     return new Promise((resolve, _reject) => {
-      ffmpeg?.ffprobe(filePath, (err: any, metadata: any) => {
+      (ffmpeg as any)?.ffprobe(filePath, (err: any, metadata: any) => {
         if (err) {
           resolve(0);
           return;

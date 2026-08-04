@@ -27,7 +27,7 @@ async function initializeFfmpeg() {
     try {
       const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic?.default) {
-        ffmpeg?.setFfmpegPath(ffmpegStatic?.default);
+        (ffmpeg as any)?.setFfmpegPath(ffmpegStatic?.default);
       }
     } catch {
       logger.warn("ffmpeg-static not available, using system ffmpeg");
@@ -125,7 +125,7 @@ export class AudioService {
       const sanitizedFileName = fileName?.replace(/[^a-zA-Z0-9?._-]/g, "_");
 
       const storageKey = `audio/${userId}/${fileId}_${sanitizedFileName}`;
-      const uploadUrl = await storageService?.getUploadUrl(
+      const uploadUrl = await (storageService?.getUploadUrl as any)(
         storageKey,
         fileType,
         3600,
@@ -133,7 +133,7 @@ export class AudioService {
 
       return {
         fileId,
-        uploadUrl,
+        uploadUrl: typeof uploadUrl === "object" ? uploadUrl?.url : uploadUrl,
         key: storageKey,
         fileName: sanitizedFileName,
         maxSize: 100 * 1024 * 1024,
@@ -199,7 +199,7 @@ export class AudioService {
       );
     }
     return new Promise((resolve, reject) => {
-      ffmpeg?.ffprobe(filePath, (err: any, metadata: any) => {
+      (ffmpeg as any)?.ffprobe(filePath, (err: any, metadata: any) => {
         if (err) {
           reject(err);
           return;
@@ -235,7 +235,7 @@ export class AudioService {
     try {
       // Convert to WAV for processing
       await new Promise<void>((resolve, reject) => {
-        ffmpeg(filePath)
+        (ffmpeg as any)(filePath)
           .toFormat("wav")
           .audioChannels(1) // Mono for waveform
           .audioFrequency(8000) // Lower sample rate for performance
@@ -249,11 +249,11 @@ export class AudioService {
       const wav = new (WaveFile as any).WaveFile(wavBuffer);
 
       // Get samples and downsample for visualization
-      const samplesData = wav?.getSamples(true) as Record<string, unknown>;
+      const samplesData = wav?.getSamples(true) as unknown;
       const samples =
         samplesData instanceof Int16Array
           ? samplesData
-          : new Int16Array(samplesData);
+          : new Int16Array(samplesData as ArrayLike<number>);
       const downsampledData = this.downsampleAudio(samples, 2000); // 2000 points for waveform
 
       return downsampledData;
@@ -339,7 +339,7 @@ export class AudioService {
     const job = await queueService?.addAudioJob("convert", {
       userId,
       filePath: inputPath,
-      format: outputFormat as unknown as Record<string, unknown>,
+      format: outputFormat as any,
       quality: options.bitrate === "320k" ? "high" : "medium",
     });
 
@@ -404,7 +404,7 @@ export class AudioService {
       };
 
       await new Promise<void>((resolve, reject) => {
-        let command = ffmpeg!(inputPath);
+        let command = (ffmpeg as any)!(inputPath);
 
         // Apply format-specific settings with professional audio quality
         switch (outputFormat?.toLowerCase()) {
@@ -504,7 +504,7 @@ export class AudioService {
     filePath: string,
     userId: string,
   ): Promise<JobResponse> {
-    const job = await queueService?.addAudioJob("waveform", {
+    const job = await queueService?.addAudioJob("convert", {
       userId,
       filePath,
       format: "wav",
@@ -581,7 +581,7 @@ export class AudioService {
       );
 
       await new Promise<void>((resolve, reject) => {
-        ffmpeg(filePath)
+        (ffmpeg as any)(filePath)
           .setStartTime(startTime)
           .setDuration(duration)
           .audioCodec("libmp3lame")
@@ -1008,7 +1008,7 @@ export class AudioService {
       }
 
       await new Promise<void>((resolve, reject) => {
-        ffmpeg(filePath)
+        (ffmpeg as any)(filePath)
           .audioFilters(audioFilters)
           .audioCodec("pcm_s24le")
           .audioChannels(2)
@@ -1115,7 +1115,7 @@ export class AudioService {
         }
 
         await new Promise<void>((resolve, reject) => {
-          const command = ffmpeg!();
+          const command = (ffmpeg as any)!();
 
           // Add all tracks as inputs with volume control
           tempTracks?.forEach((track, index) => {
@@ -1243,7 +1243,7 @@ export class AudioService {
       }
 
       await new Promise<void>((resolve, reject) => {
-        ffmpeg(filePath)
+        (ffmpeg as any)(filePath)
           .audioFilters(audioFilters)
           .audioCodec("pcm_s24le")
           .audioChannels(2)
@@ -1292,10 +1292,11 @@ export class AudioService {
         const convertedKey = await this.convertAudioFormat(
           (track as any)?.filePath,
           format,
+          "",
         );
 
         // Download the converted file to upload it as a stem
-        const convertedBuffer = await storageService?.downloadFile(convertedKey);
+        const convertedBuffer = await storageService?.downloadFile(convertedKey as unknown as string);
 
         // Upload as a stem with proper naming
         const stemKey = await storageService?.uploadFile(
@@ -1332,10 +1333,10 @@ export class AudioService {
       } else {
         // Export mixed down audio
         // First mix all tracks (returns storage key for temp file)
-        const mixedKey = await this.mixAudioTracks(tracks);
+        const mixedKey = await this.mixAudioTracks(tracks, "");
 
         // Download the mixed file to convert it
-        const mixedBuffer = await storageService?.downloadFile(mixedKey);
+        const mixedBuffer = await storageService?.downloadFile(mixedKey as unknown as string);
         const tempMixPath = path?.join(os?.tmpdir(), `mix_${randomUUID()}.wav`);
         await fsPromises?.writeFile(tempMixPath, mixedBuffer);
 
@@ -1344,6 +1345,7 @@ export class AudioService {
           const convertedKey = await this.convertAudioFormat(
             tempMixPath,
             format,
+            "",
             {
               sampleRate: 48000,
               bitrate: "320k",
@@ -1352,7 +1354,7 @@ export class AudioService {
 
           // Download and re-upload as final export with proper naming
           const convertedBuffer =
-            await storageService?.downloadFile(convertedKey);
+            await storageService?.downloadFile(convertedKey as unknown as string);
           const exportFilename = `${projectId}_mixdown_${Date?.now()}.${format}`;
           const exportKey = await storageService?.uploadFile(
             convertedBuffer,

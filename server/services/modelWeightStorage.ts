@@ -34,9 +34,7 @@ class ModelWeightStorage {
         "[WeightStorage] Pocket Dimension ai-model-weights opened (level-9 gzip, dedup)",
       );
     } catch (err) {
-      logger.warn(
-        "[WeightStorage] Could not open Pocket Dimension:",
-        err instanceof Error ? err?.message : String(err),
+      logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[WeightStorage] Could not open Pocket Dimension:",
       );
     }
     this.initialized = true;

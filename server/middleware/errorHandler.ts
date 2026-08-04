@@ -287,12 +287,12 @@ export function globalErrorHandler(
 
   if (res.headersSent) {
     logger.warn(
-      "[errorHandler] Headers already sent, cannot send error response",
       {
         method: req.method,
         url: req.originalUrl,
         statusCode,
       },
+      "[errorHandler] Headers already sent, cannot send error response",
     );
     return;
   }

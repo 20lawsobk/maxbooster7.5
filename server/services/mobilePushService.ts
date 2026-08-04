@@ -435,9 +435,7 @@ class MobilePushService {
         if (response?.status === 404 || errText?.includes("UNREGISTERED")) {
           await this.deactivateToken(token);
         }
-        logger.warn(
-          `FCM v1 send failed (${response?.status}):`,
-          errText?.substring(0, 200),
+        logger.warn({ detail: errText?.substring(0, 200) }, `FCM v1 send failed (${response?.status}):`,
         );
         return false;
       }

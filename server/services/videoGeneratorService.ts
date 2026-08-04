@@ -1356,9 +1356,7 @@ async function applyAudioAndLogo(
         errMsg,
       )
     ) {
-      logger.warn(
-        "[VideoGen] Complex audio filters unavailable, retrying with safe fallback chain:",
-        errMsg.slice(0, 120),
+      logger.warn({ detail: errMsg.slice(0, 120) }, "[VideoGen] Complex audio filters unavailable, retrying with safe fallback chain:",
       );
       const safeParts = parts.map((p) =>
         p

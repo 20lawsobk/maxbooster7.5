@@ -109,9 +109,7 @@ async function pdimRpush(
     );
     return true;
   } catch (err) {
-    logger.warn(
-      `[MaxCoreSync] PDIM rpush to ${key} failed:`,
-      err instanceof Error ? err?.message : String(err),
+    logger.warn({ err: err instanceof Error ? err?.message : String(err) }, `[MaxCoreSync] PDIM rpush to ${key} failed:`,
     );
     return false;
   }
@@ -263,9 +261,7 @@ async function syncWeightsFromMaxCore(): Promise<void> {
         `[MaxCoreSync] ${name} ✅ synced from MaxCore (${Object.keys(data).length} keys)`,
       );
     } catch (err) {
-      logger.warn(
-        `[MaxCoreSync] ${name} save failed:`,
-        err instanceof Error ? err?.message : String(err),
+      logger.warn({ err: err instanceof Error ? err?.message : String(err) }, `[MaxCoreSync] ${name} save failed:`,
       );
       skipped++;
     }
@@ -399,9 +395,7 @@ let _syncTimer: NodeJS.Timeout | null = null;
 export async function initMaxCoreSync(): Promise<void> {
   // 1. Health probe (non-blocking — don't hold up server startup)
   probeConnectivity().catch((err) =>
-    logger.warn(
-      "[MaxCoreSync] Connectivity probe error:",
-      err instanceof Error ? err?.message : String(err),
+    logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[MaxCoreSync] Connectivity probe error:",
     ),
   );
 
@@ -410,9 +404,7 @@ export async function initMaxCoreSync(): Promise<void> {
   //    syncing weights (sleeping Replit apps take 30-90s to wake up).
   setTimeout(() => {
     syncWeightsFromMaxCore().catch((err) =>
-      logger.warn(
-        "[MaxCoreSync] Initial weight sync error:",
-        err instanceof Error ? err?.message : String(err),
+      logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[MaxCoreSync] Initial weight sync error:",
       ),
     );
   }, 120_000);
@@ -420,9 +412,7 @@ export async function initMaxCoreSync(): Promise<void> {
   // 3. Periodic weight sync every 10 min (aligned with each training session)
   _syncTimer = setInterval(() => {
     syncWeightsFromMaxCore().catch((err) =>
-      logger.warn(
-        "[MaxCoreSync] Periodic weight sync error:",
-        err instanceof Error ? err?.message : String(err),
+      logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[MaxCoreSync] Periodic weight sync error:",
       ),
     );
   }, SYNC_INTERVAL_MS);
