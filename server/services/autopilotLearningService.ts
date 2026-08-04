@@ -761,9 +761,7 @@ class AutopilotLearningService {
         `[AutopilotLearning] Social AI retrained for user ${userId} — ${posts?.length} real data points (total tracked: ${dataPoints})`,
       );
     } catch (err) {
-      logger.warn(
-        `[AutopilotLearning] Social retraining failed for ${userId}:`,
-        err instanceof Error ? err?.message : String(err),
+      logger.warn({ err: err instanceof Error ? err?.message : String(err) }, `[AutopilotLearning] Social retraining failed for ${userId}:`,
       );
     }
   }

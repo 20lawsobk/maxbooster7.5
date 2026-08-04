@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db.js";
-import { eq, ilike, or, and, desc, count, gte, lte, asc, sum, inArray } from "drizzle-orm";
+import { eq, ilike, or, and, desc, count, gte, lte, asc, sum, inArray, type SQL } from "drizzle-orm";
 import { users, projects, beats, releases, analytics, socialCampaigns, searchHistory, filterPresets } from "../../shared/schema.js";
 import { logger } from "../logger.js";
 
@@ -118,8 +118,8 @@ function calculateRelevanceScore(
   if (genre.includes(normalizedQuery)) score += 15;
   if (tags.includes(normalizedQuery)) score += 10;
 
-  score += Math.min((item.plays || 0) / 1000, 30);
-  score += Math.min((item.downloads || 0) / 100, 20);
+  score += Math.min((Number(item.plays) || 0) / 1000, 30);
+  score += Math.min((Number(item.downloads) || 0) / 100, 20);
 
   return score;
 }
@@ -130,7 +130,7 @@ async function searchBeats(
   limit: number,
   offset: number,
 ) {
-  const conditions: Record<string, unknown>[] = [];
+  const conditions: SQL<unknown>[] = [];
 
   if (query) {
     conditions.push(
@@ -138,32 +138,32 @@ async function searchBeats(
         ilike(beats.title, `%${query}%`),
         ilike(beats.description, `%${query}%`),
         ilike(beats.genre, `%${query}%`),
-      ),
+      ) as SQL<unknown>,
     );
   }
 
   if (filters.genre) {
-    conditions.push(eq(beats.genre, filters.genre));
+    conditions.push(eq(beats.genre, filters.genre as string));
   }
 
   if (filters.key) {
-    conditions.push(eq(beats.key, filters.key));
+    conditions.push(eq(beats.key, filters.key as string));
   }
 
   if (filters.bpm_min) {
-    conditions.push(gte(beats.bpm, filters.bpm_min));
+    conditions.push(gte(beats.bpm, filters.bpm_min as number));
   }
 
   if (filters.bpm_max) {
-    conditions.push(lte(beats.bpm, filters.bpm_max));
+    conditions.push(lte(beats.bpm, filters.bpm_max as number));
   }
 
   if (filters.price_min) {
-    conditions.push(gte(beats.price, filters.price_min));
+    conditions.push(gte(beats.price, filters.price_min as number));
   }
 
   if (filters.price_max) {
-    conditions.push(lte(beats.price, filters.price_max));
+    conditions.push(lte(beats.price, filters.price_max as number));
   }
 
   conditions.push(eq(beats.isPublished, true));
@@ -250,7 +250,7 @@ async function searchProjects(
   limit: number,
   offset: number,
 ) {
-  const conditions: Record<string, unknown>[] = [];
+  const conditions: SQL<unknown>[] = [];
 
   if (query) {
     conditions.push(
@@ -258,7 +258,7 @@ async function searchProjects(
         ilike(projects.title, `%${query}%`),
         ilike(projects.description, `%${query}%`),
         ilike(projects.genre, `%${query}%`),
-      ),
+      ) as SQL<unknown>,
     );
   }
 
@@ -324,7 +324,7 @@ router.get("/", async (req: Request, res: Response) => {
       `/api/search/unified?${new URLSearchParams(req.query as Record<string, string>).toString()}`,
     );
   } catch (error) {
-    logger.warn("Error in search redirect:", (error as Error).message);
+    logger.warn({ err: error }, "Error in search redirect:");
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -444,7 +444,7 @@ router.get("/unified", async (req: Request, res: Response) => {
 
     if (sort === "relevance" && q) {
       allItems.sort(
-        (a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0),
+        (a, b) => (Number(b.relevanceScore) || 0) - (Number(a.relevanceScore) || 0),
       );
     }
 
@@ -788,7 +788,7 @@ router.get("/similar/:beatId", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Beat not found" });
     }
 
-    const conditions: Record<string, unknown>[] = [eq(beats.isPublished, true)];
+    const conditions: SQL<unknown>[] = [eq(beats.isPublished, true)];
 
     if (beat.genre) {
       conditions.push(eq(beats.genre, beat.genre));
@@ -1185,7 +1185,7 @@ router.get("/distribution", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const conditions: Record<string, unknown>[] = [eq(releases.userId, userId)];
+    const conditions: SQL<unknown>[] = [eq(releases.userId, userId)];
 
     if (q) {
       conditions.push(ilike(releases.title, `%${q}%`));
@@ -1419,7 +1419,7 @@ router.get("/social/search", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const conditions: Record<string, unknown>[] = [
+    const conditions: SQL<unknown>[] = [
       eq(socialCampaigns.userId, userId),
     ];
 
@@ -1525,7 +1525,7 @@ router.get("/marketplace/producers", async (req: Request, res: Response) => {
       100_000,
     );
 
-    const conditions: Record<string, unknown>[] = [];
+    const conditions: SQL<unknown>[] = [];
 
     if (q) {
       conditions.push(
@@ -1533,7 +1533,7 @@ router.get("/marketplace/producers", async (req: Request, res: Response) => {
           ilike(users.username, `%${q}%`),
           ilike(users.firstName, `%${q}%`),
           ilike(users.lastName, `%${q}%`),
-        ),
+        ) as SQL<unknown>,
       );
     }
 

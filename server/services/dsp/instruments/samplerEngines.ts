@@ -188,10 +188,8 @@ export class BasicSamplerSynth implements SynthesizerEngine {
   private envelope: ADSR;
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
-  private frequency: number = 440;
   private baseFrequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     this.sample = new SampleBuffer(44100 * 2, 44100);
@@ -205,9 +203,7 @@ export class BasicSamplerSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const playbackRate = frequency / this.baseFrequency;
     this.player.trigger(playbackRate);
@@ -268,9 +264,7 @@ export class MultisampleSynth implements SynthesizerEngine {
   private envelope: ADSR;
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     const velocityLayers = [
@@ -293,7 +287,7 @@ export class MultisampleSynth implements SynthesizerEngine {
             const harmEnv = Math.exp(-t * layer?.decay * h * 0.4);
             value += (Math.sin(2 * Math.PI * freq * h * t) * harmEnv) / h;
           }
-          (sample as unknown as Record<string, unknown>).buffer[i] = value * env;
+          (sample as unknown as { buffer: Float32Array }).buffer[i] = value * env;
         }
 
         this.samples.push({
@@ -312,9 +306,7 @@ export class MultisampleSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     let bestSample = this.samples[0];
     let bestDistance = Infinity;
@@ -392,10 +384,8 @@ export class GranularSamplerSynth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private positionLFO: LFO;
   private densityLFO: LFO;
-  private frequency: number = 440;
   private baseFrequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
   private grainSize: number = 2000;
   private grainDensity: number = 8;
   private grainCounter: number = 0;
@@ -410,7 +400,7 @@ export class GranularSamplerSynth implements SynthesizerEngine {
         const env = Math.exp(-t * 0.5 * h * 0.3);
         value += (Math.sin(2 * Math.PI * 440 * h * t) * env) / h;
       }
-      (this.sample as unknown as Record<string, unknown>).buffer[i] = value * 0.5;
+      (this.sample as unknown as { buffer: Float32Array }).buffer[i] = value * 0.5;
     }
 
     for (let i = 0; i < 12; i++) {
@@ -426,9 +416,7 @@ export class GranularSamplerSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
     this.grainCounter = 0;
     this.scanPosition = 0;
     this.grainSize = Math.floor(context?.sampleRate / 15);

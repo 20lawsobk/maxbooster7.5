@@ -1221,9 +1221,7 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!payoutRecord) {
-        logger.info(
-          "Payout record not found for transfer webhook:",
-          transfer.id,
+        logger.info({ detail: transfer.id }, "Payout record not found for transfer webhook:",
         );
         return;
       }

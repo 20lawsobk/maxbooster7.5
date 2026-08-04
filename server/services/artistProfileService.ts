@@ -1031,9 +1031,7 @@ class ArtistProfileService {
       });
 
       if (!response.ok) {
-        logger.warn(
-          "[ArtistProfile] Spotify token fetch failed:",
-          response.status,
+        logger.warn({ detail: response.status }, "[ArtistProfile] Spotify token fetch failed:",
         );
         return null;
       }
@@ -1288,9 +1286,7 @@ class ArtistProfileService {
       // Suppress noise — Audiomack API consistently requires auth in production
       const e = err as { message?: string };
       if (!e.message?.includes("401")) {
-        logger.warn(
-          "[ArtistProfile] Audiomack search error (non-fatal):",
-          e.message ?? err,
+        logger.warn({ err: e.message ?? err }, "[ArtistProfile] Audiomack search error (non-fatal):",
         );
       }
       return [];

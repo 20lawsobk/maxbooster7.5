@@ -309,9 +309,7 @@ export const platformAPI = {
               media: { media_ids: [mediaId] },
             });
           } catch (mediaError: unknown) {
-            logger.warn(
-              "Twitter media upload failed, posting text only:",
-              mediaError,
+            logger.warn({ detail: mediaError }, "Twitter media upload failed, posting text only:",
             );
             tweetResponse = await twitterClient?.v2.tweet({ text });
           }

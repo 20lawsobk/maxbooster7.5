@@ -600,9 +600,7 @@ async function trainMusicGenerator(): Promise<boolean> {
     );
     return true;
   } catch (err) {
-    logger.warn(
-      "[BaseTrainer] Music generator warm-up skipped:",
-      err instanceof Error ? err?.message : String(err),
+    logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[BaseTrainer] Music generator warm-up skipped:",
     );
     return false;
   }
@@ -986,9 +984,7 @@ export async function runBaseModelTraining(): Promise<void> {
       );
     }
   } catch (err) {
-    logger.warn(
-      "[BaseTrainer] MaxCore weight fetch failed — falling back to synthetic seeding:",
-      err instanceof Error ? err?.message : String(err),
+    logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[BaseTrainer] MaxCore weight fetch failed — falling back to synthetic seeding:",
     );
   }
 

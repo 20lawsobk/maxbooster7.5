@@ -1,6 +1,9 @@
 import { randomBytes } from "crypto";
 import { db } from "../db";
-import { takeGroups, takeLanes, takeSegments, compVersions, audioClips, type TakeGroup, type TakeLane, type TakeSegment, type CompVersion, type InsertTakeGroup, type InsertTakeLane, type InsertTakeSegment } from "@shared/schema";
+import { takeGroups, takeLanes, takeSegments, compVersions, audioClips, type TakeGroup, type TakeLane, type TakeSegment, type CompVersion } from "@shared/schema";
+type InsertTakeGroup = typeof takeGroups.$inferInsert;
+type InsertTakeLane = typeof takeLanes.$inferInsert;
+type InsertTakeSegment = typeof takeSegments.$inferInsert;
 import { eq, and, desc, asc } from "drizzle-orm";
 
 import { logger } from "../logger.js";
@@ -40,7 +43,7 @@ export class CompingService {
 
       await db
         .update(takeGroups)
-        .set({ activeCompVersionId: initialVersion.id })
+        .set({ activeCompVersionId: initialVersion.id } as any)
         .where(eq(takeGroups?.id, takeGroup?.id));
 
       return { ...takeGroup, activeCompVersionId: initialVersion.id };
@@ -66,7 +69,7 @@ export class CompingService {
     try {
       const results = await db?.query.takeGroups?.findMany({
         where: eq(takeGroups?.projectId, projectId),
-        orderBy: [asc(takeGroups?.startTime)],
+        orderBy: [asc((takeGroups as any)?.startTime)],
       });
       return results;
     } catch (error: unknown) {
@@ -79,7 +82,7 @@ export class CompingService {
     try {
       const results = await db?.query.takeGroups?.findMany({
         where: eq(takeGroups?.trackId, trackId),
-        orderBy: [asc(takeGroups?.startTime)],
+        orderBy: [asc((takeGroups as any)?.startTime)],
       });
       return results;
     } catch (error: unknown) {
@@ -123,7 +126,7 @@ export class CompingService {
     try {
       const [updated] = await db
         .update(takeGroups)
-        .set({ ...updates })
+        .set({ ...updates } as any)
         .where(eq(takeGroups?.id, groupId))
         .returning();
 
@@ -157,8 +160,8 @@ export class CompingService {
         .values({
           ...data,
           id: `tl_${randomBytes(8).toString("hex")}`,
-          laneIndex: data.laneIndex ?? nextIndex,
-        })
+          laneIndex: (data as any).laneIndex ?? nextIndex,
+        } as any)
         .returning();
 
       await db
@@ -166,7 +169,7 @@ export class CompingService {
         .set({
           takeCount: existingLanes.length + 1,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(takeGroups?.id, data?.takeGroupId));
 
       return takeLane;
@@ -192,7 +195,7 @@ export class CompingService {
     try {
       const results = await db?.query.takeLanes?.findMany({
         where: eq(takeLanes?.takeGroupId, groupId),
-        orderBy: [asc(takeLanes?.laneIndex)],
+        orderBy: [asc((takeLanes as any)?.laneIndex)],
       });
       return results;
     } catch (error: unknown) {
@@ -208,7 +211,7 @@ export class CompingService {
     try {
       const [updated] = await db
         .update(takeLanes)
-        .set({ ...updates, updatedAt: new Date() })
+        .set({ ...updates, updatedAt: new Date() } as any)
         .where(eq(takeLanes?.id, laneId))
         .returning();
 
@@ -251,7 +254,7 @@ export class CompingService {
       for (let i = 0; i < laneIds?.length; i++) {
         await db
           .update(takeLanes)
-          .set({ laneIndex: i, updatedAt: new Date() })
+          .set({ laneIndex: i, updatedAt: new Date() } as any)
           .where(eq(takeLanes?.id, laneIds[i]));
       }
     } catch (error: unknown) {
@@ -262,7 +265,7 @@ export class CompingService {
 
   async createTakeSegment(data: InsertTakeSegment): Promise<TakeSegment> {
     try {
-      const existingSegments = await this.getGroupSegments(data?.takeGroupId);
+      const existingSegments = await this.getGroupSegments((data as any)?.takeGroupId);
       const nextOrder = existingSegments?.length;
 
       const [segment] = await db
@@ -271,7 +274,7 @@ export class CompingService {
           ...data,
           id: `ts_${randomBytes(8).toString("hex")}`,
           order: data.order ?? nextOrder,
-        })
+        } as any)
         .returning();
 
       return segment;
@@ -296,7 +299,7 @@ export class CompingService {
   async getGroupSegments(groupId: string): Promise<TakeSegment[]> {
     try {
       const results = await db?.query.takeSegments?.findMany({
-        where: eq(takeSegments?.takeGroupId, groupId),
+        where: eq((takeSegments as any)?.takeGroupId, groupId),
         orderBy: [asc(takeSegments?.order), asc(takeSegments?.startTime)],
       });
       return results;
@@ -326,7 +329,7 @@ export class CompingService {
     try {
       const [updated] = await db
         .update(takeSegments)
-        .set({ ...updates, updatedAt: new Date() })
+        .set({ ...updates, updatedAt: new Date() } as any)
         .where(eq(takeSegments?.id, segmentId))
         .returning();
 
@@ -362,8 +365,8 @@ export class CompingService {
         .delete(takeSegments)
         .where(
           and(
-            eq(takeSegments?.takeGroupId, groupId),
-            eq(takeSegments?.isSelected, true),
+            eq((takeSegments as any)?.takeGroupId, groupId),
+            eq((takeSegments as any)?.isSelected, true),
           ),
         );
 
@@ -374,7 +377,7 @@ export class CompingService {
         startTime,
         endTime,
         isSelected: true,
-      });
+      } as any);
 
       return segment;
     } catch (error: unknown) {
@@ -410,7 +413,7 @@ export class CompingService {
           createdBy: data.createdBy,
           segmentData: segments,
           isActive: false,
-        })
+        } as any)
         .returning();
 
       return version;
@@ -435,8 +438,8 @@ export class CompingService {
   async getCompVersions(groupId: string): Promise<CompVersion[]> {
     try {
       const results = await db?.query.compVersions?.findMany({
-        where: eq(compVersions?.takeGroupId, groupId),
-        orderBy: [desc(compVersions?.versionNumber)],
+        where: eq((compVersions as any)?.takeGroupId, groupId),
+        orderBy: [desc((compVersions as any)?.versionNumber)],
       });
       return results;
     } catch (error: unknown) {
@@ -453,7 +456,7 @@ export class CompingService {
       await db
         .update(compVersions)
         .set({ isActive: false })
-        .where(eq(compVersions?.takeGroupId, groupId));
+        .where(eq((compVersions as any)?.takeGroupId, groupId));
 
       await db
         .update(compVersions)
@@ -472,7 +475,7 @@ export class CompingService {
       if ((version as any)?.segmentData) {
         await db
           .delete(takeSegments)
-          .where(eq(takeSegments?.takeGroupId, groupId));
+          .where(eq((takeSegments as any)?.takeGroupId, groupId));
 
         const segments = (version as any)?.segmentData as TakeSegment[];
         for (const segment of segments) {
@@ -544,15 +547,15 @@ export class CompingService {
           endTime: (takeGroup as any).endTime,
           isComped: true,
           compSourceIds: selectedSegments.map((s) => s?.id),
-        })
+        } as any)
         .returning();
 
-      await this.updateTakeGroup(groupId, { status: "rendered" });
+      await this.updateTakeGroup(groupId, { status: "rendered" } as any);
 
       if ((takeGroup as any)?.activeCompVersionId) {
         await db
           .update(compVersions)
-          .set({ renderedClipId: clipId })
+          .set({ renderedClipId: clipId } as any)
           .where(eq(compVersions?.id, (takeGroup as any)?.activeCompVersionId));
       }
 

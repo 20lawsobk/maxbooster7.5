@@ -1,4 +1,5 @@
 import cron from "node-cron";
+import type { ScheduledTask as CronScheduledTask } from "node-cron";
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db.js";
 import {
@@ -41,7 +42,7 @@ interface AutoPublishResult {
 class AutopilotPublisher {
   private isRunning: boolean = false;
   private lastRun: Date | null = null;
-  private cronJob: cron.ScheduledTask | null = null;
+  private cronJob: CronScheduledTask | null = null;
   // Tracks the last time we successfully initiated a publish attempt per user
   // so shouldPostNow can enforce frequency limits without a DB query.
   // Resets on server restart (acceptable — first cycle after restart triggers promptly
@@ -184,7 +185,7 @@ class AutopilotPublisher {
     config: Record<string, unknown>,
   ): Promise<AutoPublishResult> {
     const result: AutoPublishResult = {
-      userId: config.userId,
+      userId: config.userId as string,
       socialPosts: 0,
       adCampaigns: 0,
       errors: [],
@@ -428,10 +429,10 @@ class AutopilotPublisher {
     config: Record<string, unknown>,
   ): Promise<{ posts: number; error?: string }> {
     try {
-      const userId = config?.userId;
+      const userId = config?.userId as string;
       const platforms: string[] =
         config?.platforms && (config?.platforms as any).length > 0
-          ? config?.platforms
+          ? (config?.platforms as string[])
           : ["twitter", "instagram"];
 
       // Fetch live storefront + beat data in parallel with platform selection
@@ -462,9 +463,9 @@ class AutopilotPublisher {
           topic: enrichedTopic,
           objective: "engagement",
           platform: targetPlatform,
-          tone: config.brandVoice,
-          genre: config.genre,
-          targetAudience: config.targetAudience,
+          tone: config.brandVoice as string | undefined,
+          genre: config.genre as string | undefined,
+          targetAudience: config.targetAudience as string | undefined,
         });
 
         if (!gateResult) {
@@ -495,7 +496,7 @@ class AutopilotPublisher {
 
         const nextOptimalTime = await this.calculateNextOptimalPostingTime(
           targetPlatform,
-          (config.postingFrequency || "daily" as string),
+          ((config.postingFrequency as string) || "daily"),
           userId,
         );
 
@@ -592,8 +593,8 @@ class AutopilotPublisher {
           platforms: [targetPlatform],
           topic: mcTopic,
           tone: toneMap[((config.brandVoice || "") as any).toLowerCase()] || "energetic",
-          genre: config.genre,
-          targetAudience: config.targetAudience,
+          genre: config.genre as string | undefined,
+          targetAudience: config.targetAudience as string | undefined,
           objective: "engagement",
           contentType: contentTypeMap[selectedContentType] || "engagement",
           includeHashtags: true,
@@ -605,7 +606,7 @@ class AutopilotPublisher {
 
       // Normalise score (0-100) to confidence fraction (0-1) for threshold check
       const confidence = advancedContent.scoring.overall / 100;
-      const minThreshold = config.minConfidenceThreshold || 0.7;
+      const minThreshold = (config.minConfidenceThreshold as number) || 0.7;
 
       if (confidence < minThreshold) {
         logger.info(
@@ -636,9 +637,9 @@ class AutopilotPublisher {
         {
           topic: mcTopic,
           objective: "engagement",
-          tone: config.brandVoice,
-          genre: config.genre,
-          targetAudience: config.targetAudience,
+          tone: config.brandVoice as string | undefined,
+          genre: config.genre as string | undefined,
+          targetAudience: config.targetAudience as string | undefined,
         },
       );
 
@@ -706,7 +707,7 @@ class AutopilotPublisher {
       // Calculate next optimal posting time for this platform
       const nextOptimalTime = await this.calculateNextOptimalPostingTime(
         targetPlatform,
-        (config.postingFrequency || "daily" as string),
+        ((config.postingFrequency as string) || "daily"),
         userId,
       );
 
@@ -786,18 +787,18 @@ class AutopilotPublisher {
       }
 
       // Pick the best recommendation
-      const bestCampaign = recommendations?.reduce(
-        (best: Record<string, unknown>, current: Record<string, unknown>) => {
+      const bestCampaign: Record<string, any> = recommendations?.reduce(
+        (best: any, current: any) => {
           return (current?.predictedROI || 0) > (best?.predictedROI || 0)
             ? current
             : best;
         },
-      );
+      ) ?? {};
 
       // Check confidence threshold for auto-publish
       const confidence =
         bestCampaign?.confidence || bestCampaign?.predictedROI || 0;
-      const minThreshold = config?.minConfidenceThreshold || 0.7;
+      const minThreshold = (config?.minConfidenceThreshold as number) || 0.7;
 
       if (confidence < minThreshold) {
         logger.info(
@@ -814,9 +815,9 @@ class AutopilotPublisher {
       let mediaUrl: string | undefined;
       if (bestCampaign?.mediaType !== "text") {
         const generatedAsset = await aiContentService?.generateContent({
-          prompt: bestCampaign.content,
-          platform: bestCampaign.platforms[0] as unknown as Record<string, unknown>,
-          format: bestCampaign.mediaType,
+          prompt: bestCampaign.content as string,
+          platform: (bestCampaign.platforms as string[])[0] as unknown as Record<string, unknown>,
+          format: bestCampaign.mediaType as string,
           tone: "promotional",
           length: "medium",
         });
@@ -832,10 +833,10 @@ class AutopilotPublisher {
       }
 
       // Calculate next optimal posting time for advertising
-      const primaryPlatform = bestCampaign?.platforms?.[0] || "facebook";
+      const primaryPlatform = ((bestCampaign?.platforms as string[] | undefined)?.[0]) || "facebook";
       const nextOptimalTime = await this.calculateNextOptimalPostingTime(
         primaryPlatform,
-        (config?.postingFrequency || "daily" as string),
+        ((config?.postingFrequency as string) || "daily"),
         userId,
       );
 
@@ -905,7 +906,7 @@ class AutopilotPublisher {
    *   the "should we generate now" gate.
    */
   private shouldPostNow(config: Record<string, unknown>): boolean {
-    const frequency = config.postingFrequency || "daily";
+    const frequency = (config.postingFrequency as string) || "daily";
     const userId = config.userId;
     const now = new Date();
 

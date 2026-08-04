@@ -32,7 +32,7 @@ function seededShuffle<T>(arr: T[], seed: string): T[] {
 }
 
 interface ModelParameters {
-  [key: string]: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 interface ContentGenerationParams {
@@ -880,7 +880,7 @@ class CustomAIEngine {
   }
 
   async analyzeMusicTrack(audioData: unknown): Promise<unknown> {
-    const modelParams = this.modelParameters.get("music_analysis") || {};
+    const modelParams = (this.modelParameters.get("music_analysis") || {}) as Record<string, any>;
 
     const keyConfidenceThreshold = modelParams.keyConfidenceThreshold || 0.7;
     const genreDepth = modelParams.genreClassificationDepth || 3;
@@ -948,7 +948,7 @@ class CustomAIEngine {
     platform: string,
     _content: unknown,
   ): Promise<unknown> {
-    const modelParams = this.modelParameters.get("social_posting") || {};
+    const modelParams = (this.modelParameters.get("social_posting") || {}) as Record<string, any>;
 
     const optimalTimes = modelParams.optimalPostingTimes || [9, 12, 15, 18, 21];
     const platformOpts = modelParams.platformOptimizations || {};

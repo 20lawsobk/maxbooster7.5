@@ -84,15 +84,15 @@ export class SocialMediaContentGenerator {
         );
       }
 
-      return result;
+      return result as { image?: string; video?: string; audio?: string; content: Record<string, unknown> };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error generating social media content:");
       return {
-        content: await this.generateAIContent(
+        content: (await this.generateAIContent(
           platform,
           musicData,
           targetAudience,
-        ),
+        )) as Record<string, unknown>,
         image: this.getDefaultImage(platform),
         video: this.getDefaultVideo(platform),
         audio: this.getDefaultAudio(platform),
@@ -134,7 +134,7 @@ export class SocialMediaContentGenerator {
       return {
         ...result,
         extractedData,
-        content: aiContent,
+        content: aiContent as Record<string, unknown>,
       };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error generating content from URL:");
@@ -625,11 +625,11 @@ export class SocialMediaContentGenerator {
       };
 
       const result = await this.contentGenerator.generateCaption({
-        tone: audience.tone || "energetic",
+        tone: (audience.tone as import("../shared/ml/nlp/ContentGenerator.js").ContentTone) || "energetic",
         platform: platformMap[platform] || "instagram",
-        topic: data.title || "music",
-        trackTitle: data.title,
-        artistName: data.artist,
+        topic: (data.title as string) || "music",
+        trackTitle: data.title as string | undefined,
+        artistName: data.artist as string | undefined,
         genre: (data.metadata as any).genre,
         contentType: "release",
         includeHashtags: true,
@@ -678,13 +678,13 @@ export class SocialMediaContentGenerator {
       };
 
       const result = await this.contentGenerator.generateCaption({
-        tone: audience.tone || "energetic",
+        tone: (audience.tone as import("../shared/ml/nlp/ContentGenerator.js").ContentTone) || "energetic",
         platform: platformMap[platform] || "instagram",
-        topic: data.title || "music release",
-        trackTitle: data.title,
-        artistName: data.artist || data.artistName,
-        genre: data.genre,
-        contentType: data.contentType || "release",
+        topic: (data.title as string) || "music release",
+        trackTitle: data.title as string | undefined,
+        artistName: ((data.artist || data.artistName) as string | undefined),
+        genre: data.genre as string | undefined,
+        contentType: (data.contentType as import("../shared/ml/nlp/ContentGenerator.js").GenerationOptions["contentType"]) || "release",
         includeHashtags: true,
         includeEmojis: true,
       });

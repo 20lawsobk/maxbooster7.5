@@ -490,12 +490,12 @@ class HyperLearningEngine extends EventEmitter {
       }
       const b = buckets?.get(key)!;
       b.total += length;
-      b.engagement += post?.engagementRate || 0;
+      b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+      data?.reduce((s, d) => s + (Number(d?.engagementRate) || 0), 0) / data?.length;
 
     buckets?.forEach((stats, range) => {
       if (stats?.count >= 10) {
@@ -543,12 +543,12 @@ class HyperLearningEngine extends EventEmitter {
         densityBuckets?.set(key, { engagement: 0, count: 0 });
       }
       const b = densityBuckets?.get(key)!;
-      b.engagement += post?.engagementRate || 0;
+      b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+      data?.reduce((s, d) => s + (Number(d?.engagementRate) || 0), 0) / data?.length;
 
     densityBuckets?.forEach((stats, density) => {
       if (stats?.count >= 10) {
@@ -609,12 +609,12 @@ class HyperLearningEngine extends EventEmitter {
         positions?.set(positionKey, { engagement: 0, count: 0 });
       }
       const b = positions?.get(positionKey)!;
-      b.engagement += post?.engagementRate || 0;
+      b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+      data?.reduce((s, d) => s + (Number(d?.engagementRate) || 0), 0) / data?.length;
 
     positions?.forEach((stats, position) => {
       if (stats?.count >= 10) {
@@ -655,12 +655,12 @@ class HyperLearningEngine extends EventEmitter {
         minuteBuckets?.set(minute, { engagement: 0, count: 0 });
       }
       const b = minuteBuckets?.get(minute)!;
-      b.engagement += post?.engagementRate || 0;
+      b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+      data?.reduce((s, d) => s + (Number(d?.engagementRate) || 0), 0) / data?.length;
 
     minuteBuckets?.forEach((stats, minute) => {
       if (stats?.count >= 20) {
@@ -735,12 +735,12 @@ class HyperLearningEngine extends EventEmitter {
         hookTypes?.set(matchedHook, { engagement: 0, count: 0 });
       }
       const b = hookTypes?.get(matchedHook)!;
-      b.engagement += post?.engagementRate || 0;
+      b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+      data?.reduce((s, d) => s + (Number(d?.engagementRate) || 0), 0) / data?.length;
 
     hookTypes?.forEach((stats, hookType) => {
       if (stats?.count >= 10) {
@@ -781,12 +781,12 @@ class HyperLearningEngine extends EventEmitter {
         breakBuckets?.set(bucket, { engagement: 0, count: 0 });
       }
       const b = breakBuckets?.get(bucket)!;
-      b.engagement += post?.engagementRate || 0;
+      b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+      data?.reduce((s, d) => s + (Number(d?.engagementRate) || 0), 0) / data?.length;
 
     breakBuckets?.forEach((stats, breaks) => {
       if (stats?.count >= 15) {
@@ -836,12 +836,12 @@ class HyperLearningEngine extends EventEmitter {
           buckets?.set(bucket, { engagement: 0, count: 0 });
         }
         const b = buckets?.get(bucket)!;
-        b.engagement += post?.engagementRate || 0;
+        b.engagement += Number(post?.engagementRate) || 0;
         b.count++;
       }
 
       const avgEngagement =
-        data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+        data?.reduce((s, d) => s + (Number(d?.engagementRate) || 0), 0) / data?.length;
 
       buckets?.forEach((stats, count) => {
         if (stats?.count >= 15) {
@@ -897,12 +897,12 @@ class HyperLearningEngine extends EventEmitter {
         numberTypes?.set(numberType, { engagement: 0, count: 0 });
       }
       const b = numberTypes?.get(numberType)!;
-      b.engagement += post?.engagementRate || 0;
+      b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+      data?.reduce((s, d) => s + (Number(d?.engagementRate) || 0), 0) / data?.length;
 
     numberTypes?.forEach((stats, type) => {
       if (stats?.count >= 15) {
@@ -971,12 +971,12 @@ class HyperLearningEngine extends EventEmitter {
         ctaPositions?.set(ctaPosition, { engagement: 0, count: 0 });
       }
       const b = ctaPositions?.get(ctaPosition)!;
-      b.engagement += post?.engagementRate || 0;
+      b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+      data?.reduce((s, d) => s + (Number(d?.engagementRate) || 0), 0) / data?.length;
 
     ctaPositions?.forEach((stats, position) => {
       if (stats?.count >= 15) {
@@ -1071,12 +1071,12 @@ class HyperLearningEngine extends EventEmitter {
         sentimentBuckets.set(sentiment, { engagement: 0, count: 0 });
       }
       const b = sentimentBuckets.get(sentiment)!;
-      b.engagement += post.engagementRate || 0;
+      b.engagement += Number(post.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
+      data.reduce((s, d) => s + (Number(d.engagementRate) || 0), 0) / data.length;
 
     sentimentBuckets.forEach((stats, sentiment) => {
       if (stats.count >= 15) {
@@ -1171,7 +1171,7 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post.contentText) continue;
-      const words = post.contentText
+      const words = (post.contentText as string)
         .toLowerCase()
         .replace(/[^a-z\s]/g, "")
         .split(/\s+/)
@@ -1183,13 +1183,13 @@ class HyperLearningEngine extends EventEmitter {
           wordEngagement.set((word as string), { engagement: 0, count: 0 });
         }
         const b = wordEngagement.get((word as string))!;
-        b.engagement += post.engagementRate || 0;
+        b.engagement += Number(post.engagementRate) || 0;
         b.count++;
       }
     }
 
     const avgEngagement =
-      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
+      data.reduce((s, d) => s + (Number(d.engagementRate) || 0), 0) / data.length;
 
     const topWords = [...wordEngagement.entries()]
       .filter(([_, stats]) => stats.count >= 20)
@@ -1256,19 +1256,19 @@ class HyperLearningEngine extends EventEmitter {
         dayOfMonthBuckets.set(dayCategory, { engagement: 0, count: 0 });
       }
       dayOfMonthBuckets.get(dayCategory)!.engagement +=
-        post.engagementRate || 0;
+        Number(post.engagementRate) || 0;
       dayOfMonthBuckets.get(dayCategory)!.count++;
 
       if (!weekOfMonthBuckets.has(weekOfMonth)) {
         weekOfMonthBuckets.set(weekOfMonth, { engagement: 0, count: 0 });
       }
       weekOfMonthBuckets.get(weekOfMonth)!.engagement +=
-        post.engagementRate || 0;
+        Number(post.engagementRate) || 0;
       weekOfMonthBuckets.get(weekOfMonth)!.count++;
     }
 
     const avgEngagement =
-      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
+      data.reduce((s, d) => s + (Number(d.engagementRate) || 0), 0) / data.length;
 
     dayOfMonthBuckets.forEach((stats, category) => {
       if (stats.count >= 20) {
@@ -1307,12 +1307,12 @@ class HyperLearningEngine extends EventEmitter {
         mediaTypes.set((mediaType as string), { engagement: 0, count: 0 });
       }
       const b = mediaTypes.get((mediaType as string))!;
-      b.engagement += post.engagementRate || 0;
+      b.engagement += Number(post.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
+      data.reduce((s, d) => s + (Number(d.engagementRate) || 0), 0) / data.length;
 
     mediaTypes.forEach((stats, type) => {
       if (stats.count >= 10) {
@@ -1368,12 +1368,12 @@ class HyperLearningEngine extends EventEmitter {
         responseRatios.set(responseType, { engagement: 0, count: 0 });
       }
       const b = responseRatios.get(responseType)!;
-      b.engagement += post.engagementRate || 0;
+      b.engagement += Number(post.engagementRate) || 0;
       b.count++;
     }
 
     const avgEngagement =
-      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
+      data.reduce((s, d) => s + (Number(d.engagementRate) || 0), 0) / data.length;
 
     responseRatios.forEach((stats, type) => {
       if (stats.count >= 15) {
@@ -1404,7 +1404,7 @@ class HyperLearningEngine extends EventEmitter {
     const patterns: MicroPattern[] = [];
 
     const sortedByEngagement = [...data].sort(
-      (a, b) => (b.engagementRate || 0) - (a.engagementRate || 0),
+      (a, b) => (Number(b.engagementRate) || 0) - (Number(a.engagementRate) || 0),
     );
     const top10Percent = sortedByEngagement.slice(
       0,
@@ -2248,7 +2248,7 @@ class HyperLearningEngine extends EventEmitter {
       if (recentData?.length < 10) return emergent;
 
       const recentAvg =
-        recentData?.reduce((s, d) => s + (d?.engagementRate || 0), 0) /
+        recentData?.reduce((s, d) => s + (Number(d?.engagementRate) || 0), 0) /
         recentData?.length;
 
       const thirtyDaysAgo = new Date();

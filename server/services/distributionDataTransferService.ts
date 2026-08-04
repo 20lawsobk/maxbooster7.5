@@ -324,7 +324,7 @@ export interface StreamingProfileData {
   socialLinks?: Record<string, string>;
   lastSyncedAt?: string;
   lastSyncStatus?: "success" | "failed" | "partial";
-  lastSyncMethod?: "auto" | "manual" | "api";
+  lastSyncMethod?: "auto" | "manual" | "api" | "proxy" | "scrape" | "scraping";
   syncCount?: number;
   consecutiveFailures?: number;
   autoSyncEnabled?: boolean;
@@ -416,7 +416,7 @@ const importedReleaseSchema = z.object({
       }),
     )
     .default([]),
-  platformLinks: z.record(z.string()).optional(),
+  platformLinks: z.record(z.string(), z.string()).optional(),
   originalDistributor: z.string(),
 });
 
@@ -947,7 +947,7 @@ class DistributionDataTransferService {
         const normalizedArtist = artistName
           .toLowerCase()
           .replace(/[^a-z0-9]/g, "");
-        const normalizedReleaseArtist = (metadata.artistName || "")
+        const normalizedReleaseArtist = (String(metadata.artistName || ""))
           .toLowerCase()
           .replace(/[^a-z0-9]/g, "");
 
@@ -1144,18 +1144,18 @@ class DistributionDataTransferService {
         const p = data as Record<string, unknown>;
         userMap.set(platformId, {
           platformId,
-          artistId: p.artistId,
-          artistName: p.artistName || "Unknown Artist",
-          profileUrl: p.profileUrl,
-          verified: p.verified || false,
-          followers: p.followers,
-          monthlyListeners: p.monthlyListeners,
-          totalStreams: p.totalStreams,
-          lastSyncedAt: p.lastSyncedAt,
-          lastSyncStatus: p.lastSyncStatus,
-          lastSyncMethod: p.lastSyncMethod,
-          syncCount: p.syncCount || 0,
-          consecutiveFailures: p.consecutiveFailures || 0,
+          artistId: p.artistId as string,
+          artistName: (p.artistName as string) || "Unknown Artist",
+          profileUrl: p.profileUrl as string,
+          verified: (p.verified as boolean) || false,
+          followers: p.followers as number | undefined,
+          monthlyListeners: p.monthlyListeners as number | undefined,
+          totalStreams: p.totalStreams as number | undefined,
+          lastSyncedAt: p.lastSyncedAt as string | undefined,
+          lastSyncStatus: p.lastSyncStatus as StreamingProfileData["lastSyncStatus"],
+          lastSyncMethod: p.lastSyncMethod as StreamingProfileData["lastSyncMethod"],
+          syncCount: (p.syncCount as number) || 0,
+          consecutiveFailures: (p.consecutiveFailures as number) || 0,
         });
       }
       logger.info(
@@ -1163,8 +1163,8 @@ class DistributionDataTransferService {
       );
     } catch (err) {
       logger.warn(
+        { err: (err as Error).message },
         "[DataTransfer] Failed to hydrate profiles from storage:",
-        (err as Error).message,
       );
     }
   }
@@ -1508,10 +1508,10 @@ class DistributionDataTransferService {
       if (!resp.ok) return null;
       const data = (await resp.json()) as Record<string, unknown>;
       this.spotifyTokenCache = {
-        token: data.access_token,
+        token: data.access_token as string,
         expiresAt: Date.now() + ((data.expires_in as any) - 60) * 1000,
       };
-      return data.access_token;
+      return data.access_token as string;
     } catch {
       return null;
     }
@@ -1554,11 +1554,14 @@ class DistributionDataTransferService {
         const ttData = (await topTracksResp.json()) as Record<string, unknown>;
         topTracks = ((ttData.tracks as unknown[]) || [])
           .slice(0, 5)
-          .map((t: Record<string, unknown>) => ({
-            title: t.name,
-            streams: (t.popularity as any) * 10000,
-            isrc: (t.external_ids as any).isrc,
-          }));
+          .map((t: unknown) => {
+            const track = t as Record<string, unknown>;
+            return {
+              title: track.name as string,
+              streams: (track.popularity as number) * 10000,
+              isrc: (track.external_ids as any).isrc as string | undefined,
+            };
+          });
       }
 
       return {
@@ -1633,7 +1636,7 @@ class DistributionDataTransferService {
         topTracks:
           sharedTopTracks ??
           songs.slice(0, 5).map((s: Record<string, unknown>) => ({
-            title: s.trackName,
+            title: s.trackName as string,
             streams: 0,
           })),
         verified: true,
@@ -1789,19 +1792,22 @@ class DistributionDataTransferService {
         const topData = (await topResp.json()) as Record<string, unknown>;
         topTracks = ((topData.data as unknown[]) || [])
           .slice(0, 5)
-          .map((t: Record<string, unknown>) => ({
-            title: t.title,
-            streams: t.rank || 0,
-          }));
+          .map((t: unknown) => {
+            const track = t as Record<string, unknown>;
+            return {
+              title: track.title as string,
+              streams: (track.rank as number) || 0,
+            };
+          });
       } else {
         topTracks = [];
       }
 
       return {
-        artistName: artist.name,
-        followers: artist.nb_fan,
-        imageUrl: artist.picture_xl || artist.picture_big,
-        profileUrl: artist.link,
+        artistName: artist.name as string,
+        followers: artist.nb_fan as number,
+        imageUrl: (artist.picture_xl || artist.picture_big) as string | undefined,
+        profileUrl: artist.link as string,
         topTracks,
         verified: true,
       } as Partial<StreamingProfileData>;
@@ -2298,8 +2304,8 @@ class DistributionDataTransferService {
         }
       } catch (err) {
         logger.warn(
+          { err: err instanceof Error ? err.message : String(err) },
           `[DataTransfer] Spotify album scan error for ${artistId}:`,
-          err instanceof Error ? err.message : String(err),
         );
       }
     } else {
@@ -2428,8 +2434,8 @@ class DistributionDataTransferService {
       }));
     } catch (err) {
       logger.warn(
+        { err: err instanceof Error ? err.message : String(err) },
         `[DataTransfer] iTunes catalog lookup failed for "${artistName}":`,
-        err instanceof Error ? err.message : String(err),
       );
       return [];
     }
@@ -2657,13 +2663,13 @@ class DistributionDataTransferService {
         platformId: "apple_music",
         title: item.collectionName,
         artistName: item.artistName || artistName,
-        releaseType: (item?.trackCount >= 6
+        releaseType: ((item?.trackCount as number) >= 6
           ? "album"
-          : item?.trackCount >= 3
+          : (item?.trackCount as number) >= 3
             ? "EP"
             : "single") as "single" | "EP" | "album",
         releaseDate: item.releaseDate ? (item?.releaseDate as any).split("T")[0] : null,
-        trackCount: item.trackCount || 1,
+        trackCount: (item.trackCount as number) || 1,
         coverUrl: (item.artworkUrl100 as any)?.replace("100x100", "600x600"),
         platformUrl: item.collectionViewUrl,
         genre: item.primaryGenreName,
@@ -2695,13 +2701,13 @@ class DistributionDataTransferService {
         platformId: "deezer",
         title: item.title,
         artistName,
-        releaseType: (item?.nb_tracks >= 6
+        releaseType: ((item?.nb_tracks as number) >= 6
           ? "album"
-          : item?.nb_tracks >= 3
+          : (item?.nb_tracks as number) >= 3
             ? "EP"
             : "single") as "single" | "EP" | "album",
         releaseDate: item.release_date || null,
-        trackCount: item.nb_tracks || 1,
+        trackCount: (item.nb_tracks as number) || 1,
         coverUrl: item.cover_xl || item?.cover_big || item?.cover_medium,
         platformUrl: item.link,
         upc: item.upc,
@@ -2734,7 +2740,7 @@ class DistributionDataTransferService {
       );
       if (!searchResp?.ok) return [];
       const searchData = (await searchResp?.json()) as Record<string, unknown>;
-      const artists: Record<string, unknown>[] = searchData?.data || [];
+      const artists: Record<string, unknown>[] = (searchData?.data as Record<string, unknown>[]) || [];
       if (artists?.length === 0) return [];
 
       // Pick the artist whose name most closely matches
@@ -2764,13 +2770,13 @@ class DistributionDataTransferService {
         platformId,
         title: item.title,
         artistName,
-        releaseType: (item?.nb_tracks >= 6
+        releaseType: ((item?.nb_tracks as number) >= 6
           ? "album"
-          : item?.nb_tracks >= 3
+          : (item?.nb_tracks as number) >= 3
             ? "EP"
             : "single") as "single" | "EP" | "album",
         releaseDate: item.release_date || null,
-        trackCount: item.nb_tracks || 1,
+        trackCount: (item.nb_tracks as number) || 1,
         coverUrl: item.cover_xl || item?.cover_big || item?.cover_medium,
         platformUrl: item.link,
         upc: item.upc,
@@ -2813,7 +2819,7 @@ class DistributionDataTransferService {
 
       if (playlistResp?.ok) {
         const pd = (await playlistResp?.json()) as Record<string, unknown>;
-        for (const pl of pd?.collection || []) {
+        for (const pl of (pd?.collection as any[]) || []) {
           const trackCount = pl?.track_count || pl?.tracks?.length || 1;
           results?.push({
             id: `soundcloud-pl-${pl?.id}`,
@@ -2947,7 +2953,7 @@ class DistributionDataTransferService {
             ? "EP"
             : "single") as "single" | "EP" | "album",
         releaseDate: item.released_at
-          ? new Date(item.released_at * 1000).toISOString().split("T")[0]
+          ? new Date((item.released_at as number) * 1000).toISOString().split("T")[0]
           : null,
         trackCount: item.song_count || 1,
         coverUrl: item.image,
@@ -3086,7 +3092,7 @@ class DistributionDataTransferService {
 
         if (existing) {
           const existingMeta = existing.metadata as Record<string, unknown>;
-          const links = existingMeta.originalPlatformLinks || {};
+          const links = (existingMeta.originalPlatformLinks as Record<string, string>) || {} as Record<string, string>;
           if (release.platformUrl) links[platformId] = release.platformUrl;
           const mergedMeta: Record<string, any> = {
             ...existingMeta,
@@ -3203,7 +3209,7 @@ class DistributionDataTransferService {
         }
         platformStats[platform].releases++;
         platformStats[platform].streams +=
-          (stats as Record<string, unknown>).streams || 0;
+          ((stats as Record<string, unknown>).streams as number) || 0;
       }
     }
 

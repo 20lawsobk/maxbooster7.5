@@ -1,5 +1,6 @@
 import { db } from "../db.js";
-import { systemMetrics, alertRules, alertIncidents, type InsertAlertRule } from "@shared/schema";
+import { systemMetrics, alertRules, alertIncidents } from "@shared/schema";
+type InsertAlertRule = typeof alertRules.$inferInsert;
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 
@@ -29,21 +30,21 @@ export class MetricsService {
           minValue: value.toString(),
           maxValue: value.toString(),
           sampleCount: 1,
-        })
+        } as any)
         .onConflictDoUpdate({
           target: [
-            systemMetrics?.metricName,
+            (systemMetrics as any)?.metricName,
             systemMetrics?.source,
-            systemMetrics?.bucketStart,
-            systemMetrics?.resolutionSecs,
+            (systemMetrics as any)?.bucketStart,
+            (systemMetrics as any)?.resolutionSecs,
           ],
           set: {
-            avgValue: sql`((${systemMetrics?.avgValue}::numeric * ${systemMetrics?.sampleCount}::numeric + ${value}::numeric) / (${systemMetrics?.sampleCount}::numeric + 1))::text`,
-            minValue: sql`LEAST(${systemMetrics?.minValue}::numeric, ${value}::numeric)::text`,
-            maxValue: sql`GREATEST(${systemMetrics?.maxValue}::numeric, ${value}::numeric)::text`,
-            sampleCount: sql`${systemMetrics?.sampleCount} + 1`,
+            avgValue: sql`((${(systemMetrics as any)?.avgValue}::numeric * ${(systemMetrics as any)?.sampleCount}::numeric + ${value}::numeric) / (${(systemMetrics as any)?.sampleCount}::numeric + 1))::text`,
+            minValue: sql`LEAST(${(systemMetrics as any)?.minValue}::numeric, ${value}::numeric)::text`,
+            maxValue: sql`GREATEST(${(systemMetrics as any)?.maxValue}::numeric, ${value}::numeric)::text`,
+            sampleCount: sql`${(systemMetrics as any)?.sampleCount} + 1`,
           },
-        });
+        } as any);
     } catch (error: unknown) {
       logger.warn({ err: error }, "Failed to record metric:");
     }
@@ -67,9 +68,9 @@ export class MetricsService {
   > {
     try {
       const conditions = [
-        eq(systemMetrics?.metricName, metricName),
-        gte(systemMetrics?.bucketStart, startTime),
-        lte(systemMetrics?.bucketStart, endTime),
+        eq((systemMetrics as any)?.metricName, metricName),
+        gte((systemMetrics as any)?.bucketStart, startTime),
+        lte((systemMetrics as any)?.bucketStart, endTime),
       ];
 
       if (source) {
@@ -78,14 +79,14 @@ export class MetricsService {
 
       const results = await db
         .select({
-          bucketStart: systemMetrics.bucketStart,
-          avgValue: systemMetrics.avgValue,
-          minValue: systemMetrics.minValue,
-          maxValue: systemMetrics.maxValue,
+          bucketStart: (systemMetrics as any).bucketStart,
+          avgValue: (systemMetrics as any).avgValue,
+          minValue: (systemMetrics as any).minValue,
+          maxValue: (systemMetrics as any).maxValue,
         })
         .from(systemMetrics)
         .where(and(...conditions))
-        .orderBy(systemMetrics?.bucketStart);
+        .orderBy((systemMetrics as any)?.bucketStart);
 
       return results?.map((r) => ({
         bucketStart: r.bucketStart!,
@@ -137,7 +138,7 @@ export class MetricsService {
         if (metrics?.length === 0) continue;
 
         const latestValue = metrics[metrics?.length - 1].avgValue;
-        const threshold = parseFloat(rule?.threshold || "0");
+        const threshold = rule?.threshold ?? 0;
         let shouldTrigger = false;
 
         switch (rule?.condition) {
@@ -161,7 +162,7 @@ export class MetricsService {
             .from(alertIncidents)
             .where(
               and(
-                eq(alertIncidents?.ruleId, rule?.id),
+                eq((alertIncidents as any)?.ruleId, rule?.id),
                 eq(alertIncidents?.status, "triggered"),
               ),
             )
@@ -177,7 +178,7 @@ export class MetricsService {
                 threshold,
                 condition: rule.condition,
               },
-            });
+            } as any);
 
             logger.info(
               `Alert triggered: ${rule?.name} (${latestValue} ${rule?.condition} ${threshold})`,
@@ -192,7 +193,7 @@ export class MetricsService {
             })
             .where(
               and(
-                eq(alertIncidents?.ruleId, rule?.id),
+                eq((alertIncidents as any)?.ruleId, rule?.id),
                 eq(alertIncidents?.status, "triggered"),
               ),
             );
@@ -214,9 +215,9 @@ export class MetricsService {
           rule: alertRules,
         })
         .from(alertIncidents)
-        .innerJoin(alertRules, eq(alertIncidents?.ruleId, alertRules?.id))
+        .innerJoin(alertRules, eq((alertIncidents as any)?.ruleId, alertRules?.id))
         .where(eq(alertIncidents?.status, "triggered"))
-        .orderBy(desc(alertIncidents?.triggeredAt));
+        .orderBy(desc((alertIncidents as any)?.triggeredAt));
 
       return incidents;
     } catch (error: unknown) {

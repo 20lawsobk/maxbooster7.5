@@ -200,9 +200,7 @@ router?.get(
           endDate: end,
         });
       } catch (serviceError) {
-        logger.warn(
-          "Cohort analytics service error, returning empty data:",
-          serviceError,
+        logger.warn({ detail: serviceError }, "Cohort analytics service error, returning empty data:",
         );
         report = {
           summary: {

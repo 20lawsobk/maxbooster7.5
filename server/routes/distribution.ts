@@ -318,7 +318,7 @@ router?.patch(
           ? new Date(updates?.releaseDate)
           : undefined,
         metadata: {
-          ...release?.metadata,
+          ...(release?.metadata as Record<string, unknown> | undefined),
           ...updates,
         },
       });
@@ -531,8 +531,8 @@ router?.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => 
       assignedTo = result?.assignedTo || assignedTo;
     } catch (lgError) {
       logger.warn(
+        { err: lgError },
         "LabelGrid ISRC generation unavailable, using internal generator:",
-        lgError,
       );
       const fallback = await musicCodesService?.generateISRC(userId);
       isrcCode = fallback?.code;
@@ -548,7 +548,7 @@ router?.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => 
           title,
         );
       } catch (storeErr) {
-        logger.warn(storeErr, "Failed to store ISRC in database:");
+        logger.warn({ err: storeErr }, "Failed to store ISRC in database:");
       }
     }
 
@@ -594,8 +594,8 @@ router?.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
       assignedTo = result?.assignedTo || assignedTo;
     } catch (lgError) {
       logger.warn(
+        { err: lgError },
         "LabelGrid UPC generation unavailable, using internal generator:",
-        lgError,
       );
       const fallback = await musicCodesService?.generateUPC(userId);
       upcCode = fallback?.code;
@@ -606,7 +606,7 @@ router?.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
       try {
         await codeGenerationService?.generateUPC(userId, releaseId, title);
       } catch (storeErr) {
-        logger.warn(storeErr, "Failed to store UPC in database:");
+        logger.warn({ err: storeErr }, "Failed to store UPC in database:");
       }
     }
 
@@ -1361,8 +1361,8 @@ router.post(
         }
       } catch (refreshError) {
         logger.warn(
+          { err: refreshError },
           "Status refresh failed, returning current status:",
-          refreshError,
         );
         const currentPlatforms =
           (release.metadata as Record<string, unknown>).platforms || [];
@@ -1551,7 +1551,7 @@ router.get(
           outputPath,
         );
       } catch (packageError) {
-        logger.warn(packageError, "Error generating DDEX package content:");
+        logger.warn({ err: packageError }, "Error generating DDEX package content:");
         return res
           .status(500)
           .json({
@@ -1568,7 +1568,7 @@ router.get(
             logger.warn({ err: err }, "Error downloading DDEX package:");
           }
           fsPromises.unlink(outputPath).catch((cleanupErr) => {
-            logger.warn("Failed to clean up DDEX temp file:", cleanupErr);
+            logger.warn({ err: cleanupErr }, "Failed to clean up DDEX temp file:");
           });
         },
       );
@@ -1598,9 +1598,9 @@ router.post(
       const metadata = release.metadata as Record<string, unknown>;
 
       // HARDENING: Validate status transition - prevent duplicate submissions
-      const currentStatus = metadata.status || release.status;
+      const currentStatus = (metadata.status || release.status) as string | null;
       const validSubmissionStatuses = ["draft", "pending", "rejected"];
-      if (!validSubmissionStatuses.includes(currentStatus)) {
+      if (!validSubmissionStatuses.includes(currentStatus as string)) {
         return res.status(400).json({
           error: "Invalid status transition",
           message: `Cannot submit release with status '${currentStatus}'. Only releases in draft, pending, or rejected status can be submitted.`,
@@ -1678,11 +1678,11 @@ router.post(
       const lgPayload = await buildLabelGridPayload(
         release,
         tracks,
-        selectedPlatforms,
+        selectedPlatforms as string | string[],
       );
       logger.info(
-        `[Distribution] Submitting release ${id} to LabelGrid for ${(selectedPlatforms as any).length} platform(s)`,
         { userId, platforms: selectedPlatforms },
+        `[Distribution] Submitting release ${id} to LabelGrid for ${(selectedPlatforms as any).length} platform(s)`,
       );
       const lgResult = await labelGridService.createRelease(lgPayload);
 
@@ -1694,7 +1694,7 @@ router.post(
           const provider = await storage.getDSPProviderBySlug(platformSlug);
           if (!provider) return;
           const lgPlatformStatus = lgResult.platforms.find(
-            (p: Record<string, unknown>) =>
+            (p: any) =>
               p.platform === platformSlug || p.platform === provider.slug,
           );
           await storage.createDistroDispatch({
@@ -1730,7 +1730,6 @@ router.post(
 
       // AUDIT: Log successful submission for tracking
       logger.info(
-        `Release ${id} submitted to LabelGrid (${lgResult.releaseId}) for ${(selectedPlatforms as any).length} platforms`,
         {
           releaseId: id,
           labelGridReleaseId: lgResult.releaseId,
@@ -1738,6 +1737,7 @@ router.post(
           platforms: selectedPlatforms,
           trackCount: tracks.length,
         },
+        `Release ${id} submitted to LabelGrid (${lgResult.releaseId}) for ${(selectedPlatforms as any).length} platforms`,
       );
 
       res.json({
@@ -2033,8 +2033,8 @@ router.get(
           });
         } catch (lgErr) {
           logger.warn(
-            "[Distribution] LabelGrid analytics fetch failed, falling back to DB:",
-            lgErr,
+            { err: lgErr },
+            "[Distribution] LabelGrid analytics fetch failed, falling back to DB:"
           );
         }
       }
@@ -3639,8 +3639,8 @@ router?.get(
           }
         } catch (lgErr) {
           logger.warn(
-            "[Distribution] LabelGrid analytics growth failed, falling back to DB:",
-            lgErr,
+            { err: lgErr },
+            "[Distribution] LabelGrid analytics growth failed, falling back to DB:"
           );
         }
       }
@@ -3689,8 +3689,8 @@ router?.get(
           }
         } catch (lgErr) {
           logger.warn(
-            "[Distribution] LabelGrid streaming trends failed, falling back to DB:",
-            lgErr,
+            { err: lgErr },
+            "[Distribution] LabelGrid streaming trends failed, falling back to DB:"
           );
         }
       }
@@ -3770,8 +3770,8 @@ router?.get(
           }
         } catch (lgErr) {
           logger.warn(
-            "[Distribution] LabelGrid earnings breakdown failed, falling back to DB:",
-            lgErr,
+            { err: lgErr },
+            "[Distribution] LabelGrid earnings breakdown failed, falling back to DB:"
           );
         }
       }
@@ -3847,8 +3847,8 @@ router?.get(
           }
         } catch (lgErr) {
           logger.warn(
-            "[Distribution] LabelGrid platform earnings failed, falling back to DB:",
-            lgErr,
+            { err: lgErr },
+            "[Distribution] LabelGrid platform earnings failed, falling back to DB:"
           );
         }
       }
@@ -4448,8 +4448,8 @@ router?.get(
           }
         } catch (lgErr) {
           logger.warn(
-            "[Distribution] LabelGrid earnings summary failed, falling back to DB:",
-            lgErr,
+            { err: lgErr },
+            "[Distribution] LabelGrid earnings summary failed, falling back to DB:"
           );
         }
       }
@@ -4661,8 +4661,8 @@ router?.get(
           }
         } catch (lgErr) {
           logger.warn(
-            "[Distribution] LabelGrid royalties/platforms failed, falling back to DB:",
-            lgErr,
+            { err: lgErr },
+            "[Distribution] LabelGrid royalties/platforms failed, falling back to DB:"
           );
         }
       }
@@ -5305,12 +5305,12 @@ router?.post(
       });
 
       logger.info(
-        `Retrying submission for release ${id} to platform ${platform}`,
         {
           releaseId: id,
           platform,
           retryCount,
         },
+        `Retrying submission for release ${id} to platform ${platform}`,
       );
 
       res.json({
@@ -5452,11 +5452,13 @@ router?.post(
     try {
       const {  trackId } = req.body;
 
-      const track = await (storage as DistroStorage)?.getDistroTrack?.(trackId);
+      const track = await (storage as any)?.getDistroTrack?.(trackId);
       if (!track) {
         return res.status(404).json({ error: "Track not found" });
       }
 
+      const updateDistroTrackLoose: (id: string, data: Record<string, unknown>) => Promise<void> =
+        (storage as any)?.updateDistroTrack?.bind(storage) ?? (() => Promise.resolve());
       await updateDistroTrackLoose(trackId, {
         metadata: {
           ...(track?.metadata as Record<string, unknown> | undefined),
@@ -5791,8 +5793,8 @@ router?.post(
         assignedTo = result?.assignedTo || assignedTo;
       } catch (lgError) {
         logger.warn(
+          { err: lgError },
           "LabelGrid ISRC generation unavailable, using internal generator:",
-          lgError,
         );
         const fallback = await musicCodesService?.generateISRC(userId);
         isrcCode = fallback?.code;
@@ -5808,7 +5810,7 @@ router?.post(
             title,
           );
         } catch (storeErr) {
-          logger.warn(storeErr, "Failed to store ISRC in database:");
+          logger.warn({ err: storeErr }, "Failed to store ISRC in database:");
         }
       }
 
@@ -5853,8 +5855,8 @@ router?.post(
         assignedTo = result?.assignedTo || assignedTo;
       } catch (lgError) {
         logger.warn(
+          { err: lgError },
           "LabelGrid UPC generation unavailable, using internal generator:",
-          lgError,
         );
         const fallback = await musicCodesService?.generateUPC(userId);
         upcCode = fallback?.code;
@@ -5865,7 +5867,7 @@ router?.post(
         try {
           await codeGenerationService?.generateUPC(userId, releaseId, title);
         } catch (storeErr) {
-          logger.warn(storeErr, "Failed to store UPC in database:");
+          logger.warn({ err: storeErr }, "Failed to store UPC in database:");
         }
       }
 
@@ -6843,8 +6845,8 @@ router?.post(
       const payload = await buildLabelGridPayload(release, tracks, "spotify");
 
       logger.info(
-        `[Distribution] Submitting release ${releaseId} to Spotify via LabelGrid`,
         { userId },
+        `[Distribution] Submitting release ${releaseId} to Spotify via LabelGrid`,
       );
       const result = await labelGridService?.createRelease(payload);
 
@@ -6900,8 +6902,8 @@ router?.post(
       );
 
       logger.info(
-        `[Distribution] Submitting release ${releaseId} to Apple Music via LabelGrid`,
         { userId },
+        `[Distribution] Submitting release ${releaseId} to Apple Music via LabelGrid`,
       );
       const result = await labelGridService?.createRelease(payload);
 
@@ -6960,8 +6962,8 @@ router?.post(
       );
 
       logger.info(
-        `[Distribution] Submitting release ${releaseId} to YouTube Music via LabelGrid`,
         { userId },
+        `[Distribution] Submitting release ${releaseId} to YouTube Music via LabelGrid`,
       );
       const result = await labelGridService?.createRelease(payload);
 

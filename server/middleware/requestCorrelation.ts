@@ -91,7 +91,6 @@ export function performanceMonitoring(
     // Log slow requests (> 1 second)
     if (duration > 1000) {
       logger.warn(
-        `🐌 SLOW REQUEST: ${req.method} ${req.originalUrl} - ${duration.toFixed(2)}ms`,
         {
           requestId: req.requestId,
           method: req.method,
@@ -101,6 +100,7 @@ export function performanceMonitoring(
           userAgent: req.get("user-agent"),
           ip: req.ip,
         },
+        `🐌 SLOW REQUEST: ${req.method} ${req.originalUrl} - ${duration.toFixed(2)}ms`,
       );
     }
 

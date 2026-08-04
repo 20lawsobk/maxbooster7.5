@@ -41,9 +41,7 @@ async function refreshOAuth2Token(
     });
     const data = await res.json();
     if (!data?.access_token) {
-      logger.warn(
-        `[TokenRefresh] No access_token in response from ${tokenUrl}:`,
-        JSON.stringify(data),
+      logger.warn({ detail: JSON.stringify(data) }, `[TokenRefresh] No access_token in response from ${tokenUrl}:`,
       );
       return null;
     }
@@ -373,9 +371,7 @@ export async function syncPlatformData(
         );
         const userData = await userRes?.json();
         if (userData?.error)
-          logger.warn(
-            `[SocialSync] Facebook profile error:`,
-            JSON.stringify(userData?.error),
+          logger.warn({ err: JSON.stringify(userData?.error) }, `[SocialSync] Facebook profile error:`,
           );
         syncedUsername = userData?.name || syncedUsername;
         syncedPlatformUserId = userData?.id || syncedPlatformUserId;

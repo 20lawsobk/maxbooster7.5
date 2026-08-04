@@ -142,32 +142,32 @@ export class HnsClient {
   }
 
   /** hsd node JSON-RPC */
-  private rpc(method: string, params: unknown[] = []): Promise<unknown> {
-    return this.request("POST", "/", { method, params, id: Date.now() });
+  private rpc<T = unknown>(method: string, params: unknown[] = []): Promise<T> {
+    return this.request("POST", "/", { method, params, id: Date.now() }) as Promise<T>;
   }
 
   /** hsd wallet REST API */
-  private walletGet(path: string): Promise<unknown> {
-    return this.request("GET", `/wallet/${this.cfg.wallet}${path}`);
+  private walletGet<T = unknown>(path: string): Promise<T> {
+    return this.request("GET", `/wallet/${this.cfg.wallet}${path}`) as Promise<T>;
   }
 
-  private walletPost(
+  private walletPost<T = unknown>(
     path: string,
     body: Record<string, unknown>,
-  ): Promise<unknown> {
-    return this.request("POST", `/wallet/${this.cfg.wallet}${path}`, body);
+  ): Promise<T> {
+    return this.request("POST", `/wallet/${this.cfg.wallet}${path}`, body) as Promise<T>;
   }
 
   // ── Node info ─────────────────────────────────────────────────────────────
 
   async getInfo(): Promise<unknown> {
     if (this._nodeInfo) return this._nodeInfo;
-    this._nodeInfo = await this.rpc("getinfo");
+    this._nodeInfo = await this.rpc<Record<string, unknown>>("getinfo");
     return this._nodeInfo;
   }
 
   async getBlockCount(): Promise<number> {
-    return this.rpc("getblockcount");
+    return this.rpc<number>("getblockcount");
   }
 
   async isReady(): Promise<boolean> {
@@ -188,7 +188,7 @@ export class HnsClient {
 
   async getNameByHash(hash: string): Promise<string | null> {
     try {
-      return await this.rpc("getnamebyhash", [hash]);
+      return await this.rpc<string | null>("getnamebyhash", [hash]);
     } catch {
       return null;
     }
@@ -250,24 +250,24 @@ export class HnsClient {
     confirmed: number;
     unconfirmed: number;
   }> {
-    return this.walletGet("/balance");
+    return this.walletGet<{ confirmed: number; unconfirmed: number }>("/balance");
   }
 
   async getReceiveAddress(): Promise<string> {
-    const res = await this.walletGet("/key");
+    const res = await this.walletGet<Record<string, unknown>>("/key");
     return (res as any).address || "";
   }
 
   async getWalletBids(own = true): Promise<HnsBid[]> {
-    return this.walletGet(`/bid?own=${own}`);
+    return this.walletGet<HnsBid[]>(`/bid?own=${own}`);
   }
 
   async getWalletReveals(): Promise<any[]> {
-    return this.walletGet("/reveal");
+    return this.walletGet<any[]>("/reveal");
   }
 
   async getWalletNames(): Promise<HnsNameInfo[]> {
-    return this.walletGet("/name");
+    return this.walletGet<HnsNameInfo[]>("/name");
   }
 
   // ── Auction lifecycle ─────────────────────────────────────────────────────
@@ -277,7 +277,7 @@ export class HnsClient {
    * Must be called in CLOSED (not yet auctioned) state.
    */
   async openAuction(name: string): Promise<HnsTx> {
-    return this.walletPost("/open", { name });
+    return this.walletPost<HnsTx>("/open", { name });
   }
 
   /**
@@ -291,21 +291,21 @@ export class HnsClient {
   ): Promise<HnsTx> {
     const bid = Math.floor(bidHNS * 1_000_000);
     const lockup = Math.floor(lockupHNS * 1_000_000);
-    return this.walletPost("/bid", { name, bid, lockup });
+    return this.walletPost<HnsTx>("/bid", { name, bid, lockup });
   }
 
   /**
    * Reveal bids for a name (call during REVEAL period).
    */
   async revealBids(name: string): Promise<HnsTx> {
-    return this.walletPost("/reveal", { name });
+    return this.walletPost<HnsTx>("/reveal", { name });
   }
 
   /**
    * Redeem losing bid (reclaim locked HNS after reveal period).
    */
   async redeemBid(name: string): Promise<HnsTx> {
-    return this.walletPost("/redeem", { name });
+    return this.walletPost<HnsTx>("/redeem", { name });
   }
 
   /**
@@ -314,28 +314,28 @@ export class HnsClient {
    */
   async updateName(name: string, records: HnsResource[]): Promise<HnsTx> {
     const data = encodeHnsResource(records);
-    return this.walletPost("/update", { name, data });
+    return this.walletPost<HnsTx>("/update", { name, data });
   }
 
   /**
    * Renew a registered name (must be called before expiry).
    */
   async renewName(name: string): Promise<HnsTx> {
-    return this.walletPost("/renew", { name });
+    return this.walletPost<HnsTx>("/renew", { name });
   }
 
   /**
    * Transfer name to another address.
    */
   async transferName(name: string, toAddress: string): Promise<HnsTx> {
-    return this.walletPost("/transfer", { name, address: toAddress });
+    return this.walletPost<HnsTx>("/transfer", { name, address: toAddress });
   }
 
   /**
    * Finalize transfer (after transfer lockup period).
    */
   async finalizeName(name: string): Promise<HnsTx> {
-    return this.walletPost("/finalize", { name });
+    return this.walletPost<HnsTx>("/finalize", { name });
   }
 
   /**
@@ -343,7 +343,7 @@ export class HnsClient {
    */
   async sendHNS(toAddress: string, amountHNS: number): Promise<HnsTx> {
     const value = Math.floor(amountHNS * 1_000_000);
-    return this.walletPost("/send", {
+    return this.walletPost<HnsTx>("/send", {
       outputs: [{ address: toAddress, value }],
     });
   }

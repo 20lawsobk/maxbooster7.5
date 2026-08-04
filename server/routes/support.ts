@@ -206,9 +206,7 @@ router?.patch(
         .set(updateData)
         .where(eq(supportTickets?.id, ticketId));
 
-      logger.info(
-        `Admin ${req.user?.email} updated ticket ${ticketId}:`,
-        updateData,
+      logger.info({ detail: updateData }, `Admin ${req.user?.email} updated ticket ${ticketId}:`,
       );
 
       res.json({ success: true, message: "Ticket updated" });

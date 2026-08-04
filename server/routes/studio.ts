@@ -610,7 +610,7 @@ router.get("/samples", requireAuth, async (req: Request, res: Response) => {
 
     // Build DB query conditions
     const conditions: SQL<unknown>[] = [
-      or(eq(studioSamples.isBuiltIn, true), eq(studioSamples.userId, userId)),
+      or(eq(studioSamples.isBuiltIn, true), eq(studioSamples.userId, userId)) as SQL<unknown>,
     ];
     if (category)
       conditions?.push(eq(studioSamples.category, category as string));
@@ -1201,11 +1201,10 @@ router.post(
               .update(studioTracks)
               .set({
                 name: track.name,
-                volume: track.volume?.toString(),
-                pan: track.pan?.toString(),
-                muted: track.muted,
-                solo: track.solo,
-                updatedAt: new Date(),
+                volume: track.volume,
+                pan: track.pan,
+                isMuted: track.muted,
+                isSolo: track.solo,
               })
               .where(
                 and(
@@ -1378,7 +1377,6 @@ router.post(
       }
 
       logger.info(
-        `[Studio] Professional render completed for project ${projectId}`,
         {
           format: renderJob.settings.format,
           sampleRate: renderJob.settings.sampleRate,
@@ -1389,6 +1387,7 @@ router.post(
           dither: renderJob.settings.dither,
           hasISRC: !!renderJob?.settings.metadata?.isrc,
         },
+        `[Studio] Professional render completed for project ${projectId}`,
       );
 
       const result = {
@@ -1534,7 +1533,7 @@ router.post("/tracks", requireAuth, async (req: Request, res: Response) => {
       if (studioProject) {
         const metadata =
           (studioProject?.metadata as Record<string, unknown>) || {};
-        const trackFolders = { ...metadata?.trackFolders };
+        const trackFolders = { ...(metadata?.trackFolders as Record<string, unknown> | undefined) };
         trackFolders[trackId] = data?.parentFolderId;
         await db
           .update(studioProjects)
@@ -1731,7 +1730,7 @@ router.patch(
         if (studioProject) {
           const metadata =
             (studioProject.metadata as Record<string, unknown>) || {};
-          const trackFolders = { ...metadata.trackFolders };
+          const trackFolders = { ...(metadata.trackFolders as Record<string, unknown> | undefined) };
 
           if (data.parentFolderId === null) {
             delete trackFolders[trackId];
@@ -1930,9 +1929,11 @@ router.patch(
         return res.status(404).json({ error: "Clip not found" });
       }
 
-      const track = await db.query.studioTracks.findFirst({
-        where: eq(studioTracks.id, clip.trackId),
-      });
+      const track = clip.trackId
+        ? await db.query.studioTracks.findFirst({
+            where: eq(studioTracks.id, clip.trackId),
+          })
+        : null;
 
       if (!track || !(await verifyProjectOwnership(track.projectId, userId))) {
         return res.status(404).json({ error: "Project not found" });
@@ -1977,9 +1978,11 @@ router.delete(
         return res.status(404).json({ error: "Clip not found" });
       }
 
-      const track = await db.query.studioTracks.findFirst({
-        where: eq(studioTracks.id, clip.trackId),
-      });
+      const track = clip.trackId
+        ? await db.query.studioTracks.findFirst({
+            where: eq(studioTracks.id, clip.trackId),
+          })
+        : null;
 
       if (!track || !(await verifyProjectOwnership(track.projectId, userId))) {
         return res.status(404).json({ error: "Project not found" });
@@ -2465,11 +2468,11 @@ router.post(
         setImmediate(async () => {
           try {
             const [proj] = await db
-              .select({ name: projects.name })
+              .select({ title: projects.title })
               .from(projects)
               .where(eq(projects.id, projectId))
               .limit(1);
-            const trackName = proj.name || projectId;
+            const trackName = proj?.title || projectId;
             await notificationService.sendAiProcessingCompleteNotification(
               userId,
               "master",
@@ -2512,11 +2515,11 @@ router.post(
         setImmediate(async () => {
           try {
             const [proj] = await db
-              .select({ name: projects.name })
+              .select({ title: projects.title })
               .from(projects)
               .where(eq(projects.id, projectId))
               .limit(1);
-            const trackName = proj.name || projectId;
+            const trackName = proj?.title || projectId;
             await notificationService.sendAiProcessingCompleteNotification(
               userId,
               "mix",
@@ -3118,7 +3121,7 @@ router.post(
 // Helper function to ensure studioProject exists
 async function ensureStudioProject(
   projectId: string,
-  userId: number,
+  userId: string,
 ): Promise<boolean> {
   let studioProject = await db.query.studioProjects.findFirst({
     where: eq(studioProjects.id, projectId),
@@ -3133,7 +3136,7 @@ async function ensureStudioProject(
       await db.insert(studioProjects).values({
         id: projectId,
         userId: userId,
-        name: regularProject.name || "Untitled",
+        name: regularProject.title || "Untitled",
         metadata: {},
       });
       return true;
@@ -3204,7 +3207,7 @@ router.get(
 
       const tracks = await db.query.studioTracks.findMany({
         where: eq(studioTracks.projectId, projectId),
-        orderBy: studioTracks.trackNumber,
+        orderBy: studioTracks.order,
       });
 
       // Build folder hierarchy
@@ -3212,7 +3215,7 @@ router.get(
       const childTracks = tracks.filter((t) => t.trackType !== "folder");
       const metadata =
         (studioProject!.metadata as Record<string, unknown>) || {};
-      const trackFolders = metadata.trackFolders || {};
+      const trackFolders = (metadata.trackFolders || {}) as Record<string, unknown>;
 
       const foldersWithChildren = folders.map((folder) => ({
         ...folder,
@@ -3276,7 +3279,7 @@ router.patch(
 
         if (project) {
           const metadata = (project.metadata as Record<string, unknown>) || {};
-          const folderStates = metadata.folderStates || {};
+          const folderStates = (metadata.folderStates || {}) as Record<string, unknown>;
           folderStates[folderId] = { collapsed };
 
           await db
@@ -3336,7 +3339,7 @@ router.post(
 
       if (project) {
         const metadata = (project.metadata as Record<string, unknown>) || {};
-        const trackFolders = metadata.trackFolders || {};
+        const trackFolders = (metadata.trackFolders || {}) as Record<string, unknown>;
 
         if (folderId) {
           trackFolders[trackId] = folderId;
@@ -3354,7 +3357,7 @@ router.post(
       if (position !== undefined) {
         await db
           .update(studioTracks)
-          .set({ trackNumber: position })
+          .set({ order: position })
           .where(eq(studioTracks.id, trackId));
       }
 
@@ -3405,7 +3408,7 @@ router.delete(
 
       if (project) {
         const metadata = (project.metadata as Record<string, unknown>) || {};
-        const trackFolders = metadata.trackFolders || {};
+        const trackFolders = (metadata.trackFolders || {}) as Record<string, unknown>;
 
         // Find children
         const childTrackIds = Object.entries(trackFolders)
@@ -3426,7 +3429,7 @@ router.delete(
         }
 
         // Update metadata
-        const folderStates = metadata.folderStates || {};
+        const folderStates = (metadata.folderStates || {}) as Record<string, unknown>;
         delete folderStates[folderId];
 
         await db
@@ -3508,7 +3511,7 @@ router.post(
       }
 
       const metadata = (project.metadata as Record<string, unknown>) || {};
-      const trackFolders = { ...metadata.trackFolders };
+      const trackFolders = { ...(metadata.trackFolders as Record<string, unknown> | undefined) };
 
       for (const trackId of trackIds) {
         if (folderId) {
@@ -3649,12 +3652,12 @@ router.post(
         trackType: track.trackType,
         volume: track.volume,
         pan: track.pan,
-        muted: track.muted,
-        soloed: track.soloed,
-        armed: track.armed,
+        muted: track.isMuted,
+        soloed: track.isSolo,
+        armed: track.isArmed,
         color: track.color,
-        plugins: track.plugins,
-        routingBus: track.routingBus,
+        plugins: (track.metadata as Record<string, unknown>)?.plugins ?? null,
+        routingBus: track.outputBus,
       }));
 
       // Get current bus configurations
@@ -4841,7 +4844,7 @@ router.post(
       // Get all tracks from the project
       const tracks = await db.query.studioTracks.findMany({
         where: eq(studioTracks.projectId, projectId),
-        orderBy: studioTracks.trackNumber,
+        orderBy: studioTracks.order,
       });
 
       // Create track layout from current tracks

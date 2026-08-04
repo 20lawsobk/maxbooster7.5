@@ -134,9 +134,7 @@ router?.post(
       "[Training] Internal session-complete hook — triggering immediate weight sync",
     );
     syncWeightsNow().catch((err) =>
-      logger.warn(
-        "[Training] Post-session weight sync error:",
-        err instanceof Error ? err?.message : String(err),
+      logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[Training] Post-session weight sync error:",
       ),
     );
     return res.json({ ok: true, sync: "triggered" });
