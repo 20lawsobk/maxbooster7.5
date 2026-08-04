@@ -254,7 +254,7 @@ class PlatformAutoFixer extends EventEmitter {
       await this.runFullScan();
       this._scheduleNextScan();
     }, this.currentProbeIntervalMs);
-    this.probeTimer.unref?.();
+    (this.probeTimer as unknown as Record<string, unknown>).unref?.();
   }
 
   private _adjustProbeInterval(): void {
@@ -507,12 +507,12 @@ class PlatformAutoFixer extends EventEmitter {
       if (pingMs > SLOW_QUERY_THRESHOLD_MS) {
         status = "degraded";
         message = `DB ping slow: ${pingMs}ms`;
-      } else if (waiting > 10) {
-        status = "critical";
-        message = `${waiting} connections queued — pool exhausted`;
       } else if (waiting > 5) {
         status = "degraded";
         message = `${waiting} connections waiting for pool slot`;
+      } else if (waiting > 10) {
+        status = "critical";
+        message = `${waiting} connections queued — pool exhausted`;
       } else {
         message = `ping ${pingMs}ms, ${idle}/${total} idle`;
       }
@@ -1012,11 +1012,7 @@ class PlatformAutoFixer extends EventEmitter {
       // DB keep-alive intervals, autopilot schedulers, and realtime servers that each hold handles.
       // A baseline of 1200 handles is normal at runtime. Alarm at 3000 (genuine leak territory).
       const listenerCount =
-        (
-          process as unknown as {
-            _getActiveHandles?: () => unknown[];
-          }
-        )._getActiveHandles?.().length ?? 0;
+        (process as unknown as Record<string, unknown>)._getActiveHandles?.()?.length ?? 0;
       details.activeHandles = listenerCount;
       if (listenerCount > 3000) {
         status = status === "healthy" ? "degraded" : status;
@@ -1104,9 +1100,8 @@ class PlatformAutoFixer extends EventEmitter {
 
     // Apply patches based on subsystem and status
     if (subsystem === "memory") {
-      const heapRatio = Number(
-        (result?.details as Record<string, unknown>)?.heapRatio ?? 0,
-      );
+      const heapRatio =
+        (result?.details as Record<string, unknown>)?.heapRatio ?? 0;
 
       // Read live thresholds from permanentFixRegistry (permanently tuned over time)
       const warnPct = Math.round(permanentFixRegistry?.getHeapWarnRatio() * 100);
@@ -1148,7 +1143,9 @@ class PlatformAutoFixer extends EventEmitter {
               const { distributedCache } = await import(
                 "./distributedCacheService.js"
               );
-              await distributedCache.evictExpired();
+              await (
+                distributedCache as Record<string, unknown>
+              )?.evictExpired?.();
               logger.info(
                 `[PlatformAutoFixer] Heap critical (${heapRatio}%) — GC + cache eviction complete`,
               );
@@ -1171,7 +1168,7 @@ class PlatformAutoFixer extends EventEmitter {
                 const { distributedCache } = await import(
                   "./distributedCacheService.js"
                 );
-                await distributedCache.flush();
+                await (distributedCache as Record<string, unknown>)?.flush?.();
                 logger.warn(
                   `[PlatformAutoFixer] EXTREME heap pressure (${heapRatio}%) — full cache flush executed`,
                 );
