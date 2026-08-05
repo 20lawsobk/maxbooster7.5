@@ -1,0 +1,24 @@
+kind = "api"
+previewPath = "/api" # TODO - should be excluded from preview in the first place
+title = "API Server"
+version = "1.0.0"
+id = "3B4_FFSkEVBkAeYMFRJ2e"
+
+[[services]]
+localPort = 8080
+name = "API Server"
+paths = ["/", "/api", "/uploads"]
+
+[services.development]
+run = "pnpm --filter @workspace/api-server run dev"
+
+[services.production]
+build = "pnpm install && uv sync && pnpm --filter @workspace/api-server run build && BASE_PATH=/ pnpm --filter @workspace/ai-dashboard run build"
+# watchdog-api.sh: bash shell loop (< 2 MB) that immediately restarts the
+# Node.js server if it is killed for any reason (OOM, crash, SIGKILL).
+# The bash process itself is too small to be targeted by the OOM killer,
+# so it survives and respawns Node.js within 5 s — no external API token needed.
+run = "bash artifacts/api-server/scripts/watchdog-api.sh"
+
+[services.production.health.startup]
+path = "/api/healthz"
