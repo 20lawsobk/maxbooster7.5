@@ -32,6 +32,7 @@
     "lint:fix": "eslint . --fix",
     "fix": "eslint . --fix && prettier . --write",
     "audit": "npm audit fix",
+    "verify:dependency-upgrades": "node scripts/verify-dependency-upgrades.mjs",
     "verify": "npm run audit && npm run typecheck && npm run fix",
     "db:push": "node scripts/db-push.js",
     "electron:dev": "electron .",
@@ -299,7 +300,7 @@
     "recharts": "^3.7.0",
     "resend": "^6.12.3",
     "retry-request": "^8.0.2",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.3",
     "stripe": "^20.4.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
@@ -362,7 +363,7 @@
     "electron-updater": "^6.8.3",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "postcss": "^8.5.6",
+    "postcss": "^8.5.23",
     "rimraf": "^6.1.3",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
@@ -397,7 +398,22 @@
     "native-run": ">=2.0.0",
     "yauzl": ">=3.2.0",
     "node-abi": "^3.89.0",
-    "tar": "file:./stubs/tar"
+    "tar": "file:./stubs/tar",
+    "adm-zip": "^0.6.0",
+    "brace-expansion": "^5.0.9",
+    "fast-uri": "^3.1.5",
+    "ip-address": "^10.3.1",
+    "postcss": "^8.5.23",
+    "undici": "^7.29.0",
+    "@google-cloud/storage": {
+      "uuid": "^11.1.1"
+    },
+    "gaxios": {
+      "uuid": "^11.1.1"
+    },
+    "exceljs": {
+      "uuid": "^11.1.1"
+    }
   },
   "engines": {
     "node": ">=22"
@@ -430,6 +446,16 @@
       "native-run": ">=2.0.0",
       "yauzl": ">=3.2.0",
       "node-abi": "^3.89.0",
+      "adm-zip": "^0.6.0",
+      "brace-expansion": "^5.0.9",
+      "fast-uri": "^3.1.5",
+      "ip-address": "^10.3.1",
+      "postcss": "^8.5.23",
+      "undici": "^7.29.0",
+      "@google-cloud/storage>uuid": "^11.1.1",
+      "teeny-request>uuid": "^11.1.1",
+      "gaxios>uuid": "^11.1.1",
+      "exceljs>uuid": "^11.1.1",
       "@tensorflow/tfjs-node>tar": "file:./stubs/tar",
       "@mapbox/node-pre-gyp>tar": "file:./stubs/tar"
     }

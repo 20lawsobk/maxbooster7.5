@@ -51,6 +51,7 @@ See `.env.example` for the full list of 300+ optional variables (Stripe, SendGri
 | `npm run check:client` | TypeScript check — client only |
 | `npm run lint` | ESLint (errors only) |
 | `npm run lint:fix` | ESLint auto-fix |
+| `npm run verify:dependency-upgrades` | Exercise upgraded native, archive, spreadsheet, UUID, and storage dependencies |
 | `npm run fix` | ESLint --fix + Prettier --write |
 | `npm run db:push` | Sync Drizzle schema to NEON_DATABASE_URL |
 | `node scripts/fix-all.mjs --phase <p>` | Resumable fix-all pipeline (ts-server/ts-client/verify/imports/schema/runtime/audit/lint/summary); state+reports in `reports/fix-all/`; exits 1 while work is outstanding |
