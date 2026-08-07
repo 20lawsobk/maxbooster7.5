@@ -109,7 +109,7 @@ export const tfWorkerQueueDepth = new Gauge({
 
 const router = Router();
 
-router?.get(
+router.get(
   "/metrics",
   require2FA,
   requireAdmin,

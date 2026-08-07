@@ -192,11 +192,11 @@ export class UserPocketDimensionService {
     const [storage] = await db
       .select()
       .from(userStorage)
-      .where(eq(userStorage?.userId, userId))
+      .where(eq(userStorage.userId, userId))
       .limit(1);
 
     if (storage) {
-      await db?.insert(userStorageFiles).values({
+      await db.insert(userStorageFiles).values({
         userId,
         storageId: storage.id,
         fileName,
@@ -215,7 +215,7 @@ export class UserPocketDimensionService {
           fileCount: (storage?.fileCount || 0) + 1,
           lastAccessedAt: new Date(),
         })
-        .where(eq(userStorage?.id, storage?.id));
+        .where(eq(userStorage.id, storage?.id));
     }
 
     logger.info(`[PocketDimension] Stored file ${fileKey} for user ${userId}`);
@@ -253,7 +253,7 @@ export class UserPocketDimensionService {
     if (deleted) {
       await db
         .delete(userStorageFiles)
-        .where(eq(userStorageFiles?.fileKey, fileKey));
+        .where(eq(userStorageFiles.fileKey, fileKey));
     }
 
     return deleted;

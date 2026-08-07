@@ -17,12 +17,12 @@ const requireAdmin: RequestHandler = (req, res, next) => {
   next();
 };
 
-router?.use(requireAdmin);
-router?.use(require2FA);
+router.use(requireAdmin);
+router.use(require2FA);
 
 const processStartTime = Date?.now();
 
-router?.get("/metrics", async (_req: Request, res: Response) => {
+router.get("/metrics", async (_req: Request, res: Response) => {
   try {
     const now = new Date();
     const oneDayAgo = new Date(now?.getTime() - 24 * 60 * 60 * 1000);
@@ -41,30 +41,21 @@ router?.get("/metrics", async (_req: Request, res: Response) => {
         .from(sessions)
         .where(
           and(
-            gte(sessions?.lastActivity, oneDayAgo),
-            gte(sessions?.expiresAt, now),
+            gte(sessions.lastActivity, oneDayAgo),
+            gte(sessions.expiresAt, now),
           ),
         ),
       db
         .select({ count: count() })
         .from(securityThreats)
-        .where(gte(securityThreats?.detectedAt, oneDayAgo)),
+        .where(gte(securityThreats.detectedAt, oneDayAgo)),
       db
         .select({ count: count() })
         .from(securityThreats)
         .where(
           and(
-            eq(securityThreats?.status, "blocked"),
-            gte(securityThreats?.detectedAt, oneDayAgo),
-          ),
-        ),
-      db
-        .select({ count: count() })
-        .from(securityThreats)
-        .where(
-          and(
-            eq(securityThreats?.severity, "medium"),
-            gte(securityThreats?.detectedAt, oneDayAgo),
+            eq(securityThreats.status, "blocked"),
+            gte(securityThreats.detectedAt, oneDayAgo),
           ),
         ),
       db
@@ -72,11 +63,20 @@ router?.get("/metrics", async (_req: Request, res: Response) => {
         .from(securityThreats)
         .where(
           and(
-            eq(securityThreats?.threatType, "rate_limit"),
-            gte(securityThreats?.detectedAt, oneDayAgo),
+            eq(securityThreats.severity, "medium"),
+            gte(securityThreats.detectedAt, oneDayAgo),
           ),
         ),
-      db?.select({ count: count() }).from(users),
+      db
+        .select({ count: count() })
+        .from(securityThreats)
+        .where(
+          and(
+            eq(securityThreats.threatType, "rate_limit"),
+            gte(securityThreats.detectedAt, oneDayAgo),
+          ),
+        ),
+      db.select({ count: count() }).from(users),
     ]);
 
     const activeSessions = activeSessionsResult[0]?.count || 0;
@@ -91,8 +91,8 @@ router?.get("/metrics", async (_req: Request, res: Response) => {
       .from(securityThreats)
       .where(
         and(
-          eq(securityThreats?.threatType, "failed_login"),
-          gte(securityThreats?.detectedAt, oneDayAgo),
+          eq(securityThreats.threatType, "failed_login"),
+          gte(securityThreats.detectedAt, oneDayAgo),
         ),
       );
 
@@ -142,7 +142,7 @@ router?.get("/metrics", async (_req: Request, res: Response) => {
   }
 });
 
-router?.get("/behavioral-alerts", async (_req: Request, res: Response) => {
+router.get("/behavioral-alerts", async (_req: Request, res: Response) => {
   try {
     const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -158,8 +158,8 @@ router?.get("/behavioral-alerts", async (_req: Request, res: Response) => {
         metadata: securityThreats.metadata,
       })
       .from(securityThreats)
-      .where(gte(securityThreats?.detectedAt, sevenDaysAgo))
-      .orderBy(desc(securityThreats?.detectedAt))
+      .where(gte(securityThreats.detectedAt, sevenDaysAgo))
+      .orderBy(desc(securityThreats.detectedAt))
       .limit(100);
 
     const userIds = threats?.map((t) => t?.userId).filter(Boolean) as string[];
@@ -225,7 +225,7 @@ router?.get("/behavioral-alerts", async (_req: Request, res: Response) => {
   }
 });
 
-router?.get("/anomaly-detection", async (_req: Request, res: Response) => {
+router.get("/anomaly-detection", async (_req: Request, res: Response) => {
   try {
     const now = new Date();
     const oneHourAgo = new Date(now?.getTime() - 60 * 60 * 1000);
@@ -236,19 +236,19 @@ router?.get("/anomaly-detection", async (_req: Request, res: Response) => {
         db
           .select({ count: count() })
           .from(securityThreats)
-          .where(gte(securityThreats?.detectedAt, oneHourAgo)),
+          .where(gte(securityThreats.detectedAt, oneHourAgo)),
         db
           .select({ count: count() })
           .from(securityThreats)
-          .where(gte(securityThreats?.detectedAt, twentyFourHoursAgo)),
+          .where(gte(securityThreats.detectedAt, twentyFourHoursAgo)),
         db
           .select({ count: count() })
           .from(sessions)
-          .where(gte(sessions?.createdAt, oneHourAgo)),
+          .where(gte(sessions.createdAt, oneHourAgo)),
         db
           .select({ count: count() })
           .from(sessions)
-          .where(gte(sessions?.createdAt, twentyFourHoursAgo)),
+          .where(gte(sessions.createdAt, twentyFourHoursAgo)),
       ]);
 
     const recentThreatCount = recentThreats[0]?.count || 0;
@@ -299,8 +299,8 @@ router?.get("/anomaly-detection", async (_req: Request, res: Response) => {
       .from(securityThreats)
       .where(
         and(
-          eq(securityThreats?.threatType, "failed_login"),
-          gte(securityThreats?.detectedAt, oneHourAgo),
+          eq(securityThreats.threatType, "failed_login"),
+          gte(securityThreats.detectedAt, oneHourAgo),
         ),
       );
 
@@ -324,7 +324,7 @@ router?.get("/anomaly-detection", async (_req: Request, res: Response) => {
   }
 });
 
-router?.get("/pentest-results", async (_req: Request, res: Response) => {
+router.get("/pentest-results", async (_req: Request, res: Response) => {
   try {
     const now = new Date();
 
@@ -335,7 +335,7 @@ router?.get("/pentest-results", async (_req: Request, res: Response) => {
           count: count(),
         })
         .from(securityThreats)
-        .groupBy(securityThreats?.severity),
+        .groupBy(securityThreats.severity),
     ]);
 
     const severityCounts: Record<string, number> = {};
@@ -426,7 +426,7 @@ router?.get("/pentest-results", async (_req: Request, res: Response) => {
   }
 });
 
-router?.get("/threats", async (req: Request, res: Response) => {
+router.get("/threats", async (req: Request, res: Response) => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
@@ -434,8 +434,8 @@ router?.get("/threats", async (req: Request, res: Response) => {
     const threats = await db
       .select()
       .from(securityThreats)
-      .where(gte(securityThreats?.detectedAt, sevenDaysAgo))
-      .orderBy(desc(securityThreats?.detectedAt))
+      .where(gte(securityThreats.detectedAt, sevenDaysAgo))
+      .orderBy(desc(securityThreats.detectedAt))
       .limit(limit);
 
     res.json({ threats });
@@ -461,11 +461,11 @@ userAlertsRouter?.get("/alerts", async (req: Request, res: Response) => {
       .from(securityThreats)
       .where(
         and(
-          eq(securityThreats?.userId, userId),
-          gte(securityThreats?.detectedAt, sevenDaysAgo),
+          eq(securityThreats.userId, userId),
+          gte(securityThreats.detectedAt, sevenDaysAgo),
         ),
       )
-      .orderBy(desc(securityThreats?.detectedAt))
+      .orderBy(desc(securityThreats.detectedAt))
       .limit(50);
 
     const alerts = userThreats?.map((threat) => {
@@ -615,15 +615,15 @@ userAlertsRouter?.post(
       }
 
       const userId = req.user!.id;
-      const { alertId } = req.params;
+      const { alertId } = req.params as Record<string, string>;
 
       await db
         .update(securityThreats)
         .set({ status: "resolved" })
         .where(
           and(
-            eq(securityThreats?.id, alertId),
-            eq(securityThreats?.userId, userId),
+            eq(securityThreats.id, alertId),
+            eq(securityThreats.userId, userId),
           ),
         );
 

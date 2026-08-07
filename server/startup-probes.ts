@@ -94,7 +94,7 @@ class StartupProbeManager {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const startTime = Date?.now();
       try {
-        await db?.execute(sql`SELECT 1`);
+        await db.execute(sql`SELECT 1`);
         this.status.probes.database.status = "ready";
         this.status.probes.database.lastCheck = new Date();
         this.status.probes.database.latencyMs = Date?.now() - startTime;
@@ -296,6 +296,17 @@ class StartupProbeManager {
 
   // Run all probes and determine overall readiness
   async runAllProbes(): Promise<boolean> {
+    try {
+      return await this.runAllProbesInner();
+    } finally {
+      // Whatever happened — success, degraded, failed, or an unexpected
+      // rejection — waiters must never hang forever. Flush the queue.
+      for (const resolver of this.readyResolvers) resolver();
+      this.readyResolvers = [];
+    }
+  }
+
+  private async runAllProbesInner(): Promise<boolean> {
     this.status.phase = "connecting";
 
     logger.info("🔍 Running startup probes...");

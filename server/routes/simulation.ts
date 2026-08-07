@@ -21,7 +21,7 @@ import { requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
-router?.use(requireAdmin);
+router.use(requireAdmin);
 
 // Active simulations storage
 const activeSimulations: Map<string, RealLifeSimulationEngine> = new Map();
@@ -80,7 +80,7 @@ function getPeroidDescription(name: string): string {
 }
 
 // GET /api/simulation/periods - Get available simulation periods
-router?.get("/periods", (_req: Request, res: Response) => {
+router.get("/periods", (_req: Request, res: Response) => {
   try {
     const periods = Object.entries(SIMULATION_PERIODS).map(([name, days]) => ({
       name,
@@ -105,7 +105,7 @@ router?.get("/periods", (_req: Request, res: Response) => {
 });
 
 // GET /api/simulation/benchmarks - Get industry benchmarks
-router?.get("/benchmarks", (_req: Request, res: Response) => {
+router.get("/benchmarks", (_req: Request, res: Response) => {
   try {
     res.json({
       success: true,
@@ -120,7 +120,7 @@ router?.get("/benchmarks", (_req: Request, res: Response) => {
 });
 
 // POST /api/simulation/start - Start a new simulation
-router?.post("/start", async (req: Request, res: Response) => {
+router.post("/start", async (req: Request, res: Response) => {
   try {
     const {
       periodName = "1_month",
@@ -223,7 +223,7 @@ router?.post("/start", async (req: Request, res: Response) => {
 });
 
 // POST /api/simulation/start-full - Start full 50-year lifecycle simulation
-router?.post("/start-full", async (_req: Request, res: Response) => {
+router.post("/start-full", async (_req: Request, res: Response) => {
   try {
     const simulationId = `full_${Date?.now()}`;
 
@@ -253,7 +253,7 @@ router?.post("/start-full", async (_req: Request, res: Response) => {
 });
 
 // GET /api/simulation/status/:id - Get simulation status
-router?.get("/status/:id", (req: Request, res: Response) => {
+router.get("/status/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
 
@@ -291,7 +291,7 @@ router?.get("/status/:id", (req: Request, res: Response) => {
 });
 
 // GET /api/simulation/metrics/:id - Get real-time metrics
-router?.get("/metrics/:id", (req: Request, res: Response) => {
+router.get("/metrics/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
 
@@ -327,7 +327,7 @@ router?.get("/metrics/:id", (req: Request, res: Response) => {
 });
 
 // GET /api/simulation/snapshots/:id - Get simulation snapshots
-router?.get("/snapshots/:id", (req: Request, res: Response) => {
+router.get("/snapshots/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
 
@@ -361,7 +361,7 @@ router?.get("/snapshots/:id", (req: Request, res: Response) => {
 });
 
 // GET /api/simulation/events/:id - Get simulation events
-router?.get("/events/:id", (req: Request, res: Response) => {
+router.get("/events/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
     const { category, impact, limit = 100 } = req.query;
@@ -415,7 +415,7 @@ router?.get("/events/:id", (req: Request, res: Response) => {
 });
 
 // POST /api/simulation/pause/:id - Pause simulation
-router?.post("/pause/:id", (req: Request, res: Response) => {
+router.post("/pause/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
 
@@ -437,7 +437,7 @@ router?.post("/pause/:id", (req: Request, res: Response) => {
 });
 
 // POST /api/simulation/resume/:id - Resume simulation
-router?.post("/resume/:id", (req: Request, res: Response) => {
+router.post("/resume/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
 
@@ -459,7 +459,7 @@ router?.post("/resume/:id", (req: Request, res: Response) => {
 });
 
 // POST /api/simulation/stop/:id - Stop simulation
-router?.post("/stop/:id", (req: Request, res: Response) => {
+router.post("/stop/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
 
@@ -482,7 +482,7 @@ router?.post("/stop/:id", (req: Request, res: Response) => {
 });
 
 // GET /api/simulation/results/:id - Get final results
-router?.get("/results/:id", (req: Request, res: Response) => {
+router.get("/results/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
 
@@ -520,7 +520,7 @@ router?.get("/results/:id", (req: Request, res: Response) => {
 });
 
 // GET /api/simulation/report/:id - Generate detailed report
-router?.get("/report/:id", (req: Request, res: Response) => {
+router.get("/report/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
 
@@ -667,7 +667,7 @@ ${
 }
 
 // GET /api/simulation/list - List all simulations
-router?.get("/list", (_req: Request, res: Response) => {
+router.get("/list", (_req: Request, res: Response) => {
   try {
     const running = Array.from(activeSimulations?.entries()).map(
       ([id, sim]) => ({
@@ -705,7 +705,7 @@ router?.get("/list", (_req: Request, res: Response) => {
 });
 
 // POST /api/simulation/generate-event - Generate test event
-router?.post("/generate-event", (req: Request, res: Response) => {
+router.post("/generate-event", (req: Request, res: Response) => {
   try {
     const { type, params = {} } = req.body;
 
@@ -744,7 +744,7 @@ router?.post("/generate-event", (req: Request, res: Response) => {
 });
 
 // GET /api/simulation/:id - Get overview of a specific simulation (must be after all literal paths)
-router?.get("/:id", (req: Request, res: Response) => {
+router.get("/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
 
@@ -781,7 +781,7 @@ router?.get("/:id", (req: Request, res: Response) => {
   }
 });
 
-router?.delete("/:id", (req: Request, res: Response) => {
+router.delete("/:id", (req: Request, res: Response) => {
   try {
     const id = String(req.params?.id ?? "");
 

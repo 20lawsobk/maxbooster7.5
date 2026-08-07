@@ -125,7 +125,7 @@ export class HnsAuctionManager {
       const [updated] = await db
         .update(hnsAuctions)
         .set({ state: "bidding", txHash: tx.hash, updatedAt: new Date() })
-        .where(eq(hnsAuctions?.id, auctionId))
+        .where(eq(hnsAuctions.id, auctionId))
         .returning();
       logger.info({ name: row.name, txHash: tx.hash }, "[HNS] Bid placed");
       return this.rowToRecord(updated);
@@ -133,7 +133,7 @@ export class HnsAuctionManager {
       await db
         .update(hnsAuctions)
         .set({ state: "failed", error: (err as Error).message, updatedAt: new Date() })
-        .where(eq(hnsAuctions?.id, auctionId));
+        .where(eq(hnsAuctions.id, auctionId));
       throw err;
     }
   }
@@ -155,7 +155,7 @@ export class HnsAuctionManager {
       const [updated] = await db
         .update(hnsAuctions)
         .set({ state: "revealing", txHash: tx.hash, updatedAt: new Date() })
-        .where(eq(hnsAuctions?.id, auctionId))
+        .where(eq(hnsAuctions.id, auctionId))
         .returning();
       logger.info({ name: row.name, txHash: tx.hash }, "[HNS] Bid revealed");
       return this.rowToRecord(updated);
@@ -163,7 +163,7 @@ export class HnsAuctionManager {
       await db
         .update(hnsAuctions)
         .set({ state: "failed", error: (err as Error).message, updatedAt: new Date() })
-        .where(eq(hnsAuctions?.id, auctionId));
+        .where(eq(hnsAuctions.id, auctionId));
       throw err;
     }
   }
@@ -195,7 +195,7 @@ export class HnsAuctionManager {
       const [updated] = await db
         .update(hnsAuctions)
         .set({ state: "registered", txHash: tx.hash, updatedAt: new Date() })
-        .where(eq(hnsAuctions?.id, auctionId))
+        .where(eq(hnsAuctions.id, auctionId))
         .returning();
       logger.info(
         { name: row.name, txHash: tx.hash },
@@ -206,7 +206,7 @@ export class HnsAuctionManager {
       await db
         .update(hnsAuctions)
         .set({ state: "failed", error: (err as Error).message, updatedAt: new Date() })
-        .where(eq(hnsAuctions?.id, auctionId));
+        .where(eq(hnsAuctions.id, auctionId));
       throw err;
     }
   }
@@ -244,7 +244,7 @@ export class HnsAuctionManager {
       const [updated] = await db
         .update(hnsAuctions)
         .set({ state: newState, updatedAt: new Date() })
-        .where(eq(hnsAuctions?.id, auctionId))
+        .where(eq(hnsAuctions.id, auctionId))
         .returning();
       logger.info(
         { name: row.name, from: row.state, to: newState },
@@ -262,7 +262,7 @@ export class HnsAuctionManager {
     const rows = await db
       .select()
       .from(hnsAuctions)
-      .where(eq(hnsAuctions?.userId, userId));
+      .where(eq(hnsAuctions.userId, userId));
     return rows?.map((r) => this.rowToRecord(r));
   }
 
@@ -275,7 +275,7 @@ export class HnsAuctionManager {
     const [row] = await db
       .select()
       .from(hnsAuctions)
-      .where(and(eq(hnsAuctions?.id, id), eq(hnsAuctions?.userId, userId)))
+      .where(and(eq(hnsAuctions.id, id), eq(hnsAuctions.userId, userId)))
       .limit(1);
     return row ?? null;
   }

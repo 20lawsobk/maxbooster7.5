@@ -66,7 +66,7 @@ function getState(userId: string): AutonomousSocialState {
   return autonomousStates?.get(userId)!;
 }
 
-router?.get("/status", requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const state = getState(userId);
@@ -78,7 +78,7 @@ router?.get("/status", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/start", requireAuth, async (req, res) => {
+router.post("/start", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const state = getState(userId);
@@ -99,7 +99,7 @@ router?.post("/start", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/stop", requireAuth, async (req, res) => {
+router.post("/stop", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const state = getState(userId);

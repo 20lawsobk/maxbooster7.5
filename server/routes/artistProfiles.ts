@@ -34,9 +34,9 @@ const fixerSchema = z.object({
   notes: z.string().max(1000).optional().default(""),
 });
 
-router?.use(requireAuth);
+router.use(requireAuth);
 
-router?.get("/", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const profiles = await artistProfileService?.getUserProfiles(req.user!.id);
     res.json({ profiles });
@@ -46,7 +46,7 @@ router?.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/", async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   try {
     const parsed = createProfileSchema?.safeParse(req.body);
     if (!parsed?.success) {
@@ -103,7 +103,7 @@ router?.post("/", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/search", async (req: Request, res: Response) => {
+router.get("/search", async (req: Request, res: Response) => {
   try {
     const query = String(req.query.q || "").trim();
     if (!query || query?.length < 2) {
@@ -155,9 +155,9 @@ router?.get("/search", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/by-release/:releaseId", async (req: Request, res: Response) => {
+router.get("/by-release/:releaseId", async (req: Request, res: Response) => {
   try {
-    const { releaseId } = req.params;
+    const { releaseId } = req.params as Record<string, string>;
     const profiles = await artistProfileService?.getProfilesByRelease(releaseId);
     res.json({ profiles });
   } catch (err) {
@@ -166,13 +166,13 @@ router?.get("/by-release/:releaseId", async (req: Request, res: Response) => {
   }
 });
 
-router?.get(
+router.get(
   "/:id",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const profile = await artistProfileService?.getProfile(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       if (!profile)
@@ -185,7 +185,7 @@ router?.get(
   },
 );
 
-router?.patch(
+router.patch(
   "/:id",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
@@ -201,7 +201,7 @@ router?.patch(
       }
 
       const profile = await artistProfileService?.updateProfile(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
         parsed?.data,
       );
@@ -215,13 +215,13 @@ router?.patch(
   },
 );
 
-router?.delete(
+router.delete(
   "/:id",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const deleted = await artistProfileService?.deleteProfile(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       if (!deleted)
@@ -234,7 +234,7 @@ router?.delete(
   },
 );
 
-router?.post(
+router.post(
   "/:id/fixer",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
@@ -250,7 +250,7 @@ router?.post(
       }
 
       const profile = await artistProfileService?.submitFixerRequest(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
         parsed?.data.targetSpotifyUri,
         parsed?.data.notes,
@@ -273,14 +273,14 @@ router?.post(
   },
 );
 
-router?.get(
+router.get(
   "/:id/profile-hub",
   requireAuth,
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.profileHub(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       res.json(result);
@@ -293,7 +293,7 @@ router?.get(
   },
 );
 
-router?.post(
+router.post(
   "/:id/auto-discover",
   requireAuth,
   requireUUIDParam("id"),
@@ -305,7 +305,7 @@ router?.post(
           ? req.body.upc?.replace(/[^0-9]/g, "")
           : undefined;
       const result = await artistProfileService?.autoDiscover(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
         upc || undefined,
       );
@@ -322,14 +322,14 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/:id/auto-sync",
   requireAuth,
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.autoSync(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       res.json(result);
@@ -342,22 +342,22 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/:id/link-release/:releaseId",
   requireUUIDParam("id"),
   requireUUIDParam("releaseId"),
   async (req: Request, res: Response) => {
     try {
       const profile = await artistProfileService?.getProfile(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       if (!profile)
         return res.status(404).json({ error: "Artist profile not found" });
 
       await artistProfileService?.linkProfileToRelease(
-        req.params.id,
-        req.params.releaseId,
+        (req.params.id as string),
+        (req.params.releaseId as string),
       );
       res.json({ success: true });
     } catch (err) {
@@ -372,13 +372,13 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/:id/verify",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const profile = await artistProfileService?.getProfile(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       if (!profile)
@@ -402,7 +402,7 @@ router?.post(
       }
 
       const verified = await artistProfileService?.updateProfile(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
         {
           isVerified: true,
@@ -426,14 +426,14 @@ router?.post(
 );
 
 // ── Phase 1: ISRC Chain Discovery ─────────────────────────────────────────────
-router?.post(
+router.post(
   "/:id/isrc-discover",
   requireAuth,
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.isrcChainDiscover(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       res.json(result);
@@ -450,14 +450,14 @@ router?.post(
 );
 
 // ── Phase 1: Split Profile Scanner ────────────────────────────────────────────
-router?.post(
+router.post(
   "/:id/scan-splits",
   requireAuth,
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.scanForSplitProfiles(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       res.json(result);
@@ -474,14 +474,14 @@ router?.post(
 );
 
 // ── Phase 1: Claim Pipeline — Get full pipeline state ────────────────────────
-router?.get(
+router.get(
   "/:id/claim-pipeline",
   requireAuth,
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.getClaimPipeline(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       res.json(result);
@@ -505,7 +505,7 @@ const claimStateSchema = z.object({
   triggeredBy: z.enum(["user", "system"]).optional().default("user"),
 });
 
-router?.patch(
+router.patch(
   "/:id/claim-state",
   requireAuth,
   requireUUIDParam("id"),
@@ -522,7 +522,7 @@ router?.patch(
       }
       const { platform, state, notes, triggeredBy } = parsed?.data;
       const result = await artistProfileService?.updateClaimState(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
         platform,
         state as ClaimState,
@@ -543,14 +543,14 @@ router?.patch(
 );
 
 // ── Phase 2: Profile Health Score ─────────────────────────────────────────────
-router?.get(
+router.get(
   "/:id/health",
   requireAuth,
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.calculateHealthScore(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       res.json(result);
@@ -564,14 +564,14 @@ router?.get(
 );
 
 // ── Phase 2: Artist Identity Graph ─────────────────────────────────────────────
-router?.get(
+router.get(
   "/:id/identity-graph",
   requireAuth,
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.getIdentityGraph(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       res.json(result);
@@ -588,7 +588,7 @@ router?.get(
 );
 
 // ── Phase 3: DNA Snapshot ──────────────────────────────────────────────────────
-router?.post(
+router.post(
   "/:id/dna-snapshot",
   requireAuth,
   requireUUIDParam("id"),
@@ -596,7 +596,7 @@ router?.post(
     try {
       const { releaseId, upc, isrcs } = req.body ?? {};
       const snapshot = await artistProfileService?.snapshotArtistDNA(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
         releaseId,
         upc,
@@ -615,14 +615,14 @@ router?.post(
   },
 );
 
-router?.get(
+router.get(
   "/:id/dna-snapshots",
   requireAuth,
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const snapshots = await artistProfileService?.getDnaSnapshots(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       res.json({ snapshots });
@@ -648,7 +648,7 @@ const multiFixerSchema = z.object({
   notes: z.string().max(1000).optional(),
 });
 
-router?.post(
+router.post(
   "/:id/fixer-multi",
   requireAuth,
   requireUUIDParam("id"),
@@ -664,7 +664,7 @@ router?.post(
           });
       }
       const profile = await artistProfileService?.submitMultiPlatformFixer(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
         parsed?.data.targetPlatformIds,
         parsed?.data.notes,
@@ -697,7 +697,7 @@ const importHistorySchema = z.object({
   upcList: z.array(z.string()).max(200).default([]),
 });
 
-router?.post(
+router.post(
   "/:id/import-history",
   requireAuth,
   requireUUIDParam("id"),
@@ -713,7 +713,7 @@ router?.post(
           });
       }
       const result = await artistProfileService?.importDistributorHistory(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
         parsed?.data.sourceDistributor,
         parsed?.data.isrcList,
@@ -733,14 +733,14 @@ router?.post(
 );
 
 // ── Phase 3: Distributor Portability Report ────────────────────────────────────
-router?.get(
+router.get(
   "/:id/portability-report",
   requireAuth,
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const report = await artistProfileService?.exportPortabilityReport(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       res.json(report);
@@ -769,7 +769,7 @@ const resolveHandleSchema = z.object({
   handle: z.string().min(1).max(100),
 });
 
-router?.post(
+router.post(
   "/:id/resolve-handle",
   requireAuth,
   requireUUIDParam("id"),
@@ -785,7 +785,7 @@ router?.post(
           });
       }
       const result = await artistProfileService?.resolveHandleToDSP(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
         parsed?.data.platform,
         parsed?.data.handle,
@@ -804,7 +804,7 @@ router?.post(
 );
 
 // ── Phase 1: Profile Watch ─────────────────────────────────────────────────────
-router?.post(
+router.post(
   "/:id/watch",
   requireAuth,
   requireUUIDParam("id"),
@@ -812,7 +812,7 @@ router?.post(
     try {
       const result =
         await artistProfileService?.watchProfileForUnauthorizedReleases(
-          req.params.id,
+          (req.params.id as string),
           req.user!.id,
         );
       res.json(result);
@@ -835,7 +835,7 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const profile = await artistProfileService.getProfile(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       if (!profile)
@@ -926,14 +926,14 @@ const distributeCatalogReleaseSchema = z.object({
     .optional(),
 });
 
-router?.post(
+router.post(
   "/:id/distribute-release",
   requireAuth,
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
       const profile = await artistProfileService?.getProfile(
-        req.params.id,
+        (req.params.id as string),
         req.user!.id,
       );
       if (!profile)
@@ -941,7 +941,7 @@ router?.post(
 
       const data = distributeCatalogReleaseSchema?.parse(req.body);
 
-      const release = await storage?.createDistroRelease({
+      const release = await storage.createDistroRelease({
         artistId: req.user!.id,
         title: data.title,
         releaseDate: data.releaseDate ? new Date(data?.releaseDate) : null,
@@ -968,7 +968,7 @@ router?.post(
       });
 
       logger.info(
-        `[ArtistProfiles] Catalog release imported: profile=${req.params.id} release=${release.id} title="${data.title}"`,
+        `[ArtistProfiles] Catalog release imported: profile=${(req.params.id as string)} release=${release.id} title="${data.title}"`,
       );
       res.json({
         releaseId: release.id,

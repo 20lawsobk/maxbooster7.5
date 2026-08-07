@@ -34,7 +34,7 @@ class PaymentBypassService {
       const [setting] = await db
         .select()
         .from(systemSettings)
-        .where(eq(systemSettings?.key, PAYMENT_BYPASS_KEY))
+        .where(eq(systemSettings.key, PAYMENT_BYPASS_KEY))
         .limit(1);
 
       if (setting?.value) {
@@ -64,7 +64,7 @@ class PaymentBypassService {
       const [existing] = await db
         .select()
         .from(systemSettings)
-        .where(eq(systemSettings?.key, PAYMENT_BYPASS_KEY))
+        .where(eq(systemSettings.key, PAYMENT_BYPASS_KEY))
         .limit(1);
 
       if (existing) {
@@ -75,9 +75,9 @@ class PaymentBypassService {
             updatedBy,
             updatedAt: new Date(),
           })
-          .where(eq(systemSettings?.key, PAYMENT_BYPASS_KEY));
+          .where(eq(systemSettings.key, PAYMENT_BYPASS_KEY));
       } else {
-        await db?.insert(systemSettings).values({
+        await db.insert(systemSettings).values({
           key: PAYMENT_BYPASS_KEY,
           value: config,
           description: "Payment requirements bypass configuration",

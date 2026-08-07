@@ -62,7 +62,7 @@ const insightFilterSchema = z.object({
   limit: z.number().int().positive().optional(),
 });
 
-router?.get("/status", requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const status = autopilotCoordinatorService?.getStatus(userId);
@@ -79,7 +79,7 @@ router?.get("/status", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/schedule", requireAuth, async (req, res) => {
+router.get("/schedule", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const parsed = scheduleFilterSchema?.parse(req.query);
@@ -120,7 +120,7 @@ router?.get("/schedule", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/sync", requireAuth, async (req, res) => {
+router.post("/sync", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const result = autopilotCoordinatorService?.syncInsights(userId);
@@ -139,7 +139,7 @@ router?.post("/sync", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/register", requireAuth, async (req, res) => {
+router.post("/register", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const parsed = registerPostSchema?.parse(req.body);
@@ -178,10 +178,10 @@ router?.post("/register", requireAuth, async (req, res) => {
   }
 });
 
-router?.put("/posts/:postId", requireAuth, async (req, res) => {
+router.put("/posts/:postId", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { postId } = req.params;
+    const { postId } = req.params as Record<string, string>;
     const parsed = updatePostSchema?.parse(req.body);
 
     const post = autopilotCoordinatorService?.updatePostStatus(
@@ -215,10 +215,10 @@ router?.put("/posts/:postId", requireAuth, async (req, res) => {
   }
 });
 
-router?.delete("/posts/:postId", requireAuth, async (req, res) => {
+router.delete("/posts/:postId", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { postId } = req.params;
+    const { postId } = req.params as Record<string, string>;
 
     const cancelled = autopilotCoordinatorService?.cancelPost(userId, postId);
 
@@ -238,7 +238,7 @@ router?.delete("/posts/:postId", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/next-slot", requireAuth, async (req, res) => {
+router.get("/next-slot", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const autopilotType =
@@ -267,7 +267,7 @@ router?.get("/next-slot", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/insights", requireAuth, async (req, res) => {
+router.post("/insights", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const parsed = shareInsightSchema?.parse(req.body);
@@ -298,7 +298,7 @@ router?.post("/insights", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/insights", requireAuth, async (req, res) => {
+router.get("/insights", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const parsed = insightFilterSchema?.parse(req.query);
@@ -331,10 +331,10 @@ router?.get("/insights", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/optimal-times/:platform", requireAuth, async (req, res) => {
+router.get("/optimal-times/:platform", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { platform } = req.params;
+    const { platform } = req.params as Record<string, string>;
 
     const optimalTimes = autopilotCoordinatorService?.getOptimalPostingTimes(
       userId,
@@ -356,7 +356,7 @@ router?.get("/optimal-times/:platform", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/conflicts", requireAuth, async (req, res) => {
+router.get("/conflicts", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const startDate = parseValidDate(req.query.startDate, new Date());
@@ -386,7 +386,7 @@ router?.get("/conflicts", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/performance", requireAuth, async (req, res) => {
+router.get("/performance", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const summary = autopilotCoordinatorService?.getPerformanceSummary(userId);
@@ -403,7 +403,7 @@ router?.get("/performance", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/connect", requireAuth, async (req, res) => {
+router.post("/connect", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { autopilotType } = req.body;
@@ -428,7 +428,7 @@ router?.post("/connect", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/disconnect", requireAuth, async (req, res) => {
+router.post("/disconnect", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { autopilotType } = req.body;

@@ -162,22 +162,22 @@ class AutopilotLearningService {
         .select({
           hour: autopilotLearningData.postingHour,
           dayOfWeek: autopilotLearningData.postingDayOfWeek,
-          avgEngagement: avg(autopilotLearningData?.engagementRate),
+          avgEngagement: avg(autopilotLearningData.engagementRate),
           postCount: count(),
         })
         .from(autopilotLearningData)
         .where(
           and(
-            eq(autopilotLearningData?.userId, userId),
-            eq(autopilotLearningData?.platform, platform),
-            gte(autopilotLearningData?.createdAt, thirtyDaysAgo),
+            eq(autopilotLearningData.userId, userId),
+            eq(autopilotLearningData.platform, platform),
+            gte(autopilotLearningData.createdAt, thirtyDaysAgo),
           ),
         )
         .groupBy(
-          autopilotLearningData?.postingHour,
-          autopilotLearningData?.postingDayOfWeek,
+          autopilotLearningData.postingHour,
+          autopilotLearningData.postingDayOfWeek,
         )
-        .orderBy(desc(avg(autopilotLearningData?.engagementRate)));
+        .orderBy(desc(avg(autopilotLearningData.engagementRate)));
 
       return results
         .filter((r) => r?.hour !== null && r?.dayOfWeek !== null)
@@ -201,24 +201,24 @@ class AutopilotLearningService {
       thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
       const conditions = [
-        eq(autopilotLearningData?.userId, userId),
-        gte(autopilotLearningData?.createdAt, thirtyDaysAgo),
+        eq(autopilotLearningData.userId, userId),
+        gte(autopilotLearningData.createdAt, thirtyDaysAgo),
       ];
 
       if (platform) {
-        conditions?.push(eq(autopilotLearningData?.platform, platform));
+        conditions?.push(eq(autopilotLearningData.platform, platform));
       }
 
       const results = await db
         .select({
           contentType: autopilotLearningData.contentType,
-          avgEngagement: avg(autopilotLearningData?.engagementRate),
+          avgEngagement: avg(autopilotLearningData.engagementRate),
           count: count(),
         })
         .from(autopilotLearningData)
         .where(and(...conditions))
-        .groupBy(autopilotLearningData?.contentType)
-        .orderBy(desc(avg(autopilotLearningData?.engagementRate)));
+        .groupBy(autopilotLearningData.contentType)
+        .orderBy(desc(avg(autopilotLearningData.engagementRate)));
 
       return results
         .filter((r) => r?.contentType)
@@ -253,21 +253,21 @@ class AutopilotLearningService {
       sixtyDaysAgo?.setDate(sixtyDaysAgo?.getDate() - 60);
 
       const conditions = [
-        eq(autopilotLearningData?.userId, userId),
-        gte(autopilotLearningData?.createdAt, sixtyDaysAgo),
-        ...(platform ? [eq(autopilotLearningData?.platform, platform)] : []),
+        eq(autopilotLearningData.userId, userId),
+        gte(autopilotLearningData.createdAt, sixtyDaysAgo),
+        ...(platform ? [eq(autopilotLearningData.platform, platform)] : []),
       ];
 
       const rows = await db
         .select({
           hookType: autopilotLearningData.hookType,
-          avgEngagement: avg(autopilotLearningData?.engagementRate),
+          avgEngagement: avg(autopilotLearningData.engagementRate),
           postCount: count(),
         })
         .from(autopilotLearningData)
         .where(and(...conditions))
-        .groupBy(autopilotLearningData?.hookType)
-        .orderBy(desc(avg(autopilotLearningData?.engagementRate)));
+        .groupBy(autopilotLearningData.hookType)
+        .orderBy(desc(avg(autopilotLearningData.engagementRate)));
 
       const populated = rows?.filter(
         (r) => r?.hookType && Number(r?.postCount) >= 2,
@@ -391,11 +391,11 @@ class AutopilotLearningService {
         .from(autopilotLearningData)
         .where(
           and(
-            eq(autopilotLearningData?.userId, userId),
-            gte(autopilotLearningData?.createdAt, thirtyDaysAgo),
+            eq(autopilotLearningData.userId, userId),
+            gte(autopilotLearningData.createdAt, thirtyDaysAgo),
           ),
         )
-        .orderBy(desc(autopilotLearningData?.engagementRate))
+        .orderBy(desc(autopilotLearningData.engagementRate))
         .limit(100);
 
       if (recentData?.length < 5) {
@@ -522,10 +522,10 @@ class AutopilotLearningService {
     options: { platform?: string; limit?: number; offset?: number } = {},
   ): Promise<{ data: unknown[]; total: number }> {
     try {
-      const conditions = [eq(autopilotLearningData?.userId, userId)];
+      const conditions = [eq(autopilotLearningData.userId, userId)];
 
       if (options?.platform) {
-        conditions?.push(eq(autopilotLearningData?.platform, options?.platform));
+        conditions?.push(eq(autopilotLearningData.platform, options?.platform));
       }
 
       const [data, countResult] = await Promise?.all([
@@ -533,7 +533,7 @@ class AutopilotLearningService {
           .select()
           .from(autopilotLearningData)
           .where(and(...conditions))
-          .orderBy(desc(autopilotLearningData?.createdAt))
+          .orderBy(desc(autopilotLearningData.createdAt))
           .limit(options?.limit || 50)
           .offset(options?.offset || 0),
         db
@@ -560,13 +560,13 @@ class AutopilotLearningService {
         .from(autopilotInsights)
         .where(
           and(
-            eq(autopilotInsights?.userId, userId),
-            eq(autopilotInsights?.isActive, true),
+            eq(autopilotInsights.userId, userId),
+            eq(autopilotInsights.isActive, true),
           ),
         )
         .orderBy(
-          desc(autopilotInsights?.priority),
-          desc(autopilotInsights?.confidence),
+          desc(autopilotInsights.priority),
+          desc(autopilotInsights.confidence),
         )
         .limit(50);
     } catch (error) {
@@ -642,20 +642,20 @@ class AutopilotLearningService {
       const results = await db
         .select({
           platform: autopilotLearningData.platform,
-          avgEngagement: avg(autopilotLearningData?.engagementRate),
-          totalImpressions: sql<number>`SUM(${autopilotLearningData?.impressions})`,
-          totalClicks: sql<number>`SUM(${autopilotLearningData?.clicks})`,
-          totalShares: sql<number>`SUM(${autopilotLearningData?.shares})`,
+          avgEngagement: avg(autopilotLearningData.engagementRate),
+          totalImpressions: sql<number>`SUM(${autopilotLearningData.impressions})`,
+          totalClicks: sql<number>`SUM(${autopilotLearningData.clicks})`,
+          totalShares: sql<number>`SUM(${autopilotLearningData.shares})`,
           postCount: count(),
         })
         .from(autopilotLearningData)
         .where(
           and(
-            eq(autopilotLearningData?.userId, userId),
-            gte(autopilotLearningData?.createdAt, thirtyDaysAgo),
+            eq(autopilotLearningData.userId, userId),
+            gte(autopilotLearningData.createdAt, thirtyDaysAgo),
           ),
         )
-        .groupBy(autopilotLearningData?.platform);
+        .groupBy(autopilotLearningData.platform);
 
       return results?.map((r) => ({
         platform: r.platform,
@@ -684,8 +684,8 @@ class AutopilotLearningService {
         .from(autopilotLearningData)
         .where(
           and(
-            eq(autopilotLearningData?.userId, userId),
-            gte(autopilotLearningData?.createdAt, thirtyDaysAgo),
+            eq(autopilotLearningData.userId, userId),
+            gte(autopilotLearningData.createdAt, thirtyDaysAgo),
           ),
         );
 
@@ -726,8 +726,8 @@ class AutopilotLearningService {
       const records = await db
         .select()
         .from(autopilotLearningData)
-        .where(eq(autopilotLearningData?.userId, userId))
-        .orderBy(desc(autopilotLearningData?.createdAt))
+        .where(eq(autopilotLearningData.userId, userId))
+        .orderBy(desc(autopilotLearningData.createdAt))
         .limit(500);
 
       if (records?.length < 50) return;
@@ -778,7 +778,7 @@ class AutopilotLearningService {
 
       await db
         .delete(autopilotInsights)
-        .where(eq(autopilotInsights?.userId, userId));
+        .where(eq(autopilotInsights.userId, userId));
 
       const insightsToInsert = [];
 
@@ -843,7 +843,7 @@ class AutopilotLearningService {
       }
 
       if (insightsToInsert?.length > 0) {
-        await db?.insert(autopilotInsights).values(insightsToInsert);
+        await db.insert(autopilotInsights).values(insightsToInsert);
         logger.info(
           `Generated ${insightsToInsert?.length} insights for user ${userId}`,
         );

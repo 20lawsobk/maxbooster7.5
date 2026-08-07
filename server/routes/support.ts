@@ -19,7 +19,7 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 };
 
 // Get user's own tickets
-router?.get("/tickets", requireAuth, async (req, res) => {
+router.get("/tickets", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -29,8 +29,8 @@ router?.get("/tickets", requireAuth, async (req, res) => {
     const tickets = await db
       .select()
       .from(supportTickets)
-      .where(eq(supportTickets?.userId, userId))
-      .orderBy(desc(supportTickets?.createdAt))
+      .where(eq(supportTickets.userId, userId))
+      .orderBy(desc(supportTickets.createdAt))
       .limit(100);
 
     res.json({ tickets, total: tickets.length });
@@ -41,25 +41,25 @@ router?.get("/tickets", requireAuth, async (req, res) => {
 });
 
 // Get all tickets (admin only)
-router?.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
+router.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
   try {
     const { status, priority, search } = req.query;
 
     let conditions = [];
 
     if (status && status !== "all") {
-      conditions?.push(eq(supportTickets?.status, status as string));
+      conditions?.push(eq(supportTickets.status, status as string));
     }
 
     if (priority && priority !== "all") {
-      conditions?.push(eq(supportTickets?.priority, priority as string));
+      conditions?.push(eq(supportTickets.priority, priority as string));
     }
 
     if (search) {
       conditions?.push(
         or(
-          like(supportTickets?.subject, `%${search}%`),
-          like(supportTickets?.description, `%${search}%`),
+          like(supportTickets.subject, `%${search}%`),
+          like(supportTickets.description, `%${search}%`),
         ),
       );
     }
@@ -85,7 +85,7 @@ router?.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
       })
       .from(supportTickets)
       .where(whereClause)
-      .orderBy(desc(supportTickets?.createdAt));
+      .orderBy(desc(supportTickets.createdAt));
 
     res.json(tickets);
   } catch (error) {
@@ -94,7 +94,7 @@ router?.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
   }
 });
 
-router?.get("/stats", requireAdmin, require2FA, async (_req, res) => {
+router.get("/stats", requireAdmin, require2FA, async (_req, res) => {
   try {
     const [ticketStatsResult, avgResponseResult, avgSatisfactionResult] =
       await Promise?.all([
@@ -105,19 +105,19 @@ router?.get("/stats", requireAdmin, require2FA, async (_req, res) => {
             count: count(),
           })
           .from(supportTickets)
-          .groupBy(supportTickets?.status, supportTickets?.priority),
+          .groupBy(supportTickets.status, supportTickets.priority),
         db
           .select({
-            avg: avg(supportTickets?.responseTimeMinutes),
+            avg: avg(supportTickets.responseTimeMinutes),
           })
           .from(supportTickets)
-          .where(sql`${supportTickets?.responseTimeMinutes} IS NOT NULL`),
+          .where(sql`${supportTickets.responseTimeMinutes} IS NOT NULL`),
         db
           .select({
-            avg: avg(supportTickets?.satisfactionRating),
+            avg: avg(supportTickets.satisfactionRating),
           })
           .from(supportTickets)
-          .where(sql`${supportTickets?.satisfactionRating} IS NOT NULL`),
+          .where(sql`${supportTickets.satisfactionRating} IS NOT NULL`),
       ]);
 
     res.json({
@@ -131,14 +131,14 @@ router?.get("/stats", requireAdmin, require2FA, async (_req, res) => {
   }
 });
 
-router?.get("/tickets/:ticketId", requireAdmin, require2FA, async (req, res) => {
+router.get("/tickets/:ticketId", requireAdmin, require2FA, async (req, res) => {
   try {
-    const { ticketId } = req.params;
+    const { ticketId } = req.params as Record<string, string>;
 
     const ticket = await db
       .select()
       .from(supportTickets)
-      .where(eq(supportTickets?.id, ticketId))
+      .where(eq(supportTickets.id, ticketId))
       .limit(1);
 
     if (!ticket?.length) {
@@ -152,13 +152,13 @@ router?.get("/tickets/:ticketId", requireAdmin, require2FA, async (req, res) => 
   }
 });
 
-router?.patch(
+router.patch(
   "/tickets/:ticketId",
   requireAdmin,
   require2FA,
   async (req, res) => {
     try {
-      const { ticketId } = req.params;
+      const { ticketId } = req.params as Record<string, string>;
       const {
         status,
         priority,
@@ -204,7 +204,7 @@ router?.patch(
       await db
         .update(supportTickets)
         .set(updateData)
-        .where(eq(supportTickets?.id, ticketId));
+        .where(eq(supportTickets.id, ticketId));
 
       logger.info({ detail: updateData }, `Admin ${req.user?.email} updated ticket ${ticketId}:`,
       );
@@ -217,7 +217,7 @@ router?.patch(
   },
 );
 
-router?.post("/tickets", requireAuth, async (req, res) => {
+router.post("/tickets", requireAuth, async (req, res) => {
   try {
     const { subject, description, category, priority } = req.body;
 

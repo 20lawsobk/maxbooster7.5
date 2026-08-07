@@ -26,7 +26,7 @@ const upload = createHardenedUpload({
  * POST /api/hybrid-storage/upload
  * Upload a file with intelligent routing
  */
-router?.post(
+router.post(
   "/upload",
   requireAuth,
   upload?.single("file"),
@@ -66,13 +66,13 @@ router?.post(
  * GET /api/hybrid-storage/file/:fileKey
  * Download a file (auto-routes to correct storage)
  */
-router?.get(
+router.get(
   "/file/:fileKey",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent(req.params.fileKey);
+      const fileKey = decodeURIComponent((req.params.fileKey as string));
 
       const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
@@ -106,13 +106,13 @@ router?.get(
  * DELETE /api/hybrid-storage/file/:fileKey
  * Delete a file from storage
  */
-router?.delete(
+router.delete(
   "/file/:fileKey",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent(req.params.fileKey);
+      const fileKey = decodeURIComponent((req.params.fileKey as string));
 
       const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
@@ -141,7 +141,7 @@ router?.delete(
  * GET /api/hybrid-storage/files
  * List files for the current user
  */
-router?.get("/files", requireAuth, async (req: Request, res: Response) => {
+router.get("/files", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { tier, location, folder } = req.query;
@@ -163,13 +163,13 @@ router?.get("/files", requireAuth, async (req: Request, res: Response) => {
  * GET /api/hybrid-storage/metadata/:fileKey
  * Get metadata for a file
  */
-router?.get(
+router.get(
   "/metadata/:fileKey",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent(req.params.fileKey);
+      const fileKey = decodeURIComponent((req.params.fileKey as string));
 
       const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
@@ -192,7 +192,7 @@ router?.get(
  * POST /api/hybrid-storage/migrate
  * Migrate a file between tiers
  */
-router?.post("/migrate", requireAuth, async (req: Request, res: Response) => {
+router.post("/migrate", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { fileKey, targetTier, targetLocation } = req.body;
@@ -233,7 +233,7 @@ router?.post("/migrate", requireAuth, async (req: Request, res: Response) => {
  * GET /api/hybrid-storage/analytics
  * Get storage analytics for the current user
  */
-router?.get("/analytics", requireAuth, async (req: Request, res: Response) => {
+router.get("/analytics", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const analytics = await hybridStorageService?.getAnalytics(userId);
@@ -249,7 +249,7 @@ router?.get("/analytics", requireAuth, async (req: Request, res: Response) => {
  * POST /api/hybrid-storage/optimize
  * Optimize storage for the current user
  */
-router?.post("/optimize", requireAuth, async (req: Request, res: Response) => {
+router.post("/optimize", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const result = await hybridStorageService?.optimizeStorage(userId);
@@ -265,7 +265,7 @@ router?.post("/optimize", requireAuth, async (req: Request, res: Response) => {
  * POST /api/hybrid-storage/cleanup
  * Cleanup old/unused files
  */
-router?.post("/cleanup", requireAuth, async (req: Request, res: Response) => {
+router.post("/cleanup", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { olderThanDays } = req.body;
@@ -285,13 +285,13 @@ router?.post("/cleanup", requireAuth, async (req: Request, res: Response) => {
  * GET /api/hybrid-storage/download-url/:fileKey
  * Get download URL for a file
  */
-router?.get(
+router.get(
   "/download-url/:fileKey",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent(req.params.fileKey);
+      const fileKey = decodeURIComponent((req.params.fileKey as string));
 
       const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {

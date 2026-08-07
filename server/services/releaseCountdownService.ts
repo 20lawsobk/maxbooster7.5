@@ -154,8 +154,8 @@ class ReleaseCountdownService {
         .from(releaseCountdowns)
         .where(
           and(
-            eq(releaseCountdowns?.id, countdownId),
-            eq(releaseCountdowns?.userId, userId),
+            eq(releaseCountdowns.id, countdownId),
+            eq(releaseCountdowns.userId, userId),
           ),
         )
         .limit(1);
@@ -173,11 +173,11 @@ class ReleaseCountdownService {
         .from(releaseCountdowns)
         .where(
           and(
-            eq(releaseCountdowns?.userId, userId),
-            eq(releaseCountdowns?.status, "active"),
+            eq(releaseCountdowns.userId, userId),
+            eq(releaseCountdowns.status, "active"),
           ),
         )
-        .orderBy(releaseCountdowns?.releaseDate);
+        .orderBy(releaseCountdowns.releaseDate);
       return countdowns;
     } catch (error) {
       logger.warn({ err: error }, "Error fetching active countdowns:");
@@ -190,8 +190,8 @@ class ReleaseCountdownService {
       const countdowns = await db
         .select()
         .from(releaseCountdowns)
-        .where(eq(releaseCountdowns?.userId, userId))
-        .orderBy(desc(releaseCountdowns?.createdAt));
+        .where(eq(releaseCountdowns.userId, userId))
+        .orderBy(desc(releaseCountdowns.createdAt));
       return countdowns;
     } catch (error) {
       logger.warn({ err: error }, "Error fetching countdowns:");
@@ -210,8 +210,8 @@ class ReleaseCountdownService {
         .set(data)
         .where(
           and(
-            eq(releaseCountdowns?.id, countdownId),
-            eq(releaseCountdowns?.userId, userId),
+            eq(releaseCountdowns.id, countdownId),
+            eq(releaseCountdowns.userId, userId),
           ),
         )
         .returning();
@@ -283,8 +283,8 @@ class ReleaseCountdownService {
       const tasks = await db
         .select()
         .from(countdownTasks)
-        .where(eq(countdownTasks?.countdownId, countdownId))
-        .orderBy(countdownTasks?.order);
+        .where(eq(countdownTasks.countdownId, countdownId))
+        .orderBy(countdownTasks.order);
       return tasks;
     } catch (error) {
       logger.warn({ err: error }, "Error fetching tasks:");
@@ -300,8 +300,8 @@ class ReleaseCountdownService {
       const rows = await db
         .select()
         .from(countdownTasks)
-        .where(inArray(countdownTasks?.countdownId, countdownIds))
-        .orderBy(countdownTasks?.order);
+        .where(inArray(countdownTasks.countdownId, countdownIds))
+        .orderBy(countdownTasks.order);
       const map = new Map<string, CountdownTask[]>();
       for (const row of rows) {
         const arr = map?.get(row?.countdownId) ?? [];
@@ -325,8 +325,8 @@ class ReleaseCountdownService {
         .set({ completedAt: new Date() })
         .where(
           and(
-            eq(countdownTasks?.id, taskId),
-            eq(countdownTasks?.countdownId, countdownId),
+            eq(countdownTasks.id, taskId),
+            eq(countdownTasks.countdownId, countdownId),
           ),
         )
         .returning();
@@ -349,8 +349,8 @@ class ReleaseCountdownService {
         .set({ completedAt: null })
         .where(
           and(
-            eq(countdownTasks?.id, taskId),
-            eq(countdownTasks?.countdownId, countdownId),
+            eq(countdownTasks.id, taskId),
+            eq(countdownTasks.countdownId, countdownId),
           ),
         )
         .returning();
@@ -370,8 +370,8 @@ class ReleaseCountdownService {
       const analytics = await db
         .select()
         .from(countdownAnalytics)
-        .where(eq(countdownAnalytics?.countdownId, countdownId))
-        .orderBy(desc(countdownAnalytics?.date));
+        .where(eq(countdownAnalytics.countdownId, countdownId))
+        .orderBy(desc(countdownAnalytics.date));
       return analytics;
     } catch (error) {
       logger.warn({ err: error }, "Error fetching analytics:");
@@ -392,8 +392,8 @@ class ReleaseCountdownService {
         .from(countdownAnalytics)
         .where(
           and(
-            eq(countdownAnalytics?.countdownId, countdownId),
-            gte(countdownAnalytics?.date, today),
+            eq(countdownAnalytics.countdownId, countdownId),
+            gte(countdownAnalytics.date, today),
           ),
         )
         .limit(1);
@@ -406,7 +406,7 @@ class ReleaseCountdownService {
             shares: (existing?.shares || 0) + (data?.shares || 0),
             pageViews: (existing?.pageViews || 0) + (data?.pageViews || 0),
           })
-          .where(eq(countdownAnalytics?.id, existing?.id))
+          .where(eq(countdownAnalytics.id, existing?.id))
           .returning();
         return updated;
       }
@@ -535,7 +535,7 @@ class ReleaseCountdownService {
     const countdown = await db
       .select()
       .from(releaseCountdowns)
-      .where(eq(releaseCountdowns?.id, countdownId))
+      .where(eq(releaseCountdowns.id, countdownId))
       .limit(1);
 
     if (!countdown[0]) {

@@ -54,7 +54,7 @@ const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
   { id: "marketplace.filter", key: "f", modifiers: [], enabled: true },
 ];
 
-router?.get("/user", async (req: Request, res: Response) => {
+router.get("/user", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -63,7 +63,7 @@ router?.get("/user", async (req: Request, res: Response) => {
     const user = await db
       .select()
       .from(users)
-      .where(eq(users?.id, req.user.id))
+      .where(eq(users.id, req.user.id))
       .limit(1);
 
     if (!user?.length) {
@@ -84,7 +84,7 @@ router?.get("/user", async (req: Request, res: Response) => {
   }
 });
 
-router?.put("/user", async (req: Request, res: Response) => {
+router.put("/user", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -112,14 +112,14 @@ router?.put("/user", async (req: Request, res: Response) => {
         await db
           .select({ preferences: users.preferences })
           .from(users)
-          .where(eq(users?.id, req.user.id))
+          .where(eq(users.id, req.user.id))
           .limit(1)
       )[0]?.preferences as Record<string, any>) || {};
 
     await db
       .update(users)
       .set({ preferences: { ...currentPrefs, shortcuts: preferences } })
-      .where(eq(users?.id, req.user.id));
+      .where(eq(users.id, req.user.id));
 
     return res.json(preferences);
   } catch (error) {
@@ -128,7 +128,7 @@ router?.put("/user", async (req: Request, res: Response) => {
   }
 });
 
-router?.delete("/user", async (req: Request, res: Response) => {
+router.delete("/user", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -139,7 +139,7 @@ router?.delete("/user", async (req: Request, res: Response) => {
         await db
           .select({ preferences: users.preferences })
           .from(users)
-          .where(eq(users?.id, req.user.id))
+          .where(eq(users.id, req.user.id))
           .limit(1)
       )[0]?.preferences as Record<string, any>) || {};
 
@@ -148,7 +148,7 @@ router?.delete("/user", async (req: Request, res: Response) => {
     await db
       .update(users)
       .set({ preferences: restPrefs })
-      .where(eq(users?.id, req.user.id));
+      .where(eq(users.id, req.user.id));
 
     return res.json({ success: true, message: "Shortcuts reset successfully" });
   } catch (error) {
@@ -157,7 +157,7 @@ router?.delete("/user", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/defaults", async (_req: Request, res: Response) => {
+router.get("/defaults", async (_req: Request, res: Response) => {
   try {
     return res.json({
       shortcuts: DEFAULT_SHORTCUTS,
@@ -169,7 +169,7 @@ router?.get("/defaults", async (_req: Request, res: Response) => {
   }
 });
 
-router?.get("/conflicts", async (req: Request, res: Response) => {
+router.get("/conflicts", async (req: Request, res: Response) => {
   try {
     const { key, modifiers,  excludeId } = req.query;
 

@@ -20,7 +20,7 @@ const router = Router();
 // File-upload endpoints require authentication — prevents unauthenticated CPU abuse.
 // Static info routes (loudness-targets, supported-formats) remain public.
 
-router?.post(
+router.post(
   "/analyze-metadata",
   requireAuth,
   audioUpload?.single("audio"),
@@ -62,7 +62,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/analyze-loudness",
   requireAuth,
   audioUpload?.single("audio"),
@@ -148,7 +148,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/generate-waveform",
   requireAuth,
   audioUpload?.single("audio"),
@@ -210,7 +210,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/validate-distribution",
   requireAuth,
   audioUpload?.single("audio"),
@@ -280,7 +280,7 @@ router?.post(
 );
 
 // Static info endpoints — intentionally public (no file upload, no user data)
-router?.get("/loudness-targets", (_req: Request, res: Response) => {
+router.get("/loudness-targets", (_req: Request, res: Response) => {
   res.json({
     success: true,
     targets: LOUDNESS_TARGETS,
@@ -299,7 +299,7 @@ router?.get("/loudness-targets", (_req: Request, res: Response) => {
   });
 });
 
-router?.get("/supported-formats", (_req: Request, res: Response) => {
+router.get("/supported-formats", (_req: Request, res: Response) => {
   res.json({
     success: true,
     formats: {

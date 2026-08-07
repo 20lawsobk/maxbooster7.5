@@ -8,7 +8,7 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-router?.get("/progress", requireAuth, async (req, res) => {
+router.get("/progress", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -23,7 +23,7 @@ router?.get("/progress", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/complete-step", requireAuth, async (req, res) => {
+router.post("/complete-step", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -43,7 +43,7 @@ router?.post("/complete-step", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/skip", requireAuth, async (req, res) => {
+router.post("/skip", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -58,7 +58,7 @@ router?.post("/skip", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/recommended-step", requireAuth, async (req, res) => {
+router.get("/recommended-step", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -73,7 +73,7 @@ router?.get("/recommended-step", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/tasks", requireAuth, async (_req, res) => {
+router.get("/tasks", requireAuth, async (_req, res) => {
   try {
     const tasks = await onboardingService?.getTasks();
     res.json({ tasks });
@@ -83,7 +83,7 @@ router?.get("/tasks", requireAuth, async (_req, res) => {
   }
 });
 
-router?.post("/seed", requireAuth, async (req, res) => {
+router.post("/seed", requireAuth, async (req, res) => {
   if ((!req.user as any)?.isAdmin) {
     return res.status(403).json({ error: "Forbidden" });
   }
@@ -99,7 +99,7 @@ router?.post("/seed", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/status", async (_req, res) => {
+router.get("/status", async (_req, res) => {
   try {
     const tasks = await onboardingService?.getTasks();
     res.json({
@@ -113,7 +113,7 @@ router?.get("/status", async (_req, res) => {
   }
 });
 
-router?.post("/complete-welcome", requireAuth, async (req, res) => {
+router.post("/complete-welcome", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -137,7 +137,7 @@ router?.post("/complete-welcome", requireAuth, async (req, res) => {
           completedAt: new Date().toISOString(),
         },
       })
-      .where(eq(users?.id, userId));
+      .where(eq(users.id, userId));
 
     logger.info(`Welcome flow completed for user ${userId}`);
 
@@ -151,7 +151,7 @@ router?.post("/complete-welcome", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/track-tutorial", requireAuth, async (req, res) => {
+router.post("/track-tutorial", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -169,7 +169,7 @@ router?.post("/track-tutorial", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     const tutorialProgress =
@@ -198,7 +198,7 @@ router?.post("/track-tutorial", requireAuth, async (req, res) => {
           tutorials: tutorialProgress,
         },
       })
-      .where(eq(users?.id, userId));
+      .where(eq(users.id, userId));
 
     logger.info(
       `Tutorial ${tutorialId} step ${stepId} tracked for user ${userId}`,
@@ -217,7 +217,7 @@ router?.post("/track-tutorial", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/skip-tutorial", requireAuth, async (req, res) => {
+router.post("/skip-tutorial", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -233,7 +233,7 @@ router?.post("/skip-tutorial", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     const tutorialProgress =
@@ -256,7 +256,7 @@ router?.post("/skip-tutorial", requireAuth, async (req, res) => {
           tutorials: tutorialProgress,
         },
       })
-      .where(eq(users?.id, userId));
+      .where(eq(users.id, userId));
 
     logger.info(`Tutorial ${tutorialId} skipped for user ${userId}`);
 
@@ -271,7 +271,7 @@ router?.post("/skip-tutorial", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/tutorials", requireAuth, async (req, res) => {
+router.get("/tutorials", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -281,7 +281,7 @@ router?.get("/tutorials", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     const tutorialProgress =
@@ -296,7 +296,7 @@ router?.get("/tutorials", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/mark-celebrated", requireAuth, async (req, res) => {
+router.post("/mark-celebrated", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -312,7 +312,7 @@ router?.post("/mark-celebrated", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     const celebrations =
@@ -329,7 +329,7 @@ router?.post("/mark-celebrated", requireAuth, async (req, res) => {
           celebrations,
         },
       })
-      .where(eq(users?.id, userId));
+      .where(eq(users.id, userId));
 
     logger.info(`First action ${actionType} celebrated for user ${userId}`);
 
@@ -343,7 +343,7 @@ router?.post("/mark-celebrated", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/first-actions", requireAuth, async (req, res) => {
+router.get("/first-actions", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -353,7 +353,7 @@ router?.get("/first-actions", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     const celebrations =
@@ -362,14 +362,14 @@ router?.get("/first-actions", requireAuth, async (req, res) => {
     res.json({
       celebrations,
       pending: {
-        first_track_upload: (!celebrations as any)?.first_track_upload,
-        first_post_scheduled: (!celebrations as any)?.first_post_scheduled,
-        first_beat_listed: (!celebrations as any)?.first_beat_listed,
-        first_payout: (!celebrations as any)?.first_payout,
-        first_collaboration: (!celebrations as any)?.first_collaboration,
-        first_release: (!celebrations as any)?.first_release,
-        profile_complete: (!celebrations as any)?.profile_complete,
-        social_connected: (!celebrations as any)?.social_connected,
+        first_track_upload: !(celebrations as any).first_track_upload,
+        first_post_scheduled: !(celebrations as any).first_post_scheduled,
+        first_beat_listed: !(celebrations as any).first_beat_listed,
+        first_payout: !(celebrations as any).first_payout,
+        first_collaboration: !(celebrations as any).first_collaboration,
+        first_release: !(celebrations as any).first_release,
+        profile_complete: !(celebrations as any).profile_complete,
+        social_connected: !(celebrations as any).social_connected,
       },
     });
   } catch (error) {
@@ -378,7 +378,7 @@ router?.get("/first-actions", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/check-first-login", requireAuth, async (req, res) => {
+router.get("/check-first-login", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -388,7 +388,7 @@ router?.get("/check-first-login", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     const onboardingData = user?.onboardingData as Record<string, unknown>;
@@ -406,7 +406,7 @@ router?.get("/check-first-login", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/dismiss-reminder", requireAuth, async (req, res) => {
+router.post("/dismiss-reminder", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -418,7 +418,7 @@ router?.post("/dismiss-reminder", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     await db
@@ -433,7 +433,7 @@ router?.post("/dismiss-reminder", requireAuth, async (req, res) => {
             : null,
         },
       })
-      .where(eq(users?.id, userId));
+      .where(eq(users.id, userId));
 
     res.json({
       success: true,
@@ -562,7 +562,7 @@ const DEFAULT_ACHIEVEMENTS = [
   },
 ];
 
-router?.get("/achievements", requireAuth, async (req, res) => {
+router.get("/achievements", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -572,7 +572,7 @@ router?.get("/achievements", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     const unlockedAchievements =
@@ -582,7 +582,9 @@ router?.get("/achievements", requireAuth, async (req, res) => {
 
     const achievements = DEFAULT_ACHIEVEMENTS?.map((achievement) => {
       const unlocked =
-        unlockedAchievements[achievement?.id] || celebrations[achievement?.id];
+        unlockedAchievements[achievement?.id] ||
+        celebrations[achievement?.id] ||
+        {};
       return {
         ...achievement,
         unlockedAt: unlocked.unlockedAt || unlocked?.celebratedAt || null,
@@ -628,7 +630,7 @@ router?.get("/achievements", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/unlock-achievement", requireAuth, async (req, res) => {
+router.post("/unlock-achievement", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -651,7 +653,7 @@ router?.post("/unlock-achievement", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     const achievements =
@@ -680,7 +682,7 @@ router?.post("/unlock-achievement", requireAuth, async (req, res) => {
           achievements,
         },
       })
-      .where(eq(users?.id, userId));
+      .where(eq(users.id, userId));
 
     logger.info(`Achievement ${achievementId} unlocked for user ${userId}`);
 
@@ -697,7 +699,7 @@ router?.post("/unlock-achievement", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/profile/completion", requireAuth, async (req, res) => {
+router.get("/profile/completion", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -707,7 +709,7 @@ router?.get("/profile/completion", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     if (!user) {

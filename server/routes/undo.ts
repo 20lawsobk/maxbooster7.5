@@ -26,7 +26,7 @@ function generateActionId(): string {
   return `action_${Date?.now()}_${randomBytes(4).toString("hex")}`;
 }
 
-router?.post("/action", async (req: Request, res: Response) => {
+router.post("/action", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -87,13 +87,13 @@ router?.post("/action", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/undo/:actionId", async (req: Request, res: Response) => {
+router.post("/undo/:actionId", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { actionId } = req.params;
+    const { actionId } = req.params as Record<string, string>;
     const action = actionCache?.get(actionId);
 
     if (!action) {
@@ -125,13 +125,13 @@ router?.post("/undo/:actionId", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/redo/:actionId", async (req: Request, res: Response) => {
+router.post("/redo/:actionId", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { actionId } = req.params;
+    const { actionId } = req.params as Record<string, string>;
     const action = actionCache?.get(actionId);
 
     if (!action) {
@@ -163,7 +163,7 @@ router?.post("/redo/:actionId", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/history", async (req: Request, res: Response) => {
+router.get("/history", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -215,7 +215,7 @@ router?.get("/history", async (req: Request, res: Response) => {
   }
 });
 
-router?.delete("/history", async (req: Request, res: Response) => {
+router.delete("/history", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -238,13 +238,13 @@ router?.delete("/history", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/action/:actionId", async (req: Request, res: Response) => {
+router.get("/action/:actionId", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { actionId } = req.params;
+    const { actionId } = req.params as Record<string, string>;
     const action = actionCache?.get(actionId);
 
     if (!action) {
@@ -278,7 +278,7 @@ router?.get("/action/:actionId", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/record", async (req: Request, res: Response) => {
+router.post("/record", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -339,13 +339,13 @@ router?.post("/record", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/revert/:actionId", async (req: Request, res: Response) => {
+router.post("/revert/:actionId", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { actionId } = req.params;
+    const { actionId } = req.params as Record<string, string>;
     const action = actionCache?.get(actionId);
 
     if (!action) {
@@ -379,7 +379,7 @@ router?.post("/revert/:actionId", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/batch", async (req: Request, res: Response) => {
+router.post("/batch", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -493,7 +493,7 @@ function generateDeletedItemId(): string {
   return `deleted_${Date?.now()}_${randomBytes(4).toString("hex")}`;
 }
 
-router?.post("/track-action", async (req: Request, res: Response) => {
+router.post("/track-action", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -569,7 +569,7 @@ router?.post("/track-action", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/create-restore-point", async (req: Request, res: Response) => {
+router.post("/create-restore-point", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -619,7 +619,7 @@ router?.post("/create-restore-point", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/restore-points", async (req: Request, res: Response) => {
+router.get("/restore-points", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -645,13 +645,13 @@ router?.get("/restore-points", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/restore/:pointId", async (req: Request, res: Response) => {
+router.post("/restore/:pointId", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { pointId } = req.params;
+    const { pointId } = req.params as Record<string, string>;
     const restorePoint = restorePointCache?.get(pointId);
 
     if (!restorePoint) {
@@ -696,7 +696,7 @@ router?.post("/restore/:pointId", async (req: Request, res: Response) => {
   }
 });
 
-router?.delete(
+router.delete(
   "/restore-points/:pointId",
   async (req: Request, res: Response) => {
     try {
@@ -704,7 +704,7 @@ router?.delete(
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const { pointId } = req.params;
+      const { pointId } = req.params as Record<string, string>;
       const restorePoint = restorePointCache?.get(pointId);
 
       if (!restorePoint) {
@@ -730,7 +730,7 @@ router?.delete(
   },
 );
 
-router?.get("/deleted-items", async (req: Request, res: Response) => {
+router.get("/deleted-items", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -771,13 +771,13 @@ router?.get("/deleted-items", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/recover/:itemId", async (req: Request, res: Response) => {
+router.post("/recover/:itemId", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { itemId } = req.params;
+    const { itemId } = req.params as Record<string, string>;
     const deletedItem = deletedItemCache?.get(itemId);
 
     if (!deletedItem) {

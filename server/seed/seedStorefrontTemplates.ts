@@ -145,7 +145,7 @@ export async function seedStorefrontTemplates() {
       return;
     }
 
-    await db?.insert(storefrontTemplates).values(
+    await db.insert(storefrontTemplates).values(
       TEMPLATES?.map((t) => ({
         name: t.name,
         slug: t.slug,

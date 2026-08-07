@@ -2189,9 +2189,9 @@ class BeatMoneyLoopService {
       .from(beatMoneyLoopCycles)
       .where(
         and(
-          inArray(beatMoneyLoopCycles?.status, ["completed", "listed"]),
+          inArray(beatMoneyLoopCycles.status, ["completed", "listed"]),
           gte(
-            beatMoneyLoopCycles?.startedAt,
+            beatMoneyLoopCycles.startedAt,
             new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000),
           ),
         ),
@@ -2207,7 +2207,7 @@ class BeatMoneyLoopService {
           price: beats.price,
         })
         .from(beats)
-        .where(eq(beats?.id, cycle?.beatId))
+        .where(eq(beats.id, cycle?.beatId))
         .limit(1);
       if (!beat) continue;
       const revenueCents = Math.round(
@@ -2225,7 +2225,7 @@ class BeatMoneyLoopService {
             downloads: beat.downloads ?? 0,
             revenueCents,
           })
-          .where(eq(beatMoneyLoopCycles?.id, cycle?.id));
+          .where(eq(beatMoneyLoopCycles.id, cycle?.id));
         updated++;
       }
     }
@@ -2233,13 +2233,13 @@ class BeatMoneyLoopService {
       // Refresh totalRevenueCents on state
       const total = await db
         .select({
-          sum: sql<number>`COALESCE(SUM(${beatMoneyLoopCycles?.revenueCents}), 0)`,
+          sum: sql<number>`COALESCE(SUM(${beatMoneyLoopCycles.revenueCents}), 0)`,
         })
         .from(beatMoneyLoopCycles);
       await db
         .update(beatMoneyLoopState)
         .set({ totalRevenueCents: total[0]?.sum ?? 0, updatedAt: new Date() })
-        .where(eq(beatMoneyLoopState?.id, STATE_ROW_ID));
+        .where(eq(beatMoneyLoopState.id, STATE_ROW_ID));
     }
     return { updated };
   }

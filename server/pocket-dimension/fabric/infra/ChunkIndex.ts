@@ -34,7 +34,7 @@ export class ChunkIndex {
     const rows = await db
       .select()
       .from(fabricChunks)
-      .where(eq(fabricChunks?.id, chunkId));
+      .where(eq(fabricChunks.id, chunkId));
     return rows[0] ? this.rowToChunk(rows[0]) : null;
   }
 
@@ -45,21 +45,21 @@ export class ChunkIndex {
     const rows = await db
       .select()
       .from(fabricChunks)
-      .where(inArray(fabricChunks?.id, chunkIds));
+      .where(inArray(fabricChunks.id, chunkIds));
     const map = new Map<ChunkId, FabricChunkLocation>();
     for (const row of rows) map?.set(row?.id, this.rowToChunk(row));
     return map;
   }
 
   async deleteChunkLocation(chunkId: ChunkId): Promise<void> {
-    await db?.delete(fabricChunks).where(eq(fabricChunks?.id, chunkId));
+    await db.delete(fabricChunks).where(eq(fabricChunks.id, chunkId));
   }
 
   async getChunksByObject(objectId: ObjectId): Promise<FabricChunkLocation[]> {
     const rows = await db
       .select()
       .from(fabricChunks)
-      .where(eq(fabricChunks?.objectId, objectId));
+      .where(eq(fabricChunks.objectId, objectId));
     return rows?.map(this.rowToChunk);
   }
 

@@ -21,14 +21,14 @@ import { stripeService } from "../services/stripeService.js";
 
 const router = Router();
 
-router?.use(requireAuth);
-router?.use(payoutsRateLimiter);
+router.use(requireAuth);
+router.use(payoutsRateLimiter);
 
 /**
  * GET /api/payouts
  * Root handler — returns payout summary (balance + recent history) for dashboard use
  */
-router?.get("/", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
     const [balance, history] = await Promise?.all([
@@ -38,8 +38,8 @@ router?.get("/", async (req, res) => {
       db
         .select()
         .from(royaltyStatements)
-        .where(eq(royaltyStatements?.userId, req.user.id))
-        .orderBy(desc(royaltyStatements?.createdAt))
+        .where(eq(royaltyStatements.userId, req.user.id))
+        .orderBy(desc(royaltyStatements.createdAt))
         .limit(5)
         .catch(() => []),
     ]);
@@ -135,7 +135,7 @@ router.post("/instant", async (req, res) => {
  * GET /api/payouts/history
  * Get user's payout history
  */
-router?.get("/history", async (req, res) => {
+router.get("/history", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -173,7 +173,7 @@ router?.get("/history", async (req, res) => {
  * GET /api/payouts/status/:payoutId
  * Check payout status by ID
  */
-router?.get("/status/:payoutId", async (req, res) => {
+router.get("/status/:payoutId", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -206,7 +206,7 @@ router?.get("/status/:payoutId", async (req, res) => {
  * POST /api/payouts/setup
  * Complete Stripe Connect Express onboarding
  */
-router?.post("/setup", async (req, res) => {
+router.post("/setup", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -237,7 +237,7 @@ router?.post("/setup", async (req, res) => {
  * GET /api/payouts/verify
  * Verify payout account status (Stripe, Bank, or PayPal)
  */
-router?.get("/verify", async (req, res) => {
+router.get("/verify", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -285,7 +285,7 @@ router?.get("/verify", async (req, res) => {
  * GET /api/payouts/preferences
  * Get current payment preferences
  */
-router?.get("/preferences", async (req, res) => {
+router.get("/preferences", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -316,7 +316,7 @@ router?.get("/preferences", async (req, res) => {
  * POST /api/payouts/preferences/paypal
  * Configure PayPal for payouts
  */
-router?.post("/preferences/paypal", async (req, res) => {
+router.post("/preferences/paypal", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -341,7 +341,7 @@ router?.post("/preferences/paypal", async (req, res) => {
     await db
       .update(users)
       .set({ preferences: updatedPrefs })
-      .where(eq(users?.id, req.user.id));
+      .where(eq(users.id, req.user.id));
 
     logger.info(`PayPal configured for user ${req.user.id}`);
     res.json({ success: true, method: "paypal", email });
@@ -355,7 +355,7 @@ router?.post("/preferences/paypal", async (req, res) => {
  * POST /api/payouts/preferences/bank
  * Configure bank transfer for payouts
  */
-router?.post("/preferences/bank", async (req, res) => {
+router.post("/preferences/bank", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -402,7 +402,7 @@ router?.post("/preferences/bank", async (req, res) => {
     await db
       .update(users)
       .set({ preferences: updatedPrefs })
-      .where(eq(users?.id, req.user.id));
+      .where(eq(users.id, req.user.id));
 
     logger.info(`Bank account configured for user ${req.user.id}`);
     res.json({
@@ -421,7 +421,7 @@ router?.post("/preferences/bank", async (req, res) => {
  * GET /api/payouts/dashboard
  * Get Stripe Express dashboard link for seller
  */
-router?.get("/dashboard", async (req, res) => {
+router.get("/dashboard", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -448,7 +448,7 @@ router?.get("/dashboard", async (req, res) => {
  * GET /api/payouts/earnings
  * Get seller earnings summary
  */
-router?.get("/earnings", async (req, res) => {
+router.get("/earnings", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -468,7 +468,7 @@ router?.get("/earnings", async (req, res) => {
  * POST /api/payouts/split
  * Create split payment to multiple collaborators
  */
-router?.post("/split", async (req, res) => {
+router.post("/split", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -514,7 +514,7 @@ router?.post("/split", async (req, res) => {
  * POST /api/payouts/split-enhanced
  * Create enhanced split payment with ledger tracking
  */
-router?.post("/split-enhanced", async (req, res) => {
+router.post("/split-enhanced", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -561,7 +561,7 @@ router?.post("/split-enhanced", async (req, res) => {
  * GET /api/payouts/report
  * Generate payout report for date range
  */
-router?.get("/report", async (req, res) => {
+router.get("/report", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -600,7 +600,7 @@ router?.get("/report", async (req, res) => {
  * GET /api/payouts/risk-assessment
  * Get risk assessment for a potential payout amount
  */
-router?.get("/risk-assessment", async (req, res) => {
+router.get("/risk-assessment", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -631,7 +631,7 @@ router?.get("/risk-assessment", async (req, res) => {
  * GET /api/payouts/ledger
  * Get user's ledger history
  */
-router?.get("/ledger", async (req, res) => {
+router.get("/ledger", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -667,7 +667,7 @@ router?.get("/ledger", async (req, res) => {
  * GET /api/payouts/tax-form/:year
  * Generate or retrieve 1099-K tax form data
  */
-router?.get("/tax-form/:year", async (req, res) => {
+router.get("/tax-form/:year", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -700,7 +700,7 @@ router?.get("/tax-form/:year", async (req, res) => {
  * GET /api/payouts/tax-forms
  * Get all tax forms for user
  */
-router?.get("/tax-forms", async (req, res) => {
+router.get("/tax-forms", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -709,8 +709,8 @@ router?.get("/tax-forms", async (req, res) => {
     const forms = await db
       .select()
       .from(taxForms)
-      .where(eq(taxForms?.userId, req.user.id))
-      .orderBy(desc(taxForms?.taxYear))
+      .where(eq(taxForms.userId, req.user.id))
+      .orderBy(desc(taxForms.taxYear))
       .limit(20);
 
     res.json({ forms });
@@ -726,7 +726,7 @@ router?.get("/tax-forms", async (req, res) => {
  * POST /api/payouts/tax-form/submit
  * Submit tax form (W-9, W-8BEN, W-8BEN-E)
  */
-router?.post("/tax-form/submit", async (req, res) => {
+router.post("/tax-form/submit", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -796,7 +796,7 @@ router?.post("/tax-form/submit", async (req, res) => {
  * GET /api/payouts/statements
  * Get all statements for user
  */
-router?.get("/statements", async (req, res) => {
+router.get("/statements", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -805,8 +805,8 @@ router?.get("/statements", async (req, res) => {
     const statements = await db
       .select()
       .from(royaltyStatements)
-      .where(eq(royaltyStatements?.userId, req.user.id))
-      .orderBy(desc(royaltyStatements?.periodEnd))
+      .where(eq(royaltyStatements.userId, req.user.id))
+      .orderBy(desc(royaltyStatements.periodEnd))
       .limit(100);
 
     res.json({
@@ -836,7 +836,7 @@ router?.get("/statements", async (req, res) => {
  * POST /api/payouts/statements/generate
  * Generate statement for custom date range
  */
-router?.post("/statements/generate", async (req, res) => {
+router.post("/statements/generate", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -858,13 +858,13 @@ router?.post("/statements/generate", async (req, res) => {
     }
 
     const earningsResult = await db
-      .select({ total: sum(royaltyTransactions?.amount) })
+      .select({ total: sum(royaltyTransactions.amount) })
       .from(royaltyTransactions)
       .where(
         and(
-          eq(royaltyTransactions?.userId, req.user.id),
-          gte(royaltyTransactions?.createdAt, start),
-          lte(royaltyTransactions?.createdAt, end),
+          eq(royaltyTransactions.userId, req.user.id),
+          gte(royaltyTransactions.createdAt, start),
+          lte(royaltyTransactions.createdAt, end),
         ),
       );
 
@@ -910,7 +910,7 @@ router?.post("/statements/generate", async (req, res) => {
  * GET /api/payouts/statements/:id/download
  * Download statement PDF
  */
-router?.get("/statements/:id/download", async (req, res) => {
+router.get("/statements/:id/download", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -923,8 +923,8 @@ router?.get("/statements/:id/download", async (req, res) => {
       .from(royaltyStatements)
       .where(
         and(
-          eq(royaltyStatements?.id, id),
-          eq(royaltyStatements?.userId, req.user.id),
+          eq(royaltyStatements.id, id),
+          eq(royaltyStatements.userId, req.user.id),
         ),
       )
       .limit(1);
@@ -952,7 +952,7 @@ router?.get("/statements/:id/download", async (req, res) => {
  * GET /api/payouts/disputes
  * Get all disputes for user
  */
-router?.get("/disputes", async (req, res) => {
+router.get("/disputes", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -961,8 +961,8 @@ router?.get("/disputes", async (req, res) => {
     const disputes = await db
       .select()
       .from(royaltyDisputes)
-      .where(eq(royaltyDisputes?.userId, req.user.id))
-      .orderBy(desc(royaltyDisputes?.createdAt))
+      .where(eq(royaltyDisputes.userId, req.user.id))
+      .orderBy(desc(royaltyDisputes.createdAt))
       .limit(50);
 
     const disputeIds = disputes?.map((d) => d?.id);
@@ -971,8 +971,8 @@ router?.get("/disputes", async (req, res) => {
         ? await db
             .select()
             .from(disputeMessages)
-            .where(inArray(disputeMessages?.disputeId, disputeIds))
-            .orderBy(desc(disputeMessages?.createdAt))
+            .where(inArray(disputeMessages.disputeId, disputeIds))
+            .orderBy(desc(disputeMessages.createdAt))
             .limit(500)
         : [];
 
@@ -1021,7 +1021,7 @@ router?.get("/disputes", async (req, res) => {
  * POST /api/payouts/disputes
  * File a new dispute
  */
-router?.post("/disputes", async (req, res) => {
+router.post("/disputes", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1072,7 +1072,7 @@ router?.post("/disputes", async (req, res) => {
  * POST /api/payouts/disputes/:id/evidence
  * Submit evidence for a dispute
  */
-router?.post("/disputes/:id/evidence", async (req, res) => {
+router.post("/disputes/:id/evidence", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1090,8 +1090,8 @@ router?.post("/disputes/:id/evidence", async (req, res) => {
       .from(royaltyDisputes)
       .where(
         and(
-          eq(royaltyDisputes?.id, id),
-          eq(royaltyDisputes?.userId, req.user.id),
+          eq(royaltyDisputes.id, id),
+          eq(royaltyDisputes.userId, req.user.id),
         ),
       )
       .limit(1);
@@ -1102,7 +1102,7 @@ router?.post("/disputes/:id/evidence", async (req, res) => {
 
     const now = new Date();
 
-    await db?.insert(disputeMessages).values({
+    await db.insert(disputeMessages).values({
       disputeId: id,
       sender: "user",
       content: `[Evidence] ${description}`,
@@ -1113,10 +1113,10 @@ router?.post("/disputes/:id/evidence", async (req, res) => {
     await db
       .update(royaltyDisputes)
       .set({
-        evidenceCount: sql`${royaltyDisputes?.evidenceCount} + 1`,
+        evidenceCount: sql`${royaltyDisputes.evidenceCount} + 1`,
         updatedAt: now,
       })
-      .where(eq(royaltyDisputes?.id, id));
+      .where(eq(royaltyDisputes.id, id));
 
     res.json({
       success: true,
@@ -1134,7 +1134,7 @@ router?.post("/disputes/:id/evidence", async (req, res) => {
  * POST /api/payouts/disputes/:id/message
  * Send message for a dispute
  */
-router?.post("/disputes/:id/message", async (req, res) => {
+router.post("/disputes/:id/message", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1152,8 +1152,8 @@ router?.post("/disputes/:id/message", async (req, res) => {
       .from(royaltyDisputes)
       .where(
         and(
-          eq(royaltyDisputes?.id, id),
-          eq(royaltyDisputes?.userId, req.user.id),
+          eq(royaltyDisputes.id, id),
+          eq(royaltyDisputes.userId, req.user.id),
         ),
       )
       .limit(1);
@@ -1164,7 +1164,7 @@ router?.post("/disputes/:id/message", async (req, res) => {
 
     const now = new Date();
 
-    await db?.insert(disputeMessages).values({
+    await db.insert(disputeMessages).values({
       disputeId: id,
       sender: "user",
       content: message,
@@ -1174,7 +1174,7 @@ router?.post("/disputes/:id/message", async (req, res) => {
     await db
       .update(royaltyDisputes)
       .set({ updatedAt: now })
-      .where(eq(royaltyDisputes?.id, id));
+      .where(eq(royaltyDisputes.id, id));
 
     res.json({
       success: true,
@@ -1192,7 +1192,7 @@ router?.post("/disputes/:id/message", async (req, res) => {
  * POST /api/payouts/retry/:payoutId
  * Retry a failed payout
  */
-router?.post("/retry/:payoutId", async (req, res) => {
+router.post("/retry/:payoutId", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1226,7 +1226,7 @@ router?.post("/retry/:payoutId", async (req, res) => {
  * GET /api/payouts/instant-fee
  * Get instant payout fee calculation
  */
-router?.get("/instant-fee", async (req, res) => {
+router.get("/instant-fee", async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1261,7 +1261,7 @@ router?.get("/instant-fee", async (req, res) => {
  * GET /api/payouts/currencies
  * Get supported payout currencies
  */
-router?.get("/currencies", async (_req, res) => {
+router.get("/currencies", async (_req, res) => {
   try {
     const currencies = [
       {

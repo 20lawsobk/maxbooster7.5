@@ -172,7 +172,7 @@ const swaggerSpec = swaggerJsdoc(options);
  */
 export function setupSwagger(app: Express): void {
   // Serve Swagger UI
-  app?.use(
+  app.use(
     "/api-docs",
     swaggerUi?.serve,
     swaggerUi?.setup(swaggerSpec, {
@@ -183,7 +183,7 @@ export function setupSwagger(app: Express): void {
   );
 
   // Serve raw OpenAPI spec
-  app?.get("/api-docs.json", (_req, res) => {
+  app.get("/api-docs.json", (_req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.send(swaggerSpec);
   });

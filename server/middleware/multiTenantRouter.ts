@@ -58,8 +58,8 @@ export async function multiTenantRouter(
         storefront: storefronts,
       })
       .from(storefrontHosts)
-      .innerJoin(storefronts, eq(storefrontHosts?.storefrontId, storefronts?.id))
-      .where(eq(storefrontHosts?.host, host))
+      .innerJoin(storefronts, eq(storefrontHosts.storefrontId, storefronts.id))
+      .where(eq(storefrontHosts.host, host))
       .limit(1);
 
     if (!hostRow) {
@@ -72,7 +72,7 @@ export async function multiTenantRouter(
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users?.id, hostRow?.storefront.userId))
+      .where(eq(users.id, hostRow?.storefront.userId))
       .limit(1);
 
     (req as unknown as Record<string, unknown>).storefront = hostRow?.storefront;

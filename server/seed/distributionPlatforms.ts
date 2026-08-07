@@ -1941,7 +1941,7 @@ export async function seedDistributionPlatforms() {
   logger.info("🌱 Seeding distribution platforms...");
 
   try {
-    const [{ total }] = await db?.select({ total: count() }).from(dspProviders);
+    const [{ total }] = await db.select({ total: count() }).from(dspProviders);
 
     if (Number(total) >= DISTRIBUTION_PLATFORMS?.length) {
       logger.info(

@@ -290,18 +290,18 @@ const updateWorkflowSchema = createWorkflowSchema?.partial().extend({
   enabled: z.boolean().optional(),
 });
 
-router?.get("/catalog", (_req, res) => {
+router.get("/catalog", (_req, res) => {
   res.json({ triggers: CUSTOM_TRIGGERS, actions: CUSTOM_ACTIONS });
 });
 
-router?.get("/", requireAuth, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
     const rows = await db
       .select()
       .from(customWorkflows)
-      .where(eq(customWorkflows?.userId, req.user!.id))
-      .orderBy(desc(customWorkflows?.createdAt))
+      .where(eq(customWorkflows.userId, req.user!.id))
+      .orderBy(desc(customWorkflows.createdAt))
       .limit(limit)
       .offset(offset);
     res.json(rows);
@@ -311,15 +311,15 @@ router?.get("/", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/:id", requireAuth, async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const [row] = await db
       .select()
       .from(customWorkflows)
       .where(
         and(
-          eq(customWorkflows?.id, req.params.id),
-          eq(customWorkflows?.userId, req.user!.id),
+          eq(customWorkflows.id, (req.params.id as string)),
+          eq(customWorkflows.userId, req.user!.id),
         ),
       )
       .limit(1);
@@ -331,7 +331,7 @@ router?.get("/:id", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const parsed = createWorkflowSchema?.safeParse(req.body);
     if (!parsed?.success) {
@@ -361,7 +361,7 @@ router?.post("/", requireAuth, async (req, res) => {
   }
 });
 
-router?.put("/:id", requireAuth, async (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   try {
     const parsed = updateWorkflowSchema?.safeParse(req.body);
     if (!parsed?.success) {
@@ -391,8 +391,8 @@ router?.put("/:id", requireAuth, async (req, res) => {
       })
       .where(
         and(
-          eq(customWorkflows?.id, req.params.id),
-          eq(customWorkflows?.userId, req.user!.id),
+          eq(customWorkflows.id, (req.params.id as string)),
+          eq(customWorkflows.userId, req.user!.id),
         ),
       )
       .returning();
@@ -404,14 +404,14 @@ router?.put("/:id", requireAuth, async (req, res) => {
   }
 });
 
-router?.delete("/:id", requireAuth, async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const [deleted] = await db
       .delete(customWorkflows)
       .where(
         and(
-          eq(customWorkflows?.id, req.params.id),
-          eq(customWorkflows?.userId, req.user!.id),
+          eq(customWorkflows.id, (req.params.id as string)),
+          eq(customWorkflows.userId, req.user!.id),
         ),
       )
       .returning();
@@ -423,15 +423,15 @@ router?.delete("/:id", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/:id/enable", requireAuth, async (req, res) => {
+router.post("/:id/enable", requireAuth, async (req, res) => {
   try {
     const [row] = await db
       .update(customWorkflows)
       .set({ enabled: true, updatedAt: new Date() })
       .where(
         and(
-          eq(customWorkflows?.id, req.params.id),
-          eq(customWorkflows?.userId, req.user!.id),
+          eq(customWorkflows.id, (req.params.id as string)),
+          eq(customWorkflows.userId, req.user!.id),
         ),
       )
       .returning();
@@ -443,15 +443,15 @@ router?.post("/:id/enable", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/:id/disable", requireAuth, async (req, res) => {
+router.post("/:id/disable", requireAuth, async (req, res) => {
   try {
     const [row] = await db
       .update(customWorkflows)
       .set({ enabled: false, updatedAt: new Date() })
       .where(
         and(
-          eq(customWorkflows?.id, req.params.id),
-          eq(customWorkflows?.userId, req.user!.id),
+          eq(customWorkflows.id, (req.params.id as string)),
+          eq(customWorkflows.userId, req.user!.id),
         ),
       )
       .returning();
@@ -463,7 +463,7 @@ router?.post("/:id/disable", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/:id/test", requireAuth, async (req, res) => {
+router.post("/:id/test", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const [workflow] = await db
@@ -471,8 +471,8 @@ router?.post("/:id/test", requireAuth, async (req, res) => {
       .from(customWorkflows)
       .where(
         and(
-          eq(customWorkflows?.id, req.params.id),
-          eq(customWorkflows?.userId, userId),
+          eq(customWorkflows.id, (req.params.id as string)),
+          eq(customWorkflows.userId, userId),
         ),
       )
       .limit(1);
@@ -577,7 +577,7 @@ router?.post("/:id/test", requireAuth, async (req, res) => {
         lastRunAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(customWorkflows?.id, workflow?.id));
+      .where(eq(customWorkflows.id, workflow?.id));
 
     res.json({ success: true, actionsRun });
   } catch (error) {

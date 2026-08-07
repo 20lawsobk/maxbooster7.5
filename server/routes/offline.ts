@@ -21,7 +21,7 @@ const updateSettingsSchema = z.object({
   offlineNotifications: z.boolean().optional(),
 });
 
-router?.get("/status", requireAuth, async (_req, res) => {
+router.get("/status", requireAuth, async (_req, res) => {
   try {
     const isOnline = offlineModeService?.getOnlineStatus();
     const capabilities = offlineModeService?.getOfflineCapabilities();
@@ -45,7 +45,7 @@ router?.get("/status", requireAuth, async (_req, res) => {
   }
 });
 
-router?.get("/capabilities", requireAuth, async (_req, res) => {
+router.get("/capabilities", requireAuth, async (_req, res) => {
   try {
     const capabilities = offlineModeService?.getOfflineCapabilities();
 
@@ -72,7 +72,7 @@ router?.get("/capabilities", requireAuth, async (_req, res) => {
   }
 });
 
-router?.post("/cache", requireAuth, async (req, res) => {
+router.post("/cache", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { projectId } = cacheProjectSchema?.parse(req.body);
@@ -104,9 +104,9 @@ router?.post("/cache", requireAuth, async (req, res) => {
   }
 });
 
-router?.delete("/cache/:projectId", requireAuth, async (req, res) => {
+router.delete("/cache/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.params as Record<string, string>;
 
     await offlineModeService?.uncacheProject(projectId);
 
@@ -117,7 +117,7 @@ router?.delete("/cache/:projectId", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/cache", requireAuth, async (req, res) => {
+router.get("/cache", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const cachedProjects = offlineModeService?.getCachedProjects(userId);
@@ -144,9 +144,9 @@ router?.get("/cache", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/cache/:projectId", requireAuth, async (req, res) => {
+router.get("/cache/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.params as Record<string, string>;
     const cached = offlineModeService?.getCachedProject(projectId);
 
     if (!cached) {
@@ -163,9 +163,9 @@ router?.get("/cache/:projectId", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/cache/:projectId/check", requireAuth, async (req, res) => {
+router.get("/cache/:projectId/check", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.params as Record<string, string>;
     const isCached = offlineModeService?.isProjectCached(projectId);
 
     res.json({
@@ -179,9 +179,9 @@ router?.get("/cache/:projectId/check", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/sync/:projectId", requireAuth, async (req, res) => {
+router.post("/sync/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.params as Record<string, string>;
     const result = await offlineModeService?.syncProject(projectId);
 
     res.json({
@@ -194,7 +194,7 @@ router?.post("/sync/:projectId", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/sync-all", requireAuth, async (_req, res) => {
+router.post("/sync-all", requireAuth, async (_req, res) => {
   try {
     const { results, totalTime } = await offlineModeService?.syncAll();
 
@@ -214,7 +214,7 @@ router?.post("/sync-all", requireAuth, async (_req, res) => {
   }
 });
 
-router?.get("/settings", requireAuth, async (_req, res) => {
+router.get("/settings", requireAuth, async (_req, res) => {
   try {
     const settings = offlineModeService?.getSettings();
 
@@ -228,7 +228,7 @@ router?.get("/settings", requireAuth, async (_req, res) => {
   }
 });
 
-router?.put("/settings", requireAuth, async (req, res) => {
+router.put("/settings", requireAuth, async (req, res) => {
   try {
     const updates = updateSettingsSchema?.parse(req.body);
     const settings = offlineModeService?.updateSettings(updates);
@@ -248,7 +248,7 @@ router?.put("/settings", requireAuth, async (req, res) => {
   }
 });
 
-router?.delete("/cache", requireAuth, async (_req, res) => {
+router.delete("/cache", requireAuth, async (_req, res) => {
   try {
     await offlineModeService?.clearCache();
 
@@ -262,7 +262,7 @@ router?.delete("/cache", requireAuth, async (_req, res) => {
   }
 });
 
-router?.post("/cleanup", requireAuth, async (req, res) => {
+router.post("/cleanup", requireAuth, async (req, res) => {
   try {
     const { maxAge } = req.body;
     const cleaned = await offlineModeService?.cleanupOldCache(maxAge);
@@ -277,9 +277,9 @@ router?.post("/cleanup", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/export/:projectId", requireAuth, async (req, res) => {
+router.post("/export/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.params as Record<string, string>;
     const userId = req.user!.id;
 
     const exportResult = await offlineModeService?.exportProjectForOffline(
@@ -297,7 +297,7 @@ router?.post("/export/:projectId", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/import", requireAuth, async (req, res) => {
+router.post("/import", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const projectData = req.body;
@@ -317,9 +317,9 @@ router?.post("/import", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/change/:projectId", requireAuth, async (req, res) => {
+router.post("/change/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.params as Record<string, string>;
     const { type } = req.body;
 
     if (type === "local") {

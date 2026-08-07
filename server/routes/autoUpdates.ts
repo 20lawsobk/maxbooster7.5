@@ -70,7 +70,7 @@ setInterval(
   5 * 60 * 1000,
 ).unref();
 
-router?.get("/status", requireAuth, async (_req, res) => {
+router.get("/status", requireAuth, async (_req, res) => {
   try {
     const engineStatus = selfEvolution?.getStatus();
     const safetyStatus = selfEvolution?.getProductionSafetyStatus();
@@ -104,7 +104,7 @@ router?.get("/status", requireAuth, async (_req, res) => {
   }
 });
 
-router?.post("/start", requireAdmin, async (req, res) => {
+router.post("/start", requireAdmin, async (req, res) => {
   try {
     if (!selfEvolution?.canAutoStart()) {
       const safetyStatus = selfEvolution?.getProductionSafetyStatus();
@@ -133,7 +133,7 @@ router?.post("/start", requireAdmin, async (req, res) => {
   }
 });
 
-router?.post("/stop", requireAdmin, async (req, res) => {
+router.post("/stop", requireAdmin, async (req, res) => {
   try {
     await selfEvolution?.stop();
     const status = selfEvolution?.getStatus();
@@ -152,7 +152,7 @@ router?.post("/stop", requireAdmin, async (req, res) => {
   }
 });
 
-router?.post("/run-once", requireAdmin, runOnceRateLimit, async (req, res) => {
+router.post("/run-once", requireAdmin, runOnceRateLimit, async (req, res) => {
   try {
     logger.info(
       `[SelfEvolution] Manual evolution cycle triggered by user ${req.user!.id}`,
@@ -172,7 +172,7 @@ router?.post("/run-once", requireAdmin, runOnceRateLimit, async (req, res) => {
   }
 });
 
-router?.get("/changes", requireAuth, async (req, res) => {
+router.get("/changes", requireAuth, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     const changes = selfEvolution?.getIndustryChanges(limit);
@@ -183,7 +183,7 @@ router?.get("/changes", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/upgrades", requireAuth, async (req, res) => {
+router.get("/upgrades", requireAuth, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     const upgrades = selfEvolution?.getUpgradeHistory(limit);
@@ -194,7 +194,7 @@ router?.get("/upgrades", requireAuth, async (req, res) => {
   }
 });
 
-router?.post(
+router.post(
   "/simulation",
   requireAdmin,
   simulationRateLimit,
@@ -223,7 +223,7 @@ router?.post(
   },
 );
 
-router?.get("/silent-deployment/status", requireAdmin, (_req, res) => {
+router.get("/silent-deployment/status", requireAdmin, (_req, res) => {
   try {
     res.json(silentDeployment?.getStatus());
   } catch (error) {
@@ -232,7 +232,7 @@ router?.get("/silent-deployment/status", requireAdmin, (_req, res) => {
   }
 });
 
-router?.get("/silent-deployment/history", requireAdmin, (req, res) => {
+router.get("/silent-deployment/history", requireAdmin, (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
     res.json({ history: silentDeployment.getHistory(limit) });
@@ -242,7 +242,7 @@ router?.get("/silent-deployment/history", requireAdmin, (req, res) => {
   }
 });
 
-router?.post("/silent-deployment/enable", requireAdmin, (req, res) => {
+router.post("/silent-deployment/enable", requireAdmin, (req, res) => {
   try {
     silentDeployment?.enable();
     logger.info(`[SilentDeploy] Enabled by admin ${req.user!.id}`);
@@ -257,7 +257,7 @@ router?.post("/silent-deployment/enable", requireAdmin, (req, res) => {
   }
 });
 
-router?.post("/silent-deployment/disable", requireAdmin, (req, res) => {
+router.post("/silent-deployment/disable", requireAdmin, (req, res) => {
   try {
     silentDeployment?.disable();
     logger.info(`[SilentDeploy] Disabled by admin ${req.user!.id}`);
@@ -272,7 +272,7 @@ router?.post("/silent-deployment/disable", requireAdmin, (req, res) => {
   }
 });
 
-router?.get("/industry-monitor/status", requireAdmin, (_req, res) => {
+router.get("/industry-monitor/status", requireAdmin, (_req, res) => {
   try {
     res.json(industryMonitor?.getStatus());
   } catch (error) {
@@ -281,7 +281,7 @@ router?.get("/industry-monitor/status", requireAdmin, (_req, res) => {
   }
 });
 
-router?.post("/industry-monitor/refresh", requireAdmin, async (req, res) => {
+router.post("/industry-monitor/refresh", requireAdmin, async (req, res) => {
   try {
     logger.info(
       `[IndustryMonitor] Cache cleared and refresh triggered by admin ${req.user!.id}`,

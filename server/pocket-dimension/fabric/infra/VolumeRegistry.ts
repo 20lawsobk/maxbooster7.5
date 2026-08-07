@@ -22,7 +22,7 @@ export class VolumeRegistry {
     const rows = await db
       .select()
       .from(fabricVolumes)
-      .where(eq(fabricVolumes?.id, id));
+      .where(eq(fabricVolumes.id, id));
     return rows[0] ? this.rowToVolume(rows[0]) : null;
   }
 
@@ -30,12 +30,12 @@ export class VolumeRegistry {
     const rows = await db
       .select()
       .from(fabricVolumes)
-      .where(eq(fabricVolumes?.pocketId, pocketId));
+      .where(eq(fabricVolumes.pocketId, pocketId));
     return rows?.map(this.rowToVolume);
   }
 
   async deleteVolume(id: VolumeId): Promise<void> {
-    await db?.delete(fabricVolumes).where(eq(fabricVolumes?.id, id));
+    await db.delete(fabricVolumes).where(eq(fabricVolumes.id, id));
   }
 
   private rowToVolume(row: typeof fabricVolumes.$inferSelect): FabricVolume {

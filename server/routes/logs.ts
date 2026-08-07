@@ -17,10 +17,10 @@ const requireAdmin: RequestHandler = (req, res, next) => {
   next();
 };
 
-router?.use(requireAdmin);
-router?.use(require2FA);
+router.use(requireAdmin);
+router.use(require2FA);
 
-router?.get("/query", async (req, res) => {
+router.get("/query", async (req, res) => {
   try {
     const {
       level = "all",
@@ -38,11 +38,11 @@ router?.get("/query", async (req, res) => {
     const conditions = [];
 
     if (level !== "all") {
-      conditions?.push(eq(systemLogs?.level, level as string));
+      conditions?.push(eq(systemLogs.level, level as string));
     }
 
     if (service !== "all") {
-      conditions?.push(eq(systemLogs?.service, service as string));
+      conditions?.push(eq(systemLogs.service, service as string));
     }
 
     const whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
@@ -52,10 +52,10 @@ router?.get("/query", async (req, res) => {
         .select()
         .from(systemLogs)
         .where(whereClause)
-        .orderBy(desc(systemLogs?.timestamp))
+        .orderBy(desc(systemLogs.timestamp))
         .limit(limitNum)
         .offset(offsetNum),
-      db?.select({ count: count() }).from(systemLogs).where(whereClause),
+      db.select({ count: count() }).from(systemLogs).where(whereClause),
     ]);
 
     res.json({
@@ -74,7 +74,7 @@ router?.get("/query", async (req, res) => {
   }
 });
 
-router?.post("/write", async (req, res) => {
+router.post("/write", async (req, res) => {
   try {
     const validatedData = insertSystemLogSchema?.parse(req.body);
 
@@ -122,7 +122,7 @@ router?.post("/write", async (req, res) => {
   }
 });
 
-router?.get("/services", async (_req, res) => {
+router.get("/services", async (_req, res) => {
   try {
     res.json({
       services: [
@@ -142,7 +142,7 @@ router?.get("/services", async (_req, res) => {
   }
 });
 
-router?.get("/levels", async (_req, res) => {
+router.get("/levels", async (_req, res) => {
   try {
     res.json({
       levels: ["debug", "info", "warn", "error", "fatal"],

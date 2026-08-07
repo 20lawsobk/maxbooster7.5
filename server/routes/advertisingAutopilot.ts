@@ -41,7 +41,7 @@ const advertisingAutopilotConfigSchema = z.object({
 });
 
 // Get advertising autopilot status
-router?.get("/status", requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const now = new Date();
@@ -75,24 +75,24 @@ router?.get("/status", requireAuth, async (req, res) => {
       db
         .select({ value: count() })
         .from(adCampaigns)
-        .where(eq(adCampaigns?.userId, userId)),
+        .where(eq(adCampaigns.userId, userId)),
       db
         .select({ startDate: adCampaigns.startDate })
         .from(adCampaigns)
         .where(
           and(
-            eq(adCampaigns?.userId, userId),
-            isNotNull(adCampaigns?.startDate),
-            gt(adCampaigns?.startDate, now),
+            eq(adCampaigns.userId, userId),
+            isNotNull(adCampaigns.startDate),
+            gt(adCampaigns.startDate, now),
           ),
         )
-        .orderBy(adCampaigns?.startDate)
+        .orderBy(adCampaigns.startDate)
         .limit(1),
       db
         .select()
         .from(adCampaigns)
-        .where(eq(adCampaigns?.userId, userId))
-        .orderBy(desc(adCampaigns?.createdAt))
+        .where(eq(adCampaigns.userId, userId))
+        .orderBy(desc(adCampaigns.createdAt))
         .limit(10),
     ]).catch(() => [[], [], []]);
 
@@ -184,12 +184,12 @@ router?.get("/status", requireAuth, async (req, res) => {
 });
 
 // Start advertising autopilot
-router?.post("/start", requireAuth, async (req, res) => {
+router.post("/start", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
 
     // Get or create config
-    let config = await storage?.getAdvertisingAutopilotConfig(userId);
+    let config = await storage.getAdvertisingAutopilotConfig(userId);
     if (!config) {
       config = {
         enabled: true,
@@ -219,7 +219,7 @@ router?.post("/start", requireAuth, async (req, res) => {
       config.enabled = true;
     }
 
-    await storage?.saveAdvertisingAutopilotConfig(userId, config);
+    await storage.saveAdvertisingAutopilotConfig(userId, config);
 
     logger.info(`✅ Advertising Autopilot started for user ${userId}`);
 
@@ -235,14 +235,14 @@ router?.post("/start", requireAuth, async (req, res) => {
 });
 
 // Stop advertising autopilot
-router?.post("/stop", requireAuth, async (req, res) => {
+router.post("/stop", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
 
-    const config = await storage?.getAdvertisingAutopilotConfig(userId);
+    const config = await storage.getAdvertisingAutopilotConfig(userId);
     if (config) {
       config.enabled = false;
-      await storage?.saveAdvertisingAutopilotConfig(userId, config);
+      await storage.saveAdvertisingAutopilotConfig(userId, config);
     }
 
     logger.info(`⏸️ Advertising Autopilot stopped for user ${userId}`);
@@ -258,12 +258,12 @@ router?.post("/stop", requireAuth, async (req, res) => {
 });
 
 // Configure advertising autopilot
-router?.post("/configure", requireAuth, async (req, res) => {
+router.post("/configure", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const config = advertisingAutopilotConfigSchema?.parse(req.body);
 
-    await storage?.saveAdvertisingAutopilotConfig(userId, config);
+    await storage.saveAdvertisingAutopilotConfig(userId, config);
 
     logger.info(`⚙️ Advertising Autopilot configured for user ${userId}`);
 
@@ -285,7 +285,7 @@ router?.post("/configure", requireAuth, async (req, res) => {
 });
 
 // Generate campaign recommendations
-router?.post("/recommend", requireAuth, async (req, res) => {
+router.post("/recommend", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { objective, includeMultimodal } = req.body;
@@ -297,7 +297,7 @@ router?.post("/recommend", requireAuth, async (req, res) => {
     // Get multimodal features if enabled
     let multimodalFeatures = null;
     if (includeMultimodal !== false) {
-      const recentAnalyzedContent = await storage?.getRecentAnalyzedContent(
+      const recentAnalyzedContent = await storage.getRecentAnalyzedContent(
         userId,
         10,
       );
@@ -327,7 +327,7 @@ router?.post("/recommend", requireAuth, async (req, res) => {
 });
 
 // Get AI performance metrics
-router?.get("/performance", requireAuth, async (req, res) => {
+router.get("/performance", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
 
@@ -344,7 +344,7 @@ router?.get("/performance", requireAuth, async (req, res) => {
       .select({ id: adCampaigns.id })
       .from(adCampaigns)
       .where(
-        and(eq(adCampaigns?.userId, userId), eq(adCampaigns?.status, "active")),
+        and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, "active")),
       )
       .limit(100);
     const numCampaigns = activeCampaigns?.length;
@@ -392,10 +392,10 @@ router?.get("/performance", requireAuth, async (req, res) => {
 });
 
 // Get campaigns - returns empty array when no real data exists
-router?.get("/campaigns", requireAuth, async (req, res) => {
+router.get("/campaigns", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const campaigns = (await storage?.getAdvertisingCampaigns?.(userId)) || [];
+    const campaigns = (await storage.getAdvertisingCampaigns?.(userId)) || [];
     res.json(campaigns);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get campaigns:");
@@ -404,10 +404,10 @@ router?.get("/campaigns", requireAuth, async (req, res) => {
 });
 
 // Get AI insights - returns empty state when no real data exists
-router?.get("/ai-insights", requireAuth, async (req, res) => {
+router.get("/ai-insights", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const insights = (await storage?.getAdvertisingInsights?.(userId)) || null;
+    const insights = (await storage.getAdvertisingInsights?.(userId)) || null;
     res.json(
       insights ?? { campaigns: [], totalSpend: 0, totalRevenue: 0, roas: 0 },
     );
@@ -418,10 +418,10 @@ router?.get("/ai-insights", requireAuth, async (req, res) => {
 });
 
 // Get audience segments - returns empty array when no real data exists
-router?.get("/audience-segments", requireAuth, async (req, res) => {
+router.get("/audience-segments", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const segments = (await storage?.getAudienceSegments?.(userId)) || [];
+    const segments = (await storage.getAudienceSegments?.(userId)) || [];
     res.json(segments);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get audience segments:");
@@ -430,10 +430,10 @@ router?.get("/audience-segments", requireAuth, async (req, res) => {
 });
 
 // Get creative fatigue data - returns empty array when no real data exists
-router?.get("/creative-fatigue", requireAuth, async (req, res) => {
+router.get("/creative-fatigue", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const fatigue = (await storage?.getCreativeFatigue?.(userId)) || [];
+    const fatigue = (await storage.getCreativeFatigue?.(userId)) || [];
     res.json(fatigue);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get creative fatigue:");
@@ -442,10 +442,10 @@ router?.get("/creative-fatigue", requireAuth, async (req, res) => {
 });
 
 // Get bidding strategies - returns empty array when no real data exists
-router?.get("/bidding-strategies", requireAuth, async (req, res) => {
+router.get("/bidding-strategies", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const strategies = (await storage?.getBiddingStrategies?.(userId)) || [];
+    const strategies = (await storage.getBiddingStrategies?.(userId)) || [];
     res.json(strategies);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get bidding strategies:");
@@ -454,10 +454,10 @@ router?.get("/bidding-strategies", requireAuth, async (req, res) => {
 });
 
 // Get lookalike audiences - returns empty array when no real data exists
-router?.get("/lookalike-audiences", requireAuth, async (req, res) => {
+router.get("/lookalike-audiences", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const audiences = (await storage?.getLookalikeAudiences?.(userId)) || [];
+    const audiences = (await storage.getLookalikeAudiences?.(userId)) || [];
     res.json(audiences);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get lookalike audiences:");
@@ -466,10 +466,10 @@ router?.get("/lookalike-audiences", requireAuth, async (req, res) => {
 });
 
 // Get forecasts - returns null when no real data exists
-router?.get("/forecasts", requireAuth, async (req, res) => {
+router.get("/forecasts", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const forecasts = (await storage?.getAdvertisingForecasts?.(userId)) || null;
+    const forecasts = (await storage.getAdvertisingForecasts?.(userId)) || null;
     res.json(forecasts ?? []);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get forecasts:");
@@ -478,10 +478,10 @@ router?.get("/forecasts", requireAuth, async (req, res) => {
 });
 
 // Get competitor insights - returns empty array when no real data exists
-router?.get("/competitor-insights", requireAuth, async (req, res) => {
+router.get("/competitor-insights", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const insights = (await storage?.getCompetitorInsights?.(userId)) || [];
+    const insights = (await storage.getCompetitorInsights?.(userId)) || [];
     res.json(insights);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get competitor insights:");
@@ -490,10 +490,10 @@ router?.get("/competitor-insights", requireAuth, async (req, res) => {
 });
 
 // Get A/B tests - returns empty array when no real data exists
-router?.get("/ab-tests", requireAuth, async (req, res) => {
+router.get("/ab-tests", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const tests = (await storage?.getABTests?.(userId)) || [];
+    const tests = (await storage.getABTests?.(userId)) || [];
     res.json(tests);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get A/B tests:");
@@ -502,10 +502,10 @@ router?.get("/ab-tests", requireAuth, async (req, res) => {
 });
 
 // Get creative variants - returns empty array when no real data exists
-router?.get("/creative-variants", requireAuth, async (req, res) => {
+router.get("/creative-variants", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const variants = (await storage?.getCreativeVariants?.(userId)) || [];
+    const variants = (await storage.getCreativeVariants?.(userId)) || [];
     res.json(variants);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get creative variants:");
@@ -514,10 +514,10 @@ router?.get("/creative-variants", requireAuth, async (req, res) => {
 });
 
 // Get ROAS campaigns - returns empty array when no real data exists
-router?.get("/roas/campaigns", requireAuth, async (req, res) => {
+router.get("/roas/campaigns", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const campaigns = (await storage?.getRoasCampaigns?.(userId)) || [];
+    const campaigns = (await storage.getRoasCampaigns?.(userId)) || [];
     res.json(campaigns);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get ROAS campaigns:");
@@ -526,10 +526,10 @@ router?.get("/roas/campaigns", requireAuth, async (req, res) => {
 });
 
 // Get ROAS audience segments - returns empty array when no real data exists
-router?.get("/roas/audience-segments", requireAuth, async (req, res) => {
+router.get("/roas/audience-segments", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const segments = (await storage?.getRoasAudienceSegments?.(userId)) || [];
+    const segments = (await storage.getRoasAudienceSegments?.(userId)) || [];
     res.json(segments);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get ROAS audience segments:");
@@ -538,10 +538,10 @@ router?.get("/roas/audience-segments", requireAuth, async (req, res) => {
 });
 
 // Get ROAS forecast data - returns empty array when no real data exists
-router?.get("/roas/forecast", requireAuth, async (req, res) => {
+router.get("/roas/forecast", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const forecast = (await storage?.getRoasForecast?.(userId)) || [];
+    const forecast = (await storage.getRoasForecast?.(userId)) || [];
     res.json(forecast);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get ROAS forecast:");
@@ -550,10 +550,10 @@ router?.get("/roas/forecast", requireAuth, async (req, res) => {
 });
 
 // Get budget optimization data - returns empty array when no real data exists
-router?.get("/roas/budget-optimization", requireAuth, async (req, res) => {
+router.get("/roas/budget-optimization", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const data = (await storage?.getBudgetOptimization?.(userId)) || [];
+    const data = (await storage.getBudgetOptimization?.(userId)) || [];
     res.json(data);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get budget optimization:");
@@ -562,10 +562,10 @@ router?.get("/roas/budget-optimization", requireAuth, async (req, res) => {
 });
 
 // Get creative fatigue analysis - returns empty array when no real data exists
-router?.get("/roas/creative-fatigue-analysis", requireAuth, async (req, res) => {
+router.get("/roas/creative-fatigue-analysis", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const data = (await storage?.getCreativeFatigueAnalysis?.(userId)) || [];
+    const data = (await storage.getCreativeFatigueAnalysis?.(userId)) || [];
     res.json(data);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get creative fatigue analysis:");
@@ -574,10 +574,10 @@ router?.get("/roas/creative-fatigue-analysis", requireAuth, async (req, res) => 
 });
 
 // Get budget pacing campaigns - returns empty array when no real data exists
-router?.get("/budget-pacing/campaigns", requireAuth, async (req, res) => {
+router.get("/budget-pacing/campaigns", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const campaigns = (await storage?.getBudgetPacingCampaigns?.(userId)) || [];
+    const campaigns = (await storage.getBudgetPacingCampaigns?.(userId)) || [];
     res.json(campaigns);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get budget pacing campaigns:");
@@ -586,10 +586,10 @@ router?.get("/budget-pacing/campaigns", requireAuth, async (req, res) => {
 });
 
 // Get budget pacing history - returns empty array when no real data exists
-router?.get("/budget-pacing/history", requireAuth, async (req, res) => {
+router.get("/budget-pacing/history", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const history = (await storage?.getBudgetPacingHistory?.(userId)) || [];
+    const history = (await storage.getBudgetPacingHistory?.(userId)) || [];
     res.json(history);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get budget pacing history:");
@@ -598,10 +598,10 @@ router?.get("/budget-pacing/history", requireAuth, async (req, res) => {
 });
 
 // Get attribution data - returns empty array when no real data exists
-router?.get("/attribution", requireAuth, async (req, res) => {
+router.get("/attribution", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const data = (await storage?.getAttributionData?.(userId)) || [];
+    const data = (await storage.getAttributionData?.(userId)) || [];
     res.json(data);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get attribution data:");
@@ -610,10 +610,10 @@ router?.get("/attribution", requireAuth, async (req, res) => {
 });
 
 // Get cross-channel attribution - returns empty array when no real data exists
-router?.get("/cross-channel-attribution", requireAuth, async (req, res) => {
+router.get("/cross-channel-attribution", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const data = (await storage?.getCrossChannelAttribution?.(userId)) || [];
+    const data = (await storage.getCrossChannelAttribution?.(userId)) || [];
     res.json(data);
   } catch (error) {
     logger.warn({ err: error }, "Failed to get cross-channel attribution:");
@@ -622,10 +622,10 @@ router?.get("/cross-channel-attribution", requireAuth, async (req, res) => {
 });
 
 // Get social listening keywords - returns empty array when no real data exists
-router?.get("/social-listening/keywords", requireAuth, async (req, res) => {
+router.get("/social-listening/keywords", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const keywords = (await storage?.getSocialListeningKeywords?.(userId)) || [];
+    const keywords = (await storage.getSocialListeningKeywords?.(userId)) || [];
     res.json({ keywords });
   } catch (error) {
     logger.warn({ err: error }, "Failed to get social listening keywords:");
@@ -634,10 +634,10 @@ router?.get("/social-listening/keywords", requireAuth, async (req, res) => {
 });
 
 // Get social listening trending - returns empty array when no real data exists
-router?.get("/social-listening/trending", requireAuth, async (req, res) => {
+router.get("/social-listening/trending", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const trending = (await storage?.getSocialListeningTrending?.(userId)) || [];
+    const trending = (await storage.getSocialListeningTrending?.(userId)) || [];
     res.json({ trending });
   } catch (error) {
     logger.warn({ err: error }, "Failed to get social listening trending:");
@@ -646,11 +646,11 @@ router?.get("/social-listening/trending", requireAuth, async (req, res) => {
 });
 
 // Get social listening influencers - returns empty array when no real data exists
-router?.get("/social-listening/influencers", requireAuth, async (req, res) => {
+router.get("/social-listening/influencers", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const influencers =
-      (await storage?.getSocialListeningInfluencers?.(userId)) || [];
+      (await storage.getSocialListeningInfluencers?.(userId)) || [];
     res.json({ influencers });
   } catch (error) {
     logger.warn({ err: error }, "Failed to get social listening influencers:");
@@ -661,10 +661,10 @@ router?.get("/social-listening/influencers", requireAuth, async (req, res) => {
 });
 
 // Get social listening alerts - returns empty array when no real data exists
-router?.get("/social-listening/alerts", requireAuth, async (req, res) => {
+router.get("/social-listening/alerts", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const alerts = (await storage?.getSocialListeningAlerts?.(userId)) || [];
+    const alerts = (await storage.getSocialListeningAlerts?.(userId)) || [];
     res.json({ alerts });
   } catch (error) {
     logger.warn({ err: error }, "Failed to get social listening alerts:");
@@ -673,10 +673,10 @@ router?.get("/social-listening/alerts", requireAuth, async (req, res) => {
 });
 
 // Get competitors - returns empty array when no real data exists
-router?.get("/competitors", requireAuth, async (req, res) => {
+router.get("/competitors", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const competitors = (await storage?.getCompetitors?.(userId)) || [];
+    const competitors = (await storage.getCompetitors?.(userId)) || [];
     res.json({ competitors });
   } catch (error) {
     logger.warn({ err: error }, "Failed to get competitors:");
@@ -685,10 +685,10 @@ router?.get("/competitors", requireAuth, async (req, res) => {
 });
 
 // Get your social stats - returns empty stats when no real data exists
-router?.get("/your-stats", requireAuth, async (req, res) => {
+router.get("/your-stats", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const stats = (await storage?.getUserSocialStats?.(userId)) || {
+    const stats = (await storage.getUserSocialStats?.(userId)) || {
       totalFollowers: 0,
       avgEngagement: 0,
       shareOfVoice: 0,

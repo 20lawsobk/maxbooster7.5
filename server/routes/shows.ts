@@ -58,7 +58,7 @@ const createSetlistSchema = z.object({
 });
 
 // GET /api/shows - list shows with optional filters
-router?.get(
+router.get(
   "/",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -74,19 +74,19 @@ router?.get(
     const filter = req.query.filter as string | undefined;
 
     const now = new Date();
-    const conditions = [eq(shows?.userId, userId)];
+    const conditions = [eq(shows.userId, userId)];
 
     if (filter === "upcoming") {
-      conditions?.push(gte(shows?.date, now));
+      conditions?.push(gte(shows.date, now));
     } else if (filter === "past") {
-      conditions?.push(lt(shows?.date, now));
+      conditions?.push(lt(shows.date, now));
     }
 
     const userShows = await db
       .select()
       .from(shows)
       .where(and(...conditions))
-      .orderBy(filter === "upcoming" ? asc(shows?.date) : desc(shows?.date))
+      .orderBy(filter === "upcoming" ? asc(shows.date) : desc(shows.date))
       .limit(limit)
       .offset(offset);
 
@@ -95,7 +95,7 @@ router?.get(
 );
 
 // POST /api/shows - create show
-router?.post(
+router.post(
   "/",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -112,7 +112,7 @@ router?.post(
 );
 
 // PUT /api/shows/:id - update show
-router?.put(
+router.put(
   "/:id",
   requireAuth,
   requireUUIDParam("id"),
@@ -124,7 +124,7 @@ router?.put(
     const [updatedShow] = await db
       .update(shows)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(shows?.id, showId), eq(shows?.userId, userId)))
+      .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
       .returning();
 
     if (!updatedShow) {
@@ -136,7 +136,7 @@ router?.put(
 );
 
 // PATCH /api/shows/:id - partial update show (alias for PUT to support both methods)
-router?.patch(
+router.patch(
   "/:id",
   requireAuth,
   requireUUIDParam("id"),
@@ -148,7 +148,7 @@ router?.patch(
     const [updatedShow] = await db
       .update(shows)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(shows?.id, showId), eq(shows?.userId, userId)))
+      .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
       .returning();
 
     if (!updatedShow) {
@@ -160,7 +160,7 @@ router?.patch(
 );
 
 // DELETE /api/shows/:id - delete show
-router?.delete(
+router.delete(
   "/:id",
   requireAuth,
   requireUUIDParam("id"),
@@ -170,7 +170,7 @@ router?.delete(
 
     const [deletedShow] = await db
       .delete(shows)
-      .where(and(eq(shows?.id, showId), eq(shows?.userId, userId)))
+      .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
       .returning();
 
     if (!deletedShow) {
@@ -182,7 +182,7 @@ router?.delete(
 );
 
 // PATCH /api/shows/:id/attendance - record post-show actual attendance and revenue
-router?.patch(
+router.patch(
   "/:id/attendance",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -213,7 +213,7 @@ router?.patch(
           : { status: "completed" }),
         updatedAt: new Date(),
       })
-      .where(and(eq(shows?.id, showId), eq(shows?.userId, userId)))
+      .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
       .returning();
 
     if (!updated) {
@@ -225,7 +225,7 @@ router?.patch(
 );
 
 // PATCH /api/shows/:id/status - update show status
-router?.patch(
+router.patch(
   "/:id/status",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -247,7 +247,7 @@ router?.patch(
     const [updated] = await db
       .update(shows)
       .set({ status: parsed.data.status, updatedAt: new Date() })
-      .where(and(eq(shows?.id, showId), eq(shows?.userId, userId)))
+      .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
       .returning();
 
     if (!updated) {
@@ -259,7 +259,7 @@ router?.patch(
 );
 
 // GET /api/shows/stats - show performance summary (single query with conditional aggregation)
-router?.get(
+router.get(
   "/stats",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -268,15 +268,15 @@ router?.get(
     const [stats] = await db
       .select({
         totalShows: sql<number>`count(*)`,
-        totalRevenue: sql<number>`coalesce(sum(${shows?.revenue}), 0)`,
-        avgTicketsSold: sql<number>`coalesce(avg(${shows?.ticketsSold}), 0)`,
-        upcomingCount: sql<number>`count(*) filter (where ${shows?.date} >= now())`,
-        pastCount: sql<number>`count(*) filter (where ${shows?.date} < now())`,
-        pastRevenue: sql<number>`coalesce(sum(${shows?.revenue}) filter (where ${shows?.date} < now()), 0)`,
-        avgCapacityFill: sql<number>`coalesce(avg(case when ${shows?.capacity} > 0 then ${shows?.ticketsSold}::float / ${shows?.capacity} * 100 else null end), 0)`,
+        totalRevenue: sql<number>`coalesce(sum(${shows.revenue}), 0)`,
+        avgTicketsSold: sql<number>`coalesce(avg(${shows.ticketsSold}), 0)`,
+        upcomingCount: sql<number>`count(*) filter (where ${shows.date} >= now())`,
+        pastCount: sql<number>`count(*) filter (where ${shows.date} < now())`,
+        pastRevenue: sql<number>`coalesce(sum(${shows.revenue}) filter (where ${shows.date} < now()), 0)`,
+        avgCapacityFill: sql<number>`coalesce(avg(case when ${shows.capacity} > 0 then ${shows.ticketsSold}::float / ${shows.capacity} * 100 else null end), 0)`,
       })
       .from(shows)
-      .where(eq(shows?.userId, userId));
+      .where(eq(shows.userId, userId));
 
     res.json({
       totalShows: Number(stats?.totalShows ?? 0),
@@ -291,7 +291,7 @@ router?.get(
 );
 
 // GET /api/shows/setlists - list all setlists for user (must come BEFORE /:id)
-router?.get(
+router.get(
   "/setlists",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -299,14 +299,14 @@ router?.get(
     const userSetlists = await db
       .select()
       .from(setlists)
-      .where(eq(setlists?.userId, userId))
-      .orderBy(desc(setlists?.updatedAt));
+      .where(eq(setlists.userId, userId))
+      .orderBy(desc(setlists.updatedAt));
     res.json(userSetlists);
   }),
 );
 
 // GET /api/shows/:id - get single show (must come after all fixed-path routes)
-router?.get(
+router.get(
   "/:id",
   requireAuth,
   requireUUIDParam("id"),
@@ -317,7 +317,7 @@ router?.get(
     const [show] = await db
       .select()
       .from(shows)
-      .where(and(eq(shows?.id, showId), eq(shows?.userId, userId)))
+      .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
       .limit(1);
 
     if (!show) {
@@ -329,7 +329,7 @@ router?.get(
 );
 
 // GET /api/shows/:id/setlist - get setlist for a show
-router?.get(
+router.get(
   "/:id/setlist",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -339,7 +339,7 @@ router?.get(
     const [showSetlist] = await db
       .select()
       .from(setlists)
-      .where(and(eq(setlists?.showId, showId), eq(setlists?.userId, userId)))
+      .where(and(eq(setlists.showId, showId), eq(setlists.userId, userId)))
       .limit(1);
 
     res.json(showSetlist || null);
@@ -347,7 +347,7 @@ router?.get(
 );
 
 // POST /api/shows/setlists - create setlist
-router?.post(
+router.post(
   "/setlists",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -364,7 +364,7 @@ router?.post(
 );
 
 // PUT /api/shows/setlists/:id - update setlist
-router?.put(
+router.put(
   "/setlists/:id",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -375,7 +375,7 @@ router?.put(
     const [updatedSetlist] = await db
       .update(setlists)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(setlists?.id, setlistId), eq(setlists?.userId, userId)))
+      .where(and(eq(setlists.id, setlistId), eq(setlists.userId, userId)))
       .returning();
 
     if (!updatedSetlist) {
@@ -387,7 +387,7 @@ router?.put(
 );
 
 // DELETE /api/shows/setlists/:id - delete setlist
-router?.delete(
+router.delete(
   "/setlists/:id",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -396,7 +396,7 @@ router?.delete(
 
     const [deletedSetlist] = await db
       .delete(setlists)
-      .where(and(eq(setlists?.id, setlistId), eq(setlists?.userId, userId)))
+      .where(and(eq(setlists.id, setlistId), eq(setlists.userId, userId)))
       .returning();
 
     if (!deletedSetlist) {

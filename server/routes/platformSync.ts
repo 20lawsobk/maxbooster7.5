@@ -25,7 +25,7 @@ function isValidPlatform(p: string): p is PlatformType {
   return VALID_PLATFORMS?.includes(p as PlatformType);
 }
 
-router?.get("/devices", requireAuth, async (req, res) => {
+router.get("/devices", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const devices = listDevices(userId);
@@ -36,7 +36,7 @@ router?.get("/devices", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/devices/register", requireAuth, async (req, res) => {
+router.post("/devices/register", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { deviceId, platform, appVersion, osInfo, deviceName } = req.body;
@@ -70,7 +70,7 @@ router?.post("/devices/register", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/devices/heartbeat", requireAuth, async (req, res) => {
+router.post("/devices/heartbeat", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { deviceId } = req.body;
@@ -91,10 +91,10 @@ router?.post("/devices/heartbeat", requireAuth, async (req, res) => {
   }
 });
 
-router?.delete("/devices/:deviceId", requireAuth, async (req, res) => {
+router.delete("/devices/:deviceId", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { deviceId } = req.params;
+    const { deviceId } = req.params as Record<string, string>;
 
     const removed = unregisterDevice(userId, deviceId);
     if (!removed) {
@@ -108,7 +108,7 @@ router?.delete("/devices/:deviceId", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/version/check", requireAuth, async (req, res) => {
+router.get("/version/check", requireAuth, async (req, res) => {
   try {
     const platform = req.query.platform as string;
     const currentVersion = req.query.currentVersion as string;
@@ -137,7 +137,7 @@ router?.get("/version/check", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/version/latest", requireAuth, async (_req, res) => {
+router.get("/version/latest", requireAuth, async (_req, res) => {
   try {
     const versions = getLatestVersions();
     res.json({ versions });
@@ -147,7 +147,7 @@ router?.get("/version/latest", requireAuth, async (_req, res) => {
   }
 });
 
-router?.post("/version/notify", requireAuth, async (req, res) => {
+router.post("/version/notify", requireAuth, async (req, res) => {
   try {
     if (req.user!.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
@@ -183,7 +183,7 @@ router?.post("/version/notify", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/sync/pull", requireAuth, async (req, res) => {
+router.get("/sync/pull", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const deviceId = req.query.deviceId as string;
@@ -202,7 +202,7 @@ router?.get("/sync/pull", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/sync/push", requireAuth, async (req, res) => {
+router.post("/sync/push", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { deviceId, changes } = req.body;
@@ -221,7 +221,7 @@ router?.post("/sync/push", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/sync/status", requireAuth, async (req, res) => {
+router.get("/sync/status", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const statuses = getSyncStatus(userId);
@@ -232,7 +232,7 @@ router?.get("/sync/status", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/remote-update/trigger", requireAuth, async (req, res) => {
+router.post("/remote-update/trigger", requireAuth, async (req, res) => {
   try {
     if (req.user!.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
@@ -279,7 +279,7 @@ router?.post("/remote-update/trigger", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/remote-update/status", requireAuth, async (req, res) => {
+router.get("/remote-update/status", requireAuth, async (req, res) => {
   try {
     if (req.user!.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });

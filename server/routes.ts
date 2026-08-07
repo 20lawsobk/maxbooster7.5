@@ -183,7 +183,7 @@ async function attachUser(req: Request, _res: Response, next: NextFunction) {
       if (cached) {
         req.user = cached;
       } else {
-        const user = await storage?.getUser(req.session.userId);
+        const user = await storage.getUser(req.session.userId);
         if (user) {
           req.user = user;
           _userCacheSet(user);
@@ -258,10 +258,10 @@ export async function registerRoutes(
   // Assign a unique request ID to every request for end-to-end tracing.
   // This populates AsyncLocalStorage so every logger.* call automatically
   // includes requestId and duration without any manual threading.
-  app?.use(requestIdMiddleware);
+  app.use(requestIdMiddleware);
 
   // Apply user attachment middleware to all routes
-  app?.use(attachUser);
+  app.use(attachUser);
 
   // Smart per-user API response caching (30 s TTL, ETag, stale-while-revalidate)
   // GET responses are cached per-user+path+query; any mutation clears that user's cache.
@@ -487,7 +487,7 @@ export async function registerRoutes(
 
   // Auth: Login (accepts username or email)
   // SECURITY: Session regeneration implemented to prevent session fixation attacks
-  app?.post(
+  app.post(
     "/api/auth/login",
     loginRateLimiter,
     async (req: Request, res: Response) => {
@@ -502,9 +502,9 @@ export async function registerRoutes(
         }
 
         // Try to find user by email first, then by username
-        let user = await storage?.getUserByEmail(identifier);
+        let user = await storage.getUserByEmail(identifier);
         if (!user) {
-          user = await storage?.getUserByUsername(identifier);
+          user = await storage.getUserByUsername(identifier);
         }
 
         // Always run bcrypt?.compare to prevent timing-based user enumeration.
@@ -1630,7 +1630,8 @@ export async function registerRoutes(
   // Storage: Serve files from hybrid storage (Replit hot + Pocket Dimension cold)
   app.get("/api/storage/file/*key", async (req: Request, res: Response) => {
     try {
-      const key = decodeURIComponent(req.params.key);
+      const rawKey = (req.params.key as string);
+      const key = decodeURIComponent(Array.isArray(rawKey) ? rawKey.join("/") : rawKey);
 
       if (!key) {
         return res.status(400).json({ message: "File key is required" });
@@ -2385,7 +2386,7 @@ export async function registerRoutes(
         );
       }
 
-      const { provider } = req.params;
+      const { provider } = req.params as Record<string, string>;
       if (!ALLOWED_CONNECT_PROVIDERS.includes(provider)) {
         return res
           .status(400)
@@ -2815,7 +2816,7 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { id } = req.params;
+        const { id } = req.params as Record<string, string>;
         const notification = await storage.getNotificationById(id);
         if (!notification) {
           return res.status(404).json({ message: "Notification not found" });
@@ -2911,7 +2912,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const notification = await storage.getNotificationById(id);
       if (!notification) {
         return res.status(404).json({ message: "Notification not found" });
@@ -2935,7 +2936,7 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { id } = req.params;
+        const { id } = req.params as Record<string, string>;
 
         // Verify the notification belongs to this user
         const notification = await storage.getNotificationById(id);
@@ -3976,7 +3977,7 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const periodParam = req.params.period;
+        const periodParam = (req.params.period as string);
         const timeRange =
           periodParam || (req.query.timeRange as string) || "30d";
         const days =
@@ -4620,7 +4621,7 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { id } = req.params;
+        const { id } = req.params as Record<string, string>;
         // In production, this would update a database record
         return res.json({
           success: true,
@@ -4963,7 +4964,7 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { pocketId } = req.params;
+        const { pocketId } = req.params as Record<string, string>;
         const pocket = await db.query.userStorage.findFirst({
           where: eq(userStorage.id, pocketId),
         });
@@ -4990,7 +4991,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { pocketId } = req.params;
+      const { pocketId } = req.params as Record<string, string>;
       const pocket = await db.query.userStorage.findFirst({
         where: eq(userStorage.id, pocketId),
       });
@@ -5014,7 +5015,7 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { pocketId } = req.params;
+        const { pocketId } = req.params as Record<string, string>;
         const pocket = await db.query.userStorage.findFirst({
           where: eq(userStorage.id, pocketId),
         });
@@ -5214,7 +5215,7 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { statementId } = req.params;
+        const { statementId } = req.params as Record<string, string>;
         return res.json({
           success: true,
           downloadUrl: `/exports/statement_${statementId}.pdf`,
@@ -5776,7 +5777,7 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { splitId } = req.params;
+        const { splitId } = req.params as Record<string, string>;
         const [existing] = await db
           .select({ id: royaltySplits.id, userId: royaltySplits.userId })
           .from(royaltySplits)
@@ -7175,10 +7176,13 @@ export async function registerRoutes(
         },
       });
     } catch (err) {
+      // Log full detail internally; never leak dependency error text
+      // (DB hosts, Redis addresses, driver messages) to unauthenticated callers.
+      logger.warn({ err }, "[Readiness] health check failed");
       res.status(503).json({
         status: "down",
         timestamp: new Date().toISOString(),
-        error: (err as Error).message ?? "health check failed",
+        error: "health check failed",
       });
     }
   };

@@ -267,7 +267,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       const blocked = await db
         .select()
         .from(ipBlacklist)
-        .where(gte(ipBlacklist?.expiresAt, now))
+        .where(gte(ipBlacklist.expiresAt, now))
         .limit(10000);
 
       for (const entry of blocked) {
@@ -676,7 +676,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
             : 5 * 60 * 1000;
 
     try {
-      await db?.insert(ipBlacklist).values({
+      await db.insert(ipBlacklist).values({
         ip: ipAddress,
         reason,
         severity:
@@ -697,7 +697,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
   private async sendSecurityAlert(assessment: ThreatAssessment): Promise<void> {
     try {
-      await db?.insert(notifications).values({
+      await db.insert(notifications).values({
         userId: "system",
         type: "security_alert",
         title: `Security Alert: ${assessment?.threatType}`,
@@ -712,7 +712,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     this.metrics.threatsHealed++;
 
     try {
-      await db?.insert(securityThreats).values({
+      await db.insert(securityThreats).values({
         threatType: assessment.threatType,
         severity:
           assessment?.threatLevel >= 0.9
@@ -867,7 +867,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   public async unblockIp(ip: string): Promise<void> {
     this.blockedIps.delete(ip);
     try {
-      await db?.delete(ipBlacklist).where(eq(ipBlacklist?.ip, ip));
+      await db.delete(ipBlacklist).where(eq(ipBlacklist.ip, ip));
       logger.info(`✅ Unblocked IP ${ip}`);
     } catch (error) {
       logger.warn({ err: error }, `Failed to unblock IP ${ip}:`);
@@ -878,7 +878,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     this.blockedIps.clear();
     this.ipThreatScores.clear();
     try {
-      await db?.delete(ipBlacklist).where(eq(ipBlacklist?.isActive, true));
+      await db.delete(ipBlacklist).where(eq(ipBlacklist.isActive, true));
       logger.warn("⚠️ All blocked IPs cleared by admin");
     } catch (error) {
       logger.warn({ err: error }, "Failed to clear all blocked IPs:");

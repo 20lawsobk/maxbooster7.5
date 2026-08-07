@@ -8,7 +8,7 @@ const router = Router();
 // Backup service is initialized manually in server/index?.ts only when DATABASE_URL is valid
 
 // Create manual backup (admin only)
-router?.post("/create", requireAdmin, async (_req, res) => {
+router.post("/create", requireAdmin, async (_req, res) => {
   try {
     const backupFile = await databaseBackupService?.createBackup();
     res.json({ success: true, backupFile });
@@ -19,7 +19,7 @@ router?.post("/create", requireAdmin, async (_req, res) => {
 });
 
 // List all backups (admin only)
-router?.get("/list", requireAdmin, async (_req, res) => {
+router.get("/list", requireAdmin, async (_req, res) => {
   try {
     const backups = await databaseBackupService?.listBackups();
     res.json({ backups });
@@ -30,7 +30,7 @@ router?.get("/list", requireAdmin, async (_req, res) => {
 });
 
 // Get backup metrics (admin only)
-router?.get("/metrics", requireAdmin, async (_req, res) => {
+router.get("/metrics", requireAdmin, async (_req, res) => {
   try {
     const metrics = databaseBackupService?.getBackupMetrics();
     res.json(metrics);

@@ -31,9 +31,9 @@ export async function setupVite(server: Server, app: Express) {
     appType: "custom",
   });
 
-  app?.use(vite?.middlewares);
+  app.use(vite?.middlewares);
 
-  app?.use("/{*splat}", async (req, res, next) => {
+  app.use("/{*splat}", async (req, res, next) => {
     const url = req.originalUrl;
 
     try {

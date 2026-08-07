@@ -10,7 +10,7 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-router?.get("/user", requireAuth, async (req: Request, res: Response) => {
+router.get("/user", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const preferences = await userPreferencesService?.getUserPreferences(userId);
@@ -28,7 +28,7 @@ router?.get("/user", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.put("/user", requireAuth, async (req: Request, res: Response) => {
+router.put("/user", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const updates = req.body;
@@ -44,9 +44,9 @@ router?.put("/user", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/defaults/:artistType", async (req: Request, res: Response) => {
+router.get("/defaults/:artistType", async (req: Request, res: Response) => {
   try {
-    const { artistType } = req.params;
+    const { artistType } = req.params as Record<string, string>;
     const { careerStage = "emerging", genres } = req.query;
 
     const validArtistTypes: ArtistType[] = [
@@ -76,7 +76,7 @@ router?.get("/defaults/:artistType", async (req: Request, res: Response) => {
   }
 });
 
-router?.get(
+router.get(
   "/recommendations",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -92,7 +92,7 @@ router?.get(
   },
 );
 
-router?.post("/learn", requireAuth, async (req: Request, res: Response) => {
+router.post("/learn", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { eventType, context } = req.body;
@@ -114,7 +114,7 @@ router?.post("/learn", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.get(
+router.get(
   "/smart-defaults",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -129,7 +129,7 @@ router?.get(
   },
 );
 
-router?.get(
+router.get(
   "/scheduling-suggestions",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -147,7 +147,7 @@ router?.get(
   },
 );
 
-router?.get(
+router.get(
   "/platform-recommendations",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -165,7 +165,7 @@ router?.get(
   },
 );
 
-router?.get("/genre-templates", async (_req: Request, res: Response) => {
+router.get("/genre-templates", async (_req: Request, res: Response) => {
   try {
     const templates = smartDefaultsEngine?.getAllGenreTemplates();
     return res.json(templates);
@@ -175,9 +175,9 @@ router?.get("/genre-templates", async (_req: Request, res: Response) => {
   }
 });
 
-router?.get("/genre-templates/:genre", async (req: Request, res: Response) => {
+router.get("/genre-templates/:genre", async (req: Request, res: Response) => {
   try {
-    const { genre } = req.params;
+    const { genre } = req.params as Record<string, string>;
     const template = smartDefaultsEngine?.getGenreTemplate(genre);
     return res.json(template);
   } catch (error) {
@@ -186,7 +186,7 @@ router?.get("/genre-templates/:genre", async (req: Request, res: Response) => {
   }
 });
 
-router?.get(
+router.get(
   "/dashboard-layout",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -203,7 +203,7 @@ router?.get(
   },
 );
 
-router?.put(
+router.put(
   "/dashboard-layout",
   requireAuth,
   async (req: Request, res: Response) => {

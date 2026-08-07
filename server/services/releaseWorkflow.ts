@@ -703,7 +703,7 @@ export class ReleaseWorkflowService {
 
   private async getRelease(releaseId: string): Promise<unknown> {
     try {
-      return await storage?.getDistroRelease(releaseId);
+      return await storage.getDistroRelease(releaseId);
     } catch (error) {
       logger.warn({ err: error }, "Error fetching release:");
       return null;

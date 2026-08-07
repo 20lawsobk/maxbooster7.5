@@ -196,7 +196,7 @@ class MobilePushService {
       const existing = await db
         .select()
         .from(mobileDeviceTokens)
-        .where(eq(mobileDeviceTokens?.token, token))
+        .where(eq(mobileDeviceTokens.token, token))
         .limit(1);
 
       if (existing?.length > 0) {
@@ -211,10 +211,10 @@ class MobilePushService {
             lastSeenAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(mobileDeviceTokens?.token, token));
+          .where(eq(mobileDeviceTokens.token, token));
         logger.info(`📱 Mobile token updated for user ${userId} (${platform})`);
       } else {
-        await db?.insert(mobileDeviceTokens).values({
+        await db.insert(mobileDeviceTokens).values({
           userId,
           token,
           platform,
@@ -237,7 +237,7 @@ class MobilePushService {
       await db
         .update(mobileDeviceTokens)
         .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(mobileDeviceTokens?.token, token));
+        .where(eq(mobileDeviceTokens.token, token));
     } catch (error) {
       logger.warn({ err: error }, "Failed to deactivate mobile device token:");
     }
@@ -247,7 +247,7 @@ class MobilePushService {
     try {
       await db
         .delete(mobileDeviceTokens)
-        .where(eq(mobileDeviceTokens?.userId, userId));
+        .where(eq(mobileDeviceTokens.userId, userId));
       logger.info(`📱 All mobile tokens removed for user ${userId}`);
     } catch (error) {
       logger.warn({ err: error }, "Failed to remove user mobile tokens:");
@@ -261,8 +261,8 @@ class MobilePushService {
         .from(mobileDeviceTokens)
         .where(
           and(
-            eq(mobileDeviceTokens?.userId, userId),
-            eq(mobileDeviceTokens?.isActive, true),
+            eq(mobileDeviceTokens.userId, userId),
+            eq(mobileDeviceTokens.isActive, true),
           ),
         )) as DeviceTokenRecord[];
     } catch (error) {

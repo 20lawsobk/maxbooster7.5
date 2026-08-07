@@ -21,7 +21,7 @@ import { logger } from "../../logger.js";
 const router = Router();
 
 // ─── Full status dashboard ────────────────────────────────────────────────────
-router?.get("/status", (_req, res) => {
+router.get("/status", (_req, res) => {
   try {
     res.json(systemIntelligence?.getStatus());
   } catch (err) {
@@ -31,7 +31,7 @@ router?.get("/status", (_req, res) => {
 });
 
 // ─── Plain-language narrative only ───────────────────────────────────────────
-router?.get("/narrative", (_req, res) => {
+router.get("/narrative", (_req, res) => {
   try {
     const narrative = systemIntelligence?.narrateSystemState();
     res.json(narrative);
@@ -42,7 +42,7 @@ router?.get("/narrative", (_req, res) => {
 });
 
 // ─── Actionable insights ──────────────────────────────────────────────────────
-router?.get("/insights", (_req, res) => {
+router.get("/insights", (_req, res) => {
   try {
     const insights = systemIntelligence?.getInsights();
     res.json({ insights, count: insights.length, generatedAt: Date.now() });
@@ -53,7 +53,7 @@ router?.get("/insights", (_req, res) => {
 });
 
 // ─── Security intelligence report ────────────────────────────────────────────
-router?.get("/security", (_req, res) => {
+router.get("/security", (_req, res) => {
   try {
     const report = systemIntelligence?.getSecurityReport();
     res.json(report);
@@ -64,7 +64,7 @@ router?.get("/security", (_req, res) => {
 });
 
 // ─── Raw event window ─────────────────────────────────────────────────────────
-router?.get("/events", (req, res) => {
+router.get("/events", (req, res) => {
   try {
     const limit = Math.min(
       500,
@@ -85,7 +85,7 @@ router?.get("/events", (req, res) => {
 
 // ─── On-demand text analysis ──────────────────────────────────────────────────
 // Feed any log snippet or error message and get back a structured Understanding.
-router?.post("/analyze", (req, res) => {
+router.post("/analyze", (req, res) => {
   try {
     const body = req.body as Record<string, unknown>;
     const text = typeof body?.text === "string" ? body?.text.slice(0, 2000) : "";

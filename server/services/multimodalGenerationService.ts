@@ -252,7 +252,7 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
       db
         .select()
         .from(autopilotPreferences)
-        .where(eq(autopilotPreferences?.userId, userId))
+        .where(eq(autopilotPreferences.userId, userId))
         .limit(1),
       db
         .select({
@@ -264,7 +264,7 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
           avoidWords: userBrandVoices.avoidWords,
         })
         .from(userBrandVoices)
-        .where(eq(userBrandVoices?.userId, userId))
+        .where(eq(userBrandVoices.userId, userId))
         .limit(1),
     ]);
 
@@ -2701,7 +2701,7 @@ const textWorker = {
           (r): r is PromiseFulfilledResult<GeneratedAsset> =>
             r.status === "fulfilled",
         )
-        .map((r) => r.value);
+        .map((r) => (r as any).value);
 
       if (successful.length > 0) return successful;
 

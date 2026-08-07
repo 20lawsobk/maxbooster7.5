@@ -8,8 +8,8 @@
  *
  * Runs asynchronously after beat upload so the HTTP response is never delayed.
  * Results are stored in the hybrid storage backend and recorded in the DB:
- *   - listings?.previewUrl      → updated to the MP3 URL
- *   - listings?.metadata        → mp3Key, stemsAvailable, stemCount
+ *   - listings.previewUrl      → updated to the MP3 URL
+ *   - listings.metadata        → mp3Key, stemsAvailable, stemCount
  *   - listing_stems rows       → one row per stem file
  *   - listing_license_tiers    → audioUrls updated for any existing tier rows
  */
@@ -201,9 +201,9 @@ export async function processUploadedBeat(
       if (stemInserts?.length > 0) {
         await db
           .delete(listingStems)
-          .where(eq(listingStems?.listingId, listingId));
+          .where(eq(listingStems.listingId, listingId));
 
-        await db?.insert(listingStems).values(stemInserts);
+        await db.insert(listingStems).values(stemInserts);
         logger.info(
           `[AudioSeparator] Inserted ${stemInserts?.length} stems for listing ${listingId}`,
         );
@@ -217,7 +217,7 @@ export async function processUploadedBeat(
     const listingRow = await db
       .select({ metadata: listings.metadata })
       .from(listings)
-      .where(eq(listings?.id, listingId))
+      .where(eq(listings.id, listingId))
       .limit(1);
 
     const existingMeta =
@@ -238,7 +238,7 @@ export async function processUploadedBeat(
     await db
       .update(listings)
       .set(updatePayload as Record<string, unknown>)
-      .where(eq(listings?.id, listingId));
+      .where(eq(listings.id, listingId));
 
     logger.info(`[AudioSeparator] Updated listing ${listingId} metadata`);
 
@@ -247,7 +247,7 @@ export async function processUploadedBeat(
       const tiers = await db
         .select()
         .from(listingLicenseTiers)
-        .where(eq(listingLicenseTiers?.listingId, listingId));
+        .where(eq(listingLicenseTiers.listingId, listingId));
 
       for (const tier of tiers) {
         const lt = (tier?.licenseType ?? "").toLowerCase();
@@ -269,7 +269,7 @@ export async function processUploadedBeat(
         await db
           .update(listingLicenseTiers)
           .set({ audioUrls: newUrls })
-          .where(eq(listingLicenseTiers?.id, tier?.id));
+          .where(eq(listingLicenseTiers.id, tier?.id));
       }
 
       if (tiers?.length > 0) {

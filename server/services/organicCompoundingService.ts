@@ -621,7 +621,7 @@ class OrganicCompoundingService {
           performance,
           updatedAt: new Date(),
         })
-        .where(eq(organicAssets?.id, assetId))
+        .where(eq(organicAssets.id, assetId))
         .returning();
 
       return updated || null;
@@ -636,8 +636,8 @@ class OrganicCompoundingService {
       return await db
         .select()
         .from(organicAssets)
-        .where(eq(organicAssets?.userId, userId))
-        .orderBy(desc(organicAssets?.createdAt))
+        .where(eq(organicAssets.userId, userId))
+        .orderBy(desc(organicAssets.createdAt))
         .limit(500);
     } catch (error) {
       logger.warn({ err: error }, "Error getting assets:");
@@ -650,7 +650,7 @@ class OrganicCompoundingService {
       const [asset] = await db
         .select()
         .from(organicAssets)
-        .where(eq(organicAssets?.id, assetId))
+        .where(eq(organicAssets.id, assetId))
         .limit(1);
 
       return asset || null;
@@ -692,7 +692,7 @@ class OrganicCompoundingService {
           efficiencyScore,
           updatedAt: new Date(),
         })
-        .where(eq(organicChannels?.id, channelId))
+        .where(eq(organicChannels.id, channelId))
         .returning();
 
       return updated || null;
@@ -707,8 +707,8 @@ class OrganicCompoundingService {
       return await db
         .select()
         .from(organicChannels)
-        .where(eq(organicChannels?.userId, userId))
-        .orderBy(desc(organicChannels?.efficiencyScore));
+        .where(eq(organicChannels.userId, userId))
+        .orderBy(desc(organicChannels.efficiencyScore));
     } catch (error) {
       logger.warn({ err: error }, "Error getting channels:");
       throw error;
@@ -752,11 +752,11 @@ class OrganicCompoundingService {
         .from(organicRoiSnapshots)
         .where(
           and(
-            eq(organicRoiSnapshots?.userId, userId),
-            eq(organicRoiSnapshots?.assetId, assetId),
+            eq(organicRoiSnapshots.userId, userId),
+            eq(organicRoiSnapshots.assetId, assetId),
           ),
         )
-        .orderBy(desc(organicRoiSnapshots?.createdAt));
+        .orderBy(desc(organicRoiSnapshots.createdAt));
     } catch (error) {
       logger.warn({ err: error }, "Error getting ROI history:");
       throw error;
@@ -793,8 +793,8 @@ class OrganicCompoundingService {
         .from(organicAssetLifetime)
         .where(
           and(
-            eq(organicAssetLifetime?.userId, userId),
-            eq(organicAssetLifetime?.assetId, assetId),
+            eq(organicAssetLifetime.userId, userId),
+            eq(organicAssetLifetime.assetId, assetId),
           ),
         )
         .limit(1);
@@ -810,7 +810,7 @@ class OrganicCompoundingService {
             effectiveRoi,
             lastSeen: new Date(),
           })
-          .where(eq(organicAssetLifetime?.id, existing?.id))
+          .where(eq(organicAssetLifetime.id, existing?.id))
           .returning();
 
         return updated;
@@ -848,8 +848,8 @@ class OrganicCompoundingService {
         .from(organicAssetLifetime)
         .where(
           and(
-            eq(organicAssetLifetime?.userId, userId),
-            eq(organicAssetLifetime?.assetId, assetId),
+            eq(organicAssetLifetime.userId, userId),
+            eq(organicAssetLifetime.assetId, assetId),
           ),
         )
         .limit(1);

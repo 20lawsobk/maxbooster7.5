@@ -41,7 +41,7 @@ const preSavePageSchema = z.object({
   emailCapture: z.boolean().optional(),
 });
 
-router?.post("/presave", requireAuth, async (req: Request, res: Response) => {
+router.post("/presave", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as Record<string, unknown>).id;
     const data = preSavePageSchema?.parse(req.body);
@@ -57,7 +57,7 @@ router?.post("/presave", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/presave", requireAuth, async (req: Request, res: Response) => {
+router.get("/presave", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as Record<string, unknown>).id;
     const pages = await promotionalToolsService?.getUserPreSavePages((userId as string));
@@ -68,9 +68,9 @@ router?.get("/presave", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/presave/:id", async (req: Request, res: Response) => {
+router.get("/presave/:id", async (req: Request, res: Response) => {
   try {
-    const page = await promotionalToolsService?.getPreSavePage(req.params.id);
+    const page = await promotionalToolsService?.getPreSavePage((req.params.id as string));
     if (!page) {
       return res.status(404).json({ error: "Pre-save page not found" });
     }
@@ -82,10 +82,10 @@ router?.get("/presave/:id", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/presave/slug/:slug", async (req: Request, res: Response) => {
+router.get("/presave/slug/:slug", async (req: Request, res: Response) => {
   try {
     const page = await promotionalToolsService?.getPreSavePageBySlug(
-      req.params.slug,
+      (req.params.slug as string),
     );
     if (!page) {
       return res.status(404).json({ error: "Pre-save page not found" });
@@ -98,11 +98,11 @@ router?.get("/presave/slug/:slug", async (req: Request, res: Response) => {
   }
 });
 
-router?.put("/presave/:id", requireAuth, async (req: Request, res: Response) => {
+router.put("/presave/:id", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as Record<string, unknown>).id;
     const page = await promotionalToolsService?.updatePreSavePage(
-      req.params.id,
+      (req.params.id as string),
       (userId as string),
       req.body,
     );
@@ -120,7 +120,7 @@ const PRESAVE_EVENTS = ["view", "presave", "email", "click"] as const;
 type PresaveEvent = (typeof PRESAVE_EVENTS)[number];
 const PLATFORM_RE = /^[a-zA-Z0-9_-]{1,32}$/;
 
-router?.post("/presave/:id/analytics", async (req: Request, res: Response) => {
+router.post("/presave/:id/analytics", async (req: Request, res: Response) => {
   try {
     const { event, platform } = req.body;
     if (!PRESAVE_EVENTS?.includes(event as PresaveEvent)) {
@@ -133,7 +133,7 @@ router?.post("/presave/:id/analytics", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid platform value" });
     }
     await promotionalToolsService?.recordPreSaveAnalytics(
-      req.params.id,
+      (req.params.id as string),
       event as PresaveEvent,
       platform,
     );
@@ -144,19 +144,19 @@ router?.post("/presave/:id/analytics", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/presave/:id/email", async (req: Request, res: Response) => {
+router.post("/presave/:id/email", async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: "Valid email address required" });
     }
     const success = await promotionalToolsService?.captureEmail(
-      req.params.id,
+      (req.params.id as string),
       email,
     );
     if (success) {
       await promotionalToolsService?.recordPreSaveAnalytics(
-        req.params.id,
+        (req.params.id as string),
         "email",
       );
     }
@@ -167,14 +167,14 @@ router?.post("/presave/:id/email", async (req: Request, res: Response) => {
   }
 });
 
-router?.delete(
+router.delete(
   "/presave/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = (req.user as Record<string, unknown>).id;
       const deleted = await promotionalToolsService?.deletePreSavePage(
-        req.params.id,
+        (req.params.id as string),
         (userId as string),
       );
       if (!deleted)
@@ -198,7 +198,7 @@ const promoCardSchema = z.object({
   fontFamily: z.string().optional(),
 });
 
-router?.post(
+router.post(
   "/promo-cards",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -218,7 +218,7 @@ router?.post(
   },
 );
 
-router?.get("/promo-cards", requireAuth, async (req: Request, res: Response) => {
+router.get("/promo-cards", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as Record<string, unknown>).id;
     const releaseId = req.query.releaseId as string | undefined;
@@ -233,7 +233,7 @@ router?.get("/promo-cards", requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-router?.get("/promo-cards/templates", async (_req: Request, res: Response) => {
+router.get("/promo-cards/templates", async (_req: Request, res: Response) => {
   try {
     res.json(promotionalToolsService?.getPromoCardTemplates());
   } catch (error) {
@@ -242,14 +242,14 @@ router?.get("/promo-cards/templates", async (_req: Request, res: Response) => {
   }
 });
 
-router?.delete(
+router.delete(
   "/promo-cards/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = (req.user as Record<string, unknown>).id;
       const deleted = await promotionalToolsService?.deletePromoCard(
-        req.params.id,
+        (req.params.id as string),
         (userId as string),
       );
       if (!deleted)
@@ -276,7 +276,7 @@ const miniVideoSchema = z.object({
   accentColor: z.string().optional(),
 });
 
-router?.post(
+router.post(
   "/mini-videos",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -296,7 +296,7 @@ router?.post(
   },
 );
 
-router?.get("/mini-videos", requireAuth, async (req: Request, res: Response) => {
+router.get("/mini-videos", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as Record<string, unknown>).id;
     const releaseId = req.query.releaseId as string | undefined;
@@ -311,14 +311,14 @@ router?.get("/mini-videos", requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-router?.delete(
+router.delete(
   "/mini-videos/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = (req.user as Record<string, unknown>).id;
       const deleted = await promotionalToolsService?.deleteMiniVideo(
-        req.params.id,
+        (req.params.id as string),
         (userId as string),
       );
       if (!deleted)
@@ -339,7 +339,7 @@ const spotifyCanvasSchema = z.object({
   loopPoint: z.number().optional(),
 });
 
-router?.post(
+router.post(
   "/spotify-canvas",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -360,7 +360,7 @@ router?.post(
   },
 );
 
-router?.get(
+router.get(
   "/spotify-canvas",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -379,13 +379,13 @@ router?.get(
   },
 );
 
-router?.post(
+router.post(
   "/spotify-canvas/:id/process",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const canvas = await promotionalToolsService?.processSpotifyCanvas(
-        req.params.id,
+        (req.params.id as string),
       );
       res.json(canvas);
     } catch (error) {
@@ -395,13 +395,13 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/spotify-canvas/:id/submit",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const canvas = await promotionalToolsService?.submitSpotifyCanvas(
-        req.params.id,
+        (req.params.id as string),
       );
       res.json(canvas);
     } catch (error) {
@@ -411,12 +411,12 @@ router?.post(
   },
 );
 
-router?.delete(
+router.delete(
   "/spotify-canvas/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      await promotionalToolsService?.deleteSpotifyCanvas(req.params.id);
+      await promotionalToolsService?.deleteSpotifyCanvas((req.params.id as string));
       res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Error deleting Spotify Canvas:");
@@ -433,7 +433,7 @@ const lyricsSyncSchema = z.object({
   syncMethod: z.enum(["manual", "auto", "ai"]).optional(),
 });
 
-router?.post(
+router.post(
   "/lyrics-sync",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -454,7 +454,7 @@ router?.post(
   },
 );
 
-router?.get("/lyrics-sync", requireAuth, async (req: Request, res: Response) => {
+router.get("/lyrics-sync", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as Record<string, unknown>).id;
     const releaseId = req.query.releaseId as string | undefined;
@@ -469,14 +469,14 @@ router?.get("/lyrics-sync", requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-router?.put(
+router.put(
   "/lyrics-sync/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const { lyrics } = req.body;
       const sync = await promotionalToolsService?.updateLyricsSync(
-        req.params.id,
+        (req.params.id as string),
         lyrics,
       );
       res.json(sync);
@@ -487,13 +487,13 @@ router?.put(
   },
 );
 
-router?.post(
+router.post(
   "/lyrics-sync/:id/submit",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const sync = await promotionalToolsService?.submitLyricsToplatforms(
-        req.params.id,
+        (req.params.id as string),
       );
       res.json(sync);
     } catch (error) {
@@ -503,7 +503,7 @@ router?.post(
   },
 );
 
-router?.get(
+router.get(
   "/lyrics-sync/:id/export/lrc",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -511,7 +511,7 @@ router?.get(
       const syncs = await promotionalToolsService?.getLyricsSyncs(
         ((req.user as Record<string, unknown>).id as string),
       );
-      const sync = syncs?.find((s) => s?.id === req.params.id);
+      const sync = syncs?.find((s) => s?.id === (req.params.id as string));
       if (!sync) {
         return res.status(404).json({ error: "Lyrics sync not found" });
       }
@@ -529,7 +529,7 @@ router?.get(
   },
 );
 
-router?.get(
+router.get(
   "/lyrics-sync/:id/export/srt",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -537,7 +537,7 @@ router?.get(
       const syncs = await promotionalToolsService?.getLyricsSyncs(
         ((req.user as Record<string, unknown>).id as string),
       );
-      const sync = syncs?.find((s) => s?.id === req.params.id);
+      const sync = syncs?.find((s) => s?.id === (req.params.id as string));
       if (!sync) {
         return res.status(404).json({ error: "Lyrics sync not found" });
       }
@@ -555,12 +555,12 @@ router?.get(
   },
 );
 
-router?.delete(
+router.delete(
   "/lyrics-sync/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      await promotionalToolsService?.deleteLyricsSync(req.params.id);
+      await promotionalToolsService?.deleteLyricsSync((req.params.id as string));
       res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Error deleting lyrics sync:");

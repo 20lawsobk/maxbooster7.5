@@ -90,7 +90,7 @@ export const verifyJWT = async (
       return res.status(401).json({ message: "Invalid or revoked token" });
     }
 
-    const user = await storage?.getUser(decoded?.userId);
+    const user = await storage.getUser(decoded?.userId);
 
     if (!user) {
       await recordJwtFailure(rlKey);
@@ -120,7 +120,7 @@ export const requireAuthDual = async (
   // Fallback: check for custom session userId
   if (req.session?.userId) {
     try {
-      const user = await storage?.getUser(req.session.userId);
+      const user = await storage.getUser(req.session.userId);
 
       if (user) {
         req.user = user;
@@ -144,7 +144,7 @@ export const requireAdmin = async (
     return res.status(401).json({ message: "Authentication required" });
   }
 
-  const user = await storage?.getUser(req.user.id);
+  const user = await storage.getUser(req.user.id);
 
   if (!user || user?.role !== "admin") {
     return res.status(403).json({ message: "Admin access required" });

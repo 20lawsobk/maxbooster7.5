@@ -15,7 +15,7 @@ export class NodeRegistry {
   ): Promise<FabricStorageNode> {
     const id = randomUUID();
     const now = new Date();
-    await db?.insert(fabricStorageNodes).values({
+    await db.insert(fabricStorageNodes).values({
       id,
       region: node.region,
       costTier: node.costTier,
@@ -45,7 +45,7 @@ export class NodeRegistry {
       await db
         .update(fabricStorageNodes)
         .set(values)
-        .where(eq(fabricStorageNodes?.id, id));
+        .where(eq(fabricStorageNodes.id, id));
     }
   }
 
@@ -61,12 +61,12 @@ export class NodeRegistry {
     const rows = await db
       .select()
       .from(fabricStorageNodes)
-      .where(eq(fabricStorageNodes?.healthy, true));
+      .where(eq(fabricStorageNodes.healthy, true));
     return rows?.map(this.rowToNode);
   }
 
   async listAllNodes(): Promise<FabricStorageNode[]> {
-    const rows = await db?.select().from(fabricStorageNodes);
+    const rows = await db.select().from(fabricStorageNodes);
     return rows?.map(this.rowToNode);
   }
 
@@ -74,7 +74,7 @@ export class NodeRegistry {
     const rows = await db
       .select()
       .from(fabricStorageNodes)
-      .where(eq(fabricStorageNodes?.id, id));
+      .where(eq(fabricStorageNodes.id, id));
     return rows[0] ? this.rowToNode(rows[0]) : null;
   }
 

@@ -18,23 +18,23 @@ const markerSchema = z.object({
 });
 
 // Get all markers for a project
-router?.get("/projects/:projectId/markers", requireAuth, async (req, res) => {
+router.get("/projects/:projectId/markers", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.params as Record<string, string>;
     const userId = req.user!.id;
 
     // Verify project ownership
-    const project = await db?.query.projects?.findFirst({
-      where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+    const project = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
     });
 
     if (!project) {
       return res.status(404).json({ error: "Project not found" });
     }
 
-    const projectMarkers = await db?.query.markers?.findMany({
-      where: eq(markers?.projectId, projectId),
-      orderBy: (markers, { asc }) => [asc(markers?.time)],
+    const projectMarkers = await db.query.markers.findMany({
+      where: eq(markers.projectId, projectId),
+      orderBy: (markers, { asc }) => [asc(markers.time)],
     });
 
     res.json({ markers: projectMarkers });
@@ -45,17 +45,17 @@ router?.get("/projects/:projectId/markers", requireAuth, async (req, res) => {
 });
 
 // Create a marker
-router?.post("/projects/:projectId/markers", requireAuth, async (req, res) => {
+router.post("/projects/:projectId/markers", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.params as Record<string, string>;
     const userId = req.user!.id;
 
     // Validate input
     const markerData = markerSchema?.parse(req.body);
 
     // Verify project ownership
-    const project = await db?.query.projects?.findFirst({
-      where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+    const project = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
     });
 
     if (!project) {
@@ -83,17 +83,17 @@ router?.post("/projects/:projectId/markers", requireAuth, async (req, res) => {
 });
 
 // Update a marker
-router?.patch("/markers/:markerId", requireAuth, async (req, res) => {
+router.patch("/markers/:markerId", requireAuth, async (req, res) => {
   try {
-    const { markerId } = req.params;
+    const { markerId } = req.params as Record<string, string>;
     const userId = req.user!.id;
 
     // Partial validation
     const updates = markerSchema?.partial().parse(req.body);
 
     // Get marker and verify ownership
-    const marker = await db?.query.markers?.findFirst({
-      where: eq(markers?.id, markerId),
+    const marker = await db.query.markers.findFirst({
+      where: eq(markers.id, markerId),
     });
 
     if (!marker) {
@@ -101,10 +101,10 @@ router?.patch("/markers/:markerId", requireAuth, async (req, res) => {
     }
 
     // Verify project ownership
-    const project = await db?.query.projects?.findFirst({
+    const project = await db.query.projects.findFirst({
       where: and(
-        eq(projects?.id, marker?.projectId),
-        eq(projects?.userId, userId),
+        eq(projects.id, marker?.projectId),
+        eq(projects.userId, userId),
       ),
     });
 
@@ -115,7 +115,7 @@ router?.patch("/markers/:markerId", requireAuth, async (req, res) => {
     const [updatedMarker] = await db
       .update(markers)
       .set(updates)
-      .where(eq(markers?.id, markerId))
+      .where(eq(markers.id, markerId))
       .returning();
 
     res.json(updatedMarker);
@@ -131,14 +131,14 @@ router?.patch("/markers/:markerId", requireAuth, async (req, res) => {
 });
 
 // Delete a marker
-router?.delete("/markers/:markerId", requireAuth, async (req, res) => {
+router.delete("/markers/:markerId", requireAuth, async (req, res) => {
   try {
-    const { markerId } = req.params;
+    const { markerId } = req.params as Record<string, string>;
     const userId = req.user!.id;
 
     // Get marker and verify ownership
-    const marker = await db?.query.markers?.findFirst({
-      where: eq(markers?.id, markerId),
+    const marker = await db.query.markers.findFirst({
+      where: eq(markers.id, markerId),
     });
 
     if (!marker) {
@@ -146,10 +146,10 @@ router?.delete("/markers/:markerId", requireAuth, async (req, res) => {
     }
 
     // Verify project ownership
-    const project = await db?.query.projects?.findFirst({
+    const project = await db.query.projects.findFirst({
       where: and(
-        eq(projects?.id, marker?.projectId),
-        eq(projects?.userId, userId),
+        eq(projects.id, marker?.projectId),
+        eq(projects.userId, userId),
       ),
     });
 
@@ -157,7 +157,7 @@ router?.delete("/markers/:markerId", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    await db?.delete(markers).where(eq(markers?.id, markerId));
+    await db.delete(markers).where(eq(markers.id, markerId));
 
     res.status(204).send();
   } catch (error: unknown) {

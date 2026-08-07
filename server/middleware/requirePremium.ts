@@ -26,7 +26,7 @@ export const requirePremium = async (
       return next();
     }
 
-    const user = await storage?.getUser(userId);
+    const user = await storage.getUser(userId);
 
     if (!user) {
       return res.status(401).json({

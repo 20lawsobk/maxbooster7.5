@@ -6,7 +6,7 @@ import { requireSafeParam } from "../middleware/requestValidation.js";
 
 const router = Router();
 
-router?.get("/", requireAuth, async (_req: Request, res: Response) => {
+router.get("/", requireAuth, async (_req: Request, res: Response) => {
   try {
     const achievements = await achievementService?.getAllAchievements();
     return res.json(achievements);
@@ -16,7 +16,7 @@ router?.get("/", requireAuth, async (_req: Request, res: Response) => {
   }
 });
 
-router?.get("/user", requireAuth, async (req: Request, res: Response) => {
+router.get("/user", requireAuth, async (req: Request, res: Response) => {
   try {
     const achievements = await achievementService?.getUserAchievements(
       req.user!.id,
@@ -28,7 +28,7 @@ router?.get("/user", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/unnotified", requireAuth, async (req: Request, res: Response) => {
+router.get("/unnotified", requireAuth, async (req: Request, res: Response) => {
   try {
     const achievements = await achievementService?.getUnnotifiedAchievements(
       req.user!.id,
@@ -45,7 +45,7 @@ router?.get("/unnotified", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.post(
+router.post(
   "/mark-notified/:achievementId",
   requireAuth,
   requireSafeParam("achievementId"),
@@ -53,7 +53,7 @@ router?.post(
     try {
       await achievementService?.markAchievementNotified(
         req.user!.id,
-        req.params.achievementId,
+        (req.params.achievementId as string),
       );
       return res.json({ success: true });
     } catch (error) {
@@ -68,7 +68,7 @@ router?.post(
   },
 );
 
-router?.get("/leaderboard", requireAuth, async (req: Request, res: Response) => {
+router.get("/leaderboard", requireAuth, async (req: Request, res: Response) => {
   try {
     const category = req.query.category as string | undefined;
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
@@ -84,7 +84,7 @@ router?.get("/leaderboard", requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-router?.get("/streaks", requireAuth, async (req: Request, res: Response) => {
+router.get("/streaks", requireAuth, async (req: Request, res: Response) => {
   try {
     const streaks = await achievementService?.getUserStreaks(req.user!.id);
     return res.json(streaks);
@@ -94,7 +94,7 @@ router?.get("/streaks", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.post(
+router.post(
   "/streaks/:type",
   requireAuth,
   requireSafeParam("type"),
@@ -102,7 +102,7 @@ router?.post(
     try {
       const streak = await achievementService?.updateStreak(
         req.user!.id,
-        req.params.type,
+        (req.params.type as string),
       );
       return res.json(streak);
     } catch (error) {

@@ -67,7 +67,7 @@ export async function getCachedHealthCheck(
 async function checkDatabaseHealth() {
   try {
     // Single lightweight query instead of multiple heavy queries
-    await db?.execute(`SELECT 1`);
+    await db.execute(`SELECT 1`);
 
     const poolStatus = {
       totalCount: pool.totalCount,

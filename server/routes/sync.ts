@@ -129,8 +129,8 @@ const ACTION_HANDLERS: Record<
           .set({ ...allowed, updatedAt: new Date() })
           .where(
             and(
-              eq(studioProjects?.id, data?.projectId),
-              eq(studioProjects?.userId, userId),
+              eq(studioProjects.id, data?.projectId),
+              eq(studioProjects.userId, userId),
             ),
           )
           .returning({ id: studioProjects.id });
@@ -152,7 +152,7 @@ const ACTION_HANDLERS: Record<
         .update(projects)
         .set({ ...allowed, updatedAt: new Date() })
         .where(
-          and(eq(projects?.id, data?.projectId), eq(projects?.userId, userId)),
+          and(eq(projects.id, data?.projectId), eq(projects.userId, userId)),
         )
         .returning({ id: projects.id });
 
@@ -235,7 +235,7 @@ const ACTION_HANDLERS: Record<
       const [updated] = await db
         .update(studioTracks)
         .set(allowed)
-        .where(eq(studioTracks?.id, data?.trackId))
+        .where(eq(studioTracks.id, data?.trackId))
         .returning({ id: studioTracks.id });
 
       return {
@@ -252,7 +252,7 @@ const ACTION_HANDLERS: Record<
     try {
       const data = payload as { trackId: string };
 
-      await db?.delete(studioTracks).where(eq(studioTracks?.id, data?.trackId));
+      await db.delete(studioTracks).where(eq(studioTracks.id, data?.trackId));
 
       return { success: true, data: { deleted: true, trackId: data.trackId } };
     } catch (error) {
@@ -273,7 +273,7 @@ const ACTION_HANDLERS: Record<
       const [existing] = await db
         .select({ preferences: users.preferences })
         .from(users)
-        .where(eq(users?.id, userId))
+        .where(eq(users.id, userId))
         .limit(1);
 
       const merged = {
@@ -284,7 +284,7 @@ const ACTION_HANDLERS: Record<
       await db
         .update(users)
         .set({ preferences: merged })
-        .where(eq(users?.id, userId));
+        .where(eq(users.id, userId));
 
       return { success: true, data: { updated: true } };
     } catch (error) {
@@ -313,7 +313,7 @@ const ACTION_HANDLERS: Record<
   },
 };
 
-router?.post("/batch", requireAuth, async (req, res) => {
+router.post("/batch", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { actions } = batchSyncRequestSchema?.parse(req.body);
@@ -384,7 +384,7 @@ router?.post("/batch", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/status", requireAuth, async (req, res) => {
+router.get("/status", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
 
@@ -400,7 +400,7 @@ router?.get("/status", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/resolve-conflict", requireAuth, async (req, res) => {
+router.post("/resolve-conflict", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { actionId, resolution } = req.body;

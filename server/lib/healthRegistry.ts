@@ -15,6 +15,7 @@ type Probe = () => Promise<Omit<SubsystemHealth, "name" | "lastChecked">>;
 class HealthRegistry {
   private probes = new Map<string, Probe>();
   private cache = new Map<string, SubsystemHealth>();
+  private inflight = new Map<string, Promise<SubsystemHealth>>();
   private readonly cacheTtlMs = 5_000;
 
   register(name: string, probe: Probe): void {
@@ -39,6 +40,24 @@ class HealthRegistry {
         detail: "no probe registered",
       };
     }
+    // Single-flight: if this probe is already running (e.g. a slow dependency
+    // and many concurrent /api/ready requests), share the in-flight promise
+    // instead of stacking overlapping DB/Redis/audit calls.
+    const inflight = this.inflight.get(name);
+    if (inflight) return inflight;
+    const run = this.runProbe(name, probe);
+    this.inflight.set(name, run);
+    try {
+      return await run;
+    } finally {
+      this.inflight.delete(name);
+    }
+  }
+
+  private async runProbe(
+    name: string,
+    probe: () => Promise<Omit<SubsystemHealth, "name" | "lastChecked">>,
+  ): Promise<SubsystemHealth> {
     const start = Date?.now();
     try {
       const r = await Promise?.race([

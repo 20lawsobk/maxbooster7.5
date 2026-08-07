@@ -152,7 +152,7 @@ const collaborationSchema = z.object({
   message: z.string().max(1000).optional(),
 });
 
-router?.get("/beats", async (req: Request, res: Response) => {
+router.get("/beats", async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const {
@@ -615,7 +615,7 @@ router.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const existing = await db
         .select()
         .from(licenseTemplates)
@@ -667,7 +667,7 @@ router.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const existing = await db
         .select()
         .from(licenseTemplates)
@@ -1087,7 +1087,7 @@ router.get(
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { orderId } = req.params;
+      const { orderId } = req.params as Record<string, string>;
 
       const [order] = await db
         .select()
@@ -1370,7 +1370,7 @@ router.get("/contracts/:id", async (req: Request, res: Response) => {
     }
 
     const userId = (req.user as unknown as Record<string, unknown>).id;
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const contract = await storage.getContractTemplateByUser(id, (userId as string));
 
     if (!contract) {
@@ -1391,7 +1391,7 @@ router.patch("/contracts/:id", async (req: Request, res: Response) => {
     }
 
     const userId = (req.user as unknown as Record<string, unknown>).id;
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
 
     const parsed = contractSchema.partial().safeParse(req.body);
     if (!parsed.success) {
@@ -1424,7 +1424,7 @@ router.delete("/contracts/:id", async (req: Request, res: Response) => {
     }
 
     const userId = (req.user as unknown as Record<string, unknown>).id;
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
 
     const contract = await storage.getContractTemplateByUser(id, (userId as string));
     if (!contract) {
@@ -1478,7 +1478,7 @@ router.get("/collaborations", async (req: Request, res: Response) => {
             sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`,
           ),
         )
-        .orderBy(desc(collaborationProjects?.createdAt))
+        .orderBy(desc(collaborationProjects.createdAt))
         .limit(100);
     }
 
@@ -1520,7 +1520,7 @@ router.get("/collaborations", async (req: Request, res: Response) => {
   }
 });
 
-router?.post(
+router.post(
   "/upload",
   upload?.fields([
     { name: "audioFile", maxCount: 1 },
@@ -1633,7 +1633,7 @@ router?.post(
                   await db
                     .update(listings)
                     .set(updateData)
-                    .where(eq(listings?.id, listing?.id));
+                    .where(eq(listings.id, listing?.id));
                   logger.info(
                     `[AutoTag] Beat ${listing.id} tagged: BPM=${updateData.bpm ?? "kept"} key=${updateData?.key ?? "kept"}`,
                   );
@@ -1764,11 +1764,11 @@ router?.post(
   },
 );
 
-router?.get("/audio/*path", async (req: Request, res: Response) => {
+router.get("/audio/*path", async (req: Request, res: Response) => {
   try {
-    let fileKey = Array.isArray(req.params.path)
-      ? req.params.path?.join("/")
-      : req.params.path;
+    let fileKey = Array.isArray((req.params.path as string))
+      ? ((req.params.path as string) as any)?.join("/")
+      : (req.params.path as string);
 
     if (typeof fileKey !== "string") {
       return res.status(400).json({ error: "Invalid audio path" });
@@ -1878,11 +1878,11 @@ router?.get("/audio/*path", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/cover/*path", async (req: Request, res: Response) => {
+router.get("/cover/*path", async (req: Request, res: Response) => {
   try {
-    const fileKey = Array.isArray(req.params.path)
-      ? req.params.path?.join("/")
-      : req.params.path;
+    const fileKey = Array.isArray((req.params.path as string))
+      ? ((req.params.path as string) as any)?.join("/")
+      : (req.params.path as string);
 
     if (typeof fileKey !== "string") {
       return res.status(400).json({ error: "Invalid cover path" });
@@ -1928,7 +1928,7 @@ router?.get("/cover/*path", async (req: Request, res: Response) => {
   }
 });
 
-router?.put(
+router.put(
   "/listings/:id",
   upload?.fields([
     { name: "audio", maxCount: 1 },
@@ -1940,7 +1940,7 @@ router?.put(
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const {
         title,
         description,
@@ -2017,13 +2017,13 @@ router?.put(
   },
 );
 
-router?.delete("/listings/:id", async (req: Request, res: Response) => {
+router.delete("/listings/:id", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     await marketplaceService?.deleteListing(id, req.user!.id);
     res.json({ success: true, message: "Beat deleted successfully" });
   } catch (error) {
@@ -2038,7 +2038,7 @@ router?.delete("/listings/:id", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/connect-stripe", async (req: Request, res: Response) => {
+router.post("/connect-stripe", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -2062,13 +2062,13 @@ router?.post("/connect-stripe", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/follow/:producerId", async (req: Request, res: Response) => {
+router.post("/follow/:producerId", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { producerId } = req.params;
+    const { producerId } = req.params as Record<string, string>;
     if (!producerId) {
       return res.status(400).json({ error: "producerId is required" });
     }
@@ -2084,7 +2084,7 @@ router?.post("/follow/:producerId", async (req: Request, res: Response) => {
   }
 });
 
-router?.post(
+router.post(
   "/escrow/:transactionId/release",
   async (req: Request, res: Response) => {
     try {
@@ -2092,7 +2092,7 @@ router?.post(
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { transactionId } = req.params;
+      const { transactionId } = req.params as Record<string, string>;
       res.json({
         success: true,
         message: "Escrow released successfully",
@@ -2105,7 +2105,7 @@ router?.post(
   },
 );
 
-router?.post("/affiliates", async (req: Request, res: Response) => {
+router.post("/affiliates", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -2122,7 +2122,7 @@ router?.post("/affiliates", async (req: Request, res: Response) => {
     const [existing] = await db
       .select()
       .from(systemSettings)
-      .where(eq(systemSettings?.key, settingKey))
+      .where(eq(systemSettings.key, settingKey))
       .limit(1);
     const currentList: Record<string, unknown>[] = existing
       ? (existing?.value as Record<string, unknown>[]) || []
@@ -2147,7 +2147,7 @@ router?.post("/affiliates", async (req: Request, res: Response) => {
       await db
         .update(systemSettings)
         .set({ value: updatedList, updatedAt: new Date() })
-        .where(eq(systemSettings?.key, settingKey));
+        .where(eq(systemSettings.key, settingKey));
     } else {
       await db
         .insert(systemSettings)
@@ -2161,7 +2161,7 @@ router?.post("/affiliates", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/contracts", async (req: Request, res: Response) => {
+router.post("/contracts", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -2174,7 +2174,7 @@ router?.post("/contracts", async (req: Request, res: Response) => {
     }
     const { name, description, content, category, variables } = parsed?.data;
 
-    const contract = await storage?.createContractTemplate({
+    const contract = await storage.createContractTemplate({
       userId,
       name,
       description: description || "",
@@ -2190,7 +2190,7 @@ router?.post("/contracts", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/collaborations", async (req: Request, res: Response) => {
+router.post("/collaborations", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -2267,10 +2267,10 @@ router?.post("/collaborations", async (req: Request, res: Response) => {
 });
 
 // Producer by ID endpoint
-router?.get("/producers/:producerId", async (req: Request, res: Response) => {
+router.get("/producers/:producerId", async (req: Request, res: Response) => {
   try {
     const { producerId } = req.params as { producerId: string };
-    const producer = await storage?.getUser(producerId);
+    const producer = await storage.getUser(producerId);
     if (!producer) {
       return res.status(404).json({ error: "Producer not found" });
     }
@@ -2282,7 +2282,7 @@ router?.get("/producers/:producerId", async (req: Request, res: Response) => {
     const userStorefront = await db
       .select({ id: storefronts.id })
       .from(storefronts)
-      .where(eq(storefronts?.userId, producerId))
+      .where(eq(storefronts.userId, producerId))
       .limit(1);
     const storefrontId = userStorefront[0]?.id;
 
@@ -2294,16 +2294,16 @@ router?.get("/producers/:producerId", async (req: Request, res: Response) => {
       const [followResult] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(storefrontFollows)
-        .where(eq(storefrontFollows?.storefrontId, storefrontId))
+        .where(eq(storefrontFollows.storefrontId, storefrontId))
         .limit(1);
       followerCount = followResult?.count || 0;
 
       const [ratingResult] = await db
         .select({
-          avg: sql<number>`coalesce(avg(${storefrontRatings?.rating}), 0)`,
+          avg: sql<number>`coalesce(avg(${storefrontRatings.rating}), 0)`,
         })
         .from(storefrontRatings)
-        .where(eq(storefrontRatings?.storefrontId, storefrontId))
+        .where(eq(storefrontRatings.storefrontId, storefrontId))
         .limit(1);
       avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
     }
@@ -2326,7 +2326,7 @@ router?.get("/producers/:producerId", async (req: Request, res: Response) => {
       .select({ count: sql<number>`count(*)::int` })
       .from(orders)
       .where(
-        and(eq(orders?.sellerId, producerId), eq(orders?.status, "completed")),
+        and(eq(orders.sellerId, producerId), eq(orders.status, "completed")),
       )
       .limit(1);
     salesCount = salesResult?.count || 0;
@@ -2376,7 +2376,7 @@ router?.get("/producers/:producerId", async (req: Request, res: Response) => {
 });
 
 // Producer follow status endpoint
-router?.get(
+router.get(
   "/producers/:producerId/follow-status",
   async (req: Request, res: Response) => {
     try {
@@ -2398,7 +2398,7 @@ router?.get(
 );
 
 // Toggle unfollow producer
-router?.post("/unfollow/:producerId", async (req: Request, res: Response) => {
+router.post("/unfollow/:producerId", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -2416,7 +2416,7 @@ router?.post("/unfollow/:producerId", async (req: Request, res: Response) => {
 });
 
 // Like a beat (toggle)
-router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
+router.post("/beats/:beatId/like", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -2429,9 +2429,9 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
       .from(beatInteractions)
       .where(
         and(
-          eq(beatInteractions?.userId, req.user!.id),
-          eq(beatInteractions?.beatId, beatId),
-          eq(beatInteractions?.interactionType, "like"),
+          eq(beatInteractions.userId, req.user!.id),
+          eq(beatInteractions.beatId, beatId),
+          eq(beatInteractions.interactionType, "like"),
         ),
       )
       .limit(1);
@@ -2442,9 +2442,9 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
         .delete(beatInteractions)
         .where(
           and(
-            eq(beatInteractions?.userId, req.user!.id),
-            eq(beatInteractions?.beatId, beatId),
-            eq(beatInteractions?.interactionType, "like"),
+            eq(beatInteractions.userId, req.user!.id),
+            eq(beatInteractions.beatId, beatId),
+            eq(beatInteractions.interactionType, "like"),
           ),
         );
 
@@ -2452,7 +2452,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
       const [listing] = await db
         .select()
         .from(listings)
-        .where(eq(listings?.id, beatId))
+        .where(eq(listings.id, beatId))
         .limit(1);
       let newLikes = 0;
       if (listing) {
@@ -2462,7 +2462,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
         await db
           .update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
-          .where(eq(listings?.id, beatId));
+          .where(eq(listings.id, beatId));
       }
 
       res.json({ success: true, liked: false, likes: newLikes });
@@ -2479,7 +2479,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
       const [listing] = await db
         .select()
         .from(listings)
-        .where(eq(listings?.id, beatId))
+        .where(eq(listings.id, beatId))
         .limit(1);
       if (listing) {
         const currentMetadata =
@@ -2488,7 +2488,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
         await db
           .update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
-          .where(eq(listings?.id, beatId));
+          .where(eq(listings.id, beatId));
         res.json({ success: true, liked: true, likes: newLikes });
       } else {
         res.json({ success: true, liked: true });
@@ -2501,7 +2501,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
 });
 
 // Get like status for a beat
-router?.get(
+router.get(
   "/beats/:beatId/like-status",
   async (req: Request, res: Response) => {
     try {
@@ -2516,9 +2516,9 @@ router?.get(
         .from(beatInteractions)
         .where(
           and(
-            eq(beatInteractions?.userId, req.user!.id),
-            eq(beatInteractions?.beatId, beatId),
-            eq(beatInteractions?.interactionType, "like"),
+            eq(beatInteractions.userId, req.user!.id),
+            eq(beatInteractions.beatId, beatId),
+            eq(beatInteractions.interactionType, "like"),
           ),
         )
         .limit(1);
@@ -2532,7 +2532,7 @@ router?.get(
 );
 
 // Rate a beat
-router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
+router.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -2557,7 +2557,7 @@ router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
     const [listing] = await db
       .select()
       .from(listings)
-      .where(eq(listings?.id, beatId))
+      .where(eq(listings.id, beatId))
       .limit(1);
     if (listing) {
       const currentMetadata =
@@ -2595,7 +2595,7 @@ router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
             ratingCount: currentRatings.length,
           },
         })
-        .where(eq(listings?.id, beatId));
+        .where(eq(listings.id, beatId));
 
       res.json({
         success: true,
@@ -2612,13 +2612,13 @@ router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
 });
 
 // Get beat rating info
-router?.get("/beats/:beatId/rating", async (req: Request, res: Response) => {
+router.get("/beats/:beatId/rating", async (req: Request, res: Response) => {
   try {
-    const { beatId } = req.params;
+    const { beatId } = req.params as Record<string, string>;
     const [listing] = await db
       .select()
       .from(listings)
-      .where(eq(listings?.id, beatId))
+      .where(eq(listings.id, beatId))
       .limit(1);
     if (!listing) {
       return res.status(404).json({ error: "Beat not found" });
@@ -2642,12 +2642,12 @@ router?.get("/beats/:beatId/rating", async (req: Request, res: Response) => {
 });
 
 // Stems endpoints
-router?.get(
+router.get(
   "/stems/:stemId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { stemId } = req.params;
+      const { stemId } = req.params as Record<string, string>;
       res.json({
         id: stemId,
         name: "Stem",
@@ -2663,7 +2663,7 @@ router?.get(
   },
 );
 
-router?.post("/stems/:stemId/purchase", async (req: Request, res: Response) => {
+router.post("/stems/:stemId/purchase", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -2695,14 +2695,14 @@ router?.post("/stems/:stemId/purchase", async (req: Request, res: Response) => {
   }
 });
 
-router?.get(
+router.get(
   "/stems/:stemId/download/:trackId",
   async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-      const { stemId, trackId } = req.params;
+      const { stemId, trackId } = req.params as Record<string, string>;
       res.json({
         success: true,
         downloadUrl: `/uploads/stems/${stemId}_${trackId}.wav`,
@@ -2715,7 +2715,7 @@ router?.get(
   },
 );
 
-router?.get("/my-stems", async (req: Request, res: Response) => {
+router.get("/my-stems", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -2724,8 +2724,8 @@ router?.get("/my-stems", async (req: Request, res: Response) => {
     const stems = await db
       .select()
       .from(listingStems)
-      .where(eq(listingStems?.userId, userId))
-      .orderBy(desc(listingStems?.createdAt))
+      .where(eq(listingStems.userId, userId))
+      .orderBy(desc(listingStems.createdAt))
       .limit(100);
     res.json(stems);
   } catch (error) {
@@ -2734,7 +2734,7 @@ router?.get("/my-stems", async (req: Request, res: Response) => {
   }
 });
 
-router?.get(
+router.get(
   "/listings/:listingId/stems",
   async (req: Request, res: Response) => {
     try {
@@ -2742,8 +2742,8 @@ router?.get(
       const stems = await db
         .select()
         .from(listingStems)
-        .where(eq(listingStems?.listingId, listingId))
-        .orderBy(asc(listingStems?.createdAt))
+        .where(eq(listingStems.listingId, listingId))
+        .orderBy(asc(listingStems.createdAt))
         .limit(50);
       res.json(stems);
     } catch (error) {
@@ -2753,7 +2753,7 @@ router?.get(
   },
 );
 
-router?.post(
+router.post(
   "/listings/:listingId/stems",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -2801,7 +2801,7 @@ router?.post(
   },
 );
 
-router?.delete(
+router.delete(
   "/stems/:stemId",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -2812,7 +2812,7 @@ router?.delete(
       const [deleted] = await db
         .delete(listingStems)
         .where(
-          and(eq(listingStems?.id, stemId), eq(listingStems?.userId, userId)),
+          and(eq(listingStems.id, stemId), eq(listingStems.userId, userId)),
         )
         .returning();
 

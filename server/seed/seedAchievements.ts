@@ -174,7 +174,7 @@ export async function seedAchievements() {
     const [{ total }] = await db
       .select({ total: count() })
       .from(achievements)
-      .where(inArray(achievements?.name, names));
+      .where(inArray(achievements.name, names));
 
     if (Number(total) >= names?.length) {
       logger.info("Achievements already seeded, skipping...");
@@ -185,7 +185,7 @@ export async function seedAchievements() {
     const existing = await db
       .select({ name: achievements.name })
       .from(achievements)
-      .where(inArray(achievements?.name, names));
+      .where(inArray(achievements.name, names));
     const existingNames = new Set(existing?.map((r) => r?.name));
 
     const toInsert = defaultAchievements
@@ -193,7 +193,7 @@ export async function seedAchievements() {
       .map((a) => ({ ...a, isActive: true }));
 
     if (toInsert?.length > 0) {
-      await db?.insert(achievements).values(toInsert);
+      await db.insert(achievements).values(toInsert);
       logger.info(`Created ${toInsert?.length} achievement(s)`);
     }
 

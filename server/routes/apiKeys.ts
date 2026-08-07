@@ -9,7 +9,7 @@ import rateLimit from "express-rate-limit";
 
 const router = Router();
 
-router?.use(requireAuth);
+router.use(requireAuth);
 
 const MAX_KEYS_PER_USER = 20;
 
@@ -39,13 +39,13 @@ const getKeyPrefix = (key: string): string => {
   return `${key?.substring(0, 7)}...${key?.substring(key?.length - 4)}`;
 };
 
-router?.get("/", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const rows = await db
       .select()
       .from(apiKeys)
-      .where(eq(apiKeys?.userId, userId))
+      .where(eq(apiKeys.userId, userId))
       .limit(50);
 
     const result = rows?.map((k) => ({
@@ -71,7 +71,7 @@ router?.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
+router.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { name, scopes = ["read"] } = req.body;
@@ -109,7 +109,7 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
     const [{ activeCount }] = await db
       .select({ activeCount: count() })
       .from(apiKeys)
-      .where(and(eq(apiKeys?.userId, userId), eq(apiKeys?.isActive, true)));
+      .where(and(eq(apiKeys.userId, userId), eq(apiKeys.isActive, true)));
 
     if (Number(activeCount) >= MAX_KEYS_PER_USER) {
       return res.status(409).json({
@@ -148,15 +148,15 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
   }
 });
 
-router?.delete("/:keyId", async (req: Request, res: Response) => {
+router.delete("/:keyId", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { keyId } = req.params;
+    const { keyId } = req.params as Record<string, string>;
 
     const [updated] = await db
       .update(apiKeys)
       .set({ isActive: false })
-      .where(and(eq(apiKeys?.id, keyId), eq(apiKeys?.userId, userId)))
+      .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
       .returning({ id: apiKeys.id });
 
     if (!updated) {
@@ -170,18 +170,18 @@ router?.delete("/:keyId", async (req: Request, res: Response) => {
   }
 });
 
-router?.post(
+router.post(
   "/:keyId/regenerate",
   keyCreateLimiter,
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const { keyId } = req.params;
+      const { keyId } = req.params as Record<string, string>;
 
       const [existing] = await db
         .select({ id: apiKeys.id })
         .from(apiKeys)
-        .where(and(eq(apiKeys?.id, keyId), eq(apiKeys?.userId, userId)))
+        .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
         .limit(1);
 
       if (!existing) {
@@ -201,7 +201,7 @@ router?.post(
           createdAt: new Date(),
           isActive: true,
         })
-        .where(and(eq(apiKeys?.id, keyId), eq(apiKeys?.userId, userId)))
+        .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
         .returning();
 
       res.json({

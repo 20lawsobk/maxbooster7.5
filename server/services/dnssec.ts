@@ -558,7 +558,7 @@ export async function loadKeys(
     const rows = await db
       .select()
       .from(dnssecKeys)
-      .where(eq(dnssecKeys?.zone, zone));
+      .where(eq(dnssecKeys.zone, zone));
 
     if (rows?.length < 2) return null;
 

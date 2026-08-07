@@ -301,9 +301,9 @@ class AutopilotPublisher {
         .select()
         .from(storefronts)
         .where(
-          and(eq(storefronts?.userId, userId), eq(storefronts?.isActive, true)),
+          and(eq(storefronts.userId, userId), eq(storefronts.isActive, true)),
         )
-        .orderBy(desc(storefronts?.createdAt))
+        .orderBy(desc(storefronts.createdAt))
         .limit(1);
 
       const storefrontUrl = storefront
@@ -331,8 +331,8 @@ class AutopilotPublisher {
           artworkUrl: listings.artworkUrl,
         })
         .from(listings)
-        .where(and(eq(listings?.userId, userId), eq(listings?.isPublished, true)))
-        .orderBy(desc(listings?.createdAt))
+        .where(and(eq(listings.userId, userId), eq(listings.isPublished, true)))
+        .orderBy(desc(listings.createdAt))
         .limit(5);
 
       // Build beat context string
@@ -386,8 +386,8 @@ class AutopilotPublisher {
           .from(listingLicenseTiers)
           .where(
             and(
-              eq(listingLicenseTiers?.bogoEnabled, true),
-              eq(listingLicenseTiers?.isActive, true),
+              eq(listingLicenseTiers.bogoEnabled, true),
+              eq(listingLicenseTiers.isActive, true),
             ),
           )
           .limit(5);
@@ -757,7 +757,7 @@ class AutopilotPublisher {
       // Get multimodal features if enabled
       let multimodalFeatures = null;
       if (config?.useMultimodalAnalysis) {
-        const recentAnalysis = await storage?.getRecentAnalyzedContent(
+        const recentAnalysis = await storage.getRecentAnalyzedContent(
           (userId as string),
           1,
         );
@@ -837,7 +837,7 @@ class AutopilotPublisher {
       const nextOptimalTime = await this.calculateNextOptimalPostingTime(
         primaryPlatform,
         ((config?.postingFrequency as string) || "daily"),
-        userId,
+        (userId as string | undefined),
       );
 
       // Append storefront URL + beat/promo context to the ad content body
@@ -850,7 +850,7 @@ class AutopilotPublisher {
       }
 
       // Create campaign via storage with AI-selected media type, timing, and generated assets
-      const campaign = await storage?.createAdCampaign({
+      const campaign = await storage.createAdCampaign({
         userId,
         name:
           bestCampaign?.name ||

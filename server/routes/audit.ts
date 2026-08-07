@@ -22,18 +22,18 @@ const requireAdmin: RequestHandler = (req, res, next) => {
   next();
 };
 
-router?.use(requireAdmin);
-router?.use(require2FA);
+router.use(requireAdmin);
+router.use(require2FA);
 
-router?.get("/results", async (_req, res) => {
+router.get("/results", async (_req, res) => {
   try {
     const now = new Date();
     new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const [userCount, projectCount, releaseCount] = await Promise?.all([
-      db?.select({ count: count() }).from(users),
-      db?.select({ count: count() }).from(projects),
-      db?.select({ count: count() }).from(releases),
+      db.select({ count: count() }).from(users),
+      db.select({ count: count() }).from(projects),
+      db.select({ count: count() }).from(releases),
     ]);
 
     let securityIssues = 0;
@@ -41,7 +41,7 @@ router?.get("/results", async (_req, res) => {
       const threatCount = await db
         .select({ count: count() })
         .from(securityThreats)
-        .where(eq(securityThreats?.status, "active"));
+        .where(eq(securityThreats.status, "active"));
       securityIssues = threatCount[0]?.count || 0;
     } catch {
       securityIssues = 0;
@@ -198,7 +198,7 @@ router?.get("/results", async (_req, res) => {
   }
 });
 
-router?.post("/run", async (_req, res) => {
+router.post("/run", async (_req, res) => {
   try {
     logger.info("Manual audit triggered by admin");
     res.json({
