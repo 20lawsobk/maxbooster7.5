@@ -67,6 +67,11 @@ class StartupProbeManager {
           status: "pending",
           lastCheck: null,
         },
+        maxcore: {
+          name: "MaxCore (local subsystem)",
+          status: "pending",
+          lastCheck: null,
+        },
       },
     };
 
@@ -237,6 +242,58 @@ class StartupProbeManager {
     });
   }
 
+  // Check the local MaxCore subsystem (supervised child). Non-fatal: the
+  // supervisor restarts it on crash; AI routes fail explicit (503) meanwhile.
+  async checkMaxcore(): Promise<boolean> {
+    this.status.probes.maxcore.status = "checking";
+    const startTime = Date?.now();
+    try {
+      const { checkMaxcoreLocalReady, getMaxcoreLocalStatus } = await import(
+        "./services/maxcoreLocalSupervisor.js"
+      );
+      const st = getMaxcoreLocalStatus();
+      if (!st.enabled) {
+        // Remote mode — reachability is owned by the MaxCore client's
+        // circuit breaker, not startup probes.
+        this.status.probes.maxcore.status = "ready";
+        this.status.probes.maxcore.lastCheck = new Date();
+        this.status.probes.maxcore.error = "remote mode (MAXCORE_LOCAL=0)";
+        return true;
+      }
+      // The child supervises a Python model server that can take a while to
+      // come up; poll the fast /healthz for up to 60 s before reporting.
+      const deadline = Date.now() + 60_000;
+      for (;;) {
+        if (await checkMaxcoreLocalReady()) {
+          this.status.probes.maxcore.status = "ready";
+          this.status.probes.maxcore.lastCheck = new Date();
+          this.status.probes.maxcore.latencyMs = Date?.now() - startTime;
+          this.status.probes.maxcore.error = undefined;
+          logger.info(
+            `✅ MaxCore local probe ready (${this.status.probes.maxcore.latencyMs}ms)`,
+          );
+          return true;
+        }
+        if (Date.now() >= deadline) break;
+        await new Promise((r) => setTimeout(r, 2_000));
+      }
+      const s = getMaxcoreLocalStatus();
+      this.status.probes.maxcore.status = "degraded";
+      this.status.probes.maxcore.lastCheck = new Date();
+      this.status.probes.maxcore.error =
+        s.error ?? `local MaxCore not ready yet (running=${s.running}, restarts=${s.restarts})`;
+      logger.warn(`⚠️ MaxCore local probe: ${this.status.probes.maxcore.error}`);
+      return true; // degraded, not fatal — supervisor keeps restarting
+    } catch (error) {
+      this.status.probes.maxcore.status = "degraded";
+      this.status.probes.maxcore.lastCheck = new Date();
+      this.status.probes.maxcore.error =
+        error instanceof Error ? error.message : String(error);
+      logger.warn(`⚠️ MaxCore local probe failed: ${this.status.probes.maxcore.error}`);
+      return true;
+    }
+  }
+
   // Run all probes and determine overall readiness
   async runAllProbes(): Promise<boolean> {
     this.status.phase = "connecting";
@@ -244,10 +301,11 @@ class StartupProbeManager {
     logger.info("🔍 Running startup probes...");
 
     // Run probes in parallel
-    const [_dbReady, _redisReady, _tfReady] = await Promise.all([
+    const [_dbReady, _redisReady, _tfReady, _maxcoreReady] = await Promise.all([
       this.checkDatabase(),
       this.checkRedis(),
       this.checkTensorFlow(),
+      this.checkMaxcore(),
     ]);
 
     // Determine overall status

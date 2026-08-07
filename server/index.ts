@@ -76,6 +76,13 @@ app?.use(securityMiddleware as import("express").RequestHandler);
 
 setupStartupEndpoints(app);
 
+// Start the LOCAL MaxCore subsystem (imported repo, supervised child) before
+// probes run so its readiness is measured against a starting — not absent —
+// process. No-op when MAXCORE_LOCAL=0.
+import("./services/maxcoreLocalSupervisor.js")
+  .then(({ startMaxcoreLocal }) => startMaxcoreLocal())
+  .catch((err) => logger.error({ err }, "[MaxCoreLocal] failed to start supervisor"));
+
 // Kick off readiness probes asynchronously — /ready transitions from
 // "not_ready" → "ready"/"degraded" once DB + Redis + TF have responded.
 startupProbes?.runAllProbes().catch((err) => {
@@ -1927,6 +1934,15 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
       new Promise<void>((resolve) => setTimeout(resolve, 3_000)),
     ]);
     logger.info("[Shutdown] Autopilot coordinator persists flushed");
+  } catch {
+    /* non-critical */
+  }
+
+  try {
+    // Stop the local MaxCore subsystem child (its own handler stops Python).
+    const { stopMaxcoreLocal } = await import("./services/maxcoreLocalSupervisor.js");
+    stopMaxcoreLocal();
+    logger.info("[Shutdown] Local MaxCore subsystem stopped");
   } catch {
     /* non-critical */
   }

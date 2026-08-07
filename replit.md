@@ -11,7 +11,7 @@ AI-Powered Music Career Management Platform (v3.0.0) by B-Lawz Music.
 - **Frontend:** React 19, Vite, Tailwind CSS 4, Radix UI, Framer Motion, TanStack Query, Zustand
 - **Backend:** Node.js (Express 5), TypeScript (tsx), Drizzle ORM (PostgreSQL/Neon)
 - **Jobs:** BullMQ + Redis
-- **AI:** MaxCore (external — `secure-ai-forge.replit.app`)
+- **AI:** MaxCore (local supervised subsystem — `external/maxcore`, loopback :8090; `MAXCORE_LOCAL=0` for remote)
 
 ---
 
@@ -67,7 +67,7 @@ See `.env.example` for the full list of 300+ optional variables (Stripe, SendGri
 | `node_modules/.bin` missing | Run the inline Node script that reads each package's `bin` field and recreates symlinks manually (see Startup Note below) |
 | `npm install` / `pnpm install` fails on `tar` | Platform-blocked package; local stub at `stubs/tar/` + `overrides.tar = "file:./stubs/tar"` handles it — delete `package-lock.json` before reinstall |
 | Typecheck OOMs (`tsc` killed) | Never run monolithic `tsc`; use `npm run check` (split server/client configs); also clear `.cache/tsbuildinfo.*` before re-measuring |
-| AI features return 503 | MaxCore (`secure-ai-forge.replit.app`) is down/sleeping — expected fail-explicit behavior; not an app bug |
+| AI features return 503 | local MaxCore subsystem is starting/crashed — supervisor restarts it with backoff; fail-explicit behavior, not an app bug |
 | Login / CSRF failures in curl | Pass the `csrf-token` cookie value as `X-CSRF-Token` header (double-submit pattern) |
 | Beat cycle stuck as "running" | `recoverOrphanedCycles()` runs 75s after boot; or manually `UPDATE beatMoneyLoopCycles SET status='failed'` in DB |
 | Storefront subdomain 404s | Row in `storefront_hosts` with `hostname=...` and `active=true` must exist |
@@ -88,7 +88,7 @@ On a fresh environment, `node_modules/.bin/` symlinks may be missing even if `no
 ```
 React 19 (Vite) → Express 5 → Drizzle ORM → PostgreSQL (Neon)
                           ↓
-                 MaxCore AI (external)
+                 MaxCore AI (local subsystem)
                  PDIM session store
                  Redis / BullMQ jobs
                  Stripe / SendGrid / Twilio
