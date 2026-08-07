@@ -396,6 +396,7 @@ export async function syncWeightsNow(): Promise<number> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 let _syncTimer: NodeJS.Timeout | null = null;
+let _initialSyncTimer: NodeJS.Timeout | null = null;
 
 export async function initMaxCoreSync(): Promise<void> {
   // 1. Health probe (non-blocking — don't hold up server startup)
@@ -407,12 +408,15 @@ export async function initMaxCoreSync(): Promise<void> {
   // 2. Initial weight sync after 2 minutes — the health probe above wakes up the
   //    MaxCore server; we need to give it enough time to become ready before
   //    syncing weights (sleeping Replit apps take 30-90s to wake up).
-  setTimeout(() => {
+  _initialSyncTimer = setTimeout(() => {
+    _initialSyncTimer = null;
     syncWeightsFromMaxCore().catch((err) =>
       logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[MaxCoreSync] Initial weight sync error:",
       ),
     );
   }, 120_000);
+  // Background maintenance must never hold the process open during shutdown.
+  _initialSyncTimer.unref();
 
   // 3. Periodic weight sync every 10 min (aligned with each training session)
   _syncTimer = setInterval(() => {
@@ -421,6 +425,7 @@ export async function initMaxCoreSync(): Promise<void> {
       ),
     );
   }, SYNC_INTERVAL_MS);
+  _syncTimer.unref();
 
   logger.info(
     "[MaxCoreSync] Initialized — health probe running, weight sync scheduled every 10 min (aligned with 10-min training sessions)",
@@ -431,5 +436,9 @@ export function stopMaxCoreSync(): void {
   if (_syncTimer) {
     clearInterval(_syncTimer);
     _syncTimer = null;
+  }
+  if (_initialSyncTimer) {
+    clearTimeout(_initialSyncTimer);
+    _initialSyncTimer = null;
   }
 }
