@@ -65,6 +65,10 @@ import { advertisingDispatchService } from "./advertisingDispatchService.js";
 import path from "path";
 import fsPromises from "fs/promises";
 import { randomBytes } from "crypto";
+import {
+  getMaxcoreGenerationKey,
+  getMaxcoreOriginOrDefault,
+} from "./maxcoreConnector.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STATE_ROW_ID = "singleton";
@@ -464,10 +468,8 @@ class BeatMoneyLoopService {
       //     call against a sleeping MaxCore returns the Replit "not live yet" 404
       //     and fails the whole cycle.  A single lightweight GET is enough to
       //     trigger the wake; subsequent calls will find it ready.
-      const mcBase = (
-        process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
-      ).replace(/\/api\/?$/, "");
-      const mcKey = process.env.AI_SERVER_KEY || "";
+      const mcBase = getMaxcoreOriginOrDefault();
+      const mcKey = getMaxcoreGenerationKey();
       const PREWARM_BUDGET_MS = 90_000;
       const prewarmStart = Date.now();
       let maxcoreReady = false;
@@ -795,10 +797,8 @@ class BeatMoneyLoopService {
       bass_weight?: string;
     };
   }> {
-    const base = (
-      process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
-    ).replace(/\/api\/?$/, "");
-    const key = process.env.AI_SERVER_KEY || "";
+    const base = getMaxcoreOriginOrDefault();
+    const key = getMaxcoreGenerationKey();
     // Beat duration. Default 180 s (full-length sellable beat).
     // Override via BEAT_DURATION_SECONDS env var (max 300 s / 5 min).
     const durationSec = Math.min(
@@ -1446,10 +1446,8 @@ class BeatMoneyLoopService {
     // fails, so a slow image render never aborts the upload step.
     let artworkUrl: string | null = null;
     try {
-      const base = (
-        process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
-      ).replace(/\/api\/?$/, "");
-      const aiKey = process.env.AI_SERVER_KEY || "";
+      const base = getMaxcoreOriginOrDefault();
+      const aiKey = getMaxcoreGenerationKey();
       const artPrompt =
         `${args.scan.mood} ${args.scan.genre} music producer — album cover art, cinematic, high contrast`;
       const artRes = await fetch(`${base}/api/generate/image`, {

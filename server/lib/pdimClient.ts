@@ -839,9 +839,14 @@ export class PdimRedisClient extends EventEmitter {
   }
 
   private exec<T = unknown>(command: unknown[]): Promise<T> {
-    const [cmd, ...rawArgs] = command as (string | number | null)[];
-    // The PDIM server validates all args as strings — coerce numbers/nulls
-    const args = rawArgs?.map((a) => (a === null ? "" : String(a)));
+    const [cmd, ...rawArgs] = command as (string | number | null | undefined)[];
+    // PDIM's HTTP contract accepts only string arguments. An absent Redis value
+    // is a result (`{ result: null }`), not a valid command argument. Rejecting
+    // nullish inputs prevents silently persisting an empty string in its place.
+    if (rawArgs.some((arg) => arg === null || arg === undefined)) {
+      throw new TypeError(`[PDIM] ${String(cmd)} received a nullish command argument`);
+    }
+    const args = rawArgs.map((arg) => String(arg));
 
     // Circuit breaker: fail-fast BEFORE joining the global queue so we don't
     // waste a queue slot on a request we know will fail.
@@ -1249,9 +1254,15 @@ export class PdimRedisClient extends EventEmitter {
    */
   async scriptExec(args: string[]): Promise<unknown> {
     const [cmd, ...rawArgs] = args;
-    const strArgs = rawArgs?.map((a) =>
-      a === null || a === undefined ? "" : String(a),
-    );
+    // Same contract as exec(): PDIM accepts only string arguments, and an
+    // absent Redis value is a result, never a valid argument. Rejecting here
+    // keeps Lua/BullMQ script calls from silently persisting empty strings.
+    if (rawArgs.some((a) => a === null || a === undefined)) {
+      throw new TypeError(
+        `[PDIM] ${String(cmd)} (script) received a nullish command argument`,
+      );
+    }
+    const strArgs = rawArgs.map((a) => String(a));
 
     if (!cbAllowRequest()) {
       throw new Error(`[PDIM] Circuit OPEN — ${cmd} (script) rejected`);

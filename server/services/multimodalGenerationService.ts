@@ -3,6 +3,10 @@ import path from "path";
 import { promises as fsPromises } from "fs";
 import { logger } from "../logger.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import {
+  getMaxcoreGenerationKey,
+  getMaxcoreOriginOrDefault,
+} from "./maxcoreConnector.js";
 import { generateAudio as generateLocalAudio } from "./audioGeneratorService.js";
 import { sharpImageService as _sharpImageService } from "./sharpImageService.js";
 import { db } from "../db.js";
@@ -20,13 +24,10 @@ import {
 } from "@shared/types/multimodalGeneration.js";
 import { PLATFORM_RULES, getRules, enforceTextLength, type PlatformRules } from "@shared/config/platformRules.js";
 
-// Strip any trailing /api so the base is always the root, then append /api.
-// This means AI_SERVER_URL can be set to either the root or the /api form and both work.
-const _MAXCORE_BASE = (
-  process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
-).replace(/\/api\/?$/, "");
-const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
-const MAXCORE_KEY = process.env.AI_SERVER_KEY || "";
+// Resolved through the shared connector (single MaxCore contract boundary);
+// the connector normalizes root-vs-/api URL forms.
+const MAXCORE_URL = `${getMaxcoreOriginOrDefault()}/api`;
+const MAXCORE_KEY = getMaxcoreGenerationKey();
 
 // ── Port 8008 gateway (MaxCore Diffusion + training time simulator) ──────────
 // This is the primary gateway for ALL content generation on the platform.

@@ -100,7 +100,10 @@ async function pdimRpc(
         const parsed = JSON.parse(raw) as Record<string, unknown>;
         return {
           ok: parsed.ok !== false,
-          status: parsed.status ?? 200,
+          status:
+            typeof parsed.status === "number" && Number.isInteger(parsed.status)
+              ? parsed.status
+              : 200,
           data: parsed.data ?? parsed,
         };
       }

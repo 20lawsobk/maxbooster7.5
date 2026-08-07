@@ -37,7 +37,11 @@ export const config = {
 
   // MaxCore AI
   maxcoreUrl: p.MAXCORE_URL || p.AI_SERVER_URL || "",
-  maxcoreAdminKey: p.MAXCORE_ADMIN_KEY || p.AI_SERVER_KEY || "",
+  // Keep generation and administrative credentials distinct. A missing
+  // generation key may fall back to the admin key for backwards-compatible
+  // deployments, but an admin request must never inherit the generation key.
+  maxcoreGenerationKey: p.AI_SERVER_KEY || p.MAXCORE_ADMIN_KEY || "",
+  maxcoreAdminKey: p.MAXCORE_ADMIN_KEY || "",
   aiTrainingUrl: p.MBS_AI_TRAINING_URL || p.PEER_TRAINING_NODE || "",
   aiTrainingKey: p.MBS_AI_TRAINING_KEY || p.AI_Training_Server || "",
 

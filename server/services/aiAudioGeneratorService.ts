@@ -14,6 +14,7 @@ import { logger } from "../logger.js";
 import { storageService } from "./storageService.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import { getMaxcoreOriginOrDefault } from "./maxcoreConnector.js";
 
 // Initialize generator
 const audioGenerator = new AIAudioGenerator(48000);
@@ -174,7 +175,7 @@ export async function generateFromText(
     const { writeFile } = await import("fs/promises");
     await writeFile(filePath, Buffer.from(audioData, "base64"));
   } else if (audioSrc) {
-    const mc_base = (process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app").replace(/\/+$/, "");
+    const mc_base = getMaxcoreOriginOrDefault();
     const absUrl = /^https?:\/\//i.test(audioSrc) ? audioSrc : `${mc_base}${audioSrc.startsWith("/") ? "" : "/"}${audioSrc}`;
     const resp = await fetch(absUrl, { signal: AbortSignal.timeout(45_000) });
     if (resp.ok) {

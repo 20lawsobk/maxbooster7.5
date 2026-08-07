@@ -28,13 +28,17 @@ import express, { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import {
+  getMaxcoreGenerationKey,
+  getMaxcoreOrigin,
+} from "../services/maxcoreConnector.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = parseInt(process.env.VIDEO_DIFFUSION_PORT ?? "8008", 10);
-const MC_URL = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
-const MC_KEY = process.env.AI_SERVER_KEY || "";
+const MC_URL = getMaxcoreOrigin();
+const MC_KEY = getMaxcoreGenerationKey();
 const PDIM_URL =
   process.env.PDIM_BASE_URL || "https://pocketdimensionstorage.replit.app";
 const PDIM_TOKEN =
