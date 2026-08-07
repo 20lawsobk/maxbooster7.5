@@ -1,4 +1,9 @@
 import fs from "fs";
+import {
+  getMaxcoreGenerationKey,
+  getMaxcoreOrigin,
+  getMaxcoreOriginOrDefault,
+} from "../services/maxcoreConnector.js";
 import fsPromises from "fs/promises";
 import path from "path";
 import { Router, Request, Response, NextFunction } from "express";
@@ -3215,8 +3220,8 @@ router.get(
       return res.status(400).json({ error: "Invalid filename" });
     }
 
-    const MC_AI_URL = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
-    const MC_AI_KEY = process.env.AI_SERVER_KEY || "";
+    const MC_AI_URL = getMaxcoreOrigin();
+    const MC_AI_KEY = getMaxcoreGenerationKey();
 
     // 1. Check local cache first — if it was written to disk AND is a real video, serve it directly.
     //    Minimum 10 KB: MaxCore's SPA returns ~683-byte HTML pages for unknown paths.
@@ -4188,7 +4193,7 @@ router.post(
         // MaxCore may return relative paths like /uploads/images/img_xxx.png —
         // make them absolute so the browser can load them.
         if (raw) {
-          const mcBase = (process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app").replace(/\/+$/, "");
+          const mcBase = getMaxcoreOriginOrDefault();
           imageUrl = /^https?:\/\//i.test(raw) ? raw : `${mcBase}${raw.startsWith("/") ? "" : "/"}${raw}`;
         }
       } catch (imgErr) {

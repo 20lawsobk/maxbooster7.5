@@ -1,0 +1,32 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "mcWTj-f9X408SoicFRPOZ"
+uri = "file://MaxBooster_Patent_Application.md"
+type = "text"
+title = "MaxBooster AI — Patent Application (B-Lawz Music LLC)"
+
+[[outputs]]
+id = "5zRFfUhIxeCBXuMZY7uob"
+uri = "file://BLawzMusicLLC_MaxBooster_Patent_Application.pdf"
+type = "pdf"
+title = "B-Lawz Music LLC — MaxBooster Patent Application (Official PDF)"
+
+[[outputs]]
+id = "XiBqqk305EMXFAGoClc6V"
+uri = "file://charttopper_A_minor_140bpm_trap_3min.wav"
+type = "audio"
+title = "Chart-Topper Beat — A Minor / 140 BPM / Melodic Trap (3:00)"
+
+[[outputs]]
+id = "d-6hL4URrD4IIIIxg0Ehl"
+uri = "file://charttopper_A_minor_140bpm_trap_3min_v2.wav"
+type = "audio"
+title = "Chart-Topper Beat v2 — A Minor / 140 BPM / Melodic Trap (3:00) — Drums Fixed"
+
+[[outputs]]
+id = "L3HMLIUTGqIMBIZw47SGP"
+uri = "file://suno_spec_Fsharp_minor_138bpm_cinematic_trap.wav"
+type = "audio"
+title = "Suno-Spec Beat — F# Minor / 138 BPM / Cinematic Trap (3:00)"

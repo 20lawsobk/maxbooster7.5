@@ -16,13 +16,16 @@ import type {
 } from "./videoGeneratorService.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import {
+  getMaxcoreGenerationKey,
+  getMaxcoreOrigin,
+} from "./maxcoreConnector.js";
 
 const POLL_INTERVAL_MS = 2_000;
 const POLL_MAX_ATTEMPTS = 150; // 5 min
 
-const MAXCORE_ORIGIN = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
-const MC_AI_KEY =
-  process.env.AI_SERVER_KEY || process.env.MAXCORE_ADMIN_KEY || "";
+const MAXCORE_ORIGIN = getMaxcoreOrigin();
+const MC_AI_KEY = getMaxcoreGenerationKey();
 const LOCAL_VIDEO_DIR = path?.join(process.cwd(), "uploads", "videos");
 
 // ── MaxCore video URL cache ───────────────────────────────────────────────────

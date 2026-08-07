@@ -7,8 +7,12 @@
  * self-confinement spec.
  */
 
-import { config } from "../config/index.js";
 import { logger } from "../logger.js";
+import {
+  getMaxcoreGenerationHeaders,
+  isMaxcoreJson,
+  maxcoreUrl,
+} from "./maxcoreConnector.js";
 
 export interface MaxcoreResponse<T = unknown> {
   data: T;
@@ -26,18 +30,13 @@ export async function callMaxcore<T = unknown>(
   endpoint: string,
   payload: Record<string, unknown>,
 ): Promise<MaxcoreResponse<T>> {
-  const url = `${config.maxcoreUrl}${endpoint}`;
-  const key = config.maxcoreAdminKey;
-
-  if (!config.maxcoreUrl) {
-    throw new Error("[MaxCore] MAXCORE_URL / AI_SERVER_URL is not configured");
-  }
+  const url = maxcoreUrl(endpoint);
 
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
+      ...getMaxcoreGenerationHeaders(),
     },
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(45_000),
@@ -49,6 +48,9 @@ export async function callMaxcore<T = unknown>(
     throw new Error(`[MaxCore] ${res.status} ${res.statusText}: ${text}`);
   }
 
+  if (!isMaxcoreJson(res)) {
+    throw new Error(`[MaxCore] ${res.status} returned a non-JSON response`);
+  }
   const data = (await res.json()) as T;
   return { data, status: res.status, ok: true };
 }
@@ -59,11 +61,10 @@ export async function callMaxcore<T = unknown>(
 export async function getMaxcore<T = unknown>(
   endpoint: string,
 ): Promise<MaxcoreResponse<T>> {
-  const url = `${config.maxcoreUrl}${endpoint}`;
-  const key = config.maxcoreAdminKey;
+  const url = maxcoreUrl(endpoint);
 
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${key}` },
+    headers: getMaxcoreGenerationHeaders(),
     signal: AbortSignal.timeout(30_000),
   });
 
@@ -71,6 +72,9 @@ export async function getMaxcore<T = unknown>(
     throw new Error(`[MaxCore] GET ${endpoint} → ${res.status}`);
   }
 
+  if (!isMaxcoreJson(res)) {
+    throw new Error(`[MaxCore] GET ${endpoint} returned a non-JSON response`);
+  }
   const data = (await res.json()) as T;
   return { data, status: res.status, ok: true };
 }
@@ -78,7 +82,7 @@ export async function getMaxcore<T = unknown>(
 /** Ping MaxCore — returns true if reachable. */
 export async function pingMaxcore(): Promise<boolean> {
   try {
-    const res = await fetch(`${config.maxcoreUrl}/health`, {
+    const res = await fetch(maxcoreUrl("/health"), {
       signal: AbortSignal.timeout(10_000),
     });
     return res.ok;

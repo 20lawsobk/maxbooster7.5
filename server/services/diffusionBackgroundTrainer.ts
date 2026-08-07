@@ -29,6 +29,10 @@ import fs from "fs";
 import os from "os";
 import { fileURLToPath } from "url";
 import { logger } from "../logger.js";
+import {
+  getMaxcoreGenerationKey,
+  getMaxcoreOrigin,
+} from "./maxcoreConnector.js";
 
 const __metaUrl = (import.meta as unknown as Record<string, unknown>)?.url as
   | string
@@ -258,8 +262,8 @@ async function _isMaxCoreGatewayRunning(): Promise<boolean> {
  * local Python synthesizer — MaxCore IS the authoritative training source.
  */
 async function _isExternalMaxCoreReachable(): Promise<boolean> {
-  const mcUrl = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
-  const mcKey = process.env.AI_SERVER_KEY || "";
+  const mcUrl = getMaxcoreOrigin();
+  const mcKey = getMaxcoreGenerationKey();
   if (!mcUrl || !mcKey) return false;
   try {
     const ctrl = new AbortController();

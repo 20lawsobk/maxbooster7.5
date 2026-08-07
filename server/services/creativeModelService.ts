@@ -55,14 +55,15 @@ import {
   type PostData,
   type AnalyticsData,
 } from "./autopilotLearningService.js";
+import {
+  getMaxcoreGenerationKey,
+  getMaxcoreOriginOrDefault,
+} from "./maxcoreConnector.js";
 
-// ─── MaxCore connection (mirrors multimodalGenerationService pattern) ──────────
+// ─── MaxCore connection (via the shared connector contract boundary) ──────────
 
-const _MAXCORE_BASE = (
-  process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
-).replace(/\/api\/?$/, "");
-const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
-const MAXCORE_KEY = process.env.AI_SERVER_KEY || "";
+const MAXCORE_URL = `${getMaxcoreOriginOrDefault()}/api`;
+const MAXCORE_KEY = getMaxcoreGenerationKey();
 
 // ─── DiT-24 local relay (three-tier architecture: Max Booster → DiT-24 → MaxCore) ──
 

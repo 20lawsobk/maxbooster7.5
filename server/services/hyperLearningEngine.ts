@@ -1,4 +1,8 @@
 import { db } from "../db.js";
+import {
+  getMaxcoreGenerationKey,
+  getMaxcoreOriginOrDefault,
+} from "./maxcoreConnector.js";
 import { autopilotLearningData } from "@shared/schema";
 import { and, desc, gte, lte, avg, count } from "drizzle-orm";
 import { logger } from "../logger.js";
@@ -48,9 +52,7 @@ const AB_SIGNIFICANCE_THRESHOLD = 0.8;
 // PEER_TRAINING_NODE env var is always set to MaxCore — localhost fallback
 // would only apply in an isolated dev environment with no env vars at all.
 const AI_SERVER_URL =
-  process.env.PEER_TRAINING_NODE ||
-  process.env.AI_SERVER_URL ||
-  "https://secure-ai-forge.replit.app";
+  process.env.PEER_TRAINING_NODE || getMaxcoreOriginOrDefault();
 
 interface MicroPattern {
   id: string;
@@ -2354,7 +2356,7 @@ class HyperLearningEngine extends EventEmitter {
     winner: ABTestResult["variants"][number],
   ): Promise<void> {
     try {
-      const aiKey = process.env.AI_SERVER_KEY || "";
+      const aiKey = getMaxcoreGenerationKey();
       const payload = {
         content: `AB test winner: ${winner?.id} — ${winner?.engagementRate.toFixed(2)}% engagement`,
         source: "hyper_ab_test",

@@ -17,6 +17,10 @@ import { logger } from "../logger.js";
 import { modelWeightStorage } from "./modelWeightStorage.js";
 import { getPdimClient, isPdimConfigured } from "../lib/pdimClient.js";
 import {
+  getMaxcoreGenerationKey,
+  getMaxcoreOrigin,
+} from "./maxcoreConnector.js";
+import {
   invalidateCalibrationCache,
   runCalibration,
 } from "./maxcoreScoreCalibrator.js";
@@ -29,8 +33,9 @@ const timedFetch = (
 ): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
 
-const AI_SERVER_URL = process.env.AI_SERVER_URL || "";
-const AI_SERVER_KEY = process.env.AI_SERVER_KEY || "";
+// Resolved through the shared connector (single MaxCore contract boundary).
+const AI_SERVER_URL = getMaxcoreOrigin();
+const AI_SERVER_KEY = getMaxcoreGenerationKey();
 const PEER_NODE = process.env.PEER_TRAINING_NODE || "";
 const MBS_KEY = process.env.MBS_AI_TRAINING_KEY || "";
 

@@ -63,3 +63,4 @@
 - [audit_logs column: risk not severity](audit-logs-risk-column.md) — cleanupAuditLog query used `severity` but table has `risk` (low/medium/high/critical); fix: `AND risk != 'critical'`
 - [TS6133 autofix hazards](ts6133-autofix-hazards.md) — only params/array-destructures are prefix-safe; writes don't count as reads (class props/lets break); use `{ x: _x }` for shorthand
 - [fix-all pipeline design](fix-all-pipeline.md) — resumable phase-per-invocation (5-min shell cap), esbuild syntax gate + snapshots, import fixes surface new TS2305, honest nonzero exit
+- [MaxCore/PDIM internalization](maxcore-pdim-internalization.md) — imported repos become INTERNAL subsystems; connector is the only seam, cluster needs one shared PDIM owner, PDIM client rejects nullish args

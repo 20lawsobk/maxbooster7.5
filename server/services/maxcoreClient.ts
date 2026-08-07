@@ -18,11 +18,12 @@
  */
 
 import { logger } from "../logger.js";
+import { config } from "../config/index.js";
+import { getMaxcoreOrigin } from "./maxcoreConnector.js";
 
-const MC_AI_URL = process.env.AI_SERVER_URL || "";
-// AI_SERVER_KEY is the active generation credential; MAXCORE_ADMIN_KEY is the admin credential
-const MC_AI_KEY =
-  process.env.AI_SERVER_KEY || process.env.MAXCORE_ADMIN_KEY || "";
+// Resolved through the shared connector — the single MaxCore contract boundary.
+const MC_AI_URL = getMaxcoreOrigin();
+const MC_AI_KEY = config.maxcoreGenerationKey;
 
 /** Parse MaxCore's "Circuit breaker open — retry in ~Ns." message → ms to wait. */
 function parseCbRetryMs(body: string): number {
