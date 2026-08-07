@@ -12,7 +12,7 @@ export class PocketRegistry {
   ): Promise<FabricPocket> {
     const id = randomUUID();
     const now = new Date();
-    await db?.insert(fabricPockets).values({
+    await db.insert(fabricPockets).values({
       id,
       ownerId,
       name,
@@ -27,7 +27,7 @@ export class PocketRegistry {
     const rows = await db
       .select()
       .from(fabricPockets)
-      .where(eq(fabricPockets?.id, id));
+      .where(eq(fabricPockets.id, id));
     return rows[0] ? this.rowToPocket(rows[0]) : null;
   }
 
@@ -35,7 +35,7 @@ export class PocketRegistry {
     const rows = await db
       .select()
       .from(fabricPockets)
-      .where(eq(fabricPockets?.ownerId, ownerId));
+      .where(eq(fabricPockets.ownerId, ownerId));
     return rows?.map(this.rowToPocket);
   }
 
@@ -43,11 +43,11 @@ export class PocketRegistry {
     await db
       .update(fabricPockets)
       .set({ policy: policy as unknown as Record<string, unknown>, updatedAt: new Date() })
-      .where(eq(fabricPockets?.id, id));
+      .where(eq(fabricPockets.id, id));
   }
 
   async deletePocket(id: PocketId): Promise<void> {
-    await db?.delete(fabricPockets).where(eq(fabricPockets?.id, id));
+    await db.delete(fabricPockets).where(eq(fabricPockets.id, id));
   }
 
   private rowToPocket(row: typeof fabricPockets.$inferSelect): FabricPocket {

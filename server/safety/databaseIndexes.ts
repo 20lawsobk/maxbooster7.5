@@ -436,7 +436,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
       allNames?.map((n) => sql`${n}`),
       sql`, `,
     );
-    const batchResult = await db?.execute(
+    const batchResult = await db.execute(
       sql`SELECT indexname FROM pg_indexes WHERE schemaname = 'public' AND indexname IN (${namesSql})`,
     );
     existingSet = new Set<string>(
@@ -462,7 +462,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
 
     try {
       // Table existence check (only reached when index is missing)
-      const tableExists = await db?.execute(sql`
+      const tableExists = await db.execute(sql`
         SELECT 1 FROM information_schema.tables
         WHERE table_schema = 'public' AND table_name = ${index?.table}
       `);
@@ -484,11 +484,11 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
       );
 
       if (index?.unique) {
-        await db?.execute(
+        await db.execute(
           sql`CREATE UNIQUE INDEX IF NOT EXISTS ${indexNameId} ON ${tableId} (${columnsId})`,
         );
       } else {
-        await db?.execute(
+        await db.execute(
           sql`CREATE INDEX IF NOT EXISTS ${indexNameId} ON ${tableId} (${columnsId})`,
         );
       }
@@ -552,7 +552,7 @@ export async function getIndexStatus(): Promise<{
 
   for (const index of REQUIRED_INDEXES) {
     try {
-      const result = await db?.execute(sql`
+      const result = await db.execute(sql`
         SELECT 1 FROM pg_indexes 
         WHERE indexname = ${index?.name}
       `);

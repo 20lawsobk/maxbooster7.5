@@ -15,7 +15,7 @@ const router = Router();
  * authenticated user directly in the DB so integration tests can exercise the
  * full billing-webhook tier-update flow without a live Stripe connection.
  */
-router?.post("/setup-stripe-customer", async (req, res) => {
+router.post("/setup-stripe-customer", async (req, res) => {
   if (process.env.NODE_ENV === "production") {
     return res.status(404).json({ error: "Not found" });
   }
@@ -31,7 +31,7 @@ router?.post("/setup-stripe-customer", async (req, res) => {
   await db
     .update(users)
     .set({ stripeCustomerId })
-    .where(eq(users?.id, req.user.id));
+    .where(eq(users.id, req.user.id));
   return res.json({ success: true });
 });
 
@@ -42,7 +42,7 @@ router?.post("/setup-stripe-customer", async (req, res) => {
  * no caching.  Used by billing integration tests to verify webhook-driven
  * tier updates without interference from the Stripe subscription-sync logic.
  */
-router?.get("/user-tier", async (req, res) => {
+router.get("/user-tier", async (req, res) => {
   if (process.env.NODE_ENV === "production") {
     return res.status(404).json({ error: "Not found" });
   }
@@ -52,7 +52,7 @@ router?.get("/user-tier", async (req, res) => {
   const [row] = await db
     .select({ subscriptionTier: users.subscriptionTier })
     .from(users)
-    .where(eq(users?.id, req.user.id))
+    .where(eq(users.id, req.user.id))
     .limit(1);
   return res.json({ tier: row.subscriptionTier ?? "free" });
 });
@@ -67,8 +67,8 @@ const requireAdmin: RequestHandler = (req, res, next) => {
   next();
 };
 
-router?.use(requireAdmin);
-router?.use(require2FA);
+router.use(requireAdmin);
+router.use(require2FA);
 
 interface TestSuiteSummary {
   name: string;
@@ -109,7 +109,7 @@ async function loadStoredRun(): Promise<TestRunArtifact | null> {
   }
 }
 
-router?.get("/results", async (_req, res) => {
+router.get("/results", async (_req, res) => {
   try {
     const stored = await loadStoredRun();
 
@@ -173,7 +173,7 @@ router?.get("/results", async (_req, res) => {
   }
 });
 
-router?.post("/run", async (req, res) => {
+router.post("/run", async (req, res) => {
   try {
     const { suite } = req.body ?? {};
     const requested =

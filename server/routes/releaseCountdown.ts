@@ -33,7 +33,7 @@ const updateTaskSchema = z.object({
     .optional(),
 });
 
-router?.get(
+router.get(
   "/",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -80,7 +80,7 @@ router?.get(
   }),
 );
 
-router?.post(
+router.post(
   "/",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -110,7 +110,7 @@ router?.post(
   }),
 );
 
-router?.get(
+router.get(
   "/:id",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -156,7 +156,7 @@ router?.get(
   }),
 );
 
-router?.patch(
+router.patch(
   "/:id",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -183,7 +183,7 @@ router?.patch(
   }),
 );
 
-router?.post(
+router.post(
   "/:id/tasks",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -215,7 +215,7 @@ router?.post(
   }),
 );
 
-router?.get(
+router.get(
   "/:id/tasks",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -250,7 +250,7 @@ router?.get(
   }),
 );
 
-router?.patch(
+router.patch(
   "/:id/tasks/:taskId",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -298,7 +298,7 @@ router?.patch(
   }),
 );
 
-router?.get(
+router.get(
   "/:id/analytics",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -330,7 +330,7 @@ router?.get(
   }),
 );
 
-router?.post(
+router.post(
   "/:id/analytics/track",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -369,7 +369,7 @@ router?.post(
   }),
 );
 
-router?.post(
+router.post(
   "/:id/generate-checklist",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {

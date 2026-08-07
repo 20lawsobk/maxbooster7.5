@@ -16,7 +16,7 @@ export class ObjectIndex {
   ): Promise<FabricObject> {
     const id = existingId ?? randomUUID();
     const now = new Date();
-    await db?.insert(fabricObjects).values({
+    await db.insert(fabricObjects).values({
       id,
       volumeId,
       originalName,
@@ -42,7 +42,7 @@ export class ObjectIndex {
     const rows = await db
       .select()
       .from(fabricObjects)
-      .where(eq(fabricObjects?.id, id));
+      .where(eq(fabricObjects.id, id));
     return rows[0] ? this.rowToObject(rows[0]) : null;
   }
 
@@ -50,12 +50,12 @@ export class ObjectIndex {
     const rows = await db
       .select()
       .from(fabricObjects)
-      .where(eq(fabricObjects?.volumeId, volumeId));
+      .where(eq(fabricObjects.volumeId, volumeId));
     return rows?.map(this.rowToObject);
   }
 
   async deleteObject(id: ObjectId): Promise<void> {
-    await db?.delete(fabricObjects).where(eq(fabricObjects?.id, id));
+    await db.delete(fabricObjects).where(eq(fabricObjects.id, id));
   }
 
   private rowToObject(row: typeof fabricObjects.$inferSelect): FabricObject {

@@ -19,9 +19,9 @@ import { notificationService } from "../services/notificationService.js";
 
 const router = Router();
 
-router?.use(aiRateLimiter);
+router.use(aiRateLimiter);
 
-router?.post(
+router.post(
   "/content/generate",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -102,7 +102,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/sentiment/analyze",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -151,7 +151,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/recommendations/get",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -197,7 +197,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/ads/optimize",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -294,7 +294,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/social/predict",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -388,7 +388,7 @@ router?.post(
   },
 );
 
-router?.post("/forecast", requireAuth, async (req: Request, res: Response) => {
+router.post("/forecast", requireAuth, async (req: Request, res: Response) => {
   try {
     const { metric, horizon, historicalData, timestamps } = req.body;
 
@@ -448,7 +448,7 @@ router?.post("/forecast", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/health", requireAuth, async (_req: Request, res: Response) => {
+router.get("/health", requireAuth, async (_req: Request, res: Response) => {
   try {
     const health = await unifiedAIController?.getAIHealthStatus();
 
@@ -478,7 +478,7 @@ router?.get("/health", requireAuth, async (_req: Request, res: Response) => {
   }
 });
 
-router?.post(
+router.post(
   "/hashtags/generate",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -513,7 +513,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/toxicity/analyze",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -542,7 +542,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/emotions/detect",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -571,7 +571,7 @@ router?.post(
   },
 );
 
-router?.get("/trends", requireAuth, async (req: Request, res: Response) => {
+router.get("/trends", requireAuth, async (req: Request, res: Response) => {
   try {
     const platforms = req.query.platforms
       ? (req.query.platforms as string).split(",")
@@ -594,7 +594,7 @@ router?.get("/trends", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.post(
+router.post(
   "/content/adapt",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -629,17 +629,17 @@ router?.post(
   },
 );
 
-router?.get("/models", requireAuth, async (req: Request, res: Response) => {
+router.get("/models", requireAuth, async (req: Request, res: Response) => {
   try {
     const { status, type } = req.query;
 
-    let query = db?.select().from(aiModels);
+    let query = db.select().from(aiModels);
     const conditions: unknown[] = [];
     if (status && typeof status === "string") {
-      conditions?.push(eq(aiModels?.status, status));
+      conditions?.push(eq(aiModels.status, status));
     }
     if (type && typeof type === "string") {
-      conditions?.push(eq(aiModels?.modelType, type));
+      conditions?.push(eq(aiModels.modelType, type));
     }
 
     let models;
@@ -662,22 +662,22 @@ router?.get("/models", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.get(
+router.get(
   "/models/:modelId/performance",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { modelId } = req.params;
+      const { modelId } = req.params as Record<string, string>;
 
       const versions = await db
         .select()
         .from(aiModelVersions)
-        .where(eq(aiModelVersions?.modelId, modelId))
+        .where(eq(aiModelVersions.modelId, modelId))
         .limit(100);
       const [model] = await db
         .select()
         .from(aiModels)
-        .where(eq(aiModels?.id, modelId))
+        .where(eq(aiModels.id, modelId))
         .limit(1);
 
       res.json({
@@ -698,7 +698,7 @@ router?.get(
   },
 );
 
-router?.get("/stats", requireAuth, async (_req: Request, res: Response) => {
+router.get("/stats", requireAuth, async (_req: Request, res: Response) => {
   try {
     const stats = unifiedAIController?.getServiceStats();
 
@@ -715,7 +715,7 @@ router?.get("/stats", requireAuth, async (_req: Request, res: Response) => {
   }
 });
 
-router?.post(
+router.post(
   "/analytics/predict",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -755,7 +755,7 @@ router?.post(
   },
 );
 
-router?.get("/insights", requireAuth, async (_req: Request, res: Response) => {
+router.get("/insights", requireAuth, async (_req: Request, res: Response) => {
   try {
     const insights = await unifiedAIController?.generateInsights();
 
@@ -772,7 +772,7 @@ router?.get("/insights", requireAuth, async (_req: Request, res: Response) => {
   }
 });
 
-router?.get("/anomalies", requireAuth, async (_req: Request, res: Response) => {
+router.get("/anomalies", requireAuth, async (_req: Request, res: Response) => {
   try {
     const anomalies = await unifiedAIController?.detectAnomalies();
 
@@ -789,7 +789,7 @@ router?.get("/anomalies", requireAuth, async (_req: Request, res: Response) => {
   }
 });
 
-router?.post(
+router.post(
   "/churn/predict",
   requireAuth,
   async (_req: Request, res: Response) => {
@@ -810,7 +810,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/revenue/forecast",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -840,7 +840,7 @@ router?.post(
 // Achieve paid-ad-level results without ad spend
 // ============================================================================
 
-router?.post(
+router.post(
   "/organic/optimize",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -878,7 +878,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/organic/roi",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -922,7 +922,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/organic/schedule",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -962,7 +962,7 @@ router?.post(
   },
 );
 
-router?.get(
+router.get(
   "/organic/network-analysis",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -991,7 +991,7 @@ router?.get(
 
 const DIT24_BASE = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
 
-router?.get(
+router.get(
   "/diffusion/status",
   requireAuth,
   async (_req: Request, res: Response) => {
@@ -1018,7 +1018,7 @@ router?.get(
   },
 );
 
-router?.get(
+router.get(
   "/simulator/status",
   requireAuth,
   async (_req: Request, res: Response) => {
@@ -1045,16 +1045,21 @@ router?.get(
   },
 );
 
-router?.get("/diffusion/ready", async (_req: Request, res: Response) => {
+router.get("/diffusion/ready", async (_req: Request, res: Response) => {
   try {
     const ctrl = await fetch(`${DIT24_BASE}/ready`, {
       signal: AbortSignal.timeout(3_000),
     });
-    const data = ctrl?.ok ? await ctrl?.json() : { ready: false };
-    res.json({ success: true, data });
+    if (ctrl?.ok) {
+      res.json({ success: true, data: await ctrl.json() });
+    } else {
+      // Upstream answered but is not ready — surface it so load balancers
+      // and monitors do not treat an unavailable gateway as healthy.
+      res.status(502).json({ success: false, data: { ready: false } });
+    }
   } catch {
-    res.json({
-      success: true,
+    res.status(503).json({
+      success: false,
       data: { ready: false, reason: "gateway_offline" },
     });
   }

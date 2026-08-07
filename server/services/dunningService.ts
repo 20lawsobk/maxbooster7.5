@@ -114,7 +114,7 @@ class DunningService {
       const existing = await db
         .select()
         .from(dunningState)
-        .where(eq(dunningState?.stripeInvoiceId, invoiceId))
+        .where(eq(dunningState.stripeInvoiceId, invoiceId))
         .limit(1);
 
       if (existing?.length > 0) {
@@ -126,7 +126,7 @@ class DunningService {
 
       const nextEmailAt = new Date();
 
-      await db?.insert(dunningState).values({
+      await db.insert(dunningState).values({
         userId,
         stripeInvoiceId: invoiceId,
         currentStep: 0,
@@ -147,7 +147,7 @@ class DunningService {
       await db
         .update(dunningState)
         .set({ resolvedAt: new Date(), resolvedReason: reason })
-        .where(eq(dunningState?.stripeInvoiceId, invoiceId));
+        .where(eq(dunningState.stripeInvoiceId, invoiceId));
 
       logger.info(
         `[Dunning] Resolved sequence for invoice ${invoiceId} (${reason})`,
@@ -175,8 +175,8 @@ class DunningService {
         .from(dunningState)
         .where(
           and(
-            isNull(dunningState?.resolvedAt),
-            lte(dunningState?.nextEmailAt, now),
+            isNull(dunningState.resolvedAt),
+            lte(dunningState.nextEmailAt, now),
           ),
         )
         .limit(limit);
@@ -191,7 +191,7 @@ class DunningService {
               resolvedAt: new Date(),
               resolvedReason: "sequence_complete",
             })
-            .where(eq(dunningState?.id, record?.id));
+            .where(eq(dunningState.id, record?.id));
           processed++;
           continue;
         }
@@ -211,7 +211,7 @@ class DunningService {
         await db
           .update(dunningState)
           .set({ currentStep: nextStep, nextEmailAt, updatedAt: new Date() })
-          .where(eq(dunningState?.id, record?.id));
+          .where(eq(dunningState.id, record?.id));
         processed++;
       }
       return processed;
@@ -239,7 +239,7 @@ class DunningService {
         subscriptionTier: users.subscriptionTier,
       })
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     if (!userRows?.length || !userRows[0].email) return;

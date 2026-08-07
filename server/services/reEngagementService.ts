@@ -93,15 +93,15 @@ class ReEngagementService {
             notificationSettings: users.notificationSettings,
           })
           .from(customerHealthScores)
-          .innerJoin(users, eq(users?.id, customerHealthScores?.userId))
+          .innerJoin(users, eq(users.id, customerHealthScores.userId))
           .where(
             and(
-              gte(customerHealthScores?.daysSinceLastLogin!, 10),
-              lte(customerHealthScores?.daysSinceLastLogin!, 30),
+              gte(customerHealthScores.daysSinceLastLogin!, 10),
+              lte(customerHealthScores.daysSinceLastLogin!, 30),
               or(
-                isNull(customerHealthScores?.reEngagementEmailSentAt),
+                isNull(customerHealthScores.reEngagementEmailSentAt),
                 lte(
-                  customerHealthScores?.reEngagementEmailSentAt!,
+                  customerHealthScores.reEngagementEmailSentAt!,
                   sevenDaysAgo,
                 ),
               ),
@@ -148,7 +148,7 @@ class ReEngagementService {
             await db
               .update(customerHealthScores)
               .set({ reEngagementEmailSentAt: new Date() })
-              .where(eq(customerHealthScores?.userId, userId));
+              .where(eq(customerHealthScores.userId, userId));
 
             sent++;
           } catch (err) {

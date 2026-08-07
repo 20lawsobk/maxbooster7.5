@@ -59,7 +59,7 @@ class DatabaseOptimizer {
         ) as exists
       `;
 
-      const result = await db?.execute(existsQuery);
+      const result = await db.execute(existsQuery);
       const exists = (result?.rows[0] as Record<string, unknown>)?.exists;
 
       if (exists) {
@@ -73,7 +73,7 @@ class DatabaseOptimizer {
       }
 
       // Execute the index creation
-      await db?.execute(sql?.raw(command));
+      await db.execute(sql?.raw(command));
 
       const executionTime = Date?.now() - startTime;
       logger.info(`✅ Created index ${indexName} (${executionTime}ms)`);
@@ -133,7 +133,7 @@ class DatabaseOptimizer {
 
     try {
       // Get slow queries from pg_stat_statements if available
-      const slowQueriesResult = await db?.execute(sql`
+      const slowQueriesResult = await db.execute(sql`
         SELECT 
           query,
           calls,
@@ -165,7 +165,7 @@ class DatabaseOptimizer {
 
     // Analyze table sizes
     try {
-      const tableSizes = await db?.execute(sql`
+      const tableSizes = await db.execute(sql`
         SELECT 
           schemaname,
           tablename,
@@ -203,7 +203,7 @@ class DatabaseOptimizer {
 
     for (const indexName of criticalIndexes) {
       try {
-        const result = await db?.execute(sql`
+        const result = await db.execute(sql`
           SELECT EXISTS (
             SELECT 1 FROM pg_indexes 
             WHERE indexname = ${indexName}

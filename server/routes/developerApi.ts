@@ -23,7 +23,7 @@ const usageQuerySchema = z.object({
  * POST /api/developer/keys/create
  * Generate a new API key for the authenticated user
  */
-router?.post("/keys/create", async (req: Request, res: Response) => {
+router.post("/keys/create", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
     if (!req.user?.id) {
@@ -95,7 +95,7 @@ router?.post("/keys/create", async (req: Request, res: Response) => {
  * GET /api/developer/keys
  * List all API keys for the authenticated user
  */
-router?.get("/keys", async (req: Request, res: Response) => {
+router.get("/keys", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
     if (!req.user?.id) {
@@ -149,7 +149,7 @@ router.delete("/keys/:keyId", async (req: Request, res: Response) => {
     }
 
     const userId = req.user!.id;
-    const keyId = req.params.keyId;
+    const keyId = (req.params.keyId as string);
 
     if (!keyId) {
       return res.status(400).json({
@@ -186,7 +186,7 @@ router.delete("/keys/:keyId", async (req: Request, res: Response) => {
  * GET /api/developer/usage
  * Get usage statistics for all user's API keys
  */
-router?.get("/usage", async (req: Request, res: Response) => {
+router.get("/usage", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
     if (!req.user?.id) {
@@ -244,7 +244,7 @@ router?.get("/usage", async (req: Request, res: Response) => {
  * GET /api/developer/usage/:keyId
  * Get detailed usage statistics for a specific API key
  */
-router?.get("/usage/:keyId", async (req: Request, res: Response) => {
+router.get("/usage/:keyId", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
     if (!req.user?.id) {
@@ -255,7 +255,7 @@ router?.get("/usage/:keyId", async (req: Request, res: Response) => {
     }
 
     const userId = req.user.id;
-    const keyId = req.params.keyId;
+    const keyId = (req.params.keyId as string);
 
     // Validate query parameters
     const validation = usageQuerySchema?.safeParse(req.query);
@@ -309,7 +309,7 @@ router?.get("/usage/:keyId", async (req: Request, res: Response) => {
  * GET /api/developer/docs
  * Get API documentation metadata
  */
-router?.get("/docs", async (_req: Request, res: Response) => {
+router.get("/docs", async (_req: Request, res: Response) => {
   try {
     return res.json({
       success: true,

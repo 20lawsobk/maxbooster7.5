@@ -352,7 +352,7 @@ async function addCompositeIndexes(): Promise<void> {
   for (const idx of COMPOSITE_INDEXES) {
     try {
       const whereClause = idx?.where ? ` WHERE ${idx?.where}` : "";
-      await db?.execute(
+      await db.execute(
         sql?.raw(
           `CREATE INDEX IF NOT EXISTS ${idx?.name} ON ${idx?.table} (${idx?.columns})${whereClause}`,
         ),

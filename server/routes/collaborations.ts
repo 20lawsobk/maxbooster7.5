@@ -4,7 +4,7 @@ import { logger } from "../logger";
 
 const router = Router();
 
-router?.get("/connections", async (req: Request, res: Response) => {
+router.get("/connections", async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -18,7 +18,7 @@ router?.get("/connections", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/connections/pending", async (req: Request, res: Response) => {
+router.get("/connections/pending", async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -32,7 +32,7 @@ router?.get("/connections/pending", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/connect", async (req: Request, res: Response) => {
+router.post("/connect", async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -56,14 +56,14 @@ router?.post("/connect", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/accept/:id", async (req: Request, res: Response) => {
+router.post("/accept/:id", async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
     const connection = await collaborationService?.acceptConnection(
-      req.params.id,
+      (req.params.id as string),
       req.user.id,
     );
     return res.json(connection);
@@ -73,14 +73,14 @@ router?.post("/accept/:id", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/decline/:id", async (req: Request, res: Response) => {
+router.post("/decline/:id", async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
     const connection = await collaborationService?.declineConnection(
-      req.params.id,
+      (req.params.id as string),
       req.user.id,
     );
     return res.json(connection);
@@ -90,13 +90,13 @@ router?.post("/decline/:id", async (req: Request, res: Response) => {
   }
 });
 
-router?.delete("/connections/:id", async (req: Request, res: Response) => {
+router.delete("/connections/:id", async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    await collaborationService?.removeConnection(req.params.id, req.user.id);
+    await collaborationService?.removeConnection((req.params.id as string), req.user.id);
     return res.json({ success: true });
   } catch (error) {
     logger.warn({ err: error }, "Error removing connection:");
@@ -104,7 +104,7 @@ router?.delete("/connections/:id", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/suggestions", async (req: Request, res: Response) => {
+router.get("/suggestions", async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -122,7 +122,7 @@ router?.get("/suggestions", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/projects", async (req: Request, res: Response) => {
+router.get("/projects", async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const genre = req.query.genre as string | undefined;
@@ -141,7 +141,7 @@ router?.get("/projects", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/projects", async (req: Request, res: Response) => {
+router.post("/projects", async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -169,7 +169,7 @@ router?.post("/projects", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/projects/:id/join", async (req: Request, res: Response) => {
+router.post("/projects/:id/join", async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -177,7 +177,7 @@ router?.post("/projects/:id/join", async (req: Request, res: Response) => {
   try {
     const member = await collaborationService?.joinProject(
       req.user.id,
-      req.params.id,
+      (req.params.id as string),
       "member",
     );
     return res.json(member);
@@ -187,13 +187,13 @@ router?.post("/projects/:id/join", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/projects/:id/leave", async (req: Request, res: Response) => {
+router.post("/projects/:id/leave", async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    await collaborationService?.leaveProject(req.user.id, req.params.id);
+    await collaborationService?.leaveProject(req.user.id, (req.params.id as string));
     return res.json({ success: true });
   } catch (error) {
     logger.warn({ err: error }, "Error leaving project:");
@@ -201,7 +201,7 @@ router?.post("/projects/:id/leave", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/search", async (req: Request, res: Response) => {
+router.get("/search", async (req: Request, res: Response) => {
   try {
     const query = (req.query.q as string) || "";
     const genre = req.query.genre as string | undefined;
@@ -223,7 +223,7 @@ router?.get("/search", async (req: Request, res: Response) => {
   }
 });
 
-router?.get(
+router.get(
   "/connection-status/:userId",
   async (req: Request, res: Response) => {
     if (!req.user) {
@@ -233,7 +233,7 @@ router?.get(
     try {
       const status = await collaborationService?.getConnectionStatus(
         req.user.id,
-        req.params.userId,
+        (req.params.userId as string),
       );
       return res.json(status);
     } catch (error) {

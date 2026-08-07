@@ -11,7 +11,7 @@ const router = Router();
 
 // GET /api/music-workflow-automations/templates
 // Returns all available workflow templates (static, no auth needed)
-router?.get("/templates", async (_req: Request, res: Response) => {
+router.get("/templates", async (_req: Request, res: Response) => {
   try {
     res.json({ templates: WORKFLOW_TEMPLATES });
   } catch (err) {
@@ -22,7 +22,7 @@ router?.get("/templates", async (_req: Request, res: Response) => {
 
 // GET /api/music-workflow-automations
 // Returns the current user's enabled/config state for all templates
-router?.get("/", requireAuth, async (req: Request, res: Response) => {
+router.get("/", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const userAutomations =
@@ -48,13 +48,13 @@ router?.get("/", requireAuth, async (req: Request, res: Response) => {
 });
 
 // POST /api/music-workflow-automations/:templateId/enable
-router?.post(
+router.post(
   "/:templateId/enable",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const { templateId } = req.params;
+      const { templateId } = req.params as Record<string, string>;
       const { config } = req.body;
 
       const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
@@ -76,13 +76,13 @@ router?.post(
 );
 
 // POST /api/music-workflow-automations/:templateId/disable
-router?.post(
+router.post(
   "/:templateId/disable",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const { templateId } = req.params;
+      const { templateId } = req.params as Record<string, string>;
 
       const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
       if (!template) {
@@ -102,13 +102,13 @@ router?.post(
 );
 
 // PUT /api/music-workflow-automations/:templateId/config
-router?.put(
+router.put(
   "/:templateId/config",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const { templateId } = req.params;
+      const { templateId } = req.params as Record<string, string>;
       const { config } = req.body;
 
       if (!config || typeof config !== "object") {
@@ -135,7 +135,7 @@ router?.put(
 
 // POST /api/music-workflow-automations/trigger
 // Manually fire an event (for testing automations from the UI)
-router?.post("/trigger", requireAuth, async (req: Request, res: Response) => {
+router.post("/trigger", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const schema = z.object({
@@ -164,7 +164,7 @@ router?.post("/trigger", requireAuth, async (req: Request, res: Response) => {
 });
 
 // GET /api/music-workflow-automations/stats
-router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
+router.get("/stats", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const stats = await musicWorkflowAutomationService?.getStats(userId);
@@ -176,7 +176,7 @@ router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
 });
 
 // GET /api/music-workflow-automations/logs
-router?.get("/logs", requireAuth, async (req: Request, res: Response) => {
+router.get("/logs", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const templateId = req.query.templateId as string | undefined;

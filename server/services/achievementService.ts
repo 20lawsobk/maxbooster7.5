@@ -42,12 +42,12 @@ class AchievementService {
     const allAchievements = await db
       .select()
       .from(achievements)
-      .where(eq(achievements?.isActive, true));
+      .where(eq(achievements.isActive, true));
 
     const userAchievementRecords = await db
       .select()
       .from(userAchievements)
-      .where(eq(userAchievements?.userId, userId));
+      .where(eq(userAchievements.userId, userId));
 
     const unlockedIds = new Set(
       userAchievementRecords
@@ -84,7 +84,7 @@ class AchievementService {
               unlockedAt: new Date(),
               notified: false,
             })
-            .where(eq(userAchievements?.id, existingProgress?.id));
+            .where(eq(userAchievements.id, existingProgress?.id));
         } else {
           await db.insert(userAchievements).values({
             userId,
@@ -109,7 +109,7 @@ class AchievementService {
           await db
             .update(userAchievements)
             .set({ progress })
-            .where(eq(userAchievements?.id, existingProgress?.id));
+            .where(eq(userAchievements.id, existingProgress?.id));
         } else {
           await db.insert(userAchievements).values({
             userId,
@@ -158,13 +158,13 @@ class AchievementService {
     const allAchievements = await db
       .select()
       .from(achievements)
-      .where(eq(achievements?.isActive, true))
-      .orderBy(achievements?.sortOrder);
+      .where(eq(achievements.isActive, true))
+      .orderBy(achievements.sortOrder);
 
     const userAchievementRecords = await db
       .select()
       .from(userAchievements)
-      .where(eq(userAchievements?.userId, userId));
+      .where(eq(userAchievements.userId, userId));
 
     const progressMap = new Map<string, UserAchievement>();
     for (const ua of userAchievementRecords) {
@@ -190,13 +190,13 @@ class AchievementService {
       .from(userAchievements)
       .innerJoin(
         achievements,
-        eq(userAchievements?.achievementId, achievements?.id),
+        eq(userAchievements.achievementId, achievements.id),
       )
       .where(
         and(
-          eq(userAchievements?.userId, userId),
-          eq(userAchievements?.notified, false),
-          sql`${userAchievements?.unlockedAt} IS NOT NULL`,
+          eq(userAchievements.userId, userId),
+          eq(userAchievements.notified, false),
+          sql`${userAchievements.unlockedAt} IS NOT NULL`,
         ),
       );
 
@@ -212,8 +212,8 @@ class AchievementService {
       .set({ notified: true })
       .where(
         and(
-          eq(userAchievements?.userId, userId),
-          eq(userAchievements?.achievementId, achievementId),
+          eq(userAchievements.userId, userId),
+          eq(userAchievements.achievementId, achievementId),
         ),
       );
   }
@@ -226,8 +226,8 @@ class AchievementService {
       .from(userStreaks)
       .where(
         and(
-          eq(userStreaks?.userId, userId),
-          eq(userStreaks?.streakType, streakType),
+          eq(userStreaks.userId, userId),
+          eq(userStreaks.streakType, streakType),
         ),
       )
       .limit(1);
@@ -282,7 +282,7 @@ class AchievementService {
         lastActivityDate: today,
         updatedAt: new Date(),
       })
-      .where(eq(userStreaks?.id, streak?.id))
+      .where(eq(userStreaks.id, streak?.id))
       .returning();
 
     await this.checkAndAwardAchievements(userId, "streak", {
@@ -301,7 +301,7 @@ class AchievementService {
   }
 
   async getUserStreaks(userId: string): Promise<UserStreak[]> {
-    return db?.select().from(userStreaks).where(eq(userStreaks?.userId, userId));
+    return db.select().from(userStreaks).where(eq(userStreaks.userId, userId));
   }
 
   async getLeaderboard(
@@ -315,7 +315,7 @@ class AchievementService {
         points: achievements.points,
       })
       .from(achievements)
-      .where(eq(achievements?.isActive, true));
+      .where(eq(achievements.isActive, true));
 
     const achievementList = await query;
 
@@ -339,7 +339,7 @@ class AchievementService {
         achievementId: userAchievements.achievementId,
       })
       .from(userAchievements)
-      .where(sql`${userAchievements?.unlockedAt} IS NOT NULL`);
+      .where(sql`${userAchievements.unlockedAt} IS NOT NULL`);
 
     const userPointsMap = new Map<string, { points: number; count: number }>();
 
@@ -371,7 +371,7 @@ class AchievementService {
       })
       .from(users)
       .where(
-        sql`${users?.id} IN (${sql?.join(
+        sql`${users.id} IN (${sql?.join(
           userIds?.map((id) => sql`${id}`),
           sql`, `,
         )})`,
@@ -408,8 +408,8 @@ class AchievementService {
     return db
       .select()
       .from(achievements)
-      .where(eq(achievements?.isActive, true))
-      .orderBy(achievements?.sortOrder);
+      .where(eq(achievements.isActive, true))
+      .orderBy(achievements.sortOrder);
   }
 }
 

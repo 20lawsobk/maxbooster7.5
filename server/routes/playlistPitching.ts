@@ -173,18 +173,18 @@ const CURATORS = [
   },
 ];
 
-router?.get("/curators", (_req, res) => {
+router.get("/curators", (_req, res) => {
   res.json(CURATORS);
 });
 
-router?.get("/", requireAuth, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
     const pitches = await db
       .select()
       .from(playlistPitches)
-      .where(eq(playlistPitches?.userId, req.user!.id))
-      .orderBy(desc(playlistPitches?.createdAt))
+      .where(eq(playlistPitches.userId, req.user!.id))
+      .orderBy(desc(playlistPitches.createdAt))
       .limit(limit)
       .offset(offset);
     res.json(pitches);
@@ -194,7 +194,7 @@ router?.get("/", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const validatedData = insertPlaylistPitchSchema?.parse({
       ...req.body,
@@ -219,7 +219,7 @@ router?.post("/", requireAuth, async (req, res) => {
   }
 });
 
-router?.put("/:id", requireAuth, async (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   try {
     const validatedData = insertPlaylistPitchSchema
       .partial()
@@ -230,8 +230,8 @@ router?.put("/:id", requireAuth, async (req, res) => {
       .set({ ...validatedData, updatedAt: new Date() })
       .where(
         and(
-          eq(playlistPitches?.id, req.params.id),
-          eq(playlistPitches?.userId, req.user!.id),
+          eq(playlistPitches.id, (req.params.id as string)),
+          eq(playlistPitches.userId, req.user!.id),
         ),
       )
       .returning();
@@ -254,10 +254,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
 });
 
 // PATCH /api/playlist-pitching/:id/status — record pitch outcome (placed, rejected, etc.)
-router?.patch("/:id/status", requireAuth, async (req, res) => {
+router.patch("/:id/status", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const statusSchema = z.object({
       status: z.enum([
         "draft",
@@ -285,7 +285,7 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
       .update(playlistPitches)
       .set(setFields)
       .where(
-        and(eq(playlistPitches?.id, id), eq(playlistPitches?.userId, userId)),
+        and(eq(playlistPitches.id, id), eq(playlistPitches.userId, userId)),
       )
       .returning();
 
@@ -305,14 +305,14 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
   }
 });
 
-router?.delete("/:id", requireAuth, async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const [deletedPitch] = await db
       .delete(playlistPitches)
       .where(
         and(
-          eq(playlistPitches?.id, req.params.id),
-          eq(playlistPitches?.userId, req.user!.id),
+          eq(playlistPitches.id, (req.params.id as string)),
+          eq(playlistPitches.userId, req.user!.id),
         ),
       )
       .returning();
@@ -329,7 +329,7 @@ router?.delete("/:id", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/stats", requireAuth, async (req, res) => {
+router.get("/stats", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const cacheKey = createCacheKey("stats:playlistPitches", userId);
@@ -343,8 +343,8 @@ router?.get("/stats", requireAuth, async (req, res) => {
             count: sql<number>`count(*)`,
           })
           .from(playlistPitches)
-          .where(eq(playlistPitches?.userId, userId))
-          .groupBy(playlistPitches?.status);
+          .where(eq(playlistPitches.userId, userId))
+          .groupBy(playlistPitches.status);
 
         const r = {
           total: 0,
@@ -382,15 +382,15 @@ router?.get("/stats", requireAuth, async (req, res) => {
 });
 
 // GET /:id must come after /stats to prevent route shadowing
-router?.get("/:id", requireAuth, async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const [item] = await db
       .select()
       .from(playlistPitches)
       .where(
         and(
-          eq(playlistPitches?.id, req.params.id),
-          eq(playlistPitches?.userId, req.user!.id),
+          eq(playlistPitches.id, (req.params.id as string)),
+          eq(playlistPitches.userId, req.user!.id),
         ),
       )
       .limit(1);

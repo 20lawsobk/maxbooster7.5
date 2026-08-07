@@ -34,7 +34,7 @@ export class MetricsService {
         .onConflictDoUpdate({
           target: [
             (systemMetrics as any)?.metricName,
-            systemMetrics?.source,
+            systemMetrics.source,
             (systemMetrics as any)?.bucketStart,
             (systemMetrics as any)?.resolutionSecs,
           ],
@@ -74,7 +74,7 @@ export class MetricsService {
       ];
 
       if (source) {
-        conditions?.push(eq(systemMetrics?.source, source));
+        conditions?.push(eq(systemMetrics.source, source));
       }
 
       const results = await db
@@ -105,7 +105,7 @@ export class MetricsService {
    */
   async createAlertRule(data: InsertAlertRule): Promise<void> {
     try {
-      await db?.insert(alertRules).values(data);
+      await db.insert(alertRules).values(data);
     } catch (error: unknown) {
       logger.warn({ err: error }, "Failed to create alert rule:");
       throw error;
@@ -120,7 +120,7 @@ export class MetricsService {
       const activeRules = await db
         .select()
         .from(alertRules)
-        .where(eq(alertRules?.isActive, true))
+        .where(eq(alertRules.isActive, true))
         .limit(200);
 
       for (const rule of activeRules) {
@@ -163,13 +163,13 @@ export class MetricsService {
             .where(
               and(
                 eq((alertIncidents as any)?.ruleId, rule?.id),
-                eq(alertIncidents?.status, "triggered"),
+                eq(alertIncidents.status, "triggered"),
               ),
             )
             .limit(1);
 
           if (existingIncidents?.length === 0) {
-            await db?.insert(alertIncidents).values({
+            await db.insert(alertIncidents).values({
               ruleId: rule.id,
               status: "triggered",
               context: {
@@ -194,7 +194,7 @@ export class MetricsService {
             .where(
               and(
                 eq((alertIncidents as any)?.ruleId, rule?.id),
-                eq(alertIncidents?.status, "triggered"),
+                eq(alertIncidents.status, "triggered"),
               ),
             );
         }
@@ -215,8 +215,8 @@ export class MetricsService {
           rule: alertRules,
         })
         .from(alertIncidents)
-        .innerJoin(alertRules, eq((alertIncidents as any)?.ruleId, alertRules?.id))
-        .where(eq(alertIncidents?.status, "triggered"))
+        .innerJoin(alertRules, eq((alertIncidents as any)?.ruleId, alertRules.id))
+        .where(eq(alertIncidents.status, "triggered"))
         .orderBy(desc((alertIncidents as any)?.triggeredAt));
 
       return incidents;

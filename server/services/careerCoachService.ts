@@ -3,7 +3,7 @@ import { eq, and, desc, isNull, sql, gte } from "drizzle-orm";
 import { careerCoachRecommendations, careerGoals, analytics, releases, socialAccounts, dspAnalytics, InsertCareerCoachRecommendation, InsertCareerGoal, CareerCoachRecommendation, CareerGoal } from "../../shared/schema";
 import { logger } from "../logger";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
-import { requireMaxCore, _AIUnavailableError } from "../lib/aiSource.js";
+import { requireMaxCore, AIUnavailableError as _AIUnavailableError } from "../lib/aiSource.js";
 
 interface CareerGap {
   area: string;
@@ -639,10 +639,10 @@ class CareerCoachService {
         .from(careerCoachRecommendations)
         .where(
           and(
-            eq(careerCoachRecommendations?.userId, userId),
-            gte(careerCoachRecommendations?.createdAt, today),
-            isNull(careerCoachRecommendations?.dismissedAt),
-            isNull(careerCoachRecommendations?.completedAt),
+            eq(careerCoachRecommendations.userId, userId),
+            gte(careerCoachRecommendations.createdAt, today),
+            isNull(careerCoachRecommendations.dismissedAt),
+            isNull(careerCoachRecommendations.completedAt),
           ),
         );
 
@@ -915,8 +915,8 @@ class CareerCoachService {
         .set({ dismissedAt: new Date() })
         .where(
           and(
-            eq(careerCoachRecommendations?.id, recommendationId),
-            eq(careerCoachRecommendations?.userId, userId),
+            eq(careerCoachRecommendations.id, recommendationId),
+            eq(careerCoachRecommendations.userId, userId),
           ),
         )
         .returning();
@@ -941,8 +941,8 @@ class CareerCoachService {
         .set({ completedAt: new Date() })
         .where(
           and(
-            eq(careerCoachRecommendations?.id, recommendationId),
-            eq(careerCoachRecommendations?.userId, userId),
+            eq(careerCoachRecommendations.id, recommendationId),
+            eq(careerCoachRecommendations.userId, userId),
           ),
         )
         .returning();
@@ -965,14 +965,14 @@ class CareerCoachService {
       .from(careerCoachRecommendations)
       .where(
         and(
-          eq(careerCoachRecommendations?.userId, userId),
-          isNull(careerCoachRecommendations?.dismissedAt),
-          isNull(careerCoachRecommendations?.completedAt),
+          eq(careerCoachRecommendations.userId, userId),
+          isNull(careerCoachRecommendations.dismissedAt),
+          isNull(careerCoachRecommendations.completedAt),
         ),
       )
       .orderBy(
-        desc(careerCoachRecommendations?.priority),
-        desc(careerCoachRecommendations?.createdAt),
+        desc(careerCoachRecommendations.priority),
+        desc(careerCoachRecommendations.createdAt),
       )
       .limit(10);
   }
@@ -981,8 +981,8 @@ class CareerCoachService {
     return db
       .select()
       .from(careerGoals)
-      .where(eq(careerGoals?.userId, userId))
-      .orderBy(desc(careerGoals?.createdAt));
+      .where(eq(careerGoals.userId, userId))
+      .orderBy(desc(careerGoals.createdAt));
   }
 
   async createGoal(
@@ -1007,7 +1007,7 @@ class CareerCoachService {
     const [goal] = await db
       .update(careerGoals)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(careerGoals?.id, goalId), eq(careerGoals?.userId, userId)))
+      .where(and(eq(careerGoals.id, goalId), eq(careerGoals.userId, userId)))
       .returning();
     return goal || null;
   }
@@ -1015,7 +1015,7 @@ class CareerCoachService {
   async deleteGoal(userId: string, goalId: string): Promise<boolean> {
     const [deleted] = await db
       .delete(careerGoals)
-      .where(and(eq(careerGoals?.id, goalId), eq(careerGoals?.userId, userId)))
+      .where(and(eq(careerGoals.id, goalId), eq(careerGoals.userId, userId)))
       .returning({ id: careerGoals.id });
     return !!deleted;
   }
@@ -1035,7 +1035,7 @@ class CareerCoachService {
             ? "completed"
             : "active",
       })
-      .where(and(eq(careerGoals?.id, goalId), eq(careerGoals?.userId, userId)))
+      .where(and(eq(careerGoals.id, goalId), eq(careerGoals.userId, userId)))
       .returning();
     return goal || null;
   }
@@ -1057,7 +1057,7 @@ class CareerCoachService {
     const [goal] = await db
       .select({ targetValue: careerGoals.targetValue })
       .from(careerGoals)
-      .where(eq(careerGoals?.id, goalId))
+      .where(eq(careerGoals.id, goalId))
       .limit(1);
     return goal?.targetValue || 0;
   }
@@ -1067,28 +1067,28 @@ class CareerCoachService {
   ): Promise<UserAnalyticsSnapshot> {
     const analyticsData = await db
       .select({
-        totalStreams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
-        totalFollowers: sql<number>`COALESCE(MAX(${analytics?.followers}), 0)`,
-        totalRevenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
+        totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        totalFollowers: sql<number>`COALESCE(MAX(${analytics.followers}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
       })
       .from(analytics)
-      .where(eq(analytics?.userId, userId));
+      .where(eq(analytics.userId, userId));
 
     const releasesData = await db
       .select()
       .from(releases)
-      .where(eq(releases?.userId, userId))
-      .orderBy(desc(releases?.createdAt));
+      .where(eq(releases.userId, userId))
+      .orderBy(desc(releases.createdAt));
 
     const socialData = await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts?.userId, userId));
+      .where(eq(socialAccounts.userId, userId));
 
     const dspData = await db
       .select()
       .from(dspAnalytics)
-      .where(eq(dspAnalytics?.userId, userId))
+      .where(eq(dspAnalytics.userId, userId))
       .limit(100);
 
     let topPlatform: string | null = null;

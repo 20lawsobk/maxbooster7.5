@@ -166,7 +166,7 @@ async function run() {
 
   for (const idx of indexes) {
     try {
-      await db?.execute(sql?.raw(idx?.ddl));
+      await db.execute(sql?.raw(idx?.ddl));
       console?.log(`  ✓ ${idx?.name}`);
       created++;
     } catch (err) {

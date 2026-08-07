@@ -267,7 +267,7 @@ class NotificationDispatcher {
       const [user] = await db
         .select({ notificationSettings: users.notificationSettings })
         .from(users)
-        .where(eq(users?.id, userId))
+        .where(eq(users.id, userId))
         .limit(1);
 
       const settings =

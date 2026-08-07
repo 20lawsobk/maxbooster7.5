@@ -9,7 +9,7 @@ const router = Router();
  * Handles delivery events: delivered, bounce, spam, unsubscribe, open, click
  * SECURED with signature verification
  */
-router?.post("/", raw({ type: "application/json" }), async (req, res) => {
+router.post("/", raw({ type: "application/json" }), async (req, res) => {
   try {
     const signature = req.headers[
       "x-twilio-email-event-webhook-signature"

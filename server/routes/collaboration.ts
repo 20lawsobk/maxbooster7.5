@@ -23,7 +23,7 @@ async function verifyProjectAccess(
     .select({ id: studioProjects.id })
     .from(studioProjects)
     .where(
-      and(eq(studioProjects?.id, projectId), eq(studioProjects?.userId, userId)),
+      and(eq(studioProjects.id, projectId), eq(studioProjects.userId, userId)),
     )
     .limit(1);
   if (studioProject) return true;
@@ -140,7 +140,7 @@ const resolveConflictSchema = z.object({
   theirContent: z.string(),
 });
 
-router?.post(
+router.post(
   "/resolve-conflict",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -216,12 +216,12 @@ router?.post(
   },
 );
 
-router?.get(
+router.get(
   "/presence/:sessionId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { sessionId } = req.params;
+      const { sessionId } = req.params as Record<string, string>;
       const sessionPresence = sessions?.get(sessionId);
 
       if (!sessionPresence) {
@@ -317,7 +317,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { sessionId } = req.params;
+      const { sessionId } = req.params as Record<string, string>;
       const validatedData = updatePresenceSchema.parse(req.body);
 
       const sessionPresence = sessions.get(sessionId);
@@ -401,7 +401,7 @@ router.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { sessionId } = req.params;
+      const { sessionId } = req.params as Record<string, string>;
       const sessionPresence = sessions.get(sessionId);
 
       if (sessionPresence) {
@@ -516,7 +516,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId } = req.params;
+      const { projectId } = req.params as Record<string, string>;
       if (!(await verifyProjectAccess(projectId, req.user!.id))) {
         return res.status(404).json({ error: "Project not found" });
       }
@@ -546,7 +546,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId, versionId } = req.params;
+      const { projectId, versionId } = req.params as Record<string, string>;
       if (!(await verifyProjectAccess(projectId, req.user!.id))) {
         return res.status(404).json({ error: "Project not found" });
       }
@@ -598,7 +598,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId } = req.params;
+      const { projectId } = req.params as Record<string, string>;
       if (!(await verifyProjectAccess(projectId, req.user!.id))) {
         return res.status(404).json({ error: "Project not found" });
       }
@@ -638,7 +638,7 @@ router.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId, versionId } = req.params;
+      const { projectId, versionId } = req.params as Record<string, string>;
       if (!(await verifyProjectAccess(projectId, req.user!.id))) {
         return res.status(404).json({ error: "Project not found" });
       }
@@ -697,6 +697,17 @@ router.post(
       const validatedData = accessRequestSchema.parse(req.body);
       const userId = req.user!.id;
 
+      // The target project must exist — otherwise any authenticated user can
+      // spam requests against arbitrary IDs and fish for project existence.
+      const [project] = await db
+        .select({ id: studioProjects.id })
+        .from(studioProjects)
+        .where(eq(studioProjects.id, validatedData.projectId))
+        .limit(1);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
       const [inserted] = await db
         .insert(collaborationAccessRequests)
         .values({
@@ -739,7 +750,12 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId } = req.params;
+      const { projectId } = req.params as Record<string, string>;
+      // Only the project owner may see who requested access — otherwise any
+      // authenticated user can enumerate requester emails across projects.
+      if (!(await verifyProjectAccess(projectId, req.user!.id))) {
+        return res.status(403).json({ error: "Access denied" });
+      }
       const rows = await db
         .select()
         .from(collaborationAccessRequests)
@@ -770,7 +786,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { userId } = req.params;
+      const { userId } = req.params as Record<string, string>;
       const validatedData = updateAccessSchema.parse(req.body);
       const { projectId } = req.body;
 
@@ -917,7 +933,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId } = req.params;
+      const { projectId } = req.params as Record<string, string>;
       const rows = await db
         .select()
         .from(collaborationComments)
@@ -938,7 +954,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { commentId } = req.params;
+      const { commentId } = req.params as Record<string, string>;
 
       const [resolved] = await db
         .update(collaborationComments)
@@ -971,7 +987,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { commentId } = req.params;
+      const { commentId } = req.params as Record<string, string>;
 
       res.json({
         success: true,
@@ -993,7 +1009,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId } = req.params;
+      const { projectId } = req.params as Record<string, string>;
       const projectConflicts = conflicts.get(projectId) || [];
 
       const hasUnresolved = projectConflicts.some(

@@ -2,95 +2,95 @@
   "phases": {
     "ts-server": {
       "status": "applied",
-      "at": "2026-08-02T20:50:53.930Z",
-      "note": "native fixed=0 skipped=315; external=fix-ts2551-rename-back.mjs,fix-ts2769.mjs,fix-ts2345.mjs,fix-ts2339-cast.mjs; syntax-restored=1",
-      "snapshot": "ts-server-1785703851828",
+      "at": "2026-08-07T11:34:23.322Z",
+      "note": "native fixed=0 skipped=295; external=fix-params-string.mjs,fix-params-string2.mjs,fix-table-optional-chain.mjs,fix-singleton-optional-chain.mjs,fix-ts2724-underscore.mjs,fix-ts2551-rename-back.mjs,fix-ts2769.mjs,fix-ts2345.mjs,fix-ts2339-cast.mjs; syntax-restored=1",
+      "snapshot": "ts-server-1786102456133",
       "nativeFixed": 0,
       "syntaxRestored": [
         "server/routes/studio.ts"
       ]
     },
     "verify-server": {
-      "status": "rolled-back",
-      "at": "2026-08-02T21:06:24.973Z",
-      "note": "count rose 2352 → 2388; restored 45 files — re-run verify"
+      "status": "measured",
+      "at": "2026-08-07T11:35:49.773Z",
+      "note": "1705 → 1701 errors (parser: 0); top: TS2322:307 TS2345:217 TS2769:206 TS6133:166 TS2339:153 TS2353:100 TS2365:58 TS2571:56 TS18046:52 TS2349:42"
     },
     "imports": {
       "status": "applied",
-      "at": "2026-08-04T03:52:01.273Z",
-      "note": "rewritten=0 ambiguous=5 (bare-module diags left to policy) syntax-restored=0"
+      "at": "2026-08-07T11:36:15.500Z",
+      "note": "rewritten=0 ambiguous=0 (bare-module diags left to policy) syntax-restored=0"
     },
     "schema": {
-      "status": "applied",
-      "at": "2026-08-02T20:50:54.997Z",
-      "note": "pairs=146 inDb=0 removedWriteKeys=66 latentReads=185 syntax-restored=3"
+      "status": "measured",
+      "at": "2026-08-07T11:36:15.330Z",
+      "note": "pairs=115 inDb=0 removalCandidates=68 latentReads=123 (report-only — no code edited)"
     },
     "runtime": {
       "status": "passed",
-      "at": "2026-08-02T20:54:36.307Z",
+      "at": "2026-08-07T11:40:37.845Z",
       "note": "/api/ready:200 /:200 /api/auth/user:404"
     },
     "audit": {
       "status": "measured",
-      "at": "2026-08-02T20:53:19.906Z",
-      "note": "critical=0 high=3 moderate=7 low=0 (report-only; installs are managed manually in this repo)"
+      "at": "2026-08-07T11:40:39.702Z",
+      "note": "critical=0 high=2 moderate=0 low=0 (report-only; installs are managed manually in this repo)"
     },
     "lint": {
       "status": "measured",
-      "at": "2026-08-02T20:53:51.730Z",
-      "note": "errors=921; top rules: no-unsafe-optional-chaining:451 no-division-by-zero/no-division-by-zero:393 @typescript-eslint/no-non-null-asserted-optional-chain:50 @typescript-eslint/no-unused-expressions:24 no-dupe-else-if:1 no-self-assign:1 no-script-url:1"
+      "at": "2026-08-07T11:41:12.364Z",
+      "note": "errors=896; top rules: no-unsafe-optional-chaining:432 no-division-by-zero/no-division-by-zero:393 @typescript-eslint/no-non-null-asserted-optional-chain:44 @typescript-eslint/no-unused-expressions:24 no-dupe-else-if:1 no-self-assign:1 no-script-url:1"
     }
   },
   "counts": {
     "server": {
-      "total": 2352,
+      "total": 1701,
       "parser": 0,
       "top": [
         [
           "TS2322",
-          480
-        ],
-        [
-          "TS2769",
-          354
+          307
         ],
         [
           "TS2345",
-          290
+          217
         ],
         [
-          "TS2339",
-          223
+          "TS2769",
+          206
         ],
         [
           "TS6133",
-          178
+          166
         ],
         [
-          "TS2365",
-          95
+          "TS2339",
+          153
         ],
         [
           "TS2353",
-          72
+          100
         ],
         [
-          "TS18046",
-          63
-        ],
-        [
-          "TS2305",
-          62
+          "TS2365",
+          58
         ],
         [
           "TS2571",
-          59
+          56
+        ],
+        [
+          "TS18046",
+          52
+        ],
+        [
+          "TS2349",
+          42
         ]
       ],
-      "at": "2026-08-02T20:52:32.220Z"
+      "at": "2026-08-07T11:35:49.772Z"
     }
   },
   "lastSnapshot": {
-    "server": "imports-1785815521041"
+    "server": "imports-1786102575466"
   }
 }

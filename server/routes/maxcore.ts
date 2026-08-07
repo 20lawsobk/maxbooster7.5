@@ -198,11 +198,11 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-router?.use(requireAdmin);
+router.use(requireAdmin);
 
 // ── Status & diagnostics ──────────────────────────────────────────────────────
 
-router?.get("/status", async (_req, res) => {
+router.get("/status", async (_req, res) => {
   const result = await peer("GET", "/control/status");
   if (!result?.ok) {
     const health = await peer("GET", "/health");
@@ -211,7 +211,7 @@ router?.get("/status", async (_req, res) => {
   send(res, result);
 });
 
-router?.get("/health", async (_req, res) => {
+router.get("/health", async (_req, res) => {
   if (PEER_CFG?.type === "pdim") {
     try {
       const pong = await pdimExec(PEER_CFG, "PING", []);
@@ -223,32 +223,32 @@ router?.get("/health", async (_req, res) => {
   send(res, await peer("GET", "/health"));
 });
 
-router?.get("/logs", async (req, res) => {
+router.get("/logs", async (req, res) => {
   const n = Math.min(Number(req.query.n) || 300, 1000);
   send(res, await peer("GET", `/control/logs?n=${n}`));
 });
 
-router?.delete("/logs", async (_req, res) => {
+router.delete("/logs", async (_req, res) => {
   send(res, await peer("DELETE", "/control/logs"));
 });
 
 // ── Training control ──────────────────────────────────────────────────────────
 
-router?.get("/train/status", async (_req, res) => {
+router.get("/train/status", async (_req, res) => {
   send(res, await peer("GET", "/train/status"));
 });
 
-router?.post("/train/start", async (_req, res) => {
+router.post("/train/start", async (_req, res) => {
   logger.info("[MaxCore] Remote train/start triggered");
   send(res, await peer("POST", "/train/start"));
 });
 
-router?.post("/train/stop", async (_req, res) => {
+router.post("/train/stop", async (_req, res) => {
   logger.info("[MaxCore] Remote train/stop triggered");
   send(res, await peer("POST", "/train/stop"));
 });
 
-router?.post("/train/trigger-session", async (_req, res) => {
+router.post("/train/trigger-session", async (_req, res) => {
   logger.info("[MaxCore] Remote trigger-session triggered");
   const ts = Date?.now();
   const job = {
@@ -274,7 +274,7 @@ router?.post("/train/trigger-session", async (_req, res) => {
   }
 });
 
-router?.post("/train/set-phase", async (req, res) => {
+router.post("/train/set-phase", async (req, res) => {
   const phase = Number(req.body?.phase);
   if (!phase || phase < 1 || phase > 4) {
     return res.status(400).json({ error: "phase must be 1–4" });
@@ -285,42 +285,42 @@ router?.post("/train/set-phase", async (req, res) => {
 
 // ── Models ────────────────────────────────────────────────────────────────────
 
-router?.get("/models", async (_req, res) => {
+router.get("/models", async (_req, res) => {
   send(res, await peer("GET", "/models/list"));
 });
 
 // ── Datasets ──────────────────────────────────────────────────────────────────
 
-router?.get("/datasets", async (_req, res) => {
+router.get("/datasets", async (_req, res) => {
   send(res, await peer("GET", "/datasets/list"));
 });
 
-router?.get("/datasets/manifest", async (_req, res) => {
+router.get("/datasets/manifest", async (_req, res) => {
   send(res, await peer("GET", "/datasets/manifest"));
 });
 
 // ── Knowledge ─────────────────────────────────────────────────────────────────
 
-router?.get("/curriculum", async (_req, res) => {
+router.get("/curriculum", async (_req, res) => {
   send(res, await peer("GET", "/knowledge/curriculum"));
 });
 
-router?.get("/loss-history", async (_req, res) => {
+router.get("/loss-history", async (_req, res) => {
   send(res, await peer("GET", "/knowledge/loss-history"));
 });
 
-router?.get("/sessions", async (_req, res) => {
+router.get("/sessions", async (_req, res) => {
   send(res, await peer("GET", "/knowledge/sessions"));
 });
 
 // ── Machine lifecycle ─────────────────────────────────────────────────────────
 
-router?.post("/restart", async (_req, res) => {
+router.post("/restart", async (_req, res) => {
   logger.warn("[MaxCore] Remote RESTART triggered by admin");
   send(res, await peer("POST", "/control/restart", undefined, 5_000));
 });
 
-router?.post("/shutdown", async (req, res) => {
+router.post("/shutdown", async (req, res) => {
   const { confirm } = req.body || {};
   if (confirm !== "SHUTDOWN") {
     return res
@@ -377,13 +377,13 @@ function ensureCtrl() {
   }
 }
 
-router?.get("/downloader/status", (_req, res) => {
+router.get("/downloader/status", (_req, res) => {
   ensureCtrl();
   const stopped = fs?.existsSync(DL_STOP_FLAG);
   res.json({ stopped, flag: DL_STOP_FLAG, peerMode: PEER_CFG.type });
 });
 
-router?.post("/downloader/stop", async (req, res) => {
+router.post("/downloader/stop", async (req, res) => {
   const { confirm } = req.body || {};
   if (confirm !== "STOP") {
     return res
@@ -399,7 +399,7 @@ router?.post("/downloader/stop", async (req, res) => {
   });
 });
 
-router?.post("/downloader/start", async (_req, res) => {
+router.post("/downloader/start", async (_req, res) => {
   ensureCtrl();
   try {
     fs?.unlinkSync(DL_STOP_FLAG);
@@ -438,7 +438,7 @@ router?.post("/downloader/start", async (_req, res) => {
   }
 });
 
-router?.post("/maxcore/stop", async (req, res) => {
+router.post("/maxcore/stop", async (req, res) => {
   const { confirm } = req.body || {};
   if (confirm !== "STOP") {
     return res
@@ -454,7 +454,7 @@ router?.post("/maxcore/stop", async (req, res) => {
   });
 });
 
-router?.post("/maxcore/start", (_req, res) => {
+router.post("/maxcore/start", (_req, res) => {
   ensureCtrl();
   try {
     fs?.unlinkSync(MC_STOP_FLAG);
@@ -474,7 +474,7 @@ router?.post("/maxcore/start", (_req, res) => {
 // ── Push ALL AI generation jobs to PDIM ───────────────────────────────────────
 // Enqueues every Max Booster AI job type so MaxCore can consume them all.
 
-router?.post("/ai-jobs/push-all", async (_req, res) => {
+router.post("/ai-jobs/push-all", async (_req, res) => {
   const ts = Date?.now();
   const src = "maxbooster";
   const key = MBS_KEY;

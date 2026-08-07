@@ -259,6 +259,11 @@ function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 
 /* ─────────────── external proven handlers ────────────────── */
 const EXTERNAL_HANDLERS = [
+  "scripts/fix-params-string.mjs",
+  "scripts/fix-params-string2.mjs",
+  "scripts/fix-table-optional-chain.mjs",
+  "scripts/fix-singleton-optional-chain.mjs",
+  "scripts/fix-ts2724-underscore.mjs",
   "scripts/fix-ts2551-rename-back.mjs",
   "scripts/fix-ts2769.mjs",
   "scripts/fix-ts2345.mjs",

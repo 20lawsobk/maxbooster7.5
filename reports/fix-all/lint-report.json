@@ -1,9 +1,9 @@
 {
-  "errors": 921,
+  "errors": 896,
   "top": [
     [
       "no-unsafe-optional-chaining",
-      451
+      432
     ],
     [
       "no-division-by-zero/no-division-by-zero",
@@ -11,7 +11,7 @@
     ],
     [
       "@typescript-eslint/no-non-null-asserted-optional-chain",
-      50
+      44
     ],
     [
       "@typescript-eslint/no-unused-expressions",
@@ -269,7 +269,7 @@
     },
     {
       "file": "server/routes/fanCampaigns.ts",
-      "errors": 2
+      "errors": 1
     },
     {
       "file": "server/routes/fanHub.ts",
@@ -289,7 +289,7 @@
     },
     {
       "file": "server/routes/labelSubmissions.ts",
-      "errors": 3
+      "errors": 2
     },
     {
       "file": "server/routes/logs.ts",
@@ -333,11 +333,7 @@
     },
     {
       "file": "server/routes/pressKit.ts",
-      "errors": 2
-    },
-    {
-      "file": "server/routes/projectBudgets.ts",
-      "errors": 2
+      "errors": 1
     },
     {
       "file": "server/routes/publishing.ts",
@@ -345,7 +341,7 @@
     },
     {
       "file": "server/routes/radioPitches.ts",
-      "errors": 2
+      "errors": 1
     },
     {
       "file": "server/routes/retention.ts",
@@ -353,10 +349,6 @@
     },
     {
       "file": "server/routes/revenueForecast.ts",
-      "errors": 1
-    },
-    {
-      "file": "server/routes/sampleClearances.ts",
       "errors": 1
     },
     {
@@ -413,7 +405,7 @@
     },
     {
       "file": "server/routes/venues.ts",
-      "errors": 2
+      "errors": 1
     },
     {
       "file": "server/routes/vstBridge.ts",
@@ -438,22 +430,6 @@
     {
       "file": "server/security-system.ts",
       "errors": 2
-    },
-    {
-      "file": "server/seed/distributionPlatforms.ts",
-      "errors": 1
-    },
-    {
-      "file": "server/seed/initializeAIContentModels.ts",
-      "errors": 1
-    },
-    {
-      "file": "server/seed/initializeAIInsightsModels.ts",
-      "errors": 1
-    },
-    {
-      "file": "server/seed/initializeAIMusicModels.ts",
-      "errors": 1
     },
     {
       "file": "server/self-evolution-engine.ts",
@@ -497,7 +473,7 @@
     },
     {
       "file": "server/services/aiInsightsEngine.ts",
-      "errors": 4
+      "errors": 5
     },
     {
       "file": "server/services/aiMusicService.ts",
@@ -601,7 +577,7 @@
     },
     {
       "file": "server/services/contentAnalysisService.ts",
-      "errors": 5
+      "errors": 4
     },
     {
       "file": "server/services/contentPipeline/contentTypeGenerators.ts",
@@ -634,10 +610,6 @@
     {
       "file": "server/services/crossPlatformSyncService.ts",
       "errors": 12
-    },
-    {
-      "file": "server/services/customerHealthScoreService.ts",
-      "errors": 3
     },
     {
       "file": "server/services/diffusionVideoService.ts",
@@ -872,10 +844,6 @@
       "errors": 2
     },
     {
-      "file": "server/services/reEngagementService.ts",
-      "errors": 3
-    },
-    {
       "file": "server/services/recoupmentService.ts",
       "errors": 4
     },
@@ -976,10 +944,6 @@
       "errors": 1
     },
     {
-      "file": "server/services/stemExportService.ts",
-      "errors": 1
-    },
-    {
       "file": "server/services/storefrontDnsService.ts",
       "errors": 4
     },
@@ -1049,7 +1013,7 @@
     },
     {
       "file": "server/storage.ts",
-      "errors": 14
+      "errors": 8
     },
     {
       "file": "server/subatomic/index.ts",

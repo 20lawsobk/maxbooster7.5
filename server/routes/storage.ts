@@ -47,11 +47,11 @@ async function cleanupOldDeletedFiles() {
       .from(userStorageFiles)
       .where(
         and(
-          isNotNull(userStorageFiles?.deletedAt),
-          lt(userStorageFiles?.deletedAt, cutoffDate),
+          isNotNull(userStorageFiles.deletedAt),
+          lt(userStorageFiles.deletedAt, cutoffDate),
         ),
       )
-      .orderBy(userStorageFiles?.deletedAt)
+      .orderBy(userStorageFiles.deletedAt)
       .limit(500);
 
     for (const file of oldDeletedFiles) {
@@ -59,7 +59,7 @@ async function cleanupOldDeletedFiles() {
         await storageService?.deleteFile(file?.fileKey);
         await db
           .delete(userStorageFiles)
-          .where(eq(userStorageFiles?.id, file?.id));
+          .where(eq(userStorageFiles.id, file?.id));
         logger.info(
           `[SoftDelete] Permanently deleted expired file: ${file?.fileKey}`,
         );
@@ -203,7 +203,7 @@ const chunkUpload = createHardenedUpload({
   label: "storage chunk",
 });
 
-router?.post(
+router.post(
   "/upload",
   requireAuth,
   upload?.single("file"),
@@ -255,12 +255,12 @@ router?.post(
 
           const PLATFORM_QUOTA_GB = 1000;
           const usageResult = await db
-            .select({ totalBytes: sum(userStorageFiles?.sizeBytes) })
+            .select({ totalBytes: sum(userStorageFiles.sizeBytes) })
             .from(userStorageFiles)
             .where(
               and(
-                eq(userStorageFiles?.userId, userId),
-                isNull(userStorageFiles?.deletedAt),
+                eq(userStorageFiles.userId, userId),
+                isNull(userStorageFiles.deletedAt),
               ),
             );
           const usedBytes = Number(usageResult[0]?.totalBytes ?? 0);
@@ -292,7 +292,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/upload/chunk",
   requireAuth,
   chunkUpload?.single("chunk"),
@@ -411,12 +411,12 @@ router?.post(
 
             const PLATFORM_QUOTA_GB = 1000;
             const chunkUsageResult = await db
-              .select({ totalBytes: sum(userStorageFiles?.sizeBytes) })
+              .select({ totalBytes: sum(userStorageFiles.sizeBytes) })
               .from(userStorageFiles)
               .where(
                 and(
-                  eq(userStorageFiles?.userId, userId),
-                  isNull(userStorageFiles?.deletedAt),
+                  eq(userStorageFiles.userId, userId),
+                  isNull(userStorageFiles.deletedAt),
                 ),
               );
             const chunkUsedBytes = Number(chunkUsageResult[0]?.totalBytes ?? 0);
@@ -461,12 +461,12 @@ router?.post(
   },
 );
 
-router?.delete(
+router.delete(
   "/upload/chunk/:fileId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { fileId } = req.params;
+      const { fileId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const chunkInfo = chunkUploads?.get(fileId);
@@ -488,9 +488,9 @@ router?.delete(
   },
 );
 
-router?.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
+router.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { key } = req.params;
+    const { key } = req.params as Record<string, string>;
     const requestingUserId = req.user!.id;
 
     if (key?.startsWith("users/")) {
@@ -570,9 +570,9 @@ router?.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/public/*key", async (req: Request, res: Response) => {
+router.get("/public/*key", async (req: Request, res: Response) => {
   try {
-    const { key } = req.params;
+    const { key } = req.params as Record<string, string>;
 
     if (
       !key?.startsWith("storefronts/") ||
@@ -611,12 +611,12 @@ router?.get("/public/*key", async (req: Request, res: Response) => {
   }
 });
 
-router?.delete(
+router.delete(
   "/file/*key",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params;
+      const { key } = req.params as Record<string, string>;
       const userId = req.user!.id;
       const { permanent } = req.query;
 
@@ -632,9 +632,9 @@ router?.delete(
         .from(userStorageFiles)
         .where(
           and(
-            eq(userStorageFiles?.fileKey, key),
-            eq(userStorageFiles?.userId, userId),
-            isNull(userStorageFiles?.deletedAt),
+            eq(userStorageFiles.fileKey, key),
+            eq(userStorageFiles.userId, userId),
+            isNull(userStorageFiles.deletedAt),
           ),
         )
         .limit(1);
@@ -648,7 +648,7 @@ router?.delete(
         await storageService?.deleteFile(key);
         await db
           .delete(userStorageFiles)
-          .where(eq(userStorageFiles?.id, file?.id));
+          .where(eq(userStorageFiles.id, file?.id));
         logger.info(
           `[SoftDelete] File permanently deleted: ${key} by user ${userId}`,
         );
@@ -658,7 +658,7 @@ router?.delete(
         await db
           .update(userStorageFiles)
           .set({ deletedAt: new Date() })
-          .where(eq(userStorageFiles?.id, file?.id));
+          .where(eq(userStorageFiles.id, file?.id));
 
         logger.info(`[SoftDelete] File soft deleted: ${key} by user ${userId}`);
         res.json({
@@ -678,12 +678,12 @@ router?.delete(
 );
 
 // Restore a deleted file (undo delete)
-router?.post(
+router.post(
   "/restore/*key",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params;
+      const { key } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       // Find the soft-deleted file in database
@@ -692,9 +692,9 @@ router?.post(
         .from(userStorageFiles)
         .where(
           and(
-            eq(userStorageFiles?.fileKey, key),
-            eq(userStorageFiles?.userId, userId),
-            isNotNull(userStorageFiles?.deletedAt),
+            eq(userStorageFiles.fileKey, key),
+            eq(userStorageFiles.userId, userId),
+            isNotNull(userStorageFiles.deletedAt),
           ),
         )
         .limit(1);
@@ -719,7 +719,7 @@ router?.post(
       await db
         .update(userStorageFiles)
         .set({ deletedAt: null })
-        .where(eq(userStorageFiles?.id, deletedFile?.id));
+        .where(eq(userStorageFiles.id, deletedFile?.id));
 
       logger.info(`[SoftDelete] File restored: ${key} by user ${userId}`);
 
@@ -742,7 +742,7 @@ router?.post(
   },
 );
 
-router?.get("/quota", requireAuth, async (req: Request, res: Response) => {
+router.get("/quota", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
@@ -750,7 +750,7 @@ router?.get("/quota", requireAuth, async (req: Request, res: Response) => {
     const [userRow] = await db
       .select({ subscriptionTier: users.subscriptionTier })
       .from(users)
-      .where(eq(users?.id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     const rawTier = userRow?.subscriptionTier || "free";
@@ -767,16 +767,16 @@ router?.get("/quota", requireAuth, async (req: Request, res: Response) => {
     const usageRows = await db
       .select({
         mimeType: userStorageFiles.mimeType,
-        totalBytes: sql<number>`COALESCE(SUM(${userStorageFiles?.sizeBytes}), 0)`,
+        totalBytes: sql<number>`COALESCE(SUM(${userStorageFiles.sizeBytes}), 0)`,
       })
       .from(userStorageFiles)
       .where(
         and(
-          eq(userStorageFiles?.userId, userId),
-          isNull(userStorageFiles?.deletedAt),
+          eq(userStorageFiles.userId, userId),
+          isNull(userStorageFiles.deletedAt),
         ),
       )
-      .groupBy(userStorageFiles?.mimeType);
+      .groupBy(userStorageFiles.mimeType);
 
     let audioBytes = 0,
       imageBytes = 0,
@@ -826,7 +826,7 @@ router?.get("/quota", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/rename", requireAuth, async (req: Request, res: Response) => {
+router.post("/rename", requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId, newName } = req.body;
     const userId = req.user!.id;
@@ -852,7 +852,7 @@ router?.post("/rename", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/move", requireAuth, async (req: Request, res: Response) => {
+router.post("/move", requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId, folderId } = req.body;
     const userId = req.user!.id;
@@ -882,7 +882,7 @@ router?.post("/move", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/duplicate", requireAuth, async (req: Request, res: Response) => {
+router.post("/duplicate", requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId } = req.body;
     const userId = req.user!.id;
@@ -910,7 +910,7 @@ router?.post("/duplicate", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/validate", async (req: Request, res: Response) => {
+router.post("/validate", async (req: Request, res: Response) => {
   try {
     const {  fileSize, mimeType, options = {} } = req.body;
 
@@ -979,7 +979,7 @@ router?.post("/validate", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/scan", requireAuth, async (req: Request, res: Response) => {
+router.post("/scan", requireAuth, async (req: Request, res: Response) => {
   try {
     const { fileId } = req.body;
 
@@ -1010,7 +1010,7 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
-router?.post(
+router.post(
   "/hybrid/upload",
   requireAuth,
   upload?.single("file"),
@@ -1070,12 +1070,12 @@ router?.post(
   },
 );
 
-router?.get(
+router.get(
   "/hybrid/file/*key",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params;
+      const { key } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const buffer = await hybridStorageService?.read(userId, key);
@@ -1108,12 +1108,12 @@ router?.get(
   },
 );
 
-router?.delete(
+router.delete(
   "/hybrid/file/*key",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params;
+      const { key } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const success = await hybridStorageService?.delete(userId, key);
@@ -1133,7 +1133,7 @@ router?.delete(
   },
 );
 
-router?.get("/hybrid/list", requireAuth, async (req: Request, res: Response) => {
+router.get("/hybrid/list", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { tier, folder, includePublic } = req.query;
@@ -1168,7 +1168,7 @@ router?.get("/hybrid/list", requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-router?.get(
+router.get(
   "/hybrid/analytics",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -1186,7 +1186,7 @@ router?.get(
   },
 );
 
-router?.get(
+router.get(
   "/hybrid/tier-breakdown",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -1207,7 +1207,7 @@ router?.get(
   },
 );
 
-router?.get(
+router.get(
   "/hybrid/deduplication",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -1231,12 +1231,12 @@ router?.get(
   },
 );
 
-router?.post(
+router.post(
   "/hybrid/tier-down/*key",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params;
+      const { key } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const metadata = hybridStorageService?.getMetadata(key);
@@ -1261,7 +1261,7 @@ router?.post(
   },
 );
 
-router?.post(
+router.post(
   "/hybrid/auto-tier",
   requireAuth,
   async (_req: Request, res: Response) => {
@@ -1287,12 +1287,12 @@ router?.post(
   },
 );
 
-router?.get(
+router.get(
   "/hybrid/metadata/*key",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params;
+      const { key } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const metadata = hybridStorageService?.getMetadata(key);

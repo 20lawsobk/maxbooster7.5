@@ -8,7 +8,7 @@ const router = Router();
 
 const SITE_URL = process.env.SITE_URL || "https://max-booster.com";
 
-router?.get("/sitemap.xml", async (_req: Request, res: Response) => {
+router.get("/sitemap.xml", async (_req: Request, res: Response) => {
   try {
     const baseUrl = SITE_URL;
     const now = new Date().toISOString().split("T")[0];
@@ -24,8 +24,8 @@ router?.get("/sitemap.xml", async (_req: Request, res: Response) => {
       const beats = await db
         .select({ id: listings.id, updatedAt: listings.updatedAt })
         .from(listings)
-        .where(eq(listings?.isPublished, true))
-        .orderBy(desc(listings?.updatedAt))
+        .where(eq(listings.isPublished, true))
+        .orderBy(desc(listings.updatedAt))
         .limit(500);
 
       beatUrls = beats
@@ -104,7 +104,7 @@ ${storefrontUrls}
   }
 });
 
-router?.get("/robots.txt", (_req: Request, res: Response) => {
+router.get("/robots.txt", (_req: Request, res: Response) => {
   const content = `User-agent: *
 Allow: /
 Allow: /marketplace

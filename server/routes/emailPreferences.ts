@@ -4,7 +4,7 @@ import { logger } from "../logger.js";
 
 const router = Router();
 
-router?.get("/api/email-preferences", async (req: Request, res: Response) => {
+router.get("/api/email-preferences", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -20,7 +20,7 @@ router?.get("/api/email-preferences", async (req: Request, res: Response) => {
   }
 });
 
-router?.patch("/api/email-preferences", async (req: Request, res: Response) => {
+router.patch("/api/email-preferences", async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -62,7 +62,7 @@ router?.patch("/api/email-preferences", async (req: Request, res: Response) => {
   }
 });
 
-router?.get(
+router.get(
   "/api/email-preferences/unsubscribe",
   async (req: Request, res: Response) => {
     try {
@@ -83,7 +83,7 @@ router?.get(
   },
 );
 
-router?.get(
+router.get(
   "/api/email-preferences/preview",
   async (req: Request, res: Response) => {
     try {
@@ -104,11 +104,11 @@ router?.get(
   },
 );
 
-router?.get(
+router.get(
   "/api/emails/track/:id/open",
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       await weeklyInsightsService?.trackEmailOpen(id);
 
       const transparentPixel = Buffer?.from(
@@ -169,7 +169,7 @@ router.get(
   "/api/emails/track/:id/click",
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const redirectUrl = sanitizeEmailRedirect(req.query.redirect);
 
       await weeklyInsightsService.trackEmailClick(id, redirectUrl);

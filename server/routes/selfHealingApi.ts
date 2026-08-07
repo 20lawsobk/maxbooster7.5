@@ -39,7 +39,7 @@ function assertAuth(req: Request, res: Response): boolean {
   return true;
 }
 
-router?.get("/status", (req: Request, res: Response) => {
+router.get("/status", (req: Request, res: Response) => {
   if (!assertAuth(req, res)) return;
   try {
     const status = selfHealingEngine?.getStatus();
@@ -63,7 +63,7 @@ router?.get("/status", (req: Request, res: Response) => {
   }
 });
 
-router?.get("/metrics", (req: Request, res: Response) => {
+router.get("/metrics", (req: Request, res: Response) => {
   if (!assertAuth(req, res)) return;
   try {
     const metrics = selfHealingEngine?.getMetrics();
@@ -128,7 +128,7 @@ router?.get("/metrics", (req: Request, res: Response) => {
   }
 });
 
-router?.get("/proof", (req: Request, res: Response) => {
+router.get("/proof", (req: Request, res: Response) => {
   if (!assertAuth(req, res)) return;
   try {
     const metrics = selfHealingEngine?.getMetrics();
@@ -194,7 +194,7 @@ router?.get("/proof", (req: Request, res: Response) => {
 });
 
 // Admin-only: trigger attack simulation (modifies metrics state)
-router?.post("/simulate-attack", async (req: Request, res: Response) => {
+router.post("/simulate-attack", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
     const { type = "sql_injection" } = req.body;
@@ -250,10 +250,10 @@ router?.post("/simulate-attack", async (req: Request, res: Response) => {
 });
 
 // Admin-only: Unblock specific IP
-router?.delete("/blocked-ips/:ip", async (req: Request, res: Response) => {
+router.delete("/blocked-ips/:ip", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
-    const { ip } = req.params;
+    const { ip } = req.params as Record<string, string>;
     await selfHealingEngine?.unblockIp(ip);
     logger.info(`Admin ${req.user!.email} unblocked IP: ${ip}`);
     res.json({ success: true, message: `IP ${ip} unblocked` });
@@ -264,7 +264,7 @@ router?.delete("/blocked-ips/:ip", async (req: Request, res: Response) => {
 });
 
 // Admin-only: Clear all blocked IPs (emergency access recovery)
-router?.post("/clear-all-blocks", async (req: Request, res: Response) => {
+router.post("/clear-all-blocks", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
     await selfHealingEngine?.clearAllBlocks();
@@ -279,7 +279,7 @@ router?.post("/clear-all-blocks", async (req: Request, res: Response) => {
 });
 
 // Admin-only: Get list of currently blocked IPs
-router?.get("/blocked-ips", async (req: Request, res: Response) => {
+router.get("/blocked-ips", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
     const blockedIps = selfHealingEngine?.getBlockedIps();

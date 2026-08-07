@@ -76,8 +76,8 @@ class ArtistProgressService {
         .from(artistProgressSnapshots)
         .where(
           and(
-            eq(artistProgressSnapshots?.userId, userId),
-            eq(artistProgressSnapshots?.snapshotDate, today),
+            eq(artistProgressSnapshots.userId, userId),
+            eq(artistProgressSnapshots.snapshotDate, today),
           ),
         )
         .limit(1);
@@ -89,22 +89,22 @@ class ArtistProgressService {
 
       const analyticsData = await db
         .select({
-          totalStreams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
-          totalFollowers: sql<number>`COALESCE(MAX(${analytics?.followers}), 0)`,
-          totalRevenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
+          totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+          totalFollowers: sql<number>`COALESCE(MAX(${analytics.followers}), 0)`,
+          totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
         })
         .from(analytics)
-        .where(eq(analytics?.userId, userId));
+        .where(eq(analytics.userId, userId));
 
       const releasesCount = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(releases)
-        .where(eq(releases?.userId, userId));
+        .where(eq(releases.userId, userId));
 
       const projectsCount = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(projects)
-        .where(eq(projects?.userId, userId));
+        .where(eq(projects.userId, userId));
 
       const stats = analyticsData[0] || {
         totalStreams: 0,
@@ -122,7 +122,7 @@ class ArtistProgressService {
 
       const growthRate = await this.calculateCurrentGrowthRate(userId);
 
-      await db?.insert(artistProgressSnapshots).values({
+      await db.insert(artistProgressSnapshots).values({
         userId,
         snapshotDate: today,
         totalStreams: Number(stats?.totalStreams),
@@ -155,14 +155,14 @@ class ArtistProgressService {
         .from(artistProgressSnapshots)
         .where(
           and(
-            eq(artistProgressSnapshots?.userId, userId),
+            eq(artistProgressSnapshots.userId, userId),
             gte(
-              artistProgressSnapshots?.snapshotDate,
+              artistProgressSnapshots.snapshotDate,
               startDate?.toISOString().split("T")[0],
             ),
           ),
         )
-        .orderBy(artistProgressSnapshots?.snapshotDate);
+        .orderBy(artistProgressSnapshots.snapshotDate);
 
       if (history?.length === 0) {
         return [];
@@ -278,8 +278,8 @@ class ArtistProgressService {
       const latestSnapshot = await db
         .select()
         .from(artistProgressSnapshots)
-        .where(eq(artistProgressSnapshots?.userId, userId))
-        .orderBy(desc(artistProgressSnapshots?.snapshotDate))
+        .where(eq(artistProgressSnapshots.userId, userId))
+        .orderBy(desc(artistProgressSnapshots.snapshotDate))
         .limit(1);
 
       const snapshot = latestSnapshot[0] || {
@@ -425,14 +425,14 @@ class ArtistProgressService {
         .from(artistProgressSnapshots)
         .where(
           and(
-            eq(artistProgressSnapshots?.userId, userId),
+            eq(artistProgressSnapshots.userId, userId),
             gte(
-              artistProgressSnapshots?.snapshotDate,
+              artistProgressSnapshots.snapshotDate,
               oneWeekAgo?.toISOString().split("T")[0],
             ),
           ),
         )
-        .orderBy(artistProgressSnapshots?.snapshotDate);
+        .orderBy(artistProgressSnapshots.snapshotDate);
 
       if (snapshots?.length < 2) return 0;
 
@@ -458,17 +458,17 @@ class ArtistProgressService {
     try {
       const result = await db
         .select({
-          streams: sql<number>`COALESCE(AVG(${artistProgressSnapshots?.totalStreams}), 0)`,
-          followers: sql<number>`COALESCE(AVG(${artistProgressSnapshots?.totalFollowers}), 0)`,
-          revenue: sql<number>`COALESCE(AVG(${artistProgressSnapshots?.totalRevenue}), 0)`,
-          engagement: sql<number>`COALESCE(AVG(${artistProgressSnapshots?.engagementScore}), 0)`,
+          streams: sql<number>`COALESCE(AVG(${artistProgressSnapshots.totalStreams}), 0)`,
+          followers: sql<number>`COALESCE(AVG(${artistProgressSnapshots.totalFollowers}), 0)`,
+          revenue: sql<number>`COALESCE(AVG(${artistProgressSnapshots.totalRevenue}), 0)`,
+          engagement: sql<number>`COALESCE(AVG(${artistProgressSnapshots.engagementScore}), 0)`,
         })
         .from(artistProgressSnapshots)
         .where(
           and(
-            eq(artistProgressSnapshots?.userId, userId),
-            gte(artistProgressSnapshots?.snapshotDate, startDate),
-            lte(artistProgressSnapshots?.snapshotDate, endDate),
+            eq(artistProgressSnapshots.userId, userId),
+            gte(artistProgressSnapshots.snapshotDate, startDate),
+            lte(artistProgressSnapshots.snapshotDate, endDate),
           ),
         );
 

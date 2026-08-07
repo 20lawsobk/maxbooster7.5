@@ -652,7 +652,7 @@ router.delete("/history", async (req: Request, res: Response) => {
 router.delete("/history/:query", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { query } = req.params;
+    const { query } = req.params as Record<string, string>;
     if (!userId)
       return res.status(401).json({ error: "Authentication required" });
 
@@ -775,7 +775,7 @@ router.get("/discover", async (req: Request, res: Response) => {
 
 router.get("/similar/:beatId", async (req: Request, res: Response) => {
   try {
-    const { beatId } = req.params;
+    const { beatId } = req.params as Record<string, string>;
     const limit = Math.min(Math.max(1, Number(req.query.limit ?? 10)), 100);
 
     const [beat] = await db
@@ -1036,7 +1036,7 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const { presetId } = req.params;
+      const { presetId } = req.params as Record<string, string>;
       if (!userId)
         return res.status(401).json({ error: "Authentication required" });
 
@@ -1059,7 +1059,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const { presetId } = req.params;
+      const { presetId } = req.params as Record<string, string>;
       if (!userId)
         return res.status(401).json({ error: "Authentication required" });
 

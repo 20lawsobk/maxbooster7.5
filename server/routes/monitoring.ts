@@ -9,10 +9,10 @@ import { requireAdmin, require2FA } from "../middleware/auth.js";
 
 const router = Router();
 
-router?.use(requireAdmin);
-router?.use(require2FA);
+router.use(requireAdmin);
+router.use(require2FA);
 
-router?.get(
+router.get(
   "/queue-metrics",
   asyncHandler(async (_req: any, res: any) => {
     try {
@@ -36,7 +36,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/queue-metrics/:queueName",
   asyncHandler(async (req: any, res: any) => {
     try {
@@ -61,7 +61,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/queue-health",
   asyncHandler(async (_req: any, res: any) => {
     try {
@@ -84,7 +84,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/ai-models",
   asyncHandler(async (_req: any, res: any) => {
     try {
@@ -105,7 +105,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/system-health",
   asyncHandler(async (_req: any, res: any) => {
     try {
@@ -168,7 +168,7 @@ router?.get(
   }),
 );
 
-router?.post(
+router.post(
   "/set-thresholds",
   asyncHandler(async (req: any, res: any) => {
     try {
@@ -203,7 +203,7 @@ router?.post(
   }),
 );
 
-router?.get(
+router.get(
   "/dashboard",
   asyncHandler(async (_req: any, res: any) => {
     try {
@@ -227,7 +227,7 @@ router?.get(
   }),
 );
 
-router?.post(
+router.post(
   "/baseline/save",
   asyncHandler(async (req: any, res: any) => {
     try {
@@ -253,7 +253,7 @@ router?.post(
   }),
 );
 
-router?.get(
+router.get(
   "/alerting/config",
   asyncHandler(async (_req: any, res: any) => {
     try {
@@ -275,7 +275,7 @@ router?.get(
   }),
 );
 
-router?.post(
+router.post(
   "/alerting/test",
   asyncHandler(async (req: any, res: any) => {
     try {

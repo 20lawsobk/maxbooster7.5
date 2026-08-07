@@ -15,9 +15,9 @@ import { logger } from "../../logger.js";
 
 const router = Router();
 
-router?.use(requireAdmin);
+router.use(requireAdmin);
 
-router?.get("/status", async (_req, res) => {
+router.get("/status", async (_req, res) => {
   try {
     const status = await beatMoneyLoopService?.getStatus();
     res.json(status);
@@ -27,7 +27,7 @@ router?.get("/status", async (_req, res) => {
   }
 });
 
-router?.post("/enable", async (_req, res) => {
+router.post("/enable", async (_req, res) => {
   try {
     const status = await beatMoneyLoopService?.enable();
     res.json({ ok: true, status });
@@ -37,7 +37,7 @@ router?.post("/enable", async (_req, res) => {
   }
 });
 
-router?.post("/disable", async (_req, res) => {
+router.post("/disable", async (_req, res) => {
   try {
     const status = await beatMoneyLoopService?.disable();
     res.json({ ok: true, status });
@@ -47,7 +47,7 @@ router?.post("/disable", async (_req, res) => {
   }
 });
 
-router?.post("/run-now", async (req, res) => {
+router.post("/run-now", async (req, res) => {
   // 202 Accepted pattern: a cycle can take 10+ minutes (MaxCore audio jobs have
   // no server-side timeouts). Holding the HTTP connection open would get killed
   // by the proxy (~120 s). Kick off the cycle in the background and return
@@ -84,7 +84,7 @@ router?.post("/run-now", async (req, res) => {
   }
 });
 
-router?.get("/cycles", async (req, res) => {
+router.get("/cycles", async (req, res) => {
   try {
     const limit = Math.min(
       200,
@@ -93,7 +93,7 @@ router?.get("/cycles", async (req, res) => {
     const cycles = await db
       .select()
       .from(beatMoneyLoopCycles)
-      .orderBy(desc(beatMoneyLoopCycles?.startedAt))
+      .orderBy(desc(beatMoneyLoopCycles.startedAt))
       .limit(limit);
     res.json({ cycles });
   } catch (err) {

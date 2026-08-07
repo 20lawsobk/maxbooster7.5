@@ -165,7 +165,7 @@ class DatabaseLogTransport {
         requestId: entry.requestId || null,
       }));
 
-      await db?.insert(systemLogs).values(records);
+      await db.insert(systemLogs).values(records);
       this.consecutiveFailures = 0;
     } catch (error) {
       this.consecutiveFailures++;

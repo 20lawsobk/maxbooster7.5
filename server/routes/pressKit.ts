@@ -21,12 +21,12 @@ const publishSchema = z.object({
   isPublic: z.boolean().optional(),
 });
 
-router?.get("/", requireAuth, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const [pressKit] = await db
       .select()
       .from(pressKits)
-      .where(eq(pressKits?.userId, req.user!.id))
+      .where(eq(pressKits.userId, req.user!.id))
       .limit(1);
     res.json(pressKit ?? null);
   } catch (error) {
@@ -35,7 +35,7 @@ router?.get("/", requireAuth, async (req, res) => {
   }
 });
 
-router?.put("/", requireAuth, async (req, res) => {
+router.put("/", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const validatedData = insertPressKitSchema?.parse({ ...req.body, userId });
@@ -43,7 +43,7 @@ router?.put("/", requireAuth, async (req, res) => {
     const [existing] = await db
       .select()
       .from(pressKits)
-      .where(eq(pressKits?.userId, userId))
+      .where(eq(pressKits.userId, userId))
       .limit(1);
 
     let result;
@@ -51,10 +51,10 @@ router?.put("/", requireAuth, async (req, res) => {
       [result] = await db
         .update(pressKits)
         .set({ ...validatedData, updatedAt: new Date() })
-        .where(eq(pressKits?.id, existing?.id))
+        .where(eq(pressKits.id, existing?.id))
         .returning();
     } else {
-      [result] = await db?.insert(pressKits).values(validatedData).returning();
+      [result] = await db.insert(pressKits).values(validatedData).returning();
     }
 
     res.json(result);
@@ -73,7 +73,7 @@ router?.put("/", requireAuth, async (req, res) => {
 
 // POST /api/press-kit/photo — Add a photo URL to the press kit's photos array.
 // Upload the file first via POST /api/storage/upload, then pass the returned URL here.
-router?.post("/photo", requireAuth, async (req, res) => {
+router.post("/photo", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { url, caption } = req.body;
@@ -95,7 +95,7 @@ router?.post("/photo", requireAuth, async (req, res) => {
     const [pressKit] = await db
       .select()
       .from(pressKits)
-      .where(eq(pressKits?.userId, userId))
+      .where(eq(pressKits.userId, userId))
       .limit(1);
 
     const photos = ((pressKit?.photos as unknown[]) || []) as Array<{
@@ -109,7 +109,7 @@ router?.post("/photo", requireAuth, async (req, res) => {
       [updated] = await db
         .update(pressKits)
         .set({ photos, updatedAt: new Date() })
-        .where(eq(pressKits?.id, pressKit?.id))
+        .where(eq(pressKits.id, pressKit?.id))
         .returning();
     } else {
       [updated] = await db
@@ -125,10 +125,10 @@ router?.post("/photo", requireAuth, async (req, res) => {
   }
 });
 
-router?.delete("/photo/:index", requireAuth, async (req, res) => {
+router.delete("/photo/:index", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const index = parseInt(req.params.index);
+    const index = parseInt((req.params.index as string));
 
     if (isNaN(index) || index < 0) {
       return res.status(400).json({ error: "Invalid index" });
@@ -137,7 +137,7 @@ router?.delete("/photo/:index", requireAuth, async (req, res) => {
     const [pressKit] = await db
       .select()
       .from(pressKits)
-      .where(eq(pressKits?.userId, userId))
+      .where(eq(pressKits.userId, userId))
       .limit(1);
     if (!pressKit)
       return res.status(404).json({ error: "Press kit not found" });
@@ -152,7 +152,7 @@ router?.delete("/photo/:index", requireAuth, async (req, res) => {
     const [updated] = await db
       .update(pressKits)
       .set({ photos: newPhotos, updatedAt: new Date() })
-      .where(eq(pressKits?.id, pressKit?.id))
+      .where(eq(pressKits.id, pressKit?.id))
       .returning();
 
     res.json(updated);
@@ -162,12 +162,12 @@ router?.delete("/photo/:index", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/public/:slug", async (req, res) => {
+router.get("/public/:slug", async (req, res) => {
   try {
     const [pressKit] = await db
       .select()
       .from(pressKits)
-      .where(eq(pressKits?.slug, req.params.slug))
+      .where(eq(pressKits.slug, (req.params.slug as string)))
       .limit(1);
 
     if (!pressKit || !pressKit?.isPublic) {
@@ -181,7 +181,7 @@ router?.get("/public/:slug", async (req, res) => {
   }
 });
 
-router?.post("/publish", requireAuth, async (req, res) => {
+router.post("/publish", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
 
@@ -197,7 +197,7 @@ router?.post("/publish", requireAuth, async (req, res) => {
     const [existing] = await db
       .select()
       .from(pressKits)
-      .where(eq(pressKits?.userId, userId))
+      .where(eq(pressKits.userId, userId))
       .limit(1);
     if (!existing)
       return res.status(404).json({ error: "Press kit not found" });
@@ -205,7 +205,7 @@ router?.post("/publish", requireAuth, async (req, res) => {
     const [updated] = await db
       .update(pressKits)
       .set({ slug, isPublic, updatedAt: new Date() })
-      .where(eq(pressKits?.id, existing?.id))
+      .where(eq(pressKits.id, existing?.id))
       .returning();
 
     res.json(updated);

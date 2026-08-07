@@ -13,14 +13,14 @@ import { parsePaginationParams } from "../middleware/pagination.js";
 
 const router = Router();
 
-router?.get("/", requireAuth, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
     const budgets = await db
       .select()
       .from(projectBudgets)
-      .where(eq(projectBudgets?.userId, req.user!.id))
-      .orderBy(desc(projectBudgets?.createdAt))
+      .where(eq(projectBudgets.userId, req.user!.id))
+      .orderBy(desc(projectBudgets.createdAt))
       .limit(limit)
       .offset(offset);
     res.json(budgets);
@@ -30,15 +30,15 @@ router?.get("/", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/:id", requireAuth, async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const [budget] = await db
       .select()
       .from(projectBudgets)
       .where(
         and(
-          eq(projectBudgets?.id, req.params.id),
-          eq(projectBudgets?.userId, req.user!.id),
+          eq(projectBudgets.id, (req.params.id as string)),
+          eq(projectBudgets.userId, req.user!.id),
         ),
       )
       .limit(1);
@@ -51,15 +51,15 @@ router?.get("/:id", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/:id/items", requireAuth, async (req, res) => {
+router.get("/:id/items", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
 
     const budget = await db
       .select()
       .from(projectBudgets)
-      .where(and(eq(projectBudgets?.id, id), eq(projectBudgets?.userId, userId)))
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
       .limit(1);
 
     if (budget?.length === 0) {
@@ -70,8 +70,8 @@ router?.get("/:id/items", requireAuth, async (req, res) => {
     const items = await db
       .select()
       .from(budgetLineItems)
-      .where(eq(budgetLineItems?.budgetId, id))
-      .orderBy(desc(budgetLineItems?.createdAt))
+      .where(eq(budgetLineItems.budgetId, id))
+      .orderBy(desc(budgetLineItems.createdAt))
       .limit(limit)
       .offset(offset);
     res.json(items);
@@ -81,13 +81,13 @@ router?.get("/:id/items", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const data = insertProjectBudgetSchema?.parse({
       ...req.body,
       userId: req.user!.id,
     });
-    const [item] = await db?.insert(projectBudgets).values(data).returning();
+    const [item] = await db.insert(projectBudgets).values(data).returning();
     res.status(201).json(item);
   } catch (error) {
     logger.warn({ err: error }, "[ProjectBudgets] Failed to create:");
@@ -100,15 +100,15 @@ router?.post("/", requireAuth, async (req, res) => {
   }
 });
 
-router?.put("/:id", requireAuth, async (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
 
     const existing = await db
       .select()
       .from(projectBudgets)
-      .where(and(eq(projectBudgets?.id, id), eq(projectBudgets?.userId, userId)))
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
       .limit(1);
 
     if (existing?.length === 0) {
@@ -122,7 +122,7 @@ router?.put("/:id", requireAuth, async (req, res) => {
     const [item] = await db
       .update(projectBudgets)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(projectBudgets?.id, id), eq(projectBudgets?.userId, userId)))
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
       .returning();
     res.json(item);
   } catch (error) {
@@ -136,25 +136,25 @@ router?.put("/:id", requireAuth, async (req, res) => {
   }
 });
 
-router?.delete("/:id", requireAuth, async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
 
     const existing = await db
       .select()
       .from(projectBudgets)
-      .where(and(eq(projectBudgets?.id, id), eq(projectBudgets?.userId, userId)))
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
       .limit(1);
 
     if (existing?.length === 0) {
       return res.status(404).json({ error: "Budget not found" });
     }
 
-    await db?.delete(budgetLineItems).where(eq(budgetLineItems?.budgetId, id));
+    await db.delete(budgetLineItems).where(eq(budgetLineItems.budgetId, id));
     await db
       .delete(projectBudgets)
-      .where(and(eq(projectBudgets?.id, id), eq(projectBudgets?.userId, userId)));
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)));
     res.json({ success: true });
   } catch (error) {
     logger.warn({ err: error }, "[ProjectBudgets] Failed to delete:");
@@ -162,15 +162,15 @@ router?.delete("/:id", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/:id/items", requireAuth, async (req, res) => {
+router.post("/:id/items", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
 
     const budget = await db
       .select()
       .from(projectBudgets)
-      .where(and(eq(projectBudgets?.id, id), eq(projectBudgets?.userId, userId)))
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
       .limit(1);
 
     if (budget?.length === 0) {
@@ -182,7 +182,7 @@ router?.post("/:id/items", requireAuth, async (req, res) => {
       budgetId: id,
       userId,
     });
-    const [item] = await db?.insert(budgetLineItems).values(data).returning();
+    const [item] = await db.insert(budgetLineItems).values(data).returning();
     res.status(201).json(item);
   } catch (error) {
     logger.warn({ err: error }, "[ProjectBudgets] Failed to create line item:");
@@ -195,16 +195,16 @@ router?.post("/:id/items", requireAuth, async (req, res) => {
   }
 });
 
-router?.put("/items/:id", requireAuth, async (req, res) => {
+router.put("/items/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
 
     const existing = await db
       .select()
       .from(budgetLineItems)
       .where(
-        and(eq(budgetLineItems?.id, id), eq(budgetLineItems?.userId, userId)),
+        and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)),
       )
       .limit(1);
 
@@ -220,7 +220,7 @@ router?.put("/items/:id", requireAuth, async (req, res) => {
       .update(budgetLineItems)
       .set(data)
       .where(
-        and(eq(budgetLineItems?.id, id), eq(budgetLineItems?.userId, userId)),
+        and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)),
       )
       .returning();
     res.json(item);
@@ -235,16 +235,16 @@ router?.put("/items/:id", requireAuth, async (req, res) => {
   }
 });
 
-router?.delete("/items/:id", requireAuth, async (req, res) => {
+router.delete("/items/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
 
     const existing = await db
       .select()
       .from(budgetLineItems)
       .where(
-        and(eq(budgetLineItems?.id, id), eq(budgetLineItems?.userId, userId)),
+        and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)),
       )
       .limit(1);
 
@@ -255,7 +255,7 @@ router?.delete("/items/:id", requireAuth, async (req, res) => {
     await db
       .delete(budgetLineItems)
       .where(
-        and(eq(budgetLineItems?.id, id), eq(budgetLineItems?.userId, userId)),
+        and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)),
       );
     res.json({ success: true });
   } catch (error) {

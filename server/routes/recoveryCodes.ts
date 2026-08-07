@@ -8,7 +8,7 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-router?.use(requireAuth);
+router.use(requireAuth);
 
 interface HashedCode {
   code: string;
@@ -44,7 +44,7 @@ async function getStore(userId: string): Promise<RecoveryCodeStore | null> {
   const [row] = await db
     .select({ preferences: users.preferences })
     .from(users)
-    .where(eq(users?.id, userId))
+    .where(eq(users.id, userId))
     .limit(1);
 
   const prefs = (row?.preferences ?? {}) as Record<string, any>;
@@ -58,7 +58,7 @@ async function saveStore(
   const [row] = await db
     .select({ preferences: users.preferences })
     .from(users)
-    .where(eq(users?.id, userId))
+    .where(eq(users.id, userId))
     .limit(1);
 
   const prefs = (row?.preferences ?? {}) as Record<string, any>;
@@ -67,10 +67,10 @@ async function saveStore(
   await db
     .update(users)
     .set({ preferences: prefs })
-    .where(eq(users?.id, userId));
+    .where(eq(users.id, userId));
 }
 
-router?.get("/status", async (req: Request, res: Response) => {
+router.get("/status", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const store = await getStore(userId);
@@ -98,7 +98,7 @@ router?.get("/status", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/generate", async (req: Request, res: Response) => {
+router.post("/generate", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
@@ -129,7 +129,7 @@ router?.post("/generate", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/verify", async (req: Request, res: Response) => {
+router.post("/verify", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { code } = req.body;

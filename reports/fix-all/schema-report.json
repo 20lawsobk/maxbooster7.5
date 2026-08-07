@@ -1,7 +1,13 @@
 {
-  "generatedAt": "2026-08-02T20:50:54.995Z",
+  "generatedAt": "2026-08-07T11:36:15.328Z",
   "addToSchemaCandidates": [],
   "latentBrokenReads": [
+    {
+      "table": "releases",
+      "column": "updatedAt",
+      "file": "server/database-performance-test.ts",
+      "line": 133
+    },
     {
       "table": "users",
       "column": "youtubeToken",
@@ -76,36 +82,6 @@
     },
     {
       "table": "users",
-      "column": "limit",
-      "file": "server/routes/billing.ts",
-      "line": 828
-    },
-    {
-      "table": "users",
-      "column": "limit",
-      "file": "server/routes/billing.ts",
-      "line": 962
-    },
-    {
-      "table": "users",
-      "column": "limit",
-      "file": "server/routes/billing.ts",
-      "line": 1342
-    },
-    {
-      "table": "users",
-      "column": "limit",
-      "file": "server/routes/billing.ts",
-      "line": 1505
-    },
-    {
-      "table": "users",
-      "column": "limit",
-      "file": "server/routes/billing.ts",
-      "line": 1535
-    },
-    {
-      "table": "users",
       "column": "displayName",
       "file": "server/routes/fanHub.ts",
       "line": 255
@@ -123,52 +99,28 @@
       "line": 361
     },
     {
-      "table": "projects",
-      "column": "name",
-      "file": "server/routes/studio.ts",
-      "line": 2468
-    },
-    {
-      "table": "projects",
-      "column": "name",
-      "file": "server/routes/studio.ts",
-      "line": 2515
-    },
-    {
-      "table": "studio_tracks",
-      "column": "trackNumber",
-      "file": "server/routes/studio.ts",
-      "line": 3207
-    },
-    {
-      "table": "studio_tracks",
-      "column": "trackNumber",
-      "file": "server/routes/studio.ts",
-      "line": 4844
-    },
-    {
       "table": "audio_clips",
       "column": "filePath",
       "file": "server/routes/studio.ts",
-      "line": 5539
+      "line": 5542
     },
     {
       "table": "audio_clips",
       "column": "originalFilename",
       "file": "server/routes/studio.ts",
-      "line": 5540
+      "line": 5543
     },
     {
       "table": "audio_clips",
       "column": "filePath",
       "file": "server/routes/studio.ts",
-      "line": 5616
+      "line": 5619
     },
     {
       "table": "audio_clips",
       "column": "originalFilename",
       "file": "server/routes/studio.ts",
-      "line": 5617
+      "line": 5620
     },
     {
       "table": "warp_markers",
@@ -357,132 +309,6 @@
       "line": 578
     },
     {
-      "table": "approval_workflows",
-      "column": "trigger",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 150
-    },
-    {
-      "table": "approval_requests",
-      "column": "workflowId",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 218
-    },
-    {
-      "table": "approval_steps",
-      "column": "stepNumber",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 352
-    },
-    {
-      "table": "approval_steps",
-      "column": "stepNumber",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 422
-    },
-    {
-      "table": "approval_steps",
-      "column": "stepNumber",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 471
-    },
-    {
-      "table": "approval_requests",
-      "column": "workflowId",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 488
-    },
-    {
-      "table": "approval_requests",
-      "column": "currentStep",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 492
-    },
-    {
-      "table": "approval_requests",
-      "column": "totalSteps",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 493
-    },
-    {
-      "table": "approval_requests",
-      "column": "metadata",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 494
-    },
-    {
-      "table": "approval_requests",
-      "column": "dueAt",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 495
-    },
-    {
-      "table": "approval_steps",
-      "column": "stepNumber",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 527
-    },
-    {
-      "table": "approval_steps",
-      "column": "dueAt",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 528
-    },
-    {
-      "table": "approval_requests",
-      "column": "metadata",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 533
-    },
-    {
-      "table": "approval_steps",
-      "column": "dueAt",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 547
-    },
-    {
-      "table": "approval_requests",
-      "column": "finalDecision",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 568
-    },
-    {
-      "table": "approval_requests",
-      "column": "finalComment",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 569
-    },
-    {
-      "table": "approval_requests",
-      "column": "completedAt",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 570
-    },
-    {
-      "table": "approval_requests",
-      "column": "completedAt",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 587
-    },
-    {
-      "table": "approval_requests",
-      "column": "dueAt",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 608
-    },
-    {
-      "table": "approval_requests",
-      "column": "dueAt",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 611
-    },
-    {
-      "table": "approval_steps",
-      "column": "stepNumber",
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 668
-    },
-    {
       "table": "audit_logs",
       "column": "resourceType",
       "file": "server/services/auditLoggerService.ts",
@@ -543,12 +369,6 @@
       "line": 609
     },
     {
-      "table": "catalog_import_rows",
-      "column": "rowNumber",
-      "file": "server/services/catalogImporter.ts",
-      "line": 695
-    },
-    {
       "table": "listener_cohorts",
       "column": "userId",
       "file": "server/services/cohortAnalyticsService.ts",
@@ -583,66 +403,6 @@
       "column": "cohortDate",
       "file": "server/services/cohortAnalyticsService.ts",
       "line": 144
-    },
-    {
-      "table": "take_groups",
-      "column": "startTime",
-      "file": "server/services/compingService.ts",
-      "line": 69
-    },
-    {
-      "table": "take_groups",
-      "column": "startTime",
-      "file": "server/services/compingService.ts",
-      "line": 82
-    },
-    {
-      "table": "take_lanes",
-      "column": "laneIndex",
-      "file": "server/services/compingService.ts",
-      "line": 195
-    },
-    {
-      "table": "take_segments",
-      "column": "takeGroupId",
-      "file": "server/services/compingService.ts",
-      "line": 299
-    },
-    {
-      "table": "take_segments",
-      "column": "takeGroupId",
-      "file": "server/services/compingService.ts",
-      "line": 365
-    },
-    {
-      "table": "take_segments",
-      "column": "isSelected",
-      "file": "server/services/compingService.ts",
-      "line": 366
-    },
-    {
-      "table": "comp_versions",
-      "column": "takeGroupId",
-      "file": "server/services/compingService.ts",
-      "line": 438
-    },
-    {
-      "table": "comp_versions",
-      "column": "versionNumber",
-      "file": "server/services/compingService.ts",
-      "line": 439
-    },
-    {
-      "table": "comp_versions",
-      "column": "takeGroupId",
-      "file": "server/services/compingService.ts",
-      "line": 456
-    },
-    {
-      "table": "take_segments",
-      "column": "takeGroupId",
-      "file": "server/services/compingService.ts",
-      "line": 475
     },
     {
       "table": "users",
@@ -807,132 +567,6 @@
       "line": 524
     },
     {
-      "table": "system_metrics",
-      "column": "metricName",
-      "file": "server/services/metricsService.ts",
-      "line": 35
-    },
-    {
-      "table": "system_metrics",
-      "column": "bucketStart",
-      "file": "server/services/metricsService.ts",
-      "line": 37
-    },
-    {
-      "table": "system_metrics",
-      "column": "resolutionSecs",
-      "file": "server/services/metricsService.ts",
-      "line": 38
-    },
-    {
-      "table": "system_metrics",
-      "column": "avgValue",
-      "file": "server/services/metricsService.ts",
-      "line": 41
-    },
-    {
-      "table": "system_metrics",
-      "column": "sampleCount",
-      "file": "server/services/metricsService.ts",
-      "line": 41
-    },
-    {
-      "table": "system_metrics",
-      "column": "sampleCount",
-      "file": "server/services/metricsService.ts",
-      "line": 41
-    },
-    {
-      "table": "system_metrics",
-      "column": "minValue",
-      "file": "server/services/metricsService.ts",
-      "line": 42
-    },
-    {
-      "table": "system_metrics",
-      "column": "maxValue",
-      "file": "server/services/metricsService.ts",
-      "line": 43
-    },
-    {
-      "table": "system_metrics",
-      "column": "sampleCount",
-      "file": "server/services/metricsService.ts",
-      "line": 44
-    },
-    {
-      "table": "system_metrics",
-      "column": "metricName",
-      "file": "server/services/metricsService.ts",
-      "line": 70
-    },
-    {
-      "table": "system_metrics",
-      "column": "bucketStart",
-      "file": "server/services/metricsService.ts",
-      "line": 71
-    },
-    {
-      "table": "system_metrics",
-      "column": "bucketStart",
-      "file": "server/services/metricsService.ts",
-      "line": 72
-    },
-    {
-      "table": "system_metrics",
-      "column": "bucketStart",
-      "file": "server/services/metricsService.ts",
-      "line": 81
-    },
-    {
-      "table": "system_metrics",
-      "column": "avgValue",
-      "file": "server/services/metricsService.ts",
-      "line": 82
-    },
-    {
-      "table": "system_metrics",
-      "column": "minValue",
-      "file": "server/services/metricsService.ts",
-      "line": 83
-    },
-    {
-      "table": "system_metrics",
-      "column": "maxValue",
-      "file": "server/services/metricsService.ts",
-      "line": 84
-    },
-    {
-      "table": "system_metrics",
-      "column": "bucketStart",
-      "file": "server/services/metricsService.ts",
-      "line": 88
-    },
-    {
-      "table": "alert_incidents",
-      "column": "ruleId",
-      "file": "server/services/metricsService.ts",
-      "line": 164
-    },
-    {
-      "table": "alert_incidents",
-      "column": "ruleId",
-      "file": "server/services/metricsService.ts",
-      "line": 195
-    },
-    {
-      "table": "alert_incidents",
-      "column": "ruleId",
-      "file": "server/services/metricsService.ts",
-      "line": 217
-    },
-    {
-      "table": "alert_incidents",
-      "column": "triggeredAt",
-      "file": "server/services/metricsService.ts",
-      "line": 219
-    },
-    {
       "table": "analytics",
       "column": "totalStreams",
       "file": "server/services/musicCareerAnalyticsService.ts",
@@ -1077,12 +711,6 @@
       "line": 532
     },
     {
-      "table": "studio_tracks",
-      "column": "mute",
-      "file": "server/services/stemExportService.ts",
-      "line": 577
-    },
-    {
       "table": "users",
       "column": "isAdmin",
       "file": "server/services/supportTicketService.ts",
@@ -1113,47 +741,71 @@
       "line": 140
     }
   ],
-  "removedWriteKeys": [
+  "removalCandidates": [
     {
-      "file": "server/routes/studio.ts",
-      "line": 3357,
-      "key": "trackNumber",
-      "table": "studio_tracks"
+      "file": "server/routes/onboarding.ts",
+      "line": 129,
+      "key": "displayName",
+      "table": "users"
+    },
+    {
+      "file": "server/routes/storefront.ts",
+      "line": 696,
+      "key": "description",
+      "table": "users"
     },
     {
       "file": "server/routes/webhooks/stripe.ts",
-      "line": 283,
+      "line": 186,
       "key": "stripeSubscriptionId",
       "table": "users"
     },
     {
       "file": "server/routes/webhooks/stripe.ts",
-      "line": 236,
+      "line": 232,
+      "key": "stripeSubscriptionId",
+      "table": "users"
+    },
+    {
+      "file": "server/routes/webhooks/stripe.ts",
+      "line": 279,
       "key": "stripeSubscriptionId",
       "table": "users"
     },
     {
       "file": "server/services/approvalWorkflowService.ts",
-      "line": 637,
-      "key": "escalatedAt",
+      "line": 182,
+      "key": "updatedAt",
+      "table": "approval_workflows"
+    },
+    {
+      "file": "server/services/approvalWorkflowService.ts",
+      "line": 370,
+      "key": "decision",
+      "table": "approval_steps"
+    },
+    {
+      "file": "server/services/approvalWorkflowService.ts",
+      "line": 382,
+      "key": "completedAt",
       "table": "approval_requests"
     },
     {
       "file": "server/services/approvalWorkflowService.ts",
-      "line": 410,
+      "line": 398,
+      "key": "completedAt",
+      "table": "approval_requests"
+    },
+    {
+      "file": "server/services/approvalWorkflowService.ts",
+      "line": 411,
       "key": "currentStep",
       "table": "approval_requests"
     },
     {
       "file": "server/services/approvalWorkflowService.ts",
-      "line": 397,
-      "key": "completedAt",
-      "table": "approval_requests"
-    },
-    {
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 381,
-      "key": "completedAt",
+      "line": 638,
+      "key": "escalatedAt",
       "table": "approval_requests"
     },
     {
@@ -1164,63 +816,33 @@
     },
     {
       "file": "server/services/compingService.ts",
-      "line": 555,
-      "key": "renderedClipId",
-      "table": "comp_versions"
-    },
-    {
-      "file": "server/services/compingService.ts",
-      "line": 550,
-      "key": "status",
-      "table": "audio_clips"
-    },
-    {
-      "file": "server/services/compingService.ts",
-      "line": 466,
+      "line": 49,
       "key": "activeCompVersionId",
       "table": "take_groups"
     },
     {
       "file": "server/services/compingService.ts",
-      "line": 329,
-      "key": "updatedAt",
-      "table": "take_segments"
-    },
-    {
-      "file": "server/services/compingService.ts",
-      "line": 254,
-      "key": "laneIndex",
-      "table": "take_lanes"
-    },
-    {
-      "file": "server/services/compingService.ts",
-      "line": 239,
+      "line": 242,
       "key": "takeCount",
       "table": "take_groups"
     },
     {
       "file": "server/services/compingService.ts",
-      "line": 211,
-      "key": "updatedAt",
-      "table": "take_lanes"
-    },
-    {
-      "file": "server/services/compingService.ts",
-      "line": 46,
+      "line": 469,
       "key": "activeCompVersionId",
       "table": "take_groups"
     },
     {
       "file": "server/services/compingService.ts",
-      "line": 43,
-      "key": "activeCompVersionId",
+      "line": 483,
+      "key": "takeGroupId",
       "table": "take_groups"
     },
     {
-      "file": "server/services/consentService.ts",
-      "line": 156,
-      "key": "marketingConsent",
-      "table": "users"
+      "file": "server/services/compingService.ts",
+      "line": 585,
+      "key": "startTime",
+      "table": "comp_versions"
     },
     {
       "file": "server/services/consentService.ts",
@@ -1229,10 +851,16 @@
       "table": "users"
     },
     {
+      "file": "server/services/consentService.ts",
+      "line": 156,
+      "key": "marketingConsent",
+      "table": "users"
+    },
+    {
       "file": "server/services/dmcaService.ts",
-      "line": 402,
-      "key": "isActive",
-      "table": "legal_holds"
+      "line": 206,
+      "key": "processedAt",
+      "table": "dmca_notices"
     },
     {
       "file": "server/services/dmcaService.ts",
@@ -1242,9 +870,9 @@
     },
     {
       "file": "server/services/dmcaService.ts",
-      "line": 206,
-      "key": "processedAt",
-      "table": "dmca_notices"
+      "line": 402,
+      "key": "isActive",
+      "table": "legal_holds"
     },
     {
       "file": "server/services/dynamicTrendsService.ts",
@@ -1254,21 +882,15 @@
     },
     {
       "file": "server/services/identifierService.ts",
-      "line": 480,
-      "key": "status",
-      "table": "upc_registry"
-    },
-    {
-      "file": "server/services/identifierService.ts",
       "line": 466,
       "key": "status",
       "table": "isrc_registry"
     },
     {
-      "file": "server/services/instantPayoutService.ts",
-      "line": 1395,
-      "key": "updatedAt",
-      "table": "users"
+      "file": "server/services/identifierService.ts",
+      "line": 480,
+      "key": "status",
+      "table": "upc_registry"
     },
     {
       "file": "server/services/instantPayoutService.ts",
@@ -1277,10 +899,10 @@
       "table": "users"
     },
     {
-      "file": "server/services/metricsService.ts",
-      "line": 41,
-      "key": "avgValue",
-      "table": "system_metrics"
+      "file": "server/services/instantPayoutService.ts",
+      "line": 1393,
+      "key": "updatedAt",
+      "table": "users"
     },
     {
       "file": "server/services/rbacService.ts",
@@ -1290,20 +912,8 @@
     },
     {
       "file": "server/services/recoupmentService.ts",
-      "line": 676,
-      "key": "crossCollateralized",
-      "table": "recoupment_accounts"
-    },
-    {
-      "file": "server/services/recoupmentService.ts",
-      "line": 627,
-      "key": "transactions",
-      "table": "recoupment_accounts"
-    },
-    {
-      "file": "server/services/recoupmentService.ts",
-      "line": 515,
-      "key": "transactions",
+      "line": 421,
+      "key": "terms",
       "table": "recoupment_accounts"
     },
     {
@@ -1314,9 +924,27 @@
     },
     {
       "file": "server/services/recoupmentService.ts",
-      "line": 421,
-      "key": "terms",
+      "line": 515,
+      "key": "transactions",
       "table": "recoupment_accounts"
+    },
+    {
+      "file": "server/services/recoupmentService.ts",
+      "line": 627,
+      "key": "transactions",
+      "table": "recoupment_accounts"
+    },
+    {
+      "file": "server/services/recoupmentService.ts",
+      "line": 676,
+      "key": "crossCollateralized",
+      "table": "recoupment_accounts"
+    },
+    {
+      "file": "server/services/releaseScheduler.ts",
+      "line": 350,
+      "key": "updatedAt",
+      "table": "releases"
     },
     {
       "file": "server/services/releaseScheduler.ts",
@@ -1326,7 +954,13 @@
     },
     {
       "file": "server/services/releaseScheduler.ts",
-      "line": 350,
+      "line": 570,
+      "key": "errorMessage",
+      "table": "release_scheduled_actions"
+    },
+    {
+      "file": "server/services/releaseWorkflowService.ts",
+      "line": 155,
       "key": "updatedAt",
       "table": "releases"
     },
@@ -1337,16 +971,16 @@
       "table": "releases"
     },
     {
-      "file": "server/services/releaseWorkflowService.ts",
-      "line": 155,
-      "key": "updatedAt",
-      "table": "releases"
+      "file": "server/services/royaltyDispute.ts",
+      "line": 331,
+      "key": "communicationLog",
+      "table": "royalty_disputes"
     },
     {
       "file": "server/services/royaltyDispute.ts",
-      "line": 607,
-      "key": "payableAmount",
-      "table": "royalty_statements"
+      "line": 363,
+      "key": "supportingDocuments",
+      "table": "royalty_disputes"
     },
     {
       "file": "server/services/royaltyDispute.ts",
@@ -1356,14 +990,8 @@
     },
     {
       "file": "server/services/royaltyDispute.ts",
-      "line": 331,
-      "key": "communicationLog",
-      "table": "royalty_disputes"
-    },
-    {
-      "file": "server/services/royaltyEngine.ts",
-      "line": 844,
-      "key": "paidAt",
+      "line": 607,
+      "key": "payableAmount",
       "table": "royalty_statements"
     },
     {
@@ -1373,10 +1001,10 @@
       "table": "royalty_statements"
     },
     {
-      "file": "server/services/socialQueueService.ts",
-      "line": 424,
-      "key": "updatedAt",
-      "table": "scheduled_post_batches"
+      "file": "server/services/royaltyEngine.ts",
+      "line": 844,
+      "key": "paidAt",
+      "table": "royalty_statements"
     },
     {
       "file": "server/services/socialQueueService.ts",
@@ -1385,51 +1013,15 @@
       "table": "scheduled_post_batches"
     },
     {
-      "file": "server/services/ssoService.ts",
-      "line": 900,
-      "key": "syncStatus",
-      "table": "sso_configs"
-    },
-    {
-      "file": "server/services/ssoService.ts",
-      "line": 805,
+      "file": "server/services/socialQueueService.ts",
+      "line": 424,
       "key": "updatedAt",
-      "table": "workspace_members"
+      "table": "scheduled_post_batches"
     },
     {
       "file": "server/services/ssoService.ts",
-      "line": 742,
-      "key": "updatedAt",
-      "table": "workspace_members"
-    },
-    {
-      "file": "server/services/ssoService.ts",
-      "line": 733,
-      "key": "updatedAt",
-      "table": "users"
-    },
-    {
-      "file": "server/services/ssoService.ts",
-      "line": 369,
-      "key": "scimToken",
-      "table": "sso_configs"
-    },
-    {
-      "file": "server/services/ssoService.ts",
-      "line": 330,
-      "key": "scimEnabled",
-      "table": "sso_configs"
-    },
-    {
-      "file": "server/services/ssoService.ts",
-      "line": 292,
-      "key": "scimEnabled",
-      "table": "sso_configs"
-    },
-    {
-      "file": "server/services/ssoService.ts",
-      "line": 250,
-      "key": "enabled",
+      "line": 125,
+      "key": "attributeMapping",
       "table": "sso_configs"
     },
     {
@@ -1440,8 +1032,50 @@
     },
     {
       "file": "server/services/ssoService.ts",
-      "line": 125,
-      "key": "attributeMapping",
+      "line": 250,
+      "key": "enabled",
+      "table": "sso_configs"
+    },
+    {
+      "file": "server/services/ssoService.ts",
+      "line": 292,
+      "key": "scimEnabled",
+      "table": "sso_configs"
+    },
+    {
+      "file": "server/services/ssoService.ts",
+      "line": 330,
+      "key": "scimEnabled",
+      "table": "sso_configs"
+    },
+    {
+      "file": "server/services/ssoService.ts",
+      "line": 369,
+      "key": "scimToken",
+      "table": "sso_configs"
+    },
+    {
+      "file": "server/services/ssoService.ts",
+      "line": 733,
+      "key": "updatedAt",
+      "table": "users"
+    },
+    {
+      "file": "server/services/ssoService.ts",
+      "line": 742,
+      "key": "updatedAt",
+      "table": "workspace_members"
+    },
+    {
+      "file": "server/services/ssoService.ts",
+      "line": 805,
+      "key": "updatedAt",
+      "table": "workspace_members"
+    },
+    {
+      "file": "server/services/ssoService.ts",
+      "line": 900,
+      "key": "syncStatus",
       "table": "sso_configs"
     },
     {
@@ -1452,33 +1086,33 @@
     },
     {
       "file": "server/services/stemExportService.ts",
-      "line": 992,
+      "line": 247,
+      "key": "currentTrack",
+      "table": "stem_exports"
+    },
+    {
+      "file": "server/services/stemExportService.ts",
+      "line": 268,
+      "key": "currentTrack",
+      "table": "stem_exports"
+    },
+    {
+      "file": "server/services/stemExportService.ts",
+      "line": 300,
+      "key": "currentTrack",
+      "table": "stem_exports"
+    },
+    {
+      "file": "server/services/stemExportService.ts",
+      "line": 322,
       "key": "errorMessage",
       "table": "stem_exports"
     },
     {
       "file": "server/services/stemExportService.ts",
-      "line": 302,
-      "key": "currentTrack",
+      "line": 990,
+      "key": "errorMessage",
       "table": "stem_exports"
-    },
-    {
-      "file": "server/services/stemExportService.ts",
-      "line": 270,
-      "key": "currentTrack",
-      "table": "stem_exports"
-    },
-    {
-      "file": "server/services/stemExportService.ts",
-      "line": 249,
-      "key": "currentTrack",
-      "table": "stem_exports"
-    },
-    {
-      "file": "server/services/storefrontService.ts",
-      "line": 968,
-      "key": "cancelAtPeriodEnd",
-      "table": "customer_memberships"
     },
     {
       "file": "server/services/storefrontService.ts",
@@ -1487,10 +1121,10 @@
       "table": "membership_tiers"
     },
     {
-      "file": "server/services/workspaceService.ts",
-      "line": 482,
-      "key": "updatedAt",
-      "table": "workspace_members"
+      "file": "server/services/storefrontService.ts",
+      "line": 968,
+      "key": "cancelAtPeriodEnd",
+      "table": "customer_memberships"
     },
     {
       "file": "server/services/workspaceService.ts",
@@ -1499,16 +1133,22 @@
       "table": "workspaces"
     },
     {
-      "file": "server/storage.ts",
-      "line": 2536,
+      "file": "server/services/workspaceService.ts",
+      "line": 482,
       "key": "updatedAt",
-      "table": "hyperfollow_pages"
+      "table": "workspace_members"
     },
     {
       "file": "server/storage.ts",
       "line": 2160,
       "key": "updatedAt",
       "table": "dsp_providers"
+    },
+    {
+      "file": "server/storage.ts",
+      "line": 2536,
+      "key": "updatedAt",
+      "table": "hyperfollow_pages"
     }
   ],
   "keptWriteSites": [
@@ -1516,238 +1156,225 @@
       "file": "server/automation-system.ts",
       "line": 541,
       "key": "scheduled",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/init-admin.ts",
       "line": 124,
       "key": "role",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/middleware/selfHealingMiddleware.ts",
       "line": 103,
       "key": "statusCode",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
       "line": 21,
       "key": "compression",
-      "table": null
-    },
-    {
-      "file": "server/routes.ts",
-      "line": 7458,
-      "key": "subscriptionTier",
-      "table": null
-    },
-    {
-      "file": "server/routes.ts",
-      "line": 1311,
-      "key": "dataExportStatus",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/routes.ts",
       "line": 1302,
       "key": "dataExportRequestedAt",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
+    },
+    {
+      "file": "server/routes.ts",
+      "line": 1311,
+      "key": "dataExportStatus",
+      "table": null,
+      "reason": "table-unresolved"
+    },
+    {
+      "file": "server/routes.ts",
+      "line": 7459,
+      "key": "subscriptionTier",
+      "table": null,
+      "reason": "table-unresolved"
+    },
+    {
+      "file": "server/routes/accessibility.ts",
+      "line": 180,
+      "key": "accessibilityPreferences",
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/routes/accessibility.ts",
       "line": 206,
       "key": "accessibilityPreferences",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
-      "file": "server/routes/accessibility.ts",
-      "line": 180,
-      "key": "accessibilityPreferences",
-      "table": null
+      "file": "server/routes/admin/metrics.ts",
+      "line": 100,
+      "key": "metricName",
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/routes/advertising.ts",
       "line": 437,
       "key": "campaignObjective",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/routes/ai.ts",
       "line": 78,
       "key": "customPrompt",
-      "table": null
-    },
-    {
-      "file": "server/routes/dualAutopilot.ts",
-      "line": 651,
-      "key": "id",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/routes/dualAutopilot.ts",
       "line": 545,
       "key": "id",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
+    },
+    {
+      "file": "server/routes/dualAutopilot.ts",
+      "line": 651,
+      "key": "id",
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/routes/notifications.ts",
       "line": 77,
       "key": "silentSync",
-      "table": null
-    },
-    {
-      "file": "server/routes/onboarding.ts",
-      "line": 129,
-      "key": "displayName",
-      "table": "users",
-      "reason": "value-not-safely-removable"
-    },
-    {
-      "file": "server/routes/storefront.ts",
-      "line": 696,
-      "key": "description",
-      "table": "users",
-      "reason": "value-not-safely-removable"
-    },
-    {
-      "file": "server/routes/webhooks/stripe.ts",
-      "line": 190,
-      "key": "stripeSubscriptionId",
-      "table": "users",
-      "reason": "value-not-safely-removable"
-    },
-    {
-      "file": "server/safety/autonomousRBAC.ts",
-      "line": 178,
-      "key": "\"content:read\"",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/safety/autonomousRBAC.ts",
       "line": 165,
       "key": "\"content:read\"",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
-      "file": "server/services/aiContentService.ts",
-      "line": 512,
-      "key": "voiceProfile",
-      "table": "user_brand_voices",
-      "reason": "value-not-safely-removable"
-    },
-    {
-      "file": "server/services/approvalWorkflowService.ts",
-      "line": 369,
-      "key": "decision",
-      "table": "approval_steps",
-      "reason": "value-not-safely-removable"
+      "file": "server/safety/autonomousRBAC.ts",
+      "line": 178,
+      "key": "\"content:read\"",
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/autonomousService.ts",
       "line": 417,
       "key": "topic",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/chainErrorAutoFixer.ts",
-      "line": 1877,
+      "line": 1878,
       "key": "unknownErrors",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/compingService.ts",
-      "line": 167,
-      "key": "takeCount",
-      "table": "take_groups",
-      "reason": "value-not-safely-removable"
+      "line": 594,
+      "key": "audioClipId",
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
-      "file": "server/services/melodyPatternService.ts",
-      "line": 859,
-      "key": "hits",
-      "table": null
+      "file": "server/services/compingService.ts",
+      "line": 605,
+      "key": "takeGroupId",
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/melodyPatternService.ts",
       "line": 515,
       "key": "hits",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
+    },
+    {
+      "file": "server/services/melodyPatternService.ts",
+      "line": 859,
+      "key": "hits",
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/musicWorkflowAutomationService.ts",
-      "line": 1625,
+      "line": 1633,
       "key": "type",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
       "line": 21,
       "key": "compression",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/registrar/MaxBoosterRegistrarProvider.ts",
       "line": 204,
       "key": "legalName",
-      "table": null
-    },
-    {
-      "file": "server/services/releaseScheduler.ts",
-      "line": 570,
-      "key": "errorMessage",
-      "table": "release_scheduled_actions",
-      "reason": "value-not-safely-removable"
-    },
-    {
-      "file": "server/services/royaltyDispute.ts",
-      "line": 363,
-      "key": "supportingDocuments",
-      "table": "royalty_disputes",
-      "reason": "value-not-safely-removable"
-    },
-    {
-      "file": "server/services/royaltyDispute.ts",
-      "line": 240,
-      "key": "lastActivityAt",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/royaltyDispute.ts",
       "line": 125,
       "key": "statementId",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
+    },
+    {
+      "file": "server/services/royaltyDispute.ts",
+      "line": 240,
+      "key": "lastActivityAt",
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/royaltyEngine.ts",
       "line": 769,
       "key": "statementPeriod",
-      "table": null
-    },
-    {
-      "file": "server/services/stemExportService.ts",
-      "line": 324,
-      "key": "errorMessage",
-      "table": "stem_exports",
-      "reason": "value-not-safely-removable"
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/storefrontService.ts",
       "line": 687,
       "key": "description",
-      "table": null
-    },
-    {
-      "file": "server/services/yjsService.ts",
-      "line": 216,
-      "key": "snapshotHash",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
     },
     {
       "file": "server/services/yjsService.ts",
       "line": 180,
       "key": "snapshotHash",
-      "table": null
+      "table": null,
+      "reason": "table-unresolved"
+    },
+    {
+      "file": "server/services/yjsService.ts",
+      "line": 216,
+      "key": "snapshotHash",
+      "table": null,
+      "reason": "table-unresolved"
     }
   ]
 }

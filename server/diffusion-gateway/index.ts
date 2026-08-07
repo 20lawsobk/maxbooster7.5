@@ -528,8 +528,8 @@ async function syncMemoryToPdim() {
 // ── Express server ─────────────────────────────────────────────────────────────
 
 const app = express();
-app?.use(express?.json({ limit: "50mb" }));
-app?.use((req, _res, next) => {
+app.use(express?.json({ limit: "50mb" }));
+app.use((req, _res, next) => {
   if (req.path !== "/health" && req.path !== "/ready") {
     console?.log(`[DiffGateway] ${req.method} ${req.path}`);
   }
@@ -537,7 +537,7 @@ app?.use((req, _res, next) => {
 });
 
 // GET /health
-app?.get("/health", (_req: Request, res: Response) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.json({
     status: "healthy",
     model_loaded: true,
@@ -549,7 +549,7 @@ app?.get("/health", (_req: Request, res: Response) => {
 });
 
 // GET /ready
-app?.get("/ready", (_req: Request, res: Response) => {
+app.get("/ready", (_req: Request, res: Response) => {
   res.json({
     ready: true,
     model_trained: tState.trained,
@@ -559,7 +559,7 @@ app?.get("/ready", (_req: Request, res: Response) => {
 });
 
 // GET /status
-app?.get("/status", (_req: Request, res: Response) => {
+app.get("/status", (_req: Request, res: Response) => {
   const elapsedS = sim?.running ? (Date?.now() - sim?.sessionStartTs) / 1000 : 0;
   const yeProg = yeProgress(elapsedS);
 
@@ -615,7 +615,7 @@ app?.get("/status", (_req: Request, res: Response) => {
 });
 
 // GET /gpu/status
-app?.get("/gpu/status", (_req: Request, res: Response) => {
+app.get("/gpu/status", (_req: Request, res: Response) => {
   res.json({
     backend: "node-relay",
     device: "cpu",
@@ -629,7 +629,7 @@ app?.get("/gpu/status", (_req: Request, res: Response) => {
 });
 
 // GET /train/status
-app?.get("/train/status", (_req: Request, res: Response) => {
+app.get("/train/status", (_req: Request, res: Response) => {
   const elapsedS = sim?.running ? (Date?.now() - sim?.sessionStartTs) / 1000 : 0;
   res.json({
     running: sim.running,
@@ -647,7 +647,7 @@ app?.get("/train/status", (_req: Request, res: Response) => {
 });
 
 // GET /train/simulator/status
-app?.get("/train/simulator/status", (_req: Request, res: Response) => {
+app.get("/train/simulator/status", (_req: Request, res: Response) => {
   const elapsedS = sim?.running ? (Date?.now() - sim?.sessionStartTs) / 1000 : 0;
   const elapsedMin = elapsedS / 60;
   const simYearsThis = SIMULATED_YEARS_PER_WALL_MINUTE * elapsedMin;
@@ -686,7 +686,7 @@ app?.get("/train/simulator/status", (_req: Request, res: Response) => {
 });
 
 // POST /train — trigger a manual training session
-app?.post("/train", async (req: Request, res: Response) => {
+app.post("/train", async (req: Request, res: Response) => {
   if (sim?.running && sim?.mode === "manual") {
     return res
       .status(409)
@@ -720,7 +720,7 @@ app?.post("/train", async (req: Request, res: Response) => {
 });
 
 // POST /generate — relay to MaxCore
-app?.post("/generate", async (req: Request, res: Response) => {
+app.post("/generate", async (req: Request, res: Response) => {
   if (!MC_URL || !MC_KEY) {
     return res
       .status(503)
@@ -755,7 +755,7 @@ app?.post("/generate", async (req: Request, res: Response) => {
 });
 
 // POST /generate/keyframe — relay single frame to MaxCore
-app?.post("/generate/keyframe", async (req: Request, res: Response) => {
+app.post("/generate/keyframe", async (req: Request, res: Response) => {
   if (!MC_URL || !MC_KEY) {
     return res.status(503).json({ error: "MaxCore remote not configured" });
   }
@@ -781,7 +781,7 @@ app?.post("/generate/keyframe", async (req: Request, res: Response) => {
 });
 
 // POST /memory/sync — force-flush memory state to PDIM
-app?.post("/memory/sync", async (_req: Request, res: Response) => {
+app.post("/memory/sync", async (_req: Request, res: Response) => {
   lastPdimSync = 0; // reset rate limit
   await syncMemoryToPdim();
   res.json({
@@ -792,7 +792,7 @@ app?.post("/memory/sync", async (_req: Request, res: Response) => {
 });
 
 // POST /memory/flush — persist memory?.json to disk immediately
-app?.post("/memory/flush", (_req: Request, res: Response) => {
+app.post("/memory/flush", (_req: Request, res: Response) => {
   saveJson(MEMORY_PATH, mState);
   saveJson(TRAINING_STATE, tState);
   res.json({ ok: true, flushed_at: new Date().toISOString() });
@@ -800,7 +800,7 @@ app?.post("/memory/flush", (_req: Request, res: Response) => {
 
 // ── Start ──────────────────────────────────────────────────────────────────────
 
-app?.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, "0.0.0.0", () => {
   console?.log(
     `[DiffGateway] MaxCore Diffusion Gateway listening on port ${PORT}`,
   );

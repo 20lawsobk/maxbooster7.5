@@ -64,8 +64,8 @@ class BridgeInsightsService {
       const patterns = await db
         .select()
         .from(socialPatternAggregates)
-        .where(eq(socialPatternAggregates?.userId, userId))
-        .orderBy(desc(socialPatternAggregates?.avgImpact))
+        .where(eq(socialPatternAggregates.userId, userId))
+        .orderBy(desc(socialPatternAggregates.avgImpact))
         .limit(TOP_K_PATTERNS);
 
       if (patterns?.length === 0) {
@@ -137,13 +137,13 @@ class BridgeInsightsService {
       const assets = await db
         .select()
         .from(organicAssets)
-        .where(eq(organicAssets?.userId, userId));
+        .where(eq(organicAssets.userId, userId));
 
       const channels = await db
         .select()
         .from(organicChannels)
-        .where(eq(organicChannels?.userId, userId))
-        .orderBy(desc(organicChannels?.efficiencyScore))
+        .where(eq(organicChannels.userId, userId))
+        .orderBy(desc(organicChannels.efficiencyScore))
         .limit(TOP_K_CHANNELS);
 
       if (assets?.length === 0 && channels?.length === 0) {
@@ -298,7 +298,7 @@ class BridgeInsightsService {
         .where(
           sql`${autopilotCrossInsights.userId} = ${userId} AND ${autopilotCrossInsights.insightType} = ${type}`,
         )
-        .orderBy(desc(autopilotCrossInsights?.generatedAt))
+        .orderBy(desc(autopilotCrossInsights.generatedAt))
         .limit(1);
 
       return insight ?? null;
@@ -483,8 +483,8 @@ class BridgeInsightsService {
       const allInsights = await db
         .select()
         .from(autopilotCrossInsights)
-        .where(eq(autopilotCrossInsights?.userId, userId))
-        .orderBy(desc(autopilotCrossInsights?.generatedAt));
+        .where(eq(autopilotCrossInsights.userId, userId))
+        .orderBy(desc(autopilotCrossInsights.generatedAt));
 
       const socialToOrganicRaw = allInsights?.find(
         (i) => i?.insightType === "social_to_organic",

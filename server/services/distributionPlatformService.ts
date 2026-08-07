@@ -48,7 +48,7 @@ export async function submitToProvider(
     throw new Error(`Provider ${providerSlug} not found`);
   }
 
-  const dispatch = await storage?.createDistroDispatch({
+  const dispatch = await storage.createDistroDispatch({
     releaseId,
     providerId: provider.id,
     status: "queued",

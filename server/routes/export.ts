@@ -226,12 +226,12 @@ function simulateExportProgress(jobId: string): void {
 // ============================================================================
 
 // Start audio export
-router?.post(
+router.post(
   "/audio/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req.params;
+      const { projectId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const validation = audioExportSchema?.safeParse(req.body);
@@ -294,9 +294,9 @@ router?.post(
 );
 
 // Get export job status
-router?.get("/jobs/:jobId", requireAuth, async (req: Request, res: Response) => {
+router.get("/jobs/:jobId", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { jobId } = req.params;
+    const { jobId } = req.params as Record<string, string>;
     const userId = req.user!.id;
 
     const job = exportJobs?.get(jobId);
@@ -316,7 +316,7 @@ router?.get("/jobs/:jobId", requireAuth, async (req: Request, res: Response) => 
 });
 
 // Get all active export jobs for user
-router?.get("/jobs", requireAuth, async (req: Request, res: Response) => {
+router.get("/jobs", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
@@ -334,12 +334,12 @@ router?.get("/jobs", requireAuth, async (req: Request, res: Response) => {
 });
 
 // Cancel export job
-router?.post(
+router.post(
   "/jobs/:jobId/cancel",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req.params;
+      const { jobId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const job = exportJobs?.get(jobId);
@@ -365,12 +365,12 @@ router?.post(
 );
 
 // Retry failed export job
-router?.post(
+router.post(
   "/jobs/:jobId/retry",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req.params;
+      const { jobId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const job = exportJobs?.get(jobId);
@@ -413,7 +413,7 @@ router?.post(
 // ============================================================================
 
 // Start data export
-router?.post("/data", requireAuth, async (req: Request, res: Response) => {
+router.post("/data", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
@@ -480,7 +480,7 @@ router?.post("/data", requireAuth, async (req: Request, res: Response) => {
 // ============================================================================
 
 // Get export history
-router?.get("/history", requireAuth, async (req: Request, res: Response) => {
+router.get("/history", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { type, status, limit = "50", offset = "0" } = req.query;
@@ -514,12 +514,12 @@ router?.get("/history", requireAuth, async (req: Request, res: Response) => {
 });
 
 // Delete export history item
-router?.delete(
+router.delete(
   "/history/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const index = exportHistory?.findIndex(
@@ -543,7 +543,7 @@ router?.delete(
 // ============================================================================
 
 // Create share link
-router?.post(
+router.post(
   "/share-links",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -591,7 +591,7 @@ router?.post(
 );
 
 // Get all share links for user
-router?.get("/share-links", requireAuth, async (req: Request, res: Response) => {
+router.get("/share-links", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
@@ -610,9 +610,9 @@ router?.get("/share-links", requireAuth, async (req: Request, res: Response) => 
 });
 
 // Get share link by short code (public)
-router?.get("/share/:shortCode", async (req: Request, res: Response) => {
+router.get("/share/:shortCode", async (req: Request, res: Response) => {
   try {
-    const { shortCode } = req.params;
+    const { shortCode } = req.params as Record<string, string>;
 
     const [link] = await db
       .select()
@@ -655,9 +655,9 @@ router?.get("/share/:shortCode", async (req: Request, res: Response) => {
 });
 
 // Verify share link password
-router?.post("/share/:shortCode/verify", async (req: Request, res: Response) => {
+router.post("/share/:shortCode/verify", async (req: Request, res: Response) => {
   try {
-    const { shortCode } = req.params;
+    const { shortCode } = req.params as Record<string, string>;
     const { email } = req.body;
 
     const [link] = await db
@@ -700,11 +700,11 @@ router?.post("/share/:shortCode/verify", async (req: Request, res: Response) => 
 });
 
 // Download via share link
-router?.get(
+router.get(
   "/share/:shortCode/download",
   async (req: Request, res: Response) => {
     try {
-      const { shortCode } = req.params;
+      const { shortCode } = req.params as Record<string, string>;
 
       const [link] = await db
         .select()
@@ -748,12 +748,12 @@ router?.get(
 );
 
 // Revoke share link
-router?.delete(
+router.delete(
   "/share-links/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const [link] = await db
@@ -783,12 +783,12 @@ router?.delete(
 );
 
 // Update share link
-router?.patch(
+router.patch(
   "/share-links/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const userId = req.user!.id;
       const updates = req.body;
 
@@ -835,12 +835,12 @@ router?.patch(
 // ============================================================================
 
 // Download exported file
-router?.get(
+router.get(
   "/download/:jobId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req.params;
+      const { jobId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const job = exportJobs?.get(jobId);
@@ -881,7 +881,7 @@ router?.get(
 // ============================================================================
 
 // Start batch export
-router?.post("/batch", requireAuth, async (req: Request, res: Response) => {
+router.post("/batch", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { outputs, projectId, projectName } = req.body;
@@ -944,7 +944,7 @@ router?.post("/batch", requireAuth, async (req: Request, res: Response) => {
 // ANALYTICS EXPORT
 // ============================================================================
 
-router?.post("/analytics", requireAuth, async (req: Request, res: Response) => {
+router.post("/analytics", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { format, sections, filters, dateRange, includeCharts } = req.body;
@@ -1012,12 +1012,12 @@ const reportTypeSchema = z.object({
   emailDelivery: z.boolean().default(false),
 });
 
-router?.post(
+router.post(
   "/report/:type",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { type } = req.params;
+      const { type } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       if (!reportTypes?.includes(type as ReportType)) {
@@ -1120,7 +1120,7 @@ const chartExportSchema = z.object({
     .optional(),
 });
 
-router?.post("/chart", requireAuth, async (req: Request, res: Response) => {
+router.post("/chart", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
@@ -1223,7 +1223,7 @@ const bulkExportSchema = z.object({
   }),
 });
 
-router?.post("/bulk", requireAuth, async (req: Request, res: Response) => {
+router.post("/bulk", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
@@ -1288,12 +1288,12 @@ router?.post("/bulk", requireAuth, async (req: Request, res: Response) => {
 });
 
 // Download bulk export ZIP
-router?.get(
+router.get(
   "/download/zip/:jobId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req.params;
+      const { jobId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const job = exportJobs?.get(jobId);
@@ -1356,12 +1356,12 @@ const masteredExportSchema = z.object({
   fileName: z.string().min(1).max(255),
 });
 
-router?.post(
+router.post(
   "/audio/:projectId/mastered",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req.params;
+      const { projectId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const validation = masteredExportSchema?.safeParse(req.body);
@@ -1484,12 +1484,12 @@ const stemsExportSchema = z.object({
   bundleAsZip: z.boolean().default(true),
 });
 
-router?.post(
+router.post(
   "/audio/:projectId/stems",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req.params;
+      const { projectId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const validation = stemsExportSchema?.safeParse(req.body);
@@ -1547,12 +1547,12 @@ router?.post(
 // STATUS ENDPOINT (alias for jobs/:jobId)
 // ============================================================================
 
-router?.get(
+router.get(
   "/status/:exportId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { exportId } = req.params;
+      const { exportId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
       const job = exportJobs?.get(exportId);
@@ -1594,12 +1594,12 @@ router?.get(
 // NOTIFY LARGE EXPORT (email simulation)
 // ============================================================================
 
-router?.post(
+router.post(
   "/notify/:jobId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req.params;
+      const { jobId } = req.params as Record<string, string>;
       const userId = req.user!.id;
       const { email } = req.body;
 

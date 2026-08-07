@@ -134,7 +134,7 @@ function validateInput(body: unknown): {
 
 // ─── POST /api/content/generate-unified ──────────────────────────────────────
 
-router?.post("/", requireAuth, async (req: Request, res: Response) => {
+router.post("/", requireAuth, async (req: Request, res: Response) => {
   const { valid, error, input } = validateInput(req.body);
   if (!valid || !input) {
     res.status(400).json({ error });
@@ -173,7 +173,7 @@ router?.post("/", requireAuth, async (req: Request, res: Response) => {
 
 // ─── POST /api/content/generate-unified/artist-only ──────────────────────────
 
-router?.post(
+router.post(
   "/artist-only",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -205,7 +205,7 @@ router?.post(
 
 // ─── POST /api/content/generate-unified/maxbooster-only ──────────────────────
 
-router?.post(
+router.post(
   "/maxbooster-only",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -237,7 +237,7 @@ router?.post(
 
 // ─── POST /api/content/generate-unified/platform/:platform ───────────────────
 
-router?.post(
+router.post(
   "/platform/:platform",
   requireAuth,
   async (req: Request, res: Response) => {
@@ -279,7 +279,7 @@ router?.post(
 
 // ─── GET /api/content/generate-unified/platforms ─────────────────────────────
 
-router?.get("/platforms", (_req: Request, res: Response) => {
+router.get("/platforms", (_req: Request, res: Response) => {
   res.json({
     platforms: ALL_PLATFORMS.map((p) => ({
       id: p,
@@ -290,7 +290,7 @@ router?.get("/platforms", (_req: Request, res: Response) => {
 
 // ─── GET /api/content/generate-unified/features ──────────────────────────────
 
-router?.get("/features", (_req: Request, res: Response) => {
+router.get("/features", (_req: Request, res: Response) => {
   res.json({
     features: MAX_BOOSTER_FEATURES.map((f) => ({
       id: f.id,

@@ -11,7 +11,7 @@ const generateForecastSchema = z.object({
   months: z.number().min(1).max(24).optional().default(12),
 });
 
-router?.get(
+router.get(
   "/",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -33,7 +33,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/projections",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -56,7 +56,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/accuracy",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -78,7 +78,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/rate",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -104,7 +104,7 @@ router?.get(
   }),
 );
 
-router?.post(
+router.post(
   "/generate",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -131,7 +131,7 @@ router?.post(
   }),
 );
 
-router?.delete(
+router.delete(
   "/:id",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {

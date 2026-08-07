@@ -8,7 +8,7 @@ import { notificationService } from "../services/notificationService.js";
 
 const router = Router();
 
-router?.use(requireAuth);
+router.use(requireAuth);
 
 const getDefaultPermissions = (provider: string) => {
   const basePermissions = [
@@ -75,7 +75,7 @@ function getAccountStatus(
   return "connected";
 }
 
-router?.get("/", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const accounts = await db
@@ -83,8 +83,8 @@ router?.get("/", async (req: Request, res: Response) => {
       .from(socialAccounts)
       .where(
         and(
-          eq(socialAccounts?.userId, userId),
-          eq(socialAccounts?.isActive, true),
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.isActive, true),
         ),
       )
       .limit(50);
@@ -135,18 +135,18 @@ router?.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router?.delete("/:accountId", async (req: Request, res: Response) => {
+router.delete("/:accountId", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { accountId } = req.params;
+    const { accountId } = req.params as Record<string, string>;
 
     const result = await db
       .update(socialAccounts)
       .set({ isActive: false })
       .where(
         and(
-          eq(socialAccounts?.id, accountId),
-          eq(socialAccounts?.userId, userId),
+          eq(socialAccounts.id, accountId),
+          eq(socialAccounts.userId, userId),
         ),
       )
       .returning({ id: socialAccounts.id });
@@ -162,10 +162,10 @@ router?.delete("/:accountId", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
+router.post("/:accountId/refresh", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { accountId } = req.params;
+    const { accountId } = req.params as Record<string, string>;
 
     const now = new Date();
     const result = await db
@@ -173,8 +173,8 @@ router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
       .set({ createdAt: now })
       .where(
         and(
-          eq(socialAccounts?.id, accountId),
-          eq(socialAccounts?.userId, userId),
+          eq(socialAccounts.id, accountId),
+          eq(socialAccounts.userId, userId),
         ),
       )
       .returning({ id: socialAccounts.id });
@@ -197,7 +197,7 @@ router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/manual-token", async (req: Request, res: Response) => {
+router.post("/manual-token", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const {
@@ -240,8 +240,8 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
       .from(socialAccounts)
       .where(
         and(
-          eq(socialAccounts?.userId, userId),
-          eq(socialAccounts?.platform, platform),
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, platform),
         ),
       )
       .limit(5);
@@ -261,7 +261,7 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
           tokenExpiresAt,
           isActive: true,
         })
-        .where(eq(socialAccounts?.id, existing[0].id));
+        .where(eq(socialAccounts.id, existing[0].id));
 
       logger.info(`[ManualToken] Updated ${platform} token for user ${userId}`);
       res.json({
@@ -297,10 +297,10 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
   }
 });
 
-router?.put("/:accountId/permissions", async (req: Request, res: Response) => {
+router.put("/:accountId/permissions", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { accountId } = req.params;
+    const { accountId } = req.params as Record<string, string>;
     const permissionUpdates = req.body;
 
     const accounts = await db
@@ -308,8 +308,8 @@ router?.put("/:accountId/permissions", async (req: Request, res: Response) => {
       .from(socialAccounts)
       .where(
         and(
-          eq(socialAccounts?.id, accountId),
-          eq(socialAccounts?.userId, userId),
+          eq(socialAccounts.id, accountId),
+          eq(socialAccounts.userId, userId),
         ),
       )
       .limit(1);

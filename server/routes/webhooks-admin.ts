@@ -14,10 +14,10 @@ const requireAdmin: RequestHandler = (req, res, next) => {
   next();
 };
 
-router?.use(requireAdmin);
-router?.use(require2FA);
+router.use(requireAdmin);
+router.use(require2FA);
 
-router?.get("/dead-letter", async (_req, res) => {
+router.get("/dead-letter", async (_req, res) => {
   try {
     res.json({
       items: [],
@@ -31,7 +31,7 @@ router?.get("/dead-letter", async (_req, res) => {
   }
 });
 
-router?.post("/dead-letter/:id/retry", async (req, res) => {
+router.post("/dead-letter/:id/retry", async (req, res) => {
   try {
     const { id } = req.params;
     logger.info(`Retrying webhook: ${id}`);
@@ -42,7 +42,7 @@ router?.post("/dead-letter/:id/retry", async (req, res) => {
   }
 });
 
-router?.post("/:id/retry", async (req, res) => {
+router.post("/:id/retry", async (req, res) => {
   try {
     const { id } = req.params;
     logger.info(`Retrying webhook: ${id}`);
@@ -53,7 +53,7 @@ router?.post("/:id/retry", async (req, res) => {
   }
 });
 
-router?.delete("/dead-letter/:id", async (req, res) => {
+router.delete("/dead-letter/:id", async (req, res) => {
   try {
     const { id } = req.params;
     logger.info(`Deleted webhook from dead letter: ${id}`);

@@ -15,7 +15,7 @@ const historyQuerySchema = z.object({
     .optional(),
 });
 
-router?.get(
+router.get(
   "/dashboard",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -38,7 +38,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/history",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -73,7 +73,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/milestones",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -96,7 +96,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/growth-metrics",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -119,7 +119,7 @@ router?.get(
   }),
 );
 
-router?.post(
+router.post(
   "/capture-snapshot",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {

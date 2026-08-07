@@ -42,12 +42,12 @@ class OnboardingService {
       const tasks = await db
         .select()
         .from(onboardingTasks)
-        .orderBy(asc(onboardingTasks?.order));
+        .orderBy(asc(onboardingTasks.order));
 
       let userProgress = await db
         .select()
         .from(userOnboarding)
-        .where(eq(userOnboarding?.userId, userId))
+        .where(eq(userOnboarding.userId, userId))
         .limit(1);
 
       if (userProgress?.length === 0) {
@@ -94,8 +94,8 @@ class OnboardingService {
         .from(userStreaks)
         .where(
           and(
-            eq(userStreaks?.userId, userId),
-            eq(userStreaks?.streakType, "login"),
+            eq(userStreaks.userId, userId),
+            eq(userStreaks.streakType, "login"),
           ),
         )
         .limit(1);
@@ -135,7 +135,7 @@ class OnboardingService {
       const task = await db
         .select()
         .from(onboardingTasks)
-        .where(eq(onboardingTasks?.id, stepId))
+        .where(eq(onboardingTasks.id, stepId))
         .limit(1);
 
       if (task?.length === 0) {
@@ -151,7 +151,7 @@ class OnboardingService {
       let userProgress = await db
         .select()
         .from(userOnboarding)
-        .where(eq(userOnboarding?.userId, userId))
+        .where(eq(userOnboarding.userId, userId))
         .limit(1);
 
       if (userProgress?.length === 0) {
@@ -185,7 +185,7 @@ class OnboardingService {
       const newCompletedSteps = [...completedSteps, stepId];
       const newTotalPoints = (progress?.totalPoints || 0) + pointsAwarded;
 
-      const allTasks = await db?.select().from(onboardingTasks).limit(200);
+      const allTasks = await db.select().from(onboardingTasks).limit(200);
       const allCompleted = allTasks?.every((t) =>
         newCompletedSteps?.includes(t?.id),
       );
@@ -218,7 +218,7 @@ class OnboardingService {
           completedAt: allCompleted ? today : null,
           updatedAt: today,
         })
-        .where(eq(userOnboarding?.userId, userId));
+        .where(eq(userOnboarding.userId, userId));
 
       if (allCompleted) {
         await db
@@ -227,7 +227,7 @@ class OnboardingService {
             onboardingCompleted: true,
             onboardingStep: newCompletedSteps.length,
           })
-          .where(eq(users?.id, userId));
+          .where(eq(users.id, userId));
       }
 
       return {
@@ -252,11 +252,11 @@ class OnboardingService {
       const existing = await db
         .select()
         .from(userOnboarding)
-        .where(eq(userOnboarding?.userId, userId))
+        .where(eq(userOnboarding.userId, userId))
         .limit(1);
 
       if (existing?.length === 0) {
-        await db?.insert(userOnboarding).values({
+        await db.insert(userOnboarding).values({
           userId,
           currentStep: 0,
           completedSteps: [],
@@ -271,7 +271,7 @@ class OnboardingService {
             skippedAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(userOnboarding?.userId, userId));
+          .where(eq(userOnboarding.userId, userId));
       }
 
       await db
@@ -279,7 +279,7 @@ class OnboardingService {
         .set({
           onboardingCompleted: true,
         })
-        .where(eq(users?.id, userId));
+        .where(eq(users.id, userId));
 
       return {
         success: true,
@@ -302,12 +302,12 @@ class OnboardingService {
         const allTasks = await db
           .select()
           .from(onboardingTasks)
-          .orderBy(asc(onboardingTasks?.order));
+          .orderBy(asc(onboardingTasks.order));
 
         const userProgress = await db
           .select()
           .from(userOnboarding)
-          .where(eq(userOnboarding?.userId, userId))
+          .where(eq(userOnboarding.userId, userId))
           .limit(1);
 
         const completedSteps =
@@ -365,7 +365,7 @@ class OnboardingService {
       const tasks = await db
         .select()
         .from(onboardingTasks)
-        .orderBy(asc(onboardingTasks?.order));
+        .orderBy(asc(onboardingTasks.order));
 
       return tasks?.map((task) => ({
         id: task.id,
@@ -387,7 +387,7 @@ class OnboardingService {
 
   async seedDefaultTasks(): Promise<void> {
     try {
-      const existingTasks = await db?.select().from(onboardingTasks);
+      const existingTasks = await db.select().from(onboardingTasks);
       if (existingTasks?.length > 0) {
         logger.info("Onboarding tasks already seeded, skipping...");
         return;
@@ -506,7 +506,7 @@ class OnboardingService {
         },
       ];
 
-      await db?.insert(onboardingTasks).values(defaultTasks);
+      await db.insert(onboardingTasks).values(defaultTasks);
       logger.info(`Seeded ${defaultTasks?.length} default onboarding tasks`);
     } catch (error) {
       logger.warn({ err: error }, "Error seeding onboarding tasks:");
@@ -516,7 +516,7 @@ class OnboardingService {
 
   async ensureAITasksExist(): Promise<void> {
     try {
-      const existingTasks = await db?.select().from(onboardingTasks);
+      const existingTasks = await db.select().from(onboardingTasks);
       const existingNames = existingTasks?.map((t) => t?.name);
 
       const aiTasks = [
@@ -560,7 +560,7 @@ class OnboardingService {
       );
 
       if (tasksToInsert?.length > 0) {
-        await db?.insert(onboardingTasks).values(tasksToInsert);
+        await db.insert(onboardingTasks).values(tasksToInsert);
         logger.info(
           `Added ${tasksToInsert?.length} AI-related onboarding tasks`,
         );

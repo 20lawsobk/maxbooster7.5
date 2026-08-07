@@ -28,7 +28,7 @@ const VALID_PACKS = new Set<PackId>(Object.keys(PACK_DEFINITIONS) as PackId[]);
 
 // POST /api/multimodal/generate
 // Full multimodal content generation: normalise → plan → workers → package
-router?.post(
+router.post(
   "/generate",
   requireAuthOnly,
   async (req: Request, res: Response) => {
@@ -86,7 +86,7 @@ router?.post(
 );
 
 // GET /api/multimodal/platform-rules  — return all platform rules (for maxcore and frontend)
-router?.get(
+router.get(
   "/platform-rules",
   requireAuthOnly,
   (_req: Request, res: Response) => {
@@ -95,7 +95,7 @@ router?.get(
 );
 
 // GET /api/multimodal/platform-rules/:platform  — rules for a single platform
-router?.get(
+router.get(
   "/platform-rules/:platform",
   requireAuthOnly,
   (req: Request, res: Response) => {
@@ -109,7 +109,7 @@ router?.get(
 );
 
 // GET /api/multimodal/packs  — list available pack definitions
-router?.get("/packs", requireAuthOnly, (_req: Request, res: Response) => {
+router.get("/packs", requireAuthOnly, (_req: Request, res: Response) => {
   const packs = Object.entries(PACK_DEFINITIONS).map(([id, slots]) => ({
     id,
     slotCount: slots.length,

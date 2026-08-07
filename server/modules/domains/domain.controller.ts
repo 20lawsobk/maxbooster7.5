@@ -131,7 +131,7 @@ export async function checkManaged(req: Request, res: Response) {
     const existing = await db
       .select({ id: storefrontDomains.id })
       .from(storefrontDomains)
-      .where(eq(storefrontDomains?.domain, fqdn))
+      .where(eq(storefrontDomains.domain, fqdn))
       .limit(1);
 
     return res.json({
@@ -168,7 +168,7 @@ export async function reserveManaged(req: Request, res: Response) {
     const [sf] = await db
       .select({ id: storefronts.id, userId: storefronts.userId })
       .from(storefronts)
-      .where(eq(storefronts?.id, storefrontId))
+      .where(eq(storefronts.id, storefrontId))
       .limit(1);
 
     if (!sf)
@@ -184,7 +184,7 @@ export async function reserveManaged(req: Request, res: Response) {
     const existing = await db
       .select({ id: storefrontDomains.id })
       .from(storefrontDomains)
-      .where(eq(storefrontDomains?.domain, fqdn))
+      .where(eq(storefrontDomains.domain, fqdn))
       .limit(1);
 
     if (existing?.length > 0)
@@ -192,7 +192,7 @@ export async function reserveManaged(req: Request, res: Response) {
         .status(409)
         .json({ ok: false, error: "Domain already taken." });
 
-    // Also check storefronts?.subdomain uniqueness early — the column has a DB
+    // Also check storefronts.subdomain uniqueness early — the column has a DB
     // unique constraint.  Without this check, the INSERT below can succeed but
     // the subsequent UPDATE throws a constraint violation (unlogged 500).
     const subdomainTaken = await db
@@ -200,8 +200,8 @@ export async function reserveManaged(req: Request, res: Response) {
       .from(storefronts)
       .where(
         and(
-          eq(storefronts?.subdomain, label),
-          eq(storefronts?.isSubdomainActive, true),
+          eq(storefronts.subdomain, label),
+          eq(storefronts.isSubdomainActive, true),
         ),
       )
       .limit(1);
@@ -223,14 +223,14 @@ export async function reserveManaged(req: Request, res: Response) {
       .returning();
 
     // Activate subdomain routing: update the storefront row so static?.ts can resolve it
-    // by querying storefronts?.subdomain + isSubdomainActive (only set if not already taken).
+    // by querying storefronts.subdomain + isSubdomainActive (only set if not already taken).
     await db
       .update(storefronts)
       .set({ subdomain: label, isSubdomainActive: true, updatedAt: new Date() })
       .where(
         and(
-          eq(storefronts?.id, storefrontId),
-          eq(storefronts?.isSubdomainActive, false),
+          eq(storefronts.id, storefrontId),
+          eq(storefronts.isSubdomainActive, false),
         ),
       );
 
@@ -444,7 +444,7 @@ export async function verifyCustomDomain(req: Request, res: Response) {
         isCustomDomainActive: true,
         updatedAt: new Date(),
       })
-      .where(eq(storefronts?.id, record?.storefrontId));
+      .where(eq(storefronts.id, record?.storefrontId));
 
     logger.info(`[domains] Custom domain verified and activated: ${domain}`);
     return res.json({ ok: true, verified: true, domain });
@@ -461,11 +461,11 @@ export async function listDomains(req: Request, res: Response) {
     if (!req.isAuthenticated())
       return res.status(401).json({ ok: false, error: "Unauthorized." });
 
-    const { storefrontId } = req.params;
+    const { storefrontId } = req.params as Record<string, string>;
     const [sf] = await db
       .select({ userId: storefronts.userId })
       .from(storefronts)
-      .where(eq(storefronts?.id, storefrontId))
+      .where(eq(storefronts.id, storefrontId))
       .limit(1);
 
     if (!sf)
@@ -478,7 +478,7 @@ export async function listDomains(req: Request, res: Response) {
     const domains = await db
       .select()
       .from(storefrontDomains)
-      .where(eq(storefrontDomains?.storefrontId, storefrontId));
+      .where(eq(storefrontDomains.storefrontId, storefrontId));
 
     return res.json({ ok: true, domains });
   } catch (err) {
@@ -492,11 +492,11 @@ export async function deleteDomain(req: Request, res: Response) {
     if (!req.isAuthenticated())
       return res.status(401).json({ ok: false, error: "Unauthorized." });
 
-    const { domainId } = req.params;
+    const { domainId } = req.params as Record<string, string>;
     const [record] = await db
       .select()
       .from(storefrontDomains)
-      .where(eq(storefrontDomains?.id, domainId))
+      .where(eq(storefrontDomains.id, domainId))
       .limit(1);
 
     if (!record)
@@ -505,7 +505,7 @@ export async function deleteDomain(req: Request, res: Response) {
     const [sf] = await db
       .select({ userId: storefronts.userId })
       .from(storefronts)
-      .where(eq(storefronts?.id, record?.storefrontId))
+      .where(eq(storefronts.id, record?.storefrontId))
       .limit(1);
 
     if (sf?.userId !== (req.user as unknown as Record<string, unknown>).id)
@@ -513,19 +513,19 @@ export async function deleteDomain(req: Request, res: Response) {
 
     await db
       .delete(storefrontDomains)
-      .where(eq(storefrontDomains?.id, domainId));
+      .where(eq(storefrontDomains.id, domainId));
 
     // Clean up storefront_hosts so edge routing stops serving this domain
     await db
       .delete(storefrontHosts)
-      .where(eq(storefrontHosts?.host, record?.domain));
+      .where(eq(storefrontHosts.host, record?.domain));
     if (
       !record?.domain.startsWith("www.") &&
       record?.domain.split(".").length === 2
     ) {
       await db
         .delete(storefrontHosts)
-        .where(eq(storefrontHosts?.host, `www.${record?.domain}`));
+        .where(eq(storefrontHosts.host, `www.${record?.domain}`));
     }
 
     return res.json({ ok: true });

@@ -26,7 +26,7 @@ const createGoalSchema = z.object({
   deadline: z.string().datetime().optional(),
 });
 
-router?.get(
+router.get(
   "/recommendations",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -65,7 +65,7 @@ router?.get(
   }),
 );
 
-router?.post(
+router.post(
   "/dismiss/:id",
   requireAuth,
   requireSafeParam("id"),
@@ -101,7 +101,7 @@ router?.post(
   }),
 );
 
-router?.post(
+router.post(
   "/complete/:id",
   requireAuth,
   requireSafeParam("id"),
@@ -137,7 +137,7 @@ router?.post(
   }),
 );
 
-router?.get(
+router.get(
   "/goals",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -169,7 +169,7 @@ router?.get(
   }),
 );
 
-router?.post(
+router.post(
   "/goals",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -205,7 +205,7 @@ router?.post(
   }),
 );
 
-router?.delete(
+router.delete(
   "/goals/:id",
   requireAuth,
   requireSafeParam("id"),
@@ -228,7 +228,7 @@ router?.delete(
   }),
 );
 
-router?.put(
+router.put(
   "/goals/:id",
   requireAuth,
   requireSafeParam("id"),
@@ -270,7 +270,7 @@ const smartGoalTypeSchema = z
   .enum(["streams", "followers", "revenue", "releases", "posts", "playlists"])
   .default("streams");
 
-router?.post(
+router.post(
   "/goals/smart",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -301,7 +301,7 @@ router?.post(
   }),
 );
 
-router?.patch(
+router.patch(
   "/goals/:id/progress",
   requireAuth,
   requireSafeParam("id"),
@@ -346,7 +346,7 @@ router?.patch(
   }),
 );
 
-router?.get(
+router.get(
   "/analyze",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -371,7 +371,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/patterns",
   requireAuth,
   asyncHandler(async (_req: any, res: any) => {
@@ -385,7 +385,7 @@ router?.get(
   }),
 );
 
-router?.get(
+router.get(
   "/insights",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
@@ -407,27 +407,27 @@ router?.get(
       ] = await Promise?.all([
         db
           .select({
-            streams: sum(analytics?.streams),
-            followers: sum(analytics?.followers),
+            streams: sum(analytics.streams),
+            followers: sum(analytics.followers),
           })
           .from(analytics)
           .where(
             and(
-              eq(analytics?.userId, userId),
-              gte(analytics?.date, thirtyDaysAgo),
+              eq(analytics.userId, userId),
+              gte(analytics.date, thirtyDaysAgo),
             ),
           ),
         db
           .select({
-            streams: sum(analytics?.streams),
-            followers: sum(analytics?.followers),
+            streams: sum(analytics.streams),
+            followers: sum(analytics.followers),
           })
           .from(analytics)
           .where(
             and(
-              eq(analytics?.userId, userId),
-              gte(analytics?.date, sixtyDaysAgo),
-              lte(analytics?.date, thirtyDaysAgo),
+              eq(analytics.userId, userId),
+              gte(analytics.date, sixtyDaysAgo),
+              lte(analytics.date, thirtyDaysAgo),
             ),
           ),
         db
@@ -435,8 +435,8 @@ router?.get(
           .from(releases)
           .where(
             and(
-              eq(releases?.userId, userId),
-              gte(releases?.createdAt, ninetyDaysAgo),
+              eq(releases.userId, userId),
+              gte(releases.createdAt, ninetyDaysAgo),
             ),
           )
           .limit(500),
@@ -445,38 +445,38 @@ router?.get(
           .from(releases)
           .where(
             and(
-              eq(releases?.userId, userId),
+              eq(releases.userId, userId),
               gte(
-                releases?.createdAt,
+                releases.createdAt,
                 new Date(now?.getTime() - 180 * 24 * 60 * 60 * 1000),
               ),
             ),
           )
           .limit(500),
         db
-          .select({ total: sum(royaltyTransactions?.amount) })
+          .select({ total: sum(royaltyTransactions.amount) })
           .from(royaltyTransactions)
           .where(
             and(
-              eq(royaltyTransactions?.userId, userId),
-              gte(royaltyTransactions?.createdAt, thirtyDaysAgo),
+              eq(royaltyTransactions.userId, userId),
+              gte(royaltyTransactions.createdAt, thirtyDaysAgo),
             ),
           ),
         db
-          .select({ total: sum(royaltyTransactions?.amount) })
+          .select({ total: sum(royaltyTransactions.amount) })
           .from(royaltyTransactions)
           .where(
             and(
-              eq(royaltyTransactions?.userId, userId),
-              gte(royaltyTransactions?.createdAt, sixtyDaysAgo),
-              lte(royaltyTransactions?.createdAt, thirtyDaysAgo),
+              eq(royaltyTransactions.userId, userId),
+              gte(royaltyTransactions.createdAt, sixtyDaysAgo),
+              lte(royaltyTransactions.createdAt, thirtyDaysAgo),
             ),
           ),
         db
           .select({ id: posts.id })
           .from(posts)
           .where(
-            and(eq(posts?.userId, userId), gte(posts?.createdAt, thirtyDaysAgo)),
+            and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo)),
           )
           .limit(500),
       ]);
@@ -712,7 +712,7 @@ const CAREER_KNOWLEDGE: Record<
 const DEFAULT_RESPONSE =
   "Great question! As your AI Career Coach, I'm here to help you navigate the music industry. I can advise on topics like social media strategy, release planning, marketing campaigns, revenue diversification, audience growth, artist branding, live performance, and how to use Max Booster's tools to their full potential. What specific area of your music career would you like to focus on?";
 
-router?.post(
+router.post(
   "/chat",
   requireAuth,
   asyncHandler(async (req: any, res: any) => {

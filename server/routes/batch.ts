@@ -43,7 +43,7 @@ function createBatchResult(
   };
 }
 
-router?.post("/releases/submit", async (req: Request, res: Response) => {
+router.post("/releases/submit", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -64,7 +64,7 @@ router?.post("/releases/submit", async (req: Request, res: Response) => {
           .update(distroReleases)
           .set({ status: "pending" })
           .where(
-            and(eq(distroReleases?.id, id), eq(distroReleases?.artistId, userId)),
+            and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)),
           )
           .returning({ id: distroReleases.id });
         if (result?.length === 0)
@@ -89,7 +89,7 @@ router?.post("/releases/submit", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/releases/takedown", async (req: Request, res: Response) => {
+router.post("/releases/takedown", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -110,7 +110,7 @@ router?.post("/releases/takedown", async (req: Request, res: Response) => {
           .update(distroReleases)
           .set({ status: "takedown" })
           .where(
-            and(eq(distroReleases?.id, id), eq(distroReleases?.artistId, userId)),
+            and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)),
           )
           .returning({ id: distroReleases.id });
         if (result?.length === 0)
@@ -135,7 +135,7 @@ router?.post("/releases/takedown", async (req: Request, res: Response) => {
   }
 });
 
-router?.put("/releases/update", async (req: Request, res: Response) => {
+router.put("/releases/update", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -164,7 +164,7 @@ router?.put("/releases/update", async (req: Request, res: Response) => {
           .update(distroReleases)
           .set(allowedUpdate)
           .where(
-            and(eq(distroReleases?.id, id), eq(distroReleases?.artistId, userId)),
+            and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)),
           )
           .returning({ id: distroReleases.id });
         if (result?.length === 0)
@@ -189,7 +189,7 @@ router?.put("/releases/update", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/releases/delete", async (req: Request, res: Response) => {
+router.post("/releases/delete", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -210,7 +210,7 @@ router?.post("/releases/delete", async (req: Request, res: Response) => {
           .update(distroReleases)
           .set({ status: "deleted" })
           .where(
-            and(eq(distroReleases?.id, id), eq(distroReleases?.artistId, userId)),
+            and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)),
           )
           .returning({ id: distroReleases.id });
         if (result?.length === 0)
@@ -235,7 +235,7 @@ router?.post("/releases/delete", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/posts/schedule", async (req: Request, res: Response) => {
+router.post("/posts/schedule", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -258,7 +258,7 @@ router?.post("/posts/schedule", async (req: Request, res: Response) => {
         const result = await db
           .update(posts)
           .set({ scheduledAt, status: "scheduled" })
-          .where(and(eq(posts?.id, id), eq(posts?.userId, userId)))
+          .where(and(eq(posts.id, id), eq(posts.userId, userId)))
           .returning({ id: posts.id });
         if (result?.length === 0)
           throw new Error("Post not found or access denied");
@@ -282,7 +282,7 @@ router?.post("/posts/schedule", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/posts/delete", async (req: Request, res: Response) => {
+router.post("/posts/delete", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -301,7 +301,7 @@ router?.post("/posts/delete", async (req: Request, res: Response) => {
       ids?.map(async (id) => {
         const result = await db
           .delete(posts)
-          .where(and(eq(posts?.id, id), eq(posts?.userId, userId)))
+          .where(and(eq(posts.id, id), eq(posts.userId, userId)))
           .returning({ id: posts.id });
         if (result?.length === 0)
           throw new Error("Post not found or access denied");
@@ -325,7 +325,7 @@ router?.post("/posts/delete", async (req: Request, res: Response) => {
   }
 });
 
-router?.put("/posts/update", async (req: Request, res: Response) => {
+router.put("/posts/update", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -353,7 +353,7 @@ router?.put("/posts/update", async (req: Request, res: Response) => {
         const result = await db
           .update(posts)
           .set(allowedUpdate)
-          .where(and(eq(posts?.id, id), eq(posts?.userId, userId)))
+          .where(and(eq(posts.id, id), eq(posts.userId, userId)))
           .returning({ id: posts.id });
         if (result?.length === 0)
           throw new Error("Post not found or access denied");
@@ -377,7 +377,7 @@ router?.put("/posts/update", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/files/delete", async (req: Request, res: Response) => {
+router.post("/files/delete", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -399,8 +399,8 @@ router?.post("/files/delete", async (req: Request, res: Response) => {
           .set({ deletedAt: new Date() })
           .where(
             and(
-              eq(userStorageFiles?.id, id),
-              eq(userStorageFiles?.userId, userId),
+              eq(userStorageFiles.id, id),
+              eq(userStorageFiles.userId, userId),
             ),
           )
           .returning({ id: userStorageFiles.id });
@@ -426,7 +426,7 @@ router?.post("/files/delete", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/files/move", async (req: Request, res: Response) => {
+router.post("/files/move", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -449,8 +449,8 @@ router?.post("/files/move", async (req: Request, res: Response) => {
           .set({ folder: targetFolder })
           .where(
             and(
-              eq(userStorageFiles?.id, id),
-              eq(userStorageFiles?.userId, userId),
+              eq(userStorageFiles.id, id),
+              eq(userStorageFiles.userId, userId),
             ),
           )
           .returning({ id: userStorageFiles.id });
@@ -476,7 +476,7 @@ router?.post("/files/move", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/files/download", async (req: Request, res: Response) => {
+router.post("/files/download", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -498,9 +498,9 @@ router?.post("/files/download", async (req: Request, res: Response) => {
           .from(userStorageFiles)
           .where(
             and(
-              eq(userStorageFiles?.id, id),
-              eq(userStorageFiles?.userId, userId),
-              isNull(userStorageFiles?.deletedAt),
+              eq(userStorageFiles.id, id),
+              eq(userStorageFiles.userId, userId),
+              isNull(userStorageFiles.deletedAt),
             ),
           )
           .limit(1);
@@ -533,7 +533,7 @@ router?.post("/files/download", async (req: Request, res: Response) => {
   }
 });
 
-router?.put("/files/update", async (req: Request, res: Response) => {
+router.put("/files/update", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -563,8 +563,8 @@ router?.put("/files/update", async (req: Request, res: Response) => {
           .set(allowedUpdate)
           .where(
             and(
-              eq(userStorageFiles?.id, id),
-              eq(userStorageFiles?.userId, userId),
+              eq(userStorageFiles.id, id),
+              eq(userStorageFiles.userId, userId),
             ),
           )
           .returning({ id: userStorageFiles.id });
@@ -590,7 +590,7 @@ router?.put("/files/update", async (req: Request, res: Response) => {
   }
 });
 
-router?.put("/marketplace/update", async (req: Request, res: Response) => {
+router.put("/marketplace/update", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -620,7 +620,7 @@ router?.put("/marketplace/update", async (req: Request, res: Response) => {
         const result = await db
           .update(listings)
           .set(allowedUpdate)
-          .where(and(eq(listings?.id, id), eq(listings?.userId, userId)))
+          .where(and(eq(listings.id, id), eq(listings.userId, userId)))
           .returning({ id: listings.id });
         if (result?.length === 0)
           throw new Error("Listing not found or access denied");
@@ -644,7 +644,7 @@ router?.put("/marketplace/update", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/marketplace/delete", async (req: Request, res: Response) => {
+router.post("/marketplace/delete", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -664,7 +664,7 @@ router?.post("/marketplace/delete", async (req: Request, res: Response) => {
         const result = await db
           .update(listings)
           .set({ isPublished: false })
-          .where(and(eq(listings?.id, id), eq(listings?.userId, userId)))
+          .where(and(eq(listings.id, id), eq(listings.userId, userId)))
           .returning({ id: listings.id });
         if (result?.length === 0)
           throw new Error("Listing not found or access denied");
@@ -688,7 +688,7 @@ router?.post("/marketplace/delete", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/analytics/export", async (req: Request, res: Response) => {
+router.post("/analytics/export", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -713,9 +713,9 @@ router?.post("/analytics/export", async (req: Request, res: Response) => {
       })
       .from(analytics)
       .where(
-        and(eq(analytics?.userId, userId), inArray(analytics?.platform, ids)),
+        and(eq(analytics.userId, userId), inArray(analytics.platform, ids)),
       )
-      .orderBy(desc(analytics?.date));
+      .orderBy(desc(analytics.date));
 
     const exportId = `export_${Date?.now()}`;
 
@@ -745,7 +745,7 @@ router?.post("/analytics/export", async (req: Request, res: Response) => {
   }
 });
 
-router?.get(
+router.get(
   "/analytics/export/:exportId/download",
   async (req: Request, res: Response) => {
     try {
@@ -753,7 +753,7 @@ router?.get(
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { exportId } = req.params;
+      const { exportId } = req.params as Record<string, string>;
       const job = batchJobs?.get(exportId);
 
       if (!job || !job?.exportData) {
@@ -797,7 +797,7 @@ router?.get(
   },
 );
 
-router?.post("/analytics/compare", async (req: Request, res: Response) => {
+router.post("/analytics/compare", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -813,13 +813,13 @@ router?.post("/analytics/compare", async (req: Request, res: Response) => {
     const analyticsData = await db
       .select({
         platform: analytics.platform,
-        streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
-        revenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
-        listeners: sql<number>`COALESCE(SUM(${analytics?.totalListeners}), 0)`,
+        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+        listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
       })
       .from(analytics)
-      .where(eq(analytics?.userId, userId))
-      .groupBy(analytics?.platform);
+      .where(eq(analytics.userId, userId))
+      .groupBy(analytics.platform);
 
     const analyticsMap = new Map(analyticsData?.map((a) => [a?.platform, a]));
 
@@ -884,7 +884,7 @@ setInterval(
   10 * 60 * 1000,
 ).unref();
 
-router?.post("/tracks/move", async (req: Request, res: Response) => {
+router.post("/tracks/move", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -910,7 +910,7 @@ router?.post("/tracks/move", async (req: Request, res: Response) => {
         const result = await db
           .update(studioTracks)
           .set(updatePayload)
-          .where(eq(studioTracks?.id, id))
+          .where(eq(studioTracks.id, id))
           .returning({ id: studioTracks.id });
         if (result?.length === 0) throw new Error("Track not found");
         return id;
@@ -933,7 +933,7 @@ router?.post("/tracks/move", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/tracks/tag", async (req: Request, res: Response) => {
+router.post("/tracks/tag", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -953,7 +953,7 @@ router?.post("/tracks/tag", async (req: Request, res: Response) => {
         const [existing] = await db
           .select({ metadata: studioTracks.metadata })
           .from(studioTracks)
-          .where(eq(studioTracks?.id, id))
+          .where(eq(studioTracks.id, id))
           .limit(1);
         if (!existing) throw new Error("Track not found");
         const existingMeta =
@@ -961,7 +961,7 @@ router?.post("/tracks/tag", async (req: Request, res: Response) => {
         await db
           .update(studioTracks)
           .set({ metadata: { ...existingMeta, tags } })
-          .where(eq(studioTracks?.id, id));
+          .where(eq(studioTracks.id, id));
         return id;
       }),
     );
@@ -982,7 +982,7 @@ router?.post("/tracks/tag", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/tracks/export", async (req: Request, res: Response) => {
+router.post("/tracks/export", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1002,7 +1002,7 @@ router?.post("/tracks/export", async (req: Request, res: Response) => {
     const [firstTrack] = await db
       .select({ projectId: studioTracks.projectId })
       .from(studioTracks)
-      .where(eq(studioTracks?.id, ids[0]))
+      .where(eq(studioTracks.id, ids[0]))
       .limit(1);
 
     if (!firstTrack) {
@@ -1048,7 +1048,7 @@ router?.post("/tracks/export", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/tracks/delete", async (req: Request, res: Response) => {
+router.post("/tracks/delete", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1066,7 +1066,7 @@ router?.post("/tracks/delete", async (req: Request, res: Response) => {
       ids?.map(async (id) => {
         const result = await db
           .delete(studioTracks)
-          .where(eq(studioTracks?.id, id))
+          .where(eq(studioTracks.id, id))
           .returning({ id: studioTracks.id });
         if (result?.length === 0) throw new Error("Track not found");
         return id;
@@ -1089,7 +1089,7 @@ router?.post("/tracks/delete", async (req: Request, res: Response) => {
   }
 });
 
-router?.put("/beats/update", async (req: Request, res: Response) => {
+router.put("/beats/update", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1120,7 +1120,7 @@ router?.put("/beats/update", async (req: Request, res: Response) => {
         const result = await db
           .update(beats)
           .set(allowedUpdate)
-          .where(and(eq(beats?.id, id), eq(beats?.userId, userId)))
+          .where(and(eq(beats.id, id), eq(beats.userId, userId)))
           .returning({ id: beats.id });
         if (result?.length === 0)
           throw new Error("Beat not found or access denied");
@@ -1144,7 +1144,7 @@ router?.put("/beats/update", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/beats/delete", async (req: Request, res: Response) => {
+router.post("/beats/delete", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1164,7 +1164,7 @@ router?.post("/beats/delete", async (req: Request, res: Response) => {
         const result = await db
           .update(beats)
           .set({ isPublished: false })
-          .where(and(eq(beats?.id, id), eq(beats?.userId, userId)))
+          .where(and(eq(beats.id, id), eq(beats.userId, userId)))
           .returning({ id: beats.id });
         if (result?.length === 0)
           throw new Error("Beat not found or access denied");
@@ -1188,7 +1188,7 @@ router?.post("/beats/delete", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/posts/approve", async (req: Request, res: Response) => {
+router.post("/posts/approve", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1212,7 +1212,7 @@ router?.post("/posts/approve", async (req: Request, res: Response) => {
             reviewedBy: userId,
             reviewedAt: new Date(),
           })
-          .where(eq(posts?.id, id))
+          .where(eq(posts.id, id))
           .returning({ id: posts.id });
         if (result?.length === 0) throw new Error("Post not found");
         return id;
@@ -1235,13 +1235,13 @@ router?.post("/posts/approve", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/progress/:jobId", async (req: Request, res: Response) => {
+router.get("/progress/:jobId", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { jobId } = req.params;
+    const { jobId } = req.params as Record<string, string>;
     const job = batchJobs?.get(jobId);
 
     if (!job) {
@@ -1265,7 +1265,7 @@ router?.get("/progress/:jobId", async (req: Request, res: Response) => {
   }
 });
 
-router?.get("/templates", async (req: Request, res: Response) => {
+router.get("/templates", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1274,16 +1274,16 @@ router?.get("/templates", async (req: Request, res: Response) => {
     const userId = req.user.id;
     const resource = req.query.resource as string | undefined;
 
-    const conditions = [eq(batchTemplates?.userId, userId)];
+    const conditions = [eq(batchTemplates.userId, userId)];
     if (resource) {
-      conditions?.push(eq(batchTemplates?.resource, resource));
+      conditions?.push(eq(batchTemplates.resource, resource));
     }
 
     const rows = await db
       .select()
       .from(batchTemplates)
       .where(and(...conditions))
-      .orderBy(desc(batchTemplates?.updatedAt))
+      .orderBy(desc(batchTemplates.updatedAt))
       .limit(200);
 
     res.json({ templates: rows });
@@ -1293,7 +1293,7 @@ router?.get("/templates", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/templates", async (req: Request, res: Response) => {
+router.post("/templates", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -1327,19 +1327,19 @@ router?.post("/templates", async (req: Request, res: Response) => {
   }
 });
 
-router?.put("/templates/:id", async (req: Request, res: Response) => {
+router.put("/templates/:id", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const userId = req.user.id;
 
     const [existing] = await db
       .select({ id: batchTemplates.id, userId: batchTemplates.userId })
       .from(batchTemplates)
-      .where(eq(batchTemplates?.id, id))
+      .where(eq(batchTemplates.id, id))
       .limit(1);
 
     if (!existing) {
@@ -1363,7 +1363,7 @@ router?.put("/templates/:id", async (req: Request, res: Response) => {
         ...(isFavorite !== undefined && { isFavorite }),
         updatedAt: new Date(),
       })
-      .where(and(eq(batchTemplates?.id, id), eq(batchTemplates?.userId, userId)))
+      .where(and(eq(batchTemplates.id, id), eq(batchTemplates.userId, userId)))
       .returning();
 
     res.json(updated);
@@ -1373,18 +1373,18 @@ router?.put("/templates/:id", async (req: Request, res: Response) => {
   }
 });
 
-router?.delete("/templates/:id", async (req: Request, res: Response) => {
+router.delete("/templates/:id", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const userId = req.user.id;
 
     const [deleted] = await db
       .delete(batchTemplates)
-      .where(and(eq(batchTemplates?.id, id), eq(batchTemplates?.userId, userId)))
+      .where(and(eq(batchTemplates.id, id), eq(batchTemplates.userId, userId)))
       .returning({ id: batchTemplates.id });
 
     if (!deleted) {
@@ -1398,13 +1398,13 @@ router?.delete("/templates/:id", async (req: Request, res: Response) => {
   }
 });
 
-router?.post("/templates/:id/share", async (req: Request, res: Response) => {
+router.post("/templates/:id/share", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const { email } = req.body;
     const userId = req.user.id;
 
@@ -1415,7 +1415,7 @@ router?.post("/templates/:id/share", async (req: Request, res: Response) => {
     const [original] = await db
       .select()
       .from(batchTemplates)
-      .where(and(eq(batchTemplates?.id, id), eq(batchTemplates?.userId, userId)))
+      .where(and(eq(batchTemplates.id, id), eq(batchTemplates.userId, userId)))
       .limit(1);
 
     if (!original) {

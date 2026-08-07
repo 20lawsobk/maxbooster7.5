@@ -171,7 +171,7 @@ export class PayoutService {
       const row = await db
         .select({ value: systemSettings.value })
         .from(systemSettings)
-        .where(eq(systemSettings?.key, `payment_prefs:${userId}`))
+        .where(eq(systemSettings.key, `payment_prefs:${userId}`))
         .limit(1);
       if (row?.length && row[0].value) {
         const prefs = row[0].value as unknown as PaymentPreferences;
@@ -233,8 +233,8 @@ export class PayoutService {
       .from(royaltyStatements)
       .where(
         and(
-          eq(royaltyStatements?.userId, userId),
-          eq(royaltyStatements?.status, "finalized"),
+          eq(royaltyStatements.userId, userId),
+          eq(royaltyStatements.status, "finalized"),
         ),
       );
 

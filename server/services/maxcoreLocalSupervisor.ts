@@ -154,6 +154,10 @@ async function spawnChild(): Promise<void> {
   const childPid = child.pid;
   child.on("exit", (code, signal) => {
     child = null;
+    // The subsystem is gone — drop the cached readiness right away rather
+    // than serving a stale `ready:true` for up to READY_TTL_MS.
+    lastReady = false;
+    lastReadyCheck = 0;
     // Sweep the process group — a SIGKILL'd cluster primary strands its
     // worker (which still holds the port) and the Python model server.
     if (childPid) {
@@ -271,6 +275,10 @@ export function getMaxcoreLocalStatus(): MaxcoreLocalStatus {
  *  stops its Python child and cluster workers. */
 export function stopMaxcoreLocal(): void {
   shuttingDown = true;
+  // Invalidate the readiness cache immediately — nothing is ready once we
+  // begin stopping, and a later re-start must not inherit a stale `true`.
+  lastReady = false;
+  lastReadyCheck = 0;
   if (restartTimer) {
     clearTimeout(restartTimer);
     restartTimer = null;

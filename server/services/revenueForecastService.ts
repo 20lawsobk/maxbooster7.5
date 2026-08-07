@@ -146,12 +146,12 @@ class RevenueForecastService {
 
     const data = await db
       .select({
-        totalStreams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
-        totalRevenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
+        totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
       })
       .from(analytics)
       .where(
-        and(eq(analytics?.userId, userId), gte(analytics?.date, sixMonthsAgo)),
+        and(eq(analytics.userId, userId), gte(analytics.date, sixMonthsAgo)),
       );
 
     const { totalStreams, totalRevenue } = data[0] || {
@@ -217,11 +217,11 @@ class RevenueForecastService {
       .from(revenueForecasts)
       .where(
         and(
-          eq(revenueForecasts?.userId, userId),
-          sql`${revenueForecasts?.actualRevenue} IS NOT NULL`,
+          eq(revenueForecasts.userId, userId),
+          sql`${revenueForecasts.actualRevenue} IS NOT NULL`,
         ),
       )
-      .orderBy(desc(revenueForecasts?.createdAt))
+      .orderBy(desc(revenueForecasts.createdAt))
       .limit(12);
 
     if (forecasts?.length === 0) {
@@ -293,8 +293,8 @@ class RevenueForecastService {
     return db
       .select()
       .from(revenueForecasts)
-      .where(eq(revenueForecasts?.userId, userId))
-      .orderBy(desc(revenueForecasts?.createdAt))
+      .where(eq(revenueForecasts.userId, userId))
+      .orderBy(desc(revenueForecasts.createdAt))
       .limit(limit);
   }
 
@@ -310,9 +310,9 @@ class RevenueForecastService {
       })
       .from(analytics)
       .where(
-        and(eq(analytics?.userId, userId), gte(analytics?.date, sixMonthsAgo)),
+        and(eq(analytics.userId, userId), gte(analytics.date, sixMonthsAgo)),
       )
-      .orderBy(asc(analytics?.date));
+      .orderBy(asc(analytics.date));
 
     return data?.map((d) => ({
       date: d.date,
@@ -499,11 +499,11 @@ class RevenueForecastService {
 
     const data = await db
       .select({
-        total: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
+        total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
       })
       .from(analytics)
       .where(
-        and(eq(analytics?.userId, userId), gte(analytics?.date, thirtyDaysAgo)),
+        and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)),
       );
 
     return Number(data[0]?.total || 0);
@@ -543,7 +543,7 @@ class RevenueForecastService {
   }
 
   private async storeForecast(userId: string, forecast: ForecastResult) {
-    await db?.insert(revenueForecasts).values({
+    await db.insert(revenueForecasts).values({
       userId,
       forecastDate: new Date(),
       forecastType: "projection",
@@ -571,8 +571,8 @@ class RevenueForecastService {
       .delete(revenueForecasts)
       .where(
         and(
-          eq(revenueForecasts?.id, forecastId),
-          eq(revenueForecasts?.userId, userId),
+          eq(revenueForecasts.id, forecastId),
+          eq(revenueForecasts.userId, userId),
         ),
       )
       .returning({ id: revenueForecasts.id });

@@ -30,7 +30,7 @@ export class CapacityMonitor {
       }
 
       // Check active sessions (within last 24 hours) - Use approximate count for performance
-      const sessionResult = await db?.execute(
+      const sessionResult = await db.execute(
         sql`SELECT reltuples::bigint AS count FROM pg_class WHERE relname = 'sessions'`,
       );
       const totalSessions = parseInt((sessionResult?.rows[0]?.count ?? 0) as string);

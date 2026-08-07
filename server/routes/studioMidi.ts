@@ -153,7 +153,7 @@ const scaleSyncSchema = z.object({
   affectedClips: z.array(z.string()).optional(),
 });
 
-router?.post("/generate", requireAuth, async (req, res) => {
+router.post("/generate", requireAuth, async (req, res) => {
   try {
     const { type, ...params } = req.body;
 
@@ -210,7 +210,7 @@ router?.post("/generate", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/transform", requireAuth, async (req, res) => {
+router.post("/transform", requireAuth, async (req, res) => {
   try {
     const data = transformSchema?.parse(req.body);
     const options = data?.options || {};
@@ -287,7 +287,7 @@ router?.post("/transform", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/arpeggiate", requireAuth, async (req, res) => {
+router.post("/arpeggiate", requireAuth, async (req, res) => {
   try {
     const data = arpeggiateSchema?.parse(req.body);
 
@@ -320,7 +320,7 @@ router?.post("/arpeggiate", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/chords", requireAuth, async (req, res) => {
+router.post("/chords", requireAuth, async (req, res) => {
   try {
     const data = generateChordsSchema?.parse(req.body);
 
@@ -351,7 +351,7 @@ router?.post("/chords", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/ornament", requireAuth, async (req, res) => {
+router.post("/ornament", requireAuth, async (req, res) => {
   try {
     const data = ornamentSchema?.parse(req.body);
 
@@ -377,7 +377,7 @@ router?.post("/ornament", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/strum", requireAuth, async (req, res) => {
+router.post("/strum", requireAuth, async (req, res) => {
   try {
     const data = strumSchema?.parse(req.body);
 
@@ -403,7 +403,7 @@ router?.post("/strum", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/fit-to-scale", requireAuth, async (req, res) => {
+router.post("/fit-to-scale", requireAuth, async (req, res) => {
   try {
     const data = fitToScaleSchema?.parse(req.body);
 
@@ -428,7 +428,7 @@ router?.post("/fit-to-scale", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/scales", requireAuth, async (req, res) => {
+router.get("/scales", requireAuth, async (req, res) => {
   try {
     const { category } = req.query;
 
@@ -458,9 +458,9 @@ router?.get("/scales", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/scales/:id", requireAuth, async (req, res) => {
+router.get("/scales/:id", requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const { rootNote, octaves } = req.query;
 
     const scale = microtonalService?.getScale(id);
@@ -490,9 +490,9 @@ router?.get("/scales/:id", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/tunings/:id", requireAuth, async (req, res) => {
+router.get("/tunings/:id", requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
 
     const tuning = microtonalService?.getTuningSystem(id);
     if (!tuning) {
@@ -509,7 +509,7 @@ router?.get("/tunings/:id", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/scale-sync", requireAuth, async (req, res) => {
+router.post("/scale-sync", requireAuth, async (req, res) => {
   try {
     const data = scaleSyncSchema?.parse(req.body);
 
@@ -536,9 +536,9 @@ router?.post("/scale-sync", requireAuth, async (req, res) => {
   }
 });
 
-router?.get("/scale-sync/:projectId", requireAuth, async (req, res) => {
+router.get("/scale-sync/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.params as Record<string, string>;
 
     const config = microtonalService?.getScaleSync(projectId);
 
@@ -552,9 +552,9 @@ router?.get("/scale-sync/:projectId", requireAuth, async (req, res) => {
   }
 });
 
-router?.delete("/scale-sync/:projectId", requireAuth, async (req, res) => {
+router.delete("/scale-sync/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
+    const { projectId } = req.params as Record<string, string>;
 
     microtonalService?.removeScaleSync(projectId);
 
@@ -565,7 +565,7 @@ router?.delete("/scale-sync/:projectId", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/note-info", requireAuth, async (req, res) => {
+router.post("/note-info", requireAuth, async (req, res) => {
   try {
     const { note, tuningSystem } = req.body;
 
@@ -585,7 +585,7 @@ router?.post("/note-info", requireAuth, async (req, res) => {
   }
 });
 
-router?.post("/frequency", requireAuth, async (req, res) => {
+router.post("/frequency", requireAuth, async (req, res) => {
   try {
     const { note, tuningSystem, referenceNote, referenceFrequency } = req.body;
 
