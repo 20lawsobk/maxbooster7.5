@@ -64,3 +64,4 @@
 - [TS6133 autofix hazards](ts6133-autofix-hazards.md) — only params/array-destructures are prefix-safe; writes don't count as reads (class props/lets break); use `{ x: _x }` for shorthand
 - [fix-all pipeline design](fix-all-pipeline.md) — resumable phase-per-invocation (5-min shell cap), esbuild syntax gate + snapshots, import fixes surface new TS2305, honest nonzero exit
 - [MaxCore/PDIM internalization](maxcore-pdim-internalization.md) — imported repos become INTERNAL subsystems; connector is the only seam, cluster needs one shared PDIM owner, PDIM client rejects nullish args
+- [MaxCore local subsystem](maxcore-local-subsystem.md) — supervised child on :8090; Neon pooler rejects `options` (use unpooled host for search_path=maxcore schema isolation); sweep process group on crash

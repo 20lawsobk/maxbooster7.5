@@ -13,6 +13,7 @@ import express from "express";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 
+process.env.MAXCORE_LOCAL = "0";
 process.env.AI_SERVER_URL = "https://maxcore.test";
 process.env.AI_SERVER_KEY = "gen-key-123";
 process.env.MAXCORE_ADMIN_KEY = "admin-key-456";

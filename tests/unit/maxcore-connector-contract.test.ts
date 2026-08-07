@@ -7,6 +7,7 @@ describe("MaxCore connector contract", () => {
     vi.resetModules();
     process.env = {
       ...env,
+      MAXCORE_LOCAL: "0",
       AI_SERVER_URL: "https://maxcore.example.test/",
       AI_SERVER_KEY: "generation-key",
       MAXCORE_ADMIN_KEY: "admin-key",

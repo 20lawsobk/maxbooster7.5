@@ -23,6 +23,24 @@ export {
 
 const p = process.env;
 
+// ─── MaxCore local-subsystem resolution ──────────────────────────────────────
+// Local mode is the default: the imported MaxCore repo runs as a supervised
+// child on loopback. MAXCORE_LOCAL=0 restores the remote-URL behavior.
+const _maxcoreLocalEnabled = p.MAXCORE_LOCAL !== "0";
+const _maxcoreLocalPort = Number(p.MAXCORE_LOCAL_PORT) || 8090;
+// Deterministic loopback credentials, derived from SESSION_SECRET, used only
+// when no explicit MaxCore key is configured in local mode. Never used for a
+// remote MaxCore (remote mode without keys keeps keys empty → callers fail
+// explicit, as before).
+import { createHmac } from "node:crypto";
+function _maxcoreDerivedKey(scope: "gen" | "admin"): string {
+  if (!_maxcoreLocalEnabled || !p.SESSION_SECRET) return "";
+  return (
+    "mclocal-" +
+    createHmac("sha256", p.SESSION_SECRET).update(`maxcore-${scope}`).digest("hex").slice(0, 40)
+  );
+}
+
 export const config = {
   // Core
   port: Number(p.PORT) || 5000,
@@ -35,13 +53,26 @@ export const config = {
     p.DATABASE_URL ||
     "",
 
-  // MaxCore AI
-  maxcoreUrl: p.MAXCORE_URL || p.AI_SERVER_URL || "",
+  // MaxCore AI — runs as a LOCAL supervised subsystem by default (the imported
+  // repo at external/maxcore). Set MAXCORE_LOCAL=0 to point back at a remote
+  // MaxCore deployment via MAXCORE_URL / AI_SERVER_URL.
+  maxcoreLocal: {
+    enabled: _maxcoreLocalEnabled,
+    port: _maxcoreLocalPort,
+    modelApiPort: Number(p.MODEL_API_PORT) || 9878,
+  },
+  maxcoreUrl: _maxcoreLocalEnabled
+    ? `http://127.0.0.1:${_maxcoreLocalPort}`
+    : p.MAXCORE_URL || p.AI_SERVER_URL || "",
   // Keep generation and administrative credentials distinct. A missing
   // generation key may fall back to the admin key for backwards-compatible
   // deployments, but an admin request must never inherit the generation key.
-  maxcoreGenerationKey: p.AI_SERVER_KEY || p.MAXCORE_ADMIN_KEY || "",
-  maxcoreAdminKey: p.MAXCORE_ADMIN_KEY || "",
+  // In local mode, when no key is configured, a deterministic key is derived
+  // from SESSION_SECRET so both sides of the loopback link share it without
+  // requiring extra secrets.
+  maxcoreGenerationKey:
+    p.AI_SERVER_KEY || p.MAXCORE_ADMIN_KEY || _maxcoreDerivedKey("gen"),
+  maxcoreAdminKey: p.MAXCORE_ADMIN_KEY || _maxcoreDerivedKey("admin"),
   aiTrainingUrl: p.MBS_AI_TRAINING_URL || p.PEER_TRAINING_NODE || "",
   aiTrainingKey: p.MBS_AI_TRAINING_KEY || p.AI_Training_Server || "",
 

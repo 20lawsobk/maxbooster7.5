@@ -10,6 +10,8 @@ export default defineConfig({
     fileParallelism: false,
     globalSetup: ["tests/globalSetup.ts", "tests/globalTeardown.ts"],
     include: [
+      // Subsystems — spawns the real local MaxCore child (no running app needed)
+      "tests/integration/maxcore-local-supervisor.integration.test.ts",
       // Core platform
       "tests/health.test.ts",
       "tests/api-guards.test.ts",

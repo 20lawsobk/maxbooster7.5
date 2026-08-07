@@ -20,13 +20,13 @@ export function getMaxcoreOrigin(): string {
 }
 
 /**
- * Origin with the legacy deployment default. Services that predate explicit
- * configuration used this hardcoded MaxCore deployment when the env was unset;
- * the default lives here so it exists in exactly one place.
+ * Historical alias. MaxCore now runs as a local subsystem by default, so the
+ * origin always resolves (loopback in local mode, MAXCORE_URL in remote
+ * mode). The old hardcoded external deployment default has been removed —
+ * an unconfigured remote mode yields "" and callers fail explicit.
  */
-const LEGACY_DEFAULT_ORIGIN = "https://secure-ai-forge.replit.app";
 export function getMaxcoreOriginOrDefault(): string {
-  return getMaxcoreOrigin() || LEGACY_DEFAULT_ORIGIN;
+  return getMaxcoreOrigin();
 }
 
 export function getMaxcoreGenerationKey(): string {
