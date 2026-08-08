@@ -26,9 +26,10 @@ import * as path from "path";
 // Sharp-based image generation (production-ready, replaces Canvas)
 import { sharpImageService } from "./sharpImageService.js";
 
-import { synthesizeToWAV, generateChordProgression, generateMelody } from "./musicGenerationService.js";
+import { synthesizeToWAV, generateChordProgression, generateMelody, type MusicParameters } from "./musicGenerationService.js";
 
 import { dynamicTrendsService } from "./dynamicTrendsService";
+import type { Platform, ContentTone } from "../../shared/ml/nlp/ContentGenerator.js";
 
 // Sharp image service is automatically initialized on import
 
@@ -74,7 +75,7 @@ export interface BrandVoiceProfile {
 
 export interface TrendingTopic {
   topic: string;
-  category: "music" | "social" | "cultural" | "holiday" | "industry";
+  category: "music" | "social" | "cultural" | "holiday" | "industry" | "platform";
   popularity: number;
   hashtags: string[];
   region?: string;
@@ -254,8 +255,8 @@ export class AIContentService {
       // Route through the full advanced AI pipeline:
       // MaxCore (trained) → Python AI → ContentGenerator (in-house JS)
       const aiResult = await unifiedAIController?.generateContent({
-        platform: platform as unknown as Record<string, unknown>,
-        tone: tone as unknown as Record<string, unknown>,
+        platform: platform as Platform,
+        tone: tone as ContentTone,
         topic: prompt || "new music",
         contentType: "engagement",
         includeHashtags: true,
@@ -331,8 +332,8 @@ export class AIContentService {
     // Get MaxCore's AI-generated base content once (MaxCore generates in English
     // regardless of language param — we apply cultural post-processing per language)
     const baseAIResult = await unifiedAIController?.generateContent({
-      platform: (options?.platform || "instagram") as unknown as Record<string, unknown>,
-      tone: "energetic" as unknown as Record<string, unknown>,
+      platform: (options?.platform || "instagram") as Platform,
+      tone: "energetic" as ContentTone,
       topic: prompt,
       contentType: "engagement",
       includeHashtags: true,
@@ -719,8 +720,8 @@ export class AIContentService {
       : "";
 
     const aiResult = await unifiedAIController?.generateContent({
-      platform: platform as unknown as Record<string, unknown>,
-      tone: "energetic" as unknown as Record<string, unknown>,
+      platform: platform as Platform,
+      tone: "energetic" as ContentTone,
       topic,
       contentType: "engagement",
       includeHashtags: true,
@@ -731,7 +732,7 @@ export class AIContentService {
     if (aiResult?.success && aiResult?.data) {
       const d = aiResult?.data as unknown as Record<string, unknown>;
       return (
-        d?.caption ||
+        (d?.caption as string | undefined) ||
         [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n") ||
         topic
       );
@@ -759,8 +760,8 @@ export class AIContentService {
 
     // Route through MaxCore — it knows platform-specific hashtag strategy from 8TB of data
     const aiResult = await unifiedAIController?.generateContent({
-      platform: platform as unknown as Record<string, unknown>,
-      tone: "energetic" as unknown as Record<string, unknown>,
+      platform: platform as Platform,
+      tone: "energetic" as ContentTone,
       topic: content || "music promotion",
       contentType: "engagement",
       includeHashtags: true,
@@ -770,7 +771,7 @@ export class AIContentService {
 
     const rawHashtags: string[] =
       aiResult?.success && aiResult?.data
-        ? (aiResult?.data as unknown as Record<string, unknown>).hashtags || []
+        ? ((aiResult?.data as unknown as Record<string, unknown>).hashtags as string[] | undefined) || []
         : [];
 
     const suggestions: HashtagSuggestion[] = rawHashtags
@@ -1035,8 +1036,8 @@ export class AIContentService {
     // Get the MaxCore-generated base content once, then apply tone post-processing
     // for each variant (MaxCore's tone param doesn't vary output, so we differentiate locally)
     const baseAIResult = await unifiedAIController?.generateContent({
-      platform: "instagram" as unknown as Record<string, unknown>,
-      tone: "energetic" as unknown as Record<string, unknown>,
+      platform: "instagram" as Platform,
+      tone: "energetic" as ContentTone,
       topic: baseContent,
       contentType: "engagement",
       includeHashtags: true,
@@ -1142,8 +1143,8 @@ export class AIContentService {
     length?: string,
   ): Promise<GeneratedContent> {
     const aiResult = await unifiedAIController?.generateContent({
-      platform: platform as unknown as Record<string, unknown>,
-      tone: (tone || "energetic") as unknown as Record<string, unknown>,
+      platform: platform as Platform,
+      tone: (tone || "energetic") as ContentTone,
       topic: prompt || "new music",
       contentType: "engagement",
       includeHashtags: true,
@@ -1182,7 +1183,7 @@ export class AIContentService {
       const result = await sharpImageService?.generateImage({
         prompt,
         platform,
-        tone: (tone as unknown as Record<string, unknown>) || "creative",
+        tone: (tone || "creative") as "professional" | "casual" | "energetic" | "creative" | "promotional",
       });
 
       return {
@@ -1221,8 +1222,8 @@ export class AIContentService {
     let cta = "";
     try {
       const scriptResult = await unifiedAIController?.generateContent({
-        platform: platform as unknown as Record<string, unknown>,
-        tone: (tone || "energetic") as unknown as Record<string, unknown>,
+        platform: platform as Platform,
+        tone: (tone || "energetic") as ContentTone,
         topic: prompt || "new music",
         contentType: "engagement",
         includeHashtags: false,
@@ -1350,7 +1351,7 @@ export class AIContentService {
   private promptToMusicParams(
     _prompt: string,
     tone?: string,
-  ): Record<string, unknown> {
+  ): MusicParameters {
     const moodMap: Record<string, string> = {
       professional: "calm",
       casual: "happy",

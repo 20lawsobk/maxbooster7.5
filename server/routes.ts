@@ -1297,21 +1297,29 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        // Store export request timestamp
+        // Store export request timestamp (fields stored in preferences jsonb at runtime)
         await storage.updateUser(req.user.id, {
-          dataExportRequestedAt: new Date(),
-          dataExportStatus: "pending",
+          preferences: {
+            ...(req.user.preferences as Record<string, unknown> ?? {}),
+            dataExportRequestedAt: new Date().toISOString(),
+            dataExportStatus: "pending",
+          },
         });
 
         // In production, this would trigger an async job
         // For now, simulate immediate completion
+        const exportUserId = req.user.id;
         setTimeout(async () => {
           try {
-            await storage.updateUser(req.user!.id, {
-              dataExportStatus: "ready",
-              dataExportExpiresAt: new Date(
-                Date.now() + 7 * 24 * 60 * 60 * 1000,
-              ),
+            const u = await storage.getUser(exportUserId);
+            await storage.updateUser(exportUserId, {
+              preferences: {
+                ...(u?.preferences as Record<string, unknown> ?? {}),
+                dataExportStatus: "ready",
+                dataExportExpiresAt: new Date(
+                  Date.now() + 7 * 24 * 60 * 60 * 1000,
+                ).toISOString(),
+              },
             });
           } catch (e) {
             logger.warn({ err: e }, "Failed to update export status");
@@ -1664,7 +1672,7 @@ export async function registerRoutes(
         }
       }
 
-      const ext = key.split(".").pop().toLowerCase() || "";
+      const ext = (key.split(".").pop() ?? "").toLowerCase();
       const mimeTypes: Record<string, string> = {
         jpg: "image/jpeg",
         jpeg: "image/jpeg",
@@ -3028,7 +3036,7 @@ export async function registerRoutes(
       // Broadcast via WebSocket if available
       if (
         typeof (
-          global as NodeJS.Global & {
+          global as typeof globalThis & {
             broadcastNotification?: (
               userId: string,
               data: Record<string, unknown>,
@@ -3037,7 +3045,7 @@ export async function registerRoutes(
         ).broadcastNotification === "function"
       ) {
         (
-          global as NodeJS.Global & {
+          global as typeof globalThis & {
             broadcastNotification?: (
               userId: string,
               data: Record<string, unknown>,
@@ -3482,11 +3490,11 @@ export async function registerRoutes(
           const twilio = (await import("twilio")).default;
           const client = twilio(twilioSid, twilioToken);
 
-          const verifyParams: Record<string, string> = {
+          const verifyParams = {
             to: e164Phone,
-            channel: "sms",
+            channel: "sms" as const,
+            ...(verifyTemplateSid ? { templateSid: verifyTemplateSid } : {}),
           };
-          if (verifyTemplateSid) verifyParams.templateSid = verifyTemplateSid;
 
           const verification = await client.verify.v2
             .services(verifyServiceSid)
@@ -5146,7 +5154,7 @@ export async function registerRoutes(
           onboardingCompleted: true,
           onboardingStep: 100,
           onboardingData: {
-            ...req.user.onboardingData,
+            ...(req.user.onboardingData as Record<string, unknown> | null ?? {}),
             completedAt: new Date().toISOString(),
           },
         });
@@ -5875,20 +5883,21 @@ export async function registerRoutes(
         const balance = await instantPayoutService.calculateAvailableBalance(
           req.user.id,
         );
-        if (balance <= 0) {
+        const availableAmount = balance.availableBalance;
+        if (availableAmount <= 0) {
           return res
             .status(400)
             .json({ message: "No available balance for payout" });
         }
         const result = await instantPayoutService.requestInstantPayout(
           req.user.id,
-          { amount: balance },
+          availableAmount,
         );
         return res.json({
           success: true,
           payoutId: (result as any).id || `payout_${Date.now()}`,
           message: "Payout request submitted",
-          amount: balance,
+          amount: availableAmount,
         });
       } catch (error) {
         logger.warn({ err: error }, "Request payout error");
@@ -6100,7 +6109,7 @@ export async function registerRoutes(
       const user = req.user!;
 
       // Find or create Stripe customer linked to this user
-      let customerId: string | undefined = user.stripeCustomerId;
+      let customerId: string | undefined = user.stripeCustomerId ?? undefined;
       if (!customerId) {
         const customer = await stripe.customers.create({
           email: user.email,
@@ -7034,13 +7043,13 @@ export async function registerRoutes(
     if (result && result.type !== "skip") {
       if (result.type === "router" && result.value) {
         try {
-          app.use(path, result.value);
+          app.use(path, result.value as RouterLike);
         } catch (e) {
           log(`Warning: Failed to mount ${name} - ${(e as Error).message}`);
         }
       } else if (result.type === "function" && result.value) {
         try {
-          result.value(app);
+          (result.value as SetupFn)(app);
         } catch (e) {
           log(`Warning: Failed to setup ${name} - ${(e as Error).message}`);
         }
@@ -7192,7 +7201,7 @@ export async function registerRoutes(
   // Stripe checkout session creation for subscription plans
   const stripe = process.env.STRIPE_SECRET_KEY
     ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: "2025-12-15.clover",
+        apiVersion: "2026-02-25.clover",
       })
     : null;
 
@@ -7459,9 +7468,14 @@ export async function registerRoutes(
           password: hashedPassword,
           firstName: session.metadata!.firstName || "",
           lastName: session.metadata!.lastName || "",
-          subscriptionTier: tier,
-          subscriptionEndsAt,
         });
+        // Apply subscription details that are not part of the base insert schema
+        if (tier || subscriptionEndsAt) {
+          await storage.updateUser(user.id, {
+            subscriptionTier: tier ?? undefined,
+            subscriptionEndsAt: subscriptionEndsAt ?? undefined,
+          });
+        }
 
         // Log the user in (regenerate prevents session fixation)
         const { password: _, ...userWithoutPassword } = user;

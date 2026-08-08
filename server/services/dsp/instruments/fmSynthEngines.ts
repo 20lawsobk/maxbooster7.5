@@ -94,9 +94,7 @@ export class DX7BellSynth implements SynthesizerEngine {
   private envelope: ADSR;
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 6; i++) {
@@ -108,9 +106,7 @@ export class DX7BellSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const ratios = [1, 1.41, 2.83, 5.65, 7.07, 14.14];
     const levels = [0.8, 0.5, 0.35, 0.2, 0.1, 0.05];
@@ -188,9 +184,7 @@ export class DX7BassSynth implements SynthesizerEngine {
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
   private saturationFilter: BiquadFilter;
-  private frequency: number = 55;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 4; i++) {
@@ -203,9 +197,7 @@ export class DX7BassSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const ratios = [1, 1, 2, 3];
     const levels = [0.9, 0.7, 0.4, 0.2];
@@ -281,9 +273,7 @@ export class DX7EPianoSynth implements SynthesizerEngine {
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
   private tremoloLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 4; i++) {
@@ -300,9 +290,7 @@ export class DX7EPianoSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const ratios = [1, 1, 14, 7];
     const levels = [0.7, 0.5, 0.15, 0.1];
@@ -400,7 +388,6 @@ export class DX7BrassSynth implements SynthesizerEngine {
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
   private lfo: LFO;
-  private frequency: number = 220;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -416,7 +403,6 @@ export class DX7BrassSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -506,7 +492,6 @@ export class DX7PadSynth implements SynthesizerEngine {
   private lfo1: LFO;
   private lfo2: LFO;
   private lfo3: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -524,7 +509,6 @@ export class DX7PadSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -623,7 +607,6 @@ export class DX7LeadSynth implements SynthesizerEngine {
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
   private vibratoLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -639,7 +622,6 @@ export class DX7LeadSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -726,9 +708,7 @@ export class DX7KeysSynth implements SynthesizerEngine {
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
   private rotaryLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 6; i++) {
@@ -742,9 +722,7 @@ export class DX7KeysSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const ratios = [0.5, 1, 2, 3, 4, 6];
     const levels = [0.6, 0.8, 0.5, 0.4, 0.3, 0.2];
@@ -761,6 +739,7 @@ export class DX7KeysSynth implements SynthesizerEngine {
         0.06 + i * 0.02,
         0.8 - i * 0.05,
         0.1,
+        context?.sampleRate,
       );
       this.drawbarEnvelopes[i].trigger();
     }
@@ -829,9 +808,7 @@ export class DX7PercSynth implements SynthesizerEngine {
   private noiseFilter: BiquadFilter;
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
-  private frequency: number = 200;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 4; i++) {
@@ -844,9 +821,7 @@ export class DX7PercSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const ratios = [1, 1.5, 2.3, 3.7];
     const levels = [0.8, 0.5, 0.3, 0.15];
@@ -924,7 +899,6 @@ export class FM8Synth implements SynthesizerEngine {
   private bpFilter: BiquadFilter;
   private lfo1: LFO;
   private lfo2: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
   private modMatrix: number[][] = [];
@@ -952,7 +926,6 @@ export class FM8Synth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -1063,7 +1036,6 @@ export class ModularFMSynth implements SynthesizerEngine {
   private lfo1: LFO;
   private lfo2: LFO;
   private lfo3: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
   private customRatios: number[] = [];
@@ -1084,7 +1056,6 @@ export class ModularFMSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 

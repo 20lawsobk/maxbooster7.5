@@ -552,12 +552,10 @@ export class StretchSamplerSynth implements SynthesizerEngine {
   private frequency: number = 440;
   private baseFrequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
   private stretchFactor: number = 1;
   private readPosition: number = 0;
   private grainSize: number = 1024;
   private hopSize: number = 256;
-  private currentGrain: number = 0;
 
   constructor() {
     this.sample = new SampleBuffer(44100 * 3, 44100);
@@ -576,9 +574,7 @@ export class StretchSamplerSynth implements SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
     this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
     this.readPosition = 0;
-    this.currentGrain = 0;
 
     this.stretchFactor = 1.5;
     this.grainSize = Math.floor(context?.sampleRate / 20);
@@ -664,9 +660,7 @@ export class SlicerSynth implements SynthesizerEngine {
   private envelope: ADSR;
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
   private numSlices: number = 16;
 
   constructor() {
@@ -687,7 +681,7 @@ export class SlicerSynth implements SynthesizerEngine {
         } else {
           value = Math.sin(2 * Math.PI * freq * t) * env;
         }
-        (sample as unknown as Record<string, unknown>).buffer[i] = value;
+        (sample as unknown as { buffer: Float32Array }).buffer[i] = value;
       }
       this.samples.push(sample);
     }
@@ -699,9 +693,7 @@ export class SlicerSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const baseNote = 60;
     const midiNote = Math.round(12 * Math.log2(frequency / 261.63) + 60);
@@ -768,9 +760,7 @@ export class ROMplerSynth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private chorusDelay: DelayLine;
   private chorusLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     const sampleConfigs = [
@@ -835,7 +825,7 @@ export class ROMplerSynth implements SynthesizerEngine {
             break;
         }
 
-        (sample as unknown as Record<string, unknown>).buffer[i] = value;
+        (sample as unknown as { buffer: Float32Array }).buffer[i] = value;
       }
 
       this.samples.push({
@@ -854,9 +844,7 @@ export class ROMplerSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const selectedSample = this.samples[0];
     const playbackRate = frequency / selectedSample?.baseFreq;
@@ -926,10 +914,8 @@ export class LooperSynth implements SynthesizerEngine {
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
   private feedbackDelay: DelayLine;
-  private frequency: number = 440;
   private baseFrequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
   private loopLength: number = 44100;
 
   constructor() {
@@ -945,7 +931,7 @@ export class LooperSynth implements SynthesizerEngine {
       value += Math.sin(2 * Math.PI * 880 * t) * 0.15 * Math.sin(loopPhase * 2);
       value += Math.sin(2 * Math.PI * 660 * t) * 0.1 * Math.sin(loopPhase * 3);
 
-      (this.loopBuffer as unknown as Record<string, unknown>).buffer[i] = value;
+      (this.loopBuffer as unknown as { buffer: Float32Array }).buffer[i] = value;
     }
 
     this.player = new SamplePlayer(this.loopBuffer);
@@ -959,9 +945,7 @@ export class LooperSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const playbackRate = frequency / this.baseFrequency;
     this.player.trigger(playbackRate);
@@ -1026,9 +1010,7 @@ export class TextureSamplerSynth implements SynthesizerEngine {
   private reverbDelay2: DelayLine;
   private panLFO: LFO;
   private textureLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let t = 0; t < 4; t++) {
@@ -1039,7 +1021,7 @@ export class TextureSamplerSynth implements SynthesizerEngine {
         const rand2 = Math.random() * 2 - 1;
         const filtered = rand1 * 0.3 + rand2 * 0.7;
         const shaped = Math.tanh(filtered * 2) * 0.5;
-        (sample as unknown as Record<string, unknown>).buffer[i] = shaped;
+        (sample as unknown as { buffer: Float32Array }).buffer[i] = shaped;
       }
 
       this.samples.push(sample);
@@ -1058,9 +1040,7 @@ export class TextureSamplerSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 4; i++) {
       const playbackRate = 0.5 + (frequency / 440) * 0.5 + i * 0.1;
@@ -1271,7 +1251,6 @@ export class VoiceSamplerSynth implements SynthesizerEngine {
   private frequency: number = 440;
   private baseFrequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     this.sample = new SampleBuffer(44100 * 3, 44100);
@@ -1294,7 +1273,6 @@ export class VoiceSamplerSynth implements SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
     this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const playbackRate = frequency / this.baseFrequency;
     this.player.trigger(playbackRate);

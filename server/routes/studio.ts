@@ -839,11 +839,12 @@ router.post(
           .insert(audioClips)
           .values({
             id: clipId,
+            projectId,
             trackId,
             name: clipName,
             startTime: 0,
             duration: duration ? parseFloat(duration) : 0,
-            sourceUrl: url,
+            audioUrl: url,
           })
           .returning();
 
@@ -3923,8 +3924,8 @@ router.patch(
       }
 
       const metadata = (project.metadata as Record<string, unknown>) || {};
-      const mixSnapshots = metadata.mixSnapshots || [];
-      const snapshotIndex = (mixSnapshots as any).findIndex(
+      const mixSnapshots = (metadata.mixSnapshots || []) as any[];
+      const snapshotIndex = mixSnapshots.findIndex(
         (s: Record<string, unknown>) => s.id === snapshotId,
       );
 
@@ -3955,9 +3956,9 @@ router.patch(
       res.json({
         success: true,
         snapshot: {
-          id: mixSnapshots[snapshotIndex].id,
-          name: mixSnapshots[snapshotIndex].name,
-          description: mixSnapshots[snapshotIndex].description,
+          id: (mixSnapshots[snapshotIndex] as Record<string, unknown>).id,
+          name: (mixSnapshots[snapshotIndex] as Record<string, unknown>).name,
+          description: (mixSnapshots[snapshotIndex] as Record<string, unknown>).description,
         },
       });
     } catch (error: unknown) {
@@ -3990,8 +3991,8 @@ router.delete(
       }
 
       const metadata = (project.metadata as Record<string, unknown>) || {};
-      const mixSnapshots = metadata.mixSnapshots || [];
-      const snapshotIndex = (mixSnapshots as any).findIndex(
+      const mixSnapshots = (metadata.mixSnapshots || []) as any[];
+      const snapshotIndex = mixSnapshots.findIndex(
         (s: Record<string, unknown>) => s.id === snapshotId,
       );
 
@@ -3999,8 +4000,8 @@ router.delete(
         return res.status(404).json({ error: "Snapshot not found" });
       }
 
-      const deletedName = mixSnapshots[snapshotIndex].name;
-      (mixSnapshots as any).splice(snapshotIndex, 1);
+      const deletedName = (mixSnapshots[snapshotIndex] as Record<string, unknown>).name;
+      mixSnapshots.splice(snapshotIndex, 1);
 
       await db
         .update(studioProjects)
@@ -4196,7 +4197,7 @@ router.get(
 
       const metadata =
         (studioProject?.metadata as Record<string, unknown>) || {};
-      const mixSnapshots = metadata?.mixSnapshots || [];
+      const mixSnapshots = (metadata?.mixSnapshots || []) as any[];
       const mixBusConfig = metadata?.mixBusConfig || { busses: [] };
 
       // Calculate total audio duration from clips
@@ -4211,7 +4212,7 @@ router.get(
       let totalPlugins = 0;
       const pluginCounts: Record<string, number> = {};
       for (const track of tracks) {
-        const plugins = (track?.plugins as unknown[] | null) || [];
+        const plugins = (((track?.metadata as Record<string, unknown>)?.plugins) as unknown[] | null) || [];
         totalPlugins += plugins?.length;
         for (const plugin of plugins) {
           const name = (plugin as any)?.name || "Unknown";
@@ -4854,10 +4855,10 @@ router.post(
         color: track.color,
         volume: track.volume,
         pan: track.pan,
-        muted: track.muted,
-        soloed: track.soloed,
-        plugins: track.plugins,
-        routingBus: track.routingBus,
+        muted: track.isMuted,
+        soloed: track.isSolo,
+        plugins: ((track.metadata as Record<string, unknown>)?.plugins) ?? null,
+        routingBus: track.outputBus,
       }));
 
       // Get metadata including mix bus config
@@ -4885,7 +4886,7 @@ router.post(
           category: category || "user",
           genre: project.genre,
           bpm: project.bpm || 120,
-          timeSignature: metadata.timeSignature || "4/4",
+          timeSignature: (metadata.timeSignature as string) || "4/4",
           templateData,
           isBuiltIn: false,
         })
@@ -5002,11 +5003,12 @@ router.post(
         await db.insert(studioProjects).values({
           id: projectId,
           userId,
+          name: project.title || "Untitled",
           title: project.title,
           genre: template.genre,
           bpm: template.bpm,
           metadata: {
-            mixBusConfig: mixBusConfig || {
+            mixBusConfig: (mixBusConfig as Record<string, unknown> | null) || {
               busses: [
                 {
                   id: "master",
@@ -5530,7 +5532,7 @@ router.post(
         const files = await fsPromises.readdir(uploadsDir);
 
         for (const file of files) {
-          const filePath = path.default.join(uploadsDir, file);
+          const filePath = path.join(uploadsDir, file);
 
           try {
             const stats = await fsPromises.stat(filePath);
@@ -5538,10 +5540,7 @@ router.post(
 
             if (fileAge > maxAgeMs) {
               const clip = await db.query.audioClips.findFirst({
-                where: or(
-                  eq(audioClips.filePath, `/uploads/audio/${file}`),
-                  eq(audioClips.originalFilename, file),
-                ),
+                where: eq(audioClips.audioUrl, `/uploads/audio/${file}`),
               });
 
               if (!clip) {
@@ -5607,7 +5606,7 @@ router.get(
         totalFiles = files.length;
 
         for (const file of files) {
-          const filePath = path.default.join(uploadsDir, file);
+          const filePath = path.join(uploadsDir, file);
 
           try {
             const stats = await fsPromises.stat(filePath);
@@ -5615,10 +5614,7 @@ router.get(
 
             if (fileAge > maxAgeMs) {
               const clip = await db.query.audioClips.findFirst({
-                where: or(
-                  eq(audioClips.filePath, `/uploads/audio/${file}`),
-                  eq(audioClips.originalFilename, file),
-                ),
+                where: eq(audioClips.audioUrl, `/uploads/audio/${file}`),
               });
 
               if (!clip) {
@@ -5675,6 +5671,7 @@ const mixSettingsSchema = z.object({
 const masterSettingsSchema = z.object({
   targetLUFS: z.number().min(-24).max(-6).default(-14),
   truePeakLimit: z.number().min(-3).max(0).default(-1),
+  limiterCeiling: z.number().min(-12).max(0).optional(),
   platform: z
     .enum(["spotify", "apple_music", "youtube", "soundcloud", "custom"])
     .default("spotify"),
@@ -6026,9 +6023,10 @@ router.get(
               eq(pluginPresets.userId, userId),
               eq(pluginPresets.isFactory, true),
             ),
-          ).limit(200),
+          ),
         )
-        .orderBy(pluginPresets.name);
+        .orderBy(pluginPresets.name)
+        .limit(200);
 
       res.json({ presets, pluginId });
     } catch (error: unknown) {
@@ -6063,7 +6061,7 @@ router.post(
               eq(pluginPresets.userId, userId),
               eq(pluginPresets.isFactory, true),
             ),
-          ).limit(1),
+          ),
         )
         .limit(1);
 

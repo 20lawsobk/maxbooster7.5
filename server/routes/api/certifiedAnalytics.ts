@@ -3,16 +3,15 @@ import {
   dspAnalyticsService,
   DSPPlatform,
 } from "../../services/dspAnalyticsService";
-import { playlistAttributionService } from "../../services/playlistAttributionService";
+import { playlistAttributionService, type PlaylistType } from "../../services/playlistAttributionService";
 import { cohortAnalyticsService } from "../../services/cohortAnalyticsService";
 import { revenueForecaster } from "../../services/revenueForecaster";
 import { logger } from "../../logger.js";
 
 const router = Router();
 
-interface AuthenticatedRequest extends Request {
-  user?: { id: string };
-}
+// Use the globally-augmented Request (which already carries user?: User via routes.ts)
+type AuthenticatedRequest = Request;
 
 const getUserId = (req: AuthenticatedRequest): string | null => {
   return req.user?.id ?? null;
@@ -79,8 +78,8 @@ router.get(
 
       const attributions =
         await playlistAttributionService?.getPlaylistAttributions(userId, {
-          platform: platform as DSPPlatform | undefined,
-          playlistType: playlistType as Record<string, unknown>,
+          platform: platform as unknown as import("../../services/playlistAttributionService").DSPPlatform | undefined,
+          playlistType: playlistType as PlaylistType | undefined,
           trackId,
           activeOnly: activeOnly === "true",
         });
@@ -195,7 +194,7 @@ router.get(
       let report;
       try {
         report = await cohortAnalyticsService?.generateCohortReport(artistId, {
-          platform: platform as DSPPlatform | undefined,
+          platform: platform as unknown as import("../../services/cohortAnalyticsService").DSPPlatform | undefined,
           startDate: start,
           endDate: end,
         });
@@ -246,7 +245,7 @@ router.get(
       const { platform, numCohorts } = req.query;
 
       const curves = await cohortAnalyticsService?.getRetentionCurves(artistId, {
-        platform: platform as DSPPlatform | undefined,
+        platform: platform as unknown as import("../../services/cohortAnalyticsService").DSPPlatform | undefined,
         numCohorts: numCohorts ? parseInt(numCohorts as string) : 12,
       });
 
@@ -311,7 +310,7 @@ router.get(
       const loyaltyTiers = await cohortAnalyticsService?.getFanLoyaltyTiers(
         artistId,
         {
-          platform: platform as DSPPlatform | undefined,
+          platform: platform as unknown as import("../../services/cohortAnalyticsService").DSPPlatform | undefined,
         },
       );
 
@@ -345,14 +344,14 @@ router.get(
       const { platform, horizonDays, granularity } = req.query;
 
       const forecast = await revenueForecaster?.generateForecast(artistId, {
-        platform: platform as DSPPlatform | undefined,
+        platform: platform as unknown as import("../../services/revenueForecaster").DSPPlatform | undefined,
         horizonDays: horizonDays ? parseInt(horizonDays as string) : 90,
         granularity:
           (granularity as "daily" | "weekly" | "monthly") || "weekly",
       });
 
       const accuracy = await revenueForecaster?.getForecastAccuracy(artistId, {
-        platform: platform as DSPPlatform | undefined,
+        platform: platform as unknown as import("../../services/revenueForecaster").DSPPlatform | undefined,
       });
 
       return res.json({
@@ -570,9 +569,12 @@ router.post(
       if (result) {
         await playlistAttributionService?.syncPlaylistsFromPlatform(
           userId,
-          platform,
+          platform as unknown as import("../../services/playlistAttributionService").DSPPlatform,
         );
-        await cohortAnalyticsService?.syncCohortData(userId, platform);
+        await cohortAnalyticsService?.syncCohortData(
+          userId,
+          platform as unknown as import("../../services/cohortAnalyticsService").DSPPlatform,
+        );
       }
 
       return res.json({
@@ -620,11 +622,11 @@ router.post("/sync-all", async (req: AuthenticatedRequest, res: Response) => {
         await Promise?.all([
           playlistAttributionService?.syncPlaylistsFromPlatform(
             userId,
-            platform as DSPPlatform,
+            platform as unknown as import("../../services/playlistAttributionService").DSPPlatform,
           ),
           cohortAnalyticsService?.syncCohortData(
             userId,
-            platform as DSPPlatform,
+            platform as unknown as import("../../services/cohortAnalyticsService").DSPPlatform,
           ),
         ]);
       }),

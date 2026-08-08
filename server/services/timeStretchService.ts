@@ -10,8 +10,12 @@ import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { warpMarkers, audioClips } from "@shared/schema";
 import { eq, asc } from "drizzle-orm";
+import type FfmpegType from "fluent-ffmpeg";
 
-let ffmpeg: Record<string, unknown> | null = null;
+// Runtime type: fluent-ffmpeg's default export is a callable constructor with
+// static methods (setFfmpegPath, ffprobe, …). We hold it as the library type so
+// TypeScript knows its API without widening to Record<string,unknown>.
+let ffmpeg: typeof FfmpegType | null = null;
 let ffmpegAvailable = false;
 
 async function initializeFfmpeg() {
@@ -150,6 +154,7 @@ export class TimeStretchService {
         "FFmpeg is not available. Time stretch features are disabled in this deployment.",
       );
     }
+    const ffmpegFn = ffmpeg;
     const {
       pitchShift = 0,
       preserveFormants = true,
@@ -157,7 +162,7 @@ export class TimeStretchService {
     } = options;
 
     return new Promise((resolve, reject) => {
-      let command = ffmpeg!(inputPath);
+      let command = ffmpegFn(inputPath);
       const filters: string[] = [];
 
       if (algorithm === "rubberband") {
@@ -353,8 +358,9 @@ export class TimeStretchService {
         "FFmpeg is not available. Audio segment extraction is disabled in this deployment.",
       );
     }
+    const ffmpegFn = ffmpeg;
     return new Promise((resolve, reject) => {
-      ffmpeg(inputPath)
+      ffmpegFn(inputPath)
         .setStartTime(startTime)
         .setDuration(duration)
         .outputOptions(["-y", "-acodec", "pcm_s24le"])
@@ -386,6 +392,7 @@ export class TimeStretchService {
         "FFmpeg is not available. Audio concatenation is disabled in this deployment.",
       );
     }
+    const ffmpegFn = ffmpeg;
 
     const listFile = path?.join(this.tempDir, `concat_${randomUUID()}.txt`);
     const listContent = segments?.map((s) => `file '${s}'`).join("\n");
@@ -393,7 +400,7 @@ export class TimeStretchService {
 
     try {
       await new Promise<void>((resolve, reject) => {
-        ffmpeg()
+        ffmpegFn()
           .input(listFile)
           .inputOptions(["-f", "concat", "-safe", "0"])
           .outputOptions(["-y", "-acodec", "pcm_s24le"])
@@ -496,11 +503,12 @@ export class TimeStretchService {
       logger.warn("FFmpeg not available - using synthetic peak data");
       return this.generateSyntheticPeaks(inputPath);
     }
+    const ffmpegFn = ffmpeg;
     const outputFile = path?.join(this.tempDir, `peaks_${randomUUID()}.raw`);
 
     try {
       await new Promise<void>((resolve, _reject) => {
-        ffmpeg(inputPath)
+        ffmpegFn(inputPath)
           .audioFilters([
             "aformat=channel_layouts=mono",
             "asplit[a][b]",
@@ -620,7 +628,7 @@ export class TimeStretchService {
 
     const markers = await db.query.warpMarkers.findMany({
       where: eq(warpMarkers.clipId, clipId),
-      orderBy: [asc(warpMarkers.sourceTime)],
+      orderBy: [asc(warpMarkers.beatPosition)],
     });
 
     if (markers?.length === 0) {
@@ -650,7 +658,7 @@ export class TimeStretchService {
 
     return {
       storageKey: `${(clip as any)?.filePath}_warped`,
-      duration: clip.duration,
+      duration: clip.duration ?? 0,
     };
   }
 
@@ -674,7 +682,7 @@ export class TimeStretchService {
 
       const outputBuffer = await fsPromises?.readFile(tempOutput);
       const newStorageKey = `${payload?.storageKey}_warped_${Date?.now()}`;
-      await storageService?.uploadFile(newStorageKey, outputBuffer);
+      await storageService?.uploadFile(outputBuffer, "warp", `${newStorageKey}.wav`);
 
       const metadata = await this.getAudioMetadata(tempOutput);
 

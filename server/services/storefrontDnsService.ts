@@ -30,6 +30,20 @@
 import { pool } from "../db.js";
 import { logger } from "../logger.js";
 import crypto from "crypto";
+import type { QueryResult } from "pg";
+
+/**
+ * Typed wrapper around pool.query.
+ * InstrumentedPool.query returns Promise<unknown> to avoid coupling the pool
+ * implementation to pg types; at runtime it always returns a pg QueryResult.
+ * This cast is justified by that runtime contract.
+ */
+async function poolQuery<T extends Record<string, unknown>>(
+  text: string,
+  values?: unknown[],
+): Promise<QueryResult<T>> {
+  return pool.query(text, values) as Promise<QueryResult<T>>;
+}
 
 const BASE_DOMAIN = (
   process.env.BASE_DOMAIN || "max-booster.com"
@@ -534,7 +548,7 @@ export async function attachDomainToStorefront(
 export async function verifyStorefrontDomain(
   storefrontDomainId: string,
 ): Promise<VerificationStatus> {
-  const { rows } = await pool.query<{
+  const { rows } = await poolQuery<{
     domain: string;
     verification_token: string;
     verification_failures: number;
@@ -660,7 +674,7 @@ async function activateStorefrontDomain(
     // Post-activation: provision CAA records (async, non-blocking)
     if (dnsZoneId) {
       const userId = (
-        await pool.query<{ user_id: string }>(
+        await poolQuery<{ user_id: string }>(
           `SELECT user_id FROM dns_zones WHERE id = $1`,
           [dnsZoneId],
         )
@@ -771,7 +785,7 @@ export async function detachDomainFromStorefront(
 export async function lookupStorefrontByHost(
   host: string,
 ): Promise<string | null> {
-  const { rows } = await pool?.query<{ storefront_id: string }>(
+  const { rows } = await poolQuery<{ storefront_id: string }>(
     `SELECT storefront_id FROM storefront_hosts WHERE host = $1`,
     [host?.toLowerCase().replace(/:\d+$/, "")],
   );
@@ -793,7 +807,7 @@ export async function getDomainStatus(storefrontDomainId: string): Promise<{
   nameservers: { ns1: string; ns2: string };
   instructions?: DomainSetupInstructions;
 }> {
-  const { rows } = await pool?.query<{
+  const { rows } = await poolQuery<{
     domain: string;
     status: string;
     storefront_id: string;
@@ -809,7 +823,7 @@ export async function getDomainStatus(storefrontDomainId: string): Promise<{
     rows[0];
 
   const certRow = (
-    await pool?.query<{ cert_status: string }>(
+    await poolQuery<{ cert_status: string }>(
       `SELECT cert_status FROM storefront_hosts WHERE host = $1`,
       [domain],
     )
@@ -870,7 +884,7 @@ export async function runDomainHealthSweep(): Promise<{
   checked: number;
   degraded: number;
 }> {
-  const { rows } = await pool.query<{
+  const { rows } = await poolQuery<{
     id: string;
     domain: string;
     health_failures: number;

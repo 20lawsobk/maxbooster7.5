@@ -174,9 +174,9 @@ router.post(
           outcome: "quota_exceeded",
           details: {
             used: storage.totalBytes,
-            usedFormatted: formatBytes(storage.totalBytes),
+            usedFormatted: formatBytes(storage.totalBytes ?? 0),
             quota: storage.quotaBytes,
-            quotaFormatted: formatBytes(storage.quotaBytes),
+            quotaFormatted: formatBytes(storage.quotaBytes ?? 0),
             usedPercent,
             needed: file.size,
             neededFormatted: formatBytes(file.size),
@@ -267,7 +267,7 @@ router.post(
           used: storage.totalBytes! + file.size,
           usedFormatted: formatBytes(storage.totalBytes! + file.size),
           quota: storage.quotaBytes,
-          quotaFormatted: formatBytes(storage.quotaBytes),
+          quotaFormatted: formatBytes(storage.quotaBytes ?? 0),
           usedPercent: Math.round(
             ((storage.totalBytes! + file.size) / storage.quotaBytes!) * 100,
           ),
@@ -539,8 +539,11 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
       },
     };
 
+    const totalBytes = storage?.totalBytes ?? 0;
+    const quotaBytes = storage?.quotaBytes ?? 0;
+
     const usedPercent = Math.round(
-      (storage?.totalBytes / storage?.quotaBytes) * 100,
+      (totalBytes / quotaBytes) * 100,
     );
 
     let warningLevel: "none" | "low" | "medium" | "critical" | "exceeded" =
@@ -553,14 +556,12 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
     return res.json({
       success: true,
       storage: {
-        used: storage.totalBytes,
-        usedFormatted: formatBytes(storage?.totalBytes),
-        quota: storage.quotaBytes,
-        quotaFormatted: formatBytes(storage?.quotaBytes),
-        available: storage.quotaBytes! - storage?.totalBytes,
-        availableFormatted: formatBytes(
-          storage?.quotaBytes - storage?.totalBytes,
-        ),
+        used: totalBytes,
+        usedFormatted: formatBytes(totalBytes),
+        quota: quotaBytes,
+        quotaFormatted: formatBytes(quotaBytes),
+        available: quotaBytes - totalBytes,
+        availableFormatted: formatBytes(quotaBytes - totalBytes),
         usedPercent,
         fileCount: storage.fileCount,
         warningLevel,
@@ -572,8 +573,8 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
         usedFormatted: formatBytes(value?.used),
         count: value.count,
         percentage:
-          storage?.totalBytes > 0
-            ? Math.round((value?.used / storage?.totalBytes) * 100)
+          totalBytes > 0
+            ? Math.round((value?.used / totalBytes) * 100)
             : 0,
       })),
       thresholds: {
@@ -1009,20 +1010,22 @@ router.post(
       }
 
       const storage = await getOrCreateUserStorage(req.user.id);
-      const quotaAfterUpload = storage?.totalBytes + file?.size;
-      if (quotaAfterUpload <= storage?.quotaBytes) {
+      const storageTotalBytes = storage?.totalBytes ?? 0;
+      const storageQuotaBytes = storage?.quotaBytes ?? 0;
+      const quotaAfterUpload = storageTotalBytes + file?.size;
+      if (quotaAfterUpload <= storageQuotaBytes) {
         validationResults?.push({
           check: "Storage Quota",
           status: "pass",
           message: "Sufficient storage available",
-          value: formatBytes(storage?.quotaBytes - storage?.totalBytes),
+          value: formatBytes(storageQuotaBytes - storageTotalBytes),
         });
       } else {
         validationResults?.push({
           check: "Storage Quota",
           status: "fail",
           message: "Insufficient storage space",
-          value: `${formatBytes(storage?.quotaBytes - storage?.totalBytes)} available`,
+          value: `${formatBytes(storageQuotaBytes - storageTotalBytes)} available`,
         });
       }
 

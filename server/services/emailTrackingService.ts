@@ -2,12 +2,14 @@ import { db } from "../db.js";
 import {
   emailMessages,
   emailEvents,
-  type InsertEmailMessage,
-  type InsertEmailEvent,
 } from "@shared/schema";
 import { eq, desc, sql, gte } from "drizzle-orm";
 import nacl from "tweetnacl";
 import { logger } from "../logger.js";
+
+// Derive insert types from the table definitions (schema does not export named Insert types)
+type InsertEmailMessage = typeof emailMessages.$inferInsert;
+type InsertEmailEvent = typeof emailEvents.$inferInsert;
 
 export class EmailTrackingService {
   /**
@@ -55,18 +57,20 @@ export class EmailTrackingService {
         .where(dateFilter)
         .limit(1);
 
+      // emailEvents.event is the column name (schema uses "event", not "eventType")
+      // emailEvents.messageId links to emailMessages.sendgridMessageId
       const eventCounts = await db
         .select({
-          eventType: emailEvents.eventType,
+          eventType: emailEvents.event,
           count: sql<number>`count(*)::int`,
         })
         .from(emailEvents)
         .innerJoin(
           emailMessages,
-          eq(emailEvents.messageId, emailMessages.messageId),
+          eq(emailEvents.messageId, emailMessages.sendgridMessageId),
         )
         .where(dateFilter ? gte(emailMessages.sentAt, startDate) : undefined)
-        .groupBy(emailEvents.eventType);
+        .groupBy(emailEvents.event);
 
       const stats = {
         sent: sentCount.count || 0,
@@ -107,23 +111,26 @@ export class EmailTrackingService {
    */
   async getRecentBounces(limit: number = 50): Promise<any[]> {
     try {
+      // emailMessages columns: id, userId, to, from, subject, templateId, status, sendgridMessageId, sentAt, metadata, createdAt
+      // emailEvents columns:   id, messageId, email, event, timestamp, category, reason, metadata, createdAt
       const bounces = await db
         .select({
-          messageId: emailMessages.messageId,
-          toEmail: emailMessages.toEmail,
+          messageId: emailEvents.messageId,
+          toEmail: emailMessages.to,
           subject: emailMessages.subject,
           sentAt: emailMessages.sentAt,
           reason: emailEvents.reason,
-          smtpResponse: emailEvents.smtpResponse,
-          eventAt: emailEvents.eventAt,
+          // smtpResponse and eventAt do not exist; use available columns
+          category: emailEvents.category,
+          eventAt: emailEvents.timestamp,
         })
         .from(emailEvents)
         .innerJoin(
           emailMessages,
-          eq(emailEvents.messageId, emailMessages.messageId),
+          eq(emailEvents.messageId, emailMessages.sendgridMessageId),
         )
-        .where(eq(emailEvents.eventType, "bounce"))
-        .orderBy(desc(emailEvents.eventAt))
+        .where(eq(emailEvents.event, "bounce"))
+        .orderBy(desc(emailEvents.timestamp))
         .limit(limit);
 
       return bounces;
