@@ -598,7 +598,6 @@ router.post(
                 userId,
                 post?.platform ?? "unknown",
                 String(post?.content ?? ""),
-                new Date(),
               );
             } catch {
               /* non-fatal */
@@ -1825,7 +1824,7 @@ router.get(
           .filter((p) => !calendarPostIds?.has(p?.id))
           .map((p) => {
             const eng = (p?.engagement as Record<string, unknown>) || {};
-            const meta = eng?._autopilotMeta ? eng : {};
+            const meta = (eng?._autopilotMeta ? eng : {}) as Record<string, any>;
             let parsedContent: Record<string, unknown> = {};
             try {
               parsedContent = JSON.parse(p?.content ?? "{}");
@@ -2084,8 +2083,8 @@ router.post(
         quote: "engagement",
       };
 
-      const generatedContent = [];
-      const failedPlatforms = [];
+      const generatedContent: Record<string, unknown>[] = [];
+      const failedPlatforms: { platform: string; error: string }[] = [];
 
       // MaxCore AI is the only source — all platforms in parallel
       const mcResults = await Promise?.allSettled(
@@ -2094,10 +2093,10 @@ router.post(
           .map(async (platform: string) => {
             const ai = await getUnifiedAI();
             const result = await ai?.generateContent({
-              tone: validTones.includes(tone) ? tone : "energetic",
-              platform,
+              tone: (validTones.includes(tone) ? tone : "energetic") as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
+              platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
               topic: topic || "music",
-              contentType: contentTypeMap[contentType] || "engagement",
+              contentType: (contentTypeMap[contentType] || "engagement") as import("../../shared/ml/nlp/ContentGenerator.js").GenerationOptions["contentType"],
               userId: req.user?.id,
               includeHashtags: true,
               includeEmojis: true,
@@ -2389,7 +2388,7 @@ router.post(
           apple_music_id: "",
           data_sources: ["url_fallback"],
           error: (analyzeErr as Error).message,
-        } as Record<string, unknown>;
+        } as import("../services/mediaAnalyzerService.js").UrlAnalysis;
       }
 
       const seed = urlToContentSeed(analysis);
@@ -2468,8 +2467,8 @@ router.post(
           .map(async (platform: string) => {
             const ai = await getUnifiedAI();
             const result = await ai?.generateContent({
-              tone: validTones.includes(tone) ? tone : "energetic",
-              platform,
+              tone: (validTones.includes(tone) ? tone : "energetic") as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
+              platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
               topic: topic.substring(0, 120),
               genre: seed.genre || "hip-hop",
               artistName: seed.artist || "",
@@ -2708,7 +2707,7 @@ router.get(
         const lastSynced = (acc?.metadata as Record<string, unknown>)
           ?.lastSyncedAt
           ? new Date(
-              (acc?.metadata as Record<string, unknown>).lastSyncedAt,
+              (acc?.metadata as Record<string, unknown>).lastSyncedAt as string,
             ).getTime()
           : acc?.createdAt
             ? new Date(acc?.createdAt).getTime()
@@ -2758,17 +2757,17 @@ router.get(
               views: 0,
               posts: 0,
             };
-          platformEngagement[pl].likes += eng?.likes || 0;
-          platformEngagement[pl].comments += eng?.comments || 0;
-          platformEngagement[pl].shares += eng?.shares || eng?.retweets || 0;
-          platformEngagement[pl].views += eng?.views || 0;
+          platformEngagement[pl].likes += Number(eng?.likes) || 0;
+          platformEngagement[pl].comments += Number(eng?.comments) || 0;
+          platformEngagement[pl].shares += Number(eng?.shares) || Number(eng?.retweets) || 0;
+          platformEngagement[pl].views += Number(eng?.views) || 0;
           platformEngagement[pl].posts += 1;
-          totalLikes += eng?.likes || 0;
-          totalComments += eng?.comments || 0;
-          totalShares += eng?.shares || eng?.retweets || 0;
-          totalViews += eng?.views || 0;
-          totalReach += eng?.reach || 0;
-          totalImpressions += eng?.impressions || 0;
+          totalLikes += Number(eng?.likes) || 0;
+          totalComments += Number(eng?.comments) || 0;
+          totalShares += Number(eng?.shares) || Number(eng?.retweets) || 0;
+          totalViews += Number(eng?.views) || 0;
+          totalReach += Number(eng?.reach) || 0;
+          totalImpressions += Number(eng?.impressions) || 0;
         }
       }
 
@@ -2784,15 +2783,15 @@ router.get(
               views: 0,
               posts: 0,
             };
-          platformEngagement[pl].likes += perf?.likes || 0;
-          platformEngagement[pl].comments += perf?.comments || 0;
-          platformEngagement[pl].shares += perf?.shares || 0;
-          platformEngagement[pl].views += perf?.views || 0;
+          platformEngagement[pl].likes += Number(perf?.likes) || 0;
+          platformEngagement[pl].comments += Number(perf?.comments) || 0;
+          platformEngagement[pl].shares += Number(perf?.shares) || 0;
+          platformEngagement[pl].views += Number(perf?.views) || 0;
           platformEngagement[pl].posts += 1;
-          totalLikes += perf?.likes || 0;
-          totalComments += perf?.comments || 0;
-          totalShares += perf?.shares || 0;
-          totalViews += perf?.views || 0;
+          totalLikes += Number(perf?.likes) || 0;
+          totalComments += Number(perf?.comments) || 0;
+          totalShares += Number(perf?.shares) || 0;
+          totalViews += Number(perf?.views) || 0;
         }
       }
 
@@ -2850,8 +2849,8 @@ router.get(
           const eng = post?.engagement as Record<string, unknown>;
           if (eng) {
             dailyMap[d].engagement +=
-              (eng?.likes || 0) + (eng?.comments || 0) + (eng?.shares || 0);
-            dailyMap[d].views += eng?.views || 0;
+              (Number(eng?.likes) || 0) + (Number(eng?.comments) || 0) + (Number(eng?.shares) || 0);
+            dailyMap[d].views += Number(eng?.views) || 0;
           }
         }
       }
@@ -2862,8 +2861,8 @@ router.get(
           const perf = content?.performance as Record<string, unknown>;
           if (perf) {
             dailyMap[d].engagement +=
-              (perf?.likes || 0) + (perf?.comments || 0) + (perf?.shares || 0);
-            dailyMap[d].views += perf?.views || 0;
+              (Number(perf?.likes) || 0) + (Number(perf?.comments) || 0) + (Number(perf?.shares) || 0);
+            dailyMap[d].views += Number(perf?.views) || 0;
           }
         }
       }
@@ -2877,9 +2876,9 @@ router.get(
           publishedAt: p.publishedAt || p?.createdAt,
           engagement: (() => {
             const e = p?.engagement as Record<string, unknown>;
-            return e ? (e?.likes || 0) + (e?.comments || 0) + (e?.shares || 0) : 0;
+            return e ? (Number(e?.likes) || 0) + (Number(e?.comments) || 0) + (Number(e?.shares) || 0) : 0;
           })(),
-          views: (p?.engagement as Record<string, unknown>)?.views || 0,
+          views: Number((p?.engagement as Record<string, unknown>)?.views) || 0,
         })),
       ]
         .sort((a, b) => b?.engagement - a?.engagement)
@@ -2927,7 +2926,7 @@ router.get(
                   genres: artist.genres || [],
                   artistId: profile.spotifyArtistId,
                   artistName: artist.name,
-                  imageUrl: artist.images?.[0]?.url || null,
+                  imageUrl: (artist.images as any)?.[0]?.url || null,
                 };
               }
             }
@@ -3087,7 +3086,7 @@ router.post(
           if (result?.success) {
             ffmpegJobs?.set(jobId, {
               status: "done",
-              result,
+              result: result as unknown as Record<string, unknown>,
               createdAt: Date.now(),
             });
             logger.info(
@@ -3909,7 +3908,7 @@ router.post(
         .from(listings)
         .where(
           and(
-            eq(listings.storefrontId, storefront?.id),
+            eq(listings.storefrontId, storefront?.id as string),
             eq(listings.isPublished, true),
           ),
         )
@@ -3971,7 +3970,7 @@ router.post(
 
       const result = await (
         await getVeoMusic()
-      ).generateCampaign(campaignRequest);
+      ).generateCampaign(campaignRequest as import("../services/veoMusicService.js").VeoCampaignRequest);
       if (!result || !result?.success) {
         return res
           .status(500)
@@ -4049,11 +4048,11 @@ router.post(
         const storeRows = await db
           .select()
           .from(storefronts)
-          .where(eq(storefronts.id, listing?.storefrontId))
+          .where(eq(storefronts.id, listing.storefrontId!))
           .limit(1);
         if (storeRows[0])
           storefrontName =
-            (storeRows[0] as Record<string, unknown>).name || storefrontName;
+            ((storeRows[0] as Record<string, unknown>).name as string) || storefrontName;
       }
 
       const metadata = (listing?.metadata || {}) as Record<string, any>;
@@ -4062,7 +4061,7 @@ router.post(
       const category = listing?.category || metadata?.genre || "";
       const artworkUrl = listing?.artworkUrl || "";
       const priceDisplay = listing?.priceCents
-        ? `$${(listing?.priceCents / 100).toFixed(2)}`
+        ? `$${(Number(listing.priceCents) / 100).toFixed(2)}`
         : "";
 
       let story = `Check out "${title}" by ${storefrontName}.`;
@@ -4098,7 +4097,7 @@ router.post(
 
       const result = await (
         await getVeoMusic()
-      ).generateCampaign(campaignRequest);
+      ).generateCampaign(campaignRequest as import("../services/veoMusicService.js").VeoCampaignRequest);
       if (!result || !result.success) {
         return res
           .status(500)
@@ -4211,7 +4210,7 @@ router.post(
       };
       const colorPalette = toneColorMap[resolvedTone] ?? toneColorMap.energetic;
 
-      const visualSpec = getVisualSpec(resolvedPlatform, "video_post", colorPalette);
+      const visualSpec = getVisualSpec(resolvedPlatform, "short_video", colorPalette);
 
       const specData = {
         ...visualSpec,
@@ -4301,9 +4300,9 @@ router.post(
       const content = await (
         await getUnifiedAI()
       ).generateContent({
-        platform: platform || "instagram",
+        platform: (platform || "instagram") as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
         topic: aiTopic,
-        tone: seed.tone !== "default" ? seed.tone : "energetic",
+        tone: (seed.tone !== "default" ? seed.tone : "energetic") as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
         genre: seed.genre !== "default" ? seed.genre : "hip-hop",
         artistName: seed.artist,
         trackTitle: seed.track,
@@ -4530,9 +4529,9 @@ router.post(
         await getUnifiedAI()
       ).generateContent({
         type: "social_post",
-        platform,
+        platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
         topic: seed.topic,
-        tone: "default",
+        tone: "energetic" as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
         genre: seed.genre,
         artistName: seed.artist,
         trackTitle: seed.track,
@@ -4608,9 +4607,9 @@ router.post(
         await getUnifiedAI()
       ).generateContent({
         type: "social_post",
-        platform,
+        platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
         topic: `${analysis.mood} visual aesthetic, ${analysis.genre_hint} music`,
-        tone: analysis.tone || "default",
+        tone: (analysis.tone && analysis.tone !== "default" ? analysis.tone : "energetic") as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
         genre: analysis.genre_hint,
         artistName: (req.body.artist_name as string) || "",
       });
@@ -4662,7 +4661,7 @@ router.get(
       const svc = await getVoiceSynthService();
       res.json({ success: true, profiles: svc.listVoiceProfiles() });
     } catch (e) {
-      logger.warn("[Route] voice-profiles:", (e as Error).message);
+      logger.warn(`[Route] voice-profiles: ${(e as Error).message}`);
       res
         .status(500)
         .json({ success: false, error: "Failed to load voice profiles" });
@@ -4741,7 +4740,7 @@ router.post(
           return res
             .status(400)
             .json({ success: false, error: "text is required" });
-        result = await svc.synthesizeVoice(text, options);
+        result = await svc.synthesizeVoice(text!, options);
       }
 
       if (!result.success)
@@ -4756,7 +4755,7 @@ router.post(
         "anonymous";
 
       // ── Persist to PDIM (non-blocking — response already sent after this) ──
-      let pdimMeta: Record<string, unknown> | null = null;
+      let pdimMeta: import("../services/pdimMediaStorageService.js").StoredVoiceFile | null = null;
       try {
         const { storeVoiceFile } = await import(
           "../services/pdimMediaStorageService.js"
@@ -4768,10 +4767,7 @@ router.post(
           text: typeof text === "string" ? text : undefined,
         });
       } catch (e) {
-        logger.warn(
-          "[Route] voice PDIM store skipped:",
-          (e as Error).message.slice(0, 80),
-        );
+        logger.warn(`[Route] voice PDIM store skipped: ${(e as Error).message.slice(0, 80)}`);
       }
 
       res.json({
@@ -4794,7 +4790,7 @@ router.post(
           error: e.message,
         });
       }
-      logger.warn("[Route] synthesize-voice:", (e as Error).message);
+      logger.warn(`[Route] synthesize-voice: ${(e as Error).message}`);
       res
         .status(500)
         .json({
@@ -4832,7 +4828,7 @@ router.post(
       const characteristics = await svc.analyzeReferenceVoice(file!.path);
       res.json({ success: true, characteristics });
     } catch (e) {
-      logger.warn("[Route] analyze-reference-voice:", (e as Error).message);
+      logger.warn(`[Route] analyze-reference-voice: ${(e as Error).message}`);
       res
         .status(500)
         .json({ success: false, error: (e as Error).message || "Analysis failed" });
@@ -4898,7 +4894,7 @@ router.post(
 
       res.json({ success: true, analysis, cacheHit });
     } catch (e) {
-      logger.warn("[Route] analyze-audio-beats:", (e as Error).message);
+      logger.warn(`[Route] analyze-audio-beats: ${(e as Error).message}`);
       res
         .status(500)
         .json({ success: false, error: (e as Error).message || "Beat analysis failed" });
@@ -5137,7 +5133,7 @@ router.post(
               voiceSynthPath = voiceResult.outputPath;
             }
           } catch (e) {
-            logger.warn("[MusicVideo] Voice synthesis skipped:", (e as Error).message);
+            logger.warn(`[MusicVideo] Voice synthesis skipped: ${(e as Error).message}`);
           }
         }
 
@@ -5188,7 +5184,7 @@ router.post(
           legacyUser?.id?.toString() ||
           legacyUser?.userId?.toString() ||
           "anonymous";
-        let pdimVideoMeta: Record<string, unknown> | null = null;
+        let pdimVideoMeta: import("../services/pdimMediaStorageService.js").StoredMusicVideo | null = null;
         try {
           const { storeMusicVideo } = await import(
             "../services/pdimMediaStorageService.js"
@@ -5206,14 +5202,11 @@ router.post(
             (result as any).pdim = {
               key: pdimVideoMeta.pdimKey,
               compressedSize: pdimVideoMeta.compressedSize,
-              tier: pdimVideoMeta.tier,
+              tier: (pdimVideoMeta as any).tier,
             };
           }
         } catch (e) {
-          logger.warn(
-            `[MusicVideo] PDIM store skipped for job ${jobId}:`,
-            (e as Error).message.slice(0, 80),
-          );
+          logger.warn(`[MusicVideo] PDIM store skipped for job ${jobId}: ${(e as Error).message.slice(0, 80)}`);
         }
 
         // Extract a real first-frame poster (mobile grey-box fix).
@@ -5236,14 +5229,14 @@ router.post(
 
         musicVideoJobs.set(jobId, {
           status: "done",
-          result,
+          result: result as unknown as Record<string, unknown>,
           createdAt: Date.now(),
         });
         logger.info(
           `[MusicVideo] Job ${jobId} complete — ${result.filename} | PDIM: ${pdimVideoMeta?.pdimKey ?? "skipped"}`,
         );
       } catch (e) {
-        logger.warn(`[MusicVideo] Job ${jobId} failed:`, (e as Error).message);
+        logger.warn(`[MusicVideo] Job ${jobId} failed: ${(e as Error).message}`);
         musicVideoJobs.set(jobId, {
           status: "error",
           error: (e as Error).message || "Music video generation failed",

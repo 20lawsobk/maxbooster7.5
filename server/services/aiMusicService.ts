@@ -4,20 +4,32 @@ import { storage } from "../storage";
 import * as path from "path";
 import * as fsPromises from "fs/promises";
 import { parseFile } from "music-metadata";
+// node-wav has no bundled type declarations
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import * as wav from "node-wav";
 import FFT from "fft.js";
 import { logger } from "../logger.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import type Ffmpeg from "fluent-ffmpeg";
 
-let ffmpeg: Record<string, unknown> | null = null;
+// fluent-ffmpeg is loaded dynamically; the module default is both a namespace
+// and a callable factory. We type it as the constructor overload so callers
+// like `ffmpeg(path)` type-check correctly.
+type FfmpegFactory = (
+  input?: string | NodeJS.ReadableStream,
+  options?: Ffmpeg.FfmpegCommandOptions,
+) => Ffmpeg.FfmpegCommand;
+
+let ffmpeg: (FfmpegFactory & { setFfmpegPath(p: string): void }) | null = null;
 let ffmpegAvailable = false;
 
 async function initializeFfmpeg() {
   if (ffmpegAvailable) return true;
   try {
     const fluentFfmpeg = await import("fluent-ffmpeg");
-    ffmpeg = fluentFfmpeg?.default;
+    ffmpeg = fluentFfmpeg?.default as typeof ffmpeg;
     try {
       const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic?.default) {
@@ -2275,7 +2287,7 @@ export class AIMusicService {
 
   private async performFFT(
     audioData: Float32Array,
-    sampleRate: number,
+    _sampleRate: number,
   ): Promise<Float32Array> {
     const fftSize = 4096;
     const fft = new FFT(fftSize);
@@ -2654,7 +2666,7 @@ export class AIMusicService {
     confidence: number,
   ): string {
     const explanations: Record<string, string> = {
-      stem_separation: `Separated audio into ${Object.keys(output).length} stems with ${(confidence * 100).toFixed(1)}% overall confidence using frequency-based analysis`,
+      stem_separation: `Separated audio into ${Object.keys(output as Record<string, unknown>).length} stems with ${(confidence * 100).toFixed(1)}% overall confidence using frequency-based analysis`,
       preset_retrieval: `Retrieved ${(output as any)?.displayName} preset optimized for ${(input as any)?.genre} with professional mixing parameters`,
       preset_application: `Applied ${(input as any)?.genre} preset at ${(input as any)?.intensity}% intensity with ${(output as any)?.suggestions?.length || 0} AI-generated suggestions`,
       reference_analysis: `Analyzed reference track: ${(output as any)?.loudnessMetrics.integrated?.toFixed(1)} LUFS integrated loudness, ${(output as any)?.dynamicRange.toFixed(1)}dB dynamic range`,

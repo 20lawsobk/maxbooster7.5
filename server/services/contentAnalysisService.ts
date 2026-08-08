@@ -106,14 +106,13 @@ const SAFE_AXIOS_AGENTS = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Optional sharp support with graceful fallback
-let sharpModule: typeof import("sharp") | null | false = null;
-let _sharpAvailable = false;
+// Use the ESM-export type (SharpConstructor) which is what dynamic import resolves to
+let sharpModule: import("sharp").SharpConstructor | null | false = null;
 
 async function getSharp() {
   if (sharpModule !== null) return sharpModule;
   try {
     sharpModule = (await import("sharp")).default;
-    _sharpAvailable = true;
     logger.info("Sharp module loaded for content analysis");
     return sharpModule;
   } catch (error) {
@@ -336,12 +335,12 @@ export interface TextAnalysisResult {
 }
 
 export class ContentAnalysisService {
-  private imageClassificationModel:
+  private _imageClassificationModel:
     | import("@tensorflow/tfjs").LayersModel
     | null = null;
   private faceDetectionModel: import("@tensorflow/tfjs").LayersModel | null =
     null;
-  private textDetectionModel: import("@tensorflow/tfjs").LayersModel | null =
+  private _textDetectionModel: import("@tensorflow/tfjs").LayersModel | null =
     null;
   private modelsInitialized = false;
   private initializationPromise: Promise<void> | null = null;
@@ -385,9 +384,9 @@ export class ContentAnalysisService {
     }
 
     try {
-      this.imageClassificationModel = this.buildImageClassificationModel();
+      this._imageClassificationModel = this.buildImageClassificationModel();
       this.faceDetectionModel = this.buildFaceDetectionModel();
-      this.textDetectionModel = this.buildTextDetectionModel();
+      this._textDetectionModel = this.buildTextDetectionModel();
       this.modelsInitialized = true;
       this.ready = true;
       logger.info("[ContentAnalysis] Custom models initialized successfully");
@@ -884,7 +883,7 @@ export class ContentAnalysisService {
       const hasFacesProbability = ((await (prediction?.data as () => Promise<number[]>)()) as number[])[0];
 
       imageTensor?.dispose();
-      prediction?.dispose();
+      if (typeof (prediction as any)?.dispose === "function") (prediction as any).dispose();
 
       const hasFaces = hasFacesProbability > 0.5;
       const count = hasFaces ? Math.ceil(hasFacesProbability * 2) : 0;
@@ -1053,9 +1052,9 @@ export class ContentAnalysisService {
     else if (colors?.mood === "dark") vibes?.push("moody", "dramatic");
     else if (colors?.mood === "light") vibes?.push("airy", "fresh");
 
-    if (features?.professionalQuality > 0.8) vibes?.push("professional");
+    if ((features?.professionalQuality as number) > 0.8) vibes?.push("professional");
     if (composition?.layout === "symmetric") vibes?.push("balanced");
-    if (composition?.complexity > 0.7) vibes?.push("complex", "detailed");
+    if ((composition?.complexity as number) > 0.7) vibes?.push("complex", "detailed");
 
     return vibes?.slice(0, 5);
   }
@@ -1142,14 +1141,14 @@ export class ContentAnalysisService {
 
       const result: AudioAnalysisResult = {
         music: {
-          tempo: metadata!.tempo || 120,
-          key: metadata!.key || "C",
-          mode: metadata!.mode || "major",
-          genre: metadata!.genre || ["pop", "electronic"],
-          energy: metadata!.energy || 0.7,
-          danceability: metadata!.danceability || 0.8,
-          valence: metadata!.valence || 0.6,
-          acousticness: metadata!.acousticness || 0.3,
+          tempo: (metadata?.tempo as number | undefined) ?? 120,
+          key: (metadata?.key as string | undefined) ?? "C",
+          mode: (metadata?.mode as "major" | "minor" | "unknown" | undefined) ?? "major",
+          genre: (metadata?.genre as string[] | undefined) ?? ["pop", "electronic"],
+          energy: (metadata?.energy as number | undefined) ?? 0.7,
+          danceability: (metadata?.danceability as number | undefined) ?? 0.8,
+          valence: (metadata?.valence as number | undefined) ?? 0.6,
+          acousticness: (metadata?.acousticness as number | undefined) ?? 0.3,
         },
         production: {
           quality: 0.85,

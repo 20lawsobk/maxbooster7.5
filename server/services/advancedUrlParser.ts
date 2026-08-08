@@ -474,7 +474,7 @@ function parseMeta(html: string): PageMeta {
 
 // ── JSON-LD helpers ───────────────────────────────────────────────────────────
 
-function jStr(obj: Record<string, unknown> | undefined, key: string): string | null {
+function jStr(obj: Record<string, unknown> | undefined | null, key: string): string | null {
   if (!obj) return null;
   const v = obj[key];
   if (typeof v === "string") return clean(v);
@@ -493,7 +493,7 @@ function jStr(obj: Record<string, unknown> | undefined, key: string): string | n
   return null;
 }
 
-function jNum(obj: Record<string, unknown> | undefined, key: string): number | null {
+function jNum(obj: Record<string, unknown> | undefined | null, key: string): number | null {
   if (!obj) return null;
   const v = obj[key];
   if (typeof v === "number" && isFinite(v)) return v;
@@ -501,7 +501,7 @@ function jNum(obj: Record<string, unknown> | undefined, key: string): number | n
   return null;
 }
 
-function jObj(obj: Record<string, unknown> | undefined, key: string): Record<string, unknown> | null {
+function jObj(obj: Record<string, unknown> | undefined | null, key: string): Record<string, unknown> | null {
   if (!obj) return null;
   const v = obj[key];
   if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, unknown>;
@@ -509,7 +509,7 @@ function jObj(obj: Record<string, unknown> | undefined, key: string): Record<str
   return null;
 }
 
-function jArr(obj: Record<string, unknown> | undefined, key: string): Record<string, unknown>[] {
+function jArr(obj: Record<string, unknown> | undefined | null, key: string): Record<string, unknown>[] {
   if (!obj) return [];
   const v = obj[key];
   if (Array.isArray(v)) return v.filter((x): x is Record<string, unknown> => !!x && typeof x === "object");

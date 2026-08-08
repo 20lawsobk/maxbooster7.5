@@ -41,18 +41,24 @@ router.get("/platforms", async (req: ApiKeyRequest, res) => {
         .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    // Get user's connected platform tokens
+    // Get user's connected platform tokens (stored in metadata jsonb)
     const [user] = await db
       .select({
-        youtube: users.youtubeToken,
-        facebook: users.facebookToken,
-        instagram: users.instagramToken,
-        twitter: users.twitterToken,
-        tiktok: users.tiktokToken,
+        metadata: users.preferences,
       })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
+
+    // Extract platform token presence from metadata
+    const meta = (user?.metadata as Record<string, unknown>) ?? {};
+    const platformTokens = {
+      youtube: meta.youtubeToken as string | undefined,
+      facebook: meta.facebookToken as string | undefined,
+      instagram: meta.instagramToken as string | undefined,
+      twitter: meta.twitterToken as string | undefined,
+      tiktok: meta.tiktokToken as string | undefined,
+    };
 
     if (!user) {
       return res
@@ -62,13 +68,13 @@ router.get("/platforms", async (req: ApiKeyRequest, res) => {
 
     // Build list of connected platforms (only includes platforms with OAuth tokens in the schema)
     const platforms = [];
-    if (user?.youtube) platforms?.push({ name: "YouTube", status: "connected" });
-    if (user?.facebook)
+    if (platformTokens.youtube) platforms?.push({ name: "YouTube", status: "connected" });
+    if (platformTokens.facebook)
       platforms?.push({ name: "Facebook", status: "connected" });
-    if (user?.instagram)
+    if (platformTokens.instagram)
       platforms?.push({ name: "Instagram", status: "connected" });
-    if (user?.twitter) platforms?.push({ name: "Twitter", status: "connected" });
-    if (user?.tiktok) platforms?.push({ name: "TikTok", status: "connected" });
+    if (platformTokens.twitter) platforms?.push({ name: "Twitter", status: "connected" });
+    if (platformTokens.tiktok) platforms?.push({ name: "TikTok", status: "connected" });
 
     return res.json({
       success: true,
@@ -250,10 +256,10 @@ router.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
     // Calculate totals
     const totals = engagement?.reduce(
       (acc, curr) => ({
-        likes: acc.likes + curr?.likes,
-        shares: acc.shares + curr?.shares,
-        comments: acc.comments + curr?.comments,
-        saves: acc.saves + curr?.saves,
+        likes: acc.likes + (Number(curr?.likes) || 0),
+        shares: acc.shares + (Number(curr?.shares) || 0),
+        comments: acc.comments + (Number(curr?.comments) || 0),
+        saves: acc.saves + (Number(curr?.saves) || 0),
       }),
       { likes: 0, shares: 0, comments: 0, saves: 0 },
     );
@@ -462,21 +468,23 @@ router.get("/tracks{/:artistId}", async (req: ApiKeyRequest, res) => {
     }
 
     // Get all projects/tracks for the user
+    // streams/revenue/playCount/likeCount/artworkUrl are not direct columns on projects;
+    // they are sourced from analytics or metadata. Return nulls so the API shape is stable.
     const tracks = await db
       .select({
         id: projects.id,
         title: projects.title,
         genre: projects.genre,
-        streams: projects.streams,
-        revenue: projects.revenue,
-        playCount: projects.playCount,
-        likeCount: projects.likeCount,
-        artworkUrl: projects.artworkUrl,
+        streams: sql<number | null>`null`,
+        revenue: sql<number | null>`null`,
+        playCount: sql<number | null>`null`,
+        likeCount: sql<number | null>`null`,
+        artworkUrl: projects.coverImageUrl,
         createdAt: projects.createdAt,
       })
       .from(projects)
       .where(eq(projects.userId, artistId as string))
-      .orderBy(desc(sortBy === "revenue" ? projects.revenue : projects.streams))
+      .orderBy(desc(projects.updatedAt))
       .limit(limit);
 
     return res.json({

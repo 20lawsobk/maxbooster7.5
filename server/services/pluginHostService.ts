@@ -181,7 +181,13 @@ class PluginHostService {
       throw new Error(`Plugin instance not found: ${instanceId}`);
     }
 
-    const updatedParams = { ...instance?.parameters, ...parameters };
+    const merged = { ...instance?.parameters, ...parameters };
+    // Drop any keys whose value is undefined (from Partial spread) to keep the
+    // type as Record<string, string | number | boolean>.
+    const updatedParams: Record<string, string | number | boolean> =
+      Object.fromEntries(
+        Object.entries(merged).filter(([, v]) => v !== undefined),
+      ) as Record<string, string | number | boolean>;
 
     await db
       .update(pluginInstances)
@@ -488,7 +494,7 @@ class PluginHostService {
               channels: 2,
             },
             params,
-            { sampleRate: inputBuffer.sampleRate, tempo: 120 },
+            { sampleRate: inputBuffer.sampleRate, tempo: 120, blockSize: 512, currentTime: 0 },
           );
           return {
             samples: [
@@ -560,7 +566,7 @@ class PluginHostService {
       channels: number;
     },
     params: Record<string, number | boolean | string>,
-    context: { sampleRate: number; tempo: number },
+    context: { sampleRate: number; tempo: number; blockSize?: number; currentTime?: number },
   ): Promise<{
     samples: Float32Array[];
     sampleRate: number;
@@ -572,7 +578,7 @@ class PluginHostService {
         `No advanced DSP processor found for plugin: ${pluginId}`,
       );
     }
-    return processor?.process(inputBuffer, params, context);
+    return processor?.process(inputBuffer, params, { blockSize: 512, currentTime: 0, ...context });
   }
 
   async renderInstrumentAdvanced(
@@ -774,7 +780,7 @@ class PluginHostService {
     left: Float32Array,
     right: Float32Array,
     params: Record<string, number | boolean | string>,
-    sampleRate: number,
+    _sampleRate: number,
   ): void {
     const outputGain = Math.pow(10, ((params?.outputGain as number) || 0) / 20);
 
@@ -788,7 +794,7 @@ class PluginHostService {
     left: Float32Array,
     right: Float32Array,
     params: Record<string, number | boolean | string>,
-    sampleRate: number,
+    _sampleRate: number,
   ): void {
     const ceiling = Math.pow(10, ((params?.ceiling as number) || -0.3) / 20);
     const threshold = Math.pow(10, ((params?.threshold as number) || -6) / 20);
@@ -892,7 +898,7 @@ class PluginHostService {
     left: Float32Array,
     right: Float32Array,
     params: Record<string, number | boolean | string>,
-    sampleRate: number,
+    _sampleRate: number,
   ): void {
     const mode = (params?.mode as string) || "tube";
     const drive = (params?.drive as number) || 0.5;
@@ -1085,6 +1091,15 @@ class PluginHostService {
     }
   }
 
+  /** Extract typed fields from the opaque pluginPresets.metadata JSON column. */
+  private extractPresetMeta(meta: unknown): { category: string | undefined; isPublic: boolean } {
+    const m = meta as Record<string, unknown> | null | undefined;
+    return {
+      category: typeof m?.category === "string" ? m.category : undefined,
+      isPublic: typeof m?.isPublic === "boolean" ? m.isPublic : Boolean(m?.isPublic),
+    };
+  }
+
   async savePreset(
     userId: string,
     pluginId: string,
@@ -1111,20 +1126,17 @@ class PluginHostService {
       })
       .returning();
 
+    const meta = this.extractPresetMeta(preset.metadata);
     return {
       id: preset.id,
       userId: preset.userId || userId,
       pluginId: preset.pluginId || plugin?.id,
       name: preset.name,
-      category:
-        (preset?.metadata as Record<string, unknown>)?.category || undefined,
-      parameters: preset.parameters as Record<
-        string,
-        number | boolean | string
-      >,
+      category: meta.category,
+      parameters: preset.parameters as Record<string, number | boolean | string>,
       isDefault: preset.isFactory || false,
-      isPublic: (preset?.metadata as Record<string, unknown>)?.isPublic || false,
-      createdAt: preset.createdAt,
+      isPublic: meta.isPublic,
+      createdAt: preset.createdAt ?? new Date(),
     };
   }
 
@@ -1146,17 +1158,20 @@ class PluginHostService {
       orderBy: [desc(pluginPresets.createdAt)],
     });
 
-    return presets?.map((p) => ({
-      id: p.id,
-      userId: p.userId || userId,
-      pluginId: p.pluginId || pluginId,
-      name: p.name,
-      category: (p?.metadata as Record<string, unknown>)?.category || undefined,
-      parameters: p.parameters as Record<string, number | boolean | string>,
-      isDefault: p.isFactory || false,
-      isPublic: (p?.metadata as Record<string, unknown>)?.isPublic || false,
-      createdAt: p.createdAt,
-    }));
+    return presets?.map((p) => {
+      const meta = this.extractPresetMeta(p.metadata);
+      return {
+        id: p.id,
+        userId: p.userId || userId,
+        pluginId: p.pluginId || pluginId,
+        name: p.name,
+        category: meta.category,
+        parameters: p.parameters as Record<string, number | boolean | string>,
+        isDefault: p.isFactory || false,
+        isPublic: meta.isPublic,
+        createdAt: p.createdAt ?? new Date(),
+      };
+    });
   }
 
   async loadPreset(presetId: string): Promise<PluginPreset | undefined> {
@@ -1168,20 +1183,17 @@ class PluginHostService {
       return undefined;
     }
 
+    const meta = this.extractPresetMeta(preset.metadata);
     return {
       id: preset.id,
       userId: preset.userId || "",
       pluginId: preset.pluginId || "",
       name: preset.name,
-      category:
-        (preset?.metadata as Record<string, unknown>)?.category || undefined,
-      parameters: preset.parameters as Record<
-        string,
-        number | boolean | string
-      >,
+      category: meta.category,
+      parameters: preset.parameters as Record<string, number | boolean | string>,
       isDefault: preset.isFactory || false,
-      isPublic: (preset?.metadata as Record<string, unknown>)?.isPublic || false,
-      createdAt: preset.createdAt,
+      isPublic: meta.isPublic,
+      createdAt: preset.createdAt ?? new Date(),
     };
   }
 

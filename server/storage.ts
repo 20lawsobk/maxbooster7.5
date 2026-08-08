@@ -295,7 +295,8 @@ export class DatabaseStorage implements IStorage {
     `);
     const rows = (result as { rows?: unknown[] }).rows ?? result;
     return Array.isArray(rows)
-      ? rows?.map((user: Record<string, unknown>) => {
+      ? rows?.map((row: unknown) => {
+          const user = row as Record<string, unknown>;
           const prefs =
             typeof user?.preferences === "string"
               ? JSON.parse(user?.preferences)
@@ -358,7 +359,7 @@ export class DatabaseStorage implements IStorage {
   async createInferenceRun(
     data: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
-    const [run] = await db.insert(inferenceRuns).values(data).returning();
+    const [run] = await db.insert(inferenceRuns).values(data as any).returning();
     return run;
   }
 
@@ -411,8 +412,8 @@ export class DatabaseStorage implements IStorage {
     const [newPost] = await db
       .insert(posts)
       .values({
-        id: post.id,
-        userId: post.userId,
+        id: post.id as string | undefined,
+        userId: post.userId as string,
         platform:
           Array.isArray(platforms) && platforms?.length > 0
             ? platforms[0]
@@ -593,22 +594,22 @@ export class DatabaseStorage implements IStorage {
     for (const post of recentPosts) {
       const eng = post?.engagement as Record<string, unknown>;
       if (eng) {
-        totalLikes += eng?.likes || 0;
-        totalComments += eng?.comments || 0;
-        totalShares += eng?.shares || eng?.retweets || 0;
-        totalViews += eng?.views || 0;
-        totalReach += eng?.reach || 0;
-        totalImpressions += eng?.impressions || 0;
+        totalLikes += Number(eng?.likes) || 0;
+        totalComments += Number(eng?.comments) || 0;
+        totalShares += Number(eng?.shares) || Number(eng?.retweets) || 0;
+        totalViews += Number(eng?.views) || 0;
+        totalReach += Number(eng?.reach) || 0;
+        totalImpressions += Number(eng?.impressions) || 0;
       }
     }
 
     for (const content of autopilotContent) {
       const perf = content?.performance as Record<string, unknown>;
       if (perf) {
-        totalLikes += perf?.likes || 0;
-        totalComments += perf?.comments || 0;
-        totalShares += perf?.shares || 0;
-        totalViews += perf?.views || 0;
+        totalLikes += Number(perf?.likes) || 0;
+        totalComments += Number(perf?.comments) || 0;
+        totalShares += Number(perf?.shares) || 0;
+        totalViews += Number(perf?.views) || 0;
       }
     }
 
@@ -854,8 +855,8 @@ export class DatabaseStorage implements IStorage {
           userId: p.userId,
           title,
           contentType: (contentObj as any).mediaType || "text",
-          platform: meta.platforms?.[0] || p?.platform || "social",
-          platforms: meta.platforms || [p?.platform].filter(Boolean),
+          platform: (meta.platforms as string[] | undefined)?.[0] || p?.platform || "social",
+          platforms: (meta.platforms as string[] | undefined) || [p?.platform].filter(Boolean),
           scheduledAt: p.scheduledAt,
           status: resolvedStatus,
           content: meta.content || contentObj,
@@ -1231,16 +1232,16 @@ export class DatabaseStorage implements IStorage {
         );
         const best = variants?.reduce((a, b) => {
           const aRate =
-            ((a?.performance as Record<string, unknown>)?.clicks || 0) /
+            Number((a?.performance as Record<string, unknown>)?.clicks || 0) /
             Math.max(
               1,
-              ((a?.performance as Record<string, unknown>)?.impressions || 1 as number),
+              Number((a?.performance as Record<string, unknown>)?.impressions) || 1,
             );
           const bRate =
-            ((b?.performance as Record<string, unknown>)?.clicks || 0) /
+            Number((b?.performance as Record<string, unknown>)?.clicks || 0) /
             Math.max(
               1,
-              ((b?.performance as Record<string, unknown>)?.impressions || 1 as number),
+              Number((b?.performance as Record<string, unknown>)?.impressions) || 1,
             );
           return bRate > aRate ? b : a;
         });
@@ -1497,7 +1498,7 @@ export class DatabaseStorage implements IStorage {
     if (recentContent?.length > 0) {
       const topPerforming = recentContent?.filter((c) => {
         const perf = c?.performance as Record<string, unknown>;
-        return perf && (perf?.views > 0 || perf?.likes > 0);
+        return perf && (Number(perf?.views) > 0 || Number(perf?.likes) > 0);
       });
       if (topPerforming?.length > 0) {
         insights?.push({
@@ -1957,7 +1958,8 @@ export class DatabaseStorage implements IStorage {
       const rows = (result as { rows?: unknown[] }).rows ?? result;
       if (!Array.isArray(rows)) return [];
 
-      return rows?.map((u: Record<string, unknown>) => {
+      return rows?.map((row: unknown) => {
+        const u = row as Record<string, unknown>;
         const displayName =
           (u?.artist_name as string) ||
           `${u?.first_name || ""} ${u?.last_name || ""}`.trim() ||
@@ -1991,7 +1993,7 @@ export class DatabaseStorage implements IStorage {
   async createDistroRelease(
     data: Record<string, unknown>,
   ): Promise<DistroRelease> {
-    const [release] = await db.insert(distroReleases).values(data).returning();
+    const [release] = await db.insert(distroReleases).values(data as any).returning();
     return release;
   }
 
@@ -2034,7 +2036,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDistroTrack(data: Record<string, unknown>): Promise<DistroTrack> {
-    const [track] = await db.insert(distroTracks).values(data).returning();
+    const [track] = await db.insert(distroTracks).values(data as any).returning();
     return track;
   }
 
@@ -2133,8 +2135,6 @@ export class DatabaseStorage implements IStorage {
           isActive: data.isActive ?? true,
           logoUrl: data.logoUrl,
           metadata: data.metadata,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         })
         .returning();
       return provider;
@@ -2157,7 +2157,6 @@ export class DatabaseStorage implements IStorage {
         .update(dspProviders)
         .set({
           ...data,
-          updatedAt: new Date(),
         })
         .where(eq(dspProviders.id, id))
         .returning();
@@ -2282,17 +2281,17 @@ export class DatabaseStorage implements IStorage {
       const [entry] = await db
         .insert(workspaceAuditLog)
         .values({
-          workspaceId: data.workspaceId || data?.userId || "default",
-          userId: data.userId,
-          action: data.action,
-          resourceType: data.resourceType || null,
-          resourceId: data.resourceId || null,
+          workspaceId: String(data.workspaceId || data?.userId || "default"),
+          userId: String(data.userId),
+          action: String(data.action),
+          resourceType: (data.resourceType as string) || null,
+          resourceId: (data.resourceId as string) || null,
           details: data.details || null,
           changes: data.changes || null,
           previousValues: data.previousValues || null,
           newValues: data.newValues || null,
-          ipAddress: data.ipAddress || null,
-          userAgent: data.userAgent || null,
+          ipAddress: (data.ipAddress as string) || null,
+          userAgent: (data.userAgent as string) || null,
         })
         .returning();
       return entry;
@@ -2512,10 +2511,10 @@ export class DatabaseStorage implements IStorage {
       const [page] = await db
         .insert(hyperFollowPages)
         .values({
-          userId: data.userId,
-          title: data.title,
-          slug: data.slug,
-          imageUrl: data.imageUrl || null,
+          userId: data.userId as string,
+          title: data.title as string,
+          slug: data.slug as string,
+          imageUrl: (data.imageUrl as string) || null,
           links: data.links || {},
         })
         .returning();
@@ -2533,7 +2532,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [page] = await db
         .update(hyperFollowPages)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...data } as any)
         .where(eq(hyperFollowPages.id, id))
         .returning();
       return page || null;
@@ -2609,7 +2608,7 @@ export class DatabaseStorage implements IStorage {
             ilike(listings.description, searchTerm),
             ilike(listings.category, searchTerm),
             sql`${listings.metadata}::text ilike ${searchTerm}`,
-          ),
+          ) as import("drizzle-orm").SQL<unknown>,
         );
       }
 
@@ -2618,7 +2617,7 @@ export class DatabaseStorage implements IStorage {
           or(
             ilike(listings.category, `%${filters?.genre}%`),
             sql`${listings.metadata}->>'genre' ilike ${`%${filters?.genre}%`}`,
-          ),
+          ) as import("drizzle-orm").SQL<unknown>,
         );
       }
 
@@ -2648,7 +2647,7 @@ export class DatabaseStorage implements IStorage {
       const whereClause =
         conditions?.length > 0 ? and(...conditions) : undefined;
 
-      let orderBy: import("drizzle-orm").SQL<unknown> | undefined;
+      let orderBy: import("drizzle-orm").SQL<unknown>[];
       switch (filters?.sortBy) {
         case "popular":
           orderBy = [desc(sql`(${listings.metadata}->>'plays')::int`)];
@@ -3071,9 +3070,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createJWTToken(data: Record<string, unknown>): Promise<unknown> {
-    const [token] = await db.insert(jwtTokens).values(data).returning();
-    return token;
+  async createJWTToken(data: Record<string, unknown>): Promise<string> {
+    const [token] = await db.insert(jwtTokens).values(data as any).returning();
+    return token as unknown as string;
   }
 
   async verifyJWTToken(jti: string): Promise<boolean> {
@@ -3109,9 +3108,9 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(jwtTokens.userId, userId), eq(jwtTokens.revoked, false)));
   }
 
-  async createRefreshToken(data: Record<string, unknown>): Promise<unknown> {
-    const [token] = await db.insert(refreshTokens).values(data).returning();
-    return token;
+  async createRefreshToken(data: Record<string, unknown>): Promise<string> {
+    const [token] = await db.insert(refreshTokens).values(data as any).returning();
+    return token as unknown as string;
   }
 
   async getRefreshToken(token: string): Promise<unknown> {

@@ -5,14 +5,14 @@ import {
 } from "../middleware/uploadSecurity.js";
 
 // Optional sharp support with graceful fallback
-let sharpModule: Record<string, unknown> | null = null;
-let _sharpAvailable = false;
+// sharp's default export is SharpConstructor — a callable that produces Sharp instances.
+import type { SharpConstructor } from "sharp";
+let sharpModule: SharpConstructor | false | null = null;
 
-async function getSharp() {
-  if (sharpModule !== null) return sharpModule;
+async function getSharp(): Promise<SharpConstructor | null> {
+  if (sharpModule !== null) return sharpModule || null;
   try {
-    sharpModule = (await import("sharp")).default;
-    _sharpAvailable = true;
+    sharpModule = (await import("sharp")).default as unknown as SharpConstructor;
     logger.info("Sharp module loaded for image processing");
     return sharpModule;
   } catch (error) {

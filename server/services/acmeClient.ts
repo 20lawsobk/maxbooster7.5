@@ -28,6 +28,7 @@
  */
 
 import acme from "acme-client";
+import type { Challenge as AcmeChallenge } from "acme-client/types/rfc8555";
 import crypto from "crypto";
 import { pool } from "../db.js";
 import { logger } from "../logger.js";
@@ -79,7 +80,7 @@ async function getEncryptionKey(): Promise<Buffer> {
   }
 
   // 2. Try DB.
-  const existing = await pool?.query<{ value: string }>(
+  const existing = await (pool as any)?.query(
     `SELECT value FROM platform_settings WHERE key = $1`,
     [ENCRYPTION_KEY_SETTING],
   );
@@ -96,7 +97,7 @@ async function getEncryptionKey(): Promise<Buffer> {
 
   // 3. Generate + persist with a race-safe re-read on conflict.
   const fresh = crypto?.randomBytes(32).toString("hex");
-  const insert = await pool?.query<{ value: string }>(
+  const insert = await (pool as any)?.query(
     `INSERT INTO platform_settings (key, value, description)
      VALUES ($1, $2, $3)
      ON CONFLICT (key) DO NOTHING
@@ -111,7 +112,7 @@ async function getEncryptionKey(): Promise<Buffer> {
   let canonical = (insert as any)?.rows[0]?.value ?? null;
   if (!canonical) {
     // Lost the race — another process inserted first. Re-read the winner.
-    const reread = await pool?.query<{ value: string }>(
+    const reread = await (pool as any)?.query(
       `SELECT value FROM platform_settings WHERE key = $1`,
       [ENCRYPTION_KEY_SETTING],
     );
@@ -163,13 +164,13 @@ async function getOrCreateClient(): Promise<acme.Client> {
 
   // Reuse the persisted account key so we don't register a new ACME account
   // on every server boot (LE rate-limits this aggressively).
-  const { rows } = await pool.query<{ value: string }>(
+  const { rows } = (await (pool as any).query(
     `SELECT value FROM platform_settings WHERE key = $1`,
     [ACME_ACCOUNT_KEY_SETTING],
-  );
+  )) as { rows: Array<{ value: string }> };
 
   let accountKeyPem: string;
-  if (rows[0].value) {
+  if (rows[0]?.value) {
     accountKeyPem = await decryptKey(rows[0].value);
   } else {
     const generated = await acme.crypto.createPrivateKey();
@@ -220,10 +221,10 @@ async function dnsZoneIdForHost(
   const parts = host.split(".");
   for (let i = 0; i < parts.length - 1; i++) {
     const candidate = parts.slice(i).join(".");
-    const { rows } = await pool.query<{ id: string; user_id: string }>(
+    const { rows } = (await (pool as any).query(
       `SELECT id, user_id FROM dns_zones WHERE domain = $1`,
       [candidate],
-    );
+    )) as { rows: Array<{ id: string; user_id: string }> };
     if (rows[0])
       return {
         zoneId: rows[0].id,
@@ -236,7 +237,7 @@ async function dnsZoneIdForHost(
 
 async function challengeCreateFn(
   authz: acme.Authorization,
-  challenge: acme.Challenge,
+  challenge: AcmeChallenge,
   keyAuthorization: string,
 ): Promise<void> {
   if (challenge.type !== "dns-01") return;
@@ -274,7 +275,7 @@ async function challengeCreateFn(
 
 async function challengeRemoveFn(
   authz: acme.Authorization,
-  challenge: acme.Challenge,
+  challenge: AcmeChallenge,
   keyAuthorization: string,
 ): Promise<void> {
   if (challenge.type !== "dns-01") return;
@@ -320,14 +321,11 @@ export async function provisionCertificate(
 
   // ── Precondition: host row MUST exist. Otherwise the final UPDATE that
   // stores the issued cert would silently no-op and we'd lose the cert.
-  const { rows: existingRows } = await pool.query<{
-    cert_provision_attempts: number;
-    cert_last_attempt_at: Date | null;
-  }>(
+  const { rows: existingRows } = (await (pool as any).query(
     `SELECT cert_provision_attempts, cert_last_attempt_at
      FROM storefront_hosts WHERE host = $1`,
     [normalized],
-  );
+  )) as { rows: Array<{ cert_provision_attempts: number; cert_last_attempt_at: Date | null }> };
   const existing = existingRows[0];
   if (!existing) {
     return {
@@ -551,7 +549,7 @@ async function runRenewalSweep(): Promise<void> {
       return;
     }
 
-    const { rows } = await pool.query<{ host: string }>(
+    const { rows } = (await (pool as any).query(
       `SELECT host FROM storefront_hosts
        WHERE cert_status IN ('issued', 'failed', 'pending')
          AND (cert_renewal_after IS NULL OR cert_renewal_after <= now())
@@ -559,7 +557,7 @@ async function runRenewalSweep(): Promise<void> {
        ORDER BY cert_renewal_after NULLS FIRST
        LIMIT 25`,
       [MAX_PROVISION_ATTEMPTS],
-    );
+    )) as { rows: Array<{ host: string }> };
     if (rows.length === 0) {
       logger.debug("[acme/renewal] no hosts due");
       return;
@@ -632,11 +630,11 @@ const ACME_ACCOUNT_URL_SETTING = "acme_account_url";
 
 async function getOrCreateAccountUrl(): Promise<string | null> {
   // Return cached value if present in platform_settings.
-  const { rows } = await pool.query<{ value: string }>(
+  const { rows } = (await (pool as any).query(
     `SELECT value FROM platform_settings WHERE key = $1`,
     [ACME_ACCOUNT_URL_SETTING],
-  );
-  if (rows[0].value) return rows[0].value;
+  )) as { rows: Array<{ value: string }> };
+  if (rows[0]?.value) return rows[0].value;
 
   // Initialise the ACME client (which registers/retrieves the account).
   try {
@@ -703,7 +701,7 @@ export async function activateAcmePersistValidation(
   }
 
   // Upsert the TXT record
-  const result = await pool.query<{ id: string }>(
+  const result = await (pool as any).query(
     `INSERT INTO dns_zone_records
        (zone_id, user_id, domain, type, name, value, ttl)
      VALUES ($1, $2, $3, 'TXT', '_validation-persist', $4, 3600)

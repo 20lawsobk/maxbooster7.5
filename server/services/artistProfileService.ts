@@ -205,38 +205,6 @@ interface RawJioSaavnAutocompleteResponse {
   artists?: { data?: RawJioSaavnArtist[] };
 }
 
-interface RawItunesLookupItem {
-  wrapperType?: string;
-  kind?: string;
-  collectionType?: string;
-  artistId?: number | string;
-  artistName?: string;
-  collectionArtistName?: string;
-  primaryGenreName?: string;
-  artistLinkUrl?: string;
-  artistViewUrl?: string;
-  artworkUrl100?: string;
-  artworkUrl60?: string;
-}
-
-interface RawItunesLookupResponse {
-  results?: RawItunesLookupItem[];
-}
-
-interface RawDeezerAlbumResponse {
-  error?: unknown;
-  artist?: {
-    id?: number | string;
-    name?: string;
-    picture_xl?: string;
-    picture_big?: string;
-    picture_medium?: string;
-    picture_small?: string;
-    nb_fan?: number;
-    link?: string;
-  };
-}
-
 // All 97 DSP distribution platforms with URL templates
 // Used to generate artist profile search links for platforms without public search APIs
 const ALL_DSP_URL_TEMPLATES: Array<{
@@ -1382,7 +1350,7 @@ class ArtistProfileService {
       ).then(async (r) => {
         if (!r.ok) return null;
         const d = (await r.json()) as Record<string, unknown>;
-        const results: Record<string, unknown>[] = d.results || [];
+        const results: Record<string, unknown>[] = (d.results as Record<string, unknown>[] | undefined) ?? [];
 
         // Prefer explicit artist record (wrapperType==='artist')
         let artist = results.find(
@@ -1489,7 +1457,8 @@ class ArtistProfileService {
       platform: p.id,
       platformLabel: p.label,
       searchUrl: p.searchUrl(artistName, slug),
-      profileUrlTemplate: null,
+      profileUrl: null,
+      status: "unverified" as const,
       method: "url_template" as const,
     }));
   }
@@ -2161,7 +2130,7 @@ class ArtistProfileService {
           const d = (await res.json()) as Record<string, unknown>;
           synced.push("deezer");
           if (
-            d.picture_medium &&
+            typeof d.picture_medium === "string" &&
             d.picture_medium !== profile.profileImageUrl &&
             !updates.profileImageUrl
           ) {
@@ -2473,9 +2442,9 @@ class ArtistProfileService {
         });
         if (!res.ok) continue;
         const data = (await res.json()) as Record<string, unknown>;
-        const recordings = data.recordings ?? [];
+        const recordings = (data.recordings as Record<string, unknown>[] | undefined) ?? [];
         for (const recording of recordings) {
-          const artistCredit = recording["artist-credit"][0];
+          const artistCredit = (recording["artist-credit"] as Array<Record<string, unknown>>)[0];
           if (artistCredit.artist) {
             const nameSim = this._nameSimilarity(
               artistCredit.artist.name,
@@ -2522,7 +2491,7 @@ class ArtistProfileService {
       });
       if (res.ok) {
         const data = (await res.json()) as Record<string, unknown>;
-        const relations: Record<string, unknown>[] = data.relations ?? [];
+        const relations: Record<string, unknown>[] = (data.relations as Record<string, unknown>[] | undefined) ?? [];
 
         for (const rel of relations) {
           const url = (rel.url as any).resource ?? "";
@@ -2737,12 +2706,13 @@ class ArtistProfileService {
           if (!res.ok) continue;
           const data = (await res.json()) as Record<string, unknown>;
           // Look at URL relations to check Spotify artist IDs
-          for (const recording of data.recordings ?? []) {
-            const mbArtistId = recording["artist-credit"][0].artist.id;
-            if (mbArtistId) {
+          for (const recording of (data.recordings as Record<string, unknown>[] | undefined) ?? []) {
+            const mbArtistId = (recording["artist-credit"] as Array<Record<string, unknown>>)[0].artist as Record<string, unknown> | undefined;
+            const mbArtistIdStr = mbArtistId?.id as string | undefined;
+            if (mbArtistIdStr) {
               // Use mbid→spotify URL relation to get Spotify ID
               const relRes = await fetch(
-                `https://musicbrainz.org/ws/2/artist/${mbArtistId}?fmt=json&inc=url-rels`,
+                `https://musicbrainz.org/ws/2/artist/${mbArtistIdStr}?fmt=json&inc=url-rels`,
                 {
                   headers: { "User-Agent": "MaxBooster/3.0" },
                   signal: AbortSignal.timeout(6000),
@@ -2753,8 +2723,8 @@ class ArtistProfileService {
                   string,
                   unknown
                 >;
-                for (const rel of relData.relations ?? []) {
-                  const url = rel.url.resource ?? "";
+                for (const rel of (relData.relations as Record<string, unknown>[] | undefined) ?? []) {
+                  const url = (rel.url as Record<string, unknown> | undefined)?.resource as string ?? "";
                   if (url.includes("open.spotify.com/artist/")) {
                     const detectedSpotifyId = url
                       .split("/artist/")[1]
@@ -2785,7 +2755,7 @@ class ArtistProfileService {
           affectedIsrcs: detectedOnWrongPage,
           releaseTitle:
             tracks.find((t) => t.isrc && detectedOnWrongPage.includes(t.isrc))
-              .title ?? undefined,
+              ?.title ?? undefined,
         };
         splitEvents.push(evt);
 
@@ -3443,7 +3413,7 @@ class ArtistProfileService {
             }>;
           };
           for (const recording of data.recordings ?? []) {
-            const mbArtistId = recording["artist-credit"][0].artist.id;
+            const mbArtistId = recording["artist-credit"]?.[0]?.artist?.id;
             if (mbArtistId && !discovered.musicbrainz) {
               discovered.musicbrainz = mbArtistId;
             }
@@ -3472,7 +3442,7 @@ class ArtistProfileService {
             }>;
           };
           for (const release of data.releases ?? []) {
-            const mbArtistId = release["artist-credit"][0].artist.id;
+            const mbArtistId = release["artist-credit"]?.[0]?.artist?.id;
             if (mbArtistId && !discovered.musicbrainz) {
               discovered.musicbrainz = mbArtistId;
             }

@@ -1,5 +1,10 @@
 import { db } from "../db.js";
-import { statusPageServices, statusPageIncidents, statusPageIncidentServices, statusPageIncidentUpdates, statusPageUptimeMetrics, statusPageSubscribers, type StatusPageService, type StatusPageIncident, type StatusPageIncidentUpdate, type StatusPageSubscriber, type InsertStatusPageService } from "@shared/schema";
+import { statusPageServices, statusPageIncidents, statusPageIncidentServices, statusPageIncidentUpdates, statusPageUptimeMetrics, statusPageSubscribers, type StatusPageService as _StatusPageServiceRow, type StatusPageIncident, type StatusPageIncidentUpdate, type StatusPageSubscriber } from "@shared/schema";
+
+// Local insert type derived from the table schema
+type InsertStatusPageService = typeof statusPageServices.$inferInsert;
+// Re-export the schema row type under a distinct name for internal use
+type StatusPageServiceRow = _StatusPageServiceRow;
 import { eq, and, desc, gte, isNull, or } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
@@ -19,7 +24,7 @@ export type IncidentStatus =
   | "resolved";
 
 export interface ServiceStatusSummary {
-  services: StatusPageService[];
+  services: StatusPageServiceRow[];
   overallStatus: ServiceStatus;
   activeIncidents: StatusPageIncident[];
   scheduledMaintenance: StatusPageIncident[];
@@ -27,7 +32,7 @@ export interface ServiceStatusSummary {
 
 export interface IncidentWithUpdates extends StatusPageIncident {
   updates: StatusPageIncidentUpdate[];
-  affectedServices: StatusPageService[];
+  affectedServices: StatusPageServiceRow[];
 }
 
 export interface UptimeHistory {
@@ -79,7 +84,7 @@ const STATUS_PRIORITY: Record<ServiceStatus, number> = {
 export class StatusPageService {
   async createService(
     service: InsertStatusPageService,
-  ): Promise<StatusPageService> {
+  ): Promise<StatusPageServiceRow> {
     const [created] = await db
       .insert(statusPageServices)
       .values({
@@ -96,7 +101,7 @@ export class StatusPageService {
   async updateService(
     serviceId: string,
     updates: Partial<InsertStatusPageService>,
-  ): Promise<StatusPageService> {
+  ): Promise<StatusPageServiceRow> {
     const [updated] = await db
       .update(statusPageServices)
       .set({
@@ -114,14 +119,12 @@ export class StatusPageService {
   async updateServiceStatus(
     serviceId: string,
     status: ServiceStatus,
-  ): Promise<StatusPageService> {
+  ): Promise<StatusPageServiceRow> {
     const [updated] = await db
       .update(statusPageServices)
       .set({
         status,
-        lastCheckedAt: new Date(),
-        updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(statusPageServices.id, serviceId))
       .returning();
 
@@ -132,7 +135,7 @@ export class StatusPageService {
     return updated;
   }
 
-  async getService(serviceId: string): Promise<StatusPageService | null> {
+  async getService(serviceId: string): Promise<StatusPageServiceRow | null> {
     const [service] = await db
       .select()
       .from(statusPageServices)
@@ -142,7 +145,7 @@ export class StatusPageService {
     return service || null;
   }
 
-  async getServiceBySlug(slug: string): Promise<StatusPageService | null> {
+  async getServiceBySlug(slug: string): Promise<StatusPageServiceRow | null> {
     const [service] = await db
       .select()
       .from(statusPageServices)
@@ -154,7 +157,7 @@ export class StatusPageService {
 
   async getAllServices(
     publicOnly: boolean = true,
-  ): Promise<StatusPageService[]> {
+  ): Promise<StatusPageServiceRow[]> {
     let query = db.select().from(statusPageServices);
 
     if (publicOnly) {
@@ -199,14 +202,14 @@ export class StatusPageService {
         scheduledUntil: request.scheduledUntil,
         createdBy: request.createdBy,
         startedAt: request.isScheduled ? request?.scheduledFor : new Date(),
-      })
+      } as any)
       .returning();
 
     for (const serviceId of request?.serviceIds) {
       await db.insert(statusPageIncidentServices).values({
         incidentId: incident.id,
         serviceId,
-      });
+      } as any);
 
       const impactStatus = this.impactToServiceStatus(
         request?.impact || "minor",
@@ -219,7 +222,7 @@ export class StatusPageService {
       status: request.status || "investigating",
       message: request.message,
       createdBy: request.createdBy,
-    });
+    } as any);
 
     logger.info(`Incident created: ${incident?.id} - ${incident?.title}`);
 
@@ -247,10 +250,8 @@ export class StatusPageService {
       .update(statusPageIncidents)
       .set({
         status: newStatus,
-        isResolved: request.resolve || false,
         resolvedAt: request.resolve ? new Date() : undefined,
-        updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(statusPageIncidents.id, incidentId))
       .returning();
 
@@ -259,7 +260,7 @@ export class StatusPageService {
       status: newStatus,
       message: request.message,
       createdBy: request.createdBy,
-    });
+    } as any);
 
     if (request?.resolve) {
       const affectedServiceIds = await this.getAffectedServiceIds(incidentId);
@@ -303,13 +304,13 @@ export class StatusPageService {
       .orderBy(desc(statusPageIncidentUpdates.createdAt));
 
     const serviceLinks = await db
-      .select({ serviceId: statusPageIncidentServices.serviceId })
+      .select({ serviceId: (statusPageIncidentServices as any).serviceId })
       .from(statusPageIncidentServices)
       .where(eq(statusPageIncidentServices.incidentId, incidentId));
 
-    const affectedServices: StatusPageService[] = [];
+    const affectedServices: StatusPageServiceRow[] = [];
     for (const link of serviceLinks) {
-      const service = await this.getService(link?.serviceId);
+      const service = link?.serviceId ? await this.getService(link.serviceId as string) : null;
       if (service) affectedServices?.push(service);
     }
 
@@ -430,7 +431,7 @@ export class StatusPageService {
         unsubscribeToken,
         isVerified: !!request?.userId,
         verifiedAt: request.userId ? new Date() : undefined,
-      })
+      } as any)
       .returning();
 
     if (!request?.userId) {
@@ -448,7 +449,7 @@ export class StatusPageService {
     const [subscriber] = await db
       .select()
       .from(statusPageSubscribers)
-      .where(eq(statusPageSubscribers.verificationToken, token))
+      .where(eq((statusPageSubscribers as any).verificationToken, token))
       .limit(1);
 
     if (!subscriber) {
@@ -461,7 +462,7 @@ export class StatusPageService {
         isVerified: true,
         verifiedAt: new Date(),
         verificationToken: null,
-      })
+      } as any)
       .where(eq(statusPageSubscribers.id, subscriber?.id))
       .returning();
 
@@ -473,7 +474,7 @@ export class StatusPageService {
   async unsubscribe(token: string): Promise<void> {
     await db
       .delete(statusPageSubscribers)
-      .where(eq(statusPageSubscribers.unsubscribeToken, token));
+      .where(eq((statusPageSubscribers as any).unsubscribeToken, token));
 
     logger.info(`Subscription removed via unsubscribe token`);
   }
@@ -513,8 +514,8 @@ export class StatusPageService {
         .set({
           totalChecks: newTotal,
           successfulChecks: newSuccessful,
-          uptimePercentage: String(newPercentage),
-        })
+          uptimePercentage: newPercentage,
+        } as any)
         .where(eq(statusPageUptimeMetrics.id, metric?.id));
     } else {
       await db.insert(statusPageUptimeMetrics).values({
@@ -522,31 +523,32 @@ export class StatusPageService {
         date: today,
         totalChecks: 1,
         successfulChecks: isUp ? 1 : 0,
-        uptimePercentage: isUp ? "100.00" : "0.00",
-      });
+        uptimePercentage: isUp ? 100 : 0,
+      } as any);
     }
   }
 
   private async getAffectedServiceIds(incidentId: string): Promise<string[]> {
     const links = await db
-      .select({ serviceId: statusPageIncidentServices.serviceId })
+      .select({ serviceId: (statusPageIncidentServices as any).serviceId })
       .from(statusPageIncidentServices)
       .where(eq(statusPageIncidentServices.incidentId, incidentId));
 
-    return links?.map((l) => l?.serviceId);
+    return links?.map((l) => (l?.serviceId as string | undefined) ?? "").filter(Boolean);
   }
 
-  private calculateOverallStatus(services: StatusPageService[]): ServiceStatus {
+  private calculateOverallStatus(services: StatusPageServiceRow[]): ServiceStatus {
     if (services?.length === 0) return "operational";
 
     let worstStatus: ServiceStatus = "operational";
     let worstPriority = 0;
 
     for (const service of services) {
-      const priority = STATUS_PRIORITY[service?.status] || 0;
+      const svcStatus = (service?.status ?? "operational") as ServiceStatus;
+      const priority = STATUS_PRIORITY[svcStatus] || 0;
       if (priority > worstPriority) {
         worstPriority = priority;
-        worstStatus = service?.status;
+        worstStatus = svcStatus;
       }
     }
 

@@ -17,16 +17,12 @@ export interface SynthesizerEngine {
 
 class HammerModel {
   private hardness: number;
-  private mass: number;
-  private velocity: number = 0;
 
-  constructor(hardness: number = 0.8, mass: number = 0.5) {
+  constructor(hardness: number = 0.8, _mass: number = 0.5) {
     this.hardness = hardness;
-    this.mass = mass;
   }
 
   strike(velocity: number): number {
-    this.velocity = velocity;
     const impact = Math.pow(velocity, 1 + this.hardness * 0.5);
     const brightness = 0.3 + velocity * 0.7 * this.hardness;
     return impact * brightness;
@@ -47,7 +43,6 @@ class StringResonator {
   private combFilters: CombFilter[] = [];
   private allpassFilters: AllPassFilter[] = [];
   private damping: number;
-  private sampleRate: number = 44100;
 
   constructor(numStrings: number = 3, damping: number = 0.995) {
     this.damping = damping;
@@ -58,7 +53,6 @@ class StringResonator {
   }
 
   setFrequency(frequency: number, sampleRate: number): void {
-    this.sampleRate = sampleRate;
     const period = Math.floor(sampleRate / frequency);
     this.combFilters.forEach((comb, i) => {
       const detuning = 1 + (i - 1) * 0.001;
@@ -208,9 +202,7 @@ export class UprightPianoSynth implements SynthesizerEngine {
   private warmthFilter: BiquadFilter;
   private lpFilter: OnePoleFilter;
   private combFilter: CombFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 12; i++) {
@@ -225,9 +217,7 @@ export class UprightPianoSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < this.oscillators.length; i++) {
       this.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
@@ -427,7 +417,6 @@ export class ClavinetSynth implements SynthesizerEngine {
   private lpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
   private clavFilter: BiquadFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -444,7 +433,6 @@ export class ClavinetSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -531,9 +519,7 @@ export class HonkyTonkSynth implements SynthesizerEngine {
   private envelope: ADSR;
   private bodyFilter: BiquadFilter;
   private lpFilter: OnePoleFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
   private detuneAmounts: number[] = [];
 
   constructor() {
@@ -551,9 +537,7 @@ export class HonkyTonkSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     for (let s = 0; s < 3; s++) {
       const detunedFreq = frequency * (1 + this.detuneAmounts[s]);
@@ -624,9 +608,7 @@ export class ToyPianoSynth implements SynthesizerEngine {
   private strikeEnvelope: ADSR;
   private metalFilter: BiquadFilter;
   private highBoost: BiquadFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 6; i++) {
@@ -639,9 +621,7 @@ export class ToyPianoSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const inharmonicRatios = [1, 2.01, 3.03, 4.02, 5.05, 6.01];
     for (let i = 0; i < 6; i++) {
@@ -718,9 +698,7 @@ export class TackPianoSynth implements SynthesizerEngine {
   private bodyFilter: BiquadFilter;
   private tackFilter: BiquadFilter;
   private highBoost: BiquadFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 10; i++) {
@@ -735,9 +713,7 @@ export class TackPianoSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 10; i++) {
       this.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
@@ -818,9 +794,7 @@ export class PreparedPianoSynth implements SynthesizerEngine {
   private bpFilter: BiquadFilter;
   private metalFilter: BiquadFilter;
   private comb: CombFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
   private preparationType: number = 0;
 
   constructor() {
@@ -837,9 +811,7 @@ export class PreparedPianoSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
     this.preparationType = Math.floor(Math.random() * 3);
 
     for (let i = 0; i < 8; i++) {
@@ -931,9 +903,7 @@ export class FeltPianoSynth implements SynthesizerEngine {
   private lpFilter: BiquadFilter;
   private warmthFilter: BiquadFilter;
   private softFilter: OnePoleFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 8; i++) {
@@ -947,9 +917,7 @@ export class FeltPianoSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 8; i++) {
       this.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
@@ -1021,7 +989,6 @@ export class GlassPianoSynth implements SynthesizerEngine {
   private bellFilter: BiquadFilter;
   private shimmerFilter: BiquadFilter;
   private delay: DelayLine;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -1038,7 +1005,6 @@ export class GlassPianoSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 

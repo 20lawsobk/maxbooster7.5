@@ -54,11 +54,11 @@ async function loadOptionalModules() {
       import("./workers/index.js"),
     ]);
   if (metrics?.status === "fulfilled")
-    metricsCollector = metrics?.value.metricsCollector;
+    metricsCollector = (metrics?.value as any).metricsCollector;
   if (alerting?.status === "fulfilled")
-    alertingService = alerting?.value.alertingService;
+    alertingService = (alerting?.value as any).alertingService;
   if (capacity?.status === "fulfilled")
-    capacityMonitor = capacity?.value.CapacityMonitor;
+    capacityMonitor = (capacity?.value as any).CapacityMonitor;
   if (realtime?.status === "fulfilled")
     initializeRealtimeServer = realtime?.value.initializeRealtimeServer;
   if (workers?.status === "fulfilled")
@@ -651,7 +651,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         `[PlatformAutoFixer] Worker ${clusterId} — middleware active, probe loop handled by worker 0`,
       );
     }
-    app.use(platformFixerMiddleware);
+    app.use(platformFixerMiddleware as import("express").RequestHandler);
   } catch (e) {
     logger.warn(`[PlatformAutoFixer] Failed to start: ${(e as any)?.message}`);
   }
@@ -708,7 +708,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   // Export session store for WebSocket authentication
   (
-    global as NodeJS.Global & { __activeSessionStore?: unknown }
+    global as typeof globalThis & { __activeSessionStore?: unknown }
   ).__activeSessionStore = activeSessionStore;
 
   // ========================================
@@ -799,9 +799,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       // Pass the already-initialized session store to WebSocket for secure authentication
       const { setSessionStore } = await import("./realtime/index.js");
       if (typeof setSessionStore === "function" && activeSessionStore) {
-        setSessionStore(activeSessionStore);
+        setSessionStore(activeSessionStore as unknown as Record<string, unknown>);
       }
-      initializeRealtimeServer(httpServer);
+      (initializeRealtimeServer as (server: import("http").Server) => void)(httpServer);
       logger.info("Realtime collaboration server initialized");
     }
   } catch (e) {
@@ -815,7 +815,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // isBgWorker / clusterId are already defined above (DatabaseLogTransport section).
   try {
     if (isBgWorker && typeof initializeWorkers === "function") {
-      await initializeWorkers();
+      await (initializeWorkers as () => void | Promise<void>)();
       logger.info("Background workers initialized");
     } else if (!isBgWorker) {
       logger.info(
@@ -855,7 +855,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // they should never require a TXT ownership verification step.
   try {
     const { pool: bPool } = await import("./db.js");
-    const { rowCount } = await bPool?.query(`
+    const queryResult = await bPool?.query(`
       UPDATE dns_zones z
          SET is_verified = true,
              status      = 'active',
@@ -865,6 +865,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
          AND cd.registrar_name  = 'maxbooster'
          AND (z.is_verified = false OR z.status = 'pending')
     `);
+    const rowCount = (queryResult as { rowCount?: number })?.rowCount;
     if (rowCount && rowCount > 0) {
       logger.info(
         `[domainVerify] Backfilled ${rowCount} Max Booster-owned zone(s) to verified/active`,
@@ -1001,7 +1002,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   // Prometheus metrics endpoint (before routes so it's always reachable)
-  app.use(prometheusRouter);
+  if (prometheusRouter) app.use(prometheusRouter as import("express").RequestHandler);
 
   // HTTP request duration instrumentation for Prometheus
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -1499,7 +1500,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       );
       await initializeFabric();
       logger.info("✅ [PocketFabric] Distributed fabric storage initialized");
-      killSwitch?.registerSystem("pocket-fabric-autocluster" as string, {
+      killSwitch?.registerSystem("pocket-fabric-autocluster" as any, {
         kill: () => autoClusterManager?.stop(),
         resume: () => autoClusterManager?.start(),
       });
@@ -1623,7 +1624,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         killSwitch?.registerSystem("autonomous-autopilot", {
           kill: () => {
             if (
-              typeof mod?.autonomousAutopilot.stopAutonomousMode === "function"
+              typeof (mod?.autonomousAutopilot as any)?.stopAutonomousMode === "function"
             )
               (mod?.autonomousAutopilot as any).stopAutonomousMode();
           },
@@ -1646,7 +1647,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       ).value;
       const engine =
         mod?.autopilotEngine ??
-        (mod?.AutopilotEngine ? new mod.AutopilotEngine() : null);
+        (mod?.AutopilotEngine ? new (mod.AutopilotEngine as new () => unknown)() : null);
       if (engine) {
         logger.info("✅ [Autonomy] Autopilot Engine loaded");
         killSwitch?.registerSystem("autopilot-engine", {
@@ -1672,11 +1673,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         logger.info("✅ [Autonomy] Auto-Posting Service V1 initialized");
         killSwitch?.registerSystem("auto-posting-v1", {
           kill: () => {
-            if (typeof mod?.autoPostingService.pause === "function")
+            if (typeof (mod?.autoPostingService as any)?.pause === "function")
               (mod?.autoPostingService as any).pause();
           },
           resume: () => {
-            if (typeof mod?.autoPostingService.resume === "function")
+            if (typeof (mod?.autoPostingService as any)?.resume === "function")
               (mod?.autoPostingService as any).resume();
           },
         });
@@ -1695,11 +1696,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         logger.info("✅ [Autonomy] Auto-Posting Service V2 initialized");
         killSwitch?.registerSystem("auto-posting-v2", {
           kill: () => {
-            if (typeof mod?.autoPostingServiceV2.pause === "function")
+            if (typeof (mod?.autoPostingServiceV2 as any)?.pause === "function")
               (mod?.autoPostingServiceV2 as any).pause();
           },
           resume: () => {
-            if (typeof mod?.autoPostingServiceV2.resume === "function")
+            if (typeof (mod?.autoPostingServiceV2 as any)?.resume === "function")
               (mod?.autoPostingServiceV2 as any).resume();
           },
         });
@@ -1741,11 +1742,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         logger.info("✅ [Autonomy] Autopilot Publisher initialized");
         killSwitch?.registerSystem("autopilot-publisher", {
           kill: () => {
-            if (typeof mod?.autopilotPublisher.stopScheduler === "function")
+            if (typeof (mod?.autopilotPublisher as any)?.stopScheduler === "function")
               (mod?.autopilotPublisher as any).stopScheduler();
           },
           resume: () => {
-            if (typeof mod?.autopilotPublisher.startScheduler === "function")
+            if (typeof (mod?.autopilotPublisher as any)?.startScheduler === "function")
               (mod?.autopilotPublisher as any).startScheduler();
           },
         });
@@ -1825,7 +1826,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         import("./services/diffusionBackgroundTrainer.js")
           .then(({ startBackgroundTraining }) => {
             startBackgroundTraining()
-              .then((result?: void) => {
+              .then((_result?: void) => {
                 logger.info(
                   "🎬 [DiffBG] Diffusion trainer initialised (MaxCore Gateway or local fallback)",
                 );

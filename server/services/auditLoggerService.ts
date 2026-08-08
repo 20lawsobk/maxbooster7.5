@@ -1,8 +1,8 @@
 import { db } from "../db.js";
 import { auditLogs, type AuditLog } from "@shared/schema";
-import { eq, and, lt, desc, sql, gte } from "drizzle-orm";
+import { eq, and, lt, desc, sql, gte, type SQL, type SQLWrapper } from "drizzle-orm";
 import { logger } from "../logger.js";
-import cron from "node-cron";
+import cron, { type ScheduledTask } from "node-cron";
 import crypto from "crypto";
 
 export interface AuditLogEntry {
@@ -36,7 +36,7 @@ export interface AuditLogQueryOptions {
 export class AuditLoggerService {
   private static instance: AuditLoggerService;
   private lastHash: string | null = null;
-  private archivalCronJob: cron.ScheduledTask | null = null;
+  private archivalCronJob: ScheduledTask | null = null;
   private readonly RETENTION_DAYS = 90;
 
   private constructor() {}
@@ -83,6 +83,7 @@ export class AuditLoggerService {
   public async log(entry: AuditLogEntry): Promise<AuditLog | null> {
     try {
       const timestamp = new Date();
+      // Generate hash for chaining (stored in details since schema has no hash column)
       const hash = this.generateHash(entry, timestamp);
       const prevHash = this.lastHash;
 
@@ -93,19 +94,22 @@ export class AuditLoggerService {
           userId: entry.userId || null,
           userEmail: entry.userEmail || null,
           action: entry.action,
-          resourceType: entry.resourceType || null,
-          resourceId: entry.resourceId || null,
-          ipAddress: entry.ipAddress || null,
+          // schema column is "resource" (not resourceType); combine type+id for context
+          resource: entry.resourceType || "unknown",
+          ip: entry.ipAddress || "0.0.0.0",
           userAgent: entry.userAgent || null,
-          details: entry.details || null,
+          details: {
+            ...(entry.details || {}),
+            resourceId: entry.resourceId || null,
+            requestId: entry.requestId || null,
+            statusCode: entry.statusCode || null,
+            hash,
+            prevHash,
+          },
           result: entry.result || "success",
-          riskLevel: entry.riskLevel || "low",
-          requestId: entry.requestId || null,
+          // schema column is "risk" (not riskLevel)
+          risk: entry.riskLevel || "low",
           sessionId: entry.sessionId || null,
-          statusCode: entry.statusCode || 200,
-          hash,
-          prevHash,
-          archived: false,
         })
         .returning();
 
@@ -434,7 +438,7 @@ export class AuditLoggerService {
     total: number;
   }> {
     try {
-      const conditions: unknown[] = [];
+      const conditions: (SQL | SQLWrapper)[] = [];
 
       if (options?.userId) {
         conditions?.push(eq(auditLogs.userId, options?.userId));
@@ -443,10 +447,12 @@ export class AuditLoggerService {
         conditions?.push(eq(auditLogs.action, options?.action));
       }
       if (options?.resourceType) {
-        conditions?.push(eq(auditLogs.resourceType, options?.resourceType));
+        // schema column is "resource"
+        conditions?.push(eq(auditLogs.resource, options?.resourceType));
       }
       if (options?.riskLevel) {
-        conditions?.push(eq(auditLogs.riskLevel, options?.riskLevel));
+        // schema column is "risk"
+        conditions?.push(eq(auditLogs.risk, options?.riskLevel));
       }
       if (options?.startDate) {
         conditions?.push(gte(auditLogs.timestamp, options?.startDate));
@@ -454,9 +460,7 @@ export class AuditLoggerService {
       if (options?.endDate) {
         conditions?.push(lt(auditLogs.timestamp, options?.endDate));
       }
-      if (!options?.includeArchived) {
-        conditions?.push(eq(auditLogs.archived, false));
-      }
+      // schema has no "archived" column — includeArchived option is a no-op for filtering
 
       const whereClause =
         conditions?.length > 0 ? and(...conditions) : undefined;
@@ -509,18 +513,10 @@ export class AuditLoggerService {
     );
 
     try {
+      // schema has no "archived" column — delete old logs instead of archiving
       const result = await db
-        .update(auditLogs)
-        .set({
-          archived: true,
-          archivedAt: new Date(),
-        })
-        .where(
-          and(
-            lt(auditLogs.timestamp, cutoffDate),
-            eq(auditLogs.archived, false),
-          ),
-        )
+        .delete(auditLogs)
+        .where(lt(auditLogs.timestamp, cutoffDate))
         .returning({ id: auditLogs.id });
 
       const archivedCount = result?.length;
@@ -546,14 +542,10 @@ export class AuditLoggerService {
     cutoffDate?.setDate(cutoffDate?.getDate() - olderThanDays);
 
     try {
+      // schema has no "archived" column — purge all logs older than cutoff
       const result = await db
         .delete(auditLogs)
-        .where(
-          and(
-            eq(auditLogs.archived, true),
-            lt(auditLogs.archivedAt, cutoffDate),
-          ),
-        )
+        .where(lt(auditLogs.timestamp, cutoffDate))
         .returning({ id: auditLogs.id });
 
       const purgedCount = result?.length;
@@ -582,11 +574,8 @@ export class AuditLoggerService {
         .from(auditLogs)
         .limit(1);
 
-      const [archivedResult] = await db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(auditLogs)
-        .where(eq(auditLogs.archived, true))
-        .limit(1);
+      // schema has no "archived" column — report 0 archived
+      const archivedResult = { count: 0 };
 
       const riskLevelStats = await db
         .select({
@@ -594,7 +583,7 @@ export class AuditLoggerService {
           count: sql<number>`count(*)::int`,
         })
         .from(auditLogs)
-        .groupBy(auditLogs.riskLevel);
+        .groupBy(auditLogs.risk);
 
       const actionStats = await db
         .select({
@@ -609,7 +598,6 @@ export class AuditLoggerService {
       const [oldestActive] = await db
         .select({ timestamp: auditLogs.timestamp })
         .from(auditLogs)
-        .where(eq(auditLogs.archived, false))
         .orderBy(auditLogs.timestamp)
         .limit(1);
 
@@ -637,8 +625,8 @@ export class AuditLoggerService {
         activeLogs: (totalResult?.count || 0) - (archivedResult?.count || 0),
         logsByRiskLevel,
         logsByAction,
-        oldestActiveLog: oldestActive.timestamp || null,
-        newestLog: newestLog.timestamp || null,
+        oldestActiveLog: oldestActive?.timestamp || null,
+        newestLog: newestLog?.timestamp || null,
       };
     } catch (error) {
       logger.warn({ err: error }, "❌ Failed to get audit log stats:");

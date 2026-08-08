@@ -83,7 +83,7 @@ async function dohFallback(queryBuf: Buffer): Promise<any | null> {
     const { default: fetch } = await import("node-fetch").catch(() => ({
       default: null as typeof import("node-fetch").default | null,
     }));
-    const fetchFn = fetch ?? (globalThis as Record<string, unknown>).fetch;
+    const fetchFn = (fetch ?? (globalThis as Record<string, unknown>).fetch) as ((url: string, init?: Record<string, unknown>) => Promise<any>) | null | undefined;
     if (!fetchFn) return null;
 
     const resp = await fetchFn(DOH_UPSTREAM, {
@@ -283,7 +283,7 @@ async function handleRequest(
   const response = (Packet as any).createResponseFromRequest(request);
   response.header.aa = 0; // default: not authoritative
 
-  const questions: Record<string, unknown>[] = request.questions || [];
+  const questions: Record<string, unknown>[] = (request.questions as Record<string, unknown>[] | undefined) || [];
   if (questions.length === 0) {
     send(response);
     return;
@@ -291,7 +291,7 @@ async function handleRequest(
 
   const question = questions[0];
   const name = ((question.name || "") as any).toLowerCase().replace(/\.$/, "");
-  const qtype: number = question.type;
+  const qtype: number = question.type as number;
 
   // Determine the zone root for SOA/NS records
   // For *.maxbooster.replit.app → zone is BASE_DOMAIN
@@ -306,7 +306,7 @@ async function handleRequest(
     //   Tier 2: DNS-over-HTTPS to Cloudflare (works even when UDP port 53 is firewalled)
     //   Tier 3: UDP forwarding to configured upstream (8.8.8.8 default)
     const rawBuf: Buffer | undefined = (request as Record<string, unknown>)
-      ._rawBuffer;
+      ._rawBuffer as Buffer | undefined;
 
     // ── Tier 1: Recursive resolver (2 s cap — UDP may be firewalled) ────────
     try {
@@ -382,8 +382,8 @@ async function handleRequest(
   switch (qtype) {
     case (Packet as any).TYPE.A: {
       const ip = await resolveGeoIP(
-        (request as Record<string, unknown>)._rawBuffer ?? Buffer.alloc(0),
-        (request as Record<string, unknown>)._srcIp,
+        ((request as Record<string, unknown>)._rawBuffer as Buffer | undefined) ?? Buffer.alloc(0),
+        (request as Record<string, unknown>)._srcIp as string | undefined,
       );
       response.answers.push(makeA(name, ip));
       break;
@@ -1024,7 +1024,9 @@ async function buildNsec3ParamResponse(
   queryBuf: Buffer,
   zone: string,
 ): Promise<DohQueryResult> {
-  ((await import("dns-packet")).default);
+  // dns-packet has no bundled type declarations — import is valid at runtime
+  // @ts-ignore
+  await import("dns-packet");
   const txId = parseTxId(queryBuf);
   const salt = zoneSalt(zone);
 
@@ -1107,7 +1109,8 @@ async function addDNSSECSignatures(
   zone: string,
   qname: string,
 ): Promise<Buffer> {
-  const dnsPacket = await import("dns-packet");
+  // @ts-ignore — dns-packet has no bundled type declarations
+  const dnsPacket = await import("dns-packet") as any;
   let parsed: Record<string, unknown>;
   try {
     parsed = dnsPacket.decode(wireResponse);
@@ -1124,7 +1127,7 @@ async function addDNSSECSignatures(
   // Group answers by numeric type code
   // dns-packet returns rr.type as a string (e.g. 'A', 'MX') not a number
   const byType = new Map<number, any[]>();
-  for (const rr of parsed.answers ?? []) {
+  for (const rr of (parsed.answers as any[]) ?? []) {
     const raw = rr.type;
     const rrTypeNum =
       typeof raw === "number"
@@ -1176,8 +1179,8 @@ async function addDNSSECSignatures(
   try {
     const newPacket = {
       ...parsed,
-      flags: (parsed.flags ?? 0) | dnsPacket.AUTHENTIC_DATA,
-      answers: [...(parsed.answers ?? []), ...rrsigs],
+      flags: ((parsed.flags as number) ?? 0) | dnsPacket.AUTHENTIC_DATA,
+      answers: [...((parsed.answers as any[]) ?? []), ...rrsigs],
     };
     return dnsPacket.encode(newPacket);
   } catch {
@@ -1214,27 +1217,27 @@ function rrdataFromDnsPacket(
       }
       case 6: {
         // SOA
-        const mname = encodeNameWire((data.mname ?? data.primary ?? "" as string));
-        const rname = encodeNameWire((data.rname ?? data.admin ?? "" as string));
+        const mname = encodeNameWire((data.mname ?? data.primary ?? "") as string);
+        const rname = encodeNameWire((data.rname ?? data.admin ?? "") as string);
         const rest = Buffer.alloc(20);
-        rest.writeUInt32BE((data.serial ?? 0 as number), 0);
-        rest.writeUInt32BE((data.refresh ?? 0 as number), 4);
-        rest.writeUInt32BE((data.retry ?? 0 as number), 8);
-        rest.writeUInt32BE((data.expire ?? 0 as number), 12);
-        rest.writeUInt32BE((data.minimum ?? 0 as number), 16);
+        rest.writeUInt32BE((data.serial ?? 0) as number, 0);
+        rest.writeUInt32BE((data.refresh ?? 0) as number, 4);
+        rest.writeUInt32BE((data.retry ?? 0) as number, 8);
+        rest.writeUInt32BE((data.expire ?? 0) as number, 12);
+        rest.writeUInt32BE((data.minimum ?? 0) as number, 16);
         return Buffer.concat([mname, rname, rest]);
       }
       case 15: {
         // MX
         const prio = Buffer.alloc(2);
-        prio.writeUInt16BE((data.preference ?? data.priority ?? 10 as number), 0);
-        const xchg = encodeNameWire((data.exchange ?? data.value ?? "" as string));
+        prio.writeUInt16BE((data.preference ?? data.priority ?? 10) as number, 0);
+        const xchg = encodeNameWire((data.exchange ?? data.value ?? "") as string);
         return Buffer.concat([prio, xchg]);
       }
       case 16: {
         // TXT
         const str = Buffer.from(
-          typeof data === "string" ? data : (data.data ?? data.value ?? ""),
+          typeof data === "string" ? data : ((data.data ?? data.value ?? "") as string),
         );
         const len = Buffer.alloc(1);
         len[0] = Math.min(str.length, 255);
@@ -1372,8 +1375,8 @@ export async function processQuery(
 
         // ── Compute Cache-Control TTL (RFC 8484 §5.1) ────────────────────
         const allRRs: Record<string, unknown>[] = [
-          ...(response.answers || []),
-          ...(response.authorities || []),
+          ...((response.answers as Record<string, unknown>[] | undefined) || []),
+          ...((response.authorities as Record<string, unknown>[] | undefined) || []),
         ];
         const positiveTtls = allRRs
           .map((rr: Record<string, unknown>) =>

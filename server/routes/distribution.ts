@@ -23,7 +23,7 @@ import {
 import { storageService } from "../services/storageService";
 import * as codeGenerationService from "../services/distributionCodeGenerationService";
 import { distributionService } from "../services/distributionService";
-import { labelGridService } from "../services/labelgrid-service";
+import { labelGridService, type LabelGridRelease, type LabelGridTrack } from "../services/labelgrid-service";
 import { musicCodesService } from "../services/musicCodes";
 import {
   labelCopyLinter,
@@ -34,8 +34,9 @@ import { dspPolicyChecker, type ComplianceResult } from "../services/dspPolicyCh
 import {
   releaseWorkflowService,
   type TakedownReason,
+  type ReleaseState,
 } from "../services/releaseWorkflow";
-import { audioFingerprintService } from "../services/audioFingerprint";
+import { audioFingerprintService, type AudioFingerprint } from "../services/audioFingerprint";
 import { audioMetadataService } from "../services/audioMetadataService.js";
 import { logger } from "../logger";
 import { notificationService } from "../services/notificationService.js";
@@ -2024,7 +2025,7 @@ router.get(
             releaseId: id,
             streams: totalStreams,
             downloads: platformList.reduce(
-              (s: number, p: Record<string, unknown>) => s + (p.downloads ?? 0),
+              (s: number, p: Record<string, unknown>) => s + (Number(p.downloads) || 0),
               0,
             ),
             revenue: totalRevenue,
@@ -2213,7 +2214,7 @@ router.post("/validate", requireAuth, async (req: Request, res: Response) => {
       language: data.language,
       tracks: data.tracks!.map((t) => ({
         title: t.title,
-        artist: t.artist,
+        artist: t.artist ?? data.artist,
         featuredArtists: t.featuredArtists,
         isrc: t.isrc,
         duration: t.duration,
@@ -2430,7 +2431,7 @@ router.post("/lint", requireAuth, async (req: Request, res: Response) => {
       language: data.language,
       tracks: data.tracks!.map((t) => ({
         title: t.title,
-        artist: t.artist,
+        artist: t.artist ?? data.artist,
         featuredArtists: t.featuredArtists,
         isrc: t.isrc,
         duration: t.duration,
@@ -2648,7 +2649,7 @@ router.get(
         takedownRequests,
         updateRequests,
         validTransitions: releaseWorkflowService.getValidTransitions(
-          release.status as string,
+          release.status as ReleaseState,
         ),
       });
     } catch (error: unknown) {
@@ -2772,7 +2773,7 @@ router.post(
       );
       await fsPromises.writeFile(tmpPath, file.buffer);
 
-      let fingerprint: Record<string, unknown> | null = null;
+      let fingerprint: AudioFingerprint | null = null;
       try {
         fingerprint = await audioFingerprintService.generateFingerprint(
           tmpPath,
@@ -3270,7 +3271,7 @@ router.post("/presave", requireAuth, async (req: Request, res: Response) => {
 // ENHANCED IDENTIFIER SERVICE ROUTES
 // ============================================================================
 
-import { identifierService } from "../services/identifierService";
+import { identifierService, type IdentifierGenerationOptions } from "../services/identifierService";
 
 // POST /api/distribution/identifiers/upc/generate - Generate UPC
 router.post(
@@ -3383,7 +3384,7 @@ router.post(
         count,
         countryCode,
         registrantCode,
-        userId,
+        { userId } satisfies IdentifierGenerationOptions,
       );
       res.json({ isrcs, count: isrcs.length });
     } catch (error: unknown) {
@@ -3427,7 +3428,7 @@ router.get("/identifiers/genres", async (_req: Request, res: Response) => {
 // ENHANCED WORKFLOW SERVICE ROUTES
 // ============================================================================
 
-import { releaseWorkflowService as enhancedWorkflowService } from "../services/releaseWorkflowService";
+import { releaseWorkflowService as enhancedWorkflowService, type ReleaseStatus, type RequestType } from "../services/releaseWorkflowService";
 
 // POST /api/distribution/workflow/transition - Transition release status
 router.post(
@@ -3449,8 +3450,8 @@ router.post(
       const result = await enhancedWorkflowService.transition(
         releaseId,
         userId,
-        targetStatus as string,
-        requestType as string,
+        targetStatus as ReleaseStatus,
+        requestType as RequestType,
         { reason, metadata },
       );
 
@@ -3508,15 +3509,15 @@ router.get(
     try {
       const { status } = req.params as Record<string, string>;
       const validTransitions = enhancedWorkflowService.getValidTransitions(
-        status as string,
+        status as ReleaseStatus,
       );
       res.json({
         currentStatus: status,
         validTransitions,
         displayName: enhancedWorkflowService.getStatusDisplayName(
-          status as string,
+          status as ReleaseStatus,
         ),
-        color: enhancedWorkflowService.getStatusColor(status as string),
+        color: enhancedWorkflowService.getStatusColor(status as ReleaseStatus),
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching transitions:");
@@ -3547,18 +3548,16 @@ async function aggregateLabelGridAnalytics(userId: string) {
     ),
   );
   const results = settled
-    .filter(
-      (r): r is PromiseFulfilledResult<unknown> => r?.status === "fulfilled",
-    )
-    .map((r) => (r as any)?.value);
+    .filter((r) => r?.status === "fulfilled")
+    .map((r) => (r as PromiseFulfilledResult<unknown>).value);
   if (results?.length === 0) return null;
 
   const totalStreams = results?.reduce(
-    (s: number, a: Record<string, unknown>) => s + (a?.totalStreams || 0),
+    (s: number, a: unknown) => s + (Number((a as Record<string, unknown>)?.totalStreams) || 0),
     0,
   );
   const totalRevenue = results?.reduce(
-    (s: number, a: Record<string, unknown>) => s + (a?.totalRevenue || 0),
+    (s: number, a: unknown) => s + (Number((a as Record<string, unknown>)?.totalRevenue) || 0),
     0,
   );
 
@@ -3568,23 +3567,26 @@ async function aggregateLabelGridAnalytics(userId: string) {
     { streams: number; revenue: number; listeners: number }
   > = {};
   for (const a of results) {
-    for (const [name, data] of Object.entries(a?.platforms || {})) {
+    const aRec = a as Record<string, unknown>;
+    for (const [name, data] of Object.entries((aRec?.platforms as Record<string, unknown>) || {})) {
       if (!platforms[name])
         platforms[name] = { streams: 0, revenue: 0, listeners: 0 };
-      platforms[name].streams += (data as Record<string, unknown>).streams || 0;
-      platforms[name].revenue += (data as Record<string, unknown>).revenue || 0;
+      platforms[name].streams += Number((data as Record<string, unknown>).streams) || 0;
+      platforms[name].revenue += Number((data as Record<string, unknown>).revenue) || 0;
       platforms[name].listeners +=
-        (data as Record<string, unknown>).listeners || 0;
+        Number((data as Record<string, unknown>).listeners) || 0;
     }
   }
 
   // Merge timelines by date
   const byDate: Record<string, { streams: number; revenue: number }> = {};
   for (const a of results) {
-    for (const t of a?.timeline || []) {
-      if (!byDate[t.date]) byDate[t.date] = { streams: 0, revenue: 0 };
-      byDate[t.date].streams += t?.streams || 0;
-      byDate[t.date].revenue += t?.revenue || 0;
+    const aRec2 = a as Record<string, unknown>;
+    for (const t of (aRec2?.timeline as Record<string, unknown>[] || [])) {
+      const dateKey = String(t.date);
+      if (!byDate[dateKey]) byDate[dateKey] = { streams: 0, revenue: 0 };
+      byDate[dateKey].streams += Number(t?.streams) || 0;
+      byDate[dateKey].revenue += Number(t?.revenue) || 0;
     }
   }
   const timeline = Object.entries(byDate)
@@ -5387,9 +5389,9 @@ router.post(
 
       const fingerprint = `fp_${Date?.now()}_${randomBytes(4).toString("hex")}`;
 
-      await storage.updateDistroTrack(trackId, {
+      await storage.updateDistroTrack(trackId, track?.releaseId || "", {
         metadata: {
-          ...track?.metadata,
+          ...(track?.metadata as Record<string, unknown> || {}),
           fingerprint,
           contentIdStatus: "generating",
         },
@@ -5420,9 +5422,9 @@ router.post(
       const results = await Promise?.allSettled(
         tracks?.map((track) => {
           const fingerprint = `fp_${Date?.now()}_${randomBytes(4).toString("hex")}`;
-          return storage.updateDistroTrack(track?.id, {
+          return storage.updateDistroTrack(track?.id, track?.releaseId, {
             metadata: {
-              ...track?.metadata,
+              ...(track?.metadata as Record<string, unknown> || {}),
               fingerprint,
               contentIdStatus: "generating",
             },
@@ -5493,9 +5495,9 @@ router.post(
         return res.status(404).json({ error: "Track not found" });
       }
 
-      await storage.updateDistroTrack(trackId, {
+      await storage.updateDistroTrack(trackId, track?.releaseId || "", {
         metadata: {
-          ...track?.metadata,
+          ...(track?.metadata as Record<string, unknown> || {}),
           contentIdStatus:
             resolution === "claim_ownership" ? "registered" : "pending",
           conflictResolution: {
@@ -6783,45 +6785,50 @@ async function buildLabelGridPayload(
   release: Record<string, unknown>,
   tracks: unknown[],
   platforms: string | string[],
-) {
+): Promise<LabelGridRelease> {
   const metadata = (release?.metadata as Record<string, unknown>) || {};
   const platformList = Array.isArray(platforms) ? platforms : [platforms];
   return {
-    title: release.title,
-    artist:
+    title: String(release.title || ""),
+    artist: String(
       release?.artistName ||
       release?.artist ||
       metadata?.artistName ||
-      "Unknown Artist",
+      "Unknown Artist"
+    ),
     releaseDate: release.releaseDate
       ? new Date(release?.releaseDate as any).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0],
     upc: (release as { upc?: string }).upc,
-    artwork: metadata.artworkUrl || metadata?.artwork || "",
-    genre: release.genre || metadata?.primaryGenre || "Other",
-    label: metadata.label || undefined,
-    copyrightYear: metadata.copyrightYear || new Date().getFullYear(),
-    copyrightOwner: metadata.copyrightOwner || undefined,
+    artwork: String(metadata.artworkUrl || metadata?.artwork || ""),
+    genre: String(release.genre || metadata?.primaryGenre || "Other"),
+    label: metadata.label ? String(metadata.label) : undefined,
+    copyrightYear: Number(metadata.copyrightYear) || new Date().getFullYear(),
+    copyrightOwner: metadata.copyrightOwner ? String(metadata.copyrightOwner) : undefined,
     territoryMode:
       (metadata?.territoryMode as "worldwide" | "include" | "exclude") ||
       "worldwide",
-    territories: metadata.territories || [],
+    territories: (metadata.territories as string[]) || [],
     platforms: platformList,
-    tracks: tracks.map((t: Record<string, unknown>, idx: number) => ({
-      title: t.title,
-      artist:
-        t?.artistName ||
-        release?.artistName ||
-        release?.artist ||
-        metadata?.artistName ||
-        "Unknown Artist",
-      isrc: t.isrc,
-      audioFile: t.audioUrl || t?.fileUrl || "",
-      duration: t.duration || 0,
-      trackNumber: t.trackNumber || idx + 1,
-      explicit: t.explicit || false,
-      lyrics: t.lyrics || undefined,
-    })),
+    tracks: tracks.map((t, idx) => {
+      const tr = t as Record<string, unknown>;
+      return {
+        title: String(tr.title || ""),
+        artist: String(
+          tr?.artistName ||
+          release?.artistName ||
+          release?.artist ||
+          metadata?.artistName ||
+          "Unknown Artist"
+        ),
+        isrc: tr.isrc ? String(tr.isrc) : undefined,
+        audioFile: String(tr.audioUrl || tr?.fileUrl || ""),
+        duration: Number(tr.duration) || 0,
+        trackNumber: Number(tr.trackNumber) || idx + 1,
+        explicit: Boolean(tr.explicit),
+        lyrics: tr.lyrics ? String(tr.lyrics) : undefined,
+      } satisfies LabelGridTrack;
+    }),
   };
 }
 

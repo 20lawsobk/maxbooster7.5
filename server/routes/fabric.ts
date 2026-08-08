@@ -7,9 +7,9 @@ import {
 } from "../pocket-dimension/fabric/index.js";
 import { logger } from "../logger.js";
 
-interface AuthenticatedRequest extends Request {
-  user?: { id: string; role?: string };
-}
+// Use the standard Express Request; the global augmentation already provides
+// user?: User which is structurally compatible with the id/role access below.
+type AuthenticatedRequest = Request;
 
 const router = Router();
 

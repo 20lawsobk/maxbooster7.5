@@ -309,9 +309,8 @@ async function trackUsageRecord(usage: {
       endpoint: usage.endpoint,
       method: usage.method,
       statusCode: usage.statusCode,
-      responseTime: usage.responseTime,
-      requestCount: 1,
-      metadata: usage.metadata,
+      responseTimeMs: usage.responseTime,
+      ipAddress: usage.metadata?.ip as string | undefined,
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Failed to track API usage:");
@@ -399,41 +398,41 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
     // Get total requests
     const [totalRequests] = await db
       .select({
-        total: sql<number>`COALESCE(SUM(${apiUsage.requestCount}), 0)`,
+        total: sql<number>`COUNT(*)`,
       })
       .from(apiUsage)
       .where(
-        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)),
+        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.createdAt, startDate)),
       );
 
     // Get requests by endpoint
     const byEndpoint = await db
       .select({
         endpoint: apiUsage.endpoint,
-        requests: sql<number>`COALESCE(SUM(${apiUsage.requestCount}), 0)`,
-        avgResponseTime: sql<number>`COALESCE(AVG(${apiUsage.responseTime}), 0)`,
+        requests: sql<number>`COUNT(*)`,
+        avgResponseTime: sql<number>`COALESCE(AVG(${apiUsage.responseTimeMs}), 0)`,
       })
       .from(apiUsage)
       .where(
-        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)),
+        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.createdAt, startDate)),
       )
       .groupBy(apiUsage.endpoint)
-      .orderBy(desc(sql`COALESCE(SUM(${apiUsage.requestCount}), 0)`))
+      .orderBy(desc(sql`COUNT(*)`))
       .limit(10);
 
     // Get requests by day
     const byDay = await db
       .select({
-        date: sql<string>`DATE(${apiUsage.date})`,
-        requests: sql<number>`COALESCE(SUM(${apiUsage.requestCount}), 0)`,
-        avgResponseTime: sql<number>`COALESCE(AVG(${apiUsage.responseTime}), 0)`,
+        date: sql<string>`DATE(${apiUsage.createdAt})`,
+        requests: sql<number>`COUNT(*)`,
+        avgResponseTime: sql<number>`COALESCE(AVG(${apiUsage.responseTimeMs}), 0)`,
       })
       .from(apiUsage)
       .where(
-        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)),
+        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.createdAt, startDate)),
       )
-      .groupBy(sql`DATE(${apiUsage.date})`)
-      .orderBy(sql`DATE(${apiUsage.date})`);
+      .groupBy(sql`DATE(${apiUsage.createdAt})`)
+      .orderBy(sql`DATE(${apiUsage.createdAt})`);
 
     // Get status code distribution
     const byStatusCode = await db
@@ -443,7 +442,7 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
       })
       .from(apiUsage)
       .where(
-        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.date, startDate)),
+        and(eq(apiUsage.apiKeyId, apiKeyId), gte(apiUsage.createdAt, startDate)),
       )
       .groupBy(apiUsage.statusCode);
 

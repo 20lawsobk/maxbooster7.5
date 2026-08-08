@@ -126,7 +126,7 @@ router.post("/complete-welcome", requireAuth, async (req, res) => {
     await db
       .update(users)
       .set({
-        displayName: displayName || undefined,
+        artistName: displayName || undefined,
         bio: bio || undefined,
         avatarUrl: avatarUrl || undefined,
         onboardingData: {
@@ -173,8 +173,8 @@ router.post("/track-tutorial", requireAuth, async (req, res) => {
       .limit(1);
 
     const tutorialProgress =
-      (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
-    const tutorialData = tutorialProgress[tutorialId] || {
+      ((user?.onboardingData as Record<string, unknown>)?.tutorials || {}) as Record<string, Record<string, unknown>>;
+    const tutorialData: Record<string, unknown> = (tutorialProgress[tutorialId] as Record<string, unknown>) || {
       completedSteps: [],
       startedAt: null,
       completedAt: null,
@@ -184,8 +184,8 @@ router.post("/track-tutorial", requireAuth, async (req, res) => {
       tutorialData.startedAt = new Date().toISOString();
     }
 
-    if (completed && !tutorialData?.completedSteps.includes(stepId)) {
-      tutorialData?.completedSteps.push(stepId);
+    if (completed && !(tutorialData?.completedSteps as unknown[])?.includes(stepId)) {
+      (tutorialData?.completedSteps as unknown[])?.push(stepId);
     }
 
     tutorialProgress[tutorialId] = tutorialData;
@@ -237,8 +237,8 @@ router.post("/skip-tutorial", requireAuth, async (req, res) => {
       .limit(1);
 
     const tutorialProgress =
-      (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
-    const tutorialData = tutorialProgress[tutorialId] || {
+      ((user?.onboardingData as Record<string, unknown>)?.tutorials || {}) as Record<string, Record<string, unknown>>;
+    const tutorialData: Record<string, unknown> = (tutorialProgress[tutorialId] as Record<string, unknown>) || {
       completedSteps: [],
       startedAt: null,
     };
@@ -316,7 +316,7 @@ router.post("/mark-celebrated", requireAuth, async (req, res) => {
       .limit(1);
 
     const celebrations =
-      (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
+      ((user?.onboardingData as Record<string, unknown>)?.celebrations || {}) as Record<string, unknown>;
     celebrations[actionType] = {
       celebratedAt: new Date().toISOString(),
     };
@@ -576,15 +576,15 @@ router.get("/achievements", requireAuth, async (req, res) => {
       .limit(1);
 
     const unlockedAchievements =
-      (user?.onboardingData as Record<string, unknown>)?.achievements || {};
+      ((user?.onboardingData as Record<string, unknown>)?.achievements || {}) as Record<string, Record<string, unknown>>;
     const celebrations =
-      (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
+      ((user?.onboardingData as Record<string, unknown>)?.celebrations || {}) as Record<string, Record<string, unknown>>;
 
     const achievements = DEFAULT_ACHIEVEMENTS?.map((achievement) => {
       const unlocked =
-        unlockedAchievements[achievement?.id] ||
+        (unlockedAchievements[achievement?.id] ||
         celebrations[achievement?.id] ||
-        {};
+        {}) as Record<string, unknown>;
       return {
         ...achievement,
         unlockedAt: unlocked.unlockedAt || unlocked?.celebratedAt || null,
@@ -657,15 +657,15 @@ router.post("/unlock-achievement", requireAuth, async (req, res) => {
       .limit(1);
 
     const achievements =
-      (user?.onboardingData as Record<string, unknown>)?.achievements || {};
+      ((user?.onboardingData as Record<string, unknown>)?.achievements || {}) as Record<string, Record<string, unknown>>;
 
-    if (achievements[achievementId]?.unlockedAt) {
+    if ((achievements[achievementId] as Record<string, unknown>)?.unlockedAt) {
       return res.json({
         success: true,
         alreadyUnlocked: true,
         achievement: {
           ...achievement,
-          unlockedAt: achievements[achievementId].unlockedAt,
+          unlockedAt: (achievements[achievementId] as Record<string, unknown>).unlockedAt,
         },
       });
     }
@@ -690,7 +690,7 @@ router.post("/unlock-achievement", requireAuth, async (req, res) => {
       success: true,
       achievement: {
         ...achievement,
-        unlockedAt: achievements[achievementId].unlockedAt,
+        unlockedAt: (achievements[achievementId] as Record<string, unknown>).unlockedAt,
       },
     });
   } catch (error) {
