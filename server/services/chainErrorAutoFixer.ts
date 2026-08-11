@@ -1197,11 +1197,14 @@ class ChainErrorAutoFixer extends EventEmitter {
       `[ChainFixer] Novel error (no pattern match) — may need a new recovery rule: ${msg?.slice(0, 120)}`,
     );
 
-    // ── OFFENSIVE: weaponize this unknown error speculatively ─────────────────
-    // Don't await — fire-and-forget so it doesn't block the log transport
-    this._weaponizeUnknownError(msg).catch(() => {
-      /* non-fatal */
-    });
+    // Speculative weaponization of unknown errors is DISABLED by design.
+    // Applying the closest known pattern's fix to a novel error executes real
+    // side effects (semaphore resets, cache clears, job re-registration) on a
+    // fuzzy guess, and a coincidental "success" credits the wrong fix and
+    // masks the true root cause — directly contradicting the knowledge base's
+    // report-don't-guess contract for unrecognised errors. Novel errors are
+    // recorded, classified against the knowledge base above, and escalated
+    // for a human or a dedicated repair session.
   }
 
   // ─── Process-Level Pre-Handler ─────────────────────────────────────────────
@@ -1482,6 +1485,21 @@ class ChainErrorAutoFixer extends EventEmitter {
     logger.info(
       `[ChainFixer] Chain error auto-fixer active — monitoring ${this.patterns.length} error patterns (adaptive cooldowns, daily un-suppress)`,
     );
+
+    // Load the operating charter so every automated fix surface works from the
+    // same directive (server/services/autofix/DIRECTIVE.md).
+    void import("./autofixDirective.js")
+      .then(({ getAutofixDirectiveSummary }) => {
+        const s = getAutofixDirectiveSummary();
+        logger.info(
+          s.present
+            ? `[ChainFixer] Autofix directive loaded (${s.bytes} bytes): ${s.headline ?? "untitled"}`
+            : "[ChainFixer] No autofix directive found — running without a charter",
+        );
+      })
+      .catch(() => {
+        /* advisory only */
+      });
   }
 
   private _dailyUnsuppress(): void {

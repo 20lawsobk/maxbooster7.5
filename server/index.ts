@@ -656,6 +656,25 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`[PlatformAutoFixer] Failed to start: ${(e as any)?.message}`);
   }
 
+  // Post-deploy self-test — activates DURING deployment boot, not after.
+  // The first run starts immediately (non-blocking) so a bad deploy is caught
+  // while it is rolling out; periodic re-runs continue afterwards. Worker 0
+  // only, to avoid duplicating probe traffic across cluster workers.
+  if (isBgWorker) {
+    try {
+      const { postDeploySelfTest } = await import("./post-deploy-selftest.js");
+      postDeploySelfTest.runAllTests().catch((e: unknown) => {
+        logger.warn(
+          `[SelfTest] Deployment-time self-test error: ${(e as Error)?.message}`,
+        );
+      });
+      const selfTestTimer = postDeploySelfTest.startPeriodicTests();
+      selfTestTimer.unref?.();
+    } catch (e) {
+      logger.warn(`[SelfTest] Failed to start: ${(e as any)?.message}`);
+    }
+  }
+
   // Load permanent overrides — restores improvements accumulated across prior sessions.
   // Must run after PDIM is connected (fixers start PDIM lazily on first use, so a
   // short delay lets the connection settle before we try to read saved override keys).

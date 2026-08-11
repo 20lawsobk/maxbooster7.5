@@ -14,3 +14,9 @@ TypeScript server: **1701 errors** (parser: 0) as of 2026-08-07T11:35:49.772Z
 TypeScript client: not yet measured
 
 OUTSTANDING WORK REMAINS — 2 categories are not clean. This pipeline does not claim success until they are.
+---
+## Correction (2026-08-11)
+The earlier "1701 → 0 errors" verify-server reading was INVALID — produced with stale incremental tsbuildinfo. `tc-server-final.txt` (a stale artifact) has been removed.
+
+Authoritative measurement (scripts/typecheck-sections.sh, incremental OFF, 17 sections covering ALL of server/, shared/, and root *.ts, deduped across sections): **2,648 errors**.
+Per-section own-file breakdown: routes 771+517+533, services 153+90+94+99, top-level server 59, middleware 33, lib 19, workers/realtime/infra 21, modules 10, pocket-dimension/subatomic/storage 14, misc 25, tests/sims 8, shared+root 7.
