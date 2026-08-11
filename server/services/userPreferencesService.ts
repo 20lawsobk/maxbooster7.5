@@ -395,9 +395,10 @@ class UserPreferencesService {
       const preferences = await this.getUserPreferences(userId);
       if (!preferences) return [];
 
-      const featureUsage = await this.analyzeFeatureUsage(userId, redis);
-      const timePatterns = await this.analyzeTimePatterns(userId, redis);
-      const contentPatterns = await this.analyzeContentPatterns(userId, redis);
+      type RedisClient = { lLen: (key: string) => Promise<number>; lRange: (key: string, start: number, stop: number) => Promise<string[]> };
+      const featureUsage = await this.analyzeFeatureUsage(userId, redis as unknown as RedisClient);
+      const timePatterns = await this.analyzeTimePatterns(userId, redis as unknown as RedisClient);
+      const contentPatterns = await this.analyzeContentPatterns(userId, redis as unknown as RedisClient);
 
       if (
         featureUsage?.studioUsage > 0.7 &&
@@ -543,14 +544,14 @@ class UserPreferencesService {
 
   private async analyzeFeatureUsage(
     userId: string,
-    redis: Record<string, unknown>,
+    redis: { lLen: (key: string) => Promise<number>; lRange: (key: string, start: number, stop: number) => Promise<string[]> },
   ): Promise<{ studioUsage: number; aiUsage: number; socialUsage: number }> {
     const studioEvents =
-      (await redis?.lLen(`${this.BEHAVIOR_PREFIX}${userId}:studio_action`)) || 0;
+      (await redis.lLen(`${this.BEHAVIOR_PREFIX}${userId}:studio_action`)) || 0;
     const aiEvents =
-      (await redis?.lLen(`${this.BEHAVIOR_PREFIX}${userId}:ai_action`)) || 0;
+      (await redis.lLen(`${this.BEHAVIOR_PREFIX}${userId}:ai_action`)) || 0;
     const socialEvents =
-      (await redis?.lLen(`${this.BEHAVIOR_PREFIX}${userId}:social_action`)) || 0;
+      (await redis.lLen(`${this.BEHAVIOR_PREFIX}${userId}:social_action`)) || 0;
     const total = studioEvents + aiEvents + socialEvents || 1;
 
     return {
@@ -562,9 +563,9 @@ class UserPreferencesService {
 
   private async analyzeTimePatterns(
     userId: string,
-    redis: Record<string, unknown>,
+    redis: { lLen: (key: string) => Promise<number>; lRange: (key: string, start: number, stop: number) => Promise<string[]> },
   ): Promise<{ peakHour: number | null }> {
-    const events = await redis?.lRange(
+    const events = await redis.lRange(
       `${this.BEHAVIOR_PREFIX}${userId}:login`,
       0,
       -1,
@@ -588,9 +589,9 @@ class UserPreferencesService {
 
   private async analyzeContentPatterns(
     userId: string,
-    redis: Record<string, unknown>,
+    redis: { lLen: (key: string) => Promise<number>; lRange: (key: string, start: number, stop: number) => Promise<string[]> },
   ): Promise<{ topContentType: string | null }> {
-    const events = await redis?.lRange(
+    const events = await redis.lRange(
       `${this.BEHAVIOR_PREFIX}${userId}:content_create`,
       0,
       -1,
@@ -618,7 +619,7 @@ class UserPreferencesService {
     target: T,
     source: Partial<T>,
   ): T {
-    const output = { ...target };
+    const output: Record<string, any> = { ...target };
     for (const key in source) {
       if (
         source[key] &&
@@ -626,14 +627,14 @@ class UserPreferencesService {
         !Array.isArray(source[key])
       ) {
         output[key] = this.deepMerge(
-          target[key] || {},
-          source[key] as Record<string, unknown>,
+          (target[key] as Record<string, any>) || {},
+          source[key] as Record<string, any>,
         );
       } else if (source[key] !== undefined) {
-        output[key] = source[key] as Record<string, unknown>;
+        output[key] = source[key];
       }
     }
-    return output;
+    return output as T;
   }
 }
 

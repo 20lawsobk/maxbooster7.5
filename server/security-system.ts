@@ -58,8 +58,10 @@ export class SelfHealingSecuritySystem {
   };
   private healingProcesses: Map<string, HealingProcess> = new Map();
   private securityRules: SecurityRule[] = [];
-  private _anomalyDetector: AnomalyDetector;
-  private _autoHealer: AutoHealer;
+  // These instances run side-effects (periodic checks) via their constructors/timers.
+  // The field references are intentionally retained so the objects are not GC'd.
+  private readonly anomalyDetector: AnomalyDetector;
+  private readonly autoHealer: AutoHealer;
   private ipTracker: Map<string, IPThreatInfo> = new Map();
   private currentRequestContext: RequestContext | null = null;
   private recentThreats: Array<{ type: string; timestamp: number }> = [];
@@ -84,11 +86,14 @@ export class SelfHealingSecuritySystem {
   };
 
   private constructor() {
-    this._anomalyDetector = new AnomalyDetector();
-    this._autoHealer = new AutoHealer();
+    this.anomalyDetector = new AnomalyDetector();
+    this.autoHealer = new AutoHealer();
     this.initializeSecurityRules();
     this.initializeAIModels();
     this.startSecurityMonitoring();
+    // Retain references to prevent GC; suppress unused-private lint via void read:
+    void this.anomalyDetector;
+    void this.autoHealer;
   }
 
   // Initialize AI Models for professional security
@@ -1345,7 +1350,7 @@ export class SelfHealingSecuritySystem {
 
       // Extract current session data
       const currentHour = new Date().getHours();
-      const currentDevice = this.currentRequestContext.ipAddress || "unknown";
+      const currentDevice = this.currentRequestContext?.ipAddress || "unknown";
       const deviations: string[] = [];
       let riskScore = 0;
 
@@ -1514,7 +1519,7 @@ export class SelfHealingSecuritySystem {
         timeOfDay: context.timeOfDay || new Date().getHours(),
         location: context.location || "unknown",
         device:
-          context.device || this.currentRequestContext.ipAddress || "unknown",
+          context.device || this.currentRequestContext?.ipAddress || "unknown",
         actionType,
         frequency: context.frequency || 1,
       };
@@ -1641,7 +1646,7 @@ export class SelfHealingSecuritySystem {
         /%[0-9a-f]{2}/gi,
       ];
 
-      const _obfuscationDetected = obfuscationPatterns.some((pattern) => {
+      obfuscationPatterns.some((pattern) => {
         if (pattern.test(payloadStr)) {
           signatures.push(`Obfuscation: ${pattern.toString()}`);
           patternScore += 0.2;
@@ -1810,10 +1815,8 @@ export class SelfHealingSecuritySystem {
       } as Record<string, boolean>;
 
       for (const test of tests) {
-        const _testStart = Date.now();
         const protected_ = securityConfig[test.type] ?? true;
         const vulnerable = !protected_;
-        const _vulnerabilityScore = 0; // No real exploit attempted — configuration audit only
 
         results.push({
           testType: test.type,
@@ -2024,12 +2027,12 @@ export class SelfHealingSecuritySystem {
 
       // Get anomalies from last 24 hours
       const anomalies = await (db.query as any).securityAnomalies.findMany({
-        where: (anomalies: any, { gte }) => gte(anomalies.detectedAt, oneDayAgo),
+        where: (anomalies: any, { gte }: any) => gte(anomalies.detectedAt, oneDayAgo),
       });
 
       // Get latest pen test results
       const penTests = await (db.query as any).securityPenTestResults.findMany({
-        orderBy: (tests: any, { desc }) => [desc(tests.executedAt)],
+        orderBy: (tests: any, { desc }: any) => [desc(tests.executedAt)],
         limit: 1,
       });
 
@@ -2041,7 +2044,7 @@ export class SelfHealingSecuritySystem {
       // Get latest compliance reports
       const complianceReports =
         await (db.query as any).securityComplianceReports.findMany({
-          orderBy: (reports: any, { desc }) => [desc(reports.generatedAt)],
+          orderBy: (reports: any, { desc }: any) => [desc(reports.generatedAt)],
           limit: 10,
         });
 
@@ -2064,7 +2067,7 @@ export class SelfHealingSecuritySystem {
       });
 
       const anomaliesLast7Days = await (db.query as any).securityAnomalies.findMany({
-        where: (anomalies: any, { gte }) => gte(anomalies.detectedAt, sevenDaysAgo),
+        where: (anomalies: any, { gte }: any) => gte(anomalies.detectedAt, sevenDaysAgo),
       });
 
       // Aggregate by day

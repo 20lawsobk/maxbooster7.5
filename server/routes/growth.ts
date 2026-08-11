@@ -106,6 +106,21 @@ const shadowbanCheckSchema = z.object({
     .optional(),
 });
 
+/** Build a ContentData from a parsed zod content object + userId */
+function buildContentData(
+  content: z.infer<typeof contentDataSchema>,
+  userId: string,
+): ContentData {
+  return {
+    ...content,
+    id: content.id || randomBytes(8).toString("hex"),
+    userId,
+    scheduledTime: content.scheduledTime
+      ? new Date(content.scheduledTime)
+      : undefined,
+  };
+}
+
 router.post(
   "/score-viral",
   requireAuth,
@@ -114,14 +129,7 @@ router.post(
       const userId = req.user!.id;
       const { content } = scoreViralSchema?.parse(req.body);
 
-      const contentData: ContentData = {
-        ...content,
-        id: content.id || randomBytes(8).toString("hex"),
-        userId,
-        scheduledTime: content.scheduledTime
-          ? new Date(content?.scheduledTime)
-          : undefined,
-      };
+      const contentData = buildContentData(content, userId);
 
       const score = await viralScoringService?.scoreContent(contentData);
 
@@ -148,11 +156,7 @@ router.post(
       const userId = req.user!.id;
       const { content } = scoreViralSchema?.parse(req.body);
 
-      const contentData: ContentData = {
-        ...content,
-        id: content.id || randomBytes(8).toString("hex"),
-        userId,
-      };
+      const contentData = buildContentData(content, userId);
 
       const potential =
         await viralScoringService?.predictViralPotential(contentData);
@@ -177,11 +181,7 @@ router.post(
       const userId = req.user!.id;
       const { content } = scoreViralSchema?.parse(req.body);
 
-      const contentData: ContentData = {
-        ...content,
-        id: content.id || randomBytes(8).toString("hex"),
-        userId,
-      };
+      const contentData = buildContentData(content, userId);
 
       const improvements =
         await viralScoringService?.suggestImprovements(contentData);
@@ -205,11 +205,9 @@ router.post(
       const userId = req.user!.id;
       const { variants } = compareVariantsSchema?.parse(req.body);
 
-      const contentVariants: ContentData[] = variants?.map((v) => ({
-        ...v,
-        id: v.id || randomBytes(8).toString("hex"),
-        userId,
-      }));
+      const contentVariants: ContentData[] = variants?.map((v) =>
+        buildContentData(v, userId),
+      );
 
       const comparison =
         await viralScoringService?.compareVariants(contentVariants);
@@ -401,14 +399,10 @@ router.post(
       const userId = req.user!.id;
       const { content, count } = generateVariantsSchema?.parse(req.body);
 
-      const contentData: ContentData = {
-        ...content,
-        id: content.id || randomBytes(8).toString("hex"),
-        userId,
-      };
+      const contentData = buildContentData(content, userId);
 
       const result = await contentVariantGeneratorService?.generateVariants(
-        contentData as unknown as Record<string, unknown>,
+        contentData,
         count,
       );
 
@@ -460,11 +454,14 @@ router.post(
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
     try {
-      const { content, count = 5 } = generateVariantsSchema?.parse(req.body);
+      const userId = req.user!.id;
+      const { content, count } = generateVariantsSchema?.parse(req.body);
+
+      const contentData = buildContentData(content, userId);
 
       const hashtagSets =
         await contentVariantGeneratorService?.generateHashtagSets(
-          content as Record<string, unknown>,
+          contentData,
           count,
         );
 
@@ -484,10 +481,13 @@ router.post(
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
     try {
+      const userId = req.user!.id;
       const { content } = scoreViralSchema?.parse(req.body);
 
+      const contentData = buildContentData(content, userId);
+
       const hooks = await contentVariantGeneratorService?.generateHookVariants(
-        content as Record<string, unknown>,
+        contentData,
       );
 
       res.json({
@@ -525,7 +525,7 @@ router.post(
       };
 
       const abTest = await contentVariantGeneratorService?.createABTest(
-        contentData as Record<string, unknown>,
+        contentData as ContentData,
         variantCount,
       );
 
@@ -550,10 +550,25 @@ router.post(
       const userId = req.user!.id;
       const { platform, recentMetrics } = algorithmHealthSchema?.parse(req.body);
 
+      // Provide defaults for optional array fields so the type matches
+      const normalizedMetrics: {
+        impressions: number[];
+        engagement: number[];
+        followers: number[];
+        hashtagReach: number[];
+      } | undefined = recentMetrics
+        ? {
+            impressions: recentMetrics.impressions ?? [],
+            engagement: recentMetrics.engagement ?? [],
+            followers: recentMetrics.followers ?? [],
+            hashtagReach: recentMetrics.hashtagReach ?? [],
+          }
+        : undefined;
+
       const health = await algorithmIntelligenceService?.checkAlgorithmHealth(
         platform,
         userId,
-        recentMetrics,
+        normalizedMetrics,
       );
 
       res.json({

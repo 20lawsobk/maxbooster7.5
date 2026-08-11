@@ -62,6 +62,11 @@ interface SubmitApprovalParams {
   metadata?: Record<string, any>;
 }
 
+// Typed helpers for runtime columns not present in the trimmed schema
+const anyWorkflows = approvalWorkflows as any;
+const anyRequests = approvalRequests as any;
+const anySteps = approvalSteps as any;
+
 export class ApprovalWorkflowService {
   async createWorkflow(
     params: CreateWorkflowParams,
@@ -76,17 +81,17 @@ export class ApprovalWorkflowService {
         .values({
           workspaceId: params.workspaceId,
           name: params.name,
-          description: params.description,
-          trigger: params.trigger,
+          ...(params.description !== undefined && { description: params.description }),
+          ...(params.trigger !== undefined && { trigger: params.trigger }),
           steps: params.steps,
-          escalationPolicy: params.escalationPolicy || {
-            enabled: false,
-            timeoutHours: 48,
-            escalateTo: null,
-          },
-          conditions: params.conditions || {},
-          createdBy: params.createdBy,
-        })
+          ...(params.escalationPolicy !== undefined
+            ? { escalationPolicy: params.escalationPolicy }
+            : { escalationPolicy: { enabled: false, timeoutHours: 48, escalateTo: null } }),
+          ...(params.conditions !== undefined
+            ? { conditions: params.conditions }
+            : { conditions: {} }),
+          ...(params.createdBy !== undefined && { createdBy: params.createdBy }),
+        } as any)
         .returning();
 
       await this.logAuditEvent({
@@ -148,7 +153,7 @@ export class ApprovalWorkflowService {
         .where(
           and(
             eq(approvalWorkflows.workspaceId, workspaceId),
-            eq((approvalWorkflows as any)?.trigger, trigger),
+            eq(anyWorkflows.trigger, trigger),
             eq(approvalWorkflows.isActive, true),
           ),
         )
@@ -180,7 +185,7 @@ export class ApprovalWorkflowService {
         .set({
           ...updates,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(approvalWorkflows.id, workflowId))
         .returning();
 
@@ -216,7 +221,7 @@ export class ApprovalWorkflowService {
         .from(approvalRequests)
         .where(
           and(
-            eq((approvalRequests as any)?.workflowId, workflowId),
+            eq(anyRequests.workflowId, workflowId),
             or(
               eq(approvalRequests.status, "pending"),
               eq(approvalRequests.status, "in_progress"),
@@ -271,17 +276,17 @@ export class ApprovalWorkflowService {
       const [request] = await db
         .insert(approvalRequests)
         .values({
-          workflowId: workflow.id,
           workspaceId: params.workspaceId,
           requesterId: params.requesterId,
           resourceType: params.resourceType,
           resourceId: params.resourceId,
           status: "pending",
+          workflowId: workflow.id,
           currentStep: 0,
           totalSteps: steps.length,
           metadata: params.metadata || {},
           dueAt,
-        })
+        } as any)
         .returning();
 
       for (let i = 0; i < steps?.length; i++) {
@@ -291,14 +296,13 @@ export class ApprovalWorkflowService {
 
         await db.insert(approvalSteps).values({
           requestId: request.id,
-          stepNumber: i,
-          approverId: step.approverType === "user" ? step?.approverId : null,
-          approverRoleId:
-            step?.approverType === "role" ? step?.approverRoleId : null,
+          approverId: (step.approverType === "user" ? step?.approverId : null) as string,
           status: i === 0 ? "pending" : "waiting",
+          stepNumber: i,
+          approverRoleId: step?.approverType === "role" ? step?.approverRoleId : null,
           dueAt: stepDueAt,
           metadata: { stepConfig: step },
-        });
+        } as any);
       }
 
       await this.notifyApprovers(request?.id, 0);
@@ -350,7 +354,7 @@ export class ApprovalWorkflowService {
         .where(
           and(
             eq(approvalSteps.requestId, requestId),
-            eq((approvalSteps as any)?.stepNumber, stepNumber),
+            eq(anySteps.stepNumber, stepNumber),
           ),
         )
         .limit(1);
@@ -371,7 +375,7 @@ export class ApprovalWorkflowService {
           decidedBy: approverId,
           decidedAt: new Date(),
           comment,
-        })
+        } as any)
         .where(eq(approvalSteps.id, step?.id));
 
       if (decision === "rejected") {
@@ -384,7 +388,7 @@ export class ApprovalWorkflowService {
             finalDecisionBy: approverId,
             finalComment: comment,
             updatedAt: new Date(),
-          })
+          } as any)
           .where(eq(approvalRequests.id, requestId));
 
         await this.notifyRequester(request, "rejected", comment);
@@ -400,7 +404,7 @@ export class ApprovalWorkflowService {
               finalDecisionBy: approverId,
               finalComment: comment,
               updatedAt: new Date(),
-            })
+            } as any)
             .where(eq(approvalRequests.id, requestId));
 
           await this.notifyRequester(request, "approved", comment);
@@ -411,7 +415,7 @@ export class ApprovalWorkflowService {
               currentStep: nextStepNumber,
               status: "in_progress",
               updatedAt: new Date(),
-            })
+            } as any)
             .where(eq(approvalRequests.id, requestId));
 
           await db
@@ -420,7 +424,7 @@ export class ApprovalWorkflowService {
             .where(
               and(
                 eq(approvalSteps.requestId, requestId),
-                eq((approvalSteps as any)?.stepNumber, nextStepNumber),
+                eq(anySteps.stepNumber, nextStepNumber),
               ),
             );
 
@@ -469,7 +473,7 @@ export class ApprovalWorkflowService {
         .select()
         .from(approvalSteps)
         .where(eq(approvalSteps.requestId, requestId))
-        .orderBy((approvalSteps as any)?.stepNumber);
+        .orderBy(anySteps.stepNumber);
 
       return { request, steps };
     } catch (error: unknown) {
@@ -486,14 +490,14 @@ export class ApprovalWorkflowService {
       const pendingRequests = await db
         .select({
           id: approvalRequests.id,
-          workflowId: (approvalRequests as any).workflowId,
+          workflowId: anyRequests.workflowId,
           resourceType: approvalRequests.resourceType,
           resourceId: approvalRequests.resourceId,
           status: approvalRequests.status,
-          currentStep: (approvalRequests as any).currentStep,
-          totalSteps: (approvalRequests as any).totalSteps,
-          metadata: (approvalRequests as any).metadata,
-          dueAt: (approvalRequests as any).dueAt,
+          currentStep: anyRequests.currentStep,
+          totalSteps: anyRequests.totalSteps,
+          metadata: anyRequests.metadata,
+          dueAt: anyRequests.dueAt,
           createdAt: approvalRequests.createdAt,
           requesterId: approvalRequests.requesterId,
           requesterEmail: users.email,
@@ -525,13 +529,13 @@ export class ApprovalWorkflowService {
       const pendingSteps = await db
         .select({
           stepId: approvalSteps.id,
-          stepNumber: (approvalSteps as any).stepNumber,
-          dueAt: (approvalSteps as any).dueAt,
+          stepNumber: anySteps.stepNumber,
+          dueAt: anySteps.dueAt,
           requestId: approvalRequests.id,
           resourceType: approvalRequests.resourceType,
           resourceId: approvalRequests.resourceId,
           workspaceId: approvalRequests.workspaceId,
-          metadata: (approvalRequests as any).metadata,
+          metadata: anyRequests.metadata,
           createdAt: approvalRequests.createdAt,
         })
         .from(approvalSteps)
@@ -545,7 +549,7 @@ export class ApprovalWorkflowService {
             eq(approvalSteps.status, "pending"),
           ),
         )
-        .orderBy((approvalSteps as any)?.dueAt)
+        .orderBy(anySteps.dueAt)
         .limit(100);
 
       return pendingSteps;
@@ -566,9 +570,9 @@ export class ApprovalWorkflowService {
           resourceType: approvalRequests.resourceType,
           resourceId: approvalRequests.resourceId,
           status: approvalRequests.status,
-          finalDecision: (approvalRequests as any).finalDecision,
-          finalComment: (approvalRequests as any).finalComment,
-          completedAt: (approvalRequests as any).completedAt,
+          finalDecision: anyRequests.finalDecision,
+          finalComment: anyRequests.finalComment,
+          completedAt: anyRequests.completedAt,
           createdAt: approvalRequests.createdAt,
           requesterId: approvalRequests.requesterId,
           requesterEmail: users.email,
@@ -585,7 +589,7 @@ export class ApprovalWorkflowService {
             ),
           ),
         )
-        .orderBy(desc((approvalRequests as any)?.completedAt))
+        .orderBy(desc(anyRequests.completedAt))
         .limit(limit);
 
       return history;
@@ -606,10 +610,10 @@ export class ApprovalWorkflowService {
               eq(approvalRequests.status, "pending"),
               eq(approvalRequests.status, "in_progress"),
             ),
-            lte((approvalRequests as any)?.dueAt, new Date()),
+            lte(anyRequests.dueAt, new Date()),
           ),
         )
-        .orderBy((approvalRequests as any)?.dueAt)
+        .orderBy(anyRequests.dueAt)
         .limit(100);
 
       for (const request of overdueRequests) {
@@ -637,7 +641,7 @@ export class ApprovalWorkflowService {
           status: "escalated",
           escalatedAt: new Date(),
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(approvalRequests.id, requestId));
 
       if (policy?.notifyOnEscalate && policy?.escalateTo) {
@@ -666,7 +670,7 @@ export class ApprovalWorkflowService {
         .where(
           and(
             eq(approvalSteps.requestId, requestId),
-            eq((approvalSteps as any)?.stepNumber, stepNumber),
+            eq(anySteps.stepNumber, stepNumber),
           ),
         )
         .limit(1);

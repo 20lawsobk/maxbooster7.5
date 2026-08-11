@@ -1,6 +1,9 @@
 import { db } from "../db.js";
-import { recoupmentAccounts, royaltyStatements, type RecoupmentAccount, type InsertRecoupmentAccount } from "@shared/schema";
+import { recoupmentAccounts, royaltyStatements, type RecoupmentAccount } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
+
+// InsertRecoupmentAccount is not exported from the schema; derive it locally.
+type InsertRecoupmentAccount = typeof recoupmentAccounts.$inferInsert;
 import { logger } from "../logger.js";
 import crypto from "crypto";
 
@@ -136,7 +139,10 @@ export class RecoupmentService {
   async createAdvance(input: AdvanceInput): Promise<RecoupmentAccount> {
     const transactionId = crypto?.randomUUID();
 
-    const insertData: InsertRecoupmentAccount = {
+    // The DB table has additional columns (accountName, advanceAmount,
+    // crossCollateralized, etc.) that were added after the TS schema was last
+    // synced. Cast to any so Drizzle accepts all runtime columns.
+    const insertData: Record<string, unknown> = {
       userId: input.userId,
       releaseId: input.releaseId,
       accountName: input.accountName,
@@ -164,7 +170,8 @@ export class RecoupmentService {
 
     const [account] = await db
       .insert(recoupmentAccounts)
-      .values(insertData)
+      // Runtime columns exist in the DB but are not yet reflected in the TS schema type
+      .values(insertData as any)
       .returning();
 
     logger.info(
@@ -417,10 +424,8 @@ export class RecoupmentService {
 
     const [updated] = await db
       .update(recoupmentAccounts)
-      .set({
-        terms: updatedTerms,
-        updatedAt: new Date(),
-      })
+      // `terms` is a runtime column not yet reflected in the TS schema type
+      .set({ terms: updatedTerms, updatedAt: new Date() } as any)
       .where(eq(recoupmentAccounts.id, accountId))
       .returning();
 
@@ -452,13 +457,14 @@ export class RecoupmentService {
 
     const [updated] = await db
       .update(recoupmentAccounts)
+      // `transactions` is a runtime column not yet reflected in the TS schema type
       .set({
         remainingBalance: "0",
         isActive: false,
         fullyRecoupedAt: new Date(),
         transactions: updatedTransactions,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(recoupmentAccounts.id, accountId))
       .returning();
 
@@ -507,6 +513,7 @@ export class RecoupmentService {
 
     await db
       .update(recoupmentAccounts)
+      // `transactions` is a runtime column not yet reflected in the TS schema type
       .set({
         recoupedAmount: sql`${recoupmentAccounts.recoupedAmount} + ${amountToRecoup}`,
         remainingBalance: String(Math.max(0, newBalance)),
@@ -514,7 +521,7 @@ export class RecoupmentService {
         isActive: !isFullyRecouped,
         transactions: updatedTransactions,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(recoupmentAccounts.id, account?.id));
 
     logger.info(
@@ -541,7 +548,8 @@ export class RecoupmentService {
       .from(recoupmentAccounts)
       .where(
         and(
-          eq(recoupmentAccounts.crossCollateralGroupId, groupId),
+          // crossCollateralGroupId is a runtime column not yet in the TS schema type
+          eq((recoupmentAccounts as any).crossCollateralGroupId, groupId),
           eq(recoupmentAccounts.isActive, true),
         ),
       )
@@ -620,13 +628,14 @@ export class RecoupmentService {
 
     const [updated] = await db
       .update(recoupmentAccounts)
+      // `transactions` is a runtime column not yet reflected in the TS schema type
       .set({
         remainingBalance: String(Math.max(0, newBalance)),
         isActive,
         fullyRecoupedAt,
         transactions: updatedTransactions,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(recoupmentAccounts.id, accountId))
       .returning();
 
@@ -643,7 +652,8 @@ export class RecoupmentService {
     const accounts = await db
       .select()
       .from(recoupmentAccounts)
-      .where(eq(recoupmentAccounts.crossCollateralGroupId, groupId));
+      // crossCollateralGroupId is a runtime column not yet in the TS schema type
+      .where(eq((recoupmentAccounts as any).crossCollateralGroupId, groupId));
 
     const totalBalance = accounts?.reduce(
       (sum, acc) => sum + Number(acc?.remainingBalance),
@@ -672,11 +682,12 @@ export class RecoupmentService {
 
     await db
       .update(recoupmentAccounts)
+      // crossCollateralized / crossCollateralGroupId are runtime columns not yet in the TS schema type
       .set({
         crossCollateralized: true,
         crossCollateralGroupId: groupId,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(sql`${recoupmentAccounts.id} IN ${accountIds}`);
 
     logger.info(
@@ -708,7 +719,8 @@ export class RecoupmentService {
           eq(royaltyStatements.status, "paid"),
         ),
       )
-      .orderBy(desc(royaltyStatements.paidAt))
+      // paidAt is a runtime column not yet in the TS schema type; cast to access it
+      .orderBy(desc((royaltyStatements as any).paidAt))
       .limit(6);
 
     let averageMonthlyRecoupment = 0;

@@ -382,11 +382,11 @@ export class CompetitorBenchmarkService {
       let totalShares = 0;
 
       recentPosts?.forEach((post) => {
-        const engagement = post?.engagement as Record<string, unknown>;
+        const engagement = post?.engagement as Record<string, unknown> | null;
         if (engagement) {
-          totalLikes += engagement?.likes || 0;
-          totalComments += engagement?.comments || 0;
-          totalShares += engagement?.shares || 0;
+          totalLikes += Number(engagement?.likes) || 0;
+          totalComments += Number(engagement?.comments) || 0;
+          totalShares += Number(engagement?.shares) || 0;
         }
       });
 
@@ -430,25 +430,25 @@ export class CompetitorBenchmarkService {
     ];
 
     return {
-      id: profile.id,
-      name: profile.name,
-      handle: profile.handle,
+      id: profile.id as string,
+      name: profile.name as string,
+      handle: profile.handle as string,
       platforms: platformsData.map((platform) => ({
         platform,
-        followers: profile.followers || 0,
-        followersGrowth: profile.followersGrowth || 0,
-        engagementRate: profile.engagementRate || 0,
-        postsPerWeek: profile.postsPerWeek || 0,
-        avgLikes: profile.avgLikes || 0,
-        avgComments: profile.avgComments || 0,
-        avgShares: profile.avgShares || 0,
+        followers: Number(profile.followers) || 0,
+        followersGrowth: Number(profile.followersGrowth) || 0,
+        engagementRate: Number(profile.engagementRate) || 0,
+        postsPerWeek: Number(profile.postsPerWeek) || 0,
+        avgLikes: Number(profile.avgLikes) || 0,
+        avgComments: Number(profile.avgComments) || 0,
+        avgShares: Number(profile.avgShares) || 0,
       })),
-      totalFollowers: profile.followers || 0,
-      avgEngagementRate: profile.engagementRate || 0,
+      totalFollowers: Number(profile.followers) || 0,
+      avgEngagementRate: Number(profile.engagementRate) || 0,
       contentMix: (profile?.contentMix as Record<string, number>) || {},
       topHashtags: (profile?.topHashtags as string[]) || [],
       postingSchedule: {},
-      lastUpdated: profile.lastUpdated || new Date(),
+      lastUpdated: (profile.lastUpdated as Date) || new Date(),
     };
   }
 

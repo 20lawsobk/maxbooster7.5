@@ -484,9 +484,9 @@ class PlatformAutoFixer extends EventEmitter {
     try {
       const { pool } = await import("../db.js");
       const p = pool as unknown as Record<string, unknown>;
-      const total = p.totalCount ?? 0;
-      const idle = p.idleCount ?? 0;
-      const waiting = p.waitingCount ?? 0;
+      const total = (p.totalCount ?? 0) as number;
+      const idle = (p.idleCount ?? 0) as number;
+      const waiting = (p.waitingCount ?? 0) as number;
 
       // Ping with timeout
       const pingStart = Date.now();
@@ -1234,7 +1234,8 @@ class PlatformAutoFixer extends EventEmitter {
       });
     }
 
-    if (subsystem === "routes" && status !== "healthy") {
+    if (subsystem === "routes") {
+      // status is "degraded" | "critical" here (healthy/unknown return early above)
       const details = result?.details as { degradedRoutes?: string[] };
       const badRoutes = details?.degradedRoutes ?? [];
       if (badRoutes?.length > 0) {
@@ -1271,7 +1272,8 @@ class PlatformAutoFixer extends EventEmitter {
       });
     }
 
-    if (subsystem === "entropy" && status !== "healthy") {
+    if (subsystem === "entropy") {
+      // status is "degraded" | "critical" here (healthy/unknown return early above)
       // Log the worsening trend; no automatic patch can fix a real FD leak or RSS growth —
       // these require investigation.  But we log a detailed alert for visibility.
       const details = result?.details as Record<string, unknown>;
@@ -1420,8 +1422,8 @@ class PlatformAutoFixer extends EventEmitter {
     // waits at the AIMD gate — this causes LuaExecutor semaphore saturation.
     // When both subsystems are degraded/critical simultaneously, PDIM is almost
     // always the root cause; surface this explicitly so the fix is obvious.
-    const pdimState = this.probeResults.get("pdim").status;
-    const luaState = this.probeResults.get("lua_executor").status;
+    const pdimState = this.probeResults.get("pdim")?.status;
+    const luaState = this.probeResults.get("lua_executor")?.status;
     if (
       (pdimState === "degraded" || pdimState === "critical") &&
       (luaState === "degraded" || luaState === "critical")
@@ -1660,7 +1662,7 @@ class PlatformAutoFixer extends EventEmitter {
       const { pool } = await import("../db.js");
       const t0 = Date?.now();
       await Promise?.race([
-        (pool as unknown as Record<string, unknown>).query("SELECT 1"),
+        (pool as any).query("SELECT 1"),
         new Promise<never>((_, r) =>
           setTimeout(() => r(new Error("stress timeout")), STRESS_TIMEOUT_MS),
         ),
@@ -1673,7 +1675,7 @@ class PlatformAutoFixer extends EventEmitter {
             `Pre-warming connection pool.`,
         );
         // Fire a second no-op query to pre-warm the next connection slot
-        await (pool as unknown as Record<string, unknown>).query("SELECT 1").catch(() => {
+        await (pool as any).query("SELECT 1").catch(() => {
           /* ignore */
         });
         this._threatsNeutralized++;
@@ -1827,7 +1829,7 @@ class PlatformAutoFixer extends EventEmitter {
         const { distributedCache } = await import(
           "../infrastructure/distributedCache.js"
         );
-        await (distributedCache as unknown as Record<string, unknown>).evictExpired?.();
+        await (distributedCache as any).evictExpired?.();
         logger.info(
           "[PlatformAutoFixer] 🎯 OFFENSIVE: Cache eviction triggered to slow heap growth",
         );

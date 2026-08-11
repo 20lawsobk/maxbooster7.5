@@ -284,7 +284,7 @@ router.post("/create", async (req, res) => {
       name: validatedData.name,
       slug: validatedData.slug,
       templateId: validatedData.templateId || undefined,
-      customization: validatedData.customization || {},
+      customization: (validatedData.customization as Record<string, unknown> | undefined) || {},
     });
 
     res.status(201).json(storefront);
@@ -336,7 +336,7 @@ router.put("/:id/customize", async (req, res) => {
     const updatedStorefront = await storefrontService?.updateStorefront(
       id,
       req.user!.id,
-      validatedData,
+      validatedData as import("../services/storefrontService.js").UpdateStorefrontInput,
     );
 
     res.json(updatedStorefront);
@@ -497,7 +497,7 @@ router.post("/:storefrontId/membership-tiers", async (req, res) => {
       priceCents: validatedData.priceCents,
       currency: validatedData.currency || "usd",
       interval: validatedData.interval as "month" | "year",
-      benefits: validatedData.benefits || {},
+      benefits: (validatedData.benefits as Record<string, unknown> | undefined) || {},
       maxSubscribers: validatedData.maxSubscribers || undefined,
     });
 
@@ -538,7 +538,7 @@ router.put("/membership-tiers/:tierId", async (req, res) => {
     const tier = await storefrontService?.updateMembershipTier(
       tierId,
       req.user!.id,
-      validatedData,
+      validatedData as import("../services/storefrontService.js").CreateMembershipTierInput,
     );
 
     res.json(tier);
@@ -666,7 +666,7 @@ router.post("/subscribe/:tierId", async (req, res) => {
         });
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as unknown as "2026-02-25.clover" });
 
     let stripeCustomerId = (user as unknown as Record<string, unknown>)
       .stripeCustomerId as string | undefined;
@@ -693,7 +693,6 @@ router.post("/subscribe/:tierId", async (req, res) => {
         recurring: { interval: tier.interval as "month" | "year" },
         product_data: {
           name: `${storefront?.name || "Artist"} - ${tier?.name}`,
-          description: tier.description || undefined,
         },
         metadata: {
           storefrontId: tier.storefrontId,
@@ -1033,7 +1032,7 @@ router.put("/:storefrontId/custom-domain", async (req, res) => {
       storefrontId,
       req.user!.id,
       {
-        customDomain: null,
+        customDomain: undefined,
         isCustomDomainActive: false,
       },
     );
@@ -1400,7 +1399,7 @@ router.post("/:id/checkout", async (req, res) => {
           error: "Payment processing is not available. Please contact support.",
         });
     }
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as unknown as "2026-02-25.clover" });
 
     const [storefront] = await db
       .select()
@@ -1527,9 +1526,9 @@ router.post("/:id/checkout", async (req, res) => {
       })
       .filter((item) => item?.price_data.unit_amount > 0);
 
-    const session = await stripe?.checkout.sessions?.create({
+    const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: lineItems,
+      line_items: lineItems as any,
       mode: "payment",
       success_url: `${getBaseUrl()}/store/${storefront.slug || storefrontId}?checkout=success`,
       cancel_url: `${getBaseUrl()}/store/${storefront.slug || storefrontId}?checkout=canceled`,
@@ -1573,7 +1572,7 @@ router.post("/:id/checkout", async (req, res) => {
         storefrontId,
         sellerId: storefront.userId,
         listingId: validListings[i].id,
-        licenseType: orderLicenseType,
+        licenseType: orderLicenseType ?? licenseType,
         amountCents: finalAmount,
         status: "pending",
         stripeSessionId: session.id,
@@ -2202,7 +2201,7 @@ function applyBogoToCart(
             : `${(promo as any)?.name}: Buy ${buyLabel}, Get ${getLabel} at ${discountPercent}% off!`;
       }
       bestResult = {
-        appliedPromotion: promo,
+        appliedPromotion: promo as Record<string, unknown>,
         freeItemIndices: freeIndices,
         discountedItems,
         totalSavingsCents: savings,

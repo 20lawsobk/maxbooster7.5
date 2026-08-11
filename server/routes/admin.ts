@@ -1216,6 +1216,79 @@ adminRouter.post("/chain-fixer/reset/:patternId", async (req, res) => {
   }
 });
 
+// Error knowledge base — what the platform knows how to recognise, what it can
+// genuinely self-heal, and what it must escalate to a human.
+adminRouter.get("/knowledge-base", async (_req, res) => {
+  try {
+    const {
+      ERROR_KNOWLEDGE_BASE,
+      getKnowledgeBaseSummary,
+      getEscalationClasses,
+    } = await import("../services/errorKnowledgeBase.js");
+    res.json({
+      summary: getKnowledgeBaseSummary(),
+      // Classes that page a human even when the symptom is suppressed.
+      escalation: getEscalationClasses().map((e) => ({
+        id: e.id,
+        title: e.title,
+        severity: e.severity,
+        impact: e.impact,
+        fix: e.fix,
+      })),
+      entries: ERROR_KNOWLEDGE_BASE.map((e) => ({
+        id: e.id,
+        title: e.title,
+        category: e.category,
+        severity: e.severity,
+        remediation: e.remediation,
+        autoRemediable: e.autoRemediable,
+        rootCause: e.rootCause,
+        impact: e.impact,
+        fix: e.fix,
+        verifyBy: e.verifyBy ?? null,
+        precursorOf: e.precursorOf ?? [],
+      })),
+    });
+  } catch (err) {
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Classify an arbitrary error string against the knowledge base.
+adminRouter.post("/knowledge-base/classify", async (req, res) => {
+  try {
+    const { message } = req.body ?? {};
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({ error: "message (string) is required" });
+    }
+    const { classifyError, explainUnknownError, getDownstreamClasses } =
+      await import("../services/errorKnowledgeBase.js");
+    const matches = classifyError(message);
+    if (matches.length === 0) {
+      return res.json({ recognised: false, ...explainUnknownError(message) });
+    }
+    res.json({
+      recognised: true,
+      matches: matches.map((m) => ({
+        id: m.id,
+        title: m.title,
+        severity: m.severity,
+        category: m.category,
+        remediation: m.remediation,
+        autoRemediable: m.autoRemediable,
+        rootCause: m.rootCause,
+        impact: m.impact,
+        fix: m.fix,
+        downstream: getDownstreamClasses(m.id).map((d) => d.id),
+      })),
+    });
+  } catch (err) {
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 adminRouter.post("/chain-fixer/force-check", async (req, res) => {
   try {
     const { message } = req.body;

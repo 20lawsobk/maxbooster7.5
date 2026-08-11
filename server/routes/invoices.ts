@@ -9,9 +9,12 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-interface AuthenticatedRequest extends Request {
+// AuthenticatedRequest: express Request with an optional user shape.
+// We use type intersection rather than interface extension to avoid
+// the conflicting `user` property on the base Request type.
+type AuthenticatedRequest = Request & {
   user?: { id: string; email: string };
-}
+};
 
 function generateInvoiceNumber(): string {
   const year = new Date().getFullYear();
@@ -98,7 +101,7 @@ router.post(
       }
 
       const subtotalCents = lineItems?.reduce(
-        (sum: number, item: Record<string, unknown>) => {
+        (sum: number, item: { quantity: number; unitPrice: number }) => {
           return sum + item?.quantity * item?.unitPrice * 100;
         },
         0,
@@ -179,7 +182,7 @@ router.put(
 
       if (lineItems && Array.isArray(lineItems)) {
         subtotalCents = lineItems?.reduce(
-          (sum: number, item: Record<string, unknown>) => {
+          (sum: number, item: { quantity: number; unitPrice: number }) => {
             return sum + item?.quantity * item?.unitPrice * 100;
           },
           0,
@@ -345,7 +348,7 @@ router.get(
             description: item.description || "Service",
             quantity: item.quantity || 1,
             unitPrice: item.unitPrice || 0,
-            total: (item?.quantity || 1) * (item?.unitPrice || 0),
+            total: (Number(item?.quantity) || 1) * (Number(item?.unitPrice) || 0),
           }),
         ),
         subtotal: (invoice?.subtotalCents || 0) / 100,
@@ -364,7 +367,7 @@ router.get(
         "Content-Disposition",
         `attachment; filename="${invoice.invoiceNumber}.pdf"`,
       );
-      res.send(Buffer?.from(pdfData, "base64"));
+      res.send(Buffer?.from(pdfData as string, "base64"));
     } catch (error) {
       logger.warn({ err: error }, "[Invoices] Failed to generate PDF:");
       res.status(500).json({ error: "Failed to generate PDF" });
@@ -406,8 +409,8 @@ router.post(
               unitPrice: order.amount,
             },
           ],
-          subtotalCents: Math.round(order?.amount * 100),
-          totalCents: Math.round(order?.amount * 100),
+          subtotalCents: Math.round(Number(order?.amount) * 100),
+          totalCents: Math.round(Number(order?.amount) * 100),
           paidAt: order.createdAt,
           paymentMethod: "stripe",
           metadata: { orderId },
@@ -482,8 +485,8 @@ router.post(
                 unitPrice: order.amount,
               },
             ],
-            subtotalCents: Math.round(order?.amount * 100),
-            totalCents: Math.round(order?.amount * 100),
+            subtotalCents: Math.round(Number(order?.amount) * 100),
+            totalCents: Math.round(Number(order?.amount) * 100),
             paidAt: order.createdAt,
             paymentMethod: "stripe",
             metadata: { orderId: order.id },

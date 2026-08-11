@@ -12,7 +12,7 @@ import { randomUUID } from "crypto";
 import { isRoutesReady } from "../lib/bootState.js";
 import { selfHealingSecurityMiddleware } from "../middleware/selfHealingMiddleware.js";
 import { Sentry } from "../instrument.js";
-import { DistributedRateLimiter } from "../middleware/scalableRateLimiter.js";
+import { DistributedRateLimiter, SlidingWindowRedis } from "../middleware/scalableRateLimiter.js";
 import { getRedisClient } from "../lib/redisClient.js";
 import { env } from "../config/env.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
@@ -41,7 +41,13 @@ function sanitizeObject(
   if (depth > 10) return obj; // Prevent stack overflow
   if (obj === null || typeof obj !== "object") return obj;
   if (Array.isArray(obj)) {
-    return obj?.map((item) => sanitizeObject(item, depth + 1));
+    // Cast: callers treat the sanitized value as opaque unknown; the array
+    // shape is preserved at runtime even though TS sees Record<string,unknown>.
+    return obj.map((item) =>
+      item !== null && typeof item === "object"
+        ? sanitizeObject(item as Record<string, unknown>, depth + 1)
+        : item,
+    ) as unknown as Record<string, unknown>;
   }
 
   const dangerous = ["__proto__", "constructor", "prototype"];
@@ -52,7 +58,11 @@ function sanitizeObject(
       logger.warn(`[Security] Blocked prototype pollution attempt: ${key}`);
       continue;
     }
-    sanitized[key] = sanitizeObject(obj[key], depth + 1);
+    const val = obj[key];
+    sanitized[key] =
+      val !== null && typeof val === "object"
+        ? sanitizeObject(val as Record<string, unknown>, depth + 1)
+        : val;
   }
 
   return sanitized;
@@ -106,7 +116,7 @@ export function globalErrorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  const requestId = (req as unknown as Record<string, unknown>).requestId || "unknown";
+  const requestId = ((req as unknown as Record<string, unknown>).requestId as string | undefined) || "unknown";
 
   let statusCode = 500;
   let message = err?.message || "Internal server error";
@@ -124,9 +134,9 @@ export function globalErrorHandler(
     statusCode = 400;
     message = err?.message || "Validation failed";
   } else if ((err as unknown as Record<string, unknown>).statusCode) {
-    statusCode = (err as unknown as Record<string, unknown>).statusCode;
+    statusCode = (err as unknown as Record<string, unknown>).statusCode as number;
   } else if ((err as unknown as Record<string, unknown>).status) {
-    statusCode = (err as unknown as Record<string, unknown>).status;
+    statusCode = (err as unknown as Record<string, unknown>).status as number;
   }
 
   if (statusCode >= 500) {
@@ -147,7 +157,7 @@ export function globalErrorHandler(
           scope?.setTag("requestId", requestId);
           scope?.setTag("path", req.path);
           scope?.setTag("method", req.method);
-          scope?.setUser({ id: (req.user as Record<string, unknown>)?.id });
+          scope?.setUser({ id: ((req.user as Record<string, unknown>)?.id as string | undefined) });
           Sentry!.captureException(err);
         });
       }
@@ -393,9 +403,9 @@ export function applyMandatoryMiddleware(
     const maxRequests = isLoadTest ? 1_000_000 : isDev ? 100_000 : 1_000;
     const windowMs = 15 * 60 * 1000;
 
-    let redisClient: Record<string, unknown> | null = null;
+    let redisClient: SlidingWindowRedis | null = null;
     try {
-      redisClient = getRedisClient();
+      redisClient = getRedisClient() as unknown as SlidingWindowRedis;
     } catch {
       /* fall through to in-memory */
     }
@@ -420,7 +430,7 @@ export function applyMandatoryMiddleware(
           return `mandatory:${userId ?? ip}`;
         },
       },
-      redisClient,
+      redisClient as SlidingWindowRedis,
     );
     app.use(limiter?.middleware());
     loadedMiddleware?.push("rateLimit");
@@ -443,9 +453,9 @@ export function applyMandatoryMiddleware(
     const maxRequests = isDev || isLoadTest ? 100_000 : 200;
     const windowMs = 15 * 60 * 1000;
 
-    let redisClient: Record<string, unknown> | null = null;
+    let redisClient: SlidingWindowRedis | null = null;
     try {
-      redisClient = getRedisClient();
+      redisClient = getRedisClient() as unknown as SlidingWindowRedis;
     } catch {
       /* fall through to in-memory */
     }
@@ -473,7 +483,7 @@ export function applyMandatoryMiddleware(
           return `strict:${ip}`;
         },
       },
-      redisClient,
+      redisClient as SlidingWindowRedis,
     );
     app.use("/api/auth", strictLimiter?.middleware());
     app.use("/api/kill-switch", strictLimiter?.middleware());

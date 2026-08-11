@@ -17,7 +17,7 @@
  * GET  /api/hns/wallet/address      — get receive address for funding
  */
 
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { logger } from "../logger.js";
 import { hnsClient, hnsManager, hnsReady } from "../services/hns/index.js";
@@ -25,12 +25,12 @@ import { hnsClient, hnsManager, hnsReady } from "../services/hns/index.js";
 const router = Router();
 
 function authRequired(
-  req: Record<string, unknown>,
-  res: Record<string, unknown>,
-  next: Record<string, unknown>,
-) {
-  if (!(req.isAuthenticated as any)())
-    return (res.status as any)(401).json({ error: "Unauthorized" });
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (!req.isAuthenticated())
+    { res.status(401).json({ error: "Unauthorized" }); return; }
   next();
 }
 

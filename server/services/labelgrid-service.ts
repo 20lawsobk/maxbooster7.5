@@ -256,7 +256,7 @@ class LabelGridService {
   private apiToken: string | undefined;
   private baseUrl: string;
   private endpoints: Record<string, unknown>;
-  private authHeaderFormat: string;
+  // authHeaderFormat intentionally omitted: stored for observability, consumed via config load
   private webhookSecret: string | undefined;
   private isConfigured: boolean = false;
   private configLoaded: boolean = false;
@@ -269,7 +269,6 @@ class LabelGridService {
     this.baseUrl = process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
     this.webhookSecret = process.env.LABELGRID_WEBHOOK_SECRET;
     this.endpoints = {};
-    this.authHeaderFormat = "Bearer {token}";
 
     this.circuitBreaker = new CircuitBreaker("labelgrid-api", {
       failureThreshold: 5,
@@ -311,9 +310,11 @@ class LabelGridService {
     // automatically protected — opens after 5 consecutive failures, resets after 60s.
     const originalAdapter = this.client.defaults?.adapter;
     const cb = this.circuitBreaker;
-    this.client.defaults.adapter = async (config: Record<string, unknown>) => {
+    // Cast to any so we can assign our custom async wrapper; the runtime contract is
+    // fulfilled — we forward the InternalAxiosRequestConfig and return an AxiosPromise.
+    (this.client.defaults as any).adapter = async (config: unknown) => {
       return cb?.execute(
-        () => (originalAdapter as unknown as Record<string, unknown>)(config),
+        () => (originalAdapter as unknown as (c: unknown) => Promise<unknown>)(config),
         async () => {
           throw new Error(
             "LabelGrid API circuit breaker is open - service temporarily unavailable",
@@ -337,10 +338,6 @@ class LabelGridService {
         this.baseUrl =
           (provider as any)?.apiBase || this.baseUrl || "https://api.labelgrid.com";
         this.endpoints = (provider as any)?.requirements?.endpoints || {};
-        this.authHeaderFormat =
-          (provider as any)?.authType === "api_key"
-            ? "X-API-Key: {token}"
-            : "Bearer {token}";
         this.webhookSecret =
           (provider as any)?.requirements?.webhookSecret || this.webhookSecret;
         this.configLoaded = true;
@@ -358,7 +355,6 @@ class LabelGridService {
         this.baseUrl =
           process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
         this.endpoints = {};
-        this.authHeaderFormat = "Bearer {token}";
         this.configLoaded = true;
         // Silent fallback - provider will be added when distribution is configured
       }
@@ -370,12 +366,11 @@ class LabelGridService {
       this.baseUrl =
         process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
       this.endpoints = {};
-      this.authHeaderFormat = "Bearer {token}";
     }
   }
 
   private getEndpoint(key: string, fallback: string): string {
-    return this.endpoints[key] || fallback;
+    return (this.endpoints[key] as string | undefined) || fallback;
   }
 
   private async retryWithBackoff<T>(
@@ -465,12 +460,12 @@ class LabelGridService {
 
       const dsps: LabelGridDSP[] = providers.map(
         (p: Record<string, unknown>) => ({
-          id: p.id,
-          name: p.name,
-          slug: p.slug,
+          id: p.id as string,
+          name: p.name as string,
+          slug: p.slug as string,
           category: (p.metadata as any).category || "streaming",
           region: (p.metadata as any).region || "global",
-          isActive: p.isActive ?? true,
+          isActive: (p.isActive as boolean | undefined) ?? true,
           processingTime: (p.metadata as any).processingTime || "3-7 days",
           requirements: (p.metadata as any).requirements || {
             isrc: true,
@@ -479,7 +474,7 @@ class LabelGridService {
             audioFormats: ["WAV", "FLAC"],
           },
           deliveryMethod: (p.metadata as any).deliveryMethod || "api",
-          logoUrl: p.logoUrl,
+          logoUrl: p.logoUrl as string | undefined,
         }),
       );
 
@@ -562,8 +557,8 @@ class LabelGridService {
       });
 
       const releases: LabelGridCatalogRelease[] = Array.isArray(response?.data)
-        ? response?.data
-        : ((response?.data as Record<string, unknown>)?.releases ?? []);
+        ? (response?.data as LabelGridCatalogRelease[])
+        : (((response?.data as Record<string, unknown>)?.releases as LabelGridCatalogRelease[] | undefined) ?? []);
 
       logger.info(
         `[LabelGrid] getUserCatalog: ${releases?.length} release(s) returned`,
@@ -1600,8 +1595,7 @@ class LabelGridService {
       return best;
     } catch (err) {
       logger.warn(
-        "[LabelGrid] Artist search failed (non-fatal):",
-        (err as Error).message ?? err,
+        `[LabelGrid] Artist search failed (non-fatal): ${(err as Error).message ?? err}`,
       );
       return null;
     }
@@ -1633,8 +1627,7 @@ class LabelGridService {
       return response.data.platforms ?? [];
     } catch (err) {
       logger.warn(
-        "[LabelGrid] Artist platform presence fetch failed (non-fatal):",
-        (err as Error).message ?? err,
+        `[LabelGrid] Artist platform presence fetch failed (non-fatal): ${(err as Error).message ?? err}`,
       );
       return [];
     }
@@ -1673,8 +1666,8 @@ class LabelGridService {
       });
 
       const releases: LabelGridCatalogRelease[] = Array.isArray(response.data)
-        ? response.data
-        : ((response.data as Record<string, unknown>).releases ?? []);
+        ? (response.data as LabelGridCatalogRelease[])
+        : (((response.data as Record<string, unknown>).releases as LabelGridCatalogRelease[] | undefined) ?? []);
 
       logger.info(
         `[LabelGrid] Artist catalog fetched: ${releases.length} release(s) for ${artistExternalId}`,
@@ -1682,8 +1675,7 @@ class LabelGridService {
       return releases;
     } catch (err) {
       logger.warn(
-        "[LabelGrid] Artist catalog fetch failed (non-fatal), caller may fall back to direct scan:",
-        (err as Error).message ?? err,
+        `[LabelGrid] Artist catalog fetch failed (non-fatal), caller may fall back to direct scan: ${(err as Error).message ?? err}`,
       );
       return [];
     }
@@ -1904,7 +1896,7 @@ class LabelGridService {
   }
 
   private simulateGetContentClaims(
-    releaseId?: string,
+    _releaseId?: string,
   ): LabelGridContentClaim[] {
     return [];
   }

@@ -140,7 +140,8 @@ class AIModelManager {
       try {
         const posts = await storage.getUserSocialPosts(userId);
         if (posts && posts.length >= 50) {
-          await model.trainOnUserEngagementData(posts);
+          // Cast DB rows to the SocialPost shape expected by the AI model
+          await model.trainOnUserEngagementData(posts as any);
           await this.persistSocialModel(userId, model);
           logger.info(
             `✅ Trained and persisted Social AI model for user ${userId} (${posts.length} posts)`,
@@ -520,33 +521,42 @@ class AIModelManager {
    * Implements actual weight extraction using TensorFlow?.js serialization
    */
   private async extractModelWeights(
-    model: Record<string, unknown>,
+    model: object,
   ): Promise<unknown> {
+    // Use a loose record view for reflective property access at runtime
+    const m = model as Record<string, unknown>;
     try {
       const weights: Record<string, unknown> = {
         version: "1.0",
         timestamp: new Date().toISOString(),
       };
 
-      if (model?.getWeights && typeof model?.getWeights === "function") {
-        const tensorWeights = await model?.getWeights();
+      if (m?.getWeights && typeof m?.getWeights === "function") {
+        const tensorWeights = await (m?.getWeights as () => Promise<unknown[]>)();
         if (tensorWeights && Array.isArray(tensorWeights)) {
           weights.tensors = await Promise?.all(
-            tensorWeights?.map(async (tensor: Record<string, unknown>) => ({
-              shape: tensor.shape,
-              dtype: tensor.dtype,
-              data: Array.from(await tensor?.data()),
-            })),
+            tensorWeights?.map(async (tensorRaw: unknown) => {
+              const tensor = tensorRaw as Record<string, unknown>;
+              const dataFn = tensor?.data;
+              const data = typeof dataFn === "function"
+                ? Array.from(await (dataFn as () => Promise<ArrayLike<number>>).call(tensor))
+                : [];
+              return {
+                shape: tensor.shape,
+                dtype: tensor.dtype,
+                data,
+              };
+            }),
           );
         }
       }
 
-      if (model?.serializeState && typeof model?.serializeState === "function") {
-        weights.modelState = model?.serializeState();
+      if (m?.serializeState && typeof m?.serializeState === "function") {
+        weights.modelState = (m?.serializeState as () => unknown)();
       }
 
-      if (model?.getConfig && typeof model?.getConfig === "function") {
-        weights.config = model?.getConfig();
+      if (m?.getConfig && typeof m?.getConfig === "function") {
+        weights.config = (m?.getConfig as () => unknown)();
       }
 
       return weights;
@@ -558,7 +568,7 @@ class AIModelManager {
       return {
         version: "1.0",
         timestamp: new Date().toISOString(),
-        modelState: model.serializeState ? model?.serializeState() : null,
+        modelState: m.serializeState ? (m?.serializeState as () => unknown)() : null,
       };
     }
   }
@@ -568,47 +578,54 @@ class AIModelManager {
    * Implements actual weight loading using TensorFlow?.js deserialization
    */
   private async loadModelWeights(
-    model: Record<string, unknown>,
+    model: object,
     weights: Record<string, unknown>,
   ): Promise<void> {
     if (!weights) return;
+    // Use a loose record view for reflective property access at runtime
+    const m = model as Record<string, unknown>;
     try {
       if (
         weights?.tensors &&
-        model?.setWeights &&
-        typeof model?.setWeights === "function"
+        m?.setWeights &&
+        typeof m?.setWeights === "function"
       ) {
         const tf = await import("@tensorflow/tfjs");
-        const tensorWeights = (weights?.tensors as any).map(
-          (w: Record<string, unknown>) => tf?.tensor(w?.data, w?.shape, w?.dtype),
+        const tensorWeights = (weights?.tensors as Record<string, unknown>[]).map(
+          (w: Record<string, unknown>) =>
+            tf?.tensor(
+              w?.data as Parameters<typeof tf.tensor>[0],
+              w?.shape as Parameters<typeof tf.tensor>[1],
+              w?.dtype as Parameters<typeof tf.tensor>[2],
+            ),
         );
-        await model?.setWeights(tensorWeights);
-        tensorWeights?.forEach((t: Record<string, unknown>) => t?.dispose());
+        await (m?.setWeights as (t: unknown[]) => Promise<void>)(tensorWeights);
+        tensorWeights?.forEach((t) => t?.dispose());
         logger.debug("Loaded TensorFlow.js tensor weights");
       }
 
       if (
         weights?.modelState &&
-        model?.deserializeState &&
-        typeof model?.deserializeState === "function"
+        m?.deserializeState &&
+        typeof m?.deserializeState === "function"
       ) {
-        model?.deserializeState(weights?.modelState);
+        (m?.deserializeState as (s: unknown) => void)(weights?.modelState);
         logger.debug("Loaded model state from persistence");
       }
 
       if (
         weights?.config &&
-        model?.setConfig &&
-        typeof model?.setConfig === "function"
+        m?.setConfig &&
+        typeof m?.setConfig === "function"
       ) {
-        model?.setConfig(weights?.config);
+        (m?.setConfig as (c: unknown) => void)(weights?.config);
         logger.debug("Loaded model config from persistence");
       }
     } catch (error) {
       logger.warn({ err: error }, "Could not fully restore model weights:");
-      if (weights?.modelState && model?.deserializeState) {
+      if (weights?.modelState && m?.deserializeState) {
         try {
-          model?.deserializeState(weights?.modelState);
+          (m?.deserializeState as (s: unknown) => void)(weights?.modelState);
         } catch (e) {
           logger.warn({ err: e }, "Fallback state restoration failed:");
         }

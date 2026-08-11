@@ -10,7 +10,7 @@ import {
 export interface SmartDefault {
   category: string;
   key: string;
-  value: Record<string, unknown>;
+  value: unknown;
   confidence: number;
   reasoning: string;
 }
