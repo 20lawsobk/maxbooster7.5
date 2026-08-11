@@ -20,6 +20,7 @@
 - [Autonomous "completed"/"applied" honesty](autonomous-completed-honesty.md) — success/applied status must gate on a real side-effect a live consumer reads (effective field), never on category membership or reaching end-of-function; activateCampaign rejects pre-`active` campaigns so create as `draft`
 - [Codemod debris bug classes](codemod-debris-bug-classes.md) — `?.` inside literal SQL text and `let _x`/bare `x=` broken renames both fail silently; scanner script + detection recipes
 - [TS error mass-cleanup codemods](ts-error-cleanup-codemods.md) — DOMPurify-nest unwrap is behavior-preserving BUT codemod debris can also be an active crasher (floating stmt w/ throwing subexpr); unused-family rules (imports/params/locals), side-effect-import guardrail, clear `.cache/tsbuildinfo.*` before re-measuring
+- [Sectioned server typecheck](sectioned-typecheck.md) — full tsc exceeds the shell window & container recycles lose it; use scripts/typecheck-sections.sh (resumable sections); never 2 tsc + app concurrently
 - [typecheck OOM → split configs](typecheck-oom.md) — monolithic tsc OOMs ~4GB; split into tsconfig.server/client.json (each ~3.4GB, fits) run via `npm run check` standalone; never fold typecheck into the app run cmd (memory is additive → guaranteed OOM)
 - [Unused params can hide missing impl](unused-param-missing-impl.md) — `_`-prefixing a TS6133 param is behavior-preserving but masks intent; audit for accepted-but-not-processed + sibling-inconsistency patterns
 - [TS2339 drift vs unbuilt feature](ts2339-drift-vs-unbuilt.md) — "property X on {drizzle row}" is ambiguous: add to schema ONLY if NEON DB has the column, else it is unbuilt feature (schema-add → runtime crash); check NEON per table first
@@ -67,3 +68,4 @@
 - [fix-all pipeline design](fix-all-pipeline.md) — resumable phase-per-invocation (5-min shell cap), esbuild syntax gate + snapshots, import fixes surface new TS2305, honest nonzero exit
 - [MaxCore/PDIM internalization](maxcore-pdim-internalization.md) — imported repos become INTERNAL subsystems; connector is the only seam, cluster needs one shared PDIM owner, PDIM client rejects nullish args
 - [MaxCore local subsystem](maxcore-local-subsystem.md) — supervised child on :8090; Neon pooler rejects `options` (use unpooled host for search_path=maxcore schema isolation); sweep process group on crash
+- [Backend-only internalization](backend-only-internalization.md) — MaxCore/PDIM internalization must not add ANY frontend code; backend surfaces only

@@ -1216,6 +1216,22 @@ adminRouter.post("/chain-fixer/reset/:patternId", async (req, res) => {
   }
 });
 
+// Autofix directive — the operating charter for all automated fix surfaces.
+adminRouter.get("/autofix/directive", async (_req, res) => {
+  try {
+    const { getAutofixDirective, getAutofixDirectiveSummary } = await import(
+      "../services/autofixDirective.js"
+    );
+    res.json({
+      ...getAutofixDirectiveSummary(),
+      directive: getAutofixDirective(),
+    });
+  } catch (err) {
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 // Error knowledge base — what the platform knows how to recognise, what it can
 // genuinely self-heal, and what it must escalate to a human.
 adminRouter.get("/knowledge-base", async (_req, res) => {

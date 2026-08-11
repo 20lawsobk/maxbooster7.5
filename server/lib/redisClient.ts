@@ -65,9 +65,11 @@ export function getRedisClient(): Redis | ReturnType<typeof getPdimClient> {
     return getNativeRedisClient();
   }
   if (!isPdimConfigured()) {
-    // No PDIM and no native Redis — use local Redis as last resort
-    logger.warn("[Redis] Neither REDIS_URL nor PDIM configured — using localhost:6379");
-    return getNativeRedisClient();
+    // Fail explicitly: no local redis-server exists in the self-contained
+    // boot, so a localhost client would retry-loop forever without serving.
+    throw new Error(
+      "[Redis] Neither native REDIS_URL nor PDIM configured (PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN required) — refusing localhost fallback",
+    );
   }
   if (!_pdimRedis) {
     logger.info("[Redis] PDIM active — routing Redis operations through PDIM");
@@ -93,13 +95,13 @@ export function newBullMQRedisConnection(): Redis | ReturnType<typeof getPdimCli
     });
   }
   if (!isPdimConfigured()) {
-    // No PDIM — fall back to local Redis
-    logger.warn("[Redis/BullMQ] PDIM not configured — falling back to local Redis for BullMQ");
-    return new Redis("redis://localhost:6379", {
-      maxRetriesPerRequest: null,
-      enableReadyCheck: false,
-      enableOfflineQueue: true,
-    });
+    // Fail explicitly: Max Booster is self-contained — PDIM is the queue
+    // backend and no local redis-server exists to silently absorb this.
+    // A localhost fallback here would retry-loop forever and retain jobs
+    // in an offline queue that can never flush.
+    throw new Error(
+      "[Redis/BullMQ] PDIM is not configured (PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN required) — refusing localhost fallback; queues need the internal PDIM subsystem",
+    );
   }
   logger.info("[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor");
   return getPdimClient().duplicate() as unknown as Redis;

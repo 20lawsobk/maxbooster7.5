@@ -262,9 +262,11 @@ export class SupportTicketService {
       throw new Error("Ticket not found");
     }
 
-    // supportTicketMessages table does not exist in the schema yet; store in metadata
+    // Messages are persisted in the ticket's metadata JSONB column (verified
+    // present in the live database) under metadata.messages — a dedicated
+    // messages table does not exist yet.
     const messageRecord: TicketMessage = {
-      id: `msg_${Date.now()}`,
+      id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       ticketId,
       userId,
       message,
@@ -274,9 +276,20 @@ export class SupportTicketService {
       user: null,
     };
 
+    const existingMeta =
+      (ticket[0].metadata as Record<string, unknown> | null) ?? {};
+    const existingMessages = Array.isArray(existingMeta.messages)
+      ? (existingMeta.messages as unknown[])
+      : [];
     await db
       .update(supportTickets)
-      .set({ updatedAt: new Date() })
+      .set({
+        updatedAt: new Date(),
+        metadata: {
+          ...existingMeta,
+          messages: [...existingMessages, messageRecord],
+        },
+      })
       .where(eq(supportTickets.id, ticketId));
 
     if (isStaffReply) {
@@ -309,21 +322,50 @@ export class SupportTicketService {
   }
 
   async getTicketMessages(ticketId: string): Promise<TicketMessage[]> {
-    // supportTicketMessages table does not exist in schema; return empty array
-    void ticketId;
-    return [];
+    // Messages live in the ticket's metadata JSONB (metadata.messages).
+    const ticket = await db
+      .select({ metadata: supportTickets.metadata })
+      .from(supportTickets)
+      .where(eq(supportTickets.id, ticketId))
+      .limit(1);
+    if (!ticket?.length) return [];
+    const meta = (ticket[0].metadata as Record<string, unknown> | null) ?? {};
+    return Array.isArray(meta.messages)
+      ? (meta.messages as TicketMessage[])
+      : [];
   }
 
   async addTags(ticketId: string, tags: string[]): Promise<void> {
-    // supportTicketTags table does not exist in schema; no-op
-    void ticketId;
-    void tags;
+    // Tags live in the ticket's metadata JSONB (metadata.tags), deduplicated.
+    const ticket = await db
+      .select({ metadata: supportTickets.metadata })
+      .from(supportTickets)
+      .where(eq(supportTickets.id, ticketId))
+      .limit(1);
+    if (!ticket?.length) throw new Error("Ticket not found");
+    const meta = (ticket[0].metadata as Record<string, unknown> | null) ?? {};
+    const existing = Array.isArray(meta.tags) ? (meta.tags as string[]) : [];
+    const merged = [...new Set([...existing, ...tags])];
+    await db
+      .update(supportTickets)
+      .set({
+        updatedAt: new Date(),
+        metadata: { ...meta, tags: merged },
+      })
+      .where(eq(supportTickets.id, ticketId));
   }
 
   async getTicketTags(ticketId: string): Promise<TicketTag[]> {
-    // supportTicketTags table does not exist in schema; return empty array
-    void ticketId;
-    return [];
+    // Tags live in the ticket's metadata JSONB (metadata.tags).
+    const ticket = await db
+      .select({ metadata: supportTickets.metadata })
+      .from(supportTickets)
+      .where(eq(supportTickets.id, ticketId))
+      .limit(1);
+    if (!ticket?.length) return [];
+    const meta = (ticket[0].metadata as Record<string, unknown> | null) ?? {};
+    const tags = Array.isArray(meta.tags) ? (meta.tags as string[]) : [];
+    return tags.map((tag) => ({ ticketId, tag }) as unknown as TicketTag);
   }
 
   async getTicketStats() {
