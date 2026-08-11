@@ -3,13 +3,15 @@ import {
   dspAnalytics,
   dspUserPlatformStatus,
   releases,
-  InsertDspAnalytics,
-  DspAnalytics,
+  DspAnalytic,
   DspUserPlatformStatus,
 } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { labelGridService } from "./labelgrid-service";
+
+type InsertDspAnalytics = typeof dspAnalytics.$inferInsert;
+type DspAnalytics = DspAnalytic;
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -1237,8 +1239,8 @@ class DSPAnalyticsService {
           and(
             eq(dspAnalytics.userId, userId),
             eq(dspAnalytics.platform, platform),
-            gte(dspAnalytics.date, startDate),
-            lte(dspAnalytics.date, endDate),
+            gte(dspAnalytics.date, startDate.toISOString().split("T")[0]),
+            lte(dspAnalytics.date, endDate.toISOString().split("T")[0]),
           ),
         )
         .orderBy(desc(dspAnalytics.date))
@@ -1257,7 +1259,7 @@ class DSPAnalyticsService {
           skips: (record as any).skips || 0,
           completionRate: (record as any).completionRate || 0,
           avgListenDuration: (record as any).avgListenDuration || 0,
-          revenue: record.revenue ? parseFloat(record.revenue) : 0,
+          revenue: record.revenue ?? 0,
           sourceBreakdown:
             ((record as any).sourceBreakdown as SourceBreakdown) || undefined,
           deviceBreakdown:
@@ -1293,24 +1295,29 @@ class DSPAnalyticsService {
     userId: string,
     data: NormalizedDSPAnalytics,
   ): Promise<void> {
-    const analyticsRecord: InsertDspAnalytics = {
+    // Extra columns (shares, skips, completionRate, etc.) live in metadata
+    // since they are not present in the dsp_analytics table schema.
+    const analyticsRecord = {
       userId,
+      releaseId: "pending",
       platform: data.platform,
-      date: data.period.start,
+      date: data.period.start.toISOString().split("T")[0],
       streams: data.streams,
       listeners: data.listeners,
       saves: data.saves,
       playlistAdds: data.playlistAdds,
-      shares: data.shares,
-      skips: data.skips,
-      completionRate: data.completionRate,
-      avgListenDuration: data.avgListenDuration,
-      revenue: data.revenue!.toString(),
-      demographics: data.demographics as unknown as Record<string, unknown>,
-      geography: data.geography as unknown as Record<string, unknown>,
-      sourceBreakdown: data.sourceBreakdown as unknown as Record<string, unknown>,
-      deviceBreakdown: data.deviceBreakdown as unknown as Record<string, unknown>,
-    };
+      revenue: data.revenue ?? 0,
+      metadata: {
+        shares: data.shares,
+        skips: data.skips,
+        completionRate: data.completionRate,
+        avgListenDuration: data.avgListenDuration,
+        demographics: data.demographics,
+        geography: data.geography,
+        sourceBreakdown: data.sourceBreakdown,
+        deviceBreakdown: data.deviceBreakdown,
+      },
+    } satisfies InsertDspAnalytics;
 
     await db.insert(dspAnalytics).values(analyticsRecord);
     logger.info(`Stored DSP analytics for user ${userId} on ${data.platform}`);
@@ -1331,10 +1338,10 @@ class DSPAnalyticsService {
       conditions.push(eq(dspAnalytics.platform, options.platform));
     }
     if (options.startDate) {
-      conditions.push(gte(dspAnalytics.date, options.startDate));
+      conditions.push(gte(dspAnalytics.date, options.startDate.toISOString().split("T")[0]));
     }
     if (options.endDate) {
-      conditions.push(lte(dspAnalytics.date, options.endDate));
+      conditions.push(lte(dspAnalytics.date, options.endDate.toISOString().split("T")[0]));
     }
     if (options.trackId) {
       conditions.push(eq(dspAnalytics.trackId, options.trackId));
@@ -1375,10 +1382,10 @@ class DSPAnalyticsService {
       conditions.push(eq(dspAnalytics.platform, options.platform));
     }
     if (options.startDate) {
-      conditions.push(gte(dspAnalytics.date, options.startDate));
+      conditions.push(gte(dspAnalytics.date, options.startDate.toISOString().split("T")[0]));
     }
     if (options.endDate) {
-      conditions.push(lte(dspAnalytics.date, options.endDate));
+      conditions.push(lte(dspAnalytics.date, options.endDate.toISOString().split("T")[0]));
     }
 
     const [totals] = await db
@@ -1387,7 +1394,7 @@ class DSPAnalyticsService {
         totalListeners: sql<number>`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
         totalSaves: sql<number>`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
         totalRevenue: sql<number>`COALESCE(SUM(CAST(${dspAnalytics.revenue} AS NUMERIC)), 0)`,
-        avgCompletionRate: sql<number>`COALESCE(AVG(${dspAnalytics.completionRate}), 0)`,
+        avgCompletionRate: sql<number>`COALESCE(AVG((${dspAnalytics.metadata}->>'completionRate')::numeric), 0)`,
       })
       .from(dspAnalytics)
       .where(and(...conditions));

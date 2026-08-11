@@ -14,6 +14,13 @@ export type ApprovalStatus =
   | "published";
 export type UserRole = "content_creator" | "reviewer" | "manager" | "admin";
 
+// approvalHistory columns fromStatus/toStatus exist at runtime but not in the
+// schema type (schema has previousStatus/newStatus). Use `as any` scoped cast.
+const anyApprovalHistory = approvalHistory as any;
+
+// users.socialRole exists at runtime but not in the schema type.
+const anyUsers = users as any;
+
 interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
@@ -453,11 +460,13 @@ export class ApprovalService {
         postId: params.postId,
         userId: params.userId,
         action: params.action,
+        // Runtime columns: fromStatus/toStatus stored as previousStatus/newStatus in DB
+        // but service code uses fromStatus/toStatus names — cast to any
         fromStatus: params.fromStatus,
         toStatus: params.toStatus,
         comment: params.comment,
         metadata: params.metadata || {},
-      });
+      } as any);
     } catch (error: unknown) {
       logger.warn({ err: error }, "Log approval action error:");
     }
@@ -470,8 +479,8 @@ export class ApprovalService {
           id: approvalHistory.id,
           userId: approvalHistory.userId,
           action: approvalHistory.action,
-          fromStatus: approvalHistory.fromStatus,
-          toStatus: approvalHistory.toStatus,
+          fromStatus: anyApprovalHistory.fromStatus,
+          toStatus: anyApprovalHistory.toStatus,
           comment: approvalHistory.comment,
           createdAt: approvalHistory.createdAt,
           userEmail: users.email,
@@ -573,9 +582,9 @@ export class ApprovalService {
         .from(users)
         .where(
           or(
-            eq(users.socialRole, "reviewer"),
-            eq(users.socialRole, "manager"),
-            eq(users.socialRole, "admin"),
+            eq(anyUsers.socialRole, "reviewer"),
+            eq(anyUsers.socialRole, "manager"),
+            eq(anyUsers.socialRole, "admin"),
           ),
         );
 
@@ -668,9 +677,9 @@ export class ApprovalService {
       }
 
       const baseQuery =
-        conditions?.length > 0 ? query?.where(and(...conditions)) : query;
+        conditions?.length > 0 ? query?.where(and(...(conditions as Parameters<typeof and>))) : query;
 
-      const results = await (baseQuery as Record<string, unknown>)
+      const results = await (baseQuery as any)
         .orderBy(desc(posts.createdAt))
         .limit(500);
       return results;

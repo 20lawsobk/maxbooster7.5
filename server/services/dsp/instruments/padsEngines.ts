@@ -18,7 +18,6 @@ export class WarmPadSynth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private lfo1: LFO;
   private lfo2: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -37,7 +36,6 @@ export class WarmPadSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -412,9 +410,7 @@ export class GlassPadSynth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private lpFilter: BiquadFilter;
   private shimmerFilter: BiquadFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 6; i++) {
@@ -433,9 +429,7 @@ export class GlassPadSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 6; i++) {
       const detune = 1 + (i - 2.5) * 0.002;
@@ -551,7 +545,6 @@ export class DarkPadSynth implements SynthesizerEngine {
   private rumbleFilter: BiquadFilter;
   private lfo1: LFO;
   private lfo2: LFO;
-  private frequency: number = 220;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -572,7 +565,6 @@ export class DarkPadSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -685,7 +677,6 @@ export class EvolvingPadSynth implements SynthesizerEngine {
   private lpFilter: BiquadFilter;
   private bpFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
   private sampleCounter: number = 0;
@@ -706,7 +697,6 @@ export class EvolvingPadSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
     this.sampleCounter = 0;
@@ -1095,9 +1085,7 @@ export class DigitalPadSynth implements SynthesizerEngine {
   private notchFilter: BiquadFilter;
   private stereoLFO: LFO;
   private phaseLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 4; i++) {
@@ -1112,9 +1100,7 @@ export class DigitalPadSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 4; i++) {
       const detune = 1 + (i - 1.5) * 0.001;
@@ -1207,9 +1193,7 @@ export class SpacePadSynth implements SynthesizerEngine {
   private delayLines: DelayLine[] = [];
   private spaceLFO: LFO;
   private driftLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     for (let i = 0; i < 6; i++) {
@@ -1230,9 +1214,7 @@ export class SpacePadSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const detuneAmounts = [-0.1, -0.05, -0.02, 0.02, 0.05, 0.1];
     for (let i = 0; i < 6; i++) {

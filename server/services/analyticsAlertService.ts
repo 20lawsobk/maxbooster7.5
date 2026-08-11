@@ -98,6 +98,12 @@ const ALERT_MAX_USERS = 50_000;
 const ALERT_MAX_PER_USER = 200;
 const ALERT_USER_TTL_MS = 24 * 60 * 60 * 1000;
 
+// dspAnalytics.date is a PostgreSQL `date` column (string in JS).
+// Convert Date objects to ISO date strings for comparison.
+function toDateStr(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 class AnalyticsAlertService {
   private alertStore: Map<string, Alert[]> = new Map();
   private triggerCityCache: Map<string, TriggerCity[]> = new Map();
@@ -177,8 +183,8 @@ class AnalyticsAlertService {
           .where(
             and(
               eq(dspAnalytics.userId, userId),
-              gte(dspAnalytics.date, halfPeriod),
-              lte(dspAnalytics.date, period?.end),
+              gte(dspAnalytics.date, toDateStr(halfPeriod)),
+              lte(dspAnalytics.date, toDateStr(period?.end)),
             ),
           ),
         db
@@ -187,8 +193,8 @@ class AnalyticsAlertService {
           .where(
             and(
               eq(dspAnalytics.userId, userId),
-              gte(dspAnalytics.date, period?.start),
-              lte(dspAnalytics.date, halfPeriod),
+              gte(dspAnalytics.date, toDateStr(period?.start)),
+              lte(dspAnalytics.date, toDateStr(halfPeriod)),
             ),
           ),
       ]);
@@ -215,7 +221,7 @@ class AnalyticsAlertService {
       for (const record of currentData) {
         const geography = (record as any)?.geography as Record<string, unknown>;
         if (!geography?.cities) continue;
-        for (const city of geography?.cities) {
+        for (const city of (geography.cities as any[])) {
           if (!city?.name || !city?.streams) continue;
           const key = `${city?.name}-${city?.country || ""}`;
           const existing = currentCityMap?.get(key);
@@ -240,7 +246,7 @@ class AnalyticsAlertService {
       for (const record of previousData) {
         const geography = (record as any)?.geography as Record<string, unknown>;
         if (!geography?.cities) continue;
-        for (const city of geography?.cities) {
+        for (const city of (geography.cities as any[])) {
           if (!city?.name || !city?.streams) continue;
           const key = `${city?.name}-${city?.country || ""}`;
           previousCityMap?.set(
@@ -528,8 +534,8 @@ class AnalyticsAlertService {
         .where(
           and(
             eq(dspAnalytics.userId, userId),
-            gte(dspAnalytics.date, thirtyDaysAgo),
-            lte(dspAnalytics.date, now),
+            gte(dspAnalytics.date, toDateStr(thirtyDaysAgo)),
+            lte(dspAnalytics.date, toDateStr(now)),
           ),
         )
         .orderBy(desc(dspAnalytics.date));
@@ -547,7 +553,7 @@ class AnalyticsAlertService {
           0,
         );
         const totalRevenue = platformData?.reduce(
-          (sum, d) => sum + (d?.revenue ? parseFloat(d?.revenue) : 0),
+          (sum, d) => sum + (d?.revenue != null ? Number(d.revenue) : 0),
           0,
         );
 

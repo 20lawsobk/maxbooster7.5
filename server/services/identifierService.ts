@@ -400,7 +400,7 @@ class IdentifierService {
     const record = await db
       .select()
       .from(isrcRegistry)
-      .where(eq(isrcRegistry.code, cleanISRC))
+      .where(eq(isrcRegistry.isrc, cleanISRC))
       .limit(1);
 
     if (record?.length === 0) {
@@ -437,7 +437,7 @@ class IdentifierService {
     const record = await db
       .select()
       .from(upcRegistry)
-      .where(eq(upcRegistry.code, cleanUPC))
+      .where(eq(upcRegistry.upc, cleanUPC))
       .limit(1);
 
     if (record?.length === 0) {
@@ -461,11 +461,8 @@ class IdentifierService {
 
     await db
       .update(isrcRegistry)
-      .set({
-        trackId,
-        status: "assigned",
-      })
-      .where(eq(isrcRegistry.code, cleanISRC));
+      .set({ trackId, status: "assigned" } as any)
+      .where(eq(isrcRegistry.isrc, cleanISRC));
 
     return true;
   }
@@ -475,11 +472,8 @@ class IdentifierService {
 
     await db
       .update(upcRegistry)
-      .set({
-        releaseId,
-        status: "assigned",
-      })
-      .where(eq(upcRegistry.code, cleanUPC));
+      .set({ releaseId, status: "assigned" } as any)
+      .where(eq(upcRegistry.upc, cleanUPC));
 
     return true;
   }
@@ -496,8 +490,8 @@ class IdentifierService {
     const records = await db
       .select()
       .from(isrcRegistry)
-      .where(eq(isrcRegistry.userId, userId))
-      .orderBy(desc(isrcRegistry.issuedAt))
+      .where(eq((isrcRegistry as any).userId, userId))
+      .orderBy(desc((isrcRegistry as any).issuedAt))
       .limit(500);
 
     return records?.map((r) => ({
@@ -520,8 +514,8 @@ class IdentifierService {
     const records = await db
       .select()
       .from(upcRegistry)
-      .where(eq(upcRegistry.userId, userId))
-      .orderBy(desc(upcRegistry.issuedAt));
+      .where(eq((upcRegistry as any).userId, userId))
+      .orderBy(desc((upcRegistry as any).issuedAt));
 
     return records?.map((r) => ({
       code: (r as any).code,

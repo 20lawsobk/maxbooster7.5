@@ -169,7 +169,6 @@ export class SerumSynth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private morphLFO: LFO;
   private filterLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -199,7 +198,6 @@ export class SerumSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -286,7 +284,6 @@ export class MassiveSynth implements SynthesizerEngine {
   private saturationFilter: BiquadFilter;
   private hpFilter: BiquadFilter;
   private lfo: LFO;
-  private frequency: number = 55;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -309,7 +306,6 @@ export class MassiveSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -403,7 +399,6 @@ export class SynthwaveSynth implements SynthesizerEngine {
   private chorusDelay2: DelayLine;
   private chorusLFO: LFO;
   private filterLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -432,7 +427,6 @@ export class SynthwaveSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -532,9 +526,7 @@ export class VocalWavetableSynth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private morphLFO: LFO;
   private vibratoLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     this.wavetable = new Wavetable();
@@ -560,9 +552,7 @@ export class VocalWavetableSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const detuneAmounts = [-0.05, -0.02, 0.02, 0.05];
     for (let i = 0; i < 4; i++) {
@@ -666,9 +656,7 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
   private bodyFilter: BiquadFilter;
   private morphLFO: LFO;
   private breathLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
-  private sampleRate: number = 44100;
 
   constructor() {
     this.wavetable = new Wavetable();
@@ -691,9 +679,7 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
-    this.sampleRate = context?.sampleRate;
 
     const detuneAmounts = [-0.08, -0.04, -0.01, 0.01, 0.04, 0.08];
     for (let i = 0; i < 6; i++) {
@@ -791,7 +777,6 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private bitcrushFilter: BiquadFilter;
   private morphLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -815,7 +800,6 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -909,7 +893,6 @@ export class PPGSynth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private morphLFO: LFO;
   private pwmLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -936,7 +919,6 @@ export class PPGSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -1153,7 +1135,6 @@ export class HybridSynth implements SynthesizerEngine {
   private bpFilter: BiquadFilter;
   private morphLFO: LFO;
   private filterLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -1180,7 +1161,6 @@ export class HybridSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -1286,7 +1266,6 @@ export class GranularWavetableSynth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private grainLFO: LFO;
   private positionLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
   private grainCounter: number = 0;
@@ -1319,7 +1298,6 @@ export class GranularWavetableSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
     this.grainCounter = 0;

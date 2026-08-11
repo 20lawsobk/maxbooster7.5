@@ -25,7 +25,8 @@ const parser = new XMLParser({
       "epp.response.resData.infData.ns.hostObj",
       "epp.greeting.svcMenu.objURI",
     ];
-    return ALWAYS_ARRAY?.includes(jpath);
+    // jpath is JPathOrMatcher at the type level; at runtime it is always a string
+    return ALWAYS_ARRAY?.includes(jpath as string);
   },
 });
 
@@ -61,7 +62,8 @@ export class EppParser {
       ? resp?.result
       : [resp?.result];
     const firstResult = resultArr[0] ?? {};
-    const code = Number(firstResult["@code"] ?? 0);
+    const firstResultRec = firstResult as Record<string, unknown>;
+    const code = Number(firstResultRec["@code"] ?? 0);
     const msg: string = (firstResult as any)?.msg ?? "";
 
     return {
@@ -94,16 +96,23 @@ export class EppParser {
       ? chkData?.cd
       : [chkData?.cd];
 
-    return cds?.map((cd: Record<string, unknown>) => {
+    return (cds as unknown[])?.map((cdRaw: unknown) => {
+      const cd = cdRaw as Record<string, unknown>;
       const nameNode = cd?.name;
+      const nameRec =
+        nameNode != null && typeof nameNode === "object"
+          ? (nameNode as Record<string, unknown>)
+          : null;
       const fqdn: string =
         typeof nameNode === "string"
           ? nameNode
-          : (nameNode?.["#text"] ?? nameNode?.["$text"] ?? "");
-      const avail = nameNode?.["@avail"];
+          : ((nameRec?.["#text"] ?? nameRec?.["$text"] ?? "") as string);
+      const avail = nameRec?.["@avail"];
       const available =
         avail === 1 || avail === "1" || avail === true || avail === "true";
-      const reason: string | undefined = cd?.reason ?? undefined;
+      const rawReason = cd?.reason;
+      const reason: string | undefined =
+        typeof rawReason === "string" ? rawReason : undefined;
       return { fqdn, available, reason };
     });
   }
@@ -152,9 +161,11 @@ export class EppParser {
       ? infData?.status
       : [infData?.status];
     const statuses = rawStatuses
-      .map((s: Record<string, unknown>) =>
-        typeof s === "string" ? s : (s?.["@_s"] ?? ""),
-      )
+      .map((s: unknown) => {
+        if (typeof s === "string") return s;
+        const sr = s as Record<string, unknown>;
+        return (sr?.["@_s"] ?? "") as string;
+      })
       .filter(Boolean);
 
     const rawNs: unknown[] = (infData?.ns?.hostObj ?? []) as unknown[];

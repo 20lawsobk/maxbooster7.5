@@ -277,6 +277,37 @@ class PostDeploySelfTest {
     );
     logger.info(`   Recommendation: ${recommendation}`);
 
+    // Explain each failure using the error knowledge base so a deploy failure
+    // arrives with a root cause and a concrete fix instead of just a red flag.
+    if (failed > 0) {
+      try {
+        const { classifyError, explainUnknownError } = await import(
+          "./services/errorKnowledgeBase.js"
+        );
+        for (const t of results.filter((r) => r?.status === "fail")) {
+          const text = t?.error ?? "";
+          const known = classifyError(text);
+          if (known.length > 0) {
+            for (const k of known) {
+              logger.warn(
+                `🔬 [${t.name}] recognised as '${k.id}' (${k.severity}) — ${k.rootCause} Fix: ${k.fix}` +
+                  (k.autoRemediable
+                    ? ""
+                    : " (no safe automatic remediation — needs a human)"),
+              );
+            }
+          } else {
+            const explained = explainUnknownError(text);
+            logger.warn(
+              `🔬 [${t.name}] failed with an unrecognised error${explained.nearestCategory ? ` (likely ${explained.nearestCategory})` : ""} — ${explained.guidance}`,
+            );
+          }
+        }
+      } catch {
+        /* knowledge base is advisory only — never let it break the self-test */
+      }
+    }
+
     if (recommendation === "rollback") {
       logger.warn("❌ CRITICAL: Self-test recommends rollback!");
     }

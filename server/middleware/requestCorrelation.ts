@@ -15,7 +15,8 @@ async function getMaxBooster247() {
   if (!importAttempted) {
     try {
       const reliabilityModule = await import("../reliability-system.js");
-      maxBooster247Cache = reliabilityModule?.maxBooster247;
+      // maxBooster247 is a class instance — store as unknown then cast when used
+      maxBooster247Cache = reliabilityModule?.maxBooster247 as unknown as Record<string, unknown>;
       importAttempted = true;
       return maxBooster247Cache;
     } catch (error: unknown) {
@@ -72,9 +73,10 @@ export function performanceMonitoring(
 ): void {
   const start = process.hrtime.bigint();
 
-  // Override res.end to capture timing
+  // Override res.end to capture timing.
+  // We replace res.end with a wrapper and forward all arguments to originalEnd.
   const originalEnd = res.end.bind(res);
-  res.end = function (
+  (res as any).end = function (
     chunk?: unknown,
     encoding?: unknown,
     cb?: unknown,
@@ -133,11 +135,11 @@ export function performanceMonitoring(
     } else if (arguments?.length === 1) {
       return originalEnd(chunk);
     } else if (arguments?.length === 2) {
-      return originalEnd(chunk, encoding);
+      return originalEnd(chunk, encoding as BufferEncoding);
     } else {
-      return originalEnd(chunk, encoding, cb);
+      return originalEnd(chunk, encoding as BufferEncoding, cb as () => void);
     }
-  } as Record<string, unknown>;
+  };
 
   next();
 }
@@ -152,7 +154,7 @@ export function memoryMonitoring(
 
   // Override res.end to capture memory usage
   const originalEnd = res.end.bind(res);
-  res.end = function (
+  (res as any).end = function (
     chunk?: unknown,
     encoding?: unknown,
     cb?: unknown,
@@ -184,11 +186,11 @@ export function memoryMonitoring(
     } else if (arguments?.length === 1) {
       return originalEnd(chunk);
     } else if (arguments?.length === 2) {
-      return originalEnd(chunk, encoding);
+      return originalEnd(chunk, encoding as BufferEncoding);
     } else {
-      return originalEnd(chunk, encoding, cb);
+      return originalEnd(chunk, encoding as BufferEncoding, cb as () => void);
     }
-  } as Record<string, unknown>;
+  };
 
   next();
 }

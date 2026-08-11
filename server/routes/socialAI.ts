@@ -65,9 +65,8 @@ function extractFirstUrl(text: string): string | null {
 const router = Router();
 router.use(aiRateLimiter);
 
-interface AuthenticatedRequest extends Request {
-  user?: { id: string };
-}
+// AuthenticatedRequest: user is narrowed to always have an id (matches global Express.Request.user)
+type AuthenticatedRequest = Request & { user?: { id: string } & Record<string, unknown> };
 
 // =========================================
 // CHATBOT ROUTES
@@ -88,9 +87,14 @@ router.post(
       }
       const { platform, senderId, senderName, content, threadId } = parsed.data;
 
+      const validChatPlatforms = ["instagram", "twitter", "facebook", "linkedin"] as const;
+      type ChatPlatform = typeof validChatPlatforms[number];
+      const normalizedPlatform: ChatPlatform = (validChatPlatforms as readonly string[]).includes(platform)
+        ? (platform as ChatPlatform)
+        : "instagram";
       const message: ChatbotMessage = {
         id: `msg_${Date.now()}`,
-        platform,
+        platform: normalizedPlatform,
         senderId: senderId || "unknown",
         senderName: senderName || "User",
         content,
@@ -683,9 +687,10 @@ router.get(
         string,
         string
       >;
-      const validTypes = ["headline", "CTA", "emoji", "length", "tone"];
-      const type = validTypes.includes(variationType)
-        ? (variationType as string)
+      const validTypes = ["headline", "CTA", "emoji", "length", "tone"] as const;
+      type ABVariationType = typeof validTypes[number];
+      const type: ABVariationType = (validTypes as readonly string[]).includes(variationType)
+        ? (variationType as ABVariationType)
         : "tone";
       const variants = await aiContentService.generateABVariants(content, type);
       res.json({ variants });
@@ -1357,8 +1362,8 @@ router.post(
       }
 
       const result = await unifiedAIController.generateContent({
-        tone: resolvedTone,
-        platform: resolvedPlatform as Record<string, unknown>,
+        tone: resolvedTone as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
+        platform: resolvedPlatform as import("../../shared/ml/models/SocialAutopilotEngine.js").Platform,
         topic: metadataTopic,
         genre: detectedGenre || userContext.genre,
         artistName: effectiveArtistName || userContext.artistName,
@@ -1367,9 +1372,9 @@ router.post(
         label: effectiveLabel || undefined,
         releaseDate: effectiveReleaseDate || undefined,
         keywords: uniqueKeywords.length ? uniqueKeywords : undefined,
-        contentType: validContentTypes.includes(mappedContentType)
-          ? (mappedContentType as string)
-          : "engagement",
+        contentType: (validContentTypes.includes(mappedContentType)
+          ? mappedContentType
+          : "engagement") as "release" | "behind-the-scenes" | "announcement" | "engagement" | "promotional",
         includeHashtags: true,
         includeEmojis: true,
         userContext,
@@ -1383,10 +1388,10 @@ router.post(
       }
 
       const data = result.data as unknown as Record<string, unknown>;
-      const hook: string = data.hook || "";
-      const body: string = data.body || "";
-      const cta: string = data.cta || "";
-      const aiHashtags: string[] = data.hashtags || [];
+      const hook: string = (data.hook as string) || "";
+      const body: string = (data.body as string) || "";
+      const cta: string = (data.cta as string) || "";
+      const aiHashtags: string[] = (data.hashtags as string[]) || [];
 
       // When URL analysis provides tags/keywords, build context-specific hashtags
       // and override the AI's generic music hashtags (e.g., for website/platform promos)
@@ -1415,7 +1420,7 @@ router.post(
         }
       }
 
-      const caption: string = data.caption || `${hook}\n\n${body}\n\n${cta}`;
+      const caption: string = (data.caption as string) || `${hook}\n\n${body}\n\n${cta}`;
 
       // ── MaxCore real-time engagement predictions ─────────────────────────────
       // Run all three prediction modes in parallel; fall back to local estimators

@@ -18,7 +18,6 @@ export class MinimoogSynth implements SynthesizerEngine {
   private lpFilter2: BiquadFilter;
   private hpFilter: BiquadFilter;
   private lfo: LFO;
-  private frequency: number = 220;
   private velocity: number = 0;
   private sampleRate: number = 44100;
   private filterCutoff: number = 1000;
@@ -37,7 +36,6 @@ export class MinimoogSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -127,7 +125,6 @@ export class ProphetSynth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private polyModLFO: LFO;
   private pwmLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
   private voiceCount: number = 5;
@@ -148,7 +145,6 @@ export class ProphetSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -258,7 +254,6 @@ export class JupiterSynth implements SynthesizerEngine {
   private chorusLFO1: LFO;
   private chorusLFO2: LFO;
   private pwmLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -279,7 +274,6 @@ export class JupiterSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -396,7 +390,6 @@ export class OberheimSynth implements SynthesizerEngine {
   private stateVariableBP: BiquadFilter;
   private hpFilter: BiquadFilter;
   private lfo: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -413,7 +406,6 @@ export class OberheimSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -507,7 +499,6 @@ export class ARP2600Synth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private lfo: LFO;
   private sampleAndHold: LFO;
-  private frequency: number = 220;
   private velocity: number = 0;
   private sampleRate: number = 44100;
   private ringModDepth: number = 0.3;
@@ -527,7 +518,6 @@ export class ARP2600Synth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -624,7 +614,6 @@ export class SH101Synth implements SynthesizerEngine {
   private hpFilter: BiquadFilter;
   private lfo: LFO;
   private pwmLFO: LFO;
-  private frequency: number = 220;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -640,7 +629,6 @@ export class SH101Synth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -724,7 +712,6 @@ export class JunoSynth implements SynthesizerEngine {
   private chorusDelay2: DelayLine;
   private chorusLFO: LFO;
   private pwmLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -744,7 +731,6 @@ export class JunoSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -843,7 +829,6 @@ export class MS20Synth implements SynthesizerEngine {
   private lpFilter: BiquadFilter;
   private resonanceFilter: BiquadFilter;
   private lfo: LFO;
-  private frequency: number = 220;
   private velocity: number = 0;
   private sampleRate: number = 44100;
   private filterDrive: number = 1.5;
@@ -860,7 +845,6 @@ export class MS20Synth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -953,7 +937,6 @@ export class OdysseySynth implements SynthesizerEngine {
   private lfo: LFO;
   private sampleAndHold: number = 0;
   private shCounter: number = 0;
-  private frequency: number = 220;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -968,7 +951,6 @@ export class OdysseySynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
@@ -1065,7 +1047,6 @@ export class PolysixSynth implements SynthesizerEngine {
   private chorusDelay3: DelayLine;
   private chorusLFO: LFO;
   private pwmLFO: LFO;
-  private frequency: number = 440;
   private velocity: number = 0;
   private sampleRate: number = 44100;
 
@@ -1086,7 +1067,6 @@ export class PolysixSynth implements SynthesizerEngine {
   }
 
   noteOn(frequency: number, velocity: number, context: DSPContext): void {
-    this.frequency = frequency;
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 

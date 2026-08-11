@@ -74,9 +74,7 @@ const upload = createHardenedUpload({
 
 const purchaseSchema = z.object({
   beatId: z.string().min(1, "beatId is required"),
-  licenseType: z.enum(["basic", "premium", "unlimited", "exclusive"], {
-    required_error: "licenseType is required",
-  }),
+  licenseType: z.enum(["basic", "premium", "unlimited", "exclusive"], "licenseType is required"),
   useEscrow: z.boolean().optional(),
 });
 
@@ -118,9 +116,7 @@ const interactionSchema = z.object({
       "repeat",
       "add_to_cart",
     ],
-    {
-      required_error: "interactionType is required",
-    },
+    "interactionType is required",
   ),
   playDurationSeconds: z.number().min(0).optional(),
   completionRate: z.number().min(0).max(1).optional(),
@@ -216,7 +212,7 @@ router.get("/beats", async (req: Request, res: Response) => {
       () =>
         marketplaceService.browseListings({
           ...filters,
-          sortBy: (sortBy as Record<string, unknown>) || "recent",
+          sortBy: (sortBy as "recent" | "popular" | "price_low" | "price_high" | undefined) || "recent",
         }),
       60,
     );
@@ -787,7 +783,7 @@ router.post("/interaction", async (req: Request, res: Response) => {
             .select({
               id: listings.id,
               title: listings.title,
-              plays: listings.plays,
+              plays: (listings as any).plays,
               userId: listings.userId,
             })
             .from(listings)
@@ -1292,7 +1288,7 @@ router.get("/escrow", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as unknown as Record<string, unknown>).id;
+    const userId = String((req.user as unknown as Record<string, unknown>).id);
     const escrowOrders = await db
       .select()
       .from(orders)
@@ -1656,7 +1652,7 @@ router.post(
           await notificationService?.sendAdminMarketplaceReviewNotification(
             title,
             listing?.id,
-            ((req.user as unknown as Record<string, unknown>)?.email || "unknown" as string),
+            String((req.user as unknown as Record<string, unknown>)?.email || "unknown"),
           );
         } catch (err) {
           logger.warn(
@@ -2167,7 +2163,7 @@ router.post("/contracts", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as unknown as Record<string, unknown>).id;
+    const userId = String((req.user as unknown as Record<string, unknown>).id);
     const parsed = contractSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res.status(400).json({ error: parsed.error.issues[0].message });
@@ -2180,7 +2176,7 @@ router.post("/contracts", async (req: Request, res: Response) => {
       description: description || "",
       content,
       category: category || "custom",
-      variables: variables || [],
+      variables: (variables || []) as Record<string, unknown>[],
     });
 
     res.status(201).json(contract);

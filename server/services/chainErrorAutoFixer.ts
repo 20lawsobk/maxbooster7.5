@@ -1165,6 +1165,33 @@ class ChainErrorAutoFixer extends EventEmitter {
     if (this._unknownErrors.length > this._MAX_UNKNOWN)
       this._unknownErrors.shift();
 
+    // Consult the error knowledge base before treating this as truly novel.
+    // The KB carries classes that have no runtime remediation (schema drift,
+    // auth gaps, concurrency defects) — those must be REPORTED, never
+    // speculatively "fixed", because an unrelated action that appears to
+    // succeed would mask the real cause.
+    void import("./errorKnowledgeBase.js")
+      .then(({ classifyError, explainUnknownError }) => {
+        const known = classifyError(msg);
+        if (known.length > 0) {
+          for (const k of known) {
+            logger.warn(
+              `[ChainFixer] Knowledge base recognised this error as '${k.id}' (${k.severity}/${k.category}) — ` +
+                `${k.remediation === "report_only" ? "NO safe runtime fix exists" : "runtime recovery available"}. ` +
+                `Root cause: ${k.rootCause} Fix: ${k.fix}`,
+            );
+          }
+          return;
+        }
+        const explained = explainUnknownError(msg);
+        logger.warn(
+          `[ChainFixer] Unrecognised error${explained.nearestCategory ? ` (likely ${explained.nearestCategory})` : ""} — ${explained.guidance}`,
+        );
+      })
+      .catch(() => {
+        /* knowledge base is advisory only */
+      });
+
     // Log it so it's visible in the audit trail
     logger.warn(
       `[ChainFixer] Novel error (no pattern match) — may need a new recovery rule: ${msg?.slice(0, 120)}`,
