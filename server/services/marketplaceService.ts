@@ -940,7 +940,7 @@ export class MarketplaceService {
       }
 
       // Get buyer and seller details
-      const buyer = await storage.getUser(order?.buyerId || "");
+      const buyer = await storage.getUser(order?.userId || order?.buyerId || "");
       const seller = await storage.getUser(order?.sellerId || "");
 
       // Get license template based on license type

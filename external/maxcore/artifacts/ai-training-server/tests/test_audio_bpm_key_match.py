@@ -15,6 +15,7 @@ or:
     python -m pytest tests/test_audio_bpm_key_match.py -v
 """
 from __future__ import annotations
+import os
 
 import json
 import sys
@@ -30,9 +31,9 @@ _SERVER_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(_SERVER_DIR))
 
 # ── Config ────────────────────────────────────────────────────────────────────
-BASE      = "http://127.0.0.1:9878"
-API_KEY   = "f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701"
-ADMIN_KEY = "mbs_8a3edbac97ff333dda5068410227267e6d85b14a4c9caee279fbb18ddfb47edc"
+BASE      = os.environ.get("MAXCORE_TEST_BASE", "http://127.0.0.1:9878")
+API_KEY   = os.environ.get("MAXCORE_TEST_API_KEY", "stale")
+ADMIN_KEY = os.environ.get("MAXCORE_TEST_ADMIN_KEY", os.environ.get("MAXCORE_TEST_API_KEY", "stale"))
 HEADERS       = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 ADMIN_HEADERS = {"Content-Type": "application/json", "X-Admin-Key": ADMIN_KEY}
 

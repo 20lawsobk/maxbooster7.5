@@ -656,6 +656,20 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`[PlatformAutoFixer] Failed to start: ${(e as any)?.message}`);
   }
 
+  // Directive executor — actually runs the autofix operating directive's
+  // phases (probe subsystems, classify errors via the knowledge base, honest
+  // scorecard). Worker 0 only; first cycle at boot.
+  if (isBgWorker) {
+    try {
+      const { directiveExecutor } = await import(
+        "./services/directiveExecutor.js"
+      );
+      directiveExecutor.start();
+    } catch (e) {
+      logger.warn(`[Directive] Failed to start: ${(e as any)?.message}`);
+    }
+  }
+
   // Post-deploy self-test — activates DURING deployment boot, not after.
   // The first run starts immediately (non-blocking) so a bad deploy is caught
   // while it is rolling out; periodic re-runs continue afterwards. Worker 0

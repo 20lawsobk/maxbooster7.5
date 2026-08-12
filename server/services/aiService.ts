@@ -9,6 +9,7 @@ import {
 import { logger } from "../logger.js";
 import { cbIsOpen } from "../lib/pdimCircuitBreaker.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 
 
 interface AIAdvertisingConfig {
@@ -258,11 +259,13 @@ export class AIService {
     };
   }> {
     try {
-      // ── MaxCore ad campaign generation ────────────────────────────────────
-      const mcCampaign = await MaxCoreAIClient.generate<{
+      // ── MaxCore ad campaign generation (fail-explicit, no local fallback) ─
+      const mcRaw = await MaxCoreAIClient.generate<{
         primary?: string;
         variations?: string[];
+        caption?: string;
         hook?: string;
+        body?: string;
         cta?: string;
       }>("/api/generate/content", {
         topic: "music artist ad campaign",
@@ -272,6 +275,23 @@ export class AIService {
         target_audience: config.targetAudience,
         budget: config.budget,
       });
+      const mcCampaign = requireMaxCore(mcRaw, "ad campaign generation");
+      // MaxCore /api/generate/content returns caption/hook/body/cta — normalize
+      // into the campaign shape. A response with no usable generated copy is a
+      // contract failure, not a cue to substitute local template copy.
+      const mcPrimary =
+        mcCampaign.primary ??
+        mcCampaign.caption ??
+        [mcCampaign.hook, mcCampaign.body].filter(Boolean).join(" ") ??
+        undefined;
+      const mcVariations =
+        mcCampaign.variations ??
+        [mcCampaign.hook, mcCampaign.caption, mcCampaign.cta].filter(
+          (v): v is string => typeof v === "string" && v.length > 0,
+        );
+      if (!mcPrimary || mcPrimary.trim().length === 0) {
+        throw new AIUnavailableError("ad campaign generation (empty MaxCore content)");
+      }
 
       // Calculate metrics based on actual input data
       const audienceScore = this.calculateAudienceScore(config?.targetAudience);
@@ -292,13 +312,14 @@ export class AIService {
         viralityScore: viralityScore,
         algorithmicAdvantage: `${Math.round(viralityScore * 1000)}x platform advantage`,
         adContent: {
-          primary: mcCampaign?.primary ?? adContent.primary,
-          variations: mcCampaign?.variations ?? adContent.variations,
+          primary: mcPrimary,
+          variations: mcVariations.length > 0 ? mcVariations : adContent.variations,
           targetingStrategy: targeting,
           distributionPlan: distribution,
         },
       };
     } catch (error: unknown) {
+      if (error instanceof AIUnavailableError) throw error;
       logger.warn({ err: error }, "AI advertising error:");
       throw new Error("Failed to generate zero-cost ad campaign");
     }

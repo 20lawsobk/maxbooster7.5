@@ -30,14 +30,20 @@ function generateToken(): string {
   return randomBytes(32).toString("hex");
 }
 
-const PRODUCTION_HOST = "pocketdimensionstorage.replit.app";
+// PDIM now runs inside Max Booster; connection URLs point at the local
+// instance by default. Override with PDIM_PUBLIC_HOST if it is ever exposed
+// on a public host again.
+const PRODUCTION_HOST =
+  process.env["PDIM_PUBLIC_HOST"] ??
+  `127.0.0.1:${process.env["PORT"] ?? "5556"}`;
+const HTTP_SCHEME = PRODUCTION_HOST.startsWith("127.0.0.1") ? "http" : "https";
 
 export function buildConnectionUrl(token: string, instanceId: string): string {
   return `pdim://${token}@${PRODUCTION_HOST}/api/redis/instances/${instanceId}`;
 }
 
 export function buildHttpUrl(instanceId: string): string {
-  return `https://${PRODUCTION_HOST}/api/redis/instances/${instanceId}`;
+  return `${HTTP_SCHEME}://${PRODUCTION_HOST}/api/redis/instances/${instanceId}`;
 }
 
 class RedisManager {
