@@ -78,6 +78,23 @@ beforeAll(async () => {
       throw new Error("Failed to import DB or schema modules");
     }
 
+    // ── Users: seller + buyer must exist — notificationService.send() looks
+    // the user up and silently returns when missing, which would make the
+    // notification assertions vacuous.
+    const schemaUsers = schema.users;
+    await db.insert(schemaUsers).values([
+      {
+        id: seedIds.sellerId,
+        email: `${seedIds.sellerId}@test.local`,
+        password: "test-only-not-a-real-hash",
+      },
+      {
+        id: seedIds.buyerId,
+        email: `${seedIds.buyerId}@test.local`,
+        password: "test-only-not-a-real-hash",
+      },
+    ]);
+
     // ── A/B: listing + split + order (completed, used by sections A & B) ───
     await db.insert(listings!).values({
       id: seedIds.listingId,
@@ -182,6 +199,12 @@ afterAll(async () => {
       sql`${orders!.id} IN (${seedIds.orderId}, ${seedIds.order2Id}, ${seedIds.order3Id})`,
     );
     await db.delete(royaltySplits!).where(eq(royaltySplits!.id, seedIds.splitId));
+    {
+      const schema = await import("@shared/schema");
+      await db.delete(schema.users).where(
+        sql`${schema.users.id} IN (${seedIds.sellerId}, ${seedIds.buyerId})`,
+      );
+    }
     await db.delete(listings!).where(eq(listings!.id, seedIds.listingId));
   } catch (err) {
     console.warn("[beat-sale-money-loop] afterAll cleanup failed:", err);

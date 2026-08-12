@@ -42,7 +42,7 @@ from typing import Any
 HOST      = "127.0.0.1"
 PORT      = 9878
 BASE      = f"http://{HOST}:{PORT}"
-API_KEY   = "f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701"
+API_KEY   = os.environ.get("MAXCORE_TEST_API_KEY", "stale")
 HEADERS   = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 
 TARGET_SCALE = 90_000_000   # extrapolation target

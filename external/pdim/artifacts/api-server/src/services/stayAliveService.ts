@@ -171,7 +171,7 @@ export class StayAliveService {
     //
     // Priority:
     //   1. PDIM_APP_URL — explicitly configured production URL (e.g. set as a
-    //      production env var to "https://pocketdimensionstorage.replit.app").
+    //      production env var to "https://maxbooster.replit.app").
     //      This is the only reliable way to get the production URL on Replit
     //      VM deployments.
     //   2. REPLIT_DOMAINS — only used when it contains a stable production

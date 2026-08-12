@@ -9,7 +9,7 @@ import { autoPushService } from "../auto-push/service.js";
 const router: IRouter = Router();
 
 router.get("/", (_req: Request, res: Response) => {
-  res.redirect("https://pocketdimensionstorage.replit.app/");
+  res.redirect(process.env["PDIM_APP_URL"] || "https://maxbooster.replit.app/");
 });
 
 // ── AutoPush status — enriched with live agent-store stats ────────────────

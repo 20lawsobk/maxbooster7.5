@@ -47,7 +47,16 @@ export type ErrorCategory =
   | "type_safety"
   | "config"
   | "security"
-  | "performance";
+  | "performance"
+  | "payments"
+  | "media"
+  | "realtime"
+  | "session"
+  | "notification"
+  | "deployment"
+  | "cache"
+  | "validation"
+  | "scheduling";
 
 /**
  * What a *running process* is allowed to do about an error class.
@@ -602,6 +611,334 @@ const TYPE_SAFETY: KnowledgeEntry[] = [
 ];
 
 /* ────────────────────────────────────────────────────────────────────────────
+ * PLATFORM — payments, media, realtime, sessions, notifications, deployment,
+ * caching, validation, scheduling. The error surface of the full artist
+ * lifecycle: creation → distribution → monetization → payout.
+ * ──────────────────────────────────────────────────────────────────────────*/
+
+const PLATFORM: KnowledgeEntry[] = [
+  // ── Payments / billing ────────────────────────────────────────────────────
+  {
+    id: "stripe_charge_without_booking",
+    title: "Stripe charge succeeded but earnings were never booked",
+    category: "payments",
+    severity: "critical",
+    matchers: [
+      /payment.*(succeeded|captured).*(earnings|booking|ledger).*(fail|error|missing)/i,
+      /webhook.*checkout\.session\.completed.*(error|failed)/i,
+    ],
+    rootCause:
+      "The charge and the internal earnings booking are not one atomic unit: if the post-payment handler throws (DB error, missing column, crash), Stripe keeps the money but the seller's balance never updates.",
+    impact:
+      "Buyer paid, seller sees nothing. The most trust-destroying failure the marketplace can have.",
+    remediation: "report_only",
+    autoRemediable: false,
+    escalate: true,
+    fix: "Make booking idempotent and driven by the Stripe webhook with retry; reconcile daily: every succeeded PaymentIntent must map to a ledger row, alert on orphans.",
+    verifyBy:
+      "Reconciliation query: succeeded charges without a matching earnings row = 0.",
+  },
+  {
+    id: "stripe_webhook_signature_invalid",
+    title: "Stripe webhook signature verification failed",
+    category: "payments",
+    severity: "high",
+    matchers: [
+      /webhook signature verification failed/i,
+      /No signatures found matching the expected signature/i,
+    ],
+    rootCause:
+      "STRIPE_WEBHOOK_SECRET is stale (rotated endpoint), or a proxy/body-parser consumed the raw body before verification.",
+    impact:
+      "ALL payment lifecycle events are dropped — subscriptions don't activate, sales don't book.",
+    remediation: "report_only",
+    autoRemediable: false,
+    escalate: true,
+    fix: "Re-copy the endpoint secret from the Stripe dashboard into secrets; ensure the webhook route uses express.raw() before any JSON parser.",
+  },
+  {
+    id: "double_notification_on_sale",
+    title: "Seller notified twice for one completed sale",
+    category: "payments",
+    severity: "medium",
+    matchers: [/duplicate notification.*(sale|purchase|order)/i],
+    rootCause:
+      "Both the synchronous purchase path and the webhook path send the notification; retries multiply it further without an idempotency key.",
+    impact: "Sellers mistrust sale counts; support load.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Single notification source (webhook), keyed by an idempotency key (event id) checked before send.",
+    verifyBy: "One notifications row per order id under webhook retry.",
+  },
+  {
+    id: "payout_balance_drift",
+    title: "Payout total disagrees with the earnings ledger",
+    category: "payments",
+    severity: "critical",
+    matchers: [/payout.*(mismatch|drift|negative balance)/i],
+    rootCause:
+      "Balance is computed from mutable state instead of an append-only ledger, so concurrent sales/refunds race.",
+    impact: "Over- or under-payment of artists; financial liability.",
+    remediation: "report_only",
+    autoRemediable: false,
+    escalate: true,
+    fix: "Derive balances only from an append-only earnings/deductions ledger inside one transaction; never UPDATE a balance column from application math.",
+  },
+  // ── Media / audio ─────────────────────────────────────────────────────────
+  {
+    id: "media_job_stuck_pending",
+    title: "Audio/video generation job never leaves pending",
+    category: "media",
+    severity: "high",
+    matchers: [/job.*(stuck|pending).*(audio|video|render)/i, /poll.*audio-job.*timeout/i],
+    rootCause:
+      "MaxCore accepted the job (job_id issued) but crashed or recycled before completion; the poller has no terminal timeout so the client spins forever.",
+    impact: "User waits indefinitely on a spinner; retries pile duplicate jobs.",
+    remediation: "runtime_action",
+    autoRemediable: true,
+    fix: "Poller must enforce a hard terminal deadline, mark the job failed, and surface a retry affordance. Runtime action: expire jobs older than the deadline.",
+    verifyBy: "No jobs in pending older than the deadline.",
+  },
+  {
+    id: "unservable_audio_artifact",
+    title: "Listing points at audio that 404s or is clipped/corrupt",
+    category: "media",
+    severity: "high",
+    matchers: [/(preview|audio).*(404|not found|unservable)/i],
+    rootCause:
+      "Listing rows persist URLs from a storage location that was retired or a render that failed after the row was written — status said 'complete' but no one verified the artifact is fetchable.",
+    impact: "Buyers hit dead players; sales lost silently.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Verify servability (HTTP 200 + duration probe) BEFORE publishing the listing; periodic sweep flags dead URLs and unpublishes.",
+    verifyBy: "HEAD/range request on every published preview URL returns 200.",
+  },
+  {
+    id: "ffmpeg_nonzero_exit",
+    title: "ffmpeg exited non-zero during trim/transcode",
+    category: "media",
+    severity: "medium",
+    matchers: [/ffmpeg.*(exit(ed)? (code )?[1-9]|SIGKILL|error)/i],
+    rootCause:
+      "Corrupt/truncated input, unsupported codec, or the container OOM-killed ffmpeg under memory pressure.",
+    impact: "Preview/trim missing for that upload.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Validate input with ffprobe first; run ffmpeg with bounded memory and treat non-zero exit as a user-visible upload error, never a silent skip.",
+  },
+  // ── Realtime / websocket ─────────────────────────────────────────────────
+  {
+    id: "ws_reconnect_storm",
+    title: "WebSocket clients reconnect in a tight storm",
+    category: "realtime",
+    severity: "high",
+    matchers: [/(websocket|socket).*(reconnect|storm|thundering)/i],
+    rootCause:
+      "Server restart disconnects all clients at once and the client backoff is constant, so they all return simultaneously and knock the server over again.",
+    impact: "Collab sessions drop repeatedly right after every deploy.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Jittered exponential backoff on the client; server accepts connections before heavy boot work completes.",
+  },
+  {
+    id: "ws_message_after_close",
+    title: "Send attempted on a closed WebSocket",
+    category: "realtime",
+    severity: "low",
+    matchers: [/WebSocket is not open/i, /Cannot send.*closed (socket|connection)/i],
+    rootCause:
+      "Broadcast loops hold stale socket references; the close event pruned the registry after the loop snapshot.",
+    impact: "Log noise; the message was undeliverable anyway.",
+    remediation: "self_heals",
+    autoRemediable: true,
+    fix: "Guard sends with readyState check; prune registry on close. Acknowledge and suppress the flood.",
+  },
+  // ── Session / auth ────────────────────────────────────────────────────────
+  {
+    id: "session_store_unavailable",
+    title: "Session store backend unreachable — logins fail platform-wide",
+    category: "session",
+    severity: "critical",
+    matchers: [/session store.*(unavailable|timeout|error)/i, /failed to (get|set) session/i],
+    rootCause:
+      "Sessions live in PDIM; when the PDIM seam is down or misconfigured every request deserializes to anonymous.",
+    impact: "Everyone is logged out; writes that require auth 401.",
+    remediation: "report_only",
+    autoRemediable: false,
+    escalate: true,
+    fix: "Restore the PDIM seam (see pdim entries). Never fall back to MemoryStore in production — it silently forks session state per worker.",
+    verifyBy: "Login round-trip: set-cookie then authenticated /api/auth/user 200.",
+  },
+  {
+    id: "csrf_token_rejected",
+    title: "Legitimate requests rejected by CSRF double-submit",
+    category: "session",
+    severity: "medium",
+    matchers: [/invalid csrf token/i, /csrf.*(mismatch|missing)/i],
+    rootCause:
+      "Client omitted the X-CSRF-Token header or the csrf-token cookie was rotated mid-session; API tests often forget the double-submit pair.",
+    impact: "Mutating requests 403 for real users/tests.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Client must echo the csrf-token cookie value in X-CSRF-Token. For curl tests: read the cookie, send it as the header.",
+  },
+  // ── Notifications / email ────────────────────────────────────────────────
+  {
+    id: "email_provider_rejection",
+    title: "Transactional email rejected by provider",
+    category: "notification",
+    severity: "medium",
+    matchers: [/(sendgrid|resend|smtp|email).*(401|403|rejected|bounce|invalid api key)/i],
+    rootCause: "Stale/revoked email API key or unverified sender domain.",
+    impact: "Receipts, replies, and verification emails silently not delivered.",
+    remediation: "report_only",
+    autoRemediable: false,
+    escalate: true,
+    fix: "Rotate the provider key in secrets; verify the sender domain. Queue-and-retry so messages are not lost while credentials are fixed.",
+  },
+  {
+    id: "notification_write_failed_after_action",
+    title: "Action committed but its notification write failed",
+    category: "notification",
+    severity: "low",
+    matchers: [/notification.*(failed|error).*(after|post)/i],
+    rootCause:
+      "Notification insert runs after the main transaction, unprotected — any DB hiccup loses it while the action stands.",
+    impact: "User misses an event they should have seen.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Enqueue notification jobs transactionally with the action (outbox pattern) so delivery retries.",
+  },
+  // ── Deployment / boot ─────────────────────────────────────────────────────
+  {
+    id: "boot_route_registration_window",
+    title: "Mixed 200/404 responses right after restart",
+    category: "deployment",
+    severity: "medium",
+    matchers: [/404.*(during|after) (boot|restart)/i],
+    rootCause:
+      "Route registration takes minutes; requests landing mid-registration hit routes that exist yet as 404.",
+    impact: "Looks like broken endpoints; it is a boot window.",
+    remediation: "self_heals",
+    autoRemediable: true,
+    fix: "Wait for the '[Boot] Routes registered' marker; readiness endpoint must stay 503 until registration completes.",
+    verifyBy: "'[Boot] Routes registered' logged, then the same path returns 200.",
+  },
+  {
+    id: "port_bind_conflict",
+    title: "EADDRINUSE — port already bound at startup",
+    category: "deployment",
+    severity: "high",
+    matchers: [/EADDRINUSE/i],
+    rootCause:
+      "A previous process (or a supervised child like local MaxCore) survived the restart and still owns the port.",
+    impact: "Server cannot start; preview dead.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Kill the stale process group on shutdown (sweep children); supervisors must own child lifecycles.",
+  },
+  {
+    id: "env_secret_missing_at_boot",
+    title: "Required secret/env var missing at boot",
+    category: "deployment",
+    severity: "critical",
+    matchers: [/(env|secret|variable).*(missing|not set|undefined).*(required|boot|startup)/i],
+    rootCause:
+      "Deploy environment lacks a secret the dev workspace had; the app either crashes or silently disables the feature.",
+    impact: "Feature dead in production only.",
+    remediation: "report_only",
+    autoRemediable: false,
+    escalate: true,
+    fix: "Fail fast with an explicit named-variable error at boot; keep a boot-time manifest of required env keys per subsystem.",
+  },
+  // ── Cache ─────────────────────────────────────────────────────────────────
+  {
+    id: "stale_cache_after_shape_change",
+    title: "Cache serves an old response shape after a code change",
+    category: "cache",
+    severity: "high",
+    matchers: [/cannot read propert.*(cache|cached)/i],
+    rootCause:
+      "Response shape changed but the cache key version didn't, so consumers parse yesterday's shape.",
+    impact: "Crashes that only reproduce until TTL expiry, then vanish.",
+    remediation: "runtime_action",
+    autoRemediable: true,
+    fix: "Bump the cache key version in lockstep with shape changes. Runtime action: invalidate the affected prefix.",
+  },
+  {
+    id: "cache_stampede",
+    title: "Cache expiry triggers a stampede of identical upstream calls",
+    category: "cache",
+    severity: "medium",
+    matchers: [/stampede|thundering herd/i],
+    rootCause:
+      "Hot key expires and every concurrent request recomputes; no single-flight coalescing.",
+    impact: "Latency spike + upstream rate-limit burn every TTL.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Single-flight (in-flight promise map) per key + jittered TTLs.",
+  },
+  // ── Validation / input ────────────────────────────────────────────────────
+  {
+    id: "unvalidated_body_crash",
+    title: "Handler crashes on bare access to optional request body fields",
+    category: "validation",
+    severity: "high",
+    matchers: [
+      /Cannot read propert(y|ies) .* of (undefined|null).*req\.body/i,
+      /TypeError.*(undefined|null).*(handler|route)/i,
+    ],
+    rootCause:
+      "Route handlers dereference nested optional body/context fields without a schema gate; generation endpoints are the historical hot spot.",
+    impact: "500s on malformed or partial client payloads.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Zod-parse the body at the route boundary and 400 on failure; never deep-access unparsed input.",
+  },
+  {
+    id: "jsonb_shape_assumption",
+    title: "Code assumes a JSONB column's internal shape that rows don't have",
+    category: "validation",
+    severity: "medium",
+    matchers: [/(is not iterable|not a function).*(metadata|jsonb|prefs)/i],
+    rootCause:
+      "JSONB columns accumulate rows written by older code versions; new code assumes arrays/objects that old rows lack.",
+    impact: "Crashes only for users with old data — invisible in fresh tests.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Treat every JSONB read as untrusted: Array.isArray/typeof guards with defaults, exactly like external input.",
+  },
+  // ── Scheduling ────────────────────────────────────────────────────────────
+  {
+    id: "scheduler_silent_stall",
+    title: "Recurring loop silently stops rescheduling",
+    category: "scheduling",
+    severity: "high",
+    matchers: [/(loop|cycle|scheduler).*(stall|stopped|no longer)/i],
+    rootCause:
+      "A throw between 'work done' and 'schedule next' kills the chain; setTimeout chains have no watchdog, and backoff states (e.g. 12h offline backoff) may never be rewound on recovery.",
+    impact: "Autonomous revenue/maintenance loops quietly stop; nobody notices for days.",
+    remediation: "runtime_action",
+    autoRemediable: true,
+    fix: "Heartbeat timestamp per loop + watchdog that reschedules when heartbeat age exceeds 2× cadence. Reconnect callbacks must rewind backoff.",
+    verifyBy: "Heartbeat age < 2× cadence for every registered loop.",
+  },
+  {
+    id: "orphaned_cycle_double_kill",
+    title: "Orphan recovery kills cycles started by the current process",
+    category: "scheduling",
+    severity: "medium",
+    matchers: [/orphan.*(recover|kill).*(live|current|active)/i],
+    rootCause:
+      "Recovery treats any in-flight cycle as orphaned without checking whether it belongs to this process's lifetime.",
+    impact: "Healthy work is aborted ~75s after every boot.",
+    remediation: "report_only",
+    autoRemediable: false,
+    fix: "Exclude cycles with startedAt >= process start cutoff from orphan recovery.",
+  },
+];
+
+/* ────────────────────────────────────────────────────────────────────────────
  * REGISTRY
  * ──────────────────────────────────────────────────────────────────────────*/
 
@@ -613,6 +950,7 @@ export const ERROR_KNOWLEDGE_BASE: KnowledgeEntry[] = [
   ...SECURITY,
   ...EXTERNAL,
   ...TYPE_SAFETY,
+  ...PLATFORM,
 ];
 
 const BY_ID = new Map(ERROR_KNOWLEDGE_BASE.map((e) => [e.id, e]));

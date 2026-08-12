@@ -1527,6 +1527,11 @@ export async function generateVideo(
         );
       }
     } catch (e) {
+      // MaxCore-only fail-explicit contract: if the content pipeline failed
+      // because MaxCore is unavailable, surface that — never silently render
+      // generic placeholder copy in its place.
+      const { AIUnavailableError } = await import("../lib/aiSource.js");
+      if (e instanceof AIUnavailableError) throw e;
       logger.warn(
         { err: e },
         "[VideoGen] Pipeline content generation failed, using defaults:",

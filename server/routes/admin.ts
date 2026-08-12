@@ -1232,6 +1232,23 @@ adminRouter.get("/autofix/directive", async (_req, res) => {
   }
 });
 
+// Directive execution status — the latest honest cycle report (probes,
+// error classification, measured scorecard).
+adminRouter.get("/autofix/directive/status", async (_req, res) => {
+  try {
+    const { directiveExecutor } = await import(
+      "../services/directiveExecutor.js"
+    );
+    const report = directiveExecutor.getLastReport();
+    res.json(
+      report ?? { message: "No cycle completed yet — executor may be starting" },
+    );
+  } catch (err) {
+    logger.warn({ err: err }, "Admin route error:");
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 // Error knowledge base — what the platform knows how to recognise, what it can
 // genuinely self-heal, and what it must escalate to a human.
 adminRouter.get("/knowledge-base", async (_req, res) => {

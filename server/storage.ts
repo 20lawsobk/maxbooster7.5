@@ -3157,6 +3157,16 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return log;
   }
+
+  /** Fetch a single marketplace order by id (used by payment processing). */
+  async getOrder(orderId: string): Promise<typeof orders.$inferSelect | undefined> {
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+    return order;
+  }
 }
 
 export const storage = new DatabaseStorage();
