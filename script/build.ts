@@ -43,31 +43,32 @@ async function main() {
   console.log("\n✅ Build complete.");
 
   // ─── App deployment capsule (Pocket Dimension engine) ─────────────────────
-  // The actual deploy pipeline for this project is `npm run build` (this
-  // script) + `bash start.sh` on Replit's native VM deployment target — NOT
-  // build.sh/Dockerfile.prod (those back a separate, currently-unused
-  // Docker-based path). The capsule step therefore has to live here too, or
-  // a real Replit publish never produces one. Non-fatal: a capsule failure
-  // must never block a deploy.
-  const capsuleScript = path.resolve(root, "script/build-capsule.ts");
-  if (fs.existsSync(capsuleScript)) {
-    console.log(
-      "\n==> App capsule: building portable Pocket Dimension snapshot of app source...",
-    );
-    const version =
-      process.env.REPLIT_DEPLOYMENT_ID ||
-      new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
-    try {
-      execSync(
-        `npx tsx ${JSON.stringify(capsuleScript)} ${JSON.stringify(version)}`,
-        { cwd: root, stdio: "inherit" },
+  // DISABLED from the automatic deploy build (2026-08-13): this project's
+  // deployed image is already failing to publish with
+  // "image size is over the limit of 8 GiB: total size of layers exceeds
+  // limit" — confirmed happening even WITHOUT this step (a build before this
+  // step existed already failed with the same error). Adding another
+  // ~165-200MB of duplicated source into an image that's already over
+  // budget only makes that worse, so this no longer runs automatically here.
+  // Run `npx tsx script/build-capsule.ts [version]` manually if you need a
+  // capsule — it still works standalone, just isn't part of the deploy build
+  // until the image-size problem is resolved.
+
+  // ─── Trim dead weight from the deployed image (2026-08-13) ────────────────
+  // external/pdim is the vendored PDIM *engine source* — nothing at app
+  // runtime imports it (only script/build-capsule.ts, which is disabled from
+  // this build above). It's ~500MB of pure waste in an image that's already
+  // exceeding the 8GB limit. Only remove it when running inside an actual
+  // Replit deployment build (REPLIT_DEPLOYMENT_ID is set) — never in a local
+  // dev `npm run build`, where deleting it would break capsule tooling.
+  if (process.env.REPLIT_DEPLOYMENT_ID) {
+    const pdimDir = path.resolve(root, "external/pdim");
+    if (fs.existsSync(pdimDir)) {
+      console.log(
+        "\n==> Deploy build detected: removing external/pdim (unused vendored engine source, ~500MB) from the shipped image...",
       );
-      console.log("   ✅ App capsule built → deploy-capsule/");
-    } catch (err) {
-      console.warn(
-        "   WARNING: app capsule build failed — deployment continues without it (non-fatal):",
-        err instanceof Error ? err.message : err,
-      );
+      fs.rmSync(pdimDir, { recursive: true, force: true });
+      console.log("   ✅ external/pdim removed");
     }
   }
 }
