@@ -72,3 +72,6 @@
 - [Storage tracking + key safety](storage-tracking-and-key-safety.md) — every upload path MUST insert user_storage_files (else undeletable); never decodeURIComponent Express-5 params (double-decode traversal); soft-deleted keys must 404 on both GET routes
 - [MaxCore test-suite auth](maxcore-test-suite-auth.md) — imported pytest suites auth via env MAXCORE_TEST_API_KEY="$MAXCORE_ADMIN_KEY" (env-bypass), MAXCORE_TEST_BASE override; stale hardcoded keys always 401
 - [Pocket accelerator lossless cache](pocket-accelerator-lossless.md) — GEMM cache must store lossless copies; FP16 quantization broke the bit-identical hit contract (3 tests)
+- [PDIM repoint must precede spawn](pdim-repoint-before-spawn.md) — STORAGE_HTTP_URL/PDIM_EXEC_URL must be forced to the local :5556 exec server in pdimEnvFix.ts (first import) so the MaxCore child inherits it too
+- [ffmpeg asetrate needs numeric rate](ffmpeg-asetrate-numeric.md) — `asetrate=sr*N` fails silently (rc>0, "Unable to parse option value"); ffprobe the real input sample_rate first, pass an int
+- [Local subsystem keepalive vs remote-designed polling](local-subsystem-keepalive.md) — vendor keepalive/heartbeat loops written for a remote host are wasted overhead once the same process is spawned+supervised in-process; prefer one boot warm pass + exit-event liveness, gate the old loop behind an opt-in env var
