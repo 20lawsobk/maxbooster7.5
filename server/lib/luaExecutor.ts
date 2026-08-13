@@ -597,6 +597,34 @@ export async function execLuaViaPdim(
           } else {
             r = await pdimExec([msg.cmd, ...msg.args]);
           }
+          // Real Redis returns HGETALL (and similarly-shaped hash reads) as a
+          // FLAT ARRAY of alternating field/value strings over RESP — never a
+          // keyed object. BullMQ's Lua scripts rely on this: they either
+          // forward the raw rcall("HGETALL", ...) result untouched to the
+          // JS side (which reassembles it with array2obj — a flat-array-only
+          // for-loop), or iterate the fields with ipairs()/# in Lua itself.
+          // Our localPdimServer.exec() returns a
+          // keyed JS object for HGETALL (correct/expected shape for the
+          // *direct* pdimClient.hgetall() app-code path), but that same
+          // object — passed straight through this Lua bridge — becomes a
+          // Lua table with STRING keys instead of a 1..N sequence table, so
+          // "#table"/array2obj silently see length 0 and every field (name,
+          // rjk/repeatJobKey, opts, ...) reads back as missing. That is what
+          // caused every repeatable/scheduled BullMQ job to look nameless and
+          // never re-arm its next iteration. Flatten ONLY on this Lua-facing
+          // bridge so the direct object-returning app path is untouched.
+          if (
+            cmd === "HGETALL" &&
+            r &&
+            typeof r === "object" &&
+            !Array.isArray(r)
+          ) {
+            const flat: string[] = [];
+            for (const [k, v] of Object.entries(r)) {
+              flat.push(k, v == null ? "" : String(v));
+            }
+            r = flat as unknown as Record<string, unknown>;
+          }
           payload = JSON.stringify(r ?? null);
           status = 1; // success
         } catch (e) {
