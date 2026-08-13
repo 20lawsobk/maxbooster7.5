@@ -1,16 +1,40 @@
-import { zstdCompress, zstdDecompress, constants as zlibConstants } from "zlib";
+import * as zlib from "zlib";
+import { constants as zlibConstants } from "zlib";
 import { promisify } from "util";
 import { createHash } from "crypto";
 import fs from "fs/promises";
 import path from "path";
 
-const zstdCompressAsync = promisify(zstdCompress);
-const zstdDecompressAsync = promisify(zstdDecompress);
+// Node >=22.15 exposes zstd in zlib; older runtimes (e.g. Node 20) do not.
+// Detect at load time and fall back to Brotli so the engine works everywhere.
+// Frames are self-describing on read: zstd has magic 28 B5 2F FD, gzip 1F 8B,
+// anything else is treated as Brotli.
+const HAS_ZSTD = typeof (zlib as any).zstdCompress === "function";
+const zstdCompressAsync = HAS_ZSTD
+  ? promisify((zlib as any).zstdCompress)
+  : null;
+const zstdDecompressAsync = HAS_ZSTD
+  ? promisify((zlib as any).zstdDecompress)
+  : null;
+const brotliCompressAsync = promisify(zlib.brotliCompress);
+const brotliDecompressAsync = promisify(zlib.brotliDecompress);
 
 const DICT_DIR = path.join("./pocket-dimensions", ".dicts");
 const DICT_SAMPLE_MAX = 200;
 const DICT_SIZE = 112 * 1024;
 const ZSTD_LEVEL = 9;
+
+/** Adaptive effort: max on small payloads, throughput on huge ones. */
+function zstdLevelFor(size: number): number {
+  if (size <= 1024 * 1024) return 19;
+  if (size <= 8 * 1024 * 1024) return 15;
+  return ZSTD_LEVEL;
+}
+function brotliQualityFor(size: number): number {
+  if (size <= 1024 * 1024) return 11;
+  if (size <= 8 * 1024 * 1024) return 10;
+  return 9;
+}
 
 interface DictEntry {
   id: string;
@@ -31,28 +55,57 @@ export class ZstdEngine {
   ): Promise<{ compressed: Buffer; dictId?: string }> {
     const dict = dictId ? await this.loadDict(dictId) : undefined;
 
-    const opts: Parameters<typeof zstdCompressAsync>[1] = {
-      params: {
-        [zlibConstants.ZSTD_c_compressionLevel]: ZSTD_LEVEL,
-      },
-    };
+    if (HAS_ZSTD && zstdCompressAsync) {
+      const opts: any = {
+        params: {
+          [(zlibConstants as any).ZSTD_c_compressionLevel]: zstdLevelFor(
+            data.length,
+          ),
+        },
+      };
 
-    if (dict) {
-      // ZSTD_c_enableDedupSequences may not be exposed in all Node.js builds
-      const ZSTD_c_enableDedupSequences = (zlibConstants as any)
-        .ZSTD_c_enableDedupSequences;
-      if (ZSTD_c_enableDedupSequences !== undefined) {
-        (opts.params as any)[ZSTD_c_enableDedupSequences] = 1;
+      if (dict) {
+        // ZSTD_c_enableDedupSequences may not be exposed in all Node.js builds
+        const ZSTD_c_enableDedupSequences = (zlibConstants as any)
+          .ZSTD_c_enableDedupSequences;
+        if (ZSTD_c_enableDedupSequences !== undefined) {
+          opts.params[ZSTD_c_enableDedupSequences] = 1;
+        }
       }
+
+      const compressed = await zstdCompressAsync(data, opts);
+      return { compressed: compressed as Buffer, dictId };
     }
 
-    const compressed = await zstdCompressAsync(data, opts);
+    // Brotli fallback for runtimes without zlib zstd support.
+    const compressed = await brotliCompressAsync(data, {
+      params: {
+        [zlibConstants.BROTLI_PARAM_QUALITY]: brotliQualityFor(data.length),
+        [zlibConstants.BROTLI_PARAM_LGWIN]:
+          zlibConstants.BROTLI_MAX_WINDOW_BITS,
+        [zlibConstants.BROTLI_PARAM_SIZE_HINT]: data.length,
+      },
+    });
     return { compressed: compressed as Buffer, dictId };
   }
 
   async decompress(data: Buffer): Promise<Buffer> {
-    const result = await zstdDecompressAsync(data);
-    return result as Buffer;
+    // Sniff the frame type so data written by either codec always reads back.
+    const isZstd =
+      data.length >= 4 &&
+      data[0] === 0x28 &&
+      data[1] === 0xb5 &&
+      data[2] === 0x2f &&
+      data[3] === 0xfd;
+    if (isZstd) {
+      if (!zstdDecompressAsync) {
+        throw new Error(
+          "Stored object is zstd-compressed but this Node runtime lacks zlib zstd support (need Node >=22.15)",
+        );
+      }
+      return (await zstdDecompressAsync(data)) as Buffer;
+    }
+    return (await brotliDecompressAsync(data)) as Buffer;
   }
 
   async addSample(domain: string, sample: Buffer): Promise<void> {

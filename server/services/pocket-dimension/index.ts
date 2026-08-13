@@ -25,7 +25,13 @@ import {
   randomBytes,
   scryptSync,
 } from "crypto";
-import { createGzip, createGunzip, constants as zlibConstants } from "zlib";
+import {
+  createGzip,
+  createGunzip,
+  brotliCompress,
+  brotliDecompress,
+  constants as zlibConstants,
+} from "zlib";
 import { pipeline, Readable, Writable } from "stream";
 import { promisify } from "util";
 import { EventEmitter } from "events";
@@ -622,49 +628,63 @@ export class PocketDimension extends EventEmitter {
   // COMPRESSION ENGINE
   // ============================================================================
 
+  /**
+   * Compress a chunk with Brotli (better ratios than the previous gzip at
+   * the same or lower CPU for text-like data). Quality adapts to chunk size
+   * so large media chunks don't stall the event loop at quality 11.
+   * Decompression stays backward compatible: legacy chunks written with
+   * gzip are detected by their 0x1f 0x8b magic bytes.
+   */
   private async compress(data: Buffer): Promise<Buffer> {
+    // Map legacy gzip levels (1-9) to Brotli quality, then adapt by size:
+    // small chunks afford max quality; big ones step down for throughput.
+    const baseQuality = Math.min(11, Math.max(1, this.compressionLevel + 2));
+    const quality =
+      data.length <= 1024 * 1024
+        ? baseQuality
+        : data.length <= 8 * 1024 * 1024
+          ? Math.min(baseQuality, 9)
+          : Math.min(baseQuality, 7);
+
     return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      const gzip = createGzip({
-        level: this.compressionLevel,
-        memLevel: 9,
-        strategy: zlibConstants.Z_DEFAULT_STRATEGY,
-      });
-
-      const source = Readable?.from(data);
-      const destination = new Writable({
-        write(chunk, _encoding, callback) {
-          chunks?.push(chunk);
-          callback();
+      brotliCompress(
+        data,
+        {
+          params: {
+            [zlibConstants.BROTLI_PARAM_QUALITY]: quality,
+            [zlibConstants.BROTLI_PARAM_LGWIN]:
+              zlibConstants.BROTLI_MAX_WINDOW_BITS,
+            [zlibConstants.BROTLI_PARAM_SIZE_HINT]: data.length,
+          },
         },
-        final(callback) {
-          resolve(Buffer?.concat(chunks));
-          callback();
-        },
-      });
-
-      source?.pipe(gzip).pipe(destination).on("error", reject);
+        (err, out) => (err ? reject(err) : resolve(out)),
+      );
     });
   }
 
   private async decompress(data: Buffer): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      const gunzip = createGunzip();
-
-      const source = Readable?.from(data);
-      const destination = new Writable({
-        write(chunk, _encoding, callback) {
-          chunks?.push(chunk);
-          callback();
-        },
-        final(callback) {
-          resolve(Buffer?.concat(chunks));
-          callback();
-        },
+    // Legacy chunks were gzip; new chunks are Brotli. Gzip frames always
+    // start with 0x1f 0x8b — Brotli has no magic, so sniff gzip explicitly.
+    if (data.length >= 2 && data[0] === 0x1f && data[1] === 0x8b) {
+      return new Promise((resolve, reject) => {
+        const chunks: Buffer[] = [];
+        const gunzip = createGunzip();
+        const source = Readable?.from(data);
+        const destination = new Writable({
+          write(chunk, _encoding, callback) {
+            chunks?.push(chunk);
+            callback();
+          },
+          final(callback) {
+            resolve(Buffer?.concat(chunks));
+            callback();
+          },
+        });
+        source?.pipe(gunzip).pipe(destination).on("error", reject);
       });
-
-      source?.pipe(gunzip).pipe(destination).on("error", reject);
+    }
+    return new Promise((resolve, reject) => {
+      brotliDecompress(data, (err, out) => (err ? reject(err) : resolve(out)));
     });
   }
 

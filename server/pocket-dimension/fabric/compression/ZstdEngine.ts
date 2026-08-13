@@ -16,6 +16,13 @@ const DICT_SAMPLE_MAX = 200;
 const DICT_SIZE = 112 * 1024;
 const BROTLI_QUALITY = 9;
 
+/** Adaptive quality: max effort on small payloads, throughput on huge ones. */
+function qualityFor(size: number): number {
+  if (size <= 1024 * 1024) return 11;
+  if (size <= 8 * 1024 * 1024) return 10;
+  return BROTLI_QUALITY;
+}
+
 interface DictEntry {
   id: string;
   domain: string;
@@ -35,7 +42,8 @@ export class ZstdEngine {
   ): Promise<{ compressed: Buffer; dictId?: string }> {
     const opts = {
       params: {
-        [zlibConstants.BROTLI_PARAM_QUALITY]: BROTLI_QUALITY,
+        [zlibConstants.BROTLI_PARAM_QUALITY]: qualityFor(data?.length ?? 0),
+        [zlibConstants.BROTLI_PARAM_LGWIN]: zlibConstants.BROTLI_MAX_WINDOW_BITS,
         [zlibConstants.BROTLI_PARAM_SIZE_HINT]: data?.length,
       },
     };

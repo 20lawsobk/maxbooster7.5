@@ -2,7 +2,7 @@
  * MaxCore Diffusion Gateway — Internal Server (port 8008)
  *
  * Acts as the middle tier in the three-tier architecture:
- *   Max Booster (port 5000) → THIS RELAY (port 8008) → MaxCore AI (external)
+ *   Max Booster (port 5000) → THIS RELAY (port 8008) → MaxCore AI (internal subsystem)
  *
  * Responsibilities:
  *   1. Training Time Simulator  — continuous session loop, 1 real min = 1 simulated year

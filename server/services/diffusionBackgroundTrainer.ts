@@ -257,11 +257,11 @@ async function _isMaxCoreGatewayRunning(): Promise<boolean> {
 }
 
 /**
- * Check whether the external MaxCore AI server is reachable.
+ * Check whether the internal MaxCore AI subsystem is reachable.
  * When it is, we defer diffusion training to MaxCore rather than running the
  * local Python synthesizer — MaxCore IS the authoritative training source.
  */
-async function _isExternalMaxCoreReachable(): Promise<boolean> {
+async function _isMaxCoreReachable(): Promise<boolean> {
   const mcUrl = getMaxcoreOrigin();
   const mcKey = getMaxcoreGenerationKey();
   if (!mcUrl || !mcKey) return false;
@@ -288,7 +288,7 @@ async function _isExternalMaxCoreReachable(): Promise<boolean> {
  *
  * Priority order:
  *   1. Local MaxCore Diffusion Gateway (port 8008) — if running, defer to it.
- *   2. External MaxCore AI server — if reachable, defer to it (it IS MaxCore).
+ *   2. MaxCore AI subsystem — if reachable, defer to it (it IS MaxCore).
  *   3. Local Python synthesizer fallback — only when neither above is available.
  */
 export async function startBackgroundTraining(): Promise<void> {
@@ -299,7 +299,7 @@ export async function startBackgroundTraining(): Promise<void> {
 
   // ── 1. Local Gateway check (port 8008) ──────────────────────────────────
   // The MaxCore Diffusion Gateway workflow runs a training simulation loop and
-  // relays generate/render calls to external MaxCore.  If it is online we yield
+  // relays generate/render calls to MaxCore.  If it is online we yield
   // to it — running both would conflict on the same weights file and waste CPU.
   const gatewayUp = await _isMaxCoreGatewayRunning();
   if (gatewayUp) {
@@ -310,22 +310,22 @@ export async function startBackgroundTraining(): Promise<void> {
     return;
   }
 
-  // ── 2. External MaxCore check ────────────────────────────────────────────
+  // ── 2. MaxCore subsystem check ────────────────────────────────────────────
   // In production the Gateway workflow may not be running as a separate
-  // process, but the external MaxCore AI server (secure-ai-forge.replit.app)
+  // process, but the MaxCore AI subsystem
   // is the authoritative training + inference source.  If it is reachable we
   // defer to it — local Python training would be redundant and wasteful.
-  const externalMcUp = await _isExternalMaxCoreReachable();
-  if (externalMcUp) {
+  const mcUp = await _isMaxCoreReachable();
+  if (mcUp) {
     logger.info(
-      "[DiffBG] External MaxCore AI server reachable — " +
+      "[DiffBG] MaxCore AI subsystem reachable — " +
         "deferring diffusion training to MaxCore (local synthesizer will not run)",
     );
     return;
   }
 
   // ── 3. Local Python fallback ─────────────────────────────────────────────
-  // Neither the local Gateway nor the external MaxCore server responded.
+  // Neither the local Gateway nor the MaxCore subsystem responded.
   // Start the local synthesizer so training continues offline.
   logger.info(
     "[DiffBG] MaxCore not reachable — " +

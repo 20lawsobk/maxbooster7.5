@@ -950,7 +950,7 @@ export async function runBaseModelTraining(): Promise<void> {
     "[BaseTrainer] ═══════════════════════════════════════════════════",
   );
   logger.info("[BaseTrainer] Starting base model training");
-  logger.info("[BaseTrainer] Primary source: MaxCore external server");
+  logger.info("[BaseTrainer] Primary source: MaxCore internal subsystem");
   logger.info(
     "[BaseTrainer] Fallback source: local synthetic data (if MaxCore unavailable)",
   );
@@ -962,7 +962,7 @@ export async function runBaseModelTraining(): Promise<void> {
   );
 
   // ── Step 1: Try MaxCore first — pull trained weights directly ───────────────
-  // MaxCore is the only authoritative external training source. Attempt an
+  // MaxCore is the only authoritative training source. Attempt an
   // eager weight sync before any local synthetic seeding so per-user models
   // are initialised with MaxCore intelligence wherever possible.
   let maxcoreSynced = 0;

@@ -5,6 +5,10 @@ import "./config/index.js";
 // Reconcile stale PDIM_* credentials against the working STORAGE_* token
 // BEFORE any other module reads process.env.PDIM_* — must stay first.
 import "./lib/pdimEnvFix.js";
+// Start the internal PDIM subsystem (:5556) BEFORE any client's first call —
+// pdimEnvFix above has already pointed every PDIM/storage URL at it.
+import { startLocalPdimServer } from "./lib/localPdimServer.js";
+await startLocalPdimServer();
 // Import console error filter FIRST to suppress non-critical localhost Redis errors
 import "./lib/consoleErrorFilter.js";
 // Mandatory observability — must load before anything else can throw
