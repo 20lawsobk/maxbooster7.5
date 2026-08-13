@@ -193,6 +193,10 @@ async function main() {
     encrypt: false,
     excludePatterns,
     storagePath: OUTPUT_DIR,
+    // Dialed down from max (9) to 3 — trades some archive size for much
+    // faster build-time compression; this capsule is a build artifact, not
+    // a space-constrained long-term store.
+    compressionLevel: 3,
   });
 
   console.log(
