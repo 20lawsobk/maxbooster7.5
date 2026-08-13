@@ -335,6 +335,28 @@ else
 fi
 [ "$_PYENV_OK" = "0" ] && echo "   Python runtime unavailable — audio/image analysis disabled in production."
 
+# ─── App deployment capsule (Pocket Dimension engine) ─────────────────────────
+# Distinct from the .pdim tar capsules below (which only shrink the deployed
+# image and auto-restore via dist/pdim-restore.mjs). This produces a
+# checksummed, portable snapshot of the app's OWN source using the same
+# content-addressed Pocket Dimension storage engine PDIM gives each end user
+# — see script/build-capsule.ts. Must run here, BEFORE node_modules gets
+# packed/deleted below (tsx needs it) and before the source-tree capsule step
+# deletes client/server/etc.
+echo "==> App capsule: building portable Pocket Dimension snapshot of app source..."
+rm -rf deploy-capsule 2>/dev/null || true
+if [ -f "script/build-capsule.ts" ] && [ -x "node_modules/.bin/tsx" ]; then
+  _APP_CAPSULE_VERSION="${REPLIT_DEPLOYMENT_ID:-$(date -u +%Y%m%d%H%M%S)}"
+  if node_modules/.bin/tsx script/build-capsule.ts "$_APP_CAPSULE_VERSION"; then
+    echo "   ✅ App capsule built → deploy-capsule/ ($(du -sh deploy-capsule 2>/dev/null | cut -f1))"
+  else
+    echo "   WARNING: app capsule build failed — deployment continues without it (non-fatal)"
+    rm -rf deploy-capsule 2>/dev/null || true
+  fi
+else
+  echo "   INFO: script/build-capsule.ts or tsx not available — skipping app capsule"
+fi
+
 # ─── PDIM Capsule: pack large runtime directories ────────────────────────────
 # Implements the Pocket Dimension Storage Engine "Extract & Boot" mode.
 #

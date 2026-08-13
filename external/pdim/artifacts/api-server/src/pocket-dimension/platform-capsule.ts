@@ -76,6 +76,13 @@ export interface CapsuleBuildOptions {
   /** Extra/override environment variables recorded in the manifest. Merged
    * over the built-in NODE_ENV/PORT defaults. */
   environment?: Record<string, string>;
+  /** Override where the capsule's chunk/index files are written. Defaults to
+   * the shared `pocketManager` singleton's storage root (normally
+   * "./pocket-dimensions", which is reserved for per-user runtime storage and
+   * is typically excluded from deployment images). Pass an explicit path
+   * (e.g. a directory that DOES ship with the deployment) when the capsule
+   * itself is meant to be a shipped build artifact rather than runtime data. */
+  storagePath?: string;
 }
 
 const FILE_TYPES: Record<
@@ -161,11 +168,28 @@ export class PlatformCapsuleBuilder {
       `[Capsule] Building platform capsule: ${capsuleId} v${opts.version}`,
     );
 
-    this.pocket = await pocketManager.openPocket(capsuleId, {
-      encryptionKey: opts.encrypt ? opts.encryptionKey : undefined,
-      compressionLevel: 9,
-      enableDeduplication: true,
-    });
+    if (opts.storagePath) {
+      // Bypass the shared pocketManager singleton — its storage root is
+      // fixed at first import (normally "./pocket-dimensions", reserved for
+      // per-user runtime storage). Constructing a PocketDimension directly
+      // lets a shippable build artifact land somewhere the deployment
+      // pipeline actually keeps.
+      this.pocket = new PocketDimension({
+        id: capsuleId,
+        name: capsuleId,
+        encryptionKey: opts.encrypt ? opts.encryptionKey : undefined,
+        compressionLevel: 9,
+        enableDeduplication: true,
+        storagePath: opts.storagePath,
+      });
+      await this.pocket.open();
+    } else {
+      this.pocket = await pocketManager.openPocket(capsuleId, {
+        encryptionKey: opts.encrypt ? opts.encryptionKey : undefined,
+        compressionLevel: 9,
+        enableDeduplication: true,
+      });
+    }
 
     const excludePatterns = [
       ...DEFAULT_EXCLUDE,
@@ -335,8 +359,19 @@ export class PlatformCapsuleLoader {
   private manifest: CapsuleManifest | null = null;
   private cache = new Map<string, Buffer>();
 
-  async load(capsuleId: string): Promise<CapsuleMetadata> {
-    this.pocket = await pocketManager.openPocket(capsuleId);
+  /** @param storagePath must match whatever `storagePath` (if any) the
+   * capsule was built with — see CapsuleBuildOptions.storagePath. */
+  async load(capsuleId: string, storagePath?: string): Promise<CapsuleMetadata> {
+    if (storagePath) {
+      this.pocket = new PocketDimension({
+        id: capsuleId,
+        name: capsuleId,
+        storagePath,
+      });
+      await this.pocket.open();
+    } else {
+      this.pocket = await pocketManager.openPocket(capsuleId);
+    }
 
     const metaRaw = await this.pocket.read("metadata.json");
     const manifestRaw = await this.pocket.read("manifest.json");
