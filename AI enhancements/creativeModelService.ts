@@ -59,7 +59,7 @@ import {
 // ─── MaxCore connection (mirrors multimodalGenerationService pattern) ──────────
 
 const _MAXCORE_BASE = (
-  process?.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
+  process?.env.AI_SERVER_URL || "https://maxbooster.replit.app"
 ).replace(/\/api\/?$/, "");
 const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
 const MAXCORE_KEY = process?.env.AI_SERVER_KEY || "";

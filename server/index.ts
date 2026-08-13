@@ -1415,7 +1415,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   _spaHandlerReady = true;
   logger.info("✅ [SPA] Vite/static handler ready — boot fallback deactivated");
 
-  // Python AI microservice replaced by MaxCore (https://secure-ai-forge.replit.app)
+  // Python AI microservice replaced by MaxCore (https://maxbooster.replit.app)
 
   // Server is already listening (early listen above). Kick off deferred init now.
   log(`all middleware and routes registered — kicking off autonomous systems`);

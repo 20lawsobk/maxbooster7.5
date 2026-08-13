@@ -2,7 +2,7 @@
  * MaxCore AI HTTP Client — TF-free
  *
  * Standalone module that connects to the MaxCore training server
- * (secure-ai-forge?.replit.app).
+ * (maxbooster?.replit.app).
  *
  * Intentionally has ZERO TensorFlow dependencies so it can be imported by any
  * module (e?.g. advancedVideoRendererService) without pulling in native bindings.
