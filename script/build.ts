@@ -1,5 +1,6 @@
 import { execSync } from "child_process";
 import { build as esBuild } from "esbuild";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -40,6 +41,35 @@ async function main() {
   console.log("   ✅ Cluster bundle → dist/cluster.mjs");
 
   console.log("\n✅ Build complete.");
+
+  // ─── App deployment capsule (Pocket Dimension engine) ─────────────────────
+  // The actual deploy pipeline for this project is `npm run build` (this
+  // script) + `bash start.sh` on Replit's native VM deployment target — NOT
+  // build.sh/Dockerfile.prod (those back a separate, currently-unused
+  // Docker-based path). The capsule step therefore has to live here too, or
+  // a real Replit publish never produces one. Non-fatal: a capsule failure
+  // must never block a deploy.
+  const capsuleScript = path.resolve(root, "script/build-capsule.ts");
+  if (fs.existsSync(capsuleScript)) {
+    console.log(
+      "\n==> App capsule: building portable Pocket Dimension snapshot of app source...",
+    );
+    const version =
+      process.env.REPLIT_DEPLOYMENT_ID ||
+      new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
+    try {
+      execSync(
+        `npx tsx ${JSON.stringify(capsuleScript)} ${JSON.stringify(version)}`,
+        { cwd: root, stdio: "inherit" },
+      );
+      console.log("   ✅ App capsule built → deploy-capsule/");
+    } catch (err) {
+      console.warn(
+        "   WARNING: app capsule build failed — deployment continues without it (non-fatal):",
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
 }
 
 main().catch((err) => {

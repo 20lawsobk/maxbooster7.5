@@ -350,6 +350,19 @@ async function processBackgroundSync() {
 
 // ── Push notifications ────────────────────────────────────────────────────────
 
+// Resolve a push-supplied URL against our origin and reject anything that
+// lands cross-origin (absolute external URLs, protocol-relative, javascript:).
+function sanitizeNotificationUrl(url) {
+  if (typeof url !== "string" || !url) return "/";
+  try {
+    const resolved = new URL(url, self.location.origin);
+    if (resolved.origin !== self.location.origin) return "/";
+    return resolved.pathname + resolved.search + resolved.hash;
+  } catch {
+    return "/";
+  }
+}
+
 function getCategoryActions(category, actions) {
   if (actions && actions.length) return actions;
   switch (category) {
@@ -446,7 +459,14 @@ self.addEventListener("push", (event) => {
     return;
   }
 
-  const category = data.category || "system";
+  // Payload validation — only same-origin URLs may be opened from a
+  // notification click; a compromised push channel must not become an
+  // open-redirect into an attacker-controlled site.
+  const safeUrl = sanitizeNotificationUrl(
+    data.url || (data.data && data.data.url),
+  );
+
+  const category = typeof data.category === "string" ? data.category : "system";
   const actions = getCategoryActions(category, data.actions);
   const vibrate = data.vibrate || getVibrate(category, data.requireInteraction);
 
@@ -463,7 +483,7 @@ self.addEventListener("push", (event) => {
     timestamp: data.timestamp || Date.now(),
     actions,
     data: {
-      url: data.url || (data.data && data.data.url) || "/",
+      url: safeUrl,
       category,
       tag: data.tag,
       dateOfArrival: Date.now(),
@@ -490,7 +510,7 @@ self.addEventListener("notificationclick", (event) => {
 
   if (action === "dismiss") return;
 
-  const url = notifData.url || "/";
+  const url = sanitizeNotificationUrl(notifData.url);
 
   event.waitUntil(
     clients
