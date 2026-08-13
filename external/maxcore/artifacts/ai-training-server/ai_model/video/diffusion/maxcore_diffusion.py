@@ -55,6 +55,18 @@ class MaxCoreDiffusionPipeline:
     """Awareness-conditioned music-domain latent video diffusion pipeline."""
 
     def __init__(self) -> None:
+        if _TORCH_OK:
+            import torch
+            # The latent grid is tiny (32x32x4, batch size 1) — torch's default
+            # multi-threaded BLAS/OpenMP parallelism adds per-op thread-pool
+            # overhead that outweighs any benefit at this tensor size and gets
+            # far worse under contention with the rest of the process (the
+            # Node proxy, other MaxCore workers). Measured on this pipeline:
+            # 1 thread ~0.4s/frame, 4 threads ~5s/frame in isolation, and
+            # 4 threads regressed to 23-31s/frame under concurrent host load.
+            # Match the same single-thread discipline already used for
+            # Digital-GPU-routed training (ai_model/gpu/hyper_trainer.py).
+            torch.set_num_threads(1)
         self.scheduler_ddpm = DDPMScheduler(T=1000)
         self.scheduler = DDIMScheduler(self.scheduler_ddpm, num_steps=N_DDIM_STEPS)
         self.vae = MusicVAE(LATENT_C)
@@ -210,9 +222,16 @@ def get_diffusion_frame(
     width: int = RESOLUTION,
     height: int = RESOLUTION,
     context: Optional[Dict[str, Any]] = None,
+    reference_b64: Optional[str] = None,
 ) -> Optional[np.ndarray]:
     """
     Generate a single compositing-ready frame for the cinematic engine.
+
+    ``reference_b64`` is an optional caller-supplied conditioning image
+    (base64 PNG/JPEG, raw or ``data:image/...;base64,``) used as the SDEdit
+    prior instead of an RCGS-retrieved or neutral-grey frame — see
+    ``sdedit_prior._init_frame_from_context`` which reads it back out of
+    ``context["init_frame_b64"]``.
 
     Returns None on any failure so callers fall back to procedural backgrounds.
     This function is the public integration point used by scenes.py.
@@ -220,6 +239,9 @@ def get_diffusion_frame(
     pipeline = _get_pipeline()
     if pipeline is None:
         return None
+    merged_context: Dict[str, Any] = dict(context or {})
+    if reference_b64:
+        merged_context["init_frame_b64"] = reference_b64
     # Denoise at the pipeline's native resolution: the latent grid is fixed
     # (LATENT_H x LATENT_W), so requesting a larger decode resolution only
     # multiplies DDIM/VAE pixel work (~10x slower at 1920) without adding any
@@ -230,7 +252,7 @@ def get_diffusion_frame(
         platform=platform,
         tone=tone,
         awareness=awareness,
-        context=context or {},
+        context=merged_context,
         n_frames=1,
         resolution=RESOLUTION,
     )
