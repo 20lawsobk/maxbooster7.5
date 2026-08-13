@@ -31,7 +31,10 @@
  *
  * Output:
  *   A pocket dimension named `capsule-<version>-<timestamp>` under
- *   ./pocket-dimensions/ (this app's own PDIM storage root), containing:
+ *   ./deploy-capsule/ (NOT ./pocket-dimensions/ — that path is reserved for
+ *   per-user runtime storage and is excluded from deployment images via
+ *   .dockerignore; a build artifact meant to ship with the deployment needs
+ *   its own location), containing:
  *     - files/<relative path>   — every packaged source file
  *     - manifest.json           — file list with per-file sha256 + type
  *     - metadata.json           — capsule identity, sizes, checksums
@@ -159,10 +162,13 @@ async function excludesFromGitignore(root: string): Promise<string[]> {
   return Array.from(patterns);
 }
 
+const OUTPUT_DIR = path.join(projectRoot, "deploy-capsule");
+
 async function main() {
   const version = process.argv[2] ?? new Date().toISOString().slice(0, 10);
 
   console.log(`[build-capsule] Packaging ${projectRoot} as v${version}...`);
+  console.log(`[build-capsule] Output: ${OUTPUT_DIR}`);
 
   const gitignoreExcludes = await excludesFromGitignore(projectRoot);
   const excludePatterns = [
@@ -186,6 +192,7 @@ async function main() {
     },
     encrypt: false,
     excludePatterns,
+    storagePath: OUTPUT_DIR,
   });
 
   console.log(
@@ -197,7 +204,7 @@ async function main() {
 
   console.log(`[build-capsule] Verifying capsule integrity...`);
   const loader = new PlatformCapsuleLoader();
-  await loader.load(metadata.id);
+  await loader.load(metadata.id, OUTPUT_DIR);
   const ok = await loader.verify();
   if (!ok) {
     throw new Error(
@@ -220,7 +227,7 @@ async function main() {
     throw new Error(
       `[build-capsule] SECURITY: capsule ${metadata.id} contains ${leaked.length} ` +
         `credential-shaped file(s) that must never be packaged: ${leaked.join(", ")}. ` +
-        `Delete pocket-dimensions/${metadata.id} and fix the exclude patterns before retrying.`,
+        `Delete deploy-capsule/${metadata.id} and fix the exclude patterns before retrying.`,
     );
   }
   console.log(
