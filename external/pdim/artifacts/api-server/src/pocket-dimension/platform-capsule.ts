@@ -64,6 +64,18 @@ export interface CapsuleBuildOptions {
   encrypt?: boolean;
   encryptionKey?: string;
   excludePatterns?: string[];
+  /** Human-readable name of the project being packaged. Defaults to the
+   * PDIM storage server's own name so existing callers are unaffected. */
+  platformName?: string;
+  /** Relative path (from projectRoot) to the app's real entry point.
+   * Defaults to the PDIM server's own entry point. */
+  entryPoint?: string;
+  /** Shell command used to boot the packaged app after extraction.
+   * Defaults to the PDIM server's own start command. */
+  startCommand?: string;
+  /** Extra/override environment variables recorded in the manifest. Merged
+   * over the built-in NODE_ENV/PORT defaults. */
+  environment?: Record<string, string>;
 }
 
 const FILE_TYPES: Record<
@@ -111,8 +123,26 @@ const DEFAULT_EXCLUDE = [
   "uploads",
   "data",
   "ai_model",
-  ".env",
   "*.log",
+  // Secrets / credentials — never bundle these into a capsule, encrypted or
+  // not. Glob patterns below are matched per path segment (dir or file name).
+  ".env",
+  ".env.*",
+  "*.pem",
+  "*.key",
+  "*.crt",
+  "*.p12",
+  "*.pfx",
+  "*.keystore",
+  "id_rsa*",
+  "id_ed25519*",
+  "*.gpg",
+  "service-account*.json",
+  "credentials*.json",
+  "secrets*.json",
+  ".netrc",
+  ".git-credentials",
+  ".ssh",
 ];
 
 // ── Builder ───────────────────────────────────────────────────────────────
@@ -149,11 +179,13 @@ export class PlatformCapsuleBuilder {
     const manifest: CapsuleManifest = {
       files: [],
       directories: [],
-      entryPoint: "artifacts/api-server/src/index.ts",
-      startCommand: "pnpm --filter @workspace/api-server run dev",
+      entryPoint: opts.entryPoint ?? "artifacts/api-server/src/index.ts",
+      startCommand:
+        opts.startCommand ?? "pnpm --filter @workspace/api-server run dev",
       environment: {
         NODE_ENV: "production",
         PORT: process.env.PORT ?? "8080",
+        ...(opts.environment ?? {}),
       },
     };
 
@@ -198,11 +230,11 @@ export class PlatformCapsuleBuilder {
     const metadata: CapsuleMetadata = {
       id: capsuleId,
       version: opts.version,
-      name: "Max Booster PDIM Storage Server",
+      name: opts.platformName ?? "Max Booster PDIM Storage Server",
       description: opts.description ?? `PDIM Platform v${opts.version}`,
       createdAt: new Date(),
       platform: {
-        name: "Max Booster Storage",
+        name: opts.platformName ?? "Max Booster Storage",
         version: opts.version,
         nodeVersion: process.version,
       },
@@ -221,6 +253,14 @@ export class PlatformCapsuleBuilder {
       JSON.stringify(metadata, null, 2),
     );
 
+    // Chunk blobs are written to disk immediately by write(), but the
+    // key->chunk index (entries/chunks maps) and metadata.json/index.json
+    // are otherwise only persisted on close()/flush(). Without this, a
+    // capsule "build" only lives in the in-process pocketManager cache —
+    // any later process opening the same capsule id sees an empty pocket
+    // even though its chunk files exist on disk.
+    await this.pocket!.flush();
+
     logger.info(
       `[Capsule] Built: ${manifest.files.length} files, ` +
         `${(totalSize / 1024 / 1024).toFixed(1)} MB → ` +
@@ -229,6 +269,34 @@ export class PlatformCapsuleBuilder {
     );
 
     return metadata;
+  }
+
+  /**
+   * Match a bare filename/directory name against an exclude pattern.
+   * Supports exact names, plain suffix matches (legacy behavior), and glob
+   * wildcards (`*` = any run of characters, `?` = single character), e.g.
+   * `.env*` or `*.pem`. Case-sensitive to match filesystem semantics on
+   * Linux, where this always runs.
+   */
+  private matchesExcludePattern(entryName: string, pattern: string): boolean {
+    if (entryName === pattern) return true;
+    if (pattern.includes("*") || pattern.includes("?")) {
+      const regexSource =
+        "^" +
+        pattern
+          .split(/([*?])/g)
+          .map((part) => {
+            if (part === "*") return ".*";
+            if (part === "?") return ".";
+            return part.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+          })
+          .join("") +
+        "$";
+      return new RegExp(regexSource).test(entryName);
+    }
+    // Legacy plain-suffix fallback for non-glob patterns (e.g. an extension
+    // passed without a leading `*`, such as ".ts").
+    return entryName.endsWith(pattern);
   }
 
   private async collectFiles(
@@ -247,7 +315,7 @@ export class PlatformCapsuleBuilder {
 
     for (const entry of entries) {
       const entryName = String(entry.name);
-      if (exclude.some((p) => entryName === p || entryName.endsWith(p)))
+      if (exclude.some((p) => this.matchesExcludePattern(entryName, p)))
         continue;
       const full = path.join(dir, entryName);
       if (entry.isDirectory()) {
@@ -324,6 +392,36 @@ export class PlatformCapsuleLoader {
 
   clearCache(): void {
     this.cache.clear();
+  }
+
+  /**
+   * Restore every file in the manifest onto disk under `targetDir`,
+   * recreating the original relative directory structure. Each file's
+   * content is re-hashed against the manifest as it is written; on the
+   * first mismatch the restore aborts and throws (fail loud rather than
+   * silently handing back a partially-corrupt tree). Returns the number of
+   * files written.
+   */
+  async extractTo(targetDir: string): Promise<number> {
+    if (!this.pocket || !this.manifest)
+      throw new Error("No capsule loaded — call load() first");
+
+    await fs.mkdir(targetDir, { recursive: true });
+    let written = 0;
+    for (const entry of this.manifest.files) {
+      const data = await this.readFile(entry.path);
+      const hash = createHash("sha256").update(data).digest("hex");
+      if (hash !== entry.hash) {
+        throw new Error(
+          `Extraction aborted: ${entry.path} does not match its manifest checksum`,
+        );
+      }
+      const dest = path.join(targetDir, entry.path);
+      await fs.mkdir(path.dirname(dest), { recursive: true });
+      await fs.writeFile(dest, data);
+      written++;
+    }
+    return written;
   }
 }
 
