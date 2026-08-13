@@ -83,6 +83,9 @@ export interface CapsuleBuildOptions {
    * (e.g. a directory that DOES ship with the deployment) when the capsule
    * itself is meant to be a shipped build artifact rather than runtime data. */
   storagePath?: string;
+  /** zlib compression level, 1-9. Defaults to 9 (max ratio, slowest). Lower
+   * values trade some compression ratio for faster build-time packaging. */
+  compressionLevel?: number;
 }
 
 const FILE_TYPES: Record<
@@ -178,7 +181,7 @@ export class PlatformCapsuleBuilder {
         id: capsuleId,
         name: capsuleId,
         encryptionKey: opts.encrypt ? opts.encryptionKey : undefined,
-        compressionLevel: 9,
+        compressionLevel: opts.compressionLevel ?? 9,
         enableDeduplication: true,
         storagePath: opts.storagePath,
       });
@@ -186,7 +189,7 @@ export class PlatformCapsuleBuilder {
     } else {
       this.pocket = await pocketManager.openPocket(capsuleId, {
         encryptionKey: opts.encrypt ? opts.encryptionKey : undefined,
-        compressionLevel: 9,
+        compressionLevel: opts.compressionLevel ?? 9,
         enableDeduplication: true,
       });
     }
