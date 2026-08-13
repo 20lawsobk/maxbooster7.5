@@ -923,7 +923,7 @@ def _relay_to_maxcore_video(body: dict) -> dict:
     """
     import urllib.request as _urlreq
     import json as _json
-    base = os.environ.get('AI_SERVER_URL', 'https://secure-ai-forge.replit.app')
+    base = os.environ.get('AI_SERVER_URL', 'https://maxbooster.replit.app')
     base = base.rstrip('/').removesuffix('/api')
     api_url = f'{base}/api/generate-video'
     key = os.environ.get('AI_SERVER_KEY', '')
@@ -1320,7 +1320,7 @@ def sync_weights_to_maxcore(req: SyncRequest):
     import urllib.request as _urlreq
     import base64 as _b64
 
-    base_url = _os.environ.get('AI_SERVER_URL', 'https://secure-ai-forge.replit.app')
+    base_url = _os.environ.get('AI_SERVER_URL', 'https://maxbooster.replit.app')
     api_key  = _os.environ.get('AI_SERVER_KEY', '')
     sync_url = base_url.rstrip('/').removesuffix('/api') + '/api/model/sync'
 
@@ -1433,7 +1433,7 @@ def sync_status():
         'pending_retry':         state.get('pending_retry', False),
         'total_sessions':        sessions,
         'maxcore_url':           (
-            _os.environ.get('AI_SERVER_URL', 'https://secure-ai-forge.replit.app')
+            _os.environ.get('AI_SERVER_URL', 'https://maxbooster.replit.app')
             .rstrip('/').removesuffix('/api') + '/api/model/sync'
         ),
     }
@@ -1452,7 +1452,7 @@ def _maxcore_proxy(path: str, body: dict, timeout: int = 30) -> dict:
     import urllib.request as _urlreq
     import json as _json
 
-    base = os.environ.get('AI_SERVER_URL', 'https://secure-ai-forge.replit.app')
+    base = os.environ.get('AI_SERVER_URL', 'https://maxbooster.replit.app')
     base = base.rstrip('/').removesuffix('/api')
     url  = f'{base}/api{path}'
     key  = os.environ.get('AI_SERVER_KEY', '')

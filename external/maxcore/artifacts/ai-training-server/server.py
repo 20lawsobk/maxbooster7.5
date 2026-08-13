@@ -4157,7 +4157,17 @@ async def seed_audio_dataset(
     if _is_seeding():
         return {"status": "already_seeding"}
 
-    force_source = source.strip().lower() if source else None
+    # Awareness-only source policy: default to the local librosa examples
+    # (prioritised by the live awareness beacon) instead of auto-probing the
+    # external HuggingFace datasets-server. Callers may still explicitly pass
+    # source="hf" to opt back in.
+    force_source = source.strip().lower() if source else "librosa"
+    genre_targets = None
+    try:
+        from ai_model.quality_awareness import audio_seeding_targets
+        genre_targets = audio_seeding_targets()
+    except Exception:
+        genre_targets = None
 
     def _run():
         try:
@@ -4166,6 +4176,7 @@ async def seed_audio_dataset(
                 count=int(count),
                 replace=bool(replace),
                 force_source=force_source,
+                genre_targets=genre_targets,
             )
         except Exception as exc:  # background — surface explicit failure
             print(f"[seed_audio] seeding failed: {exc}", flush=True)

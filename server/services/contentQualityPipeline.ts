@@ -546,7 +546,7 @@ class ContentQualityPipeline {
     // ── Tier 1: MaxCore Advanced AI (sole AI source) ─────────────────────────
     // MaxCore is always the first and primary source for content generation.
     // advancedSocialAIService?.generateAdvancedContent() routes to MaxCore
-    // (secure-ai-forge?.replit.app) via MaxCoreAIClient?.infer().
+    // (maxbooster?.replit.app) via MaxCoreAIClient?.infer().
     // Falls through to Tier 2 (local pattern fallback) only on transient failure.
     {
       try {
