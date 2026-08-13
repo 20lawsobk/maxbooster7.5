@@ -1,7 +1,7 @@
 /**
  * MaxCore AI source contract.
  *
- * MaxCore (the external always-on server) is the single, primary, and ONLY
+ * MaxCore (the internal always-on AI subsystem) is the single, primary, and ONLY
  * source for every Max Booster AI feature — the sole exception being "Max",
  * the in-app assistant, which answers from its local knowledge base.
  *

@@ -1638,10 +1638,12 @@ export async function registerRoutes(
   // Storage: Serve files from hybrid storage (Replit hot + Pocket Dimension cold)
   app.get("/api/storage/file/*key", async (req: Request, res: Response) => {
     try {
-      const rawKey = (req.params.key as string);
-      const key = decodeURIComponent(Array.isArray(rawKey) ? rawKey.join("/") : rawKey);
+      // Express 5 already percent-decodes params — decoding again would allow
+      // double-encoded ".." traversal. Only join the wildcard segments.
+      const rawKey = (req.params as Record<string, string | string[]>).key;
+      const key = Array.isArray(rawKey) ? rawKey.join("/") : (rawKey ?? "");
 
-      if (!key) {
+      if (!key || key.startsWith("/") || key.includes("..") || key.includes("\0") || key.includes("\\")) {
         return res.status(400).json({ message: "File key is required" });
       }
 
@@ -1649,6 +1651,22 @@ export async function registerRoutes(
       const { hybridStorageService } = await import(
         "./services/hybridStorageService.js"
       );
+
+      // Never serve a file whose tracking row is marked deleted — the soft
+      // delete keeps the storage object only for the restore window.
+      {
+        const { userStorageFiles } = await import("../shared/schema.js");
+        const { eq, sql: dsql } = await import("drizzle-orm");
+        const [row] = await db
+          .select({ deletedAt: userStorageFiles.deletedAt })
+          .from(userStorageFiles)
+          .where(eq(userStorageFiles.fileKey, key))
+          .orderBy(dsql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
+          .limit(1);
+        if (row?.deletedAt) {
+          return res.status(404).json({ message: "File not found" });
+        }
+      }
 
       let fileBuffer: Buffer | null = null;
       let storageTier = "unknown";
@@ -7740,7 +7758,7 @@ export async function registerRoutes(
   }
 
   try {
-    // MaxCore proxy — exposes the external MaxCore endpoint surface through the
+    // MaxCore proxy — exposes the internal MaxCore endpoint surface through the
     // Node /api/* layer. Mounted last (its own try block) so it only handles
     // paths not already served by a real Node route, and so an unrelated route
     // load failure never disables it. Uses full /api/* paths internally.

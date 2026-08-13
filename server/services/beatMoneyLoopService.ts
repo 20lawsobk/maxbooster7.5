@@ -4,7 +4,7 @@
  * Admin-only autonomous revenue loop:
  *   1. SCAN   — pull live music-industry context (trending genre / mood / tempo)
  *               from musicIndustryContextFilter (which is fed by industryMonitorService).
- *   2. GENERATE — request a beat WAV from the EXTERNAL MaxCore server ONLY
+ *   2. GENERATE — request a beat WAV from the INTERNAL MaxCore subsystem ONLY
  *               (Mode C: AI from 8 TB dataset, then Mode B: HD DSP). There is
  *               NO local fallback — if MaxCore is unreachable the cycle fails
  *               explicitly. The scan context is forwarded so generation is
@@ -1033,12 +1033,12 @@ class BeatMoneyLoopService {
   }
 
   /**
-   * Generate a beat WAV — external MaxCore ONLY (no local fallback).
+   * Generate a beat WAV — internal MaxCore subsystem ONLY (no other source).
    * Tier 1: MaxCore Mode C  — AI audio from 8 TB music dataset.
    * Tier 2: MaxCore Mode B  — HD DSP (plate reverb, stereo, release quality).
    *
    * If both MaxCore modes fail, the cycle fails explicitly — we never list a
-   * beat that wasn't produced by the external MaxCore server.
+   * beat that wasn't produced by the internal MaxCore subsystem.
    *
    * The industry scan (genre / mood / tempo / production styles / viral hooks)
    * is forwarded to MaxCore so generation is biased toward what's trending.
@@ -1194,7 +1194,7 @@ class BeatMoneyLoopService {
 
     // MaxCore is the ONLY audio source — fail the cycle explicitly.
     throw new Error(
-      `MaxCore audio generation failed (external server is the only allowed source) — ${modeErrors.join("; ")}`,
+      `MaxCore audio generation failed (MaxCore subsystem is the only allowed source) — ${modeErrors.join("; ")}`,
     );
   }
 

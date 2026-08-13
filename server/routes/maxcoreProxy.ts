@@ -1,7 +1,7 @@
 /**
  * MaxCore Proxy Routes
  * --------------------
- * Exposes the external MaxCore (Python AI server) endpoint surface through the
+ * Exposes the internal MaxCore (Python AI subsystem) endpoint surface through the
  * Node/Express `/api/*` layer so the frontend never has to talk to MaxCore
  * directly (avoids CORS, hides the MaxCore key, and lets us inject the
  * authenticated user id).

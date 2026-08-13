@@ -8527,9 +8527,17 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
             # the same chunk + duration + format share one cached file, even
             # when they requested different BPM/key values.
             _fmt_l1  = str(opts.get("format") or "mp3").lower()
+            # Explicit producer targets discriminate the cache entry: a file
+            # retimed to 120 BPM must never be served for a 90 BPM request.
+            _l1_bpm_tag = round(float(_explicit_bpm)) if _explicit_bpm else None
+            _l1_key_tag = (
+                _pt._tonic_pitch_class(target_key)
+                if (opts.get("target_key") or key) else None
+            )
             _l1_key  = (
                 int(_best["idx"]), _dur_bucket, _fmt_l1,
                 opts.get("loudness_lufs"), bool(opts.get("stems")),
+                _l1_bpm_tag, _l1_key_tag,
             )
             with _AUDIO_RENDER_CACHE_LOCK:
                 _l1_hit = _AUDIO_RENDER_CACHE.get(_l1_key)
@@ -8558,7 +8566,15 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
                     # Flywheel chunks are FINAL produced MP3 output (already
                     # through loop / LUFS / master). Write bytes straight to
                     # out_path and return — no ffmpeg pipeline needed at all.
-                    if _pool_source == "flywheel" and (opts.get("format") or "mp3").lower() == "mp3" and not opts.get("stems"):
+                    # Flywheel fast-serve is only valid when the caller did not
+                    # explicitly request a BPM/key the chunk doesn't already
+                    # match — otherwise the ffmpeg pipeline below must retune.
+                    _fw_bpm_ok = (not _explicit_bpm
+                                  or abs(_pool_bpm - float(_explicit_bpm)) <= 2.0)
+                    _fw_key_ok = True
+                    if opts.get("target_key") or key:
+                        _fw_key_ok = _pt.nearest_semitones(_pool_key, target_key) == 0
+                    if _pool_source == "flywheel" and _fw_bpm_ok and _fw_key_ok and (opts.get("format") or "mp3").lower() == "mp3" and not opts.get("stems"):
                         _fw_fmt  = str(chunk.get("format") or "mp3").lower()
                         _fw_ext  = "wav" if _fw_fmt == "wav" else "mp3"
                         _fw_out  = _UPLOADS_PATH / f"audio_{job_id}.{_fw_ext}"
@@ -8667,6 +8683,38 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
             )
 
         stage_in = src_wav
+
+        # 1b) Retune/retime pool audio onto the EXPLICIT producer targets.
+        #     Only fires when the caller asked for a BPM/key the selected
+        #     chunk doesn't already match; ratio is clamped to [0.5, 2.0]
+        #     inside retune_retime, and applied_bpm reports the honest
+        #     (possibly clamped) result.
+        if _src_from_pool:
+            try:
+                _rt_semis = 0
+                if opts.get("target_key") or key:
+                    _rt_semis = _pt.nearest_semitones(applied_key, target_key)
+                _rt_ratio = 1.0
+                if _explicit_bpm and applied_bpm and applied_bpm > 0:
+                    _rt_ratio = float(_explicit_bpm) / float(applied_bpm)
+                if abs(_rt_ratio - 1.0) >= 0.01 or _rt_semis != 0:
+                    _rt_wav = _UPLOADS_PATH / f"audio_rt_{job_id}.wav"
+                    _tmp.append(_rt_wav)
+                    if _pt.retune_retime(src_wav, _rt_wav,
+                                         semitones=_rt_semis,
+                                         tempo_ratio=_rt_ratio):
+                        stage_in = _rt_wav
+                        _rt_clamped = max(0.5, min(2.0, _rt_ratio))
+                        if _explicit_bpm:
+                            applied_bpm = round(float(applied_bpm) * _rt_clamped, 1)
+                        if _rt_semis != 0:
+                            applied_key = str(target_key)
+                        print(f"[Producer] retune/retime audio_{job_id}: "
+                              f"ratio={_rt_clamped:.3f} semis={_rt_semis} "
+                              f"→ bpm={applied_bpm} key={applied_key!r}",
+                              flush=True)
+            except Exception as _rt_err:
+                print(f"[Producer] retune/retime skipped: {_rt_err}", flush=True)
 
         # 2) Assemble to the requested duration. Awareness-driven ARRANGEMENT
         #    first (structured intro/verse/hook/outro conditioned by live-
@@ -9501,7 +9549,14 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
         _fmt_probe   = (req.format or "mp3").lower()
         _lufs_probe  = None   # fast-path only for default loudness
         _stems_probe = bool(req.stems)
-        if _lufs_probe is None:
+        # Explicit producer targets disqualify the genre fast-path: the cached
+        # render was cut at the CHUNK's own BPM/key, so serving it for an
+        # explicit target_bpm/target_key request would report wrong metadata.
+        _explicit_targets = bool(
+            getattr(req, "target_bpm", None) or getattr(req, "bpm", None)
+            or getattr(req, "target_key", None) or getattr(req, "key", None)
+        )
+        if _lufs_probe is None and not _explicit_targets:
             with _AUDIO_RENDER_CACHE_LOCK:
                 _fp_hit: "dict | None" = None
                 for _fp_g in _preferred_genres_handler:

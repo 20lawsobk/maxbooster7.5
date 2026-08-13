@@ -251,6 +251,51 @@ describe("File Management (Storage Round-Trip)", () => {
     }
   });
 
+  it("10a. double-encoded traversal in file key is rejected (never 200)", async () => {
+    // %252e%252e double-decodes to ".." — must NOT be decoded a second time
+    const r = await api(
+      "GET",
+      "/api/storage/file/users%2Fsomeone%2F%252e%252e%2F%252e%252e%2Fetc%2Fpasswd",
+    );
+    expect([400, 403, 404]).toContain(r.status);
+  });
+
+  it("10b. literal '..' segments in file key are rejected (never 200)", async () => {
+    const r = await api("GET", "/api/storage/file/users/x/../../etc/passwd");
+    expect([400, 403, 404]).toContain(r.status);
+  });
+
+  it("10c. backslash and encoded-NUL keys are rejected (never 200)", async () => {
+    const r1 = await api("GET", "/api/storage/file/users%5Cx%5Csecrets");
+    expect([400, 403, 404]).toContain(r1.status);
+    const r2 = await api("GET", "/api/storage/file/users%2Fx%2Ffile%00.wav");
+    expect([400, 403, 404]).toContain(r2.status);
+  });
+
+  it("10d. restore of the deleted file makes it downloadable again", async () => {
+    if (!uploadedFileKey) return; // upload test did not run
+    const restore = await apiJson(
+      "POST",
+      `/api/storage/restore/${encodeURIComponent(uploadedFileKey)}`,
+    );
+    // Restore may be unsupported for permanently-deleted keys; only assert
+    // the round trip when the API reports success.
+    if (restore.status === 200) {
+      const r = await api(
+        "GET",
+        `/api/storage/file/${encodeURIComponent(uploadedFileKey)}`,
+      );
+      expect(r.status).toBe(200);
+      // Re-delete so the suite leaves no live file behind.
+      await api(
+        "DELETE",
+        `/api/storage/file/${encodeURIComponent(uploadedFileKey)}`,
+      );
+    } else {
+      expect([400, 404, 410]).toContain(restore.status);
+    }
+  });
+
   it("10. GET /api/storage/quota returns 401 or 403 without authentication", async () => {
     const saved = authCookies;
     const savedCsrf = csrfToken;

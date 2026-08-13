@@ -69,3 +69,6 @@
 - [MaxCore/PDIM internalization](maxcore-pdim-internalization.md) — imported repos become INTERNAL subsystems; connector is the only seam, cluster needs one shared PDIM owner, PDIM client rejects nullish args
 - [MaxCore local subsystem](maxcore-local-subsystem.md) — supervised child on :8090; Neon pooler rejects `options` (use unpooled host for search_path=maxcore schema isolation); sweep process group on crash
 - [Backend-only internalization](backend-only-internalization.md) — MaxCore/PDIM internalization must not add ANY frontend code; backend surfaces only
+- [Storage tracking + key safety](storage-tracking-and-key-safety.md) — every upload path MUST insert user_storage_files (else undeletable); never decodeURIComponent Express-5 params (double-decode traversal); soft-deleted keys must 404 on both GET routes
+- [MaxCore test-suite auth](maxcore-test-suite-auth.md) — imported pytest suites auth via env MAXCORE_TEST_API_KEY="$MAXCORE_ADMIN_KEY" (env-bypass), MAXCORE_TEST_BASE override; stale hardcoded keys always 401
+- [Pocket accelerator lossless cache](pocket-accelerator-lossless.md) — GEMM cache must store lossless copies; FP16 quantization broke the bit-identical hit contract (3 tests)

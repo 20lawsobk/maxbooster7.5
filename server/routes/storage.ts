@@ -7,7 +7,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import path from "path";
 import { db } from "../db.js";
-import { userStorageFiles, users } from "../../shared/schema.js";
+import { userStorageFiles, userStorage, users } from "../../shared/schema.js";
 import { eq, and, isNull, lt, isNotNull, sql, sum } from "drizzle-orm";
 import { notificationService } from "../services/notificationService.js";
 
@@ -24,6 +24,39 @@ function getCachedAudio(key: string): Buffer | null {
   }
   if (entry) audioCache?.delete(key);
   return null;
+}
+
+/**
+ * Normalize an Express-5 wildcard param into a canonical storage key.
+ * Express has ALREADY percent-decoded params — do NOT decode again (double
+ * decoding enables %252e%252e traversal). Rejects traversal, NUL bytes,
+ * absolute paths, and empty keys.
+ */
+function normalizeStorageKey(raw: string | string[] | undefined): string | null {
+  const key = Array.isArray(raw) ? raw.join("/") : (raw ?? "");
+  if (!key || key.includes("\0") || key.includes("\\")) return null;
+  if (key.startsWith("/") || key.includes("..")) return null;
+  return key;
+}
+
+function invalidateCachedAudio(key: string) {
+  audioCache?.delete(key);
+}
+
+/**
+ * Returns true when the key is tracked in user_storage_files and marked
+ * deleted (soft or otherwise). Deleted files must not be served — the soft
+ * delete keeps the storage object only so /restore can undo within the
+ * retention window.
+ */
+async function isFileDeleted(key: string): Promise<boolean> {
+  const [row] = await db
+    .select({ deletedAt: userStorageFiles.deletedAt })
+    .from(userStorageFiles)
+    .where(eq(userStorageFiles.fileKey, key))
+    .orderBy(sql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
+    .limit(1);
+  return !!row?.deletedAt;
 }
 
 function setCachedAudio(key: string, buffer: Buffer) {
@@ -231,6 +264,56 @@ router.post(
 
       logger.info(`File uploaded: ${key} by user ${userId}`);
 
+      // Track the file in user_storage_files — without this row the file is
+      // invisible to quota accounting and can never be deleted or restored.
+      try {
+        let [storageRow] = await db
+          .select({ id: userStorage.id })
+          .from(userStorage)
+          .where(eq(userStorage.userId, userId))
+          .limit(1);
+        if (!storageRow) {
+          [storageRow] = await db
+            .insert(userStorage)
+            .values({ userId, storagePrefix: `users/${userId}` })
+            .onConflictDoNothing()
+            .returning({ id: userStorage.id });
+          if (!storageRow) {
+            [storageRow] = await db
+              .select({ id: userStorage.id })
+              .from(userStorage)
+              .where(eq(userStorage.userId, userId))
+              .limit(1);
+          }
+        }
+        if (storageRow) {
+          await db
+            .insert(userStorageFiles)
+            .values({
+              userId,
+              storageId: storageRow.id,
+              fileName: safeFileName,
+              fileKey: key,
+              mimeType: req.file.mimetype,
+              sizeBytes: req.file.size,
+              folder: category,
+              metadata: { category, uploadedVia: "storage/upload" },
+            })
+            .onConflictDoNothing();
+        }
+      } catch (trackErr) {
+        // Tracking is mandatory: an untracked object is invisible to quota
+        // accounting and can never be deleted. Compensate by removing the
+        // just-uploaded object and failing the request.
+        logger.error({ err: trackErr }, "[Storage] Failed to track uploaded file — rolling back upload:");
+        try {
+          await storageService?.deleteFile(key);
+        } catch (cleanupErr) {
+          logger.error({ err: cleanupErr }, "[Storage] Rollback delete failed for untracked upload:");
+        }
+        return res.status(500).json({ error: "Upload could not be recorded" });
+      }
+
       const responseFile = {
         id: fileId || randomUUID(),
         key,
@@ -387,6 +470,53 @@ router.post(
 
         logger.info(`Chunked upload complete: ${key} by user ${userId}`);
 
+        // Track the assembled file — same mandatory tracking as single-shot
+        // uploads: an untracked object can never be deleted or quota-counted.
+        try {
+          let [storageRow] = await db
+            .select({ id: userStorage.id })
+            .from(userStorage)
+            .where(eq(userStorage.userId, userId))
+            .limit(1);
+          if (!storageRow) {
+            [storageRow] = await db
+              .insert(userStorage)
+              .values({ userId, storagePrefix: `users/${userId}` })
+              .onConflictDoNothing()
+              .returning({ id: userStorage.id });
+            if (!storageRow) {
+              [storageRow] = await db
+                .select({ id: userStorage.id })
+                .from(userStorage)
+                .where(eq(userStorage.userId, userId))
+                .limit(1);
+            }
+          }
+          if (storageRow) {
+            await db
+              .insert(userStorageFiles)
+              .values({
+                userId,
+                storageId: storageRow.id,
+                fileName,
+                fileKey: key,
+                mimeType,
+                sizeBytes: fileSizeNum,
+                folder: category,
+                metadata: { category, uploadedVia: "storage/upload/chunk" },
+              })
+              .onConflictDoNothing();
+          }
+        } catch (trackErr) {
+          logger.error({ err: trackErr }, "[Storage] Failed to track chunked upload — rolling back:");
+          try {
+            await storageService?.deleteFile(key);
+          } catch (cleanupErr) {
+            logger.error({ err: cleanupErr }, "[Storage] Rollback delete failed for untracked chunked upload:");
+          }
+          return res.status(500).json({ error: "Upload could not be recorded" });
+        }
+
         const chunkResponseFile = {
           id: fileId,
           key,
@@ -490,7 +620,11 @@ router.delete(
 
 router.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { key } = req.params as Record<string, string>;
+    const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
     const requestingUserId = req.user!.id;
 
     if (key?.startsWith("users/")) {
@@ -499,6 +633,11 @@ router.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
       if (fileOwnerId !== requestingUserId) {
         return res.status(403).json({ error: "Access denied" });
       }
+    }
+
+    if (await isFileDeleted(key)) {
+      invalidateCachedAudio(key);
+      return res.status(404).json({ error: "File not found" });
     }
 
     let buffer = getCachedAudio(key);
@@ -572,7 +711,11 @@ router.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
 
 router.get("/public/*key", async (req: Request, res: Response) => {
   try {
-    const { key } = req.params as Record<string, string>;
+    const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
 
     if (
       !key?.startsWith("storefronts/") ||
@@ -616,7 +759,11 @@ router.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params as Record<string, string>;
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
       const userId = req.user!.id;
       const { permanent } = req.query;
 
@@ -646,6 +793,7 @@ router.delete(
       if (permanent === "true") {
         // Permanent delete: remove from storage and database
         await storageService?.deleteFile(key);
+        invalidateCachedAudio(key);
         await db
           .delete(userStorageFiles)
           .where(eq(userStorageFiles.id, file?.id));
@@ -660,6 +808,7 @@ router.delete(
           .set({ deletedAt: new Date() })
           .where(eq(userStorageFiles.id, file?.id));
 
+        invalidateCachedAudio(key);
         logger.info(`[SoftDelete] File soft deleted: ${key} by user ${userId}`);
         res.json({
           success: true,
@@ -683,7 +832,11 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params as Record<string, string>;
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
       const userId = req.user!.id;
 
       // Find the soft-deleted file in database
@@ -1075,7 +1228,11 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params as Record<string, string>;
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
       const userId = req.user!.id;
 
       const buffer = await hybridStorageService?.read(userId, key);
@@ -1113,7 +1270,11 @@ router.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params as Record<string, string>;
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
       const userId = req.user!.id;
 
       const success = await hybridStorageService?.delete(userId, key);
@@ -1236,7 +1397,11 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params as Record<string, string>;
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
       const userId = req.user!.id;
 
       const metadata = hybridStorageService?.getMetadata(key);
@@ -1292,7 +1457,11 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { key } = req.params as Record<string, string>;
+      const _rawKey = (req.params as Record<string, string | string[]>).key;
+    const key = normalizeStorageKey(_rawKey);
+    if (key === null) {
+      return res.status(400).json({ error: "Invalid file key" });
+    }
       const userId = req.user!.id;
 
       const metadata = hybridStorageService?.getMetadata(key);
