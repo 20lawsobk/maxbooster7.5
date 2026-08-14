@@ -62,6 +62,10 @@ async function main() {
     const capsuleTargets: Array<{ dir: string; capsule: string }> = [
       { dir: "node_modules", capsule: "node_modules.pdim" },
       { dir: "external/maxcore", capsule: "external_maxcore.pdim" },
+      // 2026-08-14: user directive — the ENTIRE project must ship in the
+      // deployment (external/pdim included), so it is packed as a capsule
+      // rather than deleted from the image.
+      { dir: "external/pdim", capsule: "external_pdim.pdim" },
     ];
     for (const { dir, capsule } of capsuleTargets) {
       const abs = path.resolve(root, dir);
@@ -85,23 +89,9 @@ async function main() {
     }
   }
 
-  // ─── Trim dead weight from the deployed image (2026-08-13) ────────────────
-  // external/pdim is the vendored PDIM *engine source* — nothing at app
-  // runtime imports it (only script/build-capsule.ts, which is disabled from
-  // this build above). It's ~500MB of pure waste in an image that's already
-  // exceeding the 8GB limit. Only remove it when running inside an actual
-  // Replit deployment build (REPLIT_DEPLOYMENT_ID is set) — never in a local
-  // dev `npm run build`, where deleting it would break capsule tooling.
-  if (isDeployBuild) {
-    const pdimDir = path.resolve(root, "external/pdim");
-    if (fs.existsSync(pdimDir)) {
-      console.log(
-        "\n==> Deploy build detected: removing external/pdim (unused vendored engine source, ~500MB) from the shipped image...",
-      );
-      fs.rmSync(pdimDir, { recursive: true, force: true });
-      console.log("   ✅ external/pdim removed");
-    }
-  }
+  // external/pdim is no longer deleted from the image — per user directive
+  // (2026-08-14) the entire project ships; it is capsule-packed above and
+  // restored at first boot alongside node_modules and external/maxcore.
 }
 
 main().catch((err) => {
