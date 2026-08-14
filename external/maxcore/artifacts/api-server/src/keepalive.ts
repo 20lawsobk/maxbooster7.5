@@ -441,32 +441,9 @@ export function getKeepaliveStatus(): Record<string, unknown> {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-// This process and the Python model server it fronts are both spawned and
-// supervised in-process by the same host app (server/services/
-// maxcoreLocalSupervisor.ts) on loopback — not a remote/flaky dependency.
-// Process liveness is already known from the child's own exit event, so the
-// recurring heartbeat/residency/deep-warm network polling this module was
-// built for (designed for a separately-hosted, possibly-cold instance) is
-// unnecessary overhead here. Keep ONE boot-time warm pass (fills GPU/cache
-// residency before the first real request) but skip the recurring loops.
-// Set MAXCORE_KEEPALIVE_POLLING=1 to restore the full polling behavior
-// (e.g. if MaxCore is ever pointed at a genuinely separate/remote host).
-const POLLING_ENABLED = process.env.MAXCORE_KEEPALIVE_POLLING === "1";
-
 export function startKeepalive(): void {
   if (_running) return;
   _running = true;
-
-  if (!POLLING_ENABLED) {
-    console.log(
-      "[Keepalive] Local subsystem — running one boot-time warm pass only " +
-      "(no recurring health pings; liveness comes from process supervision)",
-    );
-    runActivation("boot").then(() => {
-      _running = false;
-    });
-    return;
-  }
 
   console.log(
     `[Keepalive] Starting — heartbeat every ${HEARTBEAT_INTERVAL_MS / 1000}s, ` +

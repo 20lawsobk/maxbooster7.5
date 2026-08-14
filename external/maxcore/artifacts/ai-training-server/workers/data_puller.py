@@ -325,25 +325,11 @@ class DataPuller:
             seed as _seed_fn,
             AlreadySeedingError as _AlreadySeedingError,
         )
-        # Awareness-only source policy: auto-growth must never reach out to
-        # the external HuggingFace datasets-server (unbounded network hang
-        # risk, and it is not one of the two sanctioned subsystems). Use the
-        # local librosa bundled examples, prioritised by the live awareness
-        # beacon's trending genre/BPM signal, and never talk to anything but
-        # the imported MaxCore awareness layer + PDIM storage.
-        genre_targets = None
-        try:
-            from ai_model.quality_awareness import audio_seeding_targets
-            genre_targets = audio_seeding_targets()
-        except Exception:
-            genre_targets = None
         try:
             summary = _seed_fn(
                 self.storage,
                 count=self.AUDIO_GROWTH_BATCH,
                 replace=False,
-                force_source="librosa",
-                genre_targets=genre_targets,
             )
         except _AlreadySeedingError:
             # Another caller (e.g. HTTP endpoint) is already seeding — skip.

@@ -29,7 +29,7 @@ PY_HOST  = "127.0.0.1"
 PY_PORT  = 9878
 API_HOST = "127.0.0.1"
 API_PORT = 8080
-API_KEY  = os.environ.get("MAXCORE_TEST_API_KEY", "stale")
+API_KEY  = "f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701"
 HEADERS  = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 
 UNIQUE_TARGET = 90_000_000

@@ -5,7 +5,6 @@ and the api-server proxy (port 8080) with correct minimal payloads.
 Exit 0 if every endpoint returns an expected status; non-zero otherwise.
 """
 from __future__ import annotations
-import os
 
 import http.client
 import json
@@ -17,7 +16,7 @@ from dataclasses import dataclass
 PY_HOST  = "127.0.0.1";  PY_PORT  = 9878
 API_HOST = "127.0.0.1";  API_PORT = 8080
 
-API_KEY = os.environ["MAXCORE_TEST_API_KEY"]
+API_KEY  = "f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701"
 HDR      = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 
 PASS, FAIL = "✓", "✗"
