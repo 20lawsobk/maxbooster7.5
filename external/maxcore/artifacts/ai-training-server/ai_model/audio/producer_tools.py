@@ -96,53 +96,10 @@ def retune_retime(in_wav: Path, out_wav: Path, *, semitones: int = 0,
         ["ffmpeg", "-y", "-i", str(in_wav), "-af", af, str(out_wav)],
         timeout=timeout,
     )
-    if r.returncode == 0 and Path(out_wav).exists():
-        return True
-
-    # ── Fallback: ffmpeg built without librubberband ──────────────────────────
-    # atempo (WSOLA time-stretch, pitch-preserving) handles tempo; pitch shift
-    # is asetrate (resample the clock) followed by aresample back to the
-    # original rate and an atempo correction so duration stays tempo-driven.
-    # asetrate needs a NUMERIC rate — probe the input's sample rate first.
-    in_rate = 44100
-    try:
-        pr = run_ffmpeg(
-            ["ffprobe", "-v", "error", "-select_streams", "a:0",
-             "-show_entries", "stream=sample_rate", "-of", "csv=p=0",
-             str(in_wav)],
-            timeout=15,
-        )
-        if pr.returncode == 0 and pr.stdout.strip().isdigit():
-            in_rate = int(pr.stdout.strip())
-    except Exception:
-        pass
-    parts = []
-    if semitones != 0:
-        parts.append(f"asetrate={int(round(in_rate * pitch_scale))}")
-        parts.append(f"aresample={in_rate}")
-    # Combined tempo the stream still needs after the asetrate speed change.
-    net_tempo = tempo_ratio / (pitch_scale if semitones != 0 else 1.0)
-    # atempo only accepts 0.5–2.0 per instance; chain as needed.
-    t = net_tempo
-    while t < 0.5:
-        parts.append("atempo=0.5")
-        t /= 0.5
-    while t > 2.0:
-        parts.append("atempo=2.0")
-        t /= 2.0
-    if abs(t - 1.0) >= 0.001:
-        parts.append(f"atempo={t:.6f}")
-    if not parts:
-        return False
-    r2 = run_ffmpeg(
-        ["ffmpeg", "-y", "-i", str(in_wav), "-af", ",".join(parts),
-         str(out_wav)],
-        timeout=timeout,
-    )
-    if r2.returncode != 0 or not Path(out_wav).exists():
+    if r.returncode != 0 or not Path(out_wav).exists():
         raise RuntimeError(
-            f"retune/retime failed (rubberband rc={r.returncode}, "
-            f"atempo rc={r2.returncode}): {r2.stderr[-300:]}"
+            f"rubberband retune/retime failed (rc={r.returncode}): "
+            f"{r.stderr[-300:]}"
         )
     return True
 

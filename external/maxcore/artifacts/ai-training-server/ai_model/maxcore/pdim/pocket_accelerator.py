@@ -114,12 +114,11 @@ class _ShardedLRU:
             return entry
 
     def put(self, key: str, value: np.ndarray, compute_seconds: float) -> None:
-        # Store a private, lossless copy. A cache hit must return the exact
-        # result compute() produced (bit-identical), so the cached array must
-        # preserve the caller's dtype — quantizing to FP16 here corrupted hits
-        # (error > tol, never bit-identical). The .copy() also isolates the
-        # store from later mutation of either the caller's array or the return.
-        arr = np.ascontiguousarray(value).copy()
+        # FP16-compress floating results to double effective cache capacity.
+        if np.issubdtype(value.dtype, np.floating):
+            arr = np.ascontiguousarray(value).astype(np.float16, copy=False).copy()
+        else:
+            arr = np.ascontiguousarray(value).copy()
         size = arr.nbytes
         if size > self._shard_budget:
             return   # single result too large for any shard

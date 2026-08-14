@@ -13,8 +13,8 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-BASE = os.environ.get("MAXCORE_TEST_BASE", "http://127.0.0.1:9878")
-API_KEY = os.environ.get("MAXCORE_TEST_API_KEY", "stale")
+BASE = "http://127.0.0.1:9878"
+API_KEY = "f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701"
 HEADERS = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 
 
