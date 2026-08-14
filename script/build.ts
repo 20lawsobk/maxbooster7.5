@@ -52,7 +52,13 @@ async function main() {
   // publishes). When the deploy build moved from build.sh to this script the
   // packing step was lost, so images shipped full uncompressed node_modules
   // and blew the limit. This section reconnects it.
-  if (process.env.REPLIT_DEPLOYMENT_ID) {
+  // Gate: DEPLOY_PACK=1 is set explicitly by the .replit deployment build
+  // command. (REPLIT_DEPLOYMENT_ID is only set at RUNTIME, not in the build
+  // container — gating on it silently skipped packing; proven by the
+  // 2026-08-14 04:08 build log which had no "Packing" lines.)
+  const isDeployBuild =
+    process.env.DEPLOY_PACK === "1" || !!process.env.REPLIT_DEPLOYMENT_ID;
+  if (isDeployBuild) {
     const capsuleTargets: Array<{ dir: string; capsule: string }> = [
       { dir: "node_modules", capsule: "node_modules.pdim" },
       { dir: "external/maxcore", capsule: "external_maxcore.pdim" },
@@ -86,7 +92,7 @@ async function main() {
   // exceeding the 8GB limit. Only remove it when running inside an actual
   // Replit deployment build (REPLIT_DEPLOYMENT_ID is set) — never in a local
   // dev `npm run build`, where deleting it would break capsule tooling.
-  if (process.env.REPLIT_DEPLOYMENT_ID) {
+  if (isDeployBuild) {
     const pdimDir = path.resolve(root, "external/pdim");
     if (fs.existsSync(pdimDir)) {
       console.log(
