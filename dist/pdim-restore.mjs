@@ -123,6 +123,16 @@ const maxcoreOk = restoreCapsule(
 );
 if (process.env.MAXCORE_LOCAL !== "0") ok = maxcoreOk && ok;
 
+// external/pdim — vendored PDIM subsystem (packed by script/build.ts).
+// Shipped per user directive that the entire project be included; a failed
+// restore is logged but non-fatal since app runtime does not import it.
+restoreCapsule(
+  "external_pdim.pdim",
+  "external_pdim.manifest.json",
+  "external/pdim",
+  ".pdim-restored-pdim",
+);
+
 if (!ok) {
   console.error(
     "[pdim-restore] FATAL: a required capsule restore failed — server will crash",
