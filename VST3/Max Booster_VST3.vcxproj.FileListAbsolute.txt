@@ -1,0 +1,1 @@
+D:\built-in plugins dsp\NewProject\Builds\VisualStudio2026\x64\Release\VST3\NewProject.dll
