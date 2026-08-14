@@ -14,4 +14,6 @@ description: Where external/maxcore and external/pdim come from, how to re-fetch
 
 **Why:** 2026-08-14 full reimport of both trees; MaxCore tree was byte-identical to GitHub except `.replit` (storage URLs repointed local — pdimEnvFix forces these at spawn anyway, so pristine `.replit` is safe) and SETUP.md.
 
+**After any reimport, delete the `.replit-artifact/` marker dirs** under `external/*/artifacts/*` — they auto-register the subsystems as Replit artifacts with pnpm-filter build steps that run during publish AFTER capsule packing has removed the dirs → `No projects matched the filters` → ELIFECYCLE exit 1 → publish fails.
+
 **How to apply:** keep node_modules across the swap when package.json is identical; nested MaxCore pnpm bootstrap can time out the boot probe on first run — run `bash scripts/bootstrap-maxcore.sh` manually then restart. Pristine MaxCore wrapper serves `/api/health` (not `/health`); supervisor + health pinger already use `/api/*` paths. rsync is not installed in this container — use tar pipes.
