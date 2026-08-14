@@ -442,10 +442,16 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
         topic: "new single release",
         platform: "instagram",
       });
-      expect(res.status).toBe(200);
-      expect(
-        res.json.generatedContent || res.json.content || res.json.suggestions,
-      ).toBeDefined();
+      // 200 with content when MaxCore generates; 503 AI_UNAVAILABLE when all
+      // platform generations fail (fail-explicit contract — no silent 200).
+      expect([200, 503]).toContain(res.status);
+      if (res.status === 200) {
+        expect(
+          res.json.generatedContent || res.json.content || res.json.suggestions,
+        ).toBeDefined();
+      } else {
+        expect(res.json?.error).toBe("AI_UNAVAILABLE");
+      }
     });
 
     it("should get inbox messages", async () => {

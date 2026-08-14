@@ -287,7 +287,12 @@ describe("Critical Path Tests - Production Readiness", () => {
         platforms: ["instagram"],
         topic: "new single release",
       });
-      expect(res.status).toBe(200);
+      // 200 with content when MaxCore generates; 503 AI_UNAVAILABLE when all
+      // platform generations fail (fail-explicit contract — no silent 200).
+      expect([200, 503]).toContain(res.status);
+      if (res.status === 503) {
+        expect(res.json?.error).toBe("AI_UNAVAILABLE");
+      }
     });
   });
 

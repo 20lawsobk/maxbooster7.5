@@ -543,7 +543,6 @@ def _push_weights_to_maxcore(session_label: str) -> None:
             headers={
                 'Content-Type': 'application/json',
                 'Authorization': f'Bearer {mc_key}',
-                'X-API-Key':     mc_key,
             },
             method='POST',
         )
@@ -930,7 +929,6 @@ def _relay_to_maxcore_video(body: dict) -> dict:
     hdrs: Dict[str, str] = {'Content-Type': 'application/json'}
     if key:
         hdrs['Authorization'] = f'Bearer {key}'
-        hdrs['X-API-Key']     = key
     # Strip None values (Python dict → JSON null can break MaxCore's schema)
     clean_body = {k: v for k, v in body.items() if v is not None}
     clean_body['source'] = 'MaxCoreAI'
@@ -1341,7 +1339,6 @@ def sync_weights_to_maxcore(req: SyncRequest):
     hdrs = {'Content-Type': 'application/json'}
     if api_key:
         hdrs['Authorization'] = f'Bearer {api_key}'
-        hdrs['X-API-Key']     = api_key
 
     import json as _json2
     import time as _time
@@ -1460,7 +1457,6 @@ def _maxcore_proxy(path: str, body: dict, timeout: int = 30) -> dict:
     hdrs: Dict[str, str] = {'Content-Type': 'application/json'}
     if key:
         hdrs['Authorization'] = f'Bearer {key}'
-        hdrs['X-API-Key']     = key
 
     clean: dict = {k: v for k, v in body.items() if v is not None}
     clean.setdefault('source', 'MaxCoreAI')

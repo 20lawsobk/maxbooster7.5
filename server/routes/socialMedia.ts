@@ -2139,6 +2139,18 @@ router.post(
       );
       const optimalTime = generatedContent[0]?.optimalPostTime || null;
 
+      // MaxCore-only fail-explicit contract: if every platform failed,
+      // surface 503 instead of a 200 with success:false.
+      if (generatedContent.length === 0) {
+        return res.status(503).json({
+          success: false,
+          error: "AI_UNAVAILABLE",
+          message:
+            "Content generation is temporarily unavailable (MaxCore did not return content). Please try again shortly.",
+          failedPlatforms,
+        });
+      }
+
       res.json({
         success: generatedContent.length > 0,
         generatedContent,
