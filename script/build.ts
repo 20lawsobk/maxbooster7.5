@@ -42,17 +42,42 @@ async function main() {
 
   console.log("\n✅ Build complete.");
 
-  // ─── App deployment capsule (Pocket Dimension engine) ─────────────────────
-  // DISABLED from the automatic deploy build (2026-08-13): this project's
-  // deployed image is already failing to publish with
-  // "image size is over the limit of 8 GiB: total size of layers exceeds
-  // limit" — confirmed happening even WITHOUT this step (a build before this
-  // step existed already failed with the same error). Adding another
-  // ~165-200MB of duplicated source into an image that's already over
-  // budget only makes that worse, so this no longer runs automatically here.
-  // Run `npx tsx script/build-capsule.ts [version]` manually if you need a
-  // capsule — it still works standalone, just isn't part of the deploy build
-  // until the image-size problem is resolved.
+  // ─── Extract & Boot capsules (Pocket Dimension) ────────────────────────────
+  // RESTORED 2026-08-14. The old build.sh pipeline packed node_modules (and
+  // the Python runtime) into compressed .pdim capsules, deleted the originals
+  // from the image, and start.sh re-extracts them on first boot via
+  // dist/pdim-restore.mjs. That is how this app previously published under
+  // the 8 GiB image limit (the limit applies to the IMAGE; extraction onto
+  // the VM's disk at boot is fine — proven by successful Jun/Jul/Aug
+  // publishes). When the deploy build moved from build.sh to this script the
+  // packing step was lost, so images shipped full uncompressed node_modules
+  // and blew the limit. This section reconnects it.
+  if (process.env.REPLIT_DEPLOYMENT_ID) {
+    const capsuleTargets: Array<{ dir: string; capsule: string }> = [
+      { dir: "node_modules", capsule: "node_modules.pdim" },
+      { dir: "external/maxcore", capsule: "external_maxcore.pdim" },
+    ];
+    for (const { dir, capsule } of capsuleTargets) {
+      const abs = path.resolve(root, dir);
+      if (!fs.existsSync(abs)) continue;
+      console.log(`\n==> Packing ${dir}/ → ${capsule} (gzip-9, Extract & Boot)...`);
+      execSync(
+        `tar -cf - ${JSON.stringify(dir)} | gzip -9 > ${JSON.stringify(capsule)}`,
+        { cwd: root, stdio: "inherit", shell: "/bin/bash" },
+      );
+      const { createHash } = await import("crypto");
+      const sha256 = createHash("sha256")
+        .update(fs.readFileSync(path.resolve(root, capsule)))
+        .digest("hex");
+      fs.writeFileSync(
+        path.resolve(root, capsule.replace(/\.pdim$/, ".manifest.json")),
+        JSON.stringify({ compression: "gzip-9", sha256, dir }, null, 2),
+      );
+      fs.rmSync(abs, { recursive: true, force: true });
+      const sizeMB = (fs.statSync(path.resolve(root, capsule)).size / 1048576).toFixed(0);
+      console.log(`   ✅ ${dir}/ packed (${sizeMB}MB) and removed from image`);
+    }
+  }
 
   // ─── Trim dead weight from the deployed image (2026-08-13) ────────────────
   // external/pdim is the vendored PDIM *engine source* — nothing at app
