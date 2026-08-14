@@ -230,7 +230,11 @@ if [ -d "$_TF_LIB_DIR" ]; then
   export LD_LIBRARY_PATH="$_TF_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
   echo "[start.sh] LD_LIBRARY_PATH set to include @tensorflow/tfjs-node deps"
 else
-  echo "[start.sh] WARNING: @tensorflow/tfjs-node deps/lib not found — TF ML features may be degraded"
+  # Not an error: the native libtensorflow download is blocked in this
+  # environment (tar package firewall), so @tensorflow/tfjs-node ships without
+  # deps/lib and the app intentionally falls back to the pure-JS TF.js CPU
+  # backend ("[BaseTrainer] TF.js CPU backend active" — verified working).
+  echo "[start.sh] tfjs-node native libs not present — using TF.js CPU backend (expected fallback)"
 fi
 
 # ── 5. Launch the cluster ─────────────────────────────────────────────────────
