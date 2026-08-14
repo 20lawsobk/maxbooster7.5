@@ -1,12 +1,14 @@
 ---
-name: Replit 8GB deploy limit is a live-footprint limit
-description: Why compression schemes cannot fix "image size over 8 GiB" deploy failures for this repo
+name: Replit 8GiB deploy limit is an IMAGE limit — Extract & Boot capsules fix it
+description: How this repo publishes under the 8GiB limit; the limit is on image layers, runtime extraction is allowed
 ---
 
-The Reserved VM/Autoscale 8 GiB limit applies to the running app's on-disk filesystem (reset on each publish), not a transmitted archive. Confirmed via Replit docs.
+The Reserved VM "image size is over the limit of 8 GiB" check applies to the **built image layers**, NOT the running VM's disk. Runtime extraction beyond the image size is allowed — proven by successful Jun/Jul/Aug 2026 publishes using Extract & Boot.
 
-**Why compression cannot fix it:** the app needs the full uncompressed files on disk to execute; and the overage here is `node_modules` + vendored `external/maxcore`/`external/pdim` library code — unrelated, byte-exact-required files with no cross-file similarity to exploit. Stacked generic compression was empirically shown to add ~0 (gzip-of-gzip: +148 bytes). Similarity-cluster/learned-codec pipelines target near-duplicate audio assets, which is not what's oversized.
+**The working mechanism (Extract & Boot):** the deploy build packs `node_modules` (and `external/maxcore`) into gzip-9 `.pdim` capsules with sha256 manifests, deletes the originals from the image, and `start.sh` runs `dist/pdim-restore.mjs` on first boot to verify + extract them (sentinel files make it idempotent; failed required restores exit(1)).
 
-**Real levers:** (1) split `external/maxcore` (~840MB) into its own deployment; (2) audit/remove unused npm deps (removed `onnxruntime-web`, `react-icons` Aug 2026); (3) `external/pdim` (~510MB) already deleted at deploy-time via `script/build.ts` when `REPLIT_DEPLOYMENT_ID` set; capsule build disabled in deploy path.
+**How it broke:** the deploy build moved from `build.sh` (which packed capsules) to `script/build.ts` (which didn't), so images shipped full uncompressed node_modules and blew the limit. Fixed 2026-08-14 by re-adding the packing step to `script/build.ts`, gated on `REPLIT_DEPLOYMENT_ID`.
 
-**How to apply:** if deploy fails with "total size of layers exceeds limit", do NOT reach for compression; measure `du` breakdown and remove/split actual weight. User repeatedly pushed elaborate compression-microservice blueprints as the fix — declined with the above evidence.
+**Why:** I initially (wrongly) argued compression couldn't help because "the limit counts the live filesystem" — git history disproved this. Check `git log --grep` for prior solutions before ruling an approach out.
+
+**Still true:** stacked/multi-pass generic compression adds ~0 (gzip-of-gzip: +148 bytes); similarity/learned codecs don't apply to byte-exact library code. Plain single-pass gzip-9 of node_modules gives ~5x (1.9GB→378MB) and that's what's needed here.
