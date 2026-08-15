@@ -1899,14 +1899,14 @@ class MusicWorkflowAutomationService {
     } catch (err) {
       logger.warn(
         { err },
-        "handlePressReleaseGenerator: AI generation failed, using template",
+        "handlePressReleaseGenerator: MaxCore generation failed — failing explicitly (no template fallback)",
       );
     }
 
-    // Fallback template if AI is unavailable
+    // MaxCore-only contract: never substitute a local press-release template.
     if (!pressReleaseDraft) {
-      pressReleaseDraft = `FOR IMMEDIATE RELEASE\n\n${String(artistName).toUpperCase()} RELEASES "${String(releaseTitle).toUpperCase()}"\n\n${String(artistName)} announces the release of "${releaseTitle}"${genre ? ` — a ${genre} track` : ""}${releaseDate ? ` on ${releaseDate}` : ""}.\n\n[Artist bio and quote to be added]\n\nFor press inquiries, contact: ${contactEmail || "[email]"}\nFor booking: ${bookingEmail || "[email]"}\n${website ? `More info: ${website}` : ""}`;
-      actions?.push(`Press release template generated (${tone} tone)`);
+      const { AIUnavailableError } = await import("../lib/aiSource.js");
+      throw new AIUnavailableError("press release generation");
     }
 
     if (config?.includeQuote) {

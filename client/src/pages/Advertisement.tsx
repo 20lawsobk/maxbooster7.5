@@ -441,7 +441,12 @@ export default function Advertisement() {
       const response = await apiRequest(
         "POST",
         "/api/advertising/lookalike-audiences",
-        data,
+        {
+          name: `${data.sourceAudienceType} Lookalike (${data.expansionLevel}%)`,
+          sourceAudience: data.sourceAudienceType,
+          estimatedSize: data.expansionLevel * 100_000,
+          status: "building",
+        },
       );
       return response.json();
     },

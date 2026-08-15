@@ -12,7 +12,7 @@
  */
 
 import { MaxCoreAIClient } from "../unifiedAIController.js";
-import { requireMaxCore } from "../../lib/aiSource.js";
+import { requireMaxCore, AIUnavailableError } from "../../lib/aiSource.js";
 import type { SupportedPlatform } from "./platformFormatters.js";
 
 // ─── Shared Context ───────────────────────────────────────────────────────────
@@ -341,13 +341,24 @@ export async function generateVisualPrompt(
   ctx: GeneratorContext,
 ): Promise<VisualPrompt> {
   const palette = ctx?.colorPalette.join(", ");
+  // Source the creative copy from MaxCore's awareness-conditioned generation —
+  // only the deterministic spec fields (colors, typography) are assembled locally.
+  const prompt = `Write two image-generation prompts for a ${ctx?.genre} artist named ${ctx?.artistName}.
+Mood: ${ctx?.mood}. Color palette: ${palette}.${ctx?.trackTitle ? ` Track: "${ctx.trackTitle}".` : ""}
+Line 1: a cinematic promotional image prompt (no text overlay in image).
+Line 2: a bold YouTube/social thumbnail prompt (artist name prominent).
+Return exactly 2 lines.`;
+  const raw = await callMaxCore(prompt, ctx);
+  const lines = raw
+    .split("\n")
+    .map((l) => l.replace(/^(Line\s*)?\d+[:.\-–]?\s*/i, "").trim())
+    .filter(Boolean);
+  if (lines.length < 2) {
+    throw new AIUnavailableError("visual prompt generation");
+  }
   return {
-    imagePrompt: `A ${ctx?.mood} ${ctx?.genre} music promotional image for ${ctx?.artistName}. 
-Color palette: ${palette}. Cinematic quality, high contrast, professional photography aesthetic.
-Subject: musician, artistic environment, emotional expression. No text overlay.`,
-    thumbnailPrompt: `YouTube/social thumbnail for ${ctx?.artistName} — ${ctx?.trackTitle ?? "new release"}.
-Bold typography, ${ctx?.mood} color scheme (${palette}), artist name prominent.
-Eye-catching, high contrast, legible at small sizes.`,
+    imagePrompt: lines[0],
+    thumbnailPrompt: lines[1],
     colorDirections: `Primary: ${ctx?.colorPalette[0] ?? "#1a1a2e"} | Accent: ${ctx?.colorPalette[2] ?? "#e94560"} | Background: ${ctx?.colorPalette[1] ?? "#16213e"}`,
     typographyNote: `Bold, modern sans-serif. Artist name: 48pt+. Track title: 36pt. All caps for impact.`,
     moodBoard: [
@@ -382,41 +393,43 @@ Return exactly 5 lines, one per frame.`;
     .map((l) => l?.replace(/^Frame\s*\d+[:\-–]?\s*/i, "").trim())
     .filter(Boolean);
 
+  // MaxCore-only contract: never fill missing frames with local template copy.
+  if (aiLines.length < 5) {
+    throw new AIUnavailableError("story sequence generation");
+  }
+
   const frames: StoryFrame[] = [
     {
       frameNumber: 1,
       durationSeconds: 5,
-      text: aiLines[0] ?? `👀 You need to hear this`,
+      text: aiLines[0],
       visualNote: `Hook frame — bold text on ${ctx?.colorPalette[0] ?? "dark"} background`,
       stickerSuggestion: "music note gif sticker",
     },
     {
       frameNumber: 2,
       durationSeconds: 7,
-      text:
-        aiLines[1] ?? `${ctx?.artistName} — ${ctx?.trackTitle ?? "New Music"}`,
+      text: aiLines[1],
       visualNote: `Artist photo/branding — ${ctx?.mood} filter applied`,
       stickerSuggestion: "countdown sticker if pre-release",
     },
     {
       frameNumber: 3,
       durationSeconds: 5,
-      text:
-        aiLines[2] ??
-        `${ctx?.mood.charAt(0).toUpperCase() + ctx?.mood.slice(1)} ${ctx?.genre} energy 🎵`,
+      text: aiLines[2],
       visualNote: `Lyric or waveform visual overlay`,
     },
     {
       frameNumber: 4,
       durationSeconds: 8,
-      text: aiLines[3] ?? `What do you feel when you listen?`,
+      text: aiLines[3],
       visualNote: `Poll or question interaction frame`,
-      pollQuestion: aiLines[3] ?? `Does this song hit? 🔥 vs 💯`,
+      pollQuestion: aiLines[3],
     },
     {
       frameNumber: 5,
       durationSeconds: 5,
-      text: aiLines[4] ?? `Stream now — link in bio 🎶`,
+      text: aiLines[4],
       visualNote: `CTA frame — swipe-up prompt, bright accent color`,
       stickerSuggestion: "link sticker",
     },

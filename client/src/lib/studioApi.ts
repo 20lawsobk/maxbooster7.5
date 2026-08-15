@@ -504,55 +504,68 @@ export const studioApi = {
 
   warping: {
     async getWarpMarkers(
-      projectId: number,
+      _projectId: number,
       clipId: string,
     ): Promise<WarpMarker[]> {
       const res = await fetch(
-        `/api/studio/projects/${projectId}/warping/clips/${clipId}/markers`,
+        `/api/studio/warping/clips/${clipId}/warp/markers`,
         { credentials: "include" },
       );
       if (!res?.ok) throw new Error("Failed to fetch warp markers");
-      return res?.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : (data?.markers ?? []);
     },
 
     async addWarpMarker(
-      projectId: number,
+      _projectId: number,
       clipId: string,
       data: { originalBeat: number; warpedBeat: number },
     ): Promise<WarpMarker> {
       return apiRequest(
         "POST",
-        `/api/studio/projects/${projectId}/warping/clips/${clipId}/markers`,
+        `/api/studio/warping/clips/${clipId}/warp/markers`,
         data,
       );
     },
 
     async updateWarpMarker(
-      projectId: number,
-      markerId: number,
+      clipId: string,
+      markerId: number | string,
       data: Partial<WarpMarker>,
     ): Promise<WarpMarker> {
       return apiRequest(
         "PUT",
-        `/api/studio/projects/${projectId}/warping/markers/${markerId}`,
+        `/api/studio/warping/clips/${clipId}/warp/markers/${markerId}`,
         data,
       );
     },
 
-    async deleteWarpMarker(projectId: number, markerId: number): Promise<void> {
+    async deleteWarpMarker(
+      clipId: string,
+      markerId: number | string,
+    ): Promise<void> {
       await apiRequest(
         "DELETE",
-        `/api/studio/projects/${projectId}/warping/markers/${markerId}`,
+        `/api/studio/warping/clips/${clipId}/warp/markers/${markerId}`,
       );
     },
 
     async analyzeClipTempo(
-      projectId: number,
+      _projectId: number,
       clipId: string,
-    ): Promise<{ tempo: number; confidence: number; beats: number[] }> {
+    ): Promise<{
+      clipId: string;
+      originalDuration: number;
+      currentDuration: number;
+      timeStretch: number;
+      pitchShift: number;
+      preserveFormants: boolean;
+      markerCount: number;
+      markers: Array<Record<string, unknown>>;
+    }> {
       return apiRequest(
-        "POST",
-        `/api/studio/projects/${projectId}/warping/clips/${clipId}/analyze`,
+        "GET",
+        `/api/studio/warping/clips/${clipId}/warp/tempo`,
       );
     },
   },

@@ -135,12 +135,14 @@ def _parse_content(raw: str, platform: str, topic: str, genre: str) -> dict:
     if not hashtags and '#' in raw:
         hashtags = [w.rstrip('.,!?') for w in raw.split() if w.startswith('#')][:8]
 
-    # 3. Fallback: split plain text into lines
+    # 3. Split plain MaxCore text into lines — never fabricate copy locally.
     if not hook:
         lines     = [l.strip() for l in raw.split('\n') if l.strip()]
-        hook      = lines[0][:140] if lines else f'🎵 {topic}'
+        if not lines:
+            raise MaxCoreUnavailable('MaxCore returned no usable content')
+        hook      = lines[0][:140]
         body_text = ' '.join(lines[1:3]) if len(lines) > 1 else ''
-        cta       = lines[-1] if len(lines) > 2 else 'Follow for more 🔥'
+        cta       = lines[-1] if len(lines) > 2 else ''
 
     if not hashtags:
         hashtags = _hashtags_for(platform, genre)
@@ -153,21 +155,13 @@ def _parse_content(raw: str, platform: str, topic: str, genre: str) -> dict:
                 caption=caption, hashtags=hashtags)
 
 
-def _fallback_fields(platform: str, topic: str, genre: str,
-                     artist: str = '', track: str = '') -> dict:
-    artist_ctx = f' by {artist}' if artist else ''
-    track_ctx  = f' — "{track}"' if track else ''
-    hook       = f'🎵 {topic}{artist_ctx}'
-    body_text  = f'New {genre or "music"} dropping soon{track_ctx}. Stay tuned!'
-    cta        = 'Follow for updates 🔥'
-    hashtags   = _hashtags_for(platform, genre)
-    return dict(
-        hook    = hook,
-        body    = body_text,
-        cta     = cta,
-        caption = f'{hook}\n\n{body_text}\n\n{cta}\n\n{" ".join(hashtags)}',
-        hashtags = hashtags,
-    )
+class MaxCoreUnavailable(Exception):
+    """MaxCore returned no usable content.
+
+    Per the MaxCore-only fail-explicit contract, the sidecar must NEVER
+    substitute locally-templated content — callers must see an explicit
+    503 so unavailability is always visible.
+    """
 
 
 # ── Endpoint handlers ─────────────────────────────────────────────────────────
@@ -213,8 +207,9 @@ def _handle_generate_content(body: dict) -> dict:
         if not raw and isinstance(result.get('data'), str):
             raw = result['data']
 
-    fields = (_parse_content(raw, platform, topic, genre) if raw
-              else _fallback_fields(platform, topic, genre, artist, track))
+    if not raw:
+        raise MaxCoreUnavailable('content generation')
+    fields = _parse_content(raw, platform, topic, genre)
 
     return {
         'success':            True,
@@ -245,13 +240,17 @@ def _handle_generate_script(body: dict) -> dict:
     })
     ms  = round((time.time() - t0) * 1000)
     raw = (result or {}).get('result') or (result or {}).get('content') or ''
-    f   = _parse_content(raw, platform, idea, '') if raw else {}
+    if not raw:
+        raise MaxCoreUnavailable('script generation')
+    f = _parse_content(raw, platform, idea, '')
+    if not (f.get('hook') or f.get('body')):
+        raise MaxCoreUnavailable('script generation (empty response)')
 
     return {
         'success':            True,
-        'hook':               f.get('hook',  f'🎵 {idea}'),
-        'body':               f.get('body',  f'New content about {idea} coming soon!'),
-        'cta':                f.get('cta',   'Follow for more 🔥'),
+        'hook':               f.get('hook', ''),
+        'body':               f.get('body', ''),
+        'cta':                f.get('cta', ''),
         'platform':           platform,
         'processing_time_ms': ms,
     }
@@ -277,9 +276,10 @@ def _handle_generate_multi_platform(body: dict) -> dict:
                 f'Respond with JSON: hook, body, cta, hashtags, caption.'
             ),
         })
-        raw    = (result or {}).get('result') or (result or {}).get('content') or ''
-        fields = (_parse_content(raw, platform, topic, genre) if raw
-                  else _fallback_fields(platform, topic, genre, artist, track))
+        raw = (result or {}).get('result') or (result or {}).get('content') or ''
+        if not raw:
+            raise MaxCoreUnavailable(f'multi-platform generation ({platform})')
+        fields = _parse_content(raw, platform, topic, genre)
 
         generated.append({
             'platform':       platform,
@@ -375,11 +375,13 @@ class SidecarHandler(BaseHTTPRequestHandler):
                 self._send(result, 200 if result.get('success') else 404)
             elif path.startswith('/video-job/'):
                 job_id = path.split('/')[-1]
-                result = _mc_get(f'/video-job/{job_id}') or {
-                    'job_id': job_id, 'status': 'processing',
-                    'progress': 0.5, 'eta_seconds': 30,
-                }
-                self._send(result)
+                result = _mc_get(f'/video-job/{job_id}')
+                if result is None:
+                    # Never fabricate job progress — surface the outage.
+                    self._send({'success': False, 'job_id': job_id,
+                                'error': 'MaxCore unavailable — video job status unknown'}, 503)
+                else:
+                    self._send(result)
             else:
                 self._send({'error': 'Not found'}, 404)
         except (BrokenPipeError, ConnectionResetError):
@@ -412,9 +414,10 @@ class SidecarHandler(BaseHTTPRequestHandler):
                         f'Respond with JSON: hook, body, cta, hashtags, caption.'
                     ),
                 })
-                raw    = (result or {}).get('result') or (result or {}).get('content') or ''
-                fields = _parse_content(raw, platform, script, '') if raw else \
-                         _fallback_fields(platform, script, '')
+                raw = (result or {}).get('result') or (result or {}).get('content') or ''
+                if not raw:
+                    raise MaxCoreUnavailable('distribution caption generation')
+                fields = _parse_content(raw, platform, script, '')
                 self._send({
                     'success':      True,
                     'caption':      fields['caption'],
@@ -425,103 +428,51 @@ class SidecarHandler(BaseHTTPRequestHandler):
                 })
 
             elif path == '/boostsheet/create':
-                result = _mc_post('/boostsheet/create', body) or {
-                    'success':  True,
-                    'sheet_id': f'bs_{int(time.time())}',
-                    'type':     'content',
-                    'platform': body.get('platform', 'instagram'),
-                    'blocks':   {},
-                    'history':  [],
-                }
+                result = _mc_post('/boostsheet/create', body)
+                if result is None:
+                    raise MaxCoreUnavailable('boost sheet creation')
                 self._send(result)
 
             elif path == '/optimize':
-                result = _mc_post('/optimize', body) or {
-                    'success':         True,
-                    'optimized':       True,
-                    'recommendations': [
-                        'Post at peak engagement hours',
-                        'Use trending audio clips',
-                        'Add captions for accessibility',
-                    ],
-                }
+                result = _mc_post('/optimize', body)
+                if result is None:
+                    raise MaxCoreUnavailable('content optimization')
                 self._send(result)
 
             elif path == '/generate/video':
-                result = _mc_post('/generate/video', body) or {
-                    'success':            True,
-                    'filename':           'video.mp4',
-                    'url':                '',
-                    'duration':           float(body.get('duration', 10)),
-                    'width':              1080,
-                    'height':             1920,
-                    'aspect_ratio':       '9:16',
-                    'template':           body.get('template', 'cinematic_promo'),
-                    'platform':           body.get('platform', 'tiktok'),
-                    'hook':               body.get('hook', ''),
-                    'body':               body.get('body', ''),
-                    'cta':                body.get('cta', ''),
-                    'source':             'maxcore',
-                    'processing_time_ms': 0,
-                }
+                result = _mc_post('/generate/video', body)
+                if result is None:
+                    raise MaxCoreUnavailable('video generation')
                 self._send(result)
 
             elif path in ('/generate-video', '/generate/video-job'):
-                result = _mc_post('/generate-video', body) or {
-                    'job_id': f'job_{int(time.time())}',
-                    'status': 'queued',
-                }
+                result = _mc_post('/generate-video', body)
+                if result is None:
+                    raise MaxCoreUnavailable('video job submission')
                 self._send(result)
 
             elif path == '/generate/visual-spec':
-                result = _mc_post('/generate/visual-spec', body) or {
-                    'success': True,
-                    'visual_spec': {
-                        'colors':  ['#1a1a2e', '#16213e', '#0f3460'],
-                        'font':    'bold',
-                        'layout':  'centered',
-                        'style':   'modern',
-                    },
-                }
+                result = _mc_post('/generate/visual-spec', body)
+                if result is None:
+                    raise MaxCoreUnavailable('visual spec generation')
                 self._send(result)
 
             elif path == '/generate/image':
-                result = _mc_post('/generate/image', body) or {
-                    'success':      True,
-                    'url':          '',
-                    'width':        1080,
-                    'height':       1080,
-                    'format':       'png',
-                    'platform':     body.get('platform', 'instagram'),
-                    'prompt_used':  body.get('topic', ''),
-                    'color_scheme': {
-                        'primary':    '#1a1a2e',
-                        'secondary':  '#16213e',
-                        'accent':     '#e94560',
-                        'background': '#0f3460',
-                    },
-                    'processing_time_ms': 0,
-                }
+                result = _mc_post('/generate/image', body)
+                if result is None:
+                    raise MaxCoreUnavailable('image generation')
                 self._send(result)
 
             elif path == '/analyze/audio':
-                result = _mc_post('/audio/analyze', body) or {
-                    'success':      True,
-                    'bpm':          120.0,
-                    'key':          'C major',
-                    'energy':       0.75,
-                    'danceability': 0.8,
-                    'sections':     [],
-                    'duration':     0,
-                }
+                result = _mc_post('/audio/analyze', body)
+                if result is None:
+                    raise MaxCoreUnavailable('audio analysis')
                 self._send(result)
 
             elif path == '/analyze/transcribe':
-                result = _mc_post('/analyze/transcribe', body) or {
-                    'success':   True,
-                    'midi_path': '',
-                    'notes':     [],
-                }
+                result = _mc_post('/analyze/transcribe', body)
+                if result is None:
+                    raise MaxCoreUnavailable('audio transcription')
                 self._send(result)
 
             else:
@@ -535,6 +486,11 @@ class SidecarHandler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             # Client dropped the connection mid-request — nothing to respond to.
             log.debug('POST %s — client disconnected mid-request', path)
+        except MaxCoreUnavailable as exc:
+            # Fail-explicit contract: MaxCore is the ONLY content source.
+            log.warning('POST %s — MaxCore unavailable: %s', path, exc)
+            self._send({'success': False,
+                        'error': f'MaxCore unavailable — {exc}'}, 503)
         except Exception as exc:
             log.error('POST %s error: %s\n%s', path, exc, traceback.format_exc())
             # Best-effort error response — ignore if the pipe is already gone.
@@ -545,7 +501,7 @@ class SidecarHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     if not MC_URL:
-        log.warning('AI_SERVER_URL not set — falling back to structured responses only')
+        log.warning('AI_SERVER_URL not set — all generation endpoints will return 503 (MaxCore-only, fail-explicit)')
     else:
         log.info('MaxCore endpoint: %s', MC_URL)
 

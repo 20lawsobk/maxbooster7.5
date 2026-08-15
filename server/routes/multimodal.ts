@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "crypto";
 import { requireAuthOnly } from "../middleware/auth.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import { logger } from "../logger.js";
 import { handleGeneration } from "../services/multimodalGenerationService.js";
 import {
@@ -78,6 +79,9 @@ router.post(
       return res.json(pkg);
     } catch (err) {
       logger.warn({ err: err }, "[POST /multimodal/generate]");
+      if (err instanceof AIUnavailableError) {
+        return res.status(503).json({ error: err.message });
+      }
       return res
         .status(500)
         .json({ error: (err as Error).message || "Generation failed" });

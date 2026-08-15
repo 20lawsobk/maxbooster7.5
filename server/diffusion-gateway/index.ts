@@ -40,7 +40,7 @@ const PORT = parseInt(process.env.VIDEO_DIFFUSION_PORT ?? "8008", 10);
 const MC_URL = getMaxcoreOrigin();
 const MC_KEY = getMaxcoreGenerationKey();
 const PDIM_URL =
-  process.env.PDIM_BASE_URL || "https://pocketdimensionstorage.replit.app";
+  process.env.PDIM_BASE_URL || "https://maxbooster.replit.app";
 const PDIM_TOKEN =
   process.env.PDIM_AUTH_TOKEN ||
   process.env.PDIM_BEARER_TOKEN ||

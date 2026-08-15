@@ -116,14 +116,16 @@ export default function CareerCoach() {
   });
 
   const { data: goalsData, isLoading: isLoadingGoals } = useQuery<{
-    goals: CareerGoal[];
+    success: boolean;
+    data: { goals: CareerGoal[] };
   }>({
     queryKey: ["/api/career-coach/goals"],
     enabled: !!user,
   });
 
   const { data: recommendationsData, isLoading: isLoadingRecs } = useQuery<{
-    recommendations: Recommendation[];
+    success: boolean;
+    data: { recommendations: Recommendation[] };
   }>({
     queryKey: ["/api/career-coach/recommendations"],
     enabled: !!user,
@@ -340,8 +342,8 @@ export default function CareerCoach() {
     setChatInput("");
   };
 
-  const goals = goalsData?.goals || [];
-  const recommendations = recommendationsData?.recommendations || [];
+  const goals = goalsData?.data?.goals || [];
+  const recommendations = recommendationsData?.data?.recommendations || [];
   const insights = insightsData?.insights;
 
   const getCategoryIcon = (category: string) => {

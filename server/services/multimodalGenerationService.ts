@@ -2337,104 +2337,6 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
   return { requestId: req.id, steps };
 }
 
-/**
- * Returns true when `text` is likely raw model token garbage (numbers, control
- * tokens, repeated hashtags).  Used to skip bad /generate/text outputs and
- * fall back to the local template builder.
- */
-
-function buildLocalTextAssets(
-  rawSlots: unknown[],
-  inputs: Record<string, unknown>,
-  req: GenerationRequest,
-): GeneratedAsset[] {
-  const normalized = inputs.normalized ?? {};
-
-  // /api/analyze returns { payload_summary, semantic: { hook, core_message } }
-  // rather than top-level hook/body/summary — handle both shapes.
-  const semantic: Record<string, string> = (normalized as any).semantic ?? {};
-  const payloadSummary: string =
-    typeof (normalized as any).payload_summary === "string"
-      ? (normalized as any).payload_summary
-      : typeof req.input.payload === "string"
-        ? req.input.payload.slice(0, 280)
-        : "";
-  const summary: string =
-    typeof (normalized as any).summary === "string"
-      ? (normalized as any).summary
-      : payloadSummary;
-
-  const hook: string =
-    (normalized as any).hook ??
-    semantic.hook ??
-    (summary.slice(0, 100) || req.intent || "New music out now");
-  const body: string =
-    (normalized as any).body ?? semantic.core_message ?? (summary || hook);
-  const cta: string = (normalized as any).cta ?? "Stream now 🎵";
-  const artist: string = (normalized as any).artistName ?? semantic.artist_name ?? "";
-
-  const TEMPLATES: Record<
-    string,
-    (h: string, b: string, c: string, a: string, tags: string) => string
-  > = {
-    instagram: (h, b, c, a, tags) =>
-      `${h}\n\n${b}\n\n${c}${a ? ` | ${a}` : ""}${tags}`,
-    tiktok: (h, _b, c, _a, tags) => `${h} ${c}${tags}`,
-    twitter: (h, _b, c, _a, _tags) => `${h} ${c}`.trim(),
-    threads: (h, b, c, _a, _tags) => `${h}\n\n${c}${b ? `\n${b}` : ""}`,
-    facebook: (h, b, c, a, tags) =>
-      `${h}\n\n${b}\n\n${c}${a ? `\n\n— ${a}` : ""}${tags}`,
-    youtube: (h, b, c, _a, _tags) =>
-      `${h}\n\n${b}\n\n${c}\n\nSubscribe for more 🔔`,
-    linkedin: (h, b, c, a, _tags) =>
-      `${a ? `${a} | ` : ""}${h}\n\n${b}\n\n${c}`,
-    google_business: (h, b, c, _a, _tags) => `${h}\n\n${b}\n\n${c}`,
-  };
-
-  return (rawSlots as Record<string, unknown>[]).map((slot) => {
-    const platform = (slot.platform ?? req.platforms[0]) as Platform;
-    const rules = platform ? getRules(platform) : null;
-
-    // Use per-platform differentiated copy if available (from localAnalyzeUrl)
-    const perCopy = (normalized as any).perPlatformCopy?.[platform] ?? {};
-    const platformHook = perCopy.hook ?? hook;
-    const platformBody = perCopy.body ?? body;
-    const platformCta = perCopy.cta ?? cta;
-
-    // Dynamic hashtags: respect platform rules for allowed count
-    const maxHashtags = rules?.text?.hashtags?.allowed
-      ? (rules.text.hashtags.max ?? 5)
-      : 0;
-    const tags = getHashtagsForPlatform(
-      (normalized as any).urlCategory ?? "social_post",
-      platform,
-      maxHashtags,
-      artist || undefined,
-    );
-
-    const tplFn = TEMPLATES[platform] ?? TEMPLATES.instagram;
-    let payload = tplFn(platformHook, platformBody, platformCta, artist, tags);
-    if (rules) payload = enforceTextLength(payload, rules.text);
-    const enriched = rules
-      ? enrichTextAssetMetadata(payload, platform, rules, {
-          platformRules: rules.text,
-          hook: platformHook,
-          body: platformBody,
-          cta: platformCta,
-        })
-      : {};
-    return {
-      id: randomUUID(),
-      modality: "text" as OutputModality,
-      payload,
-      platform,
-      slotId: slot.id,
-      purpose: slot.purpose ?? "Post copy",
-      metadata: { ...enriched, source: "local" },
-    };
-  });
-}
-
 const textWorker = {
   async run(
     step: TaskStep,
@@ -2705,47 +2607,30 @@ const textWorker = {
 
       if (successful.length > 0) return successful;
 
-      // All per-slot MaxCore calls failed — fall back to local template builder.
+      // All per-slot MaxCore calls failed — fail explicitly (MaxCore-only
+      // contract): never substitute locally-templated text assets.
       const firstFailure = perSlotResults.find(
         (r): r is PromiseRejectedResult => r.status === "rejected",
       );
+      const reason =
+        firstFailure?.reason instanceof Error
+          ? firstFailure.reason.message
+          : String(firstFailure?.reason ?? "unknown");
       logger.warn(
-        {
-          reason:
-            firstFailure?.reason instanceof Error
-              ? firstFailure.reason.message
-              : String(firstFailure?.reason ?? "unknown"),
-        },
-        "[MultimodalGen] All /generate/content slot calls failed — falling back to buildLocalTextAssets",
+        { reason },
+        "[MultimodalGen] All /generate/content slot calls failed — failing explicitly (no local fallback)",
       );
-      const localAssets = buildLocalTextAssets(rawSlots, inputs, req);
-      if (localAssets.length > 0) return localAssets;
-
-      logger.warn(
-        "[MultimodalGen] buildLocalTextAssets also returned empty — no text assets generated",
-      );
+      if (firstFailure?.reason instanceof AIUnavailableError)
+        throw firstFailure.reason;
+      throw new AIUnavailableError("multimodal text generation");
     } catch (err) {
+      if (err instanceof AIUnavailableError) throw err;
       logger.warn(
         { err },
         `[MultimodalGen] /generate/content text worker error: ${err instanceof Error ? err.message : String(err)}`,
       );
-      // Attempt local fallback even on unexpected errors
-      try {
-        const localAssets = buildLocalTextAssets(rawSlots, inputs, req);
-        if (localAssets.length > 0) {
-          logger.info(
-            "[MultimodalGen] Recovered via local text fallback after exception",
-          );
-          return localAssets;
-        }
-      } catch (fallbackErr) {
-        logger.warn(
-          { err: fallbackErr },
-          `[MultimodalGen] Local text fallback also failed: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`,
-        );
-      }
+      throw new AIUnavailableError("multimodal text generation");
     }
-    return [];
   },
 };
 
@@ -3318,7 +3203,7 @@ export async function handleGeneration(
   // doesn't abort the entire pipeline — the client handles empty assets
   // by showing appropriate fallback UI (e?.g. ServerVideoGenerator).
   if (independentSteps?.length > 0) {
-    await Promise?.allSettled(
+    const settled = await Promise?.allSettled(
       independentSteps?.map(async (step) => {
         const worker = workers[step?.worker];
         if (!worker) {
@@ -3333,6 +3218,7 @@ export async function handleGeneration(
             `[MultimodalGen] Step ${step?.id} (${step?.worker}) → ${assets?.length} asset(s) [parallel]`,
           );
         } catch (err) {
+          if (err instanceof AIUnavailableError) throw err;
           logger.warn(
             { err },
             `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets: ${err instanceof Error ? err?.message : String(err)}`,
@@ -3341,6 +3227,13 @@ export async function handleGeneration(
         }
       }),
     );
+    // MaxCore-only contract: an AIUnavailableError thrown inside a settled
+    // promise must propagate, not be silently discarded.
+    const aiFailure = settled.find(
+      (r): r is PromiseRejectedResult =>
+        r.status === "rejected" && r.reason instanceof AIUnavailableError,
+    );
+    if (aiFailure) throw aiFailure.reason;
   }
 
   // Run dependent steps serially, each resolving its upstream outputs
@@ -3364,6 +3257,7 @@ export async function handleGeneration(
         `[MultimodalGen] Step ${step?.id} (${step?.worker}) → ${assets?.length} asset(s) [sequential]`,
       );
     } catch (err) {
+      if (err instanceof AIUnavailableError) throw err;
       logger.warn(
         { err },
         `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets: ${err instanceof Error ? err?.message : String(err)}`,

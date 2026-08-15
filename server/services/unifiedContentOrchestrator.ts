@@ -23,6 +23,7 @@
  */
 
 import { logger } from "../logger.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 
 import { PLATFORM_SPECS, assembleCaption, getVisualSpec, enforceHashtagLimit, type SupportedPlatform, type ContentSlot } from "./contentPipeline/platformFormatters.js";
@@ -266,132 +267,6 @@ function normalizeInput(input: UnifiedContentInput): {
 
 // ─── Platform Bundle Builder ──────────────────────────────────────────────────
 
-// ─── Generator fallbacks (used when a generator rejects unexpectedly) ─────────
-
-function hooksFallback(ctx: GeneratorContext): HookSet {
-  return {
-    primary: `${ctx.artistName} just changed the game 🎵`,
-    alternates: [
-      `The ${ctx.genre} sound you've been waiting for`,
-      `${ctx.mood} energy × ${ctx.artistName} = this`,
-    ],
-    questionHook: `Ever wonder what real ${ctx?.genre} feels like?`,
-    statementHook: `${ctx?.artistName} is ${ctx?.mood} and unapologetic.`,
-    cliffhangerHook: `This song almost wasn't released...`,
-  };
-}
-
-function captionsFallback(ctx: GeneratorContext): CaptionSet {
-  return {
-    short: `${ctx.artistName} 🔥 ${ctx.mood} ${ctx.genre} — out now.`,
-    medium: `${ctx.artistName} is bringing the ${ctx.mood} energy to ${ctx.genre}. New music is here. 🎵`,
-    long: `${ctx.artistName} has been working on something special. The ${ctx.mood} atmosphere, the ${ctx.genre} DNA — this is the sound you needed. Stream now.`,
-    platform: ctx.platform,
-  };
-}
-
-function adCopyFallback(ctx: GeneratorContext): AdCopySet {
-  return {
-    headline: `Stream ${ctx.artistName} Now`,
-    subheadline: `${ctx.mood} ${ctx.genre} that hits different`,
-    body: `New music from ${ctx.artistName}. Available everywhere.`,
-    cta: "Stream Now",
-    variants: [
-      {
-        headline: `${ctx.artistName} — New Release`,
-        body: `The sound you didn't know you needed.`,
-        cta: "Listen Free",
-      },
-      {
-        headline: `Feel Something Real`,
-        body: `${ctx?.artistName} brings the ${ctx?.mood} ${ctx?.genre} heat.`,
-        cta: "Play Now",
-      },
-    ],
-  };
-}
-
-function videoScriptFallback(ctx: GeneratorContext): VideoScript {
-  return {
-    hook: `${ctx?.artistName} drops the ${ctx?.mood} ${ctx?.genre} anthem you needed.`,
-    body: [
-      `Show the creative process`,
-      `Highlight the emotion`,
-      `Connect with the audience`,
-    ],
-    cta: `Follow ${ctx?.artistName} now.`,
-    durationHint: "30s",
-    bRoll: [
-      `Close-up of artist`,
-      `Wide performance shot`,
-      `Studio session`,
-      `Fan reactions`,
-    ],
-    musicNote: `Match ${ctx?.mood} atmosphere — ${ctx?.genre} tempo`,
-    overlayTexts: [
-      ctx?.artistName,
-      ctx?.trackTitle ?? "New Drop",
-      "Stream Now 🎵",
-    ],
-  };
-}
-
-function visualPromptFallback(ctx: GeneratorContext): VisualPrompt {
-  const palette = ctx?.colorPalette.join(", ");
-  return {
-    imagePrompt: `A ${ctx?.mood} ${ctx?.genre} music promotional image for ${ctx?.artistName}. Color palette: ${palette}. Cinematic quality.`,
-    thumbnailPrompt: `YouTube/social thumbnail for ${ctx?.artistName}. Bold typography, ${ctx?.mood} color scheme (${palette}).`,
-    colorDirections: `Primary: ${ctx?.colorPalette[0] ?? "#1a1a2e"} | Accent: ${ctx?.colorPalette[2] ?? "#e94560"} | Background: ${ctx?.colorPalette[1] ?? "#16213e"}`,
-    typographyNote: `Bold, modern sans-serif. Artist name: 48pt+. Track title: 36pt.`,
-    moodBoard: [
-      `${ctx?.mood} lighting`,
-      `${ctx?.genre} aesthetic`,
-      `Authentic, not over-produced`,
-      `Color story: ${palette}`,
-    ],
-  };
-}
-
-function storySequenceFallback(ctx: GeneratorContext): StorySequence {
-  return {
-    frames: [
-      {
-        frameNumber: 1,
-        durationSeconds: 5,
-        text: `👀 You need to hear this`,
-        visualNote: `Hook frame`,
-      },
-      {
-        frameNumber: 2,
-        durationSeconds: 7,
-        text: `${ctx?.artistName} — ${ctx?.trackTitle ?? "New Music"}`,
-        visualNote: `Artist photo`,
-      },
-      {
-        frameNumber: 3,
-        durationSeconds: 5,
-        text: `${ctx?.mood} ${ctx?.genre} energy 🎵`,
-        visualNote: `Lyric overlay`,
-      },
-      {
-        frameNumber: 4,
-        durationSeconds: 8,
-        text: `What do you feel when you listen?`,
-        visualNote: `Poll frame`,
-        pollQuestion: `Does this song hit? 🔥 vs 💯`,
-      },
-      {
-        frameNumber: 5,
-        durationSeconds: 5,
-        text: `Stream now — link in bio 🎶`,
-        visualNote: `CTA frame`,
-        stickerSuggestion: "link sticker",
-      },
-    ],
-    totalDurationSeconds: 30,
-  };
-}
-
 /**
  * Unwrap a PromiseSettledResult. If the promise was rejected, logs a warning
  * and returns the provided fallback value instead. This keeps `buildPlatformBundle`
@@ -409,6 +284,29 @@ function unwrapSettled<T>(
     (result as PromiseRejectedResult).reason,
   );
   return fallback;
+}
+
+/**
+ * Unwrap a PromiseSettledResult for a GENERATION result. Per the MaxCore-only
+ * fail-explicit contract, generated content (hooks, captions, ad copy, video
+ * scripts, visual prompts, story sequences) must never be substituted with
+ * local templates — a rejected generator makes the whole bundle fail with an
+ * explicit AIUnavailableError (503). Metadata (hashtags) may still use
+ * unwrapSettled with a fallback.
+ */
+function unwrapGenerated<T>(
+  result: PromiseSettledResult<T>,
+  name: string,
+  platform: SupportedPlatform,
+): T {
+  if (result?.status === "fulfilled") return result?.value;
+  logger.warn(
+    `[UCO] ${name} rejected for ${platform} — failing explicitly (MaxCore-only):`,
+    (result as PromiseRejectedResult).reason,
+  );
+  const reason = (result as PromiseRejectedResult).reason;
+  if (reason instanceof AIUnavailableError) throw reason;
+  throw new AIUnavailableError(`${name} (${platform})`);
 }
 
 async function buildPlatformBundle(
@@ -437,18 +335,8 @@ async function buildPlatformBundle(
     generateStorySequence(ctx),
   ]);
 
-  const hooks = unwrapSettled(
-    hooksResult,
-    "generateHooks",
-    platform,
-    hooksFallback(ctx),
-  );
-  const captions = unwrapSettled(
-    captionsResult,
-    "generateCaptions",
-    platform,
-    captionsFallback(ctx),
-  );
+  const hooks = unwrapGenerated(hooksResult, "generateHooks", platform);
+  const captions = unwrapGenerated(captionsResult, "generateCaptions", platform);
   const hashtags = unwrapSettled(hashtagsResult, "generateHashtags", platform, {
     niche: [],
     broad: [],
@@ -456,29 +344,21 @@ async function buildPlatformBundle(
     branded: [`#${ctx?.artistName.replace(/\s+/g, "")}`],
     combined: [`#${ctx?.artistName.replace(/\s+/g, "")}`, "#newmusic", "#music"],
   });
-  const adCopy = unwrapSettled(
-    adCopyResult,
-    "generateAdCopy",
-    platform,
-    adCopyFallback(ctx),
-  );
-  const videoScript = unwrapSettled(
+  const adCopy = unwrapGenerated(adCopyResult, "generateAdCopy", platform);
+  const videoScript = unwrapGenerated(
     videoScriptResult,
     "generateVideoScript",
     platform,
-    videoScriptFallback(ctx),
   );
-  const visualPrompt = unwrapSettled(
+  const visualPrompt = unwrapGenerated(
     visualPromptResult,
     "generateVisualPrompt",
     platform,
-    visualPromptFallback(ctx),
   );
-  const storySequence = unwrapSettled(
+  const storySequence = unwrapGenerated(
     storySequenceResult,
     "generateStorySequence",
     platform,
-    storySequenceFallback(ctx),
   );
 
   const spec = PLATFORM_SPECS[platform];
@@ -588,6 +468,23 @@ class UnifiedContentOrchestrator {
         return null;
       })
       .filter((b): b is PlatformContentBundle => b !== null);
+
+    // MaxCore-only contract: an AI-unavailable failure must surface, not be
+    // silently dropped into a partial success.
+    if (platformBundles.length === 0 && bundleResults.length > 0) {
+      const firstReason = (
+        bundleResults.find(
+          (r): r is PromiseRejectedResult => r.status === "rejected",
+        )
+      )?.reason;
+      if (firstReason instanceof AIUnavailableError) throw firstReason;
+      throw new AIUnavailableError("platform content bundles");
+    }
+    const aiFailure = bundleResults.find(
+      (r): r is PromiseRejectedResult =>
+        r.status === "rejected" && r.reason instanceof AIUnavailableError,
+    );
+    if (aiFailure) throw aiFailure.reason;
 
     // ── Step 4: Collect all slot combinations for scheduling ───────────────
     logger.info(`[UCO:${runId}] Step 4: Building schedule manifest`);
