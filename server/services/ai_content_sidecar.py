@@ -1,6 +1,6 @@
 """
 Max Booster AI Content Sidecar — port 9878 (PYTHON_AI_PORT)
-============================================================
+------------------------------------------------------------
 Thin MaxCore proxy that fulfils every endpoint consumed by
 server/services/pythonAIService.ts.  Uses only Python stdlib
 so zero pip installs are required.
@@ -8,14 +8,20 @@ so zero pip installs are required.
 Architecture (direct-call path — bypasses Express CSRF):
   pythonAIService.ts  →  THIS SIDECAR (port 9878, 127.0.0.1 only)
                                 ↓
-                          MaxCore  (AI_SERVER_URL)
+                          MaxCore  (local loopback / MAXCORE_URL)
 
 The sidecar also remains reachable via the Express proxy for any
 browser-side callers that go through /api/ai-service/* (BOOSTERSTATE_SECRET
 auth layer in internalProxy.ts).  The loopback-only bind ensures external
 callers cannot reach this service directly.
+
+MaxCore-only, fail-explicit: MaxCore is the ONLY content source. When it is
+unreachable or returns nothing usable, endpoints answer 503 — the sidecar
+never substitutes locally-templated content.
 """
 
+import hashlib
+import hmac as _hmac
 import json
 import logging
 import os
@@ -30,8 +36,43 @@ from urllib.parse import urlparse
 
 HOST   = '127.0.0.1'
 PORT   = int(os.environ.get('PYTHON_AI_PORT', 9878))
-MC_URL = (os.environ.get('AI_SERVER_URL') or '').rstrip('/')
-MC_KEY = os.environ.get('AI_SERVER_KEY', '')
+
+
+def _resolve_maxcore_url() -> str:
+    """Mirror server/config/index.ts + maxcoreConnector.getMaxcoreOrigin().
+
+    - Local mode (default, MAXCORE_LOCAL != "0"): the supervised MaxCore child
+      on loopback — never the public app URL, so requests can't bounce off
+      Express CSRF/Origin validation.
+    - Remote mode: MAXCORE_URL / AI_SERVER_URL, normalized to the root origin.
+      Deployments have historically set the URL with a trailing "/api"; strip
+      it so `f"{MC_URL}/api{path}"` never produces a doubled "/api/api/..."
+      path (which the main app rejects with 403).
+    """
+    if os.environ.get('MAXCORE_LOCAL', '1') != '0':
+        port = os.environ.get('MAXCORE_LOCAL_PORT') or '8090'
+        return f'http://127.0.0.1:{port}'
+    raw = (os.environ.get('MAXCORE_URL') or os.environ.get('AI_SERVER_URL') or '').rstrip('/')
+    if raw.endswith('/api'):
+        raw = raw[:-len('/api')]
+    return raw
+
+
+def _resolve_maxcore_key() -> str:
+    """Mirror config.maxcoreGenerationKey: explicit key, else the deterministic
+    loopback key derived from SESSION_SECRET in local mode."""
+    explicit = os.environ.get('AI_SERVER_KEY') or os.environ.get('MAXCORE_ADMIN_KEY')
+    if explicit:
+        return explicit
+    secret = os.environ.get('SESSION_SECRET', '')
+    if os.environ.get('MAXCORE_LOCAL', '1') != '0' and secret:
+        digest = _hmac.new(secret.encode(), b'maxcore-gen', hashlib.sha256).hexdigest()
+        return 'mclocal-' + digest[:40]
+    return ''
+
+
+MC_URL = _resolve_maxcore_url()
+MC_KEY = _resolve_maxcore_key()
 # Keep TIMEOUT comfortably below pythonAIService.ts's 30 s client timeout so
 # the sidecar always finishes (and can write the response) before the caller
 # gives up and closes the connection.
@@ -55,10 +96,11 @@ def _mc_post(path: str, body: dict):
     req     = URLRequest(
         url,
         data    = payload,
+        # Bearer ONLY — MaxCore validates X-API-Key/X-Admin-Key schemes first
+        # and 401s the whole request if either is present (see replit.md).
         headers = {
             'Content-Type':  'application/json',
             'Authorization': f'Bearer {MC_KEY}',
-            'X-API-Key':     MC_KEY,
         },
         method = 'POST',
     )
@@ -77,7 +119,6 @@ def _mc_get(path: str):
         f'{MC_URL}/api{path}',
         headers = {
             'Authorization': f'Bearer {MC_KEY}',
-            'X-API-Key':     MC_KEY,
         },
         method = 'GET',
     )
@@ -109,6 +150,15 @@ def _hashtags_for(platform: str, genre: str) -> list:
         if tag not in base:
             base.insert(0, tag)
     return base[:8]
+
+
+class MaxCoreUnavailable(Exception):
+    """MaxCore returned no usable content.
+
+    Per the MaxCore-only fail-explicit contract, the sidecar must NEVER
+    substitute locally-templated content — callers must see an explicit
+    503 so unavailability is always visible.
+    """
 
 
 def _parse_content(raw: str, platform: str, topic: str, genre: str) -> dict:
@@ -155,13 +205,35 @@ def _parse_content(raw: str, platform: str, topic: str, genre: str) -> dict:
                 caption=caption, hashtags=hashtags)
 
 
-class MaxCoreUnavailable(Exception):
-    """MaxCore returned no usable content.
+def _extract_fields(result, platform: str, topic: str, genre: str,
+                    context: str = 'content generation') -> dict:
+    """Build hook/body/cta/hashtags/caption from a MaxCore reply.
 
-    Per the MaxCore-only fail-explicit contract, the sidecar must NEVER
-    substitute locally-templated content — callers must see an explicit
-    503 so unavailability is always visible.
+    MaxCore's /api/generate/content returns structured fields directly
+    (caption, hook, body, cta, hashtags, ...). Older/other endpoints return a
+    raw text blob under result/content/text/output. Prefer structured fields,
+    then parse raw text. Fail-explicit: no usable MaxCore content raises
+    MaxCoreUnavailable — never substitute locally-templated copy.
     """
+    if isinstance(result, dict):
+        if result.get('caption') or result.get('hook'):
+            raw_tags = result.get('hashtags', [])
+            hashtags = ([str(t) for t in raw_tags] if isinstance(raw_tags, list)
+                        else []) or _hashtags_for(platform, genre)
+            hook      = str(result.get('hook', ''))
+            body_text = str(result.get('body', result.get('body_text', '')))
+            cta       = str(result.get('cta', ''))
+            caption   = str(result.get('caption', '')) or '\n\n'.join(
+                filter(None, [hook, body_text, cta, ' '.join(hashtags)]))
+            return dict(hook=hook, body=body_text, cta=cta,
+                        caption=caption, hashtags=hashtags)
+        raw = (result.get('result') or result.get('content') or
+               result.get('text')   or result.get('output') or '')
+        if not raw and isinstance(result.get('data'), str):
+            raw = result['data']
+        if raw:
+            return _parse_content(raw, platform, topic, genre)
+    raise MaxCoreUnavailable(context)
 
 
 # ── Endpoint handlers ─────────────────────────────────────────────────────────
@@ -199,17 +271,7 @@ def _handle_generate_content(body: dict) -> dict:
 
     result = _mc_post('/generate/content', mc_body)
     ms     = round((time.time() - t0) * 1000)
-
-    raw = ''
-    if result:
-        raw = (result.get('result') or result.get('content') or
-               result.get('text')   or result.get('output') or '')
-        if not raw and isinstance(result.get('data'), str):
-            raw = result['data']
-
-    if not raw:
-        raise MaxCoreUnavailable('content generation')
-    fields = _parse_content(raw, platform, topic, genre)
+    fields = _extract_fields(result, platform, topic, genre, 'content generation')
 
     return {
         'success':            True,
@@ -238,11 +300,8 @@ def _handle_generate_script(body: dict) -> dict:
             f'Goal: {goal}. Respond with JSON: hook (string), body (string), cta (string).'
         ),
     })
-    ms  = round((time.time() - t0) * 1000)
-    raw = (result or {}).get('result') or (result or {}).get('content') or ''
-    if not raw:
-        raise MaxCoreUnavailable('script generation')
-    f = _parse_content(raw, platform, idea, '')
+    ms = round((time.time() - t0) * 1000)
+    f  = _extract_fields(result, platform, idea, '', 'script generation')
     if not (f.get('hook') or f.get('body')):
         raise MaxCoreUnavailable('script generation (empty response)')
 
@@ -263,8 +322,6 @@ def _handle_generate_multi_platform(body: dict) -> dict:
     tone      = body.get('tone', 'energetic')
     goal      = body.get('goal', 'growth')
     genre     = body.get('genre', '')
-    artist    = body.get('artist', '')
-    track     = body.get('track', '')
     fmt       = body.get('format', 'text')
 
     generated = []
@@ -276,10 +333,8 @@ def _handle_generate_multi_platform(body: dict) -> dict:
                 f'Respond with JSON: hook, body, cta, hashtags, caption.'
             ),
         })
-        raw = (result or {}).get('result') or (result or {}).get('content') or ''
-        if not raw:
-            raise MaxCoreUnavailable(f'multi-platform generation ({platform})')
-        fields = _parse_content(raw, platform, topic, genre)
+        fields = _extract_fields(result, platform, topic, genre,
+                                 f'multi-platform generation ({platform})')
 
         generated.append({
             'platform':       platform,
@@ -414,10 +469,8 @@ class SidecarHandler(BaseHTTPRequestHandler):
                         f'Respond with JSON: hook, body, cta, hashtags, caption.'
                     ),
                 })
-                raw = (result or {}).get('result') or (result or {}).get('content') or ''
-                if not raw:
-                    raise MaxCoreUnavailable('distribution caption generation')
-                fields = _parse_content(raw, platform, script, '')
+                fields = _extract_fields(result, platform, script, '',
+                                         'distribution caption generation')
                 self._send({
                     'success':      True,
                     'caption':      fields['caption'],
@@ -501,7 +554,7 @@ class SidecarHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     if not MC_URL:
-        log.warning('AI_SERVER_URL not set — all generation endpoints will return 503 (MaxCore-only, fail-explicit)')
+        log.warning('MaxCore URL not resolved — all generation endpoints will return 503 (MaxCore-only, fail-explicit)')
     else:
         log.info('MaxCore endpoint: %s', MC_URL)
 
