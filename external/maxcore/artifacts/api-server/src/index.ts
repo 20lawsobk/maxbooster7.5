@@ -54,8 +54,12 @@ if (cluster.isPrimary) {
     console.error("[Python] Failed to start AI server:", err);
   });
 
-  // Keepalive: warm all endpoints on a 20s cycle so the AI server never idles
-  startKeepalive();
+  // MaxCore runs as a local in-process subsystem — it cannot "idle out" like a
+  // remote Repl, so the perpetual warm-sweep loop is opt-in only (it adds
+  // constant load on the Python event loop for no benefit locally).
+  if (process.env.MAXCORE_KEEPALIVE === "1") {
+    startKeepalive();
+  }
 
   // Warm-status observer: polls /api/warm/status until the deep-warm pass
   // (fired by python-server.ts) reaches a terminal state; exposes the result

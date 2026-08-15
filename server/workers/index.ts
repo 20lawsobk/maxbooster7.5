@@ -268,22 +268,17 @@ process.on("unhandledRejection", (reason: Record<string, unknown>) => {
 /**
  * Poll PDIM with a lightweight PING until it returns 200 or the deadline passes.
  *
- * Why: PDIM (pocketdimensionstorage.replit.app) may be in a sleeping/cold-start
- * state when Max Booster restarts.  The first few hundred requests during its
- * ~45-second wake-up window return HTTP 500/502.  BullMQ's initial
- * moveStalledJobsToWait Lua scripts each make ~35 sequential redis?.call()s,
- * so even 4 workers × 2 concurrency = 8 initial scripts × 35 calls = 280 PDIM
- * requests fire in the first 5 s, completely overwhelming PDIM before it is
- * ready.  Waiting here costs ~45 s of startup delay in exchange for eliminating
- * the 45-s flood of 500s, the circuit-breaker open cycle, and the PDIM chain
- * stall (up to 90 callers queued) that previously degraded the app for 2-3 min.
+ * Why: PDIM is a LOCAL in-process server (:5556) that binds shortly after boot.
+ * This is only a startup-ordering gate — BullMQ's initial Lua scripts fire ~280
+ * requests in the first 5 s, so we hold workers until the local server has
+ * answered two consecutive PINGs. No remote cold-start/wake-up window applies.
  *
  * The probe goes directly to the PDIM HTTP endpoint, bypassing the circuit
  * breaker and AIMD chain, so it does not add traffic to the chain itself.
  */
 async function waitForPdimReady(
-  maxWaitMs = 130_000,
-  retryMs = 2_000,
+  maxWaitMs = 20_000,
+  retryMs = 1_000,
 ): Promise<void> {
   // When BullMQ is backed by native Redis there is no PDIM HTTP queue to wait
   // for — skip immediately so workers start without the 130s ceiling.

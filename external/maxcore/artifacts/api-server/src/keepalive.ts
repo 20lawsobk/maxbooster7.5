@@ -419,6 +419,11 @@ export function getKeepaliveStatus(): Record<string, unknown> {
   } catch {
     return {
       running: _running,
+      enabled: process.env.MAXCORE_KEEPALIVE === "1",
+      disabledReason:
+        process.env.MAXCORE_KEEPALIVE === "1"
+          ? null
+          : "keepalive is opt-in (set MAXCORE_KEEPALIVE=1) — MaxCore runs as a local in-process subsystem and cannot idle out",
       cycleCount: _cycleCount,
       heartbeatCount: _heartbeatCount,
       heartbeatOk: _heartbeatOk,
