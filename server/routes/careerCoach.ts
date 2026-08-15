@@ -582,6 +582,12 @@ const chatSchema = z.object({
   message: z.string().min(1).max(2000),
 });
 
+// NOTE: /chat intentionally does NOT call MaxCore's /api/generate/content —
+// that endpoint is a social-caption composer (always returns a hook/body/cta
+// "just dropped X" structure) and cannot answer a free-form question; passing
+// a question through it produces nonsense, not a canned-vs-AI tradeoff. This
+// route was reverted to the local knowledge-base answers pending a MaxCore
+// endpoint actually built for Q&A. See task queue for the follow-up.
 const CAREER_KNOWLEDGE: Record<
   string,
   { keywords: string[]; response: string }

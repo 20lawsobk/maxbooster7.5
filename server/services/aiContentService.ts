@@ -1217,30 +1217,23 @@ export class AIContentService {
     tone?: string,
   ): Promise<GeneratedContent> {
     // Step 1 — Generate script (hook/body/cta) via full AI pipeline
-    let hook = "";
-    let body = "";
-    let cta = "";
-    try {
-      const scriptResult = await unifiedAIController?.generateContent({
-        platform: platform as Platform,
-        tone: (tone || "energetic") as ContentTone,
-        topic: prompt || "new music",
-        contentType: "engagement",
-        includeHashtags: false,
-        includeEmojis: false,
-      });
-      if (scriptResult?.success && scriptResult?.data) {
-        const d = scriptResult?.data as unknown as Record<string, unknown>;
-        hook = ((d?.hook || d?.caption || "") as any).slice(0, 80);
-        body = ((d?.body || d?.caption || "") as any).split("\n")[0].slice(0, 120);
-        cta = ((d?.cta || "") as any).slice(0, 60);
-      }
-    } catch (scriptErr) {
-      logger.warn(
-        { err: scriptErr },
-        "[ContentService] Video script generation failed, renderer will use topic as script",
-      );
+    // MaxCore is the sole source for the video script — no silent fallback
+    // to using the raw topic as the script.
+    const scriptResult = await unifiedAIController?.generateContent({
+      platform: platform as Platform,
+      tone: (tone || "energetic") as ContentTone,
+      topic: prompt || "new music",
+      contentType: "engagement",
+      includeHashtags: false,
+      includeEmojis: false,
+    });
+    if (!(scriptResult?.success && scriptResult?.data)) {
+      throw new AIUnavailableError("video script generation");
     }
+    const d = scriptResult?.data as unknown as Record<string, unknown>;
+    const hook = ((d?.hook || d?.caption || "") as any).slice(0, 80);
+    const body = ((d?.body || d?.caption || "") as any).split("\n")[0].slice(0, 120);
+    const cta = ((d?.cta || "") as any).slice(0, 60);
 
     // Step 2 — Render through MaxCore (the only renderer)
     const result = await renderAdvancedVideo({
