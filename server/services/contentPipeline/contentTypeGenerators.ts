@@ -201,18 +201,6 @@ export async function generateHashtags(
 ): Promise<HashtagSet> {
   const branded = [`#${ctx?.artistName.replace(/\s+/g, "")}`, `#MaxBooster`];
 
-  // Platform-specific trending anchors (always included as a floor)
-  const trendingAnchor: Record<SupportedPlatform, string[]> = {
-    tiktok: ["#FYP", "#MusicTikTok", "#NewMusicFriday", "#ViralSounds"],
-    instagram: ["#Reels", "#MusicReels", "#ReelItFeelIt", "#InstaMusic"],
-    youtube: ["#YouTubeMusic", "#NewRelease", "#MusicVideo"],
-    twitter: ["#NowPlaying", "#MusicTwitter"],
-    facebook: ["#Music", "#NewRelease"],
-    threads: ["#MusicThreads", "#NewMusic"],
-    linkedin: ["#MusicIndustry", "#IndieArtist", "#CreativeEconomy"],
-    google_business: [],
-  };
-
   // Ask MaxCore for AI-powered hashtag intelligence
   const prompt = `Generate 20 high-performing hashtags for a ${ctx?.genre} artist named ${ctx?.artistName} 
 on ${ctx?.platform}. Mood: ${ctx?.mood}. Goal: ${ctx?.campaignGoal}. 
@@ -230,29 +218,20 @@ Mix: 5 niche/genre-specific, 5 broad/discovery, 5 trending/platform-native, 5 em
     .filter((l) => l?.startsWith("#") && l?.length > 1)
     .slice(0, 20);
 
-  const nicheStatic = [
-    `#${ctx?.genre.replace(/\s+/g, "")}Music`,
-    `#${ctx?.genre.replace(/\s+/g, "")}Artist`,
-    `#IndependentArtist`,
-    `#NewMusic`,
-    `#UnsignedArtist`,
-  ];
-
-  const broadStatic = [
-    "#Music",
-    "#MusicProducer",
-    "#Artist",
-    "#MusicLife",
-    "#StreamingNow",
-    "#MusicMarketing",
-  ];
-
-  const niche = aiTags?.length >= 5 ? aiTags?.slice(0, 5) : nicheStatic;
-  const broad = aiTags?.length >= 10 ? aiTags?.slice(5, 10) : broadStatic;
-  const trending =
-    aiTags?.length >= 15
-      ? aiTags?.slice(10, 15)
-      : (trendingAnchor[ctx?.platform] ?? []);
+  // MaxCore is the sole hashtag source — no static niche/broad/trending
+  // fallback lists. Fail explicit if MaxCore returns too few usable tags.
+  const niche = requireMaxCore(
+    aiTags?.length >= 5 ? aiTags?.slice(0, 5) : null,
+    "hashtag generation (niche)",
+  );
+  const broad = requireMaxCore(
+    aiTags?.length >= 10 ? aiTags?.slice(5, 10) : null,
+    "hashtag generation (broad)",
+  );
+  const trending = requireMaxCore(
+    aiTags?.length >= 15 ? aiTags?.slice(10, 15) : null,
+    "hashtag generation (trending)",
+  );
 
   const combined = [
     ...branded,
@@ -316,22 +295,47 @@ OVERLAY TEXTS (3 short text overlays for the video):`;
 
   const raw = await callMaxCore(prompt, ctx);
 
-  const defaultBRoll = [
-    `Close-up of artist in moody lighting`,
-    `Wide shot: artist performing in ${ctx?.mood} atmosphere`,
-    `B-roll of studio session — raw and authentic`,
-    `Fans reacting to music`,
-  ];
+  // Parse MaxCore's labeled sections instead of assuming a fixed line
+  // structure — every field must come from MaxCore, no hardcoded defaults.
+  const sectionOrder = ["HOOK", "BODY", "CTA", "B-ROLL", "MUSIC NOTE", "OVERLAY TEXTS"];
+  const sections: Record<string, string[]> = {};
+  let current: string | null = null;
+  for (const rawLine of raw?.split("\n") ?? []) {
+    const line = rawLine?.trim();
+    if (!line) continue;
+    const headerMatch = sectionOrder.find((h) =>
+      line.toUpperCase().startsWith(h),
+    );
+    if (headerMatch) {
+      current = headerMatch;
+      sections[current] = [];
+      const rest = line.slice(line.indexOf(":") + 1).trim();
+      if (rest) sections[current].push(rest);
+      continue;
+    }
+    if (current) {
+      sections[current].push(line.replace(/^[-•\d.]+\s*/, ""));
+    }
+  }
 
-  const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
+  const hook = sections["HOOK"]?.[0];
+  const body = sections["BODY"];
+  const cta = sections["CTA"]?.[0];
+  const bRoll = sections["B-ROLL"];
+  const musicNote = sections["MUSIC NOTE"]?.[0];
+  const overlayTexts = sections["OVERLAY TEXTS"];
+
   return {
-    hook: lines[0] ?? "",
-    body: lines.slice(1, 4),
-    cta: lines[4] ?? "",
+    hook: requireMaxCore(hook, "video script (hook)"),
+    body: requireMaxCore(body?.length ? body : null, "video script (body)"),
+    cta: requireMaxCore(cta, "video script (cta)"),
     durationHint: `${durationSeconds}s`,
-    bRoll: defaultBRoll,
-    musicNote: "",
-    overlayTexts: [lines[5] ?? "", lines[6] ?? "", lines[7] ?? ""],
+    bRoll: requireMaxCore(bRoll?.length ? bRoll : null, "video script (b-roll)"),
+    musicNote: musicNote ?? "",
+    overlayTexts: requireMaxCore(
+      overlayTexts?.length ? overlayTexts : null,
+      "video script (overlay texts)",
+    ),
   };
 }
 

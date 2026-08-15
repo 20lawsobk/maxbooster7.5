@@ -16,7 +16,7 @@ import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
 import { syncPlatformData } from "../services/socialSyncService";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
-import { AIUnavailableError } from "../lib/aiSource.js";
+import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import { notificationService } from "../services/notificationService.js";
 import {
@@ -1084,12 +1084,7 @@ router.get(
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
 
-      const FALLBACK_HASHTAGS = [
-        "#NewMusic", "#MusicProduction", "#HipHop", "#RnB", "#IndieArtist",
-        "#BeatMaker", "#SpotifyArtist", "#NewRelease", "#MusicVideo",
-        "#StudioLife", "#UrbanMusic", "#MusicMarketing",
-      ];
-
+      // MaxCore is the sole hashtag source — no local fallback list.
       const ai = await getUnifiedAI();
       const mcResult = await Promise.race([
         ai?.generateContent({
@@ -1103,10 +1098,16 @@ router.get(
           extraContext:
             "Return a diverse list of trending music hashtags across categories: general music, production, hip-hop, R&B, promotion, indie. Include high-reach and niche tags.",
         }),
-        new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000)),
-      ]).catch(() => null);
+        new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error("MaxCore hashtag request timed out")), 10_000),
+        ),
+      ]);
 
-      const rawTags: string[] = (mcResult as any)?.hashtags?.length ? (mcResult as any).hashtags : FALLBACK_HASHTAGS;
+      const mcHashtags = (mcResult as any)?.data?.hashtags;
+      const rawTags: string[] = requireMaxCore(
+        Array.isArray(mcHashtags) && mcHashtags.length ? mcHashtags : null,
+        "trending hashtags",
+      );
 
       function hashVolume(tag: string, base: number): number {
         let h = 2166136261;
