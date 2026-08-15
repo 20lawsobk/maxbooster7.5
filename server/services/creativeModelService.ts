@@ -16,7 +16,7 @@
  *     from musical features even when MaxCore is available (always runs).
  *
  *   Stage 3 — Script Generation
- *     MaxCore AI /api/generate/text → fallback: template script
+ *     MaxCore AI /api/generate/text → fail-explicit (AIUnavailableError, no template fallback)
  *
  *   Stage 4 — Keyframe Style Selection
  *     KeyframeStyleSelector (in-house TF?.js, always runs) selects optimal

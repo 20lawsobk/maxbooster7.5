@@ -1016,8 +1016,8 @@ export default function SocialMedia() {
   const uploadMediaMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append("media", file);
-      return uploadWithProgress("/api/social/upload-media", formData, {
+      formData.append("file", file);
+      return uploadWithProgress("/api/storage/upload", formData, {
         timeout: 300000, // 5 minutes
       });
     },

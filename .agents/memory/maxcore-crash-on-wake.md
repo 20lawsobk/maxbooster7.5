@@ -7,3 +7,6 @@ description: MaxCore wakes briefly then hard-crashes ~25-30s later under audio r
 **Why:** jobs lost this way: e3ed0828, 0f33f624, 7b2df484, de5d5103, c0d15741 — five consecutive losses across multiple sessions/wake windows.
 
 **How to apply:** chasing wake windows with resubmission (scripts/poll_chart_topper.py) is not sufficient; the fix is on the MaxCore deployment itself (crash under render load). Don't burn hours re-polling — after 2 lost jobs in one session, report blocked and ask the user to fix/restart the MaxCore Repl. Possible mitigation to try once: much shorter duration (10–15 s) so the render finishes inside the window.
+
+## Local-child event-loop hang variant (Aug 2026)
+Symptom: 9878 uvicorn stops accepting (curl times out) while 9879 healthz liveness still 200 and the process is alive — event loop blocked, matches bg-thread GIL stall class. 8090 proxy goes down with it. Fix: kill -9 both the `uv run` wrapper AND the python pid; supervisor respawns healthy in ~30s. Plain SIGTERM is trapped/ignored.

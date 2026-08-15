@@ -196,6 +196,28 @@ router.get(
   },
 );
 
+router.delete(
+  "/posts/:postId",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { postId } = req.params as Record<string, string>;
+      const [deleted] = await db
+        .delete(posts)
+        .where(and(eq(posts.id, postId), eq(posts.userId, userId)))
+        .returning({ id: posts.id });
+      if (!deleted) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      res.json({ success: true, id: deleted.id });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to delete social post:");
+      res.status(500).json({ error: "Failed to delete social post" });
+    }
+  },
+);
+
 const VALID_PLATFORMS = [
   "instagram",
   "twitter",

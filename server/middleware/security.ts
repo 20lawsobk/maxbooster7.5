@@ -37,7 +37,6 @@ const helmetMiddleware = helmet({
         "https://api.stripe.com",
         "https://api.labelgrid.com",
         "https://maxbooster.replit.app",
-        "https://pocketdimensionstorage.replit.app",
         "https://o4510378512613376.ingest.us.sentry.io",
         ...(isDev ? ["ws://localhost:*", "http://localhost:*"] : []),
       ],

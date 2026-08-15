@@ -25,3 +25,10 @@ Video/FFmpeg compositing and DSP metering (loudness) are processing, not AI gene
 
 ## External servers are always-on BY DESIGN
 The external **MaxCore** (AI/inference) and **PDIM** (storage) servers are designed to stay active and available at all times (owner-confirmed). This is the premise of the fail-explicit contract: a MaxCore/PDIM failure is a *real* operational signal to surface (503 / explicit error), NOT a routine condition to mask with locally-generated content. Do not add "resilience" local fallbacks on the assumption these servers go down normally — they aren't supposed to.
+
+## Enforcement extensions (Aug 2026)
+- ai_content_sidecar.py: raises MaxCoreUnavailable when MaxCore text yields no usable lines (no fabricated hook/cta); hashtags remain a metadata carve-out.
+- contentTypeGenerators: generateVisualPrompt sources both prompt lines from MaxCore (requires 2 lines or throws); generateStorySequence requires ≥5 MaxCore lines — no per-frame local fill.
+- unifiedContentOrchestrator buildPlatformBundle: any rejected bundle with AIUnavailableError rethrows (no silent partial success).
+- multimodalGenerationService step-runner: AIUnavailableError propagates from BOTH Promise.allSettled independent steps (inspect settled results — a throw inside allSettled is otherwise discarded!) and sequential dependent-step catch; routes/multimodal.ts maps it to 503.
+- Gotcha: rethrowing inside a Promise.allSettled worker does nothing — you must scan the settled results for rejected AIUnavailableError afterward.
