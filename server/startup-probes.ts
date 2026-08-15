@@ -171,7 +171,7 @@ class StartupProbeManager {
         this.status.probes.redis.status = "degraded";
         this.status.probes.redis.error = `HTTP ${res.status}`;
         logger.info(
-          `⚠️ PDIM probe degraded (HTTP ${res.status}) — operating in fallback mode`,
+          `⚠️ PDIM probe degraded (HTTP ${res.status}) — circuit breaker will absorb failures until the local server recovers`,
         );
       }
       return true;
@@ -180,9 +180,9 @@ class StartupProbeManager {
       this.status.probes.redis.lastCheck = new Date();
       this.status.probes.redis.error =
         error instanceof Error ? error?.message : String(error);
-      // Log at info not warn — cold-start probe failure is expected and self-healing
+      // Log at info not warn — local-boot probe failure is expected and self-healing
       logger.info(
-        `⚠️ PDIM probe: ${this.status.probes?.redis.error} — operating in fallback mode`,
+        `⚠️ PDIM probe: ${this.status.probes?.redis.error} — circuit breaker will absorb failures until the local server recovers`,
       );
       return true; // always non-fatal; circuit breaker handles recovery
     }

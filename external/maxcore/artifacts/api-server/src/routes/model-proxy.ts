@@ -1133,7 +1133,12 @@ router.get("/system/readiness", async (_req, res) => {
 
   const modelLoaded       = pythonHealth["model_loaded"] === true;
   const warmStartState    = (pythonHealth["warm_start"] as Record<string, unknown> | undefined)?.["state"] ?? "unknown";
-  const keepaliveOk       = (keepalive["summary"] as Record<string, number> | undefined)?.["fail"] === 0;
+  // Keepalive is opt-in (MAXCORE_KEEPALIVE=1) now that MaxCore runs as a local
+  // in-process subsystem. When disabled, readiness relies solely on Python's
+  // own health + warm state instead of keepalive sweep results.
+  const keepaliveEnabled  = process.env.MAXCORE_KEEPALIVE === "1";
+  const keepaliveOk       = !keepaliveEnabled ||
+    (keepalive["summary"] as Record<string, number> | undefined)?.["fail"] === 0;
   const kaDeepWarm        = keepalive["deepWarm"] as Record<string, unknown> | undefined;
 
   // A deep-warm counts as done if EITHER the keepalive's own POST /api/warm
@@ -1154,7 +1159,7 @@ router.get("/system/readiness", async (_req, res) => {
 
   res.status(ready ? 200 : 503).json({
     ready,
-    node: { workers: "up", keepalive_running: keepalive["running"] ?? false },
+    node: { workers: "up", keepalive_enabled: keepaliveEnabled, keepalive_running: keepalive["running"] ?? false },
     python: {
       reachable: pythonReachable,
       model_loaded: modelLoaded,

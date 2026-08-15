@@ -77,13 +77,6 @@ async function fetchMaxCore<T = any>(
     if (!r?.ok) return { ok: false, data: null, status: r.status };
     const text = await r?.text().catch(() => null);
     if (!text) return { ok: false, data: null, status: r.status };
-    // Guard against sleeping-Replit HTML pages that return HTTP 200 with HTML
-    if (text?.trimStart().startsWith("<")) {
-      logger.debug(
-        `[MaxCoreSync] ${endpoint} returned HTML — server waking up`,
-      );
-      return { ok: false, data: null, status: r.status };
-    }
     try {
       const data = JSON.parse(text) as T;
       return { ok: true, data, status: r.status };
@@ -144,7 +137,7 @@ async function probeConnectivity(): Promise<void> {
       if (res.ok) {
         logger.info("[MaxCoreSync] PDIM ✅ reachable — Redis-compatible layer active");
       } else {
-        logger.info(`[MaxCoreSync] PDIM ⚠️ cold-starting (HTTP ${res.status}) — will retry`);
+        logger.info(`[MaxCoreSync] PDIM ⚠️ local server still initialising (HTTP ${res.status}) — will retry`);
       }
     } catch (err) {
       logger.info(
@@ -226,31 +219,18 @@ async function syncWeightsFromMaxCore(): Promise<void> {
   let skipped = 0;
 
   for (const { name, endpoint } of MODEL_ENDPOINTS) {
-    // Retry up to 3 times — the MaxCore server may be sleeping (returns HTML
-    // with HTTP 200) and needs a moment to wake up between attempts.
-    let result: {
-      ok: boolean;
-      data: Record<string, unknown> | null;
-      status?: number;
-    } = { ok: false, data: null };
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      result = await fetchMaxCore<Record<string, unknown>>(endpoint, {
-        timeout: 15_000,
-      });
-      if (result?.ok && result?.data) break;
-      if (attempt < 3) {
-        logger.debug(
-          `[MaxCoreSync] ${name} attempt ${attempt} failed (status: ${result?.status ?? "no-response"}) — retrying in 15s`,
-        );
-        await new Promise((r) => setTimeout(r, 15_000));
-      }
-    }
+    // MaxCore is a local in-process subsystem — no remote wake-up retries.
+    // A single bounded attempt suffices; the next scheduled sync will pick up
+    // anything missed while the child was restarting.
+    const result = await fetchMaxCore<Record<string, unknown>>(endpoint, {
+      timeout: 15_000,
+    });
 
     const { ok, data } = result;
     if (!ok || !data) {
       skipped++;
       logger.debug(
-        `[MaxCoreSync] ${name}: no state after 3 attempts (status: ${result?.status ?? "no-response"}) — server sleeping or endpoint unavailable`,
+        `[MaxCoreSync] ${name}: no state (status: ${result?.status ?? "no-response"}) — endpoint unavailable`,
       );
       continue;
     }
@@ -405,16 +385,15 @@ export async function initMaxCoreSync(): Promise<void> {
     ),
   );
 
-  // 2. Initial weight sync after 2 minutes — the health probe above wakes up the
-  //    MaxCore server; we need to give it enough time to become ready before
-  //    syncing weights (sleeping Replit apps take 30-90s to wake up).
+  // 2. Initial weight sync after 15 s — MaxCore is a local in-process child
+  //    that binds within seconds of boot; no remote wake-up window applies.
   _initialSyncTimer = setTimeout(() => {
     _initialSyncTimer = null;
     syncWeightsFromMaxCore().catch((err) =>
       logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[MaxCoreSync] Initial weight sync error:",
       ),
     );
-  }, 120_000);
+  }, 15_000);
   // Background maintenance must never hold the process open during shutdown.
   _initialSyncTimer.unref();
 

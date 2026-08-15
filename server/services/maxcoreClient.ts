@@ -546,25 +546,10 @@ async function pingMaxCoreHealth(): Promise<boolean> {
 }
 
 /**
- * Fire an immediate wake check so we know MaxCore is reachable before users arrive.
- * Uses the lightweight model-info endpoint — no AI work queued.
- */
-function wakeMaxCore(): void {
-  pingMaxCoreHealth().then((ok) => {
-    if (ok) {
-      MaxCoreAIClient._remoteAvailable = true;
-      MaxCoreAIClient._lastCheck = Date.now();
-      logger.info("[MaxCoreAI] Wake check succeeded — MaxCore is ready ✅");
-    } else {
-      logger.warn("[MaxCoreAI] Wake check → MaxCore not yet reachable");
-    }
-  });
-}
-
-/**
- * Keep MaxCore alive with a lightweight health poll every 55 s.
- * Uses GET /api/platform/model/info — returns metadata instantly,
- * never queues AI generation work on MaxCore's side.
+ * Liveness monitor for the local MaxCore subsystem (55 s poll).
+ * MaxCore runs in-process under supervision — this is NOT a remote keepalive;
+ * it only tracks availability across the child's boot/crash-respawn window
+ * and fires onReconnect so deferred work (e.g. BeatMoneyLoop) reschedules.
  */
 export function startMaxCoreLLMWarmth(): void {
   if (!MC_AI_URL || !MC_AI_KEY) return;
@@ -590,11 +575,11 @@ export function startMaxCoreLLMWarmth(): void {
         logger.debug("[MaxCoreAI] Health ping → MaxCore alive ✅");
       } else {
         _consecutiveFailures++;
-        // Log first failure immediately, then only every 10th so a sleeping
-        // MaxCore doesn't flood the console every 55 s.
+        // Log first failure immediately, then only every 10th to avoid
+        // flooding the console while the local child restarts.
         if (_consecutiveFailures === 1 || _consecutiveFailures % 10 === 0) {
           logger.warn(
-            `[MaxCoreAI] Health ping failed (failure #${_consecutiveFailures}) — MaxCore unreachable, will keep retrying`,
+            `[MaxCoreAI] Health ping failed (failure #${_consecutiveFailures}) — local MaxCore child not responding (supervisor will respawn it)`,
           );
         }
       }
@@ -615,10 +600,10 @@ export function startMaxCoreLLMWarmth(): void {
 
 if (MC_AI_URL && MC_AI_KEY) {
   logger.info(
-    `[MaxCoreAI] Configured — remote: ${MC_AI_URL} | MaxCore is the only AI source`,
+    `[MaxCoreAI] Configured — local subsystem: ${MC_AI_URL} | MaxCore is the only AI source`,
   );
-  // Fire an immediate wake request so MaxCore is ready before users arrive
-  wakeMaxCore();
+  // No wake ping needed: MaxCore is an in-process child whose lifecycle is
+  // owned by the local supervisor. The 55s liveness monitor tracks readiness.
 } else {
   logger.warn(
     "[MaxCoreAI] No remote URL/key configured — all generate/infer calls will return null",

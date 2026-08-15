@@ -11,8 +11,8 @@
  * answer to the question: "What is actually happening right now, and why?"
  *
  *   "5 PDIM 500s + LuaExecutor queued=4 + AIService seeding fail
- *    = PDIM cold-start cascade. Not a bug. Expected for the first
- *    3-8 minutes after restart. Will self-resolve. No action needed."
+ *    = local PDIM still initialising after restart. Not a bug. Expected
+ *    for the first minute after boot. Will self-resolve. No action needed."
  *
  * Architecture:
  *   1. Event window     — 10-minute sliding buffer of every observed log entry
@@ -220,13 +220,13 @@ const INFERENCE_RULES: InferenceRule[] = [
       return Math.min(c, 0.97);
     },
     explain: (s) => ({
-      what: "PDIM (the key-value store) is still waking up after restart.",
-      why: `Replit's autoscale environment spins PDIM down between sessions. The first ${s?.pdim5xxCount} request(s) failed with HTTP 5xx while PDIM initialises — this is fully expected behaviour during the startup grace window (first 120 seconds).`,
+      what: "PDIM (the local key-value store) is still initialising after restart.",
+      why: `PDIM runs in-process and binds shortly after boot. The first ${s?.pdim5xxCount} request(s) failed with HTTP 5xx while the local server initialises — expected during the startup grace window (first 120 seconds).`,
       impact: `BullMQ job processing is delayed; AI genre-profile seeding is deferred (${s?.seedingFailCount} keys); LuaExecutor${s?.luaSaturationCount > 0 ? ` is queued (max ${s?.luaMaxQueued} waiting)` : " is operating normally"}.`,
       severity: "negligible",
       expectedResolution:
-        "PDIM will complete initialisation within 3–8 minutes of the first request. The circuit-breaker slow-lane absorbs failures silently. All queued operations will resume automatically.",
-      estimatedResolutionMs: Math.max(0, 480_000 - s?.uptimeMs),
+        "The local PDIM server completes initialisation within the first minute of boot. The circuit-breaker slow-lane absorbs failures silently. All queued operations will resume automatically.",
+      estimatedResolutionMs: Math.max(0, 60_000 - s?.uptimeMs),
       recommendedActions: [
         {
           priority: "low",
@@ -318,7 +318,7 @@ const INFERENCE_RULES: InferenceRule[] = [
     },
     explain: (s) => ({
       what: "PDIM is experiencing an unexpected outage after successful warm-up.",
-      why: `The circuit breaker opened after ${s?.pdim5xxCount} consecutive failures, well past the expected cold-start window. This indicates PDIM (pocketdimensionstorage.replit.app) is either down, restarting, or has encountered an internal error.`,
+      why: `The circuit breaker opened after ${s?.pdim5xxCount} consecutive failures, well past startup. This indicates the local PDIM server (in-process, :5556) has crashed, is restarting, or has encountered an internal error.`,
       impact:
         "All BullMQ job processing paused; real-time features relying on PDIM (WebSocket pub-sub, rate limiting, session store) are degraded. The system is operating in graceful-degradation mode.",
       severity: "high",
@@ -328,9 +328,9 @@ const INFERENCE_RULES: InferenceRule[] = [
       recommendedActions: [
         {
           priority: "high",
-          action: "Check pocketdimensionstorage.replit.app deployment status",
+          action: "Check the local PDIM server logs (in-process, :5556)",
           rationale:
-            "PDIM is a separate Replit deployment; it may have been stopped, is restarting, or has an error.",
+            "PDIM runs inside Max Booster; a persistent outage means the local server thread crashed or is erroring.",
           automated: false,
         },
         {
@@ -368,7 +368,7 @@ const INFERENCE_RULES: InferenceRule[] = [
     },
     explain: (s) => ({
       what: `LuaExecutor is congested — up to ${s?.luaMaxQueued} operations queued behind 1 active slot.`,
-      why: "BullMQ, HyperLearning, AIService seeding, and ChainFixer are all issuing concurrent PDIM commands. The single-slot LuaExecutor serialises them, creating a queue when PDIM responses are slow during cold-start.",
+      why: "BullMQ, HyperLearning, AIService seeding, and ChainFixer are all issuing concurrent PDIM commands. The single-slot LuaExecutor serialises them, creating a queue when the local PDIM server responds slowly (startup or load).",
       impact:
         "BullMQ job polling is delayed; stale-job detection runs late; some lock timeouts may occur causing BullMQ to re-queue jobs (no data loss).",
       severity: s.luaMaxQueued >= 5 ? "medium" : "low",
@@ -411,7 +411,7 @@ const INFERENCE_RULES: InferenceRule[] = [
     },
     explain: (s) => ({
       what: "BullMQ job locks are expiring before jobs complete.",
-      why: "Slow LuaExecutor round-trips (caused by PDIM latency during cold-start) are exceeding BullMQ's lock timeout. BullMQ treats the job as stalled and re-queues it automatically.",
+      why: "Slow LuaExecutor round-trips (local PDIM latency under startup or load) are exceeding BullMQ's lock timeout. BullMQ treats the job as stalled and re-queues it automatically.",
       impact:
         "Some jobs may run twice (at-least-once delivery). If job processors are idempotent, there is no data loss. Job processing resumes on re-queue.",
       severity: "low",
