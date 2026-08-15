@@ -268,31 +268,11 @@ function normalizeInput(input: UnifiedContentInput): {
 // ─── Platform Bundle Builder ──────────────────────────────────────────────────
 
 /**
- * Unwrap a PromiseSettledResult. If the promise was rejected, logs a warning
- * and returns the provided fallback value instead. This keeps `buildPlatformBundle`
- * readable — one line per generator instead of an inline comma-expression.
- */
-function unwrapSettled<T>(
-  result: PromiseSettledResult<T>,
-  name: string,
-  platform: SupportedPlatform,
-  fallback: T,
-): T {
-  if (result?.status === "fulfilled") return result?.value;
-  logger.warn(
-    `[UCO] ${name} rejected for ${platform}:`,
-    (result as PromiseRejectedResult).reason,
-  );
-  return fallback;
-}
-
-/**
  * Unwrap a PromiseSettledResult for a GENERATION result. Per the MaxCore-only
- * fail-explicit contract, generated content (hooks, captions, ad copy, video
- * scripts, visual prompts, story sequences) must never be substituted with
- * local templates — a rejected generator makes the whole bundle fail with an
- * explicit AIUnavailableError (503). Metadata (hashtags) may still use
- * unwrapSettled with a fallback.
+ * fail-explicit contract, generated content (hooks, captions, hashtags, ad
+ * copy, video scripts, visual prompts, story sequences) must never be
+ * substituted with local templates — a rejected generator makes the whole
+ * bundle fail with an explicit AIUnavailableError (503).
  */
 function unwrapGenerated<T>(
   result: PromiseSettledResult<T>,
@@ -337,13 +317,8 @@ async function buildPlatformBundle(
 
   const hooks = unwrapGenerated(hooksResult, "generateHooks", platform);
   const captions = unwrapGenerated(captionsResult, "generateCaptions", platform);
-  const hashtags = unwrapSettled(hashtagsResult, "generateHashtags", platform, {
-    niche: [],
-    broad: [],
-    trending: [],
-    branded: [`#${ctx?.artistName.replace(/\s+/g, "")}`],
-    combined: [`#${ctx?.artistName.replace(/\s+/g, "")}`, "#newmusic", "#music"],
-  });
+  // MaxCore-only contract: no local fallback hashtags — fail explicit.
+  const hashtags = unwrapGenerated(hashtagsResult, "generateHashtags", platform);
   const adCopy = unwrapGenerated(adCopyResult, "generateAdCopy", platform);
   const videoScript = unwrapGenerated(
     videoScriptResult,

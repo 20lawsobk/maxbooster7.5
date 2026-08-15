@@ -106,65 +106,153 @@ export interface StoryFrame {
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
+//
+// /api/generate/content is a structured caption composer, NOT a freeform
+// instruction-follower: `topic` is always templated raw into the hook/body
+// text server-side (see MaxCore server.py api_generate_content — "idea stays
+// a clean topic string; it is templated raw into hook/body text"). Creative
+// direction belongs in `instruction`/`extra_context`, which feed the real
+// awareness-conditioned ScriptAgent (`effective_awareness` → `_script_agent`).
+// Earlier revisions of this module stuffed multi-paragraph instructions into
+// `topic` and tried to parse the response by section headers — that never
+// worked; MaxCore ignored the instructions and returned its literal caption
+// template. Every generator below now sends a short, clean `topic` plus a
+// real `instruction`, and reads MaxCore's actual hook/body/cta/variants
+// fields instead of hallucinated section markers.
 
-async function callMaxCore(
-  prompt: string,
+/** Short, clean topic string — no quotes (MaxCore hashtagifies the raw topic,
+ * so stray punctuation becomes junk tags like `#"Title"byArtist`). */
+function buildTopic(ctx: GeneratorContext): string {
+  return ctx?.trackTitle
+    ? `${ctx.trackTitle} by ${ctx?.artistName}`
+    : `${ctx?.artistName} new ${ctx?.genre} release`;
+}
+
+interface StructuredMaxCoreResult {
+  hook: string;
+  body: string;
+  cta: string;
+  caption: string;
+  hashtags: string[];
+  variants: Array<{ hook: string; body: string; cta: string }>;
+}
+
+async function callMaxCoreStructured(
   ctx: GeneratorContext,
-): Promise<string> {
-  // /api/generate/content builds caption = hook + "\n\n" + body + "\n\n" + cta
-  // server-side, so caption is always clean structured text (never raw model tokens).
+  opts: {
+    topic: string;
+    instruction: string;
+    variants?: number;
+    maxChars?: number;
+    includeHashtags?: boolean;
+  },
+  featureLabel: string,
+): Promise<StructuredMaxCoreResult> {
   const payload: Record<string, unknown> = {
-    topic: prompt,
+    topic: opts.topic,
     platform: ctx.platform,
     tone: ctx.brandVoice,
     genre: ctx.genre,
     artist_name: ctx.artistName,
     brand_voice: ctx.brandVoice,
     target_audience: ctx.targetAudience,
+    instruction: opts.instruction,
   };
-  // Pass all available content-guidance signals as structured fields
-  if (ctx.keywords.length) payload.preferred_hashtags = ctx?.keywords;
-  if (ctx.avoidTopics.length) payload.avoid_topics = ctx?.avoidTopics;
   if (ctx.extraContext) payload.extra_context = ctx?.extraContext;
+  // Keywords are thematic direction, NOT ready-made hashtags — MaxCore echoes
+  // preferred_hashtags verbatim into its hashtag output, so raw keywords like
+  // "hip-hop" would surface as malformed tags. content_themes is the designed
+  // channel: themes feed the awareness bridge as bullets, never as #tags.
+  if (ctx.keywords.length) payload.content_themes = ctx?.keywords;
+  if (ctx.avoidTopics.length) payload.avoid_topics = ctx?.avoidTopics;
   if (ctx.trackTitle) payload.track_title = ctx?.trackTitle;
   if (ctx.releaseDate) payload.release_date = ctx?.releaseDate;
+  if (opts.variants && opts.variants > 1) payload.variants = opts.variants;
+  if (opts.maxChars) payload.max_chars = opts.maxChars;
+  if (opts.includeHashtags != null)
+    payload.include_hashtags = opts.includeHashtags;
 
   const result = await MaxCoreAIClient?.infer<{
     caption?: string;
     hook?: string;
     body?: string;
     cta?: string;
-    content?: string;
-    text?: string;
+    hashtags?: string[];
+    variants?: Array<{ hook?: string; body?: string; cta?: string }>;
   }>("/api/generate/content", payload);
-  // Prefer the clean structured caption; fall back to individual fields if absent.
+
   // MaxCore is the ONLY source — throw explicitly (HTTP 503) when it returns
   // nothing rather than letting callers substitute local fallback content.
-  return requireMaxCore(
-    result?.caption ?? result?.hook ?? result?.content ?? result?.text ?? null,
-    "content pipeline",
-  );
+  const hook = requireMaxCore(result?.hook || null, featureLabel);
+  const rawVariants =
+    Array.isArray(result?.variants) && result.variants.length
+      ? result.variants
+      : [{ hook, body: result?.body, cta: result?.cta }];
+
+  return {
+    hook,
+    body: result?.body ?? "",
+    cta: result?.cta ?? "",
+    caption: result?.caption ?? "",
+    hashtags: Array.isArray(result?.hashtags) ? result.hashtags : [],
+    variants: rawVariants.map((v) => ({
+      hook: v?.hook ?? "",
+      body: v?.body ?? "",
+      cta: v?.cta ?? "",
+    })),
+  };
 }
 
 // ─── Hook Generator ──────────────────────────────────────────────────────────
 
 export async function generateHooks(ctx: GeneratorContext): Promise<HookSet> {
-  const prompt = `Generate 5 social media hooks for ${ctx?.artistName}, a ${ctx?.genre} artist.
-Mood: ${ctx?.mood}. Platform: ${ctx?.platform}. Goal: ${ctx?.campaignGoal}.
-${ctx?.trackTitle ? `Track: "${ctx.trackTitle}".` : ""}
-${ctx?.extraContext ?? ""}
-Return: primary hook, 3 alternates, a question hook, a statement hook, and a cliffhanger hook.
-Keep each hook under 15 words. Make the primary hook irresistible in the first 3 seconds.`;
+  const topic = buildTopic(ctx);
 
-  const raw = await callMaxCore(prompt, ctx);
+  // MaxCore's composer picks ONE hook per request (variants differ only by
+  // body), so distinct hooks require distinct requests — each with a
+  // different creative angle. Angles are phrased as content direction, not
+  // meta-instructions ("write a…"), because the direction text conditions the
+  // awareness bridge and can surface in the copy itself.
+  const [main, question, statement, cliffhanger] = await Promise.all([
+    callMaxCoreStructured(
+      ctx,
+      { topic, instruction: `${ctx?.mood} energy, scroll-stopping first 3 seconds, ${ctx?.campaignGoal} focus` },
+      "hook generation (primary)",
+    ),
+    callMaxCoreStructured(
+      ctx,
+      { topic, instruction: `curiosity — a question fans can't scroll past` },
+      "hook generation (question)",
+    ),
+    callMaxCoreStructured(
+      ctx,
+      { topic, instruction: `bold, definitive statement — confidence and swagger` },
+      "hook generation (statement)",
+    ),
+    callMaxCoreStructured(
+      ctx,
+      { topic, instruction: `cliffhanger tease — what happens next stays unsaid` },
+      "hook generation (cliffhanger)",
+    ),
+  ]);
 
-  const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
+  // MaxCore's hook ranker is deterministic and the awareness pool's top hook
+  // often wins across angles — dedupe so alternates never repeat the primary.
+  // Fewer unique alternates is honest; duplicating them is not.
+  const alternates = [
+    ...new Set(
+      [question.hook, statement.hook, cliffhanger.hook].filter(
+        (h) => h && h !== main.hook,
+      ),
+    ),
+  ];
+
   return {
-    primary: lines[0] ?? "",
-    alternates: lines.slice(1, 4),
-    questionHook: lines[4] ?? "",
-    statementHook: lines[5] ?? "",
-    cliffhangerHook: lines[6] ?? "",
+    primary: main.hook,
+    alternates,
+    questionHook: question.hook,
+    statementHook: statement.hook,
+    cliffhangerHook: cliffhanger.hook,
   };
 }
 
@@ -173,73 +261,100 @@ Keep each hook under 15 words. Make the primary hook irresistible in the first 3
 export async function generateCaptions(
   ctx: GeneratorContext,
 ): Promise<CaptionSet> {
-  const prompt = `Write 3 social media captions for ${ctx?.artistName} on ${ctx?.platform}.
-Genre: ${ctx?.genre}. Mood: ${ctx?.mood}. Goal: ${ctx?.campaignGoal}.
-${ctx?.trackTitle ? `Track: "${ctx.trackTitle}".` : ""}
-${ctx?.extraContext ?? ""}
-Write:
-1. SHORT (≤80 chars) — punchy, emoji-rich
-2. MEDIUM (≤200 chars) — story + CTA
-3. LONG (≤400 chars) — narrative, emotional, CTA
-Use ${ctx?.brandVoice} tone. No filler. Every word earns its place.`;
+  const topic = buildTopic(ctx);
 
-  const raw = await callMaxCore(prompt, ctx);
+  // Three separate calls (rather than parsing one blob into sections) so each
+  // length tier is a real MaxCore caption, trimmed server-side via max_chars.
+  // Instructions read as creative angles, never "write a…" meta-directives —
+  // direction text conditions the awareness bridge and can appear in copy.
+  const [shortRes, mediumRes, longRes] = await Promise.all([
+    callMaxCoreStructured(
+      ctx,
+      {
+        topic,
+        instruction: `punchy high-impact energy, ${ctx?.brandVoice} tone`,
+        maxChars: 80,
+      },
+      "caption generation (short)",
+    ),
+    callMaxCoreStructured(
+      ctx,
+      {
+        topic,
+        instruction: `a story moment behind the music, ${ctx?.brandVoice} tone, ${ctx?.campaignGoal} focus`,
+        maxChars: 200,
+      },
+      "caption generation (medium)",
+    ),
+    callMaxCoreStructured(
+      ctx,
+      {
+        topic,
+        instruction: `emotional depth and connection with fans, ${ctx?.brandVoice} tone, ${ctx?.campaignGoal} focus`,
+        maxChars: 400,
+      },
+      "caption generation (long)",
+    ),
+  ]);
 
-  const sections = raw?.split(/\n{2,}/);
   return {
-    short: sections[0]?.trim() ?? "",
-    medium: sections[1]?.trim() ?? "",
-    long: sections[2]?.trim() ?? "",
+    short: requireMaxCore(shortRes.caption || shortRes.hook || null, "caption generation (short)"),
+    medium: requireMaxCore(mediumRes.caption || mediumRes.hook || null, "caption generation (medium)"),
+    long: requireMaxCore(longRes.caption || longRes.hook || null, "caption generation (long)"),
     platform: ctx.platform,
   };
 }
 
 // ─── Hashtag Generator ───────────────────────────────────────────────────────
 
+// Hashtags that are common platform-generic discovery tags rather than
+// genre/niche-specific — used only to BUCKET MaxCore's own returned tags
+// into categories, never to fabricate new ones.
+const TRENDING_GENERIC_TAGS = new Set([
+  "#fyp", "#foryou", "#foryoupage", "#viral", "#trending", "#explore",
+  "#explorepage", "#reels", "#reelsinstagram", "#instareels", "#shorts",
+]);
+
 export async function generateHashtags(
   ctx: GeneratorContext,
 ): Promise<HashtagSet> {
   const branded = [`#${ctx?.artistName.replace(/\s+/g, "")}`, `#MaxBooster`];
+  const topic = buildTopic(ctx);
 
-  // Ask MaxCore for AI-powered hashtag intelligence
-  const prompt = `Generate 20 high-performing hashtags for a ${ctx?.genre} artist named ${ctx?.artistName} 
-on ${ctx?.platform}. Mood: ${ctx?.mood}. Goal: ${ctx?.campaignGoal}. 
-${ctx?.trackTitle ? `Track: "${ctx.trackTitle}".` : ""}
-${ctx?.keywords?.length ? `Preferred topics: ${ctx?.keywords.join(", ")}.` : ""}
-Return only hashtags, one per line, with # prefix. 
-Mix: 5 niche/genre-specific, 5 broad/discovery, 5 trending/platform-native, 5 emotional/mood-based.`;
-
-  const raw = await callMaxCore(prompt, ctx);
-
-  // Parse AI hashtags from the (guaranteed non-null) MaxCore response
-  const aiTags: string[] = raw
-    .split("\n")
-    .map((l) => l?.trim())
-    .filter((l) => l?.startsWith("#") && l?.length > 1)
-    .slice(0, 20);
-
-  // MaxCore is the sole hashtag source — no static niche/broad/trending
-  // fallback lists. Fail explicit if MaxCore returns too few usable tags.
-  const niche = requireMaxCore(
-    aiTags?.length >= 5 ? aiTags?.slice(0, 5) : null,
-    "hashtag generation (niche)",
-  );
-  const broad = requireMaxCore(
-    aiTags?.length >= 10 ? aiTags?.slice(5, 10) : null,
-    "hashtag generation (broad)",
-  );
-  const trending = requireMaxCore(
-    aiTags?.length >= 15 ? aiTags?.slice(10, 15) : null,
-    "hashtag generation (trending)",
+  // MaxCore's distribution agent returns hashtags conditioned on the real
+  // awareness/genre/platform signals — bucket those (don't invent new ones).
+  const result = await callMaxCoreStructured(
+    ctx,
+    {
+      topic,
+      instruction: `${ctx?.mood} ${ctx?.genre} discovery reach, ${ctx?.campaignGoal} focus`,
+      includeHashtags: true,
+    },
+    "hashtag generation",
   );
 
-  const combined = [
-    ...branded,
-    ...niche?.slice(0, 3),
-    ...broad?.slice(0, 3),
-    ...trending,
-    ...(aiTags?.length >= 20 ? aiTags?.slice(15) : []),
-  ].slice(0, 30);
+  // Keep only well-formed tags — MaxCore echoes preferred_hashtags verbatim
+  // and hashtagifies the raw topic, which can produce malformed entries.
+  const cleaned = result.hashtags
+    .map((t) => (t.startsWith("#") ? t : `#${t}`))
+    .map((t) => `#${t.slice(1).replace(/[^\p{L}\p{N}_]/gu, "")}`)
+    .filter((t) => t.length > 1);
+  const aiTags = requireMaxCore(
+    cleaned.length ? [...new Set(cleaned)] : null,
+    "hashtag generation",
+  );
+
+  const genreKey = ctx?.genre?.toLowerCase().replace(/\s+/g, "");
+  const artistKey = ctx?.artistName?.toLowerCase().replace(/\s+/g, "");
+  const trending = aiTags.filter((t) => TRENDING_GENERIC_TAGS.has(t.toLowerCase()));
+  const niche = aiTags.filter(
+    (t) =>
+      !trending.includes(t) &&
+      (t.toLowerCase().includes(genreKey) || t.toLowerCase().includes(artistKey)),
+  );
+  const broad = aiTags.filter((t) => !trending.includes(t) && !niche.includes(t));
+
+  const combined = [...branded, ...aiTags].slice(0, 30);
 
   return { niche, broad, trending, branded, combined };
 }
@@ -249,29 +364,40 @@ Mix: 5 niche/genre-specific, 5 broad/discovery, 5 trending/platform-native, 5 em
 export async function generateAdCopy(
   ctx: GeneratorContext,
 ): Promise<AdCopySet> {
-  const prompt = `Write high-converting ad copy for ${ctx?.artistName} on ${ctx?.platform}.
-Genre: ${ctx?.genre}. Goal: ${ctx?.campaignGoal}. Audience: ${ctx?.targetAudience}.
-${ctx?.trackTitle ? `Track: "${ctx.trackTitle}".` : ""}
-${ctx?.extraContext ?? ""}
-Include:
-- Headline (≤40 chars)
-- Subheadline (≤80 chars)
-- Body (≤150 chars)
-- CTA button text (≤20 chars)
-Then write 2 A/B variants with different angles.`;
+  const topic = buildTopic(ctx);
 
-  const raw = await callMaxCore(prompt, ctx);
+  // hook → headline, first sentence of body → subheadline, full body → body,
+  // cta → cta. 3 variants give the primary + 2 A/B angles (variants differ by
+  // body, sharing the hook — MaxCore composer behavior), all MaxCore-real.
+  const result = await callMaxCoreStructured(
+    ctx,
+    {
+      topic,
+      instruction: `high-converting ad angle, clear value for ${ctx?.targetAudience}, ${ctx?.campaignGoal} focus`,
+      variants: 3,
+    },
+    "ad copy generation",
+  );
 
-  const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
+  const toVariant = (v: { hook: string; body: string; cta: string }) => ({
+    headline: v.hook.slice(0, 40),
+    subheadline: (v.body.split(/(?<=[.!?])\s+/)[0] ?? "").slice(0, 80),
+    body: v.body.slice(0, 150),
+    cta: v.cta.slice(0, 20),
+  });
+
+  const [primary, ...rest] = result.variants;
+  const primaryAd = toVariant(primary ?? { hook: result.hook, body: result.body, cta: result.cta });
+
   return {
-    headline: lines[0] ?? "",
-    subheadline: lines[1] ?? "",
-    body: lines[2] ?? "",
-    cta: lines[3] ?? "",
-    variants: [
-      { headline: lines[4] ?? "", body: lines[5] ?? "", cta: "" },
-      { headline: lines[6] ?? "", body: lines[7] ?? "", cta: "" },
-    ],
+    headline: primaryAd.headline,
+    subheadline: primaryAd.subheadline,
+    body: primaryAd.body,
+    cta: primaryAd.cta,
+    variants: rest.slice(0, 2).map((v) => {
+      const built = toVariant(v);
+      return { headline: built.headline, body: built.body, cta: built.cta };
+    }),
   };
 }
 
@@ -281,59 +407,68 @@ export async function generateVideoScript(
   ctx: GeneratorContext,
   durationSeconds: 15 | 30 | 60 | 180 = 30,
 ): Promise<VideoScript> {
-  const prompt = `Write a ${durationSeconds}-second video script for ${ctx?.artistName} on ${ctx?.platform}.
-Genre: ${ctx?.genre}. Mood: ${ctx?.mood}. Goal: ${ctx?.campaignGoal}.
-${ctx?.trackTitle ? `Track: "${ctx.trackTitle}".` : ""}
-${ctx?.extraContext ?? ""}
-Format:
-HOOK (spoken/visual — first 3s):
-BODY (3 bullet points for middle section):
-CTA (final 3–5s call to action):
-B-ROLL (4 visual suggestions):
-MUSIC NOTE (tempo/energy direction):
-OVERLAY TEXTS (3 short text overlays for the video):`;
+  const topic = buildTopic(ctx);
 
-  const raw = await callMaxCore(prompt, ctx);
+  // Every field is its own MaxCore call — no section-header parsing of a
+  // single free-form blob (MaxCore doesn't produce that format). Variants
+  // share one hook and differ by BODY, so list-type fields (b-roll, overlays)
+  // read variant bodies, not hooks.
+  const [main, broll, note, overlay] = await Promise.all([
+    callMaxCoreStructured(
+      ctx,
+      {
+        topic,
+        instruction: `${durationSeconds}-second video moment, ${ctx?.mood} mood, ${ctx?.campaignGoal} focus`,
+      },
+      "video script (script)",
+    ),
+    callMaxCoreStructured(
+      ctx,
+      {
+        topic,
+        instruction: `cinematic ${ctx?.mood} visuals — studio moments, city nights, performance energy`,
+        variants: 4,
+      },
+      "video script (b-roll)",
+    ),
+    callMaxCoreStructured(
+      ctx,
+      {
+        topic,
+        instruction: `the tempo and energy of the edit — pacing, cuts, momentum`,
+      },
+      "video script (music note)",
+    ),
+    callMaxCoreStructured(
+      ctx,
+      {
+        topic,
+        instruction: `short punchy on-screen text moments`,
+        variants: 3,
+      },
+      "video script (overlay texts)",
+    ),
+  ]);
 
-  // Parse MaxCore's labeled sections instead of assuming a fixed line
-  // structure — every field must come from MaxCore, no hardcoded defaults.
-  const sectionOrder = ["HOOK", "BODY", "CTA", "B-ROLL", "MUSIC NOTE", "OVERLAY TEXTS"];
-  const sections: Record<string, string[]> = {};
-  let current: string | null = null;
-  for (const rawLine of raw?.split("\n") ?? []) {
-    const line = rawLine?.trim();
-    if (!line) continue;
-    const headerMatch = sectionOrder.find((h) =>
-      line.toUpperCase().startsWith(h),
-    );
-    if (headerMatch) {
-      current = headerMatch;
-      sections[current] = [];
-      const rest = line.slice(line.indexOf(":") + 1).trim();
-      if (rest) sections[current].push(rest);
-      continue;
-    }
-    if (current) {
-      sections[current].push(line.replace(/^[-•\d.]+\s*/, ""));
-    }
-  }
-
-  const hook = sections["HOOK"]?.[0];
-  const body = sections["BODY"];
-  const cta = sections["CTA"]?.[0];
-  const bRoll = sections["B-ROLL"];
-  const musicNote = sections["MUSIC NOTE"]?.[0];
-  const overlayTexts = sections["OVERLAY TEXTS"];
+  const body = main.body
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const bRoll = [...new Set(broll.variants.map((v) => v.body).filter(Boolean))];
+  const overlayTexts = [
+    overlay.hook,
+    ...overlay.variants.slice(1).map((v) => v.body),
+  ].filter(Boolean);
 
   return {
-    hook: requireMaxCore(hook, "video script (hook)"),
-    body: requireMaxCore(body?.length ? body : null, "video script (body)"),
-    cta: requireMaxCore(cta, "video script (cta)"),
+    hook: requireMaxCore(main.hook || null, "video script (hook)"),
+    body: requireMaxCore(body.length ? body : null, "video script (body)"),
+    cta: requireMaxCore(main.cta || null, "video script (cta)"),
     durationHint: `${durationSeconds}s`,
-    bRoll: requireMaxCore(bRoll?.length ? bRoll : null, "video script (b-roll)"),
-    musicNote: musicNote ?? "",
+    bRoll: requireMaxCore(bRoll.length ? bRoll : null, "video script (b-roll)"),
+    musicNote: requireMaxCore(note.hook || null, "video script (music note)"),
     overlayTexts: requireMaxCore(
-      overlayTexts?.length ? overlayTexts : null,
+      overlayTexts.length ? overlayTexts : null,
       "video script (overlay texts)",
     ),
   };
@@ -345,24 +480,39 @@ export async function generateVisualPrompt(
   ctx: GeneratorContext,
 ): Promise<VisualPrompt> {
   const palette = ctx?.colorPalette.join(", ");
+  const topic = buildTopic(ctx);
+
   // Source the creative copy from MaxCore's awareness-conditioned generation —
-  // only the deterministic spec fields (colors, typography) are assembled locally.
-  const prompt = `Write two image-generation prompts for a ${ctx?.genre} artist named ${ctx?.artistName}.
-Mood: ${ctx?.mood}. Color palette: ${palette}.${ctx?.trackTitle ? ` Track: "${ctx.trackTitle}".` : ""}
-Line 1: a cinematic promotional image prompt (no text overlay in image).
-Line 2: a bold YouTube/social thumbnail prompt (artist name prominent).
-Return exactly 2 lines.`;
-  const raw = await callMaxCore(prompt, ctx);
-  const lines = raw
-    .split("\n")
-    .map((l) => l.replace(/^(Line\s*)?\d+[:.\-–]?\s*/i, "").trim())
-    .filter(Boolean);
-  if (lines.length < 2) {
+  // only the deterministic spec fields (colors, typography) are assembled
+  // locally, since those are fixed brand rules, not generated content.
+  const [image, thumbnail] = await Promise.all([
+    callMaxCoreStructured(
+      ctx,
+      {
+        topic,
+        instruction: `cinematic promotional imagery, ${ctx?.mood} mood, color palette ${palette}`,
+      },
+      "visual prompt generation (image)",
+    ),
+    callMaxCoreStructured(
+      ctx,
+      {
+        topic,
+        instruction: `bold thumbnail imagery, artist name prominent, ${ctx?.mood} mood, color palette ${palette}`,
+      },
+      "visual prompt generation (thumbnail)",
+    ),
+  ]);
+
+  const imagePrompt = image.body || image.hook;
+  const thumbnailPrompt = thumbnail.body || thumbnail.hook;
+  if (!imagePrompt || !thumbnailPrompt) {
     throw new AIUnavailableError("visual prompt generation");
   }
+
   return {
-    imagePrompt: lines[0],
-    thumbnailPrompt: lines[1],
+    imagePrompt,
+    thumbnailPrompt,
     colorDirections: `Primary: ${ctx?.colorPalette[0] ?? "#1a1a2e"} | Accent: ${ctx?.colorPalette[2] ?? "#e94560"} | Background: ${ctx?.colorPalette[1] ?? "#16213e"}`,
     typographyNote: `Bold, modern sans-serif. Artist name: 48pt+. Track title: 36pt. All caps for impact.`,
     moodBoard: [
@@ -379,23 +529,29 @@ Return exactly 2 lines.`;
 export async function generateStorySequence(
   ctx: GeneratorContext,
 ): Promise<StorySequence> {
-  // Ask MaxCore for the 5-frame story copy all at once
-  const prompt = `Write a 5-frame Instagram/Facebook Story sequence for ${ctx?.artistName}, a ${ctx?.genre} artist.
-Mood: ${ctx?.mood}. Goal: ${ctx?.campaignGoal}.${ctx?.trackTitle ? ` Track: "${ctx.trackTitle}".` : ""}
-${ctx?.extraContext ?? ""}
-Frame rules:
-Frame 1 (5s) — Hook: ultra-short stop-scroll text, max 8 words
-Frame 2 (7s) — Artist intro: name + track or brand moment, max 12 words
-Frame 3 (5s) — Emotion/vibe: lyric snippet or mood statement, max 10 words
-Frame 4 (8s) — Engagement: poll question or "this or that", max 12 words
-Frame 5 (5s) — CTA: clear action with link, max 8 words
-Return exactly 5 lines, one per frame.`;
+  const topic = buildTopic(ctx);
 
-  const raw = await callMaxCore(prompt, ctx);
-  const aiLines = raw
-    .split("\n")
-    .map((l) => l?.replace(/^Frame\s*\d+[:\-–]?\s*/i, "").trim())
-    .filter(Boolean);
+  // Each frame has a distinct creative purpose, so each gets its own
+  // instruction (phrased as a creative angle) rather than trying to parse
+  // 5 frames out of one response.
+  const frameInstructions = [
+    `instant stop-scroll impact`,
+    `the artist and the track, front and center`,
+    `${ctx?.mood} emotion, raw and real`,
+    `fan engagement — a this-or-that moment`,
+    `clear next step for fans, ${ctx?.campaignGoal} focus`,
+  ];
+
+  const results = await Promise.all(
+    frameInstructions.map((instruction, i) =>
+      callMaxCoreStructured(
+        ctx,
+        { topic, instruction },
+        `story sequence generation (frame ${i + 1})`,
+      ),
+    ),
+  );
+  const aiLines = results.map((r) => r.hook).filter(Boolean);
 
   // MaxCore-only contract: never fill missing frames with local template copy.
   if (aiLines.length < 5) {
