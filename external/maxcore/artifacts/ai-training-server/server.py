@@ -7191,12 +7191,30 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
         # share one asyncio.Future (suspended coroutines, ~2 KB each) rather
         # than each blocking an executor thread (~8 MB).  Only unique digests
         # enter _in_thread → INFERENCE_GATE → GPU.
+        # The key MUST cover every request field that changes the output —
+        # a coarser key (platform/topic/tone/goal/awareness only) collapsed
+        # concurrent calls that differed by instruction/max_chars/variants
+        # into one leader's result (identical hooks, untrimmed captions).
         _key = {
             "platform": platform,
             "topic":    topic,
             "tone":     req.tone or "",
             "goal":     goal,
             "awareness": str(req.awareness or ""),
+            "instruction":   req.instruction or "",
+            "extra_context": req.extra_context or "",
+            "themes":        req.content_themes or [],
+            "brand_voice":   req.brand_voice or "",
+            "audience":      req.target_audience or "",
+            "genre":         req.genre or "",
+            "mood":          req.mood or "",
+            "artist":        artist,
+            "title":         req.title or "",
+            "variants":      req.variants or 0,
+            "max_chars":     req.max_chars or 0,
+            "include_hashtags": bool(req.include_hashtags),
+            "include_cta":      req.include_cta is not False,
+            "preferred_hashtags": req.preferred_hashtags or [],
         }
         async def _coalesced_content():
             # Leader spawns ONE GPU life from the pocket for this unique request.
