@@ -1,4 +1,4 @@
-/**
+/*
  * MaxCore Proxy Routes
  * --------------------
  * Exposes the internal MaxCore (Python AI subsystem) endpoint surface through the
@@ -47,6 +47,15 @@ function isBinary(contentType: string | null): boolean {
   return BINARY_PREFIXES.some((p) => ct.startsWith(p));
 }
 
+function awarenessModeForPath(path: string): string | null {
+  const p = path.toLowerCase();
+  if (p.includes("/generate/image") || p.includes("/generate/content") || p.includes("/platform/social")) return "content";
+  if (p.includes("/generate/audio") || p.includes("/platform/audio-job") || p.includes("/audio")) return "music";
+  if (p.includes("/platform/video") || p.includes("/generate-video") || p.includes("/generate/video") || p.includes("/video/")) return "video_script";
+  if (p.includes("/optimize/ad") || p.includes("/predict/engagement") || p.includes("/platform/advertising")) return "ad_copy";
+  return null;
+}
+
 /**
  * Generic forwarder. Relays the incoming request to MaxCore at the same path.
  */
@@ -71,6 +80,59 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
       message: "Cannot access another user's resources",
     });
     return;
+  }
+
+  // Best-effort awareness injection: try multiple candidate module paths so
+  // this file doesn't hard-depend on a single layout. This never blocks the
+  // request for more than a short timeout (2s).
+  try {
+    const mode = awarenessModeForPath(req.originalUrl || req.path || "");
+    if (mode) {
+      const candidates = [
+        "../services/contentAwarenessService.js",
+        "../../awareness layer/ContentGenerationAwarenessService.js",
+        "../awareness layer/ContentGenerationAwarenessService.js",
+        "../../services/contentAwarenessService.js",
+      ];
+      let mod: any = null;
+      for (const p of candidates) {
+        try {
+          // dynamic import — path may or may not exist depending on workspace
+          // layout; swallow errors and continue to next candidate
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          // Use import() instead of require to respect ESM
+          // @ts-ignore dynamic import
+          mod = await import(p);
+          if (mod) break;
+        } catch (e) {
+          // ignore and try next
+        }
+      }
+
+      const contentAwarenessService = mod?.contentAwarenessService || mod?.default?.contentAwarenessService || mod?.default;
+      if (contentAwarenessService && typeof contentAwarenessService.getContextForMode === "function") {
+        const ctx = await Promise.race([
+          contentAwarenessService.getContextForMode(mode),
+          new Promise((r) => setTimeout(() => r(null), 2000)),
+        ]);
+        if (ctx && (ctx as any).confidence > 0 && (ctx as any).contextString) {
+          if (req.method !== "GET" && req.method !== "HEAD" && req.method !== "DELETE") {
+            try {
+              // preserve existing body but attach awareness
+              if (req.body && typeof req.body === "object" && !Array.isArray(req.body)) {
+                (req as any).body = { ...(req.body as Record<string, unknown>), awareness: (ctx as any).contextString };
+              } else {
+                (req as any).body = { awareness: (ctx as any).contextString };
+              }
+            } catch (e) {
+              // ignore
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    logger.debug({ err: e }, "[MaxCoreProxy] awareness injection failed:");
   }
 
   const targetUrl = `${origin}${req.originalUrl}`;
@@ -99,13 +161,15 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
       req.body && typeof req.body === "object" && !Array.isArray(req.body)
         ? { ...req.body }
         : {};
-    // Bind identity to the authenticated session — overwrite unconditionally so
-    // a caller cannot act as another user by supplying their own user_id.
     if (authUser?.id) {
       src.user_id = authUser.id;
       src.userId = authUser.id;
     }
-    body = JSON.stringify(src);
+    try {
+      body = JSON.stringify(src);
+    } catch (e) {
+      // fall back to undefined body
+    }
   }
 
   try {
