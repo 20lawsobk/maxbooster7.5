@@ -3,30 +3,7 @@ import { type Server } from "http";
 import { logger } from "../logger.js";
 import { auditLogger } from "./auditLogger.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
-
-export class AppError extends Error {
-  public statusCode: number;
-  public isOperational: boolean;
-  public code?: string;
-  public context?: Record<string, any>;
-
-  constructor(
-    message: string,
-    statusCode: number = 500,
-    isOperational: boolean = true,
-    code?: string,
-    context?: Record<string, any>,
-  ) {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = isOperational;
-    this.code = code;
-    this.context = context;
-
-    Object.setPrototypeOf(this, AppError?.prototype);
-    Error?.captureStackTrace(this, this.constructor);
-  }
-}
+import { AppError } from "../lib/AppError.js";
 
 interface ErrorResponse {
   success: false;
