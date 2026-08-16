@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch, Route, useLocation } from "wouter";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { Toaster } from "@/components/ui/toaster";
 import { InstantSkeleton } from "@/components/ui/instant-skeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -511,6 +512,7 @@ function App() {
     <UndoProvider maxHistorySize={100} persistToStorage={true}>
       <ShortcutProvider persistConfig={true}>
         <Toaster />
+        <VercelAnalytics />
         {/* Security-critical — must start timers synchronously on first render */}
         <TokenRefreshHandler
           refreshInterval={5 * 60 * 1000}
