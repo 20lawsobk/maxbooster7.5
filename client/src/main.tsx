@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import * as Sentry from "@sentry/react";
+import { Analytics } from "@vercel/analytics/react";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { queryClient } from "./lib/queryClient";
@@ -109,6 +110,7 @@ root.render(
             <AuthProvider>
               <TooltipProvider>
                 <App />
+                <Analytics />
               </TooltipProvider>
             </AuthProvider>
           </PersistQueryClientProvider>
