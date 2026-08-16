@@ -220,6 +220,7 @@
     "@uppy/core": "^5.2.0",
     "@uppy/dashboard": "^5.1.1",
     "@uppy/react": "^5.2.0",
+    "@vercel/speed-insights": "^1.1.0",
     "@vitejs/plugin-react": "^5.1.4",
     "acme-client": "^5.4.0",
     "archiver": "^7.0.1",

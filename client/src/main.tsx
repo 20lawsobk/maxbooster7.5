@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -109,6 +110,7 @@ root.render(
             <AuthProvider>
               <TooltipProvider>
                 <App />
+                <SpeedInsights />
               </TooltipProvider>
             </AuthProvider>
           </PersistQueryClientProvider>
