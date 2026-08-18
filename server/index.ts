@@ -463,6 +463,32 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
+// Boot-window readiness stub — before registerRoutes finishes, /api/ready
+// would otherwise 404 (the real handler lives in routes.ts). Answering 503
+// "degraded: boot in progress" makes the multi-minute route-registration
+// window observable to probes/operators without log access.
+const bootReadinessStub = (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (_routesReady) return next();
+  res.status(503).json({
+    status: "degraded",
+    timestamp: new Date().toISOString(),
+    subsystems: [
+      {
+        name: "routes",
+        status: "degraded",
+        detail: "boot in progress — route registration incomplete",
+        lastChecked: Date.now(),
+      },
+    ],
+  });
+};
+app.get("/api/ready", bootReadinessStub);
+app.get("/api/health/ready", bootReadinessStub);
+
 app.post("/api/metrics/web-vitals", (_req: Request, res: Response) => {
   // Silently accept browser web-vitals payloads during the boot window so the
   // browser doesn't log 404 errors on first paint.  Metrics from this window

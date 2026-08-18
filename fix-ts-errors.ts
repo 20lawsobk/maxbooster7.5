@@ -11,11 +11,8 @@
  * 6. TS6133 (536): Unused variables → Remove or prefix with _
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { execSync } from 'child_process';
 
-const _FIXES = {
+export const _FIXES = {
   TS2339: (line: string) => {
     // Property does not exist → add optional chaining or type assertion
     return line.replace(/\.(\w+)(?!\?)/g, '?.$1');

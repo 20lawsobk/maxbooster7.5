@@ -142,6 +142,21 @@ export function registerCoreProbes(): void {
     }
   });
 
+  // Route-registration probe — registerRoutes takes minutes after the port
+  // opens (the "boot window"), during which most /api/* paths 404 while the
+  // process looks healthy. Surfacing it here makes the boot window visible
+  // in /api/ready instead of only via log access.
+  healthRegistry?.register("routes", async () => {
+    try {
+      const { isRoutesReady } = await import("./bootState.js");
+      return isRoutesReady()
+        ? { status: "ok", detail: "all route sections registered" }
+        : { status: "degraded", detail: "boot in progress — route registration incomplete" };
+    } catch (e) {
+      return { status: "unknown", detail: (e as Error).message };
+    }
+  });
+
   // Audit subsystem probe
   healthRegistry?.register("audit", async () => {
     try {
@@ -180,6 +195,6 @@ export function registerCoreProbes(): void {
   });
 
   logger.info(
-    "[Health] Core probes registered: database, redis, audit, automation",
+    "[Health] Core probes registered: database, redis, routes, audit, automation",
   );
 }

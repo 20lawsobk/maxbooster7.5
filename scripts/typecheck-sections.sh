@@ -61,6 +61,11 @@ run_section() {
   FILES_LIST="$files" SECTION="$name" node -e '
     const fs = require("fs");
     const files = process.env.FILES_LIST.trim().split("\n").map(f => "../../" + f);
+    // Global ambient declarations (Express Request augmentation etc.) live in
+    // server/types/*.d.ts — with include:[] they must be listed explicitly or
+    // every section that touches express fails with TS2339 on req.user/session.
+    for (const d of fs.readdirSync("server/types").filter(f => f.endsWith(".d.ts")))
+      files.push("../../server/types/" + d);
     fs.writeFileSync(`.cache/tc-sections/${process.env.SECTION}.tsconfig.json`, JSON.stringify({
       extends: "../../tsconfig.server.json",
       compilerOptions: { noEmit: true, incremental: false, tsBuildInfoFile: null },
