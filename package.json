@@ -9,6 +9,7 @@
   },
   "type": "module",
   "license": "MIT",
+  "packageManager": "pnpm@11.22.0",
   "main": "electron/main.js",
   "scripts": {
     "dev": "bash -c '([ -x ./boosterstate/target/debug/boosterstate ] && ./boosterstate/target/debug/boosterstate &); sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
@@ -274,6 +275,7 @@
     "memoizee": "^0.4.17",
     "memorystore": "^1.6.7",
     "multer": "^2.0.2",
+    "msgpackr": "^2.0.5",
     "music-metadata": "^11.12.0",
     "nanoid": "^5.1.6",
     "node-cron": "^4.2.1",
