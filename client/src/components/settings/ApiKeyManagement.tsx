@@ -40,15 +40,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Checkbox,
+} from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import type { ApiKeyScopeDefinition } from "@shared/apiKeyScopes";
 import {
   Key,
   Plus,
@@ -91,6 +88,14 @@ interface NewKeyResponse {
   scopes: string[];
 }
 
+interface ApiKeyScopesResponse {
+  scopes: ApiKeyScopeDefinition[];
+  categories: {
+    features: ApiKeyScopeDefinition[];
+    services: ApiKeyScopeDefinition[];
+  };
+}
+
 export function ApiKeyManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -107,6 +112,9 @@ export function ApiKeyManagement() {
 
   const { data: apiKeys = [], isLoading } = useQuery<ApiKey[]>({
     queryKey: ["/api/auth/api-keys"],
+  });
+  const { data: scopeConfig } = useQuery<ApiKeyScopesResponse>({
+    queryKey: ["/api/auth/api-keys/scopes"],
   });
 
   const createKeyMutation = useMutation({
@@ -240,6 +248,16 @@ export function ApiKeyManagement() {
       year: "numeric",
       month: "short",
       day: "numeric",
+    });
+  };
+
+  const toggleScope = (scopeId: string, checked: boolean) => {
+    setNewKeyScopes((prev) => {
+      const next = checked
+        ? Array.from(new Set([...prev, scopeId]))
+        : prev.filter((scope) => scope !== scopeId);
+
+      return next.length > 0 ? next : ["read"];
     });
   };
 
@@ -445,19 +463,84 @@ export function ApiKeyManagement() {
             </div>
             <div className="space-y-2">
               <Label>Permissions</Label>
-              <Select
-                value={newKeyScopes.join(",")}
-                onValueChange={(value) => setNewKeyScopes(value.split(","))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="read">Read Only</SelectItem>
-                  <SelectItem value="read,write">Read & Write</SelectItem>
-                  <SelectItem value="read,write,delete">Full Access</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="rounded-md border p-3 space-y-4">
+                {scopeConfig?.categories.features?.length ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Features
+                    </p>
+                    {scopeConfig.categories.features.map((scope) => (
+                      <div
+                        key={scope.id}
+                        className="flex items-start gap-3 py-1"
+                      >
+                        <Checkbox
+                          id={`scope-${scope.id}`}
+                          checked={newKeyScopes.includes(scope.id)}
+                          onCheckedChange={(value) =>
+                            toggleScope(scope.id, value === true)
+                          }
+                        />
+                        <Label
+                          htmlFor={`scope-${scope.id}`}
+                          className="space-y-0.5 leading-none cursor-pointer"
+                        >
+                          <span className="text-sm font-medium">
+                            {scope.label}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {scope.description}
+                          </p>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {scopeConfig?.categories.services?.length ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Services
+                    </p>
+                    {scopeConfig.categories.services.map((scope) => (
+                      <div
+                        key={scope.id}
+                        className="flex items-start gap-3 py-1"
+                      >
+                        <Checkbox
+                          id={`scope-${scope.id}`}
+                          checked={newKeyScopes.includes(scope.id)}
+                          onCheckedChange={(value) =>
+                            toggleScope(scope.id, value === true)
+                          }
+                        />
+                        <Label
+                          htmlFor={`scope-${scope.id}`}
+                          className="space-y-0.5 leading-none cursor-pointer"
+                        >
+                          <span className="text-sm font-medium">
+                            {scope.label}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {scope.description}
+                          </p>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="pt-1">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Selected scopes
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {newKeyScopes.map((scope) => (
+                      <Badge key={scope} variant="secondary" className="text-xs">
+                        {scope}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
