@@ -5,8 +5,7 @@ import { Strategy, type VerifyFunction } from "openid-client/passport";
 import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
-import memoize from "memoizee";
-import connectPg from "connect-pg-simple";
+import pg from "pg";
 import { storage } from "./storage";
 import { env } from "./config/env.js";
 
@@ -14,24 +13,110 @@ if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
 
-const getOidcConfig = memoize(
+// ── Inline TTL memoizer (replaces memoizee) ───────────────────────────────────
+
+function makeTtlMemo<T>(fn: () => Promise<T>, maxAgeMs: number): () => Promise<T> {
+  let cached: T | undefined;
+  let cachedAt = 0;
+  let inflight: Promise<T> | null = null;
+  return async () => {
+    const now = Date.now();
+    if (cached !== undefined && now - cachedAt < maxAgeMs) return cached;
+    if (inflight) return inflight;
+    inflight = fn().then((value) => {
+      cached = value;
+      cachedAt = Date.now();
+      inflight = null;
+      return value;
+    });
+    return inflight;
+  };
+}
+
+const getOidcConfig = makeTtlMemo(
   async () => {
     return await client?.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!,
+      process.env.REPL_ID,
     );
   },
-  { maxAge: 3600 * 1000 },
+  3600 * 1000,
 );
+
+// ── Custom PostgreSQL session store (replaces connect-pg-simple) ──────────────
+//
+// Stores express-session blobs in a table with columns:
+//   sid TEXT PRIMARY KEY, sess TEXT NOT NULL, expire BIGINT NOT NULL
+//
+// Uses raw pg.Pool so that it does not depend on drizzle or any other ORM.
+// The `tableName` option preserves the original table name ("sessions") to
+// avoid any schema migration.
+
+class PgSessionStore extends session.Store {
+  private readonly pool: pg.Pool;
+  private readonly table: string;
+  private readonly ttlMs: number;
+
+  constructor(opts: { conString: string; tableName: string; ttl: number }) {
+    super();
+    this.pool = new pg.Pool({ connectionString: opts.conString, max: 3 });
+    this.table = opts.tableName;
+    this.ttlMs = opts.ttl;
+    // Periodic cleanup of expired rows (every hour)
+    setInterval(() => {
+      this.pool
+        .query(`DELETE FROM "${this.table}" WHERE expire <= $1`, [Date.now()])
+        .catch(() => {});
+    }, 3_600_000).unref();
+  }
+
+  get(sid, cb) {
+    this.pool
+      .query(
+        `SELECT sess FROM "${this.table}" WHERE sid = $1 AND expire > $2`,
+        [sid, Date.now()],
+      )
+      .then((res) => {
+        if (!res.rows.length) return cb(null, null);
+        try {
+          cb(null, JSON.parse(res.rows[0].sess));
+        } catch {
+          cb(null, null);
+        }
+      })
+      .catch(cb);
+  }
+
+  set(sid, sess, cb?) {
+    const expire = Date.now() + this.ttlMs;
+    this.pool
+      .query(
+        `INSERT INTO "${this.table}" (sid, sess, expire) VALUES ($1, $2, $3)
+         ON CONFLICT (sid) DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire`,
+        [sid, JSON.stringify(sess), expire],
+      )
+      .then(() => cb?.())
+      .catch((err) => cb?.(err));
+  }
+
+  destroy(sid, cb?) {
+    this.pool
+      .query(`DELETE FROM "${this.table}" WHERE sid = $1`, [sid])
+      .then(() => cb?.())
+      .catch((err) => cb?.(err));
+  }
+
+  touch(sid, sess, cb?) {
+    this.set(sid, sess, cb);
+  }
+}
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
+  const sessionStore = new PgSessionStore({
     conString: env.NEON_DATABASE_URL || env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
     tableName: "sessions",
+    ttl: sessionTtl,
   });
   return session({
     secret: env.SESSION_SECRET!,
