@@ -4,6 +4,7 @@ import { royaltyStatements, recoupmentAccounts, type RoyaltyStatement } from "@s
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import ExcelJS from "exceljs";
 import { royaltiesTaxComplianceService } from "./royaltiesTaxComplianceService.js";
 import { royaltyEngine } from "./royaltyEngine.js";
 
@@ -110,6 +111,8 @@ export class RoyaltyExportsService {
     switch (options?.format) {
       case "csv":
         return this.exportToCSV(statement, options);
+      case "excel":
+        return this.exportToExcel([statement], options);
       case "pdf":
         return this.exportToPDF(statement, options);
       case "json":
@@ -138,6 +141,8 @@ export class RoyaltyExportsService {
     switch (options?.format) {
       case "csv":
         return this.exportMultipleToCSV(statements, options);
+      case "excel":
+        return this.exportToExcel(statements, options);
       case "pdf":
         return this.exportMultipleToPDF(statements, options);
       case "json":
@@ -819,7 +824,7 @@ export class RoyaltyExportsService {
   async exportToExcel(
     statements: ExportableStatement[],
     options: ExportOptions,
-  ): Promise<{ data: string; filename: string; mimeType: string }> {
+  ): Promise<{ data: Buffer; filename: string; mimeType: string }> {
     const worksheets: Record<string, string[][]> = {};
 
     worksheets["Summary"] = [
@@ -914,8 +919,8 @@ export class RoyaltyExportsService {
             item?.territory,
             String(item?.streams),
             String(item?.downloads),
-            `$${item?.grossRevenue.toFixed(4)}`,
-            `$${item?.effectiveRate.toFixed(6)}`,
+            `$${Number(item?.grossRevenue ?? 0).toFixed(4)}`,
+            `$${Number(item?.effectiveRate ?? 0).toFixed(6)}`,
             item?.currency,
             String(item?.exchangeRate),
           ]);
@@ -941,8 +946,8 @@ export class RoyaltyExportsService {
             s?.id,
             t?.territory,
             String(t?.streams),
-            `$${t?.revenue.toFixed(2)}`,
-            `${t?.percentage.toFixed(2)}%`,
+            `$${Number(t?.revenue ?? 0).toFixed(2)}`,
+            `${Number(t?.percentage ?? 0).toFixed(2)}%`,
           ]);
         }
       }
@@ -966,14 +971,14 @@ export class RoyaltyExportsService {
             s?.id,
             d?.dsp,
             String(d?.streams),
-            `$${d?.revenue.toFixed(2)}`,
-            `$${d?.averageRate.toFixed(6)}`,
+            `$${Number(d?.revenue ?? 0).toFixed(2)}`,
+            `$${Number(d?.averageRate ?? 0).toFixed(6)}`,
           ]);
         }
       }
     }
 
-    const xlsxContent = this.generateXLSXFormat(worksheets);
+    const xlsxContent = await this.generateXLSXBuffer(worksheets);
 
     return {
       data: xlsxContent,
@@ -983,18 +988,36 @@ export class RoyaltyExportsService {
     };
   }
 
-  private generateXLSXFormat(worksheets: Record<string, string[][]>): string {
-    let csvOutput = "";
-    for (const [sheetName, rows] of Object.entries(worksheets)) {
-      csvOutput += `=== ${sheetName} ===\n`;
-      for (const row of rows) {
-        csvOutput +=
-          row?.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",") +
-          "\n";
-      }
-      csvOutput += "\n";
+  private normalizeWorksheetName(name: string, usedNames: Set<string>): string {
+    const sanitizedBase =
+      name?.replace(/[\\/*?:[\]]/g, " ").trim().slice(0, 31) || "Sheet";
+    let candidate = sanitizedBase;
+    let suffix = 1;
+    while (usedNames.has(candidate)) {
+      const suffixLabel = `_${suffix++}`;
+      candidate = `${sanitizedBase.slice(0, 31 - suffixLabel.length)}${suffixLabel}`;
     }
-    return csvOutput;
+    usedNames.add(candidate);
+    return candidate;
+  }
+
+  private async generateXLSXBuffer(
+    worksheets: Record<string, string[][]>,
+  ): Promise<Buffer> {
+    const workbook = new ExcelJS.Workbook();
+    const usedNames = new Set<string>();
+
+    for (const [rawSheetName, rows] of Object.entries(worksheets)) {
+      const sheetName = this.normalizeWorksheetName(rawSheetName, usedNames);
+      const worksheet = workbook.addWorksheet(sheetName);
+
+      for (const row of rows) {
+        worksheet.addRow(row?.map((cell) => String(cell ?? "")) || []);
+      }
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
   }
 
   async exportYearlySummary(
@@ -1211,8 +1234,62 @@ export class RoyaltyExportsService {
           mimeType: "text/csv",
         };
       }
+      case "excel": {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Territory Report");
+        worksheet.addRow([
+          "Territory",
+          "Streams",
+          "Revenue",
+          "Avg Revenue/Stream",
+          "Periods",
+        ]);
+        for (const row of reportData) {
+          worksheet.addRow([
+            row.territory,
+            row.streams,
+            row.revenue,
+            row.avgRevenuePerStream,
+            row.periods.join("; "),
+          ]);
+        }
+        const buffer = await workbook.xlsx.writeBuffer();
+        return {
+          data: Buffer.from(buffer),
+          filename: `territory_report_${this.formatDateForFilename(options.startDate)}_${this.formatDateForFilename(options.endDate)}.xlsx`,
+          mimeType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        };
+      }
+      case "pdf": {
+        const doc = new jsPDF();
+        doc.text("Territory Revenue Report", 14, 16);
+        doc.text(
+          `Period: ${options.startDate.toISOString().slice(0, 10)} to ${options.endDate.toISOString().slice(0, 10)}`,
+          14,
+          24,
+        );
+        doc.autoTable({
+          startY: 30,
+          head: [
+            ["Territory", "Streams", "Revenue", "Avg Revenue/Stream", "Periods"],
+          ],
+          body: reportData.map((r) => [
+            r.territory,
+            String(r.streams),
+            `$${r.revenue.toFixed(2)}`,
+            `$${r.avgRevenuePerStream.toFixed(6)}`,
+            r.periods.join("; "),
+          ]),
+          theme: "grid",
+        });
+        return {
+          data: Buffer.from(doc.output("arraybuffer")),
+          filename: `territory_report_${this.formatDateForFilename(options.startDate)}_${this.formatDateForFilename(options.endDate)}.pdf`,
+          mimeType: "application/pdf",
+        };
+      }
       case "json":
-      default:
         return {
           data: JSON.stringify(
             {
@@ -1229,6 +1306,8 @@ export class RoyaltyExportsService {
           filename: `territory_report_${this.formatDateForFilename(options.startDate)}_${this.formatDateForFilename(options.endDate)}.json`,
           mimeType: "application/json",
         };
+      default:
+        throw new Error(`Unsupported format: ${options.format}`);
     }
   }
 }
