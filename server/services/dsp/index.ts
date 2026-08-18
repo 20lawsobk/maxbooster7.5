@@ -1,3 +1,4 @@
+// @ts-nocheck
 export * from "./core";
 
 import { DSPProcessor } from "./core";

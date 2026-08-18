@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { memo } from "react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";

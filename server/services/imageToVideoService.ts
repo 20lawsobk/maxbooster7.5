@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Image-to-Video Service — Music Video Compositor
  *

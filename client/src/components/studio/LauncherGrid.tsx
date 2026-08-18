@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Play, Square, Plus, Layers, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {

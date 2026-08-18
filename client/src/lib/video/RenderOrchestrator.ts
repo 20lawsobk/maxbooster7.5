@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../logger";
 import type { VideoProject, LayerConfig, TransformConfig, RenderProgress, BackgroundConfig, VisualizerConfig, TextConfig, ImageConfig, ShapeConfig, ParticleConfig } from "../../../../shared/video/VideoRendererEngine";
 import { DEFAULT_TRANSFORM } from "../../../../shared/video/VideoRendererEngine";

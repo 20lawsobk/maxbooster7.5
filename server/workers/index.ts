@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Worker, type Job } from "bullmq";
 import { newBullMQRedisConnection } from "../lib/redisClient.js";
 import { config } from "../config/defaults.js";

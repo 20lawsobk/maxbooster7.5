@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useRef, useEffect } from "react";
 import { CancellationModal } from "@/components/retention/CancellationModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

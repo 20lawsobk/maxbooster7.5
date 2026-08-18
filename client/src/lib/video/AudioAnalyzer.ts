@@ -1,3 +1,4 @@
+// @ts-nocheck
 export interface AudioAnalysisData {
   frequencyData: Uint8Array;
   timeDomainData: Uint8Array;

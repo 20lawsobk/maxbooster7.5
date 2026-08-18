@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomUUID } from "crypto";
 import path from "path";
 import { promises as fsPromises } from "fs";

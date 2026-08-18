@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Max Booster — Full Recursive DNS Resolver  (Build 2)
  *

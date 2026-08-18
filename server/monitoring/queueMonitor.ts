@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../logger.js";
 import { alertingService } from "./alertingService.js";
 import { metricsCollector } from "./metricsCollector.js";

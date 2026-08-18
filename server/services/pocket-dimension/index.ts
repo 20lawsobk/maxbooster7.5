@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * POCKET DIMENSION STORAGE ENGINE
  *

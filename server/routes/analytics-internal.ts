@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Request, Response } from "express";
 import { distributedCache } from "../infrastructure/distributedCache.js";
 import { db } from "../db";

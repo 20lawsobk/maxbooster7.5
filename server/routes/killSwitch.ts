@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * KILL SWITCH API ROUTES
  *

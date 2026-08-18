@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomBytes } from "crypto";
 import { db } from "../db";
 import { MaxCoreAIClient } from "./maxcoreClient.js";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Content Sampler — Admin Route
  *

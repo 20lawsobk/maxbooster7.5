@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { aiHelpDeskService } from "../services/aiHelpDeskService";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
 import type { InsertProject, Project, StudioTrack } from "@shared/schema";

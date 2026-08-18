@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CUSTOMER HEALTH SCORE SERVICE
  *

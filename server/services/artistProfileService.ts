@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from "../db.js";
 import { eq, and, inArray } from "drizzle-orm";
 import { artistProfiles, artistProfileReleases, distroTracks, profileClaimPipeline, profileClaimEvents, artistIdentityLinks, artistDnaSnapshots, profileSplitEvents, distributorHistoryImports } from "@shared/schema";

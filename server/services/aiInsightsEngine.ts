@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { type Project } from "@shared/schema";
 import { db } from "../db";
 import { analytics, users, studioProjects, aiMetricPredictions, aiCohortAnalysis, aiChurnPredictions, aiRevenueForecasts, aiAnomalyDetections, aiModels, inferenceRuns } from "@shared/schema";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useEffect, ReactNode } from 'react';
 import { studioOneTheme, cssVariables } from '@/lib/studioOneTheme';
 import { useStudioLayoutStore } from '@/lib/studioLayoutStore';

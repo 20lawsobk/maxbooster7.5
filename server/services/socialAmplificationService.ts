@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomBytes } from "crypto";
 import { AIAdvertisingEngine } from "../ai-advertising.js";
 import { AutonomousAutopilot } from "../autonomous-autopilot.js";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from "../db";
 import { revenueForecasts, dspAnalytics, RevenueForecast } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";

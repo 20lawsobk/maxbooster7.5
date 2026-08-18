@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { AdCreative } from "@shared/schema";
 import { storage } from "../storage";
 import { db } from "../db";

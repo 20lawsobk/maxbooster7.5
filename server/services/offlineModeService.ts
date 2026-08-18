@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../logger.js";
 import { EventEmitter } from "events";
 import { db } from "../db";

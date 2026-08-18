@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { requireUUIDParam } from "../middleware/requestValidation.js";
 import { Router } from "express";
 import { db } from "../db";

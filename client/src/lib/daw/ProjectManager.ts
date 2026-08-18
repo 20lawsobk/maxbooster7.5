@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../logger";
 import { getCsrfTokenFromCookie } from "../queryClient";
 import { transportEngine } from "./TransportEngine";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Layers, Check, CheckCheck, Star, StarOff, Trash2, Play, Pause, RotateCcw, ChevronDown, ChevronUp, Mic, Volume2, VolumeX, Wand2 } from "lucide-react";

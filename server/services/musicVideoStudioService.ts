@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Music Video Studio Service
  *

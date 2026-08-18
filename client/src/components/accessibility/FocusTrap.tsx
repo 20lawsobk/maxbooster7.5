@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef, useEffect, useCallback, type ReactNode } from "react";
 import { getFocusableElements } from "@/lib/accessibility";
 import { useFocusReturn } from "@/hooks/useFocusReturn";

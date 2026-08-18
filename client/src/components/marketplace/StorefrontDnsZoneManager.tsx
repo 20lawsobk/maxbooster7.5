@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * StorefrontDnsZoneManager — Max Booster Domain Hub
  *

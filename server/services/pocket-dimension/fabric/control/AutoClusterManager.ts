@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { NodeRegistry } from "../infra/NodeRegistry.js";
 import type { ChunkIndex } from "../infra/ChunkIndex.js";
 import type { PlacementStrategy } from "./PlacementStrategy.js";

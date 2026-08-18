@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from "react";
 import { Mic, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

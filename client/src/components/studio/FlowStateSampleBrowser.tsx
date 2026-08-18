@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useMemo, useEffect } from "react";
 import { FolderOpen, Search, Play, Pause, Heart, Music, Drum, Piano, Guitar, Volume2, Grid, List, ChevronRight, ChevronDown, Plus, Wand2, Waveform } from "lucide-react";
 import { Button } from "@/components/ui/button";

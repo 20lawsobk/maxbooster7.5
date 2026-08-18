@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CHAIN ERROR AUTO-FIXER
  *

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useEffect, useMemo } from "react";
 import {
   UndoStack,

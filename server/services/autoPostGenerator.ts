@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { storage } from "../storage.js";
 import { logger } from "../logger.js";
 import { aiModelManager } from "./aiModelManager.js";

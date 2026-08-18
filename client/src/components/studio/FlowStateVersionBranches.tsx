@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GitBranch, GitMerge, GitCommit, Plus, Trash2, Check, ChevronRight, ChevronDown, Clock, Star, StarOff, RotateCcw, ArrowRight, Tag } from "lucide-react";

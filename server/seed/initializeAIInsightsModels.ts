@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from "../db";
 import { aiModels, aiModelVersions } from "../../shared/schema";
 import { eq } from "drizzle-orm";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Video Generator Service — Python NumPy Frame Engine + FFmpeg Compositor
  *

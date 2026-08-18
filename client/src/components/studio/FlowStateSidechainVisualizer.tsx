@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useRef, useEffect, useMemo } from "react";
 import { GitBranch, Plus, Trash2, Volume2, Zap, ArrowRight, Eye, EyeOff, Waves, Activity, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";

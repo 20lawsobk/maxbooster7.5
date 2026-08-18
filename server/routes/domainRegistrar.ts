@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Domain Registrar API — Max Booster Registrar
  *

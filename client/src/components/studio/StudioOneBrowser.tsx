@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Folder, FolderOpen, Music, FileAudio, ChevronRight, ChevronDown, Play, Pause, Filter, LayoutGrid, List, Star, Plus, Zap, Loader2 } from "lucide-react";

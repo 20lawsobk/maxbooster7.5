@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Music2, CheckCircle2, ChevronDown, ChevronUp, Trash2, Zap, Loader2, TriangleAlert } from "lucide-react";

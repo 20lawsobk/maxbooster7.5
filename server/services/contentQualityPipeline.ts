@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../logger.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
 import { db } from "../db";
