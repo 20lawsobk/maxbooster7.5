@@ -10,7 +10,7 @@ import { requireAdmin } from "../../middleware/auth.js";
 import { beatMoneyLoopService } from "../../services/beatMoneyLoopService.js";
 import { db } from "../../db.js";
 import { beatMoneyLoopCycles, beatMoneyLoopState } from "@shared/schema";
-import { desc, gte, sql } from "drizzle-orm";
+import { desc, gte } from "drizzle-orm";
 import { logger } from "../../logger.js";
 
 const router = Router();
@@ -284,4 +284,3 @@ router.get("/health-score", async (_req, res) => {
     res.status(500).json({ error: "Failed to compute health score" });
   }
 });
-
