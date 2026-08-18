@@ -1662,6 +1662,11 @@ function refineCategory(base: UrlCategory, meta: PageMeta, pathname: string): Ur
 
 interface OEmbedResult { title?: string; authorName?: string; thumbnailUrl?: string; embedUrl?: string }
 
+function isJsonResponse(res: Response): boolean {
+  const contentType = res.headers.get("content-type") || "";
+  return contentType.toLowerCase().includes("application/json");
+}
+
 async function trySpotifyOembed(url: string, id: string): Promise<OEmbedResult> {
   try {
     const res = await fetch(
@@ -1669,6 +1674,10 @@ async function trySpotifyOembed(url: string, id: string): Promise<OEmbedResult> 
       { headers: { "User-Agent": "MaxBooster/3.0", Accept: "application/json" }, signal: AbortSignal.timeout(8_000) },
     );
     if (!res.ok) { logger.warn(`[AdvancedUrlParser] Spotify oEmbed HTTP ${res.status} for id=${id}`); return {}; }
+    if (!isJsonResponse(res)) {
+      logger.warn(`[AdvancedUrlParser] Spotify oEmbed returned non-JSON content for id=${id}`);
+      return {};
+    }
     const d = JSON.parse(await res.text()) as { title?: string; author_name?: string; thumbnail_url?: string };
     return { title: d.title, authorName: d.author_name, thumbnailUrl: d.thumbnail_url };
   } catch (err) {
@@ -1688,6 +1697,7 @@ async function tryNoEmbed(pageUrl: string): Promise<OEmbedResult> {
       { headers: { "User-Agent": "MaxBooster/3.0", Accept: "application/json" }, signal: AbortSignal.timeout(8_000) },
     );
     if (!res.ok) return {};
+    if (!isJsonResponse(res)) return {};
     const raw = await res.text();
     if (!raw || raw.trim().startsWith("<")) return {};
     const d = JSON.parse(raw) as { title?: string; author_name?: string; thumbnail_url?: string; html?: string; error?: string };
@@ -1704,6 +1714,7 @@ async function tryTikTokOembed(pageUrl: string): Promise<OEmbedResult> {
       { headers: { "User-Agent": "MaxBooster/3.0", Accept: "application/json" }, signal: AbortSignal.timeout(8_000) },
     );
     if (!res.ok) return {};
+    if (!isJsonResponse(res)) return {};
     const d = JSON.parse(await res.text()) as { title?: string; author_name?: string; thumbnail_url?: string };
     return { title: d.title, authorName: d.author_name, thumbnailUrl: d.thumbnail_url };
   } catch { return {}; }
