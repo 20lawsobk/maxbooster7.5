@@ -24,6 +24,7 @@ export default defineConfig({
       "tests/cache-invalidation.test.ts",
       "tests/unit/cache-cross-pod.test.ts",
       "tests/file-management.test.ts",
+      "tests/direct-upload.test.ts",
       "tests/billing-lifecycle.test.ts",
       "tests/auth-2fa.test.ts",
       // Feature coverage — previously untested platform areas
