@@ -10,7 +10,7 @@ import { requireAdmin } from "../../middleware/auth.js";
 import { beatMoneyLoopService } from "../../services/beatMoneyLoopService.js";
 import { db } from "../../db.js";
 import { beatMoneyLoopCycles, beatMoneyLoopState } from "@shared/schema";
-import { desc, gte, sql } from "drizzle-orm";
+import { desc, gte } from "drizzle-orm";
 import { logger } from "../../logger.js";
 
 const router = Router();
@@ -146,7 +146,8 @@ router.get("/health-score", async (_req, res) => {
     // ── Dimension 1: Success Rate (40 pts) ──
     const totalCycles = state?.totalCycles ?? 0;
     const successfulCycles = state?.successfulCycles ?? 0;
-    const successRate = totalCycles > 0 ? successfulCycles / totalCycles : 0;
+    const successRate =
+      totalCycles > 0 ? successfulCycles / (totalCycles || 1) : 0;
     const successScore = Math.round(successRate * 40);
 
     // ── Dimension 2: Revenue Momentum (25 pts) ──
@@ -181,7 +182,9 @@ router.get("/health-score", async (_req, res) => {
       0,
     );
     const conversionRate =
-      totalPlays > 0 ? Math.min(totalDownloads / totalPlays, 0.1) / 0.1 : 0;
+      totalPlays > 0
+        ? Math.min(totalDownloads / (totalPlays || 1), 0.1) / 0.1
+        : 0;
     const velocityScore = Math.round(conversionRate * 15);
 
     const totalScore = successScore + momentumScore + freshnessScore + velocityScore;
@@ -284,4 +287,3 @@ router.get("/health-score", async (_req, res) => {
     res.status(500).json({ error: "Failed to compute health score" });
   }
 });
-
