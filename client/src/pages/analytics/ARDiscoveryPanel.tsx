@@ -60,7 +60,7 @@ const GrowthTrajectoryMini = memo(
 
     const points = trajectory
       .map((value, i) => {
-        const x = (i / (trajectory.length - 1)) * 100;
+        const x = (i / ((trajectory.length - 1 || 1))) * 100;
         const y = 100 - ((value - min) / range) * 80 - 10;
         return `${x},${y}`;
       })
@@ -243,7 +243,7 @@ const GrowthTrajectoryChart = memo(
 
               const points = trajectory
                 .map((value, i) => {
-                  const x = (i / (trajectory.length - 1)) * 100;
+                  const x = (i / ((trajectory.length - 1 || 1))) * 100;
                   const y = 100 - ((value - min) / range) * 80 - 10;
                   return `${x},${y}`;
                 })
@@ -361,7 +361,7 @@ export default function ARDiscoveryPanel({
             artists.reduce(
               (sum: number, a: EmergingArtist) => sum + a.growthScore,
               0,
-            ) / artists.length,
+            ) / (artists.length || 1),
           )
         : 0,
     totalReach: artists.reduce(

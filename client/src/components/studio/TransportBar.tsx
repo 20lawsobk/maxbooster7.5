@@ -200,7 +200,7 @@ export function TransportBar({
         intervals.push(newTimes[i] - newTimes[i - 1]);
       }
       const avgInterval =
-        intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        intervals.reduce((a, b) => a + b, 0) / (intervals.length || 1);
       const newTempo = Math.round(60000 / avgInterval);
       if (newTempo >= 40 && newTempo <= 240) {
         setTempo(newTempo);

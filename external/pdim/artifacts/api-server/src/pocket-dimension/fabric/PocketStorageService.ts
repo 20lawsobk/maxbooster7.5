@@ -1219,7 +1219,7 @@ export class PocketStorageService {
       nodes: nodes.length,
       totalCapacityBytes,
       usedBytes,
-      utilization: totalCapacityBytes > 0 ? usedBytes / totalCapacityBytes : 0,
+      utilization: totalCapacityBytes > 0 ? usedBytes / (totalCapacityBytes || 1) : 0,
     };
   }
 }

@@ -544,7 +544,7 @@ export function ArtistTypeRecommendations({
   };
 
   const completedActions = firstActions.filter((a) => a.completed).length;
-  const progressPercentage = (completedActions / firstActions.length) * 100;
+  const progressPercentage = (completedActions / (firstActions.length || 1)) * 100;
 
   return (
     <div className="space-y-6">

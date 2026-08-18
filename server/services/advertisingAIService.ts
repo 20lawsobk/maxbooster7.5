@@ -913,7 +913,7 @@ export class AdvertisingAIService {
     // Allocate budget by platform ROI
     for (const platform of platforms) {
       const roi = platformROI[platform] || 2.0;
-      const allocation = (roi / totalWeight) * totalBudget;
+      const allocation = (roi / (totalWeight || 1)) * totalBudget;
 
       platformAllocations[platform] = {
         budget: Math.round(allocation),
@@ -945,7 +945,7 @@ export class AdvertisingAIService {
     for (const segment of segments) {
       const segmentValue =
         parseFloat(segment?.predictedValue || "0") * segment?.size;
-      const allocation = (segmentValue / totalSegmentValue) * totalBudget * 0.7; // 70% to segments
+      const allocation = (segmentValue / (totalSegmentValue || 1)) * totalBudget * 0.7; // 70% to segments
 
       segmentAllocations[segment.segmentName] = {
         budget: Math.round(allocation),
@@ -1069,7 +1069,7 @@ export class AdvertisingAIService {
       .where(eq(adConversions?.campaignId, campaignId));
 
     const totalConversions = existingConversions?.length + 1;
-    const costPerConversion = campaignBudget / totalConversions;
+    const costPerConversion = campaignBudget / (totalConversions || 1);
 
     const totalRevenue = existingConversions?.reduce(
       (sum, c) => sum + parseFloat(c?.conversionValue?.toString() || "0"),

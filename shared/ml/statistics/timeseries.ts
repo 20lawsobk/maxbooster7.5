@@ -64,7 +64,7 @@ function centeredMovingAverage(data: number[], window: number): number[] {
     } else {
       const windowData = data.slice(i - halfWindow, i + halfWindow + 1);
       const avg =
-        windowData.reduce((sum, val) => sum + val, 0) / windowData.length;
+        windowData.reduce((sum, val) => sum + val, 0) / (windowData.length || 1);
       result.push(avg);
     }
   }
@@ -296,7 +296,7 @@ export function autocorrelation(data: number[], maxLag: number): number[] {
       denominator += Math.pow(data[i] - mean, 2);
     }
 
-    acf.push(denominator > 0 ? numerator / denominator : 0);
+    acf.push(denominator > 0 ? numerator / (denominator || 1) : 0);
   }
 
   return acf;

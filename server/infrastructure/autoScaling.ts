@@ -142,7 +142,7 @@ class AutoScalingManager {
       totalIdle += cpu?.times.idle;
     }
 
-    return (1 - totalIdle / totalTick) * 100;
+    return (1 - totalIdle / (totalTick || 1)) * 100;
   }
 
   private getMemoryInfo(): ScalingMetrics["memory"] {
@@ -155,7 +155,7 @@ class AutoScalingManager {
     return {
       used: usedMem,
       total: totalMem,
-      percentage: (usedMem / totalMem) * 100,
+      percentage: (usedMem / (totalMem || 1)) * 100,
       heapUsed,
       heapTotal,
     };

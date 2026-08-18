@@ -749,7 +749,7 @@ export function LyricsPanel({
                 .map((l) => l.timestamp),
               60,
             );
-            const pct = Math.min(100, (playheadPosition / totalTs) * 100);
+            const pct = Math.min(100, (playheadPosition / (totalTs || 1)) * 100);
             return (
               <div
                 className="absolute top-0 bottom-0 w-px bg-white/70 pointer-events-none"

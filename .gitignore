@@ -51,7 +51,7 @@ __pycache__/
 dist-python/
 ai_model/weights/
 ai_model/data/
-training/
+ai_model/training/
 boostsheets_db/
 boosterstate-data/
 cookies.txt

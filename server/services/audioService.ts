@@ -292,7 +292,7 @@ export class AudioService {
         count++;
       }
 
-      const average = count > 0 ? sum / count : 0;
+      const average = count > 0 ? sum / (count || 1) : 0;
       downsampled?.push(average / 32768); // Normalize to -1 to 1 range
     }
 
@@ -908,7 +908,7 @@ export class AudioService {
     }
 
     const sum = chroma?.reduce((a, b) => a + b, 0);
-    return sum > 0 ? chroma?.map((c) => c / sum) : chroma;
+    return sum > 0 ? chroma?.map((c) => c / (sum || 1)) : chroma;
   }
 
   private pearsonCorrelation(x: number[], y: number[]): number {
@@ -924,7 +924,7 @@ export class AudioService {
       (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY),
     );
 
-    return denominator === 0 ? 0 : numerator / denominator;
+    return denominator === 0 ? 0 : numerator / (denominator || 1);
   }
 
   async applyAudioEffects(

@@ -445,10 +445,10 @@ export class DX7BrassSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      this.lfo.sine() * 0.003 * envValue;
+      const vibratoMod = this.lfo.sine() * 0.003 * envValue;
 
       const modAmount = 2.0 + filterEnvValue * 2.5;
-      const mod4 = this.operators[3].process(0) * modAmount;
+      const mod4 = this.operators[3].process(vibratoMod) * modAmount;
       const mod3 = this.operators[2].process(mod4) * modAmount * 0.8;
       const mod2 = this.operators[1].process(mod3) * modAmount * 0.6;
       let sample = this.operators[0].process(mod2);
@@ -551,7 +551,7 @@ export class DX7PadSynth implements SynthesizerEngine {
 
       const modLFO = this.lfo1.sine();
       const panLFO = this.lfo2.sine();
-      this.lfo3.sine() * 0.002;
+      const detuneModLFO = this.lfo3.sine() * 0.002;
 
       const modAmount = 0.8 + modLFO * 0.4;
 
@@ -663,10 +663,10 @@ export class DX7LeadSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
-      this.vibratoLFO.sine() * 0.004 * envValue;
+      const vibratoMod = this.vibratoLFO.sine() * 0.004 * envValue;
 
       const modAmount = 2.5 + filterEnvValue * 1.5;
-      const mod4 = this.operators[3].process(0) * modAmount;
+      const mod4 = this.operators[3].process(vibratoMod) * modAmount;
       const mod3 = this.operators[2].process(mod4) * modAmount * 0.8;
       const mod2 = this.operators[1].process(mod3) * modAmount * 0.6;
       let sample = this.operators[0].process(mod2);
@@ -975,7 +975,7 @@ export class FM8Synth implements SynthesizerEngine {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
       const modLFO = this.lfo1.sine();
-      this.lfo2.sine() * 0.002;
+      const vibratoMod = this.lfo2.sine() * 0.002;
 
       for (let o = 7; o >= 0; o--) {
         let modulation = 0;

@@ -946,7 +946,7 @@ export class IntelligentMasteringEngine {
       const block = audioData.slice(i, i + blockSize);
       const kWeighted = this.applyKWeighting(block, sampleRate);
       const meanSquare =
-        kWeighted.reduce((sum, val) => sum + val * val, 0) / kWeighted.length;
+        kWeighted.reduce((sum, val) => sum + val * val, 0) / (kWeighted.length || 1);
       if (meanSquare > 0) {
         blocks.push(meanSquare);
       }
@@ -961,7 +961,7 @@ export class IntelligentMasteringEngine {
     if (gatedBlocks.length === 0) return -70;
 
     const meanPower =
-      gatedBlocks.reduce((sum, val) => sum + val, 0) / gatedBlocks.length;
+      gatedBlocks.reduce((sum, val) => sum + val, 0) / (gatedBlocks.length || 1);
     return -0.691 + 10 * Math.log10(meanPower);
   }
 
@@ -1010,7 +1010,7 @@ export class IntelligentMasteringEngine {
       for (let j = 0; j < window.length; j++) {
         sumSquares += window[j] * window[j];
       }
-      const rms = Math.sqrt(sumSquares / window.length);
+      const rms = Math.sqrt(sumSquares / (window.length || 1));
       if (rms > 0.0001) {
         rmsValues.push(20 * Math.log10(rms));
       }
@@ -1043,7 +1043,7 @@ export class IntelligentMasteringEngine {
     const totalEnergy = midEnergy + sideEnergy;
     if (totalEnergy === 0) return 0;
 
-    return sideEnergy / totalEnergy;
+    return sideEnergy / (totalEnergy || 1);
   }
 
   private analyzeFrequencyBalance(
@@ -1087,13 +1087,13 @@ export class IntelligentMasteringEngine {
     const total = Object.values(bandEnergies).reduce((a, b) => a + b, 0) || 1;
 
     return {
-      sub: bandEnergies.sub / total,
-      bass: bandEnergies.bass / total,
-      lowMid: bandEnergies.lowMid / total,
-      mid: bandEnergies.mid / total,
-      highMid: bandEnergies.highMid / total,
-      presence: bandEnergies.presence / total,
-      brilliance: bandEnergies.brilliance / total,
+      sub: bandEnergies.sub / (total || 1),
+      bass: bandEnergies.bass / (total || 1),
+      lowMid: bandEnergies.lowMid / (total || 1),
+      mid: bandEnergies.mid / (total || 1),
+      highMid: bandEnergies.highMid / (total || 1),
+      presence: bandEnergies.presence / (total || 1),
+      brilliance: bandEnergies.brilliance / (total || 1),
     };
   }
 
@@ -1525,7 +1525,7 @@ export class IntelligentMasteringEngine {
       );
       freqSimilarity += Math.max(0, 1 - diff / 0.3);
     }
-    similarity += (freqSimilarity / keys.length) * 0.2;
+    similarity += (freqSimilarity / (keys.length || 1)) * 0.2;
 
     return Math.min(similarity, 1);
   }

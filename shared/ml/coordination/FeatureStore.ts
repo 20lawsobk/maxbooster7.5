@@ -281,8 +281,8 @@ export class FeatureStore {
         });
         return;
       }
-      const weight1 = existing.sampleSize / totalSamples;
-      const weight2 = performance.sampleSize / totalSamples;
+      const weight1 = existing.sampleSize / (totalSamples || 1);
+      const weight2 = performance.sampleSize / (totalSamples || 1);
 
       this.contentPerformance.set(key, {
         contentType: performance.contentType,
@@ -345,7 +345,7 @@ export class FeatureStore {
       : Array.from(this.campaignInsights.values());
 
     if (campaigns.length === 0) return 1.0;
-    return campaigns.reduce((sum, c) => sum + c.roi, 0) / campaigns.length;
+    return campaigns.reduce((sum, c) => sum + c.roi, 0) / (campaigns.length || 1);
   }
 
   public updateCrossSystemMetrics(updates: Partial<CrossSystemMetrics>): void {
@@ -458,13 +458,13 @@ export class FeatureStore {
     const totalEvents = this.learningEvents.length;
     const eventsWithFeedback = this.learningEvents.filter((e) => e.feedback);
     const feedbackRate =
-      totalEvents > 0 ? eventsWithFeedback.length / totalEvents : 0;
+      totalEvents > 0 ? eventsWithFeedback.length / (totalEvents || 1) : 0;
     const avgQuality =
       eventsWithFeedback.length > 0
         ? eventsWithFeedback.reduce(
             (sum, e) => sum + (e.feedback?.quality || 0),
             0,
-          ) / eventsWithFeedback.length
+          ) / (eventsWithFeedback.length || 1)
         : 0;
 
     const trendsDetected: string[] = [];

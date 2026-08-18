@@ -179,7 +179,7 @@ export class AnomalyDetectionModel extends BaseModel {
     const sb = this.statisticalBaseline!;
 
     // ── Statistical detector ──────────────────────────────────────────────
-    const featureMean = features.reduce((s, v) => s + v, 0) / features.length;
+    const featureMean = features.reduce((s, v) => s + v, 0) / (features.length || 1);
     const zScore = Math.abs((featureMean - sb.mean) / (sb.std || 1));
     const isStatAnomaly = zScore > 3.5;
 
@@ -234,7 +234,7 @@ export class AnomalyDetectionModel extends BaseModel {
     const { mean } = sb;
     const featureStd = Math.sqrt(
       features.reduce((s, v) => s + (v - featureMean) ** 2, 0) /
-        features.length,
+        (features.length || 1),
     );
 
     let description = "";
@@ -258,13 +258,13 @@ export class AnomalyDetectionModel extends BaseModel {
   private extractFeatures(value: number, ctx: number[], idx: number): number[] {
     const window = ctx.slice(Math.max(0, idx - 10), idx);
     const wMean = window.length
-      ? window.reduce((s, v) => s + v, 0) / window.length
+      ? window.reduce((s, v) => s + v, 0) / (window.length || 1)
       : value;
     const wMax = window.length ? Math.max(...window) : value;
     const wMin = window.length ? Math.min(...window) : value;
     const wStd = window.length
       ? Math.sqrt(
-          window.reduce((s, v) => s + (v - wMean) ** 2, 0) / window.length,
+          window.reduce((s, v) => s + (v - wMean) ** 2, 0) / (window.length || 1),
         )
       : 0;
 

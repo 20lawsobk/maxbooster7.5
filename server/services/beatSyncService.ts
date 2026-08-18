@@ -148,7 +148,7 @@ async function analyzeBeatFFmpeg(audioPath: string): Promise<BeatAnalysis> {
   // Smooth the envelope (3-sample moving average)
   const smoothed = loudnessLog.map((_v, i) => {
     const window = loudnessLog.slice(Math.max(0, i - 1), i + 2);
-    return window.reduce((s, x) => s + x, 0) / window.length;
+    return window.reduce((s, x) => s + x, 0) / (window.length || 1);
   });
 
   // Normalize to 0–1
@@ -198,10 +198,10 @@ async function analyzeBeatFFmpeg(audioPath: string): Promise<BeatAnalysis> {
       while (bpm < 60) bpm *= 2;
       while (bpm > 200) bpm /= 2;
       // Confidence based on IBI consistency
-      const avgIbi = ibiSamples.reduce((s, x) => s + x, 0) / ibiSamples.length;
+      const avgIbi = ibiSamples.reduce((s, x) => s + x, 0) / (ibiSamples.length || 1);
       const variance =
         ibiSamples.reduce((s, x) => s + (x - avgIbi) ** 2, 0) /
-        ibiSamples.length;
+        (ibiSamples.length || 1);
       confidence = Math.max(
         0.3,
         Math.min(0.9, 1 - Math.sqrt(variance) / avgIbi),
@@ -358,7 +358,7 @@ function sectionAvgEnergy(
   const iEnd = Math.min(Math.ceil(end * rate), envelope.length);
   if (iEnd <= iStart) return 0.5;
   const slice = envelope.slice(iStart, iEnd);
-  return slice.reduce((s, x) => s + x, 0) / slice.length;
+  return slice.reduce((s, x) => s + x, 0) / (slice.length || 1);
 }
 
 // ── TIER 2: PYTHON / LIBROSA BEAT DETECTION ────────────────────────────────────

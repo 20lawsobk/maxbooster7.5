@@ -637,7 +637,7 @@ export function BulkOperationProgress({
   onCancel?: () => void;
   className?: string;
 }) {
-  const percentage = Math.round((progress / total) * 100);
+  const percentage = Math.round((progress / (total || 1)) * 100);
 
   return (
     <div className={cn("p-4 border rounded-lg space-y-3", className)}>

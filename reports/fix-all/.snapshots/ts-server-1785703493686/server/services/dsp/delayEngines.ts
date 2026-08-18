@@ -796,7 +796,7 @@ export class GranularDelayProcessor implements DSPProcessor {
         const sample =
           this.buffer[Math.floor(grain?.position) % this.buffer.length];
         const grainOutput =
-          (sample * envelope) / Math.max(1, this.grains.length * 0.5);
+          (sample * envelope) / (Math.max(1, this.grains.length * 0.5) || 1);
 
         wetL += grainOutput * (0.5 - grain?.pan);
         wetR += grainOutput * (0.5 + grain?.pan);

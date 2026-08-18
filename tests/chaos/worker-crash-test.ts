@@ -389,7 +389,7 @@ class WorkerCrashTest {
     });
 
     const totalTests = this.testResults.length;
-    const successRate = ((passedCount / totalTests) * 100).toFixed(1);
+    const successRate = ((passedCount / (totalTests || 1)) * 100).toFixed(1);
 
     logger.info(
       `\n🎯 OVERALL RESULTS: ${passedCount}/${totalTests} tests passed (${successRate}%)\n`,

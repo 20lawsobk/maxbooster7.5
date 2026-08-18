@@ -323,8 +323,8 @@ function ADSRVisualizer({
   color: string;
 }) {
   const total = attack + decay + release + 0.5;
-  const aX = (attack / total) * 100;
-  const dX = ((attack + decay) / total) * 100;
+  const aX = (attack / (total || 1)) * 100;
+  const dX = ((attack + decay) / (total || 1)) * 100;
   const sX = dX + 20;
   const rX = 100;
   const sY = 100 - sustain * 100;

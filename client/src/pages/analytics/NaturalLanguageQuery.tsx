@@ -54,7 +54,7 @@ const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
 
     const points = data.values
       .map((value: number, i: number) => {
-        const x = (i / (data.values.length - 1)) * 100;
+        const x = (i / ((data.values.length - 1 || 1))) * 100;
         const y = 100 - ((value - min) / range) * 80 - 10;
         return `${x},${y}`;
       })
@@ -77,7 +77,7 @@ const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
             <path
               d={`M0,100 L0,${100 - ((data.values[0] - min) / range) * 80 - 10} ${data.values
                 .map((v: number, i: number) => {
-                  const x = (i / (data.values.length - 1)) * 100;
+                  const x = (i / ((data.values.length - 1 || 1))) * 100;
                   const y = 100 - ((v - min) / range) * 80 - 10;
                   return `L${x},${y}`;
                 })

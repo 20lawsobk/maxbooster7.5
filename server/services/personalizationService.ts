@@ -508,7 +508,7 @@ class PersonalizationService {
       const currentAvg = widgets[widgetIndex].avgViewDuration || 0;
       const count = widgets[widgetIndex].usageCount;
       widgets[widgetIndex].avgViewDuration =
-        (currentAvg * (count - 1) + duration) / count;
+        (currentAvg * (count - 1) + duration) / (count || 1);
 
       await this.updatePreferences(userId, { dashboardWidgets: widgets });
     }
@@ -789,7 +789,7 @@ class PersonalizationService {
 
   async getRecommendations(userId: string): Promise<Recommendation[]> {
     const prefs = await this.getPreferences(userId);
-    this.userPatterns.get(userId) || [];
+    const _userPatterns = this.userPatterns.get(userId) || [];
 
     const recommendations: Recommendation[] = [];
 

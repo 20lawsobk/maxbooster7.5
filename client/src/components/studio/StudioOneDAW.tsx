@@ -2474,8 +2474,8 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 objects={tracks.map((t, i) => ({
                   id: t.id,
                   name: t.name,
-                  x: Math.cos((i / tracks.length) * Math.PI * 2) * 0.5,
-                  y: Math.sin((i / tracks.length) * Math.PI * 2) * 0.5,
+                  x: Math.cos((i / (tracks.length || 1)) * Math.PI * 2) * 0.5,
+                  y: Math.sin((i / (tracks.length || 1)) * Math.PI * 2) * 0.5,
                   z: 0,
                   size: 1,
                   color: t.color || "#3b82f6",

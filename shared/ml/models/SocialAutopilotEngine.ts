@@ -891,7 +891,7 @@ export class SocialAutopilotEngine extends BaseModel {
     postsPerWeek: number,
   ): ScheduleOptimization {
     const audience = this.audienceInsights.get(platform);
-    this.historicalData.get(platform) || [];
+    const historicalData = this.historicalData.get(platform) || [];
     const limits = PLATFORM_LIMITS[platform];
 
     const maxDailyPosts = limits?.maxDailyPosts || 5;
@@ -1604,7 +1604,7 @@ export class SocialAutopilotEngine extends BaseModel {
     const highPriorityCount = schedule.filter(
       (s) => s.priority === "high",
     ).length;
-    return Math.min(1, 0.5 + (highPriorityCount / schedule.length) * 0.5);
+    return Math.min(1, 0.5 + (highPriorityCount / (schedule.length || 1)) * 0.5);
   }
 
   private generateScheduleReasoning(

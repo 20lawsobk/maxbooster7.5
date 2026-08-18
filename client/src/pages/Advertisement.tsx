@@ -322,10 +322,10 @@ export default function Advertisement() {
   )
     ? lookalikeAudiencesData
     : lookalikeAudiencesData?.audiences || [];
-  Array.isArray(forecastsData)
+  const forecasts = Array.isArray(forecastsData)
     ? forecastsData
     : forecastsData?.forecasts || [];
-  Array.isArray(
+  const _competitorInsights = Array.isArray(
     competitorInsightsData,
   )
     ? competitorInsightsData
@@ -343,7 +343,7 @@ export default function Advertisement() {
     }
   };
 
-  ((tab: string) => {
+  const handleEnterpriseTabChange = (tab: string) => {
     setActiveEnterpriseTabState(tab);
     handleTrackAdvertisingExplored();
   });
@@ -1600,7 +1600,7 @@ export default function Advertisement() {
                               lookalikeAudiences.reduce(
                                 (acc, a) => acc + a.similarityScore,
                                 0,
-                              ) / lookalikeAudiences.length
+                              ) / (lookalikeAudiences.length || 1)
                             ).toFixed(0)
                           : 0}
                         %

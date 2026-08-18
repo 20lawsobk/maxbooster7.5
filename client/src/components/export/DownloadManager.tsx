@@ -419,7 +419,7 @@ export function DownloadManager({
       ? downloads.reduce(
           (sum, d) => sum + (d.status === "complete" ? 100 : d.progress),
           0,
-        ) / downloads.length
+        ) / (downloads.length || 1)
       : 0;
 
   const totalSpeed = activeDownloads.reduce(

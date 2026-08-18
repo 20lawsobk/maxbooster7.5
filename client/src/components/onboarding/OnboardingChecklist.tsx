@@ -192,7 +192,7 @@ export default function OnboardingChecklist({
   const completedCount = progress?.tasks.filter((t) => t.completed).length || 0;
   const totalCount = progress?.tasks.length || 0;
   const progressPercentage = progress?.completionPercentage || 0;
-  REWARDS.find((r) => progressPercentage < r.threshold) ||
+  const nextReward = REWARDS.find((r) => progressPercentage < r.threshold) ||
     REWARDS[REWARDS.length - 1];
   REWARDS.filter(
     (r) => progressPercentage >= r.threshold,

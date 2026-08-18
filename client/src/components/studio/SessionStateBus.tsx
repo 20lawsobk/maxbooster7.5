@@ -433,7 +433,7 @@ export function SessionStateBusPanel({
     {} as Record<string, PluginState[]>,
   );
 
-  ((targetPluginId: string, targetParamId: string) => {
+  const handleParameterLink = (targetPluginId: string, targetParamId: string) => {
     if (!selectedSource) return;
 
     createLink({

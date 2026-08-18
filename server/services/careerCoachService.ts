@@ -1123,7 +1123,7 @@ class CareerCoachService {
         Object.entries(platformStreams).sort((a, b) => b[1] - a[1])[0]?.[0] ||
         null;
 
-      avgEngagementRate = totalStreams > 0 ? totalEngagement / totalStreams : 0;
+      avgEngagementRate = totalStreams > 0 ? totalEngagement / (totalStreams || 1) : 0;
     }
 
     const lastReleaseDate = releasesData[0]?.createdAt || null;

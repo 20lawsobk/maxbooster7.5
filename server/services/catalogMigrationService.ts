@@ -1126,7 +1126,7 @@ export async function buildMigrationPayload(
   const totalTracks = releases?.reduce((acc, r) => acc + r?._meta.totalTracks, 0);
   const totalIsrcs = releases?.reduce((acc, r) => acc + r?._meta.isrcsCovered, 0);
   const isrcCoverage =
-    totalTracks > 0 ? `${Math.round((totalIsrcs / totalTracks) * 100)}%` : "0%";
+    totalTracks > 0 ? `${Math.round((totalIsrcs / (totalTracks || 1)) * 100)}%` : "0%";
 
   logger.info(
     `[CatalogMigration] Complete: ${releases?.length} releases, ` +

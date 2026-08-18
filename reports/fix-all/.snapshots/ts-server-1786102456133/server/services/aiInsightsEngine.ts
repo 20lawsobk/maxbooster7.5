@@ -1064,7 +1064,7 @@ export class CustomAIEngine {
       (s, d) => s + (d?.streams || 0),
       0,
     );
-    const retention = users.length > 0 ? activeUsers / users.length : 0;
+    const retention = users.length > 0 ? activeUsers / (users.length || 1) : 0;
     const ltv = activeUsers > 0 ? totalRevenue / activeUsers : 0;
     const engagement =
       totalStreams > 0 && activeUsers > 0

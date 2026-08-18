@@ -128,7 +128,7 @@ export function ConflictResolver({
     }
   };
 
-  ((
+  const resolveConflict = (
     localData: unknown,
     serverData: unknown,
   ): { localDiffs: string[]; serverDiffs: string[] } => {

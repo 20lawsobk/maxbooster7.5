@@ -133,7 +133,11 @@ export class AlertingService {
 
   private async sendEmailAlert(alert: Alert): Promise<void> {
     try {
-      sgMail?.setApiKey(env?.SENDGRID_API_KEY!);
+      if (!env.SENDGRID_API_KEY) {
+        logger.warn("Email alert skipped: SENDGRID_API_KEY not configured");
+        return;
+      }
+      sgMail?.setApiKey(env.SENDGRID_API_KEY);
 
       const severityEmoji = {
         info: "ℹ️",

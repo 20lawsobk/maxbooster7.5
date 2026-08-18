@@ -202,7 +202,7 @@ const RankingHistoryChart = memo(
 
     const points = reversedHistory
       .map((h, i) => {
-        const x = (i / (reversedHistory.length - 1)) * 100;
+        const x = (i / ((reversedHistory.length - 1 || 1))) * 100;
         const y = 100 - ((h.score - minScore) / range) * 80 - 10;
         return `${x},${y}`;
       })
@@ -212,7 +212,7 @@ const RankingHistoryChart = memo(
       100 - ((reversedHistory[0].score - minScore) / range) * 80 - 10;
     const areaPath = `M0,100 L0,${firstY} ${reversedHistory
       .map((h, i) => {
-        const x = (i / (reversedHistory.length - 1)) * 100;
+        const x = (i / ((reversedHistory.length - 1 || 1))) * 100;
         const y = 100 - ((h.score - minScore) / range) * 80 - 10;
         return `L${x},${y}`;
       })
@@ -241,7 +241,7 @@ const RankingHistoryChart = memo(
               vectorEffect="non-scaling-stroke"
             />
             {reversedHistory.map((h, i) => {
-              const x = (i / (reversedHistory.length - 1)) * 100;
+              const x = (i / ((reversedHistory.length - 1 || 1))) * 100;
               const y = 100 - ((h.score - minScore) / range) * 80 - 10;
               return (
                 <circle
@@ -400,12 +400,12 @@ export default function GlobalRankingDashboard({
   const similarArtists: SimilarArtist[] =
     propSimilarArtists || rankingData?.similarArtists || [];
 
-  platformScores.length > 0
+  const avgPlatformScore = platformScores.length > 0
       ? Math.round(
           platformScores.reduce(
             (sum: number, p: PlatformScore) => sum + p.score,
             0,
-          ) / platformScores.length,
+          ) / (platformScores.length || 1),
         )
       : 0;
 

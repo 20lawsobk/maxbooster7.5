@@ -235,7 +235,7 @@ export function UploadProgressTracker({
   const totalSize = uploads.reduce((sum, u) => sum + u.file.size, 0);
   const uploadedSize = uploads.reduce((sum, u) => sum + u.uploadedBytes, 0);
   const overallProgress =
-    totalSize > 0 ? Math.round((uploadedSize / totalSize) * 100) : 0;
+    totalSize > 0 ? Math.round((uploadedSize / (totalSize || 1)) * 100) : 0;
   const averageSpeed = activeUploads.reduce((sum, u) => sum + u.speed, 0);
   const remainingBytes = activeUploads.reduce(
     (sum, u) => sum + (u.file.size - u.uploadedBytes),

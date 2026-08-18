@@ -446,7 +446,7 @@ export function ChordTrack({
             roman,
             progression.key === "Am" ? "A" : "C",
           );
-          const chordDuration = duration / progression.chords.length;
+          const chordDuration = duration / (progression.chords.length || 1);
 
           return {
             id: `chord-${Date.now()}-${index}`,

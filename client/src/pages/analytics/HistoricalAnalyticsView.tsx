@@ -328,7 +328,7 @@ const LongTermTrends = memo(({ trends }: { trends: TrendData[] }) => {
 
   const points = data
     .map((d, i) => {
-      const x = (i / (data.length - 1)) * 100;
+      const x = (i / ((data.length - 1 || 1))) * 100;
       const y = 100 - ((d.value - minValue) / range) * 80 - 10;
       return `${x},${y}`;
     })
@@ -336,7 +336,7 @@ const LongTermTrends = memo(({ trends }: { trends: TrendData[] }) => {
 
   const areaPath = `M0,100 L0,${100 - ((data[0].value - minValue) / range) * 80 - 10} ${data
     .map((d, i) => {
-      const x = (i / (data.length - 1)) * 100;
+      const x = (i / ((data.length - 1 || 1))) * 100;
       const y = 100 - ((d.value - minValue) / range) * 80 - 10;
       return `L${x},${y}`;
     })
@@ -422,7 +422,7 @@ const LongTermTrends = memo(({ trends }: { trends: TrendData[] }) => {
                 vectorEffect="non-scaling-stroke"
               />
               {data.map((d, i) => {
-                const x = (i / (data.length - 1)) * 100;
+                const x = (i / ((data.length - 1 || 1))) * 100;
                 const y = 100 - ((d.value - minValue) / range) * 80 - 10;
                 return (
                   <g key={i}>

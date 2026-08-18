@@ -62,7 +62,7 @@ app.use((req: Request, res: Response) => {
 // ── Global error handler ──────────────────────────────────────────────────────
 // Catches any error thrown or passed to next() inside route handlers.
 // Returns JSON instead of Express's default HTML error page.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
   const message = err instanceof Error ? err.message : "Internal server error";
   const status = (err as any)?.status ?? (err as any)?.statusCode ?? 500;

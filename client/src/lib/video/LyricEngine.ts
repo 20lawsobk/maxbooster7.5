@@ -259,7 +259,7 @@ export class LyricEngine {
     let currentTime = startTime;
 
     for (let i = 0; i < words?.length; i++) {
-      const wordDuration = (words[i].length / totalChars) * duration;
+      const wordDuration = (words[i].length / (totalChars || 1)) * duration;
 
       result?.push({
         text: words[i],

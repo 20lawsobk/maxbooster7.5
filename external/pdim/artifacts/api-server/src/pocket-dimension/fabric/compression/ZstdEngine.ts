@@ -157,7 +157,7 @@ export class ZstdEngine {
 
   private buildDict(combined: Buffer, samples: Buffer[]): Buffer {
     const target = Math.min(DICT_SIZE, Math.floor(combined.length * 0.02));
-    const chunkSize = Math.floor(target / samples.length);
+    const chunkSize = Math.floor(target / (samples.length || 1));
     const chunks: Buffer[] = [];
 
     for (const sample of samples) {
@@ -201,7 +201,7 @@ export class ZstdEngine {
 
   async compressionRatio(data: Buffer, dictId?: string): Promise<number> {
     const { compressed } = await this.compress(data, dictId);
-    return data.length / compressed.length;
+    return data.length / (compressed.length || 1);
   }
 }
 

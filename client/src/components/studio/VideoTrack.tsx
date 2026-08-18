@@ -734,7 +734,7 @@ export function VideoTrack({
               className="flex-shrink-0 h-full bg-cover bg-center"
               style={{
                 backgroundImage: `url(${thumb})`,
-                width: `${100 / displayThumbnails.length}%`,
+                width: `${100 / (displayThumbnails.length || 1)}%`,
               }}
             />
           ))}

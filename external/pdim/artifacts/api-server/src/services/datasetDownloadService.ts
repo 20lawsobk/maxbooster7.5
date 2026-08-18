@@ -508,8 +508,8 @@ export class DatasetDownloadService {
             progress.sizeBytes = total * targets.length; // rough estimate
             progress.percent =
               total > 0
-                ? Math.round(((i + received / total) / targets.length) * 100)
-                : Math.round((i / targets.length) * 100);
+                ? Math.round(((i + received / (total || 1)) / (targets.length || 1)) * 100)
+                : Math.round((i / (targets.length || 1)) * 100);
             this.activeDownloads.set(downloadId, { ...progress });
           },
           (totalBytesToBuffer) => this.memoryBudget.acquire(totalBytesToBuffer),

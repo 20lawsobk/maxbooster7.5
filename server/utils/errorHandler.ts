@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { ErrorContext, AppError } from "../lib/AppError.js";
 
 export function validateRequired(

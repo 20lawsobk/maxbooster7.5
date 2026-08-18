@@ -211,7 +211,7 @@ export function SpectrumAnalyzer({
         }
       }
 
-      const value = count > 0 ? sum / count : -100;
+      const value = count > 0 ? sum / (count || 1) : -100;
       const normalizedValue = Math.max(0, (value + 60) / 60); // Normalize from -60dB to 0dB
       const barHeight = normalizedValue * h;
 
@@ -282,7 +282,7 @@ export function SpectrumAnalyzer({
         }
       }
 
-      const value = count > 0 ? sum / count : -100;
+      const value = count > 0 ? sum / (count || 1) : -100;
       const normalizedValue = Math.max(0, (value + 60) / 60);
       const x = (i / bars) * w;
       const y = h - normalizedValue * h;
@@ -333,7 +333,7 @@ export function SpectrumAnalyzer({
         }
       }
 
-      const value = count > 0 ? sum / count : -100;
+      const value = count > 0 ? sum / (count || 1) : -100;
       const normalizedValue = Math.max(0, Math.min(1, (value + 60) / 60));
 
       // Map value to color

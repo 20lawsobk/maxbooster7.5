@@ -338,7 +338,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     const partial = controls?.filter((c: any) => c?.status === "partial").length;
     const planned = controls?.filter((c: any) => c?.status === "planned").length;
     const total = controls?.length;
-    const percentage = total > 0 ? Math.round((implemented / total) * 100) : 0;
+    const percentage = total > 0 ? Math.round((implemented / (total || 1)) * 100) : 0;
 
     return { implemented, partial, planned, total, percentage };
   }

@@ -290,17 +290,17 @@ export class BrandVoiceAnalyzer {
 
     const avgSentenceLength =
       sentences.reduce((sum, s) => sum + s.split(" ").length, 0) /
-      Math.max(sentences.length, 1);
+      (Math.max(sentences.length, 1) || 1);
 
     const complexWords = allTokens.filter((t) => t.length > 10).length;
     const vocabularyComplexity =
-      complexWords / allTokens.length > 0.2
+      complexWords / (allTokens.length || 1) > 0.2
         ? "advanced"
-        : complexWords / allTokens.length > 0.1
+        : complexWords / (allTokens.length || 1) > 0.1
           ? "moderate"
           : "simple";
 
-    const emojiRatio = emojiCount / Math.max(posts.length, 1);
+    const emojiRatio = emojiCount / (Math.max(posts.length, 1) || 1);
     const emojiUsage =
       emojiRatio > 3
         ? "heavy"
@@ -310,11 +310,11 @@ export class BrandVoiceAnalyzer {
             ? "light"
             : "none";
 
-    const hashtagRatio = hashtagCount / Math.max(posts.length, 1);
+    const hashtagRatio = hashtagCount / (Math.max(posts.length, 1) || 1);
 
     const exclamationRatio =
-      posts.filter((p) => p.includes("!")).length / Math.max(posts.length, 1);
-    posts.filter((p) => p.includes("?")).length / Math.max(posts.length, 1);
+      posts.filter((p) => p.includes("!")).length / (Math.max(posts.length, 1) || 1);
+    posts.filter((p) => p.includes("?")).length / (Math.max(posts.length, 1) || 1);
 
     const isFormal =
       avgSentenceLength > 15 &&
@@ -390,7 +390,7 @@ export class BrandVoiceAnalyzer {
     const contentHashtagCount = tokens.filter((t) => t.startsWith("#")).length;
     const contentAvgSentenceLength =
       sentences.reduce((sum, s) => sum + s.split(" ").length, 0) /
-      Math.max(sentences.length, 1);
+      (Math.max(sentences.length, 1) || 1);
 
     let similarity = 0;
     let factors = 0;
@@ -433,7 +433,7 @@ export class BrandVoiceAnalyzer {
       content.toLowerCase().includes(phrase.toLowerCase()),
     ).length;
     const phraseSimilarity =
-      phraseMatches / Math.max(profile.commonPhrases.length, 1);
+      phraseMatches / (Math.max(profile.commonPhrases.length, 1) || 1);
     similarity += phraseSimilarity;
     factors++;
 
@@ -573,7 +573,7 @@ export class BrandVoiceAnalyzer {
 
       const emojiCount =
         (allText.match(/[\p{Emoji}]/gu) || []).length /
-        Math.max(posts.length, 1);
+        (Math.max(posts.length, 1) || 1);
       if (config.emojiProfile === "heavy" && emojiCount > 2) score += 0.25;
       else if (
         config.emojiProfile === "moderate" &&
@@ -637,11 +637,11 @@ export class BrandVoiceAnalyzer {
     const indicatorCoverage =
       config.indicators.filter((indicator) =>
         posts.some((post) => post.toLowerCase().includes(indicator)),
-      ).length / config.indicators.length;
+      ).length / (config.indicators.length || 1);
     strength += indicatorCoverage * 0.45;
 
     const avgPostLength =
-      posts.reduce((sum, p) => sum + p.length, 0) / Math.max(posts.length, 1);
+      posts.reduce((sum, p) => sum + p.length, 0) / (Math.max(posts.length, 1) || 1);
     if (avgPostLength > 150) strength += 0.2;
     else if (avgPostLength > 80) strength += 0.15;
     else if (avgPostLength > 40) strength += 0.08;
@@ -662,14 +662,14 @@ export class BrandVoiceAnalyzer {
     const maxScore = Math.max(...Object.values(scores));
     const avgScore =
       Object.values(scores).reduce((a, b) => a + b, 0) /
-      Object.values(scores).length;
+      (Object.values(scores).length || 1);
 
     const dominance = maxScore - avgScore;
 
     const variance =
       Object.values(scores)
         .map((s) => Math.pow(s - avgScore, 2))
-        .reduce((a, b) => a + b, 0) / Object.values(scores).length;
+        .reduce((a, b) => a + b, 0) / (Object.values(scores).length || 1);
 
     const consistencyFromDominance = Math.min(1, dominance * 2.5);
     const consistencyFromVariance = Math.max(0, 1 - Math.sqrt(variance) * 1.5);
@@ -689,10 +689,10 @@ export class BrandVoiceAnalyzer {
         return topScore;
       });
       const postMean =
-        perPostScores.reduce((a, b) => a + b, 0) / perPostScores.length;
+        perPostScores.reduce((a, b) => a + b, 0) / (perPostScores.length || 1);
       const postVariance =
         perPostScores.reduce((sum, s) => sum + Math.pow(s - postMean, 2), 0) /
-        perPostScores.length;
+        (perPostScores.length || 1);
       const perPostConsistency = Math.max(0, 1 - Math.sqrt(postVariance) * 3);
       return (
         consistencyFromDominance * 0.45 +

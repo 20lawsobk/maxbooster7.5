@@ -160,7 +160,7 @@ export function SocialListening() {
     keywords.reduce(
       (acc: number, k: TrackedKeyword) => acc + k.sentiment.positive,
       0,
-    ) / keywords.length,
+    ) / (keywords.length || 1),
   );
   const activeAlerts = alerts.filter(
     (a: CrisisAlert) => !a.acknowledged,

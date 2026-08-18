@@ -151,7 +151,7 @@ export function useProfileCompletion() {
 
   const completedCount = completionSteps.filter((s) => s.completed).length;
   const totalCount = completionSteps.length;
-  const percentage = Math.round((completedCount / totalCount) * 100);
+  const percentage = Math.round((completedCount / (totalCount || 1)) * 100);
   const totalPoints = completionSteps
     .filter((s) => s.completed)
     .reduce((sum, s) => sum + s.points, 0);

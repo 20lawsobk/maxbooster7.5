@@ -182,7 +182,7 @@ export class PocketSimulationStorage {
     for (const tier of Object.keys(this.aggregateUsers.byTier) as Array<
       keyof typeof this.aggregateUsers.byTier
     >) {
-      const tierPct = this.aggregateUsers.byTier[tier] / totalBefore;
+      const tierPct = this.aggregateUsers.byTier[tier] / (totalBefore || 1);
       const tierChurn = Math.floor(count * tierPct);
       this.aggregateUsers.byTier[tier] = Math.max(
         0,
@@ -194,7 +194,7 @@ export class PocketSimulationStorage {
       this.aggregateUsers.byArchetype,
     ) as Array<keyof typeof this.aggregateUsers.byArchetype>) {
       const archetypePct =
-        this.aggregateUsers.byArchetype[archetype] / totalBefore;
+        this.aggregateUsers.byArchetype[archetype] / (totalBefore || 1);
       const archetypeChurn = Math.floor(count * archetypePct);
       this.aggregateUsers.byArchetype[archetype] = Math.max(
         0,

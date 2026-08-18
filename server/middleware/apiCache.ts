@@ -516,7 +516,7 @@ export class APIResponseCache {
       hits: this.hitCount,
       misses: this.missCount,
       hitRate:
-        total > 0 ? ((this.hitCount / total) * 100).toFixed(1) + "%" : "0%",
+        total > 0 ? ((this.hitCount / (total || 1)) * 100).toFixed(1) + "%" : "0%",
       backend: distributedCache.isConnected() ? "pdim" : "memory",
       pollerActive: this.pollTimer !== null,
     };

@@ -283,7 +283,7 @@ export function FlowStateVersionBranches({
     });
   };
 
-  ((branchId: string, tag: string) => {
+  const handleAddTag = (branchId: string, tag: string) => {
     setBranches((prev) =>
       prev.map((b) =>
         b.id === branchId ? { ...b, tags: [...b.tags, tag] } : b,

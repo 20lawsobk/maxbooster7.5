@@ -592,7 +592,7 @@ export async function generateInsights(): Promise<InsightsResponse> {
   const totalUserCount = Number(totalUsers[0]?.count || 0);
 
   if (totalUserCount > 0) {
-    const engagementRate = (activeUserCount / totalUserCount) * 100;
+    const engagementRate = (activeUserCount / (totalUserCount || 1)) * 100;
 
     if (engagementRate < 20) {
       insights?.push({
@@ -905,7 +905,7 @@ export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
   if (platformRows?.length > 0 && totalPlatformStreams > 0) {
     const mapped = platformRows?.map((p) => ({
       platform: p.platform ?? "Other",
-      percentage: Math.round((Number(p?.streams) / totalPlatformStreams) * 100),
+      percentage: Math.round((Number(p?.streams) / (totalPlatformStreams || 1)) * 100),
     }));
     const assignedTotal = mapped?.reduce((s, p) => s + p?.percentage, 0);
     if (assignedTotal !== 100 && mapped?.length > 0)

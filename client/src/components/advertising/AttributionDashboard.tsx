@@ -505,14 +505,14 @@ export function AttributionDashboard() {
                         </span>
                         <span>
                           {(
-                            (path.conversions / totalConversions) *
+                            (path.conversions / (totalConversions || 1)) *
                             100
                           ).toFixed(1)}
                           %
                         </span>
                       </div>
                       <Progress
-                        value={(path.conversions / totalConversions) * 100}
+                        value={(path.conversions / (totalConversions || 1)) * 100}
                       />
                     </div>
                   </div>

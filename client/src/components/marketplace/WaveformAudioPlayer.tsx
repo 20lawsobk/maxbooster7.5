@@ -108,7 +108,7 @@ export function WaveformAudioPlayer({
 
     const width = rect.width;
     const height = rect.height;
-    const barWidth = width / waveform.length;
+    const barWidth = width / (waveform.length || 1);
     const progressRatio = duration > 0 ? currentTime / duration : 0;
     const progressX = progressRatio * width;
 
@@ -203,7 +203,7 @@ export function WaveformAudioPlayer({
     }
   };
 
-  ((value: number[]) => {
+  const handleWaveformSeek = (value: number[]) => {
     const audio = audioRef.current;
     if (!audio) return;
 

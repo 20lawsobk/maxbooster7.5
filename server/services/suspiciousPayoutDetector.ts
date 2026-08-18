@@ -69,7 +69,7 @@ export async function checkPayoutRisk(
       );
 
     const totalHistorical = history.reduce((s, r) => s + Number(r.amountCents), 0);
-    const avgPayout = history.length > 0 ? totalHistorical / history.length : 0;
+    const avgPayout = history.length > 0 ? totalHistorical / (history.length || 1) : 0;
 
     // ── 2. Spike check ───────────────────────────────────────────────────────
     if (avgPayout > 0 && amountCents > avgPayout * SPIKE_MULTIPLIER) {

@@ -142,7 +142,7 @@ export class TextAnimator {
   ): WordTiming[] {
     const words = text?.split(/\s+/).filter((w) => w?.length > 0);
     const totalChars = words?.reduce((sum, w) => sum + w?.length, 0);
-    const timePerChar = duration / totalChars;
+    const timePerChar = duration / (totalChars || 1);
 
     let currentTime = startTime;
     const wordTimings: WordTiming[] = [];
@@ -408,7 +408,7 @@ export class TextAnimator {
         gradient = this.ctx.createLinearGradient(x, y, x + metrics?.width, y);
     }
 
-    const colors = style?.gradientColors!;
+    const colors = style?.gradientColors;
     for (let i = 0; i < colors?.length; i++) {
       gradient?.addColorStop(i / (colors?.length - 1), colors[i]);
     }
@@ -596,7 +596,7 @@ export class TextAnimator {
     const visibleChars = Math.floor(chars?.length * progress);
 
     for (let i = 0; i < visibleChars; i++) {
-      const charProgress = chars[i].x / totalWidth;
+      const charProgress = chars[i].x / (totalWidth || 1);
       const pos = this.getPathPosition(charProgress, pathConfig);
 
       this.ctx.save();

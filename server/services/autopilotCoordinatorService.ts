@@ -456,13 +456,15 @@ class AutopilotCoordinatorService extends EventEmitter {
       schedule = schedule?.filter((p) => p?.status === options?.status);
     }
     if (options?.startDate) {
+      const startDate = options.startDate;
       schedule = schedule?.filter(
-        (p) => new Date(p?.scheduledTime) >= options?.startDate!,
+        (p) => new Date(p?.scheduledTime) >= startDate,
       );
     }
     if (options?.endDate) {
+      const endDate = options.endDate;
       schedule = schedule?.filter(
-        (p) => new Date(p?.scheduledTime) <= options?.endDate!,
+        (p) => new Date(p?.scheduledTime) <= endDate,
       );
     }
 

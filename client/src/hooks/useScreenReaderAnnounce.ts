@@ -127,7 +127,7 @@ export function useScreenReaderAnnounce(
 
   const announceProgress = useCallback(
     (current: number, total: number, context?: string) => {
-      const percentage = Math.round((current / total) * 100);
+      const percentage = Math.round((current / (total || 1)) * 100);
       const message = context
         ? `${context}: ${percentage}% complete, ${current} of ${total}`
         : `Progress: ${percentage}% complete, ${current} of ${total}`;

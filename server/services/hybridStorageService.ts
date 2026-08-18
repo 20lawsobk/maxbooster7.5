@@ -919,7 +919,7 @@ export class HybridStorageService {
     }
 
     if (totalSize > 0) {
-      stats.savingsPercent = (stats?.spaceSaved / totalSize) * 100;
+      stats.savingsPercent = (stats?.spaceSaved / (totalSize || 1)) * 100;
     }
 
     return stats;

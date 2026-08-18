@@ -1692,7 +1692,7 @@ export class ContentGenerator {
     const phraseMatches = voice.commonPhrases.filter((phrase) =>
       content.toLowerCase().includes(phrase.toLowerCase()),
     ).length;
-    score += phraseMatches / Math.max(voice.commonPhrases.length, 1);
+    score += phraseMatches / (Math.max(voice.commonPhrases.length, 1) || 1);
     factors++;
 
     return (score / factors) * voice.confidenceScore;
@@ -1716,18 +1716,18 @@ export class ContentGenerator {
     const avgSentenceLength =
       sentences.length > 0
         ? sentences.reduce((sum, s) => sum + s.split(" ").length, 0) /
-          sentences.length
+          (sentences.length || 1)
         : 12;
 
     const complexWords = allTokens.filter((t) => t.length > 10).length;
     const vocabularyComplexity: "simple" | "moderate" | "advanced" =
-      complexWords / allTokens.length > 0.2
+      complexWords / (allTokens.length || 1) > 0.2
         ? "advanced"
-        : complexWords / allTokens.length > 0.1
+        : complexWords / (allTokens.length || 1) > 0.1
           ? "moderate"
           : "simple";
 
-    const emojiRatio = emojiCount / posts.length;
+    const emojiRatio = emojiCount / (posts.length || 1);
     const emojiUsage: "none" | "light" | "moderate" | "heavy" =
       emojiRatio > 3
         ? "heavy"
@@ -1737,7 +1737,7 @@ export class ContentGenerator {
             ? "light"
             : "none";
 
-    const hashtagRatio = hashtagCount / posts.length;
+    const hashtagRatio = hashtagCount / (posts.length || 1);
 
     const isFormal =
       avgSentenceLength > 15 && vocabularyComplexity === "advanced";

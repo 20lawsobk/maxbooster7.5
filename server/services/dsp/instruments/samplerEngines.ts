@@ -21,7 +21,7 @@ class SampleBuffer {
 
   generate(generator: (phase: number, sampleRate: number) => number): void {
     for (let i = 0; i < this.length; i++) {
-      const phase = i / this.length;
+      const phase = i / (this.length || 1);
       this.buffer[i] = generator(phase, this.sampleRate);
     }
   }
@@ -1313,7 +1313,7 @@ export class VoiceSamplerSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const vibrato = this.vibratoLFO.sine() * 0.003 * envValue;
-      this.formantLFO.sine() * 0.1;
+      const formantMod = this.formantLFO.sine() * 0.1;
 
       const playbackRate =
         (this.frequency / this.baseFrequency) * (1 + vibrato);

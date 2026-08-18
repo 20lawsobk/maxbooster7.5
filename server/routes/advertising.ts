@@ -822,7 +822,7 @@ router.get(
         ([platform, revenue]) => ({
           platform,
           revenue,
-          share: total > 0 ? revenue / total : 0,
+          share: total > 0 ? revenue / (total || 1) : 0,
         }),
       );
 
@@ -1027,7 +1027,7 @@ router.get(
       }, 500 * campaigns.length);
 
       const avgPlatformCpm = campaigns.length > 0
-        ? campaigns.reduce((sum, c) => sum + (PLATFORM_CPM[(c as any)?.platform] ?? 8.0), 0) / campaigns.length
+        ? campaigns.reduce((sum, c) => sum + (PLATFORM_CPM[(c as any)?.platform] ?? 8.0), 0) / (campaigns.length || 1)
         : 8.0;
 
       const daily = Array.from({ length: 7 }, (_, i) => {

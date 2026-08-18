@@ -75,7 +75,7 @@ export class ContentDefinedChunker {
     const sizes = chunks.map((c) => c.length);
     return {
       count: chunks.length,
-      avgBytes: Math.round(sizes.reduce((a, b) => a + b, 0) / sizes.length),
+      avgBytes: Math.round(sizes.reduce((a, b) => a + b, 0) / (sizes.length || 1)),
       minBytes: Math.min(...sizes),
       maxBytes: Math.max(...sizes),
     };

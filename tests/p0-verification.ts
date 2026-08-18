@@ -325,7 +325,7 @@ function generateMarkdownReport(results: TestResult[]): string {
   const passed = results.filter((r) => r.passed).length;
   const failed = results.filter((r) => !r.passed).length;
   const total = results.length;
-  const passRate = ((passed / total) * 100).toFixed(1);
+  const passRate = ((passed / (total || 1)) * 100).toFixed(1);
 
   let md = `# P0 Feature Verification Results
 
@@ -343,7 +343,7 @@ function generateMarkdownReport(results: TestResult[]): string {
 | Passed | ${passed} ✅ |
 | Failed | ${failed} ${failed > 0 ? "❌" : ""} |
 | Pass Rate | ${passRate}% |
-| Avg Response Time | ${(results.reduce((a, r) => a + r.responseTime, 0) / total).toFixed(0)}ms |
+| Avg Response Time | ${(results.reduce((a, r) => a + r.responseTime, 0) / (total || 1)).toFixed(0)}ms |
 
 ---
 

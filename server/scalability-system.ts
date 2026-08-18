@@ -13,7 +13,7 @@ import { isProductionEnv } from "./lib/envHelpers.js";
 
 const execAsync = promisify(exec);
 
-!isProductionEnv();
+const _isDevelopment = !isProductionEnv();
 let _hasLoggedWarning = false;
 
 // Scalability Optimization System
@@ -254,7 +254,7 @@ export class ScalabilitySystem {
       const total = parseInt(totalRequests || "0");
       const errors = parseInt(errorRequests || "0");
 
-      return total > 0 ? (errors / total) * 100 : 0;
+      return total > 0 ? (errors / (total || 1)) * 100 : 0;
     } catch (error: unknown) {
       return 0;
     }
@@ -579,7 +579,7 @@ class CacheManager {
 
   async getHitRate(): Promise<number> {
     const total = this.hitCount + this.missCount;
-    return total > 0 ? (this.hitCount / total) * 100 : 0;
+    return total > 0 ? (this.hitCount / (total || 1)) * 100 : 0;
   }
 }
 

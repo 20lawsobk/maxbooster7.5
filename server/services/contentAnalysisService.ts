@@ -697,9 +697,9 @@ export class ContentAnalysisService {
       for (let i = 0; i < k; i++) {
         if (clusters[i].length > 0) {
           centroids[i] = [
-            clusters[i].reduce((sum, p) => sum + p[0], 0) / clusters[i].length,
-            clusters[i].reduce((sum, p) => sum + p[1], 0) / clusters[i].length,
-            clusters[i].reduce((sum, p) => sum + p[2], 0) / clusters[i].length,
+            clusters[i].reduce((sum, p) => sum + p[0], 0) / (clusters[i].length || 1),
+            clusters[i].reduce((sum, p) => sum + p[1], 0) / (clusters[i].length || 1),
+            clusters[i].reduce((sum, p) => sum + p[2], 0) / (clusters[i].length || 1),
           ];
         }
       }

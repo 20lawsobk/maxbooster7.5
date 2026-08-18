@@ -24,9 +24,9 @@ export function normalize(data: number[]): number[] {
  */
 export function standardize(data: number[]): number[] {
   if (data.length === 0) return [];
-  const mean = data.reduce((sum, val) => sum + val, 0) / data.length;
+  const mean = data.reduce((sum, val) => sum + val, 0) / (data.length || 1);
   const variance =
-    data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.length;
+    data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (data.length || 1);
   const std = Math.sqrt(variance);
 
   if (std === 0) return data.map(() => 0);
@@ -109,7 +109,7 @@ export function movingAverage(data: number[], windowSize: number): number[] {
   for (let i = 0; i < data.length; i++) {
     const start = Math.max(0, i - safeWindowSize + 1);
     const window = data.slice(start, i + 1);
-    const avg = window.reduce((sum, val) => sum + val, 0) / window.length;
+    const avg = window.reduce((sum, val) => sum + val, 0) / (window.length || 1);
     result.push(avg);
   }
 

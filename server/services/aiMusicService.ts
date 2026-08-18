@@ -6,7 +6,7 @@ import * as path from "path";
 import * as fsPromises from "fs/promises";
 import { parseFile } from "music-metadata";
 // node-wav has no bundled type declarations
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+ 
 // @ts-ignore
 import * as wav from "node-wav";
 import FFT from "fft.js";
@@ -776,7 +776,7 @@ export class AIMusicService {
               const integrated = parseFloat(data?.input_i) || -23.0;
               const truePeak = parseFloat(data?.input_tp) || -3.0;
               const loudnessRange = parseFloat(data?.input_lra) || 7.0;
-              parseFloat(data?.input_thresh) || -33.0;
+              const loudnessThreshold = parseFloat(data?.input_thresh) || -33.0;
 
               const audioData = this.bufferToFloat32Array(audioBuffer);
               const dynamicRange = this.calculateDynamicRange(audioData);
@@ -1888,7 +1888,7 @@ export class AIMusicService {
   private analyzeSpectrum(audioBuffer: Buffer): Float32Array {
     const size = Math.min(audioBuffer?.length / 4, 8192);
     return new Float32Array(size).map((_, i) => {
-      const normalized = i / size;
+      const normalized = i / (size || 1);
       return Math.sin(normalized * Math.PI) * Math.random() * 0.5 + 0.5;
     });
   }

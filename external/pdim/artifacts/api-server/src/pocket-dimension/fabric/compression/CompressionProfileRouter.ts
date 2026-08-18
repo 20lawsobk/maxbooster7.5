@@ -124,7 +124,7 @@ export class CompressionProfileRouter {
       contentClass,
       originalBytes: data.length,
       compressedBytes: compressed.length,
-      ratio: data.length / compressed.length,
+      ratio: data.length / (compressed.length || 1),
       codec,
       isDelta,
       deltaBaseId,
@@ -169,7 +169,7 @@ export class CompressionProfileRouter {
       contentClass,
       originalBytes: data.length,
       compressedBytes: finalData.length,
-      ratio: data.length / finalData.length,
+      ratio: data.length / (finalData.length || 1),
       codec: finalCodec,
       isDelta: false,
       metadata: {
@@ -210,7 +210,7 @@ export class CompressionProfileRouter {
       contentClass,
       originalBytes: data.length,
       compressedBytes: finalData.length,
-      ratio: data.length / finalData.length,
+      ratio: data.length / (finalData.length || 1),
       codec: `semantic+zstd`,
       isDelta: false,
       metadata: {

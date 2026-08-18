@@ -257,7 +257,7 @@ router.get("/catalog-gap", async (req, res) => {
     const avgBpm =
       catalog.length > 0
         ? Math.round(
-            catalog.reduce((s, b) => s + (b.bpm ?? 0), 0) / catalog.length,
+            catalog.reduce((s, b) => s + (b.bpm ?? 0), 0) / (catalog.length || 1),
           )
         : 0;
 

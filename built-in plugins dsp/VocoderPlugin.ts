@@ -192,7 +192,7 @@ export class VocoderPlugin extends BasePlugin {
         for (let j = 0; j < dataArray.length; j++) {
           sum += dataArray[j];
         }
-        const average = sum / dataArray.length / 255;
+        const average = sum / (dataArray.length || 1) / 255;
 
         const currentValue = this.bandEnvelopeValues[i];
         const bandAttack = this.bandAttacks[i] || this.attack;
@@ -388,8 +388,8 @@ export class VocoderPlugin extends BasePlugin {
       Math.floor((this.numBands * 2) / 3),
     );
 
-    const lowEnergy = lowBands.reduce((a, b) => a + b, 0) / lowBands.length;
-    const highEnergy = highBands.reduce((a, b) => a + b, 0) / highBands.length;
+    const lowEnergy = lowBands.reduce((a, b) => a + b, 0) / (lowBands.length || 1);
+    const highEnergy = highBands.reduce((a, b) => a + b, 0) / (highBands.length || 1);
 
     const voicedRatio = lowEnergy / (lowEnergy + highEnergy + 0.001);
 

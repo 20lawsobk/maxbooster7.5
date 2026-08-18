@@ -133,7 +133,7 @@ export class DeltaEngine {
       if (op?.type === "copy") {
         const b = Buffer?.allocUnsafe(9);
         b[0] = 0x01;
-        b?.writeUInt32LE(op?.srcOffset!, 1);
+        b?.writeUInt32LE(op.srcOffset ?? 0, 1);
         b?.writeUInt32LE(op?.length, 5);
         parts?.push(b);
       } else {

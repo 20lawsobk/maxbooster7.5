@@ -161,7 +161,7 @@ class QueryTelemetry {
     const p95Index = Math.floor(durations.length * 0.95);
     const p95Latency = durations[p95Index] || 0;
     const windowedAverage =
-      durations.reduce((sum, d) => sum + d, 0) / durations.length;
+      durations.reduce((sum, d) => sum + d, 0) / (durations.length || 1);
 
     return {
       windowedQueries: recentQueries.length,

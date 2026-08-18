@@ -99,7 +99,7 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
         try {
           // dynamic import — path may or may not exist depending on workspace
           // layout; swallow errors and continue to next candidate
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
+           
           // Use import() instead of require to respect ESM
           // @ts-ignore dynamic import
           mod = await import(p);

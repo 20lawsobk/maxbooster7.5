@@ -152,7 +152,7 @@ router.get("/results", async (_req, res) => {
     const totalTests = totalPassed + totalFailed + totalSkipped;
     const totalDuration = stored?.suites.reduce((sum, s) => sum + s?.duration, 0);
     const overallScore =
-      totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
+      totalTests > 0 ? Math.round((totalPassed / (totalTests || 1)) * 100) : 0;
 
     return res.json({
       overallScore,

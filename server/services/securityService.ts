@@ -135,11 +135,11 @@ export class SecurityService {
       }
 
       if (filters?.startDate) {
-        logs = logs?.filter((log) => log?.timestamp >= filters?.startDate!);
+        logs = logs?.filter((log) => log?.timestamp >= filters?.startDate);
       }
 
       if (filters?.endDate) {
-        logs = logs?.filter((log) => log?.timestamp <= filters?.endDate!);
+        logs = logs?.filter((log) => log?.timestamp <= filters?.endDate);
       }
 
       // Sort by timestamp descending
@@ -428,7 +428,7 @@ export class SecurityService {
         memory: {
           used: usedMem,
           total: totalMem,
-          percentage: (usedMem / totalMem) * 100,
+          percentage: (usedMem / (totalMem || 1)) * 100,
         },
         cpu: 0, // Would use os?.cpus() in production
         requests: {

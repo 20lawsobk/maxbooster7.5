@@ -334,7 +334,7 @@ class DatabasePerformanceTest {
 
     const avgExecutionTime =
       this.metrics.reduce((sum, m) => sum + m?.executionTime, 0) /
-      this.metrics.length;
+      (this.metrics.length || 1);
 
     logger.info(`\n📈 Average Query Time: ${avgExecutionTime?.toFixed(2)}ms`);
 

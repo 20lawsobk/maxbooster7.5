@@ -257,7 +257,7 @@ export function PersonalizedDashboard({
     );
   }
 
-  layout?.widgets
+  const _visibleWidgets = layout?.widgets
       .filter((w) => w.visible)
       .sort((a, b) => a.order - b.order) || [];
 

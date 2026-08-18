@@ -408,7 +408,7 @@ export function usePostingStatus() {
       ).length;
       const failedCount = platforms.filter((p) => p.stage === "failed").length;
       const overallProgress = Math.round(
-        ((completedCount + failedCount) / platforms.length) * 100,
+        ((completedCount + failedCount) / (platforms.length || 1)) * 100,
       );
 
       let currentStage: PostingStage = "publishing";

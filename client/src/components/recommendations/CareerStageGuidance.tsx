@@ -210,7 +210,7 @@ export function CareerStageIndicator() {
     "professional",
   ];
   const currentIndex = stages.indexOf(stage);
-  const progressPercent = ((currentIndex + 1) / stages.length) * 100;
+  const progressPercent = ((currentIndex + 1) / (stages.length || 1)) * 100;
 
   return (
     <div className="p-4 rounded-lg border bg-card">

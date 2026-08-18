@@ -446,11 +446,11 @@ function StorageBreakdown({
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <Progress
-                  value={total > 0 ? (category.used / total) * 100 : 0}
+                  value={total > 0 ? (category.used / (total || 1)) * 100 : 0}
                   className="h-1.5 flex-1"
                 />
                 <span className="text-xs text-muted-foreground w-10 text-right">
-                  {total > 0 ? ((category.used / total) * 100).toFixed(0) : 0}%
+                  {total > 0 ? ((category.used / (total || 1)) * 100).toFixed(0) : 0}%
                 </span>
               </div>
             </div>

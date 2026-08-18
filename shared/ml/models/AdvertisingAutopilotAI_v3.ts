@@ -1180,28 +1180,28 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
 
       const avgEngagementRate =
         segmentCamps.reduce((sum, c) => sum + c.performance.engagementRate, 0) /
-        segmentCamps.length;
+        (segmentCamps.length || 1);
       const avgShareRate =
         segmentCamps.reduce(
           (sum, c) => sum + c.performance.viralCoefficient,
           0,
-        ) / segmentCamps.length;
+        ) / (segmentCamps.length || 1);
       const avgConversionRate =
         segmentCamps.reduce(
           (sum, c) =>
             sum + c.performance.conversions / Math.max(c.performance.clicks, 1),
           0,
-        ) / segmentCamps.length;
+        ) / (segmentCamps.length || 1);
       const avgAuthenticityScore =
         segmentCamps.reduce(
           (sum, c) => sum + c.performance.authenticityScore,
           0,
-        ) / segmentCamps.length;
+        ) / (segmentCamps.length || 1);
       const avgNetworkPropagation =
         segmentCamps.reduce(
           (sum, c) => sum + c.audience.networkPropagation,
           0,
-        ) / segmentCamps.length;
+        ) / (segmentCamps.length || 1);
 
       // Determine segment name based on characteristics
       let segmentName = "General Audience";
@@ -1328,14 +1328,14 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
           ? viralCampaigns.reduce(
               (sum, c) => sum + c.algorithms.engagementVelocity,
               0,
-            ) / viralCampaigns.length
+            ) / (viralCampaigns.length || 1)
           : 100;
       const avgViralShareRate =
         viralCampaigns.length > 0
           ? viralCampaigns.reduce(
               (sum, c) => sum + c.performance.viralCoefficient,
               0,
-            ) / viralCampaigns.length
+            ) / (viralCampaigns.length || 1)
           : 0.03;
 
       // Find optimal timing
@@ -1419,12 +1419,12 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
       const metric = camp.performance[type];
       const total = camp.performance.engagement;
       if (total > 0) {
-        totalWeight += metric / total;
+        totalWeight += metric / (total || 1);
         count++;
       }
     }
 
-    return count > 0 ? totalWeight / count : 0.25;
+    return count > 0 ? totalWeight / (count || 1) : 0.25;
   }
 
   /**
@@ -1437,7 +1437,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     bestPostingTimes: number[];
   } {
     const viralCampaigns = campaigns.filter((c) => c.wentViral);
-    this.viralSuccessRate = viralCampaigns.length / campaigns.length;
+    this.viralSuccessRate = viralCampaigns.length / (campaigns.length || 1);
 
     // Top performing platforms
     const platformPerformance = new Map<string, number>();
@@ -1504,16 +1504,16 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     const avgOrganic = {
       impressions:
         campaigns.reduce((sum, c) => sum + c.performance.impressions, 0) /
-        campaigns.length,
+        (campaigns.length || 1),
       clicks:
         campaigns.reduce((sum, c) => sum + c.performance.clicks, 0) /
-        campaigns.length,
+        (campaigns.length || 1),
       conversions:
         campaigns.reduce((sum, c) => sum + c.performance.conversions, 0) /
-        campaigns.length,
+        (campaigns.length || 1),
       engagementRate:
         campaigns.reduce((sum, c) => sum + c.performance.engagementRate, 0) /
-        campaigns.length,
+        (campaigns.length || 1),
     };
 
     // Calculate multipliers
@@ -2297,7 +2297,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
       }
     }
     for (let i = 0; i < dim; i++) {
-      std[i] = Math.sqrt(std[i] / data.length);
+      std[i] = Math.sqrt(std[i] / (data.length || 1));
       if (std[i] === 0) std[i] = 1; // Prevent division by zero
     }
 

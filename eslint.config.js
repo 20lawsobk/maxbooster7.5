@@ -32,6 +32,12 @@ export default [
       "vite.config.ts.timestamp-*",
       "drizzle/**",
       "scripts/**",
+      // Build artifacts and generated bundles — not source code
+      "artifacts/**",
+      "pocket-dimensions/**",
+      "client/public/**",
+      "ReleasePackage/**",
+      "reports/**",
     ],
   },
   js.configs.recommended,

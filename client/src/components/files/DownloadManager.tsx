@@ -171,7 +171,7 @@ export function DownloadManager({
     0,
   );
   const overallProgress =
-    totalSize > 0 ? Math.round((downloadedSize / totalSize) * 100) : 0;
+    totalSize > 0 ? Math.round((downloadedSize / (totalSize || 1)) * 100) : 0;
   const averageSpeed = activeDownloads.reduce((sum, d) => sum + d.speed, 0);
   const remainingBytes = activeDownloads.reduce(
     (sum, d) => sum + (d.fileSize - d.downloadedBytes),
