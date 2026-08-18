@@ -1100,7 +1100,10 @@ router.get(
             "Return a diverse list of trending music hashtags across categories: general music, production, hip-hop, R&B, promotion, indie. Include high-reach and niche tags.",
         }),
         new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error("MaxCore hashtag request timed out")), 10_000),
+          setTimeout(
+            () => reject(new AIUnavailableError("trending hashtags (MaxCore timeout)")),
+            10_000,
+          ),
         ),
       ]);
 
