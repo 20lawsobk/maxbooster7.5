@@ -270,7 +270,7 @@ export function WebLayout({
                       Settings
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => setLocation("/settings/profile")}
+                      onClick={() => setLocation("/settings?tab=profile")}
                     >
                       Profile
                     </DropdownMenuItem>
