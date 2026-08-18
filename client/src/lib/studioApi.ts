@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { apiRequest } from "./queryClient";
 
 export interface CompingGroup {

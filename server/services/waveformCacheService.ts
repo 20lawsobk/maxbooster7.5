@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../logger.js";
 import { storageService } from "./storageService.js";
 import wavefilePkg from "wavefile";

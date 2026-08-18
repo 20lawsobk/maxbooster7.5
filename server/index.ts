@@ -655,7 +655,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         `[PlatformAutoFixer] Worker ${clusterId} — middleware active, probe loop handled by worker 0`,
       );
     }
-    app.use(platformFixerMiddleware as import("express").RequestHandler);
+    app.use(
+      platformFixerMiddleware as unknown as import("express").RequestHandler,
+    );
   } catch (e) {
     logger.warn(`[PlatformAutoFixer] Failed to start: ${(e as any)?.message}`);
   }
@@ -902,7 +904,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
          AND cd.registrar_name  = 'maxbooster'
          AND (z.is_verified = false OR z.status = 'pending')
     `);
-    const rowCount = (queryResult as { rowCount?: number })?.rowCount;
+    const rowCount = (queryResult as unknown as { rowCount?: number })?.rowCount;
     if (rowCount && rowCount > 0) {
       logger.info(
         `[domainVerify] Backfilled ${rowCount} Max Booster-owned zone(s) to verified/active`,
@@ -1682,9 +1684,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       const mod = (
         parallelMods[1] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
-      const engine =
-        mod?.autopilotEngine ??
-        (mod?.AutopilotEngine ? new (mod.AutopilotEngine as new () => unknown)() : null);
+      const engine: { start?: () => void; stop?: () => void } | null =
+        (mod?.autopilotEngine as
+          | { start?: () => void; stop?: () => void }
+          | undefined) ??
+        (mod?.AutopilotEngine
+          ? new (mod.AutopilotEngine as new () => {
+              start?: () => void;
+              stop?: () => void;
+            })()
+          : null);
       if (engine) {
         logger.info("✅ [Autonomy] Autopilot Engine loaded");
         killSwitch?.registerSystem("autopilot-engine", {

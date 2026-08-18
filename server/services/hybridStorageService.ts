@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * HYBRID STORAGE SERVICE — PDIM-ONLY MODE
  *

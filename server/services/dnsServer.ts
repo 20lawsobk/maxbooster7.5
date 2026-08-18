@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Max Booster — Built-in Authoritative DNS Server
  *

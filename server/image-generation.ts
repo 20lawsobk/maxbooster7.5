@@ -133,7 +133,7 @@ export class SocialMediaContentGenerator {
 
       return {
         ...result,
-        extractedData,
+        extractedData: extractedData as Record<string, unknown>,
         content: aiContent as Record<string, unknown>,
       };
     } catch (error: unknown) {

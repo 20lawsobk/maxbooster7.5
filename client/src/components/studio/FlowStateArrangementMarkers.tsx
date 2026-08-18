@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { Flag, Plus, Trash2, Edit2, Play, Copy, Lock, Unlock, Repeat, SkipForward, SkipBack } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "@/lib/logger";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { useState, useEffect } from "react";

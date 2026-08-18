@@ -366,7 +366,8 @@ export function createUploadValidator(category: UploadCategory) {
           category,
           filename: file.originalname,
           error: result.error,
-          userId: (req as unknown as Record<string, unknown>).user.id,
+          userId: ((req as unknown as { user?: { id?: string } }).user?.id ??
+            "unknown"),
         }, "Upload validation failed");
         return res.status(400).json({
           success: false,

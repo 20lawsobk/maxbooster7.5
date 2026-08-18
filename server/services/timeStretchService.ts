@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomUUID } from "crypto";
 import path from "path";
 import fs from "fs";

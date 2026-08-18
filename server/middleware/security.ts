@@ -105,9 +105,11 @@ export function securityMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  helmetMiddleware(req, res, (helmetErr?: Record<string, unknown>) => {
+  helmetMiddleware(req, res, (helmetErr?: unknown) => {
     if (helmetErr) {
-      logger.warn(helmetErr?.message, "[Security] Helmet error (non-fatal):");
+      logger.warn(
+        `[Security] Helmet error (non-fatal): ${(helmetErr as Error)?.message ?? "unknown"}`,
+      );
     }
     // Set Permissions-Policy — not natively supported by this helmet version.
     res.setHeader("Permissions-Policy", PERMISSIONS_POLICY);

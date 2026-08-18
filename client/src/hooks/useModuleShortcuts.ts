@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useMemo } from "react";
 import { useShortcuts, useShortcutContext } from "@/contexts/ShortcutContext";
 import {

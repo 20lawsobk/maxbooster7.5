@@ -64,7 +64,6 @@ export class AutonomousAutopilot extends EventEmitter {
   private contentGenerationInterval: NodeJS.Timeout | null = null;
   private performanceAnalysisInterval: NodeJS.Timeout | null = null;
   private adaptationInterval: NodeJS.Timeout | null = null;
-  private _platformPerformance: Map<string, any> = new Map();
   private static readonly DEFAULT_TOPICS = [
     "new release",
     "studio session",
@@ -1187,7 +1186,7 @@ export class AutonomousAutopilot extends EventEmitter {
     const totalTrials =
       Array.from(statsByTopic?.values()).reduce((s, v) => s + v?.n, 0) || 1;
 
-    let bestTopic = defaultTopics[0];
+    let bestTopic: string = defaultTopics[0];
     let bestScore = -Infinity;
     candidates?.forEach((topic) => {
       const stat = statsByTopic?.get(topic);
@@ -1250,6 +1249,13 @@ export class AutonomousAutopilot extends EventEmitter {
   }
   // ─────────────────────────────────────────────────────────────────────────────
 
+  private getEngagementRate(post: Record<string, unknown>): number {
+    const analytics = post.analytics as { engagementRate?: number } | undefined;
+    return typeof analytics?.engagementRate === "number"
+      ? analytics.engagementRate
+      : 0;
+  }
+
   // Utility Methods
   private calculateNextGenerationInterval(): number {
     const baseInterval = 2 * 60 * 60 * 1000; // 2 hours
@@ -1269,7 +1275,7 @@ export class AutonomousAutopilot extends EventEmitter {
     const recentAvgEngagement =
       this.contentPerformanceHistory
         .slice(-10)
-        .reduce((sum, post) => sum + post?.analytics.engagementRate, 0) / 10;
+        .reduce((sum, post) => sum + this.getEngagementRate(post), 0) / 10;
 
     if (recentAvgEngagement > 0.05) {
       return minInterval; // Post more frequently if performing well
@@ -1306,7 +1312,7 @@ export class AutonomousAutopilot extends EventEmitter {
       avgEngagementRate:
         this.contentPerformanceHistory.length > 0
           ? this.contentPerformanceHistory.reduce(
-              (sum, post) => sum + post?.analytics.engagementRate,
+              (sum, post) => sum + this.getEngagementRate(post),
               0,
             ) / this.contentPerformanceHistory.length
           : 0,
@@ -1328,4 +1334,4 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 }
 
-export const autonomousAutopilot = new AutonomousAutopilot();
+export const autonomousAutopilot = new AutonomousAutopilot("system");

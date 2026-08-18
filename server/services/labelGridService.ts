@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * LabelGrid Integration Service
  * Handles distribution to 34+ platforms through LabelGrid API

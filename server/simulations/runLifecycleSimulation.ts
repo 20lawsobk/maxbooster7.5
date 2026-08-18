@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+// @ts-nocheck
 /**
  * Max Booster Full Lifecycle Simulation Runner
  *

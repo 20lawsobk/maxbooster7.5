@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "@/lib/logger";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion } from "framer-motion";

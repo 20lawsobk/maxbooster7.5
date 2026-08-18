@@ -208,43 +208,62 @@ This is an automated alert from Max Booster Platform Monitoring System.
   }
 
   async checkQueueMetrics(metrics: Record<string, unknown>): Promise<void> {
-    if (metrics?.waiting > this.config.thresholds?.queueMaxWaiting) {
+    const queueMetrics = metrics as {
+      queueName?: string;
+      waiting?: number;
+      failed?: number;
+      redisLatency?: number;
+    };
+    if ((queueMetrics.waiting ?? 0) > this.config.thresholds?.queueMaxWaiting) {
       await this.sendAlert({
         severity: "warning",
         title: "High Queue Backlog",
-        message: `Queue has ${metrics?.waiting} waiting jobs (threshold: ${this.config.thresholds?.queueMaxWaiting})`,
+        message: `Queue has ${queueMetrics.waiting ?? 0} waiting jobs (threshold: ${this.config.thresholds?.queueMaxWaiting})`,
         timestamp: new Date(),
-        metadata: { queueName: metrics.queueName, waiting: metrics.waiting },
+        metadata: {
+          queueName: queueMetrics.queueName,
+          waiting: queueMetrics.waiting,
+        },
       });
     }
 
-    if (metrics?.failed > this.config.thresholds?.queueMaxFailed) {
+    if ((queueMetrics.failed ?? 0) > this.config.thresholds?.queueMaxFailed) {
       await this.sendAlert({
         severity: "critical",
         title: "High Failed Job Count",
-        message: `Queue has ${metrics?.failed} failed jobs (threshold: ${this.config.thresholds?.queueMaxFailed})`,
+        message: `Queue has ${queueMetrics.failed ?? 0} failed jobs (threshold: ${this.config.thresholds?.queueMaxFailed})`,
         timestamp: new Date(),
-        metadata: { queueName: metrics.queueName, failed: metrics.failed },
+        metadata: { queueName: queueMetrics.queueName, failed: queueMetrics.failed },
       });
     }
 
-    if (metrics?.redisLatency > this.config.thresholds?.queueMaxLatency) {
+    if (
+      (queueMetrics.redisLatency ?? 0) > this.config.thresholds?.queueMaxLatency
+    ) {
       await this.sendAlert({
         severity: "warning",
         title: "High Redis Latency",
-        message: `Redis latency is ${metrics?.redisLatency}ms (threshold: ${this.config.thresholds?.queueMaxLatency}ms)`,
+        message: `Redis latency is ${queueMetrics.redisLatency ?? 0}ms (threshold: ${this.config.thresholds?.queueMaxLatency}ms)`,
         timestamp: new Date(),
         metadata: {
-          queueName: metrics.queueName,
-          latency: metrics.redisLatency,
+          queueName: queueMetrics.queueName,
+          latency: queueMetrics.redisLatency,
         },
       });
     }
   }
 
   async checkAICacheMetrics(metrics: Record<string, unknown>): Promise<void> {
-    const socialUtil = parseFloat(metrics?.social.utilizationPercent);
-    const adUtil = parseFloat(metrics?.advertising.utilizationPercent);
+    const aiMetrics = metrics as {
+      social?: { utilizationPercent?: string | number };
+      advertising?: { utilizationPercent?: string | number };
+    };
+    const socialUtil = parseFloat(
+      String(aiMetrics.social?.utilizationPercent ?? "0"),
+    );
+    const adUtil = parseFloat(
+      String(aiMetrics.advertising?.utilizationPercent ?? "0"),
+    );
 
     if (socialUtil > this.config.thresholds?.aiCacheMaxUtilization) {
       await this.sendAlert({

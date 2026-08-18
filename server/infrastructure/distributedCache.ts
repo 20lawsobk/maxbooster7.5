@@ -1,5 +1,4 @@
 import { logger } from "../logger.js";
-import type { Redis } from "ioredis";
 import { applyIoredisCompatShim } from "../lib/redisCompat.js";
 import { getPdimClient } from "../lib/pdimClient.js";
 
@@ -18,7 +17,20 @@ interface CacheStats {
 
 export class DistributedCache {
   private static instance: DistributedCache;
-  private redis!: Redis;
+  private redis!: {
+    get(key: string): Promise<string | null>;
+    setex(key: string, ttl: number, value: string): Promise<unknown>;
+    del(...keys: string[]): Promise<unknown>;
+    keys(pattern: string): Promise<string[]>;
+    set(
+      key: string,
+      value: string,
+      mode: string,
+      ttl: number,
+      flag: string,
+    ): Promise<string | null>;
+    flushdb(): Promise<unknown>;
+  };
   private config: CacheConfig;
   private stats: CacheStats = { hits: 0, misses: 0, size: 0, memoryUsage: 0 };
 
@@ -76,8 +88,9 @@ export class DistributedCache {
   }
 
   async connect(): Promise<void> {
-    this.redis = getPdimClient() as unknown as Record<string, unknown>;
-    applyIoredisCompatShim(this.redis);
+    this.redis = applyIoredisCompatShim(
+      getPdimClient() as unknown as Record<string, unknown>,
+    ) as unknown as DistributedCache["redis"];
     logger.info("✅ [DistributedCache] Connected (PDIM)");
   }
 

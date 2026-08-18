@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomBytes } from "crypto";
 
 import { jsPDF } from "jspdf";

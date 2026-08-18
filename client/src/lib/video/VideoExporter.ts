@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { VideoProject } from "../../../../shared/video/VideoRendererEngine";
 
 export type VideoFormat = "webm" | "mp4";

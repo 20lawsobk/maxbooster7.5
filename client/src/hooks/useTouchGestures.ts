@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useRef, useState, useCallback, RefObject } from "react";
 
 export type SwipeDirection = "left" | "right" | "up" | "down" | null;

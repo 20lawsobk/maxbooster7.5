@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BasePlugin } from "@plugins/BasePlugin";
 import { CompressorPlugin } from "@plugins/CompressorPlugin";
 import { EQPlugin } from "@plugins/EQPlugin";

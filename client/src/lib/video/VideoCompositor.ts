@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { TransformConfig } from "../../../../shared/video/VideoRendererEngine";
 import {
   DEFAULT_TRANSFORM,

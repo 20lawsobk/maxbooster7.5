@@ -498,8 +498,11 @@ export class PocketDimension extends EventEmitter {
       storagePath: this.storagePath,
     });
 
-    (nested as unknown as Record<string, unknown>).currentDepth = this.currentDepth + 1;
-    (nested as unknown as Record<string, unknown>).metadata.parentDimension = this.id;
+    (nested as unknown as Record<string, unknown>).currentDepth =
+      this.currentDepth + 1;
+    const nestedMetadata = (nested as unknown as { metadata?: Record<string, unknown> })
+      .metadata;
+    if (nestedMetadata) nestedMetadata.parentDimension = this.id;
 
     await nested?.open();
     this.nestedDimensions.set(dimensionPath, nested);

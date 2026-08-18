@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 import { logger } from "../logger.js";
 

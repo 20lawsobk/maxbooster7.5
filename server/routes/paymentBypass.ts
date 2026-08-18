@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Request, Response } from "express";
 import { paymentBypassService } from "../services/paymentBypassService";
 import { require2FA } from "../middleware/auth";

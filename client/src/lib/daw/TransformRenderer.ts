@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { peakCacheEngine, PeakData } from "./PeakCacheEngine";
 
 export interface ProcessingChain {

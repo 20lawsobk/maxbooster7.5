@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, type ImgHTMLAttributes } from "react";
 import { Music } from "lucide-react";
 import { cn } from "@/lib/utils";

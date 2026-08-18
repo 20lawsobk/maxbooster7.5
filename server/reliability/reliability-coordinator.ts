@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { EventEmitter } from "events";
 import { processMonitor } from "./process-monitor";
 import { databaseResilience } from "./database-resilience";

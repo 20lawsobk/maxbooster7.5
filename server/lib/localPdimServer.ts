@@ -849,7 +849,6 @@ function exec(cmd: string, args: string[]): unknown {
     case "BLPOP":
     case "BRPOP": {
       // Non-blocking: if list has items, pop immediately; else return null
-      const _timeout = parseFloat(args[args.length - 1]);
       for (const k of args.slice(0, -1)) {
         const l = list(k);
         if (l && l.length) {
@@ -1104,15 +1103,17 @@ function exec(cmd: string, args: string[]): unknown {
         const zs = zset(key);
         let n = 0;
         if (zs) {
-          for (const score of zs.values()) {
-            if (score >= windowStart) n++;
+          for (const entry of zs.values()) {
+            if (entry.score >= windowStart) n++;
           }
         }
 
         if (n + batchCount > maxReq) return [1, 0];
 
         // ZADD: add batchCount members
-        const zsMap: Map<string, number> = new Map(zs ?? []);
+        const zsMap: Map<string, number> = new Map(
+          (zs ?? []).map(({ member, score }) => [member, score]),
+        );
         if (batchCount === 1) {
           zsMap.set(entryId, now);
         } else {

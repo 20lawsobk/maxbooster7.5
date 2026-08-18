@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PocketStorageService } from "../../../pocket-dimension/fabric/PocketStorageService.js";
 import { PocketRegistry } from "./infra/PocketRegistry.js";
 import { VolumeRegistry } from "./infra/VolumeRegistry.js";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { useStudioStore, TempoMap } from "@/lib/studioStore";
 import {

@@ -119,7 +119,9 @@ export function registerCoreProbes(): void {
   healthRegistry?.register("database", async () => {
     try {
       const { db } = await import("../db.js");
-      await (db as unknown as Record<string, unknown>).execute?.("SELECT 1");
+      await (db as { execute(query: unknown): Promise<unknown> }).execute(
+        "SELECT 1",
+      );
       return { status: "ok" };
     } catch (e) {
       return { status: "down", detail: (e as Error).message };
@@ -133,7 +135,7 @@ export function registerCoreProbes(): void {
       const { getRedisClient } = await import("./redisConnectionFactory.js");
       const client = await getRedisClient();
       if (!client) return { status: "degraded", detail: "no client" };
-      await (client as Record<string, unknown>).ping?.();
+      await (client as { ping(): Promise<unknown> }).ping();
       return { status: "ok" };
     } catch (e) {
       return { status: "degraded", detail: (e as Error).message };

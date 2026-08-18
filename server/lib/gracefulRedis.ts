@@ -6,10 +6,14 @@
  */
 
 import { logger } from "../logger.js";
-import { getPdimClient, isPdimConfigured } from "./pdimClient.js";
+import {
+  type PdimRedisClient,
+  getPdimClient,
+  isPdimConfigured,
+} from "./pdimClient.js";
 
 interface RedisClientWrapper {
-  client: Record<string, unknown>;
+  client: PdimRedisClient;
   readonly isConnected: boolean;
   get(key: string): Promise<string | null>;
   set(key: string, value: string, ttl?: number): Promise<void>;

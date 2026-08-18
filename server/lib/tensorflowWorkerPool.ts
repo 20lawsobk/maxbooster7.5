@@ -107,7 +107,7 @@ class TensorFlowWorkerPool {
           state.busy = false;
 
           if (msg?.error) {
-            req.reject(new Error(msg?.error));
+            req.reject(new Error(String(msg.error)));
           } else {
             req.resolve(msg?.result as number[]);
           }
@@ -115,7 +115,7 @@ class TensorFlowWorkerPool {
           this.dispatch();
         });
 
-        worker?.on("error", (err) => {
+        worker?.on("error", (err: Error) => {
           logger.warn(`[TFWorkerPool] Worker ${index} error: ${(err as any)?.message}`);
           clearTimeout(timeout);
           reject(err);

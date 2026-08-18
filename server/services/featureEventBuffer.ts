@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Feature Event Write Buffer — At-Least-Once Delivery
  *

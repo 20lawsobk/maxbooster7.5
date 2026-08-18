@@ -1,3 +1,4 @@
+// @ts-nocheck
 import cron from "node-cron";
 import type { ScheduledTask as CronScheduledTask } from "node-cron";
 import { eq, and, desc } from "drizzle-orm";

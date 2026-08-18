@@ -118,7 +118,8 @@ class ReadReplicaPool {
         port: (config?.port as number) || 5432,
         database: config.database || "postgres",
         user: config.user || "postgres",
-        password: config.password || "",
+        password:
+          typeof config.password === "string" ? config.password : "",
         weight: 1,
       };
     });

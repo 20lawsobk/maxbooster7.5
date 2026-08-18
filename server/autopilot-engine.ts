@@ -503,13 +503,15 @@ export class AutopilotEngine extends EventEmitter {
   }
 
   private async executeContentGeneration(job: AutopilotJob): Promise<void> {
-    const { topic, brandVoice, contentType } = job.data;
+    const topic = String(job.data.topic ?? "");
+    const brandVoice = String(job.data.brandVoice ?? this.config.brandVoice);
+    const contentType = String(job.data.contentType ?? "social_post");
 
     try {
       // This would call your actual AI service
       // Optional advanced-URL-parser brief from configured source links.
       // Undefined when no sourceUrls configured ⇒ unchanged topic-only behavior.
-      const urlBrief = await this.resolveUrlBrief((topic as string), job.platform);
+      const urlBrief = await this.resolveUrlBrief(topic, job.platform);
 
       const generatedContent = await this.generateContentForAutopilot({
         topic,
@@ -981,4 +983,4 @@ export class AutopilotEngine extends EventEmitter {
   }
 }
 
-export const autopilotEngine = new AutopilotEngine();
+export const autopilotEngine = new AutopilotEngine("system");

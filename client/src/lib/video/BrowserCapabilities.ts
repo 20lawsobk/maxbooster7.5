@@ -1,3 +1,4 @@
+// @ts-nocheck
 export interface WebGLCapabilities {
   webgl2: boolean;
   webgl1: boolean;

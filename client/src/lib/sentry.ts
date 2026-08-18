@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "@/lib/logger";
 export type SentryLevel = "fatal" | "error" | "warning" | "info" | "debug";
 

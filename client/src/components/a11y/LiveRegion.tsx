@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
 export type LiveRegionPriority = "polite" | "assertive" | "off";

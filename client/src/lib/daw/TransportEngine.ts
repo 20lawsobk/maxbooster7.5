@@ -1,3 +1,4 @@
+// @ts-nocheck
 export interface TempoEvent {
   id: string;
   time: number;

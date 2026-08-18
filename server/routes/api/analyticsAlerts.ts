@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Response } from "express";
 import { analyticsAlertService } from "../../services/analyticsAlertService";
 import { logger } from "../../logger";

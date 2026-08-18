@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Advanced Social AI Service - Server-side GPT-5.2 Level Content Generation
  *

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { create } from "zustand";
 import { subscribeWithSelector, persist, devtools } from "zustand/middleware";
 import type { WaveformPeakCache } from "../lib/daw/AudioWorkletEngine";

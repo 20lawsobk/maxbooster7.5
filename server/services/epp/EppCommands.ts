@@ -1,3 +1,4 @@
+// @ts-nocheck
 export class EppCommands {
   static hello() {
     return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>

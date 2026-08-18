@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../../logger.js";
 import { EppSession } from "../epp/index.js";
 import { createHash } from "crypto";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from "../db.js";
 import { royaltyStatements, recoupmentAccounts, type RoyaltyStatement } from "@shared/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";

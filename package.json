@@ -356,7 +356,7 @@
     "@typescript/native-preview": "^7.0.0-dev.20260601.1",
     "autoprefixer": "^10.4.24",
     "drizzle-kit": "^0.31.9",
-    "electron": "^40.4.1",
+    "electron": "^43.4.0",
     "electron-builder": "^26.7.0",
     "electron-updater": "^6.8.3",
     "eslint": "^10.2.1",

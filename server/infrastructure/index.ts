@@ -40,16 +40,17 @@ export async function initializeInfrastructure(): Promise<void> {
   logger.info("════════════════════════════════════════════════════════");
 }
 
-export function getInfrastructureStatus(): {
-  cache: Record<string, unknown>;
-  sessions: Record<string, unknown>;
-  circuitBreakers: Record<string, unknown>;
-  scaling: Record<string, unknown>;
-} {
+export function getInfrastructureStatus() {
   return {
-    cache: distributedCache.getStats(),
-    sessions: clusterSessionManager.getStatus(),
-    circuitBreakers: circuitBreakerRegistry.getAllStats(),
-    scaling: autoScalingManager.getMetrics(),
+    cache: distributedCache.getStats() as unknown as Record<string, unknown>,
+    sessions: clusterSessionManager.getStatus() as Record<string, unknown>,
+    circuitBreakers: circuitBreakerRegistry.getAllStats() as Record<
+      string,
+      unknown
+    >,
+    scaling: autoScalingManager.getMetrics() as unknown as Record<
+      string,
+      unknown
+    >,
   };
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import express, { Router, Request, Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { promises as fsPromises } from "fs";

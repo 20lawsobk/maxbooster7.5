@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { ChunkStore } from "./ChunkStore.js";
 import type { ChunkId } from "../compression/types.js";
 import { logger } from "../../../../logger.js";

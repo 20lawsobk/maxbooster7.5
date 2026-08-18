@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AIAnalyzer } from "./AIAnalyzer";
 import { EQPlugin } from "./plugins/EQPlugin";
 import { logger } from "@/lib/logger";

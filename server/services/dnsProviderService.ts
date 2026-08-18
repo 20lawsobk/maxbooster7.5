@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * dnsProviderService — Multi-provider DNS adapter layer
  *

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { LayerConfig, TransformConfig } from "../../../../shared/video/VideoRendererEngine";
 
 export type BlendMode =

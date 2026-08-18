@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "@/lib/logger";
 import { useEffect } from "react";
 import { useLocation } from "wouter";

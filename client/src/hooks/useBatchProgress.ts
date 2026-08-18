@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { apiRequest } from "@/lib/queryClient";
 

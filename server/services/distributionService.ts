@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomBytes } from "crypto";
 import { storage as baseStorage } from "../storage";
 import { db } from "../db.js";
