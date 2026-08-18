@@ -35,11 +35,11 @@ export class MetricsCollector {
     const snapshot: MetricsSnapshot = {
       timestamp: new Date(),
       queue: {
-        waiting: queueMetrics.waiting || 0,
-        active: queueMetrics.active || 0,
-        completed: queueMetrics.completed || 0,
-        failed: queueMetrics.failed || 0,
-        redisLatency: queueMetrics.redisLatency || 0,
+        waiting: Number(queueMetrics.waiting ?? 0),
+        active: Number(queueMetrics.active ?? 0),
+        completed: Number(queueMetrics.completed ?? 0),
+        failed: Number(queueMetrics.failed ?? 0),
+        redisLatency: Number(queueMetrics.redisLatency ?? 0),
       },
       aiCache: {
         socialUtilization: parseFloat(
@@ -50,9 +50,9 @@ export class MetricsCollector {
         ),
       },
       system: {
-        memoryMB: systemMetrics.memoryMB || 0,
-        uptime: systemMetrics.uptime || 0,
-        cpuPercent: systemMetrics.cpuPercent || 0,
+        memoryMB: Number(systemMetrics.memoryMB ?? 0),
+        uptime: Number(systemMetrics.uptime ?? 0),
+        cpuPercent: Number(systemMetrics.cpuPercent ?? 0),
       },
     };
 

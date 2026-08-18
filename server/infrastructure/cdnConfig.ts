@@ -20,6 +20,15 @@ interface CacheRule {
   immutable?: boolean;
 }
 
+function parseCdnProvider(value: string | undefined): CDNConfig["provider"] {
+  return value === "cloudflare" ||
+    value === "fastly" ||
+    value === "cloudfront" ||
+    value === "custom"
+    ? value
+    : "cloudflare";
+}
+
 const DEFAULT_CACHE_RULES: CacheRule[] = [
   { pattern: /\.(js|css)$/, maxAge: 31536000, immutable: true },
   { pattern: /\.(png|jpg|jpeg|gif|webp|svg|ico)$/, maxAge: 2592000 },
@@ -38,8 +47,7 @@ class CDNManager {
   private constructor() {
     this.config = {
       enabled: process.env.CDN_ENABLED === "true",
-      provider:
-        (process.env.CDN_PROVIDER as unknown as Record<string, unknown>) || "cloudflare",
+      provider: parseCdnProvider(process.env.CDN_PROVIDER),
       baseUrl: process.env.CDN_BASE_URL || "",
       staticAssetPaths: ["/static", "/assets", "/uploads", "/audio"],
       cacheControlRules: DEFAULT_CACHE_RULES,

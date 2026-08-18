@@ -100,13 +100,12 @@ export function selfHealingSecurityMiddleware(
         payload: {
           path: req.path,
           method: req.method,
-          statusCode: res.statusCode,
         },
         metrics: {
           latency,
           errorCount: 1,
         },
-      });
+      } as any);
     }
   });
 

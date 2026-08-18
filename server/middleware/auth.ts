@@ -16,7 +16,7 @@ async function resolveJwtUser(req: Request): Promise<void> {
       const user = await storage.getUser(decoded?.userId);
       if (user) {
         req.user = user;
-        req.isAuthenticated = () => true;
+        req.isAuthenticated = (() => true) as typeof req.isAuthenticated;
       }
     }
   } catch (err) {

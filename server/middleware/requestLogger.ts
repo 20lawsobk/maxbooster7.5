@@ -42,18 +42,21 @@ export function requestLogger(
   };
 
   // Override res.end to capture response details
-  const originalEnd = res.end.bind(res);
-  res.end = function (
-    chunk?: unknown,
-    encoding?: unknown,
-    cb?: unknown,
-  ): Record<string, unknown> {
+  const originalEnd = res.end.bind(res) as typeof res.end;
+  res.end = (function (
+    chunk?: string | Buffer,
+    encoding?: BufferEncoding | (() => void),
+    cb?: () => void,
+  ) {
     const responseTime = Date?.now() - startTime;
 
     // Update log data with response information
     logData.statusCode = res.statusCode;
     logData.responseTime = responseTime;
-    logData.bodySize = chunk ? Buffer?.byteLength(chunk) : 0;
+    logData.bodySize =
+      typeof chunk === "string" || Buffer.isBuffer(chunk)
+        ? Buffer.byteLength(chunk)
+        : 0;
 
     // Determine log level based on status code
     const isError = res.statusCode >= 400;
@@ -141,8 +144,8 @@ export function requestLogger(
     }
 
     // Call original end method
-    return originalEnd(chunk, encoding, cb);
-  } as Record<string, unknown>;
+    return originalEnd(chunk as any, encoding as any, cb);
+  }) as typeof res.end;
 
   next();
 }

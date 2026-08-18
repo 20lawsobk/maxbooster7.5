@@ -80,11 +80,11 @@ class QueryTelemetry {
       const sqlPreview = isDev
         ? sql.substring(0, 200).replace(/\s+/g, " ")
         : "";
-      logger.warn(
-        `⚠️ Slow query detected (${duration}ms):`,
+      logger.warn({
+        message: `⚠️ Slow query detected (${duration}ms)`,
         sqlHash,
-        isDev ? `\n   SQL: ${sqlPreview}...` : "",
-      );
+        preview: isDev ? sqlPreview : undefined,
+      });
     }
 
     // Track slowest query
@@ -188,28 +188,41 @@ export function getQueryTelemetry() {
   return queryTelemetry.getMetrics();
 }
 
-// Instrumented Pool that measures actual query execution time
-class InstrumentedPool extends Pool {
-  async query(...args: unknown[]): Promise<unknown> {
+function createInstrumentedPool(
+  options: ConstructorParameters<typeof Pool>[0],
+): Pool {
+  const pool = new Pool(options);
+  const baseQuery = pool.query.bind(pool) as (...args: unknown[]) => unknown;
+
+  pool.query = ((...args: unknown[]) => {
     const startTime = Date.now();
     const sql =
-      typeof args[0] === "string" ? args[0] : (args as any)[0].text || "unknown";
+      typeof args[0] === "string"
+        ? args[0]
+        : ((args[0] as { text?: string } | undefined)?.text ?? "unknown");
 
-    try {
-      const result = await super.query(...args);
-      const duration = Date.now() - startTime;
-      queryTelemetry.recordQuery(sql, duration);
-      return result;
-    } catch (error: unknown) {
-      const duration = Date.now() - startTime;
-      queryTelemetry.recordQuery(sql, duration);
-      throw error;
+    const result = baseQuery(...args);
+    if (result && typeof (result as Promise<unknown>).then === "function") {
+      return (result as Promise<unknown>)
+        .then((queryResult) => {
+          queryTelemetry.recordQuery(sql, Date.now() - startTime);
+          return queryResult;
+        })
+        .catch((error: unknown) => {
+          queryTelemetry.recordQuery(sql, Date.now() - startTime);
+          throw error;
+        });
     }
-  }
+
+    queryTelemetry.recordQuery(sql, Date.now() - startTime);
+    return result;
+  }) as typeof pool.query;
+
+  return pool;
 }
 
 // Configure connection pool for optimal performance and scalability
-export const pool = new InstrumentedPool({
+export const pool = createInstrumentedPool({
   connectionString: config.database.url,
   max: config.database.poolSize,
   idleTimeoutMillis: config.database.idleTimeout,
@@ -222,17 +235,19 @@ export const pool = new InstrumentedPool({
 // minutes and starving user-facing requests. Using pool.on('connect') rather
 // than the 'options' startup parameter is safer with Neon's WebSocket proxy,
 // which may not forward arbitrary startup options to the backend.
-pool?.on("connect", (client: Record<string, unknown>) => {
+pool?.on("connect", (client: { query: (sql: string) => Promise<unknown> }) => {
   (client.query as any)("SET statement_timeout = '30000'").catch((err: Error) => {
-    logger.warn({ err: err?.message }, "[DB] Failed to set statement_timeout on new connection:",
-    );
+    logger.warn({
+      err: err?.message,
+      message: "[DB] Failed to set statement_timeout on new connection",
+    });
   });
 });
 
 // Pool-level error handler — prevents unhandled 'error' events from idle client
 // disconnects from becoming uncaughtExceptions and crashing the process.
 pool?.on("error", (err: Error) => {
-  logger.warn({ value: err?.message }, "[DB] Idle client error (pool):");
+  logger.warn({ value: err?.message, message: "[DB] Idle client error (pool)" });
 });
 
 export const db = drizzle(pool, { schema });
@@ -247,7 +262,7 @@ const replicaUrl = isProduction
   : undefined;
 
 export const replicaPool = replicaUrl
-  ? new InstrumentedPool({
+  ? createInstrumentedPool({
       connectionString: replicaUrl,
       max: config.database.poolSize,
       idleTimeoutMillis: config.database.idleTimeout,
@@ -258,7 +273,10 @@ export const replicaPool = replicaUrl
 // Prevent uncaughtException from replica pool idle client disconnects
 if (replicaPool) {
   replicaPool?.on("error", (err: Error) => {
-    logger.warn({ value: err?.message }, "[DB] Idle client error (replica pool):");
+    logger.warn({
+      value: err?.message,
+      message: "[DB] Idle client error (replica pool)",
+    });
   });
 }
 

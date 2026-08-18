@@ -443,15 +443,15 @@ class PlatformCapsuleBuilder {
         type: f.type as "source" | "asset" | "config" | "data" | "binary",
       })),
       directories,
-      entryPoint: packageJson.main || "server/index.ts",
-      buildCommand: (packageJson.scripts as any).build,
+      entryPoint: String(packageJson.main || "server/index.ts"),
+      buildCommand: String((packageJson.scripts as any).build || ""),
       startCommand: (packageJson.scripts as any).start || "npm start",
       environment: {
         NODE_ENV: "production",
       },
       dependencies: {
         node: process.version,
-        npm: packageJson.dependencies || {},
+        npm: (packageJson.dependencies || {}) as Record<string, string>,
       },
     };
   }
