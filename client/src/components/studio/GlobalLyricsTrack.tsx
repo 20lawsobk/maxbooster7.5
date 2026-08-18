@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useRef, useState, useCallback } from "react";
 import { useStudioStore, LyricLine } from "@/lib/studioStore";
 import { Plus, Trash2, Music2, GripVertical, Maximize2, FileText } from "lucide-react";

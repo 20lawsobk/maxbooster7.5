@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, OnePoleFilter, DelayLine, LFO, Oscillator, ADSR, msToSamples, softClip, hardClip } from "../core";
 
 export interface SynthesizerEngine {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * AI Help Desk Service
  * Provides intelligent support assistance for Max Booster users

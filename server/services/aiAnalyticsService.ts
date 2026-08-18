@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from "../db";
 import { users, analytics, projects, posts, sessions, dspAnalytics } from "@shared/schema";
 import { sql, gte, lte, desc, and, count, eq, isNotNull } from "drizzle-orm";

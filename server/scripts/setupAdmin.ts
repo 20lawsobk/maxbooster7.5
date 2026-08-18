@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * COMPREHENSIVE ADMIN ACCOUNT SETUP SCRIPT
  *

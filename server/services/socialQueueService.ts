@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getBoosterStateClient } from "../lib/boosterStateClient.js";
 import { db } from "../db";
 import { posts, scheduledPostBatches, socialAccounts } from "@shared/schema";

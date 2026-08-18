@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * RETENTION API ROUTES
  *

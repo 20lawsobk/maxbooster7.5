@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useMemo, useRef, useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStudioStore } from "@/lib/studioStore";

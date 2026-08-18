@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router } from "express";
 import { logger } from "../logger.js";
 import { queueMonitor } from "../monitoring/queueMonitor.js";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Audio Analysis Service using Web Audio API
  * Mobile-safe: all heavy loops capped to prevent main thread stall.

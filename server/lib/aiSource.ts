@@ -11,7 +11,7 @@
  * jobs → caught by their own try/catch, logged, and skipped — never fabricated).
  */
 
-import { AppError } from "../middleware/errorHandler.js";
+import { AppError } from "../lib/AppError.js";
 
 /**
  * Thrown when a MaxCore AI feature cannot be fulfilled by the remote server.

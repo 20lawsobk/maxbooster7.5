@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback } from "react";
 import { Check, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

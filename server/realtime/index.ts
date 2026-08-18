@@ -65,7 +65,12 @@ async function authenticateFromSession(
     }
 
     return new Promise((resolve) => {
-      sessionStore?.get(
+      (sessionStore as {
+        get: (
+          id: string,
+          cb: (err: Record<string, unknown>, session: Record<string, unknown>) => void,
+        ) => void;
+      }).get(
         rawSessionId,
         (err: Record<string, unknown>, session: Record<string, unknown>) => {
           if (err || !session) {

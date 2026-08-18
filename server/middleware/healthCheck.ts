@@ -87,7 +87,15 @@ export async function healthCheck(_req: Request, res: Response): Promise<void> {
           : cachedHealth?.memory.heapUsed < 1800
             ? ("degraded" as const)
             : ("unhealthy" as const),
-      usage: cachedHealth.memory,
+      usage: {
+        heapUsed: cachedHealth.memory.heapUsed,
+        heapTotal: cachedHealth.memory.heapTotal,
+        heapPercent:
+          cachedHealth.memory.heapTotal > 0
+            ? (cachedHealth.memory.heapUsed / cachedHealth.memory.heapTotal) * 100
+            : 0,
+        rss: cachedHealth.memory.rss,
+      },
     };
 
     const health: HealthStatus = {

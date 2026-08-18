@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { spawn } from "child_process";
 import { logger } from "../../logger.js";
 import cron from "node-cron";

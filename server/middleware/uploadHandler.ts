@@ -676,8 +676,12 @@ export async function generateUploadUrl(
     const name = path?.basename(safeFilename, path?.extname(safeFilename));
     const sanitizedFilename = `${timestamp}_${name}${ext}`;
 
-    const key = `${category}/${userId}/${sanitizedFilename}`;
-    const uploadUrl = await storageService?.getUploadUrl(key, contentType, 3600);
+    const { url: uploadUrl, key } = await storageService.getUploadUrl(
+      `${category}/${userId}`,
+      sanitizedFilename,
+      contentType,
+      3600,
+    );
 
     return { uploadUrl, key };
   } catch (error: unknown) {

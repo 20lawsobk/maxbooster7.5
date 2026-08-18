@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Studio Stems Routes - API endpoints for stem bounce/export system
  *

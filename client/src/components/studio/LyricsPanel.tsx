@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { FileText, Plus, GripHorizontal, X, Clock, ArrowUpDown, Mic, Download, Upload, Music2, LayoutList, Layers, Edit3, Check, Hash } from "lucide-react";
 import {

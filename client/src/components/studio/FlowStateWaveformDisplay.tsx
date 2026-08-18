@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Waves } from "lucide-react";

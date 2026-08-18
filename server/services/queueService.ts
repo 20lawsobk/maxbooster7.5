@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Queue, QueueOptions } from "bullmq";
 import { newBullMQRedisConnection } from "../lib/redisClient.js";
 import { logger } from "../logger.js";

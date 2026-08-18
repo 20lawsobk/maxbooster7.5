@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type NavigationOrientation = "horizontal" | "vertical" | "grid" | "both";

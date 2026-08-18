@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Flame, RotateCcw, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";

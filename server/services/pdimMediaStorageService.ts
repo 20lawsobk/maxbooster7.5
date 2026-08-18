@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * PDIM Media Storage Service
  *

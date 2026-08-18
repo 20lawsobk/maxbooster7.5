@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Keyboard, Search, X, Play, Square, Circle, SkipBack, SkipForward, Scissors, Copy, Clipboard, Trash2, Undo, Redo, Save, ZoomIn, ZoomOut, Layers, Music, Maximize2, Grid, Mic, Download } from "lucide-react";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, memo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";

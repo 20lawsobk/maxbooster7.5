@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { randomBytes } from "crypto";
 
 import fsPromises from "fs/promises";

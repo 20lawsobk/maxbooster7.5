@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, memo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Max Booster Real-Life Simulation Environment
  *

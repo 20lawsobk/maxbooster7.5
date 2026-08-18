@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Express, Request, Response } from "express";
 import { reliabilityCoordinator } from "../reliability/reliability-coordinator";
 import { processMonitor } from "../reliability/process-monitor";

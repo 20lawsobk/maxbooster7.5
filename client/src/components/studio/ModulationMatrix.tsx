@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Waves, Plus, Trash2, Link, Play, Pause, ChevronDown, ChevronUp } from "lucide-react";

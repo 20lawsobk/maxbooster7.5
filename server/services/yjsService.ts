@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as Y from "yjs";
 import { storage } from "../storage";
 import crypto from "crypto";

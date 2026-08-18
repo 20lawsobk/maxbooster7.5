@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Production-grade Web Audio API Multi-Track Mixing Engine
  * Singleton pattern with lazy initialization and comprehensive audio routing

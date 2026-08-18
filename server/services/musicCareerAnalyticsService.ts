@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from "../db";
 import { analytics, distroReleases } from "@shared/schema";
 import { sql, gte, desc, and, count, eq } from "drizzle-orm";

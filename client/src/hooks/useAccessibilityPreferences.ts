@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../lib/logger";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect } from "react";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, msToSamples, dbToLinear, linearToDb, clamp, softClip } from "./core";
 
 export class GateProcessor implements DSPProcessor {

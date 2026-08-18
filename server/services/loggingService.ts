@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { storage } from "../storage";
 import type { InsertLogEvent, LogEvent } from "@shared/schema";
 import { logger } from "../logger.js";

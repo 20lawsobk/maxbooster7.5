@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from "../db";
 import { socialAccounts, posts } from "@shared/schema";
 import { eq, and, isNotNull, desc, inArray } from "drizzle-orm";

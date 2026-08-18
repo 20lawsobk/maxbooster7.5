@@ -1,6 +1,11 @@
 import { db } from "./db";
 import { sql } from "drizzle-orm";
-import { projects, analytics, releases, earnings } from "../shared/schema";
+import {
+  projects,
+  analytics,
+  releases,
+  royaltyTransactions,
+} from "../shared/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { logger } from "./logger.js";
 
@@ -129,8 +134,8 @@ class DatabasePerformanceTest {
       const result = await db
         .select()
         .from(releases)
-        .where(eq(releases.userId, 1))
-        .orderBy(desc(releases.updatedAt))
+        .where(eq(releases.userId, "test-user-1"))
+        .orderBy(desc(releases.createdAt))
         .limit(25);
 
       const executionTime = Date?.now() - startTime;
@@ -156,14 +161,14 @@ class DatabasePerformanceTest {
     try {
       const result = await db
         .select({
-          platform: earnings.platform,
-          streams: sql<number>`COALESCE(SUM(${earnings?.streams}), 0)`,
-          totalEarnings: sql<number>`COALESCE(SUM(${earnings?.amount}), 0)`,
+          platform: royaltyTransactions.platform,
+          streams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+          totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
         })
-        .from(earnings)
-        .leftJoin(releases, eq(earnings?.releaseId, releases.id))
-        .where(eq(releases.userId, 1))
-        .groupBy(earnings?.platform);
+        .from(royaltyTransactions)
+        .leftJoin(releases, eq(royaltyTransactions.releaseId, releases.id))
+        .where(eq(releases.userId, "test-user-1"))
+        .groupBy(royaltyTransactions.platform);
 
       const executionTime2 = Date?.now() - startTime2;
 
@@ -226,14 +231,14 @@ class DatabasePerformanceTest {
     try {
       const result = await db
         .select({
-          platform: earnings.platform,
-          amount: earnings.amount,
-          streams: earnings.streams,
-          reportDate: earnings.reportDate,
+          platform: royaltyTransactions.platform,
+          amount: royaltyTransactions.amount,
+          streams: royaltyTransactions.streamCount,
+          reportDate: royaltyTransactions.periodEnd,
         })
-        .from(earnings)
-        .where(eq(earnings?.userId, 1))
-        .orderBy(desc(earnings?.reportDate))
+        .from(royaltyTransactions)
+        .where(eq(royaltyTransactions.userId, "test-user-1"))
+        .orderBy(desc(royaltyTransactions.periodEnd))
         .limit(100);
 
       const executionTime = Date?.now() - startTime;

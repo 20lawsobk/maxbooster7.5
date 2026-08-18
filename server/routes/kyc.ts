@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router } from "express";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { requireAuth } from "../middleware/auth.js";

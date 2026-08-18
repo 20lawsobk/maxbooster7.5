@@ -1,16 +1,8 @@
 import { logger } from "../logger.js";
 import { env } from "../config/env.js";
 
-interface ClusterSessionConfig {
-  sessionSecret: string;
-  sessionName: string;
-  maxAge: number;
-  secure: boolean;
-}
-
 class ClusterSessionManager {
   private static instance: ClusterSessionManager;
-  private config: ClusterSessionConfig;
   private isDistributedMode: boolean = true;
 
   private constructor() {
@@ -23,15 +15,8 @@ class ClusterSessionManager {
       );
       process.exit(1);
     }
-    this.config = {
-      sessionSecret:
-        rawSecret || "dev-only-insecure-fallback-not-for-production",
-      sessionName: "maxbooster.sid",
-      maxAge: parseInt(process.env.SESSION_MAX_AGE || "86400000"),
-      secure:
-        process.env.NODE_ENV === "production" ||
-        !!process.env.REPLIT_DEPLOYMENT,
-    };
+    void (rawSecret || "dev-only-insecure-fallback-not-for-production");
+    void parseInt(process.env.SESSION_MAX_AGE || "86400000");
     this.isDistributedMode = true;
   }
 

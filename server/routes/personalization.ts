@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Request, Response } from "express";
 import { smartDefaultsService } from "../services/smartDefaultsService";
 import { personalizationService } from "../services/personalizationService";

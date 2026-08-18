@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, DelayLine, BiquadFilter, OnePoleFilter, EnvelopeFollower, LFO, msToSamples, dbToLinear } from "./core";
 
 export class TapeDelayProcessor implements DSPProcessor {

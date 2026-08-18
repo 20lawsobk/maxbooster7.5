@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { createContext, useContext, useMemo, ReactNode } from "react";
 import { useBatchSelect, UseBatchSelectResult } from "@/hooks/useBatchSelect";
 

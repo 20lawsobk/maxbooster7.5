@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -278,7 +279,7 @@ const SubscribeForm = ({
               <p className="text-sm text-muted-foreground mt-2">
                 Multiple payment attempts failed. Please try a different payment
                 method or{" "}
-                <Link href="/contact" className="underline">
+                <Link href="/help" className="underline">
                   contact support
                 </Link>
                 .

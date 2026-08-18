@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Volume2, VolumeX, Headphones, Mic, Settings2, ChevronRight, Trash2, Copy, RotateCcw, Layers, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";

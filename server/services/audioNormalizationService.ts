@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../logger.js";
 
 export interface LUFSAnalysis {

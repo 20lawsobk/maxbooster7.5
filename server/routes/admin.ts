@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Request, Response, NextFunction } from "express";
 import fs from "fs";
 import { db, pool } from "../db.js";

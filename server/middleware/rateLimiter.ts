@@ -165,17 +165,13 @@ function getClientIP(req: Request): string {
   // Prefer the validated real client IP set by cloudflareMiddleware (uses CF-Connecting-IP
   // only when the socket originates from a verified Cloudflare IP range, preventing spoofing).
   // Fall back to req.ip which respects Express trust proxy configuration.
-  return (
-    (req as unknown as Record<string, unknown>).realClientIp ||
-    req.ip ||
-    req.socket.remoteAddress ||
-    "unknown"
-  );
+  const realClientIp = (req as unknown as { realClientIp?: string }).realClientIp;
+  return realClientIp || req.ip || req.socket.remoteAddress || "unknown";
 }
 
 function getUserId(req: Request): string | null {
   const user = req.user as Record<string, unknown>;
-  return user?.id || null;
+  return typeof user?.id === "string" ? user.id : null;
 }
 
 async function slidingWindowCheck(

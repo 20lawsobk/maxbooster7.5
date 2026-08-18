@@ -18,10 +18,10 @@ export class PocketDimensionChunkStore implements ChunkStore {
       const { PocketDimensionManager } = await import("../../index.js");
       const manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
       this.pocket = await manager?.openPocket(this.pocketName, {
-        compression: 9,
-        deduplication: true,
-        encryption: false,
-        maxChunkSize: 4 * 1024 * 1024,
+        compressionLevel: 9,
+        enableDeduplication: true,
+        enableVersioning: false,
+        chunkSize: 4 * 1024 * 1024,
       });
       logger.info(
         `[PocketDimensionChunkStore] Node bubble opened: ${this.pocketName}`,

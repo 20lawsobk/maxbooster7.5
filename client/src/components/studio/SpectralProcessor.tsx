@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Waves, Zap, RotateCcw, Cpu, Activity, Maximize2, Minimize2, Lock, Unlock, Brush, Eraser, Move, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";

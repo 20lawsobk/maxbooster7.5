@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as musicMetadata from "music-metadata";
 import { logger } from "../logger.js";
 

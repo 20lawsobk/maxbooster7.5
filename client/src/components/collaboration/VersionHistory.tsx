@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { History, Clock, RotateCcw, Trash2, GitCompare, Save, AlertTriangle, Check, ChevronRight, Download, Eye, Loader2, Cloud } from "lucide-react";

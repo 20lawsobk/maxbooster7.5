@@ -104,10 +104,7 @@ export async function drainN<T>(
   const attempts = await Promise?.allSettled(
     Array.from({ length: n }, () => popFn()),
   );
-  return attempts
-    .filter(
-      (r): r is { status: "fulfilled"; value: T } =>
-        r?.status === "fulfilled" && r?.value !== null,
-    )
-    .map((r) => (r as any)?.value);
+  return attempts.flatMap((r) =>
+    r.status === "fulfilled" && r.value !== null ? [r.value] : [],
+  );
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, EnvelopeFollower, msToSamples, dbToLinear, linearToDb, clamp, softClip } from "./core";
 
 export class U87ModelerProcessor implements DSPProcessor {

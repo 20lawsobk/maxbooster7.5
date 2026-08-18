@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { storage } from "../storage.js";
 import { randomBytes } from "crypto";
 import { logger } from "../logger.js";

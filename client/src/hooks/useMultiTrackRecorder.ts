@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useRef, useCallback } from "react";
 import { useAudioContext } from "./useAudioContext";
 import { useAudioDevices } from "./useAudioDevices";

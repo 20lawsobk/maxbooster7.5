@@ -28,9 +28,9 @@ class EmailMonitor {
     const log: EmailLog = {
       timestamp: new Date(),
       to: Array.isArray(email?.to)
-        ? email?.to[0].toString()
-        : email?.to.toString(),
-      templateId: (email as unknown as Record<string, unknown>).templateId,
+        ? String(email.to[0] ?? "")
+        : String(email?.to ?? ""),
+      templateId: (email as { templateId?: string }).templateId,
       subject: email.subject as string,
       status,
       error,

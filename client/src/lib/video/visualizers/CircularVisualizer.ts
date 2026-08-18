@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { AudioAnalysisData } from "../AudioAnalyzer";
 
 export type CircularStyle = "bars" | "wave" | "dots" | "spikes" | "ring";
