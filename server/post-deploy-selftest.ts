@@ -164,8 +164,13 @@ class PostDeploySelfTest {
       const heapTotalMB = memUsage?.heapTotal / (1024 * 1024);
       const rssMB = memUsage?.rss / (1024 * 1024);
 
-      // Warning if heap usage > 80%
-      const heapPercent = (heapUsedMB / heapTotalMB) * 100;
+      // Measure heapUsed against the REAL V8 heap ceiling (max-old-space),
+      // not heapTotal — V8 grows heapTotal lazily, so used/total sits near
+      // 80-90% on a perfectly healthy process and produced permanent false
+      // "memory" failures. used/limit is the true pressure signal.
+      const { heap_size_limit } = (await import("v8")).getHeapStatistics();
+      const heapLimitMB = heap_size_limit / (1024 * 1024);
+      const heapPercent = (heapUsedMB / heapLimitMB) * 100;
       const status = heapPercent < 80 ? "pass" : "fail";
 
       return {
@@ -195,7 +200,15 @@ class PostDeploySelfTest {
   async testFilePaths(): Promise<SelfTestResult> {
     const startTime = Date?.now();
     try {
-      const criticalPaths = ["dist/index.js", "package.json"];
+      // Check the files this process ACTUALLY depends on: the entry module it
+      // was started from (process.argv[1] — dist/index.js in prod, the tsx
+      // entry in dev, wherever the capsule extracted it in deploys) and
+      // package.json. The old hardcoded "dist/index.js" failed in dev and in
+      // capsule-extracted deploy layouts even though the app was healthy.
+      const criticalPaths = [
+        ...(process.argv[1] ? [process.argv[1]] : []),
+        "package.json",
+      ];
 
       const missing: string[] = [];
       for (const path of criticalPaths) {

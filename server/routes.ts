@@ -7216,6 +7216,18 @@ export async function registerRoutes(
   app.get("/api/ready", readinessHandler);
   app.get("/api/health/ready", readinessHandler);
 
+  // Self-test endpoints (/api/health/selftest[/last]) — the module was built
+  // and its periodic runner started from index.ts, but the HTTP surface was
+  // never mounted, so the endpoint 404'd despite being documented.
+  try {
+    const { setupSelfTestEndpoint } = await import(
+      "./post-deploy-selftest.js"
+    );
+    setupSelfTestEndpoint(app);
+  } catch (err) {
+    logger.warn({ err }, "[Routes] Failed to mount self-test endpoints");
+  }
+
   // Stripe checkout session creation for subscription plans
   const stripe = process.env.STRIPE_SECRET_KEY
     ? new Stripe(process.env.STRIPE_SECRET_KEY, {

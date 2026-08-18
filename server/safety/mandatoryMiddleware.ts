@@ -147,7 +147,7 @@ export function globalErrorHandler(
         stack: err.stack,
         path: req.path,
         method: req.method,
-        userId: (req.user as Record<string, unknown>)?.id,
+        userId: (req as unknown as { user?: { id?: string } }).user?.id,
       },
       `[${requestId}] Unhandled error: ${err?.message}`,
     );
@@ -157,7 +157,7 @@ export function globalErrorHandler(
           scope?.setTag("requestId", requestId);
           scope?.setTag("path", req.path);
           scope?.setTag("method", req.method);
-          scope?.setUser({ id: ((req.user as Record<string, unknown>)?.id as string | undefined) });
+          scope?.setUser({ id: (req as unknown as { user?: { id?: string } }).user?.id });
           Sentry!.captureException(err);
         });
       }

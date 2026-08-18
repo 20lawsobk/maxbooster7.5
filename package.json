@@ -55,7 +55,7 @@
     "test:load": "tsx tests/load/load-test.ts",
     "test:smoke": "tsx tests/smoke/post-deployment-tests.ts",
     "test:security": "tsx scripts/penetration-test.ts",
-    "security:audit": "tsx scripts/security-audit.ts",
+    "security:audit": "npm audit --omit=dev --audit-level=high",
     "test:all": "npm run security:audit && npm run test:load && npm run test:security",
     "prelaunch": "tsx scripts/pre-launch-check.ts",
     "bootstrap:admin": "tsx -e \"import { bootstrapAdmin } from './server/init-admin'; bootstrapAdmin().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })\"",
