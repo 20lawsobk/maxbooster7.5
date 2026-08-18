@@ -1754,7 +1754,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async seedPluginCatalog(): Promise<void> {
-    const { ALL_PLUGINS } = await import("./services/plugins/index");
+    const { ALL_PLUGINS } = await import("./services/plugins/index.js");
     const { buildFactoryPresetRows } = await import(
       "./services/plugins/pluginEnrichment.js"
     );
