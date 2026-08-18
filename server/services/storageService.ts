@@ -222,6 +222,15 @@ class StorageService {
     return key;
   }
 
+  async uploadFileAtKey(
+    file: Buffer,
+    key: string,
+    contentType?: string,
+  ): Promise<string> {
+    await this.provider.uploadFile(file, key, contentType);
+    return key;
+  }
+
   async downloadFile(key: string): Promise<Buffer> {
     return await this.provider.downloadFile(key);
   }

@@ -7031,6 +7031,13 @@ export async function registerRoutes(
 
     // File Storage Management
     {
+      path: "/api/uploads",
+      name: "uploads",
+      loader: () => import("./routes/uploads"),
+    },
+
+    // File Storage Management
+    {
       path: "/api/storage",
       name: "storage",
       loader: () => import("./routes/storage"),
