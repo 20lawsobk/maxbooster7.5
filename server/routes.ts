@@ -2422,7 +2422,7 @@ export async function registerRoutes(
       try {
         const { socialAccounts } = await import("@shared/schema");
         const { eq, and } = await import("drizzle-orm");
-        const { db } = await import("./db");
+        const { db } = await import("./db.js");
 
         const [existing] = await db
           .select()
@@ -2438,7 +2438,7 @@ export async function registerRoutes(
         if (existing) {
           await db
             .update(socialAccounts)
-            .set({ isActive: true, createdAt: new Date() })
+            .set({ isActive: true })
             .where(eq(socialAccounts.id, existing.id));
         } else {
           await db.insert(socialAccounts).values({

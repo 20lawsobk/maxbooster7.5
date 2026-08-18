@@ -1915,7 +1915,8 @@ export class ContentGenerator {
     let score = 0.5;
 
     const exclamationCount = (content.match(/!/g) || []).length;
-    const capsRatio = (content.match(/[A-Z]/g) || []).length / content.length;
+    const safeContentLength = Math.max(1, content.length);
+    const capsRatio = (content.match(/[A-Z]/g) || []).length / safeContentLength;
     const emojiCount = (content.match(/[\p{Emoji}]/gu) || []).length;
 
     switch (targetTone) {
@@ -1965,7 +1966,7 @@ export class ContentGenerator {
 
     const optimalHashtags = this.getHashtagCount(platform);
     const hashtagScore =
-      1 - Math.abs(hashtagCount - optimalHashtags) / optimalHashtags;
+      1 - Math.abs(hashtagCount - optimalHashtags) / Math.max(1, optimalHashtags);
     score += hashtagScore * 0.1;
 
     if (content.includes("?")) score += 0.05;

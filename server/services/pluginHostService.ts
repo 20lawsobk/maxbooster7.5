@@ -82,7 +82,7 @@ class PluginHostService {
 
   async ensurePluginCatalogSeeded(): Promise<void> {
     try {
-      const { storage } = await import("../storage");
+      const { storage } = await import("../storage.js");
       await storage?.seedPluginCatalog();
     } catch (error) {
       logger.warn({ err: error }, "Error seeding plugin catalog:");
