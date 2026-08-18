@@ -1,15 +1,15 @@
 allowBuilds:
-  '@scarf/scarf': set this to true or false
-  '@sentry/node-cpu-profiler': set this to true or false
-  '@tensorflow/tfjs-node': set this to true or false
-  bcrypt: set this to true or false
-  bufferutil: set this to true or false
-  core-js: set this to true or false
-  electron-winstaller: set this to true or false
-  es5-ext: set this to true or false
-  esbuild: set this to true or false
-  ffmpeg-static: set this to true or false
-  msgpackr-extract: set this to true or false
+  '@scarf/scarf': false
+  '@sentry/node-cpu-profiler': true
+  '@tensorflow/tfjs-node': true
+  bcrypt: true
+  bufferutil: true
+  core-js: false
+  electron-winstaller: false
+  es5-ext: false
+  esbuild: true
+  ffmpeg-static: true
+  msgpackr-extract: true
 onlyBuiltDependencies:
   - '@sentry-internal/node-cpu-profiler'
   - '@tensorflow/tfjs-node'
