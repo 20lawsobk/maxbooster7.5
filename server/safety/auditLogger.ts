@@ -152,9 +152,9 @@ async function flushWAL(): Promise<void> {
             user_id, target_id, target_type, ip_address, user_agent,
             details, success, error_message
           ) VALUES (
-            ${entry?.id}, ${entry?.timestamp}, ${entry?.category}, ${entry?.severity}, ${entry?.action},
-            ${entry?.userId}, ${entry?.targetId}, ${entry?.targetType}, ${entry?.ipAddress}, ${entry?.userAgent},
-            ${JSON.stringify(entry?.details)}, ${entry?.success}, ${entry?.errorMessage}
+            ${entry?.id ?? null}, ${entry?.timestamp ?? null}, ${entry?.category ?? null}, ${entry?.severity ?? null}, ${entry?.action ?? null},
+            ${entry?.userId ?? null}, ${entry?.targetId ?? null}, ${entry?.targetType ?? null}, ${entry?.ipAddress ?? null}, ${entry?.userAgent ?? null},
+            ${JSON.stringify(entry?.details ?? {})}, ${entry?.success ?? null}, ${entry?.errorMessage ?? null}
           )
           ON CONFLICT (id) DO NOTHING
         `);

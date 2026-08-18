@@ -80,4 +80,6 @@
 - [PDIM Lua bridge HGETALL array shape](pdim-lua-hgetall-array-shape.md) — Lua-facing HGETALL must return a flat array not an object, or BullMQ jobs look nameless and repeatable jobs silently stop rescheduling after their first run
 - [8GiB deploy limit is an IMAGE limit](deploy-8gb-live-footprint.md) — Extract & Boot capsules (pack in build, extract in start.sh) are the proven fix; runtime extraction is allowed
 - [External subsystem reimport sources](external-reimport-sources.md) — GitHub origins for external/maxcore + external/pdim, private-repo blob-fetch recipe, and the 5 PDIM patches that must survive any reimport
+- [MaxCore content composer contract](maxcore-content-composer-contract.md) — topic short/unquoted, instruction = angle phrase, variants share one hook, coalescer key patched to full payload
+- [Drizzle sql undefined params](drizzle-sql-undefined-params.md) — `${undefined}` in a sql template emits EMPTY SQL not NULL → syntax error; `?? null` every optional
 - [PDIM capsule build must flush before returning](pdim-capsule-flush-durability.md) — PocketDimension writes chunk blobs immediately but the index/metadata only persist on flush()/close(); same-process verification can pass off the in-memory cache while disk is empty
