@@ -39,7 +39,11 @@
     "desktopApp": "デスクトップアプリ",
     "adminPanel": "管理パネル",
     "adminSecurity": "管理セキュリティ",
-    "contentSampler": "コンテンツサンプラー"
+    "contentSampler": "コンテンツサンプラー",
+    "fanMemberships": "Fan Memberships",
+    "arIntelligence": "A&R Intelligence",
+    "outreachCRM": "Outreach CRM",
+    "auditLog": "Audit Log"
   },
   "auth": {
     "loginTitle": "Max Boosterにログイン",

@@ -39,7 +39,11 @@
     "desktopApp": "Aplicación de Escritorio",
     "adminPanel": "Panel de Administración",
     "adminSecurity": "Seguridad Admin",
-    "contentSampler": "Muestreador de Contenido"
+    "contentSampler": "Muestreador de Contenido",
+    "fanMemberships": "Fan Memberships",
+    "arIntelligence": "A&R Intelligence",
+    "outreachCRM": "Outreach CRM",
+    "auditLog": "Audit Log"
   },
   "auth": {
     "loginTitle": "Iniciar sesión en Max Booster",

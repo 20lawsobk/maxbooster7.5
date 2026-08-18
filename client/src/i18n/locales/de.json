@@ -39,7 +39,11 @@
     "desktopApp": "Desktop-App",
     "adminPanel": "Admin-Panel",
     "adminSecurity": "Admin-Sicherheit",
-    "contentSampler": "Inhalts-Sampler"
+    "contentSampler": "Inhalts-Sampler",
+    "fanMemberships": "Fan Memberships",
+    "arIntelligence": "A&R Intelligence",
+    "outreachCRM": "Outreach CRM",
+    "auditLog": "Audit Log"
   },
   "auth": {
     "loginTitle": "Anmelden bei Max Booster",
