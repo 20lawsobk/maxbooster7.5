@@ -121,10 +121,6 @@ export async function initializeAdmin() {
         username: adminUsername,
         email: adminEmail,
         password: hashedPassword,
-        role: "admin",
-        subscriptionTier: "lifetime",
-        subscriptionStatus: "active",
-        trialEndsAt: null,
         firstName: "B-Lawz",
         lastName: "Music",
       });
@@ -133,6 +129,10 @@ export async function initializeAdmin() {
       await db
         .update(users)
         .set({
+          role: "admin",
+          subscriptionTier: "lifetime",
+          subscriptionStatus: "active",
+          trialEndsAt: null,
           onboardingCompleted: true,
           onboardingStep: 100,
           emailVerified: true,
@@ -237,23 +237,25 @@ async function initializeAdminResources(
         name: "B-Lawz Music",
         slug: slug,
         subdomain: slug,
-        description:
-          "Official B-Lawz Music producer storefront. Premium beats, instrumentals, and sound packs for artists worldwide.",
-        branding: {
-          primaryColor: "#8B5CF6",
-          secondaryColor: "#3B82F6",
-          accentColor: "#22C55E",
-          fontFamily: "Inter",
-          headerStyle: "modern",
-          layoutStyle: "grid",
+        customization: {
+          description:
+            "Official B-Lawz Music producer storefront. Premium beats, instrumentals, and sound packs for artists worldwide.",
+          branding: {
+            primaryColor: "#8B5CF6",
+            secondaryColor: "#3B82F6",
+            accentColor: "#22C55E",
+            fontFamily: "Inter",
+            headerStyle: "modern",
+            layoutStyle: "grid",
+          },
+          socialLinks: {
+            instagram: "https://instagram.com/blawzmusic",
+            twitter: "https://twitter.com/blawzmusic",
+            youtube: "https://youtube.com/@blawzmusic",
+            spotify: "https://open.spotify.com/artist/blawzmusic",
+          },
         },
-        socialLinks: {
-          instagram: "https://instagram.com/blawzmusic",
-          twitter: "https://twitter.com/blawzmusic",
-          youtube: "https://youtube.com/@blawzmusic",
-          spotify: "https://open.spotify.com/artist/blawzmusic",
-        },
-        seoSettings: {
+        seo: {
           title: "B-Lawz Music - Premium Beats & Instrumentals",
           description:
             "Professional beats and instrumentals for artists. Trap, Hip-Hop, R&B, and more.",
@@ -266,8 +268,8 @@ async function initializeAdminResources(
             "music",
           ],
         },
-        isPublished: true,
-        isVerified: true,
+        isActive: true,
+        isPublic: true,
       });
       logger.info("   ✓ Admin producer storefront initialized");
     } else {

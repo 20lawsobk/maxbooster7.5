@@ -52,9 +52,9 @@ export class SemanticArchiver {
   }
 
   private summarizeJsonValue(
-    val: Record<string, unknown>,
+    val: unknown,
     depth: number,
-  ): Record<string, unknown> {
+  ): unknown {
     if (depth > 4) return "[truncated]";
     if (Array.isArray(val)) {
       const sample = val
@@ -63,10 +63,11 @@ export class SemanticArchiver {
       return { _type: "array", _count: val.length, sample: sample };
     }
     if (val !== null && typeof val === "object") {
-      const keys = Object.keys(val);
+      const obj = val as Record<string, unknown>;
+      const keys = Object.keys(obj);
       const out: Record<string, any> = {};
       for (const k of keys?.slice(0, 32)) {
-        out[k] = this.summarizeJsonValue(val[k], depth + 1);
+        out[k] = this.summarizeJsonValue(obj[k], depth + 1);
       }
       if (keys?.length > 32)
         out["_truncated"] = `+${keys?.length - 32} more keys`;

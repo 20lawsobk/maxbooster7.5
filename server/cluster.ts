@@ -60,7 +60,7 @@ import { spawnSync, spawn } from "child_process";
   const probe = spawnSync(bin, ["--version"], {
     timeout: 300, // killed after 300 ms if binary starts (server mode)
     stdio: "ignore",
-    killSignal: "SIGKILL" as unknown as Record<string, unknown>,
+    killSignal: "SIGKILL",
   });
   const isEnoent =
     probe?.error && (probe?.error as NodeJS.ErrnoException).code === "ENOENT";

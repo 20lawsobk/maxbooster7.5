@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { randomUUID } from "crypto";
-import cron from "node-cron";
+import cron, { type ScheduledTask } from "node-cron";
 import { logger } from "./logger.js";
 
 promisify(exec);
@@ -49,9 +49,7 @@ export class AutomationSystem extends EventEmitter {
   private triggers: Map<string, Trigger> = new Map();
   private actions: Map<string, Action> = new Map();
   private conditions: Map<string, Condition> = new Map();
-  private isRunning: boolean = false;
   private automationMetrics: AutomationMetrics;
-  private _scheduledTasks: Map<string, cron.ScheduledTask> = new Map();
   private webhookHandlers: Map<
     string,
     Array<{ callback: Function; secret?: string }>
@@ -144,7 +142,8 @@ export class AutomationSystem extends EventEmitter {
           if (!notif) throw new Error("notificationService unavailable");
           // notificationService is user-centric; resolve user when only an
           // address is supplied so we can hit its public sendEmail flow.
-          let userId: string | undefined = params?.userId;
+          let userId =
+            typeof params?.userId === "string" ? params.userId : undefined;
           if (!userId && params?.to) {
             const storage = await loadStorage();
             const u = await (storage as any)?.getUserByEmail?.(params?.to);
@@ -537,10 +536,14 @@ export class AutomationSystem extends EventEmitter {
       description: "Trigger based on schedule",
       parameters: ["cron", "timezone"],
       start: (params, callback) => {
-        const task = cron?.schedule(params?.cron, callback, {
-          scheduled: false,
-          timezone: params.timezone,
-        });
+        const task: ScheduledTask =
+          typeof cron.createTask === "function"
+            ? cron.createTask(params?.cron, callback, {
+                timezone: params.timezone,
+              })
+            : cron.schedule(params?.cron, callback, {
+                timezone: params.timezone,
+              });
         task?.start();
         return task;
       },
@@ -605,8 +608,6 @@ export class AutomationSystem extends EventEmitter {
 
   // Start automation engine
   private startAutomationEngine(): void {
-    this.isRunning = true;
-
     // Start monitoring workflows
     setInterval(() => {
       this.monitorWorkflows();
@@ -646,10 +647,11 @@ export class AutomationSystem extends EventEmitter {
     for (const triggerConfig of workflow?.triggers) {
       const trigger = this.triggers.get(triggerConfig?.type);
       if (trigger) {
+        if (typeof trigger.evaluate !== "function") {
+          continue;
+        }
         try {
-          const shouldTrigger = await trigger?.evaluate(
-            triggerConfig?.parameters,
-          );
+          const shouldTrigger = await trigger.evaluate(triggerConfig?.parameters);
           if (shouldTrigger) {
             await this.triggerWorkflow(workflow);
             break;
@@ -726,7 +728,8 @@ export class AutomationSystem extends EventEmitter {
       if (workflow?.nextAction >= workflow?.actions.length) {
         workflow.status = "completed";
         workflow.endTime = Date?.now();
-        workflow.executionTime = workflow?.endTime - workflow?.startTime;
+        workflow.executionTime =
+          workflow.endTime - (workflow.startTime ?? workflow.endTime);
 
         this.automationMetrics.completedWorkflows++;
         logger.info(`🎉 Workflow completed: ${workflow?.name}`);

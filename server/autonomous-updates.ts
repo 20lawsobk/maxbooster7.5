@@ -5,6 +5,10 @@ import { logger } from "./logger.js";
 import { getPdimClient, isPdimConfigured } from "./lib/pdimClient.js";
 
 const AUTONOMOUS_STATUS_KEY = "autonomous:orchestrator:status";
+type PdimStatusClient = {
+  get(key: string): Promise<string | null | undefined>;
+  set(key: string, value: string): Promise<unknown>;
+};
 
 type UpdateFrequency = "hourly" | "daily" | "weekly";
 
@@ -162,16 +166,13 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   private async _persistStatus(): Promise<void> {
     if (!isPdimConfigured()) return;
     try {
-      const client = getPdimClient();
+      const client = getPdimClient() as unknown as PdimStatusClient;
       const payload = JSON.stringify({
         runsCompleted: this.status.runsCompleted,
         lastRunAt: this.status.lastRunAt,
         updatedAt: new Date().toISOString(),
       });
-      await (client as unknown as Record<string, unknown>).set(
-        AUTONOMOUS_STATUS_KEY,
-        payload,
-      );
+      await client.set(AUTONOMOUS_STATUS_KEY, payload);
     } catch {
       /* non-critical — in-memory status is still correct */
     }
@@ -180,10 +181,8 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   private async _restoreStatus(): Promise<void> {
     if (!isPdimConfigured()) return;
     try {
-      const client = getPdimClient();
-      const raw = await (client as unknown as Record<string, unknown>).get(
-        AUTONOMOUS_STATUS_KEY,
-      );
+      const client = getPdimClient() as unknown as PdimStatusClient;
+      const raw = await client.get(AUTONOMOUS_STATUS_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw as string);
       if (typeof saved?.runsCompleted === "number" && saved?.runsCompleted > 0) {
@@ -1245,7 +1244,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     return deployment;
   }
 
-  private selectCanaryUsers(percentage: number): Record<string, unknown>[] {
+  private selectCanaryUsers(percentage: number): Record<string, unknown> {
     const timestamp = Date?.now();
     const criteria = {
       selectionMethod: "deterministic_sampling",
@@ -1797,7 +1796,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       targetVersionId,
     );
 
-    const rollback = {
+    const rollback: RollbackData = {
       modelId,
       targetVersionId,
       reason,
@@ -1816,7 +1815,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   private async analyzeRollbackImpact(
     modelId: string,
     targetVersionId: string,
-  ): Promise<unknown> {
+  ): Promise<RollbackData["impactAnalysis"]> {
     const usersSeed = `${modelId}_${targetVersionId}_users`;
     const downtimeSeed = `${modelId}_${targetVersionId}_downtime`;
 

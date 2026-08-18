@@ -64,6 +64,12 @@ export interface AppConfig {
     retryDelay: number;
   };
 
+  boosterState: {
+    port: number;
+    shards: number;
+    dataDir: string;
+  };
+
   // Session
   session: {
     secret: string;
@@ -149,8 +155,16 @@ function parseEnvArray(key: string, defaultValue: string[]): string[] {
     .filter(Boolean);
 }
 
+function parseNodeEnv(
+  value: string | undefined,
+): AppConfig["nodeEnv"] {
+  return value === "production" || value === "test" || value === "development"
+    ? value
+    : "development";
+}
+
 export const config: AppConfig = {
-  nodeEnv: (process.env.NODE_ENV as unknown as Record<string, unknown>) || "development",
+  nodeEnv: parseNodeEnv(process.env.NODE_ENV),
   isReplitDeployment,
   isReplitWorkspace,
   port: parseEnvInt("PORT", 5000),

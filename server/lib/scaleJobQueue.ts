@@ -51,7 +51,7 @@ export function getRetentionQueue(): Queue {
 
   const connection = newBullMQRedisConnection();
   queue = new Queue(RETENTION_QUEUE, {
-    connection,
+    connection: connection as any,
     defaultJobOptions: JOB_DEFAULTS,
   });
   return queue;
@@ -252,7 +252,7 @@ export function startRetentionWorker(): Worker {
       }
     },
     {
-      connection,
+      connection: connection as any,
       // Use WORKER_CONCURRENCY (env BULLMQ_CONCURRENCY, default 3) instead of
       // hard-coding 1. All retention job types (health-score, dunning, re-engagement,
       // feature-event-flush) are independent — they read/write disjoint DB tables —

@@ -352,7 +352,7 @@ export async function execLuaViaPdim(
 ): Promise<unknown> {
   const keys = allArgs?.slice(0, numKeys).map(String);
 
-  const argv = allArgs?.slice(numKeys).map((arg: Record<string, unknown>) => {
+  const argv = allArgs?.slice(numKeys).map((arg) => {
     if (arg instanceof Buffer || arg instanceof Uint8Array) {
       try {
         return _msgUnpacker?.unpack(arg);
@@ -584,7 +584,7 @@ export async function execLuaViaPdim(
         let payload: string;
         let status: 1 | 2;
         try {
-          let r: Record<string, unknown>;
+          let r: unknown = "OK";
           const cmd = (msg?.cmd as string).toUpperCase();
           if (cmd === "HMSET") {
             // PDIM's Redis only accepts HSET with one field-value pair at a time.
@@ -593,9 +593,8 @@ export async function execLuaViaPdim(
             for (let i = 0; i < pairs.length - 1; i += 2) {
               r = await pdimExec(["HSET", key, pairs[i], pairs[i + 1]]);
             }
-            r = r ?? "OK";
           } else {
-            r = await pdimExec([msg.cmd, ...msg.args]);
+            r = await pdimExec([msg.cmd, ...(msg.args as string[])]);
           }
           // Real Redis returns HGETALL (and similarly-shaped hash reads) as a
           // FLAT ARRAY of alternating field/value strings over RESP — never a
@@ -669,7 +668,7 @@ export async function execLuaViaPdim(
         _luaConsecutivePdimErrors = 0;
         settle(() => {
           worker.terminate();
-          resolve(msg.result);
+          resolve(msg.result as unknown[]);
         });
       } else if (msg.type === "error") {
         _watchdogCancelled = true;

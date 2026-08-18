@@ -89,9 +89,9 @@ export class AutoClusterManager {
 
   constructor(
     private nodeRegistry: NodeRegistry,
-    private chunkIndex: ChunkIndex,
-    private placement: PlacementStrategy,
-    private chunkStoreFactory: (nodeId: NodeId) => ChunkStore,
+    _chunkIndex: ChunkIndex,
+    _placement: PlacementStrategy,
+    _chunkStoreFactory: (nodeId: NodeId) => ChunkStore,
     private onNodeSpawned: (
       nodeId: NodeId,
       pocketName: string,
@@ -357,9 +357,10 @@ export class AutoClusterManager {
     }
 
     const candidate = autoSpawnedNodes[0];
-    const pocketName: string =
+    const pocketName = String(
       (candidate?.backendConfig as Record<string, unknown>).pocketName ??
-      candidate?.id;
+        candidate?.id,
+    );
     const util =
       candidate?.capacityBytes > 0
         ? ((candidate?.usedBytes / candidate?.capacityBytes) * 100).toFixed(1)
@@ -548,8 +549,9 @@ export class AutoClusterManager {
   private nextPocketName(existing: FabricStorageNode[], offset = 0): string {
     const indices = existing
       .map((n) => {
-        const name: string =
-          (n?.backendConfig as Record<string, unknown>).pocketName ?? "";
+        const name = String(
+          (n?.backendConfig as Record<string, unknown>).pocketName ?? "",
+        );
         const match = name?.match(/fabric-cluster-(\d+)$/);
         return match ? parseInt(match[1], 10) : -1;
       })

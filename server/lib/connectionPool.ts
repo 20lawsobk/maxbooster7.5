@@ -16,7 +16,7 @@
  *   - Graceful shutdown on SIGTERM / SIGINT
  */
 
-import { Pool, PoolConfig } from "pg";
+import { Pool, PoolConfig, type PoolClient } from "pg";
 import { logger } from "../logger.js";
 import { env } from "../config/env.js";
 
@@ -145,7 +145,7 @@ class OptimizedConnectionPool {
   }
 
   async transaction<T>(
-    fn: (client: Record<string, unknown>) => Promise<T>,
+    fn: (client: PoolClient) => Promise<T>,
   ): Promise<T> {
     const client = await this.pool.connect();
 
@@ -235,7 +235,7 @@ class OptimizedConnectionPool {
 export const connectionPool = new OptimizedConnectionPool();
 
 export async function withConnection<T>(
-  fn: (client: Record<string, unknown>) => Promise<T>,
+  fn: (client: PoolClient) => Promise<T>,
 ): Promise<T> {
   const client = await connectionPool?.getClient();
   try {
@@ -246,7 +246,7 @@ export async function withConnection<T>(
 }
 
 export async function withTransaction<T>(
-  fn: (client: Record<string, unknown>) => Promise<T>,
+  fn: (client: PoolClient) => Promise<T>,
 ): Promise<T> {
   return connectionPool?.transaction(fn);
 }

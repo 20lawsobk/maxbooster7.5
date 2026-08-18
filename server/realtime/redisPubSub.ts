@@ -10,7 +10,7 @@ let publisher: {
   publish: (channel: string, msg: string) => Promise<unknown>;
 } | null = null;
 let subscriber: {
-  subscribe: (channel: string, cb: (msg: string) => void) => Promise<unknown>;
+  subscribe: (...channels: string[]) => Promise<unknown>;
   on: (event: string, cb: (...args: unknown[]) => void) => void;
 } | null = null;
 let _ready = false;
@@ -34,9 +34,10 @@ export async function initRedisPubSub(): Promise<void> {
   if (isPdimConfigured()) {
     try {
       publisher = getPdimClient();
-      subscriber = getPdimClient().duplicate();
+      subscriber = getPdimClient().duplicate() as unknown as typeof subscriber;
       // PDIM subscribe is HTTP-polled; register message handler if supported
-      subscriber?.on?.("message", (channel: string, message: string) => {
+      subscriber?.on?.("message", (...args: unknown[]) => {
+        const [channel, message] = args as [string, string];
         try {
           const payload = JSON.parse(message);
           if (channel === CHANNEL_USER && onUserNotify) {
@@ -80,9 +81,10 @@ export async function initRedisPubSub(): Promise<void> {
 
   try {
     publisher = makeClient();
-    subscriber = makeClient();
+    subscriber = makeClient() as unknown as typeof subscriber;
 
-    subscriber?.on("message", (channel: string, message: string) => {
+    subscriber?.on("message", (...args: unknown[]) => {
+      const [channel, message] = args as [string, string];
       try {
         const payload = JSON.parse(message);
         if (channel === CHANNEL_USER && onUserNotify) {

@@ -152,11 +152,13 @@ class RequestQueue {
       setImmediate(() => this.processQueue());
     };
 
-    const originalEnd = queuedRequest?.res.end?.bind(queuedRequest?.res);
-    queuedRequest.res.end = (...args: unknown[]) => {
+    const originalEnd = queuedRequest.res.end.bind(queuedRequest.res) as (
+      ...args: unknown[]
+    ) => unknown;
+    queuedRequest.res.end = ((...args: unknown[]) => {
       release();
       return originalEnd(...args);
-    };
+    }) as typeof queuedRequest.res.end;
 
     // Client disconnect path: socket 'close' fires when the TCP connection drops
     // before the response is sent (e?.g. browser tab closed, network timeout).
