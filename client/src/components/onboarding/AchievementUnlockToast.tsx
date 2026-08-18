@@ -394,7 +394,7 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
 
   const handleViewAll = useCallback(() => {
     handleClose();
-    navigate("/achievements");
+    navigate("/onboarding");
   }, [handleClose, navigate]);
 
   return (

@@ -1013,7 +1013,10 @@ export function NotificationPreferences() {
         </CardHeader>
         <CardContent>
           <Button variant="outline" className="w-full" asChild>
-            <a href="/settings/email-history" data-testid="view-email-history">
+            <a
+              href="/settings?tab=notifications"
+              data-testid="view-email-history"
+            >
               <Mail className="h-4 w-4 mr-2" />
               View email delivery history
               <ExternalLink className="h-3 w-3 ml-2" />
