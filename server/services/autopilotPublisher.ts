@@ -1,6 +1,6 @@
 // @ts-nocheck
-import cron from "node-cron";
-import type { ScheduledTask as CronScheduledTask } from "node-cron";
+import cron from "../lib/cronScheduler.js";
+import type { ScheduledTask as CronScheduledTask } from "../lib/cronScheduler.js";
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db.js";
 import {

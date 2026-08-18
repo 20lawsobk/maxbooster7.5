@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { randomUUID } from "crypto";
-import cron, { type ScheduledTask } from "node-cron";
+import cron, { type ScheduledTask } from "./lib/cronScheduler.js";
 import { logger } from "./logger.js";
 
 promisify(exec);
@@ -536,19 +536,14 @@ export class AutomationSystem extends EventEmitter {
       description: "Trigger based on schedule",
       parameters: ["cron", "timezone"],
       start: (params, callback) => {
-        const task: ScheduledTask =
-          typeof cron.createTask === "function"
-            ? cron.createTask(params?.cron, callback, {
-                timezone: params.timezone,
-              })
-            : cron.schedule(params?.cron, callback, {
-                timezone: params.timezone,
-              });
+        const task: ScheduledTask = cron.schedule(params?.cron, callback, {
+          timezone: params.timezone,
+        });
         task?.start();
         return task;
       },
       stop: (trigger) => {
-        if (trigger instanceof (cron as any).ScheduledTask) {
+        if (trigger && typeof (trigger as any)?.stop === "function") {
           (trigger as any)?.stop();
         }
       },

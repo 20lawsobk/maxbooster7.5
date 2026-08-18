@@ -36,6 +36,8 @@ import {
   ListMusic,
   BookOpen,
   Film,
+  Star,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -85,6 +87,8 @@ const navItems: NavItem[] = [
     icon: ListMusic,
   },
   { labelKey: "navigation.fanHub", path: "/fan-hub", icon: Heart },
+  { labelKey: "navigation.fanMemberships", path: "/fan-memberships", icon: Star },
+  { labelKey: "navigation.arIntelligence", path: "/ar-intelligence", icon: Brain },
 
   // ── Business ──────────────────────────────────────────────────────────
   {
@@ -109,6 +113,7 @@ const navItems: NavItem[] = [
   },
   { labelKey: "navigation.shows", path: "/shows", icon: Ticket },
   { labelKey: "navigation.pressKit", path: "/press-kit", icon: Newspaper },
+  { labelKey: "navigation.outreachCRM", path: "/outreach", icon: Mail },
   {
     labelKey: "navigation.collaborations",
     path: "/collaborations",
@@ -167,6 +172,12 @@ const navItems: NavItem[] = [
     labelKey: "navigation.contentSampler",
     path: "/admin/content-sampler",
     icon: Zap,
+    adminOnly: true,
+  },
+  {
+    labelKey: "navigation.auditLog",
+    path: "/admin/audit-log",
+    icon: ShieldCheck,
     adminOnly: true,
   },
 ];

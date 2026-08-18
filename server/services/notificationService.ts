@@ -352,13 +352,17 @@ Manage your notification preferences: ${link || "https://maxbooster.ai/settings"
     userId: string,
     amount: number,
     source: string,
+    transactionId?: string,
   ): Promise<void> {
+    const link = transactionId
+      ? `/royalties?highlight=${encodeURIComponent(transactionId)}`
+      : "/royalties";
     await this.send({
       userId,
       type: "earning",
       title: "New Earnings Received",
       message: `You've earned $${amount?.toFixed(2)} from ${source}. Check your dashboard for details.`,
-      link: "/royalties",
+      link,
     });
   }
 
@@ -366,13 +370,17 @@ Manage your notification preferences: ${link || "https://maxbooster.ai/settings"
     userId: string,
     productName: string,
     amount: number,
+    orderId?: string,
   ): Promise<void> {
+    const link = orderId
+      ? `/royalties?event=sale&orderId=${encodeURIComponent(orderId)}`
+      : "/marketplace";
     await this.send({
       userId,
       type: "sale",
       title: "New Sale!",
       message: `Someone just purchased "${productName}" for $${amount?.toFixed(2)}!`,
-      link: "/marketplace",
+      link,
     });
   }
 

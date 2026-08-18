@@ -1,5 +1,4 @@
 import session from "express-session";
-import { RedisStore } from "connect-redis";
 import crypto from "crypto";
 import { getRedisClient } from "../lib/redisClient.js";
 import { isPdimConfigured } from "../lib/pdimClient.js";
@@ -149,74 +148,184 @@ class SessionL1Cache {
 }
 
 /**
- * Adapter that wraps an ioredis client to satisfy the connect-redis v9 interface,
- * which expects node-redis v5 API calls:
- *   set(key, val, { expiration: { type: "EX", value: ttl } })
- *   del([key1, key2])
- *   scanIterator({ MATCH: pattern, COUNT: count })
+ * IoredsSessionStore — custom express-session Store backed by ioredis (PDIM).
  *
- * ioredis uses:
- *   set(key, val, 'EX', ttl)
- *   del(key1, key2)   ← spread, not array
- *   scan / no scanIterator
+ * Replaces the connect-redis package with a direct ioredis integration.
+ * All session blobs are stored as JSON strings under the given prefix.
+ * TTL is refreshed on every set() and touch() call.
  */
-function createIoredisAdapter(ioredisClient: {
-  get: (...a: unknown[]) => Promise<unknown>;
-  set: (...a: unknown[]) => Promise<unknown>;
-  del: (...a: unknown[]) => Promise<unknown>;
-  expire: (...a: unknown[]) => Promise<unknown>;
-  scan: (...a: unknown[]) => Promise<unknown>;
-}) {
-  return {
-    get(key: string): Promise<string | null> {
-      return ioredisClient?.get(key) as Promise<string | null>;
-    },
+interface IoredsClient {
+  get(key: string): Promise<string | null>;
+  setex(key: string, ttl: number, value: string): Promise<unknown>;
+  del(...keys: string[]): Promise<unknown>;
+  expire(key: string, ttl: number): Promise<unknown>;
+}
 
-    set(
-      key: string,
-      val: string,
-      opts?: { expiration?: { type?: string; value?: number } },
-    ): Promise<unknown> {
-      const ttl = opts?.expiration?.value;
-      if (ttl && ttl > 0) {
-        return ioredisClient?.set(key, val, "EX", ttl);
-      }
-      return ioredisClient?.set(key, val);
-    },
+interface IoredsStoreOptions {
+  prefix?: string;
+  ttl?: number; // seconds
+}
 
-    expire(key: string, ttl: number): Promise<unknown> {
-      return ioredisClient?.expire(key, ttl);
-    },
+class IoredsSessionStore extends session.Store {
+  private readonly client: IoredsClient;
+  private readonly prefix: string;
+  private readonly ttlSeconds: number;
 
-    del(keys: string | string[]): Promise<unknown> {
-      if (Array.isArray(keys)) {
-        if (keys?.length === 0) return Promise?.resolve(0);
-        return ioredisClient?.del(...keys);
-      }
-      return ioredisClient?.del(keys);
-    },
+  constructor(client: IoredsClient, opts: IoredsStoreOptions = {}) {
+    super();
+    this.client = client;
+    this.prefix = opts.prefix ?? "sess:";
+    this.ttlSeconds = opts.ttl ?? 86400;
+  }
 
-    async *scanIterator(
-      opts: { MATCH?: string; COUNT?: number } = {},
-    ): AsyncGenerator<string[]> {
-      const pattern = opts?.MATCH || "*";
-      const count = opts?.COUNT || 100;
-      let cursor = "0";
-      do {
-        const [nextCursor, keys] = (await ioredisClient?.scan(
-          cursor,
-          "MATCH",
-          pattern,
-          "COUNT",
-          count,
-        )) as [string, string[]];
-        cursor = nextCursor;
-        if (keys?.length > 0) {
-          yield keys;
+  get(
+    sid: string,
+    cb: (err: unknown, session?: session.SessionData | null) => void,
+  ): void {
+    this.client
+      .get(this.prefix + sid)
+      .then((val) => {
+        if (!val) return cb(null, null);
+        try {
+          cb(null, JSON.parse(val) as session.SessionData);
+        } catch {
+          cb(null, null);
         }
-      } while (cursor !== "0");
-    },
-  };
+      })
+      .catch((err: unknown) => cb(err));
+  }
+
+  set(
+    sid: string,
+    sess: session.SessionData,
+    cb?: (err?: unknown) => void,
+  ): void {
+    this.client
+      .setex(this.prefix + sid, this.ttlSeconds, JSON.stringify(sess))
+      .then(() => cb?.())
+      .catch((err: unknown) => cb?.(err));
+  }
+
+  destroy(sid: string, cb?: (err?: unknown) => void): void {
+    this.client
+      .del(this.prefix + sid)
+      .then(() => cb?.())
+      .catch((err: unknown) => cb?.(err));
+  }
+
+  touch(
+    sid: string,
+    sess: session.SessionData,
+    cb?: (err?: unknown) => void,
+  ): void {
+    this.client
+      .setex(this.prefix + sid, this.ttlSeconds, JSON.stringify(sess))
+      .then(() => cb?.())
+      .catch((err: unknown) => cb?.(err));
+  }
+}
+
+// ── In-process memory session store (dev / no-PDIM mode) ─────────────────────
+//
+// Lightweight replacement for the memorystore package.  Entries are
+// evicted lazily (on get) and periodically (hourly sweep) to prevent
+// unbounded growth.  Intended only for development — a single-process
+// store is not cluster-safe.
+
+interface MemEntry {
+  data: session.SessionData;
+  expiresAt: number;
+}
+
+class MemorySessionStore extends session.Store {
+  private readonly sessions = new Map<string, MemEntry>();
+  private readonly ttlMs: number;
+
+  constructor(ttlMs = 24 * 60 * 60 * 1000) {
+    super();
+    this.ttlMs = ttlMs;
+    setInterval(() => {
+      const now = Date.now();
+      for (const [sid, entry] of this.sessions) {
+        if (entry.expiresAt <= now) this.sessions.delete(sid);
+      }
+    }, 3_600_000).unref();
+  }
+
+  get(
+    sid: string,
+    cb: (err: unknown, session?: session.SessionData | null) => void,
+  ): void {
+    const entry = this.sessions.get(sid);
+    if (!entry || entry.expiresAt <= Date.now()) {
+      this.sessions.delete(sid);
+      return cb(null, null);
+    }
+    cb(null, entry.data);
+  }
+
+  set(
+    sid: string,
+    sess: session.SessionData,
+    cb?: (err?: unknown) => void,
+  ): void {
+    this.sessions.set(sid, {
+      data: sess,
+      expiresAt: Date.now() + this.ttlMs,
+    });
+    cb?.();
+  }
+
+  destroy(sid: string, cb?: (err?: unknown) => void): void {
+    this.sessions.delete(sid);
+    cb?.();
+  }
+
+  touch(
+    sid: string,
+    sess: session.SessionData,
+    cb?: (err?: unknown) => void,
+  ): void {
+    const entry = this.sessions.get(sid);
+    if (entry) {
+      entry.data = sess;
+      entry.expiresAt = Date.now() + this.ttlMs;
+    } else {
+      this.sessions.set(sid, {
+        data: sess,
+        expiresAt: Date.now() + this.ttlMs,
+      });
+    }
+    cb?.();
+  }
+
+  length(cb: (err: unknown, length?: number) => void): void {
+    const now = Date.now();
+    let count = 0;
+    for (const entry of this.sessions.values()) {
+      if (entry.expiresAt > now) count++;
+    }
+    cb(null, count);
+  }
+
+  all(
+    cb: (
+      err: unknown,
+      obj?: Record<string, session.SessionData> | null,
+    ) => void,
+  ): void {
+    const now = Date.now();
+    const result: Record<string, session.SessionData> = {};
+    for (const [sid, entry] of this.sessions) {
+      if (entry.expiresAt > now) result[sid] = entry.data;
+    }
+    cb(null, result);
+  }
+
+  clear(cb?: (err?: unknown) => void): void {
+    this.sessions.clear();
+    cb?.();
+  }
 }
 
 // ── Session revocation ────────────────────────────────────────────────────────
@@ -659,25 +768,21 @@ export async function createSessionStore(): Promise<session.Store> {
     logger.warn(
       "⚠️  PDIM not configured — using in-memory session store (development mode, sessions will not persist across restarts)",
     );
-    const MemoryStore = (await import("memorystore")).default(session);
-    return new MemoryStore({ checkPeriod: 86400000 });
+    return new MemorySessionStore(24 * 60 * 60 * 1000);
   }
   try {
     const ioredisClient = getRedisClient();
     await pingWithRetry(ioredisClient);
 
-    const redisStore = new RedisStore({
-      client: createIoredisAdapter(
-        ioredisClient as unknown as Parameters<typeof createIoredisAdapter>[0],
-      ) as Record<string, unknown>,
-      prefix: "sess:",
-      ttl: 24 * 60 * 60,
-    });
+    const innerStore = new IoredsSessionStore(
+      ioredisClient as unknown as IoredsClient,
+      { prefix: "sess:", ttl: 24 * 60 * 60 },
+    );
 
     logger.info(
       "✅ PDIM session store created with PG fallback (sessions survive restarts and PDIM outages)",
     );
-    return new PdimSessionStore(redisStore);
+    return new PdimSessionStore(innerStore);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error?.message : String(error);
     logger.warn(
