@@ -152,7 +152,7 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
       licensedTo: z.string().max(200).optional(),
       licenseFee: z.number().min(0).optional(),
     });
-    const { status, licensedTo, licenseFee } = statusSchema?.parse(req.body);
+    const { status, licensedTo, licenseFee } = statusSchema.parse(req.body);
 
     const setFields: Record<string, unknown> = {
       status,
