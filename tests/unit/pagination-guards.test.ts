@@ -8,6 +8,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join } from "path";
+import { parsePaginationParams } from "../../server/middleware/pagination.js";
 
 function capOffset(raw: string | undefined): number {
   return Math.min(Math.max(parseInt(raw ?? "") || 0, 0), 100_000);
@@ -76,6 +77,23 @@ describe("Limit cap formula", () => {
 
   it("treats NaN as 0", () => {
     expect(capLimit("", 100)).toBe(0);
+  });
+});
+
+describe("parsePaginationParams", () => {
+  it.each([
+    [{}, { page: 1, limit: 50, offset: 0 }],
+    [{ page: "2" }, { page: 2, limit: 50, offset: 50 }],
+    [{ limit: "25", page: "3" }, { page: 3, limit: 25, offset: 50 }],
+    [{ pageSize: "40" }, { page: 1, limit: 40, offset: 0 }],
+    [{ limit: "999999", page: "2" }, { page: 2, limit: 500, offset: 500 }],
+    [{ limit: "-1", page: "-9" }, { page: 1, limit: 50, offset: 0 }],
+    [{ limit: "abc", page: "xyz" }, { page: 1, limit: 50, offset: 0 }],
+  ])("normalizes query %j to %j", (query, expected) => {
+    const result = parsePaginationParams({
+      query,
+    } as Parameters<typeof parsePaginationParams>[0]);
+    expect(result).toEqual(expected);
   });
 });
 
