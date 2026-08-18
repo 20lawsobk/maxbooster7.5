@@ -29,9 +29,13 @@ router.use(requireAdmin);
  */
 router.get("/", async (req, res) => {
   try {
-    const limit = Math.min(500, Math.max(1, parseInt(String(req.query.limit ?? "50"), 10)));
-    const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
-    const offset = (page - 1) * limit;
+    const rawLimit = parseInt(String(req.query.limit ?? "50"), 10);
+    const rawPage = parseInt(String(req.query.page ?? "1"), 10);
+    const limit =
+      Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(500, rawLimit) : 50;
+    const page =
+      Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
+    const offset = Math.min((page - 1) * limit, 100_000);
 
     const riskFilter = req.query.risk as string | undefined;
     const actionFilter = req.query.action as string | undefined;

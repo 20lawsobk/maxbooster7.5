@@ -29,8 +29,13 @@ router.use(requireAuth);
 router.get("/campaigns", async (req, res) => {
   try {
     const userId = req.user!.id;
-    const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
-    const limit = Math.min(100, parseInt(String(req.query.limit ?? "20"), 10));
+    const rawPage = parseInt(String(req.query.page ?? "1"), 10);
+    const rawLimit = parseInt(String(req.query.limit ?? "20"), 10);
+    const page =
+      Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
+    const limit =
+      Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(100, rawLimit) : 20;
+    const offset = Math.min((page - 1) * limit, 100_000);
 
     const campaigns = await db
       .select()
@@ -38,7 +43,7 @@ router.get("/campaigns", async (req, res) => {
       .where(eq(outreachCampaigns.userId, userId))
       .orderBy(desc(outreachCampaigns.createdAt))
       .limit(limit)
-      .offset((page - 1) * limit);
+      .offset(offset);
 
     res.json(campaigns);
   } catch (err) {
