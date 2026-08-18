@@ -572,7 +572,7 @@ class DSPAnalyticsService {
       // Engagement rate = (likes + comments + shares) / views * 100
       const engagementRate =
         totalViews > 0
-          ? ((totalLikes + totalComments + totalShares) / totalViews) * 100
+          ? ((totalLikes + totalComments + totalShares) / (totalViews || 1)) * 100
           : 0;
       // Virality score = shares as a proportion of views (0-1 clamped)
       const virality =
@@ -730,7 +730,7 @@ class DSPAnalyticsService {
         : 0;
     const skips =
       data.views > 0 ? Math.floor(data.views * (1 - completionRate)) : 0;
-    data.views > 0
+    const shareRate = data.views > 0
         ? Math.min(1, (data.shares / Math.max(data.views, 1)) * 50)
         : 0;
     return {
@@ -921,7 +921,7 @@ class DSPAnalyticsService {
       data.averageViewDuration > 0 && assumedAvgVideoLength > 0
         ? Math.max(
             0,
-            Math.min(1, data.averageViewDuration / assumedAvgVideoLength),
+            Math.min(1, data.averageViewDuration / (assumedAvgVideoLength || 1)),
           )
         : 0;
     return {
@@ -1511,7 +1511,7 @@ class DSPAnalyticsService {
     const totalListeners =
       countries?.reduce((sum, c) => sum + c?.listeners, 0) || 1;
     countries?.forEach(
-      (c) => (c.percentage = (c?.listeners / totalListeners) * 100),
+      (c) => (c.percentage = (c?.listeners / (totalListeners || 1)) * 100),
     );
 
     return {
@@ -1520,9 +1520,9 @@ class DSPAnalyticsService {
         percentage,
       })),
       gender: {
-        male: (gender?.male / totalGender) * 100,
-        female: (gender?.female / totalGender) * 100,
-        other: (gender?.other / totalGender) * 100,
+        male: (gender?.male / (totalGender || 1)) * 100,
+        female: (gender?.female / (totalGender || 1)) * 100,
+        other: (gender?.other / (totalGender || 1)) * 100,
       },
       topCountries: countries
         .sort((a, b) => b?.listeners - a?.listeners)

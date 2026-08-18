@@ -480,7 +480,7 @@ export class FeatureValidators {
     const passed = results.filter((r) => r.passed).length;
     const failed = results.filter((r) => !r.passed).length;
     const totalTests = results.length;
-    const successRate = totalTests > 0 ? (passed / totalTests) * 100 : 0;
+    const successRate = totalTests > 0 ? (passed / (totalTests || 1)) * 100 : 0;
 
     logger.info(
       `✅ Feature validation complete: ${passed}/${totalTests} passed (${successRate.toFixed(1)}%)`,

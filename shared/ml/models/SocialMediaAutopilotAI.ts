@@ -492,8 +492,8 @@ export class SocialMediaAutopilotAI extends BaseModel {
     inputTensor.dispose();
     prediction.dispose();
 
-    userPostHistory.reduce((sum, p) => sum + p.engagement, 0) /
-      userPostHistory.length;
+    const _avgEngagement = userPostHistory.reduce((sum, p) => sum + p.engagement, 0) /
+      (userPostHistory.length || 1);
     const topPosts = userPostHistory
       .sort((a, b) => b.engagement - a.engagement)
       .slice(0, 10);
@@ -684,9 +684,9 @@ export class SocialMediaAutopilotAI extends BaseModel {
 
     const avgEngagement =
       recentPosts.reduce((sum, p) => sum + p.engagement, 0) /
-      recentPosts.length;
+      (recentPosts.length || 1);
     const avgReach =
-      recentPosts.reduce((sum, p) => sum + p.reach, 0) / recentPosts.length;
+      recentPosts.reduce((sum, p) => sum + p.reach, 0) / (recentPosts.length || 1);
 
     return avgReach > 0 ? avgEngagement / avgReach : 0;
   }
@@ -697,7 +697,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
       .slice(-20);
     if (recentPosts.length === 0) return 500;
     return Math.round(
-      recentPosts.reduce((sum, p) => sum + p.reach, 0) / recentPosts.length,
+      recentPosts.reduce((sum, p) => sum + p.reach, 0) / (recentPosts.length || 1),
     );
   }
 
@@ -708,7 +708,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
     if (recentPosts.length === 0) return 50;
     return Math.round(
       recentPosts.reduce((sum, p) => sum + p.engagement, 0) /
-        recentPosts.length,
+        (recentPosts.length || 1),
     );
   }
 
@@ -760,8 +760,8 @@ export class SocialMediaAutopilotAI extends BaseModel {
       Math.max(...this.trainingHistory.map((p) => p.likes)) || 1000;
     const maxComments =
       Math.max(...this.trainingHistory.map((p) => p.comments)) || 100;
-    Math.max(...this.trainingHistory.map((p) => p.shares)) || 50;
-    Math.max(...this.trainingHistory.map((p) => p.reach)) || 10000;
+    const _maxShares = Math.max(...this.trainingHistory.map((p) => p.shares)) || 50;
+    const _maxReach = Math.max(...this.trainingHistory.map((p) => p.reach)) || 10000;
 
     const postDate =
       post.postedAt instanceof Date && !isNaN(post.postedAt.getTime())
@@ -878,7 +878,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
     const avgEngagement =
       platformPosts.length > 0
         ? platformPosts.reduce((sum, p) => sum + p.engagement, 0) /
-          platformPosts.length
+          (platformPosts.length || 1)
         : 100;
 
     const baseFeatures = [
@@ -936,11 +936,11 @@ export class SocialMediaAutopilotAI extends BaseModel {
 
     for (let i = 0; i < numFeatures; i++) {
       const values = features.map((f) => f[i]);
-      mean[i] = values.reduce((sum, val) => sum + val, 0) / values.length;
+      mean[i] = values.reduce((sum, val) => sum + val, 0) / (values.length || 1);
 
       const variance =
         values.reduce((sum, val) => sum + Math.pow(val - mean[i], 2), 0) /
-        values.length;
+        (values.length || 1);
       std[i] = Math.sqrt(variance) || 1;
     }
 
@@ -980,7 +980,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
 
     for (const [hour, total] of hourlyPerformance) {
       const count = hourlyCounts.get(hour)!;
-      hourlyPerformance.set(hour, total / count);
+      hourlyPerformance.set(hour, total / (count || 1));
     }
 
     return hourlyPerformance;
@@ -989,8 +989,8 @@ export class SocialMediaAutopilotAI extends BaseModel {
   private calculatePlatformStats(platform: string, posts: SocialPost[]): void {
     const stats = {
       avgEngagement:
-        posts.reduce((sum, p) => sum + p.engagement, 0) / posts.length,
-      avgReach: posts.reduce((sum, p) => sum + p.reach, 0) / posts.length,
+        posts.reduce((sum, p) => sum + p.engagement, 0) / (posts.length || 1),
+      avgReach: posts.reduce((sum, p) => sum + p.reach, 0) / (posts.length || 1),
       bestHour: 12,
       bestMediaType: "video",
     };
@@ -1013,12 +1013,12 @@ export class SocialMediaAutopilotAI extends BaseModel {
     if (videoCount > topPosts.length * 0.5) {
       factors.push({
         factor: "Video content (YOUR top posts)",
-        impact: videoCount / topPosts.length,
+        impact: videoCount / (topPosts.length || 1),
       });
     }
 
     const avgHashtags =
-      topPosts.reduce((sum, p) => sum + p.hashtagCount, 0) / topPosts.length;
+      topPosts.reduce((sum, p) => sum + p.hashtagCount, 0) / (topPosts.length || 1);
     if (content.hashtagCount >= avgHashtags - 1) {
       factors.push({
         factor: `${Math.floor(avgHashtags)} hashtags (YOUR pattern)`,
@@ -1039,13 +1039,13 @@ export class SocialMediaAutopilotAI extends BaseModel {
       topPosts
         .filter((p) => p.mediaType === "video")
         .reduce((sum, p) => sum + p.engagement, 0) /
-      topPosts.filter((p) => p.mediaType === "video").length;
+      (topPosts.filter((p) => p.mediaType === "video").length || 1);
 
     const avgTextEngagement =
       topPosts
         .filter((p) => p.mediaType === "text")
         .reduce((sum, p) => sum + p.engagement, 0) /
-      topPosts.filter((p) => p.mediaType === "text").length;
+      (topPosts.filter((p) => p.mediaType === "text").length || 1);
 
     if (avgVideoEngagement > avgTextEngagement * 1.5) {
       recommendations.push(
@@ -1115,7 +1115,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
 
   private calculateShareability(_content: any, topPosts: SocialPost[]): number {
     const avgShares =
-      topPosts.reduce((sum, p) => sum + p.shares, 0) / topPosts.length;
+      topPosts.reduce((sum, p) => sum + p.shares, 0) / (topPosts.length || 1);
     return Math.min(1, avgShares / 100);
   }
 
@@ -1124,7 +1124,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
     topPosts: SocialPost[],
   ): number {
     const avgEngagement =
-      topPosts.reduce((sum, p) => sum + p.engagement, 0) / topPosts.length;
+      topPosts.reduce((sum, p) => sum + p.engagement, 0) / (topPosts.length || 1);
     return Math.min(1, avgEngagement / 200);
   }
 
@@ -1133,7 +1133,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
     topPosts: SocialPost[],
   ): number {
     const avgReach =
-      topPosts.reduce((sum, p) => sum + p.reach, 0) / topPosts.length;
+      topPosts.reduce((sum, p) => sum + p.reach, 0) / (topPosts.length || 1);
     return Math.min(1, avgReach / 1000);
   }
 

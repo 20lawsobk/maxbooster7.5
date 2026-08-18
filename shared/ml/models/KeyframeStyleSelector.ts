@@ -288,7 +288,7 @@ export class KeyframeStyleSelector extends BaseModel {
       for (const { condition, styles } of styleAffinities) {
         if (condition(inp)) {
           styles.forEach((s) => {
-            label[STYLE_IDX[s]] += 0.7 / styles.length;
+            label[STYLE_IDX[s]] += 0.7 / (styles.length || 1);
           });
           matched = true;
           break;
@@ -299,7 +299,7 @@ export class KeyframeStyleSelector extends BaseModel {
         label[randomStyle] = 0.7;
       }
       const sum = label.reduce((a, b) => a + b, 0);
-      labels.push(label.map((v) => v / sum));
+      labels.push(label.map((v) => v / (sum || 1)));
     }
     return { inputs, labels };
   }

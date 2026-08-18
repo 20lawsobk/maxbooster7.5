@@ -1076,7 +1076,7 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     const avgEngagement =
-      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
+      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / (data.length || 1);
 
     sentimentBuckets.forEach((stats, sentiment) => {
       if (stats.count >= 15) {
@@ -1189,7 +1189,7 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     const avgEngagement =
-      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
+      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / (data.length || 1);
 
     const topWords = [...wordEngagement.entries()]
       .filter(([_, stats]) => stats.count >= 20)
@@ -1268,7 +1268,7 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     const avgEngagement =
-      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
+      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / (data.length || 1);
 
     dayOfMonthBuckets.forEach((stats, category) => {
       if (stats.count >= 20) {
@@ -1312,7 +1312,7 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     const avgEngagement =
-      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
+      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / (data.length || 1);
 
     mediaTypes.forEach((stats, type) => {
       if (stats.count >= 10) {
@@ -1373,7 +1373,7 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     const avgEngagement =
-      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
+      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / (data.length || 1);
 
     responseRatios.forEach((stats, type) => {
       if (stats.count >= 15) {
@@ -1567,9 +1567,9 @@ class HyperLearningEngine extends EventEmitter {
         if (platformMap.size >= 2) {
           const patterns = [...platformMap.values()];
           const avgCorrelation =
-            patterns.reduce((s, p) => s + p.correlation, 0) / patterns.length;
+            patterns.reduce((s, p) => s + p.correlation, 0) / (patterns.length || 1);
           const avgConfidence =
-            patterns.reduce((s, p) => s + p.confidence, 0) / patterns.length;
+            patterns.reduce((s, p) => s + p.confidence, 0) / (patterns.length || 1);
 
           if (avgConfidence > 0.5 && Math.abs(avgCorrelation) > 0.1) {
             universalPatterns.push({
@@ -1629,7 +1629,7 @@ class HyperLearningEngine extends EventEmitter {
     const dimImpacts = dimensions.map((dim) => {
       const dp = patterns.filter((p) => p.type === dim);
       return dp.length > 0
-        ? dp.reduce((s, p) => s + Math.abs(p.engagementImpact), 0) / dp.length
+        ? dp.reduce((s, p) => s + Math.abs(p.engagementImpact), 0) / (dp.length || 1)
         : 0;
     });
     const totalImpact = dimImpacts.reduce((s, v) => s + v, 0) || 1;
@@ -2030,7 +2030,7 @@ class HyperLearningEngine extends EventEmitter {
             (s, d) =>
               s + (typeof d.engagementRate === "number" ? d.engagementRate : 0),
             0,
-          ) / allData.length
+          ) / (allData.length || 1)
         : 0;
 
     for (const hook of hookTypes.slice(0, 5)) {
@@ -2065,7 +2065,7 @@ class HyperLearningEngine extends EventEmitter {
     const avgPatternConf =
       contentPatterns.length > 0
         ? contentPatterns.reduce((s, p) => s + p.confidence, 0) /
-          contentPatterns.length
+          (contentPatterns.length || 1)
         : 0;
     const accuracy =
       Math.round((0.3 + patternCoverage * 0.35 + avgPatternConf * 0.25) * 100) /

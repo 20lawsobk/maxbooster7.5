@@ -209,7 +209,7 @@ export function AudienceInsights({
     const superFans = Math.round(totalListeners * 0.12);
     const engagementRate =
       totalListeners > 0 && totalStreams > 0
-        ? parseFloat((totalStreams / totalListeners).toFixed(1))
+        ? parseFloat((totalStreams / (totalListeners || 1)).toFixed(1))
         : 0;
     return [
       {

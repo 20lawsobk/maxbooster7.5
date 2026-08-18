@@ -138,7 +138,7 @@ export function RealTimeWaveformDisplay({
 
     if (localWaveformData.length === 0) return;
 
-    const barWidth = (rect.width * zoom) / localWaveformData.length;
+    const barWidth = (rect.width * zoom) / (localWaveformData.length || 1);
     const progressX =
       effectiveDuration > 0
         ? (currentTime / effectiveDuration) * (rect.width * zoom)

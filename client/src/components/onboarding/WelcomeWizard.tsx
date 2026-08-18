@@ -140,7 +140,7 @@ export default function WelcomeWizard({
     { id: "interests", title: "Interests", description: "What you want to do" },
   ];
 
-  const progress = ((currentStep + 1) / steps.length) * 100;
+  const progress = ((currentStep + 1) / (steps.length || 1)) * 100;
 
   const completeMutation = useMutation({
     mutationFn: async (welcomeData: WelcomeData) => {

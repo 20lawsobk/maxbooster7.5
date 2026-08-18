@@ -102,7 +102,7 @@ export class MediaTranscoder {
         codec: "h264+aac",
         originalBytes: data.length,
         transcodedBytes: out.length,
-        ratio: data.length / out.length,
+        ratio: data.length / (out.length || 1),
       };
     } finally {
       await fs.rm(inFile, { force: true });
@@ -130,7 +130,7 @@ export class MediaTranscoder {
         codec: "opus@64k",
         originalBytes: data.length,
         transcodedBytes: out.length,
-        ratio: data.length / out.length,
+        ratio: data.length / (out.length || 1),
       };
     } finally {
       await fs.rm(inFile, { force: true });
@@ -162,7 +162,7 @@ export class MediaTranscoder {
       codec: "webp@q72",
       originalBytes: data.length,
       transcodedBytes: out.length,
-      ratio: data.length / out.length,
+      ratio: data.length / (out.length || 1),
     };
   }
 

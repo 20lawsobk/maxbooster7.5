@@ -348,7 +348,7 @@ class MaxBooster247System extends EventEmitter {
           this.responseTimes.length > 0
             ? Math.round(
                 this.responseTimes.reduce((sum, time) => sum + time, 0) /
-                  this.responseTimes.length,
+                  (this.responseTimes.length || 1),
               )
             : 0,
       },

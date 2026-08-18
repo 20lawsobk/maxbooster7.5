@@ -69,7 +69,7 @@ class OnboardingService {
       const completedCount = completedSteps?.length;
       const totalSteps = tasks?.length;
       const completionPercentage =
-        totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
+        totalSteps > 0 ? Math.round((completedCount / (totalSteps || 1)) * 100) : 0;
 
       const tasksWithStatus: OnboardingTaskWithStatus[] = tasks?.map((task) => ({
         id: task.id,

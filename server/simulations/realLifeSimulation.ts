@@ -1111,7 +1111,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
     const viralReleases = this.metrics.streams?.viralReleases;
     const totalReleases = this.releases.size;
     const viralCoefficient =
-      totalReleases > 0 ? (viralReleases / totalReleases) * 10 : 0;
+      totalReleases > 0 ? (viralReleases / (totalReleases || 1)) * 10 : 0;
 
     // System tests
     const systemTests = {

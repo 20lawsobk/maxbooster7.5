@@ -1110,7 +1110,7 @@ class IntentClassifier {
 
     // Calculate confidence
     const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
-    const confidence = totalScore > 0 ? maxScore / totalScore : 0.5;
+    const confidence = totalScore > 0 ? maxScore / (totalScore || 1) : 0.5;
 
     // Detect specific instrument name
     let detectedInstrument: string | undefined;

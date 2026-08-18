@@ -38,7 +38,7 @@ export function safeWeightedAverage(
   }, 0);
 
   const totalWeight = weights?.reduce((sum, w) => sum + (isFinite(w) ? w : 0), 0);
-  return totalWeight > 0 ? weightedSum / totalWeight : 0;
+  return totalWeight > 0 ? weightedSum / (totalWeight || 1) : 0;
 }
 
 /**
@@ -49,7 +49,7 @@ export function safePercentage(numerator: number, denominator: number): number {
   if (!isFinite(numerator) || !isFinite(denominator) || denominator === 0) {
     return 0;
   }
-  return (numerator / denominator) * 100;
+  return (numerator / (denominator || 1)) * 100;
 }
 
 /**
@@ -60,7 +60,7 @@ export function safeRatio(numerator: number, denominator: number): number {
   if (!isFinite(numerator) || !isFinite(denominator) || denominator === 0) {
     return 0;
   }
-  return numerator / denominator;
+  return numerator / (denominator || 1);
 }
 
 /**

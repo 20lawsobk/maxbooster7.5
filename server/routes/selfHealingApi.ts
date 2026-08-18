@@ -142,7 +142,7 @@ router.get("/proof", (req: Request, res: Response) => {
 
     const totalHealingP95 = calculateP95(metrics?.totalHealingTime) || 750;
     const attackDwellTime = 7500;
-    const healingRatio = attackDwellTime / totalHealingP95;
+    const healingRatio = attackDwellTime / (totalHealingP95 || 1);
 
     res.json({
       success: true,

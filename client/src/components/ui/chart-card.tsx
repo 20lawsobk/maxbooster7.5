@@ -79,7 +79,7 @@ export function SimpleAreaChart({
 
   const points = data
     .map((d, i) => {
-      const x = (i / (data.length - 1)) * 100;
+      const x = (i / ((data.length - 1 || 1))) * 100;
       const y = 100 - ((d.value - min) / range) * 80;
       return `${x},${y}`;
     })
@@ -87,7 +87,7 @@ export function SimpleAreaChart({
 
   const areaPath = `M0,100 L0,${100 - ((data[0].value - min) / range) * 80} ${data
     .map((d, i) => {
-      const x = (i / (data.length - 1)) * 100;
+      const x = (i / ((data.length - 1 || 1))) * 100;
       const y = 100 - ((d.value - min) / range) * 80;
       return `L${x},${y}`;
     })
@@ -164,7 +164,7 @@ export function DonutChart({
     <div className="relative inline-flex items-center justify-center">
       <svg width={size} height={size} className="-rotate-90">
         {data.map((segment, i) => {
-          const percentage = total > 0 ? segment.value / total : 0;
+          const percentage = total > 0 ? segment.value / (total || 1) : 0;
           const strokeDasharray = `${circumference * percentage} ${circumference * (1 - percentage)}`;
           const strokeDashoffset = -currentOffset;
           currentOffset += circumference * percentage;
@@ -237,7 +237,7 @@ export function PlatformBreakdown({ platforms }: PlatformBreakdownProps) {
         thickness={14}
         centerValue={
           total > 0
-            ? `${Math.round((platforms[0]?.value / total) * 100)}%`
+            ? `${Math.round((platforms[0]?.value / (total || 1)) * 100)}%`
             : "0%"
         }
       />

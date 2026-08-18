@@ -349,7 +349,7 @@ export class EngagementPredictionModel extends BaseModel {
     }
 
     for (let i = 0; i < numFeatures; i++) {
-      std[i] = Math.sqrt(std[i] / vectors.length) || 1;
+      std[i] = Math.sqrt(std[i] / (vectors.length || 1)) || 1;
     }
 
     return { mean, std };
@@ -504,7 +504,7 @@ export class EngagementPredictionModel extends BaseModel {
   }
 
   private calculateR2(actual: number[], predicted: number[]): number {
-    const mean = actual.reduce((sum, val) => sum + val, 0) / actual.length;
+    const mean = actual.reduce((sum, val) => sum + val, 0) / (actual.length || 1);
     const ssTotal = actual.reduce(
       (sum, val) => sum + Math.pow(val - mean, 2),
       0,

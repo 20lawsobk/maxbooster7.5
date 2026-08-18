@@ -617,7 +617,7 @@ export class DatabaseStorage implements IStorage {
     const totalEngagement = totalLikes + totalComments + totalShares;
     const avgEngagementRate =
       totalViews > 0
-        ? Math.round((totalEngagement / totalViews) * 10000) / 100
+        ? Math.round((totalEngagement / (totalViews || 1)) * 10000) / 100
         : 0;
 
     const platformGrowth = accounts?.map((acc) => ({
@@ -1094,7 +1094,7 @@ export class DatabaseStorage implements IStorage {
       const clicks = perf?.clicks || 0;
       const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
       const daysSinceCreated = Math.floor(
-        (Date?.now() - new Date(c?.createdAt!).getTime()) / 86400000,
+        (Date?.now() - new Date(c?.createdAt).getTime()) / 86400000,
       );
       const fatigueScore = Math.min(
         100,
@@ -1434,7 +1434,7 @@ export class DatabaseStorage implements IStorage {
         streams: r.streams,
         revenue: r.revenue,
         attributionShare:
-          total > 0 ? Math.round((r?.streams / total) * 1000) / 10 : 0,
+          total > 0 ? Math.round((r?.streams / (total || 1)) * 1000) / 10 : 0,
       }));
   }
 

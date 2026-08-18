@@ -120,7 +120,7 @@ class WaveformCacheService {
         }
 
         peaks?.push(maxPeak);
-        rms?.push(count > 0 ? Math.sqrt(sumSquares / count) : 0);
+        rms?.push(count > 0 ? Math.sqrt(sumSquares / (count || 1)) : 0);
       }
 
       const duration = leftChannel?.length / sampleRate;
@@ -171,7 +171,7 @@ class WaveformCacheService {
       }
 
       peaks?.push(maxPeak);
-      rms?.push(count > 0 ? Math.sqrt(sumSquares / count) : 0);
+      rms?.push(count > 0 ? Math.sqrt(sumSquares / (count || 1)) : 0);
     }
 
     const duration = samplesPerChannel / sampleRate;

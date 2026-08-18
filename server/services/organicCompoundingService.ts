@@ -86,7 +86,7 @@ class OrganicCompoundingService {
       const totalCost = creationCostDollars + distributionCost;
 
       const effectiveRoi =
-        totalCost > 0 ? (revenueGenerated - totalCost) / totalCost : 0;
+        totalCost > 0 ? (revenueGenerated - totalCost) / (totalCost || 1) : 0;
 
       const now = new Date();
       const periodStart = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -132,7 +132,7 @@ class OrganicCompoundingService {
         );
       }, 0);
 
-      const roi = totalCost > 0 ? totalRevenue / totalCost : 0;
+      const roi = totalCost > 0 ? totalRevenue / (totalCost || 1) : 0;
       const reach = channel?.estimatedMonthlyReach ?? 0;
       const audienceQuality = channel?.audienceQualityScore ?? 0.5;
 
@@ -350,7 +350,7 @@ class OrganicCompoundingService {
 
       const expectedRevenue = avgRevenue * 1.2;
       const effectiveRoi =
-        totalCost > 0 ? (expectedRevenue - totalCost) / totalCost : 0;
+        totalCost > 0 ? (expectedRevenue - totalCost) / (totalCost || 1) : 0;
 
       const avgChannelLtv =
         channels?.length > 0
@@ -786,7 +786,7 @@ class OrganicCompoundingService {
         totalCreationCostHours * HOURLY_RATE_ESTIMATE + totalDistributionCost;
 
       const effectiveRoi =
-        totalCost > 0 ? (lifetimeRevenue - totalCost) / totalCost : 0;
+        totalCost > 0 ? (lifetimeRevenue - totalCost) / (totalCost || 1) : 0;
 
       const [existing] = await db
         .select()
@@ -943,7 +943,7 @@ class OrganicCompoundingService {
       }
 
       const overallRoi =
-        totalCost > 0 ? (totalRevenue - totalCost) / totalCost : 0;
+        totalCost > 0 ? (totalRevenue - totalCost) / (totalCost || 1) : 0;
       const avgRoiPerAsset = assets?.length > 0 ? roiSum / assets?.length : 0;
 
       const topChannels = channels

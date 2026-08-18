@@ -492,12 +492,12 @@ export default function SocialMedia() {
   >(new Set());
 
   // Helper function to format numbers with K/M suffix
-  ((num: number): string => {
+  const formatNumber = (num: number): string => {
     if (!num || num === 0) return "0";
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
-  });
+  };
 
   // Handle OAuth callback URL parameters
   useEffect(() => {

@@ -310,7 +310,7 @@ export class DistributedCache {
   getStats(): CacheStats & { mode: string; hitRate: string } {
     const total = this.stats.hits + this.stats.misses;
     const hitRate =
-      total > 0 ? ((this.stats.hits / total) * 100).toFixed(2) : "0.00";
+      total > 0 ? ((this.stats.hits / (total || 1)) * 100).toFixed(2) : "0.00";
     return {
       ...this.stats,
       mode: "pdim",

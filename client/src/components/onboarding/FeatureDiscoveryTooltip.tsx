@@ -51,7 +51,7 @@ export default function FeatureDiscoveryTooltip({
   const queryClient = useQueryClient();
 
   const currentStep = tutorial.steps[currentStepIndex];
-  const progress = ((currentStepIndex + 1) / tutorial.steps.length) * 100;
+  const progress = ((currentStepIndex + 1) / (tutorial.steps.length || 1)) * 100;
   const isLastStep = currentStepIndex === tutorial.steps.length - 1;
 
   const trackProgressMutation = useMutation({

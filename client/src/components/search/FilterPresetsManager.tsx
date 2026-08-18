@@ -198,7 +198,7 @@ export function FilterPresetsManager({
     setShowSaveDialog(true);
   };
 
-  ((
+  const handleFilterChange = (
     key: string,
     value: Record<string, unknown>,
   ): string => {

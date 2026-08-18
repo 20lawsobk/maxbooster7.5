@@ -457,7 +457,7 @@ export function BatchProgressInline({
   status = "processing",
   className,
 }: BatchProgressInlineProps) {
-  const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+  const percentage = total > 0 ? Math.round((current / (total || 1)) * 100) : 0;
 
   return (
     <div className={cn("flex items-center gap-2", className)}>

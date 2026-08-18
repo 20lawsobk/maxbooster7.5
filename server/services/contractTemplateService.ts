@@ -1561,7 +1561,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
         .filter((s) => s?.signedAt)
         .sort(
           (a, b) =>
-            new Date(b?.signedAt!).getTime() - new Date(a?.signedAt!).getTime(),
+            new Date(b?.signedAt).getTime() - new Date(a?.signedAt).getTime(),
         )[0];
       if (lastSignature?.signedAt) {
         timeline?.push({

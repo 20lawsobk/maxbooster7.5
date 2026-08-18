@@ -479,7 +479,7 @@ export function AnalogWarmthProcessor({
     ctx.beginPath();
 
     for (let i = 0; i < curve.length; i++) {
-      const x = (i / curve.length) * width;
+      const x = (i / (curve.length || 1)) * width;
       const y = height / 2 - (curve[i] * height) / 2;
 
       if (i === 0) {
@@ -497,10 +497,10 @@ export function AnalogWarmthProcessor({
     for (let h = 1; h <= 10; h++) {
       let sum = 0;
       for (let i = 0; i < curve.length; i++) {
-        const x = (i * 2) / curve.length - 1;
+        const x = (i * 2) / (curve.length || 1) - 1;
         sum += curve[i] * Math.sin(h * Math.PI * x);
       }
-      harmonics.push(Math.abs(sum / curve.length) * 100);
+      harmonics.push(Math.abs(sum / (curve.length || 1)) * 100);
     }
 
     const max = Math.max(...harmonics);

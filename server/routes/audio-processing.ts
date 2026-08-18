@@ -143,7 +143,7 @@ function analyzeStereoImage(
       : 0;
 
   const totalPower = leftPower + rightPower;
-  const balance = totalPower > 0 ? (rightPower - leftPower) / totalPower : 0;
+  const balance = totalPower > 0 ? (rightPower - leftPower) / (totalPower || 1) : 0;
   const width = 1 - Math.abs(normalizedCorrelation);
 
   return {

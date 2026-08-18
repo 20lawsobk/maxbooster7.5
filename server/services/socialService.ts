@@ -595,7 +595,7 @@ export class SocialService {
         .slice(0, 5);
 
       const engagementRate =
-        totalReach > 0 ? (totalEngagements / totalReach) * 100 : 0;
+        totalReach > 0 ? (totalEngagements / (totalReach || 1)) * 100 : 0;
 
       return { totalFollowers, totalReach, engagementRate, topPosts };
     } catch (error: unknown) {

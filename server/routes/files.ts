@@ -574,7 +574,7 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
         count: value.count,
         percentage:
           totalBytes > 0
-            ? Math.round((value?.used / totalBytes) * 100)
+            ? Math.round((value?.used / (totalBytes || 1)) * 100)
             : 0,
       })),
       thresholds: {

@@ -397,7 +397,7 @@ export function FlowStateTakeComping({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  ((time: number): TakeRegion | undefined => {
+  const getRegionAtTime = (time: number): TakeRegion | undefined => {
     return selectedRegions.find((r) => time >= r.startTime && time < r.endTime);
   });
 

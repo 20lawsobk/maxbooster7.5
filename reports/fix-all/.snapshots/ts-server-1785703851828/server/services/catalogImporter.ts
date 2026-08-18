@@ -545,7 +545,7 @@ class CatalogImporter {
           totalRows: rows.length,
           processedRows: result.processedRows,
           percentComplete: Math.round(
-            (result.processedRows / rows.length) * 100,
+            (result.processedRows / (rows.length || 1)) * 100,
           ),
           currentPhase: "importing",
         });

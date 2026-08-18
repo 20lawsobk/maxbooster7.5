@@ -319,7 +319,7 @@ export class VideoExporter {
           phase: "rendering",
           currentFrame,
           totalFrames,
-          percentage: Math.round((currentFrame / totalFrames) * 90),
+          percentage: Math.round((currentFrame / (totalFrames || 1)) * 90),
           estimatedTimeRemaining,
           elapsedTime,
         });

@@ -96,7 +96,7 @@ export class DatabaseBackupService {
     const tmpPath = `/tmp/${name}`;
 
     await new Promise<void>((resolve, reject) => {
-      const pgDump = spawn("pg_dump", [env?.DATABASE_URL!], {
+      const pgDump = spawn("pg_dump", [env?.DATABASE_URL], {
         env: process.env,
       });
       const writeStream = fs?.createWriteStream(tmpPath);

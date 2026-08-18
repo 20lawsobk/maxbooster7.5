@@ -215,9 +215,9 @@ export function extractSpectralFeatures(
     }
     const totalEnergy = bassEnergy + midEnergy + highEnergy;
     if (totalEnergy > 0) {
-      bassTotal += bassEnergy / totalEnergy;
-      midTotal += midEnergy / totalEnergy;
-      highTotal += highEnergy / totalEnergy;
+      bassTotal += bassEnergy / (totalEnergy || 1);
+      midTotal += midEnergy / (totalEnergy || 1);
+      highTotal += highEnergy / (totalEnergy || 1);
     }
 
     // Spectral flux
@@ -232,10 +232,10 @@ export function extractSpectralFeatures(
     prevMagnitudes = magnitudes;
   }
 
-  const avgCentroid = centroids.reduce((a, b) => a + b, 0) / centroids.length;
-  const avgSpread = spreads.reduce((a, b) => a + b, 0) / spreads.length;
-  const avgRolloff = rolloffs.reduce((a, b) => a + b, 0) / rolloffs.length;
-  const avgFlatness = flatnesses.reduce((a, b) => a + b, 0) / flatnesses.length;
+  const avgCentroid = centroids.reduce((a, b) => a + b, 0) / (centroids.length || 1);
+  const avgSpread = spreads.reduce((a, b) => a + b, 0) / (spreads.length || 1);
+  const avgRolloff = rolloffs.reduce((a, b) => a + b, 0) / (rolloffs.length || 1);
+  const avgFlatness = flatnesses.reduce((a, b) => a + b, 0) / (flatnesses.length || 1);
   const avgFlux = fluxTotal / (numFrames - 1);
 
   // Normalize to 0-1 range
@@ -354,7 +354,7 @@ export function extractRhythmFeatures(
       while (tempo < 60) tempo *= 2;
       while (tempo > 200) tempo /= 2;
 
-      confidence = Math.min(maxCount / intervals.length, 0.95);
+      confidence = Math.min(maxCount / (intervals.length || 1), 0.95);
     }
   }
 
@@ -390,10 +390,10 @@ export function extractRhythmFeatures(
   if (onsetStrength.length > 10) {
     const mean =
       Array.from(onsetStrength).reduce((a, b) => a + b, 0) /
-      onsetStrength.length;
+      (onsetStrength.length || 1);
     const variance =
       Array.from(onsetStrength).reduce((a, b) => a + (b - mean) ** 2, 0) /
-      onsetStrength.length;
+      (onsetStrength.length || 1);
     complexity = Math.min(Math.sqrt(variance) / mean, 1) || 0;
   }
 
@@ -456,7 +456,7 @@ export function extractTimbreFeatures(
 
   // Attack time (time to reach peak)
   const envelopeDuration = audioData.length / sampleRate;
-  const attackTime = (peakIdx / envelope.length) * envelopeDuration;
+  const attackTime = (peakIdx / (envelope.length || 1)) * envelopeDuration;
 
   // Decay time (time from peak to 10% of peak)
   let decayIdx = peakIdx;
@@ -467,7 +467,7 @@ export function extractTimbreFeatures(
       break;
     }
   }
-  const decayTime = ((decayIdx - peakIdx) / envelope.length) * envelopeDuration;
+  const decayTime = ((decayIdx - peakIdx) / (envelope.length || 1)) * envelopeDuration;
 
   // Sustain level (average of middle portion)
   let sustainSum = 0;
@@ -531,7 +531,7 @@ export function extractDynamicFeatures(
   for (let i = 0; i < audioData.length; i++) {
     sumSquares += audioData[i] ** 2;
   }
-  const rms = Math.sqrt(sumSquares / audioData.length);
+  const rms = Math.sqrt(sumSquares / (audioData.length || 1));
 
   // Peak
   let peak = 0;
@@ -679,7 +679,7 @@ export class AudioFeatureExtractor {
     totalDiff += Math.min(tempoDiff, 1) * weights.tempo;
     totalWeight += weights.tempo;
 
-    return 1 - totalDiff / totalWeight;
+    return 1 - totalDiff / (totalWeight || 1);
   }
 }
 

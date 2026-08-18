@@ -2859,7 +2859,7 @@ class ArtistProfileService {
     ];
     const claimedCount = keyPortals.filter(Boolean).length;
     const coverageScore = Math.round(
-      (claimedCount / keyPortals.length) * HEALTH_WEIGHTS.coverage,
+      (claimedCount / (keyPortals.length || 1)) * HEALTH_WEIGHTS.coverage,
     );
     breakdown.coverage = coverageScore;
     if (claimedCount < 4)
@@ -3213,7 +3213,7 @@ class ArtistProfileService {
 
     const avgConfidence =
       links.length > 0
-        ? Math.round(links.reduce((s, l) => s + l.confidence, 0) / links.length)
+        ? Math.round(links.reduce((s, l) => s + l.confidence, 0) / (links.length || 1))
         : 0;
 
     return {

@@ -466,7 +466,7 @@ export function OAuthStatusGrid({
       </div>
 
       <Progress
-        value={(connectedCount / platforms.length) * 100}
+        value={(connectedCount / (platforms.length || 1)) * 100}
         className="h-2"
       />
 

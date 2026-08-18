@@ -840,7 +840,7 @@ class ArtistProfileService {
     let hits = 0;
     for (const [bg, cnt] of ba) hits += Math.min(cnt, bb?.get(bg) ?? 0);
     const total = a?.length - 1 + (b?.length - 1);
-    return total === 0 ? 0 : (2 * hits) / total;
+    return total === 0 ? 0 : (2 * hits) / (total || 1);
   }
 
   /** Levenshtein edit distance (O(m×n) — keep inputs ≤ 35 chars) */
@@ -2830,7 +2830,7 @@ class ArtistProfileService {
     ];
     const claimedCount = keyPortals.filter(Boolean).length;
     const coverageScore = Math.round(
-      (claimedCount / keyPortals.length) * HEALTH_WEIGHTS.coverage,
+      (claimedCount / (keyPortals.length || 1)) * HEALTH_WEIGHTS.coverage,
     );
     breakdown.coverage = coverageScore;
     if (claimedCount < 4)
@@ -3184,7 +3184,7 @@ class ArtistProfileService {
 
     const avgConfidence =
       links.length > 0
-        ? Math.round(links.reduce((s, l) => s + l.confidence, 0) / links.length)
+        ? Math.round(links.reduce((s, l) => s + l.confidence, 0) / (links.length || 1))
         : 0;
 
     return {

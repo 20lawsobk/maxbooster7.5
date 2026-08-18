@@ -385,7 +385,7 @@ export function ProjectPage({ isOpen, onClose }: ProjectPageProps) {
       updateMasteringSong(activeProject.id, song.id, { isProcessing: true });
       for (let p = 0; p <= 100; p += 20) {
         await new Promise((r) => setTimeout(r, 100));
-        setMasteringProgress(((i + p / 100) / totalSongs) * 100);
+        setMasteringProgress(((i + p / 100) / (totalSongs || 1)) * 100);
       }
       updateMasteringSong(activeProject.id, song.id, {
         isProcessing: false,

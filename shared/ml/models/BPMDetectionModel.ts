@@ -343,7 +343,7 @@ export class BPMDetectionModel {
           count++;
         }
       }
-      smoothed[i] = sum / count;
+      smoothed[i] = sum / (count || 1);
     }
 
     return smoothed;
@@ -647,7 +647,7 @@ export class BPMDetectionModel {
       denominator += spectrum[i];
     }
 
-    return denominator > 0 ? numerator / denominator : 0;
+    return denominator > 0 ? numerator / (denominator || 1) : 0;
   }
 
   private computeSpectralRolloff(audioBuffer: Float32Array): number {
@@ -663,7 +663,7 @@ export class BPMDetectionModel {
     for (let i = 0; i < spectrum.length; i++) {
       cumulativeEnergy += spectrum[i];
       if (cumulativeEnergy >= targetEnergy) {
-        return i / spectrum.length;
+        return i / (spectrum.length || 1);
       }
     }
 

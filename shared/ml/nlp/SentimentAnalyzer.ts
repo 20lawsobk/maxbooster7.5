@@ -2977,7 +2977,7 @@ export class SentimentAnalyzer {
 
     for (const emotion of Object.keys(scores) as Emotion[]) {
       normalizedScores[emotion] =
-        totalScore > 0 ? scores[emotion] / totalScore : 0.2;
+        totalScore > 0 ? scores[emotion] / (totalScore || 1) : 0.2;
     }
 
     const maxEmotion = (
@@ -2986,11 +2986,11 @@ export class SentimentAnalyzer {
 
     const emotionalIntensity = Math.min(
       1,
-      totalScore / Math.max(5, tokens.length * 0.2),
+      totalScore / (Math.max(5, tokens.length * 0.2) || 1),
     );
     const confidence =
       matchedTokens > 0
-        ? Math.min(1, matchedTokens / Math.max(3, tokens.length * 0.15))
+        ? Math.min(1, matchedTokens / (Math.max(3, tokens.length * 0.15) || 1))
         : 0;
 
     return {
@@ -3125,7 +3125,7 @@ export class SentimentAnalyzer {
       emotions.confidence * 0.25 +
       toxicity.confidence * 0.2 +
       (aspects.length > 0
-        ? (aspects.reduce((sum, a) => sum + a.confidence, 0) / aspects.length) *
+        ? (aspects.reduce((sum, a) => sum + a.confidence, 0) / (aspects.length || 1)) *
           0.2
         : 0.2);
 
@@ -3194,13 +3194,13 @@ export class SentimentAnalyzer {
       totalScore += result.score;
     }
 
-    const averageScore = results.length > 0 ? totalScore / results.length : 0;
+    const averageScore = results.length > 0 ? totalScore / (results.length || 1) : 0;
     const dominantSentiment = (
       Object.entries(distribution) as [SentimentLabel, number][]
     ).sort((a, b) => b[1] - a[1])[0][0];
 
     for (const label of Object.keys(distribution) as SentimentLabel[]) {
-      distribution[label] = distribution[label] / results.length;
+      distribution[label] = distribution[label] / (results.length || 1);
     }
 
     return {

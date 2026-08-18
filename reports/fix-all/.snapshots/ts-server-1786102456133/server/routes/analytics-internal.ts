@@ -1229,7 +1229,7 @@ router.get("/historical/trends", async (req: Request, res: Response) => {
         firstValue > 0
           ? Math.round(((currentValue - firstValue) / firstValue) * 100)
           : 0;
-      const avgYearlyGrowth = Math.round(totalGrowth / (years.length - 1));
+      const avgYearlyGrowth = Math.round(totalGrowth / ((years.length - 1 || 1)));
 
       return {
         metric: metric.charAt(0).toUpperCase() + metric.slice(1),

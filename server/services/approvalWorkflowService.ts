@@ -394,7 +394,7 @@ export class ApprovalWorkflowService {
         await this.notifyRequester(request, "rejected", comment);
       } else {
         const nextStepNumber = stepNumber + 1;
-        if (nextStepNumber >= (request as any)?.totalSteps!) {
+        if (nextStepNumber >= (request as any)?.totalSteps) {
           await db
             .update(approvalRequests)
             .set({

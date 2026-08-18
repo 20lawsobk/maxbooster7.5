@@ -555,9 +555,9 @@ class UserPreferencesService {
     const total = studioEvents + aiEvents + socialEvents || 1;
 
     return {
-      studioUsage: studioEvents / total,
-      aiUsage: aiEvents / total,
-      socialUsage: socialEvents / total,
+      studioUsage: studioEvents / (total || 1),
+      aiUsage: aiEvents / (total || 1),
+      socialUsage: socialEvents / (total || 1),
     };
   }
 

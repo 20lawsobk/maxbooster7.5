@@ -95,7 +95,7 @@ export function RMSMeter({
     for (let i = 0; i < data.length; i++) {
       sum += data[i] * data[i];
     }
-    return Math.sqrt(sum / data.length);
+    return Math.sqrt(sum / (data.length || 1));
   }, []);
 
   const calculatePeak = useCallback((data: Float32Array): number => {
@@ -287,14 +287,14 @@ export function RMSMeter({
         shortTermHistoryRef.current.shift();
       const lufsShortTerm =
         shortTermHistoryRef.current.reduce((a, b) => a + b, 0) /
-        shortTermHistoryRef.current.length;
+        (shortTermHistoryRef.current.length || 1);
 
       lufsHistoryRef.current.push(lufsMomentary);
       if (lufsHistoryRef.current.length > 300) lufsHistoryRef.current.shift();
       const validLufs = lufsHistoryRef.current.filter((l) => l > LUFS_MIN + 10);
       const lufsIntegrated =
         validLufs.length > 0
-          ? validLufs.reduce((a, b) => a + b, 0) / validLufs.length
+          ? validLufs.reduce((a, b) => a + b, 0) / (validLufs.length || 1)
           : LUFS_MIN;
 
       const stereoCorrelation = calculateStereoCorrelation(leftData, rightData);

@@ -297,7 +297,7 @@ export class AIAnalyzer {
       }
     }
 
-    const clippingPercentage = (clippedSamples / totalSamples) * 100;
+    const clippingPercentage = (clippedSamples / (totalSamples || 1)) * 100;
 
     return {
       hasClipping: clippedSamples > 0,

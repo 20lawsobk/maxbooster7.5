@@ -63,7 +63,7 @@ export function StudioLoader({ children, _userId }: StudioLoaderProps) {
   useEffect(() => {
     const loadedItems = Object.values(loadingState).filter((v) => !v).length;
     const totalItems = Object.keys(loadingState).length;
-    setLoadProgress((loadedItems / totalItems) * 100);
+    setLoadProgress((loadedItems / (totalItems || 1)) * 100);
   }, [loadingState]);
 
   // Query for projects with error handling

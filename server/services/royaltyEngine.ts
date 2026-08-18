@@ -586,7 +586,7 @@ export class RoyaltyEngine {
       territory,
       streams: data.streams,
       revenue: data.revenue,
-      percentage: totalGross > 0 ? (data?.revenue / totalGross) * 100 : 0,
+      percentage: totalGross > 0 ? (data?.revenue / (totalGross || 1)) * 100 : 0,
     }));
 
     const dspBreakdown: DspBreakdown[] = Array.from(dspMap?.entries()).map(

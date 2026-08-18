@@ -595,7 +595,7 @@ export class VocalWavetableSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const morphValue = (this.morphLFO.sine() + 1) * 0.5;
-      this.vibratoLFO.sine() * 0.003 * envValue;
+      const vibratoMod = this.vibratoLFO.sine() * 0.003 * envValue;
 
       for (let o = 0; o < 4; o++) {
         this.oscillators[o].setTablePosition(morphValue);
@@ -716,7 +716,7 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
       const breathEnvValue = this.breathEnvelope.process();
 
       const morphValue = (this.morphLFO.sine() + 1) * 0.5;
-      this.breathLFO.sine() * 0.1 * breathEnvValue;
+      const breathMod = this.breathLFO.sine() * 0.1 * breathEnvValue;
 
       for (let o = 0; o < 6; o++) {
         this.oscillators[o].setTablePosition(morphValue * 0.8);

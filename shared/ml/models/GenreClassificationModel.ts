@@ -395,9 +395,9 @@ export class GenreClassificationModel extends BaseModel {
 
   private normalizeMFCC(mfcc: number[][]): number[][] {
     const flat = mfcc.flat();
-    const mean = flat.reduce((sum, val) => sum + val, 0) / flat.length;
+    const mean = flat.reduce((sum, val) => sum + val, 0) / (flat.length || 1);
     const variance =
-      flat.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / flat.length;
+      flat.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (flat.length || 1);
     const std = Math.sqrt(variance) || 1;
 
     return mfcc.map((row) => row.map((val) => (val - mean) / std));
@@ -512,12 +512,12 @@ export class GenreClassificationModel extends BaseModel {
       }
     }
 
-    const accuracy = correct / testMFCC.length;
+    const accuracy = correct / (testMFCC.length || 1);
     const perGenreAccuracy: Record<Genre, number> = {} as any;
 
     GENRES.forEach((genre) => {
       const { correct, total } = genreCounts[genre];
-      perGenreAccuracy[genre] = total > 0 ? correct / total : 0;
+      perGenreAccuracy[genre] = total > 0 ? correct / (total || 1) : 0;
     });
 
     return { accuracy, perGenreAccuracy, confusionMatrix };

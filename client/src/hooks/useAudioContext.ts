@@ -457,8 +457,8 @@ export function useAudioContext() {
     if (!state?.analyser || !state?.frequencyData) return;
 
     const analyze = () => {
-      state?.analyser!.getByteFrequencyData(state?.frequencyData!);
-      callback?.(state?.frequencyData!);
+      state?.analyser.getByteFrequencyData(state?.frequencyData);
+      callback?.(state?.frequencyData);
       animationFrameRef.current = requestAnimationFrame(analyze);
     };
 

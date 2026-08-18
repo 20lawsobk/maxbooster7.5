@@ -88,7 +88,7 @@ export default function SimplifiedDashboard({
   const earnedPoints = beginnerTasks
     .filter((task) => task.completed)
     .reduce((sum, task) => sum + task.points, 0);
-  const progressPercentage = (earnedPoints / totalPoints) * 100;
+  const progressPercentage = (earnedPoints / (totalPoints || 1)) * 100;
 
   const handleTaskComplete = (taskId: string) => {
     setCompletedTasks((prev) => [...prev, taskId]);

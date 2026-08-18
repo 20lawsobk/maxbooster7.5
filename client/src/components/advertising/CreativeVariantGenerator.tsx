@@ -334,7 +334,7 @@ export function CreativeVariantGenerator() {
                 <p className="text-sm text-muted-foreground">Avg CTR Lift</p>
                 <p className="text-2xl font-bold text-muted-foreground">
                   {variants.length > 0
-                    ? `${(variants.reduce((acc, v) => acc + v.ctr, 0) / variants.length).toFixed(1)}%`
+                    ? `${(variants.reduce((acc, v) => acc + v.ctr, 0) / (variants.length || 1)).toFixed(1)}%`
                     : "--"}
                 </p>
               </div>

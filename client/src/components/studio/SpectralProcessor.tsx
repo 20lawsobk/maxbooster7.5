@@ -273,7 +273,7 @@ export function SpectralProcessor({
 
     for (let size = 2; size <= N; size *= 2) {
       const halfSize = size / 2;
-      const angle = (-2 * Math.PI) / size;
+      const angle = (-2 * Math.PI) / (size || 1);
       for (let i = 0; i < N; i += size) {
         for (let j = 0; j < halfSize; j++) {
           const cos = Math.cos(angle * j);

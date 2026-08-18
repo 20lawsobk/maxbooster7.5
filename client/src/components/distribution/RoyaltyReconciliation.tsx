@@ -263,7 +263,7 @@ export function RoyaltyReconciliation() {
   );
   const earningsGrowth =
     totalPreviousEarnings > 0
-      ? ((totalEarnings - totalPreviousEarnings) / totalPreviousEarnings) * 100
+      ? ((totalEarnings - totalPreviousEarnings) / (totalPreviousEarnings || 1)) * 100
       : 0;
   const pendingDiscrepancies = discrepancies.filter(
     (d) => d.status !== "resolved",
@@ -503,7 +503,7 @@ export function RoyaltyReconciliation() {
                 data={platformDonutData}
                 size={140}
                 thickness={20}
-                centerValue={`${((platformEarnings[0]?.earnings / totalEarnings) * 100).toFixed(0)}%`}
+                centerValue={`${((platformEarnings[0]?.earnings / (totalEarnings || 1)) * 100).toFixed(0)}%`}
                 centerLabel="Spotify"
               />
               <div className="flex-1 space-y-2">

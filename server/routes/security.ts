@@ -100,7 +100,7 @@ router.get("/metrics", async (_req: Request, res: Response) => {
     const totalLogins = Math.max(totalUsers, activeSessions + failedLoginCount);
     const successRate =
       totalLogins > 0
-        ? ((totalLogins - failedLoginCount) / totalLogins) * 100
+        ? ((totalLogins - failedLoginCount) / (totalLogins || 1)) * 100
         : 100;
 
     const uptimeSeconds = Math.floor((Date?.now() - processStartTime) / 1000);

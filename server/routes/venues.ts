@@ -57,7 +57,7 @@ router.get("/stats", requireAuth, async (req, res) => {
           contacted: Number(totals?.contacted),
           booked: Number(totals?.booked),
           declined: Number(totals?.declined),
-          avgCapacity: total > 0 ? Math.round(totalCapacity / total) : 0,
+          avgCapacity: total > 0 ? Math.round(totalCapacity / (total || 1)) : 0,
         };
       },
       CACHE_TTL,

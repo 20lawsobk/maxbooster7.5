@@ -1726,7 +1726,7 @@ export class InstantPayoutService {
         availableBalance: balance.availableBalance,
         totalSales,
         averageOrderValue:
-          totalSales > 0 ? balance?.totalEarnings / totalSales : 0,
+          totalSales > 0 ? balance?.totalEarnings / (totalSales || 1) : 0,
       };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error getting earnings summary:");

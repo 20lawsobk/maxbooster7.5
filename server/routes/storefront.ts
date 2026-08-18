@@ -2158,7 +2158,7 @@ function applyBogoToCart(
       (a, b) => a?.priceCents - b?.priceCents,
     );
 
-    const setsApplicable = Math.floor(sorted?.length / totalNeeded);
+    const setsApplicable = Math.floor(sorted?.length / (totalNeeded || 1));
     const freeIndices: number[] = [];
     const discountedItems: { index: number; discountPercent: number }[] = [];
     let savings = 0;

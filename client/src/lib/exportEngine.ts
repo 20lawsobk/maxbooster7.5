@@ -459,7 +459,7 @@ async function exportStems(
 
     onProgress?.({
       stage: "loading",
-      progress: (i / tracksToExport.length) * 100,
+      progress: (i / (tracksToExport.length || 1)) * 100,
       message: `Rendering ${track.name} (${i + 1}/${tracksToExport.length})...`,
     });
 

@@ -1,0 +1,3 @@
+client/src/lib/video/TextAnimator.ts(412,25): error TS18048: 'colors.length' is possibly 'undefined'.
+client/src/lib/video/TextAnimator.ts(413,35): error TS18048: 'colors.length' is possibly 'undefined'.
+client/src/lib/video/TextAnimator.ts(413,56): error TS18048: 'colors' is possibly 'undefined'.

@@ -1135,10 +1135,10 @@ export class AdvancedSocialAI {
       count++;
     });
 
-    const avgVirality = count > 0 ? totalVirality / count : 0.5;
-    const avgSentiment = count > 0 ? totalSentiment / count : 0.5;
-    const avgFormality = count > 0 ? totalFormality / count : 0.5;
-    const avgEmotionality = count > 0 ? totalEmotionality / count : 0.5;
+    const avgVirality = count > 0 ? totalVirality / (count || 1) : 0.5;
+    const avgSentiment = count > 0 ? totalSentiment / (count || 1) : 0.5;
+    const avgFormality = count > 0 ? totalFormality / (count || 1) : 0.5;
+    const avgEmotionality = count > 0 ? totalEmotionality / (count || 1) : 0.5;
 
     const dominantTone = this.matchToneProfile(avgFormality, avgEmotionality);
     const viralFactors = this.identifyViralFactors(

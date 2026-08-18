@@ -1382,7 +1382,7 @@ export class SelfHealingSecuritySystem {
         // Check login time deviation
         const avgLoginTime =
           loginTimes.length > 0
-            ? loginTimes.reduce((a, b) => a + b, 0) / loginTimes.length
+            ? loginTimes.reduce((a, b) => a + b, 0) / (loginTimes.length || 1)
             : currentHour;
 
         const timeDeviation = Math.abs(currentHour - avgLoginTime);
@@ -1966,7 +1966,7 @@ export class SelfHealingSecuritySystem {
       }
 
       const totalControls = passedControls + failedControls;
-      const complianceScore = (passedControls / totalControls) * 100;
+      const complianceScore = (passedControls / (totalControls || 1)) * 100;
 
       // Store report
       logger.warn(

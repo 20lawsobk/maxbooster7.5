@@ -129,7 +129,7 @@ class SocialQueueService {
       const backoffStatus = await this.isInBackoff(platform, accountId);
       if (backoffStatus?.inBackoff) {
         logger.info(
-          `⏳ Rate limit check: ${platform}/${accountId} in backoff for ${(backoffStatus?.remainingMs! / 1000).toFixed(0)}s more`,
+          `⏳ Rate limit check: ${platform}/${accountId} in backoff for ${(backoffStatus?.remainingMs / 1000).toFixed(0)}s more`,
         );
         return false;
       }

@@ -301,7 +301,7 @@ export function FlowStateAudioWarp({
     }
   };
 
-  ((markerId: string, newTime: number) => {
+  const handleMarkerMove = (markerId: string, newTime: number) => {
     setMarkers((prev) =>
       prev.map((m) =>
         m.id === markerId && !m.isLocked

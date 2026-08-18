@@ -283,7 +283,7 @@ class AdvancedAnalyticsService {
       currentRank: data[0]?.rank,
       totalSales: data.reduce((sum, row) => sum + (row?.sales || 0), 0),
       peakRank: Math.min(
-        ...(data?.filter((d) => d?.rank).map((d) => d?.rank!) || [0]),
+        ...(data?.filter((d) => d?.rank).map((d) => d?.rank) || [0]),
       ),
     };
   }
@@ -603,9 +603,9 @@ class AdvancedAnalyticsService {
         viral: viralScore,
       },
       trend:
-        ranking?.growthRate! > 5
+        ranking?.growthRate > 5
           ? "rising"
-          : ranking?.growthRate! < -5
+          : ranking?.growthRate < -5
             ? "falling"
             : "stable",
     };
@@ -938,7 +938,7 @@ class AdvancedAnalyticsService {
           streams: Number(r?.streams),
           percentage:
             totalStreams > 0
-              ? Math.round((Number(r?.streams) / totalStreams) * 1000) / 10
+              ? Math.round((Number(r?.streams) / (totalStreams || 1)) * 1000) / 10
               : 0,
         }));
 
@@ -1482,7 +1482,7 @@ class AdvancedAnalyticsService {
         listeners: Number(p?.totalListeners),
         revenue: Number(p?.totalRevenue),
         marketShare:
-          totalStreams > 0 ? (currentStreams / totalStreams) * 100 : 0,
+          totalStreams > 0 ? (currentStreams / (totalStreams || 1)) * 100 : 0,
         growth: Math.round(growth * 10) / 10,
       };
     });

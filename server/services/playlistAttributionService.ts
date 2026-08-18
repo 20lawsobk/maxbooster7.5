@@ -484,13 +484,13 @@ class PlaylistAttributionService {
         type: t.type,
         revenue: Number(t?.revenue),
         percentage:
-          totalRevenue > 0 ? (Number(t?.revenue) / totalRevenue) * 100 : 0,
+          totalRevenue > 0 ? (Number(t?.revenue) / (totalRevenue || 1)) * 100 : 0,
       })),
       byPlatform: byPlatformRaw.map((p) => ({
         platform: p.platform,
         revenue: Number(p?.revenue),
         percentage:
-          totalRevenue > 0 ? (Number(p?.revenue) / totalRevenue) * 100 : 0,
+          totalRevenue > 0 ? (Number(p?.revenue) / (totalRevenue || 1)) * 100 : 0,
       })),
       topRevenueGenerators: topGenerators.map((g) => ({
         playlistName: g.playlistName,

@@ -303,9 +303,9 @@ export class RecoupmentService {
             (sum, a) => sum + (a?.weight || 1),
             0,
           );
-          shareRatio = weight / totalWeight;
+          shareRatio = weight / (totalWeight || 1);
         } else {
-          shareRatio = Number(account?.remainingBalance) / totalBalance;
+          shareRatio = Number(account?.remainingBalance) / (totalBalance || 1);
         }
 
         const allocatedAmount = input?.totalAmount * shareRatio;
@@ -577,7 +577,7 @@ export class RecoupmentService {
     for (const account of groupAccounts) {
       if (remainingAmount <= 0) break;
 
-      const accountShare = Number(account?.remainingBalance) / totalBalance;
+      const accountShare = Number(account?.remainingBalance) / (totalBalance || 1);
       const allocatedAmount = amount * accountShare;
 
       const result = await this.recoupFromAccount(account, allocatedAmount);

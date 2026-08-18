@@ -6117,7 +6117,7 @@ router.post(
         },
         qcScore:
           checks.length > notAnalyzed
-            ? Math.round((passed / (checks.length - notAnalyzed)) * 100)
+            ? Math.round((passed / ((checks.length - notAnalyzed || 1))) * 100)
             : null,
         note:
           notAnalyzed > 0

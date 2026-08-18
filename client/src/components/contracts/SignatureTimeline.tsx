@@ -46,7 +46,7 @@ export function SignatureTimeline({
 }: SignatureTimelineProps) {
   const signedCount = signers.filter((s) => s.status === "signed").length;
   const totalCount = signers.length;
-  const progress = totalCount > 0 ? (signedCount / totalCount) * 100 : 0;
+  const progress = totalCount > 0 ? (signedCount / (totalCount || 1)) * 100 : 0;
 
   return (
     <div className="space-y-4">

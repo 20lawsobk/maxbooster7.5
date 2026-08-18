@@ -164,7 +164,7 @@ const getClefForPitch = (pitch: number): "treble" | "bass" => {
   return pitch >= 60 ? "treble" : "bass";
 };
 
-((pitch: number): string => {
+const pitchToNoteName = (pitch: number): string => {
   const octave = Math.floor(pitch / 12) - 1;
   const note = NOTE_NAMES[pitch % 12];
   return `${note}${octave}`;

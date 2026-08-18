@@ -207,7 +207,7 @@ async function buildPerformanceSummary(): Promise<PerformanceSummary | null> {
     const p50 = rates[Math.floor(rates.length * 0.5)] ?? 0;
     const p75 = rates[Math.floor(rates.length * 0.75)] ?? 0;
     const p90 = rates[Math.floor(rates.length * 0.9)] ?? 0;
-    const avg = rates.reduce((s, v) => s + v, 0) / rates.length;
+    const avg = rates.reduce((s, v) => s + v, 0) / (rates.length || 1);
 
     const byPlatform: Record<string, number[]> = {};
     const byHook: Record<string, number[]> = {};
@@ -226,7 +226,7 @@ async function buildPerformanceSummary(): Promise<PerformanceSummary | null> {
           k,
           {
             count: v.length,
-            avgEng: v.reduce((s, x) => s + x, 0) / v.length,
+            avgEng: v.reduce((s, x) => s + x, 0) / (v.length || 1),
           },
         ]),
       );
@@ -641,8 +641,8 @@ function deriveGate(summary: PerformanceSummary): number {
 
 function variance(arr: number[]): number {
   if (arr.length < 2) return 0;
-  const mean = arr.reduce((s, v) => s + v, 0) / arr.length;
-  return arr.reduce((s, v) => s + (v - mean) ** 2, 0) / arr.length;
+  const mean = arr.reduce((s, v) => s + v, 0) / (arr.length || 1);
+  return arr.reduce((s, v) => s + (v - mean) ** 2, 0) / (arr.length || 1);
 }
 
 // ── Startup initialisation ────────────────────────────────────────────────────
