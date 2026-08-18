@@ -7346,8 +7346,8 @@ export async function registerRoutes(
             },
           ],
           mode: plan.mode,
-          success_url: `${baseUrl}/register-success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${baseUrl}/register/${tier}`,
+          success_url: `${baseUrl}/register/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${baseUrl}/register/payment/${tier}`,
           metadata: {
             tier,
             username,
