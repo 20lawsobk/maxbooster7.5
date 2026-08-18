@@ -1130,7 +1130,9 @@ export class RoyaltyExportsService {
               territory,
               ...data,
               percentage:
-                totalStreams > 0 ? (data.streams / totalStreams) * 100 : 0,
+                totalStreams > 0
+                  ? (data.streams / (totalStreams || 1)) * 100
+                  : 0,
             }))
             .sort((a, b) => b.revenue - a.revenue)
         : undefined,
@@ -1140,7 +1142,9 @@ export class RoyaltyExportsService {
               dsp,
               ...data,
               percentage:
-                totalStreams > 0 ? (data.streams / totalStreams) * 100 : 0,
+                totalStreams > 0
+                  ? (data.streams / (totalStreams || 1)) * 100
+                  : 0,
             }))
             .sort((a, b) => b.revenue - a.revenue)
         : undefined,
