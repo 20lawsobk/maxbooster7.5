@@ -94,9 +94,9 @@ export class TimeSeriesForecastModel extends BaseModel {
     labels: tf.Tensor;
     scaleParams: { mean: number; std: number };
   } {
-    const mean = data.reduce((s, v) => s + v, 0) / data.length;
+    const mean = data.reduce((s, v) => s + v, 0) / (data.length || 1);
     const variance =
-      data.reduce((s, v) => s + (v - mean) ** 2, 0) / data.length;
+      data.reduce((s, v) => s + (v - mean) ** 2, 0) / (data.length || 1);
     const std = Math.sqrt(variance) || 1;
 
     this.scaleParams = { mean, std };
@@ -193,9 +193,9 @@ export class TimeSeriesForecastModel extends BaseModel {
 
   private computeRollingStd(data: number[]): number {
     if (data.length < 2) return 0;
-    const mean = data.reduce((s, v) => s + v, 0) / data.length;
+    const mean = data.reduce((s, v) => s + v, 0) / (data.length || 1);
     return Math.sqrt(
-      data.reduce((s, v) => s + (v - mean) ** 2, 0) / data.length,
+      data.reduce((s, v) => s + (v - mean) ** 2, 0) / (data.length || 1),
     );
   }
 

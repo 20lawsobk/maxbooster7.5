@@ -190,7 +190,7 @@ export function FlowStateSidechainVisualizer({
     const canvasWidth = 600;
     const canvasHeight = 400;
     const padding = 60;
-    const trackWidth = (canvasWidth - padding * 2) / tracks.length;
+    const trackWidth = (canvasWidth - padding * 2) / (tracks.length || 1);
 
     tracks.forEach((track, idx) => {
       positions[track.id] = {

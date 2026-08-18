@@ -505,7 +505,7 @@ export function FileValidationDisplay({
           </div>
         </div>
         <Progress
-          value={(passCount / (result.details.length - pendingCount)) * 100}
+          value={(passCount / ((result.details.length - pendingCount || 1))) * 100}
           className="h-1.5 mt-2"
         />
       </CardHeader>

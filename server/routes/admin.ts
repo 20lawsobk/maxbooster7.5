@@ -42,7 +42,7 @@ function getRealCpuUsage(): number {
     const { user, nice, sys, idle, irq } = cpu?.times;
     const total = user + nice + sys + idle + irq;
     const used = user + nice + sys + irq;
-    totalUsage += (used / total) * 100;
+    totalUsage += (used / (total || 1)) * 100;
   }
   return Math.round(totalUsage / cpus?.length);
 }
@@ -490,7 +490,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
             if (stat) {
               const total = stat?.bsize * stat?.blocks;
               const free = stat?.bsize * stat?.bfree;
-              return total > 0 ? Math.round(((total - free) / total) * 100) : 0;
+              return total > 0 ? Math.round(((total - free) / (total || 1)) * 100) : 0;
             }
           } catch {
             /* intentional: statfsSync unavailable on this platform → returns 0 */
@@ -803,7 +803,7 @@ adminRouter?.get("/analytics", async (_req, res) => {
         ? ((thisMonthProjects - lastMonthProjects) / lastMonthProjects) * 100
         : 0;
 
-    const userGrowthRate = totalUsers > 0 ? (newUsers / totalUsers) * 100 : 0;
+    const userGrowthRate = totalUsers > 0 ? (newUsers / (totalUsers || 1)) * 100 : 0;
 
     const subscriptionStats = subscriptionStatsResult?.map((s) => ({
       plan: s.plan || "free",
@@ -865,7 +865,7 @@ adminRouter?.get("/metrics", async (_req, res) => {
         const total = stat?.bsize * stat?.blocks;
         const free = stat?.bsize * stat?.bfree;
         diskUsagePercent =
-          total > 0 ? Math.round(((total - free) / total) * 100) : 0;
+          total > 0 ? Math.round(((total - free) / (total || 1)) * 100) : 0;
       }
     } catch {
       // statfsSync not available on all Node versions/platforms — disk metric returns 0

@@ -781,7 +781,7 @@ class TimingOptimizerService {
       const values = engagementByHour[h];
       avgEngagementByHour[h] =
         values.length > 0
-          ? Math.round(values.reduce((a, b) => a + b, 0) / values.length)
+          ? Math.round(values.reduce((a, b) => a + b, 0) / (values.length || 1))
           : 50;
     }
 
@@ -789,7 +789,7 @@ class TimingOptimizerService {
       const values = engagementByDay[d];
       avgEngagementByDay[d] =
         values.length > 0
-          ? Math.round(values.reduce((a, b) => a + b, 0) / values.length)
+          ? Math.round(values.reduce((a, b) => a + b, 0) / (values.length || 1))
           : 50;
     }
 
@@ -1003,7 +1003,7 @@ class TimingOptimizerService {
     const allTimings = await this.getOptimalTimingForAllPlatforms(timezone);
     const postsPerPlatform = Math.max(
       1,
-      Math.ceil(postsPerWeek / platforms.length),
+      Math.ceil(postsPerWeek / (platforms.length || 1)),
     );
 
     // Compute the local day-of-week using the DST-aware offset so scheduling

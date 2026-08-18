@@ -172,7 +172,7 @@ class DirectiveExecutor {
       ).reduce((a, p) => a + (p?.fires ?? 0), 0);
 
       // ── Phase 6: honest scorecard ────────────────────────────────────────
-      const okRatio = probes.filter((p) => p.ok).length / probes.length;
+      const okRatio = probes.filter((p) => p.ok).length / (probes.length || 1);
       const unknownPenalty = Math.min(unknowns.length * 5, 40);
       const escalationPenalty = Math.min(escalations.length * 15, 60);
       const scorecard: Record<string, number> = {

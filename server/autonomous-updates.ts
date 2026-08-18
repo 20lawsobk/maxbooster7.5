@@ -1454,7 +1454,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     _run: RetrainingRun,
     modelId: string,
   ): Promise<void> {
-    ({
+    return {
       finalLoss: this.deterministicValue(`${modelId}_loss`, 0.08, 0.12),
       finalAccuracy: this.deterministicValue(
         `${modelId}_train_acc`,

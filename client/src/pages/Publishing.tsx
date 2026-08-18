@@ -151,10 +151,10 @@ export default function Publishing() {
       ? (() => {
           const avgWriter =
             works.reduce((s, w) => s + (Number(w.writerSplit) || 0), 0) /
-            works.length;
+            (works.length || 1);
           const avgPublisher =
             works.reduce((s, w) => s + (Number(w.publishingSplit) || 0), 0) /
-            works.length;
+            (works.length || 1);
           return [
             {
               name: "Writer Split",

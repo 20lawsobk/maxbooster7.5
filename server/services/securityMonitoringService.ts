@@ -53,7 +53,7 @@ export async function getSecurityMetrics() {
   const failedLogins = failedLoginsResult?.count || 0;
 
   const successRate =
-    totalLogins > 0 ? ((totalLogins - failedLogins) / totalLogins) * 100 : 100;
+    totalLogins > 0 ? ((totalLogins - failedLogins) / (totalLogins || 1)) * 100 : 100;
 
   // Calculate real metrics from tracked data
   const minutesSinceReset = (Date?.now() - lastMetricsReset) / 60000;

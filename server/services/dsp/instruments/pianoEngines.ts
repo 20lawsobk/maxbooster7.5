@@ -69,7 +69,7 @@ class StringResonator {
       sample = this.allpassFilters[i].process(sample);
       output += sample;
     }
-    return output / this.combFilters.length;
+    return output / (this.combFilters.length || 1);
   }
 
   clear(): void {

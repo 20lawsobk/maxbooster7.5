@@ -366,7 +366,7 @@ export function UnifiedCalendar() {
     setShowApprovalDialog(false);
   };
 
-  ((post: ScheduledPost) => {
+  const handlePostDelete = (post: ScheduledPost) => {
     toast({
       title: "Publishing...",
       description: `"${post.title}" is being published to ${post.platforms.length} platforms.`,

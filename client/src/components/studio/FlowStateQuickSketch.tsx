@@ -142,7 +142,7 @@ export function FlowStateQuickSketch({
         if (!analyserRef.current) return;
         const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
         analyserRef.current.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        const average = dataArray.reduce((a, b) => a + b, 0) / (dataArray.length || 1);
         setInputLevel(average / 255);
         setRecordDuration((Date.now() - recordStartRef.current) / 1000);
         animationFrameRef.current = requestAnimationFrame(updateMeter);

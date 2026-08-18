@@ -444,7 +444,7 @@ class SubatomicCore {
             ) / modules?.length
           : 0,
       averageLoadTime: avgLoadTime,
-      cacheHitRate: totalHits > 0 ? (totalHits - uniqueLoads) / totalHits : 0,
+      cacheHitRate: totalHits > 0 ? (totalHits - uniqueLoads) / (totalHits || 1) : 0,
       memoryFootprint: cacheSize + process.memoryUsage().heapUsed,
     };
   }

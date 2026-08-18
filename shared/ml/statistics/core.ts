@@ -26,9 +26,9 @@ export function calculateStatistics(data: number[]): Statistics {
   }
 
   const sorted = [...data].sort((a, b) => a - b);
-  const mean = data.reduce((sum, val) => sum + val, 0) / data.length;
+  const mean = data.reduce((sum, val) => sum + val, 0) / (data.length || 1);
   const variance =
-    data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.length;
+    data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (data.length || 1);
   const stdDev = Math.sqrt(variance);
 
   return {
@@ -127,7 +127,7 @@ export function calculateCorrelation(x: number[], y: number[]): number {
   }
 
   const denominator = Math.sqrt(denomX * denomY);
-  return denominator > 0 ? numerator / denominator : 0;
+  return denominator > 0 ? numerator / (denominator || 1) : 0;
 }
 
 /**

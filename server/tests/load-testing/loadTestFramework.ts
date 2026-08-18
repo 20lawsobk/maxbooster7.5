@@ -180,7 +180,7 @@ export class LoadTestFramework extends EventEmitter {
       p95ResponseTimeMs: this.percentile(sortedTimes, 95),
       p99ResponseTimeMs: this.percentile(sortedTimes, 99),
       requestsPerSecond: totalRequests / (durationMs / 1000),
-      errorRate: totalRequests > 0 ? this.failCount / totalRequests : 0,
+      errorRate: totalRequests > 0 ? this.failCount / (totalRequests || 1) : 0,
       errors: this.errors,
       durationMs,
       memoryUsageMB: memoryUsage.heapUsed / (1024 * 1024),

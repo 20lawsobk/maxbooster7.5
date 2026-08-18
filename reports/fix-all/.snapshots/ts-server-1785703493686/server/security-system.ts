@@ -1373,7 +1373,7 @@ export class SelfHealingSecuritySystem {
         // Check login time deviation
         const avgLoginTime =
           loginTimes.length > 0
-            ? loginTimes.reduce((a, b) => a + b, 0) / loginTimes.length
+            ? loginTimes.reduce((a, b) => a + b, 0) / (loginTimes.length || 1)
             : currentHour;
 
         const timeDeviation = Math.abs(currentHour - avgLoginTime);

@@ -254,7 +254,7 @@ export class CompetitorBenchmarkService {
         0,
       );
       const totalReach = yourReach + competitorTotalReach;
-      const yourSharePct = totalReach > 0 ? (yourReach / totalReach) * 100 : 0;
+      const yourSharePct = totalReach > 0 ? (yourReach / (totalReach || 1)) * 100 : 0;
 
       return {
         yourBrand: {
@@ -265,7 +265,7 @@ export class CompetitorBenchmarkService {
         },
         competitors: competitors.slice(0, 5).map((c) => {
           const compShare =
-            totalReach > 0 ? ((c?.totalFollowers || 0) / totalReach) * 100 : 0;
+            totalReach > 0 ? ((c?.totalFollowers || 0) / (totalReach || 1)) * 100 : 0;
           return {
             name: c.name,
             mentions: 0,
@@ -390,11 +390,11 @@ export class CompetitorBenchmarkService {
         }
       });
 
-      const avgLikes = totalPosts > 0 ? Math.round(totalLikes / totalPosts) : 0;
+      const avgLikes = totalPosts > 0 ? Math.round(totalLikes / (totalPosts || 1)) : 0;
       const avgComments =
-        totalPosts > 0 ? Math.round(totalComments / totalPosts) : 0;
+        totalPosts > 0 ? Math.round(totalComments / (totalPosts || 1)) : 0;
       const avgShares =
-        totalPosts > 0 ? Math.round(totalShares / totalPosts) : 0;
+        totalPosts > 0 ? Math.round(totalShares / (totalPosts || 1)) : 0;
 
       return {
         totalFollowers: 10000,

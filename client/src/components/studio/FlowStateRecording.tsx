@@ -217,7 +217,7 @@ export function FlowStateRecording({
       sum += value;
       if (value > max) max = value;
     }
-    const rms = sum / dataArray.length;
+    const rms = sum / (dataArray.length || 1);
 
     setInputLevel(rms);
     if (max > peakLevel) {
@@ -248,7 +248,7 @@ export function FlowStateRecording({
     ctx.strokeStyle = isRecording ? "#ef4444" : "#22c55e";
     ctx.beginPath();
 
-    const sliceWidth = canvas.width / dataArray.length;
+    const sliceWidth = canvas.width / (dataArray.length || 1);
     let x = 0;
 
     for (let i = 0; i < dataArray.length; i++) {

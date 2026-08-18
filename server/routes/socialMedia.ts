@@ -2841,7 +2841,7 @@ router.get(
       );
       const engagementRate =
         totalViews > 0
-          ? Math.round((totalEngagement / totalViews) * 10000) / 100
+          ? Math.round((totalEngagement / (totalViews || 1)) * 10000) / 100
           : 0;
 
       // Platform breakdown enriched with follower counts from connected accounts
@@ -2882,7 +2882,7 @@ router.get(
         dailyMap[d] = { date: d, posts: 0, engagement: 0, views: 0 };
       }
       for (const post of periodPosts) {
-        const d = new Date(post?.createdAt!).toISOString().split("T")[0];
+        const d = new Date(post?.createdAt).toISOString().split("T")[0];
         if (dailyMap[d]) {
           dailyMap[d].posts += 1;
           const eng = post?.engagement as Record<string, unknown>;
@@ -2894,7 +2894,7 @@ router.get(
         }
       }
       for (const content of autopilotContent) {
-        const d = new Date(content?.createdAt!).toISOString().split("T")[0];
+        const d = new Date(content?.createdAt).toISOString().split("T")[0];
         if (dailyMap[d]) {
           dailyMap[d].posts += 1;
           const perf = content?.performance as Record<string, unknown>;

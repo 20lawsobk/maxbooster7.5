@@ -145,7 +145,7 @@ export function TaxFormWizard({
   });
 
   const progress = useMemo(() => {
-    return ((step + 1) / STEPS.length) * 100;
+    return ((step + 1) / (STEPS.length || 1)) * 100;
   }, [step]);
 
   const getStatusBadge = () => {

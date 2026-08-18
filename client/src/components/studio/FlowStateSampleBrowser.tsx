@@ -430,7 +430,7 @@ export function FlowStateSampleBrowser({
     return `${seconds.toFixed(1)}s`;
   };
 
-  ((bytes: number): string => {
+  const formatBytes = (bytes: number): string => {
     if (bytes < 1000) return `${bytes}B`;
     if (bytes < 1000000) return `${(bytes / 1000).toFixed(1)}KB`;
     return `${(bytes / 1000000).toFixed(1)}MB`;

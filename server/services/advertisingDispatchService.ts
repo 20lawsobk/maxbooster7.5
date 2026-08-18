@@ -420,7 +420,7 @@ export class AdvertisingDispatchService {
         totalEngagements,
         totalReach,
         avgEngagementRate:
-          totalImpressions > 0 ? totalEngagements / totalImpressions : 0,
+          totalImpressions > 0 ? totalEngagements / (totalImpressions || 1) : 0,
         lastCollected: new Date().toISOString(),
       };
 

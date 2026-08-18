@@ -580,7 +580,7 @@ class ReleaseCountdownService {
   } {
     const total = tasks?.length;
     const completed = tasks?.filter((t) => t?.completedAt !== null).length;
-    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const percentage = total > 0 ? Math.round((completed / (total || 1)) * 100) : 0;
     return { completed, total, percentage };
   }
 

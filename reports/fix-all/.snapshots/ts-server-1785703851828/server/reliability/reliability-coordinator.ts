@@ -238,7 +238,7 @@ class ReliabilityCoordinator extends EventEmitter {
     if (this.responseTimes.length > 0) {
       this.systemHealth.reliability.avgResponseTime =
         this.responseTimes.reduce((sum, time) => sum + time, 0) /
-        this.responseTimes.length;
+        (this.responseTimes.length || 1);
 
       // Keep only last 1000 response times
       if (this.responseTimes.length > 1000) {

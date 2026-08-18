@@ -1189,7 +1189,7 @@ export class AdOptimizationEngine extends BaseModel {
 
       const avgAge =
         group.reduce((sum, a) => sum + (a.ageMin + a.ageMax) / 2, 0) /
-        group.length;
+        (group.length || 1);
 
       const genderDist: Record<string, number> = {
         male: 0,
@@ -1234,7 +1234,7 @@ export class AdOptimizationEngine extends BaseModel {
 
     const relevanceScore =
       campaign.targeting.interests.filter((i) => cluster.interests.includes(i))
-        .length / Math.max(campaign.targeting.interests.length, 1);
+        .length / (Math.max(campaign.targeting.interests.length, 1) || 1);
 
     const sizeScore = Math.log(cluster.size + 1) / 15;
     const affinityScore = cluster.affinityScore;
@@ -1719,7 +1719,7 @@ export class AdOptimizationEngine extends BaseModel {
         std[i] += Math.pow(row[i] - mean[i], 2);
       }
     }
-    std.forEach((_, i) => (std[i] = Math.sqrt(std[i] / features.length) || 1));
+    std.forEach((_, i) => (std[i] = Math.sqrt(std[i] / (features.length || 1)) || 1));
 
     return { mean, std };
   }
@@ -1792,7 +1792,7 @@ export class AdOptimizationEngine extends BaseModel {
 
     const avgHeadlineLength =
       creatives.reduce((sum, c) => sum + c.headline.length, 0) /
-      creatives.length;
+      (creatives.length || 1);
     if (avgHeadlineLength >= 20 && avgHeadlineLength <= 60) quality += 0.1;
 
     return Math.min(1, quality);
@@ -1808,9 +1808,9 @@ export class AdOptimizationEngine extends BaseModel {
     if (older.length === 0) return 0;
 
     const recentAvgROAS =
-      recent.reduce((sum, p) => sum + p.metrics.roas, 0) / recent.length;
+      recent.reduce((sum, p) => sum + p.metrics.roas, 0) / (recent.length || 1);
     const olderAvgROAS =
-      older.reduce((sum, p) => sum + p.metrics.roas, 0) / older.length;
+      older.reduce((sum, p) => sum + p.metrics.roas, 0) / (older.length || 1);
 
     return Math.tanh(
       (recentAvgROAS - olderAvgROAS) / Math.max(olderAvgROAS, 0.1),
@@ -1830,7 +1830,7 @@ export class AdOptimizationEngine extends BaseModel {
       changes.push((curr - prev) / Math.max(prev, 0.1));
     }
 
-    const avgChange = changes.reduce((sum, c) => sum + c, 0) / changes.length;
+    const avgChange = changes.reduce((sum, c) => sum + c, 0) / (changes.length || 1);
     return 0.5 + Math.tanh(avgChange) * 0.5;
   }
 
@@ -2066,7 +2066,7 @@ export class AdOptimizationEngine extends BaseModel {
     const competitionFactor =
       1 +
       (clusters.reduce((sum, c) => sum + c.affinityScore, 0) /
-        clusters.length) *
+        (clusters.length || 1)) *
         0.3;
 
     return base * competitionFactor;
@@ -2327,7 +2327,7 @@ export class AdOptimizationEngine extends BaseModel {
   private calculateUniqueness(text: string): number {
     const words = text.toLowerCase().split(/\s+/);
     const unique = new Set(words);
-    return unique.size / Math.max(words.length, 1);
+    return unique.size / (Math.max(words.length, 1) || 1);
   }
 
   private hasUrl(text: string): boolean {
@@ -2444,7 +2444,7 @@ export class AdOptimizationEngine extends BaseModel {
       monthlyProjectedSavings: monthlyProjection,
       yearlyProjectedSavings: yearlyProjection,
       effectiveROAS:
-        totalEngagements > 0 ? totalEquivalentSpend / totalEngagements : 0,
+        totalEngagements > 0 ? totalEquivalentSpend / (totalEngagements || 1) : 0,
       message:
         `Your organic reach is equivalent to $${totalEquivalentSpend.toFixed(2)} in paid advertising. ` +
         `Over a year, this saves approximately $${yearlyProjection.toFixed(2)} in ad spend.`,

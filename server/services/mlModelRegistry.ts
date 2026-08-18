@@ -392,8 +392,9 @@ export class MLModelRegistry {
         models = models?.filter((m) => m?.type === filter?.type);
       }
       if (filter?.tags && filter?.tags.length > 0) {
+        const tags = filter.tags;
         models = models?.filter((m) =>
-          filter?.tags!.some((tag) => m?.tags.includes(tag)),
+          tags.some((tag) => m?.tags.includes(tag)),
         );
       }
       if (filter?.name) {
@@ -403,8 +404,9 @@ export class MLModelRegistry {
         );
       }
       if (filter?.minAccuracy !== undefined) {
+        const minAccuracy = filter.minAccuracy;
         models = models?.filter(
-          (m) => m?.accuracy !== undefined && m?.accuracy >= filter?.minAccuracy!,
+          (m) => m?.accuracy !== undefined && m?.accuracy >= minAccuracy,
         );
       }
     }

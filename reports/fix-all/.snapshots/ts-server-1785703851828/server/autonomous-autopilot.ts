@@ -1308,7 +1308,7 @@ export class AutonomousAutopilot extends EventEmitter {
           ? this.contentPerformanceHistory.reduce(
               (sum, post) => sum + post?.analytics.engagementRate,
               0,
-            ) / this.contentPerformanceHistory.length
+            ) / (this.contentPerformanceHistory.length || 1)
           : 0,
       optimalTimes: Object.fromEntries(this.optimalTimingCache),
       topPerformingTopics: Array.from(this.topicPerformanceMap.entries()).slice(

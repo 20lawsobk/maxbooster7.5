@@ -526,15 +526,15 @@ class SocialListeningService {
     const negative = 80 + Math.floor(Math.random() * 40);
     const total = positive + neutral + negative;
 
-    const score = (positive - negative) / total;
+    const score = (positive - negative) / (total || 1);
 
     return {
       overall: score > 0.2 ? "positive" : score < -0.2 ? "negative" : "neutral",
       score: Math.round(score * 100) / 100,
       breakdown: {
-        positive: Math.round((positive / total) * 100),
-        neutral: Math.round((neutral / total) * 100),
-        negative: Math.round((negative / total) * 100),
+        positive: Math.round((positive / (total || 1)) * 100),
+        neutral: Math.round((neutral / (total || 1)) * 100),
+        negative: Math.round((negative / (total || 1)) * 100),
       },
       trend: score > 0.1 ? "improving" : score < -0.1 ? "declining" : "stable",
       topPositiveTopics: [
@@ -847,7 +847,7 @@ class SocialListeningService {
       return {
         name,
         mentions,
-        percentage: Math.round((mentions / totalMentions) * 100),
+        percentage: Math.round((mentions / (totalMentions || 1)) * 100),
         reach: mentions * (Math.floor(Math.random() * 500) + 100),
         sentiment: Math.random() * 0.6 + 0.2,
       };
@@ -874,7 +874,7 @@ class SocialListeningService {
     return {
       yourBrand: {
         mentions: yourMentions,
-        percentage: Math.round((yourMentions / totalMentions) * 100),
+        percentage: Math.round((yourMentions / (totalMentions || 1)) * 100),
         reach: yourMentions * (Math.floor(Math.random() * 500) + 200),
         sentiment: Math.random() * 0.3 + 0.6,
       },

@@ -431,7 +431,7 @@ router.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
         totalFollowers,
         avgFollowers:
           totalPlacements > 0
-            ? Math.round(totalFollowers / totalPlacements)
+            ? Math.round(totalFollowers / (totalPlacements || 1))
             : 0,
       },
       playlists: playlists.slice(0, 50), // Limit to top 50

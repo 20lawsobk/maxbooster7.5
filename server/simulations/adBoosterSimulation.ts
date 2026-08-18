@@ -221,7 +221,7 @@ function simulatePaidAdvertising(
     totalSpend: campaign.budget,
     estimatedReach: Math.round(totalReach),
     estimatedEngagement: Math.round(totalEngagement),
-    costPerImpression: campaign.budget / totalReach,
+    costPerImpression: campaign.budget / (totalReach || 1),
     platformBreakdown,
   };
 }

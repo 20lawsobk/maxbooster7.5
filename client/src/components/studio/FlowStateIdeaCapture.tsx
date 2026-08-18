@@ -141,7 +141,7 @@ export function FlowStateIdeaCapture({
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(dataArray);
 
-    const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+    const average = dataArray.reduce((a, b) => a + b, 0) / (dataArray.length || 1);
     setInputLevel(average / 255);
 
     const frequency = detectPitch(analyser);
@@ -313,7 +313,7 @@ export function FlowStateIdeaCapture({
     for (let i = 1; i < notes.length; i++) {
       intervals.push(notes[i].startTime - notes[i - 1].startTime);
     }
-    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    const avgInterval = intervals.reduce((a, b) => a + b, 0) / (intervals.length || 1);
     return Math.round(60 / avgInterval);
   };
 

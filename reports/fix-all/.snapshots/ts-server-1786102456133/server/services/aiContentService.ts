@@ -453,7 +453,7 @@ export class AIContentService {
     const emojiCount = (historicalPosts.join(" ").match(/\p{Emoji}/gu) || [])
       .length;
     const totalWords = historicalPosts.join(" ").split(/\s+/).length || 1;
-    const emojiRate = emojiCount / historicalPosts.length || 0;
+    const emojiRate = emojiCount / (historicalPosts.length || 1) || 0;
     const hashtagCount = (
       historicalPosts.join(" ").match(/#\w+/g) || []
     ).length;
@@ -487,11 +487,11 @@ export class AIContentService {
               ? "light"
               : "none",
       hashtagFrequency: historicalPosts.length
-        ? hashtagCount / historicalPosts.length
+        ? hashtagCount / (historicalPosts.length || 1)
         : 0,
       avgSentenceLength:
         historicalPosts.length
-          ? Math.round(totalWords / historicalPosts.length)
+          ? Math.round(totalWords / (historicalPosts.length || 1))
           : 12,
       vocabularyComplexity: "moderate",
       commonPhrases: this.extractCommonPhrases(historicalPosts),

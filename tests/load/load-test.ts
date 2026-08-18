@@ -174,7 +174,7 @@ class LoadTester {
     this.results.avgResponseTime =
       this.responseTimes.length > 0
         ? this.responseTimes.reduce((a, b) => a + b, 0) /
-          this.responseTimes.length
+          (this.responseTimes.length || 1)
         : 0;
 
     this.results.requestsPerSecond = this.results.totalRequests / duration;

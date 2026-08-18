@@ -142,7 +142,7 @@ export default function WelcomeFlow({
   const queryClient = useQueryClient();
 
   const stepIndex = STEP_ORDER.indexOf(currentStep);
-  const progress = ((stepIndex + 1) / STEP_ORDER.length) * 100;
+  const progress = ((stepIndex + 1) / (STEP_ORDER.length || 1)) * 100;
   const isFirstStep = stepIndex === 0;
   const isLastStep = currentStep === "complete";
 

@@ -602,7 +602,7 @@ class SocialChatbotService {
       const questionWords = entry.question.toLowerCase().split(/\s+/);
       const queryWords = lowerQuery.split(/\s+/);
       const matchingWords = questionWords.filter((w) => queryWords.includes(w));
-      score += (matchingWords.length / questionWords.length) * 0.5;
+      score += (matchingWords.length / (questionWords.length || 1)) * 0.5;
 
       if (score > bestScore && score > 0.5) {
         bestScore = score;
@@ -797,7 +797,7 @@ class SocialChatbotService {
       totalMessages,
       automatedResponses,
       humanHandled,
-      automationRate: (automatedResponses / totalMessages) * 100,
+      automationRate: (automatedResponses / (totalMessages || 1)) * 100,
       avgResponseTime: 1.2,
       topIntents: [
         { intent: "greeting", count: 312 },

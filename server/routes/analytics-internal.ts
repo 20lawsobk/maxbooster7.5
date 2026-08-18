@@ -715,7 +715,7 @@ router.get("/music/fanbase", async (req: Request, res: Response) => {
 
     const engagementRate =
       totalRecentListeners > 0 && totalRecentStreams > 0
-        ? Math.round((totalRecentStreams / totalRecentListeners) * 10) / 10
+        ? Math.round((totalRecentStreams / (totalRecentListeners || 1)) * 10) / 10
         : null;
 
     const activeListeners =
@@ -1230,7 +1230,7 @@ router.get("/historical/trends", async (req: Request, res: Response) => {
         firstValue > 0
           ? Math.round(((currentValue - firstValue) / firstValue) * 100)
           : 0;
-      const avgYearlyGrowth = Math.round(totalGrowth / (years.length - 1));
+      const avgYearlyGrowth = Math.round(totalGrowth / ((years.length - 1 || 1)));
 
       return {
         metric: metric.charAt(0).toUpperCase() + metric.slice(1),
@@ -1961,7 +1961,7 @@ router.get("/playlist-journeys", async (req: Request, res: Response) => {
     const typeBreakdown = Object.entries(typeCounts).map(([type, d]) => ({
       type,
       count: d.count,
-      percentage: Math.round((d.count / totalJourneys) * 100),
+      percentage: Math.round((d.count / (totalJourneys || 1)) * 100),
       totalReach: d.totalReach,
       avgStreamsPerDay:
         d.count > 0 ? Math.round(d.totalStreams / Math.max(1, d.count)) : 0,

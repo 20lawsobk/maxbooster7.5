@@ -462,7 +462,7 @@ export function ReleaseWizard({
     }
   };
 
-  const progress = (currentStep / STEPS.length) * 100;
+  const progress = (currentStep / (STEPS.length || 1)) * 100;
 
   return (
     <div className="space-y-6">

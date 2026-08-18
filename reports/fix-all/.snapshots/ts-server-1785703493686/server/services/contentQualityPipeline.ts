@@ -978,7 +978,7 @@ class ContentQualityPipeline {
 
   private scoreClarity(content: string): number {
     const sentences = content.split(/[.!?]+/).filter((s) => s.trim());
-    const avgLength = content.length / Math.max(sentences.length, 1);
+    const avgLength = content.length / (Math.max(sentences.length, 1) || 1);
 
     let score = 70;
 

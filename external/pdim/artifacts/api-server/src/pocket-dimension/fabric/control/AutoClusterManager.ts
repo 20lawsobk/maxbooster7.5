@@ -156,7 +156,7 @@ export class AutoClusterManager {
 
     const totalUsed = healthyNodes.reduce((s, n) => s + n.usedBytes, 0);
     const totalCapacity = healthyNodes.reduce((s, n) => s + n.capacityBytes, 0);
-    const avgUtil = totalCapacity > 0 ? totalUsed / totalCapacity : 0;
+    const avgUtil = totalCapacity > 0 ? totalUsed / (totalCapacity || 1) : 0;
     const now = Date.now();
 
     this.recordSample({

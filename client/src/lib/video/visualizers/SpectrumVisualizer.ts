@@ -197,7 +197,7 @@ export class SpectrumVisualizer {
       }
 
       const normalized =
-        count > 0 ? (sum / count / 255) * this.options.sensitivity : 0;
+        count > 0 ? (sum / (count || 1) / 255) * this.options.sensitivity : 0;
       bands?.push(Math.min(1, normalized));
     }
 

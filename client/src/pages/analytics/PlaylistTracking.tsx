@@ -292,7 +292,7 @@ export function PlaylistTracking({
           placements
             .filter((p) => p.status === "active")
             .reduce((sum, p) => sum + p.position, 0) /
-            placements.filter((p) => p.status === "active").length,
+            (placements.filter((p) => p.status === "active").length || 1),
         ) || 0,
     }),
     [placements],

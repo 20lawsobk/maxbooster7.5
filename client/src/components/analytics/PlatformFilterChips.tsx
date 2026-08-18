@@ -236,7 +236,7 @@ export function PlatformSummaryChips({
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
       {platforms.map((platform) => {
         const percentage =
-          total > 0 ? ((platform.value / total) * 100).toFixed(1) : "0";
+          total > 0 ? ((platform.value / (total || 1)) * 100).toFixed(1) : "0";
         return (
           <div
             key={platform.id}

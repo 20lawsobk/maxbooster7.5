@@ -333,7 +333,7 @@ export function TrackManagementOutcomes({
     }
   }, [selectedTrack, bounceOptions, onBounceTrack, toast]);
 
-  ((track: Track) => {
+  const handleTrackSelect = (track: Track) => {
     setSelectedTrack(track);
     setShowDeleteDialog(true);
   });

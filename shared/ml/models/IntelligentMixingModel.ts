@@ -119,7 +119,7 @@ export class IntelligentMixingModel {
     for (let i = 0; i < buffer.length; i++) {
       sumSquares += buffer[i] * buffer[i];
     }
-    const rms = Math.sqrt(sumSquares / buffer.length);
+    const rms = Math.sqrt(sumSquares / (buffer.length || 1));
     return 20 * Math.log10(rms || 0.0001);
   }
 
@@ -133,7 +133,7 @@ export class IntelligentMixingModel {
       for (let j = 0; j < window.length; j++) {
         sumSquares += window[j] * window[j];
       }
-      const rms = Math.sqrt(sumSquares / window.length);
+      const rms = Math.sqrt(sumSquares / (window.length || 1));
       rmsValues.push(20 * Math.log10(rms || 0.0001));
     }
 
@@ -166,9 +166,9 @@ export class IntelligentMixingModel {
     const total = low + mid + high;
 
     return {
-      low: low / total,
-      mid: mid / total,
-      high: high / total,
+      low: low / (total || 1),
+      mid: mid / (total || 1),
+      high: high / (total || 1),
     };
   }
 

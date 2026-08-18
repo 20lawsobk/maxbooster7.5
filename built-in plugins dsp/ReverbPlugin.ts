@@ -130,7 +130,7 @@ export class ReverbPlugin extends BasePlugin {
 
       for (let i = 0; i < length; i++) {
         let sample =
-          this.prng.nextBipolar() * Math.pow(1 - i / length, this.decay * 2);
+          this.prng.nextBipolar() * Math.pow(1 - i / (length || 1), this.decay * 2);
 
         if (i < this.context.sampleRate * 0.1) {
           const reflectionCount = this.getEarlyReflectionCount(type);
@@ -150,7 +150,7 @@ export class ReverbPlugin extends BasePlugin {
         }
 
         if (i > length * 0.1) {
-          sample *= Math.pow(this.damping, i / length);
+          sample *= Math.pow(this.damping, i / (length || 1));
         }
 
         if (channel === 1) {

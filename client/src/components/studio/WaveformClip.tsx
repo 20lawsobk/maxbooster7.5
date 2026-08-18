@@ -317,13 +317,13 @@ export function WaveformClip({
 
     // Forward pass — top edge (positive / max peaks)
     for (let i = 0; i < resampledMax.length; i++) {
-      const x = (i / resampledMax.length) * renderWidth;
+      const x = (i / (resampledMax.length || 1)) * renderWidth;
       ctx.lineTo(x, centerY - applyFade(resampledMax[i] * maxAmplitude, x));
     }
 
     // Backward pass — bottom edge (negative / min peaks for true asymmetry)
     for (let i = resampledMin.length - 1; i >= 0; i--) {
-      const x = (i / resampledMin.length) * renderWidth;
+      const x = (i / (resampledMin.length || 1)) * renderWidth;
       ctx.lineTo(x, centerY + applyFade(resampledMin[i] * maxAmplitude, x));
     }
 
@@ -337,7 +337,7 @@ export function WaveformClip({
     ctx.moveTo(0, centerY);
 
     for (let i = 0; i < resampledMax.length; i++) {
-      const x = (i / resampledMax.length) * renderWidth;
+      const x = (i / (resampledMax.length || 1)) * renderWidth;
       ctx.lineTo(x, centerY - applyFade(resampledMax[i] * maxAmplitude, x));
     }
 

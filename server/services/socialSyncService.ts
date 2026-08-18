@@ -318,7 +318,7 @@ async function calcEngagementRate(
       counted++;
     }
     if (counted === 0) return 0;
-    const avgInteractions = totalInteractions / counted;
+    const avgInteractions = totalInteractions / (counted || 1);
     return Math.min(
       Math.round((avgInteractions / followers) * 10000) / 100,
       100,

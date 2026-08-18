@@ -190,7 +190,7 @@ export class IsolationForest {
     if (c <= 0) return 0.5;
     const avg =
       this.trees.reduce((s, t) => s + this.pathLength(point, t, 0), 0) /
-      this.trees.length;
+      (this.trees.length || 1);
     return Math.pow(2, -avg / c);
   }
 

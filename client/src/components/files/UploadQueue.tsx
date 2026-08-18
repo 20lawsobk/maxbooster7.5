@@ -94,7 +94,7 @@ export function UploadQueue({
   const totalSize = files.reduce((sum, f) => sum + f.file.size, 0);
   const uploadedSize = files.reduce((sum, f) => sum + f.uploadedBytes, 0);
   const overallProgress =
-    totalSize > 0 ? Math.round((uploadedSize / totalSize) * 100) : 0;
+    totalSize > 0 ? Math.round((uploadedSize / (totalSize || 1)) * 100) : 0;
   const averageSpeed = activeUploads.reduce((sum, f) => sum + f.speed, 0);
   const remainingBytes = totalSize - uploadedSize;
   const estimatedTime = averageSpeed > 0 ? remainingBytes / averageSpeed : 0;

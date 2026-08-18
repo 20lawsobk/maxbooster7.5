@@ -1641,7 +1641,7 @@ class SemanticAnalyzer {
     if (longer.length === 0) return 1.0;
 
     const editDistance = this.levenshteinDistance(longer, shorter);
-    return (longer.length - editDistance) / longer.length;
+    return (longer.length - editDistance) / (longer.length || 1);
   }
 
   private levenshteinDistance(s1: string, s2: string): number {
@@ -1698,7 +1698,7 @@ class SemanticAnalyzer {
     const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
 
     vectors.forEach((v, i) => {
-      const weight = weights[i] / totalWeight;
+      const weight = weights[i] / (totalWeight || 1);
       v.vector.forEach((val, j) => {
         contextVector[j] += val * weight;
       });

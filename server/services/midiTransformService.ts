@@ -134,7 +134,7 @@ class MidiTransformService {
   private createTrill(note: MidiNote, config: OrnamentConfig): MidiNote[] {
     const interval = config?.interval || 2;
     const count = config?.count || 4;
-    const noteDuration = note?.duration / count;
+    const noteDuration = note?.duration / (count || 1);
     const result: MidiNote[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -215,7 +215,7 @@ class MidiTransformService {
 
   private createTremolo(note: MidiNote, config: OrnamentConfig): MidiNote[] {
     const count = config?.count || 8;
-    const noteDuration = note?.duration / count;
+    const noteDuration = note?.duration / (count || 1);
     const result: MidiNote[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -233,7 +233,7 @@ class MidiTransformService {
   private createGlissando(note: MidiNote, config: OrnamentConfig): MidiNote[] {
     const interval = config?.interval || 12;
     const count = Math.abs(interval);
-    const noteDuration = note?.duration / count;
+    const noteDuration = note?.duration / (count || 1);
     const direction = interval > 0 ? 1 : -1;
     const result: MidiNote[] = [];
 
@@ -243,7 +243,7 @@ class MidiTransformService {
         note: note.note + i * direction,
         startTime: note.startTime + i * noteDuration,
         duration: noteDuration * 1.1,
-        velocity: Math.round(note?.velocity * (0.8 + (i / count) * 0.2)),
+        velocity: Math.round(note?.velocity * (0.8 + (i / (count || 1)) * 0.2)),
       });
     }
 
@@ -310,7 +310,7 @@ class MidiTransformService {
       sorted[sorted?.length - 1].startTime + sorted[sorted?.length - 1].duration;
 
     return sorted?.map((note) => {
-      const position = note?.startTime / totalDuration;
+      const position = note?.startTime / (totalDuration || 1);
       let timeFactor: number;
 
       switch (config?.curve) {
@@ -431,7 +431,7 @@ class MidiTransformService {
     return sorted?.map((note) => {
       const position =
         totalDuration > 0
-          ? (note?.startTime - sorted[0].startTime) / totalDuration
+          ? (note?.startTime - sorted[0].startTime) / (totalDuration || 1)
           : 0;
 
       let velocityMultiplier: number;

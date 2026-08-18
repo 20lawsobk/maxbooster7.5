@@ -21,7 +21,7 @@ class SampleBuffer {
 
   generate(generator: (phase: number, sampleRate: number) => number): void {
     for (let i = 0; i < this.length; i++) {
-      const phase = i / this.length;
+      const phase = i / (this.length || 1);
       this.buffer[i] = generator(phase, this.sampleRate);
     }
   }

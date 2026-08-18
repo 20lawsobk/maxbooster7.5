@@ -660,10 +660,10 @@ const SortableTrackRow = memo(function SortableTrackRow({
             {/* Audio Clips */}
             {(clips || []).map((clip) => {
               const totalBars = 32;
-              const leftPercent = ((clip.startTime || 0) / totalBars) * 100;
+              const leftPercent = ((clip.startTime || 0) / (totalBars || 1)) * 100;
               const clipDuration = clip.duration || 4;
               const widthPercent = Math.max(
-                (clipDuration / totalBars) * 100,
+                (clipDuration / (totalBars || 1)) * 100,
                 3,
               );
               const isSelected = selectedClipId === clip.id;

@@ -290,9 +290,9 @@ export async function registerRoutes(
       const hasCookie = !!req.headers.cookie?.includes("sessionId");
       const hasSession = !!req.session;
       const hasUserId = !!req.session?.userId;
-      req.session?.id?.substring(0, 8) || "none";
+      const sessionPrefix = req.session?.id?.substring(0, 8) ?? "none";
 
-      logger.info({ hasSession, hasUserId }, "[Auth/me] Auth check");
+      logger.info({ hasSession, hasUserId, sessionPrefix }, "[Auth/me] Auth check");
 
       if (!req.user) {
         if (hasCookie && !hasUserId) {
@@ -4160,10 +4160,10 @@ export async function registerRoutes(
           );
           const trackStreams =
             totalWeight > 0
-              ? Math.round((weight / totalWeight) * totalStreams)
+              ? Math.round((weight / (totalWeight || 1)) * totalStreams)
               : 0;
           const trackRevenue =
-            totalWeight > 0 ? (weight / totalWeight) * totalRevenue : 0;
+            totalWeight > 0 ? (weight / (totalWeight || 1)) * totalRevenue : 0;
           return {
             trackId: rel.id,
             trackTitle: rel.title,

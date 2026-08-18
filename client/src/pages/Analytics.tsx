@@ -955,7 +955,7 @@ const GeographicHeatMap = memo(
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.slice(0, 6).map((geo, idx) => {
-            const percentage = ((geo.streams / totalStreams) * 100).toFixed(1);
+            const percentage = ((geo.streams / (totalStreams || 1)) * 100).toFixed(1);
             return (
               <motion.div
                 key={geo.country}
@@ -1394,7 +1394,7 @@ const RevenueAttributionChart = memo(
                     <p className="text-xl font-bold">
                       $
                       {data.length > 0
-                        ? (totalRevenue / data.length).toFixed(0)
+                        ? (totalRevenue / (data.length || 1)).toFixed(0)
                         : "0"}
                     </p>
                     <p className="text-xs text-slate-500">Avg per Source</p>
@@ -1799,7 +1799,7 @@ export default function Analytics() {
   });
 
   useEffect(() => {
-    ((message: Record<string, unknown>) => {
+    const handleWsMessage = (message: Record<string, unknown>) => {
       if (message.type === "anomaly_detected") {
         queryClient.invalidateQueries({
           queryKey: ["/api/analytics/anomalies"],

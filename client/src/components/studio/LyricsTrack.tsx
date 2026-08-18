@@ -112,7 +112,7 @@ const parseSimpleText = (
       .trim()
       .split(/\s+/)
       .map((word, wordIndex, arr) => {
-        const wordDuration = lineDuration / arr.length;
+        const wordDuration = lineDuration / (arr.length || 1);
         const wordStart = lineStartTime + wordIndex * wordDuration;
         return {
           id: `word-${Date.now()}-${lineIndex}-${wordIndex}`,
@@ -340,7 +340,7 @@ export function LyricsTrack({
       if (!line) return;
 
       const wordTexts = text.trim().split(/\s+/);
-      const wordDuration = (line.endTime - line.startTime) / wordTexts.length;
+      const wordDuration = (line.endTime - line.startTime) / (wordTexts.length || 1);
 
       const newWords: LyricWord[] = wordTexts.map((wordText, index) => ({
         id: `word-${Date.now()}-${index}`,

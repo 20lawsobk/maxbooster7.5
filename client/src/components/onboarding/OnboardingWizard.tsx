@@ -229,7 +229,7 @@ function getRank(xp: number) {
 }
 
 function XPBar({ xp, total }: { xp: number; total: number }) {
-  const pct = Math.round((xp / total) * 100);
+  const pct = Math.round((xp / (total || 1)) * 100);
   const rank = getRank(xp);
   const RankIcon = rank.icon;
   return (

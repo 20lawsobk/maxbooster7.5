@@ -163,7 +163,7 @@ class BridgeInsightsService {
         const distributionCost = asset?.distributionCost ?? 0;
         const totalCost = creationCost + distributionCost;
         const effectiveRoi =
-          totalCost > 0 ? ((revenue - totalCost) / totalCost) * 100 : 0;
+          totalCost > 0 ? ((revenue - totalCost) / (totalCost || 1)) * 100 : 0;
 
         const existing = assetTypeRoiMap?.get(asset?.type);
         if (existing) {

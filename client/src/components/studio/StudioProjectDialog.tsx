@@ -156,7 +156,7 @@ async function uploadInChunks(
     formData.append("chunk", chunk, file.name);
 
     await uploadChunkWithRetry(formData, i);
-    onProgress(Math.round(((i + 1) / totalChunks) * 85));
+    onProgress(Math.round(((i + 1) / (totalChunks || 1)) * 85));
   }
 
   const csrfToken = getCsrfTokenFromCookie();
@@ -527,7 +527,7 @@ export function StudioProjectDialog({
       ? 0
       : Math.round(
           selectedFiles.reduce((sum, f) => sum + f.progress, 0) /
-            selectedFiles.length,
+            (selectedFiles.length || 1),
         );
 
   const hasUploading = selectedFiles.some((f) => f.status === "uploading");

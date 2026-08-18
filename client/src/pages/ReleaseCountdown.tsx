@@ -389,7 +389,7 @@ export default function ReleaseCountdown() {
                           <Progress
                             value={
                               (release.tasks.filter((t) => t.completed).length /
-                                release.tasks.length) *
+                                (release.tasks.length || 1)) *
                               100
                             }
                             className="h-2"

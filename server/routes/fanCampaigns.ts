@@ -77,7 +77,7 @@ router.get("/stats", requireAuth, async (req, res) => {
         const totalSubscribers = Number(subscriberCount?.total);
         const avgOpenRate =
           totalRecipients > 0
-            ? Math.round((totalOpens / totalRecipients) * 100)
+            ? Math.round((totalOpens / (totalRecipients || 1)) * 100)
             : 0;
 
         return {

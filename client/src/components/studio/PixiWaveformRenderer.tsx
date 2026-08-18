@@ -193,7 +193,7 @@ export const PixiWaveformRenderer = forwardRef<
       graphics.moveTo(0, centerY);
 
       for (let i = 0; i < peaks.length; i++) {
-        const x = (i / peaks.length) * width;
+        const x = (i / (peaks.length || 1)) * width;
         const y = centerY - peaks[i].max * amplitude;
         if (i === 0) {
           graphics.moveTo(x, y);
@@ -203,7 +203,7 @@ export const PixiWaveformRenderer = forwardRef<
       }
 
       for (let i = peaks.length - 1; i >= 0; i--) {
-        const x = (i / peaks.length) * width;
+        const x = (i / (peaks.length || 1)) * width;
         const y = centerY - peaks[i].min * amplitude;
         graphics.lineTo(x, y);
       }
@@ -215,7 +215,7 @@ export const PixiWaveformRenderer = forwardRef<
       graphics.moveTo(0, centerY);
 
       for (let i = 0; i < peaks.length; i++) {
-        const x = (i / peaks.length) * width;
+        const x = (i / (peaks.length || 1)) * width;
         const maxY = centerY - peaks[i].max * amplitude;
         const minY = centerY - peaks[i].min * amplitude;
 

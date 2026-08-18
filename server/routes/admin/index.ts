@@ -371,7 +371,7 @@ router.post("/users/:userId/report", requireAdmin, async (req, res) => {
       try {
         await notificationService?.sendAdminUserReportNotification(
           req.user!.email!,
-          targetUser?.email!,
+          targetUser?.email,
           reason,
         );
       } catch (err) {
@@ -480,7 +480,7 @@ router.get("/analytics", async (_req, res) => {
         const totalReleases = totalReleasesResult[0]?.count || 0;
         const totalRevenue = parseFloat(revenueResult[0]?.total || "0");
         const userGrowthRate =
-          totalUsers > 0 ? (newUsers / totalUsers) * 100 : 0;
+          totalUsers > 0 ? (newUsers / (totalUsers || 1)) * 100 : 0;
         const subscriptionStats = subscriptionStatsResult?.map((s) => ({
           plan: s.plan || "free",
           count: s.count,
@@ -746,7 +746,7 @@ router.get("/metrics", async (_req, res) => {
 
     const totalMem = os?.totalmem();
     const freeMem = os?.freemem();
-    const memPercent = Math.round(((totalMem - freeMem) / totalMem) * 100);
+    const memPercent = Math.round(((totalMem - freeMem) / (totalMem || 1)) * 100);
 
     const [activeUsersResult] = await Promise?.all([
       db
@@ -800,7 +800,7 @@ router.get("/system-health", async (_req, res) => {
       memory: {
         heapUsedMb: Math.round(memUsage?.heapUsed / 1024 / 1024),
         heapTotalMb: Math.round(memUsage?.heapTotal / 1024 / 1024),
-        usedPercent: Math.round(((totalMem - freeMem) / totalMem) * 100),
+        usedPercent: Math.round(((totalMem - freeMem) / (totalMem || 1)) * 100),
       },
       cpu: {
         count: cpus.length,
