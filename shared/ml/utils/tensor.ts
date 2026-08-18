@@ -9,6 +9,7 @@ import * as tf from "@tensorflow/tfjs";
  * Normalize data to 0-1 range
  */
 export function normalize(data: number[]): number[] {
+  if (data.length === 0) return [];
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min;
@@ -22,6 +23,7 @@ export function normalize(data: number[]): number[] {
  * Standardize data (mean=0, std=1)
  */
 export function standardize(data: number[]): number[] {
+  if (data.length === 0) return [];
   const mean = data.reduce((sum, val) => sum + val, 0) / data.length;
   const variance =
     data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.length;
@@ -40,12 +42,14 @@ export function createSequences(
   windowSize: number,
   stepSize: number = 1,
 ): { sequences: number[][]; labels: number[] } {
+  const safeWindowSize = Math.max(1, Math.floor(windowSize) || 1);
+  const safeStepSize = Math.max(1, Math.floor(stepSize) || 1);
   const sequences: number[][] = [];
   const labels: number[] = [];
 
-  for (let i = 0; i <= data.length - windowSize - 1; i += stepSize) {
-    sequences.push(data.slice(i, i + windowSize));
-    labels.push(data[i + windowSize]);
+  for (let i = 0; i <= data.length - safeWindowSize - 1; i += safeStepSize) {
+    sequences.push(data.slice(i, i + safeWindowSize));
+    labels.push(data[i + safeWindowSize]);
   }
 
   return { sequences, labels };
@@ -58,7 +62,11 @@ export function trainValidationSplit<T>(
   data: T[],
   validationSplit: number = 0.2,
 ): { train: T[]; validation: T[] } {
-  const splitIndex = Math.floor(data.length * (1 - validationSplit));
+  const safeValidationSplit = Math.min(
+    1,
+    Math.max(0, Number.isFinite(validationSplit) ? validationSplit : 0.2),
+  );
+  const splitIndex = Math.floor(data.length * (1 - safeValidationSplit));
 
   return {
     train: data.slice(0, splitIndex),
@@ -94,10 +102,12 @@ export function disposeTensors(...tensors: (tf.Tensor | undefined)[]): void {
  * Calculate moving average
  */
 export function movingAverage(data: number[], windowSize: number): number[] {
+  if (data.length === 0) return [];
+  const safeWindowSize = Math.max(1, Math.floor(windowSize) || 1);
   const result: number[] = [];
 
   for (let i = 0; i < data.length; i++) {
-    const start = Math.max(0, i - windowSize + 1);
+    const start = Math.max(0, i - safeWindowSize + 1);
     const window = data.slice(start, i + 1);
     const avg = window.reduce((sum, val) => sum + val, 0) / window.length;
     result.push(avg);
@@ -113,10 +123,12 @@ export function exponentialMovingAverage(
   data: number[],
   alpha: number = 0.3,
 ): number[] {
+  if (data.length === 0) return [];
+  const safeAlpha = Math.min(1, Math.max(0, Number.isFinite(alpha) ? alpha : 0.3));
   const result: number[] = [data[0]];
 
   for (let i = 1; i < data.length; i++) {
-    const ema = alpha * data[i] + (1 - alpha) * result[i - 1];
+    const ema = safeAlpha * data[i] + (1 - safeAlpha) * result[i - 1];
     result.push(ema);
   }
 
@@ -127,9 +139,12 @@ export function exponentialMovingAverage(
  * One-hot encode categorical data
  */
 export function oneHotEncode(labels: number[], numClasses: number): number[][] {
+  const safeNumClasses = Math.max(1, Math.floor(numClasses) || 1);
   return labels.map((label) => {
-    const encoded = new Array(numClasses).fill(0);
-    encoded[label] = 1;
+    const encoded = new Array(safeNumClasses).fill(0);
+    if (label >= 0 && label < safeNumClasses) {
+      encoded[Math.floor(label)] = 1;
+    }
     return encoded;
   });
 }

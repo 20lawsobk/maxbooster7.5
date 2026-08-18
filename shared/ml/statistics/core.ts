@@ -110,6 +110,7 @@ export function calculateCorrelation(x: number[], y: number[]): number {
   }
 
   const n = x.length;
+  if (n === 0) return 0;
   const meanX = x.reduce((sum, val) => sum + val, 0) / n;
   const meanY = y.reduce((sum, val) => sum + val, 0) / n;
 
@@ -125,7 +126,8 @@ export function calculateCorrelation(x: number[], y: number[]): number {
     denomY += dy * dy;
   }
 
-  return numerator / Math.sqrt(denomX * denomY);
+  const denominator = Math.sqrt(denomX * denomY);
+  return denominator > 0 ? numerator / denominator : 0;
 }
 
 /**
@@ -145,22 +147,33 @@ export function linearRegression(
   }
 
   const n = x.length;
+  if (n === 0) {
+    return {
+      slope: 0,
+      intercept: 0,
+      r2: 0,
+      predict: () => 0,
+    };
+  }
   const sumX = x.reduce((sum, val) => sum + val, 0);
   const sumY = y.reduce((sum, val) => sum + val, 0);
   const sumXY = x.reduce((sum, val, i) => sum + val * y[i], 0);
   const sumX2 = x.reduce((sum, val) => sum + val * val, 0);
 
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const slopeDenominator = n * sumX2 - sumX * sumX;
+  const meanY = sumY / n;
+  const slope =
+    slopeDenominator !== 0 ? (n * sumXY - sumX * sumY) / slopeDenominator : 0;
   const intercept = (sumY - slope * sumX) / n;
 
   // Calculate R²
-  const meanY = sumY / n;
   const ssTotal = y.reduce((sum, val) => sum + Math.pow(val - meanY, 2), 0);
   const ssResidual = y.reduce((sum, val, i) => {
     const predicted = slope * x[i] + intercept;
     return sum + Math.pow(val - predicted, 2);
   }, 0);
-  const r2 = 1 - ssResidual / ssTotal;
+  const r2 =
+    ssTotal > 0 ? 1 - ssResidual / ssTotal : ssResidual === 0 ? 1 : 0;
 
   return {
     slope,
@@ -190,6 +203,10 @@ export function detectOutliersIQR(data: number[]): {
   lowerBound: number;
   upperBound: number;
 } {
+  if (data.length === 0) {
+    return { outliers: [], lowerBound: 0, upperBound: 0 };
+  }
+
   const sorted = [...data].sort((a, b) => a - b);
   const q1 = calculatePercentile(sorted, 25);
   const q3 = calculatePercentile(sorted, 75);
@@ -210,6 +227,7 @@ export function detectOutliersZScore(
   data: number[],
   threshold: number = 3,
 ): number[] {
+  if (data.length === 0) return [];
   const stats = calculateStatistics(data);
 
   return data.filter((val) => {
@@ -227,6 +245,7 @@ export function calculateCovariance(x: number[], y: number[]): number {
   }
 
   const n = x.length;
+  if (n === 0) return 0;
   const meanX = x.reduce((sum, val) => sum + val, 0) / n;
   const meanY = y.reduce((sum, val) => sum + val, 0) / n;
 
@@ -245,16 +264,21 @@ export function simpleMovingAverage(
   data: number[],
   windowSize: number,
 ): number[] {
+  if (data.length === 0) return [];
+  const safeWindowSize = Math.max(1, Math.floor(windowSize) || 1);
   const result: number[] = [];
 
   for (let i = 0; i < data.length; i++) {
-    if (i < windowSize - 1) {
+    if (i < safeWindowSize - 1) {
       result.push(
         data.slice(0, i + 1).reduce((sum, val) => sum + val, 0) / (i + 1),
       );
     } else {
-      const window = data.slice(i - windowSize + 1, i + 1);
-      result.push(window.reduce((sum, val) => sum + val, 0) / windowSize);
+      const window = data.slice(i - safeWindowSize + 1, i + 1);
+      result.push(
+        window.reduce((sum, val) => sum + val, 0) /
+          Math.max(1, window.length || safeWindowSize),
+      );
     }
   }
 
@@ -268,10 +292,12 @@ export function exponentialMovingAverage(
   data: number[],
   alpha: number,
 ): number[] {
+  if (data.length === 0) return [];
+  const safeAlpha = Math.min(1, Math.max(0, Number.isFinite(alpha) ? alpha : 0.3));
   const result: number[] = [data[0]];
 
   for (let i = 1; i < data.length; i++) {
-    result.push(alpha * data[i] + (1 - alpha) * result[i - 1]);
+    result.push(safeAlpha * data[i] + (1 - safeAlpha) * result[i - 1]);
   }
 
   return result;
@@ -284,13 +310,16 @@ export function confidenceInterval(
   data: number[],
   confidenceLevel: number = 0.95,
 ): { lower: number; upper: number; mean: number } {
+  if (data.length === 0) {
+    return { mean: 0, lower: 0, upper: 0 };
+  }
   const stats = calculateStatistics(data);
   const n = data.length;
 
   // Z-score for 95% confidence = 1.96
   const zScore = confidenceLevel === 0.95 ? 1.96 : 2.576; // 99% = 2.576
 
-  const margin = zScore * (stats.stdDev / Math.sqrt(n));
+  const margin = zScore * (stats.stdDev / Math.sqrt(Math.max(1, n)));
 
   return {
     mean: stats.mean,
