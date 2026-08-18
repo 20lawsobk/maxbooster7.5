@@ -61,7 +61,11 @@
     "adminAutonomy": "Admin Autonomy",
     "adminSecurity": "Admin Security",
     "contentSampler": "Content Sampler",
-    "videoGenerator": "Video Generator"
+    "videoGenerator": "Video Generator",
+    "fanMemberships": "Fan Memberships",
+    "arIntelligence": "A&R Intelligence",
+    "outreachCRM": "Outreach CRM",
+    "auditLog": "Audit Log"
   },
   "auth": {
     "loginTitle": "Login to Max Booster",

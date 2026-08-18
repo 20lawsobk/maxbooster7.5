@@ -8030,3 +8030,215 @@ export const insertHnsAuctionSchema = createInsertSchema(hnsAuctions).omit({
 });
 export type HnsAuction = typeof hnsAuctions.$inferSelect;
 export type InsertHnsAuction = z.infer<typeof insertHnsAuctionSchema>;
+
+// ============================================================================
+// FAN WALLET / LOYALTY CREDITS
+// ============================================================================
+// Artists create a wallet config for their storefront; fans earn credits
+// through engagement (purchases, shares, comments) and redeem them at checkout.
+
+export const fanWallets = pgTable(
+  "fan_wallets",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    /** Artist who owns this wallet programme */
+    artistId: varchar("artist_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Fan (subscriber) who holds credits */
+    fanId: varchar("fan_id").notNull(),
+    balanceCredits: integer("balance_credits").default(0).notNull(),
+    lifetimeEarned: integer("lifetime_earned").default(0).notNull(),
+    lifetimeRedeemed: integer("lifetime_redeemed").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => ({
+    artistFanUniq: unique("fan_wallets_artist_fan_uniq").on(
+      t.artistId,
+      t.fanId,
+    ),
+    byArtist: index("fan_wallets_artist_idx").on(t.artistId),
+    byFan: index("fan_wallets_fan_idx").on(t.fanId),
+  }),
+);
+
+export type FanWallet = typeof fanWallets.$inferSelect;
+export type InsertFanWallet = typeof fanWallets.$inferInsert;
+
+// ── Credit transactions (immutable append-only ledger) ──────────────────────
+
+export const fanCreditTransactions = pgTable(
+  "fan_credit_transactions",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    walletId: varchar("wallet_id")
+      .notNull()
+      .references(() => fanWallets.id, { onDelete: "cascade" }),
+    /** earn | redeem | expire | admin_adjust */
+    type: text("type").notNull(),
+    /** Positive = earn, negative = redeem/expire */
+    deltaCredits: integer("delta_credits").notNull(),
+    /** e.g. "purchase", "share", "comment", "checkout_discount" */
+    reason: text("reason").notNull(),
+    /** Optional reference (orderId, beatId, etc.) */
+    referenceId: varchar("reference_id"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => ({
+    byWallet: index("fan_credit_txns_wallet_idx").on(t.walletId, t.createdAt),
+  }),
+);
+
+export type FanCreditTransaction = typeof fanCreditTransactions.$inferSelect;
+export type InsertFanCreditTransaction = typeof fanCreditTransactions.$inferInsert;
+
+export const insertFanCreditTransactionSchema = createInsertSchema(
+  fanCreditTransactions,
+).omit({ id: true, createdAt: true });
+
+// ── Loyalty programme config per artist ─────────────────────────────────────
+
+export const fanLoyaltyConfigs = pgTable("fan_loyalty_configs", {
+  artistId: varchar("artist_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  /** Credits awarded per $1 spent */
+  creditsPerDollar: integer("credits_per_dollar").default(10).notNull(),
+  /** Credits awarded per qualifying share */
+  creditsPerShare: integer("credits_per_share").default(5).notNull(),
+  /** Credits awarded per qualifying comment */
+  creditsPerComment: integer("credits_per_comment").default(2).notNull(),
+  /** Credits required to redeem $1 discount */
+  creditsPerRedemptionDollar: integer("credits_per_redemption_dollar")
+    .default(100)
+    .notNull(),
+  /** Max % of order value redeemable in credits (0–100) */
+  maxRedemptionPct: integer("max_redemption_pct").default(50).notNull(),
+  enabled: boolean("enabled").default(true).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type FanLoyaltyConfig = typeof fanLoyaltyConfigs.$inferSelect;
+export const insertFanLoyaltyConfigSchema = createInsertSchema(
+  fanLoyaltyConfigs,
+);
+
+// ============================================================================
+// OUTREACH CRM — pitch tracking (press kit / playlist pitching / sync)
+// ============================================================================
+
+export const outreachCampaigns = pgTable(
+  "outreach_campaigns",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /** blog | playlist | sync_supervisor | pr_outlet | radio */
+    campaignType: text("campaign_type").notNull(),
+    releaseId: varchar("release_id"),
+    beatId: varchar("beat_id"),
+    status: text("status").default("active").notNull(),
+    totalPitches: integer("total_pitches").default(0).notNull(),
+    openCount: integer("open_count").default(0).notNull(),
+    replyCount: integer("reply_count").default(0).notNull(),
+    placementCount: integer("placement_count").default(0).notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => ({
+    byUser: index("outreach_campaigns_user_idx").on(t.userId, t.createdAt),
+  }),
+);
+
+export type OutreachCampaign = typeof outreachCampaigns.$inferSelect;
+export type InsertOutreachCampaign = typeof outreachCampaigns.$inferInsert;
+export const insertOutreachCampaignSchema = createInsertSchema(
+  outreachCampaigns,
+).omit({ id: true, createdAt: true, updatedAt: true, totalPitches: true, openCount: true, replyCount: true, placementCount: true });
+
+export const outreachPitches = pgTable(
+  "outreach_pitches",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    campaignId: varchar("campaign_id")
+      .notNull()
+      .references(() => outreachCampaigns.id, { onDelete: "cascade" }),
+    userId: varchar("user_id").notNull(),
+    /** Name of curator / blog / playlist / supervisor */
+    recipientName: text("recipient_name").notNull(),
+    recipientEmail: text("recipient_email"),
+    recipientUrl: text("recipient_url"),
+    /** draft | sent | opened | replied | added | declined | no_response */
+    status: text("status").default("draft").notNull(),
+    pitchBody: text("pitch_body"),
+    followUpAt: timestamp("follow_up_at"),
+    sentAt: timestamp("sent_at"),
+    openedAt: timestamp("opened_at"),
+    repliedAt: timestamp("replied_at"),
+    resolvedAt: timestamp("resolved_at"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => ({
+    byCampaign: index("outreach_pitches_campaign_idx").on(
+      t.campaignId,
+      t.status,
+    ),
+    byUser: index("outreach_pitches_user_idx").on(t.userId, t.status),
+    followUp: index("outreach_pitches_followup_idx").on(t.followUpAt),
+  }),
+);
+
+export type OutreachPitch = typeof outreachPitches.$inferSelect;
+export type InsertOutreachPitch = typeof outreachPitches.$inferInsert;
+export const insertOutreachPitchSchema = createInsertSchema(
+  outreachPitches,
+).omit({ id: true, createdAt: true, updatedAt: true });
+
+// ============================================================================
+// ADAPTIVE PRICING SNAPSHOTS — per-beat pricing engine decisions
+// ============================================================================
+
+export const beatPricingSnapshots = pgTable(
+  "beat_pricing_snapshots",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    beatId: varchar("beat_id").notNull(),
+    userId: varchar("user_id").notNull(),
+    previousPriceCents: integer("previous_price_cents").notNull(),
+    newPriceCents: integer("new_price_cents").notNull(),
+    /** plays, downloads, conversion_rate that drove the change */
+    conversionRate: real("conversion_rate"),
+    plays: integer("plays"),
+    downloads: integer("downloads"),
+    /** up | down | hold */
+    direction: text("direction").notNull(),
+    reason: text("reason"),
+    appliedAt: timestamp("applied_at").defaultNow(),
+  },
+  (t) => ({
+    byBeat: index("beat_pricing_snapshots_beat_idx").on(t.beatId, t.appliedAt),
+    byUser: index("beat_pricing_snapshots_user_idx").on(t.userId, t.appliedAt),
+  }),
+);
+
+export type BeatPricingSnapshot = typeof beatPricingSnapshots.$inferSelect;
+export const insertBeatPricingSnapshotSchema = createInsertSchema(
+  beatPricingSnapshots,
+).omit({ id: true, appliedAt: true });
