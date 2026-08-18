@@ -4373,11 +4373,11 @@ router.get(
 
       const avgTracksPerProject =
         totalProjectCount > 0
-          ? Math.round((trackTotal / totalProjectCount) * 10) / 10
+          ? Math.round((trackTotal / (totalProjectCount || 1)) * 10) / 10
           : 0;
       const avgClipsPerProject =
         totalProjectCount > 0
-          ? Math.round((clipTotal / totalProjectCount) * 10) / 10
+          ? Math.round((clipTotal / (totalProjectCount || 1)) * 10) / 10
           : 0;
 
       res.json({

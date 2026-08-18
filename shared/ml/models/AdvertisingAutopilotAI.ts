@@ -453,7 +453,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
       const avgROI =
         platformCampaigns.reduce((sum, c) => sum + c.roi, 0) /
-        platformCampaigns.length;
+        (platformCampaigns.length || 1);
       platformROI.set(platform, avgROI);
     }
 
@@ -473,7 +473,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
     for (const platform of platforms) {
       const roi = platformROI.get(platform)!;
-      const weight = roi / totalWeight;
+      const weight = roi / (totalWeight || 1);
       const allocatedBudget = totalBudget * weight;
 
       const platformCampaigns = userCampaignHistory.filter(
@@ -482,7 +482,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
       const avgConversions =
         platformCampaigns.length > 0
           ? platformCampaigns.reduce((sum, c) => sum + c.conversions, 0) /
-            platformCampaigns.length
+            (platformCampaigns.length || 1)
           : 10;
 
       const expectedConversions = Math.floor(
@@ -549,7 +549,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
       );
       const avgCPC =
         platformCampaigns.reduce((sum, c) => sum + c.cpc, 0) /
-        platformCampaigns.length;
+        (platformCampaigns.length || 1);
 
       const estimatedClicks = 10000 * predictedCTR;
       const predictedConversions = estimatedClicks * predictedCVR;
@@ -671,7 +671,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
         const newCentroid = clusters[i][0].map(
           (_, featureIdx) =>
             clusters[i].reduce((sum, point) => sum + point[featureIdx], 0) /
-            clusters[i].length,
+            (clusters[i].length || 1),
         );
 
         centroids[i] = newCentroid;
@@ -998,7 +998,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
       recentCampaigns.reduce(
         (sum, c) => sum + c.impressions / c.audienceSize,
         0,
-      ) / recentCampaigns.length;
+      ) / (recentCampaigns.length || 1);
 
     return Math.min(1, avgFrequency / 5);
   }
@@ -1051,16 +1051,16 @@ export class AdvertisingAutopilotAI extends BaseModel {
       const stats = {
         avgROI:
           platformCampaigns.reduce((sum, c) => sum + c.roi, 0) /
-          platformCampaigns.length,
+          (platformCampaigns.length || 1),
         avgCTR:
           platformCampaigns.reduce((sum, c) => sum + c.ctr, 0) /
-          platformCampaigns.length,
+          (platformCampaigns.length || 1),
         avgCVR:
           platformCampaigns.reduce((sum, c) => sum + c.cvr, 0) /
-          platformCampaigns.length,
+          (platformCampaigns.length || 1),
         avgCPC:
           platformCampaigns.reduce((sum, c) => sum + c.cpc, 0) /
-          platformCampaigns.length,
+          (platformCampaigns.length || 1),
         totalSpend: platformCampaigns.reduce((sum, c) => sum + c.spend, 0),
         totalConversions: platformCampaigns.reduce(
           (sum, c) => sum + c.conversions,
@@ -1105,11 +1105,11 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
     for (let i = 0; i < numFeatures; i++) {
       const values = features.map((f) => f[i]);
-      mean[i] = values.reduce((sum, val) => sum + val, 0) / values.length;
+      mean[i] = values.reduce((sum, val) => sum + val, 0) / (values.length || 1);
 
       const variance =
         values.reduce((sum, val) => sum + Math.pow(val - mean[i], 2), 0) /
-        values.length;
+        (values.length || 1);
       std[i] = Math.sqrt(variance) || 1;
     }
 
@@ -1141,13 +1141,13 @@ export class AdvertisingAutopilotAI extends BaseModel {
       campaigns
         .filter((c) => c.creativeType === "video")
         .reduce((sum, c) => sum + c.roi, 0) /
-      Math.max(campaigns.filter((c) => c.creativeType === "video").length, 1);
+      (Math.max(campaigns.filter((c) => c.creativeType === "video").length, 1) || 1);
 
     const imageROI =
       campaigns
         .filter((c) => c.creativeType === "image")
         .reduce((sum, c) => sum + c.roi, 0) /
-      Math.max(campaigns.filter((c) => c.creativeType === "image").length, 1);
+      (Math.max(campaigns.filter((c) => c.creativeType === "image").length, 1) || 1);
 
     if (videoROI > imageROI) {
       factors.push({
@@ -1180,7 +1180,7 @@ export class AdvertisingAutopilotAI extends BaseModel {
 
     return platforms.map((platform) => {
       const roi = defaultROI[platform] || 2.0;
-      const allocatedBudget = (totalBudget * roi) / totalWeight;
+      const allocatedBudget = (totalBudget * roi) / (totalWeight || 1);
 
       return {
         platform,

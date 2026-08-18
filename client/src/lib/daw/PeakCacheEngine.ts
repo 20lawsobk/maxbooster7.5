@@ -116,7 +116,7 @@ export class PeakCacheEngine {
       peaks[i] = {
         min: min === Infinity ? 0 : min,
         max: max === -Infinity ? 0 : max,
-        rms: Math.sqrt(sumSquared / count),
+        rms: Math.sqrt(sumSquared / (count || 1)),
       };
     }
 
@@ -198,7 +198,7 @@ export class PeakCacheEngine {
       result[i] = {
         min: min === Infinity ? 0 : min,
         max: max === -Infinity ? 0 : max,
-        rms: Math.sqrt(rmsSum / count),
+        rms: Math.sqrt(rmsSum / (count || 1)),
       };
     }
 

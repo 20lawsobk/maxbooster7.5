@@ -310,7 +310,7 @@ export class PocketStorageService {
       capacityBytes: totalCapacity,
       usedBytes: totalUsed,
       utilizationPercent:
-        totalCapacity > 0 ? (totalUsed / totalCapacity) * 100 : 0,
+        totalCapacity > 0 ? (totalUsed / (totalCapacity || 1)) * 100 : 0,
     };
   }
 }

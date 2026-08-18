@@ -688,7 +688,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     }
   };
 
-  ((platformKey: string) =>
+  const getPipelineStage = (platformKey: string) =>
     pipelineData?.pipeline?.find(
       (p: Record<string, unknown>) => p.platform === platformKey,
     ));
@@ -1937,7 +1937,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                 );
                 const pct = Math.max(
                   0,
-                  (stateIdx / (CLAIM_STEP_LABELS.length - 1)) * 100,
+                  (stateIdx / ((CLAIM_STEP_LABELS.length - 1 || 1))) * 100,
                 );
                 return (
                   <div key={entry.platform} className="space-y-1.5">

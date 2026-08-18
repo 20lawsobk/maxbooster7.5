@@ -255,7 +255,7 @@ export class AdvancedTimeSeriesModel extends BaseModel {
     if (data.length <= lag) return 0;
 
     const n = data.length - lag;
-    const mean = data.reduce((sum, val) => sum + val, 0) / data.length;
+    const mean = data.reduce((sum, val) => sum + val, 0) / (data.length || 1);
 
     let numerator = 0;
     let denominator = 0;
@@ -268,7 +268,7 @@ export class AdvancedTimeSeriesModel extends BaseModel {
       denominator += Math.pow(data[i] - mean, 2);
     }
 
-    return denominator === 0 ? 0 : numerator / denominator;
+    return denominator === 0 ? 0 : numerator / (denominator || 1);
   }
 
   private calculatePhase(data: number[], period: number): number {
@@ -341,7 +341,7 @@ export class AdvancedTimeSeriesModel extends BaseModel {
       const start = Math.max(0, i - halfWindow);
       const end = Math.min(data.length, i + halfWindow + 1);
       const windowData = data.slice(start, end);
-      result.push(windowData.reduce((a, b) => a + b, 0) / windowData.length);
+      result.push(windowData.reduce((a, b) => a + b, 0) / (windowData.length || 1));
     }
 
     return result;
@@ -383,10 +383,10 @@ export class AdvancedTimeSeriesModel extends BaseModel {
       for (let i = 0; i < data.length; i++) {
         const start = Math.max(0, i - window + 1);
         const windowData = data.slice(start, i + 1);
-        const mean = windowData.reduce((a, b) => a + b, 0) / windowData.length;
+        const mean = windowData.reduce((a, b) => a + b, 0) / (windowData.length || 1);
         const variance =
           windowData.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
-          windowData.length;
+          (windowData.length || 1);
         result.push(Math.sqrt(variance));
       }
       return result;
@@ -434,9 +434,9 @@ export class AdvancedTimeSeriesModel extends BaseModel {
     inputs: tf.Tensor;
     labels: tf.Tensor;
   } {
-    const mean = data.reduce((sum, val) => sum + val, 0) / data.length;
+    const mean = data.reduce((sum, val) => sum + val, 0) / (data.length || 1);
     const variance =
-      data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.length;
+      data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (data.length || 1);
     const std = Math.sqrt(variance);
     const min = Math.min(...data);
     const max = Math.max(...data);
@@ -557,9 +557,9 @@ export class AdvancedTimeSeriesModel extends BaseModel {
 
   private calculateStd(data: number[]): number {
     if (data.length === 0) return 0;
-    const mean = data.reduce((sum, val) => sum + val, 0) / data.length;
+    const mean = data.reduce((sum, val) => sum + val, 0) / (data.length || 1);
     const variance =
-      data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.length;
+      data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (data.length || 1);
     return Math.sqrt(variance);
   }
 
@@ -599,11 +599,11 @@ export class AdvancedTimeSeriesModel extends BaseModel {
       return Math.abs(val - predicted);
     });
 
-    const mae = naiveErrors.reduce((a, b) => a + b, 0) / naiveErrors.length;
+    const mae = naiveErrors.reduce((a, b) => a + b, 0) / (naiveErrors.length || 1);
     const rmse = Math.sqrt(
-      naiveErrors.reduce((sum, err) => sum + err * err, 0) / naiveErrors.length,
+      naiveErrors.reduce((sum, err) => sum + err * err, 0) / (naiveErrors.length || 1),
     );
-    const mean = testData.reduce((a, b) => a + b, 0) / testData.length;
+    const mean = testData.reduce((a, b) => a + b, 0) / (testData.length || 1);
     const mape = (mae / (mean || 1)) * 100;
 
     return {

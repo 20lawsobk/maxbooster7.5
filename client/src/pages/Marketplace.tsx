@@ -2046,7 +2046,7 @@ export default function Marketplace() {
     },
   });
 
-  async (
+  const handleBeatPurchase = async (
     beatId: string,
     interactionType: string,
     extra?: Record<string, unknown>,
@@ -4502,7 +4502,7 @@ export default function Marketplace() {
                         affiliates.reduce(
                           (sum, a) => sum + (a.conversionRate ?? 0),
                           0,
-                        ) / affiliates.length
+                        ) / (affiliates.length || 1)
                       ).toFixed(1)
                     : 0
                 }

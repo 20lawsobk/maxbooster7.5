@@ -319,7 +319,7 @@ export class MonitoringService {
       const totalErrors = errorMetrics?.reduce((sum, m) => sum + m?.value, 0);
       const successRate =
         totalRequests > 0
-          ? ((totalRequests - totalErrors) / totalRequests) * 100
+          ? ((totalRequests - totalErrors) / (totalRequests || 1)) * 100
           : 100;
 
       // Calculate average response time
@@ -344,7 +344,7 @@ export class MonitoringService {
         },
         errors: {
           total: totalErrors,
-          rate: totalRequests > 0 ? (totalErrors / totalRequests) * 100 : 0,
+          rate: totalRequests > 0 ? (totalErrors / (totalRequests || 1)) * 100 : 0,
         },
       };
     } catch (error: unknown) {

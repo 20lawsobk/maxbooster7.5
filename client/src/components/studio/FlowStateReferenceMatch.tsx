@@ -225,7 +225,7 @@ export function FlowStateReferenceMatch({
       fftInPlace(re, im);
       const mag = new Float32Array(size >> 1);
       for (let i = 0; i < size >> 1; i++) {
-        mag[i] = Math.sqrt(re[i] * re[i] + im[i] * im[i]) / size;
+        mag[i] = Math.sqrt(re[i] * re[i] + im[i] * im[i]) / (size || 1);
       }
       return mag;
     },
@@ -426,7 +426,7 @@ export function FlowStateReferenceMatch({
         const a = Math.abs(v);
         if (a > peak) peak = a;
       }
-      const rmsLin = Math.sqrt(sumSq / ch.length);
+      const rmsLin = Math.sqrt(sumSq / (ch.length || 1));
       const rmsDb = +(20 * Math.log10(Math.max(rmsLin, 1e-7))).toFixed(1);
       const peakDb = +(20 * Math.log10(Math.max(peak, 1e-7))).toFixed(1);
       const crestFactor = +(peakDb - rmsDb).toFixed(1);

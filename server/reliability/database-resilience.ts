@@ -267,7 +267,7 @@ class DatabaseResilience extends EventEmitter {
       throw new Error("Connection pool exhausted");
     }
 
-    const sql = neon(env?.DATABASE_URL!);
+    const sql = neon(env?.DATABASE_URL);
     const db = drizzle(sql);
 
     this.pool.connections?.push(db);

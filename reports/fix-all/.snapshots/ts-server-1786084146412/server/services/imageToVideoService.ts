@@ -677,12 +677,12 @@ export async function imageToMusicVideo(
           "[ImageToVideo] Beat analysis failed, using equal durations:",
           (e as Error).message,
         );
-        const perScene = totalDur / imagePaths.length;
+        const perScene = totalDur / (imagePaths.length || 1);
         sceneDurations = imagePaths.map(() => perScene);
       }
     } else {
       // Equal durations without beat sync
-      const perScene = totalDur / imagePaths.length;
+      const perScene = totalDur / (imagePaths.length || 1);
       sceneDurations = imagePaths.map(() => perScene);
     }
 

@@ -588,15 +588,18 @@ export class ReleaseWorkflowService {
     let log = this.auditLog.get(releaseId) || [];
 
     if (options?.startDate) {
-      log = log?.filter((e) => e?.timestamp >= options?.startDate!);
+      const startDate = options.startDate;
+      log = log?.filter((e) => e?.timestamp >= startDate);
     }
 
     if (options?.endDate) {
-      log = log?.filter((e) => e?.timestamp <= options?.endDate!);
+      const endDate = options.endDate;
+      log = log?.filter((e) => e?.timestamp <= endDate);
     }
 
     if (options?.actions && options?.actions.length > 0) {
-      log = log?.filter((e) => options?.actions!.includes(e?.action));
+      const actions = options.actions;
+      log = log?.filter((e) => actions.includes(e?.action));
     }
 
     log = log?.sort((a, b) => b?.timestamp.getTime() - a?.timestamp.getTime());

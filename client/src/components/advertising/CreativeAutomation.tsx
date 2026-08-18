@@ -204,8 +204,8 @@ export function CreativeAutomation() {
   variants.reduce((acc, v) => acc + v.impressions, 0);
   variants.reduce((acc, v) => acc + v.conversions, 0);
   const totalRevenue = variants.reduce((acc, v) => acc + v.revenue, 0);
-  variants.length > 0
-      ? variants.reduce((acc, v) => acc + v.ctr, 0) / variants.length
+  const avgCtr = variants.length > 0
+      ? variants.reduce((acc, v) => acc + v.ctr, 0) / (variants.length || 1)
       : 0;
 
   if (abTests.length === 0) {

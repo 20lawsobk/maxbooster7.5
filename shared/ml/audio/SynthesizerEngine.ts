@@ -2352,7 +2352,7 @@ export function generateFMTone(
     }
     output[n] = Math.max(
       -1,
-      Math.min(1, (sample * velocity) / algorithm.carriers.length),
+      Math.min(1, (sample * velocity) / (algorithm.carriers.length || 1)),
     );
   }
 
@@ -2435,7 +2435,7 @@ export class PlateReverb {
       this.positions[i] = (pos + 1) % this.sizes[i];
       out += delayed;
     }
-    return input * (1 - mix) + out * (mix / this.sizes.length);
+    return input * (1 - mix) + out * (mix / (this.sizes.length || 1));
   }
 }
 
@@ -2594,7 +2594,7 @@ export function formantFilter(
   }
 
   for (let n = 0; n < input.length; n++) {
-    output[n] = input[n] * (1 - wet) + (output[n] * wet) / fmts.length;
+    output[n] = input[n] * (1 - wet) + (output[n] * wet) / (fmts.length || 1);
   }
   return output;
 }

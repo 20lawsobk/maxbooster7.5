@@ -362,7 +362,7 @@ class RevenueForecaster {
     const platformBreakdown = byPlatform?.map((p) => ({
       platform: p.platform,
       revenue: Number(p?.revenue),
-      percentage: total > 0 ? (Number(p?.revenue) / total) * 100 : 0,
+      percentage: total > 0 ? (Number(p?.revenue) / (total || 1)) * 100 : 0,
       growth: Math.random() * 20 - 5,
     }));
 

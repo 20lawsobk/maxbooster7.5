@@ -169,7 +169,7 @@ function MiniLossChart({ history }: { history: TrainStatus["loss_history"] }) {
 
   const pts = history
     .map((h, i) => {
-      const x = pad + (i / (history.length - 1)) * (W - pad * 2);
+      const x = pad + (i / ((history.length - 1 || 1))) * (W - pad * 2);
       const y = pad + (1 - (h.loss - minLoss) / range) * (H - pad * 2);
       return `${x},${y}`;
     })

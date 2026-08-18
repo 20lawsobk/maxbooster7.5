@@ -967,7 +967,7 @@ export class CustomAIEngine {
       denominator += Math.pow(data[i] - mean, 2);
     }
 
-    return denominator === 0 ? 0 : numerator / denominator;
+    return denominator === 0 ? 0 : numerator / (denominator || 1);
   }
 
   private forecastValue(
@@ -1065,7 +1065,7 @@ export class CustomAIEngine {
       (s, d) => s + (d?.streams || 0),
       0,
     );
-    const retention = users.length > 0 ? activeUsers / users.length : 0;
+    const retention = users.length > 0 ? activeUsers / (users.length || 1) : 0;
     const ltv = activeUsers > 0 ? totalRevenue / activeUsers : 0;
     const engagement =
       totalStreams > 0 && activeUsers > 0
@@ -1488,7 +1488,7 @@ export class CustomAIEngine {
     const topChannelStreams = topPlatformData[0]?.streams || 0;
     const topChannelContribution =
       totalStreams > 0
-        ? Math.round((topChannelStreams / totalStreams) * 100)
+        ? Math.round((topChannelStreams / (totalStreams || 1)) * 100)
         : 0;
 
     const primaryGrowthDriver =

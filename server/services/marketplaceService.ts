@@ -1433,7 +1433,7 @@ export class MarketplaceService {
       return {
         totalRevenue: totalSales,
         totalSales: totalOrders,
-        averageOrderValue: totalOrders > 0 ? totalSales / totalOrders : 0,
+        averageOrderValue: totalOrders > 0 ? totalSales / (totalOrders || 1) : 0,
         recentSales: sales.slice(0, 10),
       };
     } catch (error: unknown) {

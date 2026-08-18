@@ -78,7 +78,7 @@ export class DeltaEngine {
 
   deltaRatio(base: Buffer, target: Buffer): number {
     const delta = this.encode(base, target);
-    return target.length / delta.length;
+    return target.length / (delta.length || 1);
   }
 
   private buildIndex(data: Buffer): Map<string, number[]> {

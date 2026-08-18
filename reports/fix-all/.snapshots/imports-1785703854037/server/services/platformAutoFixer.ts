@@ -312,8 +312,8 @@ class PlatformAutoFixer extends EventEmitter {
     const first = recent.slice(0, Math.floor(recent.length / 2));
     const second = recent.slice(Math.floor(recent.length / 2));
     const score = (s: TrendSnapshot) => s.criticalCount * 2 + s.degradedCount;
-    const avgFirst = first.reduce((a, b) => a + score(b), 0) / first.length;
-    const avgSecond = second.reduce((a, b) => a + score(b), 0) / second.length;
+    const avgFirst = first.reduce((a, b) => a + score(b), 0) / (first.length || 1);
+    const avgSecond = second.reduce((a, b) => a + score(b), 0) / (second.length || 1);
     const delta = avgSecond - avgFirst;
     return {
       worsening: delta > 0.5,

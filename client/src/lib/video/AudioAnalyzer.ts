@@ -136,7 +136,7 @@ export class AudioAnalyzer {
     }
 
     const averageBass =
-      this.beatHistory.reduce((a, b) => a + b, 0) / this.beatHistory.length;
+      this.beatHistory.reduce((a, b) => a + b, 0) / (this.beatHistory.length || 1);
     const now = performance?.now();
 
     if (

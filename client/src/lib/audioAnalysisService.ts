@@ -307,7 +307,7 @@ class AudioAnalysisService {
       }
 
       return totalMagnitude > 0
-        ? Math.round((weightedSum / totalMagnitude) * 100) / 100
+        ? Math.round((weightedSum / (totalMagnitude || 1)) * 100) / 100
         : 1500;
     } catch (err) {
       logger.error("Spectral centroid calculation error:", err);

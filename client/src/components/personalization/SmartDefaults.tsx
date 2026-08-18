@@ -280,7 +280,7 @@ export function SmartDefaults({
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 
   const totalSteps = 4;
-  const progress = ((currentStep + 1) / totalSteps) * 100;
+  const progress = ((currentStep + 1) / (totalSteps || 1)) * 100;
 
   const applyDefaultsMutation = useMutation({
     mutationFn: async (settings: SmartDefaultsResult) => {

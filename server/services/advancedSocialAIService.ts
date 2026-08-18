@@ -1911,7 +1911,7 @@ class AdvancedSocialAIService {
       .size;
     const originality = Math.min(
       90,
-      Math.max(60, 50 + (uniqueWords / Math.max(words.length, 1)) * 60),
+      Math.max(60, 50 + (uniqueWords / (Math.max(words.length, 1) || 1)) * 60),
     );
 
     const overall =
@@ -2272,12 +2272,12 @@ class AdvancedSocialAIService {
     const interestMatch =
       audience.interests.filter((interest) =>
         lowerContent.includes(interest.toLowerCase()),
-      ).length / audience.interests.length;
+      ).length / (audience.interests.length || 1);
 
     const valueMatch =
       audience.values.filter((value) =>
         lowerContent.includes(value.toLowerCase().replace(/-/g, " ")),
-      ).length / audience.values.length;
+      ).length / (audience.values.length || 1);
 
     const lengthMatch = (() => {
       const wordCount = content.split(/\s+/).length;
@@ -2435,7 +2435,7 @@ class AdvancedSocialAIService {
       }
     });
 
-    const avgEngagement = count > 0 ? totalEngagement / count : 0.5;
+    const avgEngagement = count > 0 ? totalEngagement / (count || 1) : 0.5;
     return Math.min(
       100,
       Math.max(0, (avgEngagement * 0.5 + hookStrength * 0.5) * 100),

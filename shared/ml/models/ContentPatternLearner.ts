@@ -61,17 +61,17 @@ export class ContentPatternLearner {
 
     const avgSentenceLength =
       sentences.reduce((sum, s) => sum + s.split(" ").length, 0) /
-      sentences.length;
+      (sentences.length || 1);
 
     const complexWords = allTokens.filter((t) => t.length > 10).length;
     const vocabularyComplexity =
-      complexWords / allTokens.length > 0.2
+      complexWords / (allTokens.length || 1) > 0.2
         ? "advanced"
-        : complexWords / allTokens.length > 0.1
+        : complexWords / (allTokens.length || 1) > 0.1
           ? "moderate"
           : "simple";
 
-    const emojiRatio = emojiCount / posts.length;
+    const emojiRatio = emojiCount / (posts.length || 1);
     const emojiUsage =
       emojiRatio > 3
         ? "heavy"
@@ -81,7 +81,7 @@ export class ContentPatternLearner {
             ? "light"
             : "none";
 
-    const hashtagRatio = hashtagCount / posts.length;
+    const hashtagRatio = hashtagCount / (posts.length || 1);
 
     const isFormal =
       avgSentenceLength > 15 && vocabularyComplexity === "advanced";

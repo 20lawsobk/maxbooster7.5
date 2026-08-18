@@ -526,7 +526,7 @@ export class VideoCompositor {
 
     this.stats.framesComposited++;
     this.stats.averageFrameTime =
-      this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length;
+      this.frameTimes.reduce((a, b) => a + b, 0) / (this.frameTimes.length || 1);
   }
 
   getCanvas(): HTMLCanvasElement | OffscreenCanvas {

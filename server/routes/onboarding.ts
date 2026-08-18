@@ -739,7 +739,7 @@ router.get("/profile/completion", requireAuth, async (req, res) => {
 
     res.json({
       ...completion,
-      completionPercentage: Math.round((completedSteps / totalSteps) * 100),
+      completionPercentage: Math.round((completedSteps / (totalSteps || 1)) * 100),
       totalPoints: completedSteps * 25,
     });
   } catch (error) {

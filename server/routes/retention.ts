@@ -164,7 +164,7 @@ router.get(
       }
 
       const staleCutoff = new Date(Date?.now() - 24 * 60 * 60 * 1000);
-      if (existing?.computedAt! < staleCutoff) {
+      if (existing?.computedAt < staleCutoff) {
         const fresh = await customerHealthScoreService?.computeAndStore(userId);
         return res.json(fresh);
       }

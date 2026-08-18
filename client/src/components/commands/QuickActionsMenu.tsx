@@ -424,7 +424,7 @@ function RadialQuickActions({
   const visibleActions = actions.slice(0, 8);
   const radius = 80;
   const startAngle = -90;
-  const angleStep = 360 / Math.min(visibleActions.length, 8);
+  const angleStep = 360 / (Math.min(visibleActions.length, 8) || 1);
 
   return (
     <TooltipProvider>

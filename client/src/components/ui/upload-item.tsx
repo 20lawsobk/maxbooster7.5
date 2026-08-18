@@ -291,7 +291,7 @@ export function UploadList({
     0,
   );
   const overallProgress =
-    totalSize > 0 ? Math.round((uploadedSize / totalSize) * 100) : 0;
+    totalSize > 0 ? Math.round((uploadedSize / (totalSize || 1)) * 100) : 0;
 
   return (
     <div className={cn("space-y-3", className)}>

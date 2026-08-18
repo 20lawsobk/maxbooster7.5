@@ -234,7 +234,7 @@ export function ContentIDManager({
     (r) => r.status === "conflict",
   ).length;
   const progress =
-    tracks.length > 0 ? (registeredCount / tracks.length) * 100 : 0;
+    tracks.length > 0 ? (registeredCount / (tracks.length || 1)) * 100 : 0;
 
   const getStatusConfig = (status: string) => {
     switch (status) {

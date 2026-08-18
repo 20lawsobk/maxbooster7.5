@@ -69,7 +69,7 @@ export function RecommendedActions({
   const completedCount = 0;
   const totalCount = displayedActions.length;
   const progressPercent =
-    totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+    totalCount > 0 ? (completedCount / (totalCount || 1)) * 100 : 0;
 
   return (
     <Card>

@@ -113,7 +113,7 @@ export function ReleaseChecklist({
   const completedCount = tasks.filter((t) => t.completedAt).length;
   const totalCount = tasks.length;
   const progress =
-    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    totalCount > 0 ? Math.round((completedCount / (totalCount || 1)) * 100) : 0;
 
   const groupedTasks = tasks.reduce<Record<string, Task[]>>((acc, task) => {
     const category = task.category || "other";

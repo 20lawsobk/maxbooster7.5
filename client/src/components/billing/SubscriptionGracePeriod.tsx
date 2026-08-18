@@ -61,7 +61,7 @@ export default function SubscriptionGracePeriod({
     gracePeriod;
   const totalGraceDays = 7;
   const progressPercent =
-    ((totalGraceDays - gracePeriodDaysRemaining) / totalGraceDays) * 100;
+    ((totalGraceDays - gracePeriodDaysRemaining) / (totalGraceDays || 1)) * 100;
 
   const getUrgencyStyles = () => {
     switch (actions?.urgencyLevel) {

@@ -464,7 +464,7 @@ class BurnInTest {
 
     const latencies = this.metrics.queueMetrics.map((m) => m.redisLatency);
     const avgLatency = (
-      latencies.reduce((a, b) => a + b, 0) / latencies.length
+      latencies.reduce((a, b) => a + b, 0) / (latencies.length || 1)
     ).toFixed(2);
     const maxLatency = Math.max(...latencies);
     const totalFailed =
@@ -500,7 +500,7 @@ class BurnInTest {
     const allSnapshots = this.metrics.featureValidationSnapshots;
     const avgSuccessRate = (
       allSnapshots.reduce((sum, snap) => sum + snap.successRate, 0) /
-      allSnapshots.length
+      (allSnapshots.length || 1)
     ).toFixed(2);
 
     const totalTests = allSnapshots.reduce(

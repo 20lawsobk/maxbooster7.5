@@ -494,7 +494,7 @@ export class PocketDimension extends EventEmitter {
       id: hash,
       size: data.length,
       compressedSize: finalData.length,
-      compressionRatio: data.length / finalData.length,
+      compressionRatio: data.length / (finalData.length || 1),
       createdAt: new Date(),
       accessCount: 1,
       lastAccessed: new Date(),

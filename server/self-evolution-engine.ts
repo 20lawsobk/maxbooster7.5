@@ -2457,7 +2457,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       (u) => u?.status === "failed",
     ).length;
     const total = appliedCount + failedCount;
-    const successRate = total > 0 ? appliedCount / total : 1.0;
+    const successRate = total > 0 ? appliedCount / (total || 1) : 1.0;
     const deployedCount = appliedCount;
 
     // Count how many of this cycle's applied upgrades addressed competitive gaps

@@ -256,8 +256,8 @@ router.get("/producer-analytics", async (req: Request, res: Response) => {
         );
 
         const conversionRate =
-          totalViews > 0 ? (totalSales / totalViews) * 100 : 0;
-        const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+          totalViews > 0 ? (totalSales / (totalViews || 1)) * 100 : 0;
+        const avgOrderValue = totalSales > 0 ? totalRevenue / (totalSales || 1) : 0;
 
         const days =
           timeRange === "7d"
@@ -377,7 +377,7 @@ router.get("/producer-analytics", async (req: Request, res: Response) => {
               revenue: data.revenue,
               percentage:
                 totalSales > 0
-                  ? parseFloat(((data.count / totalSales) * 100).toFixed(1))
+                  ? parseFloat(((data.count / (totalSales || 1)) * 100).toFixed(1))
                   : 0,
             }),
           ),

@@ -388,7 +388,7 @@ export class AutopilotCoordinator {
 
     const avgEngagement =
       recentOrganic.reduce((sum, e) => sum + (e.outcome?.engagement || 0), 0) /
-      recentOrganic.length;
+      (recentOrganic.length || 1);
 
     const baseline = 100;
     return Math.min(1, avgEngagement / baseline);
@@ -522,7 +522,7 @@ export class AutopilotCoordinator {
   private calculateAverageOrganicLift(): number {
     const platforms = ["instagram", "twitter", "tiktok", "facebook", "youtube"];
     const lifts = platforms.map((p) => this.getOrganicLift(p));
-    return lifts.reduce((a, b) => a + b, 0) / platforms.length;
+    return lifts.reduce((a, b) => a + b, 0) / (platforms.length || 1);
   }
 
   public learnFromOutcome(

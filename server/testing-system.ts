@@ -352,13 +352,13 @@ export class TestingSystem {
 
       // Calculate percentages, avoiding division by zero
       const statementsPercent =
-        totalStatements > 0 ? (coveredStatements / totalStatements) * 100 : 0;
+        totalStatements > 0 ? (coveredStatements / (totalStatements || 1)) * 100 : 0;
       const branchesPercent =
-        totalBranches > 0 ? (coveredBranches / totalBranches) * 100 : 0;
+        totalBranches > 0 ? (coveredBranches / (totalBranches || 1)) * 100 : 0;
       const functionsPercent =
-        totalFunctions > 0 ? (coveredFunctions / totalFunctions) * 100 : 0;
+        totalFunctions > 0 ? (coveredFunctions / (totalFunctions || 1)) * 100 : 0;
       const linesPercent =
-        totalLines > 0 ? (coveredLines / totalLines) * 100 : 0;
+        totalLines > 0 ? (coveredLines / (totalLines || 1)) * 100 : 0;
 
       return {
         statements: Math.round(statementsPercent * 10) / 10,
@@ -472,7 +472,7 @@ class UnitTester {
       ).length;
 
       const score =
-        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+        totalTests > 0 ? Math.round((passedTests / (totalTests || 1)) * 100) : 0;
 
       return {
         score,
@@ -743,7 +743,7 @@ class IntegrationTester {
       ).length;
 
       const score =
-        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+        totalTests > 0 ? Math.round((passedTests / (totalTests || 1)) * 100) : 0;
 
       return {
         score,
@@ -911,7 +911,7 @@ class E2ETester {
       ).length;
 
       const score =
-        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+        totalTests > 0 ? Math.round((passedTests / (totalTests || 1)) * 100) : 0;
 
       return {
         score,
@@ -1044,7 +1044,7 @@ class PerformanceTester {
       ).length;
 
       const score =
-        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+        totalTests > 0 ? Math.round((passedTests / (totalTests || 1)) * 100) : 0;
 
       return {
         score,
@@ -1177,7 +1177,7 @@ class SecurityTester {
       ).length;
 
       const score =
-        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+        totalTests > 0 ? Math.round((passedTests / (totalTests || 1)) * 100) : 0;
 
       return {
         score,
@@ -1302,7 +1302,7 @@ class AccessibilityTester {
       ).length;
 
       const score =
-        totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+        totalTests > 0 ? Math.round((passedTests / (totalTests || 1)) * 100) : 0;
 
       return {
         score,

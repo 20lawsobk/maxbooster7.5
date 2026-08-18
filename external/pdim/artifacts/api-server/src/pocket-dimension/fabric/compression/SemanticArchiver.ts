@@ -43,7 +43,7 @@ export class SemanticArchiver {
       data: out,
       originalBytes: data.length,
       archivedBytes: out.length,
-      ratio: data.length / out.length,
+      ratio: data.length / (out.length || 1),
       summary: {
         type: "json-summary",
         keys: Object.keys(parsed instanceof Object ? parsed : {}).length,
@@ -120,7 +120,7 @@ export class SemanticArchiver {
       data: out,
       originalBytes: data.length,
       archivedBytes: out.length,
-      ratio: data.length / out.length,
+      ratio: data.length / (out.length || 1),
       summary: { type: "log-archive", lines: lines.length },
     };
   }
@@ -152,7 +152,7 @@ export class SemanticArchiver {
         count: values.length,
         min: sorted[0],
         max: sorted[sorted.length - 1],
-        mean: sum / values.length,
+        mean: sum / (values.length || 1),
         p50: sorted[Math.floor(values.length * 0.5)],
         p95: sorted[Math.floor(values.length * 0.95)],
         p99: sorted[Math.floor(values.length * 0.99)],
@@ -168,7 +168,7 @@ export class SemanticArchiver {
       data: out,
       originalBytes: data.length,
       archivedBytes: out.length,
-      ratio: data.length / out.length,
+      ratio: data.length / (out.length || 1),
       summary: {
         type: "metrics-archive",
         seriesCount: Object.keys(aggregated).length,
@@ -211,7 +211,7 @@ export class SemanticArchiver {
       data: out,
       originalBytes: data.length,
       archivedBytes: out.length,
-      ratio: data.length / out.length,
+      ratio: data.length / (out.length || 1),
       summary: { type: "text-archive", wordCount: words.length },
     };
   }

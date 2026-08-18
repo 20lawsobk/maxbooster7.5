@@ -400,7 +400,7 @@ export default function Settings() {
     updateProfileMutation.mutate(profileData);
   };
 
-  async (key: string, value: boolean) => {
+  const handleNotificationToggle = async (key: string, value: boolean) => {
     const previousSettings = { ...notificationSettings };
 
     // Optimistic update
@@ -747,7 +747,7 @@ export default function Settings() {
     }
   };
 
-  ((sessionId: string) => {
+  const handleTerminateSession = (sessionId: string) => {
     setSessionToTerminate(sessionId);
     setTerminateSessionOpen(true);
   });
@@ -780,7 +780,7 @@ export default function Settings() {
     }
   };
 
-  async () => {
+  const handleConfirmTerminate = async () => {
     try {
       const response = await fetch("/api/auth/export-data", {
         credentials: "include",

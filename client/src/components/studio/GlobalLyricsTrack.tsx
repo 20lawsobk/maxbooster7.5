@@ -101,7 +101,7 @@ export function GlobalLyricsTrack({
       const lyric = lyrics.find((l) => l.id === editingId);
       if (lyric) {
         const wordDuration =
-          (lyric.endTime - lyric.startTime) / Math.max(words.length, 1);
+          (lyric.endTime - lyric.startTime) / (Math.max(words.length, 1) || 1);
         updateLyric(editingId, {
           text: editText.trim(),
           words: words.map((word, i) => ({

@@ -188,7 +188,7 @@ export function UnifiedInbox() {
     ).length,
   };
 
-  ((checked: boolean) => {
+  const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedMessages(filteredMessages.map((m: Message) => m.id));
     } else {
@@ -224,12 +224,12 @@ export function UnifiedInbox() {
     setReplyContent("");
   };
 
-  ((template: ReplyTemplate) => {
+  const handleTemplateSelect = (template: ReplyTemplate) => {
     setReplyContent(template.content);
     setShowTemplates(false);
   });
 
-  ((teamMember: TeamMember) => {
+  const handleAssign = (teamMember: TeamMember) => {
     toast({
       title: "Message Assigned",
       description: `Message assigned to ${teamMember.name}`,

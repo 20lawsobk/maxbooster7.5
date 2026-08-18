@@ -94,7 +94,7 @@ export function FlowStateBeatSlicer({
     waveform.forEach((val, idx) => {
       const threshold = 0.3 + (1 - sensitivity[0] / 100) * 0.4;
       if (val > threshold && idx - lastPeak > 20) {
-        positions.push(idx / waveform.length);
+        positions.push(idx / (waveform.length || 1));
         lastPeak = idx;
       }
     });
@@ -184,7 +184,7 @@ export function FlowStateBeatSlicer({
     ctx.fillStyle = "#6366f1";
     const centerY = height / 2;
     waveform.forEach((val, idx) => {
-      const x = (idx / waveform.length) * width;
+      const x = (idx / (waveform.length || 1)) * width;
       const h = val * height * 0.8;
       ctx.fillRect(x, centerY - h / 2, 1, h);
     });
@@ -236,7 +236,7 @@ export function FlowStateBeatSlicer({
       let endTime = positions[idx + 1] * duration;
 
       if (snapToGrid) {
-        const gridSize = duration / (gridLines.length - 1);
+        const gridSize = duration / ((gridLines.length - 1 || 1));
         startTime = Math.round(startTime / gridSize) * gridSize;
         endTime = Math.round(endTime / gridSize) * gridSize;
       }
@@ -337,7 +337,7 @@ export function FlowStateBeatSlicer({
     let clickTime = (x / canvas.width) * duration;
 
     if (snapToGrid) {
-      const gridSize = duration / (gridLines.length - 1);
+      const gridSize = duration / ((gridLines.length - 1 || 1));
       clickTime = Math.round(clickTime / gridSize) * gridSize;
     }
 

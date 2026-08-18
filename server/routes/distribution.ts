@@ -1018,7 +1018,7 @@ router.get(
         0,
       );
       const conversionRate =
-        totalClicks > 0 ? (totalPresaves / totalClicks) * 100 : 0;
+        totalClicks > 0 ? (totalPresaves / (totalClicks || 1)) * 100 : 0;
 
       res.json({
         totalClicks,
@@ -1267,7 +1267,7 @@ router.get(
         (s: unknown) => (s as any).status === "live",
       ).length;
       const totalCount = statuses.length || 1;
-      const overallProgress = (liveCount / totalCount) * 100;
+      const overallProgress = (liveCount / (totalCount || 1)) * 100;
 
       res.json({
         statuses: statuses.map((status: unknown) => ({
@@ -1913,7 +1913,7 @@ router.get(
           totalCompleted,
           allCompleted,
           progressPercentage:
-            totalRequested > 0 ? (totalCompleted / totalRequested) * 100 : 0,
+            totalRequested > 0 ? (totalCompleted / (totalRequested || 1)) * 100 : 0,
         },
       });
     } catch (error: unknown) {
@@ -6119,7 +6119,7 @@ router.post(
         },
         qcScore:
           checks.length > notAnalyzed
-            ? Math.round((passed / (checks.length - notAnalyzed)) * 100)
+            ? Math.round((passed / ((checks.length - notAnalyzed || 1))) * 100)
             : null,
         note:
           notAnalyzed > 0

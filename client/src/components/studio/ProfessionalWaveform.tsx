@@ -86,7 +86,7 @@ export function ProfessionalWaveform({
 
       if (delta > threshold && current > 0.5) {
         markers.push({
-          position: i / processedData.length,
+          position: i / (processedData.length || 1),
           strength: current,
         });
       }
@@ -102,7 +102,7 @@ export function ProfessionalWaveform({
     if (!showFrequencyColors) return primaryColor;
 
     // Simulate frequency analysis based on position in waveform
-    const position = index / total;
+    const position = index / (total || 1);
     const intensity = Math.abs(value);
 
     // Color based on frequency range
@@ -158,7 +158,7 @@ export function ProfessionalWaveform({
     }
 
     // Draw waveform
-    const barWidth = Math.max(1, width / processedData.length);
+    const barWidth = Math.max(1, width / (processedData.length || 1));
     const centerY = height / 2;
 
     // Create gradient for overall waveform

@@ -504,7 +504,7 @@ async function runAllTests() {
   logger.info(`\n  Total Tests: ${total}`);
   logger.info(`  ✅ Passed: ${passed}`);
   logger.info(`  ❌ Failed: ${failed}`);
-  logger.info(`  📊 Pass Rate: ${((passed / total) * 100).toFixed(1)}%`);
+  logger.info(`  📊 Pass Rate: ${((passed / (total || 1)) * 100).toFixed(1)}%`);
   logger.info(`  ⏱️  Duration: ${totalDuration}ms`);
 
   if (failed > 0) {

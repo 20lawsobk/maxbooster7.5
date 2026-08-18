@@ -118,7 +118,7 @@ export class StudioCollabServer {
 
           // Per-user studio connection cap
           const userCount =
-            this.userConnectionCount.get(authResult?.userId!) ?? 0;
+            this.userConnectionCount.get(authResult?.userId) ?? 0;
           if (userCount >= MAX_STUDIO_WS_PER_USER) {
             logger.warn(
               `[StudioCollab] Per-user connection limit reached for ${authResult?.userId}`,
@@ -139,7 +139,7 @@ export class StudioCollabServer {
           }
 
           const hasAccess = await this.checkProjectAccess(
-            authResult?.userId!,
+            authResult?.userId,
             projectId,
           );
 

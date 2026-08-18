@@ -129,7 +129,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
   }
 
   const denominator = Math.sqrt(normA) * Math.sqrt(normB);
-  return denominator === 0 ? 0 : dotProduct / denominator;
+  return denominator === 0 ? 0 : dotProduct / (denominator || 1);
 }
 
 function audioFeatureToVector(features: AudioFeatureVector): number[] {
@@ -353,7 +353,7 @@ export class RecommendationEngine extends BaseModel {
         count++;
       }
     }
-    const globalBias = count > 0 ? total / count : 0;
+    const globalBias = count > 0 ? total / (count || 1) : 0;
 
     // SGD with Momentum + Learning-Rate Decay + Gradient Clipping
     // Momentum β=0.9 dramatically speeds convergence on sparse interaction matrices.
@@ -574,7 +574,7 @@ export class RecommendationEngine extends BaseModel {
       }
 
       scores.set(trackId, {
-        score: totalScore / seedTracks.length,
+        score: totalScore / (seedTracks.length || 1),
         reasons: [...new Set(reasons)].slice(0, 3),
       });
     }
@@ -1075,7 +1075,7 @@ export class RecommendationEngine extends BaseModel {
       }
     }
 
-    const artistDiversity = artistSet.size / tracks.length;
+    const artistDiversity = artistSet.size / (tracks.length || 1);
     const genreDiversity = Math.min(genreSet.size / 5, 1); // Normalize to max 5 genres
 
     return (artistDiversity + genreDiversity) / 2;
@@ -1116,7 +1116,7 @@ export class RecommendationEngine extends BaseModel {
       );
       const genreScore =
         sharedGenres.length /
-        Math.max(sourceArtist.genres.length, artist.genres.length);
+        (Math.max(sourceArtist.genres.length, artist.genres.length) || 1);
       if (sharedGenres.length > 0) {
         reasons.push(`Shared genres: ${sharedGenres.slice(0, 3).join(", ")}`);
       }

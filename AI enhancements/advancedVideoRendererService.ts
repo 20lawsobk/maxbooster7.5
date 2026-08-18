@@ -548,7 +548,7 @@ async function assembleVideoFromScenes(
   const W = opts.width ?? 1080;
   const H = opts.height ?? 1920;
   const totalDuration = opts.duration ?? scenes.length * 3;
-  const clipS = Math.max(2, Math.min(6, Math.floor(totalDuration / scenes.length)));
+  const clipS = Math.max(2, Math.min(6, Math.floor(totalDuration / (scenes.length || 1))));
   const fontSize = Math.floor(W / 16);
   const labelSize = Math.floor(W / 35);
 

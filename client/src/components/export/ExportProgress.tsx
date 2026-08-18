@@ -467,7 +467,7 @@ export function ExportProgressPanel({
 
   const totalProgress =
     activeJobs.length > 0
-      ? activeJobs.reduce((sum, j) => sum + j.progress, 0) / activeJobs.length
+      ? activeJobs.reduce((sum, j) => sum + j.progress, 0) / (activeJobs.length || 1)
       : 0;
 
   if (jobs.length === 0) {

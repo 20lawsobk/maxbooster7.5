@@ -58,7 +58,7 @@ export class StripeService {
       if ((user as any)?.stripeSubscriptionId && tier !== "lifetime") {
         const result = await executeStripeOperation(
           () =>
-            stripe?.subscriptions.retrieve((user as any)?.stripeSubscriptionId!, {
+            stripe?.subscriptions.retrieve((user as any)?.stripeSubscriptionId, {
               expand: ["latest_invoice.payment_intent"],
             }),
           { cacheKey: `subscription:${(user as any)?.stripeSubscriptionId}` },

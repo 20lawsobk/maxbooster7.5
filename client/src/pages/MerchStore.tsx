@@ -509,7 +509,7 @@ export default function MerchStore() {
       ? ordersArr.reduce(
           (s: number, o) => s + parseFloat(o.total || "0"),
           0,
-        ) / ordersArr.length
+        ) / (ordersArr.length || 1)
       : 0;
 
   const totalCatRev = categoryRevenue.reduce((s, x) => s + x.rev, 0) || 1;
@@ -985,7 +985,7 @@ export default function MerchStore() {
                           <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                             <div
                               className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-500"
-                              style={{ width: `${(rev / totalCatRev) * 100}%` }}
+                              style={{ width: `${(rev / (totalCatRev || 1)) * 100}%` }}
                             />
                           </div>
                         </div>
@@ -1030,7 +1030,7 @@ export default function MerchStore() {
                               <div
                                 className="h-full rounded-full"
                                 style={{
-                                  width: `${(count / ordersArr.length) * 100}%`,
+                                  width: `${(count / (ordersArr.length || 1)) * 100}%`,
                                   backgroundColor:
                                     STATUS_COLORS[status] || "#94a3b8",
                                 }}

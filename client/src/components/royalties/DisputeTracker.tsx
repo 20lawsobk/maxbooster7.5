@@ -205,7 +205,7 @@ export function DisputeTracker({
     const currentIndex = steps.indexOf(
       status === "pending_evidence" ? "under_review" : status,
     );
-    return ((currentIndex + 1) / steps.length) * 100;
+    return ((currentIndex + 1) / (steps.length || 1)) * 100;
   };
 
   const handleFileDispute = async () => {

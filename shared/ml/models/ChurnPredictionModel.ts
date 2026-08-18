@@ -263,7 +263,7 @@ export class ChurnPredictionModel extends BaseModel {
     }
 
     for (let i = 0; i < numFeatures; i++) {
-      std[i] = Math.sqrt(std[i] / vectors.length) || 1;
+      std[i] = Math.sqrt(std[i] / (vectors.length || 1)) || 1;
     }
 
     return { mean, std };

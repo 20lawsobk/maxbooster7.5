@@ -271,7 +271,7 @@ export function useBatchSelection<T = string>(
         total,
         selected,
         unselected: total - selected,
-        percentage: total > 0 ? Math.round((selected / total) * 100) : 0,
+        percentage: total > 0 ? Math.round((selected / (total || 1)) * 100) : 0,
       };
     },
     [selectedIds],

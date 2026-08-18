@@ -197,7 +197,7 @@ export async function renderDiffusionScene(
     // Sample energy envelope at scene midpoint
     let energy = 0.65;
     if (ba?.energyEnvelope && ba?.energyEnvelope.length > 0) {
-      const midpoint = (opts?.sceneIndex + 0.5) / totalSc;
+      const midpoint = (opts?.sceneIndex + 0.5) / (totalSc || 1);
       const idx = Math.min(
         Math.floor(midpoint * ba?.energyEnvelope.length),
         ba?.energyEnvelope.length - 1,
@@ -207,7 +207,7 @@ export async function renderDiffusionScene(
 
     // Check if this scene contains an energy peak (drop / chorus)
     const sceneStartSec =
-      (opts?.sceneIndex * (ba?.durationSeconds ?? opts?.durationSec)) / totalSc;
+      (opts?.sceneIndex * (ba?.durationSeconds ?? opts?.durationSec)) / (totalSc || 1);
     const sceneEndSec = sceneStartSec + opts?.durationSec;
     const isDrop =
       ba?.peakPositions?.some((t) => t >= sceneStartSec && t < sceneEndSec) ??

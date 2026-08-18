@@ -849,7 +849,7 @@ Leads me to where I belong"
                               const y = ((maxPitch - note.pitch) / range) * 100;
                               const x =
                                 (noteIdx /
-                                  Math.min(suggestion.notes.length, 40)) *
+                                  (Math.min(suggestion.notes.length, 40) || 1)) *
                                 100;
 
                               return (

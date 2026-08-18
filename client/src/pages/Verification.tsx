@@ -397,7 +397,7 @@ export default function Verification() {
     const completedSteps =
       infoComplete + docsSubmitted + (status.status === "under_review" ? 1 : 0);
 
-    return Math.min(Math.round((completedSteps / totalSteps) * 100), 95);
+    return Math.min(Math.round((completedSteps / (totalSteps || 1)) * 100), 95);
   };
 
   const renderContent = () => {

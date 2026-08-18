@@ -332,7 +332,7 @@ export function FileValidationStatus({
                 </div>
                 <Progress
                   value={
-                    (activeResult.summary.passed / activeResult.checks.length) *
+                    (activeResult.summary.passed / (activeResult.checks.length || 1)) *
                     100
                   }
                   className="h-2"

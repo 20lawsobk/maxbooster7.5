@@ -1295,7 +1295,7 @@ class AlgorithmIntelligenceService {
     const totalImp = this.calculateSum(impressions);
     const totalEng = this.calculateSum(engagement);
     const engagementRate =
-      totalImp > 0 ? Math.round((totalEng / totalImp) * 1000) / 10 : 0;
+      totalImp > 0 ? Math.round((totalEng / (totalImp || 1)) * 1000) / 10 : 0;
 
     const followerGrowth =
       followers?.length >= 2
