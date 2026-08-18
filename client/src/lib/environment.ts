@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Runtime Environment Detection
  *

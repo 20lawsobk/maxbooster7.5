@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   dawCore,

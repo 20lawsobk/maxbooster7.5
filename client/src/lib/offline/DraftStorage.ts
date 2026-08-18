@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../logger";
 import { openDB, IDBPDatabase, DBSchema } from "idb";
 

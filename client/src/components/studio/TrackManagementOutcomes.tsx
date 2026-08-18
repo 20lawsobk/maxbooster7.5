@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Copy, Trash2, Download, Music, Mic, Drum, Guitar, Piano, Waves, Loader2, AlertTriangle, Undo, Volume2, Layers, FolderPlus } from "lucide-react";

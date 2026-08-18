@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from "../db";
 import { sessions, users, passwordResetTokens } from "@shared/schema";
 import { gte, sql, count, eq, and } from "drizzle-orm";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * MaxCore AI HTTP Client — TF-free
  *

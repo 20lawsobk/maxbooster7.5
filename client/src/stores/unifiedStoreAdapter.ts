@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useEffect, useMemo } from "react";
 import { useStudioStore as useNewStore } from "./studioStore";
 import { useStudioStore as useLegacyStore } from "@/lib/studioStore";

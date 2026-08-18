@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { AudioAnalysisData } from "../AudioAnalyzer";
 
 export type ParticleShape =

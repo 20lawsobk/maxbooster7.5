@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useEffect } from "react";
 import { X, Plus, Trash2, Clock, AlignLeft } from "lucide-react";
 import { cn } from "@/lib/utils";

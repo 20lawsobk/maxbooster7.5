@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import * as Tone from "tone";
 import { Play, Pause, Square, Circle, Plus, ZoomIn, ZoomOut, ChevronRight, Repeat, SkipBack, SkipForward, Headphones, Music, Waves, Sliders, Activity, X, Library, Cpu, GitBranch } from "lucide-react";

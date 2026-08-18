@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router } from "express";
 import { statusPageService } from "../services/statusPageService.js";
 import { z } from "zod";

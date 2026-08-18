@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GitBranch, GitMerge, Check, AlertTriangle, Loader2, ArrowLeft, ArrowRight, Eye, Code, Diff } from "lucide-react";

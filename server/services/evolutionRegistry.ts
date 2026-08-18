@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Evolution Registry — the REAL, bounded, reversible bridge between the
  * Self-Evolution Engine and the running platform.

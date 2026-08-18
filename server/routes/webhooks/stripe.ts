@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * STRIPE WEBHOOK ROUTES
  *

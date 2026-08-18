@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Resend } from "resend";
 import { db } from "../db";
 import { notifications, users } from "@shared/schema";

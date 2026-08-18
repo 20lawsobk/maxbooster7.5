@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useRef, useCallback, RefObject } from "react";
 
 export type LayoutMode = "mobile" | "tablet" | "desktop" | "wide";

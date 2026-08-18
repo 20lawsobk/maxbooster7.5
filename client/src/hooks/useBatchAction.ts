@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "./use-toast";

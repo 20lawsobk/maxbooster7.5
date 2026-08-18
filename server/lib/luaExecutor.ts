@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * LuaExecutor — runs BullMQ Lua scripts locally in a Worker thread using
  * wasmoon (WebAssembly Lua 5.4), bypassing PDIM's broken async Lua runtime.

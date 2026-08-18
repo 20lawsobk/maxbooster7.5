@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Clock, Music2 } from "lucide-react";

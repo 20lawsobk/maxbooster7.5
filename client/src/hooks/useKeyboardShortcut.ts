@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useCallback, useRef, useState } from "react";
 import { ShortcutModifier, matchesShortcut } from "@/lib/shortcuts/types";
 

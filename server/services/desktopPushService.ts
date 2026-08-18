@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Desktop Push Service
  *

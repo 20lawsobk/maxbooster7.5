@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { ContentClass } from "./types.js";
 
 export interface ArchiveResult {

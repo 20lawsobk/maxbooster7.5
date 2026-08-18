@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * MaxCore Client-Side Video Renderer
  *

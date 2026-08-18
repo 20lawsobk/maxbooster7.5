@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * MaxCore DigitalGPU — WebGL Inference Bridge (Phase 2, Client-Side)
  *

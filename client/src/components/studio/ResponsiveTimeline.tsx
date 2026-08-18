@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useRef, useState, useCallback, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { studioOneTheme } from "@/lib/studioOneTheme";

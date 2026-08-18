@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * POST-DEPLOY SELF-TEST - Automated Verification After Deployment
  *

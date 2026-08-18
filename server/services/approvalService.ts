@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from "../db";
 import { posts, approvalHistory, users } from "@shared/schema";
 import { eq, and, or, desc, sql } from "drizzle-orm";

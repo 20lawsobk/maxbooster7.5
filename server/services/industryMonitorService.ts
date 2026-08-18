@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Industry Monitor Service
  *

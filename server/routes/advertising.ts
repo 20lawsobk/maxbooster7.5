@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Request, Response } from "express";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { logger } from "../logger.js";

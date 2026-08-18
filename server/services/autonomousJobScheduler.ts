@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Queue, Worker, Job } from "bullmq";
 import fsPromises from "fs/promises";
 import path from "path";

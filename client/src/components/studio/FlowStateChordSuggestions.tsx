@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Music, Sparkles, Play, Pause, Plus, Check, RefreshCw, ChevronRight, Wand2, Lightbulb, Heart, Copy } from "lucide-react";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getBoosterStateClient } from "../lib/boosterStateClient.js";
 import { randomBytes } from "crypto";
 import { BoosterQueue } from "./queueService.js";

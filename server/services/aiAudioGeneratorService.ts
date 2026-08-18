@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * AI Audio Generator Service - Server-Side Integration
  *

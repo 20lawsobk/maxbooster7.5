@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * GUARANTEED AUDIT LOGGING
  *

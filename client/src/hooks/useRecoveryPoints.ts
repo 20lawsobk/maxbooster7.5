@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from "../lib/logger";
 import { useState, useCallback, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";

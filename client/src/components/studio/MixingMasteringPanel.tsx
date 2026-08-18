@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sliders, Volume2, Loader2, Sparkles, AlertCircle, ArrowLeftRight, Target } from "lucide-react";

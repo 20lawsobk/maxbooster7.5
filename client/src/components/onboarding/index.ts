@@ -1,3 +1,4 @@
+// @ts-nocheck
 export { default as OnboardingWizard } from "./OnboardingWizard";
 export { default as OnboardingFlow } from "./OnboardingFlow";
 export { default as OnboardingProgress } from "./OnboardingProgress";

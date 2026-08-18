@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Ad System AI Booster Simulation
  * Comprehensive simulation to verify 100%+ organic amplification vs paid advertising

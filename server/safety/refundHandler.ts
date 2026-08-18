@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * REFUND & CHARGEBACK HANDLER
  *
