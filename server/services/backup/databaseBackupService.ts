@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { spawn } from "child_process";
 import { logger } from "../../logger.js";
-import cron from "node-cron";
+import cron, { type ScheduledTask } from "../../lib/cronScheduler.js";
 import fsPromises from "fs/promises";
 import fs from "fs";
 import { storageService } from "../storageService.js";
@@ -38,7 +38,7 @@ async function saveIndex(entries: BackupEntry[]): Promise<void> {
 }
 
 export class DatabaseBackupService {
-  private backupSchedule: cron.ScheduledTask | null = null;
+  private backupSchedule: ScheduledTask | null = null;
   private isInitialized = false;
 
   async initialize() {

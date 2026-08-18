@@ -2,7 +2,7 @@ import { db } from "../db.js";
 import { auditLogs, type AuditLog } from "@shared/schema";
 import { eq, and, lt, desc, sql, gte, type SQL, type SQLWrapper } from "drizzle-orm";
 import { logger } from "../logger.js";
-import cron, { type ScheduledTask } from "node-cron";
+import cron, { type ScheduledTask } from "../lib/cronScheduler.js";
 import crypto from "crypto";
 
 export interface AuditLogEntry {

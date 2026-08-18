@@ -14,7 +14,7 @@
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
-import cron from "node-cron";
+import cron from "../lib/cronScheduler.js";
 import { logger } from "../logger.js";
 import { reloadGeoReader } from "./geoDns.js";
 import { isSchedulerLeader } from "./autonomousJobScheduler.js";
