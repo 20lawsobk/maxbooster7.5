@@ -216,7 +216,12 @@ router.put(
   "/direct/:token",
   express.raw({ type: () => true, limit: MAX_FILE_SIZE }),
   async (req: Request, res: Response) => {
-    const token = req.params.token;
+    const token = Array.isArray(req.params.token)
+      ? req.params.token[0]
+      : req.params.token;
+    if (!token) {
+      return res.status(404).json({ error: "Upload URL is invalid or expired" });
+    }
     const payload = verifyUploadToken(token);
     if (!payload) {
       return res.status(404).json({ error: "Upload URL is invalid or expired" });
