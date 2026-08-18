@@ -22,6 +22,12 @@ npm run dev
 # Runs: redis-server, then tsx server/index.ts + Vite dev server on port 5000
 ```
 
+Important install rules:
+- Do not mix `npm install` and `pnpm install` in the same checkout.
+- Use `pnpm install` for developer workflows (`lint`, `check`, `test`) so devDependencies and workspace overrides are present.
+- If `pnpm` reports an override mismatch or `lint`/`check` start failing with missing tooling such as `eslint` or `vite/client`, wipe `node_modules` and reinstall with `pnpm install --no-frozen-lockfile`.
+- Keep production-only `npm install --omit=dev` usage isolated to deployment packaging flows; it is not a valid setup for local validation.
+
 ### First-time setup
 ```bash
 # Create the initial admin user

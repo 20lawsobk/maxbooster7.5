@@ -120,6 +120,7 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const Admin = lazy(() => import("@/pages/Admin"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const SecurityDashboard = lazy(() => import("@/pages/admin/SecurityDashboard"));
+const AuditLogPage = lazy(() => import("@/pages/admin/AuditLog"));
 const SupportDashboard = lazy(() => import("@/pages/admin/SupportDashboard"));
 const Projects = lazy(() => import("@/pages/Projects"));
 const Pricing = lazy(() => import("@/pages/Pricing"));
@@ -151,6 +152,9 @@ const MusicWorkflowAutomations = lazy(
 );
 const Shows = lazy(() => import("@/pages/Shows"));
 const FanHub = lazy(() => import("@/pages/FanHub"));
+const FanMemberships = lazy(() => import("@/pages/FanMemberships"));
+const ARIntelligence = lazy(() => import("@/pages/ARIntelligence"));
+const OutreachCRM = lazy(() => import("@/pages/OutreachCRM"));
 const MerchStore = lazy(() => import("@/pages/MerchStore"));
 const PressKit = lazy(() => import("@/pages/PressKit"));
 const PlaylistPitching = lazy(() => import("@/pages/PlaylistPitching"));
@@ -210,6 +214,7 @@ function Router() {
       <Route path="/pricing" component={Pricing} />
       <Route path="/subscribe/:tier" component={Subscribe} />
       <Route path="/admin/security" component={SecurityDashboard} />
+      <Route path="/admin/audit-log" component={AuditLogPage} />
       <Route path="/admin/support" component={SupportDashboard} />
       <Route path="/admin/kyc" component={KYCReview} />
       <Route path="/admin/training" component={TrainingDashboard} />
@@ -253,6 +258,9 @@ function Router() {
       />
       <Route path="/shows" component={Shows} />
       <Route path="/fan-hub" component={FanHub} />
+      <Route path="/fan-memberships" component={FanMemberships} />
+      <Route path="/ar-intelligence" component={ARIntelligence} />
+      <Route path="/outreach" component={OutreachCRM} />
       <Route path="/merch" component={MerchStore} />
       <Route path="/press-kit" component={PressKit} />
       <Route path="/playlist-pitching" component={PlaylistPitching} />

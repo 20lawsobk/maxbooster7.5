@@ -2,6 +2,10 @@ import { Router, Request, Response } from "express";
 import { db } from "../db.js";
 import { eq, and, count } from "drizzle-orm";
 import { apiKeys } from "@shared/schema";
+import {
+  API_KEY_SCOPE_DEFINITIONS,
+  API_KEY_VALID_SCOPES,
+} from "@shared/apiKeyScopes";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 import { requireAuth } from "../middleware/auth.js";
@@ -38,6 +42,20 @@ const hashApiKey = (key: string): string => {
 const getKeyPrefix = (key: string): string => {
   return `${key?.substring(0, 7)}...${key?.substring(key?.length - 4)}`;
 };
+
+router.get("/scopes", async (_req: Request, res: Response) => {
+  res.json({
+    scopes: API_KEY_SCOPE_DEFINITIONS,
+    categories: {
+      features: API_KEY_SCOPE_DEFINITIONS.filter(
+        (scope) => scope.category === "feature",
+      ),
+      services: API_KEY_SCOPE_DEFINITIONS.filter(
+        (scope) => scope.category === "service",
+      ),
+    },
+  });
+});
 
 router.get("/", async (req: Request, res: Response) => {
   try {
@@ -80,20 +98,12 @@ router.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Key name is required" });
     }
 
-    const VALID_SCOPES = new Set([
-      "read",
-      "write",
-      "analytics",
-      "distribution",
-      "social",
-      "billing",
-      "admin",
-    ]);
     const trimmedName = name?.trim().substring(0, 100);
     const requestedScopes = Array.isArray(scopes) ? scopes : ["read"];
+    const uniqueRequestedScopes = [...new Set(requestedScopes)];
     const invalidScopes = requestedScopes?.filter(
       (s: Record<string, unknown>) =>
-        typeof s !== "string" || !VALID_SCOPES?.has(s),
+        typeof s !== "string" || !API_KEY_VALID_SCOPES?.has(s),
     );
     if (invalidScopes?.length > 0) {
       return res
@@ -101,10 +111,13 @@ router.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
         .json({
           error: "Invalid scopes",
           invalid: invalidScopes,
-          valid: [...VALID_SCOPES],
+          valid: [...API_KEY_VALID_SCOPES],
         });
     }
-    const validScopes = requestedScopes as string[];
+    const validScopes =
+      uniqueRequestedScopes.length > 0
+        ? (uniqueRequestedScopes as string[])
+        : ["read"];
 
     const [{ activeCount }] = await db
       .select({ activeCount: count() })

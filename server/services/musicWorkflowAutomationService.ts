@@ -1,5 +1,6 @@
 // @ts-nocheck
-import cron from "node-cron";
+import cron from "../lib/cronScheduler.js";
+import type { ScheduledTask } from "../lib/cronScheduler.js";
 import { db } from "../db.js";
 import {
   musicWorkflowAutomations,
@@ -896,7 +897,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 class MusicWorkflowAutomationService {
-  private scheduledTasks = new Map<string, ReturnType<typeof cron.schedule>>();
+  private scheduledTasks = new Map<string, ScheduledTask>();
 
   constructor() {
     this.startScheduledWorkflows();

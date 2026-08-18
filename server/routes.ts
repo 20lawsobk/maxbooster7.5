@@ -6825,6 +6825,11 @@ export async function registerRoutes(
       loader: () => import("./routes/admin/beatMoneyLoop"),
     },
     {
+      path: "/api/admin/audit-log",
+      name: "adminAuditLog",
+      loader: () => import("./routes/admin/auditLog"),
+    },
+    {
       path: "/api/admin/content-sampler",
       name: "adminContentSampler",
       loader: () => import("./routes/admin/contentSampler"),
@@ -6932,6 +6937,13 @@ export async function registerRoutes(
       loader: () => import("./routes/marketplace"),
     },
 
+    // Adaptive Beat Pricing Engine
+    {
+      path: "/api/adaptive-pricing",
+      name: "adaptivePricing",
+      loader: () => import("./routes/adaptivePricing"),
+    },
+
     // Search & Discovery
     {
       path: "/api/search",
@@ -6954,6 +6966,20 @@ export async function registerRoutes(
       path: "/api/career-coach",
       name: "careerCoach",
       loader: () => import("./routes/careerCoach"),
+    },
+
+    // A&R Intelligence — trend forecasting + catalog gap + release timing
+    {
+      path: "/api/ar-intelligence",
+      name: "arIntelligence",
+      loader: () => import("./routes/arIntelligence"),
+    },
+
+    // Outreach CRM — pitch tracking
+    {
+      path: "/api/outreach",
+      name: "outreach",
+      loader: () => import("./routes/outreach"),
     },
 
     // User API Keys Management
@@ -6985,6 +7011,13 @@ export async function registerRoutes(
       path: "/api/fan-hub",
       name: "fanHub",
       loader: () => import("./routes/fanHub"),
+    },
+
+    // Fan Memberships (tiers + loyalty wallet)
+    {
+      path: "/api/fan-memberships",
+      name: "fanMemberships",
+      loader: () => import("./routes/fanMemberships"),
     },
 
     // Press Kit (EPK Builder)
@@ -7027,6 +7060,13 @@ export async function registerRoutes(
       path: "/api/publishing",
       name: "publishing",
       loader: () => import("./routes/publishing"),
+    },
+
+    // File Storage Management
+    {
+      path: "/api/uploads",
+      name: "uploads",
+      loader: () => import("./routes/uploads"),
     },
 
     // File Storage Management

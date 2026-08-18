@@ -1,5 +1,5 @@
 // @ts-nocheck
-import cron from "node-cron";
+import cron, { type ScheduledTask } from "../lib/cronScheduler.js";
 import { db } from "../db.js";
 import { users, deletionAuditLogs } from "@shared/schema";
 import { eq, lte, and } from "drizzle-orm";
@@ -20,7 +20,7 @@ import { logger } from "../logger.js";
  */
 
 export class AccountDeletionService {
-  private cronJob: cron.ScheduledTask | null = null;
+  private cronJob: ScheduledTask | null = null;
   private isRunning = false;
 
   /**

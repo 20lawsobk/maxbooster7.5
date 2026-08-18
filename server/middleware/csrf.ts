@@ -146,6 +146,7 @@ const CSRF_EXEMPT_PATHS = [
   "/api/dev/", // dev-only triggers, never exist in production
   "/api/dns/resolve",
   "/api/dns/resolver/",
+  "/api/uploads/direct/",
   "/health",
   "/ready",
   "/status",

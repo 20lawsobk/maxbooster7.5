@@ -39,7 +39,11 @@
     "desktopApp": "Application de Bureau",
     "adminPanel": "Panneau Admin",
     "adminSecurity": "Sécurité Admin",
-    "contentSampler": "Échantillonneur de Contenu"
+    "contentSampler": "Échantillonneur de Contenu",
+    "fanMemberships": "Fan Memberships",
+    "arIntelligence": "A&R Intelligence",
+    "outreachCRM": "Outreach CRM",
+    "auditLog": "Audit Log"
   },
   "auth": {
     "loginTitle": "Connexion à Max Booster",

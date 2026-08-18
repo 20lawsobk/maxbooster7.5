@@ -17,6 +17,7 @@ import ContextualFeatureHint from "@/components/onboarding/ContextualFeatureHint
 import { ArtistProgressDashboard } from "@/components/dashboard/ArtistProgressDashboard";
 import { AICareerCoach } from "@/components/dashboard/AICareerCoach";
 import RevenueForecast from "@/components/dashboard/RevenueForecast";
+import { LoopHealthScore } from "@/components/dashboard/LoopHealthScore";
 import { StreakCounter } from "@/components/achievements/StreakCounter";
 import { AchievementNotification } from "@/components/achievements/AchievementNotification";
 import { CountdownCard } from "@/components/releases/CountdownCard";
@@ -917,6 +918,11 @@ function DashboardContent({ user }: { user: User }) {
             {/* Revenue Forecast */}
             <ErrorBoundary>
               <RevenueForecast />
+            </ErrorBoundary>
+
+            {/* Beat Money Loop Health Score (admin-only — hides for non-admin) */}
+            <ErrorBoundary>
+              <LoopHealthScore />
             </ErrorBoundary>
 
             {/* Upcoming Releases */}
