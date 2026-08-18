@@ -375,10 +375,12 @@ export class AdvertisingRuleEngine {
   private calculatePaceRecommendation(
     context: AdContext,
   ): "accelerate" | "maintain" | "slow_down" | "pause" {
+    const safeDailyLimit = Math.max(1, this.budgetConstraints.dailyLimit);
+    const safeWeeklyLimit = Math.max(1, this.budgetConstraints.weeklyLimit);
     const dailyPaceRatio =
-      context.dailySpend / this.budgetConstraints.dailyLimit;
+      context.dailySpend / safeDailyLimit;
     const weeklyPaceRatio =
-      context.weeklySpend / this.budgetConstraints.weeklyLimit;
+      context.weeklySpend / safeWeeklyLimit;
 
     if (context.audienceSaturation > 0.85) {
       return "pause";
@@ -483,8 +485,9 @@ export class AdvertisingRuleEngine {
         distribution.push({ day, budgetPercentage: percentage, reasoning });
       }
     } else {
-      const basePercentage = 1 / campaignDuration;
-      for (let day = 1; day <= campaignDuration; day++) {
+      const safeCampaignDuration = Math.max(1, Math.floor(campaignDuration) || 1);
+      const basePercentage = 1 / safeCampaignDuration;
+      for (let day = 1; day <= safeCampaignDuration; day++) {
         distribution.push({
           day,
           budgetPercentage: basePercentage,
@@ -500,7 +503,8 @@ export class AdvertisingRuleEngine {
     return distribution.map((d) => ({
       ...d,
       budgetPercentage:
-        Math.round((d.budgetPercentage / totalPercentage) * 10000) / 10000,
+        Math.round((d.budgetPercentage / Math.max(totalPercentage, 1)) * 10000) /
+        10000,
     }));
   }
 
@@ -509,7 +513,8 @@ export class AdvertisingRuleEngine {
     currentAdSpend: number,
     expectedReturn: number,
   ): { shouldPause: boolean; reason: string; recommendation: string } {
-    const effectiveROI = expectedReturn / currentAdSpend;
+    const effectiveROI =
+      currentAdSpend > 0 ? expectedReturn / currentAdSpend : expectedReturn > 0 ? Infinity : 0;
     const organicThreshold = 0.65;
     const roiThreshold = 1.5;
 

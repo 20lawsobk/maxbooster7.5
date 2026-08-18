@@ -37,8 +37,8 @@ export class IsolationForest {
     maxSamples: number = 256,
     contamination: number = 0.01,
   ) {
-    this.nEstimators = nEstimators;
-    this.maxSamples = maxSamples;
+    this.nEstimators = Math.max(1, Math.floor(nEstimators) || 1);
+    this.maxSamples = Math.max(1, Math.floor(maxSamples) || 1);
     this.contamination = Math.max(0.001, Math.min(0.5, contamination));
   }
 
@@ -187,6 +187,7 @@ export class IsolationForest {
   public rawScore(point: number[]): number {
     if (this.trees.length === 0) return 0.5;
     const c = this.expectedPathLength(this.maxSamples);
+    if (c <= 0) return 0.5;
     const avg =
       this.trees.reduce((s, t) => s + this.pathLength(point, t, 0), 0) /
       this.trees.length;

@@ -273,6 +273,14 @@ export class FeatureStore {
 
     if (existing) {
       const totalSamples = existing.sampleSize + performance.sampleSize;
+      if (totalSamples <= 0) {
+        this.contentPerformance.set(key, {
+          ...performance,
+          sampleSize: 0,
+          lastUpdated: new Date(),
+        });
+        return;
+      }
       const weight1 = existing.sampleSize / totalSamples;
       const weight2 = performance.sampleSize / totalSamples;
 

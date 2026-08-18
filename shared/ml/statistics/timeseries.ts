@@ -26,14 +26,19 @@ export function decomposeTimeSeries(
   data: number[],
   seasonalPeriod: number,
 ): TimeSeriesDecomposition {
+  if (data.length === 0) {
+    return { trend: [], seasonal: [], residual: [] };
+  }
+
+  const safeSeasonalPeriod = Math.max(1, Math.floor(seasonalPeriod) || 1);
   // Extract trend using moving average
-  const trend = centeredMovingAverage(data, seasonalPeriod);
+  const trend = centeredMovingAverage(data, safeSeasonalPeriod);
 
   // Detrend the data
   const detrended = data.map((val, i) => val - (trend[i] || 0));
 
   // Extract seasonal component
-  const seasonal = extractSeasonalComponent(detrended, seasonalPeriod);
+  const seasonal = extractSeasonalComponent(detrended, safeSeasonalPeriod);
 
   // Calculate residuals
   const residual = data.map(
@@ -47,8 +52,11 @@ export function decomposeTimeSeries(
  * Centered moving average for trend extraction
  */
 function centeredMovingAverage(data: number[], window: number): number[] {
+  if (data.length === 0) return [];
+
+  const safeWindow = Math.max(1, Math.floor(window) || 1);
   const result: number[] = [];
-  const halfWindow = Math.floor(window / 2);
+  const halfWindow = Math.floor(safeWindow / 2);
 
   for (let i = 0; i < data.length; i++) {
     if (i < halfWindow || i >= data.length - halfWindow) {
@@ -71,19 +79,22 @@ function extractSeasonalComponent(
   detrended: number[],
   period: number,
 ): number[] {
+  if (detrended.length === 0) return [];
+
+  const safePeriod = Math.max(1, Math.floor(period) || 1);
   const seasonal: number[] = new Array(detrended.length).fill(0);
-  const seasonalAverages = new Array(period).fill(0);
-  const counts = new Array(period).fill(0);
+  const seasonalAverages = new Array(safePeriod).fill(0);
+  const counts = new Array(safePeriod).fill(0);
 
   // Calculate average for each position in the seasonal cycle
   detrended.forEach((val, i) => {
-    const seasonalIndex = i % period;
+    const seasonalIndex = i % safePeriod;
     seasonalAverages[seasonalIndex] += val;
     counts[seasonalIndex]++;
   });
 
   // Normalize by count
-  for (let i = 0; i < period; i++) {
+  for (let i = 0; i < safePeriod; i++) {
     if (counts[i] > 0) {
       seasonalAverages[i] /= counts[i];
     }
@@ -91,7 +102,7 @@ function extractSeasonalComponent(
 
   // Apply seasonal pattern
   detrended.forEach((_, i) => {
-    seasonal[i] = seasonalAverages[i % period];
+    seasonal[i] = seasonalAverages[i % safePeriod];
   });
 
   return seasonal;
@@ -168,19 +179,21 @@ export function exponentialSmoothing(
   horizon: number,
 ): number[] {
   if (data.length === 0) return [];
+  const safeAlpha = Math.min(1, Math.max(0, Number.isFinite(alpha) ? alpha : 0.3));
+  const safeHorizon = Math.max(0, Math.floor(horizon) || 0);
 
   // Simple exponential smoothing
   const smoothed: number[] = [data[0]];
 
   for (let i = 1; i < data.length; i++) {
-    smoothed.push(alpha * data[i] + (1 - alpha) * smoothed[i - 1]);
+    smoothed.push(safeAlpha * data[i] + (1 - safeAlpha) * smoothed[i - 1]);
   }
 
   // Forecast future values
   const forecast: number[] = [];
   let lastValue = smoothed[smoothed.length - 1];
 
-  for (let i = 0; i < horizon; i++) {
+  for (let i = 0; i < safeHorizon; i++) {
     forecast.push(lastValue);
   }
 
@@ -198,47 +211,61 @@ export function holtWintersForecasting(
   beta: number = 0.1,
   gamma: number = 0.1,
 ): { forecast: number[]; confidence: number[] } {
-  if (data.length < seasonalPeriod * 2) {
+  const safeSeasonalPeriod = Math.max(1, Math.floor(seasonalPeriod) || 1);
+  const safeHorizon = Math.max(0, Math.floor(horizon) || 0);
+  const safeAlpha = Math.min(1, Math.max(0, Number.isFinite(alpha) ? alpha : 0.3));
+  const safeBeta = Math.min(1, Math.max(0, Number.isFinite(beta) ? beta : 0.1));
+  const safeGamma = Math.min(1, Math.max(0, Number.isFinite(gamma) ? gamma : 0.1));
+
+  if (data.length === 0 || safeHorizon === 0) {
+    return { forecast: [], confidence: [] };
+  }
+
+  if (data.length < safeSeasonalPeriod * 2) {
     // Fallback to simple smoothing
-    const forecast = exponentialSmoothing(data, alpha, horizon);
-    const confidence = new Array(horizon).fill(0.5);
+    const forecast = exponentialSmoothing(data, safeAlpha, safeHorizon);
+    const confidence = new Array(safeHorizon).fill(0.5);
     return { forecast, confidence };
   }
 
   // Initialize level, trend, and seasonal components
   let level = data[0];
   let trend = 0;
-  const seasonal = new Array(seasonalPeriod).fill(1);
+  const seasonal = new Array(safeSeasonalPeriod).fill(1);
+  const initialLevel = level === 0 ? 1 : level;
 
   // Initialize seasonal factors
-  for (let i = 0; i < seasonalPeriod; i++) {
-    seasonal[i] = data[i] / level;
+  for (let i = 0; i < safeSeasonalPeriod; i++) {
+    seasonal[i] = data[i] / initialLevel;
   }
 
   // Update equations for each data point
   for (let i = 0; i < data.length; i++) {
-    const seasonalIndex = i % seasonalPeriod;
+    const seasonalIndex = i % safeSeasonalPeriod;
     const oldLevel = level;
+    const seasonalFactor = seasonal[seasonalIndex] || 1;
 
     level =
-      alpha * (data[i] / seasonal[seasonalIndex]) +
-      (1 - alpha) * (level + trend);
-    trend = beta * (level - oldLevel) + (1 - beta) * trend;
+      safeAlpha * (data[i] / seasonalFactor) +
+      (1 - safeAlpha) * (level + trend);
+    trend = safeBeta * (level - oldLevel) + (1 - safeBeta) * trend;
+    const safeLevel = level === 0 ? 1 : level;
     seasonal[seasonalIndex] =
-      gamma * (data[i] / level) + (1 - gamma) * seasonal[seasonalIndex];
+      safeGamma * (data[i] / safeLevel) +
+      (1 - safeGamma) * seasonal[seasonalIndex];
   }
 
   // Generate forecasts
   const forecast: number[] = [];
   const confidence: number[] = [];
 
-  for (let i = 0; i < horizon; i++) {
-    const seasonalIndex = (data.length + i) % seasonalPeriod;
+  for (let i = 0; i < safeHorizon; i++) {
+    const seasonalIndex = (data.length + i) % safeSeasonalPeriod;
     const forecastValue = (level + trend * (i + 1)) * seasonal[seasonalIndex];
     forecast.push(forecastValue);
 
     // Confidence decreases with distance
-    const conf = Math.max(0, 1 - (i / horizon) * 0.5);
+    const conf = Math.max(0, 1 - (i / Math.max(1, safeHorizon)) * 0.5);
     confidence.push(conf);
   }
 
@@ -249,13 +276,15 @@ export function holtWintersForecasting(
  * Calculate autocorrelation at different lags
  */
 export function autocorrelation(data: number[], maxLag: number): number[] {
+  if (data.length === 0) return [];
   const stats = calculateStatistics(data);
   const mean = stats.mean;
   const n = data.length;
+  const safeMaxLag = Math.max(0, Math.min(Math.floor(maxLag) || 0, n - 1));
 
   const acf: number[] = [];
 
-  for (let lag = 0; lag <= maxLag; lag++) {
+  for (let lag = 0; lag <= safeMaxLag; lag++) {
     let numerator = 0;
     let denominator = 0;
 
@@ -267,7 +296,7 @@ export function autocorrelation(data: number[], maxLag: number): number[] {
       denominator += Math.pow(data[i] - mean, 2);
     }
 
-    acf.push(numerator / denominator);
+    acf.push(denominator > 0 ? numerator / denominator : 0);
   }
 
   return acf;
@@ -280,7 +309,8 @@ export function detectSeasonalPeriod(
   data: number[],
   maxPeriod: number = 30,
 ): number | null {
-  const acf = autocorrelation(data, maxPeriod);
+  if (data.length < 3) return null;
+  const acf = autocorrelation(data, Math.max(2, maxPeriod));
 
   // Find first significant peak after lag 1
   let maxAcf = 0;
@@ -317,12 +347,15 @@ export function difference(data: number[], order: number = 1): number[] {
  * Test for stationarity (simplified Augmented Dickey-Fuller)
  */
 export function isStationary(data: number[]): boolean {
+  if (data.length < 2) return true;
   const trend = analyzeTrend(data);
   const acf = autocorrelation(data, Math.min(10, Math.floor(data.length / 4)));
 
   // Simple heuristic: check if trend is weak and autocorrelation decays
   const trendWeak = Math.abs(trend.slope) < 0.1;
-  const acfDecays = acf[1] < 0.7 && acf[Math.min(5, acf.length - 1)] < 0.3;
+  const lagOne = acf[1] ?? 0;
+  const lagFive = acf[Math.min(5, Math.max(0, acf.length - 1))] ?? 0;
+  const acfDecays = lagOne < 0.7 && lagFive < 0.3;
 
   return trendWeak && acfDecays;
 }

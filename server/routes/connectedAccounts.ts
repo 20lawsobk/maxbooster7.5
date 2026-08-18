@@ -169,15 +169,15 @@ router.post("/:accountId/refresh", async (req: Request, res: Response) => {
 
     const now = new Date();
     const result = await db
-      .update(socialAccounts)
-      .set({ createdAt: now })
+      .select({ id: socialAccounts.id })
+      .from(socialAccounts)
       .where(
         and(
           eq(socialAccounts.id, accountId),
           eq(socialAccounts.userId, userId),
         ),
       )
-      .returning({ id: socialAccounts.id });
+      .limit(1);
 
     if (result?.length === 0) {
       return res.status(404).json({ error: "Connected account not found" });

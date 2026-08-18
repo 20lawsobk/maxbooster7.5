@@ -114,7 +114,7 @@ export async function initializeSafetySystems(): Promise<{
 
   // 1. Validate environment (non-strict mode - log but don't fail)
   try {
-    const { validateEnvironment } = await import("./envValidation");
+    const { validateEnvironment } = await import("./envValidation.js");
     const envResult = validateEnvironment(false);
     if (!envResult.valid) {
       errors.push(...envResult.errors);
@@ -126,7 +126,7 @@ export async function initializeSafetySystems(): Promise<{
 
   // 2. Initialize audit logger
   try {
-    const { initAuditLogger } = await import("./auditLogger");
+    const { initAuditLogger } = await import("./auditLogger.js");
     await initAuditLogger();
     logger.info("   ✓ Audit logger initialized");
   } catch (error) {
@@ -136,7 +136,7 @@ export async function initializeSafetySystems(): Promise<{
 
   // 3. Create database indexes
   try {
-    const { createRequiredIndexes } = await import("./databaseIndexes");
+    const { createRequiredIndexes } = await import("./databaseIndexes.js");
     const indexResult = await createRequiredIndexes();
     if (!indexResult.success) {
       logger.warn("   ⚠ Some database indexes failed to create");
@@ -150,7 +150,7 @@ export async function initializeSafetySystems(): Promise<{
 
   // 4. Register refund webhook handlers
   try {
-    const { registerRefundWebhookHandlers } = await import("./refundHandler");
+    const { registerRefundWebhookHandlers } = await import("./refundHandler.js");
     registerRefundWebhookHandlers();
     logger.info("   ✓ Refund webhook handlers registered");
   } catch (error) {
@@ -160,7 +160,7 @@ export async function initializeSafetySystems(): Promise<{
 
   // 5. Initialize kill switch (always succeeds)
   try {
-    const { killSwitch } = await import("./killSwitch");
+    const { killSwitch } = await import("./killSwitch.js");
     const state = killSwitch?.getState();
     logger.info(
       `   ✓ Kill switch ready (global killed: ${state?.globalKilled})`,
