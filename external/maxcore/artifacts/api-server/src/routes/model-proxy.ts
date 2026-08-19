@@ -106,7 +106,7 @@ const _generationLimiter = rateLimit({
   limit: 10,
   standardHeaders: "draft-8",
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip ?? "unknown",
+
   message: { error: "Generation rate limit exceeded. Max 10 requests/minute." },
 });
 
@@ -116,7 +116,7 @@ const _audioLimiter = rateLimit({
   limit: 5,
   standardHeaders: "draft-8",
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip ?? "unknown",
+
   message: { error: "Audio rate limit exceeded. Max 5 requests/minute." },
 });
 
@@ -126,7 +126,7 @@ const _readLimiter = rateLimit({
   limit: 120,
   standardHeaders: "draft-8",
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip ?? "unknown",
+
   message: { error: "Status rate limit exceeded. Max 120 requests/minute." },
 });
 

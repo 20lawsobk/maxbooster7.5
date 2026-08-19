@@ -330,8 +330,6 @@ export function PluginRack({
             midGain: plugin.parameters.mid ?? 0,
             highGain: plugin.parameters.high ?? 0,
             midFrequency: plugin.parameters.midFreq ?? 1000,
-            lowFrequency: plugin.parameters.lowFreq ?? 80,
-            highFrequency: plugin.parameters.highFreq ?? 8000,
             bypass: plugin.bypass,
           });
           break;
@@ -342,7 +340,6 @@ export function PluginRack({
             attack: plugin.parameters.attack ?? 10,
             release: plugin.parameters.release ?? 100,
             knee: plugin.parameters.knee ?? 6,
-            makeup: plugin.parameters.makeup ?? 0,
             bypass: plugin.bypass,
           });
           break;
@@ -351,8 +348,6 @@ export function PluginRack({
             mix: plugin.parameters.mix ?? 30,
             decay: plugin.parameters.decay ?? 2,
             preDelay: plugin.parameters.preDelay ?? 20,
-            size: plugin.parameters.size ?? 50,
-            damping: plugin.parameters.damping ?? 50,
             bypass: plugin.bypass,
           });
           break;

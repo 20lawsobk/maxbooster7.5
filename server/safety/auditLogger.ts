@@ -146,17 +146,46 @@ async function flushWAL(): Promise<void> {
     // Batch insert to database
     for (const entry of entries) {
       try {
+        // Canonical audit_logs contract lives in shared/schema.ts (auditLogs).
+        // Map the logger's richer entry shape onto it:
+        //   ipAddress -> ip, category -> resource, severity -> risk,
+        //   success -> result; targetId/targetType/errorMessage/walId fold
+        //   into details for full fidelity. Idempotency on WAL retry is
+        //   enforced via the wal_id key inside details.
+        const risk =
+          entry?.severity === "critical"
+            ? "critical"
+            : entry?.severity === "warning"
+              ? "medium"
+              : "low";
+        const details = JSON.stringify({
+          ...(entry?.details ?? {}),
+          wal_id: entry?.id ?? null,
+          category: entry?.category ?? null,
+          severity: entry?.severity ?? null,
+          target_id: entry?.targetId ?? null,
+          target_type: entry?.targetType ?? null,
+          error_message: entry?.errorMessage ?? null,
+        });
         await db.execute(sql`
           INSERT INTO audit_logs (
-            id, timestamp, category, severity, action, 
-            user_id, target_id, target_type, ip_address, user_agent,
-            details, success, error_message
-          ) VALUES (
-            ${entry?.id ?? null}, ${entry?.timestamp ?? null}, ${entry?.category ?? null}, ${entry?.severity ?? null}, ${entry?.action ?? null},
-            ${entry?.userId ?? null}, ${entry?.targetId ?? null}, ${entry?.targetType ?? null}, ${entry?.ipAddress ?? null}, ${entry?.userAgent ?? null},
-            ${JSON.stringify(entry?.details ?? {})}, ${entry?.success ?? null}, ${entry?.errorMessage ?? null}
+            timestamp, user_id, ip, user_agent, action,
+            resource, result, risk, details
           )
-          ON CONFLICT (id) DO NOTHING
+          SELECT
+            ${entry?.timestamp ?? new Date().toISOString()},
+            ${entry?.userId ?? null},
+            ${entry?.ipAddress ?? "unknown"},
+            ${entry?.userAgent ?? null},
+            ${entry?.action ?? "unknown"},
+            ${entry?.targetType ?? entry?.category ?? "system"},
+            ${entry?.success ? "success" : "failure"},
+            ${risk},
+            ${details}::jsonb
+          WHERE NOT EXISTS (
+            SELECT 1 FROM audit_logs
+            WHERE details->>'wal_id' = ${entry?.id ?? ""}
+          )
         `);
 
         // Remove from WAL if successfully persisted
@@ -437,8 +466,8 @@ export async function getAuditLog(params: {
       SELECT * FROM audit_logs
       WHERE 1=1
         ${params.userId ? sql`AND user_id = ${params?.userId}` : sql``}
-        ${params.category ? sql`AND category = ${params?.category}` : sql``}
-        ${params.severity ? sql`AND severity = ${params?.severity}` : sql``}
+        ${params.category ? sql`AND details->>'category' = ${params?.category}` : sql``}
+        ${params.severity ? sql`AND details->>'severity' = ${params?.severity}` : sql``}
         ${params?.startDate ? sql`AND timestamp >= ${params?.startDate}` : sql``}
         ${params?.endDate ? sql`AND timestamp <= ${params?.endDate}` : sql``}
       ORDER BY timestamp DESC

@@ -346,7 +346,7 @@ export default function Advertisement() {
   const handleEnterpriseTabChange = (tab: string) => {
     setActiveEnterpriseTabState(tab);
     handleTrackAdvertisingExplored();
-  });
+  };
   const [videoPlatform, setVideoPlatform] =
     useState<VideoPlatform>("instagram");
   const [adCreativePlatform, setAdCreativePlatform] =

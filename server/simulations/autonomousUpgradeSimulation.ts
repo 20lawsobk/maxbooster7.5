@@ -470,9 +470,6 @@ export async function simulateAutonomousUpgrade(
   const gainedCount = mainScenarios?.filter(
     (s) => s?.competitiveImpact === "gained",
   ).length;
-  const _maintainedCount = mainScenarios?.filter(
-    (s) => s?.competitiveImpact === "maintained",
-  ).length;
   const lostCount = mainScenarios?.filter(
     (s) => s?.competitiveImpact === "lost",
   ).length;

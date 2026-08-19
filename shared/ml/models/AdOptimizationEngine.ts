@@ -519,7 +519,9 @@ export class AdOptimizationEngine extends BaseModel {
 
     model.compile({
       optimizer: tf.train.adam(0.001),
-      loss: "huberLoss",
+      // tfjs-layers has no "huberLoss" registry entry; pass the fn directly
+      loss: (yTrue: tf.Tensor, yPred: tf.Tensor) =>
+        tf.losses.huberLoss(yTrue, yPred),
       metrics: ["mae"],
     });
 

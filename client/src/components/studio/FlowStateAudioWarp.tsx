@@ -309,7 +309,7 @@ export function FlowStateAudioWarp({
           : m,
       ),
     );
-  });
+  };
 
   const deleteMarker = (markerId: string) => {
     const marker = markers.find((m) => m.id === markerId);

@@ -891,7 +891,6 @@ export class SocialAutopilotEngine extends BaseModel {
     postsPerWeek: number,
   ): ScheduleOptimization {
     const audience = this.audienceInsights.get(platform);
-    const historicalData = this.historicalData.get(platform) || [];
     const limits = PLATFORM_LIMITS[platform];
 
     const maxDailyPosts = limits?.maxDailyPosts || 5;

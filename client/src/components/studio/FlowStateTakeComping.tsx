@@ -399,7 +399,7 @@ export function FlowStateTakeComping({
 
   const getRegionAtTime = (time: number): TakeRegion | undefined => {
     return selectedRegions.find((r) => time >= r.startTime && time < r.endTime);
-  });
+  };
 
   const getTakeColor = (takeId: string): string => {
     const colors = [

@@ -551,7 +551,7 @@ export class DX7PadSynth implements SynthesizerEngine {
 
       const modLFO = this.lfo1.sine();
       const panLFO = this.lfo2.sine();
-      const detuneModLFO = this.lfo3.sine() * 0.002;
+      this.lfo3.sine(); // phase advance; modulation value currently unused
 
       const modAmount = 0.8 + modLFO * 0.4;
 
@@ -975,7 +975,7 @@ export class FM8Synth implements SynthesizerEngine {
       const envValue = this.envelope.process();
       const filterEnvValue = this.filterEnvelope.process();
       const modLFO = this.lfo1.sine();
-      const vibratoMod = this.lfo2.sine() * 0.002;
+      this.lfo2.sine(); // phase advance; modulation value currently unused
 
       for (let o = 7; o >= 0; o--) {
         let modulation = 0;

@@ -128,36 +128,6 @@ export function ConflictResolver({
     }
   };
 
-  const resolveConflict = (
-    localData: unknown,
-    serverData: unknown,
-  ): { localDiffs: string[]; serverDiffs: string[] } => {
-    const localDiffs: string[] = [];
-    const serverDiffs: string[] = [];
-
-    if (
-      typeof localData === "object" &&
-      typeof serverData === "object" &&
-      localData &&
-      serverData
-    ) {
-      const localObj = localData as Record<string, unknown>;
-      const serverObj = serverData as Record<string, unknown>;
-      const allKeys = new Set([
-        ...Object.keys(localObj),
-        ...Object.keys(serverObj),
-      ]);
-
-      allKeys.forEach((key) => {
-        if (JSON.stringify(localObj[key]) !== JSON.stringify(serverObj[key])) {
-          if (key in localObj) localDiffs.push(key);
-          if (key in serverObj) serverDiffs.push(key);
-        }
-      });
-    }
-
-    return { localDiffs, serverDiffs };
-  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

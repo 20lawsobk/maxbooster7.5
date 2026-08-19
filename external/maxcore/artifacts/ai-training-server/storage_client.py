@@ -93,6 +93,15 @@ class _DiskStore:
         self._path = self._DB_PATH
         self._lock = threading.Lock()
         self._ok = False
+        # One persistent connection, shared by every operation and guarded by
+        # self._lock. Opening/closing a fresh connection per call across many
+        # threads deadlocks inside SQLite's unix-VFS inode mutex
+        # (findReusableFd / sqlite3WalClose both parked on pthread_mutex_lock,
+        # observed live via py-spy --native): every disk get then hangs
+        # forever and content generation never completes. All ops were already
+        # serialized by self._lock, so a single long-lived connection is both
+        # safe and strictly faster.
+        self._con: Optional[sqlite3.Connection] = None
         try:
             self._path.parent.mkdir(parents=True, exist_ok=True)
             con = self._conn()
@@ -101,7 +110,7 @@ class _DiskStore:
                 "(key TEXT PRIMARY KEY, value TEXT NOT NULL)"
             )
             con.commit()
-            con.close()
+            self._con = con
             self._ok = True
         except Exception as exc:
             logger.warning("[DiskStore] init failed: %s", exc)
@@ -111,6 +120,22 @@ class _DiskStore:
         con.execute("PRAGMA journal_mode=WAL")
         con.execute("PRAGMA synchronous=NORMAL")
         return con
+
+    def _shared_conn(self) -> sqlite3.Connection:
+        """Return the persistent connection, reopening it if a previous
+        operation errored and closed it. Caller must hold self._lock."""
+        if self._con is None:
+            self._con = self._conn()
+        return self._con
+
+    def _drop_conn(self) -> None:
+        """Discard a possibly-broken connection. Caller must hold self._lock."""
+        try:
+            if self._con is not None:
+                self._con.close()
+        except Exception:
+            pass
+        self._con = None
 
     @property
     def available(self) -> bool:
@@ -122,13 +147,16 @@ class _DiskStore:
         try:
             serialized = json.dumps(value) if not isinstance(value, str) else value
             with self._lock:
-                con = self._conn()
-                con.execute(
-                    "INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
-                    (key, serialized),
-                )
-                con.commit()
-                con.close()
+                try:
+                    con = self._shared_conn()
+                    con.execute(
+                        "INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
+                        (key, serialized),
+                    )
+                    con.commit()
+                except sqlite3.Error:
+                    self._drop_conn()
+                    raise
             return True
         except Exception as exc:
             logger.debug("[DiskStore] set %s failed: %s", key, exc)
@@ -139,11 +167,14 @@ class _DiskStore:
             return None
         try:
             with self._lock:
-                con = self._conn()
-                row = con.execute(
-                    "SELECT value FROM kv WHERE key = ?", (key,)
-                ).fetchone()
-                con.close()
+                try:
+                    con = self._shared_conn()
+                    row = con.execute(
+                        "SELECT value FROM kv WHERE key = ?", (key,)
+                    ).fetchone()
+                except sqlite3.Error:
+                    self._drop_conn()
+                    raise
             if row is None:
                 return None
             try:
@@ -159,11 +190,14 @@ class _DiskStore:
             return False
         try:
             with self._lock:
-                con = self._conn()
-                row = con.execute(
-                    "SELECT 1 FROM kv WHERE key = ?", (key,)
-                ).fetchone()
-                con.close()
+                try:
+                    con = self._shared_conn()
+                    row = con.execute(
+                        "SELECT 1 FROM kv WHERE key = ?", (key,)
+                    ).fetchone()
+                except sqlite3.Error:
+                    self._drop_conn()
+                    raise
             return row is not None
         except Exception:
             return False
@@ -173,9 +207,12 @@ class _DiskStore:
             return []
         try:
             with self._lock:
-                con = self._conn()
-                rows = con.execute("SELECT key FROM kv").fetchall()
-                con.close()
+                try:
+                    con = self._shared_conn()
+                    rows = con.execute("SELECT key FROM kv").fetchall()
+                except sqlite3.Error:
+                    self._drop_conn()
+                    raise
             return [r[0] for r in rows]
         except Exception:
             return []

@@ -19,6 +19,7 @@ export default defineConfig({
       "tests/security-hardening.test.ts",
       "tests/webhook-security.test.ts",
       "tests/critical-paths.test.ts",
+      "tests/audit-persistence.test.ts",
       "tests/paid-user-e2e.test.ts",
       "tests/ai-analytics-integration.test.ts",
       "tests/cache-invalidation.test.ts",
@@ -45,6 +46,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client/src"),
+      "@shared": path.resolve(__dirname, "shared"),
     },
   },
 });

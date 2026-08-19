@@ -492,8 +492,6 @@ export class SocialMediaAutopilotAI extends BaseModel {
     inputTensor.dispose();
     prediction.dispose();
 
-    const _avgEngagement = userPostHistory.reduce((sum, p) => sum + p.engagement, 0) /
-      (userPostHistory.length || 1);
     const topPosts = userPostHistory
       .sort((a, b) => b.engagement - a.engagement)
       .slice(0, 10);
@@ -760,8 +758,6 @@ export class SocialMediaAutopilotAI extends BaseModel {
       Math.max(...this.trainingHistory.map((p) => p.likes)) || 1000;
     const maxComments =
       Math.max(...this.trainingHistory.map((p) => p.comments)) || 100;
-    const _maxShares = Math.max(...this.trainingHistory.map((p) => p.shares)) || 50;
-    const _maxReach = Math.max(...this.trainingHistory.map((p) => p.reach)) || 10000;
 
     const postDate =
       post.postedAt instanceof Date && !isNaN(post.postedAt.getTime())

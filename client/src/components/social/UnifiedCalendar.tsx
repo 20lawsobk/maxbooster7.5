@@ -371,7 +371,7 @@ export function UnifiedCalendar() {
       title: "Publishing...",
       description: `"${post.title}" is being published to ${post.platforms.length} platforms.`,
     });
-  });
+  };
 
   const handleAddToQueue = (item: QueueItem) => {
     toast({

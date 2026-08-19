@@ -82,4 +82,5 @@
 - [External subsystem reimport sources](external-reimport-sources.md) — GitHub origins for external/maxcore + external/pdim, private-repo blob-fetch recipe, and the 5 PDIM patches that must survive any reimport
 - [MaxCore content composer contract](maxcore-content-composer-contract.md) — topic short/unquoted, instruction = angle phrase, variants share one hook, coalescer key patched to full payload
 - [Drizzle sql undefined params](drizzle-sql-undefined-params.md) — `${undefined}` in a sql template emits EMPTY SQL not NULL → syntax error; `?? null` every optional
+- [SQLite per-op connection churn deadlock](sqlite-diskstore-conn-churn-deadlock.md) — connect/close per call across threads deadlocks libsqlite3's inode mutex; use one persistent conn; py-spy IS installable
 - [PDIM capsule build must flush before returning](pdim-capsule-flush-durability.md) — PocketDimension writes chunk blobs immediately but the index/metadata only persist on flush()/close(); same-process verification can pass off the in-memory cache while disk is empty

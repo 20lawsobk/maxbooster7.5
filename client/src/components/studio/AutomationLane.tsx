@@ -297,9 +297,9 @@ export function AutomationLane({
     const value = interpolateValue(currentTime);
 
     if (parameter === "volume") {
-      audioEngine.setTrackVolume(trackId, value);
+      audioEngine.updateTrackGain(trackId, value);
     } else if (parameter === "pan") {
-      audioEngine.setTrackPan(trackId, (value - 0.5) * 2);
+      audioEngine.updateTrackPan(trackId, (value - 0.5) * 2);
     }
   }, [
     currentTime,

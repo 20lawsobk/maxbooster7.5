@@ -340,7 +340,7 @@ export class ChoirPadSynth implements SynthesizerEngine {
       const envValue = this.envelope.process();
       const breathValue = this.breathEnvelope.process();
       const vibrato = this.vibratoLFO.sine() * 0.004 * envValue;
-      const formantMod = this.formantLFO.sine() * 0.08;
+      this.formantLFO.sine(); // phase advance; modulation value currently unused
 
       let sampleL = 0;
       let sampleR = 0;
@@ -1132,7 +1132,7 @@ export class DigitalPadSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const stereoPan = this.stereoLFO.sine() * 0.3;
-      const phaseMod = this.phaseLFO.sine() * 0.1;
+      this.phaseLFO.sine(); // phase advance; modulation value currently unused
 
       let sampleL = 0;
       let sampleR = 0;

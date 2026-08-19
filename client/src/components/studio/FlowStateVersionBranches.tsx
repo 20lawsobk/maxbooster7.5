@@ -289,7 +289,7 @@ export function FlowStateVersionBranches({
         b.id === branchId ? { ...b, tags: [...b.tags, tag] } : b,
       ),
     );
-  });
+  };
 
   const formatTimeAgo = (date: Date): string => {
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000);

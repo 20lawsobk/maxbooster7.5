@@ -402,7 +402,6 @@ export function SessionStateBusPanel({
     (state) => state.activeSnapshotId,
   );
 
-  const createLink = useSessionStateBus((state) => state.createLink);
   const removeLink = useSessionStateBus((state) => state.removeLink);
   const updateLink = useSessionStateBus((state) => state.updateLink);
   const createSnapshot = useSessionStateBus((state) => state.createSnapshot);
@@ -433,23 +432,6 @@ export function SessionStateBusPanel({
     {} as Record<string, PluginState[]>,
   );
 
-  const handleParameterLink = (targetPluginId: string, targetParamId: string) => {
-    if (!selectedSource) return;
-
-    createLink({
-      sourcePluginId: selectedSource.pluginId,
-      sourceParameterId: selectedSource.paramId,
-      targetPluginId,
-      targetParameterId: targetParamId,
-      scale: 1,
-      offset: 0,
-      enabled: true,
-      bidirectional: false,
-    });
-
-    setSelectedSource(null);
-    setLinkCreationMode(false);
-  });
 
   const handleExportState = () => {
     const state = {

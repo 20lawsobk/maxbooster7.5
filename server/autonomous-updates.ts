@@ -1451,10 +1451,10 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   }
 
   private async completeRetraining(
-    _run: RetrainingRun,
+    run: RetrainingRun,
     modelId: string,
   ): Promise<void> {
-    return {
+    run.trainingMetrics = {
       finalLoss: this.deterministicValue(`${modelId}_loss`, 0.08, 0.12),
       finalAccuracy: this.deterministicValue(
         `${modelId}_train_acc`,
@@ -1462,7 +1462,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
         0.96,
       ),
       trainingTime: this.deterministicValue(`${modelId}_time`, 3600, 5400),
-    });
+    };
 
     const validationMetrics = {
       accuracy: this.deterministicValue(`${modelId}_val_acc`, 0.86, 0.95),
@@ -1474,6 +1474,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     const qualityChecksPassed =
       validationMetrics?.accuracy > 0.85 && validationMetrics?.f1Score > 0.8;
     const status = qualityChecksPassed ? "completed" : "failed";
+    run.validationMetrics = validationMetrics;
+    run.qualityChecksPassed = qualityChecksPassed;
+    run.status = status;
 
     this.silentLog(`${qualityChecksPassed ? "✅" : "❌"} Retraining ${status}`);
     this.silentLog(

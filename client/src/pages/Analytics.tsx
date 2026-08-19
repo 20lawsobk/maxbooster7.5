@@ -1813,7 +1813,7 @@ export default function Analytics() {
           description: `${message.metricType} ${message.anomalyType}: ${message.deviationPercentage}% deviation`,
         });
       }
-    });
+    };
     return () => {};
   }, [queryClient, toast]);
 

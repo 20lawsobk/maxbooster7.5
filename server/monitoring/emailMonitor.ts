@@ -1,4 +1,4 @@
-import type { MailDataRequired } from "@sendgrid/mail";
+import type { MailDataRequired } from "@sendgrid/helpers/classes/mail";
 import { logger } from "../logger.js";
 
 interface EmailLog {

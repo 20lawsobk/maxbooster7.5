@@ -691,7 +691,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const getPipelineStage = (platformKey: string) =>
     pipelineData?.pipeline?.find(
       (p: Record<string, unknown>) => p.platform === platformKey,
-    ));
+    );
 
   const CLAIM_STEP_LABELS = [
     "Not Started",

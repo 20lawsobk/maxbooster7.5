@@ -203,14 +203,6 @@ export function WaveformAudioPlayer({
     }
   };
 
-  const handleWaveformSeek = (value: number[]) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const newTime = (value[0] / 100) * duration;
-    audio.currentTime = newTime;
-    setCurrentTime(newTime);
-  });
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

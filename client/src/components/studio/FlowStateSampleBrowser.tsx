@@ -434,7 +434,7 @@ export function FlowStateSampleBrowser({
     if (bytes < 1000) return `${bytes}B`;
     if (bytes < 1000000) return `${(bytes / 1000).toFixed(1)}KB`;
     return `${(bytes / 1000000).toFixed(1)}MB`;
-  });
+  };
 
   const favoriteCount = samples.filter((s) => s.isFavorite).length;
 

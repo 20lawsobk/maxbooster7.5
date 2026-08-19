@@ -166,3 +166,4 @@ deploy-capsule/
 # Diffusion training runtime state
 server/services/diffusion/memory.json
 server/services/diffusion/training_state.json
+public/generated-content/

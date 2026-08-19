@@ -257,10 +257,6 @@ export function PersonalizedDashboard({
     );
   }
 
-  const _visibleWidgets = layout?.widgets
-      .filter((w) => w.visible)
-      .sort((a, b) => a.order - b.order) || [];
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">

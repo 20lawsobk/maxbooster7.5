@@ -408,9 +408,12 @@ export class TextAnimator {
         gradient = this.ctx.createLinearGradient(x, y, x + metrics?.width, y);
     }
 
-    const colors = style?.gradientColors;
-    for (let i = 0; i < colors?.length; i++) {
-      gradient?.addColorStop(i / (colors?.length - 1), colors[i]);
+    const colors = style?.gradientColors ?? [];
+    for (let i = 0; i < colors.length; i++) {
+      gradient?.addColorStop(
+        colors.length > 1 ? i / (colors.length - 1) : 0,
+        colors[i],
+      );
     }
 
     return gradient;

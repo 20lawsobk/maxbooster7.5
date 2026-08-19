@@ -206,7 +206,7 @@ export function FilterPresetsManager({
     if (key.includes("bpm")) return `${value} BPM`;
     if (typeof value === "boolean") return value ? "Yes" : "No";
     return String(value);
-  });
+  };
 
   if (compact) {
     return (

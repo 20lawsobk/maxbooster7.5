@@ -1313,7 +1313,7 @@ export class VoiceSamplerSynth implements SynthesizerEngine {
     for (let i = 0; i < numSamples; i++) {
       const envValue = this.envelope.process();
       const vibrato = this.vibratoLFO.sine() * 0.003 * envValue;
-      const formantMod = this.formantLFO.sine() * 0.1;
+      this.formantLFO.sine(); // phase advance; modulation value currently unused
 
       const playbackRate =
         (this.frequency / this.baseFrequency) * (1 + vibrato);

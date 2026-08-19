@@ -95,8 +95,6 @@ export function EnhancedZoomControls({
 
   const getZoomPercentage = () => Math.round(zoom * 100);
 
-  const snapLabel = SNAP_RESOLUTIONS.find((r) => r.value === snapResolution)?.label || "1/4";
-
   return (
     <TooltipProvider>
       <div

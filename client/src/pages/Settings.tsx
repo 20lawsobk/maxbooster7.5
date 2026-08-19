@@ -750,7 +750,7 @@ export default function Settings() {
   const handleTerminateSession = (sessionId: string) => {
     setSessionToTerminate(sessionId);
     setTerminateSessionOpen(true);
-  });
+  };
 
   const handleTerminateSession = async () => {
     if (!sessionToTerminate) return;

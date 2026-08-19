@@ -136,11 +136,6 @@ export function ShortcutCustomizer({
     setConflict(null);
   };
 
-  const handleShortcutEdit = (shortcutId: string) => {
-    if (!shortcutManager) return;
-    shortcutManager.resetShortcut(shortcutId);
-    setShortcuts(shortcutManager.getAllShortcuts());
-  });
 
   const handleResetAll = () => {
     if (!shortcutManager) return;

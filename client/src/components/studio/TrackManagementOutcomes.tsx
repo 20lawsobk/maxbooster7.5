@@ -336,7 +336,7 @@ export function TrackManagementOutcomes({
   const handleTrackSelect = (track: Track) => {
     setSelectedTrack(track);
     setShowDeleteDialog(true);
-  });
+  };
 
   ((track: Track) => {
     setSelectedTrack(track);
