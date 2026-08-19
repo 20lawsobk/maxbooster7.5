@@ -452,7 +452,7 @@ export default function FirstWeekSuccessPath({
                                   )}
                                 </div>
                                 <div>
-                                  <p
+                                  <div
                                     className={`font-medium ${task.completed ? "line-through text-muted-foreground" : ""}`}
                                   >
                                     {task.name}
@@ -464,7 +464,7 @@ export default function FirstWeekSuccessPath({
                                         Required
                                       </Badge>
                                     )}
-                                  </p>
+                                  </div>
                                   <p className="text-sm text-muted-foreground">
                                     {task.description}
                                   </p>

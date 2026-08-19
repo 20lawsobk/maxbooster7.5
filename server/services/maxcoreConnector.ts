@@ -68,9 +68,19 @@ export function maxcoreUrl(path: string): string {
 /**
  * Rewrites server-relative media references returned by MaxCore so browser
  * clients never accidentally resolve them against the Max Booster UDS origin.
+ *
+ * In local mode, MaxCore's origin is a loopback address (http://127.0.0.1:PORT)
+ * that only the Node server can reach — a browser can never load it directly,
+ * and even if it could, http:// loopback URLs are blocked by the app's CSP
+ * img-src/media-src ("https:" only). So local-mode media is rewritten to a
+ * same-origin proxy path (`/api/maxcore-media/...`, see maxcoreProxy.ts) that
+ * streams the bytes through the Node server instead. Remote MaxCore mode
+ * keeps the historical behavior of pointing straight at MaxCore's own
+ * (public, https) origin, since the browser can reach that directly.
  */
 export function absolutizeMaxcoreMediaUrls(value: unknown): unknown {
   const origin = getMaxcoreOrigin();
+  const useProxyPath = config.maxcoreLocal.enabled;
   if (Array.isArray(value)) return value.map(absolutizeMaxcoreMediaUrls);
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
@@ -80,12 +90,32 @@ export function absolutizeMaxcoreMediaUrls(value: unknown): unknown {
         origin &&
         MEDIA_URL_KEYS.test(key) &&
         RELATIVE_MEDIA.test(nested)
-          ? `${origin}${nested}`
+          ? useProxyPath
+            ? `/api/maxcore-media${nested}`
+            : `${origin}${nested}`
           : absolutizeMaxcoreMediaUrls(nested);
     }
     return out;
   }
   return value;
+}
+
+/**
+ * Guards the public /api/maxcore-media proxy: only paths matching the same
+ * media prefixes absolutizeMaxcoreMediaUrls rewrites (uploads/media/static/
+ * files/outputs) are ever forwarded upstream, and any `..` traversal segment
+ * (raw or percent-encoded) is rejected outright.
+ */
+export function isAllowedMaxcoreMediaPath(subPath: string): boolean {
+  if (!subPath) return false;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(subPath);
+  } catch {
+    return false;
+  }
+  if (decoded.includes("..") || decoded.includes("\0")) return false;
+  return RELATIVE_MEDIA.test(decoded);
 }
 
 export function isMaxcoreJson(response: Response): boolean {
