@@ -130,12 +130,12 @@ export class SocialMediaService {
 
       if (!me?.data) return null;
 
-      const metrics = me?.data.public_metrics;
+      const metrics = me?.data?.public_metrics;
       return {
         platform: "Twitter",
-        followers: metrics!.followers_count || 0,
-        posts: metrics!.tweet_count || 0,
-        reach: metrics!.listed_count || 0,
+        followers: metrics?.followers_count || 0,
+        posts: metrics?.tweet_count || 0,
+        reach: metrics?.listed_count || 0,
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {

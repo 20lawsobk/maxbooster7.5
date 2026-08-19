@@ -158,6 +158,15 @@ async function flushWAL(): Promise<void> {
             : entry?.severity === "warning"
               ? "medium"
               : "low";
+        // audit_logs.user_id has an FK to users.id — a non-UUID placeholder
+        // like "unknown" (used by callers that couldn't resolve a real user,
+        // e.g. webhook handlers) would violate that constraint and silently
+        // drop the whole entry. Fold it into details instead of nulling it
+        // out blindly, so the caller's intent isn't lost.
+        const UUID_RE =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const safeUserId =
+          entry?.userId && UUID_RE.test(entry.userId) ? entry.userId : null;
         const details = JSON.stringify({
           ...(entry?.details ?? {}),
           wal_id: entry?.id ?? null,
@@ -166,6 +175,9 @@ async function flushWAL(): Promise<void> {
           target_id: entry?.targetId ?? null,
           target_type: entry?.targetType ?? null,
           error_message: entry?.errorMessage ?? null,
+          ...(entry?.userId && !safeUserId
+            ? { raw_user_id: entry.userId }
+            : {}),
         });
         await db.execute(sql`
           INSERT INTO audit_logs (
@@ -174,7 +186,7 @@ async function flushWAL(): Promise<void> {
           )
           SELECT
             ${entry?.timestamp ?? new Date().toISOString()},
-            ${entry?.userId ?? null},
+            ${safeUserId},
             ${entry?.ipAddress ?? "unknown"},
             ${entry?.userAgent ?? null},
             ${entry?.action ?? "unknown"},

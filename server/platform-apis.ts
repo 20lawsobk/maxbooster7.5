@@ -618,16 +618,16 @@ export const platformAPI = {
         "tweet.fields": ["public_metrics"],
       });
 
-      const metrics = tweet?.data.public_metrics;
+      const metrics = tweet?.data?.public_metrics;
 
       return {
-        likes: metrics!.like_count || 0,
-        shares: metrics!.retweet_count || 0,
-        retweets: metrics!.retweet_count || 0,
-        comments: metrics!.reply_count || 0,
-        replies: metrics!.reply_count || 0,
-        impressions: metrics!.impression_count || 0,
-        engagementRate: metrics!.impression_count
+        likes: metrics?.like_count || 0,
+        shares: metrics?.retweet_count || 0,
+        retweets: metrics?.retweet_count || 0,
+        comments: metrics?.reply_count || 0,
+        replies: metrics?.reply_count || 0,
+        impressions: metrics?.impression_count || 0,
+        engagementRate: metrics?.impression_count
           ? ((metrics.like_count ?? 0) +
               (metrics.retweet_count ?? 0) +
               (metrics.reply_count ?? 0)) /
@@ -668,12 +668,13 @@ export const platformAPI = {
           data?.likes?.summary?.total_count ||
           data?.reactions?.summary?.total_count ||
           0,
-        shares: data.shares?.count || 0,
-        comments: data.comments?.summary?.total_count || 0,
+        shares: data?.shares?.count || 0,
+        comments: data?.comments?.summary?.total_count || 0,
         engagementRate: 0, // Facebook doesn't provide impressions in basic API
       };
     } catch (error: unknown) {
-      if ((error as any).response.status === 401 || (error as any).response.status === 403) {
+      const status = (error as any)?.response?.status;
+      if (status === 401 || status === 403) {
         throw new Error("Facebook OAuth token expired or invalid");
       }
       throw error;
@@ -695,10 +696,10 @@ export const platformAPI = {
         },
       );
 
-      const data = response.data.data;
-      const getMetric = (name: string) => {
-        const metric = data.find((m: unknown) => (m as Error).name === name);
-        return metric.values[0].value || 0;
+      const data = response?.data?.data ?? [];
+      const getMetric = (name: string): number => {
+        const metric = data.find((m: unknown) => (m as { name?: string })?.name === name);
+        return metric?.values?.[0]?.value || 0;
       };
 
       const impressions = getMetric("impressions");
@@ -713,7 +714,8 @@ export const platformAPI = {
         engagementRate: impressions > 0 ? engagement / impressions : 0,
       };
     } catch (error: unknown) {
-      if ((error as any).response.status === 401 || (error as any).response.status === 403) {
+      const status = (error as any)?.response?.status;
+      if (status === 401 || status === 403) {
         throw new Error("Instagram OAuth token expired or invalid");
       }
       throw error;

@@ -582,8 +582,11 @@ router.post("/sms/confirm", async (req: Request, res: Response) => {
     const { code } = req.body;
 
     const user = await storage.getUser(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
     const currentSettings =
-      (user!.notificationSettings as Record<string, unknown>) || {};
+      (user.notificationSettings as Record<string, unknown>) || {};
     const smsSettings = (currentSettings.sms as Record<string, unknown>) || {};
     const method = smsSettings.verificationMethod as string | undefined;
     const pendingCode = smsSettings.pendingVerification as string | undefined;

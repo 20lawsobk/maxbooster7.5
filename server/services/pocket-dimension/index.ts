@@ -499,13 +499,13 @@ export class PocketDimension extends EventEmitter {
     const nested = new PocketDimension({
       id: `${this.id}/${dimensionPath}`,
       name: dimensionPath,
-      encryptionKey: config!.encryptionKey,
-      chunkSize: config!.chunkSize || this.chunkSize,
-      maxRecursionDepth: config!.maxRecursionDepth || this.maxRecursionDepth,
-      compressionLevel: config!.compressionLevel || this.compressionLevel,
+      encryptionKey: config?.encryptionKey ?? this.rawEncryptionKey ?? undefined,
+      chunkSize: config?.chunkSize || this.chunkSize,
+      maxRecursionDepth: config?.maxRecursionDepth || this.maxRecursionDepth,
+      compressionLevel: config?.compressionLevel || this.compressionLevel,
       enableDeduplication:
         config?.enableDeduplication ?? this.enableDeduplication,
-      enableVersioning: config!.enableVersioning ?? this.enableVersioning,
+      enableVersioning: config?.enableVersioning ?? this.enableVersioning,
       storagePath: this.storagePath,
     });
 
@@ -804,13 +804,13 @@ export class PocketDimensionManager {
 
     const dimension = new PocketDimension({
       id,
-      name: config!.name || id,
-      encryptionKey: config!.encryptionKey,
-      chunkSize: config!.chunkSize,
-      maxRecursionDepth: config!.maxRecursionDepth,
-      compressionLevel: config!.compressionLevel,
-      enableDeduplication: config!.enableDeduplication,
-      enableVersioning: config!.enableVersioning,
+      name: config?.name || id,
+      encryptionKey: config?.encryptionKey,
+      chunkSize: config?.chunkSize,
+      maxRecursionDepth: config?.maxRecursionDepth,
+      compressionLevel: config?.compressionLevel,
+      enableDeduplication: config?.enableDeduplication,
+      enableVersioning: config?.enableVersioning,
       storagePath: this.storagePath,
     });
 

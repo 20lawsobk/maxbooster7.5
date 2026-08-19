@@ -1122,7 +1122,12 @@ export async function registerRoutes(
                 if (redisClient) {
                   await (redisClient as any).del(`maxbooster:sess:${session.id}`);
                 }
-              } catch (redisError) {}
+              } catch (redisError) {
+                logger.warn(
+                  { err: redisError, sessionId: session.id },
+                  "[Sessions] Failed to clean up Redis session key after DB delete",
+                );
+              }
             }
           }
         }
@@ -3098,7 +3103,10 @@ export async function registerRoutes(
       }
       try {
         const user = await storage.getUser(req.user.id);
-        const savedPrefs = user!.notificationSettings as Record<
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        const savedPrefs = user.notificationSettings as Record<
           string,
           unknown
         > | null;
@@ -3533,8 +3541,11 @@ export async function registerRoutes(
 
           // Store the normalized phone number (code is managed by Twilio — no DB storage needed)
           const user = await storage.getUser(req.user.id);
+          if (!user) {
+            return res.status(404).json({ message: "User not found" });
+          }
           const currentSettings =
-            (user!.notificationSettings as Record<string, unknown>) || {};
+            (user.notificationSettings as Record<string, unknown>) || {};
           await storage.updateUser(req.user.id, {
             notificationSettings: {
               ...currentSettings,
@@ -3573,8 +3584,11 @@ export async function registerRoutes(
           await client.messages.create(msgParams);
 
           const user = await storage.getUser(req.user.id);
+          if (!user) {
+            return res.status(404).json({ message: "User not found" });
+          }
           const currentSettings =
-            (user!.notificationSettings as Record<string, unknown>) || {};
+            (user.notificationSettings as Record<string, unknown>) || {};
           await storage.updateUser(req.user.id, {
             notificationSettings: {
               ...currentSettings,
@@ -3600,8 +3614,11 @@ export async function registerRoutes(
 
         // 🔧 Dev/demo fallback — no Twilio credentials configured
         const user = await storage.getUser(req.user.id);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
         const currentSettings =
-          (user!.notificationSettings as Record<string, unknown>) || {};
+          (user.notificationSettings as Record<string, unknown>) || {};
         await storage.updateUser(req.user.id, {
           notificationSettings: {
             ...currentSettings,
@@ -3671,8 +3688,11 @@ export async function registerRoutes(
 
         // Resolve phone: prefer what was sent, fall back to what's stored
         const user = await storage.getUser(req.user.id);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
         const currentSettings =
-          (user!.notificationSettings as Record<string, unknown>) || {};
+          (user.notificationSettings as Record<string, unknown>) || {};
         const smsSettings =
           (currentSettings.sms as Record<string, unknown>) || {};
         const storedPhone = smsSettings.phoneNumber as string | undefined;

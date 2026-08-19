@@ -752,7 +752,7 @@ export default function Settings() {
     setTerminateSessionOpen(true);
   };
 
-  const handleTerminateSession = async () => {
+  const confirmTerminateSession = async () => {
     if (!sessionToTerminate) return;
 
     setTerminatingSession(true);
@@ -2105,7 +2105,7 @@ export default function Settings() {
                   Cancel
                 </AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={handleTerminateSession}
+                  onClick={confirmTerminateSession}
                   disabled={terminatingSession}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
