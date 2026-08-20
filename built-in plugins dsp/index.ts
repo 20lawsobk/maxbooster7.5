@@ -123,7 +123,7 @@ import MbDrumsCinematicPlugin from './mb-drums-cinematic';
 import MbBassSubPlugin from './mb-bass-sub';
 import MbBassReesePlugin from './mb-bass-reese';
 import MbBassWobblePlugin from './mb-bass-wobble';
-import MbBass-808Plugin from './mb-bass-808';
+import MbBass808Plugin from './mb-bass-808';
 import MbBassAcidPlugin from './mb-bass-acid';
 import MbBassFmPlugin from './mb-bass-fm';
 import MbBassElectricPlugin from './mb-bass-electric';
@@ -205,7 +205,7 @@ import MbMonoMakerPlugin from './mb-mono-maker';
 import MbStereoImagerMsPlugin from './mb-stereo-imager-ms';
 import MbHaasEffectPlugin from './mb-haas-effect';
 import MbSpatialEnhancerPlugin from './mb-spatial-enhancer';
-import Mb-3dPannerPlugin from './mb-3d-panner';
+import Mb3dPannerPlugin from './mb-3d-panner';
 import MbBinauralPlugin from './mb-binaural';
 import MbSurroundEncoderPlugin from './mb-surround-encoder';
 import MbCorrelationMeterPlugin from './mb-correlation-meter';
@@ -352,7 +352,7 @@ import MbGuitarAcousticPlugin from './mb-guitar-acoustic';
 import MbGuitarElectricCleanPlugin from './mb-guitar-electric-clean';
 import MbGuitarElectricDirtyPlugin from './mb-guitar-electric-dirty';
 import MbGuitarNylonPlugin from './mb-guitar-nylon';
-import MbGuitar-12stringPlugin from './mb-guitar-12string';
+import MbGuitar12stringPlugin from './mb-guitar-12string';
 import MbGuitarSlidePlugin from './mb-guitar-slide';
 import MbGuitarSteelPlugin from './mb-guitar-steel';
 import MbGuitarBassElectricPlugin from './mb-guitar-bass-electric';
@@ -541,7 +541,7 @@ export const ALL_PLUGINS: PluginDefinition[] = [
   MbBassSubPlugin,
   MbBassReesePlugin,
   MbBassWobblePlugin,
-  MbBass-808Plugin,
+  MbBass808Plugin,
   MbBassAcidPlugin,
   MbBassFmPlugin,
   MbBassElectricPlugin,
@@ -623,7 +623,7 @@ export const ALL_PLUGINS: PluginDefinition[] = [
   MbStereoImagerMsPlugin,
   MbHaasEffectPlugin,
   MbSpatialEnhancerPlugin,
-  Mb-3dPannerPlugin,
+  Mb3dPannerPlugin,
   MbBinauralPlugin,
   MbSurroundEncoderPlugin,
   MbCorrelationMeterPlugin,
@@ -770,7 +770,7 @@ export const ALL_PLUGINS: PluginDefinition[] = [
   MbGuitarElectricCleanPlugin,
   MbGuitarElectricDirtyPlugin,
   MbGuitarNylonPlugin,
-  MbGuitar-12stringPlugin,
+  MbGuitar12stringPlugin,
   MbGuitarSlidePlugin,
   MbGuitarSteelPlugin,
   MbGuitarBassElectricPlugin,

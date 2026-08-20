@@ -66,8 +66,8 @@ export function getRegistrarProvider(): RegistrarProvider {
 }
 
 /** Replace the provider at runtime (useful for tests or hot-swapping). */
-export function setRegistrarProvider(provider: RegistrarProvider): void {
-  provider = provider;
+export function setRegistrarProvider(newProvider: RegistrarProvider): void {
+  provider = newProvider;
   logger.info(
     { provider: provider.name },
     "[RegistrarFactory] Provider overridden",

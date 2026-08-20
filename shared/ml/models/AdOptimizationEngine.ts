@@ -1075,7 +1075,7 @@ export class AdOptimizationEngine extends BaseModel {
       allocations.reduce(
         (sum, a) => sum + a.expectedROI * a.recommendedBudget,
         0,
-      ) / totalBudget;
+      ) / (totalBudget || 1);
     const expectedTotalConversions = allocations.reduce(
       (sum, a) => sum + a.expectedConversions,
       0,

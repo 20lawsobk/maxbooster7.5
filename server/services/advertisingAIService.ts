@@ -984,7 +984,7 @@ export class AdvertisingAIService {
                 (sum: number, p: PlatformAllocation) =>
                   sum + p?.expectedConversions * 50,
                 0,
-              ) / totalBudget
+              ) / (totalBudget || 1)
             ).toFixed(2)
           : "0",
       breakEvenPoint: Math.ceil(duration * 0.4), // Day 12 of 30

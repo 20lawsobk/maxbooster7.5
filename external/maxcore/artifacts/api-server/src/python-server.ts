@@ -103,8 +103,8 @@ function waitForPort(port: number, timeoutMs = 45_000): Promise<void> {
       const sock = new net.Socket();
       sock.setTimeout(1000);
       sock.on("connect", () => { sock.destroy(); resolve(); });
-      sock.on("error",   () => { sock.destroy(); Date.now() < deadline ? setTimeout(poll, 500) : reject(new Error(`Timeout waiting for port ${port}`)); });
-      sock.on("timeout", () => { sock.destroy(); Date.now() < deadline ? setTimeout(poll, 500) : reject(new Error(`Timeout waiting for port ${port}`)); });
+      sock.on("error",   () => { sock.destroy(); if (Date.now() < deadline) setTimeout(poll, 500); else reject(new Error(`Timeout waiting for port ${port}`)); });
+      sock.on("timeout", () => { sock.destroy(); if (Date.now() < deadline) setTimeout(poll, 500); else reject(new Error(`Timeout waiting for port ${port}`)); });
       sock.connect(port, "127.0.0.1");
     };
     poll();

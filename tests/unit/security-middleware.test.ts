@@ -12,6 +12,19 @@ function readSrc(file: string): string {
   return readFileSync(file, "utf8");
 }
 
+/**
+ * Safely evaluates a source-extracted numeric literal expression like
+ * "64*1024" or "65536" WITHOUT eval()/Function() — only digits and "*" are
+ * accepted, so there is no code-injection surface even though the operand
+ * comes from a regex match against a source file.
+ */
+function evaluateNumericLiteralExpression(expr: string): number {
+  if (!/^\d+(\*\d+)*$/.test(expr)) {
+    throw new Error(`Unexpected non-numeric maxPayload expression: ${expr}`);
+  }
+  return expr.split("*").reduce((product, part) => product * Number(part), 1);
+}
+
 describe("Mandatory middleware stack", () => {
   const src = readSrc("server/safety/mandatoryMiddleware.ts");
 
@@ -82,7 +95,7 @@ describe("WebSocket security", () => {
     if (match) {
       const expr = match[1].replace(/_/g, "").replace(/\s/g, "");
       // e.g. "64*1024" or "65536"
-      const bytes = expr.includes("*") ? eval(expr) : parseInt(expr);
+      const bytes = evaluateNumericLiteralExpression(expr);
       expect(bytes).toBeLessThan(10 * 1024 * 1024);
     }
   });
@@ -91,7 +104,7 @@ describe("WebSocket security", () => {
     const match = collabSrc.match(/maxPayload:\s*([\d_*\s*\d+]+)/);
     if (match) {
       const expr = match[1].replace(/_/g, "").replace(/\s/g, "");
-      const bytes = expr.includes("*") ? eval(expr) : parseInt(expr);
+      const bytes = evaluateNumericLiteralExpression(expr);
       expect(bytes).toBeLessThanOrEqual(50 * 1024 * 1024);
     }
   });

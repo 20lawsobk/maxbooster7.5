@@ -314,7 +314,6 @@ export class BrandVoiceAnalyzer {
 
     const exclamationRatio =
       posts.filter((p) => p.includes("!")).length / (Math.max(posts.length, 1) || 1);
-    posts.filter((p) => p.includes("?")).length / (Math.max(posts.length, 1) || 1);
 
     const isFormal =
       avgSentenceLength > 15 &&

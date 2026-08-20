@@ -97,6 +97,7 @@ describe("Common Zod schema patterns", () => {
     });
 
     it("safeUrlSchema rejects javascript: URIs", () => {
+      // eslint-disable-next-line no-script-url -- test fixture asserting rejection, never executed
       expect(safeUrlSchema.safeParse("javascript:alert(1)").success).toBe(
         false,
       );

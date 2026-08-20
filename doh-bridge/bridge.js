@@ -170,7 +170,7 @@ udpServer.on("message", (msg, rinfo) => {
         if (err) metrics.errors++;
       });
     },
-    (err) => {
+    (_err) => {
       const entry = pending.get(key);
       if (!entry) return;
       clearTimeout(entry.timer);
@@ -227,7 +227,7 @@ const tcpServer = net.createServer((socket) => {
           socket.end();
         });
       },
-      (err) => {
+      (_err) => {
         if (socket.destroyed) return;
         const sf = makeServfail(query);
         const lh = Buffer.alloc(2);
@@ -304,7 +304,7 @@ function shutdown(sig) {
   tcpServer.close();
   metricsServer.close();
   // Flush pending with SERVFAIL
-  for (const [key, entry] of pending) {
+  for (const [, entry] of pending) {
     clearTimeout(entry.timer);
   }
   pending.clear();

@@ -1044,7 +1044,6 @@ export class SocialAutopilotEngine extends BaseModel {
     platform: Platform,
   ): FollowerGrowthStrategy {
     const audience = this.audienceInsights.get(platform);
-    this.historicalData.get(platform) || [];
 
     const currentFollowers = audience?.totalFollowers || 1000;
     const avgEngagement =

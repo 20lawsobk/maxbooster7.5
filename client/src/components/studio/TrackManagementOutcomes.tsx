@@ -338,11 +338,6 @@ export function TrackManagementOutcomes({
     setShowDeleteDialog(true);
   };
 
-  ((track: Track) => {
-    setSelectedTrack(track);
-    setShowBounceDialog(true);
-  });
-
   return (
     <div className={cn("space-y-4", className)}>
       <div className="flex items-center gap-2">

@@ -71,6 +71,7 @@ describe("assertPublicHttpUrl", () => {
       /http and https/i,
     );
     expect(() => assertPublicHttpUrl("file:///etc/passwd")).toThrow();
+    // eslint-disable-next-line no-script-url -- test fixture asserting rejection, never executed
     expect(() => assertPublicHttpUrl("javascript:alert(1)")).toThrow();
   });
 

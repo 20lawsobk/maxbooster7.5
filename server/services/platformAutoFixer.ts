@@ -860,7 +860,7 @@ class PlatformAutoFixer extends EventEmitter {
             if (pdimQueue > 20) {
               status = "critical";
               message = `PDIM chain stall: ${pdimQueue} callers queued (gap ${pdimGap}ms) — all BullMQ scripts blocked`;
-            } else if (pdimQueue > 20 && status === "healthy") {
+            } else if (pdimQueue > 10 && status === "healthy") {
               status = "degraded";
               message = `PDIM chain congested: ${pdimQueue} callers queued (gap ${pdimGap}ms)`;
             }

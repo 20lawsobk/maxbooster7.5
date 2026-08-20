@@ -1,6 +1,6 @@
 import type { PluginDefinition } from '../server/services/pluginHostService';
 
-const MbBass-808Plugin: PluginDefinition = {
+const MbBass808Plugin: PluginDefinition = {
     id: 'mb-bass-808', slug: 'mb-bass-808', name: 'MB 808 Bass', category: 'instrument', type: 'bass', version: '1.0.0',
     description: 'Classic 808 kick bass', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sine', detune: 0, gain: 1.0 }],
@@ -12,4 +12,4 @@ const MbBass-808Plugin: PluginDefinition = {
     defaultPreset: { slide: 0.3, volume: 0.9 },
   };
 
-export default MbBass-808Plugin;
+export default MbBass808Plugin;

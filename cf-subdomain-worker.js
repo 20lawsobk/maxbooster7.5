@@ -58,7 +58,7 @@ function withSecurityHeaders(response) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, _env) {
     const url = new URL(request.url);
     const originalHost = url.hostname; // e.g. b-lawzmusic.max-booster.com
 

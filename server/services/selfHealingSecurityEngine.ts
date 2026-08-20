@@ -159,6 +159,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       [
         "<script[^>]*>", // Script tags
         "</script>", // Closing script tags
+        // eslint-disable-next-line no-script-url -- detection pattern string, not an executed URL
         "javascript:", // JavaScript protocol
         "vbscript:", // VBScript protocol
         "on\\w+\\s*=", // Event handlers

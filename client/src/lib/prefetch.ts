@@ -33,8 +33,8 @@ let _bootstrapped = false;
 
 let isAuthenticated = false;
 
-export function setAuthState(isAuthenticated: boolean): void {
-  isAuthenticated = isAuthenticated;
+export function setAuthState(authenticated: boolean): void {
+  isAuthenticated = authenticated;
 }
 
 function shouldPrefetch(): boolean {
