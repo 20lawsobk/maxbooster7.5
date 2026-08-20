@@ -145,6 +145,10 @@ export class AdvertisingAIService {
       ((creative as Record<string, unknown>).headline as string) ||
       ((creative as Record<string, unknown>).description as string) ||
       "music artist promotion";
+    // Best-effort live trend/industry signal — additive only, never blocks
+    // or fails generation on timeout/failure.
+    const { getAwarenessContext } = await import("./awarenessContext.js");
+    const adAwareness = await getAwarenessContext("advertising");
     const mcAdRaw = await MaxCoreAIClient.generate<{
       creatives?: Array<{
         hook?: string;
@@ -166,6 +170,9 @@ export class AdvertisingAIService {
         platforms,
         creative_id: creative.id,
       },
+      ...(adAwareness?.contextString
+        ? { extra_context: adAwareness.contextString.slice(0, 400) }
+        : {}),
     });
     const mcAd = requireMaxCore(mcAdRaw, "ad creative");
     const adCreative = mcAd.creatives?.[0] ?? null;

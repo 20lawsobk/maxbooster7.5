@@ -261,6 +261,10 @@ class PromotionalToolsService {
     let aiGeneratedText: string | null = null;
     if (!config.customText) {
       try {
+        // Best-effort live trend/industry signal — additive only, never
+        // blocks or fails generation on timeout/failure.
+        const { getAwarenessContext } = await import("./awarenessContext.js");
+        const promoAwareness = await getAwarenessContext("social");
         const mcCopy = await MaxCoreAIClient.generate<{
           headline?: string;
           body?: string;
@@ -276,6 +280,9 @@ class PromotionalToolsService {
             (release?.metadata as Record<string, unknown>)?.artistName ||
             "Unknown Artist",
           release_date: release.releaseDate?.toLocaleDateString(),
+          ...(promoAwareness?.contextString
+            ? { extra_context: promoAwareness.contextString.slice(0, 400) }
+            : {}),
         });
         aiGeneratedText =
           mcCopy?.headline ?? mcCopy?.caption ?? mcCopy?.body ?? null;
