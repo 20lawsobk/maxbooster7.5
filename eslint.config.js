@@ -13,6 +13,7 @@ export default [
   {
     ignores: [
       "node_modules/**",
+      ".pythonlibs/**",
       "dist/**",
       "build/**",
       "coverage/**",
