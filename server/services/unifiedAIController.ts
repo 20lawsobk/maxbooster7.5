@@ -23,6 +23,7 @@ import { logger } from "../logger.js";
 import { MLModelRegistry } from "./mlModelRegistry.js";
 import { storage } from "../storage.js";
 import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
+import { getAwarenessContext, type AwarenessMode } from "./awarenessContext.js";
 import { AIService } from "./aiService.js";
 import * as aiAnalyticsService from "./aiAnalyticsService.js";
 import {
@@ -116,6 +117,9 @@ export interface ContentGenerationOptions extends GenerationOptions {
   tracklist?: string[];
   viewCount?: number | null;
   likeCount?: number | null;
+  /** Which awareness-layer mode to fetch live trend context for. Defaults to
+   * "social" for backward compatibility with existing callers. */
+  awarenessMode?: AwarenessMode;
 }
 
 export interface SentimentAnalysisOptions {
@@ -507,11 +511,24 @@ export class UnifiedAIController {
       // User instruction (extraParts[0]) remains the primary directive — industry
       // context is always last so MaxCore treats it as background signal, not a command.
       // getContextForMode() uses a 30-min cache, so latency after first fetch is negligible.
-      const _industryCtx = await musicIndustryContextFilter
-        .getContextForMode("social")
-        .catch(() => null);
-      if (_industryCtx?.contextString)
-        extraParts?.push(_industryCtx?.contextString);
+      const resolvedAwarenessMode: AwarenessMode =
+        options.awarenessMode ||
+        (effectiveContentType === "promotional" || effectiveObjective === "conversion"
+          ? "advertising"
+          : "social");
+      const _awarenessCtx = await getAwarenessContext(resolvedAwarenessMode);
+      if (_awarenessCtx?.contextString) {
+        extraParts?.push(_awarenessCtx?.contextString);
+      } else {
+        // Fall back to the lighter-weight industry filter if the richer
+        // awareness layer is unavailable — keeps behavior identical to
+        // before this wiring for environments where it can't load.
+        const _industryCtx = await musicIndustryContextFilter
+          .getContextForMode("social")
+          .catch(() => null);
+        if (_industryCtx?.contextString)
+          extraParts?.push(_industryCtx?.contextString);
+      }
 
       const combinedExtra = extraParts?.length
         ? extraParts?.join(" | ")

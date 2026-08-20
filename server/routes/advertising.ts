@@ -1204,6 +1204,7 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
       contentType: contentType === "ad_copy" ? "promotional" : contentType,
       includeHashtags: true,
       includeEmojis: true,
+      awarenessMode: "advertising",
     });
 
     if (!result?.success) {

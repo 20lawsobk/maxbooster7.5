@@ -60,6 +60,7 @@ import {
   selectBestVariant,
 } from "../lib/contentPostProcessor.js";
 import { MaxCoreAIClient } from "./unifiedAIController.js";
+import { getAwarenessContext } from "./awarenessContext.js";
 import { autonomousService } from "./autonomousService.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
 import path from "path";
@@ -2002,6 +2003,11 @@ class BeatMoneyLoopService {
       process.env.MARKETPLACE_URL || "https://blawz.com/marketplace";
     const listenUrl = `${marketplaceUrl}?beat=${args.beatId}`;
 
+    // Live trend/industry awareness — CTA library, emotional triggers, and
+    // trending hooks feed the caption so beat drops read like current market
+    // signal, not a static template. Best-effort: never blocks generation.
+    const awareness = await getAwarenessContext("music");
+
     const mcRaw = await MaxCoreAIClient.infer<{
       hook?: string;
       body?: string;
@@ -2035,6 +2041,7 @@ class BeatMoneyLoopService {
         action: "license_beat",
         production_details: args.scan.hooks.slice(0, 3).join("; ") || args.scan.mood,
         listen_url: listenUrl,
+        ...(awareness?.contextString ? { trend_context: awareness.contextString } : {}),
       },
       // Allow "link in bio" CTAs — this post is the beat-sale call-to-action
       platform_constraints: { allow_link_in_bio: true, cta_style: "direct_sale" },
