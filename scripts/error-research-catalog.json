@@ -36,6 +36,65 @@
     "validation": "typescript",
     "scheduling": "bullmq"
   },
+  "sources": {
+    "typescript": [
+      "https://www.typescriptlang.org/docs/handbook/2/narrowing.html",
+      "https://www.typescriptlang.org/docs/handbook/2/basic-types.html"
+    ],
+    "eslint": [
+      "https://eslint.org/docs/latest/extend/custom-rules",
+      "https://eslint.org/docs/latest/use/command-line-interface"
+    ],
+    "syntax": [
+      "https://nodejs.org/api/errors.html",
+      "https://www.typescriptlang.org/docs/handbook/2/narrowing.html"
+    ],
+    "node-runtime": [
+      "https://nodejs.org/api/errors.html",
+      "https://nodejs.org/api/report.html"
+    ],
+    "postgres": [
+      "https://www.postgresql.org/docs/current/errcodes-appendix.html",
+      "https://www.postgresql.org/docs/current/transaction-iso.html"
+    ],
+    "pdim-redis": [
+      "https://redis.io/docs/latest/develop/programmability/lua-api/",
+      "https://redis.io/docs/latest/develop/interact/transactions/"
+    ],
+    "bullmq": [
+      "https://docs.bullmq.io/guide/jobs/stalled",
+      "https://docs.bullmq.io/bull/important-notes",
+      "https://docs.bullmq.io/guide/workers/graceful-shutdown"
+    ],
+    "http-network": [
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status",
+      "https://nodejs.org/api/http.html"
+    ],
+    "auth-csrf": [
+      "https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html"
+    ],
+    "stripe": [
+      "https://docs.stripe.com/api/idempotent_requests",
+      "https://docs.stripe.com/webhooks"
+    ],
+    "storage": [
+      "https://nodejs.org/api/fs.html",
+      "https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html"
+    ],
+    "concurrency": [
+      "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "https://www.postgresql.org/docs/current/mvcc.html"
+    ],
+    "memory": [
+      "https://nodejs.org/learn/diagnostics/memory",
+      "https://nodejs.org/api/report.html"
+    ],
+    "deployment": [
+      "https://nodejs.org/api/process.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status"
+    ]
+  },
   "families": [
     {
       "id": "typescript",

@@ -23,6 +23,10 @@ for (const family of families) {
       errors.push(`${family.id}: missing ${key}`);
     }
   }
+  const sources = catalog.sources?.[family.id];
+  if (!Array.isArray(sources) || sources.length === 0 || sources.some((url) => !/^https:\/\//.test(url))) {
+    errors.push(`${family.id}: missing authoritative HTTPS sources`);
+  }
 }
 
 // Keep the catalog aligned with the live KB's categories and stable IDs.
