@@ -133,6 +133,32 @@ class ReleaseWorkflowService {
         };
       }
 
+      // Apply the actual status change and verify it matched a real row
+      // BEFORE recording the request/version-history as completed. Only
+      // checking the earlier SELECT is not enough: the release could be
+      // deleted (or otherwise stop matching) in the gap between that read
+      // and this write, and an UPDATE whose WHERE clause matches zero rows
+      // still resolves without error — silently telling the caller a
+      // transition happened when the releases row was never touched.
+      const updatedRelease = await db
+        .update(releases)
+        .set({
+          status: targetStatus,
+          updatedAt: new Date(),
+        })
+        .where(eq(releases.id, releaseId))
+        .returning({ id: releases.id });
+
+      if (updatedRelease?.length === 0) {
+        return {
+          success: false,
+          previousStatus: currentStatus,
+          newStatus: currentStatus,
+          error:
+            "Release not found or was removed before the update could be applied",
+        };
+      }
+
       const [request] = await db
         .insert(releaseWorkflowRequests)
         .values({
@@ -148,14 +174,6 @@ class ReleaseWorkflowService {
           processedAt: new Date(),
         })
         .returning();
-
-      await db
-        .update(releases)
-        .set({
-          status: targetStatus,
-          updatedAt: new Date(),
-        })
-        .where(eq(releases.id, releaseId));
 
       await this.createVersionHistoryEntry(
         releaseId,
@@ -451,13 +469,23 @@ class ReleaseWorkflowService {
         metadata: release[0].metadata,
       };
 
-      await db
+      const updatedRelease = await db
         .update(releases)
         .set({
           ...changes,
           updatedAt: new Date(),
         })
-        .where(eq(releases.id, releaseId));
+        .where(eq(releases.id, releaseId))
+        .returning({ id: releases.id });
+
+      if (updatedRelease?.length === 0) {
+        return {
+          success: false,
+          version: 0,
+          error:
+            "Release not found or was removed before the update could be applied",
+        };
+      }
 
       await this.createVersionHistoryEntry(
         releaseId,

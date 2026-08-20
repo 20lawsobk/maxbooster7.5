@@ -517,10 +517,12 @@ class ReleaseScheduler {
   async processScheduledActions(): Promise<{
     processed: number;
     errors: number;
+    unsupported: number;
   }> {
     const now = new Date();
     let processed = 0;
     let errors = 0;
+    let unsupported = 0;
 
     const pendingActions = await db
       .select()
@@ -537,23 +539,67 @@ class ReleaseScheduler {
     for (const action of pendingActions) {
       try {
         switch (action?.actionType) {
-          case "publish":
-            await releaseWorkflowService?.publish(action?.releaseId, "system");
-            break;
-          case "platform_publish":
-            logger.info(
-              `Processing platform publish for release ${action?.releaseId}`,
+          case "publish": {
+            const result = await releaseWorkflowService?.publish(
+              action?.releaseId,
+              "system",
             );
+
+            if (!result?.success) {
+              // Route through the same catch-driven "failed" path used for
+              // exceptions below — publish() catches its own DB errors and
+              // returns { success: false, error }, so without this check a
+              // release that never actually transitioned to "live" (not
+              // found, invalid state, DB failure) still fell through to
+              // being marked "completed" here.
+              throw new Error(
+                result?.error || "Release publish did not report success",
+              );
+            }
             break;
+          }
+          case "platform_publish": {
+            // No real per-platform distribution call is wired up for
+            // scheduled actions yet — distributionService.submitToProvider
+            // is a separate, manually-triggered flow that itself only
+            // succeeds when a DSP provider (LabelGrid) is configured, and
+            // it isn't connected to these scheduled rows. Logging a message
+            // and marking this "completed" told creators a release went
+            // out on a platform when nothing was ever submitted anywhere.
+            // Report the honest state instead: not yet supported.
+            logger.warn(
+              `Platform publish for release ${action?.releaseId} has no distribution implementation wired up yet — marking unsupported, not completed`,
+            );
+
+            await db
+              .update(releaseScheduledActions)
+              .set({
+                status: "unsupported",
+                executedAt: new Date(),
+                metadata: {
+                  ...((action?.metadata as Record<string, unknown>) || {}),
+                  error:
+                    "Platform publishing is not yet implemented for scheduled actions",
+                },
+              })
+              .where(eq(releaseScheduledActions.id, action?.id));
+
+            unsupported++;
+            continue;
+          }
           default:
-            logger.warn(`Unknown action type: ${action?.actionType}`);
+            // Nothing was actually done for an action type we don't
+            // recognize — falling through to "completed" below would be a
+            // false success. Throw so it lands in the same "failed"
+            // handling as any other processing error.
+            throw new Error(`Unknown action type: ${action?.actionType}`);
         }
 
         await db
           .update(releaseScheduledActions)
           .set({
             status: "completed",
-            processedAt: new Date(),
+            executedAt: new Date(),
           })
           .where(eq(releaseScheduledActions.id, action?.id));
 
@@ -568,9 +614,11 @@ class ReleaseScheduler {
           .update(releaseScheduledActions)
           .set({
             status: "failed",
-            errorMessage:
-              error instanceof Error ? error?.message : "Unknown error",
-            processedAt: new Date(),
+            executedAt: new Date(),
+            metadata: {
+              ...((action?.metadata as Record<string, unknown>) || {}),
+              error: error instanceof Error ? error?.message : "Unknown error",
+            },
           })
           .where(eq(releaseScheduledActions.id, action?.id));
 
@@ -578,7 +626,7 @@ class ReleaseScheduler {
       }
     }
 
-    return { processed, errors };
+    return { processed, errors, unsupported };
   }
 
   private convertToTimezone(date: Date, timezone: string): Date {
