@@ -279,12 +279,12 @@ router.put(
         .returning({ id: userStorageFiles.id });
 
       if (!trackedRow) {
-        // fileKey is globally unique — a no-op insert here means another
-        // request already tracked this exact key (e.g. a racing duplicate
-        // submission of the same signed URL). The bytes we just wrote are
-        // an orphan copy with no tracking row, so remove them rather than
-        // report success for an upload nothing can ever find or delete.
-        await storageService.deleteFile(payload.k);
+        // fileKey is globally unique and derived from the signed token, so
+        // a no-op insert here means a concurrent request for the SAME
+        // token already tracked this exact key and wrote the same bytes to
+        // it. That other request owns the (already-tracked) file, so this
+        // request must NOT delete the object — doing so would destroy the
+        // winning request's file, not an orphan. Just report the conflict.
         return res.status(409).json({ error: "Upload URL has already been used" });
       }
 

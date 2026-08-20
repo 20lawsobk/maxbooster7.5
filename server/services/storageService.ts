@@ -125,7 +125,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
           setTimeout(() => reject(new Error("PDIM write timeout")), 6000),
         ),
       ]);
-      const pdimExists = (
+      const pdimExists = await (
         this.pocket as Record<string, (...a: unknown[]) => Promise<boolean>>
       ).exists(`files/${key}`);
       if (!pdimExists) {
