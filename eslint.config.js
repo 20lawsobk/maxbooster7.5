@@ -43,6 +43,51 @@ export default [
   },
   js.configs.recommended,
   {
+    // Plain .js files in this repository include Node/CommonJS utilities and
+    // edge/browser workers. These are runtime-provided globals, not missing
+    // variables; TypeScript files already receive the equivalent baseline
+    // below.
+    files: ["**/*.js", "**/*.jsx"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        Buffer: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+        global: "readonly",
+        require: "readonly",
+        module: "readonly",
+        exports: "readonly",
+        console: "readonly",
+        setTimeout: "readonly",
+        setInterval: "readonly",
+        clearTimeout: "readonly",
+        clearInterval: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        TextEncoder: "readonly",
+        TextDecoder: "readonly",
+        AbortController: "readonly",
+        AbortSignal: "readonly",
+        fetch: "readonly",
+        Request: "readonly",
+        Response: "readonly",
+        Headers: "readonly",
+      },
+    },
+  },
+  {
+    // AudioWorkletGlobalScope supplies these only inside the worklet module.
+    files: ["AI enhancements/audio-processor.js"],
+    languageOptions: {
+      globals: {
+        AudioWorkletProcessor: "readonly",
+        sampleRate: "readonly",
+        registerProcessor: "readonly",
+      },
+    },
+  },
+  {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       parser: tsparser,
