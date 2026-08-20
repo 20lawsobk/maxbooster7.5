@@ -24,9 +24,19 @@ the separate managed `DATABASE_URL` for application schema or data checks)
 | Full TypeScript check | **BLOCKED** | `reports/production-readiness/baseline-check.log`; process exited 137 while running `npm run check` |
 | Unit test suite | PASS | `reports/production-readiness/baseline-test.log`; 44 files / 558 tests passed |
 | `/api/health` | PASS | `reports/production-readiness/health.json`; returned `{"status":"ok"}` |
-| `/api/ready` | **DEGRADED** | `reports/production-readiness/ready.json`; audit subsystem reported `unknown: initializing` |
-| Production build | Not yet verified | Must be run after typecheck is made reproducible |
-| Integration/e2e suite | Not yet verified | Must be run against the configured live workflow |
+| `/api/ready` during boot | **DEGRADED** | `reports/production-readiness/ready-after-restart.json`; routes correctly reported boot in progress |
+| `/api/ready` after boot | PASS | `reports/production-readiness/ready-final-baseline.json`; database, Redis, routes, audit, and automation all reported `ok` |
+| Production build | PASS | `reports/production-readiness/build.log`; Vite and server bundles completed |
+| Split server typecheck | PASS | `reports/production-readiness/check-server.log` |
+| Split client typecheck | PASS | `reports/production-readiness/check-client.log` |
+| Lint | **BLOCKED** | `reports/production-readiness/lint.log`; 813 errors, including unsafe optional chaining, division-by-zero risk, test security-rule violations, and runtime-global configuration errors |
+| Integration suite before webhook fix | **FAILED** | `reports/production-readiness/integration.log`; 2 valid subscription webhook cases returned HTTP 500 |
+| Billing lifecycle after webhook fix | PASS | `reports/production-readiness/billing-lifecycle-after-restart.log`; 12/12 passed after workflow restart |
+| Full integration suite after webhook fix | PASS with skips | `reports/production-readiness/integration-after-billing-fix.log`; 21 files / 479 passed / 2 skipped |
+| Pre-launch check | PASS with timeout disclosure | `reports/production-readiness/prelaunch.log`; DB and deployed health passed; embedded typecheck timed out and was replaced by split checks |
+| Post-deployment smoke | PASS | `reports/production-readiness/smoke.log`; 14/14 passed, 10/10 critical passed |
+| Production dependency audit | PASS | `reports/production-readiness/security-audit.log`; 0 vulnerabilities at high severity or above |
+| Penetration/security test | PASS | `reports/production-readiness/security-tests.log`; 49/49 checks passed |
 | Secret/config audit | Not yet verified | Must be completed before launch |
 
 The exit-137 typecheck result is an infrastructure/tooling blocker, not a
@@ -95,3 +105,33 @@ attached to this document:
 - operator sign-off with the final verification date and commit.
 
 Until then, this application is not cleared for production launch.
+
+## Defect fixed during execution
+
+`customer.subscription.created` previously returned `success: false` when a
+valid Stripe customer had no matching local user, producing HTTP 500 and
+causing Stripe to retry an event that had been fully evaluated. The handler now
+acknowledges the valid event and records the no-local-user condition in the
+message. The linked-user path remains a real database update, and the billing
+lifecycle suite verifies both paths plus idempotency.
+
+This fix does not close the launch gate. The full repository lint command still
+reports 813 errors, and two integration tests remain skipped. Those are
+unresolved readiness work, not approved exceptions.
+
+## Explicit remaining blockers
+
+1. **Lint:** `npm run lint` exits 1 with 813 errors. Fix each production-path
+   error or explicitly scope genuinely non-runtime test/vendor files without
+   suppressing real defects. Re-run lint from a clean checkout and require
+   exit 0.
+2. **Skipped integration tests:** locate every skip declaration, replace
+   environment-dependent skips with deterministic configured-service tests,
+   and require zero skips in the launch suite. A skipped test is not a pass.
+3. **Full feature matrix:** the route/service/page inventories exist, but the
+   per-feature evidence matrix has not been populated. Every row must have
+   entrypoints, actors, inputs, state changes, success evidence, failure
+   evidence, security evidence, tests, and an owner before launch.
+4. **Secrets/configuration:** the pre-launch script confirms selected
+   variables, but the complete secret/environment inventory and plaintext
+   scan still need to be completed.

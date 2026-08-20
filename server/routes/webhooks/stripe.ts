@@ -285,8 +285,11 @@ registerWebhookHandler("customer.subscription.created", async (event) => {
       `[Stripe] No user found for Stripe customer ${customerId} on subscription.created`,
     );
     return {
-      success: false,
-      message: `No user found for Stripe customer ${customerId} on subscription.created`,
+      // The event is valid and has been fully evaluated. A customer can exist
+      // in Stripe before its local account is created, so returning a failure
+      // here would make Stripe retry an event that cannot become applicable.
+      success: true,
+      message: `Subscription created event acknowledged; no local user found for Stripe customer ${customerId}`,
     };
   } catch (err) {
     logger.warn(

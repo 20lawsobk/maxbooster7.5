@@ -381,7 +381,9 @@ describe("Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)", 
 //       sliding-window ZCOUNT keeps phase-1 scores alive → 0 pass.)
 
 const _pdimConfigured = !!(
-  process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL
+  process.env.STORAGE_HTTP_URL ||
+  process.env.PDIM_HTTP_EXEC_URL ||
+  process.env.PDIM_EXEC_URL
 );
 
 /**
