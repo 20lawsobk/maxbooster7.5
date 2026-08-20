@@ -1996,7 +1996,16 @@ export function getPdimClient(): PdimRedisClient {
 }
 
 export function isPdimConfigured(): boolean {
-  return !!(process.env.PDIM_HTTP_EXEC_URL && process.env.PDIM_BEARER_TOKEN);
+  const execUrl =
+    process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL || "";
+  if (!execUrl) return false;
+
+  // The in-process PDIM server is intentionally loopback-only and has no
+  // bearer-auth boundary. Remote PDIM must still provide its credential.
+  const isLocal =
+    execUrl.startsWith("http://127.0.0.1:5556/") ||
+    execUrl.startsWith("http://localhost:5556/");
+  return isLocal || !!(process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN);
 }
 
 // ── Direct-HTTP circuit-recovery prober ──────────────────────────────────────

@@ -380,10 +380,18 @@ describe("Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)", 
 //      (Fixed-window INCR+EXPIRE resets at this boundary → 2×limit passes;
 //       sliding-window ZCOUNT keeps phase-1 scores alive → 0 pass.)
 
+if (process.env.PDIM_FORCE_REMOTE !== "1") {
+  // The application repoints PDIM to its local loopback server during boot.
+  // Integration workers do not share that mutated process.env, so mirror the
+  // same non-remote endpoint before constructing the real client.
+  const localPdimExecUrl =
+    "http://127.0.0.1:5556/api/redis/instances/local/exec";
+  process.env.PDIM_EXEC_URL = localPdimExecUrl;
+  process.env.PDIM_HTTP_EXEC_URL = localPdimExecUrl;
+}
+
 const _pdimConfigured = !!(
-  process.env.STORAGE_HTTP_URL ||
-  process.env.PDIM_HTTP_EXEC_URL ||
-  process.env.PDIM_EXEC_URL
+  process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL
 );
 
 /**

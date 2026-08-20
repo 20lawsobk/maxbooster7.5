@@ -11,6 +11,11 @@ and all required gates are green.
 **Repository:** `max-booster`  
 **Database target:** `NEON_DATABASE_URL` (the application database; do not use
 the separate managed `DATABASE_URL` for application schema or data checks)  
+**PDIM topology:** one local loopback PDIM subsystem at
+`http://127.0.0.1:5556/api/redis/instances/local/exec` provides both the
+Redis-compatible queue/state layer and the platform storage layer. Storage and
+Redis checks must therefore verify the same subsystem through their respective
+real application clients.
 **Workflow:** `Start application`  
 **Baseline commit:** `b52eba96` (`Add production grade launch blueprint documentation`)
 
@@ -33,6 +38,8 @@ the separate managed `DATABASE_URL` for application schema or data checks)
 | Integration suite before webhook fix | **FAILED** | `reports/production-readiness/integration.log`; 2 valid subscription webhook cases returned HTTP 500 |
 | Billing lifecycle after webhook fix | PASS | `reports/production-readiness/billing-lifecycle-after-restart.log`; 12/12 passed after workflow restart |
 | Full integration suite after webhook fix | PASS with skips | `reports/production-readiness/integration-after-billing-fix.log`; 21 files / 479 passed / 2 skipped |
+| Local PDIM sliding-window integration | PASS | `reports/production-readiness/pdim-security-local-after-fix.log`; 24/24 passed, including both real PDIM tests against `127.0.0.1:5556` |
+| Server typecheck after local-PDIM fix | **BLOCKED** | `reports/production-readiness/check-server-after-local-pdim-fix.log`; process exited 137 under load; earlier isolated split check passed |
 | Pre-launch check | PASS with timeout disclosure | `reports/production-readiness/prelaunch.log`; DB and deployed health passed; embedded typecheck timed out and was replaced by split checks |
 | Post-deployment smoke | PASS | `reports/production-readiness/smoke.log`; 14/14 passed, 10/10 critical passed |
 | Production dependency audit | PASS | `reports/production-readiness/security-audit.log`; 0 vulnerabilities at high severity or above |
@@ -135,3 +142,19 @@ unresolved readiness work, not approved exceptions.
 4. **Secrets/configuration:** the pre-launch script confirms selected
    variables, but the complete secret/environment inventory and plaintext
    scan still need to be completed.
+
+## Local PDIM execution correction
+
+The application now runs PDIM as an in-process loopback service on port 5556.
+The production client configuration therefore accepts the loopback endpoint
+without requiring a remote bearer token, while remote PDIM still requires its
+real credential. Integration workers explicitly target the local loopback
+endpoint when remote mode is not requested, because test workers do not share
+the application process's startup-time environment mutation. This is a
+topology correction, not a mock or fallback.
+
+Because this same PDIM instance is also the platform storage layer, storage
+readiness must include a real upload/read/delete round trip, not only a Redis
+command probe. A PDIM failure is a shared dependency failure and must be
+reported as degraded for both capabilities rather than hidden by independent
+local substitutes.
