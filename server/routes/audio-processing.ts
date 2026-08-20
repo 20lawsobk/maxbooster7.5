@@ -3,8 +3,31 @@ import { Router, Request, Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import { z } from "zod";
+import {
+  IntelligentMasteringEngine,
+  type MasteringGenre,
+} from "../../shared/ml/audio/IntelligentMasteringEngine.js";
 
 const router = Router();
+
+const MASTERING_GENRES = [
+  "hip-hop",
+  "electronic",
+  "pop",
+  "rock",
+  "jazz",
+  "classical",
+  "r&b",
+  "metal",
+] as const;
+
+const aiMasterSchema = z.object({
+  sampleRate: z.number().min(8000).max(192000).default(44100),
+  samples: z.array(z.number()).optional(),
+  leftChannel: z.array(z.number()).optional(),
+  rightChannel: z.array(z.number()).optional(),
+  genre: z.enum(MASTERING_GENRES).optional(),
+});
 
 const analyzeAudioSchema = z.object({
   sampleRate: z.number().min(8000).max(192000).default(44100),
@@ -637,6 +660,81 @@ router.get("/presets", requireAuth, async (_req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch presets" });
   }
 });
+
+/**
+ * POST /api/audio-processing/master
+ * Genre-aware AI mastering via IntelligentMasteringEngine: spectral analysis,
+ * dynamic multiband compression, stereo width optimization, LUFS-targeted
+ * loudness normalization, and a lookahead limiter — replaces the static
+ * preset-only mastering chain with real analysis-driven processing.
+ */
+router.post(
+  "/master",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const validation = aiMasterSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res
+          .status(400)
+          .json({ error: "Invalid input", details: validation.error.issues });
+      }
+
+      const { sampleRate, samples, leftChannel, rightChannel, genre } =
+        validation.data;
+
+      let interleaved: number[] = [];
+      if (samples && samples.length > 0) {
+        interleaved = samples;
+      } else if (leftChannel && rightChannel) {
+        const len = Math.max(leftChannel.length, rightChannel.length);
+        for (let i = 0; i < len; i++) {
+          interleaved.push(leftChannel[i] ?? 0);
+          interleaved.push(rightChannel[i] ?? 0);
+        }
+      }
+
+      if (interleaved.length === 0) {
+        return res.status(400).json({ error: "No audio samples provided" });
+      }
+
+      const engine = new IntelligentMasteringEngine(sampleRate);
+      const audioData = new Float32Array(interleaved);
+
+      const analysis = engine.analyzeForMastering(audioData, sampleRate);
+      const suggestion = engine.suggestSettings(
+        audioData,
+        genre as MasteringGenre | undefined,
+        sampleRate,
+      );
+      const mastered = engine.masterTrack(
+        audioData,
+        suggestion.config,
+        sampleRate,
+      );
+
+      res.json({
+        success: true,
+        genre: suggestion.genre,
+        confidence: suggestion.confidence,
+        reasoning: suggestion.reasoning,
+        analysis: {
+          currentLUFS: analysis.currentLUFS,
+          currentPeak: analysis.currentPeak,
+          dynamicRange: analysis.dynamicRange,
+          stereoWidth: analysis.stereoWidth,
+          issues: analysis.issues,
+          recommendations: analysis.recommendations,
+        },
+        appliedConfig: suggestion.config,
+        processedSamples: Array.from(mastered),
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "AI mastering error:");
+      res.status(500).json({ error: "AI mastering failed" });
+    }
+  },
+);
 
 router.get(
   "/capabilities",

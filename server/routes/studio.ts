@@ -2450,26 +2450,62 @@ router.post("/lyrics", requireAuth, async (req: Request, res: Response) => {
 });
 
 // AI Master endpoint
-// NOT IMPLEMENTED: there is no real mastering job pipeline behind this route —
-// it previously replied with a fake jobId/"processing" status and then fired
-// an unconditional "processing complete" notification a moment later, even
-// though no mastering ever ran. Report an honest 501 instead of lying about a
-// job that doesn't exist. (Building the real mastering pipeline is tracked as
-// a separate capability — out of scope for the honesty fix.)
+// Runs the real IntelligentMasteringEngine (spectral analysis, genre-aware
+// EQ/multiband compression, LUFS-targeted loudness, lookahead limiter) on the
+// mixed-down audio the client renders and sends. If no audio is provided we
+// return an honest 400 — never a fake job/notification for work that didn't
+// happen.
 router.post(
   "/ai-master/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
     const { projectId } = req.params as Record<string, string>;
-    logger.warn(
-      `AI mastering requested for project ${projectId} but is not implemented — returning 501, no fake job/notification will be sent`,
-    );
-    res.status(501).json({
-      success: false,
-      projectId,
-      status: "not_implemented",
-      message: "AI mastering is not yet available",
-    });
+    try {
+      const { sampleRate, samples, genre, targetLufs } = req.body || {};
+
+      if (!Array.isArray(samples) || samples.length === 0) {
+        return res.status(400).json({
+          success: false,
+          projectId,
+          message:
+            "No mixed-down audio provided — render a mixdown client-side and send its samples",
+        });
+      }
+
+      const sr = Number(sampleRate) || 44100;
+      const { IntelligentMasteringEngine } = await import(
+        "../../shared/ml/audio/IntelligentMasteringEngine.js"
+      );
+      const engine = new IntelligentMasteringEngine(sr);
+      const audioData = new Float32Array(samples);
+
+      const suggestion = engine.suggestSettings(audioData, genre, sr);
+      if (typeof targetLufs === "number") {
+        suggestion.config.loudness.targetLUFS = targetLufs;
+      }
+      const mastered = engine.masterTrack(audioData, suggestion.config, sr);
+
+      logger.info(
+        `AI mastering completed for project ${projectId}: genre=${suggestion.genre} confidence=${suggestion.confidence}`,
+      );
+
+      res.json({
+        success: true,
+        projectId,
+        genre: suggestion.genre,
+        confidence: suggestion.confidence,
+        reasoning: suggestion.reasoning,
+        appliedConfig: suggestion.config,
+        processedSamples: Array.from(mastered),
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, `AI mastering failed for project ${projectId}:`);
+      res.status(500).json({
+        success: false,
+        projectId,
+        message: "AI mastering failed",
+      });
+    }
   },
 );
 
