@@ -885,7 +885,7 @@ class PlatformAutoFixer extends EventEmitter {
     let totalReqs = 0;
     let totalErrs = 0;
 
-    for (const [route, entry] of routeErrors?.entries()) {
+    for (const [route, entry] of routeErrors.entries()) {
       entry.timestamps = entry?.timestamps.filter((t) => t > cutoff);
       totalReqs += entry?.total;
       totalErrs += entry?.timestamps.length;
@@ -2075,7 +2075,7 @@ class PlatformAutoFixer extends EventEmitter {
   }
 
   getDegradedRoutes(): string[] {
-    return [...routeErrors?.entries()]
+    return [...routeErrors.entries()]
       .filter(([, e]) => e?.degraded)
       .map(([route]) => route);
   }
