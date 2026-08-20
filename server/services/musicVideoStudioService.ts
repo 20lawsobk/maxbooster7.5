@@ -92,6 +92,7 @@ export interface MusicVideoStudioOptions {
   kenBurnsIntensity?: "subtle" | "moderate" | "dramatic";
   maxScenes?: number;       // cap scenes (default: use all detected sections)
   voiceSynthPath?: string;
+  trendContext?: string;    // live awareness-layer trend hint, additive to scene prompts
 }
 
 export interface SceneResult {
@@ -134,6 +135,7 @@ function buildScenePrompt(opts: {
   platform: string;
   bpm: number;
   avgEnergy: number;
+  trendContext?: string;
 }): string {
   const genreDna = GENRE_DNA[opts.genre.toLowerCase()] ??
     GENRE_DNA["hip-hop"]; // default to hip-hop style
@@ -160,6 +162,7 @@ function buildScenePrompt(opts: {
     bpmHint,
     opts.artistStyle ? `${opts.artistStyle} aesthetic` : "",
     opts.hook ? `mood of: "${opts.hook.slice(0, 60)}"` : "",
+    opts.trendContext ? opts.trendContext.slice(0, 120) : "",
     "photorealistic, ultra-detailed, 8K, professional photography",
     "no text, no words, no logos, no watermarks",
   ].filter(Boolean);
@@ -182,6 +185,7 @@ async function generateAIScenes(opts: {
   aspectRatio: string;
   bpm: number;
   maxScenes?: number;
+  trendContext?: string;
 }): Promise<SceneResult[]> {
   // MaxCore generates the scene imagery, so by default render every detected
   // section. Only truncate when the caller explicitly requests a finite cap.
@@ -202,6 +206,7 @@ async function generateAIScenes(opts: {
         platform: opts.platform,
         bpm: opts.bpm,
         avgEnergy: section.avgEnergy,
+        trendContext: opts.trendContext,
       });
 
       let imagePath: string;
@@ -373,6 +378,7 @@ export async function generateFullMusicVideo(
     aspectRatio,
     bpm: beatAnalysis.bpm,
     maxScenes,
+    trendContext: opts.trendContext,
   });
 
   if (!scenes.length) {

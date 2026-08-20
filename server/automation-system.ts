@@ -289,22 +289,64 @@ export class AutomationSystem extends EventEmitter {
       },
     });
 
-    // Analytics actions
-    // NOT IMPLEMENTED: no report generation/delivery pipeline exists behind
-    // this action yet. Reporting success here would tell operators a report
-    // was generated and sent when nothing was produced or delivered.
+    // Analytics actions — routed through analyticsReportService, which pulls
+    // real revenue/streaming/royalty/beat data and (when recipients are
+    // given) delivers via notificationService.
     this.registerAction("generate-analytics-report", {
       name: "Generate Analytics Report",
       description: "Generate and send analytics report",
-      parameters: ["reportType", "recipients", "format", "schedule"],
+      parameters: ["userId", "reportType", "recipients", "format", "schedule"],
       execute: async (params) => {
-        logger.warn(
-          `📊 generate-analytics-report action invoked for ${params?.reportType} but is not implemented — no report was generated or sent`,
+        logger.info(
+          `📊 Generating analytics report (${params?.reportType ?? "full"}) for user ${params?.userId}`,
         );
-        return {
-          success: false,
-          message: "generate-analytics-report is not implemented",
-        };
+        try {
+          if (!params?.userId) {
+            throw new Error("generate-analytics-report requires a userId");
+          }
+          const { generateAndDeliverAnalyticsReport } = await import(
+            "./services/analyticsReportService.js"
+          );
+          const recipients = Array.isArray(params?.recipients)
+            ? params.recipients
+            : params?.recipients
+              ? [params.recipients]
+              : [];
+          const report = await generateAndDeliverAnalyticsReport({
+            userId: params.userId,
+            reportType: params?.reportType,
+            format: params?.format,
+            recipients,
+          });
+          if (!report.success) {
+            return {
+              success: false,
+              message: `generate-analytics-report failed: ${report.error ?? "unknown error"}`,
+            };
+          }
+          const deliveryNote =
+            recipients.length > 0
+              ? report.delivered
+                ? ` — delivered to ${report.deliveredCount}/${recipients.length} recipient(s)`
+                : " — generated but delivery failed (no recipient received it)"
+              : "";
+          return {
+            success: true,
+            message: `Analytics report generated (${report.reportType}, ${report.format})${deliveryNote}`,
+            result: {
+              summary: report.summary,
+              periodStart: report.periodStart,
+              periodEnd: report.periodEnd,
+              delivered: report.delivered,
+            },
+          };
+        } catch (e) {
+          logger.warn({ err: e }, "generate-analytics-report action failed");
+          return {
+            success: false,
+            message: (e as Error).message ?? "generate-analytics-report failed",
+          };
+        }
       },
     });
 
@@ -428,26 +470,47 @@ export class AutomationSystem extends EventEmitter {
       },
     });
 
-    // Data actions
-    // NOT IMPLEMENTED: this generic workflow action never calls the real
-    // backup service (server/services/backup/databaseBackupService.ts) or any
-    // other storage — it previously reported success having done nothing.
+    // Data actions — routed through databaseBackupService, the same
+    // full-database backup engine backing the admin /api/backup routes.
     this.registerAction("backup-data", {
       name: "Backup Data",
       description: "Backup user data",
       parameters: ["userId", "dataType", "destination"],
       execute: async (params) => {
-        logger.warn(
-          `💾 backup-data action invoked for user ${params?.userId} (${params?.dataType}) but is not implemented — no backup was created`,
+        logger.info(
+          `💾 Running backup-data for user ${params?.userId} (${params?.dataType ?? "database"})`,
         );
-        return { success: false, message: "backup-data is not implemented" };
+        try {
+          const { databaseBackupService } = await import(
+            "./services/backup/databaseBackupService.js"
+          );
+          const backupFile = await databaseBackupService.createBackup();
+          if (!backupFile) {
+            return {
+              success: false,
+              message: "backup-data failed: createBackup returned no file",
+            };
+          }
+          return {
+            success: true,
+            message: `Backup created: ${backupFile}`,
+            result: { backupFile },
+          };
+        } catch (e) {
+          logger.warn({ err: e }, "backup-data action failed");
+          return {
+            success: false,
+            message: (e as Error).message ?? "backup-data failed",
+          };
+        }
       },
     });
 
-    // Video creation actions
-    // NOT IMPLEMENTED: none of these four actions call a video generation
-    // service — they previously fabricated "created successfully" responses
-    // with no video ever rendered or stored.
+    // Video creation actions — routed through videoGeneratorService
+    // (Python NumPy frame engine + FFmpeg compositor), the same real render
+    // pipeline behind the live video-generation endpoints. Awareness-layer
+    // trend context is fetched once per action and passed through so scene
+    // mood/copy reflects current trending genres/moods, not static defaults.
     this.registerAction("create-promo-video", {
       name: "Create Promotional Video",
       description:
@@ -462,13 +525,41 @@ export class AutomationSystem extends EventEmitter {
         "colorPalette",
       ],
       execute: async (params) => {
-        logger.warn(
-          `🎬 create-promo-video action invoked for ${params?.platform} but is not implemented — no video was created`,
+        logger.info(
+          `🎬 Rendering promo video for ${params?.platform ?? "tiktok"}`,
         );
-        return {
-          success: false,
-          message: "create-promo-video is not implemented",
-        };
+        try {
+          const { generateVideo } = await import(
+            "./services/videoGeneratorService.js"
+          );
+          const r = await generateVideo({
+            topic: params?.contentText || "New release",
+            platform: params?.platform,
+            template: params?.templateType,
+            aspect_ratio: params?.aspectRatio,
+            bg_color: params?.colorPalette,
+            user_audio_path: params?.audioUrl,
+            userId: params?.userId,
+            awarenessMode: "advertising",
+          });
+          if (!r?.success) {
+            return {
+              success: false,
+              message: `create-promo-video failed: ${r?.error ?? "render returned no video"}`,
+            };
+          }
+          return {
+            success: true,
+            message: "Promotional video rendered",
+            result: { url: r.url, filename: r.filename },
+          };
+        } catch (e) {
+          logger.warn({ err: e }, "create-promo-video action failed");
+          return {
+            success: false,
+            message: (e as Error).message ?? "create-promo-video failed",
+          };
+        }
       },
     });
 
@@ -484,16 +575,50 @@ export class AutomationSystem extends EventEmitter {
         "visualStyle",
       ],
       execute: async (params) => {
-        const platformList = Array.isArray(params?.platforms)
-          ? params?.platforms.join(", ")
-          : params?.platforms;
-        logger.warn(
-          `📹 create-social-video action invoked for: ${platformList} but is not implemented — no video was created`,
-        );
-        return {
-          success: false,
-          message: "create-social-video is not implemented",
-        };
+        const platforms = Array.isArray(params?.platforms)
+          ? params?.platforms
+          : [params?.platforms].filter(Boolean);
+        logger.info(`📹 Rendering social video for: ${platforms.join(", ")}`);
+        try {
+          const { generateVideo } = await import(
+            "./services/videoGeneratorService.js"
+          );
+          if (platforms.length === 0) {
+            throw new Error("create-social-video requires at least one platform");
+          }
+          const results = [];
+          for (const platform of platforms) {
+            const r = await generateVideo({
+              topic: params?.contentText || "New content",
+              platform,
+              duration: params?.duration,
+              template: params?.visualStyle,
+              user_audio_path: params?.audioUrl,
+              userId: params?.userId,
+              awarenessMode: "social",
+            });
+            results.push({ platform, success: r?.success, url: r?.url, error: r?.error });
+          }
+          const succeeded = results.filter((r) => r.success);
+          if (succeeded.length === 0) {
+            return {
+              success: false,
+              message: "create-social-video failed: no platform render succeeded",
+              result: results,
+            };
+          }
+          return {
+            success: true,
+            message: `Social video rendered for ${succeeded.length}/${platforms.length} platform(s)`,
+            result: results,
+          };
+        } catch (e) {
+          logger.warn({ err: e }, "create-social-video action failed");
+          return {
+            success: false,
+            message: (e as Error).message ?? "create-social-video failed",
+          };
+        }
       },
     });
 
@@ -509,13 +634,48 @@ export class AutomationSystem extends EventEmitter {
         "resolution",
       ],
       execute: async (params) => {
-        logger.warn(
-          `🎤 create-lyric-video action invoked (${params?.visualStyle}) but is not implemented — no video was created`,
-        );
-        return {
-          success: false,
-          message: "create-lyric-video is not implemented",
-        };
+        logger.info(`🎤 Rendering lyric video (${params?.visualStyle ?? "default"})`);
+        try {
+          if (!params?.audioUrl) {
+            throw new Error("create-lyric-video requires audioUrl");
+          }
+          const { generateVideo } = await import(
+            "./services/videoGeneratorService.js"
+          );
+          const lyricsText =
+            typeof params?.lyrics === "string"
+              ? params.lyrics
+              : Array.isArray(params?.lyrics)
+                ? params.lyrics.join(" / ")
+                : "";
+          const r = await generateVideo({
+            topic: lyricsText.slice(0, 80) || "Lyric video",
+            body: lyricsText.slice(0, 120),
+            template: params?.visualStyle,
+            bg_color: params?.colorPalette,
+            aspect_ratio: params?.resolution,
+            user_audio_path: params?.audioUrl,
+            userId: params?.userId,
+            awarenessMode: "video_script",
+          });
+          if (!r?.success) {
+            return {
+              success: false,
+              message: `create-lyric-video failed: ${r?.error ?? "render returned no video"}`,
+            };
+          }
+          return {
+            success: true,
+            message: "Lyric video rendered",
+            result: { url: r.url, filename: r.filename },
+          };
+        } catch (e) {
+          logger.warn({ err: e }, "create-lyric-video action failed");
+          return {
+            success: false,
+            message: (e as Error).message ?? "create-lyric-video failed",
+          };
+        }
       },
     });
 
@@ -532,13 +692,43 @@ export class AutomationSystem extends EventEmitter {
         "duration",
       ],
       execute: async (params) => {
-        logger.warn(
-          `🌊 create-visualizer-video action invoked (${params?.visualizerType}) but is not implemented — no video was created`,
+        logger.info(
+          `🌊 Rendering visualizer video (${params?.visualizerType ?? "default"})`,
         );
-        return {
-          success: false,
-          message: "create-visualizer-video is not implemented",
-        };
+        try {
+          if (!params?.audioUrl) {
+            throw new Error("create-visualizer-video requires audioUrl");
+          }
+          const { generateVideo } = await import(
+            "./services/videoGeneratorService.js"
+          );
+          const r = await generateVideo({
+            topic: params?.visualizerType || "Audio visualizer",
+            scene_prompt: params?.visualizerType,
+            bg_color: params?.colorPalette,
+            duration: params?.duration,
+            user_audio_path: params?.audioUrl,
+            userId: params?.userId,
+            awarenessMode: "video_script",
+          });
+          if (!r?.success) {
+            return {
+              success: false,
+              message: `create-visualizer-video failed: ${r?.error ?? "render returned no video"}`,
+            };
+          }
+          return {
+            success: true,
+            message: "Visualizer video rendered",
+            result: { url: r.url, filename: r.filename },
+          };
+        } catch (e) {
+          logger.warn({ err: e }, "create-visualizer-video action failed");
+          return {
+            success: false,
+            message: (e as Error).message ?? "create-visualizer-video failed",
+          };
+        }
       },
     });
   }

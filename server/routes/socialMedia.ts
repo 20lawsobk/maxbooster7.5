@@ -5067,6 +5067,8 @@ router.post(
           const legacyUser = req.user as UserWithLegacyId | undefined;
           const userId = legacyUser?.id?.toString() || legacyUser?.userId?.toString() || "anon";
           const studioSvc = await getMusicVideoStudioService();
+          const { getAwarenessContext } = await import("../services/awarenessContext.js");
+          const videoAwareness = await getAwarenessContext("video_script");
           const studioResult = await studioSvc.generateFullMusicVideo({
             audioPath: audioFile.path,
             genre: body.genre || "hip-hop",
@@ -5075,6 +5077,7 @@ router.post(
             hook: body.hook,
             bodyText: body.body,
             cta: body.cta,
+            trendContext: videoAwareness?.contextString,
             platform: body.platform || "instagram",
             aspectRatio: body.aspect_ratio || "9:16",
             colorGrade: (body.color_grade as "cinematic") || "cinematic",

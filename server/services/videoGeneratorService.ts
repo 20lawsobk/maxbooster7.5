@@ -1429,6 +1429,7 @@ export interface VideoGenOptions {
   bg_color?: string;
   accent_color?: string;
   userId?: string;
+  awarenessMode?: import("./awarenessContext.js").AwarenessMode;
 }
 
 export interface VideoGenResult {
@@ -1483,9 +1484,21 @@ export async function generateVideo(
   const genre = (opts.genre || "default").toLowerCase();
   const audioProfile = AUDIO_PROFILES[genre] || AUDIO_PROFILES.default;
 
-  const scenePrompt =
+  // Best-effort live trend/industry signal — additive only, never blocks or
+  // fails generation. Feeds both the AI copy pipeline and the visual scene
+  // prompt so video content reflects current trending genres/moods/hooks.
+  const { getAwarenessContext } = await import("./awarenessContext.js");
+  const awareness = await getAwarenessContext(
+    opts.awarenessMode ?? "video_script",
+  );
+
+  const scenePromptBase =
     opts.scene_prompt!.trim() ||
     (opts.topic ? `${opts.topic} ${genre} music` : undefined);
+  const scenePrompt =
+    scenePromptBase && awareness?.trendingMoods?.length
+      ? `${scenePromptBase}, ${awareness.trendingMoods.slice(0, 2).join(", ")}`
+      : scenePromptBase;
 
   // ── AI content generation via Advanced Content Pipeline ──────────────────
   let hook = opts.hook || "";
@@ -1496,11 +1509,14 @@ export async function generateVideo(
   if (!hook && !body && !cta && opts.topic) {
     try {
       const userId = opts.userId || "anonymous";
+      const trendHint = awareness?.contextString
+        ? ` Trend context: ${awareness.contextString.slice(0, 300)}`
+        : "";
       const pipelineResult =
         await contentQualityPipeline.generateWithAdvancedAI(
           userId,
           {
-            topic: opts.topic,
+            topic: `${opts.topic}${trendHint}`,
             platform,
             genre: genre !== "default" ? genre : undefined,
             artistName: opts.artist_name || "",
