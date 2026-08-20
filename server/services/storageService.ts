@@ -94,15 +94,27 @@ class PocketDimensionStorageProvider implements StorageProvider {
     _contentType?: string,
   ): Promise<string> {
     // Write to local filesystem first (durable)
+    let localOk = false;
+    let localErrMessage: string | undefined;
     try {
       const localPath = localFilePath(key);
       await ensureLocalDir(localPath);
       await fsPromises?.writeFile(localPath, file);
+      const localStat = await fsPromises?.stat(localPath);
+      if (localStat.size !== file.length) {
+        throw new Error(
+          `local verification size mismatch: expected ${file.length}, got ${localStat.size}`,
+        );
+      }
+      localOk = true;
     } catch (fsErr) {
+      localErrMessage = (fsErr as Error)?.message ?? String(fsErr);
       logger.warn({ err: fsErr }, `[Storage] Local filesystem write failed for key=${key}`);
     }
 
     // Also write to PDIM (with timeout so a congested queue never blocks the response)
+    let pdimOk = false;
+    let pdimErrMessage: string | undefined;
     try {
       await this.ensure();
       await Promise?.race([
@@ -113,14 +125,33 @@ class PocketDimensionStorageProvider implements StorageProvider {
           setTimeout(() => reject(new Error("PDIM write timeout")), 6000),
         ),
       ]);
+      const pdimExists = (
+        this.pocket as Record<string, (...a: unknown[]) => Promise<boolean>>
+      ).exists(`files/${key}`);
+      if (!pdimExists) {
+        throw new Error("PDIM write verification failed");
+      }
+      pdimOk = true;
     } catch (pdimErr) {
+      pdimErrMessage = (pdimErr as Error)?.message ?? String(pdimErr);
       const now = Date.now();
       if (now - _lastPdimWriteWarnAt >= _STORAGE_WARN_THROTTLE_MS) {
         _lastPdimWriteWarnAt = now;
         logger.warn(
-          `[Storage] PDIM write failed (file is on disk only) — suppressing repeats for 30 s: ${(pdimErr as Error).message}`,
+          `[Storage] PDIM write failed (file is on disk only) — suppressing repeats for 30 s: ${pdimErrMessage}`,
         );
       }
+    }
+
+    // Neither write persisted the file anywhere — this upload must NOT be
+    // reported as successful. Throw a descriptive error so every caller
+    // (routes, background jobs) sees a real failure instead of a key that
+    // points at nothing.
+    if (!localOk && !pdimOk) {
+      throw new Error(
+        `Storage upload failed for key=${key}: both local disk and PDIM writes failed ` +
+          `(local: ${localErrMessage ?? "unknown error"}; pdim: ${pdimErrMessage ?? "unknown error"})`,
+      );
     }
 
     return key;

@@ -250,6 +250,8 @@ router.put(
         return res.status(409).json({ error: "Upload URL has already been used" });
       }
 
+      // Throws when neither local disk nor PDIM actually persisted the
+      // bytes — caught below, which cleans up and reports a real failure.
       await storageService.uploadFileAtKey(body, payload.k, payload.ct);
 
       const storageId = await ensureUserStorageRow(payload.u);
@@ -258,7 +260,7 @@ router.put(
         return res.status(500).json({ error: "Upload could not be recorded" });
       }
 
-      await db
+      const [trackedRow] = await db
         .insert(userStorageFiles)
         .values({
           userId: payload.u,
@@ -273,7 +275,18 @@ router.put(
             uploadedVia: "uploads/request-url",
           },
         })
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning({ id: userStorageFiles.id });
+
+      if (!trackedRow) {
+        // fileKey is globally unique — a no-op insert here means another
+        // request already tracked this exact key (e.g. a racing duplicate
+        // submission of the same signed URL). The bytes we just wrote are
+        // an orphan copy with no tracking row, so remove them rather than
+        // report success for an upload nothing can ever find or delete.
+        await storageService.deleteFile(payload.k);
+        return res.status(409).json({ error: "Upload URL has already been used" });
+      }
 
       return res.status(200).json({
         success: true,
