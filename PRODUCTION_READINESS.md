@@ -40,6 +40,9 @@ real application clients.
 | Full integration suite after webhook fix | PASS with skips | `reports/production-readiness/integration-after-billing-fix.log`; 21 files / 479 passed / 2 skipped |
 | Local PDIM sliding-window integration | PASS | `reports/production-readiness/pdim-security-local-after-fix.log`; 24/24 passed, including both real PDIM tests against `127.0.0.1:5556` |
 | Shared PDIM storage + Redis round trip | PASS | `reports/production-readiness/shared-pdim-storage-redis.log`; 38/38 passed across real upload/download/delete and real sliding-window operations |
+| Error research catalog validation | PASS | `scripts/error-research-catalog.json` + `reports/production-readiness/error-research-validation.log`; 14 researched families mapped to 21 live KB categories and 53 unique entries |
+| Deployment autofix gate | **BLOCKED honestly** | `.replit` now runs `npm run autofix:deploy` before build; the gate applies official/position-verified fixes, then stops on unresolved diagnostics. Current run remains blocked by 812 ESLint errors in `reports/production-readiness/deployment-autofix-run.log` |
+| Feature inventory generation | PASS structurally | `reports/production-readiness/feature-matrix.csv`; 532 rows including one explicit out-of-inventory automation file. Rows remain `UNREVIEWED` or explicitly `BLOCKED` until evidence is filled |
 | Server typecheck after local-PDIM fix | **BLOCKED** | `reports/production-readiness/check-server-after-local-pdim-fix.log`; process exited 137 under load; earlier isolated split check passed |
 | Pre-launch check | PASS with timeout disclosure | `reports/production-readiness/prelaunch.log`; DB and deployed health passed; embedded typecheck timed out and was replaced by split checks |
 | Post-deployment smoke | PASS | `reports/production-readiness/smoke.log`; 14/14 passed, 10/10 critical passed |
@@ -148,6 +151,10 @@ unresolved readiness work, not approved exceptions.
    scheduler. `/api/ready` can be green while this background queue path is
    failing, so the failure must be root-caused and reproduced with a worker
    recovery test before launch.
+6. **Autofix/lint gate:** deployment now runs the research validator and
+   fail-closed autofix pipeline before building. The pipeline will not silently
+   ship unresolved code; the current baseline still has 812 ESLint errors after
+   available official fixes.
 
 ## Local PDIM execution correction
 
@@ -164,3 +171,18 @@ readiness must include a real upload/read/delete round trip, not only a Redis
 command probe. A PDIM failure is a shared dependency failure and must be
 reported as degraded for both capabilities rather than hidden by independent
 local substitutes.
+
+## Error research and deployment autofix
+
+`scripts/error-research-catalog.json` is the operational playbook consumed by
+`scripts/deployment-autofix.mjs`. It records prevention, bounded safe action,
+and observable verification for the error families actually present in this
+codebase: TypeScript, ESLint, syntax, Node runtime, Postgres, PDIM/Redis,
+BullMQ, network, auth/CSRF, Stripe, storage, concurrency, memory, and
+deployment. `scripts/validate-error-research.mjs` maps these families to every
+live knowledge-base category and rejects duplicate or incomplete entries.
+
+Unknown errors remain report-only. This is intentional: an autofixer may
+repair a classified error only when its side effect and verification are
+known; applying the nearest-looking repair to an unknown failure would mask
+the real defect.

@@ -15,6 +15,7 @@ const SOURCES = [
   ["backend-service-files.txt", "backend service"],
   ["frontend-page-files.txt", "frontend page"],
 ];
+const EXPLICIT_DISCOVERIES = [["server/automation-system.ts", "backend automation"]];
 
 function readLines(file) {
   return fs
@@ -46,7 +47,7 @@ function domainFor(file, kind) {
 
 function statusFor(file) {
   // These are explicit incomplete-feature markers from the prior audit.
-  if (file === "server/services/automation-system.ts") {
+  if (file.endsWith("server/automation-system.ts")) {
     return {
       status: "BLOCKED",
       notes:
@@ -78,6 +79,25 @@ for (const [source, kind] of SOURCES) {
       notes: `${kind}; ${status.notes}`,
     });
   }
+}
+for (const [file, kind] of EXPLICIT_DISCOVERIES) {
+  if (seen.has(file) || !fs.existsSync(path.join(ROOT, file))) continue;
+  seen.add(file);
+  const status = statusFor(file);
+  rows.push({
+    path: file,
+    domain: domainFor(file, kind),
+    entrypoints: "",
+    authz: "",
+    side_effects: "",
+    external_dependencies: "",
+    success_evidence: "",
+    failure_evidence: "",
+    test_files: "",
+    status: status.status,
+    owner: "",
+    notes: `${kind}; discovered outside legacy inventories; ${status.notes}`,
+  });
 }
 
 const header = [

@@ -530,3 +530,4 @@ client/src/pages/Terms.tsx,frontend,,,,,,,,UNREVIEWED,,frontend page; Requires f
 client/src/pages/Verification.tsx,frontend,,,,,,,,UNREVIEWED,,frontend page; Requires feature-level evidence review.
 client/src/pages/VideoGeneratorPage.tsx,frontend,,,,,,,,UNREVIEWED,,frontend page; Requires feature-level evidence review.
 client/src/pages/Workspaces.tsx,frontend,,,,,,,,UNREVIEWED,,frontend page; Requires feature-level evidence review.
+server/automation-system.ts,backend,,,,,,,,BLOCKED,,"backend automation; discovered outside legacy inventories; Explicit honest incomplete actions remain: payment, analytics, AI mix/master, and beat upload have no real side effect."
