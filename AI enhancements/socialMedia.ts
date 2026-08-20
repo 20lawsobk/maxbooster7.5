@@ -150,9 +150,9 @@ interface FFmpegJob {
 const ffmpegJobs = new Map<string, FFmpegJob>();
 
 function pruneStaleFFmpegJobs() {
-  const now = Date?.now();
-  for (const [id, job] of ffmpegJobs?.entries()) {
-    if (now - job?.createdAt > 10 * 60 * 1000) ffmpegJobs?.delete(id);
+  const now = Date.now();
+  for (const [id, job] of ffmpegJobs.entries()) {
+    if (now - job?.createdAt > 10 * 60 * 1000) ffmpegJobs.delete(id);
   }
 }
 
@@ -173,8 +173,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const posts = (await storage?.getSocialPosts?.(userId)) || [];
+      const userId = req.user!.id;
+      const posts = (await storage.getSocialPosts?.(userId)) || [];
       res?.json(posts);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social posts:");
@@ -206,15 +206,15 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      const parsed = schedulePostSchema?.safeParse(req?.body);
+      const parsed = schedulePostSchema?.safeParse(req.body);
       if (!parsed?.success) {
         return res
           .status(400)
           .json({ error: "Invalid request", details: parsed.error.issues });
       }
-      const { platform, content, mediaUrls, scheduledAt } = parsed?.data;
+      const { platform, content, mediaUrls, scheduledAt } = parsed.data;
 
       const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
 
@@ -261,8 +261,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { postId } = req?.params;
+      const userId = req.user!.id;
+      const { postId } = req.params;
 
       const [post] = await db
         .select()
@@ -310,8 +310,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const metrics = (await storage?.getSocialMetrics?.(userId)) || {
+      const userId = req.user!.id;
+      const metrics = (await storage.getSocialMetrics?.(userId)) || {
         totalFollowers: 0,
         totalEngagement: 0,
         totalReach: 0,
@@ -348,8 +348,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const events = (await storage?.getSocialCalendarEvents?.(userId)) || [];
+      const userId = req.user!.id;
+      const events = (await storage.getSocialCalendarEvents?.(userId)) || [];
       res?.json(events);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social calendar:");
@@ -364,8 +364,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const stats = (await storage?.getSocialCalendarStats?.(userId)) || {
+      const userId = req.user!.id;
+      const stats = (await storage.getSocialCalendarStats?.(userId)) || {
         totalScheduled: 0,
         pendingApproval: 0,
         published: 0,
@@ -390,8 +390,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { platform, content, mediaUrls, scheduledAt, status } = req?.body;
+      const userId = req.user!.id;
+      const { platform, content, mediaUrls, scheduledAt, status } = req.body;
 
       if (!platform || !content) {
         return res
@@ -443,9 +443,9 @@ router?.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { postId } = req?.params;
-      const { platform, content, mediaUrls, scheduledAt, status } = req?.body;
+      const userId = req.user!.id;
+      const { postId } = req.params;
+      const { platform, content, mediaUrls, scheduledAt, status } = req.body;
 
       const existing = await db
         .select()
@@ -489,8 +489,8 @@ router?.patch(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { postIds, updates } = req?.body as {
+      const userId = req.user!.id;
+      const { postIds, updates } = req.body as {
         postIds: string[];
         updates: {
           status?: string;
@@ -505,7 +505,7 @@ router?.patch(
           .status(400)
           .json({ error: "postIds must be a non-empty array" });
       }
-      if (!updates || Object?.keys(updates).length === 0) {
+      if (!updates || Object.keys(updates).length === 0) {
         return res
           .status(400)
           .json({ error: "updates must contain at least one field" });
@@ -552,8 +552,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { postIds } = req?.body as { postIds: string[] };
+      const userId = req.user!.id;
+      const { postIds } = req.body as { postIds: string[] };
 
       if (!Array?.isArray(postIds) || postIds?.length === 0) {
         return res
@@ -616,9 +616,9 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       // Support both JSON body and query-string for DELETE
-      const rawIds = req?.body?.postIds ?? req?.query?.postIds;
+      const rawIds = req.body?.postIds ?? req.query?.postIds;
       const postIds: string[] = Array?.isArray(rawIds)
         ? rawIds
         : typeof rawIds === "string"
@@ -659,8 +659,8 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { postId } = req?.params;
+      const userId = req.user!.id;
+      const { postId } = req.params;
 
       const existing = await db
         .select()
@@ -690,8 +690,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const activity = (await storage?.getSocialActivity?.(userId)) || [];
+      const userId = req.user!.id;
+      const activity = (await storage.getSocialActivity?.(userId)) || [];
       res?.json(activity);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social activity:");
@@ -706,8 +706,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const stats = (await storage?.getSocialWeeklyStats?.(userId)) || [];
+      const userId = req.user!.id;
+      const stats = (await storage.getSocialWeeklyStats?.(userId)) || [];
       res?.json(stats);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get weekly stats:");
@@ -722,9 +722,9 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const insights = await (
-        storage?.getSocialAIInsights?.(userId) ?? Promise?.resolve([])
+        storage.getSocialAIInsights?.(userId) ?? Promise.resolve([])
       ).catch(() => []);
       res?.json(insights);
     } catch (error) {
@@ -736,7 +736,7 @@ router?.get(
 
 // Track the time this server process started — any sync older than this used the old
 // code and must be re-fetched immediately regardless of the 1-hour guard.
-const SERVER_BOOT_MS = Date?.now();
+const SERVER_BOOT_MS = Date.now();
 
 // Get platform status - returns connected social accounts from OAuth connections
 // Returns array format for SocialMedia page, also works for Advertisement page
@@ -745,7 +745,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       // Get actual OAuth connections from socialAccounts table
       const connections = await db
@@ -762,7 +762,7 @@ router?.get(
       }
 
       const ONE_HOUR_MS = 60 * 60 * 1000;
-      const now = Date?.now();
+      const now = Date.now();
       const stalePlatforms: string[] = [];
       for (const conn of connections) {
         if (conn?.isActive) {
@@ -802,7 +802,7 @@ router?.get(
           logger?.info(
             `[SocialSync] Pre-boot stale data detected — running blocking sync for ${[...uniquePlatforms].join(", ")}`,
           );
-          await Promise?.all(
+          await Promise.all(
             [...uniquePlatforms].map((p) =>
               syncPlatformData(userId, p).catch((err) =>
                 logger?.warn({ err: err }, `Blocking sync failed for ${p}:`),
@@ -881,7 +881,7 @@ router?.get(
             ? new Date(igMeta?.lastSyncedAt).getTime()
             : 0;
           const lastSync = new Date(
-            Math?.max(fbSync, igSync) || Date?.now(),
+            Math?.max(fbSync, igSync) || Date.now(),
           ).toISOString();
 
           // Primary conn for username/profileUrl — prefer IG, fall back to FB
@@ -961,7 +961,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const connections = await db
         .select()
@@ -984,7 +984,7 @@ router?.post(
       for (const p of activePlatforms) {
         try {
           const result = await syncPlatformData(userId, p);
-          Object?.assign(allResults, result);
+          Object.assign(allResults, result);
         } catch (err) {
           logger?.warn({ err: err }, `sync-all: failed to sync ${p}:`);
           allResults[p] = { error: "Sync failed" };
@@ -1032,9 +1032,9 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const keywords =
-        (await storage?.getSocialListeningKeywords?.(userId)) || [];
+        (await storage.getSocialListeningKeywords?.(userId)) || [];
       res?.json(keywords);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social listening keywords:");
@@ -1050,8 +1050,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const user = await storage?.getUser(userId);
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
 
       const ai = await getUnifiedAI();
       const mcResult = await ai?.generateContent({
@@ -1103,14 +1103,14 @@ router?.get(
 
       function guessCategory(tag: string): string {
         const t = tag?.replace(/^#/, "").toLowerCase();
-        for (const [key, cat] of Object?.entries(categoryMap)) {
+        for (const [key, cat] of Object.entries(categoryMap)) {
           if (t?.includes(key)) return cat;
         }
         return "general";
       }
 
       const dayOfYear = Math?.floor(
-        (Date?.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+        (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
           86400000,
       );
       const hourOfDay = new Date().getUTCHours();
@@ -1148,9 +1148,9 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const trending =
-        (await storage?.getSocialListeningTrending?.(userId)) || [];
+        (await storage.getSocialListeningTrending?.(userId)) || [];
       res?.json(trending);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social listening trending:");
@@ -1167,9 +1167,9 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const influencers =
-        (await storage?.getSocialListeningInfluencers?.(userId)) || [];
+        (await storage.getSocialListeningInfluencers?.(userId)) || [];
       res?.json(influencers);
     } catch (error) {
       logger?.warn(
@@ -1189,8 +1189,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const alerts = (await storage?.getSocialListeningAlerts?.(userId)) || [];
+      const userId = req.user!.id;
+      const alerts = (await storage.getSocialListeningAlerts?.(userId)) || [];
       res?.json(alerts);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social listening alerts:");
@@ -1209,7 +1209,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const competitors = await (
         await getCompetitorBenchmark()
       ).getCompetitors(userId);
@@ -1227,8 +1227,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { name, handle, platforms } = req?.body;
+      const userId = req.user!.id;
+      const { name, handle, platforms } = req.body;
 
       if (!name || !handle) {
         return res?.status(400).json({ error: "Name and handle are required" });
@@ -1256,8 +1256,8 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
+      const userId = req.user!.id;
+      const { id } = req.params;
 
       const result = await (
         await getCompetitorBenchmark()
@@ -1281,8 +1281,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const stats = (await storage?.getUserSocialStats?.(userId)) || null;
+      const userId = req.user!.id;
+      const stats = (await storage.getUserSocialStats?.(userId)) || null;
       res?.json(stats);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get your social stats:");
@@ -1297,7 +1297,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const competitors = await (
         await getCompetitorBenchmark()
       ).getCompetitors(userId);
@@ -1321,7 +1321,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const insights = await (
         await getCompetitorBenchmark()
       ).getInsights(userId);
@@ -1339,7 +1339,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const shareOfVoice = await (
         await getCompetitorBenchmark()
       ).getShareOfVoice(userId);
@@ -1361,7 +1361,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const {
         platform,
         status,
@@ -1369,7 +1369,7 @@ router?.get(
         sentiment,
         limit = "50",
         offset = "0",
-      } = req?.query;
+      } = req.query;
 
       let query = db
         .select()
@@ -1433,7 +1433,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const messages = await db
         .select()
         .from(socialInboxMessages)
@@ -1478,8 +1478,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
+      const userId = req.user!.id;
+      const { id } = req.params;
 
       await db
         .update(socialInboxMessages)
@@ -1508,8 +1508,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { messageIds } = req?.body;
+      const userId = req.user!.id;
+      const { messageIds } = req.body;
 
       if (!Array?.isArray(messageIds)) {
         return res?.status(400).json({ error: "messageIds must be an array" });
@@ -1544,9 +1544,9 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
-      const { content } = req?.body;
+      const userId = req.user!.id;
+      const { id } = req.params;
+      const { content } = req.body;
 
       if (!content) {
         return res?.status(400).json({
@@ -1629,9 +1629,9 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
-      const { assigneeId, assigneeName } = req?.body;
+      const userId = req.user!.id;
+      const { id } = req.params;
+      const { assigneeId, assigneeName } = req.body;
 
       await db
         .update(socialInboxMessages)
@@ -1675,8 +1675,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
+      const userId = req.user!.id;
+      const { id } = req.params;
 
       await db
         .update(socialInboxMessages)
@@ -1730,7 +1730,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const connections = await db
         .select()
         .from(socialAccounts)
@@ -1767,7 +1767,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       // Scheduled social posts (includes autopilot-created posts with status 'pending')
       const scheduledPosts = await db
@@ -1832,7 +1832,7 @@ router?.get(
               createdBy: meta.createdBy || "social_autopilot",
             };
           }),
-        ...calendarEntries?.map((c) => ({
+        ...calendarEntries.map((c) => ({
           id: c.id,
           title: c.title,
           platform: c.platform,
@@ -1859,7 +1859,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const userCampaigns = await db
         .select()
@@ -1976,7 +1976,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       // Posts that are scheduled but not yet published (the publishing queue)
       const queuedPosts = await db
@@ -2015,7 +2015,7 @@ router?.post(
         contentType = "post",
         topic = "new music",
         tone = "energetic",
-      } = req?.body;
+      } = req.body;
 
       const validPlatforms = [
         "instagram",
@@ -2066,7 +2066,7 @@ router?.post(
       const failedPlatforms = [];
 
       // MaxCore AI is the only source — all platforms in parallel
-      const mcResults = await Promise?.allSettled(
+      const mcResults = await Promise.allSettled(
         platforms
           .filter((p: string) => validPlatforms?.includes(p))
           .map(async (platform: string) => {
@@ -2092,7 +2092,7 @@ router?.post(
           });
           continue;
         }
-        const { platform, result } = settled?.value;
+        const { platform, result } = settled.value;
         if (result?.success && result?.data) {
           generatedContent?.push({
             platform,
@@ -2147,7 +2147,7 @@ router?.post(
         },
       });
 
-      if (generatedContent?.length > 0 && req?.user?.id) {
+      if (generatedContent?.length > 0 && req.user?.id) {
         setImmediate(async () => {
           try {
             const firstPiece = generatedContent[0];
@@ -2160,7 +2160,7 @@ router?.post(
               ""
             ).slice(0, 100);
             await notificationService?.sendSocialContentGeneratedNotification(
-              req?.user!.id,
+              req.user!.id,
               platformLabel,
               snippet,
             );
@@ -2213,10 +2213,10 @@ function assertSafeExternalUrl(raw: string): void {
   try {
     parsed = new URL(raw);
   } catch {
-    throw Object?.assign(new Error("Invalid URL"), { status: 400 });
+    throw Object.assign(new Error("Invalid URL"), { status: 400 });
   }
   if (!["http:", "https:"].includes(parsed?.protocol)) {
-    throw Object?.assign(new Error("Only http/https URLs are permitted"), {
+    throw Object.assign(new Error("Only http/https URLs are permitted"), {
       status: 400,
     });
   }
@@ -2241,7 +2241,7 @@ function assertSafeExternalUrl(raw: string): void {
     /\.local$/i,
   ];
   if (blocked?.some((re) => re?.test(h))) {
-    throw Object?.assign(
+    throw Object.assign(
       new Error("URL resolves to a restricted network range"),
       { status: 400 },
     );
@@ -2262,7 +2262,7 @@ router?.post(
         tone = "energetic",
         format = "text",
         targetAudience = "",
-      } = req?.body;
+      } = req.body;
 
       if (!url) {
         return res?.status(400).json({ error: "URL is required" });
@@ -2431,7 +2431,7 @@ router?.post(
       if (targetAudience) extraParts?.push(`Target: ${targetAudience}`);
 
       // MaxCore AI is the only source — generate for all platforms in parallel
-      const platformResults = await Promise?.allSettled(
+      const platformResults = await Promise.allSettled(
         platforms
           .filter((p: string) => validPlatforms?.includes(p))
           .map(async (platform: string) => {
@@ -2463,7 +2463,7 @@ router?.post(
 
       for (const settled of platformResults) {
         if (settled?.status !== "fulfilled") continue;
-        const { platform, result } = settled?.value;
+        const { platform, result } = settled.value;
         if (!result?.success || !result?.data) continue;
 
         const captionText = result?.data.caption + `\n\n🔗 ${url}`;
@@ -2610,8 +2610,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const scheduledPosts = (await storage?.getScheduledPosts?.(userId)) || [];
+      const userId = req.user!.id;
+      const scheduledPosts = (await storage.getScheduledPosts?.(userId)) || [];
       res?.json(scheduledPosts);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get scheduled posts:");
@@ -2626,14 +2626,14 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { platform, period = "30d" } = req?.query;
+      const userId = req.user!.id;
+      const { platform, period = "30d" } = req.query;
 
       const days = period === "7d" ? 7 : period === "90d" ? 90 : 30;
-      const periodStart = new Date(Date?.now() - days * 24 * 60 * 60 * 1000);
+      const periodStart = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       const [accounts, periodPosts, autopilotContent, artistProfile] =
-        await Promise?.all([
+        await Promise.all([
           db
             .select()
             .from(socialAccounts)
@@ -2662,7 +2662,7 @@ router?.get(
 
       // Kick off background follower-count sync for stale accounts
       const ONE_HOUR_MS = 60 * 60 * 1000;
-      const now = Date?.now();
+      const now = Date.now();
       const stalePlatforms = new Set<string>();
       for (const acc of accounts) {
         if (!acc?.isActive) continue;
@@ -2799,7 +2799,7 @@ router?.get(
         { date: string; posts: number; engagement: number; views: number }
       > = {};
       for (let i = days - 1; i >= 0; i--) {
-        const d = new Date(Date?.now() - i * 24 * 60 * 60 * 1000)
+        const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000)
           .toISOString()
           .split("T")[0];
         dailyMap[d] = { date: d, posts: 0, engagement: 0, views: 0 };
@@ -2831,7 +2831,7 @@ router?.get(
 
       // Top posts by engagement
       const allPostsForRanking = [
-        ...periodPosts?.map((p) => ({
+        ...periodPosts.map((p) => ({
           id: p.id,
           platform: p.platform,
           content: p.content?.substring(0, 120) || "",
@@ -2956,18 +2956,18 @@ router?.post(
         genre,
         user_audio_path,
         voiceover,
-      } = req?.body;
+      } = req.body;
 
-      const userId = req?.user?.id;
+      const userId = req.user?.id;
 
       // ── Always respond immediately — client polls via /video-job/:id ─────────
       // Holding the HTTP connection open during generation (2–5 min) triggers
       // proxy timeouts that the client misreads as auth failures.  All paths
       // (Python AI and FFmpeg) now run in a background job and store their
       // result in the ffmpegJobs map so the polling endpoint can serve it.
-      const jobId = `video_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}`;
+      const jobId = `video_${Date.now()}_${Math?.random().toString(36).slice(2, 8)}`;
       pruneStaleFFmpegJobs();
-      ffmpegJobs?.set(jobId, { status: "processing", createdAt: Date.now() });
+      ffmpegJobs.set(jobId, { status: "processing", createdAt: Date.now() });
 
       // ── Background job: MaxCore video render ──────────────────────────────────
       (async () => {
@@ -3085,7 +3085,7 @@ router?.post(
           });
 
           if (result?.success) {
-            ffmpegJobs?.set(jobId, {
+            ffmpegJobs.set(jobId, {
               status: "done",
               result,
               createdAt: Date.now(),
@@ -3096,7 +3096,7 @@ router?.post(
           } else {
             const errMsg =
               result?.error || "Video generation failed (no error message)";
-            ffmpegJobs?.set(jobId, {
+            ffmpegJobs.set(jobId, {
               status: "error",
               error: errMsg,
               createdAt: Date.now(),
@@ -3104,7 +3104,7 @@ router?.post(
             logger?.warn(`[VideoGen] Job ${jobId} FAILED — ${errMsg}`);
           }
         } catch (err) {
-          ffmpegJobs?.set(jobId, {
+          ffmpegJobs.set(jobId, {
             status: "error",
             error:
               (err instanceof Error ? err?.message : undefined) ||
@@ -3134,11 +3134,11 @@ router?.get(
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { jobId } = req?.params;
+      const { jobId } = req.params;
 
       // Check the local FFmpeg job map first (jobs created by the async generate-video route).
       // FFmpeg job IDs are prefixed with "ffmpeg_" so they never collide with Python AI job IDs.
-      const ffmpegJob = ffmpegJobs?.get(jobId);
+      const ffmpegJob = ffmpegJobs.get(jobId);
       if (ffmpegJob) {
         if (ffmpegJob?.status === "processing") {
           return res?.json({ status: "processing", progress: 50 });
@@ -3374,7 +3374,7 @@ router.get(
           try {
             if (!peekDone) {
               while (true) {
-                const { done, value } = await reader?.read();
+                const { done, value } = await reader.read();
                 if (done) break;
                 nodeStream?.write(value);
                 chunks?.push(value);
@@ -3583,7 +3583,7 @@ router?.post(
         targets,
         audio_duration_sec,
         track_id,
-      } = req?.body;
+      } = req.body;
 
       if (!title || !artist) {
         return res?.status(400).json({
@@ -3639,7 +3639,7 @@ router?.post(
   aiRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { title, artist, platform, mood, story, lyrics, tone } = req?.body;
+      const { title, artist, platform, mood, story, lyrics, tone } = req.body;
 
       if (!title || !artist || !platform) {
         return res?.status(400).json({
@@ -3724,7 +3724,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { platform } = req?.params;
+      const { platform } = req.params;
       const data = await (await getVeoMusic()).getRecommendedGoals(platform);
       if (!data) {
         return res?.status(404).json({
@@ -3767,7 +3767,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { url } = req?.body;
+      const { url } = req.body;
       if (!url || typeof url !== "string") {
         return res?.status(400).json({
           success: false,
@@ -3800,7 +3800,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { url, ...overrides } = req?.body;
+      const { url, ...overrides } = req.body;
       if (!url || typeof url !== "string") {
         return res?.status(400).json({
           success: false,
@@ -3837,13 +3837,13 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user?.id;
+      const userId = req.user?.id;
       if (!userId)
         return res
           .status(401)
           .json({ success: false, message: "Not authenticated" });
 
-      const { slug, platforms, mood, brand_notes, campaign_notes } = req?.body;
+      const { slug, platforms, mood, brand_notes, campaign_notes } = req.body;
 
       let storefront: Record<string, unknown> | null = null;
       if (slug) {
@@ -3989,14 +3989,14 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user?.id;
+      const userId = req.user?.id;
       if (!userId)
         return res
           .status(401)
           .json({ success: false, message: "Not authenticated" });
 
       const { listingId, platforms, mood, brand_notes, campaign_notes } =
-        req?.body;
+        req.body;
       if (!listingId)
         return res
           .status(400)
@@ -5067,7 +5067,7 @@ router?.get(
   "/music-video-job/:jobId",
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
-    const { jobId } = req?.params;
+    const { jobId } = req.params;
     const job = musicVideoJobs?.get(jobId);
 
     if (!job) {
@@ -5103,7 +5103,7 @@ router?.get(
   requireAuthOnly,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const [voiceSvc, imgSvc] = await Promise?.all([
+      const [voiceSvc, imgSvc] = await Promise.all([
         getVoiceSynthService(),
         getImageToVideoService(),
       ]);
