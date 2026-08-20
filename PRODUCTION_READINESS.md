@@ -39,6 +39,7 @@ real application clients.
 | Billing lifecycle after webhook fix | PASS | `reports/production-readiness/billing-lifecycle-after-restart.log`; 12/12 passed after workflow restart |
 | Full integration suite after webhook fix | PASS with skips | `reports/production-readiness/integration-after-billing-fix.log`; 21 files / 479 passed / 2 skipped |
 | Local PDIM sliding-window integration | PASS | `reports/production-readiness/pdim-security-local-after-fix.log`; 24/24 passed, including both real PDIM tests against `127.0.0.1:5556` |
+| Shared PDIM storage + Redis round trip | PASS | `reports/production-readiness/shared-pdim-storage-redis.log`; 38/38 passed across real upload/download/delete and real sliding-window operations |
 | Server typecheck after local-PDIM fix | **BLOCKED** | `reports/production-readiness/check-server-after-local-pdim-fix.log`; process exited 137 under load; earlier isolated split check passed |
 | Pre-launch check | PASS with timeout disclosure | `reports/production-readiness/prelaunch.log`; DB and deployed health passed; embedded typecheck timed out and was replaced by split checks |
 | Post-deployment smoke | PASS | `reports/production-readiness/smoke.log`; 14/14 passed, 10/10 critical passed |
@@ -142,6 +143,11 @@ unresolved readiness work, not approved exceptions.
 4. **Secrets/configuration:** the pre-launch script confirms selected
    variables, but the complete secret/environment inventory and plaintext
    scan still need to be completed.
+5. **Shared PDIM queue reliability:** the running workflow repeatedly logs
+   `ZPOPMIN` fetch failures and Lua `HMGET` fetch failures from the autonomous
+   scheduler. `/api/ready` can be green while this background queue path is
+   failing, so the failure must be root-caused and reproduced with a worker
+   recovery test before launch.
 
 ## Local PDIM execution correction
 
