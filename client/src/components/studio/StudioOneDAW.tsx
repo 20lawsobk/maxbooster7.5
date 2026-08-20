@@ -1323,13 +1323,27 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     if (!projectId) return;
     setIsAIMastering(true);
     try {
-      await apiRequest("POST", `/api/studio/ai-master/${projectId}`, {
+      const res = await apiRequest("POST", `/api/studio/ai-master/${projectId}`, {
         targetLufs: -14,
+        sampleRate: 44100,
+        bitDepth: 24,
+        format: "wav",
       });
+      const data = await res.json();
       toast({
         title: "AI Master Complete",
-        description: "Your project has been mastered for streaming.",
+        description: data?.genre
+          ? `Mastered as ${data.genre} (${Math.round((data.confidence || 0) * 100)}% confidence). Download ready.`
+          : "Your project has been mastered for streaming.",
       });
+      if (data?.downloadUrl) {
+        const a = document.createElement("a");
+        a.href = data.downloadUrl;
+        a.download = "";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
     } catch (error) {
       toast({
         title: "Master Failed",

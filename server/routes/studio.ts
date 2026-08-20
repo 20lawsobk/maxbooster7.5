@@ -1298,139 +1298,81 @@ router.post(
         return res.status(404).json({ error: "Project not found" });
       }
 
-      const renderJob = {
-        id: `render_${randomBytes(8).toString("hex")}`,
-        projectId,
-        userId,
-        settings: {
+      const metadata = {
+        title: settings.metadata?.title || project?.title,
+        artist: settings.metadata?.artist || "",
+        album: settings.metadata?.album || "",
+        year: settings?.metadata?.year || new Date().getFullYear().toString(),
+        genre: settings.metadata?.genre || project?.genre || "",
+        isrc: settings.metadata?.isrc || "",
+        iswc: settings.metadata?.iswc || "",
+        upc: settings.metadata?.upc || "",
+        copyright: settings.metadata?.copyright || "",
+        bpm: settings.metadata?.bpm || project?.bpm,
+        key: settings.metadata?.key || project?.key || "",
+        producer: settings.metadata?.producer || "",
+        mixer: settings.metadata?.mixer || "",
+        masteringEngineer: settings.metadata?.masteringEngineer || "",
+      };
+
+      const { renderProjectMixdown } = await import(
+        "../services/studioRenderService.js"
+      );
+
+      let rendered;
+      try {
+        rendered = await renderProjectMixdown(projectId, {
           format,
           sampleRate,
           bitDepth,
-          channels: settings.channels || 2,
-          dither: settings.dither || "triangular",
-          normalize: settings.normalize || "lufs",
-          normalizeTarget: settings.normalizeTarget ?? -14,
-          truePeakCeiling: settings.truePeakCeiling ?? -1,
-          limiter: settings.limiter || "true-peak",
-          limiterThreshold: settings.limiterThreshold ?? -1,
-          limiterRelease: settings.limiterRelease ?? 100,
-          limiterLookahead: settings.limiterLookahead ?? 5,
-          dcOffset: settings.dcOffset ?? true,
-          fadeIn: settings.fadeIn ?? 0,
-          fadeOut: settings.fadeOut ?? 0,
-          fadeType: settings.fadeType || "equal-power",
-          tailLength: settings.tailLength ?? 0,
-          trimSilence: settings.trimSilence ?? false,
-          silenceThreshold: settings.silenceThreshold ?? -60,
-          mp3Bitrate: settings.mp3Bitrate ?? 320,
-          flacCompression: settings.flacCompression ?? 5,
-          metadata: {
-            title: settings.metadata?.title || project?.title,
-            artist: settings.metadata?.artist || "",
-            album: settings.metadata?.album || "",
-            year:
-              settings?.metadata?.year || new Date().getFullYear().toString(),
-            genre: settings.metadata?.genre || project?.genre || "",
-            isrc: settings.metadata?.isrc || "",
-            iswc: settings.metadata?.iswc || "",
-            upc: settings.metadata?.upc || "",
-            copyright: settings.metadata?.copyright || "",
-            bpm: settings.metadata?.bpm || project?.bpm,
-            key: settings.metadata?.key || project?.key || "",
-            producer: settings.metadata?.producer || "",
-            mixer: settings.metadata?.mixer || "",
-            masteringEngineer: settings.metadata?.masteringEngineer || "",
-          },
-          exportRange: settings.exportRange || "full",
-          stemExport: settings.stemExport ?? false,
-        },
-        status: "completed",
-        createdAt: new Date(),
-      };
-
-      const estimatedDuration = 180;
-      const bytesPerSample = renderJob?.settings.bitDepth / 8;
-      const channels = renderJob?.settings.channels;
-      let fileSize: number;
-
-      switch (renderJob?.settings.format) {
-        case "wav":
-        case "aiff":
-          fileSize =
-            estimatedDuration *
-            renderJob?.settings.sampleRate *
-            channels *
-            bytesPerSample;
-          break;
-        case "flac":
-          fileSize =
-            estimatedDuration *
-            renderJob?.settings.sampleRate *
-            channels *
-            bytesPerSample *
-            0.5;
-          break;
-        case "mp3":
-          fileSize =
-            estimatedDuration * ((renderJob?.settings.mp3Bitrate * 1000) / 8);
-          break;
-        default:
-          fileSize = estimatedDuration * ((256 * 1000) / 8);
+          applyMastering: settings.applyMastering === true,
+          masteringGenre: settings.masteringGenre,
+          targetLufs: settings.normalizeTarget,
+        });
+      } catch (renderErr: unknown) {
+        logger.warn(
+          { err: renderErr, projectId },
+          "[Studio] Real mixdown render failed",
+        );
+        return res.status(422).json({
+          error:
+            (renderErr as Error)?.message ||
+            "Failed to render project audio",
+        });
       }
 
       logger.info(
         {
-          format: renderJob.settings.format,
-          sampleRate: renderJob.settings.sampleRate,
-          bitDepth: renderJob.settings.bitDepth,
-          normalize: renderJob.settings.normalize,
-          normalizeTarget: renderJob.settings.normalizeTarget,
-          limiter: renderJob.settings.limiter,
-          dither: renderJob.settings.dither,
-          hasISRC: !!renderJob?.settings.metadata?.isrc,
+          format,
+          sampleRate,
+          bitDepth,
+          fileSize: rendered.fileSize,
+          durationSec: rendered.durationSec,
+          mastering: rendered.mastering,
         },
-        `[Studio] Professional render completed for project ${projectId}`,
+        `[Studio] Real render completed for project ${projectId}`,
       );
 
       const result = {
         success: true,
-        outputPath: `/exports/${projectId}/${renderJob?.id}.${renderJob?.settings.format}`,
-        downloadUrl: `/api/studio/projects/${projectId}/download/${renderJob?.id}`,
-        duration: estimatedDuration,
-        fileSize,
-        peakLevel: -0.3,
-        lufs: renderJob.settings.normalizeTarget,
-        truePeak: renderJob.settings.truePeakCeiling,
+        outputPath: rendered.filePath,
+        downloadUrl: rendered.downloadPath,
+        duration: rendered.durationSec,
+        fileSize: rendered.fileSize,
+        mastering: rendered.mastering,
         warnings: [] as string[],
         renderSettings: {
-          format: renderJob.settings.format,
-          sampleRate: `${renderJob?.settings.sampleRate / 1000}kHz`,
-          bitDepth: `${renderJob?.settings.bitDepth}-bit`,
-          channels: renderJob.settings.channels === 2 ? "Stereo" : "Mono",
-          dither: renderJob.settings.dither,
-          normalize: renderJob.settings.normalize,
-          normalizeTarget: `${renderJob?.settings.normalizeTarget} ${renderJob?.settings.normalize === "lufs" ? "LUFS" : "dB"}`,
-          truePeakCeiling: `${renderJob?.settings.truePeakCeiling} dBTP`,
-          limiter: renderJob.settings.limiter,
-          metadata: renderJob.settings.metadata,
+          format,
+          sampleRate: `${sampleRate / 1000}kHz`,
+          bitDepth: `${bitDepth}-bit`,
+          channels: (settings.channels || 2) === 2 ? "Stereo" : "Mono",
+          metadata,
         },
       };
 
-      if (
-        renderJob?.settings.bitDepth === 16 &&
-        renderJob?.settings.dither === "none"
-      ) {
+      if (bitDepth === 16 && settings.dither === "none") {
         result?.warnings.push(
           "16-bit export without dithering may introduce quantization noise",
-        );
-      }
-
-      if (
-        renderJob?.settings.format === "mp3" &&
-        renderJob?.settings.truePeakCeiling > -0.5
-      ) {
-        result?.warnings.push(
-          "True peak above -0.5 dBTP may cause intersample peaks in MP3",
         );
       }
 
@@ -2450,60 +2392,62 @@ router.post("/lyrics", requireAuth, async (req: Request, res: Response) => {
 });
 
 // AI Master endpoint
-// Runs the real IntelligentMasteringEngine (spectral analysis, genre-aware
-// EQ/multiband compression, LUFS-targeted loudness, lookahead limiter) on the
-// mixed-down audio the client renders and sends. If no audio is provided we
-// return an honest 400 — never a fake job/notification for work that didn't
-// happen.
+// Renders the project's real tracks/clips server-side (ffmpeg mixdown) and
+// runs the result through IntelligentMasteringEngine (spectral analysis,
+// genre-aware EQ/multiband compression, LUFS-targeted loudness, lookahead
+// limiter). Returns a real, downloadable mastered file — never a fake
+// job/notification for work that didn't happen.
 router.post(
   "/ai-master/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
     const { projectId } = req.params as Record<string, string>;
+    const userId = req.user!.id;
     try {
-      const { sampleRate, samples, genre, targetLufs } = req.body || {};
-
-      if (!Array.isArray(samples) || samples.length === 0) {
-        return res.status(400).json({
-          success: false,
-          projectId,
-          message:
-            "No mixed-down audio provided — render a mixdown client-side and send its samples",
-        });
+      if (!(await verifyProjectOwnership(projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const sr = Number(sampleRate) || 44100;
-      const { IntelligentMasteringEngine } = await import(
-        "../../shared/ml/audio/IntelligentMasteringEngine.js"
+      const { genre, targetLufs, sampleRate, bitDepth, format } =
+        req.body || {};
+
+      const { renderProjectMixdown } = await import(
+        "../services/studioRenderService.js"
       );
-      const engine = new IntelligentMasteringEngine(sr);
-      const audioData = new Float32Array(samples);
 
-      const suggestion = engine.suggestSettings(audioData, genre, sr);
-      if (typeof targetLufs === "number") {
-        suggestion.config.loudness.targetLUFS = targetLufs;
-      }
-      const mastered = engine.masterTrack(audioData, suggestion.config, sr);
+      const rendered = await renderProjectMixdown(projectId, {
+        format: format || "wav",
+        sampleRate: Number(sampleRate) || 44100,
+        bitDepth: Number(bitDepth) || 24,
+        applyMastering: true,
+        masteringGenre: genre,
+        targetLufs: typeof targetLufs === "number" ? targetLufs : -14,
+      });
 
       logger.info(
-        `AI mastering completed for project ${projectId}: genre=${suggestion.genre} confidence=${suggestion.confidence}`,
+        `AI mastering completed for project ${projectId}: genre=${rendered.mastering?.genre} confidence=${rendered.mastering?.confidence}`,
       );
 
       res.json({
         success: true,
         projectId,
-        genre: suggestion.genre,
-        confidence: suggestion.confidence,
-        reasoning: suggestion.reasoning,
-        appliedConfig: suggestion.config,
-        processedSamples: Array.from(mastered),
+        genre: rendered.mastering?.genre,
+        confidence: rendered.mastering?.confidence,
+        reasoning: rendered.mastering?.reasoning,
+        downloadUrl: rendered.downloadPath,
+        fileSize: rendered.fileSize,
+        duration: rendered.durationSec,
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, `AI mastering failed for project ${projectId}:`);
-      res.status(500).json({
+      logger.warn(
+        { err: error },
+        `AI mastering failed for project ${projectId}:`,
+      );
+      res.status(422).json({
         success: false,
         projectId,
-        message: "AI mastering failed",
+        message:
+          (error as Error)?.message || "AI mastering failed",
       });
     }
   },
