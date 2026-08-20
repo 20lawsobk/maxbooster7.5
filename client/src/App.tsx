@@ -122,6 +122,9 @@ const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const SecurityDashboard = lazy(() => import("@/pages/admin/SecurityDashboard"));
 const AuditLogPage = lazy(() => import("@/pages/admin/AuditLog"));
 const SupportDashboard = lazy(() => import("@/pages/admin/SupportDashboard"));
+const SupportTicketDetail = lazy(
+  () => import("@/pages/admin/SupportTicketDetail"),
+);
 const Projects = lazy(() => import("@/pages/Projects"));
 const Pricing = lazy(() => import("@/pages/Pricing"));
 const Subscribe = lazy(() => import("@/pages/Subscribe"));
@@ -215,6 +218,10 @@ function Router() {
       <Route path="/subscribe/:tier" component={Subscribe} />
       <Route path="/admin/security" component={SecurityDashboard} />
       <Route path="/admin/audit-log" component={AuditLogPage} />
+      <Route
+        path="/admin/support/tickets/:ticketId"
+        component={SupportTicketDetail}
+      />
       <Route path="/admin/support" component={SupportDashboard} />
       <Route path="/admin/kyc" component={KYCReview} />
       <Route path="/admin/training" component={TrainingDashboard} />

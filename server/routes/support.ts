@@ -5,6 +5,7 @@ import { eq, desc, like, or, sql, count, avg, and } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { requireAuth, require2FA } from "../middleware/auth.js";
 import { notificationService } from "../services/notificationService.js";
+import { supportTicketService } from "../services/supportTicketService.js";
 
 const router = Router();
 
@@ -145,12 +146,137 @@ router.get("/tickets/:ticketId", requireAdmin, require2FA, async (req, res) => {
       return res.status(404).json({ error: "Ticket not found" });
     }
 
-    res.json(ticket[0]);
+    const [messages, tags] = await Promise.all([
+      supportTicketService.getTicketMessages(ticketId),
+      supportTicketService.getTicketTags(ticketId),
+    ]);
+
+    res.json({ ...ticket[0], messages, tags: tags.map((t) => t.tag) });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching ticket:");
     res.status(500).json({ error: "Failed to fetch ticket" });
   }
 });
+
+// Add a reply (message) to a ticket — admin/staff only. Persisted in the
+// ticket's metadata JSONB (metadata.messages) since a dedicated messages
+// table does not exist in the schema yet.
+router.post(
+  "/tickets/:ticketId/messages",
+  requireAdmin,
+  require2FA,
+  async (req, res) => {
+    try {
+      const { ticketId } = req.params as Record<string, string>;
+      const { message } = req.body;
+
+      if (!message || typeof message !== "string" || !message.trim()) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const existing = await db
+        .select({ id: supportTickets.id })
+        .from(supportTickets)
+        .where(eq(supportTickets.id, ticketId))
+        .limit(1);
+      if (!existing?.length) {
+        return res.status(404).json({ error: "Ticket not found" });
+      }
+
+      const saved = await supportTicketService.addMessage(
+        ticketId,
+        req.user!.id,
+        message.trim(),
+        true,
+      );
+
+      logger.info(`Admin ${req.user?.email} replied to ticket ${ticketId}`);
+
+      res.status(201).json(saved);
+    } catch (error) {
+      logger.warn({ err: error }, "Error adding ticket reply:");
+      res.status(500).json({ error: "Failed to add reply" });
+    }
+  },
+);
+
+// Add tags to a ticket — admin only. Persisted in metadata.tags (deduplicated).
+router.post(
+  "/tickets/:ticketId/tags",
+  requireAdmin,
+  require2FA,
+  async (req, res) => {
+    try {
+      const { ticketId } = req.params as Record<string, string>;
+      const { tags } = req.body;
+
+      const tagList = Array.isArray(tags)
+        ? tags
+        : typeof tags === "string"
+          ? [tags]
+          : [];
+      const cleaned = tagList
+        .map((t) => String(t).trim())
+        .filter((t) => t.length > 0);
+
+      if (!cleaned.length) {
+        return res.status(400).json({ error: "At least one tag is required" });
+      }
+
+      await supportTicketService.addTags(ticketId, cleaned);
+      const updatedTags = await supportTicketService.getTicketTags(ticketId);
+
+      logger.info(
+        `Admin ${req.user?.email} tagged ticket ${ticketId}: ${cleaned.join(", ")}`,
+      );
+
+      res.status(201).json({ tags: updatedTags.map((t) => t.tag) });
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === "Ticket not found") {
+        return res.status(404).json({ error: "Ticket not found" });
+      }
+      logger.warn({ err: error }, "Error adding ticket tags:");
+      res.status(500).json({ error: "Failed to add tags" });
+    }
+  },
+);
+
+// Remove a tag from a ticket — admin only.
+router.delete(
+  "/tickets/:ticketId/tags/:tag",
+  requireAdmin,
+  require2FA,
+  async (req, res) => {
+    try {
+      const { ticketId, tag } = req.params as Record<string, string>;
+
+      const existing = await db
+        .select({ metadata: supportTickets.metadata })
+        .from(supportTickets)
+        .where(eq(supportTickets.id, ticketId))
+        .limit(1);
+      if (!existing?.length) {
+        return res.status(404).json({ error: "Ticket not found" });
+      }
+
+      const meta = (existing[0].metadata as Record<string, unknown> | null) ?? {};
+      const currentTags = Array.isArray(meta.tags) ? (meta.tags as string[]) : [];
+      const remaining = currentTags.filter((t) => t !== tag);
+
+      await db
+        .update(supportTickets)
+        .set({ updatedAt: new Date(), metadata: { ...meta, tags: remaining } })
+        .where(eq(supportTickets.id, ticketId));
+
+      logger.info(`Admin ${req.user?.email} removed tag "${tag}" from ticket ${ticketId}`);
+
+      res.json({ tags: remaining });
+    } catch (error) {
+      logger.warn({ err: error }, "Error removing ticket tag:");
+      res.status(500).json({ error: "Failed to remove tag" });
+    }
+  },
+);
 
 router.patch(
   "/tickets/:ticketId",

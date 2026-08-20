@@ -357,7 +357,7 @@ export default function SupportDashboard() {
                               Resolve
                             </Button>
                           )}
-                          <Link href={`/support/tickets/${ticket.id}`}>
+                          <Link href={`/admin/support/tickets/${ticket.id}`}>
                             <Button size="sm" variant="ghost">
                               View
                             </Button>
