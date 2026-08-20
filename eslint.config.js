@@ -75,12 +75,6 @@ export default [
         Headers: "readonly",
       },
     },
-    rules: {
-      "no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
-      ],
-    },
   },
   {
     // AudioWorkletGlobalScope supplies these only inside the worklet module.

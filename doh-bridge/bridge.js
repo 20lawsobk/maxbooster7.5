@@ -170,7 +170,7 @@ udpServer.on("message", (msg, rinfo) => {
         if (err) metrics.errors++;
       });
     },
-    (_err) => {
+    () => {
       const entry = pending.get(key);
       if (!entry) return;
       clearTimeout(entry.timer);
@@ -227,7 +227,7 @@ const tcpServer = net.createServer((socket) => {
           socket.end();
         });
       },
-      (_err) => {
+      () => {
         if (socket.destroyed) return;
         const sf = makeServfail(query);
         const lh = Buffer.alloc(2);
