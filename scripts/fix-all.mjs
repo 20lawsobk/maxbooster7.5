@@ -320,7 +320,9 @@ function runTsc(config) {
     cwd: ROOT,
     encoding: "utf8",
     env: { ...process.env, NODE_OPTIONS: "--max-old-space-size=4096" },
-    timeout: 280_000,
+    // Keep the deployment gate bounded. A split check that cannot settle in
+    // this window is a failed verification, not a reason to hold deployment.
+    timeout: 150_000,
     maxBuffer: 64 * 1024 * 1024,
   });
   return (res.stdout || "") + (res.stderr || "");

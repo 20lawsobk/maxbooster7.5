@@ -12,7 +12,7 @@
     },
     "verify-server": {
       "status": "measured",
-      "at": "2026-08-20T12:12:20.218Z",
+      "at": "2026-08-20T12:25:53.245Z",
       "note": "0 → 0 errors (parser: 0); top: "
     },
     "imports": {
@@ -42,8 +42,8 @@
     },
     "verify-client": {
       "status": "measured",
-      "at": "2026-08-20T12:13:28.029Z",
-      "note": "0 errors (parser: 0); top: "
+      "at": "2026-08-20T12:26:47.544Z",
+      "note": "0 → 0 errors (parser: 0); top: "
     }
   },
   "counts": {
@@ -51,13 +51,13 @@
       "total": 0,
       "parser": 0,
       "top": [],
-      "at": "2026-08-20T12:12:20.117Z"
+      "at": "2026-08-20T12:25:53.183Z"
     },
     "client": {
       "total": 0,
       "parser": 0,
       "top": [],
-      "at": "2026-08-20T12:13:27.963Z"
+      "at": "2026-08-20T12:26:47.487Z"
     }
   },
   "lastSnapshot": {

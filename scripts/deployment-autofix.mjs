@@ -21,9 +21,17 @@ function run(label, command, args, options = {}) {
     cwd: ROOT,
     stdio: "inherit",
     env: { ...process.env, NODE_OPTIONS: "--max-old-space-size=4096" },
+    timeout: options.timeout ?? 180_000,
+    maxBuffer: options.maxBuffer ?? 64 * 1024 * 1024,
     ...options,
   });
-  if (result.error) throw result.error;
+  if (result.error) {
+    if (result.error.code === "ETIMEDOUT") {
+      console.error(`[deploy-autofix] ${label} exceeded its time budget`);
+      return 124;
+    }
+    throw result.error;
+  }
   return result.status ?? 1;
 }
 
@@ -58,7 +66,13 @@ if (research !== 0) {
 
 // ESLint's own fixes are syntax-aware and are safe to run before the
 // repository-specific diagnostic handlers.
-const lintFix = run("apply official ESLint fixes", "npx", ["eslint", ".", "--fix"]);
+const eslintCache = path.join("reports", "deployment-autofix", ".eslintcache");
+const lintFix = run(
+  "apply official ESLint fixes",
+  "npx",
+  ["eslint", ".", "--fix", "--cache", "--cache-location", eslintCache],
+  { timeout: 120_000 },
+);
 if (lintFix !== 0) {
   console.warn(
     "[deploy-autofix] ESLint reported unresolved diagnostics after applying available fixes; continuing to TypeScript repair",
@@ -83,7 +97,12 @@ for (const config of ["server", "client"]) {
   }
 }
 
-const lint = run("verify lint", "npx", ["eslint", ".", "--quiet"]);
+const lint = run(
+  "verify lint",
+  "npx",
+  ["eslint", ".", "--quiet", "--cache", "--cache-location", eslintCache],
+  { timeout: 90_000 },
+);
 if (lint !== 0) {
   console.error(
     "[deploy-autofix] Unresolved lint errors remain; no deployment will be promoted",
