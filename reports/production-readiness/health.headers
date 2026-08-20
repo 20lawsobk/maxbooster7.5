@@ -1,0 +1,22 @@
+HTTP/1.1 200 OK
+Content-Security-Policy: default-src 'self';base-uri 'self';font-src 'self' https://fonts.gstatic.com data:;form-action 'self';frame-ancestors 'none';img-src 'self' data: blob: https:;object-src 'none';script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://www.googletagmanager.com https://connect.facebook.net;script-src-attr 'none';style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;upgrade-insecure-requests;media-src 'self' blob: data: https:;connect-src 'self' https://maxbooster.replit.app wss: ws: https://api.stripe.com https://api.labelgrid.com https://maxbooster.replit.app https://o4510378512613376.ingest.us.sentry.io ws://localhost:* http://localhost:*;frame-src 'self' https://js.stripe.com https://hooks.stripe.com;worker-src 'self' blob:
+Cross-Origin-Opener-Policy: same-origin-allow-popups
+Cross-Origin-Resource-Policy: cross-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com"), usb=(), accelerometer=(), gyroscope=(), magnetometer=(), autoplay=(self), fullscreen=(self), picture-in-picture=(self)
+Content-Type: application/json; charset=utf-8
+Content-Length: 54
+ETag: W/"36-1v8XU5RThpuJYA3BhXSfeJQhBKw"
+Vary: Accept-Encoding
+Date: Thu, 20 Aug 2026 10:48:48 GMT
+Connection: keep-alive
+Keep-Alive: timeout=65
+

@@ -1,0 +1,31 @@
+HTTP/1.1 200 OK
+Content-Security-Policy: default-src 'self';base-uri 'self';font-src 'self' https://fonts.gstatic.com data:;form-action 'self';frame-ancestors 'none';img-src 'self' data: blob: https:;object-src 'none';script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://www.googletagmanager.com https://connect.facebook.net;script-src-attr 'none';style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;upgrade-insecure-requests;media-src 'self' blob: data: https:;connect-src 'self' https://maxbooster.replit.app wss: ws: https://api.stripe.com https://api.labelgrid.com https://maxbooster.replit.app https://o4510378512613376.ingest.us.sentry.io ws://localhost:* http://localhost:*;frame-src 'self' https://js.stripe.com https://hooks.stripe.com;worker-src 'self' blob:
+Cross-Origin-Opener-Policy: same-origin-allow-popups
+Cross-Origin-Resource-Policy: cross-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com"), usb=(), accelerometer=(), gyroscope=(), magnetometer=(), autoplay=(self), fullscreen=(self), picture-in-picture=(self)
+Cache-Control: private, max-age=30, stale-while-revalidate=60
+CDN-Cache-Control: no-store
+Cloudflare-CDN-Cache-Control: no-store
+X-Request-ID: 29a4044a-bb17-4583-b292-5285bba1068f
+Vary: Origin, Accept-Encoding
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Content-Length,Content-Range,Accept-Ranges,Content-Type
+Set-Cookie: csrf-token=94924911bb3b7f691c0eecf0aba12f4f24a4c565ef479bd743b6c73d5fd8e6d4; Max-Age=86400; Path=/; Expires=Fri, 21 Aug 2026 10:48:48 GMT; SameSite=Strict
+X-Correlation-ID: 29a4044a-bb17-4583-b292-5285bba1068f
+X-Cache: MISS
+ETag: "i1olga"
+Content-Type: application/json; charset=utf-8
+Content-Length: 655
+Date: Thu, 20 Aug 2026 10:48:48 GMT
+Connection: keep-alive
+Keep-Alive: timeout=65
+
