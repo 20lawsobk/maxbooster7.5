@@ -9,9 +9,14 @@ const sendMock = vi.fn();
 
 vi.mock("resend", () => {
   return {
-    Resend: vi.fn().mockImplementation(() => ({
-      emails: { send: sendMock },
-    })),
+    // Must be a real `function` (not an arrow) — notificationService does
+    // `new Resend(...)`, and an arrow-function mockImplementation throws
+    // "is not a constructor", which the constructor's own try/catch was
+    // silently swallowing, permanently disabling email sending for every
+    // test in this file regardless of what sendMock resolves to.
+    Resend: vi.fn().mockImplementation(function () {
+      return { emails: { send: sendMock } };
+    }),
   };
 });
 
@@ -67,6 +72,7 @@ describe("notificationService email honesty", () => {
     });
 
     expect(result.emailSent).toBe(false);
+    expect(sendMock).toHaveBeenCalledTimes(1);
   });
 
   it("reports emailSent:true only when Resend resolves a real message id with no error", async () => {
@@ -92,8 +98,8 @@ describe("notificationService email honesty", () => {
       title: "Test",
       message: "Test message",
     });
-    console.log("DEBUG result", JSON.stringify(result), "sendMock calls", sendMock.mock.calls.length);
 
     expect(result.emailSent).toBe(true);
+    expect(sendMock).toHaveBeenCalledTimes(1);
   });
 });
