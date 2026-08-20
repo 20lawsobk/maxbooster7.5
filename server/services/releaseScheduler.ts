@@ -358,10 +358,12 @@ class ReleaseScheduler {
             releaseId: request.releaseId,
             actionType: "platform_publish",
             scheduledFor: schedule.effectiveDate,
-            timezone:
-              PLATFORM_WINDOWS[schedule?.platform.toLowerCase()]?.timezone ||
-              "UTC",
-            platforms: { platform: schedule.platform },
+            metadata: {
+              platform: schedule.platform,
+              timezone:
+                PLATFORM_WINDOWS[schedule?.platform.toLowerCase()]?.timezone ||
+                "UTC",
+            },
             status: "pending",
           });
         }
