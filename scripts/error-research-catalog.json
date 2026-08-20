@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "unknownErrors": "report_only",
+    "autofixRequires": [
+      "stable classification",
+      "bounded side effect",
+      "observable verification",
+      "rollback or idempotency"
+    ],
+    "never": [
+      "cast to any to silence a type error",
+      "add non-null assertions without proving the invariant",
+      "retry payment or webhook side effects without an idempotency key",
+      "fall back to a second data store silently",
+      "claim success from an HTTP status alone"
+    ]
+  },
+  "categoryMap": {
+    "queue": "bullmq",
+    "database": "postgres",
+    "data_integrity": "concurrency",
+    "performance": "memory",
+    "security": "auth-csrf",
+    "auth": "auth-csrf",
+    "rate_limiting": "http-network",
+    "external": "http-network",
+    "config": "deployment",
+    "type_safety": "typescript",
+    "payments": "stripe",
+    "media": "storage",
+    "realtime": "http-network",
+    "session": "auth-csrf",
+    "notification": "http-network",
+    "cache": "pdim-redis",
+    "validation": "typescript",
+    "scheduling": "bullmq"
+  },
+  "families": [
+    {
+      "id": "typescript",
+      "signals": ["TS1xxx", "TS2xxx", "TS6133", "TS2339", "TS2345", "TS2769"],
+      "prevention": "Run split server/client typechecks with fresh build metadata; preserve strict null and structural types.",
+      "safeAction": "Apply only position-verified, syntax-gated handlers for a known diagnostic; otherwise report the exact diagnostic.",
+      "verifyBy": "The same split typecheck reports zero diagnostics and the affected regression test passes."
+    },
+    {
+      "id": "eslint",
+      "signals": ["no-unused-expressions", "no-undef", "no-useless-assignment", "no-div-zero"],
+      "prevention": "Run ESLint on the same source set used by deployment; keep generated/vendor trees explicitly configured.",
+      "safeAction": "Run ESLint's own --fix, then stop for non-fixable rules; never rewrite code with a blanket regex.",
+      "verifyBy": "A fresh ESLint run exits zero and the changed file passes syntax/type checks."
+    },
+    {
+      "id": "syntax",
+      "signals": ["TS1005", "TS1109", "TS1128", "Unexpected token", "parse error"],
+      "prevention": "Run the authoritative parser before semantic or mechanical fixes.",
+      "safeAction": "Stop downstream autofix, report the parser location, and restore the last syntax-safe snapshot.",
+      "verifyBy": "The project parser/esbuild syntax gate passes for every touched file."
+    },
+    {
+      "id": "node-runtime",
+      "signals": ["TypeError", "ReferenceError", "Cannot read properties of", "is not a function"],
+      "prevention": "Validate nullable inputs at boundaries and preserve consumer-facing object shapes.",
+      "safeAction": "Classify from the stack and input shape; restart only if the process is unhealthy, otherwise escalate unknown variants.",
+      "verifyBy": "The original request or worker job completes and no repeat error occurs within the observation window."
+    },
+    {
+      "id": "postgres",
+      "signals": ["23505", "23503", "column does not exist", "relation does not exist", "connection refused"],
+      "prevention": "Check the live application schema and use idempotent transactions/constraints.",
+      "safeAction": "Retry only connection failures with bounded backoff; never manufacture columns, drop constraints, or retry a duplicate mutation.",
+      "verifyBy": "A live schema query and the affected transaction/regression test both pass."
+    },
+    {
+      "id": "pdim-redis",
+      "signals": ["WRONGPASS", "ZCOUNT", "ZPOPMIN", "HMGET", "PDIM", "fetch failed"],
+      "prevention": "Use the single configured PDIM endpoint for both Redis/state and platform storage; validate command/result shapes.",
+      "safeAction": "Probe the real endpoint, apply bounded circuit recovery, and escalate persistent command failures; never switch silently to an unrelated store.",
+      "verifyBy": "PING plus the affected command succeeds against the configured endpoint, followed by a real application operation."
+    },
+    {
+      "id": "bullmq",
+      "signals": ["Missing lock for job", "stalled", "moveToFinished", "QueueScheduler"],
+      "prevention": "Use idempotent handlers and align lock/visibility timeouts with the real queue round-trip.",
+      "safeAction": "Acknowledge only documented self-healing lock races; reset bounded executor state, never duplicate a side effect.",
+      "verifyBy": "The job's own durable side effect exists exactly once and the queue returns to healthy processing."
+    },
+    {
+      "id": "http-network",
+      "signals": ["ECONNREFUSED", "ETIMEDOUT", "fetch failed", "ENOTFOUND", "502", "503", "504"],
+      "prevention": "Use bounded timeouts, circuit breakers, retry budgets, and health-aware dependency routing.",
+      "safeAction": "Retry idempotent reads with bounded exponential backoff; open the circuit and report degraded for persistent failures.",
+      "verifyBy": "The dependency health probe and the original idempotent operation succeed after recovery."
+    },
+    {
+      "id": "auth-csrf",
+      "signals": ["401", "403", "CSRF", "Missing CSRF cookie", "invalid session", "WRONGPASS"],
+      "prevention": "Verify credentials at the boundary, use double-submit CSRF, and keep authorization separate from authentication.",
+      "safeAction": "Reject and audit; never refresh, weaken, or bypass credentials automatically.",
+      "verifyBy": "Valid and invalid credential tests preserve the expected status and no secret appears in the response/log."
+    },
+    {
+      "id": "stripe",
+      "signals": ["StripeSignatureVerificationError", "payment_intent", "subscription", "webhook", "idempotency"],
+      "prevention": "Verify signatures, persist event IDs, and make ledger mutations idempotent.",
+      "safeAction": "Acknowledge valid non-applicable events; retry only transient provider failures; never repeat a charge or ledger booking blindly.",
+      "verifyBy": "The event is recorded once and the customer/ledger state matches the provider event."
+    },
+    {
+      "id": "storage",
+      "signals": ["ENOENT", "EACCES", "upload", "download", "soft delete", "storage key"],
+      "prevention": "Atomically claim metadata, enforce owner checks, and make delete/restore idempotent.",
+      "safeAction": "Retry only transient transport errors; preserve metadata on uncertain writes and report reconciliation required.",
+      "verifyBy": "A real upload/read/delete/restore round trip verifies bytes, ownership, and database tracking."
+    },
+    {
+      "id": "concurrency",
+      "signals": ["deadlock", "lock timeout", "race", "duplicate", "already processed"],
+      "prevention": "Use unique keys, transactional claims, bounded locks, and deterministic ownership.",
+      "safeAction": "Retry only a proven transient conflict with jitter; never repeat an external side effect without an idempotency key.",
+      "verifyBy": "A concurrent regression test proves one durable winner and no lost/duplicated side effect."
+    },
+    {
+      "id": "memory",
+      "signals": ["heap out of memory", "exit 137", "allocation failed", "RSS", "GC"],
+      "prevention": "Run memory-heavy checks serially, cap worker fan-out, and monitor RSS/heap separately.",
+      "safeAction": "Reduce bounded concurrency or restart a known-leaking worker; never mark a killed check as passed.",
+      "verifyBy": "The same command completes with exit zero under the documented resource budget."
+    },
+    {
+      "id": "deployment",
+      "signals": ["build artifact missing", "node not found", "capsule", "port", "readiness", "workflow"],
+      "prevention": "Use one canonical build/start path and verify artifacts, ports, dependencies, and readiness.",
+      "safeAction": "Stop promotion on missing artifacts or degraded readiness; do not fall back to stale build outputs.",
+      "verifyBy": "A clean build starts through the canonical launcher and settled readiness is healthy."
+    }
+  ]
+}

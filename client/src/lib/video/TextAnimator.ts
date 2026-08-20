@@ -411,7 +411,7 @@ export class TextAnimator {
     const colors = style?.gradientColors ?? [];
     for (let i = 0; i < colors.length; i++) {
       gradient?.addColorStop(
-        colors.length > 1 ? i / (colors.length - 1) : 0,
+        colors.length > 1 ? i / ((colors.length - 1 || 1)) : 0,
         colors[i],
       );
     }

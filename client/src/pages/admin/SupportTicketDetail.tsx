@@ -74,7 +74,6 @@ export default function SupportTicketDetail() {
     if (user && ticketId) {
       fetchTicket();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, ticketId]);
 
   const sendReply = async () => {
