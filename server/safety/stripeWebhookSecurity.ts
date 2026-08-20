@@ -11,6 +11,7 @@ import Stripe from "stripe";
 import { logger } from "../logger.js";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 import { env } from "../config/env.js";
+import { audit } from "./auditLogger";
 
 // Audit log for webhook events
 interface WebhookAuditEntry {
@@ -280,6 +281,7 @@ export async function handleWebhookEvent(
       logger.warn(
         `[Stripe Webhook] Handler failed for ${event?.type} (${event?.id}): ${result?.message}`,
       );
+      await recordWebhookFailureAudit(event, result?.message);
     }
 
     return result;
@@ -289,6 +291,50 @@ export async function handleWebhookEvent(
       { err: error },
       `[Stripe Webhook] Handler error for ${event?.type} (${event?.id}):`,
     );
-    return { success: false, message: (error as Error).message };
+    const message = (error as Error).message;
+    await recordWebhookFailureAudit(event, message);
+    return { success: false, message };
+  }
+}
+
+/**
+ * Persist a critical, queryable audit record when a webhook's critical DB
+ * write could not be confirmed — so operators can find and fix it by hand
+ * even after Stripe's retry window (~3 days) exhausts, without needing raw
+ * log access. Best-effort: never throws back into the webhook flow.
+ */
+async function recordWebhookFailureAudit(
+  event: Stripe.Event,
+  message: string | undefined,
+): Promise<void> {
+  try {
+    const obj = event?.data?.object as Record<string, unknown> | undefined;
+    const customerRef =
+      (typeof obj?.customer === "string" ? obj?.customer : undefined) ||
+      (obj?.metadata as Record<string, unknown> | undefined)?.userId ||
+      (obj?.metadata as Record<string, unknown> | undefined)?.buyerId ||
+      undefined;
+
+    await audit({
+      category: "payment",
+      severity: "critical",
+      action: "stripe_webhook_processing_failed",
+      userId: typeof customerRef === "string" ? customerRef : undefined,
+      targetId: event?.id,
+      targetType: "stripe_webhook_event",
+      details: {
+        eventType: event?.type,
+        eventId: event?.id,
+        customerRef: customerRef ?? null,
+        message: message ?? null,
+      },
+      success: false,
+      errorMessage: message,
+    });
+  } catch (auditError) {
+    logger.warn(
+      { err: auditError },
+      "[Stripe Webhook] Failed to record webhook-failure audit entry:",
+    );
   }
 }

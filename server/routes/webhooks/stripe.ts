@@ -26,6 +26,7 @@ import {
 import { eq, and, sql } from "drizzle-orm";
 import { notificationService } from "../../services/notificationService.js";
 import { dunningService } from "../../services/dunningService.js";
+import { instantPayoutService } from "../../services/instantPayoutService.js";
 import { env } from "../../config/env.js";
 
 const router = Router();
@@ -41,6 +42,8 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
     (session?.payment_intent as string) || session?.id,
     true,
   );
+
+  const failures: string[] = [];
 
   const {
     beatId,
@@ -88,32 +91,52 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
       }
     } catch (orderError) {
       logger.warn(orderError, "[Stripe] Failed to create order record:");
+      failures.push(`order creation for beat ${beatId} (payment ${session?.id})`);
     }
   }
 
   const { storefrontId, promotionId } = session?.metadata || {};
   if (storefrontId) {
     try {
-      await db
+      const updatedStorefrontOrders = await db
         .update(storefrontOrders)
         .set({ status: "completed" })
-        .where(eq(storefrontOrders.stripeSessionId, session?.id));
-      logger.info(
-        `[Stripe] Storefront orders marked completed for session ${session?.id}`,
-      );
+        .where(eq(storefrontOrders.stripeSessionId, session?.id))
+        .returning({ id: storefrontOrders.id });
+
+      if (updatedStorefrontOrders?.length > 0) {
+        logger.info(
+          `[Stripe] Storefront orders marked completed for session ${session?.id}`,
+        );
+      } else {
+        logger.warn(
+          `[Stripe] No storefront order found for session ${session?.id}`,
+        );
+        failures.push(`storefront order update for session ${session?.id}`);
+      }
 
       if (promotionId) {
-        await db
+        const updatedPromotions = await db
           .update(bogoPromotions)
           .set({ redemptionCount: sql`${bogoPromotions.redemptionCount} + 1` })
-          .where(eq(bogoPromotions.id, promotionId));
-        logger.info(
-          `[Stripe] BOGO promotion ${promotionId} redemption count incremented`,
-        );
+          .where(eq(bogoPromotions.id, promotionId))
+          .returning({ id: bogoPromotions.id });
+
+        if (updatedPromotions?.length > 0) {
+          logger.info(
+            `[Stripe] BOGO promotion ${promotionId} redemption count incremented`,
+          );
+        } else {
+          logger.warn(
+            `[Stripe] BOGO promotion ${promotionId} not found for redemption increment`,
+          );
+          failures.push(`BOGO promotion redemption for ${promotionId}`);
+        }
       }
     } catch (storefrontError) {
       logger.warn({ detail: storefrontError }, "[Stripe] Failed to update storefront orders:",
       );
+      failures.push(`storefront order update for session ${session?.id}`);
     }
   }
 
@@ -163,6 +186,9 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
     } catch (membershipError) {
       logger.warn({ detail: membershipError }, "[Stripe] Failed to activate storefront membership:",
       );
+      failures.push(
+        `membership activation for tier=${memberTierId}, customer=${memberCustomerId}`,
+      );
     }
   }
 
@@ -195,13 +221,26 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
         logger.info(
           `[Stripe] checkout.session.completed: user ${updated[0].id} tier set to ${planId}`,
         );
+      } else {
+        logger.warn(
+          `[Stripe] checkout.session.completed: no user found for customer ${checkoutCusId} to set tier ${planId}`,
+        );
+        failures.push(`tier update for customer ${checkoutCusId}`);
       }
     } catch (checkoutErr) {
       logger.warn(
         { err: checkoutErr },
         "[Stripe] Failed to update tier on checkout.session.completed:",
       );
+      failures.push(`tier update for customer ${checkoutCusId}`);
     }
+  }
+
+  if (failures.length > 0) {
+    return {
+      success: false,
+      message: `Checkout session ${session?.id} processing incomplete: ${failures.join("; ")}`,
+    };
   }
 
   return { success: true, message: "Checkout session processed" };
@@ -239,19 +278,26 @@ registerWebhookHandler("customer.subscription.created", async (event) => {
       logger.info(
         `[Stripe] User ${updated[0].id} subscription created: tier=${tier}, status=${subscription?.status}`,
       );
-    } else {
-      logger.warn(
-        `[Stripe] No user found for Stripe customer ${customerId} on subscription.created`,
-      );
+      return { success: true, message: "Subscription created" };
     }
+
+    logger.warn(
+      `[Stripe] No user found for Stripe customer ${customerId} on subscription.created`,
+    );
+    return {
+      success: false,
+      message: `No user found for Stripe customer ${customerId} on subscription.created`,
+    };
   } catch (err) {
     logger.warn(
       { err: err },
       "[Stripe] Failed to update user on subscription.created:",
     );
+    return {
+      success: false,
+      message: `Failed to update user on subscription.created: ${(err as Error)?.message || err}`,
+    };
   }
-
-  return { success: true, message: "Subscription created" };
 });
 
 registerWebhookHandler("customer.subscription.updated", async (event) => {
@@ -302,19 +348,26 @@ registerWebhookHandler("customer.subscription.updated", async (event) => {
             .catch(() => {});
         }
       }
-    } else {
-      logger.warn(
-        `[Stripe] No user found for Stripe customer ${customerId} on subscription.updated`,
-      );
+      return { success: true, message: "Subscription updated" };
     }
+
+    logger.warn(
+      `[Stripe] No user found for Stripe customer ${customerId} on subscription.updated`,
+    );
+    return {
+      success: false,
+      message: `No user found for Stripe customer ${customerId} on subscription.updated`,
+    };
   } catch (err) {
     logger.warn(
       { err: err },
       "[Stripe] Failed to update user on subscription.updated:",
     );
+    return {
+      success: false,
+      message: `Failed to update user on subscription.updated: ${(err as Error)?.message || err}`,
+    };
   }
-
-  return { success: true, message: "Subscription updated" };
 });
 
 registerWebhookHandler("customer.subscription.deleted", async (event) => {
@@ -343,19 +396,26 @@ registerWebhookHandler("customer.subscription.deleted", async (event) => {
       logger.info(
         `[Stripe] User ${updated[0].id} subscription canceled, downgraded to free`,
       );
-    } else {
-      logger.warn(
-        `[Stripe] No user found for Stripe customer ${customerId} on subscription.deleted`,
-      );
+      return { success: true, message: "Subscription canceled" };
     }
+
+    logger.warn(
+      `[Stripe] No user found for Stripe customer ${customerId} on subscription.deleted`,
+    );
+    return {
+      success: false,
+      message: `No user found for Stripe customer ${customerId} on subscription.deleted`,
+    };
   } catch (err) {
     logger.warn(
       { err: err },
       "[Stripe] Failed to update user on subscription.deleted:",
     );
+    return {
+      success: false,
+      message: `Failed to update user on subscription.deleted: ${(err as Error)?.message || err}`,
+    };
   }
-
-  return { success: true, message: "Subscription canceled" };
 });
 
 registerWebhookHandler("invoice.paid", async (event) => {
@@ -372,9 +432,19 @@ registerWebhookHandler("invoice.paid", async (event) => {
   );
 
   try {
-    await dunningService?.resolveSequence(invoice?.id, "paid");
+    const resolved = await dunningService?.resolveSequence(invoice?.id, "paid");
+    if (resolved === false) {
+      return {
+        success: false,
+        message: `Failed to resolve dunning sequence for invoice ${invoice?.id}`,
+      };
+    }
   } catch (err) {
     logger.warn({ err: err }, "[Stripe] Failed to resolve dunning sequence:");
+    return {
+      success: false,
+      message: `Failed to resolve dunning sequence for invoice ${invoice?.id}: ${(err as Error)?.message || err}`,
+    };
   }
 
   return { success: true, message: "Invoice paid" };
@@ -397,40 +467,80 @@ registerWebhookHandler("invoice.payment_failed", async (event) => {
       typeof invoice?.customer === "string"
         ? invoice?.customer
         : (invoice?.customer as unknown as Record<string, unknown>)?.id;
-    if (customerId) {
-      const found = await db
-        .select({ id: users.id, email: users.email })
-        .from(users)
-        .where(eq(users.stripeCustomerId, customerId))
-        .limit(1);
-      if (found?.length > 0) {
-        const amount = invoice?.amount_due / 100;
-        const reason = (invoice as unknown as Record<string, unknown>).last_payment_error
-          ?.message;
-        await notificationService?.sendPaymentFailedNotification(
-          found[0].id,
-          amount,
-          reason,
-        );
-        await notificationService?.sendAdminPaymentIssueNotification(
-          found[0].email!,
-          found[0].id,
-          amount,
-          reason,
-        );
 
-        try {
-          await dunningService?.startSequence(found[0].id, invoice?.id);
-        } catch (dunningErr) {
-          logger.warn(dunningErr, "[Stripe] Failed to start dunning sequence:");
-        }
-      }
+    if (!customerId) {
+      logger.warn(
+        `[Stripe] invoice.payment_failed has no customer id: ${invoice?.id}`,
+      );
+      return {
+        success: false,
+        message: `invoice.payment_failed has no customer id for invoice ${invoice?.id}`,
+      };
+    }
+
+    const found = await db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(eq(users.stripeCustomerId, customerId))
+      .limit(1);
+
+    if (!found?.length) {
+      logger.warn(
+        `[Stripe] invoice.payment_failed: no user found for Stripe customer ${customerId}`,
+      );
+      return {
+        success: false,
+        message: `No user found for Stripe customer ${customerId} on invoice.payment_failed`,
+      };
+    }
+
+    const amount = invoice?.amount_due / 100;
+    const reason = (invoice as unknown as Record<string, unknown>).last_payment_error
+      ?.message;
+
+    // Notifications are best-effort — a delivery failure shouldn't mask
+    // whether the critical write (the dunning sequence row) succeeded.
+    await notificationService
+      ?.sendPaymentFailedNotification(found[0].id, amount, reason)
+      .catch((notifyErr: unknown) =>
+        logger.warn(
+          { err: notifyErr },
+          "[Stripe] Failed to send payment-failed user notification:",
+        ),
+      );
+    await notificationService
+      ?.sendAdminPaymentIssueNotification(
+        found[0].email!,
+        found[0].id,
+        amount,
+        reason,
+      )
+      .catch((notifyErr: unknown) =>
+        logger.warn(
+          { err: notifyErr },
+          "[Stripe] Failed to send payment-failed admin notification:",
+        ),
+      );
+
+    const started = await dunningService?.startSequence(
+      found[0].id,
+      invoice?.id,
+    );
+    if (started === false) {
+      return {
+        success: false,
+        message: `Failed to start dunning sequence for invoice ${invoice?.id}`,
+      };
     }
   } catch (err) {
     logger.warn(
       { err: err },
-      "[Stripe] Failed to send payment failure notification:",
+      "[Stripe] Failed to process payment failure:",
     );
+    return {
+      success: false,
+      message: `Failed to process invoice.payment_failed for invoice ${invoice?.id}: ${(err as Error)?.message || err}`,
+    };
   }
 
   return { success: true, message: "Payment failure recorded" };
@@ -478,24 +588,77 @@ registerWebhookHandler("payment_intent.succeeded", async (event) => {
     );
   } catch (err) {
     logger.warn(`[Stripe] payment_intent.succeeded audit error: ${err}`);
+    return {
+      success: false,
+      message: `payment_intent.succeeded processing failed for ${paymentIntent?.id}: ${(err as Error)?.message || err}`,
+    };
   }
 
   return { success: true, message: "Payment intent succeeded and audited" };
 });
 
+// payment_intent.payment_failed has no order/subscription row of its own to
+// update (that lives in checkout.session.completed / invoice.payment_failed),
+// but it must still confirm the same kind of critical write its sibling
+// payment_intent.succeeded handler makes: a persisted payment audit record.
 registerWebhookHandler("payment_intent.payment_failed", async (event) => {
   const paymentIntent = event?.data.object as Stripe.PaymentIntent;
-  logger.warn(`[Stripe] Payment failed: ${paymentIntent?.id}`);
+  const failureReason =
+    (paymentIntent as unknown as Record<string, any>)?.last_payment_error
+      ?.message || "Payment failed";
+  logger.warn(
+    `[Stripe] Payment failed: ${paymentIntent?.id} — ${failureReason}`,
+  );
+
+  try {
+    await auditPayment.charge(
+      paymentIntent?.metadata?.userId ||
+        paymentIntent?.metadata?.buyerId ||
+        "unknown",
+      paymentIntent?.amount || 0,
+      paymentIntent?.id,
+      false,
+      failureReason,
+    );
+  } catch (err) {
+    logger.warn(
+      { err },
+      "[Stripe] Failed to record payment_intent.payment_failed audit:",
+    );
+    return {
+      success: false,
+      message: `Failed to record payment failure audit for ${paymentIntent?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+
   return { success: true, message: "Payment failure recorded" };
 });
 
-// Stripe Connect webhook handlers for payouts
+// Stripe Connect webhook handlers for payouts. Each one confirms its critical
+// write by delegating to instantPayoutService, which persists the matching
+// instant_payouts/users row (or, for account.application.deauthorized,
+// clears the stored Connect account id) and confirms every update actually
+// matched a row via `.returning()`. Every transfer/payout/account this
+// platform's Connect setup produces is tagged with an internal id at
+// creation time, so an event that cannot be matched to a local record is a
+// reconciliation gap, not a legitimate no-op — instantPayoutService throws
+// for that case (and for real DB errors) instead of resolving silently, and
+// these handlers turn any throw into success:false so Stripe retries.
 registerWebhookHandler("account.updated", async (event) => {
   const account = event?.data.object as Stripe.Account;
   logger.info(
     `[Stripe Connect] Account updated: ${account?.id} - Charges enabled: ${account?.charges_enabled}`,
   );
-  return { success: true, message: "Account updated" };
+  try {
+    await instantPayoutService.handleAccountWebhook(event);
+  } catch (err) {
+    logger.warn({ err }, "[Stripe Connect] Failed to process account.updated:");
+    return {
+      success: false,
+      message: `Failed to process account.updated for ${account?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+  return { success: true, message: "Account update processed" };
 });
 
 registerWebhookHandler("transfer.created", async (event) => {
@@ -503,7 +666,19 @@ registerWebhookHandler("transfer.created", async (event) => {
   logger.info(
     `[Stripe Connect] Transfer created: ${transfer?.id} - Amount: $${(transfer?.amount / 100).toFixed(2)}`,
   );
-  return { success: true, message: "Transfer created" };
+  try {
+    await instantPayoutService.handleTransferWebhook(event);
+  } catch (err) {
+    logger.warn(
+      { err },
+      "[Stripe Connect] Failed to process transfer.created:",
+    );
+    return {
+      success: false,
+      message: `Failed to process transfer.created for ${transfer?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+  return { success: true, message: "Transfer processed" };
 });
 
 registerWebhookHandler("payout.paid", async (event) => {
@@ -511,7 +686,16 @@ registerWebhookHandler("payout.paid", async (event) => {
   logger.info(
     `[Stripe Connect] Payout completed: ${payout?.id} - Amount: $${(payout?.amount / 100).toFixed(2)}`,
   );
-  return { success: true, message: "Payout completed" };
+  try {
+    await instantPayoutService.handlePayoutWebhook(event);
+  } catch (err) {
+    logger.warn({ err }, "[Stripe Connect] Failed to process payout.paid:");
+    return {
+      success: false,
+      message: `Failed to process payout.paid for ${payout?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+  return { success: true, message: "Payout completion processed" };
 });
 
 registerWebhookHandler("payout.failed", async (event) => {
@@ -519,7 +703,16 @@ registerWebhookHandler("payout.failed", async (event) => {
   logger.warn(
     `[Stripe Connect] Payout failed: ${payout?.id} - Reason: ${payout?.failure_message}`,
   );
-  return { success: true, message: "Payout failure recorded" };
+  try {
+    await instantPayoutService.handlePayoutWebhook(event);
+  } catch (err) {
+    logger.warn({ err }, "[Stripe Connect] Failed to process payout.failed:");
+    return {
+      success: false,
+      message: `Failed to process payout.failed for ${payout?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+  return { success: true, message: "Payout failure processed" };
 });
 
 /**

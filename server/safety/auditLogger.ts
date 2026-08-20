@@ -122,6 +122,56 @@ export async function audit(
 }
 
 /**
+ * Log an audit event and confirm it is durably persisted before resolving.
+ *
+ * audit() above is intentionally best-effort: it buffers and flushes on a
+ * timer (or every 10 events) so hot paths never block on a DB round trip,
+ * but that means a crash between the call and the next flush silently loses
+ * the entry — even for "critical" severity, a failed flush is caught and
+ * re-queued rather than surfaced to the caller.
+ *
+ * Some call sites can't accept that: when an audit row is the ONLY record
+ * that an event was ever reconciled (e.g. a webhook handler's legitimate
+ * no-op branch, where no other table gets a write), reporting success back
+ * to an external caller before that row is confirmed persisted means a
+ * crash in the gap loses the event's only trace while the external system
+ * believes it was handled. Use this instead of audit() there: it performs
+ * the insert immediately and rejects if it fails, so the caller can
+ * propagate a retryable failure instead of a silently lost trace.
+ */
+export async function auditConfirmed(
+  entry: Omit<AuditEntry, "id" | "timestamp">,
+): Promise<string> {
+  const fullEntry: AuditEntry = {
+    id: crypto.randomUUID(),
+    timestamp: new Date(),
+    ...entry,
+  };
+
+  const logLevel =
+    entry?.severity === "critical"
+      ? "error"
+      : entry?.severity === "warning"
+        ? "warn"
+        : "info";
+
+  logger[logLevel](
+    `[AUDIT] [${entry?.category}] ${entry?.action} - ${entry?.success ? "SUCCESS" : "FAILED"}`,
+    {
+      userId: entry.userId,
+      targetId: entry.targetId,
+      details: entry.details,
+    },
+  );
+
+  // Deliberately no try/catch, no buffering: a failure here must reject
+  // this call so the caller knows the trace was NOT persisted.
+  await persistAuditEntry(fullEntry);
+
+  return fullEntry?.id;
+}
+
+/**
  * Write critical event to write-ahead log
  */
 async function writeToWAL(entry: AuditEntry): Promise<void> {
@@ -131,6 +181,70 @@ async function writeToWAL(entry: AuditEntry): Promise<void> {
   } catch (error) {
     logger.warn({ err: error }, "[Audit] Failed to write to WAL:");
   }
+}
+
+/**
+ * Insert a single audit entry into the canonical audit_logs table
+ * (shared/schema.ts). Maps the logger's richer entry shape onto it:
+ *   ipAddress -> ip, category -> resource, severity -> risk,
+ *   success -> result; targetId/targetType/errorMessage/walId fold
+ *   into details for full fidelity. Idempotency on retry is enforced
+ *   via the wal_id key inside details.
+ *
+ * Throws if the insert fails — this is the single source of truth for
+ * "did this entry actually persist," used both by the best-effort
+ * buffered flush (which catches and re-queues on failure) and by
+ * auditConfirmed() (which does not catch, so a caller that needs a
+ * durable write before proceeding gets a real rejection instead of a
+ * silently dropped trace).
+ */
+async function persistAuditEntry(entry: AuditEntry): Promise<void> {
+  const risk =
+    entry?.severity === "critical"
+      ? "critical"
+      : entry?.severity === "warning"
+        ? "medium"
+        : "low";
+  // audit_logs.user_id has an FK to users.id — a non-UUID placeholder
+  // like "unknown" (used by callers that couldn't resolve a real user,
+  // e.g. webhook handlers) would violate that constraint and silently
+  // drop the whole entry. Fold it into details instead of nulling it
+  // out blindly, so the caller's intent isn't lost.
+  const UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const safeUserId =
+    entry?.userId && UUID_RE.test(entry.userId) ? entry.userId : null;
+  const details = JSON.stringify({
+    ...(entry?.details ?? {}),
+    wal_id: entry?.id ?? null,
+    category: entry?.category ?? null,
+    severity: entry?.severity ?? null,
+    target_id: entry?.targetId ?? null,
+    target_type: entry?.targetType ?? null,
+    error_message: entry?.errorMessage ?? null,
+    ...(entry?.userId && !safeUserId ? { raw_user_id: entry.userId } : {}),
+  });
+
+  await db.execute(sql`
+    INSERT INTO audit_logs (
+      timestamp, user_id, ip, user_agent, action,
+      resource, result, risk, details
+    )
+    SELECT
+      ${entry?.timestamp ?? new Date().toISOString()},
+      ${safeUserId},
+      ${entry?.ipAddress ?? "unknown"},
+      ${entry?.userAgent ?? null},
+      ${entry?.action ?? "unknown"},
+      ${entry?.targetType ?? entry?.category ?? "system"},
+      ${entry?.success ? "success" : "failure"},
+      ${risk},
+      ${details}::jsonb
+    WHERE NOT EXISTS (
+      SELECT 1 FROM audit_logs
+      WHERE details->>'wal_id' = ${entry?.id ?? ""}
+    )
+  `);
 }
 
 /**
@@ -146,59 +260,7 @@ async function flushWAL(): Promise<void> {
     // Batch insert to database
     for (const entry of entries) {
       try {
-        // Canonical audit_logs contract lives in shared/schema.ts (auditLogs).
-        // Map the logger's richer entry shape onto it:
-        //   ipAddress -> ip, category -> resource, severity -> risk,
-        //   success -> result; targetId/targetType/errorMessage/walId fold
-        //   into details for full fidelity. Idempotency on WAL retry is
-        //   enforced via the wal_id key inside details.
-        const risk =
-          entry?.severity === "critical"
-            ? "critical"
-            : entry?.severity === "warning"
-              ? "medium"
-              : "low";
-        // audit_logs.user_id has an FK to users.id — a non-UUID placeholder
-        // like "unknown" (used by callers that couldn't resolve a real user,
-        // e.g. webhook handlers) would violate that constraint and silently
-        // drop the whole entry. Fold it into details instead of nulling it
-        // out blindly, so the caller's intent isn't lost.
-        const UUID_RE =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const safeUserId =
-          entry?.userId && UUID_RE.test(entry.userId) ? entry.userId : null;
-        const details = JSON.stringify({
-          ...(entry?.details ?? {}),
-          wal_id: entry?.id ?? null,
-          category: entry?.category ?? null,
-          severity: entry?.severity ?? null,
-          target_id: entry?.targetId ?? null,
-          target_type: entry?.targetType ?? null,
-          error_message: entry?.errorMessage ?? null,
-          ...(entry?.userId && !safeUserId
-            ? { raw_user_id: entry.userId }
-            : {}),
-        });
-        await db.execute(sql`
-          INSERT INTO audit_logs (
-            timestamp, user_id, ip, user_agent, action,
-            resource, result, risk, details
-          )
-          SELECT
-            ${entry?.timestamp ?? new Date().toISOString()},
-            ${safeUserId},
-            ${entry?.ipAddress ?? "unknown"},
-            ${entry?.userAgent ?? null},
-            ${entry?.action ?? "unknown"},
-            ${entry?.targetType ?? entry?.category ?? "system"},
-            ${entry?.success ? "success" : "failure"},
-            ${risk},
-            ${details}::jsonb
-          WHERE NOT EXISTS (
-            SELECT 1 FROM audit_logs
-            WHERE details->>'wal_id' = ${entry?.id ?? ""}
-          )
-        `);
+        await persistAuditEntry(entry);
 
         // Remove from WAL if successfully persisted
         removeFromWAL(entry?.id);

@@ -8,7 +8,7 @@
  * depend on the periodic flush timer.
  */
 import { describe, it, expect } from "vitest";
-import { audit } from "../server/safety/auditLogger";
+import { audit, auditConfirmed } from "../server/safety/auditLogger";
 import { db } from "../server/db";
 import { sql } from "drizzle-orm";
 
@@ -60,5 +60,55 @@ describe("Audit log persistence (canonical contract)", () => {
 
     // Cleanup
     await db.execute(sql`DELETE FROM audit_logs WHERE action = ${marker}`);
+  });
+
+  it("auditConfirmed() persists the row synchronously — no poll needed — before it resolves", async () => {
+    const marker = `audit_confirmed_test_${Date.now()}`;
+
+    const walId = await auditConfirmed({
+      category: "payment",
+      severity: "info",
+      action: marker,
+      targetId: "tr_confirmed_123",
+      targetType: "stripe_transfer",
+      success: true,
+      details: { probe: true },
+    });
+    expect(walId).toBeTruthy();
+
+    // Unlike audit() (buffered, needs the poll loop above), auditConfirmed()
+    // awaits the insert directly — the row must already exist the instant
+    // the call resolves, with no retry/poll required.
+    const res = await db.execute(
+      sql`SELECT * FROM audit_logs WHERE action = ${marker} LIMIT 1`,
+    );
+    const row = res?.rows?.[0] as Record<string, unknown> | undefined;
+
+    expect(row, "audit row must be durably persisted before auditConfirmed resolves").toBeTruthy();
+    expect(row!.result).toBe("success");
+    expect(row!.risk).toBe("low");
+    const details = row!.details as Record<string, unknown>;
+    expect(details.wal_id).toBe(walId);
+    expect(details.target_id).toBe("tr_confirmed_123");
+
+    // Cleanup
+    await db.execute(sql`DELETE FROM audit_logs WHERE action = ${marker}`);
+  });
+
+  it("auditConfirmed() rejects instead of resolving when the insert fails", async () => {
+    // A userId that looks like a UUID but references no real user would
+    // pass the safeUserId regex check but violate the FK constraint on
+    // audit_logs.user_id, giving us a genuine DB-level failure to assert
+    // against without mocking anything.
+    await expect(
+      auditConfirmed({
+        category: "payment",
+        severity: "info",
+        action: `audit_confirmed_fk_fail_${Date.now()}`,
+        userId: "00000000-0000-0000-0000-000000000000",
+        success: true,
+        details: {},
+      }),
+    ).rejects.toThrow();
   });
 });

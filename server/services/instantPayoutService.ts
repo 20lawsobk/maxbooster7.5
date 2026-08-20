@@ -5,6 +5,7 @@ import { users, instantPayouts, notifications, ledgerEntries, splitPayments } fr
 import { eq, and, sql, desc, gte, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { withLock } from "../lib/distributedLock.js";
+import { audit, auditConfirmed } from "../safety/auditLogger";
 
 // Initialize Stripe
 const stripe = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
@@ -1213,122 +1214,314 @@ export class InstantPayoutService {
   async handleTransferWebhook(event: Stripe.Event): Promise<void> {
     try {
       const transfer = event.data.object as Stripe.Transfer;
+      const metadata = ((transfer as any)?.metadata || {}) as Record<
+        string,
+        string | undefined
+      >;
+      const metadataPayoutId = metadata.payoutId;
+      const metadataSplitPaymentId = metadata.splitPaymentId;
 
-      // Find payout record by Stripe transfer ID
-      const [payoutRecord] = await db
-        .select()
-        .from(instantPayouts)
-        .where(eq(instantPayouts.stripePayoutId, transfer.id))
-        .limit(1);
-
-      if (!payoutRecord) {
-        logger.info({ detail: transfer.id }, "Payout record not found for transfer webhook:",
-        );
+      // Three distinct code paths create Stripe transfers on this platform's
+      // Connect account, each tagging metadata differently:
+      //   - requestInstantPayout()       -> metadata.payoutId
+      //   - createEnhancedSplitPayment() -> metadata.splitPaymentId
+      //   - createSplitPayment() (legacy)-> metadata.type="split_payment", no id, no local row at all
+      // Both id-carrying paths stamp their metadata BEFORE calling
+      // stripe.transfers.create(), so an id-based lookup has no
+      // create-vs-webhook race window; the matching stripe*Id column is only
+      // a fallback for older records.
+      let payoutRecord: any;
+      if (metadataPayoutId) {
+        [payoutRecord] = await db
+          .select()
+          .from(instantPayouts)
+          .where(eq(instantPayouts.id, metadataPayoutId))
+          .limit(1);
+      }
+      if (!payoutRecord && !metadataSplitPaymentId) {
+        [payoutRecord] = await db
+          .select()
+          .from(instantPayouts)
+          .where(eq(instantPayouts.stripePayoutId, transfer.id))
+          .limit(1);
+      }
+      if (payoutRecord) {
+        await this.reconcileInstantPayoutTransfer(event, transfer, payoutRecord);
         return;
       }
 
-      // Update status based on event type
-      let status = payoutRecord.status;
-      let processedAt = payoutRecord.processedAt;
-      let failureReason: string | null = null;
-
-      switch (event.type) {
-        case "transfer.created":
-          status = "in_transit";
-          logger.info({ value: transfer.id }, "Transfer created:");
-          break;
-
-        case "transfer.paid":
-          status = "completed";
-          processedAt = new Date();
-
-          // Send success notification
-          await db.insert(notifications).values({
-            userId: payoutRecord.userId,
-            type: "payout",
-            title: "Money Received!",
-            message: `Your payout of $${(payoutRecord.amountCents / 100).toFixed(2)} has been successfully transferred to your bank account.`,
-            metadata: {
-              payoutId: payoutRecord.id,
-              amount: payoutRecord.amountCents / 100,
-              transferId: transfer.id,
-            },
-          });
-          break;
-
-        case "transfer.failed":
-          status = "failed";
-          failureReason = (transfer as any).failure_message || "Transfer failed";
-
-          // Log transfer failure for audit (balance is calculated dynamically from orders/payouts tables)
-          logger.info({
-            userId: payoutRecord.userId,
-            amount: payoutRecord.amountCents / 100,
-            payoutId: payoutRecord.id,
-            transferId: transfer.id,
-            operation: "transfer_failed_balance_restored",
-          }, "Transfer failed - balance calculated dynamically");
-
-          // Send failure notification
-          await db.insert(notifications).values({
-            userId: payoutRecord.userId,
-            type: "payout",
-            title: "Payout Failed",
-            message: `Your payout of $${(payoutRecord.amountCents / 100).toFixed(2)} failed: ${failureReason}. The amount has been returned to your available balance. Please ensure your bank account is verified.`,
-            metadata: {
-              payoutId: payoutRecord.id,
-              error: failureReason,
-              transferId: transfer.id,
-            },
-          });
-          break;
-
-        case "transfer.reversed":
-          status = "refunded";
-
-          // Log transfer reversal for audit (balance is calculated dynamically from orders/payouts tables)
-          logger.info({
-            userId: payoutRecord.userId,
-            amount: payoutRecord.amountCents / 100,
-            payoutId: payoutRecord.id,
-            transferId: transfer.id,
-            operation: "transfer_reversed_balance_restored",
-          }, "Transfer reversed - balance calculated dynamically");
-
-          // Send notification
-          await db.insert(notifications).values({
-            userId: payoutRecord.userId,
-            type: "payout",
-            title: "Payout Reversed",
-            message: `Your payout of $${(payoutRecord.amountCents / 100).toFixed(2)} was reversed and the funds have been returned to your available balance.`,
-            metadata: {
-              payoutId: payoutRecord.id,
-              transferId: transfer.id,
-            },
-          });
-          break;
+      let splitRecord: any;
+      if (metadataSplitPaymentId) {
+        [splitRecord] = await db
+          .select()
+          .from(splitPayments)
+          .where(eq(splitPayments.id, metadataSplitPaymentId))
+          .limit(1);
+      }
+      if (!splitRecord && !metadataPayoutId) {
+        [splitRecord] = await db
+          .select()
+          .from(splitPayments)
+          .where(eq(splitPayments.stripeTransferId, transfer.id))
+          .limit(1);
+      }
+      if (splitRecord) {
+        await this.reconcileSplitPaymentTransfer(event, transfer, splitRecord);
+        return;
       }
 
-      // Log failure reason for audit (not stored in DB - column doesn't exist)
-      if (failureReason) {
-        logger.warn({
-          payoutId: payoutRecord.id,
-          transferId: transfer.id,
-          failureReason,
-        }, "Transfer webhook failure");
+      if (metadataPayoutId || metadataSplitPaymentId) {
+        // Metadata explicitly named a local record that both the id- and
+        // Stripe-id-based lookups failed to find — a genuine reconciliation
+        // gap, not a legitimate no-op.
+        throw new Error(
+          `No local record found for Stripe transfer ${transfer.id} (metadata.payoutId=${metadataPayoutId || "none"}, metadata.splitPaymentId=${metadataSplitPaymentId || "none"})`,
+        );
       }
 
-      // Update payout record
-      await db
-        .update(instantPayouts)
-        .set({
-          status,
-          processedAt,
-        })
-        .where(eq(instantPayouts.id, payoutRecord?.id));
+      // No id metadata at all: this is the legacy createSplitPayment() path
+      // (metadata.type="split_payment", no id) or any other transfer our
+      // code creates without a trackable local row. There is no record to
+      // reconcile by design, so this is a legitimate no-op — but it must
+      // still leave a persisted, auditable trace rather than silently doing
+      // nothing. No other table gets a write on this branch, so the audit
+      // row IS the entire record that this event was ever handled: use
+      // auditConfirmed (not audit) so we don't report success to Stripe
+      // until that row is actually confirmed durable.
+      await auditConfirmed({
+        category: "payment",
+        severity: "info",
+        action: "stripe_transfer_untracked_reconciled",
+        targetId: transfer.id,
+        targetType: "stripe_transfer",
+        details: {
+          eventType: event.type,
+          amountCents: transfer.amount,
+          currency: transfer.currency,
+          destination:
+            typeof transfer.destination === "string"
+              ? transfer.destination
+              : (transfer.destination as any)?.id,
+          metadata: transfer.metadata,
+        },
+        success: true,
+      });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error handling transfer webhook:");
       throw error;
+    }
+  }
+
+  /**
+   * Reconcile a Stripe transfer webhook against its instantPayouts record.
+   * Throws if the confirming update matches zero rows.
+   */
+  private async reconcileInstantPayoutTransfer(
+    event: Stripe.Event,
+    transfer: Stripe.Transfer,
+    payoutRecord: any,
+  ): Promise<void> {
+    // Update status based on event type
+    let status = payoutRecord.status;
+    let processedAt = payoutRecord.processedAt;
+    let failureReason: string | null = null;
+
+    switch (event.type) {
+      case "transfer.created":
+        status = "in_transit";
+        logger.info({ value: transfer.id }, "Transfer created:");
+        break;
+
+      case "transfer.paid":
+        status = "completed";
+        processedAt = new Date();
+
+        // Send success notification
+        await db.insert(notifications).values({
+          userId: payoutRecord.userId,
+          type: "payout",
+          title: "Money Received!",
+          message: `Your payout of $${(payoutRecord.amountCents / 100).toFixed(2)} has been successfully transferred to your bank account.`,
+          metadata: {
+            payoutId: payoutRecord.id,
+            amount: payoutRecord.amountCents / 100,
+            transferId: transfer.id,
+          },
+        });
+        break;
+
+      case "transfer.failed":
+        status = "failed";
+        failureReason = (transfer as any).failure_message || "Transfer failed";
+
+        // Log transfer failure for audit (balance is calculated dynamically from orders/payouts tables)
+        logger.info({
+          userId: payoutRecord.userId,
+          amount: payoutRecord.amountCents / 100,
+          payoutId: payoutRecord.id,
+          transferId: transfer.id,
+          operation: "transfer_failed_balance_restored",
+        }, "Transfer failed - balance calculated dynamically");
+
+        // Send failure notification
+        await db.insert(notifications).values({
+          userId: payoutRecord.userId,
+          type: "payout",
+          title: "Payout Failed",
+          message: `Your payout of $${(payoutRecord.amountCents / 100).toFixed(2)} failed: ${failureReason}. The amount has been returned to your available balance. Please ensure your bank account is verified.`,
+          metadata: {
+            payoutId: payoutRecord.id,
+            error: failureReason,
+            transferId: transfer.id,
+          },
+        });
+        break;
+
+      case "transfer.reversed":
+        status = "refunded";
+
+        // Log transfer reversal for audit (balance is calculated dynamically from orders/payouts tables)
+        logger.info({
+          userId: payoutRecord.userId,
+          amount: payoutRecord.amountCents / 100,
+          payoutId: payoutRecord.id,
+          transferId: transfer.id,
+          operation: "transfer_reversed_balance_restored",
+        }, "Transfer reversed - balance calculated dynamically");
+
+        // Send notification
+        await db.insert(notifications).values({
+          userId: payoutRecord.userId,
+          type: "payout",
+          title: "Payout Reversed",
+          message: `Your payout of $${(payoutRecord.amountCents / 100).toFixed(2)} was reversed and the funds have been returned to your available balance.`,
+          metadata: {
+            payoutId: payoutRecord.id,
+            transferId: transfer.id,
+          },
+        });
+        break;
+    }
+
+    // Log failure reason for audit (not stored in DB - column doesn't exist)
+    if (failureReason) {
+      logger.warn({
+        payoutId: payoutRecord.id,
+        transferId: transfer.id,
+        failureReason,
+      }, "Transfer webhook failure");
+    }
+
+    // Update payout record — confirm the write actually matched a row
+    // instead of assuming success just because nothing threw.
+    const updatedTransferPayout = await db
+      .update(instantPayouts)
+      .set({
+        status,
+        processedAt,
+      })
+      .where(eq(instantPayouts.id, payoutRecord?.id))
+      .returning({ id: instantPayouts.id });
+
+    if (updatedTransferPayout.length === 0) {
+      throw new Error(
+        `Transfer webhook update matched no rows for payout ${payoutRecord.id} (transfer ${transfer.id})`,
+      );
+    }
+  }
+
+  /**
+   * Reconcile a Stripe transfer webhook against its splitPayments record
+   * (createEnhancedSplitPayment). Throws if the confirming update matches
+   * zero rows.
+   */
+  private async reconcileSplitPaymentTransfer(
+    event: Stripe.Event,
+    transfer: Stripe.Transfer,
+    splitRecord: any,
+  ): Promise<void> {
+    let status = splitRecord.status;
+    let processedAt = splitRecord.processedAt;
+    let failureReason: string | null = splitRecord.failureReason ?? null;
+
+    switch (event.type) {
+      case "transfer.created":
+        // createEnhancedSplitPayment() already marks the row "completed"
+        // synchronously once stripe.transfers.create() resolves, so this is
+        // a confirming re-affirmation rather than a state transition —
+        // unless a later event already moved it to a terminal failure/refund
+        // state, which must not be clobbered.
+        if (status !== "failed" && status !== "refunded") {
+          status = "completed";
+        }
+        if (!processedAt) {
+          processedAt = new Date();
+        }
+        logger.info({ value: transfer.id }, "Split payment transfer created:");
+        break;
+
+      case "transfer.paid":
+        status = "completed";
+        processedAt = new Date();
+        break;
+
+      case "transfer.failed":
+        status = "failed";
+        failureReason = (transfer as any).failure_message || "Transfer failed";
+
+        await db.insert(notifications).values({
+          userId: splitRecord.collaboratorId || splitRecord.userId,
+          type: "payout",
+          title: "Split Payment Failed",
+          message: `Your split payment of $${(splitRecord.amountCents / 100).toFixed(2)} failed: ${failureReason}.`,
+          metadata: {
+            splitPaymentId: splitRecord.id,
+            orderId: splitRecord.orderId,
+            error: failureReason,
+            transferId: transfer.id,
+          },
+        });
+        break;
+
+      case "transfer.reversed":
+        status = "refunded";
+
+        await db.insert(notifications).values({
+          userId: splitRecord.collaboratorId || splitRecord.userId,
+          type: "payout",
+          title: "Split Payment Reversed",
+          message: `Your split payment of $${(splitRecord.amountCents / 100).toFixed(2)} was reversed.`,
+          metadata: {
+            splitPaymentId: splitRecord.id,
+            orderId: splitRecord.orderId,
+            transferId: transfer.id,
+          },
+        });
+        break;
+    }
+
+    if (failureReason && event.type === "transfer.failed") {
+      logger.warn({
+        splitPaymentId: splitRecord.id,
+        transferId: transfer.id,
+        failureReason,
+      }, "Split payment transfer webhook failure");
+    }
+
+    const updatedSplit = await db
+      .update(splitPayments)
+      .set({
+        status,
+        processedAt,
+        ...(failureReason ? { failureReason } : {}),
+      })
+      .where(eq(splitPayments.id, splitRecord.id))
+      .returning({ id: splitPayments.id });
+
+    if (updatedSplit.length === 0) {
+      throw new Error(
+        `Split payment transfer webhook update matched no rows for split payment ${splitRecord.id} (transfer ${transfer.id})`,
+      );
     }
   }
 
@@ -1347,12 +1540,19 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!user) {
-        logger.info({ value: account?.id }, "User not found for account webhook:");
-        return;
+        // createAccountLink() writes stripeConnectedAccountId right after
+        // stripe.accounts.create() returns, so a webhook for an account with
+        // no matching user is a reconciliation gap (the write may not have
+        // landed yet, or the account was disconnected mid-flight) — throw so
+        // the route reports failure and Stripe retries instead of the event
+        // being silently dropped.
+        throw new Error(
+          `No user found for Stripe Connect account ${account?.id} on ${event?.type}`,
+        );
       }
 
       switch (event?.type) {
-        case "account.updated":
+        case "account.updated": {
           // Check if account is now verified and can receive payouts
           const canReceivePayouts =
             account?.payouts_enabled && account?.charges_enabled;
@@ -1382,18 +1582,51 @@ export class InstantPayoutService {
                 action: "complete_onboarding",
               },
             });
+          } else {
+            // details_submitted but payouts/charges aren't both enabled yet
+            // (e.g. pending Stripe review). No user-facing notification is
+            // warranted for every intermediate ping, but the event must
+            // still leave a persisted reconciliation record rather than
+            // silently reporting success with no write of any kind. As with
+            // the untracked-transfer branch above, this audit row is the
+            // only record of this event, so it must be confirmed durable
+            // before we report success — use auditConfirmed, not audit.
+            await auditConfirmed({
+              category: "payment",
+              severity: "info",
+              action: "stripe_connect_account_pending_capabilities",
+              userId: user.id,
+              targetId: account.id,
+              targetType: "stripe_connect_account",
+              details: {
+                payoutsEnabled: !!account?.payouts_enabled,
+                chargesEnabled: !!account?.charges_enabled,
+                detailsSubmitted: !!account?.details_submitted,
+              },
+              success: true,
+            });
           }
           break;
+        }
 
-        case "account.application.deauthorized":
-          // User has disconnected their account
-          await db
+        case "account.application.deauthorized": {
+          // User has disconnected their account — confirm the update
+          // actually matched a row instead of assuming success just because
+          // nothing threw.
+          const deauthorized = await db
             .update(users)
             .set({
               stripeConnectedAccountId: null,
               updatedAt: new Date(),
             })
-            .where(eq(users.id, user?.id));
+            .where(eq(users.id, user?.id))
+            .returning({ id: users.id });
+
+          if (deauthorized.length === 0) {
+            throw new Error(
+              `Deauthorize update matched no rows for user ${user.id} (account ${account?.id})`,
+            );
+          }
 
           await db.insert(notifications).values({
             userId: user.id,
@@ -1405,6 +1638,7 @@ export class InstantPayoutService {
             },
           });
           break;
+        }
       }
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error handling account webhook:");
@@ -1418,17 +1652,40 @@ export class InstantPayoutService {
   async handlePayoutWebhook(event: Stripe.Event): Promise<void> {
     try {
       const payout = event?.data.object as Stripe.Payout;
+      const metadataPayoutId = (payout as any)?.metadata?.payoutId as
+        | string
+        | undefined;
 
-      // Find payout record by Stripe payout ID
-      const [payoutRecord] = await db
-        .select()
-        .from(instantPayouts)
-        .where(eq(instantPayouts.stripePayoutId, payout?.id))
-        .limit(1);
+      // requestInstantPayout() inserts the instantPayouts row and stamps its
+      // id into payout.metadata.payoutId BEFORE calling stripe.payouts.create(),
+      // so looking up by metadata.payoutId first has no create-vs-webhook race
+      // window. stripePayoutId (written just after the Stripe call returns)
+      // is only a fallback.
+      let payoutRecord: any;
+      if (metadataPayoutId) {
+        [payoutRecord] = await db
+          .select()
+          .from(instantPayouts)
+          .where(eq(instantPayouts.id, metadataPayoutId))
+          .limit(1);
+      }
+      if (!payoutRecord) {
+        [payoutRecord] = await db
+          .select()
+          .from(instantPayouts)
+          .where(eq(instantPayouts.stripePayoutId, payout?.id))
+          .limit(1);
+      }
 
       if (!payoutRecord) {
-        logger.info({ value: payout?.id }, "Payout record not found for webhook:");
-        return;
+        // Every payout on this platform's Connect account is created by
+        // requestInstantPayout with metadata.payoutId set, so an unmatched
+        // payout is a reconciliation gap, not a legitimate no-op — throw so
+        // the route reports failure and Stripe retries the event instead of
+        // it being silently dropped.
+        throw new Error(
+          `No local payout record found for Stripe payout ${payout?.id} (checked metadata.payoutId=${metadataPayoutId || "none"} and stripePayoutId)`,
+        );
       }
 
       // Update status based on event type
@@ -1504,14 +1761,22 @@ export class InstantPayoutService {
         }, "Payout webhook failure");
       }
 
-      // Update payout record
-      await db
+      // Update payout record — confirm the write actually matched a row
+      // instead of assuming success just because nothing threw.
+      const updatedPayout = await db
         .update(instantPayouts)
         .set({
           status,
           processedAt,
         })
-        .where(eq(instantPayouts.id, payoutRecord.id));
+        .where(eq(instantPayouts.id, payoutRecord.id))
+        .returning({ id: instantPayouts.id });
+
+      if (updatedPayout.length === 0) {
+        throw new Error(
+          `Payout webhook update matched no rows for payout ${payoutRecord.id} (Stripe payout ${payout?.id})`,
+        );
+      }
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error handling payout webhook:");
       throw error;

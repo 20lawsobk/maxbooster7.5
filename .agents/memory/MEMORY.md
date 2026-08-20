@@ -84,3 +84,4 @@
 - [Drizzle sql undefined params](drizzle-sql-undefined-params.md) — `${undefined}` in a sql template emits EMPTY SQL not NULL → syntax error; `?? null` every optional
 - [SQLite per-op connection churn deadlock](sqlite-diskstore-conn-churn-deadlock.md) — connect/close per call across threads deadlocks libsqlite3's inode mutex; use one persistent conn; py-spy IS installable
 - [PDIM capsule build must flush before returning](pdim-capsule-flush-durability.md) — PocketDimension writes chunk blobs immediately but the index/metadata only persist on flush()/close(); same-process verification can pass off the in-memory cache while disk is empty
+- [Webhook honesty patterns](webhook-honesty-patterns.md) — stamp own id pre-call; discriminate multi-creator-path lookups; mocked-service tests hide no-write bugs; buffered audit-log calls aren't a durability guarantee

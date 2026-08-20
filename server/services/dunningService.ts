@@ -109,7 +109,12 @@ function buildDunningEmailHtml(
 }
 
 class DunningService {
-  async startSequence(userId: string, invoiceId: string): Promise<void> {
+  /**
+   * Returns true once the sequence row is confirmed started (or already existed),
+   * false if the critical DB write failed — callers (e.g. the Stripe webhook
+   * handler) use this to decide whether to report success or ask Stripe to retry.
+   */
+  async startSequence(userId: string, invoiceId: string): Promise<boolean> {
     try {
       const existing = await db
         .select()
@@ -121,7 +126,7 @@ class DunningService {
         logger.info(
           `[Dunning] Sequence already started for invoice ${invoiceId}`,
         );
-        return;
+        return true;
       }
 
       const nextEmailAt = new Date();
@@ -134,15 +139,22 @@ class DunningService {
       });
 
       await this.sendStep(userId, invoiceId, 0);
+      return true;
     } catch (err) {
       logger.warn({ err: err }, "[Dunning] Failed to start sequence:");
+      return false;
     }
   }
 
+  /**
+   * Returns true once resolution is confirmed persisted. Resolving an invoice
+   * that never had a dunning sequence is a legitimate no-op (0 rows updated,
+   * no exception) and still returns true; only a real DB error returns false.
+   */
   async resolveSequence(
     invoiceId: string,
     reason: "paid" | "cancelled",
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       await db
         .update(dunningState)
@@ -152,8 +164,10 @@ class DunningService {
       logger.info(
         `[Dunning] Resolved sequence for invoice ${invoiceId} (${reason})`,
       );
+      return true;
     } catch (err) {
       logger.warn({ err: err }, "[Dunning] Failed to resolve sequence:");
+      return false;
     }
   }
 
