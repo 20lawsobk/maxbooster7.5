@@ -2450,92 +2450,47 @@ router.post("/lyrics", requireAuth, async (req: Request, res: Response) => {
 });
 
 // AI Master endpoint
+// NOT IMPLEMENTED: there is no real mastering job pipeline behind this route —
+// it previously replied with a fake jobId/"processing" status and then fired
+// an unconditional "processing complete" notification a moment later, even
+// though no mastering ever ran. Report an honest 501 instead of lying about a
+// job that doesn't exist. (Building the real mastering pipeline is tracked as
+// a separate capability — out of scope for the honesty fix.)
 router.post(
   "/ai-master/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const { projectId } = req.params as Record<string, string>;
-      const { targetLoudness, genre, preset } = req.body;
-      res.json({
-        success: true,
-        projectId,
-        jobId: `master_${Date.now()}`,
-        status: "processing",
-        message: "AI mastering started",
-        settings: { targetLoudness: targetLoudness || -14, genre, preset },
-      });
-      if (userId) {
-        setImmediate(async () => {
-          try {
-            const [proj] = await db
-              .select({ title: projects.title })
-              .from(projects)
-              .where(eq(projects.id, projectId))
-              .limit(1);
-            const trackName = proj?.title || projectId;
-            await notificationService.sendAiProcessingCompleteNotification(
-              userId,
-              "master",
-              trackName,
-            );
-          } catch (err) {
-            logger.warn({ err: err }, "AI master notification error:");
-          }
-        });
-      }
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error starting AI master:");
-      res.status(500).json({ error: "Failed to start AI mastering" });
-    }
+    const { projectId } = req.params as Record<string, string>;
+    logger.warn(
+      `AI mastering requested for project ${projectId} but is not implemented — returning 501, no fake job/notification will be sent`,
+    );
+    res.status(501).json({
+      success: false,
+      projectId,
+      status: "not_implemented",
+      message: "AI mastering is not yet available",
+    });
   },
 );
 
 // AI Mix endpoint
+// NOT IMPLEMENTED: same issue as /ai-master — no mixing engine exists behind
+// this route, so it must not report a fake job or send a fake completion
+// notification.
 router.post(
   "/ai-mix/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const { projectId } = req.params as Record<string, string>;
-      const { targetGenre,  autoEQ, autoCompression } = req.body;
-      res.json({
-        success: true,
-        projectId,
-        jobId: `mix_${Date.now()}`,
-        status: "processing",
-        message: "AI mixing started",
-        settings: {
-          targetGenre,
-          autoEQ: autoEQ ?? true,
-          autoCompression: autoCompression ?? true,
-        },
-      });
-      if (userId) {
-        setImmediate(async () => {
-          try {
-            const [proj] = await db
-              .select({ title: projects.title })
-              .from(projects)
-              .where(eq(projects.id, projectId))
-              .limit(1);
-            const trackName = proj?.title || projectId;
-            await notificationService.sendAiProcessingCompleteNotification(
-              userId,
-              "mix",
-              trackName,
-            );
-          } catch (err) {
-            logger.warn({ err: err }, "AI mix notification error:");
-          }
-        });
-      }
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error starting AI mix:");
-      res.status(500).json({ error: "Failed to start AI mixing" });
-    }
+    const { projectId } = req.params as Record<string, string>;
+    logger.warn(
+      `AI mixing requested for project ${projectId} but is not implemented — returning 501, no fake job/notification will be sent`,
+    );
+    res.status(501).json({
+      success: false,
+      projectId,
+      status: "not_implemented",
+      message: "AI mixing is not yet available",
+    });
   },
 );
 

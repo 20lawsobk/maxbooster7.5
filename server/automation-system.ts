@@ -153,13 +153,29 @@ export class AutomationSystem extends EventEmitter {
           if (typeof (notif as any)?.send !== "function") {
             throw new Error("notificationService.send unavailable");
           }
-          await (notif as any)?.send({
+          const outcome = await (notif as any)?.send({
             userId,
             type: params.template || "system",
             title: params.subject,
             message: params.body,
             link: params.link,
           });
+          // notificationService.send() now reports which channels actually
+          // fired. This action specifically claims to send an EMAIL, so
+          // success must require the email channel itself to have gone out —
+          // a persisted in-app notification (or a no-op for an unknown user)
+          // is not the same thing and must not be reported as "email sent".
+          if (!outcome?.emailSent) {
+            const reason =
+              outcome?.reason ??
+              (outcome?.delivered
+                ? "email channel disabled by user preference or provider not configured"
+                : "notification was not delivered");
+            return {
+              success: false,
+              message: `Email not sent: ${reason}`,
+            };
+          }
           return { success: true, message: "Email sent successfully" };
         } catch (e) {
           logger.warn({ err: e }, "send-email action failed");
@@ -204,9 +220,20 @@ export class AutomationSystem extends EventEmitter {
             postContent,
             scheduledTime,
           );
+          // schedulePost only queues a pending post for the platform poster
+          // to pick up later — it does NOT post to any platform itself. A
+          // confirmed queue record is a real, verifiable side effect, but
+          // claiming "Posted to social media" overstates it; be explicit that
+          // this is a scheduled/queued record, not a confirmed platform post.
+          if (!r) {
+            return {
+              success: false,
+              message: "post-social-media failed: schedulePost returned no record",
+            };
+          }
           return {
             success: true,
-            message: "Posted to social media",
+            message: "Post scheduled for social media (not yet confirmed live on any platform)",
             result: r,
           };
         } catch (e) {
@@ -237,6 +264,16 @@ export class AutomationSystem extends EventEmitter {
             params?.releaseId,
             params?.userId,
           );
+          // distributeRelease now reports its own honest success (only true
+          // when at least one provider actually accepted the submission) —
+          // propagate that instead of assuming success whenever it resolves.
+          if (!r?.success) {
+            return {
+              success: false,
+              message: "Music distribution failed — no provider accepted the release",
+              detail: r,
+            };
+          }
           return {
             success: true,
             message: "Music distribution dispatched",
@@ -253,65 +290,82 @@ export class AutomationSystem extends EventEmitter {
     });
 
     // Analytics actions
+    // NOT IMPLEMENTED: no report generation/delivery pipeline exists behind
+    // this action yet. Reporting success here would tell operators a report
+    // was generated and sent when nothing was produced or delivered.
     this.registerAction("generate-analytics-report", {
       name: "Generate Analytics Report",
       description: "Generate and send analytics report",
       parameters: ["reportType", "recipients", "format", "schedule"],
       execute: async (params) => {
-        logger.info(`📊 Generating ${params?.reportType} analytics report`);
-        // Implement analytics report generation
-        return { success: true, message: "Analytics report generated" };
+        logger.warn(
+          `📊 generate-analytics-report action invoked for ${params?.reportType} but is not implemented — no report was generated or sent`,
+        );
+        return {
+          success: false,
+          message: "generate-analytics-report is not implemented",
+        };
       },
     });
 
     // AI actions
+    // NOT IMPLEMENTED: no mixing engine is wired to this generic workflow
+    // action. See studio.ts /ai-mix for the user-facing equivalent, which is
+    // also honestly gated to "not implemented" until a real job pipeline exists.
     this.registerAction("ai-mix-track", {
       name: "AI Mix Track",
       description: "Use AI to mix and master track",
       parameters: ["trackId", "style", "quality"],
       execute: async (params) => {
-        logger.info(
-          `🎛️ AI mixing track ${params?.trackId} with ${params?.style} style`,
+        logger.warn(
+          `🎛️ ai-mix-track action invoked for track ${params?.trackId} but is not implemented — no mixing was performed`,
         );
-        // Implement AI mixing
-        return { success: true, message: "Track mixed with AI" };
+        return { success: false, message: "ai-mix-track is not implemented" };
       },
     });
 
+    // NOT IMPLEMENTED: same as ai-mix-track — no mastering engine is wired up.
     this.registerAction("ai-master-track", {
       name: "AI Master Track",
       description: "Use AI to master track",
       parameters: ["trackId", "targetLoudness", "format"],
       execute: async (params) => {
-        logger.info(`🎚️ AI mastering track ${params?.trackId}`);
-        // Implement AI mastering
-        return { success: true, message: "Track mastered with AI" };
+        logger.warn(
+          `🎚️ ai-master-track action invoked for track ${params?.trackId} but is not implemented — no mastering was performed`,
+        );
+        return { success: false, message: "ai-master-track is not implemented" };
       },
     });
 
     // Marketplace actions
+    // NOT IMPLEMENTED: beats are uploaded/listed via the storefront upload
+    // flow (server/routes) and the Beat Money Loop service, not this generic
+    // action, which never reads the beat data or writes anything.
     this.registerAction("upload-beat", {
       name: "Upload Beat to Marketplace",
       description: "Upload beat to marketplace",
       parameters: ["beatData", "pricing", "licenses"],
       execute: async (_params) => {
-        logger.info(`🎶 Uploading beat to marketplace`);
-        // Implement beat upload
-        return { success: true, message: "Beat uploaded to marketplace" };
+        logger.warn(
+          `🎶 upload-beat action invoked but is not implemented — no beat was uploaded or listed`,
+        );
+        return { success: false, message: "upload-beat is not implemented" };
       },
     });
 
     // Payment actions
+    // NOT IMPLEMENTED: payments run through the Stripe integration/webhooks,
+    // not this generic action, which never calls a payment processor or
+    // persists any transaction/ledger record.
     this.registerAction("process-payment", {
       name: "Process Payment",
       description: "Process payment transaction",
       parameters: ["amount", "currency", "method", "recipient"],
       execute: async (params) => {
-        logger.info(
-          `💳 Processing payment of ${params?.amount} ${params?.currency}`,
+        logger.warn(
+          `💳 process-payment action invoked for ${params?.amount} ${params?.currency} but is not implemented — no payment was processed`,
         );
-        // Implement payment processing
-        return { success: true, message: "Payment processed successfully" };
+        return { success: false, message: "process-payment is not implemented" };
       },
     });
 
@@ -329,19 +383,40 @@ export class AutomationSystem extends EventEmitter {
           const recipients: string[] = Array.isArray(params?.recipients)
             ? params?.recipients
             : [params?.recipients].filter(Boolean);
+          // An empty recipient list means nothing was actually sent — this
+          // must not be reported as a successful notification.
+          if (recipients.length === 0) {
+            return {
+              success: false,
+              message: "send-notification failed: no recipients specified",
+              count: 0,
+            };
+          }
+          let deliveredCount = 0;
           for (const userId of recipients) {
-            await (notif as any)?.send({
+            const outcome = await (notif as any)?.send({
               userId,
               type: params.type ?? "system",
               title: params.title,
               message: params.message,
               link: params.link,
             });
+            if (outcome?.delivered) deliveredCount++;
+          }
+          // Success requires at least one recipient to have actually
+          // received the notification — every recipient silently failing
+          // (e.g. all unknown user IDs) must not be reported as success.
+          if (deliveredCount === 0) {
+            return {
+              success: false,
+              message: "send-notification failed: no recipient could be notified",
+              count: 0,
+            };
           }
           return {
             success: true,
-            message: "Notification sent",
-            count: recipients.length,
+            message: `Notification delivered to ${deliveredCount}/${recipients.length} recipient(s)`,
+            count: deliveredCount,
           };
         } catch (e) {
           logger.warn({ err: e }, "send-notification action failed");
@@ -354,20 +429,25 @@ export class AutomationSystem extends EventEmitter {
     });
 
     // Data actions
+    // NOT IMPLEMENTED: this generic workflow action never calls the real
+    // backup service (server/services/backup/databaseBackupService.ts) or any
+    // other storage — it previously reported success having done nothing.
     this.registerAction("backup-data", {
       name: "Backup Data",
       description: "Backup user data",
       parameters: ["userId", "dataType", "destination"],
       execute: async (params) => {
-        logger.info(
-          `💾 Backing up ${params?.dataType} data for user ${params?.userId}`,
+        logger.warn(
+          `💾 backup-data action invoked for user ${params?.userId} (${params?.dataType}) but is not implemented — no backup was created`,
         );
-        // Implement data backup
-        return { success: true, message: "Data backed up successfully" };
+        return { success: false, message: "backup-data is not implemented" };
       },
     });
 
     // Video creation actions
+    // NOT IMPLEMENTED: none of these four actions call a video generation
+    // service — they previously fabricated "created successfully" responses
+    // with no video ever rendered or stored.
     this.registerAction("create-promo-video", {
       name: "Create Promotional Video",
       description:
@@ -382,15 +462,12 @@ export class AutomationSystem extends EventEmitter {
         "colorPalette",
       ],
       execute: async (params) => {
-        logger.info(
-          `🎬 Creating ${params?.templateType} video for ${params?.platform}`,
+        logger.warn(
+          `🎬 create-promo-video action invoked for ${params?.platform} but is not implemented — no video was created`,
         );
         return {
-          success: true,
-          message: "Promotional video created successfully",
-          templateType: params.templateType,
-          platform: params.platform,
-          aspectRatio: params.aspectRatio || "16:9",
+          success: false,
+          message: "create-promo-video is not implemented",
         };
       },
     });
@@ -410,12 +487,12 @@ export class AutomationSystem extends EventEmitter {
         const platformList = Array.isArray(params?.platforms)
           ? params?.platforms.join(", ")
           : params?.platforms;
-        logger.info(`📹 Creating social video for: ${platformList}`);
+        logger.warn(
+          `📹 create-social-video action invoked for: ${platformList} but is not implemented — no video was created`,
+        );
         return {
-          success: true,
-          message: "Social media video created successfully",
-          platforms: params.platforms,
-          duration: params.duration || 15,
+          success: false,
+          message: "create-social-video is not implemented",
         };
       },
     });
@@ -432,12 +509,12 @@ export class AutomationSystem extends EventEmitter {
         "resolution",
       ],
       execute: async (params) => {
-        logger.info(`🎤 Creating lyric video with ${params?.visualStyle} style`);
+        logger.warn(
+          `🎤 create-lyric-video action invoked (${params?.visualStyle}) but is not implemented — no video was created`,
+        );
         return {
-          success: true,
-          message: "Lyric video created successfully",
-          visualStyle: params.visualStyle || "karaoke",
-          resolution: params.resolution || "1080p",
+          success: false,
+          message: "create-lyric-video is not implemented",
         };
       },
     });
@@ -455,12 +532,12 @@ export class AutomationSystem extends EventEmitter {
         "duration",
       ],
       execute: async (params) => {
-        logger.info(`🌊 Creating ${params?.visualizerType} visualizer video`);
+        logger.warn(
+          `🌊 create-visualizer-video action invoked (${params?.visualizerType}) but is not implemented — no video was created`,
+        );
         return {
-          success: true,
-          message: "Visualizer video created successfully",
-          visualizerType: params.visualizerType || "spectrum",
-          shaderEffects: params.shaderEffects || ["bloom", "particles"],
+          success: false,
+          message: "create-visualizer-video is not implemented",
         };
       },
     });
@@ -704,8 +781,26 @@ export class AutomationSystem extends EventEmitter {
 
       // Execute action
       const startTime = Date?.now();
-      await action?.execute(actionConfig?.parameters);
+      const actionResult = await action?.execute(actionConfig?.parameters);
       const executionTime = Date?.now() - startTime;
+      // Positive success contract: every built-in action now returns an
+      // explicit { success: boolean } result reflecting its real side effect.
+      // A workflow step only counts as done when success === true — missing,
+      // malformed, or false results are ALL treated as failure so a broken or
+      // legacy action can never silently be waved through as "completed".
+      const success =
+        !!actionResult &&
+        typeof actionResult === "object" &&
+        (actionResult as { success?: unknown }).success === true;
+      if (!success) {
+        const message =
+          actionResult &&
+          typeof actionResult === "object" &&
+          typeof (actionResult as { message?: unknown }).message === "string"
+            ? (actionResult as { message: string }).message
+            : `Action ${actionConfig?.type} did not return a confirmed success result`;
+        throw new Error(message);
+      }
 
       // Update metrics
       this.automationMetrics.totalExecutions++;

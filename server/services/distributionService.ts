@@ -294,8 +294,9 @@ export class DistributionService {
     userId: string,
   ): Promise<{
     success: boolean;
-    dispatchId: string;
-    estimatedLiveDate: Date;
+    dispatchId?: string;
+    estimatedLiveDate?: Date;
+    reason?: string;
   }> {
     try {
       const release = await this.getRelease(releaseId, userId);
@@ -338,31 +339,39 @@ export class DistributionService {
           throw error;
         }
       } else {
-        // DEVELOPMENT/DEMO MODE: Simulated distribution (no real API calls)
-        logger.warn("⚠️  LabelGrid API token not configured - using demo mode");
+        // NO DISTRIBUTION PROVIDER CONFIGURED: nothing was actually submitted
+        // anywhere — no external API call happened, no real DSP will ever see
+        // this release. Recording a "processing" row here previously let
+        // callers report success for a release that will NEVER go live.
+        // Honest contract: this is a failure (provider not configured), not a
+        // successful dispatch. We still persist a demo/local-only marker on
+        // the release so operators can see what was attempted, but callers
+        // must not count this as a real distribution.
+        logger.warn(
+          "⚠️  LabelGrid API token not configured — cannot distribute for real; reporting failure, not success",
+        );
         logger.warn(
           "   Set LABELGRID_API_TOKEN in environment to enable real distribution",
         );
 
         const dispatchId = `demo_dispatch_${randomBytes(8).toString("hex")}`;
-        const estimatedLiveDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-        // Update release platforms
+        // Update release platforms with an explicit "not_configured" marker
+        // (never "processing" — that implies a real submission is in flight).
         const platforms = (release.platforms as unknown[]) || [];
         platforms.push({
           providerId,
-          status: "processing",
+          status: "not_configured",
           dispatchId,
           submittedAt: new Date(),
-          estimatedLiveDate,
+          note: "No distribution provider configured — not actually submitted",
         });
 
         await storage.updateRelease(releaseId, userId, { platforms });
 
         return {
-          success: true,
-          dispatchId,
-          estimatedLiveDate,
+          success: false,
+          reason: "No distribution provider configured (LABELGRID_API_TOKEN unset)",
         };
       }
     } catch (error: unknown) {
@@ -616,11 +625,58 @@ export class DistributionService {
         "tidal",
       ];
 
-      const distributionResults = platforms.map((platform) => ({
-        platform,
-        status: "processing",
-        estimatedLiveDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      }));
+      // Actually submit to each provider (via the same submitToProvider path
+      // used elsewhere) instead of fabricating "processing" rows with no
+      // underlying dispatch — this previously reported success for every
+      // platform without making a single real submission or DB write.
+      const distributionResults = await Promise.all(
+        platforms.map(async (platform) => {
+          try {
+            const result = await this.submitToProvider(
+              releaseId,
+              platform,
+              userId,
+            );
+            // Propagate submitToProvider's own success flag rather than
+            // assuming every non-throwing call succeeded.
+            if (!result.success) {
+              return {
+                platform,
+                status: "failed" as const,
+                success: false,
+                error: "Provider declined submission",
+              };
+            }
+            return {
+              platform,
+              status: "processing" as const,
+              dispatchId: result.dispatchId,
+              estimatedLiveDate: result.estimatedLiveDate,
+              success: true,
+            };
+          } catch (err) {
+            logger.warn(
+              { err },
+              `Distribution submission failed for platform ${platform}:`,
+            );
+            return {
+              platform,
+              status: "failed" as const,
+              success: false,
+              error: err instanceof Error ? err.message : String(err),
+            };
+          }
+        }),
+      );
+
+      const succeeded = distributionResults.filter((r) => r.success);
+      if (succeeded.length === 0) {
+        return {
+          success: false,
+          distributionId: `dist_${releaseId}`,
+          platforms: distributionResults,
+        };
+      }
 
       return {
         success: true,

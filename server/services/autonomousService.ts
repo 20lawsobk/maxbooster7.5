@@ -352,6 +352,24 @@ export class AutonomousService extends EventEmitter {
             `[AUTONOMOUS] Campaign ${newCampaign?.id} created but not dispatched: ${dispatch?.error ?? dispatch?.message}`,
           );
         }
+
+        // Only count/report success when the campaign actually posted content.
+        // activateCampaign can resolve success:true while leaving the campaign
+        // in 'draft' with zero posts (e.g. no connected platforms) — that is
+        // still a no-op from the caller's perspective and must not be reported
+        // as a launched campaign, and there is nothing yet to optimize.
+        const postsCreated = dispatch?.results?.postsCreated ?? 0;
+        if (!dispatch?.success || postsCreated === 0) {
+          logger.warn(
+            `[AUTONOMOUS] Campaign ${newCampaign?.id} created but 0 posts were actually dispatched — reporting failure, not success`,
+          );
+          return {
+            success: false,
+            campaignId: newCampaign.id,
+            requiresApproval: false,
+          };
+        }
+
         scheduleCampaignOptimization(newCampaign?.id).catch((err) =>
           logger.warn(
             { err: err },
@@ -505,6 +523,23 @@ export class AutonomousService extends EventEmitter {
 
       const estimatedReach = successfulDispatches?.length * 50000;
       const royaltyProjection = estimatedReach * 0.004;
+
+      // Honest success gate: a release with zero confirmed provider dispatches
+      // was NOT distributed, regardless of how many providers we attempted —
+      // reporting success:true here previously happened unconditionally, even
+      // when every single provider threw or declined.
+      if (successfulDispatches.length === 0) {
+        logger.warn(
+          `[AUTO-DISTRIBUTE] Release ${release.id} created but 0/${providers.length} providers accepted dispatch — reporting failure, not success`,
+        );
+        return {
+          success: false,
+          releaseId: release.id,
+          dispatchedTo: [],
+          estimatedReach: 0,
+          royaltyProjection: 0,
+        };
+      }
 
       this.metrics.releasesDistributed++;
       this.metrics.lastUpdated = new Date();

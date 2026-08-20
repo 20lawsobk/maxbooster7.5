@@ -43,7 +43,15 @@ class NotificationService {
     }
   }
 
-  async send(options: NotificationOptions): Promise<void> {
+  // Returns whether a notification was actually persisted/delivered so
+  // callers (e.g. the automation workflow engine) can distinguish a real
+  // delivery from a silent no-op (unknown user, disabled preferences).
+  async send(options: NotificationOptions): Promise<{
+    delivered: boolean;
+    emailSent: boolean;
+    browserSent: boolean;
+    reason?: string;
+  }> {
     const { userId, type, title, message, link, metadata } = options;
 
     try {
@@ -53,7 +61,7 @@ class NotificationService {
 
       if (!user) {
         logger.warn({ value: userId }, "User not found:");
-        return;
+        return { delivered: false, emailSent: false, browserSent: false, reason: "user not found" };
       }
 
       const preferences = (user?.notificationSettings as Record<
@@ -85,12 +93,14 @@ class NotificationService {
         })
         .returning();
 
+      let emailSent = false;
       if (shouldSendEmail) {
-        await this.sendEmail(user, type, title, message, link);
+        emailSent = await this.sendEmail(user, type, title, message, link);
       }
 
+      let browserSent = false;
       if (shouldSendBrowser) {
-        await this.sendBrowserNotification(
+        browserSent = await this.sendBrowserNotification(
           user,
           title,
           message,
@@ -112,6 +122,10 @@ class NotificationService {
       }
 
       logger.info(`✅ Notification sent to user ${userId}: ${title}`);
+      // "Delivered" means the in-app notification record was persisted — the
+      // one channel that is always attempted. Email/browser pushes are
+      // reported separately since they depend on preferences/provider config.
+      return { delivered: !!notification, emailSent, browserSent };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error sending notification:");
       throw error;
@@ -124,26 +138,45 @@ class NotificationService {
     title: string,
     message: string,
     link?: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (!this.isInitialized || !this.resend) {
       logger.warn("Resend not initialized, skipping email");
-      return;
+      return false;
     }
 
     const template = this.getEmailTemplate(type, title, message, link);
     const fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
     try {
-      await this.resend.emails?.send({
+      const result = await this.resend.emails?.send({
         to: (user as any).email,
         from: fromEmail,
         subject: template.subject,
         text: template.text,
         html: template.html,
       });
+      // Resend's SDK resolves provider-side rejections (invalid sender,
+      // quota exceeded, validation errors) as { data: null, error } rather
+      // than throwing, so a resolved promise is not itself proof of delivery.
+      if ((result as any)?.error) {
+        logger.warn(
+          { err: (result as any).error },
+          "Resend rejected the email:",
+        );
+        return false;
+      }
+      if (!(result as any)?.data?.id) {
+        logger.warn(
+          { result },
+          "Resend returned no message id, treating as not sent:",
+        );
+        return false;
+      }
       logger.info(`📧 Email sent to ${(user as any)?.email}`);
+      return true;
     } catch (error: unknown) {
       logger.warn("Resend error:", (error as Error)?.message || error);
+      return false;
     }
   }
 
@@ -154,11 +187,11 @@ class NotificationService {
     link?: string,
     type?: string,
     metadata?: Record<string, unknown>,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       if (!webPushService?.isReady()) {
         logger.info("Web Push not ready, skipping push notification");
-        return;
+        return false;
       }
 
       let richPayload;
@@ -206,9 +239,12 @@ class NotificationService {
         logger.info(
           `🔔 Push notification [${type || "generic"}] delivered to ${result?.sent} device(s)`,
         );
+        return true;
       }
+      return false;
     } catch (error) {
       logger.warn({ err: error }, "Failed to send push notification:");
+      return false;
     }
   }
 
