@@ -87,6 +87,29 @@ interface TopCountry {
   users: number;
 }
 
+interface ExternalApiCheck {
+  status: "connected" | "disconnected" | "unknown";
+  latency: number | null;
+}
+
+interface SystemHealthResponse {
+  externalApis: Record<
+    "stripe" | "labelgrid" | "spotify" | "apple_music" | "youtube" | "twitter" | "instagram" | "tiktok",
+    ExternalApiCheck
+  >;
+}
+
+const EXTERNAL_API_LABELS: Record<string, string> = {
+  stripe: "Stripe",
+  labelgrid: "LabelGrid",
+  spotify: "Spotify",
+  apple_music: "Apple Music",
+  youtube: "YouTube",
+  twitter: "Twitter",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+};
+
 interface UserAnalytics {
   newUsers: number;
   totalRevenue: number;
@@ -223,6 +246,16 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
   } = useQuery<ActivityItem[]>({
     queryKey: ["/api/admin/activity"],
     enabled: isAdmin,
+  });
+
+  // Fetch real system/external-API health (replaces the old hardcoded panel)
+  const {
+    data: systemHealth,
+    isLoading: systemHealthLoading,
+  } = useQuery<SystemHealthResponse>({
+    queryKey: ["/api/admin/system-health"],
+    enabled: isAdmin,
+    refetchInterval: 30000,
   });
 
   // Fetch users list with pagination and search
@@ -709,43 +742,58 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-                  {[
-                    { name: "Stripe", status: "operational", latency: 45 },
-                    { name: "LabelGrid", status: "operational", latency: 78 },
-                    { name: "Spotify", status: "operational", latency: 52 },
-                    { name: "Apple Music", status: "operational", latency: 68 },
-                    { name: "YouTube", status: "operational", latency: 42 },
-                    { name: "Twitter", status: "operational", latency: 35 },
-                    { name: "Instagram", status: "operational", latency: 48 },
-                    { name: "TikTok", status: "operational", latency: 62 },
-                  ].map((api) => (
-                    <div
-                      key={api.name}
-                      className={`p-3 rounded-lg border ${
-                        api.status === "operational"
-                          ? "bg-green-50 border-green-200"
-                          : api.status === "degraded"
-                            ? "bg-yellow-50 border-yellow-200"
-                            : "bg-red-50 border-red-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        {api.status === "operational" ? (
-                          <CheckCircle className="h-3 w-3 text-green-600" />
-                        ) : api.status === "degraded" ? (
-                          <AlertTriangle className="h-3 w-3 text-yellow-600" />
-                        ) : (
-                          <XCircle className="h-3 w-3 text-red-600" />
-                        )}
-                        <span className="text-xs font-medium truncate">
-                          {api.name}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500">{api.latency}ms</p>
-                    </div>
-                  ))}
-                </div>
+                {systemHealthLoading && !systemHealth ? (
+                  <div className="text-center py-6 text-sm text-gray-500">
+                    Checking external services…
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                    {Object.entries(EXTERNAL_API_LABELS).map(([key, label]) => {
+                      const check = systemHealth?.externalApis?.[
+                        key as keyof SystemHealthResponse["externalApis"]
+                      ];
+                      const status = check?.status ?? "unknown";
+                      const isOperational = status === "connected";
+                      const isUnknown = status === "unknown";
+                      const isDown = status === "disconnected";
+                      return (
+                        <div
+                          key={key}
+                          className={`p-3 rounded-lg border ${
+                            isOperational
+                              ? "bg-green-50 border-green-200"
+                              : isUnknown
+                                ? "bg-gray-50 border-gray-200"
+                                : "bg-red-50 border-red-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            {isOperational ? (
+                              <CheckCircle className="h-3 w-3 text-green-600" />
+                            ) : isUnknown ? (
+                              <AlertTriangle className="h-3 w-3 text-gray-400" />
+                            ) : (
+                              <XCircle className="h-3 w-3 text-red-600" />
+                            )}
+                            <span className="text-xs font-medium truncate">
+                              {label}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            {isUnknown
+                              ? "not configured"
+                              : isDown
+                                ? "unreachable"
+                                : `${check?.latency ?? "–"}ms`}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 mt-3">
+                  Live reachability checks against each provider's API, run every 30s. "Not configured" means no credential is set for that service in this environment.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>

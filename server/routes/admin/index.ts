@@ -772,53 +772,14 @@ router.get("/metrics", async (_req, res) => {
 });
 
 // ============================================================
-// SYSTEM HEALTH ENDPOINT
+// NOTE: /system-health used to be duplicated here with a stub
+// `services: { api: "ok", storage: "ok", ai: "ok" }` block that never
+// reflected reality. The authoritative implementation (real DB ping,
+// real external-API reachability checks) lives in server/routes/admin.ts
+// and is mounted first on /api/admin, so it wins for this path. The
+// duplicate was removed to avoid two divergent handlers for the same
+// route silently drifting apart again.
 // ============================================================
-
-router.get("/system-health", async (_req, res) => {
-  try {
-    const memUsage = process.memoryUsage();
-    const uptimeSeconds = process.uptime();
-    const loadAvg = os?.loadavg();
-    const cpus = os?.cpus();
-    const totalMem = os?.totalmem();
-    const freeMem = os?.freemem();
-
-    // Quick DB ping
-    let dbStatus = "ok";
-    try {
-      await db.execute(sql`SELECT 1`);
-    } catch {
-      dbStatus = "error";
-    }
-
-    return res.json({
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      uptime: Math.round(uptimeSeconds),
-      database: dbStatus,
-      memory: {
-        heapUsedMb: Math.round(memUsage?.heapUsed / 1024 / 1024),
-        heapTotalMb: Math.round(memUsage?.heapTotal / 1024 / 1024),
-        usedPercent: Math.round(((totalMem - freeMem) / (totalMem || 1)) * 100),
-      },
-      cpu: {
-        count: cpus.length,
-        loadAvg1m: loadAvg[0].toFixed(2),
-        loadAvg5m: loadAvg[1].toFixed(2),
-        loadAvg15m: loadAvg[2].toFixed(2),
-      },
-      services: {
-        api: "ok",
-        storage: "ok",
-        ai: "ok",
-      },
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "Error fetching system health:");
-    return res.status(500).json({ error: "Failed to fetch system health" });
-  }
-});
 
 // ============================================================
 // CONTENT MODERATION ENDPOINTS
