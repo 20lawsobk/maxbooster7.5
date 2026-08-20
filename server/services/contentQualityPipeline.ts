@@ -1633,12 +1633,53 @@ class ContentQualityPipeline {
       variants.sort((a, b) => b.scores.overall - a.scores.overall);
     }
 
-    const selected = await this.selectBestVariant(variants, minScore);
+    let selected = await this.selectBestVariant(variants, minScore);
+
+    // ── Discriminator pass ─────────────────────────────────────────────────
+    // selectBestVariant only compares candidates against each other; the
+    // discriminator judges the winner in isolation for artifact-level
+    // defects (placeholders, stutter, spam) a relative score blend can miss.
+    // On reject, fall through the ranked list rather than publishing content
+    // that fails the critic outright.
+    if (selected) {
+      const { judgeContent } = await import("./discriminatorEngine.js");
+      const ranked = [selected, ...variants.filter((v) => v.id !== selected!.id)]
+        .sort((a, b) => b.scores.overall - a.scores.overall);
+      let discriminatorPassed = false;
+      for (const candidate of ranked) {
+        const verdict = await judgeContent({
+          text: candidate.content,
+          headline: candidate.headline,
+          cta: candidate.callToAction,
+          hashtags: candidate.hashtags,
+          platform: context.platform,
+        });
+        if (verdict.verdict === "pass") {
+          if (candidate.id !== selected.id) {
+            logger.info(
+              `[Discriminator] Top-ranked variant rejected — falling back to ${candidate.id} (score ${verdict.overall})`,
+            );
+          }
+          selected = candidate;
+          discriminatorPassed = true;
+          break;
+        }
+        logger.info(
+          `[Discriminator] Variant ${candidate.id} rejected: ${verdict.feedback}`,
+        );
+      }
+      if (!discriminatorPassed) {
+        logger.warn(
+          "[Discriminator] All ranked variants rejected by the critic — no content selected",
+        );
+        selected = null;
+      }
+    }
 
     logger.info(
       `[VeoGate] Generated ${variants.length} variant(s) (base: ${variantCount} + pressure extra: ${pressureExtra}` +
         `${maxcoreAvailable ? " + MaxCore blend" : ""}), ` +
-        `selected: ${selected!.id || "none"} (score: ${selected!.scores.overall.toFixed(1) || "N/A"} / gate: ${VEO_QUALITY_GATE})`,
+        `selected: ${selected?.id || "none"} (score: ${selected?.scores.overall.toFixed(1) || "N/A"} / gate: ${VEO_QUALITY_GATE})`,
     );
 
     return { selected, variants, context };
