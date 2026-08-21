@@ -366,16 +366,47 @@ export class AutomationSystem extends EventEmitter {
       },
     });
 
-    // NOT IMPLEMENTED: same as ai-mix-track — no mastering engine is wired up.
+    // AI Master action — routed through the real mastering pipeline
+    // (renderProjectMixdown + IntelligentMasteringEngine) that already backs
+    // POST /api/studio/ai-master/:projectId. `trackId` here is the studio
+    // project id — the generic automation param name predates that route.
     this.registerAction("ai-master-track", {
       name: "AI Master Track",
       description: "Use AI to master track",
       parameters: ["trackId", "targetLoudness", "format"],
       execute: async (params) => {
-        logger.warn(
-          `🎚️ ai-master-track action invoked for track ${params?.trackId} but is not implemented — no mastering was performed`,
-        );
-        return { success: false, message: "ai-master-track is not implemented" };
+        logger.info(`🎚️ Mastering project ${params?.trackId}`);
+        try {
+          if (!params?.trackId) {
+            throw new Error("ai-master-track requires trackId (studio project id)");
+          }
+          const { renderProjectMixdown } = await import(
+            "./services/studioRenderService.js"
+          );
+          const rendered = await renderProjectMixdown(params.trackId, {
+            format: params?.format || "wav",
+            applyMastering: true,
+            targetLufs:
+              typeof params?.targetLoudness === "number"
+                ? params.targetLoudness
+                : -14,
+          });
+          return {
+            success: true,
+            message: `Mastering complete — genre=${rendered.mastering?.genre ?? "auto"}`,
+            result: {
+              downloadUrl: rendered.downloadPath,
+              genre: rendered.mastering?.genre,
+              confidence: rendered.mastering?.confidence,
+            },
+          };
+        } catch (e) {
+          logger.warn({ err: e }, "ai-master-track action failed");
+          return {
+            success: false,
+            message: (e as Error).message ?? "ai-master-track failed",
+          };
+        }
       },
     });
 
