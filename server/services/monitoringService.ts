@@ -90,6 +90,57 @@ class ResponseTimeRingBuffer {
 /** Singleton tracker shared across the process. */
 export const responseTimeTracker = new ResponseTimeRingBuffer();
 
+// ── Per-endpoint latency tracking ─────────────────────────────────────────
+// The global tracker above answers "how fast is the API overall", but a
+// single slow route can hide inside a healthy-looking aggregate p95. This
+// keeps one small ring buffer per endpoint so a specific slow route surfaces
+// on its own instead of requiring someone to go dig through logs.
+const PER_ENDPOINT_BUFFER_SIZE = 500; // smaller per-route buffer is enough for percentiles
+const MAX_TRACKED_ENDPOINTS = 500; // cap distinct endpoints to bound memory (unmatched routes collapse to req.path, which could otherwise be unbounded for path-param routes)
+
+class EndpointLatencyRegistry {
+  private readonly buffers = new Map<string, ResponseTimeRingBuffer>();
+
+  record(endpoint: string, ms: number): void {
+    let buf = this.buffers.get(endpoint);
+    if (!buf) {
+      if (this.buffers.size >= MAX_TRACKED_ENDPOINTS) {
+        // Evict the least-recently-created entry (Map preserves insertion order).
+        const oldestKey = this.buffers.keys().next().value;
+        if (oldestKey !== undefined) this.buffers.delete(oldestKey);
+      }
+      buf = new ResponseTimeRingBuffer(PER_ENDPOINT_BUFFER_SIZE);
+      this.buffers.set(endpoint, buf);
+    }
+    buf.record(ms);
+  }
+
+  /** Stats for every tracked endpoint, sorted slowest-p95-first. */
+  getAllStats(): Array<{
+    endpoint: string;
+    avg: number;
+    p95: number;
+    p99: number;
+    min: number;
+    max: number;
+    count: number;
+  }> {
+    const rows = Array.from(this.buffers.entries())
+      .map(([endpoint, buf]) => ({ endpoint, ...buf.getStats() }))
+      .filter((r) => r.count > 0);
+    rows.sort((a, b) => b.p95 - a.p95);
+    return rows;
+  }
+
+  /** The N slowest endpoints by p95, for surfacing in health/monitoring views. */
+  getSlowestEndpoints(limit = 10) {
+    return this.getAllStats().slice(0, limit);
+  }
+}
+
+/** Singleton per-endpoint latency registry shared across the process. */
+export const endpointLatencyRegistry = new EndpointLatencyRegistry();
+
 export interface SystemMetric {
   name: string;
   value: number;

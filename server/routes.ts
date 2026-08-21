@@ -7255,6 +7255,16 @@ export async function registerRoutes(
         healthRegistry.checkAll(),
         Promise.resolve(responseTimeTracker.getStats()),
       ]);
+      const { endpointLatencyRegistry } = await import("./services/monitoringService.js");
+      const slowestEndpoints = endpointLatencyRegistry
+        .getSlowestEndpoints(10)
+        .map((e) => ({
+          endpoint: e.endpoint,
+          avgMs: Math.round(e.avg),
+          p95Ms: Math.round(e.p95),
+          p99Ms: Math.round(e.p99),
+          samples: e.count,
+        }));
       const code = result.status === "down" ? 503 : 200;
       res.status(code).json({
         status: result.status,
@@ -7269,6 +7279,9 @@ export async function registerRoutes(
           maxMs:   Math.round(rtStats.max),
           samples: rtStats.count,
           windowSec: 300,
+          // Per-endpoint breakdown (slowest-p95-first) so a single slow route
+          // surfaces on its own instead of hiding inside the global average.
+          slowestEndpoints,
         },
       });
     } catch (err) {

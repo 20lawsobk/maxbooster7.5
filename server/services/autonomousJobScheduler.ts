@@ -200,6 +200,14 @@ async function processAutonomousJob(job: Job): Promise<void> {
     case "prune-upload-dirs":
       await pruneUploadDirs(7);
       break;
+    case "payout-drain": {
+      const { payoutService } = await import("./payoutService.js");
+      const result = await payoutService?.processScheduledPayouts();
+      logger.info(
+        `[AutonomousScheduler] payout-drain: ${result?.processed} processed, ${result?.failed} failed, ${result?.skipped} skipped`,
+      );
+      break;
+    }
     case "beat-money-loop-tick": {
       const { beatMoneyLoopService } = await import(
         "./beatMoneyLoopService.js"
@@ -347,6 +355,7 @@ const REPEATABLE_JOBS = [
   { name: "prune-notifications", every: 86_400_000 },
   { name: "prune-upload-dirs", every: 86_400_000 },
   { name: "beat-money-loop-tick", every: 1_800_000 }, // 30 min heartbeat; cycle fires only when due
+  { name: "payout-drain", every: 21_600_000 }, // every 6h; auto-drains balances past threshold
 ] as const;
 
 const SCHED_DEFAULTS = {

@@ -68,26 +68,55 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
         /* intentional: malformed snapshot JSON → parsedSnapshot stays null */
       }
 
+      let bookedOrderId: string | null = null;
       if (!existing) {
-        await db.insert(orders).values({
-          userId: buyerId,
-          sellerId,
-          listingId: beatId,
-          amount: (session?.amount_total || 0) / 100,
-          currency: session.currency || "usd",
-          status: "completed",
-          licenseType: licenseType || "basic",
-          licenseSnapshot: parsedSnapshot,
-          stripePaymentIntentId: paymentRef,
-          metadata: { licenseType, sessionId: session.id },
-        });
+        const [createdOrder] = await db
+          .insert(orders)
+          .values({
+            userId: buyerId,
+            sellerId,
+            listingId: beatId,
+            amount: (session?.amount_total || 0) / 100,
+            currency: session.currency || "usd",
+            status: "completed",
+            licenseType: licenseType || "basic",
+            licenseSnapshot: parsedSnapshot,
+            stripePaymentIntentId: paymentRef,
+            metadata: { licenseType, sessionId: session.id },
+          })
+          .returning({ id: orders.id });
+        bookedOrderId = createdOrder?.id ?? null;
         logger.info(
           `[Stripe] Order created for beat ${beatId}, buyer ${buyerId}, seller ${sellerId}, license ${licenseType}`,
         );
       } else {
+        bookedOrderId = existing.id;
         logger.info(
           `[Stripe] Order already exists for payment ${paymentRef}, skipping duplicate`,
         );
+      }
+
+      // Book the seller's earnings (revenue event + royalty split distribution
+      // + instant payout) via the same path used by direct-purchase flow.
+      // Without this call, the order row existed but no earnings were ever
+      // credited — the buyer was charged with nothing booked for the seller.
+      // processPayment() is idempotent (guarded on order.status==="completed"),
+      // so replaying this webhook never double-books.
+      if (bookedOrderId) {
+        try {
+          const { marketplaceService } = await import(
+            "../../services/marketplaceService.js"
+          );
+          await marketplaceService.processPayment(bookedOrderId, paymentRef);
+        } catch (bookingError) {
+          logger.warn(
+            bookingError,
+            `[Stripe] Failed to book seller earnings for order ${bookedOrderId} (beat ${beatId}):`,
+          );
+          failures.push(
+            `earnings booking for order ${bookedOrderId} (beat ${beatId}, payment ${session?.id})`,
+          );
+        }
       }
     } catch (orderError) {
       logger.warn(orderError, "[Stripe] Failed to create order record:");

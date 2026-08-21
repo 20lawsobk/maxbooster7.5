@@ -7,7 +7,7 @@
 
 import type { Request, Response, NextFunction } from "express";
 import { logger } from "./logger.js";
-import { responseTimeTracker } from "./services/monitoringService.js";
+import { responseTimeTracker, endpointLatencyRegistry } from "./services/monitoringService.js";
 
 /**
  * Custom metrics interface for APM integration
@@ -144,6 +144,7 @@ export function metricsMiddleware(
 
     metrics?.trackAPICall(endpoint, duration, res.statusCode);
     responseTimeTracker.record(duration);
+    endpointLatencyRegistry.record(`${req.method} ${endpoint}`, duration);
 
     // Log slow requests and bump Prometheus counter (>5 s threshold)
     if (duration > 3000) {

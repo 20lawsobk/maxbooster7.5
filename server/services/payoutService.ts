@@ -1,6 +1,6 @@
 import { db } from "../db.js";
 import { royaltyStatements, systemSettings } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 
@@ -519,6 +519,41 @@ export class PayoutService {
       .sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
   }
 
+  /**
+   * Loads every user's payment preferences directly from the DB — NOT from
+   * the in-process read-through cache, which only holds users who happened
+   * to have their prefs read during this process's lifetime. A cache-only
+   * scan would silently skip auto-payout-eligible users the cache never
+   * warmed for, so the drain job would never actually reach them.
+   */
+  private async getAllPaymentPreferences(): Promise<PaymentPreferences[]> {
+    const rows = await db
+      .select({ key: systemSettings.key, value: systemSettings.value })
+      .from(systemSettings)
+      .where(sql`${systemSettings.key} LIKE 'payment_prefs:%'`);
+
+    const prefsList: PaymentPreferences[] = [];
+    for (const row of rows) {
+      if (!row?.value) continue;
+      const prefs = row.value as unknown as PaymentPreferences;
+      prefsList.push(prefs);
+      // Opportunistically warm the cache so subsequent reads are fast.
+      if (prefs?.userId) {
+        this.paymentPreferences.set(prefs.userId, {
+          prefs,
+          cachedAt: Date.now(),
+        });
+      }
+    }
+    return prefsList;
+  }
+
+  /**
+   * Auto-drains every seller's accumulated royalty balance once it crosses
+   * their configured payout threshold. Without this running on a schedule,
+   * `autoPayoutEnabled` in preferences was inert — balances would sit
+   * unpaid indefinitely no matter how high they climbed.
+   */
   async processScheduledPayouts(): Promise<{
     processed: number;
     failed: number;
@@ -528,9 +563,7 @@ export class PayoutService {
     let failed = 0;
     let skipped = 0;
 
-    const allPreferences = Array.from(this.paymentPreferences.values()).map(
-      (e) => e?.prefs,
-    );
+    const allPreferences = await this.getAllPaymentPreferences();
 
     for (const prefs of allPreferences) {
       if (!prefs?.autoPayoutEnabled) {

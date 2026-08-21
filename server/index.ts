@@ -23,6 +23,7 @@ import compression from "compression";
 import { brotliMiddleware } from "./middleware/brotliCompression.js";
 import { logger } from "./logger.js";
 import { setupStartupEndpoints, startupProbes } from "./startup-probes.js";
+import { metricsMiddleware } from "./monitoring.js";
 import {
   cloudflareMiddleware,
   buildTrustProxyValue,
@@ -115,6 +116,11 @@ app.use(brotliMiddleware());
 // Threshold at 256 B (lowered from 512) so more small JSON responses get compressed.
 app.use(compression({ level: 6, threshold: 256 }));
 app.use(cookieParser());
+
+// Global + per-endpoint response-time tracking. Feeds responseTimeTracker
+// and endpointLatencyRegistry (surfaced in /api/ready's `latency` block).
+// Was defined but never mounted, so those stats were always all-zero.
+app.use(metricsMiddleware);
 
 // Fast-path health endpoint: must be registered BEFORE session/PDIM middleware so
 // Replit's health checker always gets an instant response regardless of PDIM load.
