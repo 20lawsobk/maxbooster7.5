@@ -23,3 +23,24 @@ roughly the MAX of the largest one. If this class of promote-timeout recurs afte
 lever is reducing capsule sizes (further node_modules pruning, or deferring external/maxcore extraction
 until after the server binds and responds to the probe, since it's a supervised child process started
 later in start.sh, not required for the initial HTTP response).
+
+## Update: synchronous checksum silently re-serialized the "parallel" fix
+
+Converting the four `restoreCapsule()` calls to `Promise.all` was not sufficient by itself.
+Each call still did `createHash("sha256").update(readFileSync(capsulePath)).digest("hex")` to verify
+capsule integrity before extraction — a fully synchronous read+hash of a large (100s of MB) file.
+Since `Array.prototype.map` invokes each async function synchronously up to its first `await`/blocking
+point, and `readFileSync`+`createHash` never yields to the event loop, the four checksum verifications
+still ran one after another before any of the `tar` extractions could even start — production logs kept
+showing capsule "Extracting ..." lines 10-30s apart despite the Promise.all wrapper, i.e. the fix looked
+like a no-op from the logs alone.
+
+**Fix:** replace the sync hash with a streaming one (`fs.createReadStream` + incremental `hash.update()`
+per chunk, resolved on the stream's `end` event). A stream naturally yields between chunks, so multiple
+capsules' checksums (and consequently their tar spawns) now actually overlap. Verified with a synthetic
+two-capsule test showing checksum start times within ~5ms of each other instead of serialized.
+
+**Lesson:** when parallelizing Node.js work with `Promise.all`, audit every step inside each task for
+sync I/O or sync CPU-bound work (readFileSync of a large file, sync hashing, sync JSON parsing of a huge
+file) — a single blocking call anywhere in the chain silently re-serializes everything before it, and the
+bug will not appear as a JS error, only as unexplained timing in production logs.

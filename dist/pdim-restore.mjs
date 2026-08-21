@@ -11,11 +11,27 @@
  *   "gzip-9" → tar -xzf  (gzip, fallback)
  */
 
-import { existsSync, readFileSync, writeFileSync, rmSync } from "fs";
+import { existsSync, readFileSync, writeFileSync, rmSync, createReadStream } from "fs";
 import { createHash } from "crypto";
 import { spawn } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+
+// Streaming, non-blocking sha256 — reading large capsules synchronously
+// (readFileSync + createHash) stalls Node's single event loop for the whole
+// read+hash duration, which serializes every other "concurrent" restore
+// behind it one at a time. A stream yields to the event loop between chunks,
+// so multiple capsules' checksums (and their tar extractions) actually
+// overlap instead of just appearing to.
+function sha256File(path) {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const hash = createHash("sha256");
+    const stream = createReadStream(path);
+    stream.on("data", (chunk) => hash.update(chunk));
+    stream.on("end", () => resolvePromise(hash.digest("hex")));
+    stream.on("error", rejectPromise);
+  });
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
@@ -29,44 +45,44 @@ function readManifest(manifestPath) {
   return null;
 }
 
-function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
+async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
+  const capsulePath = resolve(ROOT, capsuleName);
+  const manifestPath = resolve(ROOT, manifestName);
+  const sentinelPath = resolve(ROOT, targetDir, sentinel || ".pdim-restored");
+
+  if (!existsSync(capsulePath)) {
+    console.log(`[pdim-restore] ${capsuleName}: capsule not found — skipping`);
+    return true;
+  }
+
+  if (existsSync(sentinelPath)) {
+    console.log(`[pdim-restore] ${targetDir}/ already restored — skipping`);
+    return true;
+  }
+
+  const manifest = readManifest(manifestPath);
+  const compression = manifest?.compression || "gzip-9";
+  const tarFlag = compression.startsWith("xz") ? "-xJf" : "-xzf";
+
+  // Verify capsule integrity before extraction when the manifest has a hash.
+  // Streamed (see sha256File) so this doesn't block the other concurrent
+  // restores' event-loop turns while it reads a large capsule.
+  if (manifest?.sha256) {
+    const actual = await sha256File(capsulePath);
+    if (actual !== manifest.sha256) {
+      console.error(
+        `[pdim-restore] ERROR: checksum mismatch for ${capsuleName}\n` +
+          `  expected ${manifest.sha256}\n  actual   ${actual}`,
+      );
+      return false;
+    }
+  }
+
+  console.log(
+    `[pdim-restore] Extracting ${capsuleName} (${compression}) → ${targetDir}/ ...`,
+  );
+
   return new Promise((resolvePromise) => {
-    const capsulePath = resolve(ROOT, capsuleName);
-    const manifestPath = resolve(ROOT, manifestName);
-    const sentinelPath = resolve(ROOT, targetDir, sentinel || ".pdim-restored");
-
-    if (!existsSync(capsulePath)) {
-      console.log(`[pdim-restore] ${capsuleName}: capsule not found — skipping`);
-      return resolvePromise(true);
-    }
-
-    if (existsSync(sentinelPath)) {
-      console.log(`[pdim-restore] ${targetDir}/ already restored — skipping`);
-      return resolvePromise(true);
-    }
-
-    const manifest = readManifest(manifestPath);
-    const compression = manifest?.compression || "gzip-9";
-    const tarFlag = compression.startsWith("xz") ? "-xJf" : "-xzf";
-
-    // Verify capsule integrity before extraction when the manifest has a hash.
-    if (manifest?.sha256) {
-      const actual = createHash("sha256")
-        .update(readFileSync(capsulePath))
-        .digest("hex");
-      if (actual !== manifest.sha256) {
-        console.error(
-          `[pdim-restore] ERROR: checksum mismatch for ${capsuleName}\n` +
-            `  expected ${manifest.sha256}\n  actual   ${actual}`,
-        );
-        return resolvePromise(false);
-      }
-    }
-
-    console.log(
-      `[pdim-restore] Extracting ${capsuleName} (${compression}) → ${targetDir}/ ...`,
-    );
-
     const fail = (msg) => {
       console.error(`[pdim-restore] ERROR: ${msg}`);
       // Remove a partially extracted tree so the next boot retries cleanly.

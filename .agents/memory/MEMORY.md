@@ -87,3 +87,4 @@
 - [Webhook honesty patterns](webhook-honesty-patterns.md) — stamp own id pre-call; discriminate multi-creator-path lookups; mocked-service tests hide no-write bugs; buffered audit-log calls aren't a durability guarantee
 - [PnPm hoisted copy reconciliation](pnpm-hoisted-copy-reconciliation.md) — a refreshed lock can coexist with stale top-level hoisted packages; verify runtime resolution and reify those generated copies
 - [pdim-restore.mjs is static, serial-by-default](pdim-restore-parallel-extract.md) — it's a git-committed file, not build-generated; 4 capsules extracting serially at boot can blow the promote-step probe timeout
+- [Sync hash defeats "parallel" restore](pdim-restore-sync-hash-blocks-loop.md) — readFileSync+createHash for checksum verify blocks Node's event loop, serializing supposedly-concurrent Promise.all work; stream the hash instead
