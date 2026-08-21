@@ -12,7 +12,7 @@ interface PaymentBypassConfig {
 }
 
 const PAYMENT_BYPASS_KEY = "payment_bypass";
-const DEFAULT_BYPASS_DURATION_HOURS = 2;
+const DEFAULT_BYPASS_DURATION_HOURS = 24;
 
 class PaymentBypassService {
   private cachedConfig: PaymentBypassConfig | null = null;
