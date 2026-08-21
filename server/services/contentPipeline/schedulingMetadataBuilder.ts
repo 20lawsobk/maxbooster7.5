@@ -248,7 +248,8 @@ export function manifestToBulkSchedulePayload(
     .map((entry) => {
       const key = `${entry?.platform}:${entry?.slot}`;
       // Safe: the preceding .filter() only keeps entries where contentMap.has(key).
-      const item = contentMap?.get(key)!;
+      // contentMap is a required, non-nullable parameter, so a plain .get() is safe here.
+      const item = contentMap.get(key)!;
       return {
         platform: entry.platform,
         content: item.content,

@@ -29,19 +29,19 @@ setInterval(
     const cutoff = Date.now() - AUTONOMOUS_STATE_TTL_MS;
     for (const [uid, ts] of autonomousStateLastAccessed) {
       if (ts < cutoff) {
-        autonomousStates?.delete(uid);
-        autonomousStateLastAccessed?.delete(uid);
+        autonomousStates.delete(uid);
+        autonomousStateLastAccessed.delete(uid);
       }
     }
     // Hard size cap: if still over limit, evict oldest entries first.
-    if (autonomousStates?.size > AUTONOMOUS_STATE_MAX) {
-      const sorted = [...(autonomousStateLastAccessed?.entries() ?? [])].sort(
+    if (autonomousStates.size > AUTONOMOUS_STATE_MAX) {
+      const sorted = [...autonomousStateLastAccessed.entries()].sort(
         (a, b) => a[1] - b[1],
       );
       for (const [uid] of sorted) {
-        autonomousStates?.delete(uid);
-        autonomousStateLastAccessed?.delete(uid);
-        if (autonomousStates?.size <= AUTONOMOUS_STATE_MAX) break;
+        autonomousStates.delete(uid);
+        autonomousStateLastAccessed.delete(uid);
+        if (autonomousStates.size <= AUTONOMOUS_STATE_MAX) break;
       }
     }
   },
@@ -49,8 +49,8 @@ setInterval(
 ).unref(); // hourly
 
 function getState(userId: string): AutonomousSocialState {
-  if (!autonomousStates?.has(userId)) {
-    autonomousStates?.set(userId, {
+  if (!autonomousStates.has(userId)) {
+    autonomousStates.set(userId, {
       isRunning: false,
       totalContentPublished: 0,
       lastPublishedAt: null,
@@ -62,10 +62,10 @@ function getState(userId: string): AutonomousSocialState {
       },
     });
   }
-  autonomousStateLastAccessed?.set(userId, Date.now());
+  autonomousStateLastAccessed.set(userId, Date.now());
   // Safe: the block above guarantees an entry exists for `userId` before
   // this line runs.
-  return autonomousStates?.get(userId)!;
+  return autonomousStates.get(userId)!;
 }
 
 router.get("/status", requireAuth, async (req, res) => {

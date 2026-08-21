@@ -164,16 +164,16 @@ function compareVersions(a: string, b: string): number {
 }
 
 function getUserDevices(userId: string): Map<string, DeviceInfo> {
-  if (!userDevices?.has(userId)) {
-    userDevices?.set(userId, new Map());
+  if (!userDevices.has(userId)) {
+    userDevices.set(userId, new Map());
   }
   // Safe: the block above guarantees an entry exists for `userId`.
-  return userDevices?.get(userId)!;
+  return userDevices.get(userId)!;
 }
 
 function getUserSyncState(userId: string): SyncState {
-  if (!userSyncStates?.has(userId)) {
-    userSyncStates?.set(userId, {
+  if (!userSyncStates.has(userId)) {
+    userSyncStates.set(userId, {
       preferences: {},
       theme: "system",
       language: "en",
@@ -184,7 +184,7 @@ function getUserSyncState(userId: string): SyncState {
     });
   }
   // Safe: the block above guarantees an entry exists for `userId`.
-  return userSyncStates?.get(userId)!;
+  return userSyncStates.get(userId)!;
 }
 
 export function registerDevice(
