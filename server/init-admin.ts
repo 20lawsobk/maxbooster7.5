@@ -153,6 +153,7 @@ export async function initializeAdmin() {
     await seedPluginCatalog();
     await seedDSPProviders();
     await seedDistributionPlatformsFromFile();
+    await seedPlatformRoyaltyRatesFromFile();
     await seedAchievementsData();
     await seedStatusPageServices();
     await seedAIModels();
@@ -1664,6 +1665,22 @@ async function seedDistributionPlatformsFromFile() {
     await seedDistributionPlatforms();
   } catch (error) {
     logger.warn("Distribution platforms seeding skipped:", (error as any)?.message);
+  }
+}
+
+/**
+ * Seed real, publicly-reported per-stream royalty rates for major DSPs into
+ * platform_royalty_rates so royalty statements reflect actual earnings
+ * instead of falling back on royaltyEngine's hardcoded defaults.
+ */
+async function seedPlatformRoyaltyRatesFromFile() {
+  try {
+    const { seedPlatformRoyaltyRates } = await import(
+      "./seed/platformRoyaltyRates.js"
+    );
+    await seedPlatformRoyaltyRates();
+  } catch (error) {
+    logger.warn("Platform royalty rate seeding skipped:", (error as any)?.message);
   }
 }
 

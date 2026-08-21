@@ -5988,6 +5988,7 @@ export const autopilotPreferences = pgTable("autopilot_preferences", {
 
   // Advertisement Autopilot Settings
   adAutopilotEnabled: boolean("ad_autopilot_enabled").default(false),
+  autoDistributionEnabled: boolean("auto_distribution_enabled").default(false),
   organicGrowthPriority: text("organic_growth_priority"), // 'reach' | 'engagement' | 'followers' | 'conversions'
   crossPostingEnabled: boolean("cross_posting_enabled").default(true),
   viralOptimizationLevel: text("viral_optimization_level"), // 'conservative' | 'moderate' | 'aggressive'

@@ -75,6 +75,7 @@ interface AutopilotPreferencesData {
   platformSettings: Record<string, PlatformSetting>;
   postingSchedule: PostingSchedule;
   adAutopilotEnabled: boolean;
+  autoDistributionEnabled: boolean;
   organicGrowthPriority: string;
   crossPostingEnabled: boolean;
   viralOptimizationLevel: string;
@@ -110,6 +111,7 @@ const defaultPreferences: AutopilotPreferencesData = {
     avoidDays: [],
   },
   adAutopilotEnabled: false,
+  autoDistributionEnabled: false,
   organicGrowthPriority: "engagement",
   crossPostingEnabled: true,
   viralOptimizationLevel: "moderate",
@@ -780,6 +782,25 @@ export function AutopilotPreferences() {
                       adAutopilotEnabled: checked,
                     })
                   }
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <p className="font-medium">Auto-Distribution</p>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically send new beats to Spotify, Apple Music, and other DSPs when you publish them
+                  </p>
+                </div>
+                <Switch
+                  checked={preferences.autoDistributionEnabled}
+                  onCheckedChange={(checked) =>
+                    setPreferences({
+                      ...preferences,
+                      autoDistributionEnabled: checked,
+                    })
+                  }
+                  data-testid="switch-auto-distribution"
                 />
               </div>
 

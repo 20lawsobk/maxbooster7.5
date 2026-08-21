@@ -28,6 +28,7 @@ import {
   storefrontFollows,
   storefrontRatings,
   beatInteractions,
+  autopilotPreferences,
 } from "@shared/schema";
 import { eq, and, gte, sql, desc, asc, or, inArray } from "drizzle-orm";
 import { getBaseUrl } from "../config/defaults.js";
@@ -1602,6 +1603,53 @@ router.post(
           },
         ],
       });
+
+      // Fire-and-forget: dispatch this beat to DSPs if the seller has opted
+      // into auto-distribution in their settings. Never blocks the listing
+      // response — a slow/failed DSP submission must not fail the upload.
+      if (listing?.id && audioUrl) {
+        setImmediate(async () => {
+          try {
+            const [prefs] = await db
+              .select({
+                autoDistributionEnabled:
+                  autopilotPreferences.autoDistributionEnabled,
+              })
+              .from(autopilotPreferences)
+              .where(eq(autopilotPreferences.userId, req.user!.id))
+              .limit(1);
+
+            if (!prefs?.autoDistributionEnabled) return;
+
+            const { autonomousService } = await import(
+              "../services/autonomousService.js"
+            );
+            const result = await autonomousService.autoDistributeRelease(
+              req.user!.id,
+              {
+                title,
+                audioUrl,
+                artworkUrl,
+              } as any,
+            );
+
+            if (result?.success) {
+              logger.info(
+                `[AutoDistribution] Beat ${listing.id} dispatched to ${result.dispatchedTo?.join(", ")} for user ${req.user!.id}`,
+              );
+            } else {
+              logger.warn(
+                `[AutoDistribution] Beat ${listing.id} auto-distribution did not succeed for user ${req.user!.id}`,
+              );
+            }
+          } catch (err) {
+            logger.warn(
+              { err },
+              `[AutoDistribution] Failed to auto-distribute beat ${listing?.id}`,
+            );
+          }
+        });
+      }
 
       // Auto-tag BPM/key via Python librosa analysis if not provided by user
       if (files?.audioFile?.[0] && (!tempo || !key)) {
