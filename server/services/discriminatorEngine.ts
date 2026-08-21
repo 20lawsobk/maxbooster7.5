@@ -76,7 +76,7 @@ function allCapsSpamRatio(text: string): number {
   const words = text.split(/\s+/).filter((w) => /[A-Za-z]{3,}/.test(w));
   if (words.length === 0) return 0;
   const capsWords = words.filter((w) => w === w.toUpperCase());
-  return capsWords.length / words.length;
+  return capsWords.length / (words.length || 1);
 }
 
 /**
@@ -205,7 +205,7 @@ export async function judgeContent(
   const axes = [local.coherence, local.style, local.correctness];
   if (realism !== null) axes.push(realism);
   const overall = Math.round(
-    axes.reduce((a, b) => a + b, 0) / axes.length,
+    axes.reduce((a, b) => a + b, 0) / (axes.length || 1),
   );
 
   const critique = [...local.critique];
