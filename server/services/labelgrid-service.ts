@@ -203,6 +203,7 @@ export interface LabelGridDSP {
   };
   deliveryMethod: "api" | "ftp" | "ddex";
   logoUrl?: string;
+  docsUrl?: string;
 }
 
 export interface LabelGridDSPListResponse {
@@ -475,6 +476,7 @@ class LabelGridService {
           },
           deliveryMethod: (p.metadata as any).deliveryMethod || "api",
           logoUrl: p.logoUrl as string | undefined,
+          docsUrl: (p.metadata as any).docsUrl as string | undefined,
         }),
       );
 

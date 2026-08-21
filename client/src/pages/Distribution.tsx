@@ -438,6 +438,7 @@ interface PlatformData {
   isActive?: boolean;
   iconUrl?: string;
   websiteUrl?: string;
+  docsUrl?: string;
 }
 
 interface DistroPlatform extends PlatformData {
@@ -4035,6 +4036,18 @@ export default function Distribution() {
                                 {platform.region}
                               </span>
                             </div>
+                            {platform.docsUrl && (
+                              <a
+                                href={platform.docsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between text-xs pt-1 text-blue-600 dark:text-blue-400 hover:underline"
+                                data-testid={`link-docs-${platform.id}`}
+                              >
+                                <span>Documentation</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
                           </div>
                         </div>
                       );

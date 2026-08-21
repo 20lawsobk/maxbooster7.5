@@ -688,6 +688,7 @@ router.get("/platforms", requireAuth, async (_req: Request, res: Response) => {
       processingTime: dsp.processingTime,
       requirements: dsp.requirements,
       logoUrl: dsp.logoUrl,
+      docsUrl: dsp.docsUrl,
     }));
 
     res.json({

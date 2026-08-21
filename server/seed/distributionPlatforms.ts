@@ -1,7 +1,8 @@
 import { db } from "../db";
 import { dspProviders } from "@shared/schema";
-import { sql, count } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { logger } from "../logger.js";
+import { DOCS_URLS } from "./distributionPlatformDocs.js";
 
 export const DISTRIBUTION_PLATFORMS = [
   // =====================================================
@@ -1941,20 +1942,14 @@ export async function seedDistributionPlatforms() {
   logger.info("🌱 Seeding distribution platforms...");
 
   try {
-    const [{ total }] = await db.select({ total: count() }).from(dspProviders);
-
-    if (Number(total) >= DISTRIBUTION_PLATFORMS?.length) {
-      logger.info(
-        `✅ Distribution platform seeding complete! ${DISTRIBUTION_PLATFORMS?.length} platforms available.`,
-      );
-      return;
-    }
-
     const values = DISTRIBUTION_PLATFORMS?.map((p) => ({
       name: p.name,
       slug: p.slug,
       isActive: p.isActive,
-      metadata: p.metadata,
+      metadata: {
+        ...p.metadata,
+        ...(DOCS_URLS[p.slug] ? { docsUrl: DOCS_URLS[p.slug] } : {}),
+      },
     }));
 
     await db
