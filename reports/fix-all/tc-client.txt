@@ -1,1 +1,0 @@
-/nix/store/b1kq183rmmiv453fn6f8bfmi1drxvxba-npx/bin/npx: line 7:  5202 Killed                     /nix/store/1lagpgadaybvs1n2312gysg2phjk89y8-nodejs-20.20.0-wrapped/bin/npx "$@"
