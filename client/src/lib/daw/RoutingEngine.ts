@@ -289,15 +289,16 @@ export class RoutingEngine {
     const visited = new Set<string>();
     const stack = [targetId];
 
-    while (stack?.length > 0) {
-      const current = stack?.pop();
+    while (stack.length > 0) {
+      const current = stack.pop();
+      if (current === undefined) continue;
 
       if (current === sourceId) {
         return true;
       }
 
-      if (visited?.has(current)) continue;
-      visited?.add(current);
+      if (visited.has(current)) continue;
+      visited.add(current);
 
       const neighbors = this.adjacencyList.get(current);
       if (neighbors) {
