@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { logger } from "./logger";
 import { randomBytes } from "crypto";
-import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot } from "@shared/schema";
+import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, systemLogs, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot } from "@shared/schema";
 import { db, dbRead } from "./db";
 import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, isNotNull } from "drizzle-orm";
 
@@ -15,6 +15,14 @@ type DistroRelease = typeof distroReleases.$inferSelect;
 type DistroTrack = typeof distroTracks.$inferSelect;
 
 export interface IStorage {
+  createOptimizationTask(task: {
+    taskType: string;
+    status: string;
+    description: string;
+    metrics?: Record<string, unknown>;
+    executedAt?: Date;
+    completedAt?: Date;
+  }): Promise<{ id: number }>;
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -119,6 +127,36 @@ export class DatabaseStorage implements IStorage {
       "getUser",
     );
     return user || undefined;
+  }
+
+  // Persistent audit trail for self-evolution / silent-deployment / autonomous
+  // update tasks. Backed by the existing system_logs table (service:
+  // "optimization") rather than a new table, since callers only need a
+  // queryable append-only record, not a dedicated schema.
+  async createOptimizationTask(task: {
+    taskType: string;
+    status: string;
+    description: string;
+    metrics?: Record<string, unknown>;
+    executedAt?: Date;
+    completedAt?: Date;
+  }): Promise<{ id: number }> {
+    const [row] = await db
+      .insert(systemLogs)
+      .values({
+        level: task.status === "failed" ? "warn" : "info",
+        service: "optimization",
+        message: `[${task.taskType}] ${task.description}`,
+        metadata: {
+          taskType: task.taskType,
+          status: task.status,
+          metrics: task.metrics ?? {},
+          executedAt: (task.executedAt ?? new Date()).toISOString(),
+          completedAt: (task.completedAt ?? new Date()).toISOString(),
+        },
+      })
+      .returning({ id: systemLogs.id });
+    return { id: row.id };
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
