@@ -167,7 +167,8 @@ function getUserDevices(userId: string): Map<string, DeviceInfo> {
   if (!userDevices?.has(userId)) {
     userDevices?.set(userId, new Map());
   }
-  return userDevices?.get(userId);
+  // Safe: the block above guarantees an entry exists for `userId`.
+  return userDevices?.get(userId)!;
 }
 
 function getUserSyncState(userId: string): SyncState {
@@ -182,7 +183,8 @@ function getUserSyncState(userId: string): SyncState {
       syncVersion: 0,
     });
   }
-  return userSyncStates?.get(userId);
+  // Safe: the block above guarantees an entry exists for `userId`.
+  return userSyncStates?.get(userId)!;
 }
 
 export function registerDevice(
@@ -207,7 +209,7 @@ export function registerDevice(
     deviceName: device.deviceName,
     lastSeen: now,
     registeredAt: devices.has(device?.deviceId)
-      ? devices?.get(device?.deviceId).registeredAt
+      ? devices?.get(device?.deviceId)!.registeredAt
       : now,
   };
 
@@ -339,7 +341,8 @@ export function pushUpdateNotification(
   if (!updateNotifications?.has("global")) {
     updateNotifications?.set("global", []);
   }
-  updateNotifications?.get("global").push(notification);
+  // Safe: the block above guarantees a "global" entry exists.
+  updateNotifications?.get("global")!.push(notification);
 
   logger.info({ platform, version, isForced }, "Update notification pushed");
   return notification;

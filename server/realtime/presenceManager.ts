@@ -331,7 +331,7 @@ export class PresenceManager {
 
     const projectPresence = this.localPresence.get(projectId);
     if (projectPresence?.has(fieldKey)) {
-      return projectPresence?.get(fieldKey);
+      return projectPresence?.get(fieldKey) ?? null;
     }
 
     try {

@@ -96,7 +96,6 @@ export const PLATFORM_ROYALTY_RATES: Array<{
 export async function seedPlatformRoyaltyRates() {
   const { db } = await import("../db.js");
   const { platformRoyaltyRates } = await import("../../shared/schema.js");
-  const { sql } = await import("drizzle-orm");
   const { logger } = await import("../logger.js");
 
   logger.info("🌱 Seeding platform royalty rates...");

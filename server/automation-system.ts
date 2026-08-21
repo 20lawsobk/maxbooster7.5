@@ -7,6 +7,18 @@ import { logger } from "./logger.js";
 
 promisify(exec);
 
+// Action `params` are `Record<string, unknown>` (arbitrary caller-supplied
+// JSON), but the services they're forwarded to expect typed fields. These
+// narrow a param to its expected primitive type instead of casting, so a
+// wrong-shaped param becomes `undefined` (falls back to the callee's own
+// default) rather than a runtime error deep inside the callee.
+function strParam(v: unknown): string | undefined {
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+function numParam(v: unknown): number | undefined {
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+}
+
 // Lazy service loaders — avoid circular imports at module load time.
 async function loadNotificationService() {
   const m = await import("./services/notificationService.js");
@@ -301,21 +313,40 @@ export class AutomationSystem extends EventEmitter {
           `📊 Generating analytics report (${params?.reportType ?? "full"}) for user ${params?.userId}`,
         );
         try {
-          if (!params?.userId) {
+          const userId = strParam(params?.userId);
+          if (!userId) {
             throw new Error("generate-analytics-report requires a userId");
           }
           const { generateAndDeliverAnalyticsReport } = await import(
             "./services/analyticsReportService.js"
           );
+          const REPORT_TYPES = [
+            "revenue",
+            "streaming",
+            "royalties",
+            "beats",
+            "full",
+          ] as const;
+          const REPORT_FORMATS = ["json", "csv"] as const;
+          const reportType = REPORT_TYPES.includes(
+            params?.reportType as (typeof REPORT_TYPES)[number],
+          )
+            ? (params.reportType as (typeof REPORT_TYPES)[number])
+            : undefined;
+          const format = REPORT_FORMATS.includes(
+            params?.format as (typeof REPORT_FORMATS)[number],
+          )
+            ? (params.format as (typeof REPORT_FORMATS)[number])
+            : undefined;
           const recipients = Array.isArray(params?.recipients)
             ? params.recipients
             : params?.recipients
               ? [params.recipients]
               : [];
           const report = await generateAndDeliverAnalyticsReport({
-            userId: params.userId,
-            reportType: params?.reportType,
-            format: params?.format,
+            userId,
+            reportType,
+            format,
             recipients,
           });
           if (!report.success) {
@@ -364,13 +395,14 @@ export class AutomationSystem extends EventEmitter {
       execute: async (params) => {
         logger.info(`🎛️ Auto-mixing project ${params?.trackId}`);
         try {
-          if (!params?.trackId) {
+          const trackId = strParam(params?.trackId);
+          if (!trackId) {
             throw new Error("ai-mix-track requires trackId (studio project id)");
           }
           const { renderProjectMixdown } = await import(
             "./services/studioRenderService.js"
           );
-          const rendered = await renderProjectMixdown(params.trackId, {
+          const rendered = await renderProjectMixdown(trackId, {
             format: "wav",
             sampleRate: 44100,
             bitDepth: 24,
@@ -402,19 +434,19 @@ export class AutomationSystem extends EventEmitter {
       execute: async (params) => {
         logger.info(`🎚️ Mastering project ${params?.trackId}`);
         try {
-          if (!params?.trackId) {
+          const trackId = strParam(params?.trackId);
+          if (!trackId) {
             throw new Error("ai-master-track requires trackId (studio project id)");
           }
           const { renderProjectMixdown } = await import(
             "./services/studioRenderService.js"
           );
-          const rendered = await renderProjectMixdown(params.trackId, {
-            format: params?.format || "wav",
+          const rendered = await renderProjectMixdown(trackId, {
+            format: strParam(params?.format) || "wav",
+            sampleRate: 44100,
+            bitDepth: 24,
             applyMastering: true,
-            targetLufs:
-              typeof params?.targetLoudness === "number"
-                ? params.targetLoudness
-                : -14,
+            targetLufs: numParam(params?.targetLoudness) ?? -14,
           });
           return {
             success: true,
@@ -589,13 +621,13 @@ export class AutomationSystem extends EventEmitter {
             "./services/videoGeneratorService.js"
           );
           const r = await generateVideo({
-            topic: params?.contentText || "New release",
-            platform: params?.platform,
-            template: params?.templateType,
-            aspect_ratio: params?.aspectRatio,
-            bg_color: params?.colorPalette,
-            user_audio_path: params?.audioUrl,
-            userId: params?.userId,
+            topic: strParam(params?.contentText) || "New release",
+            platform: strParam(params?.platform),
+            template: strParam(params?.templateType),
+            aspect_ratio: strParam(params?.aspectRatio),
+            bg_color: strParam(params?.colorPalette),
+            user_audio_path: strParam(params?.audioUrl),
+            userId: strParam(params?.userId),
             awarenessMode: "advertising",
           });
           if (!r?.success) {
@@ -645,12 +677,12 @@ export class AutomationSystem extends EventEmitter {
           const results = [];
           for (const platform of platforms) {
             const r = await generateVideo({
-              topic: params?.contentText || "New content",
+              topic: strParam(params?.contentText) || "New content",
               platform,
-              duration: params?.duration,
-              template: params?.visualStyle,
-              user_audio_path: params?.audioUrl,
-              userId: params?.userId,
+              duration: numParam(params?.duration),
+              template: strParam(params?.visualStyle),
+              user_audio_path: strParam(params?.audioUrl),
+              userId: strParam(params?.userId),
               awarenessMode: "social",
             });
             results.push({ platform, success: r?.success, url: r?.url, error: r?.error });
@@ -707,11 +739,11 @@ export class AutomationSystem extends EventEmitter {
           const r = await generateVideo({
             topic: lyricsText.slice(0, 80) || "Lyric video",
             body: lyricsText.slice(0, 120),
-            template: params?.visualStyle,
-            bg_color: params?.colorPalette,
-            aspect_ratio: params?.resolution,
-            user_audio_path: params?.audioUrl,
-            userId: params?.userId,
+            template: strParam(params?.visualStyle),
+            bg_color: strParam(params?.colorPalette),
+            aspect_ratio: strParam(params?.resolution),
+            user_audio_path: strParam(params?.audioUrl),
+            userId: strParam(params?.userId),
             awarenessMode: "video_script",
           });
           if (!r?.success) {
@@ -759,12 +791,12 @@ export class AutomationSystem extends EventEmitter {
             "./services/videoGeneratorService.js"
           );
           const r = await generateVideo({
-            topic: params?.visualizerType || "Audio visualizer",
-            scene_prompt: params?.visualizerType,
-            bg_color: params?.colorPalette,
-            duration: params?.duration,
-            user_audio_path: params?.audioUrl,
-            userId: params?.userId,
+            topic: strParam(params?.visualizerType) || "Audio visualizer",
+            scene_prompt: strParam(params?.visualizerType),
+            bg_color: strParam(params?.colorPalette),
+            duration: numParam(params?.duration),
+            user_audio_path: strParam(params?.audioUrl),
+            userId: strParam(params?.userId),
             awarenessMode: "video_script",
           });
           if (!r?.success) {

@@ -63,7 +63,9 @@ function getState(userId: string): AutonomousSocialState {
     });
   }
   autonomousStateLastAccessed?.set(userId, Date.now());
-  return autonomousStates?.get(userId);
+  // Safe: the block above guarantees an entry exists for `userId` before
+  // this line runs.
+  return autonomousStates?.get(userId)!;
 }
 
 router.get("/status", requireAuth, async (req, res) => {

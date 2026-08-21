@@ -157,7 +157,8 @@ export function buildScheduleManifest(
   const byPlatform = new Map<SupportedPlatform, ContentSlot[]>();
   for (const { platform, slot } of slots) {
     if (!byPlatform?.has(platform)) byPlatform?.set(platform, []);
-    byPlatform?.get(platform).push(slot);
+    // Safe: the line above guarantees `platform` has an entry.
+    byPlatform?.get(platform)!.push(slot);
   }
 
   for (const [platform, contentSlots] of byPlatform?.entries() ?? []) {
@@ -246,7 +247,8 @@ export function manifestToBulkSchedulePayload(
     .filter((entry) => contentMap?.has(`${entry?.platform}:${entry?.slot}`))
     .map((entry) => {
       const key = `${entry?.platform}:${entry?.slot}`;
-      const item = contentMap?.get(key);
+      // Safe: the preceding .filter() only keeps entries where contentMap.has(key).
+      const item = contentMap?.get(key)!;
       return {
         platform: entry.platform,
         content: item.content,
