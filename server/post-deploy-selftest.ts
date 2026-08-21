@@ -324,7 +324,19 @@ class PostDeploySelfTest {
     }
 
     if (recommendation === "rollback") {
-      logger.warn("❌ CRITICAL: Self-test recommends rollback!");
+      logger.warn("❌ CRITICAL: Self-test recommends rollback — executing automatic rollback now");
+      try {
+        const { selfEvolution } = await import("./self-evolution-engine.js");
+        await selfEvolution?.triggerRollback();
+        logger.warn(
+          "🔙 Automatic rollback executed following failed post-deploy self-test",
+        );
+      } catch (err) {
+        logger.warn(
+          { err },
+          "❌ Automatic rollback attempt failed after self-test recommended it",
+        );
+      }
     }
 
     this.isRunning = false;

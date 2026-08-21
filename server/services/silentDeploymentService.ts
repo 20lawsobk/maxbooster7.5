@@ -1,21 +1,38 @@
 /**
  * Silent Deployment Service
  *
- * Hooks into the Self-Evolution Engine to apply generated code changes to the
- * live server with zero user-visible downtime and no end-user notifications.
+ * Hooks into the Self-Evolution Engine to verify generated code/registry
+ * changes on the live server and auto-rollback if they degrade health, with
+ * no end-user notifications.
  *
- * Deployment flow:
- *  1. SelfEvolutionEngine writes new files atomically (tmp → rename)
- *  2. Engine emits 'filesDeployed' with upgrade metadata
- *  3. SilentDeploymentService receives event and queues a deployment window
- *  4. Pre-deploy health baseline is captured
- *  5. 30-second grace period drains in-flight requests
- *  6. Rolling cluster restart triggered via IPC to primary process
+ * There are two upgrade paths, and this service completes both end-to-end:
+ *
+ * A) Registry-applied enhancements (the current, non-disruptive path):
+ *  1. SelfEvolutionEngine applies the change to the in-process evolution
+ *     registry immediately and emits 'enhancementsApplied' — no restart is
+ *     needed because every worker reads the registry live.
+ *  2. SilentDeploymentService queues a verification window (no restart step).
+ *  3. Short post-apply health watch (polling every 5s, up to 20s).
+ *  4. If health degrades → automatic rollback via
+ *     SelfEvolutionEngine.triggerRollback() (deactivates the registry entry
+ *     in-process — no restart required to undo it either).
+ *  5. Full audit entry written to admin log.
+ *
+ * B) Legacy file-based upgrades (kept for any future producer that writes
+ *    files directly rather than going through the registry):
+ *  1. Producer writes new files atomically (tmp → rename) and emits
+ *     'filesDeployed' with upgrade metadata.
+ *  2. SilentDeploymentService receives the event and queues a deployment
+ *     window that DOES require a restart for the new files to load.
+ *  3. Pre-deploy health baseline is captured.
+ *  4. 30-second grace period drains in-flight requests.
+ *  5. Rolling cluster restart triggered via IPC to primary process
  *     – Primary cycles workers one at a time (old exits → new forks → shift traffic)
  *     – Single-process mode: scheduled restart after event loop drains
- *  7. 60-second health watch (polling every 5s) after restart
- *  8. If health degrades → automatic rollback + second restart to restore .bak files
- *  9. Full audit entry written to admin log — zero end-user notifications
+ *  6. 60-second health watch (polling every 5s) after restart.
+ *  7. If health degrades → automatic rollback via
+ *     SelfEvolutionEngine.triggerRollback().
+ *  8. Full audit entry written to admin log.
  */
 
 import { EventEmitter } from "events";
@@ -30,6 +47,7 @@ interface DeploymentRecord {
   upgradeId: string;
   upgradeType: string;
   filesModified: number;
+  requiresRestart: boolean;
   startedAt: Date;
   completedAt?: Date;
   restartTriggered: boolean;
@@ -49,16 +67,23 @@ interface HealthSnapshot {
 const GRACE_PERIOD_MS = 30_000;
 const HEALTH_POLL_MS = 5_000;
 const HEALTH_TIMEOUT_MS = 60_000;
+// In-process registry changes take effect immediately, so post-apply
+// verification only needs a short watch, not the full restart-recovery
+// window used for a real process restart.
+const REGISTRY_VERIFY_TIMEOUT_MS = 20_000;
 const SLOW_THRESHOLD_MS = 2_000;
 const PORT = process.env.PORT || "5000";
 
+interface QueuedDeployment {
+  upgradeId: string;
+  upgradeType: string;
+  filesModified: number;
+  requiresRestart: boolean;
+}
+
 class SilentDeploymentService extends EventEmitter {
   private enabled: boolean = false;
-  private deploymentQueue: Array<{
-    upgradeId: string;
-    upgradeType: string;
-    filesModified: number;
-  }> = [];
+  private deploymentQueue: QueuedDeployment[] = [];
   private isDeploying: boolean = false;
   private history: DeploymentRecord[] = [];
   private readonly MAX_HISTORY = 100;
@@ -119,7 +144,27 @@ class SilentDeploymentService extends EventEmitter {
         logger.info(
           `[SilentDeploy] Evolution files written — queueing silent reload (upgradeId=${payload?.upgradeId})`,
         );
-        this.deploymentQueue.push(payload);
+        this.deploymentQueue.push({ ...payload, requiresRestart: true });
+        this.processQueue();
+      },
+    );
+
+    // Current production path: registry-applied enhancements take effect
+    // in-process immediately, so this queues a lightweight verify-and-maybe
+    // -rollback window instead of a restart.
+    selfEvolution?.on(
+      "enhancementsApplied",
+      (payload: { upgradeId: string; category: string }) => {
+        if (!this.enabled) return;
+        logger.info(
+          `[SilentDeploy] Registry enhancement applied — queueing post-apply verification (upgradeId=${payload?.upgradeId})`,
+        );
+        this.deploymentQueue.push({
+          upgradeId: payload?.upgradeId,
+          upgradeType: payload?.category,
+          filesModified: 0,
+          requiresRestart: false,
+        });
         this.processQueue();
       },
     );
@@ -144,6 +189,7 @@ class SilentDeploymentService extends EventEmitter {
       upgradeId: item.upgradeId,
       upgradeType: item.upgradeType,
       filesModified: item.filesModified,
+      requiresRestart: item.requiresRestart,
       startedAt: new Date(),
       restartTriggered: false,
       rolledBack: false,
@@ -165,15 +211,29 @@ class SilentDeploymentService extends EventEmitter {
         return;
       }
 
-      logger.info(
-        `[SilentDeploy] Pre-deploy health OK (${preHealth?.responseTimeMs}ms) — waiting ${GRACE_PERIOD_MS / 1000}s grace period`,
-      );
-      await this.sleep(GRACE_PERIOD_MS);
+      let postHealth: HealthSnapshot;
 
-      this.triggerReload("silent-deploy");
-      record.restartTriggered = true;
+      if (item.requiresRestart) {
+        logger.info(
+          `[SilentDeploy] Pre-deploy health OK (${preHealth?.responseTimeMs}ms) — waiting ${GRACE_PERIOD_MS / 1000}s grace period`,
+        );
+        await this.sleep(GRACE_PERIOD_MS);
 
-      const postHealth = await this.watchHealthUntilReady();
+        this.triggerReload("silent-deploy");
+        record.restartTriggered = true;
+
+        postHealth = await this.watchHealthUntilReady(HEALTH_TIMEOUT_MS);
+      } else {
+        // Registry change already took effect in-process — no restart to
+        // wait on, just confirm the server is still healthy afterwards.
+        logger.info(
+          `[SilentDeploy] Pre-apply health OK (${preHealth?.responseTimeMs}ms) — verifying post-apply health`,
+        );
+        postHealth = await this.watchHealthUntilReady(
+          REGISTRY_VERIFY_TIMEOUT_MS,
+        );
+      }
+
       record.postHealthMs = postHealth?.responseTimeMs;
       record.healthCheckPassed = postHealth?.ok;
       record.completedAt = new Date();
@@ -233,8 +293,10 @@ class SilentDeploymentService extends EventEmitter {
     }
   }
 
-  private async watchHealthUntilReady(): Promise<HealthSnapshot> {
-    const deadline = Date?.now() + HEALTH_TIMEOUT_MS;
+  private async watchHealthUntilReady(
+    timeoutMs: number,
+  ): Promise<HealthSnapshot> {
+    const deadline = Date?.now() + timeoutMs;
     let lastSnapshot: HealthSnapshot = {
       responseTimeMs: 9999,
       ok: false,
