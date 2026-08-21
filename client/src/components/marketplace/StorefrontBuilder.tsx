@@ -415,7 +415,7 @@ export default function StorefrontBuilder() {
   const { data: tiers = [] } = useQuery<
     MembershipTier[]
   >({
-    queryKey: ["/api/storefront", selectedStorefront.id, "tiers"],
+    queryKey: ["/api/storefront", selectedStorefront?.id, "tiers"],
     enabled: !!selectedStorefront,
     queryFn: async () => {
       const res = await fetch(
@@ -440,7 +440,7 @@ export default function StorefrontBuilder() {
       createdAt: string;
     }>;
   }>({
-    queryKey: ["/api/storefront-domains", selectedStorefront.id],
+    queryKey: ["/api/storefront-domains", selectedStorefront?.id],
     enabled: !!selectedStorefront,
     queryFn: async () => {
       const res = await fetch(
@@ -746,7 +746,7 @@ export default function StorefrontBuilder() {
     domain: string | null;
     status: string | null;
   }>({
-    queryKey: ["/api/storefront-domains/platform", selectedStorefront.id],
+    queryKey: ["/api/storefront-domains/platform", selectedStorefront?.id],
     queryFn: () =>
       selectedStorefront
         ? apiRequest(
@@ -779,7 +779,7 @@ export default function StorefrontBuilder() {
         queryClient.invalidateQueries({
           queryKey: [
             "/api/storefront-domains/platform",
-            selectedStorefront.id,
+            selectedStorefront?.id,
           ],
         });
       } else {

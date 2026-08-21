@@ -5621,7 +5621,8 @@ export async function registerRoutes(
       }
       try {
         const user = req.user!;
-        const prefs = (user.preferences as any).payoutSettings || {};
+        const preferences = (user.preferences as any) || {};
+        const prefs = preferences.payoutSettings || {};
 
         // Pull the latest submitted tax form to surface taxCountry / taxId
         const [latestTaxForm] = await db
@@ -5635,9 +5636,12 @@ export async function registerRoutes(
           .orderBy(desc(taxForms.submittedAt))
           .limit(1);
 
-        const taxFormData = latestTaxForm.formData as Record<string, unknown>;
+        const taxFormData =
+          (latestTaxForm?.formData as Record<string, unknown>) || {};
         const taxCountry =
-          taxFormData.taxCountry ?? (taxFormData.address as any).country ?? null;
+          taxFormData.taxCountry ??
+          (taxFormData.address as any)?.country ??
+          null;
         const taxId = taxFormData.taxId
           ? "***-**-" + String(taxFormData.taxId).slice(-4)
           : null;
@@ -5647,11 +5651,11 @@ export async function registerRoutes(
           payoutSchedule: prefs.payoutSchedule ?? "monthly",
           preferredMethod: prefs.preferredMethod ?? null,
           stripeConnected: !!user.stripeConnectedAccountId,
-          paypalEmail: (user.preferences as any).payout.paypalEmail ?? null,
+          paypalEmail: prefs.paypalEmail ?? null,
           taxCountry,
           taxId,
-          taxFormType: latestTaxForm.formType ?? null,
-          taxFormStatus: latestTaxForm.status ?? null,
+          taxFormType: latestTaxForm?.formType ?? null,
+          taxFormStatus: latestTaxForm?.status ?? null,
         });
       } catch (error) {
         logger.warn({ err: error }, "Payout settings error");
