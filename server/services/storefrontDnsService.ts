@@ -733,14 +733,14 @@ export async function detachDomainFromStorefront(
   const client = await pool?.connect();
   try {
     await client?.query("BEGIN");
-    const { rows } = await client?.query<{
+    const { rows } = (await client?.query<{
       domain: string;
       dns_zone_id: string | null;
       storefront_id: string;
     }>(
       `SELECT domain, dns_zone_id, storefront_id FROM storefront_domains WHERE id = $1`,
       [storefrontDomainId],
-    );
+    )) ?? {};
     if (!rows[0]) {
       await client?.query("ROLLBACK");
       return;

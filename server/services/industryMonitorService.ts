@@ -10,8 +10,8 @@
  *  - Digital Music News        (digitalmusicnews?.com)
  *  - Music Ally                (musically?.com)
  *  - MusicRadar                (musicradar?.com)
- *  - Spotify Newsroom          (newsroom?.spotify.com)
- *  - Meta Creators Newsroom    (about?.fb.com)
+ *  - Spotify Newsroom          (newsroom?.spotify?.com)
+ *  - Meta Creators Newsroom    (about?.fb?.com)
  *
  * Optional (activated when env vars are set):
  *  - TAVILY_API_KEY  → Tavily web search for deeper real-time intelligence
@@ -154,7 +154,7 @@ class IndustryMonitorService {
   });
 
   async fetchLiveChanges(): Promise<LiveIndustryChange[]> {
-    if (this.cache && Date?.now() - this.cache.fetchedAt < CACHE_TTL_MS) {
+    if (this.cache && Date.now() - this.cache.fetchedAt < CACHE_TTL_MS) {
       const fresh = this.cache.changes?.filter((c) => !this.seenIds.has(c?.id));
       for (const c of fresh) this.seenIds.add(c?.id);
       return fresh;
@@ -162,7 +162,7 @@ class IndustryMonitorService {
 
     logger.info("[IndustryMonitor] Fetching live music industry data...");
 
-    const [rssChanges, searchChanges] = await Promise?.all([
+    const [rssChanges, searchChanges] = await Promise.all([
       this.fetchAllRssFeeds(),
       this.fetchSearchIntelligence(),
     ]);
@@ -182,7 +182,7 @@ class IndustryMonitorService {
   }
 
   private async fetchAllRssFeeds(): Promise<LiveIndustryChange[]> {
-    const results = await Promise?.allSettled(
+    const results = await Promise.allSettled(
       RSS_FEEDS?.map((feed) => this.fetchRssFeed(feed?.url, feed?.name)),
     );
 
@@ -190,7 +190,7 @@ class IndustryMonitorService {
     let failCount = 0;
     for (const result of results) {
       if (result?.status === "fulfilled") {
-        all?.push(...result?.value);
+        all?.push(...(result?.value ?? []));
       } else {
         failCount++;
         logger.warn(
@@ -249,7 +249,7 @@ class IndustryMonitorService {
           ? [channel?.item]
           : [];
 
-      for (const item of items?.slice(0, 20)) {
+      for (const item of items?.slice(0, 20) ?? []) {
         const title = this.stripHtml(String(item?.title || "")).trim();
         const description = this.stripHtml(String(item?.description || ""))
           .trim()
@@ -304,21 +304,21 @@ class IndustryMonitorService {
 
     const changes: LiveIndustryChange[] = [];
 
-    const [tavilyResults, exaResults] = await Promise?.all([
+    const [tavilyResults, exaResults] = await Promise.all([
       tavilyKey
-        ? Promise?.allSettled(
+        ? Promise.allSettled(
             MUSIC_INDUSTRY_QUERIES?.map((q) => this.tavilySearch(q, tavilyKey)),
           )
-        : Promise?.resolve([]),
+        : Promise.resolve([]),
       exaKey
-        ? Promise?.allSettled(
+        ? Promise.allSettled(
             MUSIC_INDUSTRY_QUERIES?.map((q) => this.exaSearch(q, exaKey)),
           )
-        : Promise?.resolve([]),
+        : Promise.resolve([]),
     ]);
 
     for (const r of tavilyResults) {
-      if (r?.status === "fulfilled") changes?.push(...r?.value);
+      if (r?.status === "fulfilled") changes?.push(...(r?.value ?? []));
       else
         logger.warn(
           "[IndustryMonitor] Tavily query failed:",
@@ -327,7 +327,7 @@ class IndustryMonitorService {
     }
 
     for (const r of exaResults) {
-      if (r?.status === "fulfilled") changes?.push(...r?.value);
+      if (r?.status === "fulfilled") changes?.push(...(r?.value ?? []));
       else
         logger.warn(
           "[IndustryMonitor] Exa query failed:",

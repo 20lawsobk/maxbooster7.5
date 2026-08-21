@@ -282,7 +282,7 @@ export class PeakCacheEngine {
 
   private estimateEntrySize(entry: PeakCacheEntry): number {
     let size = 0;
-    for (const [, level] of entry?.levels) {
+    for (const [, level] of entry?.levels ?? []) {
       size += level?.peaks.length * 24;
     }
     if (entry?.rawData) {

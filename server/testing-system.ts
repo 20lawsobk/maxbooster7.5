@@ -141,7 +141,7 @@ export class TestingSystem {
       this.testResults.passedTests += unitResults?.passedTests;
       this.testResults.failedTests += unitResults?.failedTests;
       this.testResults.skippedTests += unitResults?.skippedTests;
-      this.testResults.testSuites?.push(...unitResults?.testSuites);
+      this.testResults.testSuites?.push(...(unitResults?.testSuites ?? []));
 
       // Integration tests
       const integrationResults = await this.integrationTester.runTests();
@@ -150,7 +150,7 @@ export class TestingSystem {
       this.testResults.passedTests += integrationResults?.passedTests;
       this.testResults.failedTests += integrationResults?.failedTests;
       this.testResults.skippedTests += integrationResults?.skippedTests;
-      this.testResults.testSuites?.push(...integrationResults?.testSuites);
+      this.testResults.testSuites?.push(...(integrationResults?.testSuites ?? []));
 
       // E2E tests
       const e2eResults = await this.e2eTester.runTests();
@@ -159,7 +159,7 @@ export class TestingSystem {
       this.testResults.passedTests += e2eResults?.passedTests;
       this.testResults.failedTests += e2eResults?.failedTests;
       this.testResults.skippedTests += e2eResults?.skippedTests;
-      this.testResults.testSuites?.push(...e2eResults?.testSuites);
+      this.testResults.testSuites?.push(...(e2eResults?.testSuites ?? []));
 
       // Performance tests
       const performanceResults = await this.performanceTester.runTests();
@@ -168,7 +168,7 @@ export class TestingSystem {
       this.testResults.passedTests += performanceResults?.passedTests;
       this.testResults.failedTests += performanceResults?.failedTests;
       this.testResults.skippedTests += performanceResults?.skippedTests;
-      this.testResults.testSuites?.push(...performanceResults?.testSuites);
+      this.testResults.testSuites?.push(...(performanceResults?.testSuites ?? []));
 
       // Security tests
       const securityResults = await this.securityTester.runTests();
@@ -177,7 +177,7 @@ export class TestingSystem {
       this.testResults.passedTests += securityResults?.passedTests;
       this.testResults.failedTests += securityResults?.failedTests;
       this.testResults.skippedTests += securityResults?.skippedTests;
-      this.testResults.testSuites?.push(...securityResults?.testSuites);
+      this.testResults.testSuites?.push(...(securityResults?.testSuites ?? []));
 
       // Accessibility tests
       const accessibilityResults = await this.accessibilityTester.runTests();
@@ -186,7 +186,7 @@ export class TestingSystem {
       this.testResults.passedTests += accessibilityResults?.passedTests;
       this.testResults.failedTests += accessibilityResults?.failedTests;
       this.testResults.skippedTests += accessibilityResults?.skippedTests;
-      this.testResults.testSuites?.push(...accessibilityResults?.testSuites);
+      this.testResults.testSuites?.push(...(accessibilityResults?.testSuites ?? []));
 
       // Calculate overall score
       this.calculateOverallScore();
@@ -195,7 +195,7 @@ export class TestingSystem {
       await this.calculateCoverage();
 
       // Update last test time
-      this.testResults.lastTest = Date?.now();
+      this.testResults.lastTest = Date.now();
 
       logger.info(
         `✅ Test suite completed. Overall score: ${this.testResults.overallScore}/100`,

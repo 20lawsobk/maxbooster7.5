@@ -65,7 +65,7 @@ import { spawnSync, spawn } from "child_process";
   const isEnoent =
     probe?.error && (probe?.error as NodeJS.ErrnoException).code === "ENOENT";
   if (isEnoent) {
-    console?.warn(
+    console.warn(
       "[Cluster] boosterstate binary cannot execute on this host " +
         "(ELF interpreter not found — binary was built for a different NixOS/glibc). " +
         "Continuing without sidecar.",
@@ -108,19 +108,19 @@ import { spawnSync, spawn } from "child_process";
 
   function compressDir(dir: string) {
     let count = 0;
-    for (const entry of fs?.readdirSync(dir, { withFileTypes: true })) {
+    for (const entry of fs?.readdirSync(dir, { withFileTypes: true }) ?? []) {
       const full = path?.join(dir, entry?.name);
       if (entry?.isDirectory()) {
         count += compressDir(full);
         continue;
       }
       if (!COMPRESSIBLE?.test(entry?.name)) continue;
-      if (entry?.name.endsWith(".br") || entry?.name.endsWith(".gz")) continue;
+      if (entry?.name?.endsWith(".br") || entry?.name?.endsWith(".gz")) continue;
       try {
         const src = fs?.readFileSync(full);
         if (!fs?.existsSync(full + ".br")) {
           const br = zlib?.brotliCompressSync(src, {
-            params: { [zlib?.constants.BROTLI_PARAM_QUALITY]: 6 },
+            params: { [zlib?.constants?.BROTLI_PARAM_QUALITY]: 6 },
           });
           fs?.writeFileSync(full + ".br", br);
           count++;
@@ -140,11 +140,11 @@ import { spawnSync, spawn } from "child_process";
   try {
     const compressed = compressDir(assetsDir);
     if (compressed > 0)
-      console?.log(
+      console.log(
         `[Cluster] Asset pre-compression complete — ${compressed} file(s) written`,
       );
   } catch (err) {
-    console?.warn(
+    console.warn(
       "[Cluster] Asset pre-compression skipped:",
       (err as Error).message,
     );
@@ -177,7 +177,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // Use dynamic import — index?.mjs is ESM and cannot be loaded with require().
   const appEntry = path?.join(__dirname, "index.mjs");
   import(appEntry).catch((err: unknown) => {
-    console?.error("[Cluster] Failed to load server entry:", err);
+    console.error("[Cluster] Failed to load server entry:", err);
     process.exit(1);
   });
 } else {
@@ -269,7 +269,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   const workerCount =
     envOverride && envOverride > 0
       ? (() => {
-          console?.warn(
+          console.warn(
             `[Cluster] ⚠️  CLUSTER_WORKERS override active — pinned to ${envOverride} worker(s). ` +
               `Auto-sizing would have chosen ${Math.min(cpuLimit, memLimit)}. ` +
               `Remove CLUSTER_WORKERS to restore full VM utilisation.`,
@@ -342,7 +342,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   primaryHealthServer?.listen(
     { port: primaryPort, host: "0.0.0.0", reusePort: true },
     () => {
-      console?.log(
+      console.log(
         `[Cluster] Primary health server on :${primaryPort} (pid=${process.pid}) — workers starting`,
       );
     },
@@ -380,8 +380,8 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
   cluster?.on("exit", (worker, code, signal) => {
     const reason = signal ? `signal=${signal}` : `code=${code}`;
-    console?.error(
-      `[Cluster] Worker ${worker?.process.pid} exited (${reason}) — restarting`,
+    console.error(
+      `[Cluster] Worker ${worker?.process?.pid} exited (${reason}) — restarting`,
     );
 
     // Retrieve (and remove) the env so the replacement inherits the same CLUSTER_WORKER_ID.
@@ -393,7 +393,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
       if (savedEnv) workerEnvMap?.set(w?.id, savedEnv);
     };
 
-    const now = Date?.now();
+    const now = Date.now();
     // Evict timestamps outside the 60-second window
     while (
       workerRestartTimes?.length > 0 &&
@@ -403,7 +403,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     }
 
     if (workerRestartTimes?.length >= MAX_RESTARTS_PER_MINUTE) {
-      console?.error(
+      console.error(
         `[Cluster] Crash-loop detected: ${workerRestartTimes?.length} restarts in last 60s — ` +
           `backing off ${BACKOFF_DELAY_MS / 1000}s before next fork`,
       );
@@ -417,7 +417,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   let workersOnline = 0;
   let primaryPortReleased = false;
   cluster?.on("online", (worker) => {
-    console?.log(`[Cluster] Worker ${worker?.process.pid} online`);
+    console.log(`[Cluster] Worker ${worker?.process?.pid} online`);
     workersOnline++;
     if (workersOnline >= workerCount && !primaryPortReleased) {
       primaryPortReleased = true;
@@ -426,7 +426,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
       // requests (including API calls from the SPA) land on the primary and get
       // 503 forever, breaking the app for users even after a clean boot.
       primaryHealthServer?.close(() => {
-        console?.log(
+        console.log(
           "[Cluster] Primary port released — all traffic now served by workers",
         );
       });
@@ -438,12 +438,12 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // The primary must propagate the signal to all workers and wait for them to drain
   // before exiting. Hard-exits after 25 s (autoscale sends SIGKILL at ~30 s).
   function primaryShutdown(signal: string): void {
-    console?.log(
+    console.log(
       `[Cluster] Primary received ${signal} — draining ${Object.keys(cluster?.workers ?? {}).length} worker(s)`,
     );
 
     const hardExit = setTimeout(() => {
-      console?.error("[Cluster] Primary hard timeout — forcing exit");
+      console.error("[Cluster] Primary hard timeout — forcing exit");
       process.exit(0);
     }, 25_000);
     hardExit?.unref();
@@ -454,7 +454,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     ) as import("cluster").Worker[];
     workers?.forEach((w) => {
       try {
-        w?.process.kill("SIGTERM");
+        w?.process?.kill("SIGTERM");
       } catch {
         /* worker may already be gone */
       }
@@ -471,7 +471,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     cluster?.on("exit", () => {
       remaining--;
       if (remaining <= 0) {
-        console?.log("[Cluster] All workers exited — primary shutting down");
+        console.log("[Cluster] All workers exited — primary shutting down");
         clearTimeout(hardExit);
         process.exit(0);
       }
@@ -491,14 +491,14 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     const msg = message as Record<string, unknown>;
     if (msg?.type !== "SILENT_RELOAD") return;
     if (rollingRestartInProgress) {
-      console?.log(
+      console.log(
         "[Cluster] Rolling restart already in progress — ignoring duplicate SILENT_RELOAD",
       );
       return;
     }
 
     const reason = msg?.reason ?? "unknown";
-    console?.log(
+    console.log(
       `[Cluster] SILENT_RELOAD received (reason=${reason}) — beginning rolling restart`,
     );
     rollingRestartInProgress = true;
@@ -510,7 +510,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
     const restartNext = () => {
       if (index >= workerList?.length) {
-        console?.log(
+        console.log(
           "[Cluster] Rolling restart complete — all workers running new code",
         );
         rollingRestartInProgress = false;
@@ -526,8 +526,8 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
       // Fork the replacement first so traffic is never fully dropped
       const replacement = cluster?.fork();
       replacement?.once("listening", () => {
-        console?.log(
-          `[Cluster] Replacement worker ${replacement?.process.pid} ready — retiring old worker ${target?.process.pid}`,
+        console.log(
+          `[Cluster] Replacement worker ${replacement?.process?.pid} ready — retiring old worker ${target?.process?.pid}`,
         );
         target?.disconnect();
         // Give old worker 10s to finish in-flight requests then force-kill

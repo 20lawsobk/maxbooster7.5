@@ -218,7 +218,7 @@ export class NonDestructiveRenderer {
     const result = this.renderWaveform(sourceId, sampleRate, viewport);
     if (result && result?.path.length > 0) {
       let maxAmplitude = 0;
-      for (const p of result?.path) {
+      for (const p of result?.path ?? []) {
         const extent = Math.max(Math.abs(p?.yMin - 100), Math.abs(p?.yMax - 100));
         if (extent > maxAmplitude) maxAmplitude = extent;
       }

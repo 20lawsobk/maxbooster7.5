@@ -411,19 +411,19 @@ export class ContentAnalysisService {
 
     const model = tf?.sequential({
       layers: [
-        tf?.layers.conv2d({
+        tf?.layers?.conv2d({
           inputShape: [224, 224, 3],
           filters: 32,
           kernelSize: 3,
           activation: "relu",
         }),
-        tf?.layers.maxPooling2d({ poolSize: 2 }),
-        tf?.layers.conv2d({ filters: 64, kernelSize: 3, activation: "relu" }),
-        tf?.layers.maxPooling2d({ poolSize: 2 }),
-        tf?.layers.flatten(),
-        tf?.layers.dense({ units: 128, activation: "relu" }),
-        tf?.layers.dropout({ rate: 0.5 }),
-        tf?.layers.dense({ units: 10, activation: "softmax" }),
+        tf?.layers?.maxPooling2d({ poolSize: 2 }),
+        tf?.layers?.conv2d({ filters: 64, kernelSize: 3, activation: "relu" }),
+        tf?.layers?.maxPooling2d({ poolSize: 2 }),
+        tf?.layers?.flatten(),
+        tf?.layers?.dense({ units: 128, activation: "relu" }),
+        tf?.layers?.dropout({ rate: 0.5 }),
+        tf?.layers?.dense({ units: 10, activation: "softmax" }),
       ],
     });
 
@@ -446,16 +446,16 @@ export class ContentAnalysisService {
 
     const model = tf?.sequential({
       layers: [
-        tf?.layers.conv2d({
+        tf?.layers?.conv2d({
           inputShape: [224, 224, 3],
           filters: 16,
           kernelSize: 3,
           activation: "relu",
         }),
-        tf?.layers.maxPooling2d({ poolSize: 2 }),
-        tf?.layers.flatten(),
-        tf?.layers.dense({ units: 64, activation: "relu" }),
-        tf?.layers.dense({ units: 1, activation: "sigmoid" }),
+        tf?.layers?.maxPooling2d({ poolSize: 2 }),
+        tf?.layers?.flatten(),
+        tf?.layers?.dense({ units: 64, activation: "relu" }),
+        tf?.layers?.dense({ units: 1, activation: "sigmoid" }),
       ],
     });
 
@@ -478,16 +478,16 @@ export class ContentAnalysisService {
 
     const model = tf?.sequential({
       layers: [
-        tf?.layers.conv2d({
+        tf?.layers?.conv2d({
           inputShape: [224, 224, 1],
           filters: 32,
           kernelSize: 3,
           activation: "relu",
         }),
-        tf?.layers.maxPooling2d({ poolSize: 2 }),
-        tf?.layers.flatten(),
-        tf?.layers.dense({ units: 64, activation: "relu" }),
-        tf?.layers.dense({ units: 1, activation: "sigmoid" }),
+        tf?.layers?.maxPooling2d({ poolSize: 2 }),
+        tf?.layers?.flatten(),
+        tf?.layers?.dense({ units: 64, activation: "relu" }),
+        tf?.layers?.dense({ units: 1, activation: "sigmoid" }),
       ],
     });
 
@@ -789,7 +789,7 @@ export class ContentAnalysisService {
       // Determine layout
       const centerDensity = regionDensities[1][1];
       const avgDensity = regionDensities?.flat().reduce((a, b) => a + b) / 9;
-      const maxDensity = Math.max(...regionDensities?.flat());
+      const maxDensity = Math.max(...(regionDensities?.flat() ?? []));
 
       let layout: "centered" | "rule-of-thirds" | "symmetric" | "dynamic" =
         "centered";
@@ -1192,7 +1192,7 @@ export class ContentAnalysisService {
         },
       });
 
-      const html = response?.data.toString();
+      const html = response?.data?.toString();
       return this.analyzeHTMLCustom(html);
     } catch (error) {
       logger.warn({ err: error }, "Website analysis error:");

@@ -17,12 +17,12 @@ const builtInEffects = BUILT_IN_EFFECTS?.filter(
 
 export const EXPANDED_INSTRUMENTS: PluginDefinition[] = enrichAll([
   ...builtInInstruments,
-  ...MB_PLUGINS?.filter((p: PluginDefinition) => p?.category === "instrument"),
+  ...(MB_PLUGINS?.filter((p: PluginDefinition) => p?.category === "instrument") ?? []),
 ]);
 
 export const EXPANDED_EFFECTS: PluginDefinition[] = enrichAll([
   ...builtInEffects,
-  ...MB_PLUGINS?.filter((p: PluginDefinition) => p?.category === "effect"),
+  ...(MB_PLUGINS?.filter((p: PluginDefinition) => p?.category === "effect") ?? []),
 ]);
 
 export const ALL_PLUGINS: PluginDefinition[] = [

@@ -79,7 +79,7 @@ const CACHE_TTL_MS = 30_000; // 30 s — recheck if idle
 
 /** Returns true if the PyTorch diffusion API is currently reachable. */
 export async function checkDiffusionAvailable(): Promise<boolean> {
-  if (_availabilityCache && Date?.now() - _availabilityCache?.ts < CACHE_TTL_MS) {
+  if (_availabilityCache && Date.now() - _availabilityCache?.ts < CACHE_TTL_MS) {
     return _availabilityCache?.available;
   }
   const available = await isPyTorchDiffusionReady();
@@ -198,11 +198,11 @@ export async function renderDiffusionScene(
     let energy = 0.65;
     if (ba?.energyEnvelope && ba?.energyEnvelope.length > 0) {
       const midpoint = (opts?.sceneIndex + 0.5) / (totalSc || 1);
-      const idx = Math?.min(
-        Math?.floor(midpoint * ba?.energyEnvelope.length),
+      const idx = Math.min(
+        Math.floor(midpoint * ba?.energyEnvelope.length),
         ba?.energyEnvelope.length - 1,
       );
-      energy = Math?.max(0.1, Math?.min(1.0, ba?.energyEnvelope[idx]));
+      energy = Math.max(0.1, Math.min(1.0, ba?.energyEnvelope[idx]));
     }
 
     // Check if this scene contains an energy peak (drop / chorus)
@@ -227,11 +227,11 @@ export async function renderDiffusionScene(
     // Diffusion API is capped at 48 frames per call for performance.
     // The post-process FFmpeg step trims/loops to exact durationSec.
     const fps = 30;
-    const frames = Math?.min(Math?.ceil(opts?.durationSec * fps), 48);
+    const frames = Math.min(Math.ceil(opts?.durationSec * fps), 48);
 
     // Cap resolution — diffusion API works best at ≤512 on each axis.
-    const H = Math?.min(opts?.height, 512);
-    const W = Math?.min(opts?.width, 512);
+    const H = Math.min(opts?.height, 512);
+    const W = Math.min(opts?.width, 512);
 
     const diffRequest: PyTorchDiffusionRequest = {
       prompt,
@@ -282,7 +282,7 @@ export async function renderDiffusionScene(
       "vignette=angle=PI/4.5:mode=forward:eval=init",
     ];
     if (opts?.textOverlays && opts?.textOverlays.length > 0) {
-      vfParts?.push(...opts?.textOverlays);
+      vfParts?.push(...(opts?.textOverlays ?? []));
     }
 
     await execFileAsync(

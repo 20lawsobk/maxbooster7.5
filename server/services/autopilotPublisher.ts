@@ -67,7 +67,7 @@ class AutopilotPublisher {
     // Run every 6 hours; each pass is O(n) over active users — fast.
     setInterval(
       () => {
-        const cutoff = Date?.now() - AutopilotPublisher.ATTEMPT_TTL_MS;
+        const cutoff = Date.now() - AutopilotPublisher.ATTEMPT_TTL_MS;
         for (const [userId, lastAttempt] of this.lastPublishAttempt) {
           if (lastAttempt?.getTime() < cutoff) {
             this.lastPublishAttempt.delete(userId);
@@ -437,7 +437,7 @@ class AutopilotPublisher {
           : ["twitter", "instagram"];
 
       // Fetch live storefront + beat data in parallel with platform selection
-      const [targetPlatform, sfContext] = await Promise?.all([
+      const [targetPlatform, sfContext] = await Promise.all([
         this.pickNextPlatform((userId as string), platforms),
         this.fetchStorefrontContext((userId as string)),
       ]);

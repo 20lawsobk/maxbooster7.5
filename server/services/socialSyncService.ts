@@ -47,7 +47,7 @@ async function refreshOAuth2Token(
       return null;
     }
     const expiresAt = data?.expires_in
-      ? new Date(Date?.now() + data?.expires_in * 1000)
+      ? new Date(Date.now() + data?.expires_in * 1000)
       : null;
     return {
       accessToken: data.access_token,
@@ -81,7 +81,7 @@ async function getValidAccessToken(connection: {
   const expiry = connection?.tokenExpiresAt
     ? new Date(connection?.tokenExpiresAt).getTime()
     : null;
-  const isExpired = expiry !== null && expiry < Date?.now() + 60_000; // refresh 60s before expiry
+  const isExpired = expiry !== null && expiry < Date.now() + 60_000; // refresh 60s before expiry
 
   if (!isExpired) return token;
   if (!connection?.refreshToken) {
@@ -421,7 +421,7 @@ export async function syncPlatformData(
           let bestFollowers = 0;
 
           // Check all pages for linked Instagram Business accounts
-          for (const page of pagesData?.data) {
+          for (const page of pagesData?.data ?? []) {
             const pageToken = page?.access_token;
             const igAccountRes = await timedFetch(
               `https://graph.facebook.com/${page.id}?fields=instagram_business_account&access_token=${pageToken}`,

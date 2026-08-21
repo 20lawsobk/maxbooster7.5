@@ -105,10 +105,10 @@ export class CompressionProfileRouter {
     await zstdEngine?.addSample(domain, processedData?.subarray(0, 32 * 1024));
     const dictId = await zstdEngine?.getDictForDomain(domain);
 
-    const { compressed, dictId: usedDict } = await zstdEngine?.compress(
+    const { compressed, dictId: usedDict } = (await zstdEngine?.compress(
       processedData,
       dictId,
-    );
+    )) ?? {};
 
     if (opts?.versionOf && !isDelta) {
       this.versionBases.set(opts?.versionOf, data);
@@ -154,7 +154,7 @@ export class CompressionProfileRouter {
     }
 
     const domain = `media-${contentClass}`;
-    const { compressed } = await zstdEngine?.compress(workingData);
+    const { compressed } = await (zstdEngine?.compress(workingData) ?? {});
 
     const finalData =
       compressed?.length < workingData?.length ? compressed : workingData;
@@ -188,17 +188,17 @@ export class CompressionProfileRouter {
     const domain = `semantic-${contentClass}`;
     await zstdEngine?.addSample(
       domain,
-      archiveResult?.data.subarray(0, 32 * 1024),
+      archiveResult?.data?.subarray(0, 32 * 1024),
     );
     const dictId = await zstdEngine?.getDictForDomain(domain);
 
-    const { compressed } = await zstdEngine?.compress(
+    const { compressed } = (await zstdEngine?.compress(
       archiveResult?.data,
       dictId,
-    );
+    )) ?? {};
 
     const finalData =
-      compressed?.length < archiveResult?.data.length
+      compressed?.length < archiveResult?.data?.length
         ? compressed
         : archiveResult?.data;
 

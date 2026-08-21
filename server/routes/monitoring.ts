@@ -109,7 +109,7 @@ router.get(
   "/system-health",
   asyncHandler(async (_req: any, res: any) => {
     try {
-      const [queueHealth, aiMetrics] = await Promise?.all([
+      const [queueHealth, aiMetrics] = await Promise.all([
         queueMonitor?.getHealthStatus(),
         aiModelManager?.getMetrics(),
       ]);

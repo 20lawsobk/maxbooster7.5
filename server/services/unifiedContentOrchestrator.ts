@@ -305,7 +305,7 @@ async function buildPlatformBundle(
     videoScriptResult,
     visualPromptResult,
     storySequenceResult,
-  ] = await Promise?.allSettled([
+  ] = await Promise.allSettled([
     generateHooks(ctx),
     generateCaptions(ctx),
     generateHashtags(ctx),
@@ -339,7 +339,7 @@ async function buildPlatformBundle(
   const spec = PLATFORM_SPECS[platform];
   const formattedPosts: FormattedPost[] = [];
 
-  for (const slot of spec?.supportedSlots) {
+  for (const slot of spec?.supportedSlots ?? []) {
     // Pick the right caption length for this slot
     const rawBody =
       slot === "text_post" || slot === "thread"
@@ -395,8 +395,8 @@ class UnifiedContentOrchestrator {
    * @returns UnifiedContentPackage — a complete, production-ready content package
    */
   async generate(input: UnifiedContentInput): Promise<UnifiedContentPackage> {
-    const runId = `ucr_${Date?.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const startTime = Date?.now();
+    const runId = `ucr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const startTime = Date.now();
 
     logger.info(
       `[UnifiedContentOrchestrator] Starting run ${runId} — type=${input.type} artist="${input.artistName}" platforms=${(input?.platforms ?? ["tiktok", "instagram", "youtube", "twitter"]).join(",")}`,
@@ -431,7 +431,7 @@ class UnifiedContentOrchestrator {
     logger.info(
       `[UCO:${runId}] Step 3: Building platform bundles for [${platforms?.join(", ")}]`,
     );
-    const bundleResults = await Promise?.allSettled(
+    const bundleResults = await Promise.allSettled(
       platforms?.map((platform) => buildPlatformBundle(platform, generatorCtx)),
     );
     const platformBundles: PlatformContentBundle[] = bundleResults
@@ -465,7 +465,7 @@ class UnifiedContentOrchestrator {
     logger.info(`[UCO:${runId}] Step 4: Building schedule manifest`);
     const slots: Array<{ platform: SupportedPlatform; slot: ContentSlot }> =
       platformBundles?.flatMap((bundle) =>
-        bundle?.formattedPosts.map((post) => ({
+        bundle?.formattedPosts?.map((post) => ({
           platform: bundle.platform,
           slot: post.slot,
         })),
@@ -485,7 +485,7 @@ class UnifiedContentOrchestrator {
       { content: string; platform: SupportedPlatform }
     >();
     for (const bundle of platformBundles) {
-      for (const post of bundle?.formattedPosts) {
+      for (const post of bundle?.formattedPosts ?? []) {
         contentMap?.set(`${post?.platform}:${post?.slot}`, {
           content: post.rawContent,
           platform: post.platform,
@@ -510,7 +510,7 @@ class UnifiedContentOrchestrator {
       );
     });
 
-    const generationTimeMs = Date?.now() - startTime;
+    const generationTimeMs = Date.now() - startTime;
 
     const pkg: UnifiedContentPackage = {
       runId,
@@ -535,7 +535,7 @@ class UnifiedContentOrchestrator {
     };
 
     logger.info(
-      `[UCO:${runId}] ✅ Complete — ${pkg?.stats.totalPieces} pieces, ${pkg?.stats.scheduledPosts} scheduled, ${generationTimeMs}ms`,
+      `[UCO:${runId}] ✅ Complete — ${pkg?.stats?.totalPieces} pieces, ${pkg?.stats?.scheduledPosts} scheduled, ${generationTimeMs}ms`,
     );
 
     return pkg;
@@ -567,7 +567,7 @@ class UnifiedContentOrchestrator {
         },
       },
       // Image/visual rendering job for each platform
-      ...bundles?.map((bundle) => ({
+      ...(bundles?.map((bundle) => ({
         queue: "mbs:content:visual:render",
         payload: {
           runId,
@@ -576,7 +576,7 @@ class UnifiedContentOrchestrator {
           thumbnailPrompt: bundle.visualPrompt.thumbnailPrompt,
           colorPalette: bundle.visualPrompt.colorDirections,
         },
-      })),
+      })) ?? []),
       // Training feedback to MaxCore
       {
         queue: "mbs:training:feedback",

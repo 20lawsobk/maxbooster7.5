@@ -81,9 +81,9 @@ export class JWTAuthService {
     const refreshTokenValue = crypto?.randomBytes(32).toString("hex");
     const tokenVersion = await this.getUserTokenVersion(userId);
 
-    const accessTokenExpiresAt = new Date(Date?.now() + ACCESS_TOKEN_EXPIRY_MS);
+    const accessTokenExpiresAt = new Date(Date.now() + ACCESS_TOKEN_EXPIRY_MS);
     const refreshTokenExpiresAt = new Date(
-      Date?.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+      Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
     );
 
     const accessToken = jwt?.sign(
@@ -111,7 +111,7 @@ export class JWTAuthService {
       revoked: false,
     };
 
-    const [jwtTokenRecord, refreshTokenRecord] = await Promise?.all([
+    const [jwtTokenRecord, refreshTokenRecord] = await Promise.all([
       storage.createJWTToken(jwtTokenData),
       storage.createRefreshToken(refreshTokenData),
     ]);
@@ -195,9 +195,9 @@ export class JWTAuthService {
     const accessTokenId = crypto?.randomUUID();
     crypto?.randomUUID();
     const newRefreshTokenValue = crypto?.randomBytes(32).toString("hex");
-    const accessTokenExpiresAt = new Date(Date?.now() + ACCESS_TOKEN_EXPIRY_MS);
+    const accessTokenExpiresAt = new Date(Date.now() + ACCESS_TOKEN_EXPIRY_MS);
     const refreshTokenExpiresAt = new Date(
-      Date?.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+      Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
     );
 
     const accessToken = jwt?.sign(
@@ -225,7 +225,7 @@ export class JWTAuthService {
       revoked: false,
     };
 
-    const [jwtTokenRecord, newRefreshTokenRecord] = await Promise?.all([
+    const [jwtTokenRecord, newRefreshTokenRecord] = await Promise.all([
       storage.createJWTToken(jwtTokenData),
       storage.createRefreshToken(newRefreshTokenData),
     ]);
@@ -244,7 +244,7 @@ export class JWTAuthService {
     userId: string,
     reason: string = "User logout",
   ): Promise<void> {
-    await Promise?.all([
+    await Promise.all([
       storage.revokeAllJWTTokensForUser(userId, reason),
       storage.revokeAllRefreshTokensForUser(userId, reason),
     ]);

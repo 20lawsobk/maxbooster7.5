@@ -37,7 +37,7 @@ async function getUserDomainUsage(
   );
   const total = (uniqueResult as any)?.rows[0]?.n ?? 0;
   // zones/claimed kept for informational breakdown (not used for quota)
-  const [zonesResult] = await Promise?.all([
+  const [zonesResult] = await Promise.all([
     pool.query("SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1", [
       userId,
     ]),
@@ -177,7 +177,7 @@ router.get("/usage", async (req, res) => {
     if (!req.isAuthenticated())
       return res.status(401).json({ error: "Unauthorized" });
     const userId = (req.user as unknown as Record<string, unknown>).id;
-    const [usage, hasSubscription] = await Promise?.all([
+    const [usage, hasSubscription] = await Promise.all([
       getUserDomainUsage((userId as string)),
       userHasActiveSubscription((userId as string)),
     ]);

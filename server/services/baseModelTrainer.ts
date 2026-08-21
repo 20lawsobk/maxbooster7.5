@@ -40,15 +40,15 @@ function makeSyntheticPosts(count: number): SocialPost[] {
   for (let i = 0; i < count; i++) {
     const platform = pick(PLATFORMS);
     const mediaType = pick(MEDIA_TYPES);
-    const peakHours = temporalFactors?.hourOfDay.peakHours;
+    const peakHours = temporalFactors?.hourOfDay?.peakHours;
     const isPeak = Math.random() > 0.4;
     const hour = isPeak ? pick(peakHours) : randInt(0, 23);
-    const postedAt = new Date(Date?.now() - randInt(0, 90) * 24 * 3600 * 1000);
+    const postedAt = new Date(Date.now() - randInt(0, 90) * 24 * 3600 * 1000);
     postedAt?.setHours((hour as number));
 
     const hashtagCount = randInt(
-      contentFactors?.hashtagCount.optimal?.min,
-      contentFactors?.hashtagCount.optimal?.max + 3,
+      contentFactors?.hashtagCount?.optimal?.min,
+      contentFactors?.hashtagCount?.optimal?.max + 3,
     );
     const emojiCount = randInt(0, 5);
     const mentionCount = randInt(0, 3);
@@ -58,12 +58,12 @@ function makeSyntheticPosts(count: number): SocialPost[] {
     const isNewRelease = Math.random() > 0.7;
     const mediaMultiplier =
       mediaType === "video"
-        ? contentFactors?.mediaPresence.videoMultiplier
+        ? contentFactors?.mediaPresence?.videoMultiplier
         : mediaType === "image"
-          ? contentFactors?.mediaPresence.imageMultiplier
+          ? contentFactors?.mediaPresence?.imageMultiplier
           : 1;
     const releaseMultiplier = isNewRelease
-      ? musicFactors?.newRelease.multiplier
+      ? musicFactors?.newRelease?.multiplier
       : 1;
     const peakMultiplier = isPeak ? 1.6 : 0.7;
 
@@ -137,7 +137,7 @@ function makeSyntheticCampaigns(count: number): OrganicCampaign[] {
         callToAction: objective === "conversions" ? "Shop Now" : "Listen Now",
       },
       timing: {
-        publishedAt: new Date(Date?.now() - randInt(0, 60) * 24 * 3600 * 1000),
+        publishedAt: new Date(Date.now() - randInt(0, 60) * 24 * 3600 * 1000),
         hourOfDay,
         dayOfWeek,
         isOptimalTime,
@@ -192,13 +192,13 @@ function makeOrganicAsAdsCampaigns(count: number): OrganicCampaign[] {
   const campaigns: OrganicCampaign[] = [];
   const funnelStages = ["awareness", "consideration", "conversion"] as const;
   const burstSequence =
-    (ORGANIC_AS_ADS_PATTERNS as any)?.crossPlatformBurstStrategy.sequencing;
+    (ORGANIC_AS_ADS_PATTERNS as any)?.crossPlatformBurstStrategy?.sequencing;
   const burstPlatforms = [
-    burstSequence?.t0.platform,
-    burstSequence?.t2h.platform,
-    burstSequence?.t4h.platform,
-    burstSequence?.t6h.platform,
-    burstSequence?.t24h.platform,
+    burstSequence?.t0?.platform,
+    burstSequence?.t2h?.platform,
+    burstSequence?.t4h?.platform,
+    burstSequence?.t6h?.platform,
+    burstSequence?.t24h?.platform,
   ];
   const mediaMix: Array<"text" | "image" | "video" | "carousel"> = [
     "video",
@@ -241,7 +241,7 @@ function makeOrganicAsAdsCampaigns(count: number): OrganicCampaign[] {
 
     // Conversions: organic converts better (higher trust) than paid
     const organicCVR =
-      (PAID_AD_BENCHMARKS as any)?.performanceVsOrganic.conversionComparison?.organicCVR;
+      (PAID_AD_BENCHMARKS as any)?.performanceVsOrganic?.conversionComparison?.organicCVR;
     const conversions = Math.round(
       clicks * rand(organicCVR * 0.7, organicCVR * 1.4),
     );
@@ -279,7 +279,7 @@ function makeOrganicAsAdsCampaigns(count: number): OrganicCampaign[] {
         callToAction,
       },
       timing: {
-        publishedAt: new Date(Date?.now() - randInt(0, 45) * 24 * 3600 * 1000),
+        publishedAt: new Date(Date.now() - randInt(0, 45) * 24 * 3600 * 1000),
         hourOfDay,
         dayOfWeek,
         isOptimalTime,
@@ -370,19 +370,19 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
     const budget = rand(50, 2500);
     const avgCPM = isPrimarilyInstagram
       ? rand(
-          instaBenchmarks?.avgCPM.engagement,
-          instaBenchmarks?.avgCPM.conversion,
+          instaBenchmarks?.avgCPM?.engagement,
+          instaBenchmarks?.avgCPM?.conversion,
         )
       : rand(
-          tiktokBenchmarks?.avgCPM.engagement,
-          tiktokBenchmarks?.avgCPM.conversion,
+          tiktokBenchmarks?.avgCPM?.engagement,
+          tiktokBenchmarks?.avgCPM?.conversion,
         );
     const impressions = Math.round((budget / avgCPM) * 1000);
     const reach = Math.round(
       impressions /
         rand(
-          instaBenchmarks?.frequencyOptimal.min,
-          instaBenchmarks?.frequencyOptimal.max,
+          instaBenchmarks?.frequencyOptimal?.min,
+          instaBenchmarks?.frequencyOptimal?.max,
         ),
     );
     const organicReach = Math.round(reach * rand(0.05, 0.2)); // paid campaigns get minimal organic lift
@@ -390,14 +390,14 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
     // CTR from benchmarks
     const avgCTR =
       mediaType === "video"
-        ? instaBenchmarks?.avgCTR.video
+        ? instaBenchmarks?.avgCTR?.video
         : mediaType === "carousel"
-          ? instaBenchmarks?.avgCTR.carousel
-          : instaBenchmarks?.avgCTR.image;
+          ? instaBenchmarks?.avgCTR?.carousel
+          : instaBenchmarks?.avgCTR?.image;
     const clicks = Math.round(impressions * (avgCTR + rand(-0.01, 0.01)));
 
     // CVR from benchmarks — paid audience is colder than organic
-    const avgCVR = instaBenchmarks?.avgCVR.coldAudience;
+    const avgCVR = instaBenchmarks?.avgCVR?.coldAudience;
     const conversions = Math.round(clicks * rand(avgCVR * 0.5, avgCVR * 1.5));
 
     // Engagement metrics — paid gets lower authentic engagement
@@ -421,7 +421,7 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
         callToAction: objective === "conversions" ? "Buy Now" : "Learn More",
       },
       timing: {
-        publishedAt: new Date(Date?.now() - randInt(0, 90) * 24 * 3600 * 1000),
+        publishedAt: new Date(Date.now() - randInt(0, 90) * 24 * 3600 * 1000),
         hourOfDay,
         dayOfWeek,
         isOptimalTime: false, // paid ads run 24/7 by schedule, not peak-optimized
@@ -485,7 +485,7 @@ async function trainAndSaveSocialBase(): Promise<boolean> {
 
     const result = await model?.trainOnUserEngagementData(posts);
     logger.info(
-      `[BaseTrainer] Social training complete: ${result?.postsProcessed} posts, models: ${result?.modelsTrained.join(", ")}`,
+      `[BaseTrainer] Social training complete: ${result?.postsProcessed} posts, models: ${result?.modelsTrained?.join(", ")}`,
     );
 
     const state = model?.serializeMetadata ? model?.serializeMetadata() : null;
@@ -992,7 +992,7 @@ export async function runBaseModelTraining(): Promise<void> {
   // ── Step 2: Local seeding (fallback — only runs if MaxCore didn't supply weights) ─
   // Each trainer checks modelWeightStorage?.exists() first — if MaxCore already
   // stored weights above, this becomes a no-op for those models.
-  const [socialOk, adsOk, musicOk, fineTuneOk] = await Promise?.allSettled([
+  const [socialOk, adsOk, musicOk, fineTuneOk] = await Promise.allSettled([
     trainAndSaveSocialBase(),
     trainAndSaveAdvertisingBase(),
     trainMusicGenerator(),
@@ -1062,7 +1062,7 @@ async function trainCreativePlannerBase(): Promise<boolean> {
 
     const model = new CreativePlannerModel();
     await model?.initialize();
-    const { inputs, labels } = CreativePlannerModel?.makeSyntheticSamples(500);
+    const { inputs, labels } = CreativePlannerModel?.makeSyntheticSamples(500) ?? {};
 
     await model?.train(inputs, labels, {
       epochs: 40,
@@ -1104,7 +1104,7 @@ async function trainBeatSyncAlignmentBase(): Promise<boolean> {
 
     const model = new BeatSyncAlignmentModel();
     await model?.initialize();
-    const { inputs, labels } = BeatSyncAlignmentModel?.makeSyntheticSamples(600);
+    const { inputs, labels } = BeatSyncAlignmentModel?.makeSyntheticSamples(600) ?? {};
 
     await model?.train(inputs, labels, {
       epochs: 50,
@@ -1146,7 +1146,7 @@ async function trainVideoCreativeScorerBase(): Promise<boolean> {
 
     const model = new VideoCreativeScorer();
     await model?.initialize();
-    const { inputs, labels } = VideoCreativeScorer?.makeSyntheticSamples(800);
+    const { inputs, labels } = VideoCreativeScorer?.makeSyntheticSamples(800) ?? {};
 
     await model?.train(inputs, labels, {
       epochs: 60,
@@ -1188,7 +1188,7 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
 
     const model = new KeyframeStyleSelector();
     await model?.initialize();
-    const { inputs, labels } = KeyframeStyleSelector?.makeSyntheticSamples(700);
+    const { inputs, labels } = KeyframeStyleSelector?.makeSyntheticSamples(700) ?? {};
 
     await model?.train(inputs, labels, {
       epochs: 50,
@@ -1222,14 +1222,14 @@ export async function trainCreativeModelPipeline(): Promise<void> {
     "[BaseTrainer] ──────────────────────────────────────────────────",
   );
 
-  const results = await Promise?.allSettled([
+  const results = await Promise.allSettled([
     trainCreativePlannerBase(),
     trainBeatSyncAlignmentBase(),
     trainVideoCreativeScorerBase(),
     trainKeyframeSelectorBase(),
   ]);
 
-  const [planner, align, scorer, style] = results?.map(
+  const [planner, align, scorer, style] = results.map(
     (r) => r?.status === "fulfilled" && r?.value,
   );
 

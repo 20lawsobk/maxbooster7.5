@@ -121,21 +121,21 @@ const PLATFORM_SPECIFIC_TRENDS: Record<string, TrendingTopic[]> = {
       category: "platform",
       popularity: 95,
       hashtags: ["#TrendingSound", "#ViralSound", "#FYP"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
     {
       topic: "Dance Challenges",
       category: "social",
       popularity: 92,
       hashtags: ["#DanceChallenge", "#TikTokDance", "#Viral"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
     {
       topic: "Music Discovery",
       category: "music",
       popularity: 88,
       hashtags: ["#MusicTok", "#NewSong", "#Discover"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
   instagram: [
@@ -144,21 +144,21 @@ const PLATFORM_SPECIFIC_TRENDS: Record<string, TrendingTopic[]> = {
       category: "platform",
       popularity: 90,
       hashtags: ["#Reels", "#ReelsMusic", "#Explore"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
     {
       topic: "Artist Spotlight",
       category: "industry",
       popularity: 85,
       hashtags: ["#ArtistSpotlight", "#MusicCreator", "#IndieArtist"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
     {
       topic: "Behind The Music",
       category: "music",
       popularity: 82,
       hashtags: ["#BTS", "#MakingOf", "#StudioLife"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
   twitter: [
@@ -167,14 +167,14 @@ const PLATFORM_SPECIFIC_TRENDS: Record<string, TrendingTopic[]> = {
       category: "social",
       popularity: 85,
       hashtags: ["#MusicTwitter", "#NowPlaying", "#NewMusicAlert"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
     {
       topic: "Album Drops",
       category: "music",
       popularity: 88,
       hashtags: ["#AlbumDrop", "#OutNow", "#Streaming"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
   youtube: [
@@ -183,14 +183,14 @@ const PLATFORM_SPECIFIC_TRENDS: Record<string, TrendingTopic[]> = {
       category: "music",
       popularity: 90,
       hashtags: ["#Premiere", "#MusicVideo", "#Subscribe"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
     {
       topic: "Shorts Music",
       category: "platform",
       popularity: 88,
       hashtags: ["#Shorts", "#YouTubeShorts", "#ShortMusic"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
 };
@@ -202,7 +202,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "holiday",
       popularity: 90,
       hashtags: ["#NewYear", "#2026Music", "#FreshStart"],
-      expiresAt: new Date(Date?.now() + 86400000 * 15),
+      expiresAt: new Date(Date.now() + 86400000 * 15),
     },
   ],
   1: [
@@ -211,7 +211,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "holiday",
       popularity: 88,
       hashtags: ["#ValentinesDay", "#LoveSongs", "#Romantic"],
-      expiresAt: new Date(Date?.now() + 86400000 * 14),
+      expiresAt: new Date(Date.now() + 86400000 * 14),
     },
   ],
   5: [
@@ -220,7 +220,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "cultural",
       popularity: 92,
       hashtags: ["#SummerVibes", "#SummerPlaylist", "#SummerHits"],
-      expiresAt: new Date(Date?.now() + 86400000 * 30),
+      expiresAt: new Date(Date.now() + 86400000 * 30),
     },
   ],
   6: [
@@ -229,7 +229,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "cultural",
       popularity: 94,
       hashtags: ["#FestivalSeason", "#MusicFestival", "#LiveMusic"],
-      expiresAt: new Date(Date?.now() + 86400000 * 30),
+      expiresAt: new Date(Date.now() + 86400000 * 30),
     },
   ],
   9: [
@@ -238,7 +238,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "cultural",
       popularity: 85,
       hashtags: ["#FallVibes", "#AutumnPlaylist", "#CozyMusic"],
-      expiresAt: new Date(Date?.now() + 86400000 * 30),
+      expiresAt: new Date(Date.now() + 86400000 * 30),
     },
   ],
   10: [
@@ -247,7 +247,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "holiday",
       popularity: 87,
       hashtags: ["#Halloween", "#SpookyVibes", "#HalloweenPlaylist"],
-      expiresAt: new Date(Date?.now() + 86400000 * 10),
+      expiresAt: new Date(Date.now() + 86400000 * 10),
     },
   ],
   11: [
@@ -256,7 +256,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "cultural",
       popularity: 95,
       hashtags: ["#Wrapped", "#TopSongs", "#YearInReview"],
-      expiresAt: new Date(Date?.now() + 86400000 * 30),
+      expiresAt: new Date(Date.now() + 86400000 * 30),
     },
   ],
 };
@@ -268,7 +268,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "social",
       popularity: 80,
       hashtags: ["#SundayVibes", "#SundayFunday", "#ChillSunday"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
   1: [
@@ -277,7 +277,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "social",
       popularity: 82,
       hashtags: ["#MondayMotivation", "#NewWeek", "#MusicMotivation"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
   2: [
@@ -286,7 +286,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "music",
       popularity: 78,
       hashtags: ["#TuesdayTunes", "#MusicTuesday"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
   3: [
@@ -295,7 +295,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "social",
       popularity: 75,
       hashtags: ["#WednesdayVibes", "#HumpDay"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
   4: [
@@ -304,7 +304,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "social",
       popularity: 88,
       hashtags: ["#TBT", "#ThrowbackThursday", "#ClassicHits"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
   5: [
@@ -313,7 +313,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "music",
       popularity: 95,
       hashtags: ["#NewMusicFriday", "#NMF", "#FridayMusic", "#OutNow"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
   6: [
@@ -322,7 +322,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "social",
       popularity: 90,
       hashtags: ["#WeekendVibes", "#SaturdayNight", "#PartyTime"],
-      expiresAt: new Date(Date?.now() + 86400000),
+      expiresAt: new Date(Date.now() + 86400000),
     },
   ],
 };
@@ -388,7 +388,7 @@ class DynamicTrendsService {
         category: "music",
         popularity: 85,
         hashtags: MUSIC_GENRE_TRENDS[genre].hashtags,
-        expiresAt: new Date(Date?.now() + 86400000),
+        expiresAt: new Date(Date.now() + 86400000),
       };
       trends?.push(genreTrend);
 
@@ -399,9 +399,9 @@ class DynamicTrendsService {
           popularity: 70 + seededIndex(topic + ":popularity", 20),
           hashtags: [
             `#${topic?.replace(/\s+/g, "")}`,
-            ...MUSIC_GENRE_TRENDS[genre].hashtags?.slice(0, 2),
+            ...(MUSIC_GENRE_TRENDS[genre].hashtags?.slice(0, 2) ?? []),
           ],
-          expiresAt: new Date(Date?.now() + 86400000),
+          expiresAt: new Date(Date.now() + 86400000),
         });
       });
     }
@@ -416,7 +416,7 @@ class DynamicTrendsService {
         "#SupportIndieMusic",
         "#UnsignedTalent",
       ],
-      expiresAt: new Date(Date?.now() + 86400000 * 7),
+      expiresAt: new Date(Date.now() + 86400000 * 7),
     });
 
     const sortedTrends = trends
@@ -426,7 +426,7 @@ class DynamicTrendsService {
     this.trendCache = {
       data: sortedTrends,
       fetchedAt: new Date(),
-      expiresAt: new Date(Date?.now() + this.CACHE_DURATION_MS),
+      expiresAt: new Date(Date.now() + this.CACHE_DURATION_MS),
     };
 
     return sortedTrends;
@@ -681,7 +681,7 @@ class DynamicTrendsService {
 
     const uniqueHashtags = hashtags?.reduce((acc, tag) => {
       if (
-        !acc?.some((t) => t?.hashtag.toLowerCase() === tag?.hashtag.toLowerCase())
+        !acc?.some((t) => t?.hashtag?.toLowerCase() === tag?.hashtag?.toLowerCase())
       ) {
         acc?.push(tag);
       }
@@ -886,7 +886,7 @@ class DynamicTrendsService {
 
     const unique = recommendedHashtags?.reduce((acc, tag) => {
       if (
-        !acc?.some((t) => t?.hashtag.toLowerCase() === tag?.hashtag.toLowerCase())
+        !acc?.some((t) => t?.hashtag?.toLowerCase() === tag?.hashtag?.toLowerCase())
       ) {
         acc?.push(tag);
       }
@@ -901,7 +901,7 @@ class DynamicTrendsService {
     userId: string,
   ): Promise<void> {
     try {
-      for (const hashtag of hashtags?.slice(0, 10)) {
+      for (const hashtag of hashtags?.slice(0, 10) ?? []) {
         const existing = await db
           .select()
           .from(hashtagResearch)

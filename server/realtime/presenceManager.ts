@@ -89,7 +89,7 @@ export class PresenceManager {
     existingColor?: string,
   ): Promise<PresenceState> {
     const connectionId = generateConnectionId();
-    const now = Date?.now();
+    const now = Date.now();
 
     const presence: PresenceState = {
       userId,
@@ -147,7 +147,7 @@ export class PresenceManager {
 
     const projectPresence = this.localPresence.get(projectId);
     if (projectPresence) {
-      for (const [key, presence] of projectPresence?.entries()) {
+      for (const [key, presence] of projectPresence?.entries() ?? []) {
         if (presence?.userId === userId) {
           if (!connectionId || presence?.connectionId === connectionId) {
             projectPresence?.delete(key);
@@ -172,7 +172,7 @@ export class PresenceManager {
     const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.cursor = cursor;
-      presence.lastActivity = Date?.now();
+      presence.lastActivity = Date.now();
       presence.status = "editing";
       await this.savePresence(projectId, presence);
     }
@@ -187,7 +187,7 @@ export class PresenceManager {
     const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.selection = selection;
-      presence.lastActivity = Date?.now();
+      presence.lastActivity = Date.now();
       presence.status = "editing";
       await this.savePresence(projectId, presence);
     }
@@ -202,7 +202,7 @@ export class PresenceManager {
     const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.status = status;
-      presence.lastActivity = Date?.now();
+      presence.lastActivity = Date.now();
       await this.savePresence(projectId, presence);
     }
   }
@@ -214,7 +214,7 @@ export class PresenceManager {
   ): Promise<void> {
     const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
-      const now = Date?.now();
+      const now = Date.now();
       const timeSinceActivity = now - presence?.lastActivity;
 
       if (
@@ -270,7 +270,7 @@ export class PresenceManager {
     if (collaborators?.length === 0) {
       const projectPresence = this.localPresence.get(projectId);
       if (projectPresence) {
-        for (const presence of projectPresence?.values()) {
+        for (const presence of projectPresence?.values() ?? []) {
           if (!seen?.has(presence?.userId)) {
             seen?.add(presence?.userId);
             collaborators?.push({
@@ -331,7 +331,7 @@ export class PresenceManager {
 
     const projectPresence = this.localPresence.get(projectId);
     if (projectPresence?.has(fieldKey)) {
-      return projectPresence?.get(fieldKey)!;
+      return projectPresence?.get(fieldKey);
     }
 
     try {
@@ -397,7 +397,7 @@ export class PresenceManager {
   }
 
   private async cleanupStalePresence(projectId: string): Promise<string[]> {
-    const now = Date?.now();
+    const now = Date.now();
     const staleUsers: string[] = [];
 
     try {
@@ -430,7 +430,7 @@ export class PresenceManager {
 
     const projectPresence = this.localPresence.get(projectId);
     if (projectPresence) {
-      for (const [key, presence] of projectPresence?.entries()) {
+      for (const [key, presence] of projectPresence?.entries() ?? []) {
         if (now - presence?.lastActivity > STALE_TIMEOUT_MS) {
           projectPresence?.delete(key);
           if (!staleUsers?.includes(presence?.userId)) {

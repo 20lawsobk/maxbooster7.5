@@ -7,7 +7,7 @@
  *     - Energy variance across windows → local maxima = beat candidates
  *     - Inter-beat interval histogram → BPM estimation
  *   Tier 2 (when Python + librosa available) — precise beat tracking:
- *     - librosa?.beat.beat_track() → frame-accurate beat positions
+ *     - librosa?.beat?.beat_track() → frame-accurate beat positions
  *     - onset_strength envelope → per-frame energy for dynamic transitions
  *     - spectral centroid → brightness trajectory for color animation
  *
@@ -430,10 +430,10 @@ async function analyzeBeatLibrosa(
       const proc = spawn(PYTHON, [scriptPath, audioPath]);
       let out = "";
       let err = "";
-      proc?.stdout.on("data", (d: Buffer) => {
+      proc?.stdout?.on("data", (d: Buffer) => {
         out += d?.toString();
       });
-      proc?.stderr.on("data", (d: Buffer) => {
+      proc?.stderr?.on("data", (d: Buffer) => {
         err += d?.toString();
       });
       proc?.on("close", (code) => {
@@ -524,7 +524,7 @@ function findMajorPeaks(
   const peaks: number[] = [];
   let lastPeak = -999;
   for (let i = 5; i < envelope?.length - 5; i++) {
-    const localMax = Math.max(...envelope?.slice(i - 5, i + 5));
+    const localMax = Math.max(...(envelope?.slice(i - 5, i + 5) ?? []));
     if (
       envelope[i] >= threshold &&
       envelope[i] === localMax &&
@@ -574,7 +574,7 @@ export function getBeatAlignedCuts(
 
     // Find nearest beat (prefer downbeat if within 0.5s)
     const candidates = preferDownbeats
-      ? [...analysis?.downbeats, ...analysis?.beats]
+      ? [...(analysis?.downbeats ?? []), ...(analysis?.beats ?? [])]
       : analysis?.beats;
 
     let closest = idealTime;

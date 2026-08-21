@@ -143,7 +143,7 @@ export function useStudioController({
       // Cleanup on unmount - stop playback if active
       try {
         if (audioEngineRef?.current) {
-          audioEngineRef?.current.stop();
+          audioEngineRef?.current?.stop();
         }
       } catch (cleanupError) {
         logger.warn("Error during AudioEngine cleanup:", cleanupError);
@@ -232,7 +232,7 @@ export function useStudioController({
     try {
       const loadPromises: Promise<void>[] = [];
 
-      for (const [, clips] of trackClips?.entries()) {
+      for (const [, clips] of trackClips?.entries() ?? []) {
         for (const clip of clips) {
           const url = clip?.audioUrl || clip?.filePath;
           if (url && clip?.id) {
@@ -248,7 +248,7 @@ export function useStudioController({
         }
       }
 
-      await Promise?.all(loadPromises);
+      await Promise.all(loadPromises);
       logger.info(`Preloaded ${loadPromises?.length} audio buffers`);
     } catch (error) {
       logger.warn("Error during audio preload:", error);
@@ -345,7 +345,7 @@ export function useStudioController({
       }
 
       // Initialize and unlock AudioEngine (BeatStars-style: works on user gesture)
-      const isReady = await audioEngineRef?.current.ensureReady();
+      const isReady = await audioEngineRef?.current?.ensureReady();
       if (!isReady) {
         // Still not ready, but we can continue - it might unlock mid-playback
         logger.warn("Audio engine not fully ready, attempting playback anyway");
@@ -354,7 +354,7 @@ export function useStudioController({
 
       // Clear orphaned tracks from previous sessions
       const currentTrackIds = new Set(tracks?.map((t) => t?.id));
-      const engineTrackIds = audioEngineRef?.current.getAllTrackIds();
+      const engineTrackIds = audioEngineRef?.current?.getAllTrackIds();
       engineTrackIds?.forEach((trackId) => {
         if (!currentTrackIds?.has(trackId)) {
           audioEngineRef?.current!.removeTrack(trackId);
@@ -367,8 +367,8 @@ export function useStudioController({
           const clips = trackClips?.get(track?.id) || [];
 
           // Create track in AudioEngine if not exists
-          if (!audioEngineRef?.current.hasTrack(track?.id)) {
-            audioEngineRef?.current.createTrack({
+          if (!audioEngineRef?.current?.hasTrack(track?.id)) {
+            audioEngineRef?.current?.createTrack({
               id: track.id,
               name: track.name,
               gain: track.volume,
@@ -379,10 +379,10 @@ export function useStudioController({
             });
           } else {
             // Update existing track parameters to match current state
-            audioEngineRef?.current.updateTrackGain(track?.id, track?.volume);
-            audioEngineRef?.current.updateTrackPan(track?.id, track?.pan);
-            audioEngineRef?.current.setTrackMute(track?.id, track?.mute);
-            audioEngineRef?.current.setTrackSolo(track?.id, track?.solo);
+            audioEngineRef?.current?.updateTrackGain(track?.id, track?.volume);
+            audioEngineRef?.current?.updateTrackPan(track?.id, track?.pan);
+            audioEngineRef?.current?.setTrackMute(track?.id, track?.mute);
+            audioEngineRef?.current?.setTrackSolo(track?.id, track?.solo);
           }
 
           // Add clips to track (awaiting since loadTrack is instant with cached buffers)
@@ -409,7 +409,7 @@ export function useStudioController({
       }
 
       // Start playback
-      await audioEngineRef?.current.play(currentTime);
+      await audioEngineRef?.current?.play(currentTime);
       setStoreIsPlaying(true);
     } catch (error: unknown) {
       logger.error("Failed to play:", error);
@@ -428,8 +428,8 @@ export function useStudioController({
     try {
       if (!audioEngineRef?.current) return;
 
-      audioEngineRef?.current.pause();
-      const engineTime = audioEngineRef?.current.getCurrentTime();
+      audioEngineRef?.current?.pause();
+      const engineTime = audioEngineRef?.current?.getCurrentTime();
       setStoreCurrentTime(engineTime);
       setStoreIsPlaying(false);
     } catch (error: unknown) {
@@ -442,7 +442,7 @@ export function useStudioController({
     try {
       if (!audioEngineRef?.current) return;
 
-      audioEngineRef?.current.stop();
+      audioEngineRef?.current?.stop();
       setStoreCurrentTime(0);
       setStoreIsPlaying(false);
       setStoreIsRecording(false);
@@ -457,7 +457,7 @@ export function useStudioController({
       try {
         if (!audioEngineRef?.current) return;
 
-        await audioEngineRef?.current.seek(time);
+        await audioEngineRef?.current?.seek(time);
         setStoreCurrentTime(time);
       } catch (error: unknown) {
         logger.error("Failed to seek:", error);
@@ -594,16 +594,16 @@ export function useStudioController({
         // Update in audio engine if relevant
         if (audioEngineRef?.current) {
           if (updates?.volume !== undefined) {
-            audioEngineRef?.current.updateTrackGain(trackId, updates?.volume);
+            audioEngineRef?.current?.updateTrackGain(trackId, updates?.volume);
           }
           if (updates?.pan !== undefined) {
-            audioEngineRef?.current.updateTrackPan(trackId, updates?.pan);
+            audioEngineRef?.current?.updateTrackPan(trackId, updates?.pan);
           }
           if (updates?.mute !== undefined) {
-            audioEngineRef?.current.setTrackMute(trackId, updates?.mute);
+            audioEngineRef?.current?.setTrackMute(trackId, updates?.mute);
           }
           if (updates?.solo !== undefined) {
-            audioEngineRef?.current.setTrackSolo(trackId, updates?.solo);
+            audioEngineRef?.current?.setTrackSolo(trackId, updates?.solo);
           }
         }
 
@@ -623,7 +623,7 @@ export function useStudioController({
       try {
         // Remove from audio engine
         if (audioEngineRef?.current) {
-          audioEngineRef?.current.removeTrack(trackId);
+          audioEngineRef?.current?.removeTrack(trackId);
         }
 
         // Remove from local state
@@ -683,7 +683,7 @@ export function useStudioController({
 
   const setMasterVolume = useCallback((volume: number) => {
     if (audioEngineRef?.current) {
-      audioEngineRef?.current.setMasterVolume(volume);
+      audioEngineRef?.current?.setMasterVolume(volume);
     }
   }, []);
 
@@ -701,7 +701,7 @@ export function useStudioController({
 
         // Sync to audio engine
         if (audioEngineRef?.current) {
-          audioEngineRef?.current.addClipsToTrack(
+          audioEngineRef?.current?.addClipsToTrack(
             trackId,
             updatedClips?.map((clip) => ({
               id: clip.id,
@@ -728,7 +728,7 @@ export function useStudioController({
 
       // Sync to audio engine
       if (audioEngineRef?.current) {
-        audioEngineRef?.current.addClipsToTrack(
+        audioEngineRef?.current?.addClipsToTrack(
           trackId,
           updatedClips?.map((c) => ({
             id: c.id,
@@ -753,7 +753,7 @@ export function useStudioController({
 
       // Sync to audio engine
       if (audioEngineRef?.current) {
-        audioEngineRef?.current.addClipsToTrack(
+        audioEngineRef?.current?.addClipsToTrack(
           trackId,
           updatedClips?.map((clip) => ({
             id: clip.id,
@@ -777,7 +777,7 @@ export function useStudioController({
         // Update audio engine schedule by reloading clips if track is found
         if (audioEngineRef?.current && updates?.startTime !== undefined) {
           // Find which track contains this clip
-          for (const [trackId, clips] of trackClips?.entries()) {
+          for (const [trackId, clips] of trackClips?.entries() ?? []) {
             const clipIndex = clips?.findIndex((c) => c?.id === clipId);
             if (clipIndex !== -1) {
               // Update the clip in the map
@@ -788,7 +788,7 @@ export function useStudioController({
               };
 
               // Sync to audio engine
-              audioEngineRef?.current.addClipsToTrack(
+              audioEngineRef?.current?.addClipsToTrack(
                 trackId,
                 updatedClips?.map((clip) => ({
                   id: clip.id,
@@ -836,7 +836,7 @@ export function useStudioController({
   // Calculate project duration from clips reactively
   const projectDuration = useMemo(() => {
     let maxDuration = 0;
-    for (const clips of trackClips?.values()) {
+    for (const clips of trackClips?.values() ?? []) {
       for (const clip of clips) {
         const clipEnd = clip?.startTime + (clip?.duration || 0);
         if (clipEnd > maxDuration) {

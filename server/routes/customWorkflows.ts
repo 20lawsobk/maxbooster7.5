@@ -341,7 +341,7 @@ router.post("/", requireAuth, async (req, res) => {
     }
 
     const { name, description, triggerEvent, triggerConditions, actions } =
-      parsed?.data;
+      parsed?.data ?? {};
     const [row] = await db
       .insert(customWorkflows)
       .values({
@@ -377,7 +377,7 @@ router.put("/:id", requireAuth, async (req, res) => {
       triggerConditions,
       actions,
       enabled,
-    } = parsed?.data;
+    } = parsed?.data ?? {};
     const [row] = await db
       .update(customWorkflows)
       .set({
@@ -492,9 +492,9 @@ router.post("/:id/test", requireAuth, async (req, res) => {
             await notificationService?.send({
               userId,
               type: "info",
-              title: String(action?.config.title || "Custom Workflow Triggered"),
+              title: String(action?.config?.title || "Custom Workflow Triggered"),
               message: String(
-                action?.config.message ||
+                action?.config?.message ||
                   `Workflow "${workflow.name}" executed successfully.`,
               ),
               link: "/workflow-automations",
@@ -503,7 +503,7 @@ router.post("/:id/test", requireAuth, async (req, res) => {
             break;
           case "log_note":
             actionsRun?.push(
-              `Note logged: ${String(action?.config.note || "(empty)")}`,
+              `Note logged: ${String(action?.config?.note || "(empty)")}`,
             );
             break;
           case "email_self":
@@ -513,13 +513,13 @@ router.post("/:id/test", requireAuth, async (req, res) => {
             break;
           case "social_post":
             actionsRun?.push(
-              `Social post queued for ${String(action?.config.platform || "all platforms")}`,
+              `Social post queued for ${String(action?.config?.platform || "all platforms")}`,
             );
             break;
           case "share_smart_link": {
-            const platform = String(action?.config.platform || "all");
-            const link = String(action?.config.smartLink || "");
-            const msg = String(action?.config.message || "").replace(
+            const platform = String(action?.config?.platform || "all");
+            const link = String(action?.config?.smartLink || "");
+            const msg = String(action?.config?.message || "").replace(
               "{{smartLink}}",
               link || "https://lnk.to/your-release",
             );
@@ -529,8 +529,8 @@ router.post("/:id/test", requireAuth, async (req, res) => {
             break;
           }
           case "webhook":
-            if (action?.config.url && typeof action?.config.url === "string") {
-              const webhookUrl = String(action?.config.url);
+            if (action?.config?.url && typeof action?.config?.url === "string") {
+              const webhookUrl = String(action?.config?.url);
               if (!isSafeWebhookUrl(webhookUrl)) {
                 logger.warn(
                   `[CustomWorkflow] Blocked SSRF attempt — unsafe webhook URL: ${webhookUrl}`,
@@ -545,8 +545,8 @@ router.post("/:id/test", requireAuth, async (req, res) => {
                     signal: AbortSignal.timeout(10_000), // 10 s hard cap — prevents hanging slots
                     headers: {
                       "Content-Type": "application/json",
-                      ...(action?.config.secret
-                        ? { Authorization: String(action?.config.secret) }
+                      ...(action?.config?.secret
+                        ? { Authorization: String(action?.config?.secret) }
                         : {}),
                     },
                     body: JSON.stringify({

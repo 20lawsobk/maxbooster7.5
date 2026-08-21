@@ -73,7 +73,7 @@ const exportHistory: ExportHistoryItem[] = [];
 const EXPORT_JOB_TTL_MS = 30 * 60 * 1000;
 setInterval(
   () => {
-    const cutoff = Date?.now() - EXPORT_JOB_TTL_MS;
+    const cutoff = Date.now() - EXPORT_JOB_TTL_MS;
     for (const [id, job] of exportJobs) {
       const terminal = ["complete", "failed", "cancelled", "expired"].includes(
         job?.status,
@@ -202,7 +202,7 @@ function simulateExportProgress(jobId: string): void {
           status: "completed",
           createdAt: currentJob.startTime || new Date(),
           completedAt: currentJob.completedTime,
-          expiresAt: new Date(Date?.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
           fileSize: currentJob.fileSize,
           downloadUrl: currentJob.downloadUrl,
           downloadCount: 0,
@@ -244,7 +244,7 @@ router.post(
 
       const options = validation?.data;
       const jobId = randomBytes(8).toString("hex");
-      const jobName = options?.fileName || `Export_${Date?.now()}`;
+      const jobName = options?.fileName || `Export_${Date.now()}`;
 
       const job: ExportJob = {
         id: jobId,
@@ -1235,7 +1235,7 @@ router.post("/bulk", requireAuth, async (req: Request, res: Response) => {
       });
     }
 
-    const { items, settings } = validation?.data;
+    const { items, settings } = validation?.data ?? {};
     const jobId = randomBytes(8).toString("hex");
     const isLargeExport = items?.length > 20;
 
@@ -1413,7 +1413,7 @@ router.post(
       const job: ExportJob = {
         id: jobId,
         userId,
-        name: options.fileName || `Mastered_${Date?.now()}`,
+        name: options.fileName || `Mastered_${Date.now()}`,
         type: "audio",
         format: options.format,
         status: "queued",

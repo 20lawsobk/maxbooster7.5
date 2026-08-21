@@ -23,7 +23,7 @@ export class AdvertisingNormalizationService {
       );
     }
 
-    const [patternRaw, peaksRaw, globalRaw] = await Promise?.all([
+    const [patternRaw, peaksRaw, globalRaw] = await Promise.all([
       (redis as any)?.get(`mb:ads:${artistId}:patterns`),
       (redis as any)?.lrange(`mb:ads:${artistId}:peaks`, 0, -1),
       (redis as any)?.lrange("mb:ads:global:peaks", 0, -1),
@@ -330,7 +330,7 @@ export class AdvertisingNormalizationService {
       k?.startsWith(platform),
     );
     if (platformKey && patterns[platformKey]?.top_hooks?.length) {
-      hooks?.push(...patterns[platformKey].top_hooks?.slice(0, 2));
+      hooks?.push(...(patterns[platformKey].top_hooks?.slice(0, 2) ?? []));
     }
 
     if (!content?.includes("?")) {

@@ -78,7 +78,7 @@ export async function processRefund(params: {
   try {
     logger.info(`[Refund] Processing refund for charge ${params?.chargeId}`);
 
-    const refund = await stripe?.refunds.create({
+    const refund = await stripe?.refunds?.create({
       charge: params.chargeId,
       amount: params.amount, // In cents, omit for full refund
       reason: params.reason,
@@ -298,19 +298,19 @@ async function persistChargebackRecord(
 export function registerRefundWebhookHandlers(): void {
   // Handle refund events
   registerWebhookHandler("charge.refunded", async (event) => {
-    const charge = event?.data.object as Stripe.Charge;
+    const charge = event?.data?.object as Stripe.Charge;
     logger.info(`[Webhook] Charge refunded: ${charge?.id}`);
     return { success: true, message: "Refund recorded" };
   });
 
   registerWebhookHandler("refund.created", async (event) => {
-    const refund = event?.data.object as Stripe.Refund;
+    const refund = event?.data?.object as Stripe.Refund;
     logger.info(`[Webhook] Refund created: ${refund?.id}`);
     return { success: true, message: "Refund created" };
   });
 
   registerWebhookHandler("refund.updated", async (event) => {
-    const refund = event?.data.object as Stripe.Refund;
+    const refund = event?.data?.object as Stripe.Refund;
     const existingRecord = refundRecords?.get(refund?.id);
     if (existingRecord) {
       existingRecord.status =
@@ -329,13 +329,13 @@ export function registerRefundWebhookHandlers(): void {
 
   // Handle dispute events
   registerWebhookHandler("charge.dispute.created", async (event) => {
-    const dispute = event?.data.object as Stripe.Dispute;
+    const dispute = event?.data?.object as Stripe.Dispute;
     await handleDispute(dispute);
     return { success: true, message: "Dispute handled" };
   });
 
   registerWebhookHandler("charge.dispute.updated", async (event) => {
-    const dispute = event?.data.object as Stripe.Dispute;
+    const dispute = event?.data?.object as Stripe.Dispute;
     const existing = chargebackRecords?.get(dispute?.id);
     if (existing) {
       existing.status = dispute?.status;
@@ -346,7 +346,7 @@ export function registerRefundWebhookHandlers(): void {
   });
 
   registerWebhookHandler("charge.dispute.closed", async (event) => {
-    const dispute = event?.data.object as Stripe.Dispute;
+    const dispute = event?.data?.object as Stripe.Dispute;
     const existing = chargebackRecords?.get(dispute?.id);
     if (existing) {
       existing.status = dispute?.status;
@@ -375,11 +375,11 @@ export function getRefundStats(): {
   let pendingRefunds = 0;
   let pendingChargebacks = 0;
 
-  for (const record of refundRecords?.values()) {
+  for (const record of refundRecords?.values() ?? []) {
     if (record?.status === "pending") pendingRefunds++;
   }
 
-  for (const record of chargebackRecords?.values()) {
+  for (const record of chargebackRecords?.values() ?? []) {
     if (
       record?.status === "needs_response" ||
       record?.status === "under_review"

@@ -15,8 +15,8 @@ export function usePWAInstall() {
   useEffect(() => {
     const checkInstalled = () => {
       const isStandalone =
-        window?.matchMedia("(display-mode: standalone)").matches ||
-        (window?.navigator as Record<string, unknown>).standalone === true;
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as Record<string, unknown>).standalone === true;
       setIsInstalled(isStandalone);
     };
     checkInstalled();
@@ -33,12 +33,12 @@ export function usePWAInstall() {
       setInstallPrompt(null);
     };
 
-    window?.addEventListener("beforeinstallprompt", handleBeforeInstall);
-    window?.addEventListener("appinstalled", handleAppInstalled);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
-      window?.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-      window?.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
@@ -46,7 +46,7 @@ export function usePWAInstall() {
     if (!installPrompt) return false;
 
     await installPrompt?.prompt();
-    const { outcome } = await installPrompt?.userChoice;
+    const { outcome } = await (installPrompt?.userChoice ?? {});
 
     if (outcome === "accepted") {
       setIsInstalled(true);

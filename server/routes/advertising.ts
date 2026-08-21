@@ -208,7 +208,7 @@ router.post(
       }
       const existing = await storage.getLookalikeAudiences(userId);
       const newAudience = {
-        id: `aud_${Date?.now()}`,
+        id: `aud_${Date.now()}`,
         name,
         sourceAudience: sourceAudience || "Custom Audience",
         targetPlatforms: targetPlatforms || [],
@@ -501,7 +501,7 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const userId = req.user!.id;
 
-    const [campaigns, autopilotConfig] = await Promise?.all([
+    const [campaigns, autopilotConfig] = await Promise.all([
       db
         .select({
           platform: adCampaigns.platform,
@@ -959,7 +959,7 @@ router.get(
         const impressions = Number(perf?.impressions || 0);
         const age = c?.createdAt
           ? Math.floor(
-              (Date?.now() - new Date(c?.createdAt).getTime()) /
+              (Date.now() - new Date(c?.createdAt).getTime()) /
                 (1000 * 60 * 60 * 24),
             )
           : 0;

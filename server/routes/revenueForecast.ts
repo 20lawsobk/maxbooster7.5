@@ -110,7 +110,7 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const { months } = generateForecastSchema?.parse(req.body);
+      const { months } = generateForecastSchema?.parse(req.body) ?? {};
 
       logger.info(`Generating ${months}-month forecast for user ${userId}`);
 

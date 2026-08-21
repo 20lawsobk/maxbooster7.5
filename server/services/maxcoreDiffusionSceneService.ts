@@ -79,7 +79,7 @@ const CACHE_TTL_MS = 30_000; // 30 s — recheck if idle
 
 /** Returns true if the PyTorch diffusion API is currently reachable. */
 export async function checkDiffusionAvailable(): Promise<boolean> {
-  if (_availabilityCache && Date?.now() - _availabilityCache?.ts < CACHE_TTL_MS) {
+  if (_availabilityCache && Date.now() - _availabilityCache?.ts < CACHE_TTL_MS) {
     return _availabilityCache?.available;
   }
   const available = await isPyTorchDiffusionReady();
@@ -282,7 +282,7 @@ export async function renderDiffusionScene(
       "vignette=angle=PI/4.5:mode=forward:eval=init",
     ];
     if (opts?.textOverlays && opts?.textOverlays.length > 0) {
-      vfParts?.push(...opts?.textOverlays);
+      vfParts?.push(...(opts?.textOverlays ?? []));
     }
 
     await execFileAsync(

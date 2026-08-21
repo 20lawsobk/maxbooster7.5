@@ -179,7 +179,7 @@ export async function processUploadedBeat(
             .catch(() => false))
         )
           continue;
-        const fileSize = (await fsPromises?.stat(filePath)).size;
+        const fileSize = (await fsPromises.stat(filePath)).size;
         const {  url } = await uploadLocalFile(
           filePath,
           "beats-stems",

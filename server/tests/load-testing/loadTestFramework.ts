@@ -51,7 +51,7 @@ export class LoadTestFramework extends EventEmitter {
 
   async runLoadTest(config: LoadTestConfig): Promise<LoadTestResult> {
     this.reset();
-    this.startTime = Date?.now();
+    this.startTime = Date.now();
 
     const usersPerBatch = Math.min(config?.concurrentUsers, 100);
     const batches = Math.ceil(config?.concurrentUsers / usersPerBatch);
@@ -74,7 +74,7 @@ export class LoadTestFramework extends EventEmitter {
       }
     }
 
-    await Promise?.all(promises);
+    await Promise.all(promises);
 
     return this.calculateResults();
   }
@@ -91,11 +91,11 @@ export class LoadTestFramework extends EventEmitter {
   }
 
   private async makeRequest(config: LoadTestConfig): Promise<void> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     try {
       const response = await this.httpRequest(config);
-      const duration = Date?.now() - startTime;
+      const duration = Date.now() - startTime;
 
       this.responseTimes.push(duration);
 
@@ -111,7 +111,7 @@ export class LoadTestFramework extends EventEmitter {
         this.errors.set(errorKey, (this.errors.get(errorKey) || 0) + 1);
       }
     } catch (error) {
-      const duration = Date?.now() - startTime;
+      const duration = Date.now() - startTime;
       this.responseTimes.push(duration);
       this.failCount++;
       const errorKey = (error as any)?.code || (error as any)?.message || "Unknown";
@@ -161,7 +161,7 @@ export class LoadTestFramework extends EventEmitter {
   private calculateResults(): LoadTestResult {
     const sortedTimes = [...this.responseTimes].sort((a, b) => a - b);
     const totalRequests = this.successCount + this.failCount;
-    const durationMs = Date?.now() - this.startTime;
+    const durationMs = Date.now() - this.startTime;
 
     const memoryUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
@@ -377,12 +377,12 @@ export class ScalabilityTester {
   private printResults(result: ScaleTestResult): void {
     logger.info({
       simulatedUsers: this.formatNumber(result?.simulatedUsers),
-      totalRequests: this.formatNumber(result?.results.totalRequests),
-      successRate: `${((1 - result?.results.errorRate) * 100).toFixed(2)}%`,
-      avgResponse: `${result?.results.avgResponseTimeMs?.toFixed(2) || "N/A"}ms`,
-      p95Response: `${result?.results.p95ResponseTimeMs?.toFixed(2) || "N/A"}ms`,
-      p99Response: `${result?.results.p99ResponseTimeMs?.toFixed(2) || "N/A"}ms`,
-      throughput: `${this.formatNumber(Math.round(result?.results.requestsPerSecond || 0))} req/s`,
+      totalRequests: this.formatNumber(result?.results?.totalRequests),
+      successRate: `${((1 - result?.results?.errorRate) * 100).toFixed(2)}%`,
+      avgResponse: `${result?.results?.avgResponseTimeMs?.toFixed(2) || "N/A"}ms`,
+      p95Response: `${result?.results?.p95ResponseTimeMs?.toFixed(2) || "N/A"}ms`,
+      p99Response: `${result?.results?.p99ResponseTimeMs?.toFixed(2) || "N/A"}ms`,
+      throughput: `${this.formatNumber(Math.round(result?.results?.requestsPerSecond || 0))} req/s`,
       status: result.passed ? "PASSED" : "NEEDS OPTIMIZATION",
       bottlenecks: result.bottlenecks,
       recommendations: result.recommendations,
@@ -440,7 +440,7 @@ export async function runComprehensiveLoadTest(
 
   logger.info("FINAL SUMMARY");
 
-  for (const [endpoint, results] of allResults?.entries()) {
+  for (const [endpoint, results] of allResults?.entries() ?? []) {
     const lastResult = results[results?.length - 1];
     logger.info({
       maxScaleTested: lastResult.scale,

@@ -249,7 +249,7 @@ router.post("/message", async (req: Request, res: Response) => {
         .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
-    const { subject, body, segmentFilter } = parsed?.data;
+    const { subject, body, segmentFilter } = parsed?.data ?? {};
 
     // Get artist info for the from-name
     const [artist] = await db
@@ -304,7 +304,7 @@ router.post("/message", async (req: Request, res: Response) => {
       (async () => {
         for (let i = 0; i < toSend.length; i += BATCH) {
           const batch = toSend?.slice(i, i + BATCH);
-          await Promise?.allSettled(
+          await Promise.allSettled(
             batch?.map((sub) =>
               emailService
                 .send({

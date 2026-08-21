@@ -551,7 +551,7 @@ export class SocialAmplificationService {
       const postResult: OrganicPerformance = {
         platform,
         posted: true,
-        postId: `organic_${Date?.now()}_${platform}_${randomBytes(6).toString("hex")}`,
+        postId: `organic_${Date.now()}_${platform}_${randomBytes(6).toString("hex")}`,
         metrics: timeBasedVariation,
         organicBoost,
         costSavings,
@@ -1426,8 +1426,8 @@ export class SocialAmplificationService {
       metrics?.engagementByPost.length;
     const consistency =
       1 -
-      (Math.max(...metrics?.engagementByPost) -
-        Math.min(...metrics?.engagementByPost)) /
+      (Math.max(...(metrics?.engagementByPost ?? [])) -
+        Math.min(...(metrics?.engagementByPost ?? []))) /
         (avgEngagement || 1);
     return Math.min(consistency * 100 + 20, 100);
   }
@@ -1444,7 +1444,7 @@ export class SocialAmplificationService {
     const anomalyPatterns: string[] = [];
     let suspicionScore = 0;
 
-    const maxGrowth = Math.max(...metrics?.followerGrowth);
+    const maxGrowth = Math.max(...(metrics?.followerGrowth ?? []));
     const avgGrowth =
       metrics?.followerGrowth.reduce((a: number, b: number) => a + b, 0) /
       metrics?.followerGrowth.length;

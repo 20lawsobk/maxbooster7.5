@@ -184,7 +184,7 @@ class VSTPluginBridge extends EventEmitter {
     }
 
     this.isScanning = true;
-    const startTime = Date?.now();
+    const startTime = Date.now();
     const scanPaths = paths || this.config.scanPaths;
     const result: VSTScanResult = {
       scanned: 0,
@@ -205,19 +205,19 @@ class VSTPluginBridge extends EventEmitter {
           result.scanned += plugins?.scanned;
           result.valid += plugins?.valid;
           result.invalid += plugins?.invalid;
-          result?.plugins.push(...plugins?.plugins);
-          result?.errors.push(...plugins?.errors);
+          result?.plugins.push(...(plugins?.plugins ?? []));
+          result?.errors.push(...(plugins?.errors ?? []));
         } catch (error) {
           result?.errors.push({ path: scanPath, error: (error as Error).message });
         }
       }
 
-      for (const plugin of result?.plugins) {
+      for (const plugin of result?.plugins ?? []) {
         this.scannedPlugins.set(plugin?.id, plugin);
       }
 
       this.lastScanTime = new Date();
-      result.scanTime = Date?.now() - startTime;
+      result.scanTime = Date.now() - startTime;
 
       logger.info({
         scanned: result.scanned,
@@ -1190,7 +1190,7 @@ class VSTPluginBridge extends EventEmitter {
     }
 
     const instance: VSTInstance = {
-      id: `vst-inst-${Date?.now()}-${randomBytes(6).toString("hex")}`,
+      id: `vst-inst-${Date.now()}-${randomBytes(6).toString("hex")}`,
       pluginId,
       pluginInfo: plugin,
       projectId,

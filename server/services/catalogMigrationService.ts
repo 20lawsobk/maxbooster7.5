@@ -280,7 +280,7 @@ async function deezerFindTrack(
     `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=5`,
   );
   if (!data?.data?.length) return null;
-  for (const t of data?.data) {
+  for (const t of data?.data ?? []) {
     if (titleMatch((t as any)?.title, trackTitle)) {
       return { isrc: (t as any).isrc ?? null, albumId: (t as any).album?.id ?? null };
     }
@@ -385,7 +385,7 @@ async function validateOnDeezer(ctx: DeezerValidationContext): Promise<{
   let bestAlbum: DeezerAlbumSummary | null = null;
   let bestScore = 0;
 
-  for (const album of ctx?.allDeezerAlbums) {
+  for (const album of ctx?.allDeezerAlbums ?? []) {
     const score = titleSimilarity(album?.title, ctx?.lgTitle);
     if (score > bestScore) {
       bestScore = score;
@@ -533,7 +533,7 @@ async function validateOnAppleMusic(ctx: AppleMusicValidationContext): Promise<{
   let bestAlbum: iTunesAlbumEntry | null = null;
   let bestScore = 0;
 
-  for (const album of ctx?.allItunesAlbums) {
+  for (const album of ctx?.allItunesAlbums ?? []) {
     const score = titleSimilarity(album?.collectionName, ctx?.lgTitle);
     if (score > bestScore) {
       bestScore = score;
@@ -740,8 +740,8 @@ async function hydrateLabelGridRelease(
   // ── Collect alternate versions across platforms ───────────────────────────
   [
     ...new Set([
-      ...deezerResult?.alternateVersions,
-      ...amResult?.alternateVersions,
+      ...(deezerResult?.alternateVersions ?? []),
+      ...(amResult?.alternateVersions ?? []),
     ]),
   ].filter((v) => !titleMatch(v, cleanTitle));
 
@@ -1045,7 +1045,7 @@ export async function buildMigrationPayload(
   logger.info(
     "[CatalogMigration] Pre-fetching Deezer + iTunes discographies (authority layer)",
   );
-  const [deezerAlbums, itunesArtist] = await Promise?.all([
+  const [deezerAlbums, itunesArtist] = await Promise.all([
     deezerSearchAlbums(artistName, 100),
     itunesFindArtistId(artistName),
   ]);

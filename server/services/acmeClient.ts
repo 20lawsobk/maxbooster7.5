@@ -139,7 +139,7 @@ async function encryptKey(plain: string): Promise<string> {
 }
 
 async function decryptKey(blob: string): Promise<string> {
-  const [ivHex, tagHex, encHex] = blob?.split(":");
+  const [ivHex, tagHex, encHex] = blob?.split(":") ?? [];
   if (!ivHex || !tagHex || !encHex)
     throw new Error("malformed encrypted payload");
   const key = await getEncryptionKey();

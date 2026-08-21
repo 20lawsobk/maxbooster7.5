@@ -168,7 +168,7 @@ class RevenueForecastService {
   }
 
   async getRevenueProjections(userId: string): Promise<RevenueProjections> {
-    const [threeMonth, sixMonth, twelveMonth] = await Promise?.all([
+    const [threeMonth, sixMonth, twelveMonth] = await Promise.all([
       this.generateForecast(userId, 3),
       this.generateForecast(userId, 6),
       this.generateForecast(userId, 12),

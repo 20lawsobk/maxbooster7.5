@@ -39,10 +39,10 @@ export function useFluidLayout(
 ): FluidLayoutResult {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(
-    typeof window !== "undefined" ? window?.innerWidth : 1200,
+    typeof window !== "undefined" ? window.innerWidth : 1200,
   );
   const [containerHeight, setContainerHeight] = useState(
-    typeof window !== "undefined" ? window?.innerHeight : 800,
+    typeof window !== "undefined" ? window.innerHeight : 800,
   );
 
   const { mobileMax, tabletMax, desktopMax } = { ...DEFAULT_CONFIG, ...config };
@@ -75,7 +75,7 @@ export function useFluidLayout(
     if (container) {
       const resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
-          const { width, height } = entry?.contentRect;
+          const { width, height } = entry?.contentRect ?? {};
           updateDimensions(width, height);
         }
       });
@@ -83,11 +83,11 @@ export function useFluidLayout(
       return () => resizeObserver?.disconnect();
     } else {
       const handleResize = () => {
-        updateDimensions(window?.innerWidth, window?.innerHeight);
+        updateDimensions(window.innerWidth, window.innerHeight);
       };
       handleResize();
-      window?.addEventListener("resize", handleResize);
-      return () => window?.removeEventListener("resize", handleResize);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
     }
   }, [calculateLayoutMode]);
 

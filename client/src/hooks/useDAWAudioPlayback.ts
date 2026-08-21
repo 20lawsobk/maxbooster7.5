@@ -31,7 +31,7 @@ export function useDAWAudioPlayback({
   const getOrCreateContext = useCallback((): AudioContext => {
     if (!contextRef?.current || contextRef?.current.state === "closed") {
       const AudioCtx =
-        window?.AudioContext ||
+        window.AudioContext ||
         (window as Record<string, unknown>).webkitAudioContext;
       contextRef.current = new AudioCtx({ latencyHint: "interactive" });
     }
@@ -41,7 +41,7 @@ export function useDAWAudioPlayback({
   const decodeAudio = useCallback(
     async (sourceUrl: string): Promise<AudioBuffer | null> => {
       if (buffersRef?.current.has(sourceUrl)) {
-        return buffersRef?.current.get(sourceUrl)!;
+        return buffersRef?.current.get(sourceUrl);
       }
       try {
         const ctx = getOrCreateContext();
@@ -63,7 +63,7 @@ export function useDAWAudioPlayback({
     const allUrls = new Set<string>();
     for (const track of tracks) {
       if (track?.muted) continue;
-      for (const clip of track?.audioClips) {
+      for (const clip of track?.audioClips ?? []) {
         if (clip?.sourceUrl) allUrls?.add(clip?.sourceUrl);
       }
     }
@@ -108,7 +108,7 @@ export function useDAWAudioPlayback({
         if (track?.muted) continue;
         if (soloExists && !track?.solo) continue;
 
-        for (const clip of track?.audioClips) {
+        for (const clip of track?.audioClips ?? []) {
           if (!clip?.sourceUrl) continue;
           const buffer = buffersRef?.current.get(clip?.sourceUrl);
           if (!buffer) continue;

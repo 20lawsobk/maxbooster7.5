@@ -89,18 +89,18 @@ class NotificationDispatcher {
     const channels: Array<"web" | "desktop" | "mobile"> =
       opts?.forceChannels || ["web", "desktop", "mobile"];
 
-    const [webResult, desktopResult, mobileResult] = await Promise?.all([
+    const [webResult, desktopResult, mobileResult] = await Promise.all([
       channels?.includes("web") && webPushService?.isReady()
         ? webPushService?.sendRichToUser(userId, richPayload)
-        : Promise?.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve({ sent: 0, failed: 0 }),
 
       channels?.includes("desktop") && desktopPushService?.isReady()
         ? desktopPushService?.sendRichToDesktop(userId, richPayload)
-        : Promise?.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve({ sent: 0, failed: 0 }),
 
       channels?.includes("mobile") && mobilePushService?.isReady()
         ? mobilePushService?.sendRichToUser(userId, richPayload)
-        : Promise?.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve({ sent: 0, failed: 0 }),
     ]);
 
     const activeChannels: string[] = [];
@@ -136,14 +136,14 @@ class NotificationDispatcher {
   ): Promise<DispatchResult> {
     const payload = buildSilentPayload(reason);
 
-    const [webResult, desktopResult, mobileResult] = await Promise?.all([
+    const [webResult, desktopResult, mobileResult] = await Promise.all([
       webPushService?.isReady()
         ? webPushService?.sendRichToUser(userId, payload)
-        : Promise?.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve({ sent: 0, failed: 0 }),
 
       desktopPushService?.isReady()
         ? desktopPushService?.sendRichToDesktop(userId, payload)
-        : Promise?.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve({ sent: 0, failed: 0 }),
 
       mobilePushService?.isReady()
         ? mobilePushService?.sendToUser(userId, {
@@ -153,7 +153,7 @@ class NotificationDispatcher {
             priority: "normal",
             data: { silent: "true", reason },
           })
-        : Promise?.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve({ sent: 0, failed: 0 }),
     ]);
 
     return {
@@ -178,7 +178,7 @@ class NotificationDispatcher {
     let dispatched = 0;
     let totalSent = 0;
 
-    await Promise?.all(
+    await Promise.all(
       userIds?.map(async (userId) => {
         try {
           const result = await this.dispatch(userId, notificationType, ctx);
@@ -213,16 +213,16 @@ class NotificationDispatcher {
     richPayload.body = "Push notifications are working on this device!";
     richPayload.tag = "test";
 
-    const [webResult, desktopResult, mobileResult] = await Promise?.all([
+    const [webResult, desktopResult, mobileResult] = await Promise.all([
       webPushService?.isReady()
         ? webPushService?.sendRichToUser(userId, richPayload)
-        : Promise?.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve({ sent: 0, failed: 0 }),
       desktopPushService?.isReady()
         ? desktopPushService?.sendRichToDesktop(userId, richPayload)
-        : Promise?.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve({ sent: 0, failed: 0 }),
       mobilePushService?.isReady()
         ? mobilePushService?.sendRichToUser(userId, richPayload)
-        : Promise?.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve({ sent: 0, failed: 0 }),
     ]);
 
     return {

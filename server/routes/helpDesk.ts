@@ -65,7 +65,7 @@ router.post("/chat", chatRateLimiter, async (req: Request, res: Response) => {
       });
     }
 
-    const { message, sessionId } = parsed?.data;
+    const { message, sessionId } = parsed?.data ?? {};
     const userId = req.user?.id;
     const chatSessionId = sessionId || crypto?.randomUUID();
 
@@ -101,7 +101,7 @@ router.post("/escalate", async (req: Request, res: Response) => {
       });
     }
 
-    const { sessionId, reason } = parsed?.data;
+    const { sessionId, reason } = parsed?.data ?? {};
     const result = await aiHelpDeskService?.escalateToHuman(
       sessionId,
       reason || "User requested human support",
@@ -127,7 +127,7 @@ router.post("/end", (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: "Invalid request" });
     }
 
-    const { sessionId } = parsed?.data;
+    const { sessionId } = parsed?.data ?? {};
     if (sessionId) {
       aiHelpDeskService?.endConversation(sessionId);
     }

@@ -514,7 +514,7 @@ export class AIService {
   }
 
   private calculateEnergyFromProfile(profile: unknown, hash: number): number {
-    const [min, max] = (profile as any)?.energyRange;
+    const [min, max] = (profile as any)?.energyRange ?? [];
     return min + ((hash % 100) / 100) * (max - min);
   }
 
@@ -522,12 +522,12 @@ export class AIService {
     profile: unknown,
     hash: number,
   ): number {
-    const [min, max] = (profile as any)?.danceabilityRange;
+    const [min, max] = (profile as any)?.danceabilityRange ?? [];
     return min + (((hash >> 8) % 100) / 100) * (max - min);
   }
 
   private calculateValenceFromProfile(profile: unknown, hash: number): number {
-    const [min, max] = (profile as any)?.valence;
+    const [min, max] = (profile as any)?.valence ?? [];
     return min + (((hash >> 16) % 100) / 100) * (max - min);
   }
 
@@ -550,9 +550,9 @@ export class AIService {
     audience: AIAdvertisingConfig["targetAudience"],
   ): number {
     // Calculate score based on audience specificity and interests
-    const ageSpecificity = audience?.age.includes("-") ? 1.5 : 1.0;
-    const interestDiversity = Math.min(audience?.interests.length / 5, 2.0);
-    const locationSpecificity = audience?.location.length > 10 ? 1.3 : 1.0;
+    const ageSpecificity = audience?.age?.includes("-") ? 1.5 : 1.0;
+    const interestDiversity = Math.min(audience?.interests?.length / 5, 2.0);
+    const locationSpecificity = audience?.location?.length > 10 ? 1.3 : 1.0;
 
     return ageSpecificity * interestDiversity * locationSpecificity;
   }
@@ -593,7 +593,7 @@ export class AIService {
     const genreScore = genreMultipliers[(musicData as any)?.genre?.toLowerCase()] || 0.7;
     const campaignScore = campaignMultipliers[config?.campaignType] || 0.6;
     const audienceScore =
-      config?.targetAudience.interests?.length > 3 ? 0.8 : 0.6;
+      config?.targetAudience?.interests?.length > 3 ? 0.8 : 0.6;
 
     return Math.min(genreScore * campaignScore * audienceScore, 0.95);
   }
@@ -603,17 +603,17 @@ export class AIService {
     musicData: unknown,
   ): { primary: string; variations: string[] } {
     // Generate ads based on campaign type and target audience
-    const ageSegment = config?.targetAudience.age;
-    const primaryInterest = config?.targetAudience.interests[0] || "music";
+    const ageSegment = config?.targetAudience?.age;
+    const primaryInterest = config?.targetAudience?.interests[0] || "music";
 
     let primary = "";
     let variations: string[] = [];
 
     switch (config?.campaignType) {
       case "viral":
-        primary = `🔥 Everyone's talking about ${(musicData as any).title} by ${(musicData as any).artist} - Join the movement that's taking ${config?.targetAudience.location} by storm!`;
+        primary = `🔥 Everyone's talking about ${(musicData as any).title} by ${(musicData as any).artist} - Join the movement that's taking ${config?.targetAudience?.location} by storm!`;
         variations = [
-          `💯 ${config?.targetAudience.location} can't stop playing ${(musicData as any).title} - See what the hype is about`,
+          `💯 ${config?.targetAudience?.location} can't stop playing ${(musicData as any).title} - See what the hype is about`,
           `🎵 The track ${primaryInterest} fans have been waiting for: ${(musicData as any).title} is HERE`,
           `⚡ ${(musicData as any).artist} drops ${(musicData as any).title} and it's everything ${ageSegment} music lovers needed`,
         ];
@@ -655,7 +655,7 @@ export class AIService {
       geographic_focus: audience.location,
       interest_alignment: audience.interests.join(", "),
       engagement_optimization:
-        audience?.interests.length > 2 ? "high-precision" : "broad-reach",
+        audience?.interests?.length > 2 ? "high-precision" : "broad-reach",
       conversion_likelihood: audience.interests.includes("music") ? 0.85 : 0.65,
       organic_amplification: audience.location.includes("City") ? 1.4 : 1.2,
     };

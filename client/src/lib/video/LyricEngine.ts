@@ -492,7 +492,7 @@ export class LyricEngine {
     const totalWidth = this.measureLineWidth(currentLine?.text, textStyle);
     let x = position?.x - totalWidth / 2;
 
-    for (const word of currentLine?.words) {
+    for (const word of currentLine?.words ?? []) {
       const isActive =
         currentTime >= word?.startTime && currentTime < word?.endTime;
       const isPast = currentTime >= word?.endTime;

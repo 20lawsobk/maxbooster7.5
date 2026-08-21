@@ -71,7 +71,7 @@ router.get("/status", requireAuth, async (req, res) => {
     }
 
     // Real campaign stats from ad_campaigns table
-    const [totalRow, nextCampaignRow, recentCampaignRows] = await Promise?.all([
+    const [totalRow, nextCampaignRow, recentCampaignRows] = await Promise.all([
       db
         .select({ value: count() })
         .from(adCampaigns)

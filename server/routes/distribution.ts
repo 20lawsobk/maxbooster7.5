@@ -519,7 +519,7 @@ router.delete(
 router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const { trackId, artist, title } = generateCodeSchema?.parse(req.body);
+    const { trackId, artist, title } = generateCodeSchema?.parse(req.body) ?? {};
 
     let isrcCode: string;
     let assignedTo: string = `${artist} - ${title}`;
@@ -540,7 +540,7 @@ router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
       isOfficiallyRegistered = false;
     }
 
-    if (trackId && trackId !== `temp_${Date?.now()}`) {
+    if (trackId && trackId !== `temp_${Date.now()}`) {
       try {
         await codeGenerationService?.generateISRC(
           userId,
@@ -582,7 +582,7 @@ router.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
       releaseId: z.string().optional(),
       title: z.string(),
     });
-    const { releaseId, title } = upcSchema?.parse(req.body);
+    const { releaseId, title } = upcSchema?.parse(req.body) ?? {};
 
     let upcCode: string;
     let assignedTo: string = title;
@@ -603,7 +603,7 @@ router.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
       isOfficiallyRegistered = false;
     }
 
-    if (releaseId && releaseId !== `temp_${Date?.now()}`) {
+    if (releaseId && releaseId !== `temp_${Date.now()}`) {
       try {
         await codeGenerationService?.generateUPC(userId, releaseId, title);
       } catch (storeErr) {
@@ -3541,7 +3541,7 @@ async function aggregateLabelGridAnalytics(userId: string) {
   );
   if (lgReleases?.length === 0) return null;
 
-  const settled = await Promise?.allSettled(
+  const settled = await Promise.allSettled(
     lgReleases?.map((r) =>
       labelGridService?.getReleaseAnalytics(
         ((r?.metadata as Record<string, unknown>).labelGridReleaseId as string),
@@ -3609,7 +3609,7 @@ router.get(
         try {
           const agg = await aggregateLabelGridAnalytics(userId);
           if (agg) {
-            const now = Date?.now();
+            const now = Date.now();
             const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
             const last30Streams = agg?.timeline
               .filter((t) => new Date(t?.date).getTime() >= now - thirtyDaysMs)
@@ -4269,7 +4269,7 @@ router.get("/codes/stats", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const [[isrcResult], [upcResult]] = await Promise?.all([
+    const [[isrcResult], [upcResult]] = await Promise.all([
       db
         .select({ count: count() })
         .from(isrcRegistry)
@@ -4311,7 +4311,7 @@ router.get(
         100_000,
       );
 
-      const [entries, [{ total }]] = await Promise?.all([
+      const [entries, [{ total }]] = await Promise.all([
         db
           .select({
             id: royaltyTransactions.id,
@@ -4610,7 +4610,7 @@ router.get(
         eq(royaltyTransactions.status, "paid"),
       );
 
-      const [payouts, [{ total }]] = await Promise?.all([
+      const [payouts, [{ total }]] = await Promise.all([
         db
           .select()
           .from(royaltyTransactions)
@@ -5251,7 +5251,7 @@ router.get(
           failed,
           overallProgress,
           estimatedCompletion: new Date(
-            Date?.now() + 5 * 24 * 60 * 60 * 1000,
+            Date.now() + 5 * 24 * 60 * 60 * 1000,
           ).toISOString(),
         },
       });
@@ -5388,7 +5388,7 @@ router.post(
         return res.status(404).json({ error: "Track not found" });
       }
 
-      const fingerprint = `fp_${Date?.now()}_${randomBytes(4).toString("hex")}`;
+      const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString("hex")}`;
 
       await storage.updateDistroTrack(trackId, track?.releaseId || "", {
         metadata: {
@@ -5420,9 +5420,9 @@ router.post(
 
       const tracks = await storage.getDistroTracks(releaseId);
 
-      const results = await Promise?.allSettled(
+      const results = await Promise.allSettled(
         tracks?.map((track) => {
-          const fingerprint = `fp_${Date?.now()}_${randomBytes(4).toString("hex")}`;
+          const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString("hex")}`;
           return storage.updateDistroTrack(track?.id, track?.releaseId, {
             metadata: {
               ...(track?.metadata as Record<string, unknown> || {}),
@@ -5804,7 +5804,7 @@ router.post(
         isOfficiallyRegistered = false;
       }
 
-      if (trackId && trackId !== `temp_${Date?.now()}`) {
+      if (trackId && trackId !== `temp_${Date.now()}`) {
         try {
           await codeGenerationService?.generateISRC(
             userId,
@@ -5866,7 +5866,7 @@ router.post(
         isOfficiallyRegistered = false;
       }
 
-      if (releaseId && releaseId !== `temp_${Date?.now()}`) {
+      if (releaseId && releaseId !== `temp_${Date.now()}`) {
         try {
           await codeGenerationService?.generateUPC(userId, releaseId, title);
         } catch (storeErr) {
@@ -6436,7 +6436,7 @@ router.post(
       if (!type || !year)
         return res.status(400).json({ error: "type and year are required" });
 
-      const docId = `tax_doc_${type}_${year}_${userId?.slice(0, 8)}_${Date?.now()}`;
+      const docId = `tax_doc_${type}_${year}_${userId?.slice(0, 8)}_${Date.now()}`;
       logger.info(
         `[Distribution] Tax document ${type} ${year} generated for user ${userId}`,
       );
@@ -6484,7 +6484,7 @@ router.post(
       }
 
       const ext = file?.originalname.split(".").pop() || "jpg";
-      const key = `distribution/artwork/${userId}/${Date?.now()}.${ext}`;
+      const key = `distribution/artwork/${userId}/${Date.now()}.${ext}`;
       await storageService?.uploadFile(file?.buffer, key, file?.mimetype);
 
       const artworkUrl = await storageService?.getDownloadUrl(key);
@@ -6564,7 +6564,7 @@ router.post("/packages", requireAuth, async (req: Request, res: Response) => {
         .json({ error: "projectId and albumTitle are required" });
 
     const pkg = {
-      id: `pkg_${Date?.now()}_${userId?.slice(0, 8)}`,
+      id: `pkg_${Date.now()}_${userId?.slice(0, 8)}`,
       userId,
       projectId,
       albumTitle,
@@ -6716,7 +6716,7 @@ router.post(
       }
 
       const track = {
-        id: `track_${Date?.now()}`,
+        id: `track_${Date.now()}`,
         packageId: id,
         trackId: trackId || null,
         title,

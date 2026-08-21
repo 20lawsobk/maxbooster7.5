@@ -207,7 +207,7 @@ export class DAWCore {
     name?: string,
     options: Partial<DAWTrack> = {},
   ): string {
-    const id = `track_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const trackCount = this.state.tracks?.filter((t) => t?.type === type).length;
     const defaultName =
       name ||
@@ -277,11 +277,11 @@ export class DAWCore {
 
     this.routing.removeNode(track?.routingNodeId);
 
-    for (const plugin of track?.plugins) {
+    for (const plugin of track?.plugins ?? []) {
       this.plugins.unregisterPlugin(plugin?.instanceId);
     }
 
-    for (const lane of track?.automationLanes) {
+    for (const lane of track?.automationLanes ?? []) {
       this.automation.removeLane(lane?.id);
     }
 
@@ -351,7 +351,7 @@ export class DAWCore {
   reorderTracks(fromIndex: number, toIndex: number): void {
     const beforeTracks = structuredClone(this.state.tracks);
     const tracks = [...this.state.tracks];
-    const [removed] = tracks?.splice(fromIndex, 1);
+    const [removed] = tracks?.splice(fromIndex, 1) ?? [];
     tracks?.splice(toIndex, 0, removed);
     this.state.tracks = tracks;
     const afterTracks = structuredClone(this.state.tracks);
@@ -491,7 +491,7 @@ export class DAWCore {
     const track = this.state.tracks?.find((t) => t?.id === trackId);
     if (!track) return null;
 
-    const instanceId = `plugin_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const instanceId = `plugin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     this.plugins.registerPlugin(instanceId, pluginId, trackId, pluginName);
 

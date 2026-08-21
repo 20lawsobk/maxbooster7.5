@@ -30,7 +30,7 @@ router.get("/results", async (_req, res) => {
     const now = new Date();
     new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const [userCount, projectCount, releaseCount] = await Promise?.all([
+    const [userCount, projectCount, releaseCount] = await Promise.all([
       db.select({ count: count() }).from(users),
       db.select({ count: count() }).from(projects),
       db.select({ count: count() }).from(releases),

@@ -26,7 +26,7 @@
  *   const bridge = new DigitalGPUInferenceBridge({ width: 512, height: 512 });
  *   await bridge?.init();
  *   const result = await bridge?.process(base64Frame, { scene: 'concert_stage' });
- *   canvas?.getContext('2d')!.putImageData(result, 0, 0);
+ *   canvas?.getContext('2d').putImageData(result, 0, 0);
  */
 
 import { WebGLRenderer } from "./WebGLRenderer";
@@ -534,7 +534,7 @@ export class DigitalGPUInferenceBridge {
     const canvas = document?.createElement("canvas");
     canvas.width = this.config.width;
     canvas.height = this.config.height;
-    const ctx = canvas?.getContext("2d")!;
+    const ctx = canvas?.getContext("2d");
     if (src instanceof HTMLCanvasElement) {
       ctx?.drawImage(src, 0, 0, canvas?.width, canvas?.height);
     } else {

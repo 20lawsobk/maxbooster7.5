@@ -266,11 +266,11 @@ export class UnifiedAIController {
   }
 
   private async performInitialization(): Promise<void> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     logger.info("🤖 Initializing Unified AI Controller...");
 
     try {
-      await Promise?.all([
+      await Promise.all([
         this.modelRegistry.initialize().catch((err) => {
           logger.warn({ err: err }, "Model Registry initialization warning:");
         }),
@@ -291,7 +291,7 @@ export class UnifiedAIController {
       this.initializeTimeSeriesModels();
 
       this.initialized = true;
-      const duration = Date?.now() - startTime;
+      const duration = Date.now() - startTime;
       logger.info(`✅ Unified AI Controller initialized in ${duration}ms`);
     } catch (error) {
       logger.warn(
@@ -372,7 +372,7 @@ export class UnifiedAIController {
       }
 
       if (!callerContentType && Array.isArray(posting?.contentFormatPriority)) {
-        for (const fmt of posting?.contentFormatPriority) {
+        for (const fmt of posting?.contentFormatPriority ?? []) {
           const mapped =
             typeof fmt === "string"
               ? CONTENT_FORMAT_TO_TYPE[fmt?.toLowerCase()]
@@ -405,7 +405,7 @@ export class UnifiedAIController {
   public async generateContent(
     options: ContentGenerationOptions,
   ): Promise<UnifiedAIResult<CaptionResult>> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     await this.ensureInitialized();
 
     try {
@@ -478,7 +478,7 @@ export class UnifiedAIController {
       if (options?.label) extraParts?.push(`Label: ${options?.label}`);
       if (options?.tracklist?.length)
         extraParts?.push(
-          `Tracklist: ${options?.tracklist.slice(0, 4).join(", ")}`,
+          `Tracklist: ${options?.tracklist?.slice(0, 4).join(", ")}`,
         );
       if (options?.viewCount != null && options?.viewCount > 0) {
         extraParts?.push(
@@ -608,7 +608,7 @@ export class UnifiedAIController {
         // spaces, or is longer than 40 chars — these are enriched topic strings
         // that MaxCore occasionally echoes back as hashtags rather than real tags.
         const mcHashtags: string[] = (
-          Array.isArray((mc as any)?.hashtags) ? (mc as any)?.hashtags : []
+          Array.isArray((mc as any)?.hashtags) ? ((mc as any)?.hashtags ?? []) : []
         ).filter(
           (h: string) =>
             typeof h === "string" &&
@@ -683,12 +683,12 @@ export class UnifiedAIController {
       artist: string;
     };
   }): Promise<UnifiedAIResult<{ content: string[] }>> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     await this.ensureInitialized();
 
     const platform = (options?.platform || "instagram") as string;
     const topic = options?.musicData
-      ? `${options?.musicData.title} by ${options?.musicData.artist}`
+      ? `${options?.musicData?.title} by ${options?.musicData?.artist}`
       : options?.customPrompt || "new music";
     const tone = options?.tone || "energetic";
 
@@ -756,7 +756,7 @@ export class UnifiedAIController {
   public async analyzeSentiment(
     options: SentimentAnalysisOptions,
   ): Promise<UnifiedAIResult<FullAnalysisResult | SentimentResult>> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     await this.ensureInitialized();
 
     try {
@@ -820,7 +820,7 @@ export class UnifiedAIController {
   public async getRecommendations(
     options: RecommendationOptions,
   ): Promise<UnifiedAIResult<RecommendationResult | SimilarityResult[]>> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     await this.ensureInitialized();
 
     try {
@@ -842,7 +842,7 @@ export class UnifiedAIController {
           );
           break;
         case "similar":
-          if (!options?.seedIds || options?.seedIds.length === 0) {
+          if (!options?.seedIds || options?.seedIds?.length === 0) {
             throw new Error("seedIds required for similar recommendations");
           }
           result = this.recommendationEngine.findSimilar(
@@ -905,7 +905,7 @@ export class UnifiedAIController {
       | ROIForecast
     >
   > {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     await this.ensureInitialized();
 
     try {
@@ -982,7 +982,7 @@ export class UnifiedAIController {
       | ScheduleOptimization
     >
   > {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     await this.ensureInitialized();
 
     try {
@@ -1058,7 +1058,7 @@ export class UnifiedAIController {
   public async forecastMetrics(
     options: ForecastOptions,
   ): Promise<UnifiedAIResult<ForecastResult>> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     await this.ensureInitialized();
 
     try {
@@ -1071,7 +1071,7 @@ export class UnifiedAIController {
       }
 
       if ((!model as any)?.isModelTrained()) {
-        const { inputs, labels } = model?.prepareTrainingData(
+        const { inputs, labels } = model.prepareTrainingData(
           options?.historicalData,
           options?.timestamps,
         );
@@ -1094,7 +1094,7 @@ export class UnifiedAIController {
         data: result,
         processingTimeMs: Date.now() - startTime,
         source: "AdvancedTimeSeriesModel",
-        confidence: 1 - result?.accuracy.mape / 100,
+        confidence: 1 - result?.accuracy?.mape / 100,
       };
     } catch (error) {
       logger.warn({ err: error }, "Metric forecasting failed:");
@@ -1278,7 +1278,7 @@ export class UnifiedAIController {
     _name: string,
     healthCheck: () => Promise<unknown>,
   ): Promise<ServiceHealth> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     try {
       await healthCheck();
       return {
@@ -1300,7 +1300,7 @@ export class UnifiedAIController {
     _name: string,
     healthCheck: () => any,
   ): ServiceHealth {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     try {
       healthCheck();
       return {
@@ -1343,7 +1343,7 @@ export class UnifiedAIController {
     content: Record<string, unknown>;
     goals: Record<string, unknown>;
   }): Promise<UnifiedAIResult<unknown>> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     try {
       const result = await (this as any).adEngine.optimizePersonalAdNetwork(
         options?.profiles,
@@ -1373,7 +1373,7 @@ export class UnifiedAIController {
   public async calculateOrganicROI(
     results: Record<string, unknown>,
   ): Promise<UnifiedAIResult<unknown>> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     try {
       const analysis = (this as any).adEngine.calculateOrganicROI(results);
       return {
@@ -1401,7 +1401,7 @@ export class UnifiedAIController {
     contentQueue: unknown[];
     goals: Record<string, unknown>;
   }): Promise<UnifiedAIResult<unknown>> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     try {
       const schedule = (this as any).adEngine.generateOrganicSchedule(
         options?.profiles,
@@ -1429,7 +1429,7 @@ export class UnifiedAIController {
   public async analyzePersonalAdNetwork(
     userId?: string,
   ): Promise<UnifiedAIResult<unknown>> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     try {
       let profiles: unknown[] = [];
 

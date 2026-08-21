@@ -548,11 +548,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialMetrics(userId: string): Promise<unknown> {
-    const thirtyDaysAgo = new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const [accounts, recentPosts, weekPosts, autopilotContent] =
-      await Promise?.all([
+      await Promise.all([
         this.getSocialAccounts(userId),
         db
           .select()
@@ -797,7 +797,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialCalendarEvents(userId: string): Promise<any[]> {
-    const [calendarEntries, scheduledPosts] = await Promise?.all([
+    const [calendarEntries, scheduledPosts] = await Promise.all([
       db
         .select()
         .from(contentCalendar)
@@ -881,7 +881,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialCalendarStats(userId: string): Promise<unknown> {
-    const [calendarRows, postRows] = await Promise?.all([
+    const [calendarRows, postRows] = await Promise.all([
       db
         .select({
           status: contentCalendar.status,
@@ -948,11 +948,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialWeeklyStats(userId: string): Promise<any[]> {
-    const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     // Use SQL aggregation for both tables rather than fetching all rows into JS
     // and filtering — this avoids the 500-row truncation problem and is O(1) network.
-    const [postRows, contentRows] = await Promise?.all([
+    const [postRows, contentRows] = await Promise.all([
       db.execute(sql`
         SELECT
           DATE(created_at) AS day,
@@ -1094,7 +1094,7 @@ export class DatabaseStorage implements IStorage {
       const clicks = perf?.clicks || 0;
       const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
       const daysSinceCreated = Math.floor(
-        (Date?.now() - new Date(c?.createdAt).getTime()) / 86400000,
+        (Date.now() - new Date(c?.createdAt).getTime()) / 86400000,
       );
       const fatigueScore = Math.min(
         100,
@@ -1599,7 +1599,7 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     features: Record<string, unknown>,
   ): Promise<string> {
-    const id = `feature-${Date?.now()}-${userId?.slice(0, 8)}`;
+    const id = `feature-${Date.now()}-${userId?.slice(0, 8)}`;
     try {
       await db
         .insert(systemSettings)
@@ -2130,7 +2130,7 @@ export class DatabaseStorage implements IStorage {
       const [provider] = await db
         .insert(dspProviders)
         .values({
-          id: `dsp_${Date?.now()}_${randomBytes(4).toString("hex")}`,
+          id: `dsp_${Date.now()}_${randomBytes(4).toString("hex")}`,
           name: data.name,
           slug: data.slug,
           isActive: data.isActive ?? true,
@@ -2220,7 +2220,7 @@ export class DatabaseStorage implements IStorage {
 
   async createDistroDispatch(data: Record<string, unknown>): Promise<unknown> {
     const dispatch = {
-      id: `dispatch_${Date?.now()}_${randomBytes(4).toString("hex")}`,
+      id: `dispatch_${Date.now()}_${randomBytes(4).toString("hex")}`,
       ...data,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -2298,7 +2298,7 @@ export class DatabaseStorage implements IStorage {
       return entry;
     } catch (error) {
       logger.warn({ err: error }, "Failed to persist audit log entry:");
-      return { id: `audit_${Date?.now()}`, ...data, createdAt: new Date() };
+      return { id: `audit_${Date.now()}`, ...data, createdAt: new Date() };
     }
   }
 
@@ -2309,7 +2309,7 @@ export class DatabaseStorage implements IStorage {
     const threeMonthsAgo = new Date(now?.getFullYear(), now?.getMonth() - 3, 1);
 
     const [allTimeAgg, thisMonthAgg, prevMonthAgg, txRow, recentAnalytics] =
-      await Promise?.all([
+      await Promise.all([
         db
           .select({
             totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,

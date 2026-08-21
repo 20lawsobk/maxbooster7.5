@@ -110,7 +110,7 @@ export class RenderOrchestrator {
     if (options?.useOffscreen && typeof OffscreenCanvas !== "undefined") {
       this.canvas = new OffscreenCanvas(this.width, this.height);
     } else {
-      this.canvas = document?.createElement("canvas");
+      this.canvas = document.createElement("canvas");
       this.canvas.width = this.width;
       this.canvas.height = this.height;
     }
@@ -170,12 +170,12 @@ export class RenderOrchestrator {
         project?.id,
       );
 
-      for (const layerConfig of project?.layers) {
+      for (const layerConfig of project?.layers ?? []) {
         const layer = new Layer(layerConfig);
         this.scene.addLayer(layer);
       }
 
-      for (const keyframe of project?.keyframes) {
+      for (const keyframe of project?.keyframes ?? []) {
         const layer = this.scene.getLayer(keyframe?.layerId);
         if (layer) {
           layer?.addKeyframe(
@@ -219,7 +219,7 @@ export class RenderOrchestrator {
       }
     }
 
-    await Promise?.all(loadPromises);
+    await Promise.all(loadPromises);
   }
 
   private createVisualizer(layer: LayerConfig): void {
@@ -440,7 +440,7 @@ export class RenderOrchestrator {
       return generateMockAudioData(time, 120);
     }
     if (!this.audioAnalyzer) {
-      console?.warn(
+      console.warn(
         "[RenderOrchestrator] No audio analyzer attached — falling back to synthetic audio data. Pass an audioElement or set mockAudio:true to suppress this warning.",
       );
       return generateMockAudioData(time, 120);

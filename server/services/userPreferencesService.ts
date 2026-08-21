@@ -402,7 +402,7 @@ class UserPreferencesService {
 
       if (
         featureUsage?.studioUsage > 0.7 &&
-        preferences?.studioPreferences.autoSave === false
+        preferences?.studioPreferences?.autoSave === false
       ) {
         recommendations?.push({
           category: "studio",
@@ -417,7 +417,7 @@ class UserPreferencesService {
 
       if (
         timePatterns?.peakHour &&
-        !preferences?.contentPreferences.preferredPostingTimes?.includes(
+        !preferences?.contentPreferences?.preferredPostingTimes?.includes(
           `${timePatterns?.peakHour}:00`,
         )
       ) {
@@ -430,10 +430,10 @@ class UserPreferencesService {
           suggestedValue: {
             preferredPostingTimes: [
               `${timePatterns?.peakHour}:00`,
-              ...preferences?.contentPreferences.preferredPostingTimes?.slice(
+              ...(preferences?.contentPreferences?.preferredPostingTimes?.slice(
                 0,
                 2,
-              ),
+              ) ?? []),
             ],
           },
         });
@@ -441,7 +441,7 @@ class UserPreferencesService {
 
       if (
         contentPatterns?.topContentType &&
-        !preferences?.contentPreferences.contentTypes?.includes(
+        !preferences?.contentPreferences?.contentTypes?.includes(
           contentPatterns?.topContentType,
         )
       ) {
@@ -453,7 +453,7 @@ class UserPreferencesService {
           actionable: true,
           suggestedValue: {
             contentTypes: [
-              ...preferences?.contentPreferences.contentTypes,
+              ...(preferences?.contentPreferences?.contentTypes ?? []),
               contentPatterns?.topContentType,
             ],
           },
@@ -490,7 +490,7 @@ class UserPreferencesService {
 
     const generalRecommendations: PreferenceRecommendation[] = [];
 
-    if (preferences?.genres.length === 0) {
+    if (preferences?.genres?.length === 0) {
       generalRecommendations?.push({
         category: "profile",
         recommendation: "Add your primary genres to get better recommendations",
@@ -500,7 +500,7 @@ class UserPreferencesService {
       });
     }
 
-    if (preferences?.targetAudience.regions?.length === 0) {
+    if (preferences?.targetAudience?.regions?.length === 0) {
       generalRecommendations?.push({
         category: "audience",
         recommendation: "Define your target audience regions",
@@ -511,7 +511,7 @@ class UserPreferencesService {
     }
 
     if (
-      preferences?.dashboardLayout.widgets?.filter((w) => w?.visible).length < 3
+      preferences?.dashboardLayout?.widgets?.filter((w) => w?.visible).length < 3
     ) {
       generalRecommendations?.push({
         category: "dashboard",
@@ -604,7 +604,7 @@ class UserPreferencesService {
         const event = JSON.parse(eventStr);
         if (event?.context?.contentType) {
           typeCounts[event.context.contentType] =
-            (typeCounts[event?.context.contentType] || 0) + 1;
+            (typeCounts[event?.context?.contentType] || 0) + 1;
         }
       } catch {
         /* intentional: malformed event string → skipped */

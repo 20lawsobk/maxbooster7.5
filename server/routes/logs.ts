@@ -47,7 +47,7 @@ router.get("/query", async (req, res) => {
 
     const whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
 
-    const [logs, totalResult] = await Promise?.all([
+    const [logs, totalResult] = await Promise.all([
       db
         .select()
         .from(systemLogs)

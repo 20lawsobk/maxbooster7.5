@@ -21,7 +21,7 @@ const _hlCache = new Map<string, { value: unknown; expiresAt: number }>();
 function _hlGet<T>(key: string): T | undefined {
   const e = _hlCache?.get(key);
   if (!e) return undefined;
-  if (Date?.now() > e?.expiresAt) {
+  if (Date.now() > e?.expiresAt) {
     _hlCache?.delete(key);
     return undefined;
   }
@@ -307,13 +307,13 @@ class HyperLearningEngine extends EventEmitter {
   }
 
   private async runLearningCycle(): Promise<void> {
-    const cycleStart = Date?.now();
+    const cycleStart = Date.now();
     const cycleId = `hyper_${cycleStart}`;
 
     logger.info(`🧠 HyperLearning cycle ${cycleId} started`);
 
     try {
-      const results = await Promise?.all([
+      const results = await Promise.all([
         this.runMicroPatternDetection(),
         this.runCrossPlatformSynthesis(),
         this.runPredictiveModeling(),
@@ -335,7 +335,7 @@ class HyperLearningEngine extends EventEmitter {
         adaptations,
       ] = results;
 
-      const cycleEnd = Date?.now();
+      const cycleEnd = Date.now();
       const actualTimeMs = cycleEnd - cycleStart;
 
       const humanEquivalentHours = this.calculateHumanEquivalent(
@@ -370,7 +370,7 @@ class HyperLearningEngine extends EventEmitter {
         `   Cross-platform syntheses: ${crossPlatform?.synthesisCount}`,
       );
       logger.info(
-        `   Predictions generated: ${predictions?.reduce((s, m) => s + m?.predictions.length, 0)} (${predictions?.length} models: ${predictions?.map((m) => `${m?.type}@${m?.accuracy.toFixed(2)}`).join(", ")})`,
+        `   Predictions generated: ${predictions?.reduce((s, m) => s + m?.predictions?.length, 0)} (${predictions?.length} models: ${predictions?.map((m) => `${m?.type}@${m?.accuracy?.toFixed(2)}`).join(", ")})`,
       );
       logger.info(`   A/B tests processed: ${abTests?.length}`);
       logger.info(
@@ -395,7 +395,7 @@ class HyperLearningEngine extends EventEmitter {
 
   private async runMicroPatternDetection(): Promise<MicroPattern[]> {
     const patterns: MicroPattern[] = [];
-    Date?.now();
+    Date.now();
 
     try {
       const ninetyDaysAgo = new Date();
@@ -491,7 +491,7 @@ class HyperLearningEngine extends EventEmitter {
       if (!buckets?.has(key)) {
         buckets?.set(key, { total: 0, engagement: 0, count: 0 });
       }
-      const b = buckets?.get(key)!;
+      const b = buckets?.get(key);
       b.total += length;
       b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
@@ -545,7 +545,7 @@ class HyperLearningEngine extends EventEmitter {
       if (!densityBuckets?.has(key)) {
         densityBuckets?.set(key, { engagement: 0, count: 0 });
       }
-      const b = densityBuckets?.get(key)!;
+      const b = densityBuckets?.get(key);
       b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
@@ -587,7 +587,7 @@ class HyperLearningEngine extends EventEmitter {
       if (
         !post?.contentText ||
         !Array.isArray(post?.hashtags) ||
-        post?.hashtags.length === 0
+        post?.hashtags?.length === 0
       )
         continue;
 
@@ -611,7 +611,7 @@ class HyperLearningEngine extends EventEmitter {
       if (!positions?.has(positionKey)) {
         positions?.set(positionKey, { engagement: 0, count: 0 });
       }
-      const b = positions?.get(positionKey)!;
+      const b = positions?.get(positionKey);
       b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
@@ -657,7 +657,7 @@ class HyperLearningEngine extends EventEmitter {
       if (!minuteBuckets?.has(minute)) {
         minuteBuckets?.set(minute, { engagement: 0, count: 0 });
       }
-      const b = minuteBuckets?.get(minute)!;
+      const b = minuteBuckets?.get(minute);
       b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
@@ -728,7 +728,7 @@ class HyperLearningEngine extends EventEmitter {
 
       let matchedHook = "generic";
       for (const hook of hookPatterns) {
-        if (hook?.regex.test(text)) {
+        if (hook?.regex?.test(text)) {
           matchedHook = hook?.name;
           break;
         }
@@ -737,7 +737,7 @@ class HyperLearningEngine extends EventEmitter {
       if (!hookTypes?.has(matchedHook)) {
         hookTypes?.set(matchedHook, { engagement: 0, count: 0 });
       }
-      const b = hookTypes?.get(matchedHook)!;
+      const b = hookTypes?.get(matchedHook);
       b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
@@ -783,7 +783,7 @@ class HyperLearningEngine extends EventEmitter {
       if (!breakBuckets?.has(bucket)) {
         breakBuckets?.set(bucket, { engagement: 0, count: 0 });
       }
-      const b = breakBuckets?.get(bucket)!;
+      const b = breakBuckets?.get(bucket);
       b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
@@ -838,7 +838,7 @@ class HyperLearningEngine extends EventEmitter {
         if (!buckets?.has(bucket)) {
           buckets?.set(bucket, { engagement: 0, count: 0 });
         }
-        const b = buckets?.get(bucket)!;
+        const b = buckets?.get(bucket);
         b.engagement += Number(post?.engagementRate) || 0;
         b.count++;
       }
@@ -855,7 +855,7 @@ class HyperLearningEngine extends EventEmitter {
           patterns?.push({
             id: `${pType?.name}_${count}`,
             type: "exclamation_density",
-            pattern: `${count} ${pType?.name.replace(/_/g, " ")}`,
+            pattern: `${count} ${pType?.name?.replace(/_/g, " ")}`,
             correlation,
             sampleSize: stats.count,
             confidence: Math.min(0.8, 0.35 + stats?.count / 100),
@@ -899,7 +899,7 @@ class HyperLearningEngine extends EventEmitter {
       if (!numberTypes?.has(numberType)) {
         numberTypes?.set(numberType, { engagement: 0, count: 0 });
       }
-      const b = numberTypes?.get(numberType)!;
+      const b = numberTypes?.get(numberType);
       b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
@@ -973,7 +973,7 @@ class HyperLearningEngine extends EventEmitter {
       if (!ctaPositions?.has(ctaPosition)) {
         ctaPositions?.set(ctaPosition, { engagement: 0, count: 0 });
       }
-      const b = ctaPositions?.get(ctaPosition)!;
+      const b = ctaPositions?.get(ctaPosition);
       b.engagement += Number(post?.engagementRate) || 0;
       b.count++;
     }
@@ -1782,7 +1782,7 @@ class HyperLearningEngine extends EventEmitter {
       // engagementVelocityCurve: derived from the hourly engagement distribution
       // normalized so the peak hour = 1.0.  Only include hours with above-mean engagement.
       const maxEng = Math.max(
-        ...hourlyData?.map((h) => parseFloat(String(h?.avgEngagement) || "0")),
+        ...(hourlyData?.map((h) => parseFloat(String(h?.avgEngagement) || "0")) ?? []),
         0.001,
       );
       const velocityCurve = hourlyData
@@ -1848,7 +1848,7 @@ class HyperLearningEngine extends EventEmitter {
 
       models?.push(timingModel, contentModel, compositeModel);
       this.learningMetrics.predictionsGenerated += models?.reduce(
-        (s, m) => s + m?.predictions.length,
+        (s, m) => s + m?.predictions?.length,
         0,
       );
 
@@ -2279,7 +2279,7 @@ class HyperLearningEngine extends EventEmitter {
             : "stable";
 
       emergent?.push({
-        id: `trend_${Date?.now()}`,
+        id: `trend_${Date.now()}`,
         type: "timing_precision",
         pattern: `Engagement trend: ${trendDirection} (${((recentAvg / historicalAvg - 1) * 100).toFixed(1)}% change)`,
         correlation:
@@ -2303,14 +2303,14 @@ class HyperLearningEngine extends EventEmitter {
 
     this.abTestQueue.forEach((test, id) => {
       const minImpressionsRequired =
-        test?.variants.length * AB_MIN_IMPRESSIONS_PER_VARIATE;
-      const totalImpressions = test?.variants.reduce(
+        test?.variants?.length * AB_MIN_IMPRESSIONS_PER_VARIATE;
+      const totalImpressions = test?.variants?.reduce(
         (s, v) => s + v?.impressions,
         0,
       );
 
       if (totalImpressions >= minImpressionsRequired) {
-        const sortedVariants = [...test?.variants].sort(
+        const sortedVariants = [...(test?.variants ?? [])].sort(
           (a, b) => b?.engagementRate - a?.engagementRate,
         );
         const winner = sortedVariants[0];
@@ -2328,11 +2328,11 @@ class HyperLearningEngine extends EventEmitter {
                 ).toFixed(1)
               : "100";
 
-          test?.learnings.push(
+          test?.learnings?.push(
             `Winner (${winner?.id}) beat ${sortedVariants?.length - 1} variates` +
               ` by ${upliftPct}% engagement uplift` +
               ` (confidence ${(winner?.statisticalSignificance * 100).toFixed(0)}%,` +
-              ` ${totalImpressions} impressions across ${test?.variants.length} variates)`,
+              ` ${totalImpressions} impressions across ${test?.variants?.length} variates)`,
           );
 
           results?.push(test);
@@ -2359,7 +2359,7 @@ class HyperLearningEngine extends EventEmitter {
     try {
       const aiKey = getMaxcoreGenerationKey();
       const payload = {
-        content: `AB test winner: ${winner?.id} — ${winner?.engagementRate.toFixed(2)}% engagement`,
+        content: `AB test winner: ${winner?.id} — ${winner?.engagementRate?.toFixed(2)}% engagement`,
         source: "hyper_ab_test",
         trigger: "ab_winner",
         engagement_rate: winner.engagementRate,
@@ -2392,7 +2392,7 @@ class HyperLearningEngine extends EventEmitter {
       if (resp?.ok) {
         logger.info(
           `[HyperLearning] DiffusionTrainer notified — winner variant ${winner?.id}` +
-            ` (${winner?.engagementRate.toFixed(2)}% engagement, ${test?.variants.length} variates tested)`,
+            ` (${winner?.engagementRate?.toFixed(2)}% engagement, ${test?.variants?.length} variates tested)`,
         );
       } else {
         logger.warn(
@@ -2492,7 +2492,7 @@ class HyperLearningEngine extends EventEmitter {
         id: `micro_${pattern?.id}`,
         category: "micro_pattern",
         title: `Micro-Pattern: ${pattern?.pattern}`,
-        description: `This pattern affects engagement by ${pattern?.engagementImpact.toFixed(1)}% with ${(pattern?.confidence * 100).toFixed(0)}% confidence`,
+        description: `This pattern affects engagement by ${pattern?.engagementImpact?.toFixed(1)}% with ${(pattern?.confidence * 100).toFixed(0)}% confidence`,
         confidence: pattern.confidence,
         impact: Math.abs(pattern?.engagementImpact),
         actionability: pattern.engagementImpact > 0 ? 0.9 : 0.7,
@@ -2508,7 +2508,7 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     if (crossPlatform?.model) {
-      for (const universal of crossPlatform?.model.universalPatterns?.slice(
+      for (const universal of (crossPlatform.model.universalPatterns ?? []).slice(
         0,
         5,
       )) {
@@ -2516,7 +2516,7 @@ class HyperLearningEngine extends EventEmitter {
           id: `cross_${universal?.id}`,
           category: "cross_platform",
           title: `Universal Pattern: ${universal?.description}`,
-          description: `This pattern works across ${universal?.applicablePlatforms.length} platforms with ${(universal?.effectiveness * 100).toFixed(0)}% effectiveness`,
+          description: `This pattern works across ${universal?.applicablePlatforms?.length} platforms with ${(universal?.effectiveness * 100).toFixed(0)}% effectiveness`,
           confidence: 0.8,
           impact: universal.effectiveness * 100,
           actionability: 0.95,
@@ -2536,7 +2536,7 @@ class HyperLearningEngine extends EventEmitter {
           id: `predict_${model?.type}`,
           category: "predictive",
           title: `${model?.type} Prediction`,
-          description: `Predicted engagement: ${topPrediction?.predictedEngagement.toFixed(2)}% with ${(topPrediction?.confidence * 100).toFixed(0)}% confidence`,
+          description: `Predicted engagement: ${topPrediction?.predictedEngagement?.toFixed(2)}% with ${(topPrediction?.confidence * 100).toFixed(0)}% confidence`,
           confidence: topPrediction.confidence,
           impact: topPrediction.predictedEngagement,
           actionability: 0.85,
@@ -2591,7 +2591,7 @@ class HyperLearningEngine extends EventEmitter {
           id: `universal_${universal?.id}`,
           category: "cross_platform",
           title: universal.description,
-          description: `Works across ${universal?.applicablePlatforms.length} platforms`,
+          description: `Works across ${universal?.applicablePlatforms?.length} platforms`,
           confidence: 0.75,
           impact: universal.effectiveness * 100,
           actionability: 0.9,
@@ -2604,13 +2604,13 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     for (const [type, model] of this.predictiveModels) {
-      const topPredictions = model?.predictions.slice(0, 3);
+      const topPredictions = model?.predictions?.slice(0, 3);
       for (const prediction of topPredictions) {
         hyperInsights?.push({
           id: `predict_${type}_${hyperInsights?.length}`,
           category: "predictive",
           title: `${type} optimization`,
-          description: `Predicted ${prediction?.predictedEngagement.toFixed(1)}% engagement`,
+          description: `Predicted ${prediction?.predictedEngagement?.toFixed(1)}% engagement`,
           confidence: prediction.confidence,
           impact: prediction.predictedEngagement,
           actionability: 0.85,
@@ -2642,7 +2642,7 @@ class HyperLearningEngine extends EventEmitter {
     const contentModel = this.predictiveModels.get("content");
 
     let optimalTiming = { hour: 18, dayOfWeek: 3, confidence: 0.5 };
-    if (timingModel && timingModel?.predictions.length > 0) {
+    if (timingModel && timingModel?.predictions?.length > 0) {
       const top = timingModel?.predictions[0];
       optimalTiming = {
         hour: top.scenario.hour,
@@ -2655,17 +2655,17 @@ class HyperLearningEngine extends EventEmitter {
     let optimalLength = "100-200 characters";
     let optimalEmojiDensity = "1-2 emojis per 100 characters";
 
-    if (contentModel && contentModel?.predictions.length > 0) {
+    if (contentModel && contentModel?.predictions?.length > 0) {
       const top = contentModel?.predictions[0];
-      optimalHook = top?.scenario.hookType || optimalHook;
-      optimalLength = top?.scenario.lengthRange || optimalLength;
-      optimalEmojiDensity = top?.scenario.emojiDensity || optimalEmojiDensity;
+      optimalHook = top?.scenario?.hookType || optimalHook;
+      optimalLength = top?.scenario?.lengthRange || optimalLength;
+      optimalEmojiDensity = top?.scenario?.emojiDensity || optimalEmojiDensity;
     }
 
     const platformPatterns = [...this.microPatternCache.values()]
       .flat()
       .filter(
-        (p) => p?.platforms.includes(platform) || p?.platforms.includes("all"),
+        (p) => p?.platforms?.includes(platform) || p?.platforms?.includes("all"),
       )
       .filter((p) => p?.engagementImpact > 5)
       .sort((a, b) => b?.engagementImpact - a?.engagementImpact)
@@ -2679,7 +2679,7 @@ class HyperLearningEngine extends EventEmitter {
       .filter(
         (p) =>
           p?.type === "hashtag_position" &&
-          (p?.platforms.includes(platform) || p?.platforms.includes("all")) &&
+          (p?.platforms?.includes(platform) || p?.platforms?.includes("all")) &&
           p?.engagementImpact > 0,
       )
       .sort((a, b) => b?.engagementImpact - a?.engagementImpact);

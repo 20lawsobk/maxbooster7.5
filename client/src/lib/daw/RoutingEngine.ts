@@ -68,7 +68,7 @@ export class RoutingEngine {
   }
 
   addNode(node: Omit<RoutingNode, "id" | "inputs" | "outputs">): string {
-    const id = `node_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newNode: RoutingNode = {
       ...node,
       id,
@@ -125,7 +125,7 @@ export class RoutingEngine {
       return null;
     }
 
-    const id = `edge_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `edge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const edge: RoutingEdge = {
       id,
       sourceId,
@@ -290,7 +290,7 @@ export class RoutingEngine {
     const stack = [targetId];
 
     while (stack?.length > 0) {
-      const current = stack?.pop()!;
+      const current = stack?.pop();
 
       if (current === sourceId) {
         return true;
@@ -322,7 +322,7 @@ export class RoutingEngine {
       const node = this.state.nodes?.find((n) => n?.id === nodeId);
       if (!node) return;
 
-      for (const inputId of node?.inputs) {
+      for (const inputId of node?.inputs ?? []) {
         visit(inputId);
       }
       sorted?.push(nodeId);
@@ -337,7 +337,7 @@ export class RoutingEngine {
       if (!node) continue;
 
       let maxInputLatency = 0;
-      for (const inputId of node?.inputs) {
+      for (const inputId of node?.inputs ?? []) {
         const inputLatency = latencies?.get(inputId) ?? 0;
         maxInputLatency = Math.max(maxInputLatency, inputLatency);
       }

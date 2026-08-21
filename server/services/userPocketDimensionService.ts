@@ -35,7 +35,7 @@ export class UserPocketDimensionService {
   private acquireWriteLock(userId: string): Promise<() => void> {
     let release!: () => void;
     const pending: Promise<void> = (
-      this.writeLocks.get(userId) ?? Promise?.resolve()
+      this.writeLocks.get(userId) ?? Promise.resolve()
     ).then(
       () =>
         new Promise<void>((res) => {
@@ -185,7 +185,7 @@ export class UserPocketDimensionService {
     }
 
     const folder = options?.folder || "uploads";
-    const fileKey = `${folder}/${Date?.now()}-${fileName}`;
+    const fileKey = `${folder}/${Date.now()}-${fileName}`;
 
     const entry = await pocket?.write(fileKey, data);
 
@@ -499,7 +499,7 @@ export class UserPocketDimensionService {
     const uniqueSalt = randomBytes(32).toString("hex");
     const masterSecret = env?.SESSION_SECRET || randomBytes(32).toString("hex");
     return createHash("sha512")
-      .update(`${masterSecret}:${uniqueSalt}:${userId}:${Date?.now()}`)
+      .update(`${masterSecret}:${uniqueSalt}:${userId}:${Date.now()}`)
       .digest("hex")
       .substring(0, 64);
   }

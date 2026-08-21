@@ -109,7 +109,7 @@ class RequestQueue {
       const queue = this.queues.get(priority)!;
 
       while (queue?.length > 0 && this.processing < this.config.maxConcurrent) {
-        const request = queue?.shift()!;
+        const request = queue?.shift();
         this.processRequest(request);
       }
     }

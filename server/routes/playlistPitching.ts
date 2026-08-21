@@ -270,7 +270,7 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
       ]),
       responseNote: z.string().max(2000).optional(),
     });
-    const { status, responseNote } = statusSchema?.parse(req.body);
+    const { status, responseNote } = statusSchema?.parse(req.body) ?? {};
 
     const setFields: Record<string, unknown> = {
       status,

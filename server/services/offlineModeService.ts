@@ -170,13 +170,13 @@ class OfflineModeService extends EventEmitter {
         project.cachedAt = new Date(project?.cachedAt as any);
         project.lastSyncAt = new Date(project?.lastSyncAt as any);
         if (project?.audioFiles) {
-          for (const af of project?.audioFiles)
+          for (const af of project?.audioFiles ?? [])
             af.cachedAt = new Date(af?.cachedAt);
           project.audioFiles = (project?.audioFiles as any).filter(
             (af: OfflineAudioFile) => {
               if (
-                af?.path.startsWith("/") ||
-                af?.path.includes("offline-cache")
+                af?.path?.startsWith("/") ||
+                af?.path?.includes("offline-cache")
               ) {
                 return fs?.existsSync(af?.path);
               }
@@ -445,7 +445,7 @@ class OfflineModeService extends EventEmitter {
   }
 
   async syncProject(projectId: string): Promise<SyncResult> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     const cached = this.cachedProjects.get(projectId);
 
     if (!cached) {
@@ -508,7 +508,7 @@ class OfflineModeService extends EventEmitter {
       cached.localChanges = 0;
       cached.serverChanges = 0;
 
-      const syncTime = Date?.now() - startTime;
+      const syncTime = Date.now() - startTime;
       this.emit("syncComplete", { projectId, syncTime });
 
       logger.info({
@@ -550,7 +550,7 @@ class OfflineModeService extends EventEmitter {
     }
 
     this.isSyncing = true;
-    const startTime = Date?.now();
+    const startTime = Date.now();
     const results: SyncResult[] = [];
 
     try {
@@ -607,11 +607,11 @@ class OfflineModeService extends EventEmitter {
       usedPercentage: (totalSize / this.settings.maxCacheSize) * 100,
       oldestCache:
         cacheDates?.length > 0
-          ? new Date(Math.min(...cacheDates?.map((d) => d?.getTime())))
+          ? new Date(Math.min(...(cacheDates?.map((d) => d?.getTime()) ?? [])))
           : null,
       newestCache:
         cacheDates?.length > 0
-          ? new Date(Math.max(...cacheDates?.map((d) => d?.getTime())))
+          ? new Date(Math.max(...(cacheDates?.map((d) => d?.getTime()) ?? [])))
           : null,
     };
   }
@@ -638,11 +638,11 @@ class OfflineModeService extends EventEmitter {
   async cleanupOldCache(
     maxAge: number = 30 * 24 * 60 * 60 * 1000,
   ): Promise<number> {
-    const now = Date?.now();
+    const now = Date.now();
     let cleaned = 0;
 
     for (const [projectId, project] of this.cachedProjects) {
-      if (now - project?.cachedAt.getTime() > maxAge) {
+      if (now - project?.cachedAt?.getTime() > maxAge) {
         await this.uncacheProject(projectId);
         cleaned++;
       }
@@ -684,7 +684,7 @@ class OfflineModeService extends EventEmitter {
   }> {
     const cached = await this.cacheProject(projectId, userId);
 
-    const filename = `${cached?.name.replace(/[^a-z0-9]/gi, "_")}_offline.mbproj`;
+    const filename = `${cached?.name?.replace(/[^a-z0-9]/gi, "_")}_offline.mbproj`;
     const downloadUrl = `/api/offline/download/${projectId}`;
 
     return {

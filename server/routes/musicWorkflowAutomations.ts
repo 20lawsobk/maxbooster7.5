@@ -147,7 +147,7 @@ router.post("/trigger", requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
 
-    const { eventType, data = {} } = parsed?.data;
+    const { eventType, data = {} } = parsed.data;
     await musicWorkflowAutomationService?.triggerEvent(eventType, {
       userId,
       ...data,

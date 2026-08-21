@@ -291,22 +291,22 @@ class MusicIndustryContextFilterService {
 
   /** Returns the top trending genre from the last cached fetch, or undefined. */
   getSuggestedGenreSync(): string | undefined {
-    return this?.cache?.ctx?.generationHints.suggestedGenre;
+    return this?.cache?.ctx?.generationHints?.suggestedGenre;
   }
 
   /** Returns the top trending mood from the last cached fetch, or undefined. */
   getSuggestedMoodSync(): string | undefined {
-    return this?.cache?.ctx?.generationHints.suggestedMood;
+    return this?.cache?.ctx?.generationHints?.suggestedMood;
   }
 
   /** Returns tempo bias from the last cached fetch ('neutral' when cold). */
   getTempoBiasSync(): "up" | "down" | "neutral" {
-    return this?.cache?.ctx?.generationHints.tempoBias ?? "neutral";
+    return this?.cache?.ctx?.generationHints?.tempoBias ?? "neutral";
   }
 
   /** Returns top production style keywords from the last cached fetch. */
   getProductionKeywordsSync(): string[] {
-    return this?.cache?.ctx?.generationHints.productionKeywords ?? [];
+    return this?.cache?.ctx?.generationHints?.productionKeywords ?? [];
   }
 
   /** Returns all platform trend signals from the last cached fetch. */
@@ -326,17 +326,17 @@ class MusicIndustryContextFilterService {
   // ── Internal ───────────────────────────────────────────────────────────────
 
   private async getOrBuild(): Promise<MusicIndustryContext> {
-    if (this?.cache && Date?.now() - this?.cache.builtAt < CACHE_TTL_MS) {
-      return this?.cache.ctx;
+    if (this?.cache && Date.now() - this?.cache?.builtAt < CACHE_TTL_MS) {
+      return this?.cache?.ctx;
     }
     const signals = await industryMonitor?.fetchLiveChanges();
     const ctx = this?.build(signals);
     this.cache = { ctx, builtAt: Date.now() };
     logger?.info(
       `[IndustryFilter] Built context from ${signals?.length} signals — ` +
-        `confidence=${ctx?.confidence.toFixed(2)} ` +
-        `genres=[${ctx?.trendingGenres.slice(0, 3).join(",")}] ` +
-        `moods=[${ctx?.trendingMoods.slice(0, 3).join(",")}]`,
+        `confidence=${ctx?.confidence?.toFixed(2)} ` +
+        `genres=[${ctx?.trendingGenres?.slice(0, 3).join(",")}] ` +
+        `moods=[${ctx?.trendingMoods?.slice(0, 3).join(",")}]`,
     );
     return ctx;
   }
@@ -362,7 +362,7 @@ class MusicIndustryContextFilterService {
               : 0.8;
 
       for (const kw of GENRE_KW) {
-        if (kw?.pattern.test(text)) {
+        if (kw?.pattern?.test(text)) {
           genreScores?.set(
             kw?.value,
             (genreScores?.get(kw?.value) ?? 0) + kw?.weight * age * boost,
@@ -370,7 +370,7 @@ class MusicIndustryContextFilterService {
         }
       }
       for (const kw of MOOD_KW) {
-        if (kw?.pattern.test(text)) {
+        if (kw?.pattern?.test(text)) {
           moodScores?.set(
             kw?.value,
             (moodScores?.get(kw?.value) ?? 0) + kw?.weight * age * boost,
@@ -378,7 +378,7 @@ class MusicIndustryContextFilterService {
         }
       }
       for (const kw of PRODUCTION_KW) {
-        if (kw?.pattern.test(text)) {
+        if (kw?.pattern?.test(text)) {
           prodScores?.set(
             kw?.value,
             (prodScores?.get(kw?.value) ?? 0) + kw?.weight * age * boost,
@@ -386,16 +386,16 @@ class MusicIndustryContextFilterService {
         }
       }
       for (const kw of HOOK_KW) {
-        if (kw?.pattern.test(text)) hookSet?.add(kw?.hook);
+        if (kw?.pattern?.test(text)) hookSet?.add(kw?.hook);
       }
       for (const kw of LYRIC_KW) {
-        if (kw?.pattern.test(text)) themeSet?.add(kw?.theme);
+        if (kw?.pattern?.test(text)) themeSet?.add(kw?.theme);
       }
       for (const pe of PLATFORM_ENTRIES) {
-        if (pe?.detect.test(text)) {
+        if (pe?.detect?.test(text)) {
           const set = platMap?.get(pe?.platform) ?? new Set<string>();
-          for (const ts of pe?.trendSignals) {
-            if (ts?.pattern.test(text)) set?.add(ts?.trend);
+          for (const ts of pe?.trendSignals ?? []) {
+            if (ts?.pattern?.test(text)) set?.add(ts?.trend);
           }
           if (set?.size) platMap?.set(pe?.platform, set);
         }
@@ -422,7 +422,7 @@ class MusicIndustryContextFilterService {
       }
     }
 
-    const confidence = Math?.min(1, signals?.length / 40);
+    const confidence = Math.min(1, signals?.length / 40);
     const hints = this?.buildHints(
       trendingGenres,
       trendingMoods,
@@ -461,57 +461,57 @@ class MusicIndustryContextFilterService {
       case "content":
       case "advertising":
         parts?.push("[Music Industry Context]");
-        if (ctx?.trendingGenres.length)
-          parts?.push(`Trending: ${ctx?.trendingGenres.slice(0, 3).join(", ")}`);
-        if (ctx?.platformSignals.length) {
+        if (ctx?.trendingGenres?.length)
+          parts?.push(`Trending: ${ctx?.trendingGenres?.slice(0, 3).join(", ")}`);
+        if (ctx?.platformSignals?.length) {
           const top = ctx?.platformSignals
             .slice(0, 3)
             .map((s) => `${s?.platform}: ${s?.trend}`)
             .join("; ");
           parts?.push(`Platform: ${top}`);
         }
-        if (ctx?.viralHookPatterns.length)
-          parts?.push(`Hooks: ${ctx?.viralHookPatterns.slice(0, 2).join(", ")}`);
-        if (ctx?.lyricThemes.length)
-          parts?.push(`Themes: ${ctx?.lyricThemes.slice(0, 2).join(", ")}`);
+        if (ctx?.viralHookPatterns?.length)
+          parts?.push(`Hooks: ${ctx?.viralHookPatterns?.slice(0, 2).join(", ")}`);
+        if (ctx?.lyricThemes?.length)
+          parts?.push(`Themes: ${ctx?.lyricThemes?.slice(0, 2).join(", ")}`);
         break;
 
       case "melody":
       case "music":
         parts?.push("[Industry Music Context]");
-        if (ctx?.trendingGenres.length)
+        if (ctx?.trendingGenres?.length)
           parts?.push(
-            `Trending genres: ${ctx?.trendingGenres.slice(0, 3).join(", ")}`,
+            `Trending genres: ${ctx?.trendingGenres?.slice(0, 3).join(", ")}`,
           );
-        if (ctx?.trendingMoods.length)
+        if (ctx?.trendingMoods?.length)
           parts?.push(
-            `Resonant moods: ${ctx?.trendingMoods.slice(0, 3).join(", ")}`,
+            `Resonant moods: ${ctx?.trendingMoods?.slice(0, 3).join(", ")}`,
           );
-        if (ctx?.productionStyles.length)
+        if (ctx?.productionStyles?.length)
           parts?.push(
-            `Production: ${ctx?.productionStyles.slice(0, 2).join(", ")}`,
+            `Production: ${ctx?.productionStyles?.slice(0, 2).join(", ")}`,
           );
-        if (ctx?.generationHints.tempoBias !== "neutral")
-          parts?.push(`Tempo bias: ${ctx?.generationHints.tempoBias}`);
+        if (ctx?.generationHints?.tempoBias !== "neutral")
+          parts?.push(`Tempo bias: ${ctx?.generationHints?.tempoBias}`);
         break;
 
       case "songwriting":
         parts?.push("[Songwriting Industry Context]");
-        if (ctx?.lyricThemes.length)
+        if (ctx?.lyricThemes?.length)
           parts?.push(
-            `Resonant themes: ${ctx?.lyricThemes.slice(0, 3).join(", ")}`,
+            `Resonant themes: ${ctx?.lyricThemes?.slice(0, 3).join(", ")}`,
           );
-        if (ctx?.trendingGenres.length)
+        if (ctx?.trendingGenres?.length)
           parts?.push(
-            `Trending genres: ${ctx?.trendingGenres.slice(0, 3).join(", ")}`,
+            `Trending genres: ${ctx?.trendingGenres?.slice(0, 3).join(", ")}`,
           );
-        if (ctx?.viralHookPatterns.length)
+        if (ctx?.viralHookPatterns?.length)
           parts?.push(
-            `Hook patterns: ${ctx?.viralHookPatterns.slice(0, 2).join(", ")}`,
+            `Hook patterns: ${ctx?.viralHookPatterns?.slice(0, 2).join(", ")}`,
           );
-        if (ctx?.trendingMoods.length)
+        if (ctx?.trendingMoods?.length)
           parts?.push(
-            `Audience mood: ${ctx?.trendingMoods.slice(0, 2).join(", ")}`,
+            `Audience mood: ${ctx?.trendingMoods?.slice(0, 2).join(", ")}`,
           );
         break;
     }
@@ -557,7 +557,7 @@ class MusicIndustryContextFilterService {
 
     const hashtagContext = platformSignals
       .filter((s) => s?.strength === "strong")
-      .map((s) => `#${s?.platform.toLowerCase().replace(/\s+/g, "")}`)
+      .map((s) => `#${s?.platform?.toLowerCase().replace(/\s+/g, "")}`)
       .join(" ");
 
     return {
@@ -571,7 +571,7 @@ class MusicIndustryContextFilterService {
   }
 
   private topN(scores: Map<string, number>, n: number): string[] {
-    return [...scores?.entries()]
+    return [...(scores?.entries() ?? [])]
       .sort((a, b) => b[1] - a[1])
       .slice(0, n)
       .map(([k]) => k);
@@ -585,7 +585,7 @@ class MusicIndustryContextFilterService {
    *   older   → 0.2
    */
   private recencyFactor(date: Date): number {
-    const h = (Date?.now() - date?.getTime()) / 3_600_000;
+    const h = (Date.now() - date?.getTime()) / 3_600_000;
     if (h <= 24) return 1.0;
     if (h <= 72) return 0.8;
     if (h <= 168) return 0.5;

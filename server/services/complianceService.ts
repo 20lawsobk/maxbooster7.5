@@ -472,7 +472,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
       }
     }
 
-    const expiringEvidence = (await (storage as any)?.getExpiringEvidence(30)).length;
+    const expiringEvidence = ((await (storage as any)?.getExpiringEvidence(30)) ?? []).length;
 
     return {
       totalEvidence,
@@ -523,7 +523,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     });
     let collected = 0;
 
-    for (const control of controls?.slice(0, 5)) {
+    for (const control of controls?.slice(0, 5) ?? []) {
       const validUntil = new Date();
       validUntil?.setDate(validUntil?.getDate() + 30);
 
@@ -555,7 +555,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     });
     let collected = 0;
 
-    for (const control of controls?.slice(0, 3)) {
+    for (const control of controls?.slice(0, 3) ?? []) {
       const validUntil = new Date();
       validUntil?.setDate(validUntil?.getDate() + 90);
 
@@ -588,7 +588,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     let collected = 0;
 
     for (const control of controls
-      .filter((c: any) => c?.title.toLowerCase().includes("access"))
+      .filter((c: any) => c?.title?.toLowerCase().includes("access"))
       .slice(0, 3)) {
       const validUntil = new Date();
       validUntil?.setDate(validUntil?.getDate() + 60);
@@ -621,7 +621,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     });
     let collected = 0;
 
-    for (const control of controls?.slice(0, 2)) {
+    for (const control of controls?.slice(0, 2) ?? []) {
       const validUntil = new Date();
       validUntil?.setDate(validUntil?.getDate() + 180);
 

@@ -386,7 +386,7 @@ export class TemplateManager {
 
   getTemplatesByPlatform(platform: Platform): TemplateMetadata[] {
     return this.getAllTemplates().filter((t) =>
-      t?.supportedPlatforms.includes(platform),
+      t?.supportedPlatforms?.includes(platform),
     );
   }
 
@@ -398,9 +398,9 @@ export class TemplateManager {
     const lowerQuery = query?.toLowerCase();
     return this.getAllTemplates().filter(
       (t) =>
-        t?.name.toLowerCase().includes(lowerQuery) ||
-        t?.description.toLowerCase().includes(lowerQuery) ||
-        t?.tags.some((tag) => tag?.toLowerCase().includes(lowerQuery)),
+        t?.name?.toLowerCase().includes(lowerQuery) ||
+        t?.description?.toLowerCase().includes(lowerQuery) ||
+        t?.tags?.some((tag) => tag?.toLowerCase().includes(lowerQuery)),
     );
   }
 
@@ -427,7 +427,7 @@ export class TemplateManager {
   }
 
   getPreset(presetId: string): TemplatePreset | undefined {
-    for (const presets of TEMPLATE_PRESETS?.values()) {
+    for (const presets of TEMPLATE_PRESETS?.values() ?? []) {
       const preset = presets?.find((p) => p?.id === presetId);
       if (preset) return preset;
     }
@@ -501,7 +501,7 @@ export class TemplateManager {
     );
 
     return {
-      id: options.id || `${metadata?.id}_${Date?.now()}`,
+      id: options.id || `${metadata?.id}_${Date.now()}`,
       name: options.name || metadata?.name,
       aspectRatio,
       duration:
@@ -698,7 +698,7 @@ export class TemplateManager {
       title: options.title || "Coming Soon",
       targetDate:
         options?.targetDate ||
-        new Date(Date?.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       eventName: options.eventName || "New Release",
       artistName: options.artistName || "Artist Name",
       timerStyle: options.timerStyle || "digital",
@@ -872,7 +872,7 @@ export class TemplateManager {
 
   importTemplateConfig(config: ExportedTemplateConfig): CompiledTemplate {
     return this.instantiateTemplate(
-      config?.templateId.split("_")[0],
+      config?.templateId?.split("_")[0],
       config?.options,
       config?.customizations,
     );
@@ -888,7 +888,7 @@ export class TemplateManager {
       return this.previewCache.get(cacheKey)!;
     }
 
-    const canvas = document?.createElement("canvas");
+    const canvas = document.createElement("canvas");
     canvas.width = config?.width;
     canvas.height = config?.height;
     const ctx = canvas?.getContext("2d");
@@ -909,7 +909,7 @@ export class TemplateManager {
       ctx?.save();
       ctx?.scale(scaleX, scaleY);
 
-      for (const layer of compiled?.layers) {
+      for (const layer of compiled?.layers ?? []) {
         if (
           currentTime >= layer?.startTime &&
           currentTime <= layer?.endTime &&
@@ -952,7 +952,7 @@ export class TemplateManager {
     ctx?.translate(-width * transform?.anchorX, -height * transform?.anchorY);
 
     let opacity = layer?.opacity;
-    for (const anim of layer?.animations) {
+    for (const anim of layer?.animations ?? []) {
       if (currentTime >= anim?.startTime && currentTime <= anim?.endTime) {
         const progress =
           (currentTime - anim?.startTime) / (anim?.endTime - anim?.startTime);

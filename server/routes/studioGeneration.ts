@@ -142,23 +142,23 @@ router.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
     const parts: string[] = [];
 
     if (validatedData?.instrumentType) {
-      const instrumentId = validatedData?.instrumentType.toLowerCase();
+      const instrumentId = validatedData?.instrumentType?.toLowerCase();
       const friendlyName = instrumentId?.replace(/_/g, " ");
       if (!textLower?.includes(friendlyName) && !textLower?.includes(instrumentId)) {
         parts?.push(friendlyName);
       }
     }
-    if (validatedData?.genre && !textLower?.includes(validatedData?.genre.toLowerCase())) {
+    if (validatedData?.genre && !textLower?.includes(validatedData?.genre?.toLowerCase())) {
       parts?.push(validatedData?.genre);
     }
     if (userText) parts?.push(userText);
     if (validatedData?.tempo) parts?.push(`at ${validatedData?.tempo}bpm`);
     if (validatedData?.key &&
-      !textLower?.includes(` ${validatedData?.key.toLowerCase()} `) &&
-      !textLower?.includes(`in ${validatedData?.key.toLowerCase()}`)) {
+      !textLower?.includes(` ${validatedData?.key?.toLowerCase()} `) &&
+      !textLower?.includes(`in ${validatedData?.key?.toLowerCase()}`)) {
       parts?.push(`in ${validatedData?.key}`);
     }
-    if (validatedData?.scale && !textLower?.includes(validatedData?.scale.toLowerCase())) {
+    if (validatedData?.scale && !textLower?.includes(validatedData?.scale?.toLowerCase())) {
       parts?.push(validatedData?.scale);
     }
 
@@ -310,7 +310,7 @@ router.get("/presets", requireAuth, async (_req, res) => {
 
     const presets = {
       genres: Object.entries(genres).flatMap(([category, data]) =>
-        data?.genres.map((g) => ({
+        data?.genres?.map((g) => ({
           id: g,
           name: g.replace(/_/g, " ").replace(/\b\w/g, (l) => l?.toUpperCase()),
           category,
@@ -319,24 +319,24 @@ router.get("/presets", requireAuth, async (_req, res) => {
         })),
       ),
       instrumentTypes: [
-        ...instruments?.melodic.map((i) => ({
+        ...(instruments?.melodic?.map((i) => ({
           id: i,
           name: i.replace(/_/g, " ").replace(/\b\w/g, (l) => l?.toUpperCase()),
           category: "melodic",
           description: `${i?.replace(/_/g, " ")} instrument`,
-        })),
-        ...instruments?.drums.map((i) => ({
+        })) ?? []),
+        ...(instruments?.drums?.map((i) => ({
           id: i,
           name: i.replace(/_/g, " ").replace(/\b\w/g, (l) => l?.toUpperCase()),
           category: "drums",
           description: `${i?.replace(/_/g, " ")} drum kit`,
-        })),
-        ...instruments?.percussion.map((i) => ({
+        })) ?? []),
+        ...(instruments?.percussion?.map((i) => ({
           id: i,
           name: i.replace(/_/g, " ").replace(/\b\w/g, (l) => l?.toUpperCase()),
           category: "percussion",
           description: `${i?.replace(/_/g, " ")} percussion`,
-        })),
+        })) ?? []),
       ],
       keys: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
       scales: scales.map((s) => ({
@@ -438,19 +438,19 @@ router.get("/pattern/stats", requireAuth, async (_req, res) => {
         drums: instruments.drums.length,
         percussion: instruments.percussion.length,
         total:
-          instruments?.melodic.length +
-          instruments?.drums.length +
-          instruments?.percussion.length,
+          instruments?.melodic?.length +
+          instruments?.drums?.length +
+          instruments?.percussion?.length,
       },
       genres: Object.entries(genres).reduce(
         (acc, [key, data]) => {
-          acc[key] = data?.genres.length;
+          acc[key] = data?.genres?.length;
           return acc;
         },
         {} as Record<string, number>,
       ),
       totalGenres: Object.values(genres).reduce(
-        (sum, data) => sum + data?.genres.length,
+        (sum, data) => sum + data?.genres?.length,
         0,
       ),
       styles: melodyPatternService.getAvailableStyles().length,
@@ -751,11 +751,11 @@ router.post(
       return res.status(400).json({ error: "No audio file provided" });
     }
 
-    const rawExt = (file?.originalname.split(".").pop() || "wav")
+    const rawExt = (file?.originalname?.split(".").pop() || "wav")
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "");
     const ext = rawExt || "wav";
-    const tmpPath = path?.join(os?.tmpdir(), `pitch_${Date?.now()}.${ext}`);
+    const tmpPath = path?.join(os?.tmpdir(), `pitch_${Date.now()}.${ext}`);
 
     try {
       await fsPromises?.writeFile(tmpPath, file?.buffer);

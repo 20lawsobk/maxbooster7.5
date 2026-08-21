@@ -243,7 +243,7 @@ export class AIContentService {
   async generateText(
     options: ContentGenerationOptions,
   ): Promise<GeneratedContent> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     try {
       const {
         prompt,
@@ -263,7 +263,7 @@ export class AIContentService {
         includeEmojis: true,
       });
 
-      const executionTimeMs = Date?.now() - startTime;
+      const executionTimeMs = Date.now() - startTime;
 
       if (!(aiResult?.success && aiResult?.data)) {
         // MaxCore is the sole AI source — no local fallback.
@@ -314,7 +314,7 @@ export class AIContentService {
     targetLanguages: string[],
     options?: { headline?: string; hashtags?: string[]; platform?: string },
   ): Promise<MultilingualContent[]> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     const LANGUAGE_NAMES: Record<string, string> = {
       en: "English",
@@ -376,7 +376,7 @@ export class AIContentService {
       Arabic: "إصدار جديد! ",
     };
 
-    const results = await Promise?.all(
+    const results = await Promise.all(
       targetLanguages?.map(async (lang) => {
         const langName = LANGUAGE_NAMES[lang] || lang;
         const opener = LANG_OPENERS[langName] || "";
@@ -399,7 +399,7 @@ export class AIContentService {
       }),
     );
 
-    const executionTimeMs = Date?.now() - startTime;
+    const executionTimeMs = Date.now() - startTime;
     await this.logInference(
       "multilingual",
       { prompt, targetLanguages },
@@ -415,7 +415,7 @@ export class AIContentService {
     userId: string,
     historicalPosts: string[],
   ): Promise<BrandVoiceProfile> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     // Route through MaxCore — the sole AI source for brand voice analysis.
     // We embed the intent in the topic so MaxCore's content generator handles it.
@@ -531,7 +531,7 @@ export class AIContentService {
       logger.warn({ err: error }, "Failed to save brand voice:");
     }
 
-    const executionTimeMs = Date?.now() - startTime;
+    const executionTimeMs = Date.now() - startTime;
     const inferenceId = await this.logInference(
       "brandVoice",
       { userId, postsCount: historicalPosts.length },
@@ -573,7 +573,7 @@ export class AIContentService {
     prompt: string,
     userId: string,
   ): Promise<string> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     try {
       const [brandVoice] = await db
@@ -620,18 +620,18 @@ export class AIContentService {
         `${userId}:${prompt?.slice(0, 32)}:phrasegate`,
         1000,
       );
-      if (profile?.commonPhrases.length > 0 && phraseGateSeed >= 500) {
+      if (profile?.commonPhrases?.length > 0 && phraseGateSeed >= 500) {
         const phrase =
           profile?.commonPhrases[
             seededIndex(
               `${userId}:${prompt?.slice(0, 32)}:phrase`,
-              profile?.commonPhrases.length,
+              profile?.commonPhrases?.length,
             )
           ];
         content = `${phrase}! ${content}`;
       }
 
-      const executionTimeMs = Date?.now() - startTime;
+      const executionTimeMs = Date.now() - startTime;
       const inferenceId = await this.logInference(
         "brandVoice",
         { prompt, userId, profile },
@@ -660,7 +660,7 @@ export class AIContentService {
     region?: string,
     genre?: string,
   ): Promise<TrendingTopic[]> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     try {
       const dynamicTrends = await dynamicTrendsService?.getTrendingTopics(
@@ -677,7 +677,7 @@ export class AIContentService {
         region: t.region,
       }));
 
-      const executionTimeMs = Date?.now() - startTime;
+      const executionTimeMs = Date.now() - startTime;
       const inferenceId = await this.logInference(
         "trendDetector",
         { platform, region, genre },
@@ -713,10 +713,10 @@ export class AIContentService {
   ): Promise<string> {
     const trends = await this.getTrendingTopics(platform);
     const matchedTrend = trends?.find((t) =>
-      t?.topic.toLowerCase().includes(topic?.toLowerCase()),
+      t?.topic?.toLowerCase().includes(topic?.toLowerCase()),
     );
     const trendContext = matchedTrend
-      ? `Trending topic: ${matchedTrend?.topic}. Suggested hashtags: ${matchedTrend?.hashtags.join(", ")}.`
+      ? `Trending topic: ${matchedTrend?.topic}. Suggested hashtags: ${matchedTrend?.hashtags?.join(", ")}.`
       : "";
 
     const aiResult = await unifiedAIController?.generateContent({
@@ -745,7 +745,7 @@ export class AIContentService {
     platform: string,
     goal: "reach" | "engagement" | "niche" = "engagement",
   ): Promise<HashtagSuggestion[]> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     const platformLimits: Record<string, number> = {
       instagram: 30,
@@ -796,7 +796,7 @@ export class AIContentService {
       });
 
     try {
-      for (const suggestion of suggestions?.slice(0, 5)) {
+      for (const suggestion of suggestions?.slice(0, 5) ?? []) {
         const existing = await db
           .select()
           .from(hashtagResearch)
@@ -830,7 +830,7 @@ export class AIContentService {
       logger.warn({ err: error }, "Failed to save hashtag research:");
     }
 
-    const executionTimeMs = Date?.now() - startTime;
+    const executionTimeMs = Date.now() - startTime;
     await this.logInference(
       "hashtagOptimizer",
       { content, platform, goal, limit },
@@ -847,7 +847,7 @@ export class AIContentService {
     platform: string,
     timezone: string = "UTC",
   ): Promise<PostingTimeRecommendation[]> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     const platformPatterns: Record<
       string,
@@ -929,7 +929,7 @@ export class AIContentService {
       }
     }
 
-    const executionTimeMs = Date?.now() - startTime;
+    const executionTimeMs = Date.now() - startTime;
     const inferenceId = await this.logInference(
       "hashtagOptimizer",
       { userId, platform, timezone },
@@ -953,7 +953,7 @@ export class AIContentService {
     baseContent: string,
     variationType: "headline" | "CTA" | "emoji" | "length" | "tone" = "tone",
   ): Promise<ABVariant[]> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     // For all variant types, call the full AI pipeline (MaxCore → Python AI → in-house)
     // with different tone parameters to produce real AI-generated alternatives.
@@ -1089,7 +1089,7 @@ export class AIContentService {
       changes: [spec.desc, "Source: MaxCore AI + local tone adaptation"],
     }));
 
-    const executionTimeMs = Date?.now() - startTime;
+    const executionTimeMs = Date.now() - startTime;
     const inferenceId = await this.logInference(
       "multilingual",
       { baseContent, variationType },

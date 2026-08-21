@@ -69,7 +69,7 @@ router.post("/", requireAuth, async (req, res) => {
         .status(400)
         .json({ error: "Validation error", details: parsed.error.flatten() });
     }
-    const { status: _status, ...data } = parsed?.data;
+    const { status: _status, ...data } = parsed?.data ?? {};
     const [work] = await db
       .insert(publishingRights)
       .values({
@@ -97,7 +97,7 @@ router.put("/:id", requireAuth, async (req, res) => {
         .status(400)
         .json({ error: "Validation error", details: parsed.error.flatten() });
     }
-    const { status: _status, ...updateData } = parsed?.data;
+    const { status: _status, ...updateData } = parsed?.data ?? {};
     const [updated] = await db
       .update(publishingRights)
       .set(updateData)

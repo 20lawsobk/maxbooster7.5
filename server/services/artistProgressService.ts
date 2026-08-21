@@ -195,7 +195,7 @@ class ArtistProgressService {
       const twoMonthsAgo = new Date(now?.getTime() - 60 * 24 * 60 * 60 * 1000);
 
       const [currentWeek, previousWeek, currentMonth, previousMonth] =
-        await Promise?.all([
+        await Promise.all([
           this.getAverageMetrics(
             userId,
             oneWeekAgo?.toISOString().split("T")[0],

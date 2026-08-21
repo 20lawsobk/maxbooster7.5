@@ -881,7 +881,7 @@ class AdvancedAnalyticsService {
     userId: string,
     query: string,
   ): Promise<NlpQueryResult> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     const lowerQuery = query?.toLowerCase();
 
     let intent = "unknown";
@@ -1201,7 +1201,7 @@ class AdvancedAnalyticsService {
           "I understood your query but need more specific information. Try asking about streams, revenue, playlists, top cities, or platform comparisons.";
       }
 
-      const executionTime = Date?.now() - startTime;
+      const executionTime = Date.now() - startTime;
 
       await db.insert(nlpQueryLogs).values({
         userId,
@@ -1216,7 +1216,7 @@ class AdvancedAnalyticsService {
 
       return { intent, entities, responseType, data, summary };
     } catch (error) {
-      const executionTime = Date?.now() - startTime;
+      const executionTime = Date.now() - startTime;
 
       await db.insert(nlpQueryLogs).values({
         userId,
@@ -1420,7 +1420,7 @@ class AdvancedAnalyticsService {
     // Compute mid-point for period-over-period growth calculation
     const midDate = new Date((startDate?.getTime() + endDate?.getTime()) / 2);
 
-    const [platformData, previousPeriodData] = await Promise?.all([
+    const [platformData, previousPeriodData] = await Promise.all([
       db
         .select({
           platform: analytics.platform,

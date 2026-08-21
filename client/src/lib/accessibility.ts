@@ -58,7 +58,7 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
     focusableElements?.join(","),
   );
   return Array.from(elements).filter((el) => {
-    const style = window?.getComputedStyle(el);
+    const style = window.getComputedStyle(el);
     return (
       style?.display !== "none" &&
       style?.visibility !== "hidden" &&
@@ -78,12 +78,12 @@ export function trapFocus(container: HTMLElement): () => void {
     if (e?.key !== "Tab") return;
 
     if (e?.shiftKey) {
-      if (document?.activeElement === firstElement) {
+      if (document.activeElement === firstElement) {
         e?.preventDefault();
         lastElement?.focus();
       }
     } else {
-      if (document?.activeElement === lastElement) {
+      if (document.activeElement === lastElement) {
         e?.preventDefault();
         firstElement?.focus();
       }
@@ -102,17 +102,17 @@ export function announce(
   message: string,
   priority: "polite" | "assertive" = "polite",
 ) {
-  const announcement = document?.createElement("div");
+  const announcement = document.createElement("div");
   announcement?.setAttribute("role", "status");
   announcement?.setAttribute("aria-live", priority);
   announcement?.setAttribute("aria-atomic", "true");
   announcement.className = "sr-only";
   announcement.textContent = message;
 
-  document?.body.appendChild(announcement);
+  document.body.appendChild(announcement);
 
   setTimeout(() => {
-    document?.body.removeChild(announcement);
+    document.body.removeChild(announcement);
   }, 1000);
 }
 
@@ -121,7 +121,7 @@ export function getContrastRatio(color1: string, color2: string): number {
     const rgb = color?.match(/\d+/g);
     if (!rgb) return 0;
 
-    const [r, g, b] = rgb?.map((c) => {
+    const [r, g, b] = rgb.map((c) => {
       const val = parseInt(c) / 255;
       return val <= 0.03928
         ? val / 12.92
@@ -158,17 +158,17 @@ export function toggleAriaExpanded(element: HTMLElement) {
 export function createLiveRegion(
   priority: "polite" | "assertive" = "polite",
 ): HTMLDivElement {
-  const region = document?.createElement("div");
+  const region = document.createElement("div");
   region?.setAttribute("aria-live", priority);
   region?.setAttribute("aria-atomic", "true");
   region.className = "sr-only";
-  document?.body.appendChild(region);
+  document.body.appendChild(region);
   return region;
 }
 
 export function removeLiveRegion(region: HTMLDivElement) {
   if (region && region?.parentNode) {
-    region?.parentNode.removeChild(region);
+    region?.parentNode?.removeChild(region);
   }
 }
 
@@ -178,7 +178,7 @@ export function handleArrowKeyNavigation(
   orientation: "horizontal" | "vertical" = "horizontal",
 ): number | null {
   const currentIndex = items?.findIndex(
-    (item) => item === document?.activeElement,
+    (item) => item === document.activeElement,
   );
   if (currentIndex === -1) return null;
 
@@ -392,7 +392,7 @@ export function useKeyboardShortcuts(
       for (const shortcut of shortcuts) {
         if (!shortcut?.key || !event?.key) continue;
         const matchesKey =
-          event?.key.toLowerCase() === shortcut?.key.toLowerCase();
+          event?.key?.toLowerCase() === shortcut?.key?.toLowerCase();
         const matchesCtrl = shortcut?.ctrl
           ? event?.ctrlKey
           : !event?.ctrlKey || event?.key === "Control";
@@ -420,8 +420,8 @@ export function useKeyboardShortcuts(
       }
     };
 
-    window?.addEventListener("keydown", handleKeyDown);
-    return () => window?.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [shortcuts, enabled]);
 }
 
@@ -429,12 +429,12 @@ export function useFocusReturn() {
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const saveFocus = useCallback(() => {
-    previousFocusRef.current = document?.activeElement as HTMLElement;
+    previousFocusRef.current = document.activeElement as HTMLElement;
   }, []);
 
   const restoreFocus = useCallback(() => {
-    if (previousFocusRef?.current && previousFocusRef?.current.focus) {
-      previousFocusRef?.current.focus();
+    if (previousFocusRef?.current && previousFocusRef?.current?.focus) {
+      previousFocusRef?.current?.focus();
     }
   }, []);
 
@@ -445,7 +445,7 @@ export function usePrefersReducedMotion(): boolean {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
-    const mediaQuery = window?.matchMedia("(prefers-reduced-motion: reduce)");
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     setPrefersReducedMotion(mediaQuery?.matches);
 
     const handleChange = (event: MediaQueryListEvent) => {
@@ -485,8 +485,8 @@ export function useDialogAccessibility(
       }
     };
 
-    document?.addEventListener("keydown", handleEscape);
-    return () => document?.removeEventListener("keydown", handleEscape);
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
 
   useFocusTrap(dialogRef, isOpen);
@@ -515,7 +515,7 @@ export function useRovingTabIndex(
 
     const handleKeyDown = (event: KeyboardEvent) => {
       const currentIndex = items?.findIndex(
-        (item) => item === document?.activeElement,
+        (item) => item === document.activeElement,
       );
       if (currentIndex === -1) return;
 
@@ -606,7 +606,7 @@ export function useScreenReaderOnly() {
 
 export function useSkipLink(targetId: string) {
   const skipToContent = useCallback(() => {
-    const target = document?.getElementById(targetId);
+    const target = document.getElementById(targetId);
     if (target) {
       target.tabIndex = -1;
       target?.focus();
@@ -621,7 +621,7 @@ export function useHighContrastMode(): boolean {
   const [isHighContrast, setIsHighContrast] = useState(false);
 
   useEffect(() => {
-    const mediaQuery = window?.matchMedia("(prefers-contrast: high)");
+    const mediaQuery = window.matchMedia("(prefers-contrast: high)");
     setIsHighContrast(mediaQuery?.matches);
 
     const handleChange = (event: MediaQueryListEvent) => {
@@ -641,8 +641,8 @@ export function useColorScheme(): "light" | "dark" | "no-preference" {
   >("no-preference");
 
   useEffect(() => {
-    const darkQuery = window?.matchMedia("(prefers-color-scheme: dark)");
-    const lightQuery = window?.matchMedia("(prefers-color-scheme: light)");
+    const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const lightQuery = window.matchMedia("(prefers-color-scheme: light)");
 
     if (darkQuery?.matches) {
       setColorScheme("dark");
@@ -684,12 +684,12 @@ export function useFocusVisible(): boolean {
       setFocusVisible(false);
     };
 
-    document?.addEventListener("keydown", handleKeyDown);
-    document?.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleMouseDown);
 
     return () => {
-      document?.removeEventListener("keydown", handleKeyDown);
-      document?.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleMouseDown);
     };
   }, []);
 

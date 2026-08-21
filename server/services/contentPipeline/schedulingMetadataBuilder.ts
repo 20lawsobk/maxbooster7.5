@@ -97,8 +97,8 @@ function getOptimalWindows(
   const spec = PLATFORM_SPECS[platform];
   const windows: OptimalWindow[] = [];
 
-  for (const day of spec?.bestPostingDays) {
-    for (const hour of spec?.bestPostingHours) {
+  for (const day of spec?.bestPostingDays ?? []) {
+    for (const hour of spec?.bestPostingHours ?? []) {
       let multiplier = 1.0;
 
       // Goal-specific scoring adjustments
@@ -157,10 +157,10 @@ export function buildScheduleManifest(
   const byPlatform = new Map<SupportedPlatform, ContentSlot[]>();
   for (const { platform, slot } of slots) {
     if (!byPlatform?.has(platform)) byPlatform?.set(platform, []);
-    byPlatform?.get(platform)!.push(slot);
+    byPlatform?.get(platform).push(slot);
   }
 
-  for (const [platform, contentSlots] of byPlatform?.entries()) {
+  for (const [platform, contentSlots] of byPlatform?.entries() ?? []) {
     const windows = getOptimalWindows(platform, campaignGoal);
     const isPriority = priorityPlatforms?.includes(platform);
     const weeklyTarget = isPriority
@@ -217,7 +217,7 @@ export function buildScheduleManifest(
   }
 
   // Sort by scheduledAt ascending
-  entries?.sort((a, b) => a?.scheduledAt.getTime() - b?.scheduledAt.getTime());
+  entries?.sort((a, b) => a?.scheduledAt?.getTime() - b?.scheduledAt?.getTime());
 
   logger.info(
     `[SchedulingMetadataBuilder] Built ${entries?.length} schedule entries for ${byPlatform?.size} platforms`,
@@ -246,7 +246,7 @@ export function manifestToBulkSchedulePayload(
     .filter((entry) => contentMap?.has(`${entry?.platform}:${entry?.slot}`))
     .map((entry) => {
       const key = `${entry?.platform}:${entry?.slot}`;
-      const item = contentMap?.get(key)!;
+      const item = contentMap?.get(key);
       return {
         platform: entry.platform,
         content: item.content,

@@ -188,7 +188,7 @@ router.patch(
         responseNote: z.string().max(2000).optional(),
         responseAt: z.string().datetime().optional(),
       });
-      const { status, responseNote, responseAt } = statusSchema?.parse(req.body);
+      const { status, responseNote, responseAt } = statusSchema?.parse(req.body) ?? {};
 
       const setFields: Record<string, unknown> = {
         status,
@@ -244,7 +244,7 @@ router.post(
         nextFollowUpAt: z.string().datetime().optional(),
         notes: z.string().max(2000).optional(),
       });
-      const { nextFollowUpAt, notes } = followupSchema?.parse(req.body);
+      const { nextFollowUpAt, notes } = followupSchema?.parse(req.body) ?? {};
 
       const setFields: Record<string, unknown> = {
         status: "following_up",

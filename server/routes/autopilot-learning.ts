@@ -11,7 +11,7 @@ async function getPdimArtistLearningData(artistId: string) {
   try {
     const redis = await getRedisClient();
     if (!redis) return null;
-    const [patternRaw, peaksRaw, runsRaw, statsRaw] = await Promise?.all([
+    const [patternRaw, peaksRaw, runsRaw, statsRaw] = await Promise.all([
       (redis as any)?.get(`mb:ads:${artistId}:patterns`).catch(() => null),
       (redis as any)?.lrange(`mb:ads:${artistId}:peaks`, 0, -1).catch(() => []),
       (redis as any)?.lrange(`mb:ads:${artistId}:runs`, 0, -1).catch(() => []),
@@ -77,7 +77,7 @@ router.get("/status", requireAuth, async (req, res) => {
     const metrics = hyperLearningEngine?.getMetrics();
 
     const [insights, recommendations, performance, platformStats, pdimData] =
-      await Promise?.all([
+      await Promise.all([
         autopilotLearningService?.getLearningInsights(userId),
         autopilotLearningService?.getRecommendations(userId),
         autopilotLearningService?.getPerformanceHistory(userId, { limit: 1 }),

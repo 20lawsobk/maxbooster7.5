@@ -84,11 +84,11 @@ const conflicts = new Map<string, ConflictResolution[]>();
 
 /** Remove idle sessions and trim both Maps to their capacity caps. */
 function sweepCollaborationMaps(): void {
-  const cutoff = Date?.now() - SESSION_TTL_MS;
+  const cutoff = Date.now() - SESSION_TTL_MS;
   for (const [sid, presence] of sessions) {
     const lastActive = Math.max(
       0,
-      ...[...presence?.values()].map((p) => new Date(p?.lastActive).getTime()),
+      ...[...(presence?.values() ?? [])].map((p) => new Date(p?.lastActive).getTime()),
     );
     if (lastActive < cutoff) sessions?.delete(sid);
   }
@@ -96,7 +96,7 @@ function sweepCollaborationMaps(): void {
   if (sessions?.size > MAX_SESSIONS) {
     const excess = sessions?.size - MAX_SESSIONS;
     let dropped = 0;
-    for (const key of sessions?.keys()) {
+    for (const key of sessions?.keys() ?? []) {
       sessions?.delete(key);
       if (++dropped >= excess) break;
     }
@@ -104,7 +104,7 @@ function sweepCollaborationMaps(): void {
   if (conflicts?.size > MAX_CONFLICTS) {
     const excess = conflicts?.size - MAX_CONFLICTS;
     let dropped = 0;
-    for (const key of conflicts?.keys()) {
+    for (const key of conflicts?.keys() ?? []) {
       conflicts?.delete(key);
       if (++dropped >= excess) break;
     }

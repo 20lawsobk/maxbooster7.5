@@ -30,7 +30,7 @@ async function httpGet(
   path: string,
   cookie?: string,
 ): Promise<{ status: number; time: number; error?: string }> {
-  const start = Date?.now();
+  const start = Date.now();
   return new Promise((resolve) => {
     const req = http?.request(
       {
@@ -66,7 +66,7 @@ async function httpPost(
   body: Record<string, unknown>,
   cookie?: string,
 ): Promise<{ status: number; time: number; error?: string }> {
-  const start = Date?.now();
+  const start = Date.now();
   const data = JSON.stringify(body);
 
   return new Promise((resolve) => {
@@ -152,7 +152,7 @@ async function runConcurrentRequests(
   const results: { status: number; time: number; error?: string }[] = [];
   const errors: Record<string, number> = {};
 
-  const startTime = Date?.now();
+  const startTime = Date.now();
 
   const userPromises = [];
   for (let u = 0; u < concurrency; u++) {
@@ -176,9 +176,9 @@ async function runConcurrentRequests(
     );
   }
 
-  await Promise?.all(userPromises);
+  await Promise.all(userPromises);
 
-  const totalTime = Date?.now() - startTime;
+  const totalTime = Date.now() - startTime;
   const successResults = results?.filter(
     (r) => r?.status >= 200 && r?.status < 400,
   );
@@ -362,7 +362,7 @@ async function main() {
 
   logger.info("SCALE PROJECTIONS UP TO 80 BILLION USERS");
 
-  for (const [name, results] of allResults?.entries()) {
+  for (const [name, results] of allResults?.entries() ?? []) {
     if (results?.length === 0) continue;
 
     const bestResult = results?.reduce((a, b) =>
@@ -373,11 +373,11 @@ async function main() {
     for (const target of projectionTargets) {
       const projection = projectToScale(bestResult, target);
       projections[`${projection.scale} users`] =
-        `~${formatNumber(projection?.serversNeeded)} servers, ${projection?.projectedLatency.toFixed(0)}ms latency`;
+        `~${formatNumber(projection?.serversNeeded)} servers, ${projection?.projectedLatency?.toFixed(0)}ms latency`;
     }
 
     logger.info({
-      basePerformance: `${bestResult?.requestsPerSecond.toFixed(0)} req/s, ${bestResult?.avgResponseMs.toFixed(0)}ms latency`,
+      basePerformance: `${bestResult?.requestsPerSecond?.toFixed(0)} req/s, ${bestResult?.avgResponseMs?.toFixed(0)}ms latency`,
       ...projections,
     }, `Scale projection: ${name}`);
   }

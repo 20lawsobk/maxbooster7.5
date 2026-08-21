@@ -311,7 +311,7 @@ class MemoryManager extends EventEmitter {
   }
 
   getUsageHistory(minutes: number = 60): MemoryMetrics[] {
-    const cutoff = Date?.now() - minutes * 60 * 1000;
+    const cutoff = Date.now() - minutes * 60 * 1000;
     return this.metrics.filter((m) => m?.timestamp > cutoff);
   }
 
@@ -321,7 +321,7 @@ class MemoryManager extends EventEmitter {
 
     const avgHeapUsed =
       history?.reduce((sum, m) => sum + m?.heapUsed, 0) / history?.length;
-    const maxHeapUsed = Math.max(...history?.map((m) => m?.heapUsed));
+    const maxHeapUsed = Math.max(...(history?.map((m) => m?.heapUsed) ?? []));
 
     return {
       current: {

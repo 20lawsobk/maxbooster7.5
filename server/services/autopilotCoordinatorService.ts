@@ -87,7 +87,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     try {
       const redis = (await getRedisClient()) as RedisClientType;
       if (!redis) return;
-      const [postsRaw, insightsRaw] = await Promise?.all([
+      const [postsRaw, insightsRaw] = await Promise.all([
         redis?.get(pdimKeyPosts(userId)).catch(() => null),
         redis?.get(pdimKeyInsights(userId)).catch(() => null),
       ]);
@@ -108,7 +108,7 @@ class AutopilotCoordinatorService extends EventEmitter {
         const current = this.scheduleQueue.get(userId) ?? [];
         const currentIds = new Set(current?.map((p) => p?.id));
         const merged = [
-          ...revived?.filter((p) => !currentIds?.has(p?.id)),
+          ...(revived?.filter((p) => !currentIds?.has(p?.id)) ?? []),
           ...current,
         ];
         this.scheduleQueue.set(userId, merged);
@@ -122,7 +122,7 @@ class AutopilotCoordinatorService extends EventEmitter {
         const current = this.sharedInsights.get(userId) ?? [];
         const currentIds = new Set(current?.map((i) => i?.id));
         const merged = [
-          ...revived?.filter((i) => !currentIds?.has(i?.id)),
+          ...(revived?.filter((i) => !currentIds?.has(i?.id)) ?? []),
           ...current,
         ];
         this.sharedInsights.set(userId, merged);
@@ -148,7 +148,7 @@ class AutopilotCoordinatorService extends EventEmitter {
       if (t) clearTimeout(t);
       this.pendingPersist.delete(uid);
     }
-    await Promise?.all(
+    await Promise.all(
       userIds?.map((uid) => this.persistUserStateToPdim(uid).catch(() => {})),
     );
   }
@@ -185,7 +185,7 @@ class AutopilotCoordinatorService extends EventEmitter {
       if (!redis) return;
       const posts = this.scheduleQueue.get(userId) || [];
       const insights = this.sharedInsights.get(userId) || [];
-      await Promise?.all([
+      await Promise.all([
         redis
           .set(
             pdimKeyPosts(userId),
@@ -219,7 +219,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     // Evict stale / over-cap entries every 30 minutes.
     setInterval(
       () => {
-        const cutoff = Date?.now() - AutopilotCoordinatorService.SYNC_STALE_MS;
+        const cutoff = Date.now() - AutopilotCoordinatorService.SYNC_STALE_MS;
         for (const [uid, lastSync] of this.lastSyncTimes.entries()) {
           if (lastSync?.getTime() < cutoff) {
             this.scheduleQueue.delete(uid);
@@ -547,8 +547,8 @@ class AutopilotCoordinatorService extends EventEmitter {
     const insight = insights?.find((i) => i?.id === insightId);
     if (!insight) return false;
 
-    if (!insight?.appliedBy.includes(autopilotType)) {
-      insight?.appliedBy.push(autopilotType);
+    if (!insight?.appliedBy?.includes(autopilotType)) {
+      insight?.appliedBy?.push(autopilotType);
       this.schedulePersist(userId);
       this.emit("insightApplied", { insight, appliedBy: autopilotType });
       logger.info(`Insight ${insightId} applied by ${autopilotType}`);
@@ -566,11 +566,11 @@ class AutopilotCoordinatorService extends EventEmitter {
 
     const socialInsights = insights?.filter(
       (i) =>
-        i?.sourceAutopilot === "social" && !i?.appliedBy.includes("advertising"),
+        i?.sourceAutopilot === "social" && !i?.appliedBy?.includes("advertising"),
     );
     const advertisingInsights = insights?.filter(
       (i) =>
-        i?.sourceAutopilot === "advertising" && !i?.appliedBy.includes("social"),
+        i?.sourceAutopilot === "advertising" && !i?.appliedBy?.includes("social"),
     );
 
     for (const insight of socialInsights) {
@@ -659,11 +659,11 @@ class AutopilotCoordinatorService extends EventEmitter {
 
     for (const insight of timingInsights) {
       if (
-        insight?.data.platform === platform &&
-        insight?.data.hour !== undefined
+        insight?.data?.platform === platform &&
+        insight?.data?.hour !== undefined
       ) {
-        const hour = insight?.data.hour as number;
-        const score = (insight?.data.engagementScore as number) || 1;
+        const hour = insight?.data?.hour as number;
+        const score = (insight?.data?.engagementScore as number) || 1;
 
         const existing = hourlyScores?.get(hour) || { total: 0, count: 0 };
         existing.total += score;

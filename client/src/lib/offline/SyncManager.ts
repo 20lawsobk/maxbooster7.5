@@ -83,8 +83,8 @@ class SyncManager {
 
     await offlineQueue?.init();
 
-    window?.addEventListener("online", this.handleOnline);
-    window?.addEventListener("offline", this.handleOffline);
+    window.addEventListener("online", this.handleOnline);
+    window.addEventListener("offline", this.handleOffline);
 
     offlineQueue?.on("action-added", this.handleActionAdded);
 
@@ -260,7 +260,7 @@ class SyncManager {
       );
       const data: BatchSyncResponse = await response?.json();
 
-      for (const result of data?.results) {
+      for (const result of data?.results ?? []) {
         if (result?.success) {
           await offlineQueue?.markCompleted(result?.actionId);
         } else {
@@ -272,7 +272,7 @@ class SyncManager {
         }
       }
 
-      for (const conflict of data?.conflicts) {
+      for (const conflict of data?.conflicts ?? []) {
         await offlineQueue?.recordConflict(
           conflict?.actionId,
           conflict?.localData,
@@ -371,8 +371,8 @@ class SyncManager {
   }
 
   destroy(): void {
-    window?.removeEventListener("online", this.handleOnline);
-    window?.removeEventListener("offline", this.handleOffline);
+    window.removeEventListener("online", this.handleOnline);
+    window.removeEventListener("offline", this.handleOffline);
 
     this.cancelPendingSync();
 

@@ -39,7 +39,7 @@ function getRealCpuUsage(): number {
   if (cpus?.length === 0) return 0;
   let totalUsage = 0;
   for (const cpu of cpus) {
-    const { user, nice, sys, idle, irq } = cpu?.times;
+    const { user, nice, sys, idle, irq } = cpu?.times ?? {};
     const total = user + nice + sys + idle + irq;
     const used = user + nice + sys + irq;
     totalUsage += (used / (total || 1)) * 100;
@@ -99,7 +99,7 @@ adminRouter?.get("/users", async (req, res) => {
 
     const whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
 
-    const [usersList, totalResult] = await Promise?.all([
+    const [usersList, totalResult] = await Promise.all([
       db
         .select({
           id: users.id,
@@ -145,7 +145,7 @@ adminRouter?.get("/users/export", async (req, res) => {
       100_000,
     );
 
-    const [exportedUsers, totalResult] = await Promise?.all([
+    const [exportedUsers, totalResult] = await Promise.all([
       db
         .select({
           id: users.id,
@@ -398,9 +398,9 @@ adminRouter?.get("/system-health", async (_req, res) => {
     let dbStatus = "connected";
     let dbLatency: number | null = null;
     try {
-      const dbStart = Date?.now();
+      const dbStart = Date.now();
       await db.select({ count: count() }).from(users).limit(1);
-      dbLatency = Date?.now() - dbStart;
+      dbLatency = Date.now() - dbStart;
     } catch {
       dbStatus = "disconnected";
     }
@@ -413,7 +413,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
       latency: number | null;
     }> => {
       try {
-        const start = Date?.now();
+        const start = Date.now();
         const controller = new AbortController();
         const timer = setTimeout(() => controller?.abort(), timeoutMs);
         await fetch(url, { method: "HEAD", signal: controller.signal });
@@ -424,29 +424,29 @@ adminRouter?.get("/system-health", async (_req, res) => {
       }
     };
 
-    const apiChecks = await Promise?.allSettled([
+    const apiChecks = await Promise.allSettled([
       env?.STRIPE_SECRET_KEY
         ? pingApi("https://api.stripe.com/v1")
-        : Promise?.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({ status: "unknown" as const, latency: null }),
       process.env.LABELGRID_API_TOKEN
         ? pingApi("https://api.labelgrid.com")
-        : Promise?.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({ status: "unknown" as const, latency: null }),
       process.env.SPOTIFY_CLIENT_ID
         ? pingApi("https://api.spotify.com/v1")
-        : Promise?.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({ status: "unknown" as const, latency: null }),
       pingApi("https://api.music.apple.com"),
       process.env.YOUTUBE_CLIENT_ID
         ? pingApi("https://www.googleapis.com/youtube/v3")
-        : Promise?.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({ status: "unknown" as const, latency: null }),
       process.env.TWITTER_API_KEY
         ? pingApi("https://api.twitter.com/2")
-        : Promise?.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({ status: "unknown" as const, latency: null }),
       process.env.INSTAGRAM_APP_ID
         ? pingApi("https://graph.instagram.com")
-        : Promise?.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({ status: "unknown" as const, latency: null }),
       process.env.TIKTOK_CLIENT_KEY
         ? pingApi("https://open.tiktokapis.com")
-        : Promise?.resolve({ status: "unknown" as const, latency: null }),
+        : Promise.resolve({ status: "unknown" as const, latency: null }),
     ]);
 
     const getResult = (
@@ -709,7 +709,7 @@ adminRouter?.get("/analytics", async (_req, res) => {
       thisMonthProjectsResult,
       lastMonthProjectsResult,
       userGrowthResult,
-    ] = await Promise?.all([
+    ] = await Promise.all([
       db.select({ count: count() }).from(users),
       db
         .select({ count: count() })

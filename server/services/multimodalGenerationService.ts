@@ -246,10 +246,10 @@ function emptyUserContext(): UserContext {
 async function fetchUserContext(userId: string): Promise<UserContext> {
   if (!userId) return emptyUserContext();
   const cached = _userContextCache?.get(userId);
-  if (cached && cached?.expiresAt > Date?.now()) return cached?.data;
+  if (cached && cached?.expiresAt > Date.now()) return cached?.data;
 
   try {
-    const [[prefs], [voice]] = await Promise?.all([
+    const [[prefs], [voice]] = await Promise.all([
       db
         .select()
         .from(autopilotPreferences)
@@ -3204,7 +3204,7 @@ export async function handleGeneration(
   // doesn't abort the entire pipeline — the client handles empty assets
   // by showing appropriate fallback UI (e?.g. ServerVideoGenerator).
   if (independentSteps?.length > 0) {
-    const settled = await Promise?.allSettled(
+    const settled = await Promise.allSettled(
       independentSteps?.map(async (step) => {
         const worker = workers[step?.worker];
         if (!worker) {
@@ -3247,7 +3247,7 @@ export async function handleGeneration(
     const inputs = {
       normalized,
       stepAssets: (Array.isArray(step?.inputFrom)
-        ? step?.inputFrom
+        ? (step?.inputFrom ?? [])
         : [step?.inputFrom]
       ).flatMap((id: string) => stepOutputs?.get(id) ?? []),
     };

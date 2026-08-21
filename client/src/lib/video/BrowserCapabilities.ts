@@ -97,11 +97,11 @@ class BrowserCapabilitiesDetector {
       return this.cachedCapabilities;
     }
 
-    this.testCanvas = document?.createElement("canvas");
+    this.testCanvas = document.createElement("canvas");
     this.testCanvas.width = 1;
     this.testCanvas.height = 1;
 
-    const [webgl, canvas, media, audio, device] = await Promise?.all([
+    const [webgl, canvas, media, audio, device] = await Promise.all([
       this.detectWebGL(),
       this.detectCanvas(),
       this.detectMedia(),
@@ -304,8 +304,8 @@ class BrowserCapabilitiesDetector {
     }
 
     let supportsHDR = false;
-    if (typeof window?.matchMedia === "function") {
-      supportsHDR = window?.matchMedia("(dynamic-range: high)").matches;
+    if (typeof window.matchMedia === "function") {
+      supportsHDR = window.matchMedia("(dynamic-range: high)").matches;
     }
 
     return {
@@ -580,7 +580,7 @@ export function getWebGLLimits(): {
   maxFragmentUniformVectors: number;
   maxVertexUniformVectors: number;
 } | null {
-  const canvas = document?.createElement("canvas");
+  const canvas = document.createElement("canvas");
   const gl = canvas?.getContext("webgl2") || canvas?.getContext("webgl");
 
   if (!gl) return null;

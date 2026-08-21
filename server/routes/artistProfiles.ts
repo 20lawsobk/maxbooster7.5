@@ -55,7 +55,7 @@ router.post("/", async (req: Request, res: Response) => {
         .json({ error: "Validation failed", details: parsed.error.flatten() });
     }
 
-    const { spotifyArtistUri, spotifyArtistId, ...rest } = parsed?.data;
+    const { spotifyArtistUri, spotifyArtistId, ...rest } = parsed?.data ?? {};
 
     let resolvedSpotifyId = spotifyArtistId;
     let resolvedSpotifyUri = spotifyArtistUri;
@@ -520,7 +520,7 @@ router.patch(
             details: parsed.error.flatten(),
           });
       }
-      const { platform, state, notes, triggeredBy } = parsed?.data;
+      const { platform, state, notes, triggeredBy } = parsed?.data ?? {};
       const result = await artistProfileService?.updateClaimState(
         (req.params.id as string),
         req.user!.id,

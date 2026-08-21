@@ -376,7 +376,7 @@ router.put(
         return res.status(404).json({ error: "Project not found" });
       }
 
-      const { laneIds } = reorderLanesSchema?.parse(req.body);
+      const { laneIds } = reorderLanesSchema?.parse(req.body) ?? {};
       await compingService?.reorderLanes(groupId, laneIds);
 
       res.json({ success: true });

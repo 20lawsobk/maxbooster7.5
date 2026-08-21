@@ -175,7 +175,7 @@ async function getOrCreateStripeCustomer(
   // SECURITY FIX: Wrap Stripe customer creation with circuit breaker
   try {
     const result = await executeStripeOperation(() =>
-      stripe?.customers.create(
+      stripe?.customers?.create(
         {
           email: user.email,
           metadata: { userId: user.id },
@@ -409,7 +409,7 @@ router.post(
         metadata: { userId, planId },
       };
 
-      const session = await stripe?.checkout.sessions?.create(sessionParams);
+      const session = await stripe?.checkout?.sessions?.create(sessionParams);
       res.json({ url: session.url, sessionId: session.id });
     } catch (error) {
       logger.warn(
@@ -451,19 +451,19 @@ router.get(
 
       if (user?.stripeCustomerId && stripe) {
         try {
-          const subscriptions = await stripe?.subscriptions.list({
+          const subscriptions = await stripe?.subscriptions?.list({
             customer: user.stripeCustomerId,
             limit: 5,
             expand: ["data.default_payment_method"],
           });
 
-          const activeSubscription = subscriptions?.data.find(
+          const activeSubscription = subscriptions?.data?.find(
             (s) => s?.status === "active" || s?.status === "trialing",
           );
-          const canceledSubscription = subscriptions?.data.find(
+          const canceledSubscription = subscriptions?.data?.find(
             (s) => s?.status === "canceled" || s?.cancel_at_period_end,
           );
-          const pastDueSubscription = subscriptions?.data.find(
+          const pastDueSubscription = subscriptions?.data?.find(
             (s) => s?.status === "past_due" || s?.status === "unpaid",
           );
 
@@ -669,13 +669,13 @@ router.get(
       }
 
       try {
-        const paymentMethods = await stripe?.paymentMethods.list({
+        const paymentMethods = await stripe?.paymentMethods?.list({
           customer: user.stripeCustomerId,
           type: "card",
           limit: 1,
         });
 
-        if (paymentMethods?.data.length > 0) {
+        if (paymentMethods?.data?.length > 0) {
           const pm = paymentMethods?.data[0];
           return res.json({
             last4: pm.card?.last4,
@@ -714,19 +714,19 @@ router.get(
       }
 
       try {
-        const invoices = await stripe?.invoices.list({
+        const invoices = await stripe?.invoices?.list({
           customer: user.stripeCustomerId,
           limit: 24,
         });
 
-        const history = invoices?.data.map((invoice) => ({
+        const history = invoices?.data?.map((invoice) => ({
           id: invoice.id,
           invoiceId: invoice.number || invoice?.id,
           date: new Date(invoice?.created * 1000).toISOString(),
           amount: (invoice?.amount_paid || 0) / 100,
           status: invoice.status,
           description:
-            invoice?.lines.data[0]?.description || "Max Booster Subscription",
+            invoice?.lines?.data[0]?.description || "Max Booster Subscription",
           pdfUrl: invoice.invoice_pdf,
         }));
 
@@ -780,12 +780,12 @@ router.post(
         });
       }
 
-      const subscriptions = await stripe?.subscriptions.list({
+      const subscriptions = await stripe?.subscriptions?.list({
         customer: user.stripeCustomerId,
         limit: 1,
       });
 
-      if (subscriptions?.data.length === 0) {
+      if (subscriptions?.data?.length === 0) {
         return res.status(404).json({
           message: "No subscription found",
           code: "SUBSCRIPTION_NOT_FOUND",
@@ -819,7 +819,7 @@ router.post(
       };
 
       if (immediately) {
-        await stripe?.subscriptions.cancel(subscription?.id, {
+        await stripe?.subscriptions?.cancel(subscription?.id, {
           prorate: true,
         });
 
@@ -839,7 +839,7 @@ router.post(
           refundPending: true,
         });
       } else {
-        await stripe?.subscriptions.update(subscription?.id, {
+        await stripe?.subscriptions?.update(subscription?.id, {
           cancel_at_period_end: true,
           metadata,
         });
@@ -857,7 +857,7 @@ router.post(
             (subscription as any)?.current_period_end * 1000,
           ).toISOString(),
           daysRemaining: Math.ceil(
-            ((subscription as any)?.current_period_end * 1000 - Date?.now()) /
+            ((subscription as any)?.current_period_end * 1000 - Date.now()) /
               (1000 * 60 * 60 * 24),
           ),
         });
@@ -903,12 +903,12 @@ router.post(
         });
       }
 
-      const subscriptions = await stripe?.subscriptions.list({
+      const subscriptions = await stripe?.subscriptions?.list({
         customer: user.stripeCustomerId,
         limit: 5,
       });
 
-      if (subscriptions?.data.length === 0) {
+      if (subscriptions?.data?.length === 0) {
         return res.status(404).json({
           message: "No subscription found",
           code: "SUBSCRIPTION_NOT_FOUND",
@@ -936,13 +936,13 @@ router.post(
         });
       }
 
-      const paymentMethods = await stripe?.paymentMethods.list({
+      const paymentMethods = await stripe?.paymentMethods?.list({
         customer: user.stripeCustomerId,
         type: "card",
         limit: 1,
       });
 
-      if (paymentMethods?.data.length === 0) {
+      if (paymentMethods?.data?.length === 0) {
         return res.status(402).json({
           message:
             "No payment method on file. Please add a payment method first.",
@@ -952,7 +952,7 @@ router.post(
         });
       }
 
-      await stripe?.subscriptions.update(subscription?.id, {
+      await stripe?.subscriptions?.update(subscription?.id, {
         cancel_at_period_end: false,
       });
 
@@ -1020,7 +1020,7 @@ router.get(
 
       let invoice: Stripe.Invoice;
       try {
-        invoice = await stripe?.invoices.retrieve(invoiceId);
+        invoice = await stripe?.invoices?.retrieve(invoiceId);
       } catch (stripeError: unknown) {
         if (
           stripeError instanceof Error &&
@@ -1091,7 +1091,7 @@ router.post(
       const userId = req.user!.id;
       const customerId = await getOrCreateStripeCustomer(req.user);
 
-      const session = await stripe?.checkout.sessions?.create({
+      const session = await stripe?.checkout?.sessions?.create({
         customer: customerId,
         mode: "setup",
         payment_method_types: ["card"],
@@ -1131,7 +1131,7 @@ router.post(
         return res.status(400).json({ error: "No billing account found" });
       }
 
-      const portalSession = await stripe?.billingPortal.sessions?.create({
+      const portalSession = await stripe?.billingPortal?.sessions?.create({
         customer: user.stripeCustomerId,
         return_url: `${process.env.APP_URL || "https://max-booster.com"}/settings`,
       });
@@ -1303,7 +1303,7 @@ router.post(
           limit: 1,
         });
 
-        if (unpaidSubs?.data.length === 0) {
+        if (unpaidSubs?.data?.length === 0) {
           return res.status(400).json({
             message: "No past due payments found",
             code: "NO_PAST_DUE_PAYMENT",
@@ -1422,7 +1422,7 @@ router.delete(
       });
 
       if (
-        subscriptions?.data.length > 0 &&
+        subscriptions?.data?.length > 0 &&
         !user?.subscriptionTier?.includes("lifetime")
       ) {
         return res.status(400).json({
@@ -1440,14 +1440,14 @@ router.delete(
         type: "card",
       });
 
-      if (paymentMethods?.data.length === 0) {
+      if (paymentMethods?.data?.length === 0) {
         return res.status(404).json({
           message: "No payment method found",
           code: "NO_PAYMENT_METHOD",
         });
       }
 
-      for (const pm of paymentMethods?.data) {
+      for (const pm of paymentMethods?.data ?? []) {
         await stripe!.paymentMethods?.detach(pm?.id);
       }
 
@@ -1666,7 +1666,7 @@ router.post(
       let refundableAmount: number = 0;
 
       if (invoiceId) {
-        const invoice = await stripe?.invoices.retrieve(invoiceId);
+        const invoice = await stripe?.invoices?.retrieve(invoiceId);
 
         if (invoice?.customer !== user?.stripeCustomerId) {
           return res.status(403).json({
@@ -1687,7 +1687,7 @@ router.post(
         chargeToRefund = (invoice as any)?.charge as string;
         refundableAmount = invoice?.amount_paid;
       } else if (chargeId) {
-        const charge = await stripe?.charges.retrieve(chargeId);
+        const charge = await stripe?.charges?.retrieve(chargeId);
 
         if (charge?.customer !== user?.stripeCustomerId) {
           return res.status(403).json({
@@ -1723,7 +1723,7 @@ router.post(
         : refundableAmount;
       const isPartialRefund = refundAmount < refundableAmount;
 
-      const refundRequestId = `refund_req_${Date?.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const refundRequestId = `refund_req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const refundRequestPayload = {
         id: refundRequestId,
         chargeId: chargeToRefund,
@@ -1837,9 +1837,9 @@ router.post(
       }
 
       try {
-        const dispute = await stripe?.disputes.retrieve(disputeId);
+        const dispute = await stripe?.disputes?.retrieve(disputeId);
 
-        const charge = await stripe?.charges.retrieve(dispute?.charge as string);
+        const charge = await stripe?.charges?.retrieve(dispute?.charge as string);
         if (charge?.customer !== user?.stripeCustomerId) {
           return res.status(403).json({
             message: "You do not have permission to access this dispute",
@@ -1869,7 +1869,7 @@ router.post(
         if (evidence?.uncategorized_text)
           evidenceSubmission.uncategorized_text = evidence?.uncategorized_text;
 
-        await stripe?.disputes.update(disputeId, {
+        await stripe?.disputes?.update(disputeId, {
           evidence: evidenceSubmission,
           submit: evidence.submit === true,
         });
@@ -1951,13 +1951,13 @@ router.get(
 
       if (user?.stripeCustomerId && stripe) {
         try {
-          const subscriptions = await stripe?.subscriptions.list({
+          const subscriptions = await stripe?.subscriptions?.list({
             customer: user.stripeCustomerId,
             limit: 1,
             expand: ["data.latest_invoice"],
           });
 
-          if (subscriptions?.data.length > 0) {
+          if (subscriptions?.data?.length > 0) {
             stripeSubscription = subscriptions?.data[0];
             latestInvoice =
               stripeSubscription?.latest_invoice as Stripe.Invoice | null;
@@ -2075,17 +2075,17 @@ router.get(
       }
 
       try {
-        const charges = await stripe?.charges.list({
+        const charges = await stripe?.charges?.list({
           customer: user.stripeCustomerId,
           limit: 100,
         });
 
-        const disputedCharges = charges?.data.filter((charge) => (charge as any)?.dispute);
+        const disputedCharges = charges?.data?.filter((charge) => (charge as any)?.dispute);
         const disputes: unknown[] = [];
 
         for (const charge of disputedCharges) {
           if ((charge as any)?.dispute) {
-            const dispute = await stripe?.disputes.retrieve(
+            const dispute = await stripe?.disputes?.retrieve(
               (charge as any)?.dispute as string,
             );
             disputes?.push({
@@ -2121,7 +2121,7 @@ router.get(
                           : "gray",
               created: new Date(dispute?.created * 1000).toISOString(),
               evidenceDueBy: dispute.evidence_details?.due_by
-                ? new Date(dispute?.evidence_details.due_by * 1000).toISOString()
+                ? new Date(dispute?.evidence_details?.due_by * 1000).toISOString()
                 : null,
               hasEvidence: dispute.evidence_details?.has_evidence || false,
               submissionCount: dispute.evidence_details?.submission_count || 0,
@@ -2179,10 +2179,10 @@ router.get(
           invoiceParams.status = status as Stripe.InvoiceListParams.Status;
         }
 
-        const invoices = await stripe?.invoices.list(invoiceParams);
+        const invoices = await stripe?.invoices?.list(invoiceParams);
 
         const now = new Date();
-        const invoiceList = invoices?.data.map((invoice) => {
+        const invoiceList = invoices?.data?.map((invoice) => {
           const dueDate = invoice?.due_date
             ? new Date(invoice?.due_date * 1000)
             : null;
@@ -2228,11 +2228,11 @@ router.get(
             dueDate: dueDate!.toISOString() || null,
             paidAt: invoice.status_transitions?.paid_at
               ? new Date(
-                  invoice?.status_transitions.paid_at * 1000,
+                  invoice?.status_transitions?.paid_at * 1000,
                 ).toISOString()
               : null,
             description:
-              invoice?.lines.data[0]?.description || "Max Booster Subscription",
+              invoice?.lines?.data[0]?.description || "Max Booster Subscription",
             pdfUrl: invoice.invoice_pdf,
             hostedUrl: invoice.hosted_invoice_url,
             attemptCount: invoice.attempt_count || 0,
@@ -2276,16 +2276,16 @@ router.get(
       }
 
       try {
-        const charges = await stripe?.charges.list({
+        const charges = await stripe?.charges?.list({
           customer: user.stripeCustomerId,
           limit: 50,
         });
 
         const refunds: unknown[] = [];
 
-        for (const charge of charges?.data) {
-          if (charge?.refunds && charge?.refunds.data?.length > 0) {
-            for (const refund of charge?.refunds.data) {
+        for (const charge of charges?.data ?? []) {
+          if (charge?.refunds && charge?.refunds?.data?.length > 0) {
+            for (const refund of charge?.refunds?.data ?? []) {
               refunds?.push({
                 id: refund.id,
                 amount: refund.amount / 100,

@@ -48,7 +48,7 @@ router.get("/status", async (_req, res) => {
       });
     }
 
-    const [info, balance] = await Promise?.all([
+    const [info, balance] = await Promise.all([
       hnsClient?.getInfo(),
       hnsClient?.getWalletBalance().catch(() => null),
     ]);
@@ -77,7 +77,7 @@ router.get("/name/:name", authRequired, async (req, res) => {
     const name = req.params.name?.toLowerCase().replace(/[^a-z0-9-]/g, "");
     if (!name) return res.status(400).json({ error: "Invalid name" });
 
-    const [avail, resource] = await Promise?.all([
+    const [avail, resource] = await Promise.all([
       hnsClient?.checkAvailability(name),
       hnsClient?.getNameResource(name).catch(() => null),
     ]);
@@ -137,7 +137,7 @@ router.post("/auctions", authRequired, async (req, res) => {
 
   try {
     const userId = (req.user as Record<string, unknown>).id;
-    const { name, bidHNS, lockupHNS } = parsed?.data;
+    const { name, bidHNS, lockupHNS } = parsed?.data ?? {};
     const auction = await hnsManager?.openAuction(
       (userId as string),
       name,
@@ -189,7 +189,7 @@ router.post("/auctions/:id/register", authRequired, async (req, res) => {
 
   try {
     const userId = (req.user as Record<string, unknown>).id;
-    const { ns1IP, ns2IP } = parsed?.data;
+    const { ns1IP, ns2IP } = parsed?.data ?? {};
     const auction = await hnsManager?.registerName(
       req.params.id,
       (userId as string),
@@ -218,7 +218,7 @@ router.post("/auctions/:id/sync", authRequired, async (req, res) => {
 // ── Wallet ────────────────────────────────────────────────────────────────────
 router.get("/wallet", authRequired, async (_req, res) => {
   try {
-    const [info, balance] = await Promise?.all([
+    const [info, balance] = await Promise.all([
       hnsClient?.getWalletInfo(),
       hnsClient?.getWalletBalance(),
     ]);

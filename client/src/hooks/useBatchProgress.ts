@@ -113,7 +113,7 @@ export function useBatchProgress(
 
     timerRef.current = setInterval(() => {
       if (startTimeRef?.current) {
-        const elapsed = Date?.now() - startTimeRef?.current;
+        const elapsed = Date.now() - startTimeRef?.current;
         setState((prev) => ({ ...prev, elapsedTime: elapsed }));
       }
     }, 100);
@@ -133,7 +133,7 @@ export function useBatchProgress(
   const start = useCallback(
     (total: number, newJobId?: string) => {
       stopTimers();
-      startTimeRef.current = Date?.now();
+      startTimeRef.current = Date.now();
 
       const newState: BatchProgressState = {
         ...defaultState,
@@ -192,7 +192,7 @@ export function useBatchProgress(
     setState((prev) => ({
       ...prev,
       failureCount: prev.failureCount + 1,
-      failures: [...prev?.failures, { id, error, index: prev.current }],
+      failures: [...(prev?.failures ?? []), { id, error, index: prev.current }],
     }));
   }, []);
 

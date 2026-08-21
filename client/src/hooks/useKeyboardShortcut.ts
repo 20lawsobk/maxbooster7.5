@@ -60,8 +60,8 @@ export function useKeyboardShortcut(
   useEffect(() => {
     if (!enabled) return;
 
-    window?.addEventListener("keydown", handleKeyDown);
-    return () => window?.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown, enabled]);
 }
 
@@ -76,7 +76,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcutConfig[]) {
       target?.tagName === "TEXTAREA" ||
       target?.contentEditable === "true";
 
-    for (const shortcut of shortcutsRef?.current) {
+    for (const shortcut of shortcutsRef?.current ?? []) {
       if (shortcut?.enabled === false) continue;
       if (isInput && !shortcut?.allowInInput) continue;
 
@@ -92,8 +92,8 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcutConfig[]) {
   }, []);
 
   useEffect(() => {
-    window?.addEventListener("keydown", handleKeyDown);
-    return () => window?.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 }
 
@@ -178,8 +178,8 @@ export function useArrowKeys(
   );
 
   useEffect(() => {
-    window?.addEventListener("keydown", handleKeyDown);
-    return () => window?.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 }
 
@@ -199,12 +199,12 @@ export function useKeyPress(targetKey: string) {
       }
     };
 
-    window?.addEventListener("keydown", handleKeyDown);
-    window?.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
     return () => {
-      window?.removeEventListener("keydown", handleKeyDown);
-      window?.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
   }, [targetKey]);
 
@@ -238,12 +238,12 @@ export function useModifierKeys() {
       });
     };
 
-    window?.addEventListener("keydown", handleKeyDown);
-    window?.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
     return () => {
-      window?.removeEventListener("keydown", handleKeyDown);
-      window?.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
 

@@ -146,7 +146,7 @@ export class VideoExporter {
       options?.videoBitrate ?? getDefaultBitrate(options?.resolution, frameRate);
 
     if (options?.signal) {
-      options?.signal.addEventListener("abort", () => {
+      options?.signal?.addEventListener("abort", () => {
         this.abort();
       });
     }
@@ -161,7 +161,7 @@ export class VideoExporter {
         elapsedTime: 0,
       });
 
-      this.canvas = document?.createElement("canvas");
+      this.canvas = document.createElement("canvas");
       this.canvas.width = resolution?.width;
       this.canvas.height = resolution?.height;
 
@@ -258,7 +258,7 @@ export class VideoExporter {
       let currentFrame = 0;
 
       this.mediaRecorder.ondataavailable = (event) => {
-        if (event?.data.size > 0) {
+        if (event?.data?.size > 0) {
           this.recordedChunks.push(event?.data);
         }
       };
@@ -366,7 +366,7 @@ export class VideoExporter {
 
       const renderedBuffer = await offlineContext?.startRendering();
 
-      const canvas = document?.createElement("canvas");
+      const canvas = document.createElement("canvas");
       canvas.width = 1;
       canvas.height = 1;
       const stream = canvas?.captureStream(1);
@@ -376,13 +376,13 @@ export class VideoExporter {
       bufferSource.buffer = renderedBuffer;
       bufferSource?.connect(audioDestination);
 
-      for (const track of audioDestination?.stream.getAudioTracks()) {
+      for (const track of audioDestination?.stream?.getAudioTracks() ?? []) {
         stream?.addTrack(track);
       }
 
       const combinedStream = new MediaStream([
-        ...stream?.getVideoTracks(),
-        ...audioDestination?.stream.getAudioTracks(),
+        ...(stream?.getVideoTracks() ?? []),
+        ...(audioDestination?.stream?.getAudioTracks() ?? []),
       ]);
 
       const mimeType = getMimeType(format);
@@ -393,7 +393,7 @@ export class VideoExporter {
 
       const chunks: Blob[] = [];
       recorder.ondataavailable = (e) => {
-        if (e?.data.size > 0) chunks?.push(e?.data);
+        if (e?.data?.size > 0) chunks?.push(e?.data);
       };
 
       return new Promise((resolve, reject) => {
@@ -494,12 +494,12 @@ export async function exportToFile(
   const result = await exporter?.export(project, frameRenderer, options);
 
   const url = URL?.createObjectURL(result?.blob);
-  const link = document?.createElement("a");
+  const link = document.createElement("a");
   link.href = url;
-  link.download = filename ?? `export_${Date?.now()}.${options?.format}`;
-  document?.body.appendChild(link);
+  link.download = filename ?? `export_${Date.now()}.${options?.format}`;
+  document.body.appendChild(link);
   link?.click();
-  document?.body.removeChild(link);
+  document.body.removeChild(link);
   URL?.revokeObjectURL(url);
 }
 

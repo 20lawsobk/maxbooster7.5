@@ -58,7 +58,7 @@ export class StripeService {
       if ((user as any)?.stripeSubscriptionId && tier !== "lifetime") {
         const result = await executeStripeOperation(
           () =>
-            stripe?.subscriptions.retrieve((user as any)?.stripeSubscriptionId, {
+            stripe?.subscriptions?.retrieve((user as any)?.stripeSubscriptionId, {
               expand: ["latest_invoice.payment_intent"],
             }),
           { cacheKey: `subscription:${(user as any)?.stripeSubscriptionId}` },
@@ -83,14 +83,14 @@ export class StripeService {
       let customerId = user?.stripeCustomerId;
       if (!customerId) {
         const result = await executeStripeOperation(() =>
-          stripe?.customers.create({
+          stripe?.customers?.create({
             email: user.email!,
             name: user.firstName
               ? `${user?.firstName} ${user?.lastName || ""}`.trim()
               : undefined,
           }),
         );
-        customerId = result?.data.id;
+        customerId = result?.data?.id;
         await (storage as any)?.updateUserStripeInfo(userId, customerId, null);
       }
 
@@ -99,7 +99,7 @@ export class StripeService {
 
       if (tier === "lifetime") {
         const result = await executeStripeOperation(() =>
-          stripe?.paymentIntents.create({
+          stripe?.paymentIntents?.create({
             amount: 69900,
             currency: "usd",
             customer: customerId,
@@ -116,7 +116,7 @@ export class StripeService {
         };
       } else {
         const result = await executeStripeOperation(() =>
-          stripe?.subscriptions.create({
+          stripe?.subscriptions?.create({
             customer: customerId,
             items: [{ price: priceId }],
             payment_behavior: "default_incomplete",
@@ -152,7 +152,7 @@ export class StripeService {
   ) {
     try {
       const result = await executeStripeOperation(() =>
-        stripe?.paymentIntents.create({
+        stripe?.paymentIntents?.create({
           amount: Math.round(price * 100),
           currency: "usd",
           metadata: {
@@ -181,15 +181,15 @@ export class StripeService {
       switch (event?.type) {
         // Subscription & payment events
         case "payment_intent.succeeded":
-          const paymentIntent = event?.data.object as Stripe.PaymentIntent;
+          const paymentIntent = event?.data?.object as Stripe.PaymentIntent;
           await this.handlePaymentSuccess(paymentIntent);
           break;
         case "invoice.payment_succeeded":
-          const invoice = event?.data.object as Stripe.Invoice;
+          const invoice = event?.data?.object as Stripe.Invoice;
           await this.handleSubscriptionPayment(invoice);
           break;
         case "customer.subscription.deleted":
-          const subscription = event?.data.object as Stripe.Subscription;
+          const subscription = event?.data?.object as Stripe.Subscription;
           await this.handleSubscriptionCanceled(subscription);
           break;
 
@@ -235,7 +235,7 @@ export class StripeService {
       sellerId,
       listingId,
       stemFileUrl,
-    } = paymentIntent?.metadata;
+    } = paymentIntent?.metadata ?? {};
 
     if (tier === "lifetime" && userId) {
       // Update user subscription status
@@ -328,9 +328,9 @@ export class StripeService {
       if (user && subscriptionId) {
         // Update subscription status
         const subscription =
-          await stripe?.subscriptions.retrieve(subscriptionId);
+          await stripe?.subscriptions?.retrieve(subscriptionId);
         const tier =
-          subscription?.items.data[0].price?.recurring?.interval === "year"
+          subscription?.items?.data[0].price?.recurring?.interval === "year"
             ? "yearly"
             : "monthly";
         await storage.updateUser(user?.id, {
@@ -417,12 +417,12 @@ export class StripeService {
       let stripeRefund: Stripe.Refund;
       let chargeId: string;
       try {
-        const paymentIntent = await stripe?.paymentIntents.retrieve(
+        const paymentIntent = await stripe?.paymentIntents?.retrieve(
           order?.stripePaymentIntentId,
         );
         chargeId = paymentIntent?.latest_charge as string;
 
-        stripeRefund = await stripe?.refunds.create(
+        stripeRefund = await stripe?.refunds?.create(
           {
             charge: chargeId,
             amount: amountCents,

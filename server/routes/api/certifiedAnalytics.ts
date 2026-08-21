@@ -32,7 +32,7 @@ router.get(
 
       const start = startDate
         ? new Date(startDate as string)
-        : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
+        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const end = endDate ? new Date(endDate as string) : new Date();
 
       const analytics = await dspAnalyticsService?.getAggregatedAnalytics(
@@ -556,7 +556,7 @@ router.post(
 
       const start = startDate
         ? new Date(startDate)
-        : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
+        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const end = endDate ? new Date(endDate) : new Date();
 
       const result = await dspAnalyticsService?.syncPlatformData(
@@ -608,7 +608,7 @@ router.post("/sync-all", async (req: AuthenticatedRequest, res: Response) => {
     const { startDate, endDate } = req.body;
     const start = startDate
       ? new Date(startDate)
-      : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
     const result = await dspAnalyticsService?.syncAllPlatforms(
@@ -617,9 +617,9 @@ router.post("/sync-all", async (req: AuthenticatedRequest, res: Response) => {
       end,
     );
 
-    await Promise?.all(
+    await Promise.all(
       result?.success.map(async (platform) => {
-        await Promise?.all([
+        await Promise.all([
           playlistAttributionService?.syncPlaylistsFromPlatform(
             userId,
             platform as unknown as import("../../services/playlistAttributionService").DSPPlatform,
@@ -689,10 +689,10 @@ router.get(
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const thirtyDaysAgo = new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
       const [streams, playlists, cohorts, forecast, demographics] =
-        await Promise?.all([
+        await Promise.all([
           dspAnalyticsService?.getAggregatedAnalytics(artistId, {
             startDate: thirtyDaysAgo,
           }),

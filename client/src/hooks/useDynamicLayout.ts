@@ -117,8 +117,8 @@ function calculateFontSizes(width: number) {
 export function useDynamicLayout(): DynamicLayoutResult {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({
-    width: typeof window !== "undefined" ? window?.innerWidth : 1200,
-    height: typeof window !== "undefined" ? window?.innerHeight : 800,
+    width: typeof window !== "undefined" ? window.innerWidth : 1200,
+    height: typeof window !== "undefined" ? window.innerHeight : 800,
   });
 
   useEffect(() => {
@@ -133,7 +133,7 @@ export function useDynamicLayout(): DynamicLayoutResult {
     if (container) {
       const resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
-          const { width, height } = entry?.contentRect;
+          const { width, height } = entry?.contentRect ?? {};
           updateDimensions(width, height);
         }
       });
@@ -143,11 +143,11 @@ export function useDynamicLayout(): DynamicLayoutResult {
       return () => resizeObserver?.disconnect();
     } else {
       const handleResize = () => {
-        updateDimensions(window?.innerWidth, window?.innerHeight);
+        updateDimensions(window.innerWidth, window.innerHeight);
       };
       handleResize();
-      window?.addEventListener("resize", handleResize);
-      return () => window?.removeEventListener("resize", handleResize);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
     }
   }, []);
 

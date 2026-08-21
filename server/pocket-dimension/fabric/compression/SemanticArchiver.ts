@@ -66,7 +66,7 @@ export class SemanticArchiver {
       const obj = val as Record<string, unknown>;
       const keys = Object.keys(obj);
       const out: Record<string, any> = {};
-      for (const k of keys?.slice(0, 32)) {
+      for (const k of keys?.slice(0, 32) ?? []) {
         out[k] = this.summarizeJsonValue(obj[k], depth + 1);
       }
       if (keys?.length > 32)

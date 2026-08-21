@@ -66,7 +66,7 @@ router.post("/initialize", requireAuth, async (_req, res) => {
 router.post("/connect-desktop", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { sessionId } = connectDesktopSchema?.parse(req.body);
+    const { sessionId } = connectDesktopSchema?.parse(req.body) ?? {};
 
     const connected = await vstPluginBridge?.connectDesktopApp({
       sessionId,
@@ -114,7 +114,7 @@ router.post("/disconnect-desktop", requireAuth, async (_req, res) => {
 
 router.post("/scan", requireAuth, async (req, res) => {
   try {
-    const { paths } = scanPathsSchema?.parse(req.body);
+    const { paths } = scanPathsSchema?.parse(req.body) ?? {};
     const result = await vstPluginBridge?.scanPlugins(paths);
 
     res.json({
@@ -253,7 +253,7 @@ router.get("/instances/:id", requireAuth, async (req, res) => {
 router.put("/instances/:id/parameters", requireAuth, async (req, res) => {
   try {
     const { id } = req.params as Record<string, string>;
-    const { parameters } = updateParametersSchema?.parse(req.body);
+    const { parameters } = updateParametersSchema?.parse(req.body) ?? {};
 
     const instance = await vstPluginBridge?.updateParameters(id, parameters);
 
@@ -296,7 +296,7 @@ router.put("/instances/:id/bypass", requireAuth, async (req, res) => {
 router.post("/instances/:id/program", requireAuth, async (req, res) => {
   try {
     const { id } = req.params as Record<string, string>;
-    const { programIndex } = loadProgramSchema?.parse(req.body);
+    const { programIndex } = loadProgramSchema?.parse(req.body) ?? {};
 
     await vstPluginBridge?.loadProgram(id, programIndex);
 

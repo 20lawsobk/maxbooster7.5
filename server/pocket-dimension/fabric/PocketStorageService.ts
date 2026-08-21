@@ -153,14 +153,14 @@ export class PocketStorageService {
         pocket?.policy,
       );
 
-      await Promise?.all(
+      await Promise.all(
         decision?.nodeIds.map(async (nodeId) => {
           const store = this.chunkStoreFactory(nodeId);
           await store?.putChunk(chunkId, cdcChunk?.data);
         }),
       );
 
-      await Promise?.all(
+      await Promise.all(
         decision?.nodeIds.map(async (nodeId) => {
           const node = await this.nodeRegistry.getNode(nodeId);
           if (node)
@@ -191,7 +191,7 @@ export class PocketStorageService {
       objectId,
     );
 
-    await Promise?.all(
+    await Promise.all(
       chunkMetas
         .filter((c) => !c?.isDedup)
         .map((meta) =>
@@ -228,7 +228,7 @@ export class PocketStorageService {
     );
 
     const buffers: Buffer[] = [];
-    for (const chunkId of obj?.chunkIds) {
+    for (const chunkId of obj?.chunkIds ?? []) {
       const loc = chunkLocations?.get(chunkId);
       if (!loc || loc?.nodeIds.length === 0) {
         throw new Error(
@@ -237,7 +237,7 @@ export class PocketStorageService {
       }
 
       let retrieved = false;
-      for (const nodeId of loc?.nodeIds) {
+      for (const nodeId of loc?.nodeIds ?? []) {
         try {
           const store = this.chunkStoreFactory(nodeId);
           const chunk = await store?.getChunk(chunkId);
@@ -264,11 +264,11 @@ export class PocketStorageService {
       obj?.chunkIds,
     );
 
-    await Promise?.all(
+    await Promise.all(
       obj?.chunkIds.map(async (chunkId) => {
         const loc = chunkLocations?.get(chunkId);
         if (loc) {
-          await Promise?.all(
+          await Promise.all(
             loc?.nodeIds.map(async (nodeId) => {
               try {
                 const store = this.chunkStoreFactory(nodeId);

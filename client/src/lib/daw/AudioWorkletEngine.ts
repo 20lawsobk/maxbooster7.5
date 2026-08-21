@@ -147,7 +147,7 @@ export class AudioWorkletEngine {
         this.workletReady = true;
 
         this.workletNode.port.onmessage = (event) => {
-          const { type, data } = event?.data;
+          const { type, data } = event?.data ?? {};
           if (type === "metering") {
             this.state.currentSample = data?.position;
             this.state.currentTime = data?.time;

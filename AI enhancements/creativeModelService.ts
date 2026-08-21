@@ -149,12 +149,12 @@ function tryParseJson(raw: string): Record<string, unknown> {
   const e = candidate?.lastIndexOf("}");
   if (s !== -1 && e !== -1) {
     try {
-      return JSON?.parse(candidate?.slice(s, e + 1));
+      return JSON.parse(candidate?.slice(s, e + 1));
     } catch {
       /* fall through */
     }
   }
-  return JSON?.parse(raw);
+  return JSON.parse(raw);
 }
 
 // ─── MaxCore / DiT-24 response shapes (typing for `unknown` JSON bodies) ───────
@@ -443,10 +443,10 @@ async function precomputeMusicalIntelligence(
         musicMeta?.energyCurve.length
       : 0.6;
   const energyPeak =
-    musicMeta?.energyCurve.length > 0 ? Math?.max(...musicMeta?.energyCurve) : 0.9;
+    musicMeta?.energyCurve.length > 0 ? Math.max(...(musicMeta?.energyCurve ?? [])) : 0.9;
   const energyVariance =
     musicMeta?.energyCurve.length > 1
-      ? energyPeak - Math?.min(...musicMeta?.energyCurve)
+      ? energyPeak - Math.min(...(musicMeta?.energyCurve ?? []))
       : 0.3;
 
   const plannerInput = {
@@ -479,12 +479,12 @@ async function precomputeMusicalIntelligence(
   const beatCount = plannerSuggestion?.optimalBeatCount ?? estimatedBeatCount;
 
   // Run style selections and alignment for every beat in parallel
-  const beatIndices = Array?.from({ length: beatCount }, (_, i) => i);
+  const beatIndices = Array.from({ length: beatCount }, (_, i) => i);
   const secondsPerBeat = 60 / musicMeta?.bpm;
 
-  const [styleResults, alignmentResults] = await Promise?.all([
+  const [styleResults, alignmentResults] = await Promise.all([
     // All style selections in parallel
-    Promise?.all(
+    Promise.all(
       beatIndices?.map(async (i) => {
         const sel = await getStyleSelector().catch(() => null);
         if (!sel) return null;
@@ -499,24 +499,24 @@ async function precomputeMusicalIntelligence(
             bpm: musicMeta.bpm,
             energyAtBeat:
               musicMeta?.energyCurve[
-                i % Math?.max(1, musicMeta?.energyCurve.length)
+                i % Math.max(1, musicMeta?.energyCurve.length)
               ] ?? energyMean,
             aesthetic: (brief?.style.aesthetic as string) ?? "cinematic",
             emotionalGoal: "curiosity", // refined per-beat once plan is known
-            beatIndexNorm: i / Math?.max(1, beatCount - 1),
+            beatIndexNorm: i / Math.max(1, beatCount - 1),
           })
           .catch(() => null);
       }),
     ),
     // All alignment computations in parallel
-    Promise?.all(
+    Promise.all(
       beatIndices?.map(async (i) => {
         const defaultStart = i * secondsPerBeat * 4;
         const energyAtBeat =
           musicMeta?.energyCurve[
-            i % Math?.max(1, musicMeta?.energyCurve.length)
+            i % Math.max(1, musicMeta?.energyCurve.length)
           ] ?? energyMean;
-        const acc = Math?.min(
+        const acc = Math.min(
           1,
           (i / beatCount) * energyMean + energyAtBeat * 0.2,
         );
@@ -537,7 +537,7 @@ async function precomputeMusicalIntelligence(
                   s?.name.toLowerCase().includes("drop")),
             ),
             accumulatedEnergy: acc,
-            transitionMomentum: i / Math?.max(1, beatCount - 1),
+            transitionMomentum: i / Math.max(1, beatCount - 1),
           })
           .catch(() => null);
       }),
@@ -601,8 +601,8 @@ async function planningStage(
     ? `
 MUSIC INTELLIGENCE CONSTRAINTS (computed from audio — treat as ground truth):
 - Optimal beat count: ${ps?.optimalBeatCount} (your "beats" array MUST have exactly ${ps?.optimalBeatCount} items)
-- Hook emotional intensity: ${Math?.round(ps?.hookEmotionalWeight * 100)}% (${ps?.hookEmotionalWeight > 0.7 ? "high-impact opener needed" : ps?.hookEmotionalWeight > 0.4 ? "moderate emotional draw" : "informational hook"})
-- CTA urgency: ${ctaLabel} (${Math?.round(ps?.ctaUrgency * 100)}%)
+- Hook emotional intensity: ${Math.round(ps?.hookEmotionalWeight * 100)}% (${ps?.hookEmotionalWeight > 0.7 ? "high-impact opener needed" : ps?.hookEmotionalWeight > 0.4 ? "moderate emotional draw" : "informational hook"})
+- CTA urgency: ${ctaLabel} (${Math.round(ps?.ctaUrgency * 100)}%)
 - Testing variants: generate ${variantCount} distinct variants
 `.trim()
     : "";
@@ -611,10 +611,10 @@ MUSIC INTELLIGENCE CONSTRAINTS (computed from audio — treat as ground truth):
     ctx?.styleMap.size > 0
       ? `
 PER-BEAT STYLE GUIDANCE (pre-selected from audio energy + genre):
-${Array?.from(ctx?.styleMap.entries())
+${Array.from(ctx?.styleMap.entries())
   .map(
     ([i, s]) =>
-      `  Beat ${i + 1}: primary=${s.primaryStyle} (${Math.round((s.topStyles[0].probability ?? 0) * 100)}%), alt=${s?.topStyles[1]?.style ?? "n/a"} (${Math?.round((s?.topStyles[1]?.probability ?? 0) * 100)}%)`,
+      `  Beat ${i + 1}: primary=${s.primaryStyle} (${Math.round((s.topStyles[0].probability ?? 0) * 100)}%), alt=${s?.topStyles[1]?.style ?? "n/a"} (${Math.round((s?.topStyles[1]?.probability ?? 0) * 100)}%)`,
   )
   .join("\n")}
 `.trim()
@@ -631,7 +631,7 @@ BRIEF:
 - Offer: ${brief?.offer}
 - CTA: ${brief?.callToAction}
 - Key messages: ${brief?.keyMessages.join(" | ")}
-- Visual style: ${JSON?.stringify(brief?.style)}
+- Visual style: ${JSON.stringify(brief?.style)}
 
 MUSIC:
 - BPM: ${musicMeta?.bpm} | Key: ${musicMeta?.key} | Energy peak: ${ctx?.energyPeak.toFixed(2)} | Mean: ${ctx?.energyMean.toFixed(2)}
@@ -663,10 +663,10 @@ Return JSON only — beats array must match the constraint count exactly:
     })) as GenerateTextResponse;
 
     const text: string =
-      raw?.text ?? raw?.content ?? raw?.outputs?.[0]?.text ?? JSON?.stringify(raw);
+      raw?.text ?? raw?.content ?? raw?.outputs?.[0]?.text ?? JSON.stringify(raw);
     const parsed = tryParseJson(text);
 
-    const maxCoreBeats: BeatNote[] = Array?.isArray(parsed?.beats)
+    const maxCoreBeats: BeatNote[] = Array.isArray(parsed?.beats)
       ? parsed?.beats.map((b: RawBeat) => ({
           timecodeHint: b.timecodeHint ?? b?.timecode_hint ?? "0-3s",
           description: b.description ?? "",
@@ -687,7 +687,7 @@ Return JSON only — beats array must match the constraint count exactly:
             ),
           ];
 
-    const variants: string[] = Array?.isArray(
+    const variants: string[] = Array.isArray(
       parsed?.testingVariants ?? parsed?.testing_variants,
     )
       ? ((parsed?.testingVariants ?? parsed?.testing_variants) as string[])
@@ -709,7 +709,7 @@ Return JSON only — beats array must match the constraint count exactly:
     );
 
     const beatCount = ps?.optimalBeatCount ?? 3;
-    const beats = defaultBeats(brief).slice(0, Math?.min(beatCount, 5));
+    const beats = defaultBeats(brief).slice(0, Math.min(beatCount, 5));
     if (ps && ps?.ctaUrgency > 0.65 && beats?.length < beatCount) {
       beats?.push({
         timecodeHint: `${beats?.length * 4}-${beats?.length * 4 + 3}s`,
@@ -763,7 +763,7 @@ async function scriptStage(
 
   const ps = ctx?.plannerSuggestion;
   const hookGuidance = ps
-    ? `Hook emotional intensity: ${Math?.round(ps?.hookEmotionalWeight * 100)}% — ${ps?.hookEmotionalWeight > 0.7 ? "make it visceral and immediate" : ps?.hookEmotionalWeight > 0.4 ? "draw viewers in with curiosity" : "lead with information"}`
+    ? `Hook emotional intensity: ${Math.round(ps?.hookEmotionalWeight * 100)}% — ${ps?.hookEmotionalWeight > 0.7 ? "make it visceral and immediate" : ps?.hookEmotionalWeight > 0.4 ? "draw viewers in with curiosity" : "lead with information"}`
     : "";
   const ctaGuidance = ps
     ? `CTA pressure: ${ps?.ctaUrgency > 0.75 ? "urgent — create scarcity or FOMO" : ps?.ctaUrgency > 0.45 ? "direct — clear next step" : "soft — invite, do not demand"}`
@@ -817,7 +817,7 @@ async function keyframesStage(
   const isVertical = ["tiktok", "reels", "shorts"].includes(brief?.platform);
 
   // All keyframe generation in parallel — style data already pre-computed in ctx?.styleMap
-  const keyframePaths = await Promise?.all(
+  const keyframePaths = await Promise.all(
     plan?.beats.map(async (beat, i) => {
       // Pull from context — no re-computation needed
       const styleResult = ctx?.styleMap.get(i) ?? null;
@@ -841,11 +841,11 @@ async function keyframesStage(
               bpm: musicMeta.bpm,
               energyAtBeat:
                 musicMeta?.energyCurve[
-                  i % Math?.max(1, musicMeta?.energyCurve.length)
+                  i % Math.max(1, musicMeta?.energyCurve.length)
                 ] ?? ctx?.energyMean,
               aesthetic: (brief?.style.aesthetic as string) ?? "cinematic",
               emotionalGoal: beat.emotionalGoal,
-              beatIndexNorm: i / Math?.max(1, totalBeats - 1),
+              beatIndexNorm: i / Math.max(1, totalBeats - 1),
             })
             .catch(() => null)
         : null;
@@ -854,7 +854,7 @@ async function keyframesStage(
 
       const blendInstruction =
         closeMatch && altStyle
-          ? `Blend visual elements of "${selectedStyle}" and "${altStyle}" — the model is split (${Math?.round(primaryProb * 100)}% vs ${Math?.round(altProb * 100)}%).`
+          ? `Blend visual elements of "${selectedStyle}" and "${altStyle}" — the model is split (${Math.round(primaryProb * 100)}% vs ${Math.round(altProb * 100)}%).`
           : "";
 
       const prompt = [
@@ -925,7 +925,7 @@ async function alignmentStage(
 
     const alignment = ctx?.alignmentMap[i];
     if (alignment) {
-      start = Math?.max(0, start + alignment?.cutTimeDelta);
+      start = Math.max(0, start + alignment?.cutTimeDelta);
     }
     return { start, end, beat };
   });
@@ -934,7 +934,7 @@ async function alignmentStage(
     const alignment = ctx?.alignmentMap[i];
     if (alignment) return alignment?.transitionType;
     const energyAtBeat =
-      musicMeta?.energyCurve[i % Math?.max(1, musicMeta?.energyCurve.length)] ??
+      musicMeta?.energyCurve[i % Math.max(1, musicMeta?.energyCurve.length)] ??
       0.6;
     return energyAtBeat > 0.7
       ? "cut_on_beat"
@@ -973,10 +973,10 @@ Only override a beat's timing or transition if there is a strong narrative reaso
 }`,
     })) as GenerateTextResponse;
 
-    const text: string = raw?.text ?? raw?.content ?? JSON?.stringify(raw);
+    const text: string = raw?.text ?? raw?.content ?? JSON.stringify(raw);
     const parsed = tryParseJson(text);
 
-    if (Array?.isArray(parsed?.timeline)) {
+    if (Array.isArray(parsed?.timeline)) {
       return {
         timeline: parsed.timeline.map(
           (t: Record<string, unknown>, i: number) => ({
@@ -1069,8 +1069,8 @@ async function assemblyStage(
       logger?.info(
         `[CreativeModel] Stage 6: DiT-24 relay → MaxCore job ${relayResp?.job_id} — polling`,
       );
-      const deadline = Date?.now() + 180_000;
-      while (Date?.now() < deadline) {
+      const deadline = Date.now() + 180_000;
+      while (Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 5_000));
         const poll = (await maxcoreGet(
           `/video-job/${relayResp?.job_id}`,
@@ -1132,8 +1132,8 @@ async function assemblyStage(
       logger?.info(
         `[CreativeModel] Stage 6: MaxCore async job ${jobResp?.job_id} — polling`,
       );
-      const deadline = Date?.now() + 180_000;
-      while (Date?.now() < deadline) {
+      const deadline = Date.now() + 180_000;
+      while (Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 5_000));
         const poll = await maxcoreGet(`/video-job/${jobResp?.job_id}`);
         if (poll?.status === "done" && poll?.url) {
@@ -1187,7 +1187,7 @@ async function scoringStage(
     hasStatementHook: plan.hooks.some((h) => !h?.includes("?")),
     beatCount: plan.beats.length,
     visualDiversity:
-      new Set(plan?.visuals).size / Math?.max(1, plan?.visuals.length),
+      new Set(plan?.visuals).size / Math.max(1, plan?.visuals.length),
     hasCTA: !!brief?.callToAction,
     genreEnergy:
       musicMeta?.mood.includes("driving") || musicMeta?.mood.includes("energetic")
@@ -1198,7 +1198,7 @@ async function scoringStage(
   };
 
   // Always run both in parallel — neither is fallback, both always contribute
-  const [maxcoreResult, localResult] = await Promise?.allSettled([
+  const [maxcoreResult, localResult] = await Promise.allSettled([
     maxcorePost("/generate/text", {
       mode: "content",
       format: "json",
@@ -1218,7 +1218,7 @@ async function scoringStage(
         hookWordCount: localScorerInput.hookWordCount,
         hasQuestionHook: localScorerInput.hasQuestionHook,
       }),
-      prompt: `Predict engagement for this short-form video creative. Consider beat count, hook type, CTA urgency (${ctx?.plannerSuggestion ? Math?.round(ctx?.plannerSuggestion.ctaUrgency * 100) : 50}%), and energy peak (${ctx?.energyPeak.toFixed(2)}). Return JSON only:
+      prompt: `Predict engagement for this short-form video creative. Consider beat count, hook type, CTA urgency (${ctx?.plannerSuggestion ? Math.round(ctx?.plannerSuggestion.ctaUrgency * 100) : 50}%), and energy peak (${ctx?.energyPeak.toFixed(2)}). Return JSON only:
 {
   "watchTimeScore": 0.0-1.0,
   "hookStrength": 0.0-1.0,
@@ -1251,9 +1251,9 @@ async function scoringStage(
     // Both succeeded — weighted blend (MaxCore 60%, local 40%)
     const agreement =
       1 -
-      (Math?.abs(maxcore?.watchTimeScore - local?.watchTimeScore) +
-        Math?.abs(maxcore?.hookStrength - local?.hookStrength) +
-        Math?.abs(maxcore?.conversionScore - local?.conversionScore)) /
+      (Math.abs(maxcore?.watchTimeScore - local?.watchTimeScore) +
+        Math.abs(maxcore?.hookStrength - local?.hookStrength) +
+        Math.abs(maxcore?.conversionScore - local?.conversionScore)) /
         3;
 
     logger?.info("[CreativeModel] Scoring blended", {
@@ -1299,7 +1299,7 @@ async function scoringStage(
 }
 
 function clamp(v: unknown, min = 0, max = 1): number {
-  return Math?.max(min, Math?.min(max, Number(v) || 0));
+  return Math.max(min, Math.min(max, Number(v) || 0));
 }
 
 // ─── Stage 8: Feedback Loop ───────────────────────────────────────────────────
@@ -1368,9 +1368,9 @@ export async function generateCreativePackage(
 
   // Pre-computation: run all four in-house models in parallel before any MaxCore call.
   // Estimated beat count from section count — planner will refine this.
-  const estimatedBeatCount = Math?.max(
+  const estimatedBeatCount = Math.max(
     3,
-    Math?.min(musicMeta?.sections.length * 2, 8),
+    Math.min(musicMeta?.sections.length * 2, 8),
   );
   const ctx = await precomputeMusicalIntelligence(
     brief,
@@ -1382,7 +1382,7 @@ export async function generateCreativePackage(
   const plan = await planningStage(brief, musicMeta, ctx);
 
   // Stages 3 + 4 in parallel — script uses hook intelligence, keyframes use style map
-  const [script, keyframePaths] = await Promise?.all([
+  const [script, keyframePaths] = await Promise.all([
     scriptStage(brief, plan, ctx),
     keyframesStage(plan, brief, musicMeta, ctx),
   ]);
@@ -1391,7 +1391,7 @@ export async function generateCreativePackage(
   const timing = await alignmentStage(plan, musicMeta, ctx);
 
   // Stages 6 + 7 in parallel — assembly and scoring both run simultaneously
-  const [videoPath, scores] = await Promise?.all([
+  const [videoPath, scores] = await Promise.all([
     assemblyStage(
       keyframePaths,
       timing,
@@ -1457,9 +1457,9 @@ export async function planCreative(
   audioPath: string,
 ): Promise<{ musicMeta: MusicMeta; plan: CreativePlan; script: string }> {
   const musicMeta = await analyzeMusicStage(audioPath, brief);
-  const estimatedBeatCount = Math?.max(
+  const estimatedBeatCount = Math.max(
     3,
-    Math?.min(musicMeta?.sections.length * 2, 8),
+    Math.min(musicMeta?.sections.length * 2, 8),
   );
   const ctx = await precomputeMusicalIntelligence(
     brief,

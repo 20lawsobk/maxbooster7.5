@@ -45,7 +45,7 @@ export async function getCachedHealthCheck(
     cacheKey,
     async () => {
       // Batched health check queries
-      const [dbHealth, processHealth] = await Promise?.all([
+      const [dbHealth, processHealth] = await Promise.all([
         checkDatabaseHealth(),
         checkProcessHealth(),
       ]);

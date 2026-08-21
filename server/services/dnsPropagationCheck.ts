@@ -91,7 +91,7 @@ async function queryResolver(
   expectedValue: string | undefined,
   timeoutMs: number,
 ): Promise<ResolverResult> {
-  const start = Date?.now();
+  const start = Date.now();
   try {
     // Use string type name in the URL — universally accepted across Cloudflare,
     // Google, Quad9, OpenDNS (numeric codes are supported by Cloudflare/Google
@@ -178,7 +178,7 @@ export async function checkPropagation(
 
   // Serve from cache if fresh
   const cached = cache?.get(cacheKey);
-  if (cached && cached?.expiresAt > Date?.now()) {
+  if (cached && cached?.expiresAt > Date.now()) {
     return cached?.data;
   }
 
@@ -187,7 +187,7 @@ export async function checkPropagation(
     throw new Error(`Unsupported DNS type for propagation check: ${type}`);
   }
 
-  const results = await Promise?.all(
+  const results = await Promise.all(
     RESOLVERS?.map((r) =>
       queryResolver(r, domain, typeNum, upperType, expected, timeoutMs),
     ),
@@ -236,7 +236,7 @@ export async function checkDomainSetupPropagation(
   setupComplete: boolean;
 }> {
   const cnameTarget = `${storefrontId}.${baseDomain}`;
-  const [ns, a, wwwCname] = await Promise?.all([
+  const [ns, a, wwwCname] = await Promise.all([
     checkPropagation(domain, "NS", ns1),
     checkPropagation(domain, "A", platformIp),
     checkPropagation(`www.${domain}`, "CNAME", cnameTarget),

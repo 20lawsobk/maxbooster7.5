@@ -523,7 +523,7 @@ export function useProjectSync(projectId: string | null) {
   const syncToBackend = useCallback(async () => {
     if (!projectId) return;
 
-    const now = Date?.now();
+    const now = Date.now();
     if (now - lastSyncRef?.current < SYNC_DEBOUNCE_MS) return;
     lastSyncRef.current = now;
 
@@ -607,7 +607,7 @@ export function useProjectSync(projectId: string | null) {
     );
 
     try {
-      const [projectRes, tracksRes] = await Promise?.all([
+      const [projectRes, tracksRes] = await Promise.all([
         fetch(`/api/studio/projects/${projectId}`, { credentials: "include" }),
         fetch(`/api/studio/projects/${projectId}/tracks`, {
           credentials: "include",

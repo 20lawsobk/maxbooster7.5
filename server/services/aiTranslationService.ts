@@ -352,7 +352,7 @@ class AITranslationService {
   ): Promise<TranslatedContent[]> {
     const results: TranslatedContent[] = [];
 
-    for (const targetLang of request?.targetLanguages) {
+    for (const targetLang of request?.targetLanguages ?? []) {
       try {
         const translated = await this.translateToLanguage(
           request?.content,

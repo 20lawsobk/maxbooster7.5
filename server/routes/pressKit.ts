@@ -192,7 +192,7 @@ router.post("/publish", requireAuth, async (req, res) => {
         .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
-    const { slug, isPublic } = parsed?.data;
+    const { slug, isPublic } = parsed?.data ?? {};
 
     const [existing] = await db
       .select()

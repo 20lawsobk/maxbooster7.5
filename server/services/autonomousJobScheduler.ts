@@ -25,7 +25,7 @@ const LEADER_STALENESS_MS = 120_000; // 2× content-dispatch interval (60 s)
 
 export function isSchedulerLeader(): boolean {
   return (
-    _isProcessingJob || Date?.now() - _lastJobCompletedAt < LEADER_STALENESS_MS
+    _isProcessingJob || Date.now() - _lastJobCompletedAt < LEADER_STALENESS_MS
   );
 }
 
@@ -51,7 +51,7 @@ function getQueue(): Queue {
 
 /** Delete system_logs rows older than `days` days. */
 async function pruneSystemLogs(days = 7): Promise<void> {
-  const cutoff = new Date(Date?.now() - days * 86_400_000);
+  const cutoff = new Date(Date.now() - days * 86_400_000);
   const result = await db.execute(
     sql`DELETE FROM system_logs WHERE timestamp < ${cutoff}`,
   );
@@ -74,7 +74,7 @@ async function pruneAuditLog(days = 90): Promise<void> {
 
 /** Delete notifications older than `days` days. */
 async function pruneNotifications(days = 30): Promise<void> {
-  const cutoff = new Date(Date?.now() - days * 86_400_000);
+  const cutoff = new Date(Date.now() - days * 86_400_000);
   const result = await db.execute(
     sql`DELETE FROM notifications WHERE created_at < ${cutoff}`,
   );
@@ -93,11 +93,11 @@ async function pruneUploadDirs(days = 7): Promise<void> {
     path?.join(process.cwd(), "uploads", "processed"),
     path?.join(process.cwd(), "uploads", "normalized"),
   ];
-  const cutoffMs = Date?.now() - days * 86_400_000;
+  const cutoffMs = Date.now() - days * 86_400_000;
   let total = 0;
 
   // Scan all directories in parallel — each dir is independent I/O.
-  await Promise?.allSettled(
+  await Promise.allSettled(
     dirs?.map(async (dir) => {
       let entries: string[];
       try {
@@ -108,7 +108,7 @@ async function pruneUploadDirs(days = 7): Promise<void> {
 
       // Delete eligible files within each dir in parallel (up to 8 concurrent unlinks).
       const cutoffEntries = (
-        await Promise?.allSettled(
+        await Promise.allSettled(
           entries?.map(async (name) => {
             const full = path?.join(dir, name);
             try {
@@ -126,7 +126,7 @@ async function pruneUploadDirs(days = 7): Promise<void> {
         )
         .map((r) => r?.value);
 
-      await Promise?.allSettled(
+      await Promise.allSettled(
         cutoffEntries?.map(async (full) => {
           try {
             await fsPromises?.unlink(full);
@@ -424,8 +424,8 @@ async function waitForPdimSettled(
   await new Promise((r) => setTimeout(r, minWaitMs));
 
   const { getPdimQueueDepth } = await import("../lib/pdimClient.js");
-  const deadline = Date?.now() + extraTimeoutMs;
-  while (Date?.now() < deadline) {
+  const deadline = Date.now() + extraTimeoutMs;
+  while (Date.now() < deadline) {
     const depth = getPdimQueueDepth();
     if (depth < maxDepth) {
       logger.info(
@@ -435,7 +435,7 @@ async function waitForPdimSettled(
     }
     logger.info(
       `[AutonomousScheduler] PDIM depth=${depth} ≥ ${maxDepth} — ` +
-        `waiting ${Math.round((deadline - Date?.now()) / 1000)}s more`,
+        `waiting ${Math.round((deadline - Date.now()) / 1000)}s more`,
     );
     await new Promise((r) => setTimeout(r, 5_000));
   }
@@ -573,7 +573,7 @@ export async function setupRepeatableJobs(): Promise<void> {
     //   fromEnd:   minimum 2 min after the loop ends.
     //     Covers the BullMQ worker-startup PDIM spike that occurs when the newly
     //     registered workers begin executing their first cycle simultaneously.
-    const elapsed = Date?.now() - regStart;
+    const elapsed = Date.now() - regStart;
     const fromStart = Math.max(0, REG_MIN_HOLD_MS - elapsed);
     const fromEnd = 2 * 60_000;
     const holdMs = Math.max(fromStart, fromEnd);

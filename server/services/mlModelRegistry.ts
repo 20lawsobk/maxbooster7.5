@@ -215,7 +215,7 @@ export class MLModelRegistry {
       const parsed = JSON.parse(data);
 
       if (parsed?.models) {
-        for (const model of parsed?.models) {
+        for (const model of parsed?.models ?? []) {
           model.createdAt = new Date(model?.createdAt);
           model.lastTrained = new Date(model?.lastTrained);
           model.updatedAt = new Date(model?.updatedAt);
@@ -624,7 +624,7 @@ export class MLModelRegistry {
       throw new Error("Exactly one variant must be marked as control");
     }
 
-    const experimentId = `exp_${modelId}_${Date?.now()}`;
+    const experimentId = `exp_${modelId}_${Date.now()}`;
     const now = new Date();
 
     const variants: ModelVariant[] = variantConfigs?.map((config, index) => ({
@@ -791,7 +791,7 @@ export class MLModelRegistry {
     experiment.status = status;
     experiment.endDate = new Date();
 
-    for (const variant of experiment?.variants) {
+    for (const variant of experiment?.variants ?? []) {
       variant.status = "archived";
     }
 
@@ -822,7 +822,7 @@ export class MLModelRegistry {
     }
 
     const prediction: PredictionRecord = {
-      id: `pred_${Date?.now()}_${randomBytes(6).toString("hex")}`,
+      id: `pred_${Date.now()}_${randomBytes(6).toString("hex")}`,
       timestamp: new Date(),
       ...record,
     };

@@ -415,7 +415,7 @@ class ContractTemplateService {
     }
 
     if (type === "split_sheet" && variables?.splits) {
-      for (const split of variables?.splits) {
+      for (const split of variables?.splits ?? []) {
         if (!parties?.find((p) => p?.name === split?.name)) {
           parties?.push({ name: split.name, role: split.role });
         }
@@ -1311,7 +1311,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     y += lineHeight * 2;
 
     doc?.setFontSize(10);
-    for (const sig of contract?.signatures) {
+    for (const sig of contract?.signatures ?? []) {
       doc?.setFont("helvetica", "bold");
       doc?.text(sig?.partyName, margin, y);
       y += lineHeight;
@@ -1366,7 +1366,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    for (const requiredVar of template?.variables) {
+    for (const requiredVar of template?.variables ?? []) {
       const value = variables[requiredVar as keyof ContractVariables];
       if (value === undefined || value === null || value === "") {
         if (
@@ -1545,7 +1545,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
       details: `Contract created from template: ${contract?.templateId}`,
     });
 
-    for (const sig of contract?.signatures) {
+    for (const sig of contract?.signatures ?? []) {
       if (sig?.signedAt) {
         timeline?.push({
           event: "signature_added",

@@ -155,8 +155,8 @@ interface FFmpegJob {
 const ffmpegJobs = new Map<string, FFmpegJob>();
 
 function pruneStaleFFmpegJobs() {
-  const now = Date?.now();
-  for (const [id, job] of ffmpegJobs?.entries()) {
+  const now = Date.now();
+  for (const [id, job] of ffmpegJobs?.entries() ?? []) {
     if (now - job?.createdAt > 10 * 60 * 1000) ffmpegJobs?.delete(id);
   }
 }
@@ -250,7 +250,7 @@ router.post(
           .status(400)
           .json({ error: "Invalid request", details: parsed.error.issues });
       }
-      const { platform, content, mediaUrls, scheduledAt } = parsed?.data;
+      const { platform, content, mediaUrls, scheduledAt } = parsed?.data ?? {};
 
       const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
 
@@ -756,7 +756,7 @@ router.get(
     try {
       const userId = req.user!.id;
       const insights = await (
-        storage.getSocialAIInsights?.(userId) ?? Promise?.resolve([])
+        storage.getSocialAIInsights?.(userId) ?? Promise.resolve([])
       ).catch(() => []);
       res.json(insights);
     } catch (error) {
@@ -768,7 +768,7 @@ router.get(
 
 // Track the time this server process started — any sync older than this used the old
 // code and must be re-fetched immediately regardless of the 1-hour guard.
-const SERVER_BOOT_MS = Date?.now();
+const SERVER_BOOT_MS = Date.now();
 
 // Get platform status - returns connected social accounts from OAuth connections
 // Returns array format for SocialMedia page, also works for Advertisement page
@@ -794,7 +794,7 @@ router.get(
       }
 
       const ONE_HOUR_MS = 60 * 60 * 1000;
-      const now = Date?.now();
+      const now = Date.now();
       const stalePlatforms: string[] = [];
       for (const conn of connections) {
         if (conn?.isActive) {
@@ -834,7 +834,7 @@ router.get(
           logger.info(
             `[SocialSync] Pre-boot stale data detected — running blocking sync for ${[...uniquePlatforms].join(", ")}`,
           );
-          await Promise?.all(
+          await Promise.all(
             [...uniquePlatforms].map((p) =>
               syncPlatformData(userId, p).catch((err) =>
                 logger.warn({ err: err }, `Blocking sync failed for ${p}:`),
@@ -913,7 +913,7 @@ router.get(
             ? new Date(igMeta?.lastSyncedAt as any).getTime()
             : 0;
           const lastSync = new Date(
-            Math.max(fbSync, igSync) || Date?.now(),
+            Math.max(fbSync, igSync) || Date.now(),
           ).toISOString();
 
           // Primary conn for username/profileUrl — prefer IG, fall back to FB
@@ -1035,7 +1035,7 @@ router.post(
             const followers = conn?.followerCount as number;
             if (followerMilestones?.includes(followers)) {
               const platformName =
-                conn?.platform.charAt(0).toUpperCase() + conn?.platform.slice(1);
+                conn?.platform?.charAt(0).toUpperCase() + conn?.platform?.slice(1);
               await notificationService?.sendFollowerMilestoneNotification(
                 userId,
                 platformName,
@@ -1155,7 +1155,7 @@ router.get(
       }
 
       const dayOfYear = Math.floor(
-        (Date?.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+        (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
           86400000,
       );
       const hourOfDay = new Date().getUTCHours();
@@ -1880,7 +1880,7 @@ router.get(
               createdBy: meta.createdBy || "social_autopilot",
             };
           }),
-        ...calendarEntries?.map((c) => ({
+        ...(calendarEntries?.map((c) => ({
           id: c.id,
           title: c.title,
           platform: c.platform,
@@ -1891,7 +1891,7 @@ router.get(
             ((c?.content as Record<string, unknown>)?.body as string) ?? null,
           mediaUrls: c.mediaUrls ?? [],
           source: "calendar" as const,
-        })),
+        })) ?? []),
       ];
 
       return res.json({ posts: allPosts, total: allPosts.length });
@@ -2114,7 +2114,7 @@ router.post(
       const failedPlatforms: { platform: string; error: string }[] = [];
 
       // MaxCore AI is the only source — all platforms in parallel
-      const mcResults = await Promise?.allSettled(
+      const mcResults = await Promise.allSettled(
         platforms
           .filter((p: string) => validPlatforms?.includes(p))
           .map(async (platform: string) => {
@@ -2140,7 +2140,7 @@ router.post(
           });
           continue;
         }
-        const { platform, result } = settled?.value;
+        const { platform, result } = settled?.value ?? {};
         if (result?.success && result?.data) {
           generatedContent?.push({
             platform,
@@ -2162,7 +2162,7 @@ router.post(
       }
 
       const hasHashtags = generatedContent?.some(
-        (c) => c?.hashtags && c?.hashtags.length > 0,
+        (c) => c?.hashtags && c?.hashtags?.length > 0,
       );
       const optimalTime = generatedContent[0]?.optimalPostTime || null;
 
@@ -2212,8 +2212,8 @@ router.post(
           try {
             const firstPiece = generatedContent[0];
             const platformLabel =
-              firstPiece?.platform.charAt(0).toUpperCase() +
-              firstPiece?.platform.slice(1);
+              firstPiece?.platform?.charAt(0).toUpperCase() +
+              firstPiece?.platform?.slice(1);
             const snippet = (
               firstPiece?.caption ||
               firstPiece?.content ||
@@ -2283,7 +2283,7 @@ function assertSafeExternalUrl(raw: string): void {
       status: 400,
     });
   }
-  const h = parsed?.hostname.toLowerCase().replace(/^\[|\]$/g, ""); // strip IPv6 brackets
+  const h = parsed?.hostname?.toLowerCase().replace(/^\[|\]$/g, ""); // strip IPv6 brackets
   const blocked = [
     /^localhost$/i,
     /^127\./, // 127.0.0.0/8  loopback
@@ -2448,7 +2448,7 @@ router.post(
           .trim()
           .slice(0, 80);
       } else {
-        topic = seed?.topic.slice(0, 80);
+        topic = seed?.topic?.slice(0, 80);
       }
 
       // Derive the content_type for better CTA selection
@@ -2476,31 +2476,31 @@ router.post(
       // Build rich extra_context from headings, event/product data, and content signals
       const extraParts: string[] = [];
       if (seed?.headings?.length)
-        extraParts?.push(seed?.headings.slice(0, 3).join(" • "));
+        extraParts?.push(seed?.headings?.slice(0, 3).join(" • "));
       if (seed?.event_date)
         extraParts?.push(
           `Event: ${seed?.event_date}${seed?.event_location ? " @ " + seed?.event_location : ""}`,
         );
       if (seed?.performers?.length)
         extraParts?.push(
-          `Performers: ${seed?.performers.slice(0, 3).join(", ")}`,
+          `Performers: ${seed?.performers?.slice(0, 3).join(", ")}`,
         );
       if (seed?.price)
         extraParts?.push(`Price: ${seed?.currency || ""}${seed?.price}`);
       if (seed?.view_count)
-        extraParts?.push(`${seed?.view_count.toLocaleString()} views`);
+        extraParts?.push(`${seed?.view_count?.toLocaleString()} views`);
       if (seed?.like_count)
-        extraParts?.push(`${seed?.like_count.toLocaleString()} likes`);
+        extraParts?.push(`${seed?.like_count?.toLocaleString()} likes`);
       if (seed?.play_count)
-        extraParts?.push(`${seed?.play_count.toLocaleString()} plays`);
+        extraParts?.push(`${seed?.play_count?.toLocaleString()} plays`);
       if (seed?.subscriber_count)
         extraParts?.push(
-          `${seed?.subscriber_count.toLocaleString()} subscribers`,
+          `${seed?.subscriber_count?.toLocaleString()} subscribers`,
         );
       if (targetAudience) extraParts?.push(`Target: ${targetAudience}`);
 
       // MaxCore AI is the only source — generate for all platforms in parallel
-      const platformResults = await Promise?.allSettled(
+      const platformResults = await Promise.allSettled(
         platforms
           .filter((p: string) => validPlatforms?.includes(p))
           .map(async (platform: string) => {
@@ -2532,22 +2532,22 @@ router.post(
 
       for (const settled of platformResults) {
         if (settled?.status !== "fulfilled") continue;
-        const { platform, result } = settled?.value;
+        const { platform, result } = settled?.value ?? {};
         if (!result?.success || !result?.data) continue;
 
-        const captionText = result?.data.caption + `\n\n🔗 ${url}`;
-        const rawCaption = result?.data.caption || "";
+        const captionText = result?.data?.caption + `\n\n🔗 ${url}`;
+        const rawCaption = result?.data?.caption || "";
         const captionParts = rawCaption
           .split(/\n\n+/)
           .map((s: string) => s?.trim())
           .filter(Boolean);
         const derivedHook =
-          result?.data.hook ||
+          result?.data?.hook ||
           captionParts[0] ||
           rawCaption?.split("\n")[0] ||
           "";
-        const derivedBody = result?.data.body || captionParts[1] || "";
-        const derivedCta = result?.data.cta || captionParts[2] || "";
+        const derivedBody = result?.data?.body || captionParts[1] || "";
+        const derivedCta = result?.data?.cta || captionParts[2] || "";
         // Video overlays need short, punchy text (no hashtags, no URLs)
         const stripMeta = (s: string) =>
           s
@@ -2607,19 +2607,19 @@ router.post(
           });
 
           if (result?.success && result?.data) {
-            const captionText = result?.data.caption + `\n\n🔗 ${url}`;
-            const rawCaption = result?.data.caption || "";
+            const captionText = result?.data?.caption + `\n\n🔗 ${url}`;
+            const rawCaption = result?.data?.caption || "";
             const captionParts = rawCaption
               .split(/\n\n+/)
               .map((s: string) => s?.trim())
               .filter(Boolean);
             const derivedHook =
-              result?.data.hook ||
+              result?.data?.hook ||
               captionParts[0] ||
               rawCaption?.split("\n")[0] ||
               "";
-            const derivedBody = result?.data.body || captionParts[1] || "";
-            const derivedCta = result?.data.cta || captionParts[2] || "";
+            const derivedBody = result?.data?.body || captionParts[1] || "";
+            const derivedCta = result?.data?.cta || captionParts[2] || "";
             const stripMeta = (s: string) =>
               s
                 .replace(/#\w+/g, "")
@@ -2707,10 +2707,10 @@ router.get(
       const { platform, period = "30d" } = req.query;
 
       const days = period === "7d" ? 7 : period === "90d" ? 90 : 30;
-      const periodStart = new Date(Date?.now() - days * 24 * 60 * 60 * 1000);
+      const periodStart = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       const [accounts, periodPosts, autopilotContent, artistProfile] =
-        await Promise?.all([
+        await Promise.all([
           db
             .select()
             .from(socialAccounts)
@@ -2739,7 +2739,7 @@ router.get(
 
       // Kick off background follower-count sync for stale accounts
       const ONE_HOUR_MS = 60 * 60 * 1000;
-      const now = Date?.now();
+      const now = Date.now();
       const stalePlatforms = new Set<string>();
       for (const acc of accounts) {
         if (!acc?.isActive) continue;
@@ -2848,7 +2848,7 @@ router.get(
       const platformBreakdown = accounts
         .filter((acc) => acc?.isActive)
         .map((acc) => {
-          const pl = acc?.platform.toLowerCase();
+          const pl = acc?.platform?.toLowerCase();
           const eng = platformEngagement[pl] || {
             likes: 0,
             comments: 0,
@@ -2876,7 +2876,7 @@ router.get(
         { date: string; posts: number; engagement: number; views: number }
       > = {};
       for (let i = days - 1; i >= 0; i--) {
-        const d = new Date(Date?.now() - i * 24 * 60 * 60 * 1000)
+        const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000)
           .toISOString()
           .split("T")[0];
         dailyMap[d] = { date: d, posts: 0, engagement: 0, views: 0 };
@@ -2908,7 +2908,7 @@ router.get(
 
       // Top posts by engagement
       const allPostsForRanking = [
-        ...periodPosts?.map((p) => ({
+        ...(periodPosts?.map((p) => ({
           id: p.id,
           platform: p.platform,
           content: p.content?.substring(0, 120) || "",
@@ -2918,7 +2918,7 @@ router.get(
             return e ? (Number(e?.likes) || 0) + (Number(e?.comments) || 0) + (Number(e?.shares) || 0) : 0;
           })(),
           views: Number((p?.engagement as Record<string, unknown>)?.views) || 0,
-        })),
+        })) ?? []),
       ]
         .sort((a, b) => b?.engagement - a?.engagement)
         .slice(0, 10);
@@ -3050,7 +3050,7 @@ router.post(
       // proxy timeouts that the client misreads as auth failures.  All paths
       // (Python AI and FFmpeg) now run in a background job and store their
       // result in the ffmpegJobs map so the polling endpoint can serve it.
-      const jobId = `video_${Date?.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const jobId = `video_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       pruneStaleFFmpegJobs();
       ffmpegJobs?.set(jobId, { status: "processing", createdAt: Date.now() });
 
@@ -3405,7 +3405,7 @@ router.get(
 
         const isRealVideo = (isMP4 || isWebM || isAVI) && !looksHTML;
 
-        const ct = upstream?.headers.get("content-type") ?? "";
+        const ct = upstream?.headers?.get("content-type") ?? "";
         if (!isRealVideo) {
           reader?.cancel();
           logger.info(
@@ -3414,7 +3414,7 @@ router.get(
           continue;
         }
 
-        const cl = upstream?.headers.get("content-length");
+        const cl = upstream?.headers?.get("content-length");
         res.setHeader("Content-Type", "video/mp4");
         if (cl) res.setHeader("Content-Length", cl);
         res.setHeader("Cache-Control", "public, max-age=86400");
@@ -3431,7 +3431,7 @@ router.get(
           try {
             if (!peekDone) {
               while (true) {
-                const { done, value } = await reader?.read();
+                const { done, value } = await (reader?.read() ?? {});
                 if (done) break;
                 nodeStream?.write(value);
                 chunks?.push(value);
@@ -5346,7 +5346,7 @@ router.get(
   requireAuthOnly,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const [voiceSvc, _imgSvc] = await Promise?.all([
+      const [voiceSvc, _imgSvc] = await Promise.all([
         getVoiceSynthService(),
         getImageToVideoService(),
       ]);

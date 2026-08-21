@@ -316,7 +316,7 @@ const ACTION_HANDLERS: Record<
 router.post("/batch", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { actions } = batchSyncRequestSchema?.parse(req.body);
+    const { actions } = batchSyncRequestSchema?.parse(req.body) ?? {};
 
     logger.info({
       userId,

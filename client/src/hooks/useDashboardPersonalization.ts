@@ -115,14 +115,14 @@ export function useDashboardPersonalization() {
   }, [usagePatterns]);
 
   const startWidgetView = useCallback((widgetId: string) => {
-    widgetViewTimers.current[widgetId] = Date?.now();
+    widgetViewTimers.current[widgetId] = Date.now();
   }, []);
 
   const endWidgetView = useCallback(
     (widgetId: string) => {
       const startTime = widgetViewTimers?.current[widgetId];
       if (startTime) {
-        const duration = Date?.now() - startTime;
+        const duration = Date.now() - startTime;
         if (duration > 1000) {
           trackWidgetMutation?.mutate({ widgetId, duration });
         }
@@ -183,7 +183,7 @@ export function useDashboardPersonalization() {
     if (!layout || !usagePatterns) return;
 
     const usageMap = usagePatterns as Record<string, WidgetUsageData>;
-    const widgets = [...layout?.widgets]
+    const widgets = [...(layout?.widgets ?? [])]
       .sort((a, b) => {
         const aUsage = usageMap[a?.id]?.viewCount || 0;
         const bUsage = usageMap[b?.id]?.viewCount || 0;

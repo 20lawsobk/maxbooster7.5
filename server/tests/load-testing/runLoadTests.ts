@@ -154,7 +154,7 @@ async function runAllLoadTests(): Promise<void> {
   for (const suite of TEST_SUITES) {
     logger.info({
       endpoint: suite.endpoint,
-    }, `Testing: ${suite?.name.toUpperCase()}`);
+    }, `Testing: ${suite?.name?.toUpperCase()}`);
 
     try {
       const results = await tester?.runProgressiveScaleTest(
@@ -176,9 +176,9 @@ async function runAllLoadTests(): Promise<void> {
       for (const result of results) {
         if (!result?.passed) {
           issues?.push(
-            `${suite?.name} at ${result?.scale}: ${result?.bottlenecks.join(", ")}`,
+            `${suite?.name} at ${result?.scale}: ${result?.bottlenecks?.join(", ")}`,
           );
-          fixes?.push(...result?.recommendations);
+          fixes?.push(...(result?.recommendations ?? []));
         }
       }
     } catch (error) {
@@ -189,7 +189,7 @@ async function runAllLoadTests(): Promise<void> {
 
   logger.info("COMPREHENSIVE SCALABILITY REPORT");
 
-  for (const [name, results] of allResults?.entries()) {
+  for (const [name, results] of allResults?.entries() ?? []) {
     const maxResult = results[results?.length - 1];
     const passRate =
       (results?.filter((r) => r?.passed).length / results?.length) * 100;

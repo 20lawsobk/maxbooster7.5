@@ -911,7 +911,7 @@ export class WorkspaceService {
     try {
       const shares = [];
 
-      for (const memberId of params?.memberIds) {
+      for (const memberId of params?.memberIds ?? []) {
         const share = {
           id: crypto.randomUUID(),
           projectId: params.projectId,
@@ -1040,7 +1040,7 @@ export class WorkspaceService {
         color: this.generateUserColor(member?.userId),
         status:
           member?.lastActiveAt &&
-          Date?.now() - new Date(member?.lastActiveAt).getTime() < 5 * 60 * 1000
+          Date.now() - new Date(member?.lastActiveAt).getTime() < 5 * 60 * 1000
             ? "online"
             : "offline",
         cursor: null,

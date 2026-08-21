@@ -353,13 +353,13 @@ class MidiGeneratorService {
       case "updown":
         orderedNotes = [
           ...expandedNotes,
-          ...expandedNotes?.slice(1, -1).reverse(),
+          ...(expandedNotes?.slice(1, -1).reverse() ?? []),
         ];
         break;
       case "downup":
         orderedNotes = [
-          ...expandedNotes?.reverse(),
-          ...expandedNotes?.slice(1, -1),
+          ...(expandedNotes?.reverse() ?? []),
+          ...(expandedNotes?.slice(1, -1) ?? []),
         ];
         break;
       case "random":

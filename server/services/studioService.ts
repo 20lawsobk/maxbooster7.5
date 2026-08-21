@@ -370,7 +370,7 @@ export class StudioService {
     });
 
     try {
-      const result = await Promise?.race([promise, timeoutPromise]);
+      const result = await Promise.race([promise, timeoutPromise]);
       clearTimeout(timeoutId!);
       return result;
     } catch (error) {
@@ -473,13 +473,13 @@ export class StudioService {
       const markers = await storageAny?.getProjectMarkers(projectId);
 
       // Batch-fetch all clips in parallel (eliminates N+1: was 2×tracks serial queries)
-      const [allAudioClipArrays, allMidiClipArrays] = await Promise?.all([
-        Promise?.all(
+      const [allAudioClipArrays, allMidiClipArrays] = await Promise.all([
+        Promise.all(
           tracks?.map((t: Record<string, unknown>) =>
             storageAny?.getTrackAudioClips((t?.id as string)),
           ),
         ),
-        Promise?.all(
+        Promise.all(
           tracks?.map((t: Record<string, unknown>) =>
             storageAny?.getTrackMidiClips((t?.id as string)),
           ),
@@ -1011,7 +1011,7 @@ export class StudioService {
         status: "draft",
       } as InsertProject);
 
-      for (const trackTemplate of template?.tracks) {
+      for (const trackTemplate of template?.tracks ?? []) {
         await storageAny?.createStudioTrack({
           projectId: project.id,
           name: trackTemplate.name,

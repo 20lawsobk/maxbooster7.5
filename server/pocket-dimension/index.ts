@@ -190,14 +190,14 @@ export class PocketDimension extends EventEmitter {
               target?.createNestedDimension(prop, config),
           };
         }
-        return Reflect?.get(target, prop);
+        return Reflect.get(target, prop);
       },
       set: (target, prop: string, value: Buffer | string) => {
         if (typeof prop === "string") {
           target?.write(prop, value);
           return true;
         }
-        return Reflect?.set(target, prop, value);
+        return Reflect.set(target, prop, value);
       },
     }) as unknown as PocketBracketAccessor;
   }
@@ -424,7 +424,7 @@ export class PocketDimension extends EventEmitter {
 
     const chunks: Buffer[] = [];
 
-    for (const chunkId of entry?.chunks) {
+    for (const chunkId of entry?.chunks ?? []) {
       const chunkData = await this.readChunk(chunkId);
       chunks?.push(chunkData);
     }

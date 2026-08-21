@@ -2560,7 +2560,7 @@ class DistributionDataTransferService {
       const CAA_CONCURRENCY = 8;
       for (let i = 0; i < groups.length; i += CAA_CONCURRENCY) {
         const chunk = groups?.slice(i, i + CAA_CONCURRENCY);
-        await Promise?.allSettled(
+        await Promise.allSettled(
           chunk?.map(async (rg) => {
             try {
               const caaResp = await timedFetch(
@@ -2806,7 +2806,7 @@ class DistributionDataTransferService {
       const user = (await userResp?.json()) as Record<string, unknown>;
       if (!user?.id) return [];
 
-      const [playlistResp, tracksResp] = await Promise?.all([
+      const [playlistResp, tracksResp] = await Promise.all([
         fetch(
           `https://api-v2.soundcloud.com/users/${user.id}/playlists?client_id=${clientId}&limit=20`,
         ),

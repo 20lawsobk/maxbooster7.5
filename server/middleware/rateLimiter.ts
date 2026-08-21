@@ -97,14 +97,14 @@ const DEGRADED_MAX_KEYS = 10_000;
 
 class InMemoryDegradedRateLimiter {
   private store = new Map<string, number[]>();
-  private lastPrune = Date?.now();
+  private lastPrune = Date.now();
 
   check(
     key: string,
     windowMs: number,
     maxRequests: number,
   ): SlidingWindowResult {
-    const now = Date?.now();
+    const now = Date.now();
     const degradedMax = Math.max(
       1,
       Math.floor(maxRequests * DEGRADED_RATE_FRACTION),
@@ -179,7 +179,7 @@ async function slidingWindowCheck(
   windowMs: number,
   maxRequests: number,
 ): Promise<SlidingWindowResult> {
-  const now = Date?.now();
+  const now = Date.now();
   const windowStart = now - windowMs;
   const redis = await getRedisClient();
 
@@ -196,7 +196,7 @@ async function slidingWindowCheck(
   const REDIS_TIMEOUT_MS = 400;
 
   try {
-    const result = await Promise?.race<SlidingWindowResult>([
+    const result = await Promise.race<SlidingWindowResult>([
       (async () => {
         // PDIM does not support ZREMRANGEBYSCORE; use ZCOUNT to count only
         // in-window members (scores >= windowStart) without pruning old entries.
@@ -264,7 +264,7 @@ function setRateLimitHeaders(
 }
 
 function sendRateLimitExceeded(res: Response, resetAt: number): void {
-  const retryAfter = Math.ceil((resetAt - Date?.now()) / 1000);
+  const retryAfter = Math.ceil((resetAt - Date.now()) / 1000);
   res.setHeader("Retry-After", Math.max(1, retryAfter).toString());
   res.status(429).json({
     error: "Too Many Requests",
@@ -304,7 +304,7 @@ export const globalIPRateLimiter: RequestHandler = async (
 
   const ip = getClientIP(req);
   const key = `global:ip:${ip}`;
-  const { perIP } = RATE_LIMITS?.global;
+  const { perIP } = RATE_LIMITS?.global ?? {};
 
   const result = await slidingWindowCheck(key, perIP?.windowMs, perIP?.max);
   setRateLimitHeaders(res, perIP?.max, result?.remaining, result?.resetAt);
@@ -335,7 +335,7 @@ export const globalUserRateLimiter: RequestHandler = async (
   }
 
   const key = `global:user:${userId}`;
-  const { perUser } = RATE_LIMITS?.global;
+  const { perUser } = RATE_LIMITS?.global ?? {};
 
   const result = await slidingWindowCheck(key, perUser?.windowMs, perUser?.max);
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
@@ -372,7 +372,7 @@ export const loginRateLimiter: RequestHandler = async (
     return;
   }
   const key = `auth:login:${ip}`;
-  const { login } = RATE_LIMITS?.auth;
+  const { login } = RATE_LIMITS?.auth ?? {};
 
   const result = await slidingWindowCheck(key, login?.windowMs, login?.max);
   setRateLimitHeaders(res, login?.max, result?.remaining, result?.resetAt);
@@ -410,7 +410,7 @@ export const registerRateLimiter: RequestHandler = async (
   }
 
   const key = `auth:register:${ip}`;
-  const { register } = RATE_LIMITS?.auth;
+  const { register } = RATE_LIMITS?.auth ?? {};
 
   const result = await slidingWindowCheck(key, register?.windowMs, register?.max);
   setRateLimitHeaders(res, register?.max, result?.remaining, result?.resetAt);
@@ -436,7 +436,7 @@ export const forgotPasswordRateLimiter: RequestHandler = async (
 
   const ip = getClientIP(req);
   const key = `auth:forgot-password:${ip}`;
-  const { forgotPassword } = RATE_LIMITS?.auth;
+  const { forgotPassword } = RATE_LIMITS?.auth ?? {};
 
   const result = await slidingWindowCheck(
     key,
@@ -472,7 +472,7 @@ export const twoFactorRateLimiter: RequestHandler = async (
   const ip = getClientIP(req);
   const userId = getUserId(req);
   const key = userId ? `auth:2fa:${userId}:${ip}` : `auth:2fa:${ip}`;
-  const { twoFactor } = RATE_LIMITS?.auth;
+  const { twoFactor } = RATE_LIMITS?.auth ?? {};
 
   const result = await slidingWindowCheck(
     key,
@@ -509,7 +509,7 @@ export const billingRateLimiter: RequestHandler = async (
   }
 
   const key = `billing:user:${userId}`;
-  const { perUser } = RATE_LIMITS?.billing;
+  const { perUser } = RATE_LIMITS?.billing ?? {};
 
   const result = await slidingWindowCheck(key, perUser?.windowMs, perUser?.max);
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
@@ -540,7 +540,7 @@ export const uploadRateLimiter: RequestHandler = async (
   }
 
   const key = `uploads:user:${userId}`;
-  const { perUser } = RATE_LIMITS?.uploads;
+  const { perUser } = RATE_LIMITS?.uploads ?? {};
 
   const result = await slidingWindowCheck(key, perUser?.windowMs, perUser?.max);
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
@@ -571,7 +571,7 @@ export const aiRateLimiter: RequestHandler = async (
   }
 
   const key = `ai:user:${userId}`;
-  const { perUser } = RATE_LIMITS?.ai;
+  const { perUser } = RATE_LIMITS?.ai ?? {};
 
   const result = await slidingWindowCheck(key, perUser?.windowMs, perUser?.max);
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
@@ -602,7 +602,7 @@ export const payoutsRateLimiter: RequestHandler = async (
   }
 
   const key = `payouts:user:${userId}`;
-  const { perUser } = RATE_LIMITS?.payouts;
+  const { perUser } = RATE_LIMITS?.payouts ?? {};
 
   const result = await slidingWindowCheck(key, perUser?.windowMs, perUser?.max);
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
@@ -633,7 +633,7 @@ export const kycRateLimiter: RequestHandler = async (
   }
 
   const key = `kyc:user:${userId}`;
-  const { perUser } = RATE_LIMITS?.kyc;
+  const { perUser } = RATE_LIMITS?.kyc ?? {};
 
   const result = await slidingWindowCheck(key, perUser?.windowMs, perUser?.max);
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
@@ -687,7 +687,7 @@ export async function getRateLimitStatus(
   }
 
   try {
-    const now = Date?.now();
+    const now = Date.now();
     const windowStart = now - config?.windowMs;
     const redisKey = `${REDIS_KEY_PREFIX}${key}`;
 

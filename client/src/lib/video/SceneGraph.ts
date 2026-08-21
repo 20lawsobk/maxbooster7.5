@@ -350,14 +350,14 @@ export class Layer {
       this._timeline.tracks?.set(property, track);
     }
 
-    const existingIndex = track?.keyframes.findIndex((kf) => kf?.time === time);
+    const existingIndex = track?.keyframes?.findIndex((kf) => kf?.time === time);
     const keyframe: KeyframeData = { time, value, easing };
 
     if (existingIndex >= 0) {
       track.keyframes[existingIndex] = keyframe;
     } else {
-      track?.keyframes.push(keyframe);
-      track?.keyframes.sort((a, b) => a?.time - b?.time);
+      track?.keyframes?.push(keyframe);
+      track?.keyframes?.sort((a, b) => a?.time - b?.time);
     }
 
     this._dirty = true;
@@ -367,10 +367,10 @@ export class Layer {
     const track = this._timeline.tracks?.get(property);
     if (!track) return false;
 
-    const index = track?.keyframes.findIndex((kf) => kf?.time === time);
+    const index = track?.keyframes?.findIndex((kf) => kf?.time === time);
     if (index >= 0) {
-      track?.keyframes.splice(index, 1);
-      if (track?.keyframes.length === 0) {
+      track?.keyframes?.splice(index, 1);
+      if (track?.keyframes?.length === 0) {
         this._timeline.tracks?.delete(property);
       }
       this._dirty = true;
@@ -384,7 +384,7 @@ export class Layer {
     time: number,
   ): number | string | number[] | undefined {
     const track = this._timeline.tracks?.get(property);
-    if (!track || track?.keyframes.length === 0) {
+    if (!track || track?.keyframes?.length === 0) {
       return this.getDefaultValue(property);
     }
 
@@ -423,14 +423,14 @@ export class Layer {
     }
 
     if (typeof kf1?.value === "string" && typeof kf2?.value === "string") {
-      if (kf1?.value.startsWith("#") && kf2?.value.startsWith("#")) {
+      if (kf1?.value?.startsWith("#") && kf2?.value?.startsWith("#")) {
         return interpolateColor(kf1?.value, kf2?.value, easedProgress);
       }
       return easedProgress < 0.5 ? kf1?.value : kf2?.value;
     }
 
     if (Array.isArray(kf1?.value) && Array.isArray(kf2?.value)) {
-      return kf1?.value.map((v, i) =>
+      return kf1?.value?.map((v, i) =>
         interpolateValue(v, kf2?.value[i], easedProgress),
       );
     }
@@ -506,7 +506,7 @@ export class Layer {
 
   clone(): Layer {
     const config: LayerConfig = {
-      id: `${this.id}_copy_${Date?.now()}`,
+      id: `${this.id}_copy_${Date.now()}`,
       type: this.type,
       zIndex: this.zIndex,
       opacity: this._state.opacity,
@@ -519,7 +519,7 @@ export class Layer {
     cloned._state.effects = this._state.effects?.map((e) => ({ ...e }));
 
     for (const [property, track] of this._timeline.tracks) {
-      cloned?._timeline.tracks?.set(property, {
+      cloned?._timeline?.tracks?.set(property, {
         property,
         keyframes: track.keyframes.map((kf) => ({ ...kf })),
       });
@@ -575,7 +575,7 @@ export class Scene {
   private onLayerChangeCallbacks: ((layers: Layer[]) => void)[] = [];
 
   constructor(options: SceneOptions, id?: string) {
-    this.id = id ?? `scene_${Date?.now()}`;
+    this.id = id ?? `scene_${Date.now()}`;
     this.name = "Untitled Scene";
     this.width = options?.width;
     this.height = options?.height;
@@ -731,7 +731,7 @@ export class Scene {
     for (const layer of this.layers.values()) {
       const tracks: SerializedTrack[] = [];
 
-      for (const [property, track] of layer?.timeline.tracks) {
+      for (const [property, track] of layer?.timeline?.tracks ?? []) {
         tracks?.push({
           property,
           keyframes: track.keyframes.map((kf) => ({
@@ -751,7 +751,7 @@ export class Scene {
           visible: layer.state.visible,
           locked: layer.state.locked,
           solo: layer.state.solo,
-          transform: { ...layer?.state.transform },
+          transform: { ...layer?.state?.transform },
           opacity: layer.state.opacity,
           blendMode: layer.state.blendMode,
           effects: layer.state.effects?.map((e) => ({ ...e })),
@@ -794,7 +794,7 @@ export class Scene {
 
     scene.name = data?.name;
 
-    for (const layerData of data?.layers) {
+    for (const layerData of data?.layers ?? []) {
       const layerConfig: LayerConfig = {
         id: layerData.id,
         type: layerData.type,
@@ -806,26 +806,26 @@ export class Scene {
 
       const layer = new Layer(layerConfig);
       layer.name = layerData?.name;
-      layer.visible = layerData?.state.visible;
-      layer.blendMode = layerData?.state.blendMode;
+      layer.visible = layerData?.state?.visible;
+      layer.blendMode = layerData?.state?.blendMode;
 
-      for (const effect of layerData?.state.effects) {
+      for (const effect of layerData?.state?.effects ?? []) {
         layer?.addEffect(effect);
       }
 
       layer?.setTimeRange(
-        layerData?.timeline.startTime,
-        layerData?.timeline.endTime,
+        layerData?.timeline?.startTime,
+        layerData?.timeline?.endTime,
       );
-      layer?.setTrim(layerData?.timeline.trimIn, layerData?.timeline.trimOut);
+      layer?.setTrim(layerData?.timeline?.trimIn, layerData?.timeline?.trimOut);
 
-      for (const track of layerData?.timeline.tracks) {
-        for (const kf of track?.keyframes) {
+      for (const track of layerData?.timeline?.tracks ?? []) {
+        for (const kf of track?.keyframes ?? []) {
           layer?.addKeyframe(track?.property, kf?.time, kf?.value, kf?.easing);
         }
       }
 
-      scene?.layers.set(layer?.id, layer);
+      scene?.layers?.set(layer?.id, layer);
     }
 
     scene.layerOrder = data?.layerOrder;
@@ -835,13 +835,13 @@ export class Scene {
 
   clone(): Scene {
     const data = this.serialize();
-    data.id = `${this.id}_copy_${Date?.now()}`;
+    data.id = `${this.id}_copy_${Date.now()}`;
     data.name = `${this.name} (Copy)`;
 
-    for (const layer of data?.layers) {
-      layer.id = `${layer?.id}_copy_${Date?.now()}`;
+    for (const layer of data?.layers ?? []) {
+      layer.id = `${layer?.id}_copy_${Date.now()}`;
     }
-    data.layerOrder = data?.layers.map((l) => l?.id);
+    data.layerOrder = data?.layers?.map((l) => l?.id);
 
     return Scene?.deserialize(data);
   }
@@ -850,8 +850,8 @@ export class Scene {
     const keyframes: Keyframe[] = [];
 
     for (const layer of this.layers.values()) {
-      for (const [property, track] of layer?.timeline.tracks) {
-        for (const kf of track?.keyframes) {
+      for (const [property, track] of layer?.timeline?.tracks ?? []) {
+        for (const kf of track?.keyframes ?? []) {
           keyframes?.push({
             layerId: layer.id,
             time: kf.time,
@@ -895,12 +895,12 @@ export class Scene {
 
     scene.name = project?.name;
 
-    for (const layerConfig of project?.layers) {
+    for (const layerConfig of project?.layers ?? []) {
       const layer = new Layer(layerConfig);
       scene?.addLayer(layer);
     }
 
-    for (const keyframe of project?.keyframes) {
+    for (const keyframe of project?.keyframes ?? []) {
       const layer = scene?.getLayer(keyframe?.layerId);
       if (layer) {
         layer?.addKeyframe(
@@ -1009,7 +1009,7 @@ export class Timeline {
 
   addMarker(time: number, label: string, color?: string): TimelineMarker {
     const marker: TimelineMarker = {
-      id: `marker_${Date?.now()}`,
+      id: `marker_${Date.now()}`,
       time,
       label,
       color: color ?? "#ff0000",

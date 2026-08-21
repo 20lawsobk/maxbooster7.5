@@ -39,7 +39,7 @@ export async function runDomainLifecycleChecks(): Promise<void> {
 
   logger.info({ now }, "[DomainLifecycle] starting lifecycle checks");
 
-  await Promise?.allSettled([
+  await Promise.allSettled([
     _markExpiringSoon(now, in30d),
     _autoRenewDueSoon(now, in7d),
     _enterGracePeriod(now),
@@ -53,7 +53,7 @@ export async function runDomainLifecycleChecks(): Promise<void> {
 // ── Step 1: active → expiring_soon ───────────────────────────────────────────
 
 async function _markExpiringSoon(now: Date, threshold: Date): Promise<void> {
-  const { rowCount } = await pool?.query(
+  const { rowCount } = (await pool?.query(
     `UPDATE claimed_domains
      SET status = 'expiring_soon', updated_at = NOW()
      WHERE status IN ('active', 'platform_managed')
@@ -61,19 +61,19 @@ async function _markExpiringSoon(now: Date, threshold: Date): Promise<void> {
        AND expires_at > $1
        AND expires_at <= $2`,
     [now, threshold],
-  );
+  )) ?? {};
 
   if (rowCount && rowCount > 0) {
     logger.info({ count: rowCount }, "[DomainLifecycle] marked expiring_soon");
 
     // Emit events for each affected domain
-    const { rows } = await pool?.query(
+    const { rows } = (await pool?.query(
       `SELECT id, user_id, domain, expires_at
        FROM claimed_domains
        WHERE status = 'expiring_soon'
          AND expires_at > $1 AND expires_at <= $2`,
       [now, threshold],
-    );
+    )) ?? {};
     for (const row of rows) {
       await emitDomainEvent(
         "DomainExpiringSoon",
@@ -89,7 +89,7 @@ async function _markExpiringSoon(now: Date, threshold: Date): Promise<void> {
 // ── Step 2: auto-renew domains expiring within 7 days ────────────────────────
 
 async function _autoRenewDueSoon(now: Date, threshold: Date): Promise<void> {
-  const { rows } = await pool?.query(
+  const { rows } = (await pool?.query(
     `SELECT id, user_id, domain, expires_at, auto_renew
      FROM claimed_domains
      WHERE status IN ('active', 'expiring_soon')
@@ -99,7 +99,7 @@ async function _autoRenewDueSoon(now: Date, threshold: Date): Promise<void> {
        AND expires_at <= $2
        AND registrar_name = 'maxbooster'`, // only internally-managed domains
     [now, threshold],
-  );
+  )) ?? {};
 
   for (const row of rows) {
     try {
@@ -128,14 +128,14 @@ async function _autoRenewDueSoon(now: Date, threshold: Date): Promise<void> {
 // ── Step 3: expired → grace ───────────────────────────────────────────────────
 
 async function _enterGracePeriod(now: Date): Promise<void> {
-  const { rowCount } = await pool?.query(
+  const { rowCount } = (await pool?.query(
     `UPDATE claimed_domains
      SET status = 'grace', updated_at = NOW()
      WHERE status IN ('active', 'expiring_soon', 'non_renewing')
        AND expires_at IS NOT NULL
        AND expires_at <= $1`,
     [now],
-  );
+  )) ?? {};
 
   if (rowCount && rowCount > 0) {
     logger.info(
@@ -143,10 +143,10 @@ async function _enterGracePeriod(now: Date): Promise<void> {
       "[DomainLifecycle] domains entered grace period (DNS still live)",
     );
 
-    const { rows } = await pool?.query(
+    const { rows } = (await pool?.query(
       `SELECT id, user_id, domain FROM claimed_domains WHERE status = 'grace' AND expires_at <= $1`,
       [now],
-    );
+    )) ?? {};
     for (const row of rows) {
       await emitDomainEvent(
         "DomainEnteredGrace",
@@ -162,7 +162,7 @@ async function _enterGracePeriod(now: Date): Promise<void> {
 // ── Step 4: grace past 30 days → expired ──────────────────────────────────────
 
 async function _expireGraceDomains(graceThreshold: Date): Promise<void> {
-  const { rows } = await pool?.query(
+  const { rows } = (await pool?.query(
     `UPDATE claimed_domains
      SET status = 'expired', auto_renew = false, updated_at = NOW()
      WHERE status = 'grace'
@@ -170,7 +170,7 @@ async function _expireGraceDomains(graceThreshold: Date): Promise<void> {
        AND expires_at <= $1
      RETURNING id, user_id, domain`,
     [graceThreshold],
-  );
+  )) ?? {};
 
   for (const row of rows) {
     await emitDomainEvent("DomainExpired", row?.id, row?.user_id, row?.domain, {
@@ -186,12 +186,12 @@ async function _expireGraceDomains(graceThreshold: Date): Promise<void> {
 // ── Step 5: remove DNS zones for expired domains ──────────────────────────────
 
 async function _cleanUpExpiredZones(): Promise<void> {
-  const { rows } = await pool?.query(
+  const { rows } = (await pool?.query(
     `SELECT cd.domain
      FROM claimed_domains cd
      JOIN dns_zones dz ON dz.domain = cd.domain
      WHERE cd.status = 'expired'`,
-  );
+  )) ?? {};
 
   for (const row of rows) {
     try {

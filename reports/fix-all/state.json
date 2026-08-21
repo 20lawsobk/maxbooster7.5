@@ -2,17 +2,15 @@
   "phases": {
     "ts-server": {
       "status": "applied",
-      "at": "2026-08-07T11:34:23.322Z",
-      "note": "native fixed=0 skipped=295; external=fix-params-string.mjs,fix-params-string2.mjs,fix-table-optional-chain.mjs,fix-singleton-optional-chain.mjs,fix-ts2724-underscore.mjs,fix-ts2551-rename-back.mjs,fix-ts2769.mjs,fix-ts2345.mjs,fix-ts2339-cast.mjs; syntax-restored=1",
-      "snapshot": "ts-server-1786102456133",
+      "at": "2026-08-21T00:50:15.109Z",
+      "note": "native fixed=0 skipped=0; external=fix-params-string.mjs,fix-params-string2.mjs,fix-table-optional-chain.mjs,fix-singleton-optional-chain.mjs,fix-ts2724-underscore.mjs,fix-ts2551-rename-back.mjs,fix-ts2769.mjs,fix-ts2345.mjs,fix-ts2339-cast.mjs; syntax-restored=0",
+      "snapshot": "ts-server-1787273409228",
       "nativeFixed": 0,
-      "syntaxRestored": [
-        "server/routes/studio.ts"
-      ]
+      "syntaxRestored": []
     },
     "verify-server": {
       "status": "measured",
-      "at": "2026-08-21T00:40:21.139Z",
+      "at": "2026-08-21T00:55:16.678Z",
       "note": "0 → 0 errors (parser: 0); top: "
     },
     "imports": {
@@ -42,7 +40,7 @@
     },
     "verify-client": {
       "status": "measured",
-      "at": "2026-08-21T00:41:19.012Z",
+      "at": "2026-08-21T00:56:11.000Z",
       "note": "0 → 0 errors (parser: 0); top: "
     }
   },
@@ -51,16 +49,16 @@
       "total": 0,
       "parser": 0,
       "top": [],
-      "at": "2026-08-21T00:40:21.064Z"
+      "at": "2026-08-21T00:55:16.607Z"
     },
     "client": {
       "total": 0,
       "parser": 0,
       "top": [],
-      "at": "2026-08-21T00:41:18.912Z"
+      "at": "2026-08-21T00:56:10.981Z"
     }
   },
   "lastSnapshot": {
-    "server": "imports-1786102575466"
+    "server": "ts-server-1787273409228"
   }
 }

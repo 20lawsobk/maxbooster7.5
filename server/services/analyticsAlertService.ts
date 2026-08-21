@@ -115,7 +115,7 @@ class AnalyticsAlertService {
   }
 
   private _sweepExpired(): void {
-    const cutoff = Date?.now() - ALERT_USER_TTL_MS;
+    const cutoff = Date.now() - ALERT_USER_TTL_MS;
     for (const [uid, ts] of this.lastAccess) {
       if (ts < cutoff) {
         this.alertStore.delete(uid);
@@ -127,7 +127,7 @@ class AnalyticsAlertService {
   }
 
   private _touch(userId: string): void {
-    this.lastAccess.set(userId, Date?.now());
+    this.lastAccess.set(userId, Date.now());
   }
 
   private _evictIfFull(): void {
@@ -176,7 +176,7 @@ class AnalyticsAlertService {
           (period?.end.getTime() - period?.start.getTime()) / 2,
       );
 
-      const [currentData, previousData] = await Promise?.all([
+      const [currentData, previousData] = await Promise.all([
         db
           .select()
           .from(dspAnalytics)
@@ -598,7 +598,7 @@ class AnalyticsAlertService {
     alertData: Omit<Alert, "id" | "createdAt" | "dismissed">,
   ): Promise<Alert> {
     const alert: Alert = {
-      id: `alert_${Date?.now()}_${randomBytes(4).toString("hex")}`,
+      id: `alert_${Date.now()}_${randomBytes(4).toString("hex")}`,
       createdAt: new Date(),
       dismissed: false,
       ...alertData,

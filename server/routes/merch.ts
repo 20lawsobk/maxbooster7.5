@@ -250,7 +250,7 @@ router.put("/orders/:id", requireAuth, async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    const { status, trackingNumber } = parsed?.data;
+    const { status, trackingNumber } = parsed?.data ?? {};
     const [updated] = await db
       .update(merchOrders)
       .set({

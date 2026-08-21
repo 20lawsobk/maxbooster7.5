@@ -465,7 +465,7 @@ class MicrotonalService {
     const scale = MICROTONAL_SCALES[scaleId] || MICROTONAL_SCALES?.major;
     const frequencies: number[] = [];
     for (let oct = 0; oct < octaves; oct++) {
-      for (const interval of scale?.intervals) {
+      for (const interval of scale?.intervals ?? []) {
         const midiNote = rootNote + Math.round(interval) + oct * 12;
         frequencies?.push(this.noteToFrequency(midiNote, tuningSystem));
       }
@@ -564,7 +564,7 @@ class MicrotonalService {
     const scale = MICROTONAL_SCALES[scaleId] || MICROTONAL_SCALES?.major;
     const notes: number[] = [];
     for (let oct = 0; oct < octaves; oct++) {
-      for (const interval of scale?.intervals) {
+      for (const interval of scale?.intervals ?? []) {
         notes?.push(rootNote + Math.round(interval) + oct * 12);
       }
     }

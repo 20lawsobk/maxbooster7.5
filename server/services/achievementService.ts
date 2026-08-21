@@ -384,7 +384,7 @@ class AchievementService {
 
     const leaderboard: LeaderboardEntry[] = [];
 
-    for (const [userId, stats] of userPointsMap?.entries()) {
+    for (const [userId, stats] of userPointsMap?.entries() ?? []) {
       const user = userMap?.get(userId);
       if (!user) continue;
 

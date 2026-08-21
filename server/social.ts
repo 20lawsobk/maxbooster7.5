@@ -441,7 +441,7 @@ export class SocialMediaService {
         threadsData,
         googleBusinessData,
         linkedinData,
-      ] = await Promise?.allSettled([
+      ] = await Promise.allSettled([
         this.getFacebookMetrics(),
         this.getInstagramMetrics(),
         this.getTwitterMetrics(),

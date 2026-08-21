@@ -238,7 +238,7 @@ export async function decodeAudioBuffer(
   signal?: AbortSignal,
 ): Promise<AudioBuffer> {
   if (decodingJobs?.has(url)) {
-    return decodingJobs?.get(url)!;
+    return decodingJobs?.get(url);
   }
 
   const job = (async () => {

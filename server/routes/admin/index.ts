@@ -64,7 +64,7 @@ router.put("/settings", async (req, res) => {
         .status(400)
         .json({ error: "Unknown setting keys", keys: unknown });
     }
-    await Promise?.all(
+    await Promise.all(
       Object.entries(body).map(([key, value]) => updateSetting(key, value)),
     );
     res.json({ success: true, message: "Settings updated" });
@@ -127,7 +127,7 @@ router.get("/users", async (req, res) => {
 
     const countSelect = db.select({ count: count() }).from(users);
 
-    const [usersList, totalResult] = await Promise?.all([
+    const [usersList, totalResult] = await Promise.all([
       whereClause
         ? baseSelect
             .where(whereClause)
@@ -178,7 +178,7 @@ router.get("/users/export", async (req, res) => {
       100_000,
     );
 
-    const [exportedUsers, totalResult] = await Promise?.all([
+    const [exportedUsers, totalResult] = await Promise.all([
       db
         .select({
           id: users.id,
@@ -443,7 +443,7 @@ router.post("/users/:userId/email", async (req, res) => {
 
 router.get("/analytics", async (_req, res) => {
   try {
-    const cacheKey = `admin:stats:${Math.floor(Date?.now() / 60000)}`;
+    const cacheKey = `admin:stats:${Math.floor(Date.now() / 60000)}`;
     const payload = await distributedCache?.getOrSet(
       cacheKey,
       async () => {
@@ -459,7 +459,7 @@ router.get("/analytics", async (_req, res) => {
           totalReleasesResult,
           subscriptionStatsResult,
           revenueResult,
-        ] = await Promise?.all([
+        ] = await Promise.all([
           db.select({ count: count() }).from(users),
           db
             .select({ count: count() })
@@ -540,7 +540,7 @@ router.get("/settings", async (_req, res) => {
     };
 
     settings?.forEach((s) => {
-      const key = s?.key.replace("platform.", "");
+      const key = s?.key?.replace("platform.", "");
       try {
         settingsMap[key] = JSON.parse((s?.value as string));
       } catch {
@@ -641,7 +641,7 @@ router.get("/activity", async (req, res) => {
     const { limit = "20" } = req.query;
     const limitNum = Math.min(parseInt(limit as string) || 20, 100);
 
-    const [recentUsers, recentReleases, pendingFixers] = await Promise?.all([
+    const [recentUsers, recentReleases, pendingFixers] = await Promise.all([
       db
         .select({
           id: users.id,
@@ -679,27 +679,27 @@ router.get("/activity", async (req, res) => {
     ]);
 
     const activities = [
-      ...recentUsers?.map((u) => ({
+      ...(recentUsers?.map((u) => ({
         type: "success",
         action: `New user registered: ${u?.email || u?.username}`,
         user: "System",
         time: formatTimeAgo(u?.createdAt),
         timestamp: u.createdAt,
-      })),
-      ...recentReleases?.map((r) => ({
+      })) ?? []),
+      ...(recentReleases?.map((r) => ({
         type: "info",
         action: `Release submitted: ${r?.title}`,
         user: "System",
         time: formatTimeAgo(r?.createdAt),
         timestamp: r.createdAt,
-      })),
-      ...pendingFixers?.map((f) => ({
+      })) ?? []),
+      ...(pendingFixers?.map((f) => ({
         type: "warning",
         action: `Artist fixer request pending: ${f?.artistName}`,
         user: "System",
         time: formatTimeAgo(f?.fixerRequestedAt),
         timestamp: f.fixerRequestedAt,
-      })),
+      })) ?? []),
     ]
       .sort(
         (a, b) =>
@@ -748,7 +748,7 @@ router.get("/metrics", async (_req, res) => {
     const freeMem = os?.freemem();
     const memPercent = Math.round(((totalMem - freeMem) / (totalMem || 1)) * 100);
 
-    const [activeUsersResult] = await Promise?.all([
+    const [activeUsersResult] = await Promise.all([
       db
         .select({ count: count() })
         .from(users)

@@ -169,7 +169,7 @@ class InfiniteCache extends EventEmitter {
     if (!metadata?.ttl) return false;
     const createdTime = new Date(metadata?.createdAt).getTime();
     const expiresAt = createdTime + metadata?.ttl * 1000;
-    return Date?.now() > expiresAt;
+    return Date.now() > expiresAt;
   }
 
   async get(key: string): Promise<Buffer | null> {
@@ -258,7 +258,7 @@ class InfiniteCache extends EventEmitter {
     this.evictMemoryIfNeeded();
 
     // Update tag index
-    for (const tag of entry?.metadata.tags) {
+    for (const tag of entry?.metadata?.tags ?? []) {
       if (!this.tagIndex.has(tag)) {
         this.tagIndex.set(tag, new Set());
       }
@@ -284,7 +284,7 @@ class InfiniteCache extends EventEmitter {
 
     // Remove from tag index
     if (entry) {
-      for (const tag of entry?.metadata.tags) {
+      for (const tag of entry?.metadata?.tags ?? []) {
         const tagKeys = this.tagIndex.get(tag);
         if (tagKeys) {
           tagKeys?.delete(key);
@@ -375,8 +375,8 @@ class InfiniteCache extends EventEmitter {
 
     const entries = Array.from(this.memoryCache.entries()).sort(
       (a, b) =>
-        a[1].metadata?.lastAccessed.getTime() -
-        b[1].metadata?.lastAccessed.getTime(),
+        a[1].metadata?.lastAccessed?.getTime() -
+        b[1].metadata?.lastAccessed?.getTime(),
     );
 
     const toEvict = entries?.slice(0, entries?.length - this.maxMemoryItems);
@@ -386,7 +386,7 @@ class InfiniteCache extends EventEmitter {
   }
 
   private logAccess(key: string): void {
-    const now = Date?.now();
+    const now = Date.now();
     if (!this.accessLog.has(key)) {
       this.accessLog.set(key, []);
     }
@@ -573,8 +573,8 @@ class VersionInfinity extends EventEmitter {
     return {
       v1Size: entry1.metadata.size,
       v2Size: entry2.metadata.size,
-      sizeDiff: entry2.metadata.size - entry1?.metadata.size,
-      checksumMatch: entry1.metadata.checksum === entry2?.metadata.checksum,
+      sizeDiff: entry2.metadata.size - entry1?.metadata?.size,
+      checksumMatch: entry1.metadata.checksum === entry2?.metadata?.checksum,
     };
   }
 
@@ -930,10 +930,10 @@ class PredictivePreloader extends EventEmitter {
 
     for (const pattern of patterns) {
       const contextMatch = currentContext?.filter((c) =>
-        pattern?.resources.includes(c),
+        pattern?.resources?.includes(c),
       ).length;
       if (contextMatch > 0) {
-        for (const resource of pattern?.resources) {
+        for (const resource of pattern?.resources ?? []) {
           if (!currentContext?.includes(resource)) {
             predictions?.set(
               resource,
@@ -1055,7 +1055,7 @@ export class UltraQualityEngine extends EventEmitter {
     logger.info(`   Compression Level: ${this.config.compressionLevel}/9`);
     logger.info("============================================\n");
 
-    await Promise?.all([
+    await Promise.all([
       this.cache.initialize(),
       this.versions.initialize(),
       this.aiVault.initialize(),
@@ -1130,7 +1130,7 @@ export class UltraQualityEngine extends EventEmitter {
   }
 
   async close(): Promise<void> {
-    await Promise?.all([
+    await Promise.all([
       this.cache.close(),
       this.versions.close(),
       this.aiVault.close(),

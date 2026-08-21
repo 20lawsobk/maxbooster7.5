@@ -59,7 +59,7 @@ let _statusCache: { value: TrainingStatus; expiresAt: number } | null = null;
 const STATUS_CACHE_TTL_MS = 30_000;
 
 export function getDiffusionTrainingStatus(): TrainingStatus {
-  const now = Date?.now();
+  const now = Date.now();
   if (_statusCache && now < _statusCache?.expiresAt) return _statusCache?.value;
 
   const trained = fs?.existsSync(WEIGHTS_PATH) && fs?.existsSync(META_PATH);
@@ -68,7 +68,7 @@ export function getDiffusionTrainingStatus(): TrainingStatus {
     value = { trained: false };
   } else {
     try {
-      const meta = JSON?.parse(fs?.readFileSync(META_PATH, "utf8"));
+      const meta = JSON.parse(fs?.readFileSync(META_PATH, "utf8"));
       const stat = fs?.statSync(WEIGHTS_PATH);
       value = {
         trained: true,
@@ -145,7 +145,7 @@ export function generateDiffusionFrames(
     } = opts;
 
     const outDir =
-      opts?.outputDir ?? path?.join(os?.tmpdir(), `diffusion_${Date?.now()}`);
+      opts?.outputDir ?? path?.join(os?.tmpdir(), `diffusion_${Date.now()}`);
 
     fs?.mkdirSync(outDir, { recursive: true });
 
@@ -166,7 +166,7 @@ export function generateDiffusionFrames(
 
     if (forceRetrain) args?.push("--train");
 
-    const t0 = Date?.now();
+    const t0 = Date.now();
     const proc = spawn(PYTHON, args, { stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
@@ -201,7 +201,7 @@ export function generateDiffusionFrames(
       try {
         const lines = stdout?.trim().split("\n");
         const jsonLine = lines?.reverse().find((l) => l?.startsWith("{"));
-        if (jsonLine) modelMeta = JSON?.parse(jsonLine);
+        if (jsonLine) modelMeta = JSON.parse(jsonLine);
       } catch {
         /* ignore */
       }
@@ -389,7 +389,7 @@ export async function* streamPyTorchDiffusion(
   let buffer = "";
 
   while (true) {
-    const { value, done } = await reader?.read();
+    const { value, done } = await (reader?.read() ?? {});
     if (done) break;
     buffer += decoder?.decode(value, { stream: true });
 
@@ -399,7 +399,7 @@ export async function* streamPyTorchDiffusion(
     for (const line of lines) {
       if (!line?.startsWith("data: ")) continue;
       try {
-        const evt = JSON?.parse(line?.slice(6));
+        const evt = JSON.parse(line?.slice(6));
         yield evt;
         if (evt?.done) return;
       } catch {

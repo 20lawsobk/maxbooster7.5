@@ -801,15 +801,15 @@ export class DSPPolicyChecker {
     errors?.push(...metadataErrors);
 
     const coverArtResult = await this.checkCoverArtCompliance(release, policy);
-    errors?.push(...coverArtResult?.errors);
-    warnings?.push(...coverArtResult?.warnings);
+    errors?.push(...(coverArtResult?.errors ?? []));
+    warnings?.push(...(coverArtResult?.warnings ?? []));
 
     const audioErrors = this.checkAudioCompliance(release, policy);
     errors?.push(...audioErrors);
 
     const timingResult = this.checkReleaseTiming(release, policy);
-    errors?.push(...timingResult?.errors);
-    warnings?.push(...timingResult?.warnings);
+    errors?.push(...(timingResult?.errors ?? []));
+    warnings?.push(...(timingResult?.warnings ?? []));
 
     return {
       dsp,
@@ -872,7 +872,7 @@ export class DSPPolicyChecker {
     }
 
     const titleLower = (release?.title || "").toLowerCase();
-    for (const term of meta?.bannedTerms) {
+    for (const term of meta?.bannedTerms ?? []) {
       if (titleLower?.includes(term?.toLowerCase())) {
         errors?.push({
           category: "metadata",

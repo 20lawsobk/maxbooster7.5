@@ -169,7 +169,7 @@ export class OrchestralStringsSynth implements SynthesizerEngine {
         const envValue = section?.envelope.process();
         let sectionSample = 0;
 
-        for (const osc of section?.oscillators) {
+        for (const osc of section?.oscillators ?? []) {
           const currentFreq = this.frequency * (1 + vibrato);
           osc?.setFrequency(
             currentFreq * (1 + (Math.random() - 0.5) * 0.001),
@@ -881,7 +881,7 @@ export class CinematicStringsSynth implements SynthesizerEngine {
         const envValue = layer?.envelope.process();
         let layerSample = 0;
 
-        for (const osc of layer?.oscillators) {
+        for (const osc of layer?.oscillators ?? []) {
           const currentFreq =
             this.frequency * (1 + vibrato + (Math.random() - 0.5) * 0.001);
           osc?.setFrequency(currentFreq, this.sampleRate);

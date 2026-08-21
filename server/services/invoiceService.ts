@@ -375,7 +375,7 @@ class InvoiceService {
       discountType: data.discountType,
       total: Math.round(total * 100) / 100,
       currency,
-      dueDate: data.dueDate || new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000),
+      dueDate: data.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       issuedDate: new Date(),
       notes: data.notes,
       terms: data.terms || "Payment is due within 30 days of invoice date.",
@@ -579,7 +579,7 @@ class InvoiceService {
     );
     y += 7;
 
-    for (const tax of invoice?.taxes) {
+    for (const tax of invoice?.taxes ?? []) {
       doc?.text(`${tax?.taxType.toUpperCase()} (${tax?.taxRate}%):`, totalsX, y);
       doc?.text(
         this.formatCurrency(tax?.taxAmount, invoice?.currency),

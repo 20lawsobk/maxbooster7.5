@@ -265,7 +265,7 @@ export class RecoupmentService {
     input: ProRataRecoupmentInput,
   ): Promise<WaterfallResult & { notifications: RecoupmentNotification[] }> {
     const accounts: RecoupmentAccount[] = [];
-    for (const accountInput of input?.accounts) {
+    for (const accountInput of input?.accounts ?? []) {
       const account = await this.getAccountById(accountInput?.accountId);
       if (account && account?.isActive) {
         accounts?.push(account);

@@ -54,7 +54,7 @@ async function runQuickSimulation() {
   fs?.writeFileSync(reportPath, generateReport(result));
   logger.info(`\n📝 Report saved to: ${reportPath}\n`);
 
-  return result?.systemTests.failed === 0;
+  return result?.systemTests?.failed === 0;
 }
 
 async function runPeriodSimulation(periodName: string) {
@@ -95,7 +95,7 @@ async function runPeriodSimulation(periodName: string) {
   fs?.writeFileSync(reportPath, generateReport(result));
   logger.info(`\n📝 Report saved to: ${reportPath}\n`);
 
-  return result?.systemTests.failed === 0;
+  return result?.systemTests?.failed === 0;
 }
 
 async function runFullSimulation() {
@@ -110,7 +110,7 @@ async function runFullSimulation() {
   logger.info(`\n📝 Full lifecycle report saved to: ${reportPath}\n`);
 
   const allPassed = Object.values(results).every(
-    (r) => r?.systemTests.failed === 0,
+    (r) => r?.systemTests?.failed === 0,
   );
   return allPassed;
 }
@@ -121,7 +121,7 @@ function generateReport(result: Record<string, unknown>): string {
   const testStatus =
     (systemTests as any)?.failed === 0
       ? "✅ ALL TESTS PASSED"
-      : (systemTests as any)?.criticalIssues.length > 0
+      : (systemTests as any)?.criticalIssues?.length > 0
         ? "❌ CRITICAL ISSUES FOUND"
         : "⚠️ WARNINGS DETECTED";
 
@@ -143,10 +143,10 @@ function generateReport(result: Record<string, unknown>): string {
 | System Tests | ${(systemTests as any)?.passed} | ${(systemTests as any)?.failed} | ${(systemTests as any)?.warnings} |
 
 ${
-  (systemTests as any)?.criticalIssues.length > 0
+  (systemTests as any)?.criticalIssues?.length > 0
     ? `
 ### Critical Issues
-${(systemTests as any)?.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join("\n")}
+${(systemTests as any)?.criticalIssues?.map((issue: string) => `- ❌ ${issue}`).join("\n")}
 `
     : ""
 }
@@ -157,46 +157,46 @@ ${(systemTests as any)?.criticalIssues.map((issue: string) => `- ❌ ${issue}`).
 
 | KPI | Value | Status |
 |-----|-------|--------|
-| User Growth Rate | ${(kpis as any)?.userGrowthRate.toFixed(1)}% | ${(kpis as any)?.userGrowthRate > 0 ? "✅" : "❌"} |
-| Revenue Growth Rate | ${(kpis as any)?.revenueGrowthRate.toFixed(1)}% | ${(kpis as any)?.revenueGrowthRate > 0 ? "✅" : "❌"} |
-| Churn Rate | ${(kpis as any)?.churnRate.toFixed(2)}% | ${(kpis as any)?.churnRate < 5 ? "✅" : (kpis as any)?.churnRate < 10 ? "⚠️" : "❌"} |
-| LTV | $${(kpis as any)?.ltv.toFixed(2)} | ${(kpis as any)?.ltv > 100 ? "✅" : "⚠️"} |
+| User Growth Rate | ${(kpis as any)?.userGrowthRate?.toFixed(1)}% | ${(kpis as any)?.userGrowthRate > 0 ? "✅" : "❌"} |
+| Revenue Growth Rate | ${(kpis as any)?.revenueGrowthRate?.toFixed(1)}% | ${(kpis as any)?.revenueGrowthRate > 0 ? "✅" : "❌"} |
+| Churn Rate | ${(kpis as any)?.churnRate?.toFixed(2)}% | ${(kpis as any)?.churnRate < 5 ? "✅" : (kpis as any)?.churnRate < 10 ? "⚠️" : "❌"} |
+| LTV | $${(kpis as any)?.ltv?.toFixed(2)} | ${(kpis as any)?.ltv > 100 ? "✅" : "⚠️"} |
 | LTV/CAC Ratio | ${((kpis as any)?.ltv / (kpis as any)?.cac).toFixed(2)} | ${(kpis as any)?.ltv / (kpis as any)?.cac > 3 ? "✅" : (kpis as any)?.ltv / (kpis as any)?.cac > 1 ? "⚠️" : "❌"} |
-| Viral Coefficient | ${(kpis as any)?.viralCoefficient.toFixed(2)} | ${(kpis as any)?.viralCoefficient > 0.5 ? "✅" : "⚠️"} |
-| NPS Score | ${(kpis as any)?.nps.toFixed(0)} | ${(kpis as any)?.nps > 50 ? "✅" : (kpis as any)?.nps > 0 ? "⚠️" : "❌"} |
-| System Uptime | ${(kpis as any)?.systemUptime.toFixed(2)}% | ${(kpis as any)?.systemUptime > 99.9 ? "✅" : (kpis as any)?.systemUptime > 99 ? "⚠️" : "❌"} |
-| Autonomous Efficiency | ${(kpis as any)?.autonomousEfficiency.toFixed(1)}% | ${(kpis as any)?.autonomousEfficiency > 90 ? "✅" : "⚠️"} |
+| Viral Coefficient | ${(kpis as any)?.viralCoefficient?.toFixed(2)} | ${(kpis as any)?.viralCoefficient > 0.5 ? "✅" : "⚠️"} |
+| NPS Score | ${(kpis as any)?.nps?.toFixed(0)} | ${(kpis as any)?.nps > 50 ? "✅" : (kpis as any)?.nps > 0 ? "⚠️" : "❌"} |
+| System Uptime | ${(kpis as any)?.systemUptime?.toFixed(2)}% | ${(kpis as any)?.systemUptime > 99.9 ? "✅" : (kpis as any)?.systemUptime > 99 ? "⚠️" : "❌"} |
+| Autonomous Efficiency | ${(kpis as any)?.autonomousEfficiency?.toFixed(1)}% | ${(kpis as any)?.autonomousEfficiency > 90 ? "✅" : "⚠️"} |
 
 ---
 
 ## Final Metrics
 
 ### Users
-- **Total Users:** ${(finalMetrics as any)?.users.total?.toLocaleString()}
-- **Active Users:** ${(finalMetrics as any)?.users.active?.toLocaleString()}
-- **Free:** ${(finalMetrics as any)?.users.byTier?.free} | **Basic:** ${(finalMetrics as any)?.users.byTier?.basic} | **Pro:** ${(finalMetrics as any)?.users.byTier?.pro} | **Enterprise:** ${(finalMetrics as any)?.users.byTier?.enterprise}
+- **Total Users:** ${(finalMetrics as any)?.users?.total?.toLocaleString()}
+- **Active Users:** ${(finalMetrics as any)?.users?.active?.toLocaleString()}
+- **Free:** ${(finalMetrics as any)?.users?.byTier?.free} | **Basic:** ${(finalMetrics as any)?.users?.byTier?.basic} | **Pro:** ${(finalMetrics as any)?.users?.byTier?.pro} | **Enterprise:** ${(finalMetrics as any)?.users?.byTier?.enterprise}
 
 ### Revenue
-- **MRR:** $${(finalMetrics as any)?.revenue.mrr?.toFixed(2)}
-- **ARR:** $${(finalMetrics as any)?.revenue.arr?.toFixed(2)}
-- **Lifetime Revenue:** $${(finalMetrics as any)?.revenue.lifetime?.toFixed(2)}
+- **MRR:** $${(finalMetrics as any)?.revenue?.mrr?.toFixed(2)}
+- **ARR:** $${(finalMetrics as any)?.revenue?.arr?.toFixed(2)}
+- **Lifetime Revenue:** $${(finalMetrics as any)?.revenue?.lifetime?.toFixed(2)}
 
 ### Content & Streams
-- **Total Streams:** ${(finalMetrics as any)?.streams.total?.toLocaleString()}
-- **Viral Releases:** ${(finalMetrics as any)?.streams.viralReleases}
-- **Avg Streams/Release:** ${(finalMetrics as any)?.streams.avgPerRelease?.toFixed(0)}
+- **Total Streams:** ${(finalMetrics as any)?.streams?.total?.toLocaleString()}
+- **Viral Releases:** ${(finalMetrics as any)?.streams?.viralReleases}
+- **Avg Streams/Release:** ${(finalMetrics as any)?.streams?.avgPerRelease?.toFixed(0)}
 
 ### Platform Health
-- **Uptime:** ${(finalMetrics as any)?.platform.uptime?.toFixed(2)}%
-- **Response Time:** ${(finalMetrics as any)?.platform.responseTime}ms
-- **Error Rate:** ${((finalMetrics as any)?.platform.errorRate * 100).toFixed(3)}%
+- **Uptime:** ${(finalMetrics as any)?.platform?.uptime?.toFixed(2)}%
+- **Response Time:** ${(finalMetrics as any)?.platform?.responseTime}ms
+- **Error Rate:** ${((finalMetrics as any)?.platform?.errorRate * 100).toFixed(3)}%
 
 ### Autonomous Systems Performance
-- **Posts Auto-Published:** ${(finalMetrics as any)?.autonomous.postsAutoPublished?.toLocaleString()}
-- **Campaigns Auto-Launched:** ${(finalMetrics as any)?.autonomous.campaignsAutoLaunched?.toLocaleString()}
-- **Releases Auto-Distributed:** ${(finalMetrics as any)?.autonomous.releasesAutoDistributed?.toLocaleString()}
-- **AI Decisions Made:** ${(finalMetrics as any)?.autonomous.decisionsAutoMade?.toLocaleString()}
-- **Human Interventions Required:** ${(finalMetrics as any)?.autonomous.interventionsRequired}
+- **Posts Auto-Published:** ${(finalMetrics as any)?.autonomous?.postsAutoPublished?.toLocaleString()}
+- **Campaigns Auto-Launched:** ${(finalMetrics as any)?.autonomous?.campaignsAutoLaunched?.toLocaleString()}
+- **Releases Auto-Distributed:** ${(finalMetrics as any)?.autonomous?.releasesAutoDistributed?.toLocaleString()}
+- **AI Decisions Made:** ${(finalMetrics as any)?.autonomous?.decisionsAutoMade?.toLocaleString()}
+- **Human Interventions Required:** ${(finalMetrics as any)?.autonomous?.interventionsRequired}
 
 ---
 
@@ -251,7 +251,7 @@ function generateFullReport(results: Record<string, any>): string {
       continue;
     }
 
-    report += `| ${period} | ${result?.config.daysToSimulate}d | ${result?.finalMetrics.users?.total.toLocaleString()} | $${result?.finalMetrics.revenue?.mrr.toFixed(2)} | ${result?.finalMetrics.platform?.uptime.toFixed(2)}% | ${result?.systemTests.passed} | ${result?.systemTests.failed} |\n`;
+    report += `| ${period} | ${result?.config?.daysToSimulate}d | ${result?.finalMetrics?.users?.total?.toLocaleString()} | $${result?.finalMetrics?.revenue?.mrr?.toFixed(2)} | ${result?.finalMetrics?.platform?.uptime?.toFixed(2)}% | ${result?.systemTests?.passed} | ${result?.systemTests?.failed} |\n`;
   }
 
   report += `
@@ -283,16 +283,16 @@ function generateFullReport(results: Record<string, any>): string {
 `;
   for (const s of snapshots) {
     const bars = "█".repeat(Math.min(50, Math.floor(s?.users / 100)));
-    report += `${s?.period.padEnd(12)} | ${bars} ${s?.users.toLocaleString()}\n`;
+    report += `${s?.period?.padEnd(12)} | ${bars} ${s?.users?.toLocaleString()}\n`;
   }
 
   report += `
 ### Revenue Growth Over Time
 `;
-  const maxMRR = Math.max(...snapshots?.map((s) => s?.mrr));
+  const maxMRR = Math.max(...(snapshots?.map((s) => s?.mrr) ?? []));
   for (const s of snapshots) {
     const bars = "█".repeat(Math.min(50, Math.floor((s?.mrr / maxMRR) * 50)));
-    report += `${s?.period.padEnd(12)} | ${bars} $${s?.mrr.toFixed(2)}\n`;
+    report += `${s?.period?.padEnd(12)} | ${bars} $${s?.mrr?.toFixed(2)}\n`;
   }
 
   report += `
@@ -305,7 +305,7 @@ function generateFullReport(results: Record<string, any>): string {
   const allIssues = new Set<string>();
   for (const [period, result] of periods) {
     if (result?.systemTests?.criticalIssues) {
-      for (const issue of result?.systemTests.criticalIssues) {
+      for (const issue of result?.systemTests?.criticalIssues ?? []) {
         allIssues?.add(`[${period}] ${issue}`);
       }
     }
@@ -331,7 +331,7 @@ Based on the full lifecycle simulation:
   const recommendations = new Set<string>();
   for (const [_, result] of periods) {
     if (result?.recommendations) {
-      for (const rec of result?.recommendations) {
+      for (const rec of result?.recommendations ?? []) {
         recommendations?.add(rec);
       }
     }

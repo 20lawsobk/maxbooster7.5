@@ -58,7 +58,7 @@ router.post("/releases/submit", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled0 = await Promise?.allSettled(
+    const _settled0 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(distroReleases)
@@ -104,7 +104,7 @@ router.post("/releases/takedown", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled1 = await Promise?.allSettled(
+    const _settled1 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(distroReleases)
@@ -158,7 +158,7 @@ router.put("/releases/update", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled2 = await Promise?.allSettled(
+    const _settled2 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(distroReleases)
@@ -204,7 +204,7 @@ router.post("/releases/delete", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled3 = await Promise?.allSettled(
+    const _settled3 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(distroReleases)
@@ -253,7 +253,7 @@ router.post("/posts/schedule", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled4 = await Promise?.allSettled(
+    const _settled4 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(posts)
@@ -297,7 +297,7 @@ router.post("/posts/delete", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled5 = await Promise?.allSettled(
+    const _settled5 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .delete(posts)
@@ -348,7 +348,7 @@ router.put("/posts/update", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled6 = await Promise?.allSettled(
+    const _settled6 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(posts)
@@ -392,7 +392,7 @@ router.post("/files/delete", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled7 = await Promise?.allSettled(
+    const _settled7 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(userStorageFiles)
@@ -442,7 +442,7 @@ router.post("/files/move", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled8 = await Promise?.allSettled(
+    const _settled8 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(userStorageFiles)
@@ -491,7 +491,7 @@ router.post("/files/download", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled9 = await Promise?.allSettled(
+    const _settled9 = await Promise.allSettled(
       ids?.map(async (id) => {
         const [file] = await db
           .select({ id: userStorageFiles.id })
@@ -556,7 +556,7 @@ router.put("/files/update", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled10 = await Promise?.allSettled(
+    const _settled10 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(userStorageFiles)
@@ -615,7 +615,7 @@ router.put("/marketplace/update", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled11 = await Promise?.allSettled(
+    const _settled11 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(listings)
@@ -659,7 +659,7 @@ router.post("/marketplace/delete", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled12 = await Promise?.allSettled(
+    const _settled12 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(listings)
@@ -717,7 +717,7 @@ router.post("/analytics/export", async (req: Request, res: Response) => {
       )
       .orderBy(desc(analytics.date));
 
-    const exportId = `export_${Date?.now()}`;
+    const exportId = `export_${Date.now()}`;
 
     batchJobs?.set(exportId, {
       status: "completed",
@@ -772,7 +772,7 @@ router.get(
       ];
       const csvLines = [
         headers?.join(","),
-        ...rows?.map((r) =>
+        ...(rows?.map((r) =>
           headers
             .map((h) => {
               const val = r[h];
@@ -781,7 +781,7 @@ router.get(
               return String(val).replace(/,/g, ";");
             })
             .join(","),
-        ),
+        ) ?? []),
       ];
 
       res.setHeader("Content-Type", "text/csv");
@@ -871,7 +871,7 @@ const batchJobs: Map<
 const BATCH_JOB_TTL_MS = 30 * 60 * 1000;
 setInterval(
   () => {
-    const cutoff = Date?.now() - BATCH_JOB_TTL_MS;
+    const cutoff = Date.now() - BATCH_JOB_TTL_MS;
     for (const [id, job] of batchJobs) {
       if (
         job?.startTime < cutoff ||
@@ -901,7 +901,7 @@ router.post("/tracks/move", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled13 = await Promise?.allSettled(
+    const _settled13 = await Promise.allSettled(
       ids?.map(async (id) => {
         const updatePayload: Record<string, unknown> = {};
         if (targetProjectId) updatePayload.projectId = targetProjectId;
@@ -948,7 +948,7 @@ router.post("/tracks/tag", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled14 = await Promise?.allSettled(
+    const _settled14 = await Promise.allSettled(
       ids?.map(async (id) => {
         const [existing] = await db
           .select({ metadata: studioTracks.metadata })
@@ -1062,7 +1062,7 @@ router.post("/tracks/delete", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled15 = await Promise?.allSettled(
+    const _settled15 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .delete(studioTracks)
@@ -1115,7 +1115,7 @@ router.put("/beats/update", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled16 = await Promise?.allSettled(
+    const _settled16 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(beats)
@@ -1159,7 +1159,7 @@ router.post("/beats/delete", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled17 = await Promise?.allSettled(
+    const _settled17 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(beats)
@@ -1203,7 +1203,7 @@ router.post("/posts/approve", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const _settled18 = await Promise?.allSettled(
+    const _settled18 = await Promise.allSettled(
       ids?.map(async (id) => {
         const result = await db
           .update(posts)

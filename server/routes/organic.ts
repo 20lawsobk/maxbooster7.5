@@ -100,9 +100,9 @@ router.post(
         },
         recommendations: score.recommendations,
         predictedReach: {
-          low: Math.round(score?.predictedEngagement.likes * 0.5),
-          mid: Math.round(score?.predictedEngagement.likes),
-          high: Math.round(score?.predictedEngagement.likes * 2),
+          low: Math.round(score?.predictedEngagement?.likes * 0.5),
+          mid: Math.round(score?.predictedEngagement?.likes),
+          high: Math.round(score?.predictedEngagement?.likes * 2),
         },
       };
 
@@ -183,8 +183,8 @@ router.get(
 
       const platforms = ["tiktok", "instagram", "youtube", "twitter"];
 
-      const [healthResults, timingResults] = await Promise?.all([
-        Promise?.all(
+      const [healthResults, timingResults] = await Promise.all([
+        Promise.all(
           platforms?.map((platform) =>
             algorithmIntelligenceService?.checkAlgorithmHealth(platform, userId),
           ),
@@ -256,7 +256,7 @@ router.get(
       for (const platform of platforms) {
         const timing = timingResults[platform];
         if (timing) {
-          for (const slot of timing?.bestTimes.slice(0, 10)) {
+          for (const slot of timing?.bestTimes?.slice(0, 10) ?? []) {
             heatmapData?.push({
               dayOfWeek: slot.dayOfWeek,
               hour: slot.hour,
@@ -326,7 +326,7 @@ router.post(
         ? variantResult
         : variantResult?.variants || [];
 
-      const variantsWithScores = await Promise?.all(
+      const variantsWithScores = await Promise.all(
         variants?.map(async (variant: Record<string, unknown>) => {
           const score = await viralScoringService?.scoreContent({
             ...contentData,
@@ -337,9 +337,9 @@ router.post(
             ...variant,
             viralScore: score.overall,
             predictedReach: {
-              low: Math.round(score?.predictedEngagement.likes * 0.5),
-              mid: Math.round(score?.predictedEngagement.likes),
-              high: Math.round(score?.predictedEngagement.likes * 2),
+              low: Math.round(score?.predictedEngagement?.likes * 0.5),
+              mid: Math.round(score?.predictedEngagement?.likes),
+              high: Math.round(score?.predictedEngagement?.likes * 2),
             },
           };
         }),
@@ -384,7 +384,7 @@ router.get(
         return res.status(400).json({ error: "Invalid platform" });
       }
 
-      const [health, insights, patterns] = await Promise?.all([
+      const [health, insights, patterns] = await Promise.all([
         algorithmIntelligenceService?.checkAlgorithmHealth(
           platform as string,
           userId,

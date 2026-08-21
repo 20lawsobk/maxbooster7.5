@@ -31,7 +31,7 @@ router.use(payoutsRateLimiter);
 router.get("/", async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-    const [balance, history] = await Promise?.all([
+    const [balance, history] = await Promise.all([
       instantPayoutService
         .calculateAvailableBalance(req.user.id)
         .catch(() => 0),
@@ -574,7 +574,7 @@ router.get("/report", async (req, res) => {
     };
     const startDate = parseDate(
       req.query.startDate,
-      new Date(Date?.now() - 365 * 24 * 60 * 60 * 1000),
+      new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
     );
     const endDate = parseDate(req.query.endDate, new Date());
     if (endDate < startDate) {

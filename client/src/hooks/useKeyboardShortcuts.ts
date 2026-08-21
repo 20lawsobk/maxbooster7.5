@@ -35,7 +35,7 @@ export function useKeyboardShortcuts(
         return;
       }
 
-      for (const shortcut of shortcutsRef?.current) {
+      for (const shortcut of shortcutsRef?.current ?? []) {
         const ctrlMatch =
           shortcut?.ctrl === undefined ||
           shortcut?.ctrl === (e?.ctrlKey || e?.metaKey);
@@ -61,8 +61,8 @@ export function useKeyboardShortcuts(
 
   useEffect(() => {
     if (enabled) {
-      window?.addEventListener("keydown", handleKeyDown);
-      return () => window?.removeEventListener("keydown", handleKeyDown);
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
     }
   }, [handleKeyDown, enabled]);
 
@@ -102,8 +102,8 @@ export function useShortcutOverlay() {
       }
     };
 
-    window?.addEventListener("keydown", handleKeyDown);
-    return () => window?.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
   return { isOpen, setIsOpen, toggle: () => setIsOpen((prev) => !prev) };

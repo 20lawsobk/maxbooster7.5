@@ -40,7 +40,7 @@ router.get(
       const reader = dbRead ?? db;
 
       const [userResult, projectsResult, notificationsResult, releasesResult] =
-        await Promise?.allSettled([
+        await Promise.allSettled([
           reader
             .select({
               id: users.id,

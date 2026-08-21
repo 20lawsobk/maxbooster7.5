@@ -433,10 +433,10 @@ async function precomputeMusicalIntelligence(
         musicMeta?.energyCurve.length
       : 0.6;
   const energyPeak =
-    musicMeta?.energyCurve.length > 0 ? Math.max(...musicMeta?.energyCurve) : 0.9;
+    musicMeta?.energyCurve.length > 0 ? Math.max(...(musicMeta?.energyCurve ?? [])) : 0.9;
   const energyVariance =
     musicMeta?.energyCurve.length > 1
-      ? energyPeak - Math.min(...musicMeta?.energyCurve)
+      ? energyPeak - Math.min(...(musicMeta?.energyCurve ?? []))
       : 0.3;
 
   const plannerInput = {
@@ -472,9 +472,9 @@ async function precomputeMusicalIntelligence(
   const beatIndices = Array.from({ length: beatCount }, (_, i) => i);
   const secondsPerBeat = 60 / musicMeta?.bpm;
 
-  const [styleResults, alignmentResults] = await Promise?.all([
+  const [styleResults, alignmentResults] = await Promise.all([
     // All style selections in parallel
-    Promise?.all(
+    Promise.all(
       beatIndices?.map(async (i) => {
         const sel = await getStyleSelector().catch(() => null);
         if (!sel) return null;
@@ -499,7 +499,7 @@ async function precomputeMusicalIntelligence(
       }),
     ),
     // All alignment computations in parallel
-    Promise?.all(
+    Promise.all(
       beatIndices?.map(async (i) => {
         const defaultStart = i * secondsPerBeat * 4;
         const energyAtBeat =
@@ -812,7 +812,7 @@ async function keyframesStage(
   const isVertical = ["tiktok", "reels", "shorts"].includes(brief?.platform);
 
   // All keyframe generation in parallel — style data already pre-computed in ctx?.styleMap
-  const keyframePaths = await Promise?.all(
+  const keyframePaths = await Promise.all(
     plan?.beats.map(async (beat, i) => {
       // Pull from context — no re-computation needed
       const styleResult = ctx?.styleMap.get(i) ?? null;
@@ -1064,8 +1064,8 @@ async function assemblyStage(
       logger.info(
         `[CreativeModel] Stage 6: DiT-24 relay → MaxCore job ${relayResp?.job_id} — polling`,
       );
-      const deadline = Date?.now() + 180_000;
-      while (Date?.now() < deadline) {
+      const deadline = Date.now() + 180_000;
+      while (Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 5_000));
         const poll = (await maxcoreGet(
           `/video-job/${relayResp?.job_id}`,
@@ -1127,8 +1127,8 @@ async function assemblyStage(
       logger.info(
         `[CreativeModel] Stage 6: MaxCore async job ${jobResp?.job_id} — polling`,
       );
-      const deadline = Date?.now() + 180_000;
-      while (Date?.now() < deadline) {
+      const deadline = Date.now() + 180_000;
+      while (Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 5_000));
         const poll = await maxcoreGet(`/video-job/${jobResp?.job_id}`);
         if ((poll as any)?.status === "done" && (poll as any)?.url) {
@@ -1193,7 +1193,7 @@ async function scoringStage(
   };
 
   // Always run both in parallel — neither is fallback, both always contribute
-  const [maxcoreResult, localResult] = await Promise?.allSettled([
+  const [maxcoreResult, localResult] = await Promise.allSettled([
     maxcorePost("/generate/text", {
       mode: "content",
       format: "json",
@@ -1377,7 +1377,7 @@ export async function generateCreativePackage(
   const plan = await planningStage(brief, musicMeta, ctx);
 
   // Stages 3 + 4 in parallel — script uses hook intelligence, keyframes use style map
-  const [script, keyframePaths] = await Promise?.all([
+  const [script, keyframePaths] = await Promise.all([
     scriptStage(brief, plan, ctx),
     keyframesStage(plan, brief, musicMeta, ctx),
   ]);
@@ -1386,7 +1386,7 @@ export async function generateCreativePackage(
   const timing = await alignmentStage(plan, musicMeta, ctx);
 
   // Stages 6 + 7 in parallel — assembly and scoring both run simultaneously
-  const [videoPath, scores] = await Promise?.all([
+  const [videoPath, scores] = await Promise.all([
     assemblyStage(
       keyframePaths,
       timing,

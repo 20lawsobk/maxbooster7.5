@@ -21,7 +21,7 @@ class MaxBooster247System extends EventEmitter {
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private memoryCheckInterval: NodeJS.Timeout | null = null;
   private maxRestartAttempts = 3;
-  private startTime = Date?.now();
+  private startTime = Date.now();
   private isActive = false;
   private responseTimes: number[] = [];
 
@@ -48,7 +48,7 @@ class MaxBooster247System extends EventEmitter {
     logger.info("🚀 Max Booster 24/7/365 System Starting...");
 
     this.isActive = true;
-    this.startTime = Date?.now();
+    this.startTime = Date.now();
 
     // Start reliability coordinator
     await reliabilityCoordinator?.start();
@@ -145,7 +145,7 @@ class MaxBooster247System extends EventEmitter {
 
   private performHealthCheck(): void {
     try {
-      this.metrics.uptime = Date?.now() - this.startTime;
+      this.metrics.uptime = Date.now() - this.startTime;
       this.metrics.memory = process.memoryUsage();
       this.metrics.cpu = process.cpuUsage();
 
@@ -156,7 +156,7 @@ class MaxBooster247System extends EventEmitter {
         typeof (global as Record<string, unknown>).gc === "function";
 
       // Log health status every 10 minutes (approximate, modulo-gated to avoid a dedicated timer).
-      if (Date?.now() % (10 * 60 * 1000) < 30000) {
+      if (Date.now() % (10 * 60 * 1000) < 30000) {
         logger.info(
           `📊 Health Check: ${memMB}MB memory, ${uptimeHours}h uptime, ${this.metrics.requestCount} requests, GC: ${gcAvailable ? "✅" : "—"}`,
         );
@@ -199,7 +199,7 @@ class MaxBooster247System extends EventEmitter {
 
   private _dailyTimer: NodeJS.Timeout | null = null;
   private _peakMemoryMB = 0;
-  private _peakMemorySince = Date?.now();
+  private _peakMemorySince = Date.now();
 
   private scheduleDailyDiagnostic(): void {
     // Fire once per day — staggered so two cluster workers don't log simultaneously.
@@ -229,7 +229,7 @@ class MaxBooster247System extends EventEmitter {
       );
       const status = chainErrorAutoFixer?.getStatus();
       let reset = 0;
-      for (const p of status?.patterns) {
+      for (const p of status?.patterns ?? []) {
         if (p?.suppressed) {
           chainErrorAutoFixer?.resetPattern(p?.id);
           reset++;
@@ -248,7 +248,7 @@ class MaxBooster247System extends EventEmitter {
   private runDailyDiagnostic(): void {
     try {
       const mem = process.memoryUsage();
-      const uptimeH = ((Date?.now() - this.startTime) / 3_600_000).toFixed(2);
+      const uptimeH = ((Date.now() - this.startTime) / 3_600_000).toFixed(2);
       const uptimeD = (Number(uptimeH) / 24).toFixed(2);
       const heapMB = Math.round(mem?.heapUsed / 1024 / 1024);
       const rssMB = Math.round(mem?.rss / 1024 / 1024);

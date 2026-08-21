@@ -299,7 +299,7 @@ class AutopilotLearningService {
       const recommendations: Recommendation[] = [];
 
       const [optimalTimes, topContentTypes, patterns, insights] =
-        await Promise?.all([
+        await Promise.all([
           this.getOptimalPostingTimes(userId, "all"),
           this.getTopPerformingContentTypes(userId),
           this.detectPatterns(userId),
@@ -318,10 +318,10 @@ class AutopilotLearningService {
           "Saturday",
         ];
         recommendations?.push({
-          id: `timing-${Date?.now()}`,
+          id: `timing-${Date.now()}`,
           type: "timing",
           title: "Optimal Posting Time",
-          description: `Your content performs best on ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00 with ${bestTime?.avgEngagement.toFixed(2)}% engagement rate.`,
+          description: `Your content performs best on ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00 with ${bestTime?.avgEngagement?.toFixed(2)}% engagement rate.`,
           confidence: Math.min(0.95, 0.5 + optimalTimes?.length * 0.05),
           priority: 1,
           actionable: true,
@@ -333,10 +333,10 @@ class AutopilotLearningService {
       if (topContentTypes?.length > 0) {
         const bestType = topContentTypes[0];
         recommendations?.push({
-          id: `content-${Date?.now()}`,
+          id: `content-${Date.now()}`,
           type: "content",
           title: "Top Performing Content Type",
-          description: `${bestType?.contentType} content generates ${bestType?.avgEngagement.toFixed(2)}% engagement on average.`,
+          description: `${bestType?.contentType} content generates ${bestType?.avgEngagement?.toFixed(2)}% engagement on average.`,
           confidence: Math.min(0.9, 0.4 + bestType?.count * 0.1),
           priority: 2,
           actionable: true,
@@ -345,9 +345,9 @@ class AutopilotLearningService {
         });
       }
 
-      for (const pattern of patterns?.slice(0, 3)) {
+      for (const pattern of patterns?.slice(0, 3) ?? []) {
         recommendations?.push({
-          id: `pattern-${Date?.now()}-${pattern?.pattern}`,
+          id: `pattern-${Date.now()}-${pattern?.pattern}`,
           type: "general",
           title: `Pattern Detected: ${pattern?.pattern}`,
           description: pattern.description,
@@ -483,7 +483,7 @@ class AutopilotLearningService {
         const allHashtags: string[] = [];
         highPerformers?.forEach((d) => {
           if (Array.isArray(d?.hashtags)) {
-            allHashtags?.push(...d?.hashtags);
+            allHashtags?.push(...(d?.hashtags ?? []));
           }
         });
 
@@ -528,7 +528,7 @@ class AutopilotLearningService {
         conditions?.push(eq(autopilotLearningData.platform, options?.platform));
       }
 
-      const [data, countResult] = await Promise?.all([
+      const [data, countResult] = await Promise.all([
         db
           .select()
           .from(autopilotLearningData)
@@ -578,7 +578,7 @@ class AutopilotLearningService {
   async getLearningInsights(userId: string): Promise<LearningInsight[]> {
     try {
       const [optimalTimes, topContentTypes, patterns, platformStats] =
-        await Promise?.all([
+        await Promise.all([
           this.getOptimalPostingTimes(userId, "all"),
           this.getTopPerformingContentTypes(userId),
           this.detectPatterns(userId),
@@ -738,14 +738,14 @@ class AutopilotLearningService {
         content: r.contentText || `${r?.contentType || "post"} on ${r?.platform}`,
         mediaType:
           (r?.mediaType as "text" | "image" | "video" | "carousel") || "text",
-        postedAt: new Date(r?.createdAt || Date?.now() - i * 3600000),
+        postedAt: new Date(r?.createdAt || Date.now() - i * 3600000),
         likes: r.likes || 0,
         comments: r.comments || 0,
         shares: r.shares || 0,
         reach: r.reach || r?.impressions || 0,
         engagement:
           (r?.likes || 0) + (r?.comments || 0) + (r?.shares || 0) + (r?.saves || 0),
-        hashtagCount: Array.isArray(r?.hashtags) ? r?.hashtags.length : 0,
+        hashtagCount: Array.isArray(r?.hashtags) ? r?.hashtags?.length : 0,
         mentionCount: 0,
         emojiCount: 0,
         contentLength: (r?.contentText || "").length,
@@ -770,7 +770,7 @@ class AutopilotLearningService {
     try {
       logger.info(`Generating insights for user ${userId}`);
 
-      const [optimalTimes, topContentTypes, patterns] = await Promise?.all([
+      const [optimalTimes, topContentTypes, patterns] = await Promise.all([
         this.getOptimalPostingTimes(userId, "all"),
         this.getTopPerformingContentTypes(userId),
         this.detectPatterns(userId),

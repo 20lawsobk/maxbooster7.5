@@ -155,7 +155,7 @@ export async function initializeFabric(): Promise<void> {
         chunkStoreCache?.set(nodeId, new PocketDimensionChunkStore(pocketName));
       }
 
-      const total = (await nodeRegistry?.listAllNodes()).filter(
+      const total = ((await nodeRegistry?.listAllNodes()) ?? []).filter(
         (n) => n?.backendType === "pocket-dimension",
       ).length;
       logger.info(

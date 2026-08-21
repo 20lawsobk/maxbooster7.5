@@ -98,7 +98,7 @@ router.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
 router.get("/stats", requireAdmin, require2FA, async (_req, res) => {
   try {
     const [ticketStatsResult, avgResponseResult, avgSatisfactionResult] =
-      await Promise?.all([
+      await Promise.all([
         db
           .select({
             status: supportTickets.status,

@@ -532,7 +532,7 @@ class SmartDefaultsService {
       });
     }
 
-    if (behavior?.mostUsedFeatures.length < 3) {
+    if (behavior?.mostUsedFeatures?.length < 3) {
       suggestions?.push({
         id: "explore-features",
         type: "setup",
@@ -550,7 +550,7 @@ class SmartDefaultsService {
       ...this.getCareerStageSuggestions(careerStage, artistType),
     );
 
-    if (behavior?.growthTrends.streamGrowthRate < 0) {
+    if (behavior?.growthTrends?.streamGrowthRate < 0) {
       suggestions?.push({
         id: "boost-streams",
         type: "marketing",
@@ -599,9 +599,9 @@ class SmartDefaultsService {
       "goals",
     ];
 
-    const priorityWidgets = settings?.dashboard.priorityWidgets;
-    const hiddenFeatures = settings?.dashboard.hiddenFeatures;
-    const frequentlyUsed = behavior?.mostUsedFeatures.map((f) => f?.feature);
+    const priorityWidgets = settings?.dashboard?.priorityWidgets;
+    const hiddenFeatures = settings?.dashboard?.hiddenFeatures;
+    const frequentlyUsed = behavior?.mostUsedFeatures?.map((f) => f?.feature);
 
     const widgets = allWidgets
       .map((id, index) => ({
@@ -690,7 +690,7 @@ class SmartDefaultsService {
     };
     const audiences = new Set<string>();
     genres?.forEach((g) => {
-      (audienceMap[g?.toLowerCase()] || audienceMap?.pop).forEach((a) =>
+      (audienceMap[g?.toLowerCase()] || audienceMap.pop).forEach((a) =>
         audiences?.add(a),
       );
     });

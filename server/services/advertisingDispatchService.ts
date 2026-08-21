@@ -268,7 +268,7 @@ export class AdvertisingDispatchService {
       // 7. Update campaign status and metrics
       const organicMetrics = {
         posts: Object.entries(postResults).map(([key, postId]) => {
-          const [platform] = key?.split("_");
+          const [platform] = key?.split("_") ?? [];
           // Key format is `${platform}_${creative.id}` — recover the creative
           // id so per-creative performance can drive optimizeCreative().
           const creativeId = key?.slice((platform?.length ?? 0) + 1) || undefined;
@@ -370,7 +370,7 @@ export class AdvertisingDispatchService {
       let totalEngagements = 0;
       let totalReach = 0;
 
-      for (const post of organicMetrics?.posts) {
+      for (const post of organicMetrics?.posts ?? []) {
         if (!post?.postId) continue;
 
         try {

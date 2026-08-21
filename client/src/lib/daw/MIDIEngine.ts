@@ -202,7 +202,7 @@ export class MIDIEngine {
     const relativeBeat = currentBeat - clip?.startBeat;
 
     if (event?.type === "note-on") {
-      const noteId = `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const noteId = `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const note: MIDINote = {
         id: noteId,
         pitch: event.data1,
@@ -224,7 +224,7 @@ export class MIDIEngine {
       }
     } else if (event?.type === "control-change") {
       const cc: MIDIControlChange = {
-        id: `cc_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `cc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         controller: event.data1,
         value: event.data2,
         time: relativeBeat,
@@ -245,7 +245,7 @@ export class MIDIEngine {
     durationBeats: number = 4,
     name?: string,
   ): string {
-    const id = `midi_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `midi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const clip: MIDIClip = {
       id,
       trackId,
@@ -285,7 +285,7 @@ export class MIDIEngine {
     const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip) return null;
 
-    const newId = `midi_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newId = `midi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newClip: MIDIClip = {
       ...structuredClone(clip),
       id: newId,
@@ -293,7 +293,7 @@ export class MIDIEngine {
       startBeat: newStartBeat ?? clip?.startBeat + clip?.durationBeats,
       notes: clip.notes.map((n) => ({
         ...n,
-        id: `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       })),
     };
 
@@ -320,7 +320,7 @@ export class MIDIEngine {
     const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return null;
 
-    const id = `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newNote: MIDINote = {
       ...note,
       id,
@@ -395,7 +395,7 @@ export class MIDIEngine {
       (c) => c?.id === this.state.editingClipId,
     );
     if (clip) {
-      for (const note of clip?.notes) {
+      for (const note of clip?.notes ?? []) {
         note.selected = noteIds?.includes(note?.id);
       }
     }
@@ -408,7 +408,7 @@ export class MIDIEngine {
     if (!clip) return;
 
     this.state.selectedNoteIds = clip?.notes.map((n) => n?.id);
-    for (const note of clip?.notes) {
+    for (const note of clip?.notes ?? []) {
       note.selected = true;
     }
     this.notify();
@@ -531,7 +531,7 @@ export class MIDIEngine {
     const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
-    const sortedNotes = [...clip?.notes].sort(
+    const sortedNotes = [...(clip?.notes ?? [])].sort(
       (a, b) => a?.startBeat - b?.startBeat,
     );
 
@@ -559,7 +559,7 @@ export class MIDIEngine {
     const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return null;
 
-    const id = `cc_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `cc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newCC: MIDIControlChange = { ...cc, id };
     clip?.controlChanges.push(newCC);
     clip?.controlChanges.sort((a, b) => a?.time - b?.time);

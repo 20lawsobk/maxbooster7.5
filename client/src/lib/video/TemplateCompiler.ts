@@ -50,7 +50,7 @@ export interface CompilationMetadata {
 }
 
 function generateId(prefix: string = "layer"): string {
-  return `${prefix}_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 function getDefaultTransform(): TransformConfig {
@@ -169,7 +169,7 @@ function convertTemplateLayer(
     config: convertLayerConfig(templateLayer, width, height),
   };
 
-  if (templateLayer?.animations.length > 0) {
+  if (templateLayer?.animations?.length > 0) {
     baseConfig.animation = templateLayer?.animations[0];
   }
 
@@ -320,7 +320,7 @@ function extractKeyframes(layers: TemplateLayer[]): Keyframe[] {
   const keyframes: Keyframe[] = [];
 
   for (const layer of layers) {
-    for (const animation of layer?.animations) {
+    for (const animation of layer?.animations ?? []) {
       keyframes?.push({
         layerId: layer.id,
         time: animation.startTime,
@@ -361,7 +361,7 @@ function extractAudioReactiveBindings(
   }
 
   if (options?.audioReactive?.enabled) {
-    for (const target of options?.audioReactive.targets) {
+    for (const target of options?.audioReactive?.targets ?? []) {
       if (
         !bindings?.find(
           (b) => b?.layerId === target?.layerId && b?.property === target?.property,
@@ -502,7 +502,7 @@ function buildFullOptions(
           (partial as Partial<CountdownTimerOptions>).title || "Coming Soon",
         targetDate:
           (partial as Partial<CountdownTimerOptions>).targetDate ||
-          new Date(Date?.now() + 86400000).toISOString(),
+          new Date(Date.now() + 86400000).toISOString(),
         eventName:
           (partial as Partial<CountdownTimerOptions>).eventName || "Event",
         artistName:
@@ -563,7 +563,7 @@ export function scaleProjectToAspectRatio(
   const scaleY = target?.height / project?.height;
   const scale = Math.min(scaleX, scaleY);
 
-  const scaledLayers = project?.layers.map((layer) => ({
+  const scaledLayers = project?.layers?.map((layer) => ({
     ...layer,
     transform: layer.transform
       ? {
@@ -577,7 +577,7 @@ export function scaleProjectToAspectRatio(
     config: scaleLayerConfig(layer?.config, scaleX, scaleY),
   }));
 
-  const scaledKeyframes = project?.keyframes.map((kf) => {
+  const scaledKeyframes = project?.keyframes?.map((kf) => {
     if (kf?.property === "x") {
       return { ...kf, value: (kf?.value as number) * scaleX };
     }
@@ -665,7 +665,7 @@ export function addVisualizerToProject(
 
   return {
     ...project,
-    layers: [...project?.layers, visualizerLayer],
+    layers: [...(project?.layers ?? []), visualizerLayer],
   };
 }
 
@@ -705,7 +705,7 @@ export function addParticlesToProject(
 
   return {
     ...project,
-    layers: [...project?.layers, particleLayer],
+    layers: [...(project?.layers ?? []), particleLayer],
   };
 }
 

@@ -50,7 +50,7 @@ let initializeWorkers: (() => void) | null = null;
 async function loadOptionalModules() {
   // Import all optional modules concurrently instead of 5 sequential awaits.
   const [metrics, alerting, capacity, realtime, workers] =
-    await Promise?.allSettled([
+    await Promise.allSettled([
       import("./monitoring/metricsCollector.js"),
       import("./monitoring/alertingService.js"),
       import("./monitoring/capacityMonitor.js"),
@@ -358,7 +358,7 @@ export function log(message: string, source = "express") {
 }
 
 app.use((req, res, next) => {
-  const start = Date?.now();
+  const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
@@ -369,7 +369,7 @@ app.use((req, res, next) => {
   };
 
   res.on("finish", () => {
-    const duration = Date?.now() - start;
+    const duration = Date.now() - start;
     if (path?.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse && !isProductionEnv()) {
@@ -570,7 +570,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 (async () => {
   // ── Option 2: Parallel deferred imports ──────────────────────────────────
   // All modules that were previously static top-level imports are loaded here
-  // in one parallel Promise?.all.  Removing them from the module's static
+  // in one parallel Promise.all.  Removing them from the module's static
   // import graph means the synchronous code above (express setup + listen())
   // now completes in < 50 ms instead of waiting 30–60 s for the route tree /
   // TF.js / distributedCache / DB pool to initialise before listen() is called.
@@ -961,7 +961,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Import the four /api middleware modules concurrently — their initialization is
   // independent so there is no reason to await them one at a time (~1s saved).
   const [demoAuthResult, rateLimiterResult, admissionResult, apiCacheResult] =
-    await Promise?.allSettled([
+    await Promise.allSettled([
       import("./auth.js"),
       import("./middleware/scalableRateLimiter.js"),
       import("./middleware/admissionControl.js"),
@@ -1001,7 +1001,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   if (apiCacheResult?.status === "fulfilled") {
-    const { invalidateCacheOnMutation, cacheMiddleware } = apiCacheResult?.value;
+    const { invalidateCacheOnMutation, cacheMiddleware } = apiCacheResult?.value ?? {};
     app.use("/api", invalidateCacheOnMutation());
     const cachedRoutes: Record<string, number> = {
       "/api/bootstrap": 30,
@@ -1670,7 +1670,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     }
 
     // 4-9. Other autonomous modules — load in parallel then register with kill switch
-    const parallelMods = await Promise?.allSettled([
+    const parallelMods = await Promise.allSettled([
       import("./autonomous-autopilot.js"),
       import("./autopilot-engine.js"),
       import("./services/autoPostingService.js"),
@@ -1950,7 +1950,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     );
   });
 })().catch((error) => {
-  console?.error("FATAL: Server startup failed:", error);
+  console.error("FATAL: Server startup failed:", error);
   logger.warn({ err: error }, "FATAL: Server startup failed");
   process.exit(1);
 });
@@ -1985,7 +1985,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     // 2. Close BullMQ workers — waits for the current job to finish then stops.
     //    Import is dynamic so this file compiles even if workers module is absent.
     const { shutdownWorkers } = await import("./workers/index.js");
-    await Promise?.race([
+    await Promise.race([
       shutdownWorkers(),
       new Promise<void>((_, rej) =>
         setTimeout(() => rej(new Error("BullMQ drain timeout")), 10_000),

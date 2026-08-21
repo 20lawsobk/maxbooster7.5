@@ -353,10 +353,10 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
 
     // Also update the DNS zone NS records
     try {
-      const { rows } = await pool?.query(
+      const { rows } = (await pool?.query(
         "SELECT id FROM dns_zones WHERE domain = $1 LIMIT 1",
         [domain],
-      );
+      )) ?? {};
       if (rows?.length) {
         await pool?.query(
           `
@@ -414,10 +414,10 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
   ): Promise<RdapDomain | null> {
     const domain = fqdn?.toLowerCase();
     try {
-      const { rows } = await pool?.query(
+      const { rows } = (await pool?.query(
         "SELECT * FROM claimed_domains WHERE domain = $1 LIMIT 1",
         [domain],
-      );
+      )) ?? {};
       if (!rows?.length) return null;
       return buildRdapResponse(rows[0], isPublic);
     } catch {
@@ -549,7 +549,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
           NS1,
           NS2,
           NS3,
-          `${NS1} hostmaster.${PLATFORM_DOMAIN} ${Date?.now().toString().slice(0, 10)} 3600 900 604800 300`,
+          `${NS1} hostmaster.${PLATFORM_DOMAIN} ${Date.now().toString().slice(0, 10)} 3600 900 604800 300`,
         ],
       );
 

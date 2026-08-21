@@ -206,7 +206,7 @@ export class StatusPageService {
       } as any)
       .returning();
 
-    for (const serviceId of request?.serviceIds) {
+    for (const serviceId of request?.serviceIds ?? []) {
       await db.insert(statusPageIncidentServices).values({
         incidentId: incident.id,
         serviceId,

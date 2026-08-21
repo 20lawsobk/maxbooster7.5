@@ -316,7 +316,7 @@ class BridgeInsightsService {
       const biasedTypes: string[] = [];
       const biasedTopics: string[] = [];
 
-      for (const hook of insights?.topHooks) {
+      for (const hook of insights?.topHooks ?? []) {
         if (hook?.avgMusicImpact > 0) {
           if (hook?.format === "short_video" || hook?.format === "reel") {
             biasedTypes?.push("youtube_video");
@@ -336,7 +336,7 @@ class BridgeInsightsService {
         }
       }
 
-      for (const track of insights?.topTracksByImpact) {
+      for (const track of insights?.topTracksByImpact ?? []) {
         if (track?.avgImpact > 50) {
           biasedTopics?.push(`Content featuring track: ${track?.trackId}`);
         }
@@ -369,7 +369,7 @@ class BridgeInsightsService {
       const recommendedFormats: string[] = [];
       const recommendedTones: string[] = [];
 
-      for (const assetType of insights?.topAssetTypes) {
+      for (const assetType of insights?.topAssetTypes ?? []) {
         if (assetType?.avgRoi > 0) {
           if (assetType?.type === "youtube_video") {
             recommendedFormats?.push("short_video", "reel");
@@ -386,7 +386,7 @@ class BridgeInsightsService {
         }
       }
 
-      for (const intent of insights?.highValueIntents) {
+      for (const intent of insights?.highValueIntents ?? []) {
         if (intent?.conversionRate > 0) {
           if (intent?.intent === "discovery") {
             recommendedTones?.push("exciting", "upbeat");
@@ -400,7 +400,7 @@ class BridgeInsightsService {
         }
       }
 
-      for (const channel of insights?.topChannels) {
+      for (const channel of insights?.topChannels ?? []) {
         if (channel?.efficiencyScore > 0.5) {
           if (channel?.channelType === "community") {
             recommendedTones?.push("conversational", "engaging");
@@ -437,7 +437,7 @@ class BridgeInsightsService {
       logger.info({ userId }, "Starting cross-insights sync");
 
       const [socialToOrganicInsights, organicToSocialInsights] =
-        await Promise?.all([
+        await Promise.all([
           this.generateSocialToOrganicInsights(userId),
           this.generateOrganicToSocialInsights(userId),
         ]);

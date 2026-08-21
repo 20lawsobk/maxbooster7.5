@@ -156,7 +156,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
 
   const addTrack = useCallback(
     async (track: Track) => {
-      setState((prev) => ({ ...prev, tracks: [...prev?.tracks, track] }));
+      setState((prev) => ({ ...prev, tracks: [...(prev?.tracks ?? []), track] }));
 
       try {
         // Ensure engine is initialized
@@ -458,7 +458,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
 
   // Get audio context state
   const isSupported =
-    !!window?.AudioContext ||
+    !!window.AudioContext ||
     !!(window as Record<string, unknown>).webkitAudioContext;
 
   return {

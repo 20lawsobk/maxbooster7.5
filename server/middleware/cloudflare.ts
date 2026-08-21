@@ -40,7 +40,7 @@ function ipToInt(ip: string): number {
 }
 
 function cidrToRange(cidr: string): { start: number; end: number } {
-  const [ip, prefix] = cidr?.split("/");
+  const [ip, prefix] = cidr?.split("/") ?? [];
   const mask = prefix
     ? ~((1 << (32 - parseInt(prefix, 10))) - 1) >>> 0
     : 0xffffffff;

@@ -20,7 +20,7 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 router.use(requireAdmin);
 router.use(require2FA);
 
-const processStartTime = Date?.now();
+const processStartTime = Date.now();
 
 router.get("/metrics", async (_req: Request, res: Response) => {
   try {
@@ -35,7 +35,7 @@ router.get("/metrics", async (_req: Request, res: Response) => {
       suspiciousActivityResult,
       rateLimitThreatsResult,
       totalUsersResult,
-    ] = await Promise?.all([
+    ] = await Promise.all([
       db
         .select({ count: count() })
         .from(sessions)
@@ -103,7 +103,7 @@ router.get("/metrics", async (_req: Request, res: Response) => {
         ? ((totalLogins - failedLoginCount) / (totalLogins || 1)) * 100
         : 100;
 
-    const uptimeSeconds = Math.floor((Date?.now() - processStartTime) / 1000);
+    const uptimeSeconds = Math.floor((Date.now() - processStartTime) / 1000);
     const errorRate =
       totalThreats > 0 ? (totalThreats / Math.max(1, totalLogins)) * 100 : 0;
     const requestsPerMinute = Math.floor(activeSessions * 2.5);
@@ -144,7 +144,7 @@ router.get("/metrics", async (_req: Request, res: Response) => {
 
 router.get("/behavioral-alerts", async (_req: Request, res: Response) => {
   try {
-    const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const threats = await db
       .select({
@@ -232,7 +232,7 @@ router.get("/anomaly-detection", async (_req: Request, res: Response) => {
     const twentyFourHoursAgo = new Date(now?.getTime() - 24 * 60 * 60 * 1000);
 
     const [recentThreats, dailyThreats, recentSessions, dailySessions] =
-      await Promise?.all([
+      await Promise.all([
         db
           .select({ count: count() })
           .from(securityThreats)
@@ -328,7 +328,7 @@ router.get("/pentest-results", async (_req: Request, res: Response) => {
   try {
     const now = new Date();
 
-    const [threatStats] = await Promise?.all([
+    const [threatStats] = await Promise.all([
       db
         .select({
           severity: securityThreats.severity,
@@ -429,7 +429,7 @@ router.get("/pentest-results", async (_req: Request, res: Response) => {
 router.get("/threats", async (req: Request, res: Response) => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-    const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const threats = await db
       .select()
@@ -454,7 +454,7 @@ userAlertsRouter?.get("/alerts", async (req: Request, res: Response) => {
     }
 
     const userId = req.user!.id;
-    const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const userThreats = await db
       .select()

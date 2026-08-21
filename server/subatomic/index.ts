@@ -140,7 +140,7 @@ class SubatomicCore {
     }
 
     // Load dependencies first (entanglement)
-    for (const depId of module?.dependencies) {
+    for (const depId of module?.dependencies ?? []) {
       if (!this.loadedModules.has(depId)) {
         await this.loadModule(depId);
       }
@@ -195,7 +195,7 @@ class SubatomicCore {
     }
 
     // Try multiple algorithms and pick the best
-    const results = await Promise?.all([
+    const results = await Promise.all([
       this.compressGzip(input),
       this.compressBrotli(input),
     ]);

@@ -596,7 +596,7 @@ export class AutonomousAutopilot extends EventEmitter {
     hook?: string;
     cta?: string;
   }> {
-    const goalsLower = params?.objectives.map((g) => g?.toLowerCase()).join(" ");
+    const goalsLower = params?.objectives?.map((g) => g?.toLowerCase()).join(" ");
     let objective: "awareness" | "engagement" | "conversions" | "viral" =
       goalsLower?.includes("sales") ||
       goalsLower?.includes("conversion") ||
@@ -616,7 +616,7 @@ export class AutonomousAutopilot extends EventEmitter {
     // configured objectives. Fully reversible (deactivating reverts behavior).
     try {
       const posting = evolutionRegistry?.getPostingOptimization(
-        params?.platform.toLowerCase(),
+        params?.platform?.toLowerCase(),
       );
       if (posting?.engagementTargeting === "high") {
         objective = "engagement";
@@ -628,7 +628,7 @@ export class AutonomousAutopilot extends EventEmitter {
       );
     }
 
-    const voice = params?.brandPersonality.toLowerCase();
+    const voice = params?.brandPersonality?.toLowerCase();
     const tone:
       | "professional"
       | "casual"
@@ -670,7 +670,7 @@ export class AutonomousAutopilot extends EventEmitter {
       await advancedSocialAIService?.generateAdvancedContent({
         userId: this.userId,
         topic: urlBrief?.topic ?? params.topic,
-        platforms: [params?.platform.toLowerCase()],
+        platforms: [params?.platform?.toLowerCase()],
         objective,
         tone,
         targetAudience: params.targetAudience
@@ -1159,7 +1159,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
     const candidates = new Set<string>([
       ...defaultTopics,
-      ...statsByTopic?.keys(),
+      ...(statsByTopic?.keys() ?? []),
     ]);
 
     // Forced exploration: any candidate arm never tried (n=0) must be sampled

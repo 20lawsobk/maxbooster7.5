@@ -19,7 +19,7 @@ const AUDIO_CACHE_TTL = 300000;
 
 function getCachedAudio(key: string): Buffer | null {
   const entry = audioCache?.get(key);
-  if (entry && Date?.now() - entry?.timestamp < AUDIO_CACHE_TTL) {
+  if (entry && Date.now() - entry?.timestamp < AUDIO_CACHE_TTL) {
     return entry?.buffer;
   }
   if (entry) audioCache?.delete(key);
@@ -201,8 +201,8 @@ const chunkUploads = new Map<string, ChunkInfo>();
 
 setInterval(
   () => {
-    const now = Date?.now();
-    for (const [fileId, info] of chunkUploads?.entries()) {
+    const now = Date.now();
+    for (const [fileId, info] of chunkUploads?.entries() ?? []) {
       if (now - info?.createdAt > CHUNK_TTL) {
         cleanupChunks(fileId);
       }
@@ -214,7 +214,7 @@ setInterval(
 function cleanupChunks(fileId: string): void {
   const info = chunkUploads?.get(fileId);
   if (info) {
-    info?.chunkBuffers.clear();
+    info?.chunkBuffers?.clear();
   }
   chunkUploads?.delete(fileId);
 }
@@ -443,17 +443,17 @@ router.post(
           .json({ error: "Upload session belongs to a different user" });
       }
 
-      chunkInfo?.chunkBuffers.set(chunkIdx, req.file.buffer);
-      chunkInfo?.uploadedChunks.add(chunkIdx);
+      chunkInfo?.chunkBuffers?.set(chunkIdx, req.file.buffer);
+      chunkInfo?.uploadedChunks?.add(chunkIdx);
 
       logger.info(
         `Chunk ${chunkIdx + 1}/${totalChunksNum} uploaded for file ${fileId}`,
       );
 
-      if (chunkInfo?.uploadedChunks.size === totalChunksNum) {
+      if (chunkInfo?.uploadedChunks?.size === totalChunksNum) {
         const chunks: Buffer[] = [];
         for (let i = 0; i < totalChunksNum; i++) {
-          const chunk = chunkInfo?.chunkBuffers.get(i);
+          const chunk = chunkInfo?.chunkBuffers?.get(i);
           if (!chunk) throw new Error(`Missing chunk ${i} for file ${fileId}`);
           chunks?.push(chunk);
         }

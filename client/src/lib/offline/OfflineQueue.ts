@@ -167,7 +167,7 @@ class OfflineQueue {
     const db = await this.ensureDb();
 
     const action: QueuedAction<T> = {
-      id: `${type}-${Date?.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      id: `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       type,
       payload,
       priority: options.priority ?? "normal",
@@ -398,7 +398,7 @@ class OfflineQueue {
     const db = await this.ensureDb();
 
     const [pending, syncing, completed, failed, conflict, total] =
-      await Promise?.all([
+      await Promise.all([
         db?.countFromIndex("actions", "by-status", "pending"),
         db?.countFromIndex("actions", "by-status", "syncing"),
         db?.countFromIndex("actions", "by-status", "completed"),

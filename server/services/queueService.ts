@@ -126,7 +126,7 @@ export class BoosterQueue<TData = any, TResult = any> {
       delay: opts!.delay,
       jobId: opts!.jobId,
     });
-    return { id: job.id ?? `${Date?.now()}`, name: jobName, data };
+    return { id: job.id ?? `${Date.now()}`, name: jobName, data };
   }
 
   async close(): Promise<void> {
@@ -161,7 +161,7 @@ class QueueService {
   ) {
     return this.audioQueue.add(type, data as unknown as Record<string, unknown>, {
       priority,
-      jobId: `audio_${type}_${Date?.now()}`,
+      jobId: `audio_${type}_${Date.now()}`,
     });
   }
 
@@ -196,7 +196,7 @@ class QueueService {
 
   async getQueueStats(queueName: string) {
     const queue = this.getQueue(queueName);
-    const [waiting, active, completed, failed] = await Promise?.all([
+    const [waiting, active, completed, failed] = await Promise.all([
       queue?.getWaitingCount(),
       queue?.getActiveCount(),
       queue?.getCompletedCount(),
@@ -206,7 +206,7 @@ class QueueService {
   }
 
   async getAllQueueStats() {
-    const [audio, csv, analytics, email] = await Promise?.all([
+    const [audio, csv, analytics, email] = await Promise.all([
       this.getQueueStats("audio"),
       this.getQueueStats("csv"),
       this.getQueueStats("analytics"),
@@ -251,7 +251,7 @@ class QueueService {
   }
 
   async close() {
-    await Promise?.all([
+    await Promise.all([
       this.audioQueue.close(),
       this.csvQueue.close(),
       this.analyticsQueue.close(),

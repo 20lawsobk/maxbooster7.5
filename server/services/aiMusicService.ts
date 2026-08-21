@@ -284,7 +284,7 @@ export class AIMusicService {
    * @returns Frequency-filtered audio outputs with spectral profiles and confidence scores
    */
   async separateStems(audioBuffer: Buffer): Promise<StemSeparationResult> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     const inferenceId = randomBytes(8).toString("hex");
 
     try {
@@ -330,7 +330,7 @@ export class AIMusicService {
         inferenceId,
       );
 
-      const processingTime = Date?.now() - startTime;
+      const processingTime = Date.now() - startTime;
       const overallConfidence =
         (vocals?.confidence +
           drums?.confidence +
@@ -396,7 +396,7 @@ export class AIMusicService {
     suggestions: AISuggestion[];
     outputFilePath?: string;
   }> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     let outputFilePath: string | undefined;
 
     try {
@@ -470,7 +470,7 @@ export class AIMusicService {
         }
       }
 
-      const processingTime = Date?.now() - startTime;
+      const processingTime = Date.now() - startTime;
 
       await this.logInference(
         this.AI_MODELS.GENRE_PRESET_ENGINE,
@@ -577,7 +577,7 @@ export class AIMusicService {
   }
 
   async analyzeReferenceTrack(audioBuffer: Buffer): Promise<ReferenceAnalysis> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     const spectralProfile = this.analyzeSpectrum(audioBuffer);
     const loudnessMetrics = await this.measureLoudness(audioBuffer);
@@ -590,7 +590,7 @@ export class AIMusicService {
       frequencyBalance: this.analyzeFrequencyBalance(spectralProfile),
     };
 
-    const processingTime = Date?.now() - startTime;
+    const processingTime = Date.now() - startTime;
     await this.logInference(
       this.AI_MODELS.REFERENCE_MATCHER,
       "reference_analysis",
@@ -613,7 +613,7 @@ export class AIMusicService {
     confidenceScore: number;
     adjustments: Record<string, any>;
   }> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     const suggestions: AISuggestion[] = [];
     const adjustments: Record<string, any> = {};
@@ -694,7 +694,7 @@ export class AIMusicService {
       );
     }
 
-    const processingTime = Date?.now() - startTime;
+    const processingTime = Date.now() - startTime;
     const confidenceScore =
       suggestions?.reduce((sum, s) => sum + s?.confidence, 0) /
         suggestions?.length || 0.8;
@@ -732,7 +732,7 @@ export class AIMusicService {
    * @returns Real measured loudness metrics from FFmpeg analysis
    */
   async measureLoudness(audioBuffer: Buffer): Promise<LoudnessMetrics> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
@@ -802,7 +802,7 @@ export class AIMusicService {
 
       await fsPromises?.unlink(tempInputPath).catch(() => {});
 
-      const processingTime = Date?.now() - startTime;
+      const processingTime = Date.now() - startTime;
       await this.logInference(
         this.AI_MODELS.LUFS_METER,
         "loudness_measurement",
@@ -847,7 +847,7 @@ export class AIMusicService {
     suggestions: AISuggestion[];
     outputFilePath?: string;
   }> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     let outputFilePath: string | undefined;
 
     try {
@@ -932,7 +932,7 @@ export class AIMusicService {
         }
       }
 
-      const processingTime = Date?.now() - startTime;
+      const processingTime = Date.now() - startTime;
       await this.logInference(
         this.AI_MODELS.LUFS_METER,
         "loudness_normalization",
@@ -2559,7 +2559,7 @@ export class AIMusicService {
         page: 1,
         limit: 1000,
       });
-      for (const project of allProjects?.data) {
+      for (const project of allProjects?.data ?? []) {
         const projectTracks = await (storage as any)?.getProjectTracks(project?.id);
         const track = projectTracks?.find((t: any) => t?.id === trackId);
         if (track) {

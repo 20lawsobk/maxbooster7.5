@@ -312,7 +312,7 @@ export class PluginStateManager {
       this.state.automationBindings?.set(instanceId, []);
     }
 
-    const bindings = this.state.automationBindings?.get(instanceId)!;
+    const bindings = this.state.automationBindings?.get(instanceId);
     const existingIndex = bindings?.findIndex(
       (b) => b?.parameterId === parameterId,
     );

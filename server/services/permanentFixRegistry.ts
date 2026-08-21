@@ -142,7 +142,7 @@ const DEFAULTS: Overrides = {
 
 class PermanentFixRegistry {
   private _sessionCounts = new Map<string, number>();
-  private _sessionStartMs = Date?.now();
+  private _sessionStartMs = Date.now();
 
   private _overrides: Overrides = { ...DEFAULTS };
 
@@ -215,7 +215,7 @@ class PermanentFixRegistry {
         rawAimdGap,
         rawEscalations,
         rawDeEscalations,
-      ] = await Promise?.all([
+      ] = await Promise.all([
         get(`${PFR}override:pdim_gap_floor`),
         get(`${PFR}override:lua_wait_ms`),
         get(`${PFR}override:heap_warn_ratio`),
@@ -575,7 +575,7 @@ class PermanentFixRegistry {
   // ── Status — exposed via admin endpoint ─────────────────────────────────────
 
   getStatus() {
-    const upMinutes = Math.round((Date?.now() - this._sessionStartMs) / 60_000);
+    const upMinutes = Math.round((Date.now() - this._sessionStartMs) / 60_000);
     return {
       loaded: this._loaded,
       sessionUptimeMinutes: upMinutes,

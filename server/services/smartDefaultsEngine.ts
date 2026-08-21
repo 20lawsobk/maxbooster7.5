@@ -406,16 +406,16 @@ class SmartDefaultsEngine {
       if (!preferences) return [];
 
       const timezone =
-        preferences?.targetAudience.primaryTimezone || "America/New_York";
+        preferences?.targetAudience?.primaryTimezone || "America/New_York";
       const timezoneData =
         TIMEZONE_POSTING_MAP[timezone] ||
         TIMEZONE_POSTING_MAP["America/New_York"];
-      const platforms = preferences?.contentPreferences.platforms;
+      const platforms = preferences?.contentPreferences?.platforms;
 
       const suggestions: SchedulingSuggestion[] = [];
 
-      for (const platform of platforms?.slice(0, 3)) {
-        for (const day of timezoneData?.peakDays) {
+      for (const platform of platforms?.slice(0, 3) ?? []) {
+        for (const day of timezoneData?.peakDays ?? []) {
           const times = timezoneData?.peakHours
             .slice(0, 2)
             .map((h) => `${h?.toString().padStart(2, "0")}:00`);
@@ -449,7 +449,7 @@ class SmartDefaultsEngine {
       const genreTemplate = this.getGenreTemplate(
         preferences?.genres[0] || "pop",
       );
-      const audienceAge = preferences?.targetAudience.ageRange;
+      const audienceAge = preferences?.targetAudience?.ageRange;
       const recommendations: PlatformRecommendation[] = [];
 
       for (const [platform, data] of Object.entries(PLATFORM_DATA)) {
@@ -458,8 +458,8 @@ class SmartDefaultsEngine {
           data?.audienceAge,
         );
         const isGenreSuggested =
-          genreTemplate?.suggestedPlatforms.includes(platform);
-        preferences?.contentPreferences.platforms?.includes(platform);
+          genreTemplate?.suggestedPlatforms?.includes(platform);
+        preferences?.contentPreferences?.platforms?.includes(platform);
 
         let priority: "primary" | "secondary" | "emerging";
         if (isGenreSuggested && ageOverlap > 0.6) {

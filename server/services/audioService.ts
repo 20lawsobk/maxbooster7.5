@@ -139,7 +139,7 @@ export class AudioService {
         fileName: sanitizedFileName,
         maxSize: 100 * 1024 * 1024,
         allowedTypes,
-        expiresAt: new Date(Date?.now() + 3600000).toISOString(),
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
       };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error generating upload URL:");
@@ -206,7 +206,7 @@ export class AudioService {
           return;
         }
 
-        const audioStream = metadata?.streams.find(
+        const audioStream = metadata?.streams?.find(
           (s: any) => s?.codec_type === "audio",
         );
         if (!audioStream) {
@@ -215,9 +215,9 @@ export class AudioService {
         }
 
         resolve({
-          duration: parseFloat(metadata?.format.duration || "0"),
+          duration: parseFloat(metadata?.format?.duration || "0"),
           sampleRate: parseInt(audioStream?.sample_rate || "44100"),
-          bitRate: parseInt(metadata?.format.bit_rate || "320000"),
+          bitRate: parseInt(metadata?.format?.bit_rate || "320000"),
           channels: audioStream.channels || 2,
           format: path.extname(filePath).slice(1),
         });
@@ -323,7 +323,7 @@ export class AudioService {
   }
 
   private calculatePeakLevel(waveformData: number[]): number {
-    return Math.max(...waveformData?.map(Math.abs));
+    return Math.max(...(waveformData?.map(Math.abs) ?? []));
   }
 
   async convertAudioFormat(
@@ -391,7 +391,7 @@ export class AudioService {
       });
       if (!validation?.valid) {
         throw new Error(
-          `Invalid audio configuration: ${validation?.errors.join(", ")}`,
+          `Invalid audio configuration: ${validation?.errors?.join(", ")}`,
         );
       }
 
@@ -467,7 +467,7 @@ export class AudioService {
 
       // Upload converted file to storageService
       const fileBuffer = await fsPromises?.readFile(tempOutputPath);
-      const filename = `converted_${Date?.now()}.${outputFormat}`;
+      const filename = `converted_${Date.now()}.${outputFormat}`;
       const key = await storageService?.uploadFile(
         fileBuffer,
         "temp",
@@ -540,7 +540,7 @@ export class AudioService {
       });
 
       const buffer = Buffer?.from(waveformJson, "utf-8");
-      const filename = `waveform_${Date?.now()}.json`;
+      const filename = `waveform_${Date.now()}.json`;
       const key = await storageService?.uploadFile(
         buffer,
         "temp",
@@ -736,7 +736,7 @@ export class AudioService {
       let bestCorr = -Infinity;
 
       for (let i = 0; i < 12; i++) {
-        const rotated = [...chroma?.slice(i), ...chroma?.slice(0, i)];
+        const rotated = [...(chroma?.slice(i) ?? []), ...(chroma?.slice(0, i) ?? [])];
         const majCorr = pearson(rotated, majorProfile);
         const minCorr = pearson(rotated, minorProfile);
         if (majCorr > bestCorr) {
@@ -837,7 +837,7 @@ export class AudioService {
       let bestCorrelation = -Infinity;
 
       for (let i = 0; i < 12; i++) {
-        const rotatedChroma = [...chroma?.slice(i), ...chroma?.slice(0, i)];
+        const rotatedChroma = [...(chroma?.slice(i) ?? []), ...(chroma?.slice(0, i) ?? [])];
 
         const majorCorr = this.pearsonCorrelation(
           rotatedChroma,
@@ -887,7 +887,7 @@ export class AudioService {
     for (let i = 0; i < waveformData.length - windowSize; i += hopSize) {
       const window = waveformData?.slice(i, i + windowSize);
       const magnitude =
-        window?.reduce((sum, val) => sum + Math.abs(val), 0) / windowSize;
+        window.reduce((sum, val) => sum + Math.abs(val), 0) / windowSize;
 
       for (let note = 0; note < 12; note++) {
         const freq = 440 * Math.pow(2, (note - 9) / 12);
@@ -896,7 +896,7 @@ export class AudioService {
 
         for (
           let j = 0;
-          j < Math.min(window?.length, Math.floor(period * 4));
+          j < Math.min(window.length, Math.floor(period * 4));
           j++
         ) {
           const phase = (2 * Math.PI * j) / period;
@@ -948,7 +948,7 @@ export class AudioService {
           case "eq":
           case "equalizer":
             if ((effect as any)?.settings?.bands) {
-              for (const band of (effect as any)?.settings.bands) {
+              for (const band of (effect as any)?.settings?.bands ?? []) {
                 audioFilters?.push(
                   `equalizer=f=${band.frequency}:width_type=o:width=1:g=${band?.gain}`,
                 );
@@ -1096,7 +1096,7 @@ export class AudioService {
         // If only one track, just convert it
         if (tempTracks?.length === 1) {
           const fileBuffer = await fsPromises?.readFile(tempTracks[0].filePath);
-          const filename = `mix_${Date?.now()}.${outputFormat}`;
+          const filename = `mix_${Date.now()}.${outputFormat}`;
           const key = await storageService?.uploadFile(
             fileBuffer,
             "temp",
@@ -1151,7 +1151,7 @@ export class AudioService {
 
         // Upload mixed file to storageService
         const fileBuffer = await fsPromises?.readFile(tempMixPath);
-        const filename = `mix_${Date?.now()}.${outputFormat}`;
+        const filename = `mix_${Date.now()}.${outputFormat}`;
         const key = await storageService?.uploadFile(
           fileBuffer,
           "temp",
@@ -1356,7 +1356,7 @@ export class AudioService {
           // Download and re-upload as final export with proper naming
           const convertedBuffer =
             await storageService?.downloadFile(convertedKey as unknown as string);
-          const exportFilename = `${projectId}_mixdown_${Date?.now()}.${format}`;
+          const exportFilename = `${projectId}_mixdown_${Date.now()}.${format}`;
           const exportKey = await storageService?.uploadFile(
             convertedBuffer,
             "exports",

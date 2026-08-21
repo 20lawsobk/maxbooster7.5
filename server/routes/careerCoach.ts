@@ -187,7 +187,7 @@ router.post(
         });
       }
 
-      const { deadline, ...goalData } = validation?.data;
+      const { deadline, ...goalData } = validation?.data ?? {};
 
       const goal = await careerCoachService?.createGoal(userId, {
         ...goalData,
@@ -247,7 +247,7 @@ router.put(
           });
       }
 
-      const { deadline, ...rest } = validation?.data;
+      const { deadline, ...rest } = validation?.data ?? {};
       const goal = await careerCoachService?.updateGoal(userId, goalId, {
         ...rest,
         ...(deadline !== undefined ? { deadline: new Date(deadline) } : {}),
@@ -404,7 +404,7 @@ router.get(
         recentRevenue,
         previousRevenue,
         recentPosts,
-      ] = await Promise?.all([
+      ] = await Promise.all([
         db
           .select({
             streams: sum(analytics.streams),
@@ -727,7 +727,7 @@ router.post(
       return res.status(400).json({ error: "Message is required" });
     }
 
-    const { message } = parsed?.data;
+    const { message } = parsed?.data ?? {};
     const lowerMsg = message?.toLowerCase();
 
     let response = DEFAULT_RESPONSE;

@@ -389,7 +389,7 @@ class ContentQualityPipeline {
     baseContext: Partial<ContentContext>,
   ): Promise<ContentContext> {
     try {
-      const [[brandVoiceResult], [preferencesResult]] = await Promise?.all([
+      const [[brandVoiceResult], [preferencesResult]] = await Promise.all([
         db
           .select()
           .from(userBrandVoices)
@@ -619,7 +619,7 @@ class ContentQualityPipeline {
     );
 
     return {
-      id: `variant_${index}_${Date?.now()}`,
+      id: `variant_${index}_${Date.now()}`,
       content: body!,
       headline: headline!,
       hashtags: hashtags!,

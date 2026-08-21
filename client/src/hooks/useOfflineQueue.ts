@@ -81,7 +81,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
 
   const loadActions = useCallback(async () => {
     try {
-      const [pending, failed, conflict] = await Promise?.all([
+      const [pending, failed, conflict] = await Promise.all([
         offlineQueue?.getAllPending(),
         offlineQueue?.getByStatus("failed"),
         offlineQueue?.getByStatus("conflict"),
@@ -95,7 +95,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
   }, []);
 
   const refresh = useCallback(async () => {
-    await Promise?.all([loadStats(), loadActions()]);
+    await Promise.all([loadStats(), loadActions()]);
   }, [loadStats, loadActions]);
 
   useEffect(() => {

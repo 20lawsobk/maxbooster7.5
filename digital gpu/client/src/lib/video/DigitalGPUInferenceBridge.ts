@@ -25,7 +25,7 @@
  *   const bridge = new DigitalGPUInferenceBridge({ width: 512, height: 512 });
  *   await bridge?.init();
  *   const result = await bridge?.process(base64Frame, { scene: 'concert_stage' });
- *   canvas?.getContext('2d')!.putImageData(result, 0, 0);
+ *   canvas?.getContext('2d').putImageData(result, 0, 0);
  */
 
 import { WebGLRenderer } from "./WebGLRenderer";
@@ -308,7 +308,7 @@ export class DigitalGPUInferenceBridge {
 
       this.ready = true;
     } catch (err) {
-      console?.warn("[DigitalGPUInferenceBridge] WebGL2 init failed:", err);
+      console.warn("[DigitalGPUInferenceBridge] WebGL2 init failed:", err);
       this.ready = false;
     }
   }
@@ -338,20 +338,20 @@ export class DigitalGPUInferenceBridge {
     this.frameCount++;
 
     this?.renderer.getContext();
-    const { width, height } = this?.config;
+    const { width, height } = this?.config ?? {};
     const res = new Float32Array([width, height]);
 
     const srcTex = this?.renderer.createTexture(
       "src_frame",
       imageSource as Record<string, unknown>,
     );
-    const fbA = this?.renderer.getFramebuffer("pingA")!;
-    const fbB = this?.renderer.getFramebuffer("pingB")!;
-    const fbBl0 = this?.renderer.getFramebuffer("bloom0")!;
-    const fbBl1 = this?.renderer.getFramebuffer("bloom1")!;
+    const fbA = this?.renderer.getFramebuffer("pingA");
+    const fbB = this?.renderer.getFramebuffer("pingB");
+    const fbBl0 = this?.renderer.getFramebuffer("bloom0");
+    const fbBl1 = this?.renderer.getFramebuffer("bloom1");
 
     // ── Pass 1: Color Grading ──────────────────────────────────────────────
-    const gradeProg = this?.renderer.getProgram("colorGrade")!;
+    const gradeProg = this?.renderer.getProgram("colorGrade");
     this?.renderer.bindFramebuffer(fbA);
     this?.renderer.clear();
     this?.renderer.useProgram(gradeProg);
@@ -416,7 +416,7 @@ export class DigitalGPUInferenceBridge {
     this?.renderer.drawQuad(gradeProg);
 
     // ── Pass 2–4: Bloom (3 passes: extract bright → blur H → blur V → merge) ─
-    const bloomProg = this?.renderer.getProgram("bloom")!;
+    const bloomProg = this?.renderer.getProgram("bloom");
 
     // Pass 2a: Extract bright regions
     this?.renderer.bindFramebuffer(fbBl0);
@@ -453,7 +453,7 @@ export class DigitalGPUInferenceBridge {
     this?.renderer.drawQuad(bloomProg);
 
     // ── Pass 3: Chromatic Aberration ──────────────────────────────────────
-    const chromaProg = this?.renderer.getProgram("chromaAb")!;
+    const chromaProg = this?.renderer.getProgram("chromaAb");
     this?.renderer.bindFramebuffer(fbB);
     this?.renderer.clear();
     this?.renderer.useProgram(chromaProg);
@@ -476,7 +476,7 @@ export class DigitalGPUInferenceBridge {
     this?.renderer.drawQuad(chromaProg);
 
     // ── Pass 4: Vignette (final pass → screen) ────────────────────────────
-    const vignetteProg = this?.renderer.getProgram("vignette")!;
+    const vignetteProg = this?.renderer.getProgram("vignette");
     this?.renderer.bindFramebuffer(null); // render to screen
     this?.renderer.clear();
     this?.renderer.useProgram(vignetteProg);
@@ -530,10 +530,10 @@ export class DigitalGPUInferenceBridge {
     src: ImageBitmap | HTMLCanvasElement | ImageData,
   ): Promise<ImageData> {
     if (src instanceof ImageData) return src;
-    const canvas = document?.createElement("canvas");
+    const canvas = document.createElement("canvas");
     canvas.width = this?.config.width;
     canvas.height = this?.config.height;
-    const ctx = canvas?.getContext("2d")!;
+    const ctx = canvas?.getContext("2d");
     if (src instanceof HTMLCanvasElement) {
       ctx?.drawImage(src, 0, 0, canvas?.width, canvas?.height);
     } else {
@@ -543,7 +543,7 @@ export class DigitalGPUInferenceBridge {
   }
 
   static getSceneNames(): string[] {
-    return Object?.keys(SCENE_PRESETS);
+    return Object.keys(SCENE_PRESETS);
   }
 
   static getPreset(scene: string): ScenePostConfig {

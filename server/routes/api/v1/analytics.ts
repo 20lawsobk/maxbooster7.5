@@ -134,7 +134,7 @@ router.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
           conditions?.push(eq(analytics.platform, platform as string));
         }
 
-        const [streamData, [totals], byPlatform] = await Promise?.all([
+        const [streamData, [totals], byPlatform] = await Promise.all([
           db
             .select({
               date: sql<string>`DATE(${analytics.date})`,

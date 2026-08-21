@@ -68,7 +68,7 @@ router.get("/status", requireAuth, async (req, res) => {
 
     // Real activity stats from socialAutopilotContent table
     const [totalGenRow, publishedRow, pendingRow, nextJobRow, recentRows] =
-      await Promise?.all([
+      await Promise.all([
         db
           .select({ value: count() })
           .from(socialAutopilotContent)

@@ -171,7 +171,7 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
       responseNote: z.string().max(2000).optional(),
       featureUrl: z.string().url().optional(),
     });
-    const { status, responseNote, featureUrl } = statusSchema?.parse(req.body);
+    const { status, responseNote, featureUrl } = statusSchema?.parse(req.body) ?? {};
 
     const setFields: Record<string, unknown> = {
       status,

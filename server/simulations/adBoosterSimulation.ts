@@ -204,7 +204,7 @@ function simulatePaidAdvertising(
   let totalEngagement = 0;
   const platformBreakdown: Record<string, unknown> = {};
 
-  for (const platform of campaign?.platforms) {
+  for (const platform of campaign?.platforms ?? []) {
     const benchmark =
       PAID_AD_BENCHMARKS[platform as keyof typeof PAID_AD_BENCHMARKS];
     if (!benchmark) continue;
@@ -248,7 +248,7 @@ function simulateAIBoosterOrganic(
   const platformBreakdown: PlatformMetrics[] = [];
   let avgViralCoefficient = 0;
 
-  for (const platform of campaign?.platforms) {
+  for (const platform of campaign?.platforms ?? []) {
     const organic =
       AI_BOOSTER_ORGANIC[platform as keyof typeof AI_BOOSTER_ORGANIC];
     if (!organic) continue;

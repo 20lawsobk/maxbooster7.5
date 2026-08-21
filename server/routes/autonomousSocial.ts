@@ -26,7 +26,7 @@ const AUTONOMOUS_STATE_TTL_MS = 24 * 60 * 60 * 1000;
 
 setInterval(
   () => {
-    const cutoff = Date?.now() - AUTONOMOUS_STATE_TTL_MS;
+    const cutoff = Date.now() - AUTONOMOUS_STATE_TTL_MS;
     for (const [uid, ts] of autonomousStateLastAccessed) {
       if (ts < cutoff) {
         autonomousStates?.delete(uid);
@@ -35,7 +35,7 @@ setInterval(
     }
     // Hard size cap: if still over limit, evict oldest entries first.
     if (autonomousStates?.size > AUTONOMOUS_STATE_MAX) {
-      const sorted = [...autonomousStateLastAccessed?.entries()].sort(
+      const sorted = [...(autonomousStateLastAccessed?.entries() ?? [])].sort(
         (a, b) => a[1] - b[1],
       );
       for (const [uid] of sorted) {
@@ -62,8 +62,8 @@ function getState(userId: string): AutonomousSocialState {
       },
     });
   }
-  autonomousStateLastAccessed?.set(userId, Date?.now());
-  return autonomousStates?.get(userId)!;
+  autonomousStateLastAccessed?.set(userId, Date.now());
+  return autonomousStates?.get(userId);
 }
 
 router.get("/status", requireAuth, async (req, res) => {

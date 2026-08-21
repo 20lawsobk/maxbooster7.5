@@ -96,7 +96,7 @@ export function useSmartScheduling(
 
   const topSuggestions = useMemo(() => {
     if (!scheduleData?.suggestions) return [];
-    return [...scheduleData?.suggestions]
+    return [...(scheduleData?.suggestions ?? [])]
       .sort((a, b) => b?.confidence - a?.confidence)
       .slice(0, 5);
   }, [scheduleData]);

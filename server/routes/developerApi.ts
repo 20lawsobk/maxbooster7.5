@@ -43,7 +43,7 @@ router.post("/keys/create", async (req: Request, res: Response) => {
       });
     }
 
-    const { keyName, tier } = validation?.data;
+    const { keyName, tier } = validation?.data ?? {};
     const userId = req.user.id;
 
     // Check subscription tier for premium API keys
@@ -208,7 +208,7 @@ router.get("/usage", async (req: Request, res: Response) => {
       });
     }
 
-    const { days } = validation?.data;
+    const { days } = validation?.data ?? {};
 
     // Get usage statistics
     const usageStats = await apiKeyService?.getUserApiUsageStats(userId, days);
@@ -225,7 +225,7 @@ router.get("/usage", async (req: Request, res: Response) => {
       success: true,
       timeRange: {
         days,
-        start: new Date(Date?.now() - days * 24 * 60 * 60 * 1000).toISOString(),
+        start: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString(),
         end: new Date().toISOString(),
       },
       totalUsage,
@@ -267,7 +267,7 @@ router.get("/usage/:keyId", async (req: Request, res: Response) => {
       });
     }
 
-    const { days } = validation?.data;
+    const { days } = validation?.data ?? {};
 
     // Verify the API key belongs to the user
     const apiKey = await apiKeyService?.getApiKeyById(keyId);
@@ -291,7 +291,7 @@ router.get("/usage/:keyId", async (req: Request, res: Response) => {
       },
       timeRange: {
         days,
-        start: new Date(Date?.now() - days * 24 * 60 * 60 * 1000).toISOString(),
+        start: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString(),
         end: new Date().toISOString(),
       },
       usage: usageStats,
@@ -395,7 +395,7 @@ fetch('https://your-domain.com/api/v1/analytics/streams', {
 })
 .then(response => response?.json())
 .then(data => { /* process data */ })
-.catch(error => console?.error('Error:', error));
+.catch(error => console.error('Error:', error));
       `.trim(),
         python: `
 import requests

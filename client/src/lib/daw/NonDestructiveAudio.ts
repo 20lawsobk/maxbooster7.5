@@ -97,7 +97,7 @@ export class NonDestructiveAudioEngine {
     name: string,
     audioBuffer?: AudioBuffer,
   ): Promise<string> {
-    const id = `src_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `src_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const source: AudioSource = {
       id,
@@ -201,7 +201,7 @@ export class NonDestructiveAudioEngine {
     const source = this.state.sources?.find((s) => s?.id === sourceId);
     if (!source) return null;
 
-    const id = `evt_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const event: AudioEvent = {
       id,
@@ -254,7 +254,7 @@ export class NonDestructiveAudioEngine {
     const event = this.state.events?.find((e) => e?.id === eventId);
     if (!event) return null;
 
-    const newId = `evt_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newId = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newEvent: AudioEvent = {
       ...structuredClone(event),
       id: newId,
@@ -386,7 +386,7 @@ export class NonDestructiveAudioEngine {
     event.durationBeats = leftDuration;
 
     const rightId = this.createEvent(event?.trackId, event?.sourceId, splitBeat)!;
-    const rightEvent = this.state.events?.find((e) => e?.id === rightId)!;
+    const rightEvent = this.state.events?.find((e) => e?.id === rightId);
 
     rightEvent.durationBeats = rightDuration;
     rightEvent.sourceStartOffset = event?.sourceStartOffset + leftDuration;
@@ -420,7 +420,7 @@ export class NonDestructiveAudioEngine {
 
     const startBeat = events[0].startBeat;
     const endBeat = Math.max(
-      ...events?.map((e) => e?.startBeat + e?.durationBeats),
+      ...(events?.map((e) => e?.startBeat + e?.durationBeats) ?? []),
     );
 
     logger.info(
@@ -470,7 +470,7 @@ export class NonDestructiveAudioEngine {
 
     if (events?.length === 0) return;
 
-    const minBeat = Math.min(...events?.map((e) => e?.startBeat));
+    const minBeat = Math.min(...(events?.map((e) => e?.startBeat) ?? []));
     this.state.clipboard = {
       events: structuredClone(events),
       sourceBeat: minBeat,
@@ -479,14 +479,14 @@ export class NonDestructiveAudioEngine {
   }
 
   pasteEvents(targetBeat: number, targetTrackId?: string): string[] {
-    if (!this.state.clipboard || this.state.clipboard?.events.length === 0)
+    if (!this.state.clipboard || this.state.clipboard?.events?.length === 0)
       return [];
 
     const offset = targetBeat - this.state.clipboard?.sourceBeat;
     const newIds: string[] = [];
 
-    for (const event of this.state.clipboard?.events) {
-      const newId = `evt_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    for (const event of this.state.clipboard?.events ?? []) {
+      const newId = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const newEvent: AudioEvent = {
         ...structuredClone(event),
         id: newId,
@@ -523,16 +523,16 @@ export class NonDestructiveAudioEngine {
     let fadeGain = 1;
 
     if (
-      event?.fadeIn.enabled &&
-      position < event?.startBeat + event?.fadeIn.duration
+      event?.fadeIn?.enabled &&
+      position < event?.startBeat + event?.fadeIn?.duration
     ) {
-      const fadeProgress = (position - event?.startBeat) / event?.fadeIn.duration;
-      fadeGain *= this.calculateFadeCurve(fadeProgress, event?.fadeIn.curve);
+      const fadeProgress = (position - event?.startBeat) / event?.fadeIn?.duration;
+      fadeGain *= this.calculateFadeCurve(fadeProgress, event?.fadeIn?.curve);
     }
 
-    if (event?.fadeOut.enabled && position > eventEnd - event?.fadeOut.duration) {
-      const fadeProgress = (eventEnd - position) / event?.fadeOut.duration;
-      fadeGain *= this.calculateFadeCurve(fadeProgress, event?.fadeOut.curve);
+    if (event?.fadeOut?.enabled && position > eventEnd - event?.fadeOut?.duration) {
+      const fadeProgress = (eventEnd - position) / event?.fadeOut?.duration;
+      fadeGain *= this.calculateFadeCurve(fadeProgress, event?.fadeOut?.curve);
     }
 
     return fadeGain * event?.gain;

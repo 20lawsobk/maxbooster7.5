@@ -1018,7 +1018,7 @@ router.post("/provision-wildcard", async (req, res) => {
   }
   try {
     const { provisionCertificate } = await import("../services/acmeClient.js");
-    const [wildcardResult, rootResult] = await Promise?.all([
+    const [wildcardResult, rootResult] = await Promise.all([
       provisionCertificate("*.max-booster.com"),
       provisionCertificate("max-booster.com"),
     ]);

@@ -1481,7 +1481,7 @@ router.get("/collaborations", async (req: Request, res: Response) => {
 
     const allProjects = [
       ...ownedProjects,
-      ...memberProjects?.filter((p) => p?.ownerId !== userId),
+      ...(memberProjects?.filter((p) => p?.ownerId !== userId) ?? []),
     ];
 
     const collaborations = allProjects?.map((project) => {
@@ -1553,7 +1553,7 @@ router.post(
       if (files?.audioFile?.[0]) {
         const audioFile = files?.audioFile[0];
         const ext = path?.extname(audioFile?.originalname) || ".mp3";
-        const filename = `${Date?.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
+        const filename = `${Date.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
         uploadedAudioKey = await storageService?.uploadFile(
           audioFile?.buffer,
           "beats",
@@ -1683,7 +1683,7 @@ router.post(
             const batchSize = 10;
             for (let i = 0; i < followers.length; i += batchSize) {
               const batch = followers?.slice(i, i + batchSize);
-              await Promise?.all(
+              await Promise.all(
                 batch?.map((followerId) =>
                   notificationService
                     .send({
@@ -1965,7 +1965,7 @@ router.put(
       if (files?.audio?.[0]) {
         const audioFile = files?.audio[0];
         const ext = path?.extname(audioFile?.originalname).toLowerCase();
-        const filename = `${Date?.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
+        const filename = `${Date.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
         const audioKey = await storageService?.uploadFile(
           audioFile?.buffer,
           "beats",
@@ -2112,7 +2112,7 @@ router.post("/affiliates", async (req: Request, res: Response) => {
     if (!parsed?.success) {
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
-    const { name, email, commissionRate } = parsed?.data;
+    const { name, email, commissionRate } = parsed?.data ?? {};
 
     const userId = (req.user as unknown as Record<string, unknown>).id;
     const settingKey = `affiliates:${userId}`;
@@ -2126,7 +2126,7 @@ router.post("/affiliates", async (req: Request, res: Response) => {
       : [];
 
     const affiliate = {
-      id: `aff-${Date?.now()}`,
+      id: `aff-${Date.now()}`,
       name,
       email,
       affiliateCode: `REF-${crypto?.randomBytes(3).toString("hex").toUpperCase()}`,
@@ -2169,7 +2169,7 @@ router.post("/contracts", async (req: Request, res: Response) => {
     if (!parsed?.success) {
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
-    const { name, description, content, category, variables } = parsed?.data;
+    const { name, description, content, category, variables } = parsed?.data ?? {};
 
     const contract = await storage.createContractTemplate({
       userId,
@@ -2198,7 +2198,7 @@ router.post("/collaborations", async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const { toUserId, beatId, type, terms, splitPercentage, budget, message } =
-      parsed?.data;
+      parsed?.data ?? {};
     const userId = req.user!.id;
 
     const fromUser = {
@@ -2668,7 +2668,7 @@ router.post("/stems/:stemId/purchase", async (req: Request, res: Response) => {
     const { stemId } = req.params as { stemId: string };
     res.json({
       success: true,
-      purchaseId: `purchase_${Date?.now()}`,
+      purchaseId: `purchase_${Date.now()}`,
       stemId,
       downloadUrl: `/api/marketplace/stems/${stemId}/download`,
     });
@@ -2703,7 +2703,7 @@ router.get(
       res.json({
         success: true,
         downloadUrl: `/uploads/stems/${stemId}_${trackId}.wav`,
-        expiresAt: new Date(Date?.now() + 3600000).toISOString(),
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
       });
     } catch (error) {
       logger.warn({ err: error }, "Error generating stem download:");

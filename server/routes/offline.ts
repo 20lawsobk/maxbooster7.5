@@ -75,7 +75,7 @@ router.get("/capabilities", requireAuth, async (_req, res) => {
 router.post("/cache", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { projectId } = cacheProjectSchema?.parse(req.body);
+    const { projectId } = cacheProjectSchema?.parse(req.body) ?? {};
 
     const cachedProject = await offlineModeService?.cacheProject(
       projectId,
@@ -196,7 +196,7 @@ router.post("/sync/:projectId", requireAuth, async (req, res) => {
 
 router.post("/sync-all", requireAuth, async (_req, res) => {
   try {
-    const { results, totalTime } = await offlineModeService?.syncAll();
+    const { results, totalTime } = await (offlineModeService?.syncAll() ?? {});
 
     res.json({
       success: true,

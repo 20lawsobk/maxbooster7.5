@@ -102,7 +102,7 @@ export class CompingService {
       const lanes = await this.getGroupLanes(groupId);
       const versions = await this.getCompVersions(groupId);
 
-      const lanesWithSegments: TakeLaneWithSegments[] = await Promise?.all(
+      const lanesWithSegments: TakeLaneWithSegments[] = await Promise.all(
         lanes?.map(async (lane) => {
           const segments = await this.getLaneSegments(lane?.id);
           return { ...lane, segments };
@@ -589,7 +589,7 @@ export class CompingService {
         metadata: (original as any).metadata,
       });
 
-      for (const lane of original?.lanes) {
+      for (const lane of original?.lanes ?? []) {
         const newLane = await this.createTakeLane({
           takeGroupId: newGroup.id,
           audioClipId: (lane as any).audioClipId,
@@ -601,7 +601,7 @@ export class CompingService {
           notes: (lane as any).notes,
         });
 
-        for (const segment of lane?.segments) {
+        for (const segment of lane?.segments ?? []) {
           await this.createTakeSegment({
             takeGroupId: newGroup.id,
             takeLaneId: newLane.id,

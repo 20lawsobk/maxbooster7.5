@@ -127,7 +127,7 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const { content } = scoreViralSchema?.parse(req.body);
+      const { content } = scoreViralSchema?.parse(req.body) ?? {};
 
       const contentData = buildContentData(content, userId);
 
@@ -154,7 +154,7 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const { content } = scoreViralSchema?.parse(req.body);
+      const { content } = scoreViralSchema?.parse(req.body) ?? {};
 
       const contentData = buildContentData(content, userId);
 
@@ -179,7 +179,7 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const { content } = scoreViralSchema?.parse(req.body);
+      const { content } = scoreViralSchema?.parse(req.body) ?? {};
 
       const contentData = buildContentData(content, userId);
 
@@ -203,7 +203,7 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const { variants } = compareVariantsSchema?.parse(req.body);
+      const { variants } = compareVariantsSchema?.parse(req.body) ?? {};
 
       const contentVariants: ContentData[] = variants?.map((v) =>
         buildContentData(v, userId),
@@ -293,7 +293,7 @@ router.post(
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
     try {
-      const { platform, timezone, targetDate } = timingSchema?.parse(req.body);
+      const { platform, timezone, targetDate } = timingSchema?.parse(req.body) ?? {};
 
       const date = targetDate ? new Date(targetDate) : new Date();
       const recommendation =
@@ -397,7 +397,7 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const { content, count } = generateVariantsSchema?.parse(req.body);
+      const { content, count } = generateVariantsSchema?.parse(req.body) ?? {};
 
       const contentData = buildContentData(content, userId);
 
@@ -407,7 +407,7 @@ router.post(
       );
 
       logger.info(
-        `🎯 Generated ${result?.variants.length} variants for user ${userId}`,
+        `🎯 Generated ${result?.variants?.length} variants for user ${userId}`,
       );
 
       res.json({
@@ -455,7 +455,7 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const { content, count } = generateVariantsSchema?.parse(req.body);
+      const { content, count } = generateVariantsSchema?.parse(req.body) ?? {};
 
       const contentData = buildContentData(content, userId);
 
@@ -482,7 +482,7 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const { content } = scoreViralSchema?.parse(req.body);
+      const { content } = scoreViralSchema?.parse(req.body) ?? {};
 
       const contentData = buildContentData(content, userId);
 
@@ -548,7 +548,7 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const { platform, recentMetrics } = algorithmHealthSchema?.parse(req.body);
+      const { platform, recentMetrics } = algorithmHealthSchema?.parse(req.body) ?? {};
 
       // Provide defaults for optional array fields so the type matches
       const normalizedMetrics: {
@@ -628,7 +628,7 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const { platform, recentMetrics } = shadowbanCheckSchema?.parse(req.body);
+      const { platform, recentMetrics } = shadowbanCheckSchema?.parse(req.body) ?? {};
 
       const result = await algorithmIntelligenceService?.checkShadowBan(
         platform,
@@ -730,8 +730,8 @@ router.get(
 
       const platforms = ["tiktok", "instagram", "youtube", "twitter"];
 
-      const [healthResults, timingResults] = await Promise?.all([
-        Promise?.all(
+      const [healthResults, timingResults] = await Promise.all([
+        Promise.all(
           platforms?.map((platform) =>
             algorithmIntelligenceService?.checkAlgorithmHealth(platform, userId),
           ),
@@ -792,7 +792,7 @@ router.get(
       for (const platform of platforms) {
         const timing = timingResults[platform];
         if (timing) {
-          for (const slot of timing?.bestTimes.slice(0, 5)) {
+          for (const slot of timing?.bestTimes?.slice(0, 5) ?? []) {
             heatmapData?.push({
               dayOfWeek: slot.dayOfWeek,
               hour: slot.hour,
@@ -833,7 +833,7 @@ router.get(
       const userId = req.user!.id;
 
       const defaultPlatform = "instagram";
-      const [health, patterns, insights] = await Promise?.all([
+      const [health, patterns, insights] = await Promise.all([
         algorithmIntelligenceService?.checkAlgorithmHealth(
           defaultPlatform,
           userId,

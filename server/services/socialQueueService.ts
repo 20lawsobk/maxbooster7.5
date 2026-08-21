@@ -142,7 +142,7 @@ class SocialQueueService {
       const hourKey = `rate:${platform}:${accountId}:hour`;
       const dayKey = `rate:${platform}:${accountId}:day`;
 
-      const [hourCount, dayCount] = await Promise?.all([
+      const [hourCount, dayCount] = await Promise.all([
         client?.get(hourKey),
         client?.get(dayKey),
       ]);
@@ -167,7 +167,7 @@ class SocialQueueService {
       const hourKey = `rate:${platform}:${accountId}:hour`;
       const dayKey = `rate:${platform}:${accountId}:day`;
 
-      await Promise?.all([client?.incr(hourKey), client?.incr(dayKey)]);
+      await Promise.all([client?.incr(hourKey), client?.incr(dayKey)]);
       await client?.expire(hourKey, 3600);
       await client?.expire(dayKey, 86400);
     } catch (error) {
@@ -201,7 +201,7 @@ class SocialQueueService {
             lastHit: 0,
           };
 
-      const now = Date?.now();
+      const now = Date.now();
       const timeSinceLastHit = now - state?.lastHit;
 
       if (timeSinceLastHit > 3600000) {
@@ -261,7 +261,7 @@ class SocialQueueService {
       }
 
       const state: RateLimitBackoffState = JSON.parse(stateJson);
-      const now = Date?.now();
+      const now = Date.now();
 
       if (state?.backoffUntil > now) {
         return {
@@ -312,7 +312,7 @@ class SocialQueueService {
       const hourKey = `rate:${platform}:${accountId}:hour`;
       const dayKey = `rate:${platform}:${accountId}:day`;
 
-      const [hourCount, dayCount, backoffStatus] = await Promise?.all([
+      const [hourCount, dayCount, backoffStatus] = await Promise.all([
         client?.get(hourKey),
         client?.get(dayKey),
         this.isInBackoff(platform, accountId),
@@ -536,7 +536,7 @@ class SocialQueueService {
   }
 
   async close(): Promise<void> {
-    await Promise?.all([this.socialQueue.close(), this.batchQueue.close()]);
+    await Promise.all([this.socialQueue.close(), this.batchQueue.close()]);
     logger.info("📱 Social media queues closed");
   }
 }

@@ -132,6 +132,6 @@ export function aspectRatioHeight(
   width: number,
   aspectRatio: string = "16/9",
 ): number {
-  const [w, h] = aspectRatio?.split("/").map(Number);
+  const [w, h] = aspectRatio?.split("/").map(Number) ?? [];
   return Math.round(width * (h / w));
 }

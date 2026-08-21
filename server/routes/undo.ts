@@ -23,7 +23,7 @@ interface UndoAction {
 const actionCache = new Map<string, UndoAction>();
 
 function generateActionId(): string {
-  return `action_${Date?.now()}_${randomBytes(4).toString("hex")}`;
+  return `action_${Date.now()}_${randomBytes(4).toString("hex")}`;
 }
 
 router.post("/action", async (req: Request, res: Response) => {
@@ -71,7 +71,7 @@ router.post("/action", async (req: Request, res: Response) => {
     );
     if (userActions?.length > 100) {
       const oldest = userActions?.sort(
-        (a, b) => a?.createdAt.getTime() - b?.createdAt.getTime(),
+        (a, b) => a?.createdAt?.getTime() - b?.createdAt?.getTime(),
       )[0];
       actionCache?.delete(oldest?.id);
     }
@@ -179,7 +179,7 @@ router.get("/history", async (req: Request, res: Response) => {
 
     let userActions = Array.from(actionCache?.values())
       .filter((a) => a?.userId === req.user!.id)
-      .sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
+      .sort((a, b) => b?.createdAt?.getTime() - a?.createdAt?.getTime());
 
     if (category) {
       userActions = userActions?.filter((a) => a?.category === category);
@@ -323,7 +323,7 @@ router.post("/record", async (req: Request, res: Response) => {
     );
     if (userActions?.length > 100) {
       const oldest = userActions?.sort(
-        (a, b) => a?.createdAt.getTime() - b?.createdAt.getTime(),
+        (a, b) => a?.createdAt?.getTime() - b?.createdAt?.getTime(),
       )[0];
       actionCache?.delete(oldest?.id);
     }
@@ -391,7 +391,7 @@ router.post("/batch", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Actions array is required" });
     }
 
-    const groupId = `group_${Date?.now()}_${randomBytes(4).toString("hex")}`;
+    const groupId = `group_${Date.now()}_${randomBytes(4).toString("hex")}`;
     const recordedIds: string[] = [];
 
     for (const actionData of actions) {
@@ -457,8 +457,8 @@ const MAX_RESTORE_POINTS = 10_000;
 
 setInterval(
   () => {
-    const now = Date?.now();
-    for (const [id, item] of deletedItemCache?.entries()) {
+    const now = Date.now();
+    for (const [id, item] of deletedItemCache?.entries() ?? []) {
       if (item?.expiresAt && new Date(item?.expiresAt).getTime() < now)
         deletedItemCache?.delete(id);
     }
@@ -467,7 +467,7 @@ setInterval(
       if (k !== undefined) deletedItemCache?.delete(k);
       else break;
     }
-    for (const [id, rp] of restorePointCache?.entries()) {
+    for (const [id, rp] of restorePointCache?.entries() ?? []) {
       if ((rp as any)?.expiresAt && new Date((rp as any)?.expiresAt).getTime() < now)
         restorePointCache?.delete(id);
     }
@@ -486,11 +486,11 @@ setInterval(
 ).unref(); // run hourly
 
 function generateRestorePointId(): string {
-  return `restore_${Date?.now()}_${randomBytes(4).toString("hex")}`;
+  return `restore_${Date.now()}_${randomBytes(4).toString("hex")}`;
 }
 
 function generateDeletedItemId(): string {
-  return `deleted_${Date?.now()}_${randomBytes(4).toString("hex")}`;
+  return `deleted_${Date.now()}_${randomBytes(4).toString("hex")}`;
 }
 
 router.post("/track-action", async (req: Request, res: Response) => {
@@ -543,7 +543,7 @@ router.post("/track-action", async (req: Request, res: Response) => {
         name: description,
         data: previousState,
         deletedAt: new Date(),
-        expiresAt: new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       };
       deletedItemCache?.set(deletedItem?.id, deletedItem);
     }
@@ -553,7 +553,7 @@ router.post("/track-action", async (req: Request, res: Response) => {
     );
     if (userActions?.length > 100) {
       const oldest = userActions?.sort(
-        (a, b) => a?.createdAt.getTime() - b?.createdAt.getTime(),
+        (a, b) => a?.createdAt?.getTime() - b?.createdAt?.getTime(),
       )[0];
       actionCache?.delete(oldest?.id);
     }
@@ -583,7 +583,7 @@ router.post("/create-restore-point", async (req: Request, res: Response) => {
 
     const userActions = Array.from(actionCache?.values())
       .filter((a) => a?.userId === req.user!.id)
-      .sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
+      .sort((a, b) => b?.createdAt?.getTime() - a?.createdAt?.getTime());
 
     const lastAction = userActions[0];
 
@@ -603,7 +603,7 @@ router.post("/create-restore-point", async (req: Request, res: Response) => {
     );
     if (userRestorePoints?.length > 20) {
       const oldest = userRestorePoints?.sort(
-        (a, b) => a?.createdAt.getTime() - b?.createdAt.getTime(),
+        (a, b) => a?.createdAt?.getTime() - b?.createdAt?.getTime(),
       )[0];
       restorePointCache?.delete(oldest?.id);
     }
@@ -627,7 +627,7 @@ router.get("/restore-points", async (req: Request, res: Response) => {
 
     const userRestorePoints = Array.from(restorePointCache?.values())
       .filter((rp) => rp?.userId === req.user!.id)
-      .sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
+      .sort((a, b) => b?.createdAt?.getTime() - a?.createdAt?.getTime());
 
     return res.json({
       success: true,
@@ -666,7 +666,7 @@ router.post("/restore/:pointId", async (req: Request, res: Response) => {
 
     const userActions = Array.from(actionCache?.values())
       .filter((a) => a?.userId === req.user!.id)
-      .sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
+      .sort((a, b) => b?.createdAt?.getTime() - a?.createdAt?.getTime());
 
     const restorePointAction = actionCache?.get(restorePoint?.actionId);
     const undoneActions: string[] = [];
@@ -748,7 +748,7 @@ router.get("/deleted-items", async (req: Request, res: Response) => {
     }
 
     userDeletedItems?.sort(
-      (a, b) => b?.deletedAt.getTime() - a?.deletedAt.getTime(),
+      (a, b) => b?.deletedAt?.getTime() - a?.deletedAt?.getTime(),
     );
 
     const limitNum = Math.min(parseInt(limit as string) || 50, 100);

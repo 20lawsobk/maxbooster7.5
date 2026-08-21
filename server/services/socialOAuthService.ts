@@ -128,7 +128,7 @@ export class SocialOAuthService {
    */
   private decryptToken(encryptedText: string): string | null {
     try {
-      const [ivHex, authTagHex, encrypted] = encryptedText?.split(":");
+      const [ivHex, authTagHex, encrypted] = encryptedText?.split(":") ?? [];
       if (!ivHex || !authTagHex || !encrypted) {
         // Legacy unencrypted token - return as-is for migration
         return encryptedText;
@@ -179,7 +179,7 @@ export class SocialOAuthService {
   private async checkAndRefreshExpiringTokens(): Promise<void> {
     try {
       // Query tokens expiring within the refresh buffer (5 minutes from now)
-      const expiryThreshold = new Date(Date?.now() + TOKEN_REFRESH_BUFFER_MS);
+      const expiryThreshold = new Date(Date.now() + TOKEN_REFRESH_BUFFER_MS);
       const now = new Date();
 
       const expiringAccounts = await db
@@ -203,7 +203,7 @@ export class SocialOAuthService {
           if (!account?.tokenExpiresAt || !account?.refreshToken) continue;
 
           const expiresAt = new Date(account?.tokenExpiresAt).getTime();
-          const timeUntilExpiry = expiresAt - Date?.now();
+          const timeUntilExpiry = expiresAt - Date.now();
 
           // Refresh if expiring within buffer period
           if (
@@ -344,7 +344,7 @@ export class SocialOAuthService {
     // Check if token is expired or expiring soon
     if ((tokens as any)?.expiresAt) {
       const expiresAt = new Date((tokens as any)?.expiresAt).getTime();
-      const now = Date?.now();
+      const now = Date.now();
 
       if (expiresAt <= now + TOKEN_REFRESH_BUFFER_MS) {
         logger.info(
@@ -561,9 +561,9 @@ export class SocialOAuthService {
     const params = new URLSearchParams({
       [isTikTok ? "client_key" : "client_id"]: config?.clientId,
       redirect_uri: config.redirectUri,
-      scope: isTikTok ? config?.scopes.join(",") : config.scopes.join(" "),
+      scope: isTikTok ? config?.scopes?.join(",") : config.scopes.join(" "),
       response_type: "code",
-      state: `${userId}:${platform}:${Date?.now()}`,
+      state: `${userId}:${platform}:${Date.now()}`,
     });
 
     if (!isTikTok) {
@@ -622,7 +622,7 @@ export class SocialOAuthService {
         accessToken: access_token,
         refreshToken: refresh_token,
         expiresAt: expires_in
-          ? new Date(Date?.now() + expires_in * 1000)
+          ? new Date(Date.now() + expires_in * 1000)
           : undefined,
         ...(open_id ? { platformUserId: open_id } : {}),
       });
@@ -701,12 +701,12 @@ export class SocialOAuthService {
         access_token,
         expires_in,
         refresh_token: new_refresh_token,
-      } = response?.data;
+      } = response?.data ?? {};
 
       await this.updateAccessToken(userId, platform, {
         accessToken: access_token,
         expiresAt: expires_in
-          ? new Date(Date?.now() + expires_in * 1000)
+          ? new Date(Date.now() + expires_in * 1000)
           : undefined,
         refreshToken: new_refresh_token,
       });

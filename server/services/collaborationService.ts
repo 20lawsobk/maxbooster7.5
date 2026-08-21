@@ -167,7 +167,7 @@ class CollaborationService {
       )
       .orderBy(desc(artistConnections.acceptedAt));
 
-    const result = await Promise?.all(
+    const result = await Promise.all(
       connections?.map(async (conn) => {
         const connectedUserId =
           conn?.requesterId === userId ? conn?.receiverId : conn?.requesterId;
@@ -209,7 +209,7 @@ class CollaborationService {
       )
       .orderBy(desc(artistConnections.createdAt));
 
-    const result = await Promise?.all(
+    const result = await Promise.all(
       requests?.map(async (req) => {
         const [requester] = await db
           .select({
@@ -320,10 +320,10 @@ class CollaborationService {
     const skills: string[] = [];
 
     if ((onboardingData as any)?.artistType) {
-      skills?.push((onboardingData as any)?.artistType.toLowerCase());
+      skills?.push((onboardingData as any)?.artistType?.toLowerCase());
     }
     if ((onboardingData as any)?.skills) {
-      skills?.push(...(onboardingData as any)?.skills.map((s: string) => s?.toLowerCase()));
+      skills?.push(...((onboardingData as any)?.skills?.map((s: string) => s?.toLowerCase()) ?? []));
     }
 
     return {
@@ -345,15 +345,15 @@ class CollaborationService {
     if (
       user?.genre &&
       match?.genre &&
-      user?.genre.toLowerCase() === match?.genre.toLowerCase()
+      user?.genre?.toLowerCase() === match?.genre?.toLowerCase()
     ) {
       score += 30;
       reasons?.push(`Same genre: ${user?.genre}`);
     }
 
-    for (const userSkill of user?.skills) {
+    for (const userSkill of user?.skills ?? []) {
       const complements = SKILL_COMPLEMENTS[userSkill] || [];
-      for (const matchSkill of match?.skills) {
+      for (const matchSkill of match?.skills ?? []) {
         if (complements?.includes(matchSkill)) {
           score += 25;
           reasons?.push(`Complementary skills: ${userSkill} + ${matchSkill}`);
@@ -375,7 +375,7 @@ class CollaborationService {
     if (
       user?.location &&
       match?.location &&
-      user?.location.toLowerCase() === match?.location.toLowerCase()
+      user?.location?.toLowerCase() === match?.location?.toLowerCase()
     ) {
       score += 15;
       reasons?.push(`Same location: ${user?.location}`);
@@ -383,7 +383,7 @@ class CollaborationService {
 
     if (match?.lastActive) {
       const daysSinceActive = Math.floor(
-        (Date?.now() - new Date(match?.lastActive).getTime()) /
+        (Date.now() - new Date(match?.lastActive).getTime()) /
           (1000 * 60 * 60 * 24),
       );
       if (daysSinceActive < 7) {
@@ -452,14 +452,14 @@ class CollaborationService {
 
     const projects = await query?.orderBy(desc(collaborationProjects.createdAt));
 
-    const result = await Promise?.all(
+    const result = await Promise.all(
       projects?.map(async (project) => {
         const members = await db
           .select()
           .from(projectMembers)
           .where(eq(projectMembers.projectId, project?.id));
 
-        const membersWithUsers = await Promise?.all(
+        const membersWithUsers = await Promise.all(
           members?.map(async (member) => {
             const [user] = await db
               .select({
@@ -637,7 +637,7 @@ class CollaborationService {
       });
     }
 
-    if (filters?.skills && filters?.skills.length > 0) {
+    if (filters?.skills && filters?.skills?.length > 0) {
       filteredResults = filteredResults?.filter((user) => {
         const data = user?.onboardingData as Record<string, unknown>;
         const userSkills = [

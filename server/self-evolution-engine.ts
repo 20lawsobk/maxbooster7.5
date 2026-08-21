@@ -1443,7 +1443,7 @@ export class SelfEvolutionEngine extends EventEmitter {
         seenChangeIds?: string[];
       };
       if (Array.isArray(state?.seenChangeIds)) {
-        for (const id of state?.seenChangeIds) this.seenChangeIds.add(id);
+        for (const id of state?.seenChangeIds ?? []) this.seenChangeIds.add(id);
         logger.info(
           `🧬 Restored ${this.seenChangeIds.size} seen change IDs from Pocket Dimension`,
         );
@@ -1550,7 +1550,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     changesDetected: number;
     upgradesDeployed: number;
   }> {
-    const cycleId = `manual_evolution_${Date?.now()}`;
+    const cycleId = `manual_evolution_${Date.now()}`;
     logger.info(
       `🔧 MANUAL EVOLUTION TRIGGER: Starting controlled upgrade cycle ${cycleId}`,
     );
@@ -1692,7 +1692,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     }
 
     this.isCycleRunning = true;
-    const cycleId = `evolution_${Date?.now()}`;
+    const cycleId = `evolution_${Date.now()}`;
     logger.info(`🧬 Starting evolution cycle: ${cycleId}`);
 
     try {
@@ -2367,12 +2367,12 @@ export class SelfEvolutionEngine extends EventEmitter {
   private async monitorDeploymentHealth(): Promise<void> {
     try {
       const port = process.env.PORT || "5000";
-      const start = Date?.now();
+      const start = Date.now();
 
       const responseTime = await new Promise<number>((resolve, reject) => {
         const req = http?.get(`http://127.0.0.1:${port}/api/health`, (res) => {
           res.resume();
-          res.on("end", () => resolve(Date?.now() - start));
+          res.on("end", () => resolve(Date.now() - start));
         });
         req.setTimeout(5000, () => {
           req.destroy();
@@ -2531,7 +2531,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     };
 
     const files: string[] = [];
-    for (const module of change?.affectedModules) {
+    for (const module of change?.affectedModules ?? []) {
       if (moduleFileMap[module]) {
         files?.push(...moduleFileMap[module]);
       }
@@ -2596,7 +2596,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     };
     memoryUsage: { changes: number; upgrades: number; seenIds: number };
   } {
-    const now = Date?.now();
+    const now = Date.now();
     const expectedIntervalMs = this.MONITORING_INTERVAL_MS * 1.5;
     const intervalHealthy =
       !this.isRunning || !this.lastCycleAt

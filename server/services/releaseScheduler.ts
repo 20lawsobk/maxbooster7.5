@@ -229,17 +229,17 @@ class ReleaseScheduler {
       const window = PLATFORM_WINDOWS[platform?.toLowerCase()];
       if (!window) continue;
 
-      if (daysUntilRelease < window?.minLeadDays) {
+      if (daysUntilRelease < window.minLeadDays) {
         issues?.push({
           platform: window.platform,
-          issue: `Requires at least ${window?.minLeadDays} days lead time (${daysUntilRelease} days provided)`,
+          issue: `Requires at least ${window.minLeadDays} days lead time (${daysUntilRelease} days provided)`,
         });
       }
 
-      if (daysUntilRelease > window?.maxFutureDays) {
+      if (daysUntilRelease > window.maxFutureDays) {
         issues?.push({
           platform: window.platform,
-          issue: `Cannot schedule more than ${window?.maxFutureDays} days in advance`,
+          issue: `Cannot schedule more than ${window.maxFutureDays} days in advance`,
         });
       }
     }
@@ -268,15 +268,15 @@ class ReleaseScheduler {
     const validation = this.validateScheduleForPlatforms(finalDate, platforms);
 
     if (!validation?.valid) {
-      for (const issue of validation?.issues) {
+      for (const issue of validation?.issues ?? []) {
         warnings?.push(`${issue?.platform}: ${issue?.issue}`);
       }
     }
 
     const maxLeadTime = Math.max(
-      ...platforms?.map(
+      ...(platforms?.map(
         (p) => PLATFORM_WINDOWS[p?.toLowerCase()]?.minLeadDays || 7,
-      ),
+      ) ?? []),
     );
 
     const now = new Date();
@@ -312,7 +312,7 @@ class ReleaseScheduler {
         continue;
       }
 
-      const effectiveDate = this.convertToTimezone(finalDate, window?.timezone);
+      const effectiveDate = this.convertToTimezone(finalDate, window.timezone);
       const daysToRelease = Math.ceil(
         (effectiveDate?.getTime() - now?.getTime()) / (1000 * 60 * 60 * 24),
       );
@@ -321,7 +321,7 @@ class ReleaseScheduler {
         platform: window.platform,
         effectiveDate,
         status:
-          daysToRelease >= window?.minLeadDays
+          daysToRelease >= window.minLeadDays
             ? "scheduled"
             : "insufficient_lead_time",
       });
@@ -361,7 +361,7 @@ class ReleaseScheduler {
             metadata: {
               platform: schedule.platform,
               timezone:
-                PLATFORM_WINDOWS[schedule?.platform.toLowerCase()]?.timezone ||
+                PLATFORM_WINDOWS[schedule?.platform?.toLowerCase()]?.timezone ||
                 "UTC",
             },
             status: "pending",
@@ -377,7 +377,7 @@ class ReleaseScheduler {
         success: true,
         scheduledDate: finalDate,
         adjustedDate:
-          request?.scheduledDate.getTime() !== finalDate?.getTime()
+          request?.scheduledDate?.getTime() !== finalDate?.getTime()
             ? finalDate
             : undefined,
         warnings,
@@ -720,9 +720,9 @@ class ReleaseScheduler {
 
     for (const platform of platforms) {
       const window = PLATFORM_WINDOWS[platform?.toLowerCase()];
-      if (window && window?.minLeadDays > maxLeadTime) {
-        maxLeadTime = window?.minLeadDays;
-        limitingPlatform = window?.platform;
+      if (window && window.minLeadDays > maxLeadTime) {
+        maxLeadTime = window.minLeadDays;
+        limitingPlatform = window.platform;
       }
     }
 

@@ -77,7 +77,7 @@ function calculateLUFS(samples: number[], sampleRate: number): number {
 
 function calculatePeakDB(samples: number[]): number {
   if (samples?.length === 0) return -Infinity;
-  const peak = Math.max(...samples?.map(Math.abs));
+  const peak = Math.max(...(samples?.map(Math.abs) ?? []));
   const peakDB = 20 * Math.log10(peak);
   return isFinite(peakDB) ? Math.round(peakDB * 100) / 100 : -Infinity;
 }
@@ -98,7 +98,7 @@ function calculateDynamicRange(samples: number[]): {
     return { peak: 0, rms: 0, dynamicRange: 0, crestFactor: 0 };
   }
 
-  const peak = Math.max(...samples?.map(Math.abs));
+  const peak = Math.max(...(samples?.map(Math.abs) ?? []));
   const rms = calculateRMS(samples);
   const dynamicRange = peak > 0 && rms > 0 ? 20 * Math.log10(peak / rms) : 0;
   const crestFactor = rms > 0 ? peak / rms : 0;
@@ -240,7 +240,7 @@ router.post("/analyze", requireAuth, async (req: Request, res: Response) => {
     }
 
     const { sampleRate, channels, samples, leftChannel, rightChannel } =
-      validation?.data;
+      validation?.data ?? {};
 
     let allSamples: number[] = [];
     let left: number[] = [];
@@ -316,7 +316,7 @@ router.post("/process", requireAuth, async (req: Request, res: Response) => {
       leftChannel,
       rightChannel,
       processingChain,
-    } = validation?.data;
+    } = validation?.data ?? {};
 
     let processedSamples: number[] = [];
 
@@ -340,15 +340,15 @@ router.post("/process", requireAuth, async (req: Request, res: Response) => {
     for (const processor of processingChain) {
       switch (processor?.type) {
         case "gain":
-          const gainDB = processor?.parameters.gain ?? 0;
+          const gainDB = processor?.parameters?.gain ?? 0;
           processedSamples = applyGain(processedSamples, gainDB);
           break;
 
         case "compressor":
-          const threshold = processor?.parameters.threshold ?? -24;
-          const ratio = processor?.parameters.ratio ?? 4;
-          const attack = processor?.parameters.attack ?? 0.003;
-          const release = processor?.parameters.release ?? 0.1;
+          const threshold = processor?.parameters?.threshold ?? -24;
+          const ratio = processor?.parameters?.ratio ?? 4;
+          const attack = processor?.parameters?.attack ?? 0.003;
+          const release = processor?.parameters?.release ?? 0.1;
           processedSamples = applyCompressor(
             processedSamples,
             threshold,
@@ -360,7 +360,7 @@ router.post("/process", requireAuth, async (req: Request, res: Response) => {
           break;
 
         case "limiter":
-          const ceiling = processor?.parameters.ceiling ?? -0.3;
+          const ceiling = processor?.parameters?.ceiling ?? -0.3;
           processedSamples = applyLimiter(processedSamples, ceiling);
           break;
 

@@ -157,7 +157,7 @@ export function generateKeyPair(
   flags: number;
   keyTag: number;
 } {
-  const { privateKey, publicKey } = crypto?.generateKeyPairSync("ec", {
+  const { privateKey, publicKey } = crypto.generateKeyPairSync("ec", {
     namedCurve: "P-256",
   });
 
@@ -338,7 +338,7 @@ export function signRRset(
   keyTag: number,
   zone: string,
 ): RrsigRecord {
-  const now = Math.floor(Date?.now() / 1000);
+  const now = Math.floor(Date.now() / 1000);
   const inception = now - 300; // 5 min backdated for clock skew
   const expiration = now + SIGNATURE_VALIDITY_DAYS * 86400;
   const labels = countLabels(ownerName);
@@ -575,7 +575,7 @@ export async function loadKeys(
       privateKeyPem: r.privateKeyPem,
       publicKeyPem: r.publicKeyPem,
       publicKeyRaw: Buffer.from(r?.publicKeyRaw as string, "base64"),
-      expiresAt: r.expiresAt ?? new Date(Date?.now() + 90 * 86400000),
+      expiresAt: r.expiresAt ?? new Date(Date.now() + 90 * 86400000),
     });
 
     return { ksk: toKeyPair(kskRow), zsk: toKeyPair(zskRow) };
@@ -592,7 +592,7 @@ export async function provisionKeys(
   const kskGen = generateKeyPair(true, zone);
   const zskGen = generateKeyPair(false, zone);
 
-  const expiresAt = new Date(Date?.now() + 365 * 86400000); // 1 year
+  const expiresAt = new Date(Date.now() + 365 * 86400000); // 1 year
 
   const toInsert = (
     gen: ReturnType<typeof generateKeyPair>,
@@ -646,7 +646,7 @@ export async function getOrCreateKeys(
   zone: string,
 ): Promise<{ ksk: DnssecKeyPair; zsk: DnssecKeyPair } | null> {
   const cached = keyCache?.get(zone);
-  if (cached && Date?.now() - cached?.cachedAt < 300_000) return cached?.keys;
+  if (cached && Date.now() - cached?.cachedAt < 300_000) return cached?.keys;
 
   let keys = await loadKeys(zone);
   if (!keys) keys = await provisionKeys(zone);

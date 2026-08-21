@@ -68,7 +68,7 @@ export class RoyaltiesCSVImportService {
     let validCount = 0;
     let invalidCount = 0;
 
-    for (const row of rows?.slice(0, 100)) {
+    for (const row of rows?.slice(0, 100) ?? []) {
       const mapped = this.mapColumns(row, mapping);
       const validation = this.validateRow(mapped);
 
@@ -122,7 +122,7 @@ export class RoyaltiesCSVImportService {
   }
 
   async processCSVImport(data: CSVImportJobData): Promise<CSVImportResult> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
 
     try {
       // Download CSV from storage
@@ -183,7 +183,7 @@ export class RoyaltiesCSVImportService {
         completedAt: new Date(),
       });
 
-      const duration = Date?.now() - startTime;
+      const duration = Date.now() - startTime;
 
       return {
         rowsProcessed: rows.length,

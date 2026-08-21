@@ -253,7 +253,7 @@ export async function buildContactProfile(
   // Parse city from location string (may be "City, State" or "City, Country" format)
   let city = "Los Angeles";
   if (user?.location) {
-    const parts = user?.location.split(",");
+    const parts = user?.location?.split(",");
     city = parts[0].trim() || "Los Angeles";
   }
 
@@ -308,13 +308,13 @@ export async function getDomainEvents(
   domainId: string,
   _userId: string,
 ): Promise<unknown[]> {
-  const { rows } = await pool?.query(
+  const { rows } = (await pool?.query(
     `SELECT event_type, fqdn, metadata, created_at
      FROM domain_events
      WHERE domain_id = $1
      ORDER BY created_at DESC
      LIMIT 100`,
     [domainId],
-  );
+  )) ?? {};
   return rows;
 }

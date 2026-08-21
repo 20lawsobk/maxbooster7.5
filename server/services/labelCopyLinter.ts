@@ -639,16 +639,16 @@ export class LabelCopyLinter {
       const { errors: titleErrors, warnings: titleWarnings } =
         this.validateTitle(track?.title, true);
       errors?.push(
-        ...titleErrors?.map((e) => ({
+        ...(titleErrors?.map((e) => ({
           ...e,
           field: `tracks[${index}].${e?.field}`,
-        })),
+        })) ?? []),
       );
       warnings?.push(
-        ...titleWarnings?.map((w) => ({
+        ...(titleWarnings?.map((w) => ({
           ...w,
           field: `tracks[${index}].${w?.field}`,
-        })),
+        })) ?? []),
       );
 
       if (!track?.isrc) {
@@ -712,7 +712,7 @@ export class LabelCopyLinter {
 
     if (
       coverArt?.format &&
-      !["jpg", "jpeg", "png"].includes(coverArt?.format.toLowerCase())
+      !["jpg", "jpeg", "png"].includes(coverArt?.format?.toLowerCase())
     ) {
       errors?.push({
         field: "coverArt",
@@ -776,17 +776,17 @@ export class LabelCopyLinter {
     for (const [dsp, limits] of Object.entries(DSP_CHAR_LIMITS)) {
       const issues: string[] = [];
 
-      if (release?.title && release?.title.length > limits?.title) {
+      if (release?.title && release?.title?.length > limits?.title) {
         issues?.push(`Title exceeds ${dsp} limit of ${limits?.title} characters`);
       }
 
-      if (release?.artist && release?.artist.length > limits?.artist) {
+      if (release?.artist && release?.artist?.length > limits?.artist) {
         issues?.push(
           `Artist name exceeds ${dsp} limit of ${limits?.artist} characters`,
         );
       }
 
-      if (release?.label && release?.label.length > limits?.label) {
+      if (release?.label && release?.label?.length > limits?.label) {
         issues?.push(
           `Label name exceeds ${dsp} limit of ${limits?.label} characters`,
         );
@@ -853,16 +853,16 @@ export class LabelCopyLinter {
     const dspErrors: LintError[] = [];
     const dspWarnings: LintWarning[] = [];
 
-    if (release?.title && release?.title.length > dspLimits?.title) {
+    if (release?.title && release?.title?.length > dspLimits?.title) {
       dspErrors?.push({
         field: "title",
-        message: `Title exceeds ${dsp} limit of ${dspLimits?.title} characters (current: ${release?.title.length})`,
+        message: `Title exceeds ${dsp} limit of ${dspLimits?.title} characters (current: ${release?.title?.length})`,
         severity: "error",
         code: "DSP_TITLE_TOO_LONG",
       });
     }
 
-    if (release?.artist && release?.artist.length > dspLimits?.artist) {
+    if (release?.artist && release?.artist?.length > dspLimits?.artist) {
       dspErrors?.push({
         field: "artist",
         message: `Artist name exceeds ${dsp} limit of ${dspLimits?.artist} characters`,
@@ -873,8 +873,8 @@ export class LabelCopyLinter {
 
     return {
       ...baseResult,
-      errors: [...baseResult?.errors, ...dspErrors],
-      warnings: [...baseResult?.warnings, ...dspWarnings],
+      errors: [...(baseResult?.errors ?? []), ...dspErrors],
+      warnings: [...(baseResult?.warnings ?? []), ...dspWarnings],
       valid: baseResult.valid && dspErrors?.length === 0,
     };
   }
@@ -948,7 +948,7 @@ export class LabelCopyLinter {
 
     if (fixed?.title) {
       const originalTitle = fixed?.title;
-      fixed.title = fixed?.title.trim().replace(/\s+/g, " ");
+      fixed.title = fixed?.title?.trim().replace(/\s+/g, " ");
       if (fixed?.title !== originalTitle) {
         appliedFixes?.push("Normalized title whitespace");
       }
@@ -956,14 +956,14 @@ export class LabelCopyLinter {
 
     if (fixed?.artist) {
       const originalArtist = fixed?.artist;
-      fixed.artist = fixed?.artist.trim().replace(/\s+/g, " ");
+      fixed.artist = fixed?.artist?.trim().replace(/\s+/g, " ");
       if (fixed?.artist !== originalArtist) {
         appliedFixes?.push("Normalized artist whitespace");
       }
     }
 
     if (fixed?.tracks) {
-      fixed.tracks = fixed?.tracks.map((track, index) => {
+      fixed.tracks = fixed?.tracks?.map((track, index) => {
         const originalTitle = track?.title;
         const fixedTitle = track?.title?.trim().replace(/\s+/g, " ");
         if (fixedTitle !== originalTitle) {

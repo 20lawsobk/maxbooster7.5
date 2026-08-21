@@ -508,7 +508,7 @@ export function useFlowStateAdapter(
       ...prev,
       selectionType: "track",
       selectedTrackIds: addToSelection
-        ? [...prev?.selectedTrackIds, trackId]
+        ? [...(prev?.selectedTrackIds ?? []), trackId]
         : [trackId],
     }));
   }, []);
@@ -518,7 +518,7 @@ export function useFlowStateAdapter(
       ...prev,
       selectionType: "clip",
       selectedClipIds: addToSelection
-        ? [...prev?.selectedClipIds, clipId]
+        ? [...(prev?.selectedClipIds ?? []), clipId]
         : [clipId],
     }));
   }, []);

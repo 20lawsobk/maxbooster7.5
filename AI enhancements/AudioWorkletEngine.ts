@@ -147,19 +147,19 @@ export class AudioWorkletEngine {
         this.workletReady = true;
 
         this.workletNode.port.onmessage = (event) => {
-          const { type, data } = event?.data;
+          const { type, data } = event?.data ?? {};
           if (type === "metering") {
             this.state.currentSample = data?.position;
             this.state.currentTime = data?.time;
 
             const peakLeftDb =
-              data?.peakLeft > 0 ? 20 * Math?.log10(data?.peakLeft) : -Infinity;
+              data?.peakLeft > 0 ? 20 * Math.log10(data?.peakLeft) : -Infinity;
             const peakRightDb =
-              data?.peakRight > 0 ? 20 * Math?.log10(data?.peakRight) : -Infinity;
+              data?.peakRight > 0 ? 20 * Math.log10(data?.peakRight) : -Infinity;
             const rmsLeftDb =
-              data?.rmsLeft > 0 ? 20 * Math?.log10(data?.rmsLeft) : -Infinity;
+              data?.rmsLeft > 0 ? 20 * Math.log10(data?.rmsLeft) : -Infinity;
             const rmsRightDb =
-              data?.rmsRight > 0 ? 20 * Math?.log10(data?.rmsRight) : -Infinity;
+              data?.rmsRight > 0 ? 20 * Math.log10(data?.rmsRight) : -Infinity;
 
             const masterMeteringData: MeteringData = {
               trackId: "master",
@@ -264,14 +264,14 @@ export class AudioWorkletEngine {
     let peak = 0;
 
     for (let i = 0; i < bufferLength; i++) {
-      const value = Math?.abs(dataArray[i]);
+      const value = Math.abs(dataArray[i]);
       sumSquares += dataArray[i] * dataArray[i];
       if (value > peak) peak = value;
     }
 
-    const rms = Math?.sqrt(sumSquares / bufferLength);
-    const dbPeak = peak > 0 ? 20 * Math?.log10(peak) : -Infinity;
-    const dbRms = rms > 0 ? 20 * Math?.log10(rms) : -Infinity;
+    const rms = Math.sqrt(sumSquares / bufferLength);
+    const dbPeak = peak > 0 ? 20 * Math.log10(peak) : -Infinity;
+    const dbRms = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
 
     return {
       trackId,
@@ -336,10 +336,10 @@ export class AudioWorkletEngine {
     if (!nodes || !this?.audioContext) return;
 
     // volume is linear 0.0–1.0 from the store (fader position)
-    const clampedVolume = Math?.max(0, Math?.min(1, volume));
+    const clampedVolume = Math.max(0, Math.min(1, volume));
     nodes.volume = clampedVolume;
 
-    const hasSolo = Array?.from(this?.trackNodes.values()).some((n) => n?.solo);
+    const hasSolo = Array.from(this?.trackNodes.values()).some((n) => n?.solo);
     const shouldMute = nodes?.muted || (hasSolo && !nodes?.solo);
     if (!shouldMute) {
       nodes?.gain.gain?.setTargetAtTime(
@@ -376,7 +376,7 @@ export class AudioWorkletEngine {
   private updateTrackSoloMute(): void {
     if (!this?.audioContext) return;
 
-    const hasSolo = Array?.from(this?.trackNodes.values()).some((n) => n?.solo);
+    const hasSolo = Array.from(this?.trackNodes.values()).some((n) => n?.solo);
 
     this?.trackNodes.forEach((nodes, _trackId) => {
       let shouldMute = nodes?.muted;
@@ -398,7 +398,7 @@ export class AudioWorkletEngine {
     if (!this?.masterGain || !this?.audioContext) return;
 
     // volume is linear 0.0–1.0 from the store
-    const clampedVolume = Math?.max(0, Math?.min(1, volume));
+    const clampedVolume = Math.max(0, Math.min(1, volume));
     this?.masterGain.gain?.setTargetAtTime(
       clampedVolume,
       this?.audioContext.currentTime,
@@ -438,7 +438,7 @@ export class AudioWorkletEngine {
     )
       return;
 
-    const startTimeOffset = Math?.max(
+    const startTimeOffset = Math.max(
       0,
       (clip?.startSample - currentSample) / this?.config.sampleRate,
     );
@@ -449,7 +449,7 @@ export class AudioWorkletEngine {
         : clip?.offsetSamples / this?.config.sampleRate;
 
     const remainingDuration =
-      (clipEndSample - Math?.max(currentSample, clip?.startSample)) /
+      (clipEndSample - Math.max(currentSample, clip?.startSample)) /
       this?.config.sampleRate;
 
     if (remainingDuration <= 0) return;
@@ -605,7 +605,7 @@ export class AudioWorkletEngine {
       this?.stopAllSources();
     }
 
-    this.state.currentSample = Math?.max(0, sample);
+    this.state.currentSample = Math.max(0, sample);
     this.state.currentTime = this?.state.currentSample / this?.config.sampleRate;
 
     if (this?.workletNode && this?.workletReady) {
@@ -654,7 +654,7 @@ export class AudioWorkletEngine {
         const elapsed = now - this?.lastScheduleTime;
         this.lastScheduleTime = now;
 
-        const samplesElapsed = Math?.round(elapsed * this?.config.sampleRate);
+        const samplesElapsed = Math.round(elapsed * this?.config.sampleRate);
         this.state.currentSample += samplesElapsed;
         this.state.currentTime =
           this?.state.currentSample / this?.config.sampleRate;
@@ -799,12 +799,12 @@ export class AudioWorkletEngine {
 
     const levels: WaveformPeakLevel[] = AudioWorkletEngine.PEAK_RESOLUTIONS.map(
       (spp) => {
-        const count = Math?.ceil(totalSamples / spp);
+        const count = Math.ceil(totalSamples / spp);
         const peaks = new Float32Array(count * 2);
 
         for (let i = 0; i < count; i++) {
           const start = i * spp;
-          const end = Math?.min(start + spp, totalSamples);
+          const end = Math.min(start + spp, totalSamples);
           let minVal = 0;
           let maxVal = 0;
 
@@ -831,14 +831,14 @@ export class AudioWorkletEngine {
     samplesPerPeak: number = 256,
   ): Float32Array {
     const channelData = buffer?.getChannelData(0);
-    const peaks = Math?.ceil(channelData?.length / samplesPerPeak);
+    const peaks = Math.ceil(channelData?.length / samplesPerPeak);
     const peakData = new Float32Array(peaks);
     for (let i = 0; i < peaks; i++) {
       const start = i * samplesPerPeak;
-      const end = Math?.min(start + samplesPerPeak, channelData?.length);
+      const end = Math.min(start + samplesPerPeak, channelData?.length);
       let peak = 0;
       for (let j = start; j < end; j++) {
-        const abs = Math?.abs(channelData[j]);
+        const abs = Math.abs(channelData[j]);
         if (abs > peak) peak = abs;
       }
       peakData[i] = peak;

@@ -16,7 +16,7 @@ const router = Router();
 const runOnceCalls = new Map<string, number[]>();
 function runOnceRateLimit(req: Request, res: Response, next: NextFunction) {
   const userId = req.user?.id || "anon";
-  const now = Date?.now();
+  const now = Date.now();
   const window = 60 * 1000;
   const maxPerMinute = 3;
   const calls = (runOnceCalls?.get(userId) || []).filter(
@@ -37,7 +37,7 @@ function runOnceRateLimit(req: Request, res: Response, next: NextFunction) {
 const simulationCalls = new Map<string, number>();
 function simulationRateLimit(req: Request, res: Response, next: NextFunction) {
   const userId = req.user?.id || "anon";
-  const now = Date?.now();
+  const now = Date.now();
   const cooldownMs = 30 * 1000;
   const last = simulationCalls?.get(userId) || 0;
   if (now - last < cooldownMs) {
@@ -57,7 +57,7 @@ function simulationRateLimit(req: Request, res: Response, next: NextFunction) {
 // Periodic sweep removes keys whose windows have fully expired.
 setInterval(
   () => {
-    const now = Date?.now();
+    const now = Date.now();
     const rlWindow = 60 * 1000;
     const simCooldown = 30 * 1000;
     for (const [uid, calls] of runOnceCalls) {
@@ -208,7 +208,7 @@ router.post(
         200,
       );
 
-      const [mainResults, longTermResults] = await Promise?.all([
+      const [mainResults, longTermResults] = await Promise.all([
         simulateAutonomousUpgrade(),
         simulateLongTermAdaptation(scenarios),
       ]);

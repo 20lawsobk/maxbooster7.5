@@ -119,13 +119,13 @@ latestVersions?.set("desktop", {
 // has been idle for DEVICE_STALE_TTL_MS.  Also enforces hard caps as a safety net.
 setInterval(
   () => {
-    const now = Date?.now();
-    for (const [uid, devices] of userDevices?.entries()) {
-      const allStale = [...devices?.values()].every(
+    const now = Date.now();
+    for (const [uid, devices] of userDevices?.entries() ?? []) {
+      const allStale = [...(devices?.values() ?? [])].every(
         (d) => now - new Date(d?.lastSeen).getTime() > DEVICE_STALE_TTL_MS,
       );
       if (allStale) {
-        for (const [did] of devices?.entries())
+        for (const [did] of devices?.entries() ?? [])
           deviceSyncVersions?.delete(`${uid}:${did}`);
         userDevices?.delete(uid);
         userSyncStates?.delete(uid);
@@ -167,7 +167,7 @@ function getUserDevices(userId: string): Map<string, DeviceInfo> {
   if (!userDevices?.has(userId)) {
     userDevices?.set(userId, new Map());
   }
-  return userDevices?.get(userId)!;
+  return userDevices?.get(userId);
 }
 
 function getUserSyncState(userId: string): SyncState {
@@ -182,7 +182,7 @@ function getUserSyncState(userId: string): SyncState {
       syncVersion: 0,
     });
   }
-  return userSyncStates?.get(userId)!;
+  return userSyncStates?.get(userId);
 }
 
 export function registerDevice(
@@ -207,7 +207,7 @@ export function registerDevice(
     deviceName: device.deviceName,
     lastSeen: now,
     registeredAt: devices.has(device?.deviceId)
-      ? devices?.get(device?.deviceId)!.registeredAt
+      ? devices?.get(device?.deviceId).registeredAt
       : now,
   };
 
@@ -245,7 +245,7 @@ export function listDevices(userId: string): DeviceInfo[] {
 
 export function isDeviceOnline(device: DeviceInfo): boolean {
   const lastSeen = new Date(device?.lastSeen).getTime();
-  return Date?.now() - lastSeen < HEARTBEAT_TIMEOUT_MS;
+  return Date.now() - lastSeen < HEARTBEAT_TIMEOUT_MS;
 }
 
 export function checkForUpdate(
@@ -293,7 +293,7 @@ export function getLatestVersions(): Record<
       downloadUrl: string;
     }
   > = {};
-  for (const [platform, info] of latestVersions?.entries()) {
+  for (const [platform, info] of latestVersions?.entries() ?? []) {
     result[platform] = { ...info };
   }
   return result as Record<
@@ -328,7 +328,7 @@ export function pushUpdateNotification(
   isForced: boolean,
 ): UpdateNotification {
   const notification: UpdateNotification = {
-    id: `update-${Date?.now()}-${randomBytes(3).toString("hex")}`,
+    id: `update-${Date.now()}-${randomBytes(3).toString("hex")}`,
     platform,
     version,
     changelog,
@@ -339,7 +339,7 @@ export function pushUpdateNotification(
   if (!updateNotifications?.has("global")) {
     updateNotifications?.set("global", []);
   }
-  updateNotifications?.get("global")!.push(notification);
+  updateNotifications?.get("global").push(notification);
 
   logger.info({ platform, version, isForced }, "Update notification pushed");
   return notification;
@@ -353,7 +353,7 @@ export function triggerRemoteUpdate(
   triggeredBy: string,
 ): UpdateRollout {
   const rollout: UpdateRollout = {
-    id: `rollout-${Date?.now()}-${randomBytes(3).toString("hex")}`,
+    id: `rollout-${Date.now()}-${randomBytes(3).toString("hex")}`,
     platform,
     targetVersion,
     isForced,
@@ -363,13 +363,13 @@ export function triggerRemoteUpdate(
     deviceStatuses: new Map(),
   };
 
-  for (const [, devices] of userDevices?.entries()) {
-    for (const [deviceId, device] of devices?.entries()) {
+  for (const [, devices] of userDevices?.entries() ?? []) {
+    for (const [deviceId, device] of devices?.entries() ?? []) {
       if (
         device?.platform === platform &&
         compareVersions(device?.appVersion, targetVersion) < 0
       ) {
-        rollout?.deviceStatuses.set(deviceId, {
+        rollout?.deviceStatuses?.set(deviceId, {
           deviceId,
           platform,
           status: "pending",
@@ -411,8 +411,8 @@ export function getUpdateRolloutStatus(): Array<{
   devices: DeviceUpdateStatus[];
 }> {
   const results = [];
-  for (const [, rollout] of updateRollouts?.entries()) {
-    const devices = Array.from(rollout?.deviceStatuses.values());
+  for (const [, rollout] of updateRollouts?.entries() ?? []) {
+    const devices = Array.from(rollout?.deviceStatuses?.values());
     const stats = {
       total: devices.length,
       pending: devices.filter((d) => d?.status === "pending").length,
@@ -478,8 +478,8 @@ export function pushSyncState(
   }
   if (changes?.notificationReadIds !== undefined) {
     const merged = new Set([
-      ...syncState?.notificationReadIds,
-      ...changes?.notificationReadIds,
+      ...(syncState?.notificationReadIds ?? []),
+      ...(changes?.notificationReadIds ?? []),
     ]);
     syncState.notificationReadIds = Array.from(merged);
   }
@@ -503,7 +503,7 @@ export function getSyncStatus(userId: string): SyncStatus[] {
   const syncState = getUserSyncState(userId);
   const statuses: SyncStatus[] = [];
 
-  for (const [deviceId, device] of devices?.entries()) {
+  for (const [deviceId, device] of devices?.entries() ?? []) {
     const deviceSyncKey = `${userId}:${deviceId}`;
     const deviceVersion = deviceSyncVersions?.get(deviceSyncKey) || 0;
 

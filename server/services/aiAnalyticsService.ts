@@ -223,7 +223,7 @@ const CHURN_CACHE_TTL_MS = 5 * 60 * 1000;
  * Now: 1 query, capped at 1000 users, cached for 5 minutes.
  */
 export async function predictChurn(): Promise<ChurnPredictionResponse> {
-  if (_churnCache?.data && Date?.now() < _churnCache?.expiresAt) {
+  if (_churnCache?.data && Date.now() < _churnCache?.expiresAt) {
     return _churnCache?.data;
   }
 
@@ -305,7 +305,7 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
   };
 
   _churnCache.data = result;
-  _churnCache.expiresAt = Date?.now() + CHURN_CACHE_TTL_MS;
+  _churnCache.expiresAt = Date.now() + CHURN_CACHE_TTL_MS;
 
   return result;
 }
@@ -416,10 +416,10 @@ export async function detectAnomalies(): Promise<AnomaliesResponse> {
 
   for (const metric of metrics) {
     const mean =
-      metric?.values.reduce((sum, val) => sum + val, 0) / metric?.values.length;
+      metric?.values?.reduce((sum, val) => sum + val, 0) / metric?.values?.length;
     const stdDev = calculateStandardDeviation(metric?.values);
 
-    metric?.values.forEach((value, index) => {
+    metric?.values?.forEach((value, index) => {
       if (stdDev > 0) {
         const zScore = Math.abs((value - mean) / stdDev);
 
@@ -817,7 +817,7 @@ export async function getCareerMilestones(
     nextMilestone: nextStreamMilestone,
     progress: Math.min(99, Math.round(streamProgress)),
     estimatedDate: new Date(
-      Date?.now() + daysToStreamMilestone * 24 * 60 * 60 * 1000,
+      Date.now() + daysToStreamMilestone * 24 * 60 * 60 * 1000,
     ).toLocaleDateString(),
   });
 
@@ -837,7 +837,7 @@ export async function getCareerMilestones(
     nextMilestone: nextFollowerMilestone,
     progress: Math.min(99, Math.round(followerProgress)),
     estimatedDate: new Date(
-      Date?.now() + daysToFollowerMilestone * 24 * 60 * 60 * 1000,
+      Date.now() + daysToFollowerMilestone * 24 * 60 * 60 * 1000,
     ).toLocaleDateString(),
   });
 
@@ -988,7 +988,7 @@ export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
   }
   const topLocations =
     locationCounts?.size >= 3
-      ? [...locationCounts?.entries()]
+      ? [...(locationCounts?.entries() ?? [])]
           .sort((a, b) => b[1] - a[1])
           .slice(0, 5)
           .map(([loc]) => loc)

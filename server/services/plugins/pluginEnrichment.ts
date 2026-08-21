@@ -1896,7 +1896,7 @@ export function enrichPlugin(plugin: PluginDefinition): PluginDefinition {
   // Add any missing reference parameters (preserve existing values/ranges).
   const existing = new Set(plugin?.parameters.map((p) => p?.id));
   const additions = refParams?.filter((p) => !existing?.has(p?.id));
-  const mergedParams = [...plugin?.parameters, ...additions];
+  const mergedParams = [...(plugin?.parameters ?? []), ...additions];
 
   // Backfill defaultPreset for newly added parameters.
   const mergedDefault: Record<string, number | boolean | string> = {

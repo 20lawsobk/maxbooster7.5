@@ -78,7 +78,7 @@ function cacheKey(name: string, type: number): string {
 function cacheGet(name: string, type: number): CacheEntry | null {
   const entry = cache?.get(cacheKey(name, type));
   if (!entry) return null;
-  if (Date?.now() > entry?.expiry) {
+  if (Date.now() > entry?.expiry) {
     cache?.delete(cacheKey(name, type));
     return null;
   }
@@ -90,7 +90,7 @@ function cacheSet(name: string, type: number, entry: CacheEntry): void {
     // Evict oldest 5%
     let evicted = 0;
     const target = Math.floor(CACHE_MAX_SIZE * 0.05);
-    for (const k of cache?.keys()) {
+    for (const k of cache?.keys() ?? []) {
       cache?.delete(k);
       if (++evicted >= target) break;
     }
@@ -112,7 +112,7 @@ function encodeName(name: string): Buffer {
   const n = name?.replace(/\.$/, "");
   if (n === "") return Buffer?.from([0]);
   const parts: Buffer[] = [];
-  for (const label of n?.split(".")) {
+  for (const label of n?.split(".") ?? []) {
     const lBuf = Buffer?.from(label, "ascii");
     parts?.push(Buffer?.from([lBuf?.length]), lBuf);
   }
@@ -436,7 +436,7 @@ async function resolveIterative(
       // NOERROR + no answers = NODATA or referral
       if (pkt.rcode === 0 && pkt.authority.length > 0) {
         // Check if it's a referral (NS records in authority, no answers)
-        const nsRecs = pkt?.authority.filter((r) => r?.type === TYPE_NS);
+        const nsRecs = pkt?.authority?.filter((r) => r?.type === TYPE_NS);
         if (nsRecs?.length === 0) {
           // NODATA — negative cache
           const entry: CacheEntry = {
@@ -462,7 +462,7 @@ async function resolveIterative(
         for (const ns of nsRecs) {
           const nsName = rdataToName(Buffer?.alloc(0), ns?.rdata, 0);
           // Check glue records first
-          const glue = pkt?.additional.filter(
+          const glue = pkt?.additional?.filter(
             (r) => r?.name === nsName && r?.type === TYPE_A,
           );
           if (glue?.length > 0) {
@@ -560,7 +560,7 @@ export function rrToA(rr: {
   ttl: number;
   rdata: Buffer;
 }): string | null {
-  if (rr?.rdata.length !== 4) return null;
+  if (rr?.rdata?.length !== 4) return null;
   return rdataToIP(rr?.rdata);
 }
 

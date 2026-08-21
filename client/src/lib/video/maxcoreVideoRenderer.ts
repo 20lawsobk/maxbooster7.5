@@ -1370,7 +1370,7 @@ function drawFrame(
     const offscreen = document?.createElement("canvas");
     offscreen.width = w;
     offscreen.height = h;
-    const octx = offscreen?.getContext("2d")!;
+    const octx = offscreen?.getContext("2d");
     s?.draw(octx, w, h, clamp(lt), time);
     ctx?.save();
     ctx.globalAlpha = a;
@@ -1448,7 +1448,7 @@ export async function renderMaxcoreVideo(
   const canvas = document?.createElement("canvas");
   canvas.width = W;
   canvas.height = H;
-  const ctx = canvas?.getContext("2d")!;
+  const ctx = canvas?.getContext("2d");
 
   // Pre-bake 8 Gaussian film grain frames before render starts (one-time cost)
   const grainFrames = p?.grain ? buildGrainFrames(W, H, p) : [];

@@ -962,7 +962,7 @@ export class AutomationSystem extends EventEmitter {
 
   // Check workflow triggers
   private async checkWorkflowTriggers(workflow: Workflow): Promise<void> {
-    for (const triggerConfig of workflow?.triggers ?? []) {
+    for (const triggerConfig of workflow?.triggers) {
       const trigger = this.triggers.get(triggerConfig?.type);
       if (trigger) {
         if (typeof trigger.evaluate !== "function") {
@@ -988,7 +988,7 @@ export class AutomationSystem extends EventEmitter {
   private async triggerWorkflow(workflow: Workflow): Promise<void> {
     workflow.status = "triggered";
     workflow.nextAction = 0;
-    workflow.startTime = Date.now();
+    workflow.startTime = Date?.now();
 
     logger.info(`🎯 Workflow triggered: ${workflow?.name}`);
 
@@ -1010,7 +1010,7 @@ export class AutomationSystem extends EventEmitter {
     try {
       // Check conditions
       if (actionConfig?.conditions) {
-        for (const conditionConfig of actionConfig?.conditions ?? []) {
+        for (const conditionConfig of actionConfig?.conditions) {
           const condition = this.conditions.get(conditionConfig?.type);
           if (condition) {
             const conditionMet = await condition?.evaluate(
@@ -1026,9 +1026,9 @@ export class AutomationSystem extends EventEmitter {
       }
 
       // Execute action
-      const startTime = Date.now();
+      const startTime = Date?.now();
       const actionResult = await action?.execute(actionConfig?.parameters);
-      const executionTime = Date.now() - startTime;
+      const executionTime = Date?.now() - startTime;
       // Positive success contract: every built-in action now returns an
       // explicit { success: boolean } result reflecting its real side effect.
       // A workflow step only counts as done when success === true — missing,
@@ -1063,7 +1063,7 @@ export class AutomationSystem extends EventEmitter {
       // Check if workflow is complete
       if (workflow?.nextAction >= workflow?.actions.length) {
         workflow.status = "completed";
-        workflow.endTime = Date.now();
+        workflow.endTime = Date?.now();
         workflow.executionTime =
           workflow.endTime - (workflow.startTime ?? workflow.endTime);
 
@@ -1079,7 +1079,7 @@ export class AutomationSystem extends EventEmitter {
         `Action execution failed: ${actionConfig?.type}`,
       );
       workflow.status = "failed";
-      workflow.endTime = Date.now();
+      workflow.endTime = Date?.now();
       workflow.error = error instanceof Error ? error?.message : String(error);
 
       this.automationMetrics.failedWorkflows++;
@@ -1117,10 +1117,10 @@ export class AutomationSystem extends EventEmitter {
     if (!workflow) return false;
 
     workflow.status = "active";
-    workflow.updatedAt = Date.now();
+    workflow.updatedAt = Date?.now();
 
     // Start triggers
-    for (const triggerConfig of workflow?.triggers ?? []) {
+    for (const triggerConfig of workflow?.triggers) {
       const trigger = this.triggers.get(triggerConfig?.type);
       if (trigger) {
         const triggerInstance = trigger?.start(triggerConfig?.parameters, () => {
@@ -1143,11 +1143,11 @@ export class AutomationSystem extends EventEmitter {
     if (!workflow) return false;
 
     workflow.status = "inactive";
-    workflow.updatedAt = Date.now();
+    workflow.updatedAt = Date?.now();
 
     // Stop triggers
     if (workflow?.triggerInstances) {
-      for (const triggerInstance of workflow?.triggerInstances ?? []) {
+      for (const triggerInstance of workflow?.triggerInstances) {
         const trigger = this.triggers.get(workflow?.triggers[0].type);
         if (trigger) {
           trigger?.stop(triggerInstance);

@@ -431,8 +431,8 @@ class MelodyPatternService {
     );
 
     for (const [_category, genreData] of Object.entries(GENRES)) {
-      for (const genre of genreData?.genres) {
-        for (const instrument of INSTRUMENTS?.melodic) {
+      for (const genre of genreData?.genres ?? []) {
+        for (const instrument of INSTRUMENTS?.melodic ?? []) {
           const key = `${genre}_${instrument}`;
           this.trainedPatterns.set(
             key,
@@ -443,14 +443,14 @@ class MelodyPatternService {
             ),
           );
         }
-        for (const kit of INSTRUMENTS?.drums) {
+        for (const kit of INSTRUMENTS?.drums ?? []) {
           const key = `${genre}_${kit}`;
           this.drumPatterns.set(
             key,
             this.generateDrumPatterns(genre, kit, genreData?.characteristics),
           );
         }
-        for (const perc of INSTRUMENTS?.percussion) {
+        for (const perc of INSTRUMENTS?.percussion ?? []) {
           const key = `${genre}_${perc}`;
           this.percussionPatterns.set(
             key,
@@ -913,15 +913,15 @@ class MelodyPatternService {
   ): MelodyPattern {
     const rootNote = NOTES?.indexOf(params?.key);
     const scaleNotes = (
-      SCALE_INTERVALS[params?.scale] || SCALE_INTERVALS?.minor
+      SCALE_INTERVALS[params?.scale] || SCALE_INTERVALS.minor
     ).map((n) => (n + rootNote) % 12);
 
-    const transformedNotes = pattern?.notes.map((note) => {
+    const transformedNotes = pattern?.notes?.map((note) => {
       const scaleIndex = note % scaleNotes?.length;
       return scaleNotes[scaleIndex];
     });
 
-    const transformedVelocities = pattern?.velocities.map((v) => {
+    const transformedVelocities = pattern?.velocities?.map((v) => {
       const humanized = v + (Math.random() - 0.5) * params?.humanize * 20;
       return Math.max(1, Math.min(127, Math.round(humanized)));
     });
@@ -955,7 +955,7 @@ class MelodyPatternService {
 
   private getGenreCategory(genre: string): string {
     for (const [category, data] of Object.entries(GENRES)) {
-      if (data?.genres.includes(genre)) return category;
+      if (data?.genres?.includes(genre)) return category;
     }
     return "pop";
   }

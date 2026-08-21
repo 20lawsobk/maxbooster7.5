@@ -977,7 +977,7 @@ export class DistributionService {
 
       const csvContent = [
         headers?.join(","),
-        ...rows?.map((row) => row?.map((cell) => `"${cell}"`).join(",")),
+        ...(rows?.map((row) => row?.map((cell) => `"${cell}"`).join(",")) ?? []),
       ].join("\n");
 
       return csvContent;
@@ -1075,7 +1075,7 @@ Generated: ${new Date().toISOString()}
 
       // Upload ZIP to storageService
       const zipBuffer = await fsPromises?.readFile(tempZipPath);
-      const zipFilename = `distribution_${packageId}_${Date?.now()}.zip`;
+      const zipFilename = `distribution_${packageId}_${Date.now()}.zip`;
       const zipKey = await storageService?.uploadFile(
         zipBuffer,
         "exports",
@@ -1281,7 +1281,7 @@ Generated: ${new Date().toISOString()}
 
       const actualDeliveryAt = new Date();
       const deliveryHours =
-        (actualDeliveryAt?.getTime() - metric?.submittedAt.getTime()) /
+        (actualDeliveryAt?.getTime() - metric?.submittedAt?.getTime()) /
         (1000 * 60 * 60);
       const metSLA =
         deliveryHours <= (metric?.slaTargetHours || DEFAULT_SLA_TARGET_HOURS);
@@ -1861,7 +1861,7 @@ Generated: ${new Date().toISOString()}
     try {
       const slug =
         data?.slug ||
-        `${data?.name.toLowerCase().replace(/\s+/g, "-")}-${randomBytes(3).toString("hex")}`;
+        `${data?.name?.toLowerCase().replace(/\s+/g, "-")}-${randomBytes(3).toString("hex")}`;
 
       const campaign = await storage.createPreSaveCampaign({
         ...data,
@@ -1999,14 +1999,14 @@ Generated: ${new Date().toISOString()}
         bySource[source] = (bySource[source] || 0) + 1;
 
         if (entry?.createdAt) {
-          const date = entry?.createdAt.toISOString().split("T")[0];
+          const date = entry?.createdAt?.toISOString().split("T")[0];
           byDate[date] = (byDate[date] || 0) + 1;
         }
       }
 
       const timeline = Object.entries(byDate)
         .map(([date, saves]) => ({ date, saves }))
-        .sort((a, b) => a?.date.localeCompare(b?.date));
+        .sort((a, b) => a?.date?.localeCompare(b?.date));
 
       return {
         totalSaves: campaign.totalSaves || 0,

@@ -120,48 +120,48 @@ export class AuditSystem {
       // Security audit
       const securityResults = await this.securityAuditor.audit();
       this.auditResults.securityScore = securityResults?.score;
-      this.auditResults.issues?.push(...securityResults?.issues);
+      this.auditResults.issues?.push(...(securityResults?.issues ?? []));
       this.auditResults.recommendations?.push(
-        ...securityResults?.recommendations,
+        ...(securityResults?.recommendations ?? []),
       );
 
       // Functionality audit
       const functionalityResults = await this.functionalityAuditor.audit();
       this.auditResults.functionalityScore = functionalityResults?.score;
-      this.auditResults.issues?.push(...functionalityResults?.issues);
+      this.auditResults.issues?.push(...(functionalityResults?.issues ?? []));
       this.auditResults.recommendations?.push(
-        ...functionalityResults?.recommendations,
+        ...(functionalityResults?.recommendations ?? []),
       );
 
       // Performance audit
       const performanceResults = await this.performanceAuditor.audit();
       this.auditResults.performanceScore = performanceResults?.score;
-      this.auditResults.issues?.push(...performanceResults?.issues);
+      this.auditResults.issues?.push(...(performanceResults?.issues ?? []));
       this.auditResults.recommendations?.push(
-        ...performanceResults?.recommendations,
+        ...(performanceResults?.recommendations ?? []),
       );
 
       // Code quality audit
       const codeQualityResults = await this.codeQualityAuditor.audit();
       this.auditResults.codeQualityScore = codeQualityResults?.score;
-      this.auditResults.issues?.push(...codeQualityResults?.issues);
+      this.auditResults.issues?.push(...(codeQualityResults?.issues ?? []));
       this.auditResults.recommendations?.push(
-        ...codeQualityResults?.recommendations,
+        ...(codeQualityResults?.recommendations ?? []),
       );
 
       // Accessibility audit
       const accessibilityResults = await this.accessibilityAuditor.audit();
       this.auditResults.accessibilityScore = accessibilityResults?.score;
-      this.auditResults.issues?.push(...accessibilityResults?.issues);
+      this.auditResults.issues?.push(...(accessibilityResults?.issues ?? []));
       this.auditResults.recommendations?.push(
-        ...accessibilityResults?.recommendations,
+        ...(accessibilityResults?.recommendations ?? []),
       );
 
       // SEO audit
       const seoResults = await this.seoAuditor.audit();
       this.auditResults.seoScore = seoResults?.score;
-      this.auditResults.issues?.push(...seoResults?.issues);
-      this.auditResults.recommendations?.push(...seoResults?.recommendations);
+      this.auditResults.issues?.push(...(seoResults?.issues ?? []));
+      this.auditResults.recommendations?.push(...(seoResults?.recommendations ?? []));
 
       // Calculate overall score
       this.calculateOverallScore();
@@ -170,7 +170,7 @@ export class AuditSystem {
       await this.checkCompliance();
 
       // Update last audit time
-      this.auditResults.lastAudit = Date?.now();
+      this.auditResults.lastAudit = Date.now();
 
       logger.info(
         `✅ Audit completed. Overall score: ${this.auditResults.overallScore}/100`,

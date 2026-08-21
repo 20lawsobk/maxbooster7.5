@@ -251,7 +251,7 @@ export class CustomAIEngine {
     horizon: "7d" | "30d" | "90d" | "365d" = "30d",
     confidenceLevel: number = 0.95,
   ): Promise<MetricPrediction[]> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     const { modelId, versionId } = await this.getAIModel(
       "time_series_predictor_v1",
     );
@@ -342,7 +342,7 @@ export class CustomAIEngine {
       "time_series_forecast",
       { userId, metricName, horizon, confidenceLevel },
       { predictions, algorithm, seasonality: seasonality !== null },
-      Date?.now() - startTime,
+      Date.now() - startTime,
       userId,
     );
 
@@ -354,7 +354,7 @@ export class CustomAIEngine {
     cohortDefinition: CohortDefinition,
     metrics: string[] = ["retention", "ltv", "engagement"],
   ): Promise<CohortAnalysisResult> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     const { modelId, versionId } = await this.getAIModel("cohort_analyzer_v1");
 
     const cohortUsers = await this.getCohortUsers(cohortDefinition);
@@ -407,7 +407,7 @@ export class CustomAIEngine {
       "cohort_analysis",
       { userId, cohortDefinition, metrics },
       { cohortSize, metrics: cohortMetrics, comparisonToAverage },
-      Date?.now() - startTime,
+      Date.now() - startTime,
       userId,
     );
 
@@ -423,7 +423,7 @@ export class CustomAIEngine {
   }
 
   async predictChurn(userId: string): Promise<ChurnPrediction> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     const { modelId, versionId } = await this.getAIModel("churn_predictor_v1");
 
     const features = await this.extractChurnFeatures(userId);
@@ -474,7 +474,7 @@ export class CustomAIEngine {
       "churn_prediction",
       { userId, features },
       { churnProbability, riskLevel, topRiskFactors },
-      Date?.now() - startTime,
+      Date.now() - startTime,
       userId,
     );
 
@@ -486,7 +486,7 @@ export class CustomAIEngine {
     period: "daily" | "weekly" | "monthly" | "quarterly" | "yearly",
     breakdown?: boolean,
   ): Promise<RevenueForecast[]> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     const { modelId, versionId } = await this.getAIModel(
       "revenue_forecaster_v1",
     );
@@ -553,7 +553,7 @@ export class CustomAIEngine {
       "revenue_forecast",
       { userId, period, breakdown },
       { forecasts: forecasts.length, growthTrend: forecasts[0]?.growthTrend },
-      Date?.now() - startTime,
+      Date.now() - startTime,
       userId,
     );
 
@@ -566,7 +566,7 @@ export class CustomAIEngine {
     value: number,
     context?: unknown,
   ): Promise<AnomalyDetectionResult | null> {
-    const startTime = Date?.now();
+    const startTime = Date.now();
     const { modelId, versionId } = await this.getAIModel("anomaly_detector_v1");
 
     const historicalData = await this.getHistoricalMetricData(
@@ -647,7 +647,7 @@ export class CustomAIEngine {
       "anomaly_detection",
       { userId, metricName, value, baseline },
       { anomalyType, severity, deviationScore },
-      Date?.now() - startTime,
+      Date.now() - startTime,
       userId,
     );
 
@@ -658,7 +658,7 @@ export class CustomAIEngine {
     userId: string,
     timeframe: "7d" | "30d" | "90d" = "30d",
   ): Promise<InsightNarrative[]> {
-    Date?.now();
+    Date.now();
     const insights: InsightNarrative[] = [];
 
     const stats = await this.getUserStats(userId, timeframe);
@@ -1433,7 +1433,7 @@ export class CustomAIEngine {
     const prevStart = new Date(startDate);
     prevStart?.setDate(prevStart?.getDate() - days);
 
-    const [currentData, previousData] = await Promise?.all([
+    const [currentData, previousData] = await Promise.all([
       db
         .select()
         .from(analytics)
@@ -1528,7 +1528,7 @@ export class CustomAIEngine {
     const prevPeriodStart = new Date(periodStart);
     prevPeriodStart?.setDate(prevPeriodStart?.getDate() - days);
 
-    const [current, previous] = await Promise?.all([
+    const [current, previous] = await Promise.all([
       db
         .select()
         .from(analytics)
@@ -1561,7 +1561,7 @@ export class CustomAIEngine {
     )[0];
     const lastReleaseDate = lastRelease
       ? new Date(lastRelease?.date)
-      : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     return { streamDecline, lastReleaseDate };
   }

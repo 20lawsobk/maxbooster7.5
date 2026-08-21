@@ -191,13 +191,13 @@ export async function recoverStaleProcessingBatches(): Promise<void> {
     let recovered = 0;
 
     do {
-      const [nextCursor, keys] = await redis?.scan(
+      const [nextCursor, keys] = (await redis?.scan(
         cursor,
         "MATCH",
         `${PROCESSING_PREFIX}*`,
         "COUNT",
         "100",
-      );
+      )) ?? ["0", []];
       cursor = nextCursor;
 
       for (const key of keys) {

@@ -611,7 +611,7 @@ router.get("/music/milestones", async (req: Request, res: Response) => {
       current: totalStreams,
       nextMilestone: nextStreamMilestone,
       progress: Math.min(100, (totalStreams / nextStreamMilestone) * 100),
-      estimatedDate: new Date(Date?.now() + 90 * 24 * 60 * 60 * 1000)
+      estimatedDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0],
       recommendations: [
@@ -629,7 +629,7 @@ router.get("/music/milestones", async (req: Request, res: Response) => {
       current: totalListeners,
       nextMilestone: nextFollowerMilestone,
       progress: Math.min(100, (totalListeners / nextFollowerMilestone) * 100),
-      estimatedDate: new Date(Date?.now() + 60 * 24 * 60 * 60 * 1000)
+      estimatedDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0],
       recommendations: [
@@ -647,7 +647,7 @@ router.get("/music/milestones", async (req: Request, res: Response) => {
       current: releasesCount,
       nextMilestone: nextReleaseMilestone,
       progress: Math.min(100, (releasesCount / nextReleaseMilestone) * 100),
-      estimatedDate: new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000)
+      estimatedDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0],
       recommendations: [
@@ -1025,12 +1025,12 @@ router.get("/historical/yearly", async (req: Request, res: Response) => {
           currentYear - 4,
         ];
 
-        const yearlyData = await Promise?.all(
+        const yearlyData = await Promise.all(
           years?.map(async (year) => {
             const startDate = new Date(year, 0, 1);
             const endDate = new Date(year, 11, 31);
 
-            const [yearStats, releaseCount] = await Promise?.all([
+            const [yearStats, releaseCount] = await Promise.all([
               db
                 .select({
                   streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,

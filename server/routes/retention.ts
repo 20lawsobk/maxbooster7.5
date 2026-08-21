@@ -58,7 +58,7 @@ router.post("/nps", requireAuth, async (req: Record<string, unknown>, res) => {
         .json({ error: "Invalid NPS data", details: parsed.error.flatten() });
     }
 
-    const { score, comment, triggerContext } = parsed?.data;
+    const { score, comment, triggerContext } = parsed?.data ?? {};
     const userId = (req.user! as any).id;
 
     await db.insert(npsResponses).values({
@@ -163,7 +163,7 @@ router.get(
         return res.json(fresh);
       }
 
-      const staleCutoff = new Date(Date?.now() - 24 * 60 * 60 * 1000);
+      const staleCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
       if (existing?.computedAt < staleCutoff) {
         const fresh = await customerHealthScoreService?.computeAndStore(userId);
         return res.json(fresh);

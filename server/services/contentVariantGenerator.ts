@@ -277,7 +277,7 @@ class ContentVariantGeneratorService {
   ): Promise<string[][]> {
     const sets: string[][] = [];
     new Set(
-      content?.hashtags.map((h) => h?.toLowerCase()),
+      content?.hashtags?.map((h) => h?.toLowerCase()),
     );
 
     const platformOptimal: Record<
@@ -304,12 +304,12 @@ class ContentVariantGeneratorService {
       set?.push(...viralTags);
 
       const topicHashtags = this.generateTopicHashtags(content?.caption);
-      set?.push(...topicHashtags?.slice(0, config?.niche));
+      set?.push(...(topicHashtags?.slice(0, config?.niche) ?? []));
 
       if (
-        content?.caption.toLowerCase().includes("music") ||
-        content?.caption.toLowerCase().includes("beat") ||
-        content?.caption.toLowerCase().includes("song")
+        content?.caption?.toLowerCase().includes("music") ||
+        content?.caption?.toLowerCase().includes("beat") ||
+        content?.caption?.toLowerCase().includes("song")
       ) {
         const musicTags = seededShuffle(
           [...this.hashtagCategories.music],
@@ -610,8 +610,8 @@ class ContentVariantGeneratorService {
     let score = 40;
 
     if (content.caption.length > 50) score += 10;
-    if (content?.hashtags.length >= 3) score += 10;
-    if (content?.hashtags.length <= 15) score += 5;
+    if (content?.hashtags?.length >= 3) score += 10;
+    if (content?.hashtags?.length <= 15) score += 5;
     if (content.caption.includes("?")) score += 5;
 
     return Math.min(100, score);
@@ -630,13 +630,13 @@ class ContentVariantGeneratorService {
       );
     }
 
-    if (content?.hashtags.length < 5 && content?.platform === "instagram") {
+    if (content?.hashtags?.length < 5 && content?.platform === "instagram") {
       recommendations?.push(
         "Consider using more hashtags for Instagram (optimal: 8-15)",
       );
     }
 
-    if (!content?.caption.includes("?")) {
+    if (!content?.caption?.includes("?")) {
       recommendations?.push(
         "Question-based hooks typically increase engagement by 20%",
       );

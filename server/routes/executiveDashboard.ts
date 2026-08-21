@@ -20,7 +20,7 @@ router.get(
   "/dashboard",
   asyncHandler(async (_req: any, res: any) => {
     try {
-      const [queueHealth, aiMetrics, dashboard] = await Promise?.all([
+      const [queueHealth, aiMetrics, dashboard] = await Promise.all([
         queueMonitor?.getHealthStatus(),
         aiModelManager?.getMetrics(),
         metricsCollector?.getDashboardData(),

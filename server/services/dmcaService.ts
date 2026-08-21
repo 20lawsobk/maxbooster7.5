@@ -533,7 +533,7 @@ export class DMCAService {
       query = query?.offset(options?.offset) as typeof query;
     }
 
-    const [notices, [{ count: total }]] = await Promise?.all([
+    const [notices, [{ count: total }]] = await Promise.all([
       query,
       countQuery,
     ]);

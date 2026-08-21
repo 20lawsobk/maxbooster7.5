@@ -177,7 +177,7 @@ export async function auditConfirmed(
 async function writeToWAL(entry: AuditEntry): Promise<void> {
   try {
     const walFile = path?.join(WAL_PATH, `${entry?.id}.json`);
-    await fs?.promises.writeFile(walFile, JSON.stringify(entry), "utf8");
+    await fs?.promises?.writeFile(walFile, JSON.stringify(entry), "utf8");
   } catch (error) {
     logger.warn({ err: error }, "[Audit] Failed to write to WAL:");
   }
@@ -298,12 +298,12 @@ function removeFromWAL(entryId: string): void {
 async function recoverWAL(): Promise<void> {
   try {
     try {
-      await fs?.promises.access(WAL_PATH);
+      await fs?.promises?.access(WAL_PATH);
     } catch {
       return;
     }
 
-    const files = (await fs?.promises.readdir(WAL_PATH)).filter((f) =>
+    const files = (await fs.promises.readdir(WAL_PATH)).filter((f) =>
       f?.endsWith(".json"),
     );
 
@@ -315,7 +315,7 @@ async function recoverWAL(): Promise<void> {
 
     for (const file of files) {
       try {
-        const content = await fs?.promises.readFile(
+        const content = await fs?.promises?.readFile(
           path?.join(WAL_PATH, file),
           "utf8",
         );
@@ -564,7 +564,7 @@ export async function cleanupAuditLog(
 ): Promise<number> {
   try {
     const cutoffDate = new Date(
-      Date?.now() - retentionDays * 24 * 60 * 60 * 1000,
+      Date.now() - retentionDays * 24 * 60 * 60 * 1000,
     );
 
     // Keep critical entries for longer (column is `risk`, not `severity`)
@@ -575,7 +575,7 @@ export async function cleanupAuditLog(
       RETURNING id
     `);
 
-    const deleted = result?.rows.length;
+    const deleted = result?.rows?.length;
     if (deleted > 0) {
       logger.info(`[Audit] Cleaned up ${deleted} old audit entries`);
     }

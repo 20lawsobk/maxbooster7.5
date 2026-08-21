@@ -166,7 +166,7 @@ export function resetLuaExecutorSemaphore(): number {
   // Drain all queued waiters — resolve their promises so they can proceed.
   // Don't call _activeWorkers++ here; we zero the counter on the next line.
   while (_waitQueue?.length > 0) {
-    const { resolve, timer } = _waitQueue?.shift()!;
+    const { resolve, timer } = _waitQueue?.shift() ?? {};
     clearTimeout(timer);
     resolve();
   }
@@ -297,10 +297,10 @@ const { script, keys, argv } = workerData;
 const engine = await new LuaFactory().createEngine({ openStandardLibs: true });
 
 try {
-  engine?.global.set('KEYS', keys);
-  engine?.global.set('ARGV', argv);
+  engine?.global?.set('KEYS', keys);
+  engine?.global?.set('ARGV', argv);
 
-  engine?.global.set('redis', {
+  engine?.global?.set('redis', {
     call(...all) {
       const [cmd, ...args] = all;
       // XADD (Redis Streams) is not supported by PDIM — silently drop it.
@@ -322,8 +322,8 @@ try {
     }
   });
 
-  engine?.global.set('cmsgpack', makeCmsgpack());
-  engine?.global.set('cjson', {
+  engine?.global?.set('cmsgpack', makeCmsgpack());
+  engine?.global?.set('cjson', {
     decode(s) {
       try {
         const v = JSON.parse(s);
@@ -341,7 +341,7 @@ try {
 } catch(e) {
   parentPort?.postMessage({ type: 'error', error: e.message });
 } finally {
-  engine?.global.close();
+  engine?.global?.close();
 }
 `;
 
@@ -551,7 +551,7 @@ export async function execLuaViaPdim(
         // During the first 120s of boot the PDIM settling burst causes
         // LuaExecutor stalls that look alarming but are entirely expected.
         // Demote to debug so the log stream stays clean during boot.
-        if (Date?.now() - _executorBootTs < 120_000) {
+        if (Date.now() - _executorBootTs < 120_000) {
           logger.debug(
             `[LuaExecutor] script still running after ${elapsedS}s — ` +
               `boot settling window (active=${_activeWorkers}, queued=${_waitQueue?.length})`,

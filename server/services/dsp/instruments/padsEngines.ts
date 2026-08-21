@@ -209,7 +209,7 @@ export class StringPadSynth implements SynthesizerEngine {
 
       for (const section of this.sections) {
         let sectionSample = 0;
-        for (const osc of section?.oscillators) {
+        for (const osc of section?.oscillators ?? []) {
           const currentFreq = this.frequency * (1 + vibrato);
           osc?.setFrequency(
             currentFreq * (1 + (Math.random() - 0.5) * 0.001),

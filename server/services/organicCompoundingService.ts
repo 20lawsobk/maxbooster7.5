@@ -220,7 +220,7 @@ class OrganicCompoundingService {
           candidates?.push({
             assetId: `candidate_${randomBytes(8).toString("hex")}`,
             type: def.type,
-            topic: `${def?.type.replace(/_/g, " ")} for ${channel?.name}`,
+            topic: `${def?.type?.replace(/_/g, " ")} for ${channel?.name}`,
             intent: channel.type === "search" ? "search" : "discovery",
             creationCostHours: def.hours,
             distributionCost: 0,
@@ -296,7 +296,7 @@ class OrganicCompoundingService {
         ];
 
         const needed = 5 - candidates?.length;
-        for (const defaultAsset of defaultTypes?.slice(0, needed)) {
+        for (const defaultAsset of defaultTypes?.slice(0, needed) ?? []) {
           candidates?.push({
             assetId: `candidate_${randomBytes(8).toString("hex")}`,
             type: defaultAsset.type,
@@ -479,7 +479,7 @@ class OrganicCompoundingService {
         ? new Date(asset?.createdAt)
         : new Date();
       const ageInDays =
-        (Date?.now() - createdAt?.getTime()) / (1000 * 60 * 60 * 24);
+        (Date.now() - createdAt?.getTime()) / (1000 * 60 * 60 * 24);
 
       const decayFactor = Math.pow(0.5, ageInDays / halfLifeDays);
 
