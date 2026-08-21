@@ -1170,6 +1170,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn({ err }, "[Health] Failed to register core probes");
   }
 
+  // Watch for Sentry going silent (DSN revoked, egress blocked, Sentry-side
+  // outage) — pages operators via AlertingService independent of Sentry.
+  try {
+    const { startSentryHeartbeatMonitor } = await import("./instrument.js");
+    startSentryHeartbeatMonitor();
+  } catch (err) {
+    logger.warn({ err }, "[Observability] Failed to start Sentry heartbeat monitor");
+  }
+
   // Start retention background services
   try {
     const { reEngagementService } = await import(

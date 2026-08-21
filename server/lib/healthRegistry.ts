@@ -194,7 +194,39 @@ export function registerCoreProbes(): void {
     }
   });
 
+  // MaxCore circuit-breaker probe — surfaces outages/circuit-open state in
+  // /api/ready without requiring log access. "down" only when the breaker is
+  // actually open (fast-failing real requests); a closed breaker with zero
+  // failures reports "ok" even if MaxCore has never been called yet.
+  healthRegistry?.register("maxcore", async () => {
+    try {
+      const { MaxCoreAIClient } = await import("../services/maxcoreClient.js");
+      const cb = MaxCoreAIClient.getCircuitBreakerState();
+      if (!cb.configured) {
+        return { status: "unknown", detail: "MaxCore not configured (no URL/key)" };
+      }
+      if (cb.open) {
+        const retryInSec = cb.openUntil
+          ? Math.max(0, Math.round((cb.openUntil - Date.now()) / 1000))
+          : null;
+        return {
+          status: "down",
+          detail: `circuit breaker OPEN — ${cb.consecutiveFailures} consecutive failures, retry in ~${retryInSec}s`,
+        };
+      }
+      if (cb.halfOpen) {
+        return {
+          status: "degraded",
+          detail: "circuit breaker half-open — probing recovery",
+        };
+      }
+      return { status: "ok", detail: `${cb.consecutiveFailures} consecutive failures` };
+    } catch (e) {
+      return { status: "unknown", detail: (e as Error).message };
+    }
+  });
+
   logger.info(
-    "[Health] Core probes registered: database, redis, routes, audit, automation",
+    "[Health] Core probes registered: database, redis, routes, audit, automation, maxcore",
   );
 }

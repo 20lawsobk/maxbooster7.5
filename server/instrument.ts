@@ -188,3 +188,126 @@ export function captureSentryMessage(
     Sentry.captureMessage(msg, { level, extra });
   } catch { /* best-effort */ }
 }
+
+// ── Sentry-silence detection ─────────────────────────────────────────────
+// Sentry can go quiet for reasons that never throw locally: a revoked DSN,
+// Sentry-side ingestion outage, or an egress/firewall change blocking
+// sentry.io — the SDK call itself still "succeeds" (queues the event) even
+// though nothing is ever delivered. Sentry.flush() is the one signal that
+// actually confirms the transport finished sending queued events, so the
+// heartbeat below uses it rather than trusting captureMessage() alone.
+let lastSentryHeartbeatOkAt: number | null = null;
+let lastSentryHeartbeatAttemptAt: number | null = null;
+let lastSentryHeartbeatFailed = false;
+const SENTRY_SILENCE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+
+async function sendSentryHeartbeat(): Promise<void> {
+  if (!isProduction || !Sentry) return;
+  lastSentryHeartbeatAttemptAt = Date.now();
+  try {
+    Sentry.captureMessage("[Heartbeat] Sentry delivery check", {
+      level: "info",
+      tags: { heartbeat: "true" },
+    });
+    const flushed = await Sentry.flush(8000);
+    if (flushed) {
+      lastSentryHeartbeatOkAt = Date.now();
+      lastSentryHeartbeatFailed = false;
+    } else {
+      lastSentryHeartbeatFailed = true;
+      logger.warn(
+        "[Observability] Sentry heartbeat did not confirm delivery within 8s flush window",
+      );
+    }
+  } catch (err) {
+    lastSentryHeartbeatFailed = true;
+    logger.warn({ err }, "[Observability] Sentry heartbeat send failed");
+  }
+}
+
+/**
+ * Snapshot of Sentry delivery health for /api/ready and alerting.
+ * `silentForMs` is null until the first heartbeat attempt completes.
+ */
+export function getSentryHeartbeatStatus(): {
+  configured: boolean;
+  lastSuccessAt: number | null;
+  lastAttemptAt: number | null;
+  lastAttemptFailed: boolean;
+  silentForMs: number | null;
+  isSilent: boolean;
+} {
+  const configured = isProduction && !!Sentry && !!dsn;
+  const silentForMs = lastSentryHeartbeatOkAt
+    ? Date.now() - lastSentryHeartbeatOkAt
+    : lastSentryHeartbeatAttemptAt
+      ? Date.now() - lastSentryHeartbeatAttemptAt
+      : null;
+  return {
+    configured,
+    lastSuccessAt: lastSentryHeartbeatOkAt,
+    lastAttemptAt: lastSentryHeartbeatAttemptAt,
+    lastAttemptFailed: lastSentryHeartbeatFailed,
+    silentForMs,
+    isSilent: configured && silentForMs !== null && silentForMs > SENTRY_SILENCE_THRESHOLD_MS,
+  };
+}
+
+let sentryHeartbeatTimer: NodeJS.Timeout | null = null;
+let sentrySilenceAlertTimer: NodeJS.Timeout | null = null;
+
+/**
+ * Starts a periodic Sentry delivery heartbeat plus a silence watchdog that
+ * pages operators (via AlertingService — email/webhook, independent of
+ * Sentry) when no confirmed delivery has happened in 24+ hours. No-op
+ * outside production or when Sentry isn't configured, since "silent" is
+ * only meaningful when Sentry is expected to be receiving events.
+ */
+export function startSentryHeartbeatMonitor(): void {
+  if (!isProduction || !Sentry || !dsn) return;
+  if (sentryHeartbeatTimer) return; // already started
+
+  // First heartbeat shortly after boot, then hourly.
+  const HEARTBEAT_INTERVAL_MS = 60 * 60 * 1000;
+  const SILENCE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+
+  setTimeout(() => void sendSentryHeartbeat(), 15_000);
+  sentryHeartbeatTimer = setInterval(
+    () => void sendSentryHeartbeat(),
+    HEARTBEAT_INTERVAL_MS,
+  );
+  sentryHeartbeatTimer.unref?.();
+
+  sentrySilenceAlertTimer = setInterval(() => {
+    const status = getSentryHeartbeatStatus();
+    if (!status.isSilent) return;
+    const hours = status.silentForMs
+      ? Math.round(status.silentForMs / (60 * 60 * 1000))
+      : null;
+    logger.warn(
+      { status },
+      `[Observability] Sentry has not confirmed delivery in ~${hours}h — paging operators via AlertingService`,
+    );
+    import("./monitoring/alertingService.js")
+      .then(({ alertingService }) => {
+        alertingService?.sendAlert({
+          severity: "critical",
+          title: "Sentry error reporting is silent",
+          message: `No confirmed Sentry event delivery in ~${hours}h. Error tracking may be blind — check the DSN, egress to sentry.io, and Sentry project status.`,
+          timestamp: new Date(),
+          metadata: status,
+        });
+      })
+      .catch((err) => {
+        logger.warn(
+          { err },
+          "[Observability] Failed to dispatch Sentry-silence alert via AlertingService",
+        );
+      });
+  }, SILENCE_CHECK_INTERVAL_MS);
+  sentrySilenceAlertTimer.unref?.();
+
+  logger.info(
+    "✅ [Observability] Sentry silence watchdog active (heartbeat hourly, alert threshold 24h)",
+  );
+}

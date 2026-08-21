@@ -213,6 +213,31 @@ export class MaxCoreAIClient {
   }
 
   /**
+   * Public snapshot of circuit-breaker state for health/readiness reporting.
+   * Exposed so /api/ready can surface an open breaker without requiring
+   * log access — a closed breaker with 0 failures means MaxCore is healthy
+   * from this process's point of view (it may still be cold/unconfigured;
+   * `configured` distinguishes that).
+   */
+  static getCircuitBreakerState(): {
+    configured: boolean;
+    open: boolean;
+    halfOpen: boolean;
+    consecutiveFailures: number;
+    openUntil: number | null;
+  } {
+    const now = Date.now();
+    const open = now < MaxCoreAIClient._cbOpenUntil;
+    return {
+      configured: !!(MC_AI_URL && MC_AI_KEY),
+      open,
+      halfOpen: !open && MaxCoreAIClient._cbOpenUntil > 0,
+      consecutiveFailures: MaxCoreAIClient._cbFailures,
+      openUntil: MaxCoreAIClient._cbOpenUntil > 0 ? MaxCoreAIClient._cbOpenUntil : null,
+    };
+  }
+
+  /**
    * GET a stable named endpoint (suppression applies on permanent failures).
    * Do NOT use this for per-job poll paths — use poll() instead.
    */
