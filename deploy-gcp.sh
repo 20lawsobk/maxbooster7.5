@@ -28,6 +28,10 @@ GCP_IP="${1:-34.117.33.233}"
 GCP_USER="${GCP_USER:-ubuntu}"
 GCP_SSH_KEY="${GCP_SSH_KEY:-}"
 DEPLOY_DIR="/opt/max-booster"
+# Confirmed live production URL (verified via the deployments service on
+# 2026-08-21) — pinned as the default so the DNS stack always syncs zone
+# data from the actual running app, not a guess. Override only if the app
+# is ever republished under a different domain.
 MAIN_APP_URL="${MAIN_APP_URL:-https://maxbooster.replit.app}"
 DNS_SYNC_SECRET="${DNS_SYNC_SECRET:-}"
 
