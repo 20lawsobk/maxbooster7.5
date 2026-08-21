@@ -21,7 +21,7 @@
     "cors": "^2",
     "drizzle-orm": "catalog:",
     "express": "^5",
-    "multer": "^2.1.1",
+    "multer": "^2.2.0",
     "wasmoon": "^1.16.0",
     "zod": "catalog:"
   },
