@@ -2454,23 +2454,59 @@ router.post(
 );
 
 // AI Mix endpoint
-// NOT IMPLEMENTED: same issue as /ai-master — no mixing engine exists behind
-// this route, so it must not report a fake job or send a fake completion
-// notification.
+// Real auto-mix engine: applies role-based per-track EQ (highpass/shelf/
+// peaking) + leveling compression via ffmpeg's audio filters, inferred from
+// each track's name/type (bass/kick-drum/vocal/generic), then renders the
+// mixdown. Optionally chains into the same mastering pipeline as /ai-master.
+// Returns a real, downloadable file — never a fake job/notification.
 router.post(
   "/ai-mix/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
     const { projectId } = req.params as Record<string, string>;
-    logger.warn(
-      `AI mixing requested for project ${projectId} but is not implemented — returning 501, no fake job/notification will be sent`,
-    );
-    res.status(501).json({
-      success: false,
-      projectId,
-      status: "not_implemented",
-      message: "AI mixing is not yet available",
-    });
+    const userId = req.user!.id;
+    try {
+      if (!(await verifyProjectOwnership(projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      const { format, sampleRate, bitDepth, applyMastering, genre, targetLufs } =
+        req.body || {};
+
+      const { renderProjectMixdown } = await import(
+        "../services/studioRenderService.js"
+      );
+
+      const rendered = await renderProjectMixdown(projectId, {
+        format: format || "wav",
+        sampleRate: Number(sampleRate) || 44100,
+        bitDepth: Number(bitDepth) || 24,
+        applyAutoMix: true,
+        applyMastering: Boolean(applyMastering),
+        masteringGenre: genre,
+        targetLufs: typeof targetLufs === "number" ? targetLufs : -14,
+      });
+
+      logger.info(
+        `AI mixing completed for project ${projectId}${rendered.mastering ? " (+ mastering)" : ""}`,
+      );
+
+      res.json({
+        success: true,
+        projectId,
+        downloadUrl: rendered.downloadPath,
+        fileSize: rendered.fileSize,
+        duration: rendered.durationSec,
+        mastering: rendered.mastering,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, `AI mixing failed for project ${projectId}:`);
+      res.status(422).json({
+        success: false,
+        projectId,
+        message: (error as Error)?.message || "AI mixing failed",
+      });
+    }
   },
 );
 

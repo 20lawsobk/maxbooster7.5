@@ -354,15 +354,40 @@ export class AutomationSystem extends EventEmitter {
     // NOT IMPLEMENTED: no mixing engine is wired to this generic workflow
     // action. See studio.ts /ai-mix for the user-facing equivalent, which is
     // also honestly gated to "not implemented" until a real job pipeline exists.
+    // AI Mix action — routed through the real auto-mix engine (role-based
+    // per-track EQ + leveling compression via ffmpeg, same pipeline behind
+    // POST /api/studio/ai-mix/:projectId). `trackId` is the studio project id.
     this.registerAction("ai-mix-track", {
       name: "AI Mix Track",
       description: "Use AI to mix and master track",
       parameters: ["trackId", "style", "quality"],
       execute: async (params) => {
-        logger.warn(
-          `🎛️ ai-mix-track action invoked for track ${params?.trackId} but is not implemented — no mixing was performed`,
-        );
-        return { success: false, message: "ai-mix-track is not implemented" };
+        logger.info(`🎛️ Auto-mixing project ${params?.trackId}`);
+        try {
+          if (!params?.trackId) {
+            throw new Error("ai-mix-track requires trackId (studio project id)");
+          }
+          const { renderProjectMixdown } = await import(
+            "./services/studioRenderService.js"
+          );
+          const rendered = await renderProjectMixdown(params.trackId, {
+            format: "wav",
+            sampleRate: 44100,
+            bitDepth: 24,
+            applyAutoMix: true,
+          });
+          return {
+            success: true,
+            message: "Auto-mix complete",
+            result: { downloadUrl: rendered.downloadPath },
+          };
+        } catch (e) {
+          logger.warn({ err: e }, "ai-mix-track action failed");
+          return {
+            success: false,
+            message: (e as Error).message ?? "ai-mix-track failed",
+          };
+        }
       },
     });
 

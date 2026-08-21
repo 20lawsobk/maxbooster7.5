@@ -103,6 +103,41 @@ interface RenderInput {
   pan: number; // -1..1
   startTimeMs: number;
   isTempFile: boolean;
+  /** Optional ffmpeg filter chain (no brackets) applied before volume/pan — auto-mix EQ + compression. */
+  preFilter?: string;
+}
+
+/**
+ * Role-based corrective EQ + leveling compression for the auto-mix engine.
+ * This is real per-track DSP applied through ffmpeg's audio filters
+ * (highpass/lowshelf/peaking EQ + acompressor) — not a score or a fake
+ * "mixed" flag. Roles are inferred from the track name/type since that's
+ * the only per-track semantic signal the schema stores; unrecognized roles
+ * get generic corrective EQ + gentle leveling rather than no processing.
+ */
+function autoMixFilterForTrack(
+  name: string | undefined,
+  trackType: string | undefined,
+): string {
+  const n = `${name ?? ""} ${trackType ?? ""}`.toLowerCase();
+  const isBass = /\bbass\b|808/.test(n);
+  const isKickOrDrum = /\bkick\b|\bdrum|\bpercussion/.test(n);
+  const isVocal = /\bvocal|\bvox\b|\blead\b|\brap\b/.test(n);
+
+  if (isBass) {
+    // Keep sub weight, tame boxy mids, prevent bass from clashing with kick.
+    return "highpass=f=30,equalizer=f=250:width_type=o:width=1.5:g=-3,acompressor=threshold=-16dB:ratio=3.5:attack=8:release=90:makeup=2";
+  }
+  if (isKickOrDrum) {
+    // Punch through with a small low-mid scoop for clarity against bass.
+    return "highpass=f=35,equalizer=f=400:width_type=o:width=1.5:g=-2,acompressor=threshold=-14dB:ratio=4:attack=3:release=60:makeup=2";
+  }
+  if (isVocal) {
+    // Clear the low end, add presence, gentle leveling compression.
+    return "highpass=f=100,equalizer=f=3000:width_type=o:width=1.8:g=2.5,acompressor=threshold=-18dB:ratio=2.5:attack=5:release=80:makeup=2.5";
+  }
+  // Generic instrument/other: reduce sub-bass mud, light leveling.
+  return "highpass=f=60,acompressor=threshold=-20dB:ratio=2.5:attack=10:release=100:makeup=1.5";
 }
 
 async function mixToRawPcm(
@@ -124,8 +159,9 @@ async function mixToRawPcm(
       const delayMs = Math.max(0, Math.round(inp.startTimeMs));
       const panLeft = Math.max(0, 1 - Math.max(0, inp.pan));
       const panRight = Math.max(0, 1 + Math.min(0, inp.pan));
+      const pre = inp.preFilter ? `${inp.preFilter},` : "";
       filterParts.push(
-        `[${i}:a]volume=${inp.volume}:eval=once,pan=stereo|c0=${panLeft}*c0|c1=${panRight}*c1,adelay=${delayMs}|${delayMs}[a${i}]`,
+        `[${i}:a]${pre}volume=${inp.volume}:eval=once,pan=stereo|c0=${panLeft}*c0|c1=${panRight}*c1,adelay=${delayMs}|${delayMs}[a${i}]`,
       );
     });
     const mixInputs = inputs.map((_, i) => `[a${i}]`).join("");
@@ -211,6 +247,8 @@ export interface RenderProjectOptions {
   applyMastering?: boolean;
   masteringGenre?: MasteringGenre;
   targetLufs?: number;
+  /** Auto-mix engine: role-based per-track EQ + leveling compression before the mixdown. */
+  applyAutoMix?: boolean;
 }
 
 export interface RenderProjectResult {
@@ -284,6 +322,9 @@ export async function renderProjectMixdown(
         pan: track?.pan ?? 0,
         startTimeMs: (clip.startTime ?? 0) * 1000,
         isTempFile: isTemp,
+        preFilter: options.applyAutoMix
+          ? autoMixFilterForTrack(track?.name, track?.trackType ?? undefined)
+          : undefined,
       });
     }
 

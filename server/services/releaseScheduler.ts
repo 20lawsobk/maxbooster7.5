@@ -561,33 +561,85 @@ class ReleaseScheduler {
             break;
           }
           case "platform_publish": {
-            // No real per-platform distribution call is wired up for
-            // scheduled actions yet — distributionService.submitToProvider
-            // is a separate, manually-triggered flow that itself only
-            // succeeds when a DSP provider (LabelGrid) is configured, and
-            // it isn't connected to these scheduled rows. Logging a message
-            // and marking this "completed" told creators a release went
-            // out on a platform when nothing was ever submitted anywhere.
-            // Report the honest state instead: not yet supported.
-            logger.warn(
-              `Platform publish for release ${action?.releaseId} has no distribution implementation wired up yet — marking unsupported, not completed`,
-            );
+            // Wired to the real distribution flow: distributionService
+            // .submitToProvider() calls LabelGrid when configured (the same
+            // path the manual "Submit to DSP" flow uses). If LabelGrid isn't
+            // configured for this environment, submitToProvider itself
+            // throws rather than faking a dispatch — that failure is
+            // reported honestly below via the same "unsupported" state
+            // instead of a false "completed".
+            const metadata =
+              (action?.metadata as Record<string, unknown>) || {};
+            const platform = String(metadata.platform || "").trim();
+            const release = await db.query.releases.findFirst({
+              where: eq(releases.id, action.releaseId),
+            });
 
-            await db
-              .update(releaseScheduledActions)
-              .set({
-                status: "unsupported",
-                executedAt: new Date(),
-                metadata: {
-                  ...((action?.metadata as Record<string, unknown>) || {}),
-                  error:
-                    "Platform publishing is not yet implemented for scheduled actions",
-                },
-              })
-              .where(eq(releaseScheduledActions.id, action?.id));
+            if (!platform || !release) {
+              logger.warn(
+                `Platform publish for release ${action?.releaseId} is missing a platform/release — marking unsupported`,
+              );
+              await db
+                .update(releaseScheduledActions)
+                .set({
+                  status: "unsupported",
+                  executedAt: new Date(),
+                  metadata: {
+                    ...metadata,
+                    error: "Missing platform or release for scheduled publish",
+                  },
+                })
+                .where(eq(releaseScheduledActions.id, action?.id));
+              unsupported++;
+              continue;
+            }
 
-            unsupported++;
-            continue;
+            try {
+              const { distributionService } = await import(
+                "./distributionService.js"
+              );
+              const result = await distributionService.submitToProvider(
+                action.releaseId,
+                platform,
+                release.userId,
+              );
+              if (!result?.success) {
+                throw new Error(
+                  result?.reason || `Submission to ${platform} did not succeed`,
+                );
+              }
+              await db
+                .update(releaseScheduledActions)
+                .set({
+                  metadata: {
+                    ...metadata,
+                    dispatchId: result.dispatchId,
+                    estimatedLiveDate: result.estimatedLiveDate,
+                  },
+                })
+                .where(eq(releaseScheduledActions.id, action?.id));
+            } catch (distError: unknown) {
+              logger.warn(
+                { err: distError },
+                `Platform publish to ${platform} for release ${action?.releaseId} failed — marking unsupported`,
+              );
+              await db
+                .update(releaseScheduledActions)
+                .set({
+                  status: "unsupported",
+                  executedAt: new Date(),
+                  metadata: {
+                    ...metadata,
+                    error:
+                      (distError as Error)?.message ||
+                      "Platform distribution failed",
+                  },
+                })
+                .where(eq(releaseScheduledActions.id, action?.id));
+              unsupported++;
+              continue;
+            }
+            break;
           }
           default:
             // Nothing was actually done for an action type we don't
