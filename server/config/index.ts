@@ -64,6 +64,20 @@ export const config = {
   maxcoreUrl: _maxcoreLocalEnabled
     ? `http://127.0.0.1:${_maxcoreLocalPort}`
     : p.MAXCORE_URL || p.AI_SERVER_URL || "",
+
+  // Local DNS node — internal-only supervised child process running the
+  // dns-node authoritative nameserver (dns-node/src) for backend testing.
+  // NOT publicly reachable: Replit's deployment proxy is HTTP(S)-only and
+  // does not pass through raw UDP/TCP:53 traffic, so this can never serve
+  // real public DNS. Real production nameservers run on the separate GCP
+  // VMs provisioned by deploy-gcp.sh. Disabled by default; opt in with
+  // DNS_NODE_LOCAL=1 for internal verification only.
+  dnsNodeLocal: {
+    enabled: p.DNS_NODE_LOCAL === "1",
+    port: Number(p.DNS_NODE_LOCAL_PORT) || 5353,
+    healthPort: Number(p.DNS_NODE_LOCAL_HEALTH_PORT) || 5380,
+    domain: p.DNS_NODE_LOCAL_DOMAIN || "max-booster.com",
+  },
   // Keep generation and administrative credentials distinct. A missing
   // generation key may fall back to the admin key for backwards-compatible
   // deployments, but an admin request must never inherit the generation key.

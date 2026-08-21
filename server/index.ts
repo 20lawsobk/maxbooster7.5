@@ -87,6 +87,13 @@ import("./services/maxcoreLocalSupervisor.js")
   .then(({ startMaxcoreLocal }) => startMaxcoreLocal())
   .catch((err) => logger.error({ err }, "[MaxCoreLocal] failed to start supervisor"));
 
+// Optionally start an internal-only dns-node instance (backend testing of the
+// DNS zone pipeline only — never publicly reachable). No-op unless
+// DNS_NODE_LOCAL=1. See server/services/dnsNodeLocalSupervisor.ts for why.
+import("./services/dnsNodeLocalSupervisor.js")
+  .then(({ startDnsNodeLocal }) => startDnsNodeLocal())
+  .catch((err) => logger.error({ err }, "[DnsNodeLocal] failed to start supervisor"));
+
 // Kick off readiness probes asynchronously — /ready transitions from
 // "not_ready" → "ready"/"degraded" once DB + Redis + TF have responded.
 startupProbes?.runAllProbes().catch((err) => {
@@ -2016,6 +2023,15 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     const { stopMaxcoreLocal } = await import("./services/maxcoreLocalSupervisor.js");
     stopMaxcoreLocal();
     logger.info("[Shutdown] Local MaxCore subsystem stopped");
+  } catch {
+    /* non-critical */
+  }
+
+  try {
+    // Stop the internal-only dns-node child, if it was started.
+    const { stopDnsNodeLocal } = await import("./services/dnsNodeLocalSupervisor.js");
+    stopDnsNodeLocal();
+    logger.info("[Shutdown] Local dns-node subsystem stopped");
   } catch {
     /* non-critical */
   }

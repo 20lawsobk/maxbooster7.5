@@ -6936,6 +6936,11 @@ export async function registerRoutes(
       name: "paymentBypass",
       loader: () => import("./routes/paymentBypass"),
     },
+    {
+      path: "/api/admin/dns-node-local",
+      name: "dnsNodeLocalStatus",
+      loader: () => import("./routes/dnsNodeLocalStatus"),
+    },
 
     // SEO (sitemap.xml + robots.txt — mounted at root)
     { path: "", name: "seo", loader: () => import("./routes/seo") },
