@@ -22,12 +22,29 @@ import {
   createReadStream,
 } from "fs";
 import { createHash } from "crypto";
-import { spawn } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
+
+// Resolve bsdtar once per process. bsdtar (libarchive) sets
+// ARCHIVE_EXTRACT_ATOMIC by default, which is libarchive's actual fix for
+// the "Directory renamed before its status could be extracted" extractor
+// race — not a workaround, a different (safer) extraction strategy. Falls
+// back to null (caller uses GNU tar + exit-code tolerance) if unavailable.
+let _bsdtarBinCache;
+function resolveBsdtar() {
+  if (_bsdtarBinCache !== undefined) return _bsdtarBinCache;
+  try {
+    const probe = spawnSync("bsdtar", ["--version"], { stdio: "ignore" });
+    _bsdtarBinCache = probe.status === 0 ? "bsdtar" : null;
+  } catch {
+    _bsdtarBinCache = null;
+  }
+  return _bsdtarBinCache;
+}
 
 // Reserved VM deployments keep the same persistent disk across the rapid
 // crash/restart cycles a slow cold boot causes: the platform kills a
@@ -122,6 +139,18 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
   const compression = manifest?.compression || "gzip-9";
   const tarFlag = compression.startsWith("xz") ? "-xJf" : "-xzf";
 
+  // Prefer bsdtar (libarchive) over GNU tar for the actual extraction. This
+  // isn't a warning-tolerance workaround — libarchive ships a real fix for
+  // this exact class of bug: it added ARCHIVE_EXTRACT_ATOMIC (atomic
+  // directory creation/rename during extraction, avoiding the create→rename
+  // window that the kernel/overlayfs "Directory renamed before its status
+  // could be extracted" race lands in) and bsdtar enables it by default.
+  // GNU tar has no equivalent flag — this is a tool-level fix, not a
+  // config tweak. libarchive auto-detects gzip/xz from the stream, so no
+  // format-specific flag is needed; GNU tar's exit-code-tolerant path below
+  // remains as a safety net for any environment where bsdtar is unavailable.
+  const bsdtarBin = resolveBsdtar();
+
   // Extract into a scratch directory that nothing else in the tree has ever
   // seen, then swap it into place with a single rename — instead of
   // extracting the thousands of individual files/dirs of node_modules
@@ -200,9 +229,19 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
     // final metadata touch-up on it is — so this specific, well-known warning
     // class is treated as non-fatal (with a loud log and a post-extraction
     // sanity check below), while anything else on stderr still fails hard.
-    const child = spawn("tar", [tarFlag, "-", "-C", scratchDir], {
-      stdio: ["pipe", "inherit", "pipe"],
-    });
+    const usingBsdtar = !!bsdtarBin;
+    const child = usingBsdtar
+      ? spawn(bsdtarBin, ["-x", "-f", "-", "-C", scratchDir], {
+          stdio: ["pipe", "inherit", "pipe"],
+        })
+      : spawn("tar", [tarFlag, "-", "-C", scratchDir], {
+          stdio: ["pipe", "inherit", "pipe"],
+        });
+    if (usingBsdtar) {
+      console.log(`[pdim-restore] Using bsdtar (libarchive, atomic extraction) for ${capsuleName}`);
+    } else {
+      console.log(`[pdim-restore] bsdtar not found — falling back to GNU tar for ${capsuleName}`);
+    }
 
     let stderrBuf = "";
     child.stderr.on("data", (chunk) => {

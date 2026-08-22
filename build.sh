@@ -513,7 +513,7 @@ if [ -n "$_SOURCE_DIRS" ] || [ -n "$_SOURCE_CONFIGS" ]; then
   "compression": "${_PDIM_FORMAT}",
   "format": "pdim-v2",
   "autoRestore": false,
-  "note": "Not needed at runtime — restore manually: tar -xJf source.pdim (xz) or tar -xzf source.pdim (gzip)",
+  "note": "Not needed at runtime — restore manually: bsdtar -xf source.pdim (auto-detects xz/gzip), or GNU tar -xJf/-xzf as a fallback",
   "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 MANIFEST_EOF

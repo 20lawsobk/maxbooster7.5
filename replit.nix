@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.libarchive
     pkgs.psmisc
     pkgs.redis
     pkgs.nano
