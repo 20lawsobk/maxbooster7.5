@@ -187,9 +187,35 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
     // ship. The archive's internal paths already start with the target dir
     // name (e.g. "node_modules/..."), so extracting with -C scratchDir
     // reproduces "scratchDir/node_modules/...".
+    // Capture stderr instead of piping straight to the console: the scratch-
+    // dir swap alone did NOT eliminate "Directory renamed before its status
+    // could be extracted" (confirmed against real deploy logs — it recurred
+    // verbatim even extracting into a brand-new empty directory). That rules
+    // out a collision with pre-existing entries and matches a well-documented
+    // GNU tar / overlayfs kernel race (identical message reported against
+    // RHEL, Ubuntu, and Docker/dokku for large nested node_modules-style
+    // trees): the kernel's overlay copy-up renames a just-created directory
+    // out from under tar between mkdir and the follow-up stat/chmod call.
+    // The content already written into that directory is NOT lost — only the
+    // final metadata touch-up on it is — so this specific, well-known warning
+    // class is treated as non-fatal (with a loud log and a post-extraction
+    // sanity check below), while anything else on stderr still fails hard.
     const child = spawn("tar", [tarFlag, "-", "-C", scratchDir], {
-      stdio: ["pipe", "inherit", "inherit"],
+      stdio: ["pipe", "inherit", "pipe"],
     });
+
+    let stderrBuf = "";
+    child.stderr.on("data", (chunk) => {
+      const text = chunk.toString();
+      stderrBuf += text;
+      process.stderr.write(text);
+    });
+
+    const BENIGN_TAR_WARNING = /Directory renamed before its status could be extracted/;
+    const isBenignOnly = (text) => {
+      const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+      return lines.length > 0 && lines.every((l) => BENIGN_TAR_WARNING.test(l));
+    };
 
     const hash = manifest?.sha256 ? createHash("sha256") : null;
     const source = createReadStream(capsulePath);
@@ -219,7 +245,17 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
     child.on("exit", (code) => {
       clearTimeout(timer);
       if (sourceErrored) return; // already handled by source's error path
-      if (code !== 0) return fail(`tar exited with code ${code}`);
+      if (code !== 0) {
+        if (!isBenignOnly(stderrBuf)) {
+          return fail(`tar exited with code ${code}`);
+        }
+        console.error(
+          `[pdim-restore] WARN: tar exited ${code} with only known-benign ` +
+            `overlayfs "Directory renamed" warnings (kernel copy-up race — ` +
+            `content is extracted, only metadata touch-up on the affected ` +
+            `dirs is skipped). Continuing; verifying tree size below.`,
+        );
+      }
 
       if (hash) {
         const actual = hash.digest("hex");
@@ -240,6 +276,27 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
       if (!existsSync(extractedPath)) {
         return fail(
           `extraction succeeded but ${extractedPath} was not produced — archive layout mismatch`,
+        );
+      }
+
+      // Sanity-check the tree size, since the benign-warning path above
+      // deliberately tolerates a nonzero tar exit code — this catches the
+      // case where "benign-looking" warnings actually coincided with real
+      // content loss instead of just a skipped metadata touch-up.
+      let entryCount = 0;
+      try {
+        entryCount = readdirSync(extractedPath).length;
+      } catch (e) {
+        return fail(`could not verify extracted tree at ${extractedPath}: ${e.message}`);
+      }
+      if (entryCount === 0) {
+        return fail(`extraction produced an empty ${targetDir}/ directory — treating as failed`);
+      }
+      const MIN_ENTRIES = { node_modules: 500 };
+      const minExpected = MIN_ENTRIES[targetDir];
+      if (minExpected && entryCount < minExpected) {
+        return fail(
+          `extracted ${targetDir}/ has only ${entryCount} entries (expected ${minExpected}+) — treating as failed`,
         );
       }
 

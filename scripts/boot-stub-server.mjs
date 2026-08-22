@@ -40,8 +40,11 @@ server.on("error", (err) => {
   process.exit(1);
 });
 
-server.listen(port, () => {
-  console.log(`[boot-stub] listening on ${port} (liveness placeholder while node_modules restores)`);
+// Bind explicitly to 0.0.0.0 — Replit's published-app health check reaches
+// the container over the network, not via loopback, so a server bound only
+// to 127.0.0.1/localhost is invisible to it even while "running".
+server.listen(port, "0.0.0.0", () => {
+  console.log(`[boot-stub] listening on 0.0.0.0:${port} (liveness placeholder while node_modules restores)`);
 });
 
 const shutdown = () => {
