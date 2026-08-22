@@ -90,12 +90,29 @@ export PATH="$(dirname "$_NODE_BIN"):$PATH"
 echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 
 # ── 2. PDIM restore (Extract & Boot) ─────────────────────────────────────────
-# Extracts node_modules.pdim and python_runtime.pdim on first startup.
-# No-op on subsequent restarts (directories already present).
+# Extracts node_modules.pdim (and friends) on first startup. No-op on
+# subsequent restarts (directories already present, sentinel files found).
 # Reads compression format from *.manifest.json — handles xz and gzip capsules.
+#
+# Only node_modules blocks boot — Node cannot import anything without it.
+# python_runtime / external/maxcore / external/pdim restore in the
+# BACKGROUND, in parallel with the app itself starting: those subsystems
+# already start async and degrade gracefully (Python sidecar warns and
+# falls back, MaxCore's supervisor reports degraded/unreachable, pdim isn't
+# imported by the running app at all). Blocking on all four here delays port
+# binding past the deployment's startup-probe timeout on a cold boot when
+# their combined extraction time is large.
 if [ -f "dist/pdim-restore.mjs" ]; then
-  echo "[start.sh] Running PDIM capsule restore..."
-  "$_NODE_BIN" dist/pdim-restore.mjs
+  echo "[start.sh] Running PDIM capsule restore (critical: node_modules)..."
+  "$_NODE_BIN" dist/pdim-restore.mjs critical
+  _RESTORE_RC=$?
+  if [ $_RESTORE_RC -ne 0 ]; then
+    echo "[start.sh] FATAL: critical PDIM restore (node_modules) failed" >&2
+    exit 1
+  fi
+  echo "[start.sh] Restoring python_runtime / external/maxcore / external/pdim in background..."
+  "$_NODE_BIN" dist/pdim-restore.mjs background >> /tmp/pdim-background-restore.log 2>&1 &
+  echo "[start.sh] background PDIM restore pid $!"
 else
   echo "[start.sh] dist/pdim-restore.mjs not found — skipping PDIM restore"
 fi

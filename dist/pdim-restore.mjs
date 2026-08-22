@@ -134,46 +134,88 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
   });
 }
 
-const [nodeModulesOk, , maxcoreOk] = await Promise.all([
-  restoreCapsule(
-    "node_modules.pdim",
-    "node_modules.manifest.json",
-    "node_modules",
-    ".pdim-restored",
-  ),
-  restoreCapsule(
-    "python_runtime.pdim",
-    "python_runtime.manifest.json",
-    "python_runtime",
-    ".pdim-restored-py",
-  ),
+// node_modules MUST be present before the Node process can import anything,
+// so it is the only capsule that legitimately has to block the app from
+// starting. python_runtime / external/maxcore / external/pdim are consumed
+// lazily by subsystems that already start asynchronously and degrade
+// gracefully when their backing files aren't there yet (Python sidecar warns
+// and falls back, MaxCore's local supervisor reports its probe as
+// degraded/unreachable, external/pdim isn't imported by the running app at
+// all) — so blocking boot on them too only serves to burn through the
+// deployment's startup-probe window for no functional benefit. `critical`
+// mode restores node_modules only; `background` mode restores the rest.
+const CAPSULES = {
+  nodeModules: () =>
+    restoreCapsule(
+      "node_modules.pdim",
+      "node_modules.manifest.json",
+      "node_modules",
+      ".pdim-restored",
+    ),
+  pythonRuntime: () =>
+    restoreCapsule(
+      "python_runtime.pdim",
+      "python_runtime.manifest.json",
+      "python_runtime",
+      ".pdim-restored-py",
+    ),
   // external/maxcore — internalized MaxCore subsystem (packed by script/build.ts).
   // Required unless local MaxCore mode is explicitly disabled (MAXCORE_LOCAL=0).
-  restoreCapsule(
-    "external_maxcore.pdim",
-    "external_maxcore.manifest.json",
-    "external/maxcore",
-    ".pdim-restored-maxcore",
-  ),
+  maxcore: () =>
+    restoreCapsule(
+      "external_maxcore.pdim",
+      "external_maxcore.manifest.json",
+      "external/maxcore",
+      ".pdim-restored-maxcore",
+    ),
   // external/pdim — vendored PDIM subsystem (packed by script/build.ts).
   // Shipped per user directive that the entire project be included; a failed
   // restore is logged but non-fatal since app runtime does not import it.
-  restoreCapsule(
-    "external_pdim.pdim",
-    "external_pdim.manifest.json",
-    "external/pdim",
-    ".pdim-restored-pdim",
-  ),
-]);
+  pdim: () =>
+    restoreCapsule(
+      "external_pdim.pdim",
+      "external_pdim.manifest.json",
+      "external/pdim",
+      ".pdim-restored-pdim",
+    ),
+};
 
-let ok = nodeModulesOk;
-if (process.env.MAXCORE_LOCAL !== "0") ok = maxcoreOk && ok;
+const mode = process.argv[2] || "all";
 
-if (!ok) {
-  console.error(
-    "[pdim-restore] FATAL: a required capsule restore failed — server will crash",
-  );
-  process.exit(1);
+if (mode === "critical") {
+  const nodeModulesOk = await CAPSULES.nodeModules();
+  if (!nodeModulesOk) {
+    console.error(
+      "[pdim-restore] FATAL: node_modules restore failed — server will crash",
+    );
+    process.exit(1);
+  }
+  console.log("[pdim-restore] Critical capsule (node_modules) restored.");
+} else if (mode === "background") {
+  await Promise.all([
+    CAPSULES.pythonRuntime(),
+    CAPSULES.maxcore(),
+    CAPSULES.pdim(),
+  ]);
+  console.log("[pdim-restore] Background capsules processed.");
+} else {
+  // Legacy/dev path: restore everything up front and block on it.
+  const [nodeModulesOk, , maxcoreOk] = await Promise.all([
+    CAPSULES.nodeModules(),
+    CAPSULES.pythonRuntime(),
+    CAPSULES.maxcore(),
+    CAPSULES.pdim(),
+  ]);
+
+  let ok = nodeModulesOk;
+  if (process.env.MAXCORE_LOCAL !== "0") ok = maxcoreOk && ok;
+
+  if (!ok) {
+    console.error(
+      "[pdim-restore] FATAL: a required capsule restore failed — server will crash",
+    );
+    process.exit(1);
+  }
+
+  console.log("[pdim-restore] All capsules processed.");
 }
-
-console.log("[pdim-restore] All capsules processed.");
