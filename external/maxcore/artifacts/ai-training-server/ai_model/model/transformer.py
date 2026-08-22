@@ -30,7 +30,9 @@ def _ensure_gpu() -> bool:
     _gpu_init_attempted = True
     try:
         from ai_model.gpu.hyper_core import HyperGPU, PrecisionMode
-        _hyper_gpu = HyperGPU(lanes=512, tensor_cores=8,
+        from ai_model.gpu.sizing import hyper_gpu_sizing
+        _lanes, _tensor_cores = hyper_gpu_sizing()
+        _hyper_gpu = HyperGPU(lanes=_lanes, tensor_cores=_tensor_cores,
                                precision=PrecisionMode.MIXED)
         _gpu_ready = True
         _log.info("transformer: DigitalGPU backend active (HyperGPU tensor-core kernels)")

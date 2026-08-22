@@ -11,6 +11,7 @@ from torch.optim import AdamW
 from ai_model.gpu.hyper_backend import HyperGPUBackend
 from ai_model.gpu.hyper_core import PrecisionMode
 from ai_model.gpu.hyper_transformer import HyperTransformerLM
+from ai_model.gpu.sizing import hyper_gpu_sizing
 from ai_model.training.dataset import CreativeDataset
 from ai_model.model.tokenizer import SimpleTokenizer
 from ai_model.training.config import TrainConfig
@@ -28,8 +29,8 @@ def _cosine_lr(step, warmup, total, base_lr, min_lr):
 def train_on_hyper_gpu(
     data_path: str = "training/boostsheet_samples_v2.json",
     config: TrainConfig | None = None,
-    lanes: int = 512,
-    tensor_cores: int = 8,
+    lanes: int | None = None,
+    tensor_cores: int | None = None,
     resume: bool = True,
 ):
     if config is None:
@@ -39,6 +40,13 @@ def train_on_hyper_gpu(
     # are not in the compute path and must not be sized from host CPU count.
     torch.set_num_threads(1)
     torch.set_grad_enabled(True)
+
+    # Default to the shared host-capacity-derived sizing (ai_model/gpu/sizing.py)
+    # unless the caller explicitly overrides lanes/tensor_cores.
+    if lanes is None or tensor_cores is None:
+        _default_lanes, _default_tensor_cores = hyper_gpu_sizing()
+        lanes = _default_lanes if lanes is None else lanes
+        tensor_cores = _default_tensor_cores if tensor_cores is None else tensor_cores
 
     backend = HyperGPUBackend(
         lanes=lanes,

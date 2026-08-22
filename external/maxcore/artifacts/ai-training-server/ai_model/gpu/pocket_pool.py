@@ -25,6 +25,7 @@ from contextlib import asynccontextmanager, contextmanager
 from typing import AsyncIterator, Iterator
 
 from ai_model.gpu.hyper_backend import HyperGPUBackend, PrecisionMode
+from ai_model.gpu.sizing import hyper_gpu_sizing
 
 
 # ── Lifecycle states ──────────────────────────────────────────────────────────
@@ -52,9 +53,13 @@ class PocketGPUInstance:
         self.died_at: float | None = None
         # Each instance gets its own isolated GPU + VRAM — pocket-compressed
         # storage means unlimited simultaneous instances without memory growth.
+        # Lanes/tensor_cores come from the same host-capacity-derived sizing
+        # every other HyperGPU construction site in this process uses (see
+        # ai_model/gpu/sizing.py) instead of an independent hardcoded value.
+        _lanes, _tensor_cores = hyper_gpu_sizing()
         self.backend = HyperGPUBackend(
-            lanes=512,
-            tensor_cores=8,
+            lanes=_lanes,
+            tensor_cores=_tensor_cores,
             precision=PrecisionMode.MIXED,
         )
 

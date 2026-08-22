@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from ai_model.gpu.hyper_backend import HyperGPUBackend
 from ai_model.gpu.hyper_core import PrecisionMode
+from ai_model.gpu.sizing import hyper_gpu_sizing
 
 
 class HyperFeedForward(nn.Module):
@@ -49,8 +50,9 @@ class HyperTransformerLM(nn.Module):
                  max_len=512, dropout=0.1, backend=None):
         super().__init__()
         if backend is None:
+            _lanes, _tensor_cores = hyper_gpu_sizing()
             backend = HyperGPUBackend(
-                lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED
+                lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED
             )
         self.backend = backend
         self.dim = dim

@@ -7,6 +7,7 @@ import zlib from "zlib";
 import { fileURLToPath } from "url";
 import { createRequire } from "module";
 import { spawnSync, spawn } from "child_process";
+import { computeWorkerSizing } from "./computeSizing";
 
 // ── Boosterstate sidecar startup ──────────────────────────────────────────────
 // Previously handled by start?.sh. Moved here so the run command can be a plain
@@ -181,8 +182,6 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     process.exit(1);
   });
 } else {
-  const numCPUs = os?.cpus().length;
-  const freeMemGB = os?.freemem() / 1024 ** 3;
   const totalMemGB = os?.totalmem() / 1024 ** 3;
 
   // ── Worker auto-sizing — why this matters at scale ───────────────────────
@@ -252,31 +251,34 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // it must be passed explicitly via execArgv (done below).
   const workerHeapMB = isDeployment ? 4096 : 3072;
 
+  // Sizing derivation lives in server/computeSizing.ts — the single shared
+  // source of truth also consumed by maxcoreLocalSupervisor.ts (its own Node
+  // cluster) and (via env vars) MaxCore's Python HyperGPU engine, so every
+  // process on this host reasons about CPU/RAM capacity the same way.
+  //
   // cpuLimit: reserve 1 core for the primary process + OS scheduler.
   // memLimit: never fork more workers than RAM can hold at memPerWorkerGB each.
   // The real worker count is the lesser of the two — whichever resource
   // is exhausted first on the current VM is the binding constraint.
-  const cpuLimit = Math.max(1, numCPUs - 1);
-  const memLimit = Math.max(1, Math.floor(freeMemGB / memPerWorkerGB));
-
+  //
   // CLUSTER_WORKERS is intentionally left unset in production so auto-sizing
   // fills every available CPU core and RAM slot on whatever VM Autoscale
   // provisions.  Only set it when deliberately constraining for debugging.
-  const envOverride = process.env.CLUSTER_WORKERS
-    ? parseInt(process.env.CLUSTER_WORKERS, 10)
-    : null;
+  const sizing = computeWorkerSizing({
+    memPerWorkerGB,
+    envOverrideVar: "CLUSTER_WORKERS",
+  });
+  const { cpuLimit, memLimit } = sizing;
 
-  const workerCount =
-    envOverride && envOverride > 0
-      ? (() => {
-          console.warn(
-            `[Cluster] ⚠️  CLUSTER_WORKERS override active — pinned to ${envOverride} worker(s). ` +
-              `Auto-sizing would have chosen ${Math.min(cpuLimit, memLimit)}. ` +
-              `Remove CLUSTER_WORKERS to restore full VM utilisation.`,
-          );
-          return envOverride;
-        })()
-      : Math.min(cpuLimit, memLimit);
+  if (sizing.source === "override") {
+    console.warn(
+      `[Cluster] ⚠️  CLUSTER_WORKERS override active — pinned to ${sizing.workerCount} worker(s). ` +
+        `Auto-sizing would have chosen ${Math.min(cpuLimit, memLimit ?? cpuLimit)}. ` +
+        `Remove CLUSTER_WORKERS to restore full VM utilisation.`,
+    );
+  }
+
+  const workerCount = sizing.workerCount;
 
   const workerScript = path?.join(__dirname, "index.mjs");
 
@@ -289,10 +291,10 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
   console.log(
     `[Cluster] Primary ${process.pid} — forking ${workerCount} workers ` +
-      `(CPUs: ${numCPUs}, total RAM: ${totalMemGB.toFixed(1)} GB, free: ${freeMemGB.toFixed(1)} GB, ` +
+      `(CPUs: ${sizing.numCPUs}, total RAM: ${totalMemGB.toFixed(1)} GB, free: ${sizing.freeMemGB.toFixed(1)} GB, ` +
       `${memPerWorkerGB} GB/worker, heap/worker: ${workerHeapMB} MB, ` +
       `cpu-limit: ${cpuLimit}, mem-limit: ${memLimit})` +
-      (isDeployment ? ` [Deployed VM — ${numCPUs} vCPU]` : ""),
+      (isDeployment ? ` [Deployed VM — ${sizing.numCPUs} vCPU]` : ""),
   );
 
   // ── Option 1: Primary-owned health check server ───────────────────────────

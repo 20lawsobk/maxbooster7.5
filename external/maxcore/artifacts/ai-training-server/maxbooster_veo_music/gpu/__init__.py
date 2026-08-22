@@ -1,5 +1,7 @@
 from ai_model.gpu.hyper_core import HyperGPU, PrecisionMode
+from ai_model.gpu.sizing import hyper_gpu_sizing
 
-gpu = HyperGPU(lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED)
+_lanes, _tensor_cores = hyper_gpu_sizing()
+gpu = HyperGPU(lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED)
 
 __all__ = ["gpu", "HyperGPU", "PrecisionMode"]

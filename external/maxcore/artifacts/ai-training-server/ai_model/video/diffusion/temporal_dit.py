@@ -29,6 +29,7 @@ from typing import List, Optional
 
 from ...gpu.hyper_backend import HyperGPUBackend, HyperFlashAttention
 from ...gpu.hyper_core import PrecisionMode
+from ...gpu.sizing import hyper_gpu_sizing
 from .awareness_conditioner import N_TOKENS, D_MODEL as COND_DIM
 
 PATCH_SIZE: int = 4
@@ -44,9 +45,12 @@ FFN_MULT: int = 4
 
 
 def _build_backend() -> HyperGPUBackend:
+    # Host-capacity-derived sizing (see ai_model/gpu/sizing.py) instead of an
+    # independent hardcoded lanes/tensor_cores pair.
+    _lanes, _tensor_cores = hyper_gpu_sizing()
     return HyperGPUBackend(
-        lanes=256,
-        tensor_cores=4,
+        lanes=_lanes,
+        tensor_cores=_tensor_cores,
         precision=PrecisionMode.MIXED,
         vram_capacity=0,
         training_mode=False,

@@ -10,6 +10,7 @@ from ai_model.gpu.digital_gpu import (
     GPUError, ShapeError, SIMDCore, VRAM
 )
 from ai_model.gpu.native.kernels import get_native_kernels
+from ai_model.gpu.sizing import hyper_gpu_sizing
 
 # Numerics-reference switch: when set, mixed-precision GEMMs round operands to
 # bit-level FP16 before the FP32-accumulate product (slower on CPU; BLAS has no
@@ -192,13 +193,21 @@ class MemoryPool:
 class HyperSIMDCore(SIMDCore):
     def __init__(
         self,
-        lanes: int = 512,
+        lanes: int | None = None,
         tile_m: int = 128,
         tile_n: int = 128,
         tile_k: int = 128,
-        tensor_cores: int = 8,
+        tensor_cores: int | None = None,
         precision: PrecisionMode = PrecisionMode.MIXED,
     ):
+        # Default to the shared host-capacity-derived sizing (ai_model/gpu/sizing.py)
+        # unless the caller explicitly overrides lanes/tensor_cores. This is the
+        # root primitive every HyperGPU/HyperGPUBackend construction path bottoms
+        # out at, so defaulting here closes off any remaining bypass.
+        if lanes is None or tensor_cores is None:
+            _default_lanes, _default_tensor_cores = hyper_gpu_sizing()
+            lanes = _default_lanes if lanes is None else lanes
+            tensor_cores = _default_tensor_cores if tensor_cores is None else tensor_cores
         super().__init__(lanes=lanes, tile_m=tile_m, tile_n=tile_n, tile_k=tile_k)
         self.precision = precision
         self.tensor_core_units = [
@@ -681,13 +690,15 @@ class HyperVRAM(VRAM):
 class HyperGPU:
     def __init__(
         self,
-        lanes: int = 512,
-        tensor_cores: int = 8,
+        lanes: int | None = None,
+        tensor_cores: int | None = None,
         precision: PrecisionMode = PrecisionMode.MIXED,
         vram_capacity: int = 0,
         tile_size: int = 128,
         silicon=None,
     ):
+        # lanes/tensor_cores default to None so HyperSIMDCore resolves the
+        # shared host-capacity-derived sizing itself unless overridden here.
         self.core = HyperSIMDCore(
             lanes=lanes,
             tile_m=tile_size, tile_n=tile_size, tile_k=tile_size,
@@ -1024,11 +1035,17 @@ class GPUClusterNode:
     def __init__(
         self,
         node_id: int,
-        lanes: int = 512,
-        tensor_cores: int = 8,
+        lanes: int | None = None,
+        tensor_cores: int | None = None,
         precision: PrecisionMode = PrecisionMode.MIXED,
         vram_capacity: int = 0,
     ):
+        # Default to the shared host-capacity-derived sizing (ai_model/gpu/sizing.py)
+        # unless the caller explicitly overrides lanes/tensor_cores.
+        if lanes is None or tensor_cores is None:
+            _default_lanes, _default_tensor_cores = hyper_gpu_sizing()
+            lanes = _default_lanes if lanes is None else lanes
+            tensor_cores = _default_tensor_cores if tensor_cores is None else tensor_cores
         self.node_id = node_id
         self.gpu = HyperGPU(
             lanes=lanes,
@@ -1060,11 +1077,19 @@ class GPUCluster:
     def __init__(
         self,
         num_nodes: int = 4,
-        lanes_per_node: int = 512,
-        tensor_cores_per_node: int = 8,
+        lanes_per_node: int | None = None,
+        tensor_cores_per_node: int | None = None,
         precision: PrecisionMode = PrecisionMode.MIXED,
         vram_per_node: int = 0,
     ):
+        # Default to the shared host-capacity-derived sizing (ai_model/gpu/sizing.py)
+        # unless the caller explicitly overrides lanes_per_node/tensor_cores_per_node.
+        if lanes_per_node is None or tensor_cores_per_node is None:
+            _default_lanes, _default_tensor_cores = hyper_gpu_sizing()
+            lanes_per_node = _default_lanes if lanes_per_node is None else lanes_per_node
+            tensor_cores_per_node = (
+                _default_tensor_cores if tensor_cores_per_node is None else tensor_cores_per_node
+            )
         self.nodes: Dict[int, GPUClusterNode] = {}
         self._lock = threading.Lock()
         self._gradient_buffer: Dict[str, List[np.ndarray]] = {}
@@ -1154,9 +1179,11 @@ class GPUCluster:
             node.gpu.flush_vram()
 
     def add_node(
-        self, lanes: int = 512, tensor_cores: int = 8,
+        self, lanes: int | None = None, tensor_cores: int | None = None,
         precision: PrecisionMode = PrecisionMode.MIXED,
     ) -> int:
+        # lanes/tensor_cores default to None so GPUClusterNode resolves the
+        # shared host-capacity-derived sizing itself unless overridden here.
         with self._lock:
             nid = max(self.nodes.keys()) + 1 if self.nodes else 0
             self.nodes[nid] = GPUClusterNode(

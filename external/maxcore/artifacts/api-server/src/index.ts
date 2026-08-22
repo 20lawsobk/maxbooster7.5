@@ -34,15 +34,19 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-// Default to min(cpus, 4) Node workers.  Each worker is ~150-200 MB;
-// 4 workers + the Python model (~1.7 GB) leaves ~4 GB headroom on an 8 GB
-// host for PIL render threads and ffmpeg.  Override via NODE_CLUSTER_WORKERS
-// env var if you need to dial back on a memory-constrained host.
+// NODE_CLUSTER_WORKERS is always set by the process that spawns this server
+// (server/services/maxcoreLocalSupervisor.ts when run as MaxCore's local
+// subsystem — see server/computeSizing.ts, the single shared compute-sizing
+// source also used by the main app's own Node cluster). Read it directly
+// rather than re-deriving a count from os.cpus() here, which would give this
+// vendored entrypoint its own independent opinion about host capacity.
+// Fall back to min(cpus, 4) only for the case of running this server
+// directly (outside the supervisor) without that env var set.
 const _envWorkers = parseInt(process.env["NODE_CLUSTER_WORKERS"] ?? "", 10);
-const NUM_WORKERS = Math.min(
-  os.cpus().length,
-  Number.isFinite(_envWorkers) && _envWorkers > 0 ? _envWorkers : 4,
-);
+const NUM_WORKERS =
+  Number.isFinite(_envWorkers) && _envWorkers > 0
+    ? _envWorkers
+    : Math.min(os.cpus().length, 4);
 
 if (cluster.isPrimary) {
   console.log(

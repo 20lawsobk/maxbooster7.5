@@ -38,6 +38,7 @@ from ai_model.gpu.hyper_backend import (
     _HyperLayerNorm,
     _HyperSiLU,
 )
+from ai_model.gpu.sizing import hyper_gpu_sizing
 from typing import Optional
 
 from ai_model.model.transformer import (
@@ -419,8 +420,12 @@ class HyperCreativeTransformerLM(nn.Module):
         super().__init__()
         self.dim = dim
         self.max_len = max_len
-        self.gpu = gpu if gpu is not None else HyperGPU(
-            lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED)
+        if gpu is not None:
+            self.gpu = gpu
+        else:
+            _lanes, _tensor_cores = hyper_gpu_sizing()
+            self.gpu = HyperGPU(
+                lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED)
 
         self.token_emb = nn.Embedding(vocab_size, dim)
         self.emb_dropout = nn.Dropout(dropout)

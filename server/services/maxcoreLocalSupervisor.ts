@@ -18,6 +18,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { config } from "../config/index.js";
 import { logger } from "../logger.js";
+import { computeWorkerSizing, computeHyperGpuSizing } from "../computeSizing.js";
 
 const MAXCORE_ROOT = path.resolve(process.cwd(), "external", "maxcore");
 const API_SERVER_DIR = path.join(MAXCORE_ROOT, "artifacts", "api-server");
@@ -110,6 +111,28 @@ async function spawnChild(): Promise<void> {
     `[MaxCoreLocal] Starting MaxCore api-server (port ${port}, model port ${modelApiPort})…`,
   );
 
+  // Derived from the same shared compute-sizing source as server/cluster.ts
+  // (server/computeSizing.ts) so this process's own Node cluster and
+  // MaxCore's Python HyperGPU engine reason about host capacity the same
+  // way the main app does — instead of each hardcoding an independent
+  // number. `maxWorkers: 1` is a deliberate, explicit cap: Max Booster is
+  // the only caller on loopback, so the imported default of 4 workers would
+  // just waste ~600 MB per unused worker without adding throughput. If that
+  // single-caller assumption ever changes, raise/remove `maxWorkers` here
+  // rather than reintroducing a separate hardcoded constant.
+  const nodeSizing = computeWorkerSizing({
+    maxWorkers: 1,
+    reserveCore: false,
+    envOverrideVar: "MAXCORE_LOCAL_CLUSTER_WORKERS",
+  });
+  // HyperGPU's modeled lanes/tensor_cores, derived from the same host CPU
+  // capacity (see computeHyperGpuSizing docstring) instead of the 6
+  // previously-hardcoded `lanes=512, tensor_cores=8` call sites in
+  // server.py. Forwarded to the Python child automatically: this Node
+  // process's env is inherited by the api-server child, which in turn
+  // spreads `...process.env` into the Python child it spawns.
+  const hyperGpuSizing = computeHyperGpuSizing(nodeSizing.cpuLimit);
+
   child = spawn(TSX_BIN, ["src/index.ts"], {
     cwd: API_SERVER_DIR,
     env: {
@@ -119,9 +142,9 @@ async function spawnChild(): Promise<void> {
       // MODEL_API_PORT set ⇒ this instance is the Python owner (see the
       // imported python-server.ts PYTHON_SPAWN_DISABLED logic).
       MODEL_API_PORT: String(modelApiPort),
-      // Single Node worker: Max Booster is the only caller on loopback; the
-      // imported default of 4 workers wastes ~600 MB here.
-      NODE_CLUSTER_WORKERS: "1",
+      NODE_CLUSTER_WORKERS: String(nodeSizing.workerCount),
+      HYPER_GPU_LANES: String(hyperGpuSizing.lanes),
+      HYPER_GPU_TENSOR_CORES: String(hyperGpuSizing.tensorCores),
       SESSION_SECRET: process.env.SESSION_SECRET ?? "",
       // Credentials — the Python service env-bypasses these exact values, so
       // the same keys the connector sends are accepted upstream.

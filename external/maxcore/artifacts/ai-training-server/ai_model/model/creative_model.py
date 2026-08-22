@@ -25,8 +25,10 @@ def _get_hyper_core():
         if _hyper_core is None:
             try:
                 from ai_model.gpu.hyper_core import HyperSIMDCore, PrecisionMode
+                from ai_model.gpu.sizing import hyper_gpu_sizing
+                _lanes, _tensor_cores = hyper_gpu_sizing()
                 _hyper_core = HyperSIMDCore(
-                    lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED
+                    lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED
                 )
             except Exception:
                 pass

@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from typing import List
+from ai_model.gpu.sizing import hyper_gpu_sizing
 from ai_model.gpu.hyper_core import (
     HyperGPU, GPUCluster, PrecisionMode, GPUError,
 )
@@ -520,13 +521,19 @@ class HyperSiLU(nn.Module):
 class HyperGPUBackend:
     def __init__(
         self,
-        lanes: int = 512,
-        tensor_cores: int = 8,
+        lanes: int | None = None,
+        tensor_cores: int | None = None,
         precision: PrecisionMode = PrecisionMode.MIXED,
         vram_capacity: int = 0,
         training_mode: bool = False,
         silicon=None,
     ):
+        # Default to the shared host-capacity-derived sizing (ai_model/gpu/sizing.py)
+        # unless the caller explicitly overrides lanes/tensor_cores.
+        if lanes is None or tensor_cores is None:
+            _default_lanes, _default_tensor_cores = hyper_gpu_sizing()
+            lanes = _default_lanes if lanes is None else lanes
+            tensor_cores = _default_tensor_cores if tensor_cores is None else tensor_cores
         self.gpu = HyperGPU(
             lanes=lanes,
             tensor_cores=tensor_cores,
@@ -579,10 +586,12 @@ class ClusterBackend:
     def __init__(
         self,
         num_nodes: int = 4,
-        lanes_per_node: int = 512,
-        tensor_cores_per_node: int = 8,
+        lanes_per_node: int | None = None,
+        tensor_cores_per_node: int | None = None,
         precision: PrecisionMode = PrecisionMode.MIXED,
     ):
+        # lanes_per_node/tensor_cores_per_node default to None so GPUCluster
+        # resolves the shared host-capacity-derived sizing itself unless overridden.
         self.cluster = GPUCluster(
             num_nodes=num_nodes,
             lanes_per_node=lanes_per_node,

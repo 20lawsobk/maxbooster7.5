@@ -661,6 +661,17 @@ _coverage_watchdog = None
 _gen_coalescer = None
 _workers_lock = threading.Lock()
 
+def _hyper_gpu_sizing() -> tuple[int, int]:
+    """HyperGPU's modeled `lanes`/`tensor_cores` sizing — see
+    ai_model/gpu/sizing.py (the one place every HyperGPU construction site
+    in this process reads HYPER_GPU_LANES/HYPER_GPU_TENSOR_CORES from) for
+    the full rationale. Thin re-export kept here since this module already
+    imports lazily inside try/except blocks throughout and callers in this
+    file reference `_hyper_gpu_sizing()` directly.
+    """
+    from ai_model.gpu.sizing import hyper_gpu_sizing
+    return hyper_gpu_sizing()
+
 def _init_ai_model():
     global _model_ready, _tokenizer, _creative_model, _script_agent
     global _visual_spec_agent, _distribution_agent, _optimization_agent
@@ -705,8 +716,9 @@ def _init_ai_model():
             from ai_model.gpu.hyper_core import HyperGPU, PrecisionMode
             from ai_model.gpu.hyper_backend import HyperGPUBackend
 
+            _lanes, _tensor_cores = _hyper_gpu_sizing()
             _hyper_backend    = HyperGPUBackend(
-                lanes=512, tensor_cores=8,
+                lanes=_lanes, tensor_cores=_tensor_cores,
                 precision=PrecisionMode.MIXED,
             )
             _hyper_gpu        = _hyper_backend.gpu   # created internally
@@ -798,7 +810,8 @@ def _init_ai_model():
             try:
                 from ai_model.gpu.hyper_core import HyperGPU, PrecisionMode
                 from ai_model.gpu.hyper_creative_transformer import HyperCreativeTransformerLM
-                _fb_gpu = HyperGPU(lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED)
+                _fb_lanes, _fb_tensor_cores = _hyper_gpu_sizing()
+                _fb_gpu = HyperGPU(lanes=_fb_lanes, tensor_cores=_fb_tensor_cores, precision=PrecisionMode.MIXED)
                 base_model = HyperCreativeTransformerLM(
                     vocab_size=vocab_size,
                     dim=dim, n_layers=n_layers, n_heads=n_heads, max_len=max_len,
@@ -2405,17 +2418,18 @@ async def gpu_status():
 async def hyper_gpu_status():
     global _hyper_backend
     try:
+        _lanes, _tensor_cores = _hyper_gpu_sizing()
         if _hyper_backend is None:
             from ai_model.gpu.hyper_backend import HyperGPUBackend
             from ai_model.gpu.hyper_core import PrecisionMode
-            _hyper_backend = HyperGPUBackend(lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED)
+            _hyper_backend = HyperGPUBackend(lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED)
         s = _hyper_backend.status()
         return {
             "available": True,
             "engine": s.get("engine", "HyperGPU"),
             "role": "primary — all model inference/training compute routes through this backend",
-            "lanes": s.get("lanes", 512),
-            "tensor_cores": s.get("tensor_cores", 8),
+            "lanes": s.get("lanes", _lanes),
+            "tensor_cores": s.get("tensor_cores", _tensor_cores),
             "precision": str(s.get("precision", "MIXED")),
             "total_ops": s.get("total_ops", 0),
             "total_tensor_core_tflops": s.get("total_tensor_core_tflops", 0.0),
@@ -2434,12 +2448,18 @@ async def gpu_capabilities():
     global _hyper_backend, _digital_gpu_backend
     hyper_ok = True
     hyper_err = None
+    _lanes, _tensor_cores = _hyper_gpu_sizing()
     try:
         if _hyper_backend is None:
             from ai_model.gpu.hyper_backend import HyperGPUBackend
             from ai_model.gpu.hyper_core import PrecisionMode
-            _hyper_backend = HyperGPUBackend(lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED)
-        _hyper_backend.status()
+            _hyper_backend = HyperGPUBackend(lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED)
+        _hyper_status = _hyper_backend.status()
+        # Report the live backend's actual lanes/tensor_cores (falls back to
+        # the sizing default only if status() omits them) so this endpoint
+        # never disagrees with /gpu/hyper/status or the configured sizing.
+        _lanes = _hyper_status.get("lanes", _lanes)
+        _tensor_cores = _hyper_status.get("tensor_cores", _tensor_cores)
     except Exception as e:
         hyper_ok = False
         hyper_err = str(e)
@@ -2464,7 +2484,7 @@ async def gpu_capabilities():
             "available": digital_ok, **({"error": digital_err} if digital_err else {}),
         },
         "hyper_gpu": {
-            "engine": "HyperGPU", "lanes": 512, "tensor_cores": 8, "precision": "MIXED", "role": "primary",
+            "engine": "HyperGPU", "lanes": _lanes, "tensor_cores": _tensor_cores, "precision": "MIXED", "role": "primary",
             "available": hyper_ok, **({"error": hyper_err} if hyper_err else {}),
         },
     }
@@ -2709,13 +2729,18 @@ def _run_bpe_scaleup(req: BPEScaleUpRequest, job_id: str):
         gc.collect()
 
         # Train entirely on the MaxCore digital GPU stack — no Replit CPU kernels.
-        from ai_model.gpu.hyper_core import HyperGPU, PrecisionMode
+        from ai_model.gpu.hyper_core import PrecisionMode
+        from ai_model.gpu.hyper_backend import HyperGPUBackend
         from ai_model.gpu.hyper_transformer import HyperTransformerLM
-        _train_gpu = HyperGPU(lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED)
+        _lanes, _tensor_cores = _hyper_gpu_sizing()
+        _train_backend = HyperGPUBackend(lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED)
         new_model = HyperTransformerLM(
             vocab_size=new_tokenizer.vocab_size,
             dim=req.dim, n_layers=req.layers, n_heads=req.heads, max_len=req.max_len,
-            backend=None,   # HyperTransformerLM creates its own HyperGPUBackend internally
+            # Pass the env-sized backend explicitly — leaving this None would
+            # make HyperTransformerLM construct its own hard-coded
+            # lanes=512/tensor_cores=8 backend, defeating the sizing above.
+            backend=_train_backend,
         )
         n_params = sum(p.numel() for p in new_model.parameters())
         log_training(
@@ -3035,7 +3060,8 @@ def _run_hyper_scaleup(req: HyperScaleUpRequest, job_id: str):
             _creative_model = None
         gc.collect()
 
-        gpu = HyperGPU(lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED)
+        _lanes, _tensor_cores = _hyper_gpu_sizing()
+        gpu = HyperGPU(lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED)
         hyper_model = HyperCreativeTransformerLM(
             vocab_size=new_tokenizer.vocab_size,
             dim=req.dim, n_layers=req.layers, n_heads=req.heads,
@@ -3990,7 +4016,7 @@ async def dashboard_stats():
         "training_state": training_state,
         "vocab_size": len(_tokenizer.vocab) if _tokenizer else 0,
         "weights_exist": (Path(__file__).parent / "ai_model" / "weights" / "model.pt").exists(),
-        "gpu_lanes": 512,
+        "gpu_lanes": _hyper_gpu_sizing()[0],
         "boostsheet_count": boostsheet_count,
     }
 
