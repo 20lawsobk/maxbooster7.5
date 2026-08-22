@@ -692,17 +692,25 @@ def _init_ai_model():
         # ── Digital GPU backend (HyperGPU + SM102 custom nvcc + pdim) ─────────
         # Initialise before the model so the pocket accelerator is warm by the
         # time the first GEMM fires during weight loading / warm-up.
+        #
+        # HyperGPU/HyperGPUBackend is the ONE canonical compute engine for all
+        # model inference and training in this process — see
+        # docs/gpu-architecture.md for the full reconciliation of the
+        # "Digital GPU"-branded subsystems. `ai_model.gpu.digital_gpu.DigitalGPU`
+        # (a standalone ISA/VRAM/SIMDCore emulator) is intentionally NOT
+        # instantiated here: nothing in this file ever called it for real
+        # compute, and keeping a live-but-unused instance around is what made
+        # /gpu/status report "unavailable" even while HyperGPU was healthy.
         try:
             from ai_model.gpu.hyper_core import HyperGPU, PrecisionMode
             from ai_model.gpu.hyper_backend import HyperGPUBackend
-            from ai_model.gpu.digital_gpu import DigitalGPU
 
             _hyper_backend    = HyperGPUBackend(
                 lanes=512, tensor_cores=8,
                 precision=PrecisionMode.MIXED,
             )
             _hyper_gpu        = _hyper_backend.gpu   # created internally
-            _digital_gpu_backend = DigitalGPU()
+            _digital_gpu_backend = None  # lazily created by /gpu/status if requested
 
             # Prime the pocket accelerator so its lazy init doesn't stall the
             # first real request.
@@ -2354,6 +2362,13 @@ async def model_status():
     }
 
 # ─── GPU Status ──────────────────────────────────────────────────────────────
+#
+# HyperGPU (/gpu/hyper/status) is the primary, live compute engine for this
+# process — see docs/gpu-architecture.md. `/gpu/status` reports the secondary
+# `ai_model.gpu.torch_backend.DigitalGPUBackend` (a lightweight SIMD-lane
+# accounting shim, distinct from the unused ISA emulator in
+# ai_model/gpu/digital_gpu.py) purely for backward-compatible callers; it is
+# NOT where model compute happens.
 
 @app.get("/gpu/status")
 async def gpu_status():
@@ -2369,9 +2384,22 @@ async def gpu_status():
             from ai_model.gpu.torch_backend import DigitalGPUBackend
             _digital_gpu_backend = DigitalGPUBackend(lanes=32)
         status = _digital_gpu_backend.status()
-        return {"available": True, "backend": "digital_gpu", **status, **pool_stats}
+        return {
+            "available": True,
+            "backend": "digital_gpu",
+            "primary_compute_backend": "hyper_gpu",
+            "role": "secondary — SIMD-lane accounting shim, not the model compute path",
+            **status,
+            **pool_stats,
+        }
     except Exception as e:
-        return {"available": False, "backend": "none", "error": str(e), **pool_stats}
+        return {
+            "available": False,
+            "backend": "none",
+            "primary_compute_backend": "hyper_gpu",
+            "error": str(e),
+            **pool_stats,
+        }
 
 @app.get("/gpu/hyper/status")
 async def hyper_gpu_status():
@@ -2383,7 +2411,9 @@ async def hyper_gpu_status():
             _hyper_backend = HyperGPUBackend(lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED)
         s = _hyper_backend.status()
         return {
+            "available": True,
             "engine": s.get("engine", "HyperGPU"),
+            "role": "primary — all model inference/training compute routes through this backend",
             "lanes": s.get("lanes", 512),
             "tensor_cores": s.get("tensor_cores", 8),
             "precision": str(s.get("precision", "MIXED")),
@@ -2393,16 +2423,50 @@ async def hyper_gpu_status():
             "uptime_s": s.get("uptime_s", 0.0),
         }
     except Exception as e:
-        return {"engine": "HyperGPU", "lanes": 512, "tensor_cores": 8, "precision": "MIXED",
-                "total_ops": 0, "total_tensor_core_tflops": 0.0, "total_compute_ms": 0.0,
-                "uptime_s": 0.0, "error": str(e)}
+        # HyperGPU failed to initialize/report — surface this as genuinely
+        # unavailable rather than echoing the configured hardware spec as if
+        # it were live. Callers must check `available` before trusting the
+        # rest of this payload.
+        return {"available": False, "engine": "HyperGPU", "role": "primary", "error": str(e)}
 
 @app.get("/gpu/capabilities")
 async def gpu_capabilities():
+    global _hyper_backend, _digital_gpu_backend
+    hyper_ok = True
+    hyper_err = None
+    try:
+        if _hyper_backend is None:
+            from ai_model.gpu.hyper_backend import HyperGPUBackend
+            from ai_model.gpu.hyper_core import PrecisionMode
+            _hyper_backend = HyperGPUBackend(lanes=512, tensor_cores=8, precision=PrecisionMode.MIXED)
+        _hyper_backend.status()
+    except Exception as e:
+        hyper_ok = False
+        hyper_err = str(e)
+
+    digital_ok = True
+    digital_err = None
+    try:
+        if _digital_gpu_backend is None:
+            sys.path.insert(0, str(Path(__file__).parent))
+            from ai_model.gpu.torch_backend import DigitalGPUBackend
+            _digital_gpu_backend = DigitalGPUBackend(lanes=32)
+        _digital_gpu_backend.status()
+    except Exception as e:
+        digital_ok = False
+        digital_err = str(e)
+
     return {
-        "success": True,
-        "digital_gpu": {"backend": "digital_gpu", "lanes": 32, "type": "SIMD"},
-        "hyper_gpu": {"engine": "HyperGPU", "lanes": 512, "tensor_cores": 8, "precision": "MIXED"},
+        "success": hyper_ok,
+        "primary_compute_backend": "hyper_gpu",
+        "digital_gpu": {
+            "backend": "digital_gpu", "lanes": 32, "type": "SIMD", "role": "secondary",
+            "available": digital_ok, **({"error": digital_err} if digital_err else {}),
+        },
+        "hyper_gpu": {
+            "engine": "HyperGPU", "lanes": 512, "tensor_cores": 8, "precision": "MIXED", "role": "primary",
+            "available": hyper_ok, **({"error": hyper_err} if hyper_err else {}),
+        },
     }
 
 # ─── Training ────────────────────────────────────────────────────────────────
