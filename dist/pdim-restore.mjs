@@ -11,7 +11,16 @@
  *   "gzip-9" → tar -xzf  (gzip, fallback)
  */
 
-import { existsSync, readFileSync, writeFileSync, rmSync, createReadStream } from "fs";
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  rmSync,
+  mkdirSync,
+  renameSync,
+  readdirSync,
+  createReadStream,
+} from "fs";
 import { createHash } from "crypto";
 import { spawn } from "child_process";
 import { resolve, dirname } from "path";
@@ -113,8 +122,42 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
   const compression = manifest?.compression || "gzip-9";
   const tarFlag = compression.startsWith("xz") ? "-xJf" : "-xzf";
 
+  // Extract into a scratch directory that nothing else in the tree has ever
+  // seen, then swap it into place with a single rename — instead of
+  // extracting the thousands of individual files/dirs of node_modules
+  // directly on top of the real target path. GNU tar's "Directory renamed
+  // before its status could be extracted" is a known extractor race
+  // (reported against Docker/overlay filesystems and container runtimes
+  // generally) triggered by rapid nested mkdir/rename traffic landing on a
+  // path that already has directory entries in it — exactly the shape of a
+  // fresh multi-thousand-file node_modules extraction. Extracting into an
+  // empty scratch dir removes any pre-existing entries for tar to collide
+  // with; the only operation touching the real target path is one atomic
+  // rename after the archive is fully verified.
+  const scratchDir = resolve(ROOT, `.pdim-scratch-${targetDir.replace(/[\/]/g, "_")}-${process.pid}`);
+  const finalTargetPath = resolve(ROOT, targetDir);
+
+  // Clean up any scratch leftovers from a prior crashed attempt (same or
+  // different pid) before starting a fresh one.
+  try {
+    const prefix = `.pdim-scratch-${targetDir.replace(/[\/]/g, "_")}-`;
+    for (const entry of readdirSync(ROOT)) {
+      if (entry.startsWith(prefix)) {
+        rmSync(resolve(ROOT, entry), { recursive: true, force: true });
+      }
+    }
+  } catch {}
+
+  try {
+    mkdirSync(scratchDir, { recursive: true });
+  } catch (e) {
+    console.error(`[pdim-restore] ERROR: could not create scratch dir ${scratchDir}: ${e.message}`);
+    releaseLock();
+    return false;
+  }
+
   console.log(
-    `[pdim-restore] Extracting ${capsuleName} (${compression}) → ${targetDir}/ ...`,
+    `[pdim-restore] Extracting ${capsuleName} (${compression}) → ${scratchDir}/ (staging for ${targetDir}/) ...`,
   );
 
   // Stream the capsule through tar's stdin while simultaneously hashing the
@@ -127,20 +170,24 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
   return new Promise((resolvePromise) => {
     const fail = (msg) => {
       console.error(`[pdim-restore] ERROR: ${msg}`);
-      // Remove a partially extracted tree so the next boot retries cleanly.
+      // Remove the scratch tree so the next boot retries cleanly; the real
+      // target path was never touched, so it's left exactly as it was.
       try {
-        rmSync(resolve(ROOT, targetDir), { recursive: true, force: true });
+        rmSync(scratchDir, { recursive: true, force: true });
       } catch {}
       releaseLock();
       resolvePromise(false);
     };
 
-    // Each capsule extracts into its own target directory, so running the
-    // four restores concurrently is safe (no shared-path writes) and turns
-    // total wall-clock time from the SUM of all extractions into roughly the
-    // MAX of the largest one — needed to stay under the deployment
-    // promote-step startup-probe timeout now that four capsules ship.
-    const child = spawn("tar", [tarFlag, "-", "-C", ROOT], {
+    // Each capsule extracts into its own scratch/target directory, so running
+    // the four restores concurrently is safe (no shared-path writes) and
+    // turns total wall-clock time from the SUM of all extractions into
+    // roughly the MAX of the largest one — needed to stay under the
+    // deployment promote-step startup-probe timeout now that four capsules
+    // ship. The archive's internal paths already start with the target dir
+    // name (e.g. "node_modules/..."), so extracting with -C scratchDir
+    // reproduces "scratchDir/node_modules/...".
+    const child = spawn("tar", [tarFlag, "-", "-C", scratchDir], {
       stdio: ["pipe", "inherit", "inherit"],
     });
 
@@ -184,7 +231,31 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
         }
       }
 
-      // Write the sentinel only after a fully successful extraction so
+      // Archive contents landed at scratchDir/<targetDir>/... (the archive's
+      // internal paths already start with the target dir name). Swap the
+      // fully-verified tree into place with one atomic rename instead of the
+      // thousands of individual creates a direct extraction would perform on
+      // the live path.
+      const extractedPath = resolve(scratchDir, targetDir);
+      if (!existsSync(extractedPath)) {
+        return fail(
+          `extraction succeeded but ${extractedPath} was not produced — archive layout mismatch`,
+        );
+      }
+
+      try {
+        rmSync(finalTargetPath, { recursive: true, force: true });
+        mkdirSync(dirname(finalTargetPath), { recursive: true });
+        renameSync(extractedPath, finalTargetPath);
+      } catch (e) {
+        return fail(`failed to swap ${extractedPath} into ${finalTargetPath}: ${e.message}`);
+      } finally {
+        try {
+          rmSync(scratchDir, { recursive: true, force: true });
+        } catch {}
+      }
+
+      // Write the sentinel only after a fully successful extraction+swap so
       // subsequent boots skip re-extraction (idempotent restore).
       try {
         writeFileSync(sentinelPath, new Date().toISOString());
