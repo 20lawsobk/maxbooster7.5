@@ -20,6 +20,62 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 
+// Reserved VM deployments keep the same persistent disk across the rapid
+// crash/restart cycles a slow cold boot causes: the platform kills a
+// container that doesn't open its port in time and immediately starts a new
+// one on the SAME volume. If the killed container's `tar` child was
+// orphaned rather than torn down before the new one starts, two tar
+// processes end up extracting into the same node_modules/ tree at once —
+// which is exactly what produced tar's "Directory renamed before its status
+// could be extracted" warnings. A simple PID lockfile makes a fresh restore
+// attempt wait for (or clean up after) a prior one instead of racing it.
+async function acquireRestoreLock(targetDir) {
+  const lockPath = resolve(ROOT, `${targetDir.replace(/[\/]/g, "_")}.pdim-restore.lock`);
+  const isPidAlive = (pid) => {
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  for (let waited = 0; waited < 120_000; waited += 500) {
+    if (existsSync(lockPath)) {
+      const heldPid = Number(readFileSync(lockPath, "utf8").trim());
+      if (heldPid && isPidAlive(heldPid)) {
+        if (waited === 0) {
+          console.log(
+            `[pdim-restore] ${targetDir}/ restore already in progress (pid ${heldPid}) — waiting instead of racing it`,
+          );
+        }
+        await new Promise((r) => setTimeout(r, 500));
+        continue;
+      }
+      // Stale lock from a killed process — safe to reclaim.
+      try {
+        rmSync(lockPath, { force: true });
+      } catch {}
+    }
+    try {
+      writeFileSync(lockPath, String(process.pid), { flag: "wx" });
+      return () => {
+        try {
+          rmSync(lockPath, { force: true });
+        } catch {}
+      };
+    } catch {
+      // Another process won the race to create the lock file — retry the loop.
+      continue;
+    }
+  }
+
+  console.error(
+    `[pdim-restore] WARN: gave up waiting for ${targetDir}/ restore lock after 120s — proceeding anyway`,
+  );
+  return () => {};
+}
+
 function readManifest(manifestPath) {
   try {
     if (existsSync(manifestPath)) {
@@ -41,6 +97,15 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
 
   if (existsSync(sentinelPath)) {
     console.log(`[pdim-restore] ${targetDir}/ already restored — skipping`);
+    return true;
+  }
+
+  const releaseLock = await acquireRestoreLock(targetDir);
+  // Another process may have finished the restore while we were waiting on
+  // the lock — re-check the sentinel before starting a redundant extraction.
+  if (existsSync(sentinelPath)) {
+    releaseLock();
+    console.log(`[pdim-restore] ${targetDir}/ restored while waiting on lock — skipping`);
     return true;
   }
 
@@ -66,6 +131,7 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
       try {
         rmSync(resolve(ROOT, targetDir), { recursive: true, force: true });
       } catch {}
+      releaseLock();
       resolvePromise(false);
     };
 
@@ -129,6 +195,7 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
       }
 
       console.log(`[pdim-restore] ✅ ${targetDir}/ restored from ${capsuleName}`);
+      releaseLock();
       resolvePromise(true);
     });
   });
