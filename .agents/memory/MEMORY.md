@@ -88,3 +88,4 @@
 - [PnPm hoisted copy reconciliation](pnpm-hoisted-copy-reconciliation.md) — a refreshed lock can coexist with stale top-level hoisted packages; verify runtime resolution and reify those generated copies
 - [pdim-restore.mjs is static, serial-by-default](pdim-restore-parallel-extract.md) — it's a git-committed file, not build-generated; 4 capsules extracting serially at boot can blow the promote-step probe timeout
 - [Sync hash defeats "parallel" restore](pdim-restore-sync-hash-blocks-loop.md) — readFileSync+createHash for checksum verify blocks Node's event loop, serializing supposedly-concurrent Promise.all work; stream the hash instead
+- [Capsule restore double-read bottleneck](pdim-restore-double-read.md) — hashing then extracting a capsule reads it twice; pipe one stream into both hash and tar stdin so large capsules don't blow the boot-time probe window

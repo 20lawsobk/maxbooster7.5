@@ -17,22 +17,6 @@ import { spawn } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
-// Streaming, non-blocking sha256 — reading large capsules synchronously
-// (readFileSync + createHash) stalls Node's single event loop for the whole
-// read+hash duration, which serializes every other "concurrent" restore
-// behind it one at a time. A stream yields to the event loop between chunks,
-// so multiple capsules' checksums (and their tar extractions) actually
-// overlap instead of just appearing to.
-function sha256File(path) {
-  return new Promise((resolvePromise, rejectPromise) => {
-    const hash = createHash("sha256");
-    const stream = createReadStream(path);
-    stream.on("data", (chunk) => hash.update(chunk));
-    stream.on("end", () => resolvePromise(hash.digest("hex")));
-    stream.on("error", rejectPromise);
-  });
-}
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 
@@ -64,24 +48,17 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
   const compression = manifest?.compression || "gzip-9";
   const tarFlag = compression.startsWith("xz") ? "-xJf" : "-xzf";
 
-  // Verify capsule integrity before extraction when the manifest has a hash.
-  // Streamed (see sha256File) so this doesn't block the other concurrent
-  // restores' event-loop turns while it reads a large capsule.
-  if (manifest?.sha256) {
-    const actual = await sha256File(capsulePath);
-    if (actual !== manifest.sha256) {
-      console.error(
-        `[pdim-restore] ERROR: checksum mismatch for ${capsuleName}\n` +
-          `  expected ${manifest.sha256}\n  actual   ${actual}`,
-      );
-      return false;
-    }
-  }
-
   console.log(
     `[pdim-restore] Extracting ${capsuleName} (${compression}) → ${targetDir}/ ...`,
   );
 
+  // Stream the capsule through tar's stdin while simultaneously hashing the
+  // same bytes as they pass through, instead of reading the whole file once
+  // to verify its checksum and then reading it AGAIN to extract it. For a
+  // large capsule (node_modules can be hundreds of MB to multi-GB) that
+  // double read was itself enough to blow the deployment's startup-probe
+  // window — the "Extracting" log never even appeared before the platform
+  // killed and restarted the container. One read now covers both.
   return new Promise((resolvePromise) => {
     const fail = (msg) => {
       console.error(`[pdim-restore] ERROR: ${msg}`);
@@ -97,9 +74,24 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
     // total wall-clock time from the SUM of all extractions into roughly the
     // MAX of the largest one — needed to stay under the deployment
     // promote-step startup-probe timeout now that four capsules ship.
-    const child = spawn("tar", [tarFlag, capsulePath, "-C", ROOT], {
-      stdio: "inherit",
+    const child = spawn("tar", [tarFlag, "-", "-C", ROOT], {
+      stdio: ["pipe", "inherit", "inherit"],
     });
+
+    const hash = manifest?.sha256 ? createHash("sha256") : null;
+    const source = createReadStream(capsulePath);
+    let sourceErrored = false;
+
+    source.on("data", (chunk) => {
+      if (hash) hash.update(chunk);
+    });
+    source.on("error", (err) => {
+      sourceErrored = true;
+      clearTimeout(timer);
+      child.kill("SIGKILL");
+      fail(`failed reading ${capsuleName}: ${err.message}`);
+    });
+    source.pipe(child.stdin);
 
     const timer = setTimeout(() => {
       child.kill("SIGKILL");
@@ -113,7 +105,18 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
 
     child.on("exit", (code) => {
       clearTimeout(timer);
+      if (sourceErrored) return; // already handled by source's error path
       if (code !== 0) return fail(`tar exited with code ${code}`);
+
+      if (hash) {
+        const actual = hash.digest("hex");
+        if (actual !== manifest.sha256) {
+          return fail(
+            `checksum mismatch for ${capsuleName}\n` +
+              `  expected ${manifest.sha256}\n  actual   ${actual}`,
+          );
+        }
+      }
 
       // Write the sentinel only after a fully successful extraction so
       // subsequent boots skip re-extraction (idempotent restore).
