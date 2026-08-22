@@ -87,14 +87,24 @@ class StartupProbeManager {
     }
   }
 
-  // Check database connection with retry
-  async checkDatabase(maxRetries = 5): Promise<boolean> {
+  // Check database connection with retry. Each attempt is itself bounded by
+  // a hard timeout — a hung query (not an error, just never resolving) must
+  // not be able to stall the whole probe run indefinitely.
+  async checkDatabase(maxRetries = 5, perAttemptTimeoutMs = 5_000): Promise<boolean> {
     this.status.probes.database.status = "checking";
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const startTime = Date?.now();
       try {
-        await db.execute(sql`SELECT 1`);
+        await Promise.race([
+          db.execute(sql`SELECT 1`),
+          new Promise((_resolve, reject) =>
+            setTimeout(
+              () => reject(new Error(`query timed out after ${perAttemptTimeoutMs}ms`)),
+              perAttemptTimeoutMs,
+            ),
+          ),
+        ]);
         this.status.probes.database.status = "ready";
         this.status.probes.database.lastCheck = new Date();
         this.status.probes.database.latencyMs = Date?.now() - startTime;
@@ -303,7 +313,24 @@ class StartupProbeManager {
       // rejection — waiters must never hang forever. Flush the queue.
       for (const resolver of this.readyResolvers) resolver();
       this.readyResolvers = [];
+      // Once the initial run has settled, keep re-checking periodically so
+      // /ready and /startup reflect CURRENT health, not a one-time snapshot
+      // from boot. Without this, a database that drops and reconnects an
+      // hour into uptime would leave /ready reporting stale "ready" forever
+      // (or vice versa — a probe that recovers would never be reflected).
+      this.startPeriodicRecheck();
     }
+  }
+
+  private startPeriodicRecheck(intervalMs = 30_000): void {
+    if (this.checkInterval) return; // already running
+    this.checkInterval = setInterval(() => {
+      this.runAllProbesInner().catch((err) => {
+        logger.warn({ err }, "[startup-probes] periodic recheck failed");
+      });
+    }, intervalMs);
+    // Don't let this timer keep the process alive on its own during shutdown.
+    this.checkInterval.unref?.();
   }
 
   private async runAllProbesInner(): Promise<boolean> {
@@ -450,31 +477,15 @@ export function setupStartupEndpoints(app: import("express").Express): void {
     });
   });
 
-  app?.get("/status", (_req, res) => {
+  // Shared readiness responder — /status, /ready, and /readyz all report the
+  // same underlying probe state; one implementation keeps them from drifting.
+  const sendReadiness = (
+    res: import("express").Response,
+    readyBody: (phase: string) => Record<string, unknown>,
+  ) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     if (startupProbes?.isReady()) {
-      res.status(200).json({
-        status: "ok",
-        uptime: startupProbes.getUptimeSeconds(),
-        timestamp: new Date().toISOString(),
-      });
-    } else {
-      res.status(503).json({
-        status: "starting",
-        phase: startupProbes.getStatus().phase,
-        timestamp: new Date().toISOString(),
-      });
-    }
-  });
-
-  // Override /ready to use probe status
-  app?.get("/ready", (_req, res) => {
-    if (startupProbes?.isReady()) {
-      res.status(200).json({
-        status: "ready",
-        phase: startupProbes.getStatus().phase,
-        uptime: startupProbes.getUptimeSeconds(),
-        timestamp: new Date().toISOString(),
-      });
+      res.status(200).json(readyBody(startupProbes.getStatus().phase));
     } else {
       res.status(503).json({
         status: "not_ready",
@@ -483,25 +494,35 @@ export function setupStartupEndpoints(app: import("express").Express): void {
         timestamp: new Date().toISOString(),
       });
     }
+  };
+
+  app?.get("/status", (_req, res) => {
+    sendReadiness(res, (phase) => ({
+      status: "ok",
+      phase,
+      uptime: startupProbes.getUptimeSeconds(),
+      timestamp: new Date().toISOString(),
+    }));
+  });
+
+  // Override /ready to use probe status
+  app?.get("/ready", (_req, res) => {
+    sendReadiness(res, (phase) => ({
+      status: "ready",
+      phase,
+      uptime: startupProbes.getUptimeSeconds(),
+      timestamp: new Date().toISOString(),
+    }));
   });
 
   // /readyz — Kubernetes-style readiness probe alias for /ready.
   // Registered before middleware so uptime monitors never hit the middleware chain.
   app?.get("/readyz", (_req, res) => {
-    if (startupProbes?.isReady()) {
-      res.status(200).json({
-        status: "ready",
-        phase: startupProbes.getStatus().phase,
-        uptime: startupProbes.getUptimeSeconds(),
-        timestamp: new Date().toISOString(),
-      });
-    } else {
-      res.status(503).json({
-        status: "not_ready",
-        phase: startupProbes.getStatus().phase,
-        probes: startupProbes.getStatus().probes,
-        timestamp: new Date().toISOString(),
-      });
-    }
+    sendReadiness(res, (phase) => ({
+      status: "ready",
+      phase,
+      uptime: startupProbes.getUptimeSeconds(),
+      timestamp: new Date().toISOString(),
+    }));
   });
 }
