@@ -89,6 +89,20 @@ fi
 export PATH="$(dirname "$_NODE_BIN"):$PATH"
 echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 
+# ── 1b. Boot-time liveness stub ───────────────────────────────────────────────
+# Binds the real port immediately (before node_modules even exists) so the
+# platform's health check against "/" gets a 200 from second one, instead of
+# "connection refused" / a crash-restart loop, while capsule restore + venv +
+# sidecars finish below. Pure Node core-module script — needs zero deps.
+_STUB_PID=""
+if [ -f "$_SCRIPT_DIR/scripts/boot-stub-server.mjs" ]; then
+  PORT="${PORT:-5000}" "$_NODE_BIN" "$_SCRIPT_DIR/scripts/boot-stub-server.mjs" &
+  _STUB_PID=$!
+  echo "[start.sh] boot-stub liveness server started (pid $_STUB_PID) on port ${PORT:-5000}"
+else
+  echo "[start.sh] WARNING: scripts/boot-stub-server.mjs not found — health check will 500 until real server binds"
+fi
+
 # ── 2. PDIM restore (Extract & Boot) ─────────────────────────────────────────
 # Extracts node_modules.pdim (and friends) on first startup. No-op on
 # subsequent restarts (directories already present, sentinel files found).
@@ -252,6 +266,20 @@ else
   # deps/lib and the app intentionally falls back to the pure-JS TF.js CPU
   # backend ("[BaseTrainer] TF.js CPU backend active" — verified working).
   echo "[start.sh] tfjs-node native libs not present — using TF.js CPU backend (expected fallback)"
+fi
+
+# ── 4b. Hand off the port from the boot-stub to the real server ─────────────
+# The real server binds the same port next, so the stub must release it
+# first. SIGTERM triggers its graceful shutdown handler; wait briefly for the
+# port to actually free rather than assuming the signal was instantaneous.
+if [ -n "$_STUB_PID" ] && kill -0 "$_STUB_PID" 2>/dev/null; then
+  kill -TERM "$_STUB_PID" 2>/dev/null
+  for _i in 1 2 3 4 5 6 7 8 9 10; do
+    kill -0 "$_STUB_PID" 2>/dev/null || break
+    sleep 0.2
+  done
+  kill -0 "$_STUB_PID" 2>/dev/null && kill -KILL "$_STUB_PID" 2>/dev/null
+  echo "[start.sh] boot-stub liveness server stopped, port ${PORT:-5000} released"
 fi
 
 # ── 5. Launch the cluster ─────────────────────────────────────────────────────
