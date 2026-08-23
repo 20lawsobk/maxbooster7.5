@@ -56,6 +56,7 @@ import {
   getMaxcoreGenerationKey,
   getMaxcoreOriginOrDefault,
 } from "./maxcoreConnector.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 
 // ─── MaxCore connection (via the shared connector contract boundary) ──────────
 
@@ -508,26 +509,17 @@ Return JSON only — beats array must match the constraint count exactly:
       raw?.text ?? raw?.content ?? raw?.outputs?.[0]?.text ?? JSON.stringify(raw);
     const parsed = tryParseJson(text);
 
-    const maxCoreBeats: BeatNote[] = Array.isArray(parsed?.beats)
-      ? parsed?.beats.map((b: RawBeat) => ({
-          timecodeHint: b.timecodeHint ?? b?.timecode_hint ?? "0-3s",
-          description: b.description ?? "",
-          emotionalGoal: b.emotionalGoal ?? b?.emotional_goal ?? "curiosity",
-        }))
-      : defaultBeats(brief);
+    if (!Array.isArray(parsed?.beats) || parsed.beats.length === 0) {
+      throw new AIUnavailableError("creative planning (MaxCore returned no plan)");
+    }
+    const maxCoreBeats: BeatNote[] = parsed.beats.map((b: RawBeat) => ({
+      timecodeHint: b.timecodeHint ?? b?.timecode_hint ?? "0-3s",
+      description: b.description ?? "",
+      emotionalGoal: b.emotionalGoal ?? b?.emotional_goal ?? "curiosity",
+    }));
 
-    // Enforce beat count from in-house model — pad or trim to match
-    const targetBeatCount = ps?.optimalBeatCount ?? maxCoreBeats?.length;
-    const beats =
-      maxCoreBeats?.length >= targetBeatCount
-        ? maxCoreBeats?.slice(0, targetBeatCount)
-        : [
-            ...maxCoreBeats,
-            ...defaultBeats(brief).slice(
-              0,
-              targetBeatCount - maxCoreBeats?.length,
-            ),
-          ];
+    const targetBeatCount = ps?.optimalBeatCount ?? maxCoreBeats.length;
+    const beats = maxCoreBeats.slice(0, targetBeatCount);
 
     const variants: string[] = Array.isArray(
       parsed?.testingVariants ?? parsed?.testing_variants,
@@ -538,39 +530,16 @@ Return JSON only — beats array must match the constraint count exactly:
 
     return {
       beats,
-      visuals: Array.isArray(parsed?.visuals)
-        ? parsed?.visuals
-        : ["studio shots", "crowd"],
-      hooks: Array.isArray(parsed?.hooks) ? parsed?.hooks : [brief?.offer],
+      visuals: Array.isArray(parsed?.visuals) ? parsed.visuals : [],
+      hooks: Array.isArray(parsed?.hooks) && parsed.hooks.length
+        ? parsed.hooks
+        : [brief?.offer],
       testingVariants: variants.slice(0, variantCount),
     };
   } catch (err) {
-    logger.warn(
-      "[CreativeModel] Planning: MaxCore call failed (transient) — using local CreativePlannerModel",
-      { err },
-    );
-
-    const beatCount = ps?.optimalBeatCount ?? 3;
-    const beats = defaultBeats(brief).slice(0, Math.min(beatCount, 5));
-    if (ps && ps?.ctaUrgency > 0.65 && beats?.length < beatCount) {
-      beats?.push({
-        timecodeHint: `${beats?.length * 4}-${beats?.length * 4 + 3}s`,
-        description: `Urgent CTA: ${brief?.callToAction}`,
-        emotionalGoal: "action",
-      });
-    }
-
-    return {
-      beats,
-      visuals: ["studio shots", "crowd", "UI overlays"],
-      hooks: [brief?.offer, brief?.callToAction],
-      testingVariants: [
-        "origin_story",
-        "bold_claim",
-        "fan_reaction",
-        "social_proof",
-      ].slice(0, variantCount),
-    };
+    logger.warn({ err }, "[CreativeModel] Planning: MaxCore Digital GPU unavailable");
+    if (err instanceof AIUnavailableError) throw err;
+    throw new AIUnavailableError("creative planning");
   }
 }
 
@@ -838,13 +807,10 @@ Only override a beat's timing or transition if there is a strong narrative reaso
       };
     }
   } catch (err) {
-    logger.warn(
-      "[CreativeModel] Alignment: MaxCore call failed (transient) — using local BeatSyncAlignmentModel map",
-      { err },
-    );
+    logger.warn({ err }, "[CreativeModel] Alignment: MaxCore Digital GPU unavailable; using deterministic BPM map");
   }
 
-  // Local alignment map is the final output when MaxCore returns no changes
+  // This is deterministic BPM/energy math, not an AI inference fallback.
   return { timeline, transitions };
 }
 
@@ -895,67 +861,11 @@ async function assemblyStage(
     is_drop: isDropSection,
   };
 
-  // ── Tier 1: DiT-24 local relay (routes to MaxCore when untrained, local when trained) ──
+  // MaxCore Digital GPU is the only video inference source. The local diffusion
+  // relay is intentionally not consulted because it can execute host-local
+  // inference when its trained model is available.
   try {
-    logger.info("[CreativeModel] Stage 6: Trying DiT-24 local relay");
-    const relayResp = (await dit24Post(
-      "/generate-video",
-      videoPayload,
-      90_000,
-    )) as VideoRelayResponse;
-
-    if (relayResp?.url) {
-      logger.info(
-        `[CreativeModel] Stage 6: DiT-24 relay → URL ${relayResp?.url}`,
-      );
-      return relayResp?.url;
-    }
-
-    // MaxCore async job forwarded through relay
-    if (relayResp?.job_id) {
-      logger.info(
-        `[CreativeModel] Stage 6: DiT-24 relay → MaxCore job ${relayResp?.job_id} — polling`,
-      );
-      const deadline = Date.now() + 180_000;
-      while (Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 5_000));
-        const poll = (await maxcoreGet(
-          `/video-job/${relayResp?.job_id}`,
-        )) as VideoJobResponse;
-        if (poll?.status === "done" && poll?.url) {
-          logger.info(
-            `[CreativeModel] Stage 6: MaxCore job done → ${poll?.url}`,
-          );
-          return poll?.url;
-        }
-        if (poll?.status === "failed") {
-          logger.warn(
-            `[CreativeModel] Stage 6: MaxCore job ${relayResp?.job_id} failed`,
-          );
-          break;
-        }
-      }
-    }
-
-    // Local DiT-24 trained inference — returned as base64 MP4
-    if (relayResp?.mp4_b64) {
-      logger.info(
-        `[CreativeModel] Stage 6: DiT-24 local video (${relayResp.frames ?? "?"} frames, source=${relayResp?.source})`,
-      );
-      return `data:video/mp4;base64,${relayResp?.mp4_b64}`;
-    }
-  } catch (relayErr) {
-    logger.warn(
-      "[CreativeModel] Stage 6: DiT-24 relay unavailable — falling back to MaxCore direct",
-      {
-        err: relayErr instanceof Error ? relayErr?.message : String(relayErr),
-      },
-    );
-  }
-
-  // ── Tier 2: MaxCore direct (fallback when relay is unavailable) ──────────────
-  try {
-    logger.info("[CreativeModel] Stage 6: MaxCore direct fallback");
+    logger.info("[CreativeModel] Stage 6: MaxCore Digital GPU video generation");
     const jobResp = (await maxcorePost(
       "/generate-video",
       videoPayload,
@@ -1044,9 +954,9 @@ async function scoringStage(
     scriptLength: script.length,
   };
 
-  // Always run both in parallel — neither is fallback, both always contribute
-  const [maxcoreResult, localResult] = await Promise.allSettled([
-    maxcorePost("/generate/text", {
+  let maxcore: EngagementScores;
+  try {
+    const value = (await maxcorePost("/generate/text", {
       mode: "content",
       format: "json",
       topic: "Engagement prediction scoring",
@@ -1071,78 +981,27 @@ async function scoringStage(
   "hookStrength": 0.0-1.0,
   "conversionScore": 0.0-1.0
 }`,
-    }),
-    getScorer().then((m) => m?.scoreCreative(localScorerInput)),
-  ]);
-
-  const maxcore =
-    maxcoreResult?.status === "fulfilled"
-      ? (() => {
-          const value = maxcoreResult?.value as GenerateTextResponse;
-          const parsed = tryParseJson(value?.text ?? value?.content ?? "{}");
-          return {
-            watchTimeScore: clamp(
-              parsed?.watchTimeScore ?? parsed?.watch_time_score,
-            ),
-            hookStrength: clamp(parsed?.hookStrength ?? parsed?.hook_strength),
-            conversionScore: clamp(
-              parsed?.conversionScore ?? parsed?.conversion_score,
-            ),
-          };
-        })()
-      : null;
-
-  const local = localResult?.status === "fulfilled" ? localResult?.value : null;
-
-  if (maxcore && local) {
-    // Both succeeded — weighted blend (MaxCore 60%, local 40%)
-    const agreement =
-      1 -
-      (Math.abs(maxcore?.watchTimeScore - local?.watchTimeScore) +
-        Math.abs(maxcore?.hookStrength - local?.hookStrength) +
-        Math.abs(maxcore?.conversionScore - local?.conversionScore)) /
-        3;
-
-    logger.info({
-      maxcore,
-      local,
-      agreement: agreement.toFixed(2),
-      method: "blended",
-    }, "[CreativeModel] Scoring blended");
-
-    return {
-      watchTimeScore: clamp(
-        maxcore?.watchTimeScore * 0.6 + local?.watchTimeScore * 0.4,
-      ),
-      hookStrength: clamp(
-        maxcore?.hookStrength * 0.6 + local?.hookStrength * 0.4,
-      ),
+    })) as GenerateTextResponse;
+    const parsed = tryParseJson(value?.text ?? value?.content ?? "{}");
+    if (
+      parsed?.watchTimeScore === undefined &&
+      parsed?.watch_time_score === undefined
+    ) {
+      throw new AIUnavailableError("engagement scoring (MaxCore returned no scores)");
+    }
+    maxcore = {
+      watchTimeScore: clamp(parsed?.watchTimeScore ?? parsed?.watch_time_score),
+      hookStrength: clamp(parsed?.hookStrength ?? parsed?.hook_strength),
       conversionScore: clamp(
-        maxcore?.conversionScore * 0.6 + local?.conversionScore * 0.4,
+        parsed?.conversionScore ?? parsed?.conversion_score,
       ),
     };
+  } catch (err) {
+    logger.warn({ err }, "[CreativeModel] Scoring: MaxCore Digital GPU unavailable");
+    if (err instanceof AIUnavailableError) throw err;
+    throw new AIUnavailableError("engagement scoring");
   }
-
-  if (maxcore) {
-    logger.info(
-      "[CreativeModel] Scoring: MaxCore only (local scorer unavailable)",
-    );
-    return maxcore;
-  }
-
-  if (local) {
-    logger.info(
-      "[CreativeModel] Scoring: using local model (MaxCore call skipped or failed transiently)",
-    );
-    return {
-      watchTimeScore: local.watchTimeScore,
-      hookStrength: local.hookStrength,
-      conversionScore: local.conversionScore,
-    };
-  }
-
-  logger.warn("[CreativeModel] Scoring: both failed — using safe defaults");
-  return { watchTimeScore: 0.7, hookStrength: 0.75, conversionScore: 0.65 };
+  return maxcore;
 }
 
 function clamp(v: unknown, min = 0, max = 1): number {
