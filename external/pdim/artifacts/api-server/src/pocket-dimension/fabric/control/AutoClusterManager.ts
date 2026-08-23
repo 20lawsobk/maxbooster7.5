@@ -100,7 +100,7 @@ export class AutoClusterManager {
     this.rebalancer = new Rebalancer(
       nodeRegistry,
       this.chunkIndex,
-      placement,
+      this.placement,
       chunkStoreFactory,
     );
   }
