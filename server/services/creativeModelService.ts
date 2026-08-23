@@ -12,9 +12,7 @@
  *     MaxCore AI /api/audio/analyze → fallback: BPM math heuristics
  *
  *   Stage 2 — Creative Planning
- *     MaxCore AI /api/generate/text → local: CreativePlannerModel (in-house TF?.js)
- *     CreativePlannerModel augments beat count, hook weight, and variant diversity
- *     from musical features even when MaxCore is available (always runs).
+ *     MaxCore Digital GPU /api/generate/text
  *
  *   Stage 3 — Script Generation
  *     MaxCore AI /api/generate/text → fail-explicit (AIUnavailableError, no template fallback)
@@ -24,8 +22,7 @@
  *     visual style per beat → passed to MaxCore /api/generate/image
  *
  *   Stage 5 — Temporal Alignment
- *     BeatSyncAlignmentModel (in-house TF?.js, always runs) → refined by
- *     MaxCore /api/generate/text when available
+ *     BPM/energy mathematics → validated by MaxCore Digital GPU
  *
  *   Stage 6 — Video Assembly
  *     MaxCore /api/generate-video (sole source — async job, polled until done)
@@ -33,8 +30,7 @@
  *       — placeholder returned if MaxCore job times out or errors
  *
  *   Stage 7 — Engagement Scoring
- *     MaxCore AI /api/generate/text → VideoCreativeScorer (in-house TF?.js)
- *     VideoCreativeScorer is the local fallback with full feature-aware scoring.
+ *     MaxCore Digital GPU /api/generate/text
  *
  *   Stage 8 — Feedback Loop
  *     autopilotLearningService?.recordPerformance (PDIM-backed)
@@ -46,7 +42,7 @@
  *   ✓ A/B variant generation with platform-optimized hook selection
  *   ✓ Continuous learning from real platform performance data
  *   ✓ 13 music-industry visual styles with genre-calibrated selection
- *   ✓ Fully offline-capable — in-house models run all stages without MaxCore
+ *   ✓ Fail-explicit production behavior — AI stages never consume host CPU fallbacks
  */
 
 import { randomUUID } from "crypto";
@@ -341,86 +337,23 @@ async function analyzeMusicStage(
   }
 }
 
-// ─── In-house model singletons (lazy-loaded, shared across requests) ──────────
-
-let planner:
-  | import("../../shared/ml/models/CreativePlannerModel.js").CreativePlannerModel
-  | null = null;
-let _aligner:
-  | import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatSyncAlignmentModel
-  | null = null;
-let scorer:
-  | import("../../shared/ml/models/VideoCreativeScorer.js").VideoCreativeScorer
-  | null = null;
-let _styleSelector:
-  | import("../../shared/ml/models/KeyframeStyleSelector.js").KeyframeStyleSelector
-  | null = null;
-
-async function getPlanner() {
-  if (!planner) {
-    const { CreativePlannerModel } = await import(
-      "../../shared/ml/models/CreativePlannerModel.js"
-    );
-    planner = new CreativePlannerModel();
-    await planner?.initialize();
-  }
-  return planner;
-}
-async function getAligner() {
-  if (!_aligner) {
-    const { BeatSyncAlignmentModel } = await import(
-      "../../shared/ml/models/BeatSyncAlignmentModel.js"
-    );
-    _aligner = new BeatSyncAlignmentModel();
-    await _aligner?.initialize();
-  }
-  return _aligner;
-}
-async function getScorer() {
-  if (!scorer) {
-    const { VideoCreativeScorer } = await import(
-      "../../shared/ml/models/VideoCreativeScorer.js"
-    );
-    scorer = new VideoCreativeScorer();
-    await scorer?.initialize();
-  }
-  return scorer;
-}
-async function getStyleSelector() {
-  if (!_styleSelector) {
-    const { KeyframeStyleSelector } = await import(
-      "../../shared/ml/models/KeyframeStyleSelector.js"
-    );
-    _styleSelector = new KeyframeStyleSelector();
-    await _styleSelector?.initialize();
-  }
-  return _styleSelector;
-}
-
 // ─── CreativeContext — shared musical intelligence across all pipeline stages ──
 
 interface CreativeContext {
-  /** CreativePlannerModel output — structural frame for the whole video */
-  plannerSuggestion:
-    | import("../../shared/ml/models/CreativePlannerModel.js").CreativePlannerOutput
-    | null;
-  /** Per-beat style selections from KeyframeStyleSelector (keyed by beat index) */
-  styleMap: Map<
-    number,
-    import("../../shared/ml/models/KeyframeStyleSelector.js").KeyframeSelectorOutput
-  >;
-  /** Per-beat alignment data from BeatSyncAlignmentModel */
-  alignmentMap: import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatAlignmentOutput[];
+  /** Optional caller-provided planning guidance; no local inference is run. */
+  plannerSuggestion: null;
+  /** Styles are selected by MaxCore during media generation. */
+  styleMap: Map<number, unknown>;
+  /** Deterministic BPM/energy alignment adjustments. */
+  alignmentMap: Array<{ cutTimeDelta: number; transitionType: string; transitionScore: number }>;
   energyMean: number;
   energyPeak: number;
   energyVariance: number;
 }
 
 /**
- * Pre-computation phase — runs ALL four in-house models in parallel before
- * any MaxCore call. The resulting CreativeContext is threaded through every
- * stage so MaxCore receives quantitative musical intelligence as hard
- * constraints rather than starting from scratch.
+ * Pre-computation phase — derives only deterministic BPM/energy values locally.
+ * All learned/AI decisions remain on MaxCore's Digital GPU path.
  */
 async function precomputeMusicalIntelligence(
   brief: CreativeBrief,
@@ -461,99 +394,18 @@ async function precomputeMusicalIntelligence(
         : 0.55,
   };
 
-  // Compute planner first to get beat count for style/alignment maps
-  const plannerSuggestion = await getPlanner()
-    .then((m) => m?.predictPlan(plannerInput))
-    .catch(() => null);
-
-  const beatCount = plannerSuggestion?.optimalBeatCount ?? estimatedBeatCount;
-
-  // Run style selections and alignment for every beat in parallel
-  const beatIndices = Array.from({ length: beatCount }, (_, i) => i);
-  const secondsPerBeat = 60 / musicMeta?.bpm;
-
-  const [styleResults, alignmentResults] = await Promise.all([
-    // All style selections in parallel
-    Promise.all(
-      beatIndices?.map(async (i) => {
-        const sel = await getStyleSelector().catch(() => null);
-        if (!sel) return null;
-        return sel
-          .selectStyle({
-            platform: brief.platform,
-            tone: brief.tone,
-            genre:
-              brief?.domain === "music"
-                ? ((brief?.style.genre as string) ?? "pop")
-                : "pop",
-            bpm: musicMeta.bpm,
-            energyAtBeat:
-              musicMeta?.energyCurve[
-                i % Math.max(1, musicMeta?.energyCurve.length)
-              ] ?? energyMean,
-            aesthetic: (brief?.style.aesthetic as string) ?? "cinematic",
-            emotionalGoal: "curiosity", // refined per-beat once plan is known
-            beatIndexNorm: i / Math.max(1, beatCount - 1),
-          })
-          .catch(() => null);
-      }),
-    ),
-    // All alignment computations in parallel
-    Promise.all(
-      beatIndices?.map(async (i) => {
-        const defaultStart = i * secondsPerBeat * 4;
-        const energyAtBeat =
-          musicMeta?.energyCurve[
-            i % Math.max(1, musicMeta?.energyCurve.length)
-          ] ?? energyMean;
-        const acc = Math.min(
-          1,
-          (i / beatCount) * energyMean + energyAtBeat * 0.2,
-        );
-        const al = await getAligner().catch(() => null);
-        if (!al) return null;
-        return al
-          .alignBeat({
-            bpm: musicMeta.bpm,
-            sectionEnergy: energyAtBeat,
-            beatIndex: i,
-            totalBeats: beatCount,
-            energyVariance,
-            isChorussOrDrop: musicMeta.sections.some(
-              (s) =>
-                s?.start <= defaultStart &&
-                s?.end >= defaultStart &&
-                (s?.name.toLowerCase().includes("chorus") ||
-                  s?.name.toLowerCase().includes("drop")),
-            ),
-            accumulatedEnergy: acc,
-            transitionMomentum: i / Math.max(1, beatCount - 1),
-          })
-          .catch(() => null);
-      }),
-    ),
-  ]);
-
-  const styleMap = new Map<
-    number,
-    import("../../shared/ml/models/KeyframeStyleSelector.js").KeyframeSelectorOutput
-  >();
-  styleResults?.forEach((r, i) => {
-    if (r) styleMap?.set(i, r);
-  });
-
-  const alignmentMap = alignmentResults?.filter(
-    Boolean,
-  ) as import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatAlignmentOutput[];
+  const beatCount = Math.max(1, estimatedBeatCount);
+  const styleMap = new Map<number, unknown>();
+  const alignmentMap: CreativeContext["alignmentMap"] = [];
 
   logger.info({
-    plannerBeatCount: plannerSuggestion!.optimalBeatCount,
-    stylesComputed: styleMap.size,
-    alignmentsComputed: alignmentMap.length,
-  }, "[CreativeModel] Musical intelligence pre-computed");
+    estimatedBeatCount: beatCount,
+    stylesComputed: 0,
+    alignmentsComputed: 0,
+  }, "[CreativeModel] Deterministic musical metadata prepared; AI delegated to MaxCore");
 
   return {
-    plannerSuggestion,
+    plannerSuggestion: null,
     styleMap,
     alignmentMap,
     energyMean,
