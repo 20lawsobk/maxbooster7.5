@@ -105,7 +105,7 @@ export class AutoClusterManager {
       nodeRegistry,
       this.chunkIndex,
       this.placement,
-      chunkStoreFactory,
+      this.chunkStoreFactory,
     );
   }
 
