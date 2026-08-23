@@ -173,11 +173,11 @@ else
   echo "[start.sh] boosterstate already running"
 fi
 
-# ── 3b. Start Python AI Content Sidecar ──────────────────────────────────────
+# ── 3b. Optional legacy Python AI Content Sidecar ─────────────────────────────
 # The sidecar provides all /generate/content, /generate/script, /analyze/audio,
 # etc. endpoints consumed by pythonAIService.ts.  It must start alongside the
 # main server so tier-1 AI content generation works in production.
-if ! pgrep -f "ai_content_sidecar.py" >/dev/null 2>&1; then
+if [ "${ENABLE_LEGACY_AI_SIDECAR:-0}" = "1" ] && ! pgrep -f "ai_content_sidecar.py" >/dev/null 2>&1; then
   _PY_BIN=""
   # Prefer the venv Python that was just activated (has dependencies)
   if [ "$_PYENV_ACTIVATED" = "1" ] && command -v python3 >/dev/null 2>&1; then
@@ -214,18 +214,21 @@ if ! pgrep -f "ai_content_sidecar.py" >/dev/null 2>&1; then
       >> /tmp/ai_content_sidecar.log 2>&1 &
     echo "[start.sh] Python AI Content Sidecar started (pid $!) on port ${PYTHON_AI_PORT:-9878} via $_PY_BIN"
   else
-    echo "[start.sh] WARNING: Python not found — Python AI Sidecar not started (content generation will use fallback)"
+    echo "[start.sh] WARNING: Python not found — legacy AI sidecar unavailable"
   fi
 else
-  echo "[start.sh] Python AI Content Sidecar already running"
+  if [ "${ENABLE_LEGACY_AI_SIDECAR:-0}" = "1" ]; then
+    echo "[start.sh] Python AI Content Sidecar already running"
+  else
+    echo "[start.sh] Legacy Python AI sidecar disabled; AI requests must use MaxCore Digital GPU"
+  fi
 fi
 
 # ── 3c. Start MaxCore Diffusion Gateway ──────────────────────────────────────
 # The Diffusion Gateway runs on port 8008 and acts as the middle tier between
 # Max Booster and MaxCore AI for video/image diffusion training and relay.
-# diffusionBackgroundTrainer.ts checks localhost:8008 before deciding whether to
-# run the local fallback loop — if the gateway is not up it falls back to local
-# training instead of routing through MaxCore.
+# The gateway is transport/orchestration only. AI inference must remain in
+# MaxCore's Digital GPU/HyperGPU path; local model fallback is not permitted.
 if ! pgrep -f "dist/gateway.mjs" >/dev/null 2>&1; then
   if [ -f "dist/gateway.mjs" ]; then
     "$_NODE_BIN" dist/gateway.mjs >> /tmp/diffusion_gateway.log 2>&1 &
@@ -240,33 +243,8 @@ else
   echo "[start.sh] MaxCore Diffusion Gateway already running"
 fi
 
-# ── 4. Set up @tensorflow/tfjs-node native library path ──────────────────────
-# @tensorflow/tfjs-node ships libtensorflow.so.2.9.1 inside its npm package but
-# the .node binding looks for the unversioned soname libtensorflow.so.2 via the
-# dynamic linker.  Create the versioned symlinks if they are missing (npm install
-# does not always create them on NixOS/Replit) and add the dir to LD_LIBRARY_PATH
-# so the linker can resolve them without root / system-wide ldconfig.
-_TF_LIB_DIR="$(pwd)/node_modules/@tensorflow/tfjs-node/deps/lib"
-if [ -d "$_TF_LIB_DIR" ]; then
-  # Create libtensorflow.so.2 → libtensorflow.so.2.9.1 symlink if missing
-  if [ ! -f "$_TF_LIB_DIR/libtensorflow.so.2" ] && [ -f "$_TF_LIB_DIR/libtensorflow.so.2.9.1" ]; then
-    ln -sf libtensorflow.so.2.9.1 "$_TF_LIB_DIR/libtensorflow.so.2" 2>/dev/null || true
-    echo "[start.sh] created libtensorflow.so.2 symlink"
-  fi
-  # Create libtensorflow_framework.so.2 → libtensorflow_framework.so.2.9.1 symlink if missing
-  if [ ! -f "$_TF_LIB_DIR/libtensorflow_framework.so.2" ] && [ -f "$_TF_LIB_DIR/libtensorflow_framework.so.2.9.1" ]; then
-    ln -sf libtensorflow_framework.so.2.9.1 "$_TF_LIB_DIR/libtensorflow_framework.so.2" 2>/dev/null || true
-    echo "[start.sh] created libtensorflow_framework.so.2 symlink"
-  fi
-  export LD_LIBRARY_PATH="$_TF_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-  echo "[start.sh] LD_LIBRARY_PATH set to include @tensorflow/tfjs-node deps"
-else
-  # Not an error: the native libtensorflow download is blocked in this
-  # environment (tar package firewall), so @tensorflow/tfjs-node ships without
-  # deps/lib and the app intentionally falls back to the pure-JS TF.js CPU
-  # backend ("[BaseTrainer] TF.js CPU backend active" — verified working).
-  echo "[start.sh] tfjs-node native libs not present — using TF.js CPU backend (expected fallback)"
-fi
+# No TensorFlow.js CPU fallback is configured here. Any model path that cannot
+# reach MaxCore/Digital GPU must fail explicitly rather than consume host CPU.
 
 # ── 4b. Hand off the port from the boot-stub to the real server ─────────────
 # The real server binds the same port next, so the stub must release it
