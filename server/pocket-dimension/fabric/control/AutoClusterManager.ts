@@ -25,12 +25,13 @@ export interface ClusterRules {
 
 // Storage scale for 90 million users:
 //   90M users × 10 MB average stored data = ~900 TB
-//   Each PDIM node capacity: 100 GB  →  need ~9 000 nodes for full scale
-//   In practice, hot data is cached and cold data is tiered; cap at 500 nodes
-//   so the cluster can grow automatically without operator intervention.
+//   Each PDIM node capacity: 100 GB  →  need ~9 000 nodes for full scale.
+//   There is intentionally no artificial node-count ceiling: the pocket
+//   dimension owns compressed node state, while the rules below still control
+//   spawn rate, health replacement, utilization, and scale-down.
 export const DEFAULT_RULES: ClusterRules = {
   minNodes: 3,
-  maxNodes: 500,
+  maxNodes: Number.POSITIVE_INFINITY,
   utilizationHighWatermark: 0.7,
   utilizationLowWatermark: 0.4,
   utilizationPerNodeHighWatermark: 0.8,
