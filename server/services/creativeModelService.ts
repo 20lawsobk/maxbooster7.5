@@ -643,30 +643,9 @@ async function keyframesStage(
       const primaryProb = styleResult?.topStyles[0]?.probability ?? 0.8;
       const closeMatch = altStyle && primaryProb - altProb < 0.15;
 
-      // Refine style selection with the now-known emotional goal from the plan
-      const refinedSelector = await getStyleSelector().catch(() => null);
-      const refinedStyle = refinedSelector
-        ? await refinedSelector
-            .selectStyle({
-              platform: brief.platform,
-              tone: brief.tone,
-              genre:
-                brief?.domain === "music"
-                  ? ((brief?.style.genre as string) ?? "pop")
-                  : "pop",
-              bpm: musicMeta.bpm,
-              energyAtBeat:
-                musicMeta?.energyCurve[
-                  i % Math.max(1, musicMeta?.energyCurve.length)
-                ] ?? ctx?.energyMean,
-              aesthetic: (brief?.style.aesthetic as string) ?? "cinematic",
-              emotionalGoal: beat.emotionalGoal,
-              beatIndexNorm: i / Math.max(1, totalBeats - 1),
-            })
-            .catch(() => null)
-        : null;
-
-      const selectedStyle = refinedStyle?.primaryStyle ?? primaryStyle;
+      // Style selection is delegated to MaxCore; this local value is only a
+      // deterministic prompt hint and never performs model inference.
+      const selectedStyle = primaryStyle;
 
       const blendInstruction =
         closeMatch && altStyle
@@ -703,14 +682,18 @@ async function keyframesStage(
           video_style: selectedStyle,
           style_confidence: primaryProb,
         });
-        return (
+        const imageUrl = (
           (raw as any)?.url ??
           (raw as any)?.image_url ??
-          (raw as any)?.path ??
-          `keyframe_${i}_${selectedStyle}`
+          (raw as any)?.path
         );
-      } catch {
-        return `style:${selectedStyle}`;
+        if (!imageUrl) {
+          throw new AIUnavailableError("keyframe generation (MaxCore returned no image)");
+        }
+        return imageUrl;
+      } catch (err) {
+        if (err instanceof AIUnavailableError) throw err;
+        throw new AIUnavailableError("keyframe generation");
       }
     }),
   );
