@@ -92,3 +92,4 @@
 - [Only critical capsule blocks boot](pdim-restore-critical-vs-background.md) — only node_modules must block start.sh; python_runtime/maxcore/pdim restore in background since their consumers already degrade gracefully
 - [Shared compute-sizing source](shared-compute-sizing.md) — server/computeSizing.ts is the ONE place that reads os.cpus()/freemem() for worker/lane sizing; cluster.ts, maxcoreLocalSupervisor.ts, and HyperGPU (via env) all derive from it
 - [Pocket-backed elastic compute](pocket-elastic-compute.md) — PocketFabric node lifecycles and MaxCore GPU lives are uncapped logical resources backed by compressed pocket state
+- [Awareness conditioning contract](awareness-conditioning-contract.md) — every model seam uses the shared cascade, and media coalescing identities include effective awareness

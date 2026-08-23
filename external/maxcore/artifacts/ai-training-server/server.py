@@ -6746,15 +6746,18 @@ class ApiGenerateTextRequest(_AwarenessMixin):
     content_themes: Optional[List[str]] = None
 
 
-class ApiContentScoreRequest(BaseModel):
+class ApiContentScoreRequest(_AwarenessMixin):
     text: str
     platform: str
     cta: Optional[str] = None
     hashtags: List[str] = []
     userId: Optional[str] = None
+    instruction: Optional[str] = None
+    extra_context: Optional[str] = None
+    content_themes: Optional[List[str]] = None
 
 
-class ApiAnalyzeRequest(BaseModel):
+class ApiAnalyzeRequest(_AwarenessMixin):
     modality: str
     payload: Any
     artistProfileId: Optional[str] = None
@@ -6762,12 +6765,18 @@ class ApiAnalyzeRequest(BaseModel):
     intent: Optional[str] = None
     metadata: Optional[Any] = None
     platformRules: Optional[Any] = None
+    instruction: Optional[str] = None
+    extra_context: Optional[str] = None
+    content_themes: Optional[List[str]] = None
 
 
-class ApiSentimentRequest(BaseModel):
+class ApiSentimentRequest(_AwarenessMixin):
     text: str
     includeEmotions: Optional[bool] = False
     includeToxicity: Optional[bool] = False
+    instruction: Optional[str] = None
+    extra_context: Optional[str] = None
+    content_themes: Optional[List[str]] = None
 
 
 class ApiAnalyzeAudioRequest(BaseModel):
@@ -7778,6 +7787,7 @@ async def api_content_score(req: ApiContentScoreRequest, _key=Depends(require_sc
     feedback = None
     model_insight = None
     source = "heuristic"
+    _request_awareness = _merged_awareness_for(req)
 
     if _model_ready and _script_agent:
         try:
@@ -7785,7 +7795,8 @@ async def api_content_score(req: ApiContentScoreRequest, _key=Depends(require_sc
             sr = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                 idea=req.text[:200], platform=normalize_platform(req.platform),
                 goal="engagement", tone="authentic",
-                awareness=_effective_awareness(normalize_platform(req.platform), ""),
+                awareness=_effective_awareness(
+                    normalize_platform(req.platform), _request_awareness),
             )))
             if sr:
                 hook_len    = len(sr.hook or "")
@@ -7826,6 +7837,7 @@ async def api_analyze(req: ApiAnalyzeRequest, _key=Depends(require_scope("genera
         else str(req.payload)
     )
     intent_hint = req.intent or "general content promotion"
+    _request_awareness = _merged_awareness_for(req)
 
     normalised: dict = {
         "modality":         req.modality,
@@ -7846,7 +7858,8 @@ async def api_analyze(req: ApiAnalyzeRequest, _key=Depends(require_scope("genera
             result = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                 idea=content_hint, platform=normalize_platform(first_platform),
                 goal=intent_hint, tone="authentic",
-                awareness=_effective_awareness(normalize_platform(first_platform), ""),
+                awareness=_effective_awareness(
+                    normalize_platform(first_platform), _request_awareness),
             )))
             normalised["semantic"]["hook"]         = result.hook
             normalised["semantic"]["core_message"] = result.body
@@ -7878,6 +7891,7 @@ async def api_analyze_sentiment(req: ApiSentimentRequest, _key=Depends(require_s
 
     model_summary = None
     source = "heuristic"
+    _request_awareness = _merged_awareness_for(req)
 
     if _model_ready and _script_agent:
         try:
@@ -7885,7 +7899,7 @@ async def api_analyze_sentiment(req: ApiSentimentRequest, _key=Depends(require_s
             sr = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                 idea=req.text[:180], platform="general",
                 goal="sentiment_analysis", tone="authentic",
-                awareness=_effective_awareness("general", ""),
+                awareness=_effective_awareness("general", _request_awareness),
             )))
             if sr:
                 model_summary = sr.hook
@@ -10239,8 +10253,23 @@ async def api_video_generate_ai(request: Request, _key=Depends(require_scope("ge
     if not idea:
         raise HTTPException(status_code=422, detail="'idea' is required")
 
-    # Coalesce: identical concurrent video AI gen requests (same idea/platform/
-    # goal/tone/genre) share one plan+render rather than running N copies.
+    # Awareness is part of the generation identity: two callers with the same
+    # idea but different creative direction must not receive one another's
+    # coalesced video.
+    from types import SimpleNamespace
+    _video_awareness_req = SimpleNamespace(
+        awareness=body.get("awareness", ""),
+        description=body.get("description", "") or idea,
+        prompt_url=body.get("prompt_url", ""),
+        instruction=body.get("instruction", ""),
+        extra_context=body.get("extra_context", ""),
+        content_themes=body.get("content_themes"),
+    )
+    _effective_video_awareness = _effective_awareness(
+        platform, _merged_awareness_for(_video_awareness_req))
+
+    # Coalesce: identical concurrent video AI gen requests (including the
+    # conditioning context) share one plan+render rather than running N copies.
     _vdigest = _job_digest({
         "type":     "video_ai_gen",
         "idea":     idea,
@@ -10248,6 +10277,7 @@ async def api_video_generate_ai(request: Request, _key=Depends(require_scope("ge
         "goal":     goal,
         "tone":     tone,
         "genre":    genre,
+        "awareness": _effective_video_awareness,
     })
     with _active_jobs_lock:
         _vexisting = _active_jobs.get(_vdigest)
@@ -10290,7 +10320,12 @@ async def api_video_generate_ai(request: Request, _key=Depends(require_scope("ge
         artist_name=artist_name,
         duration=duration,
         artist_context=artist_ctx,
-        awareness="\n".join(f"• {d}" for d in brief.directives),
+        awareness="\n".join(
+            p for p in (
+                _effective_video_awareness,
+                "\n".join(f"• {d}" for d in brief.directives),
+            ) if p
+        ),
         camera_motion=str(body.get("camera_motion") or ""),
         negative_prompt=str(body.get("negative_prompt") or ""),
         seed=int(_seed_raw) if _seed_raw is not None else None,
