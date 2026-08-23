@@ -24,7 +24,7 @@ export interface ClusterRules {
 
 export const DEFAULT_RULES: ClusterRules = {
   minNodes: 3,
-  maxNodes: 20,
+  maxNodes: Number.POSITIVE_INFINITY,
   utilizationHighWatermark: 0.7,
   utilizationLowWatermark: 0.4,
   utilizationPerNodeHighWatermark: 0.8,
@@ -99,7 +99,7 @@ export class AutoClusterManager {
   ) {
     this.rebalancer = new Rebalancer(
       nodeRegistry,
-      chunkIndex,
+      this.chunkIndex,
       placement,
       chunkStoreFactory,
     );

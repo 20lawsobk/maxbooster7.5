@@ -91,3 +91,4 @@
 - [Capsule restore double-read bottleneck](pdim-restore-double-read.md) — hashing then extracting a capsule reads it twice; pipe one stream into both hash and tar stdin so large capsules don't blow the boot-time probe window
 - [Only critical capsule blocks boot](pdim-restore-critical-vs-background.md) — only node_modules must block start.sh; python_runtime/maxcore/pdim restore in background since their consumers already degrade gracefully
 - [Shared compute-sizing source](shared-compute-sizing.md) — server/computeSizing.ts is the ONE place that reads os.cpus()/freemem() for worker/lane sizing; cluster.ts, maxcoreLocalSupervisor.ts, and HyperGPU (via env) all derive from it
+- [Pocket-backed elastic compute](pocket-elastic-compute.md) — PocketFabric node lifecycles and MaxCore GPU lives are uncapped logical resources backed by compressed pocket state

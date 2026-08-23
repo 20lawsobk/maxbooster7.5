@@ -114,14 +114,10 @@ async function spawnChild(): Promise<void> {
   // Derived from the same shared compute-sizing source as server/cluster.ts
   // (server/computeSizing.ts) so this process's own Node cluster and
   // MaxCore's Python HyperGPU engine reason about host capacity the same
-  // way the main app does — instead of each hardcoding an independent
-  // number. `maxWorkers: 1` is a deliberate, explicit cap: Max Booster is
-  // the only caller on loopback, so the imported default of 4 workers would
-  // just waste ~600 MB per unused worker without adding throughput. If that
-  // single-caller assumption ever changes, raise/remove `maxWorkers` here
-  // rather than reintroducing a separate hardcoded constant.
+  // way the main app does. The node layer is intentionally not pinned to one
+  // worker: the pocket-backed fabric owns elastic logical node lifecycle, and
+  // this process uses all safely available local execution capacity.
   const nodeSizing = computeWorkerSizing({
-    maxWorkers: 1,
     reserveCore: false,
     envOverrideVar: "MAXCORE_LOCAL_CLUSTER_WORKERS",
   });
