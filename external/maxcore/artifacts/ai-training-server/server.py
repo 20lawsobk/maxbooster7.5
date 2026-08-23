@@ -6242,6 +6242,19 @@ async def ads_optimize(
     platform  = body.get("platform", "meta")
     campaigns = body.get("campaigns", [])
     ads       = get_ads_client()
+    # This route historically accepted a raw dict.  Normalize its awareness
+    # fields into the same cascade used by typed generation requests instead of
+    # handing the replacement-hook model an empty context.
+    from types import SimpleNamespace
+    _awareness_req = SimpleNamespace(
+        awareness=body.get("awareness", ""),
+        description=body.get("description", ""),
+        prompt_url=body.get("prompt_url", ""),
+        instruction=body.get("instruction", ""),
+        extra_context=body.get("extra_context", ""),
+        content_themes=body.get("content_themes"),
+    )
+    _request_awareness = _merged_awareness_for(_awareness_req)
 
     actions   = []
     for camp in campaigns:
@@ -6275,7 +6288,7 @@ async def ads_optimize(
                 s = await _in_thread(lambda ph=product_hint: _script_agent.run(ScriptRequest(
                     idea=f"new angle for {ph} ad",
                     platform=platform, goal="conversions", tone="direct",
-                    awareness=_effective_awareness(platform, ""),
+                    awareness=_effective_awareness(platform, _request_awareness),
                 )))
                 new_hook = s.hook
             except Exception:
@@ -6762,19 +6775,25 @@ class ApiAnalyzeAudioRequest(BaseModel):
     artist_id: Optional[str] = None
 
 
-class ApiOptimizeAdRequest(BaseModel):
+class ApiOptimizeAdRequest(_AwarenessMixin):
     action: str  # "score"|"optimize_budget"|"predict_creative"|"forecast_roi"
     campaign: Optional[Any] = None
     campaigns: Optional[List[Any]] = None
     totalBudget: Optional[float] = None
     forecastPeriod: Optional[int] = None
+    instruction: Optional[str] = None
+    extra_context: Optional[str] = None
+    content_themes: Optional[List[str]] = None
 
 
-class ApiPredictEngagementRequest(BaseModel):
+class ApiPredictEngagementRequest(_AwarenessMixin):
     platform: str
     action: str
     content: Any
     postsPerWeek: Optional[int] = None
+    instruction: Optional[str] = None
+    extra_context: Optional[str] = None
+    content_themes: Optional[List[str]] = None
 
 
 class ApiGenerateImageRequest(_AwarenessMixin):
@@ -7945,6 +7964,7 @@ async def api_optimize_ad(req: ApiOptimizeAdRequest, _key=Depends(require_scope(
     """Campaign scoring, budget allocation, creative prediction, ROI forecasting — AI model powered."""
     import numpy as _np
     result: dict = {"action": req.action, "confidence": 0.78, "source": "heuristic"}
+    _request_awareness = _merged_awareness_for(req)
 
     if req.action == "score":
         c     = req.campaign or {}
@@ -7957,7 +7977,7 @@ async def api_optimize_ad(req: ApiOptimizeAdRequest, _key=Depends(require_scope(
                 sr   = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                     idea=str(c.get("name", "ad campaign")),
                     platform=plat, goal=c.get("objective", "conversions"), tone="direct",
-                    awareness=_effective_awareness(plat, ""),
+                    awareness=_effective_awareness(plat, _request_awareness),
                 )))
                 if sr:
                     model_score = min(100.0, 40.0 + len(sr.hook or "") * 0.35 + len(sr.body or "") * 0.2)
@@ -7985,7 +8005,8 @@ async def api_optimize_ad(req: ApiOptimizeAdRequest, _key=Depends(require_scope(
                         platform=normalize_platform(_c.get("platform", "instagram")),
                         goal=_c.get("objective", "conversions"), tone="direct",
                         awareness=_effective_awareness(
-                            normalize_platform(_c.get("platform", "instagram")), ""),
+                            normalize_platform(_c.get("platform", "instagram")),
+                            _request_awareness),
                     )))
                     if sr:
                         s = round(s * 0.4 + min(100.0, 40 + len(sr.hook or "") * 0.35) * 0.6, 1)
@@ -8009,7 +8030,7 @@ async def api_optimize_ad(req: ApiOptimizeAdRequest, _key=Depends(require_scope(
                 sr = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                     idea=content[:150] or "ad creative",
                     platform="instagram", goal="conversions", tone="direct",
-                    awareness=_effective_awareness("instagram", ""),
+                    awareness=_effective_awareness("instagram", _request_awareness),
                 )))
                 if sr:
                     hook_quality     = min(1.0, len(sr.hook or "") / 80)
@@ -8031,7 +8052,7 @@ async def api_optimize_ad(req: ApiOptimizeAdRequest, _key=Depends(require_scope(
                 sr = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                     idea=f"ROI forecast for: {context[:100]}",
                     platform="general", goal="revenue", tone="professional",
-                    awareness=_effective_awareness("general", ""),
+                    awareness=_effective_awareness("general", _request_awareness),
                 )))
                 if sr:
                     hook_quality    = min(1.0, len(sr.hook or "") / 80)
@@ -8052,6 +8073,7 @@ async def api_predict_engagement(req: ApiPredictEngagementRequest, _key=Depends(
     """Best post times, viral scoring, schedule optimisation — AI model powered."""
     import numpy as _np
     platform   = req.platform.lower()
+    _request_awareness = _merged_awareness_for(req)
     best_times = {"instagram": "18:00", "tiktok": "19:00", "twitter": "12:00", "youtube": "15:00", "facebook": "13:00", "spotify": "10:00"}
     result: dict = {"action": req.action, "platform": platform, "confidence": 0.72, "source": "heuristic"}
 
@@ -8064,7 +8086,8 @@ async def api_predict_engagement(req: ApiPredictEngagementRequest, _key=Depends(
                 dr = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
                     script=str(req.content or f"content on {platform}"),
                     platform=normalize_platform(platform), goal="engagement",
-                    awareness=_effective_awareness(normalize_platform(platform), ""),
+                    awareness=_effective_awareness(
+                        normalize_platform(platform), _request_awareness),
                 )))
                 raw_time = getattr(dr, "posting_time", "") or ""
                 # posting_time is like "T18:00:00Z" — extract HH:MM
@@ -8086,6 +8109,8 @@ async def api_predict_engagement(req: ApiPredictEngagementRequest, _key=Depends(
                 sr = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                     idea=str(req.content or f"best content format for {platform}"),
                     platform=normalize_platform(platform), goal="engagement", tone="authentic",
+                    awareness=_effective_awareness(
+                        normalize_platform(platform), _request_awareness),
                 )))
                 if sr:
                     model_reasoning  = sr.hook
@@ -8106,6 +8131,8 @@ async def api_predict_engagement(req: ApiPredictEngagementRequest, _key=Depends(
                 sr = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                     idea=content_text, platform=normalize_platform(platform),
                     goal="viral", tone="energetic",
+                    awareness=_effective_awareness(
+                        normalize_platform(platform), _request_awareness),
                 )))
                 if sr:
                     hook_power      = min(1.0, len(sr.hook or "") / 80)
@@ -8128,7 +8155,8 @@ async def api_predict_engagement(req: ApiPredictEngagementRequest, _key=Depends(
                 dr = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
                     script=str(req.content or f"{platform} posting schedule"),
                     platform=normalize_platform(platform), goal="engagement",
-                    awareness=_effective_awareness(normalize_platform(platform), ""),
+                    awareness=_effective_awareness(
+                        normalize_platform(platform), _request_awareness),
                 )))
                 raw_time = getattr(dr, "posting_time", "") or ""
                 if "T" in raw_time and ":" in raw_time:
@@ -8147,6 +8175,8 @@ async def api_predict_engagement(req: ApiPredictEngagementRequest, _key=Depends(
                 sr = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                     idea=str(req.content or "post")[:150],
                     platform=normalize_platform(platform), goal="engagement", tone="authentic",
+                    awareness=_effective_awareness(
+                        normalize_platform(platform), _request_awareness),
                 )))
                 if sr:
                     hook_quality     = min(1.0, len(sr.hook or "") / 80)
