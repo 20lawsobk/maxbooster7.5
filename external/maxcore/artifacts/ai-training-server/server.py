@@ -7365,12 +7365,14 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
         # a coarser key (platform/topic/tone/goal/awareness only) collapsed
         # concurrent calls that differed by instruction/max_chars/variants
         # into one leader's result (identical hooks, untrimmed captions).
+        from ai_model.generation import merge_awareness as _merge_awareness
+        _awareness_key = _merge_awareness(req)
         _key = {
             "platform": platform,
             "topic":    topic,
             "tone":     req.tone or "",
             "goal":     goal,
-            "awareness": str(req.awareness or ""),
+            "awareness": _awareness_key,
             "platform_optimization": _platform_optimization_awareness(req),
             "instruction":   req.instruction or "",
             "extra_context": req.extra_context or "",

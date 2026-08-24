@@ -49,13 +49,33 @@ def merge_awareness(req: Any) -> str:
         ) if s)
         def _coerce_aw(v: Any) -> str:
             """Normalize awareness to str regardless of whether the caller sent
-            a plain string or a structured ``{contextString, ...}`` dict."""
+            a plain string or the structured object injected by MaxBooster."""
             if isinstance(v, dict):
-                return (v.get("contextString", "") or "").strip()
+                fields = ["contextString", "trendingGenres", "trendingMoods",
+                          "contentAngles", "ctaPatterns", "emotionalTriggers",
+                          "platformAlgorithmNotes"]
+                parts = []
+                for field in fields:
+                    value = v.get(field)
+                    if isinstance(value, list):
+                        value = ", ".join(str(item).strip() for item in value if str(item).strip())
+                    if value:
+                        parts.append(str(value).strip())
+                return "\n".join(parts)
             return (v or "").strip() if v is not None else ""
 
+        direction_parts = []
+        instruction = _as_text(getattr(req, "instruction", None))
+        extra_context = _as_text(getattr(req, "extra_context", None))
+        if instruction:
+            direction_parts.append(ri.awareness_from_direction(
+                instruction, getattr(req, "content_themes", None),
+            ))
+        if extra_context:
+            direction_parts.append(ri.awareness_from_direction(extra_context))
+
         return "\n".join(p for p in (
-            ri.awareness_from_direction(direction, getattr(req, "content_themes", None)),
+            *direction_parts,
             _coerce_aw(getattr(req, "awareness", "")),
             platform_awareness,
         ) if p)
