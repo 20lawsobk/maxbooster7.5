@@ -17,7 +17,7 @@ def test_api_content_awareness_bus_contains_shared_platform_profile_once():
     assert awareness.count("[PLATFORM_OPTIMIZATION platform=tiktok") == 1
     assert "watch_completion" in awareness
     assert "first_seconds" in awareness
-    assert "first second impossible to ignore" in awareness
+    assert "First second impossible to ignore" in awareness
 
 
 def test_awareness_bus_rejects_platforms_outside_the_closed_set():

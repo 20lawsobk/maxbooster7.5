@@ -1730,7 +1730,7 @@ _ARTIFACT_NOUNS = {
     "message", "thread", "piece", "something", "one", "text", "words",
 }
 _LEADIN_CONNECTORS = {
-    "about", "for", "on", "that", "which", "to", "of", "around", "regarding",
+    "about", "for", "on", "that", "which", "of", "around", "regarding",
     "hyping", "celebrating", "announcing", "promoting", "introducing",
     "teasing", "describing", "explaining", "highlighting", "showcasing",
     "spotlighting", "covering", "detailing", "capturing",
