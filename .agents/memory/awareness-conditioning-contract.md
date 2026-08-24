@@ -7,4 +7,4 @@ Every model-backed generation or analysis path must pass the shared awareness ca
 
 **Why:** Passing awareness only as an accepted request field leaves live model calls unconditioned, while omitting it from coalescing can return output generated for another caller's creative direction.
 
-**How to apply:** When adding or auditing an AI endpoint, use `_merged_awareness_for()` followed by `_effective_awareness()` at the model seam; include the resulting context in any generation digest.
+**How to apply:** When adding or auditing an AI endpoint, use `_merged_awareness_for()` followed by `_effective_awareness()` at the model seam; include the resulting context in any generation digest. Routes using `build_context()` directly must ensure `merge_awareness()` carries the same platform profile, rather than assuming the server wrapper ran.
