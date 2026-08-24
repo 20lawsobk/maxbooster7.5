@@ -1,0 +1,101 @@
+{
+  "revision": "2026-08-24.1",
+  "platforms": {
+    "facebook": {
+      "label": "Facebook",
+      "contentShape": "native video, event, group, and milestone storytelling",
+      "length": {"min": 80, "max": 120, "unit": "words"},
+      "format": ["native_video", "image", "event", "text"],
+      "audienceIntent": ["community", "local discovery", "conversation"],
+      "cadence": "3-5 posts per week; prioritize weekday mornings",
+      "cta": "invite a reaction, share, tag, RSVP, or local action",
+      "hashtagKeywordPolicy": "use 2-5 relevant hashtags and specific local/community keywords",
+      "engagementSignals": ["meaningful_comments", "shares", "emotional_reactions", "event_responses"],
+      "qualityDimensions": ["story_value", "community_relevance", "native_media", "conversation"]
+    },
+    "instagram": {
+      "label": "Instagram",
+      "contentShape": "Reels for discovery, carousels for saves, Stories for relationship",
+      "length": {"min": 300, "max": 1200, "unit": "characters"},
+      "format": ["reel", "carousel", "image", "story"],
+      "audienceIntent": ["discovery", "inspiration", "education", "connection"],
+      "cadence": "4-7 feed posts per week with daily Stories when available",
+      "cta": "ask for a save, share to a DM, comment, or profile action",
+      "hashtagKeywordPolicy": "use 3-5 precise topical hashtags; put important searchable terms in caption",
+      "engagementSignals": ["saves", "shares", "meaningful_comments", "reel_completion"],
+      "qualityDimensions": ["visual_cohesion", "first_frame", "save_value", "shareability"]
+    },
+    "youtube": {
+      "label": "YouTube",
+      "contentShape": "long-form video and Shorts with title-thumbnail promise alignment",
+      "length": {"min": 1, "max": 60, "unit": "minutes"},
+      "format": ["long_form_video", "shorts", "premiere", "community_post"],
+      "audienceIntent": ["watch", "learn", "discover", "subscribe"],
+      "cadence": "publish on a consistent weekly schedule; use Shorts between releases",
+      "cta": "extend the session with a related video, subscribe, or comment prompt",
+      "hashtagKeywordPolicy": "prioritize searchable title, description, chapters, and a small set of hashtags",
+      "engagementSignals": ["click_through_rate", "watch_time", "completion", "session_continuation"],
+      "qualityDimensions": ["title_thumbnail_fit", "opening_retention", "watch_value", "session_depth"]
+    },
+    "tiktok": {
+      "label": "TikTok",
+      "contentShape": "vertical short-form with an immediate hook and rewatchable payoff",
+      "length": {"min": 5, "max": 180, "unit": "seconds"},
+      "format": ["vertical_video", "duet", "stitch", "live"],
+      "audienceIntent": ["discovery", "entertainment", "participation", "trend adoption"],
+      "cadence": "post consistently and test multiple hooks around the same creative",
+      "cta": "invite a rewatch, duet, stitch, follow, or specific comment",
+      "hashtagKeywordPolicy": "use 3-5 descriptive hashtags; pair niche terms with relevant trend terms",
+      "engagementSignals": ["watch_completion", "rewatches", "shares", "duets", "comments"],
+      "qualityDimensions": ["first_seconds", "loopability", "native_energy", "trend_fit"]
+    },
+    "threads": {
+      "label": "Threads",
+      "contentShape": "text-first conversational posts, replies, and compact threads",
+      "length": {"min": 40, "max": 500, "unit": "characters"},
+      "format": ["text", "thread", "image", "video"],
+      "audienceIntent": ["conversation", "opinion", "community", "real_time_context"],
+      "cadence": "participate daily when possible; reply to relevant conversations",
+      "cta": "ask an honest question that earns a reply rather than a promotion",
+      "hashtagKeywordPolicy": "use only directly relevant keywords and at most one topical tag when useful",
+      "engagementSignals": ["replies", "reposts", "quote_conversations", "meaningful_reads"],
+      "qualityDimensions": ["authentic_voice", "conversation_depth", "timeliness", "replyability"]
+    },
+    "google_business": {
+      "label": "Google Business",
+      "contentShape": "local updates, offers, events, and photo-rich business posts",
+      "length": {"min": 80, "max": 1500, "unit": "characters"},
+      "format": ["update", "event", "offer", "photo"],
+      "audienceIntent": ["local discovery", "visit", "book", "call", "directions"],
+      "cadence": "publish at least weekly and refresh event or offer posts on schedule",
+      "cta": "use a precise local action such as book, learn more, call, or directions",
+      "hashtagKeywordPolicy": "use natural location, venue, service, and event keywords; avoid hashtag stuffing",
+      "engagementSignals": ["profile_actions", "website_clicks", "calls", "directions", "offer_views"],
+      "qualityDimensions": ["local_relevance", "freshness", "photo_quality", "action_clarity"]
+    },
+    "x": {
+      "label": "X",
+      "contentShape": "concise real-time takes, replies, and context-rich threads",
+      "length": {"min": 40, "max": 280, "unit": "characters"},
+      "format": ["text", "thread", "image", "video", "poll"],
+      "audienceIntent": ["conversation", "real_time_context", "opinion", "discovery"],
+      "cadence": "be timely and respond during the first conversation window",
+      "cta": "ask for a take, quote, reply, or poll response; place links with context",
+      "hashtagKeywordPolicy": "use 0-2 precise hashtags and lead with natural searchable terms",
+      "engagementSignals": ["replies", "reposts", "quotes", "bookmarks", "video_completion"],
+      "qualityDimensions": ["timeliness", "replyability", "clarity", "conversation_velocity"]
+    },
+    "linkedin": {
+      "label": "LinkedIn",
+      "contentShape": "professional stories, lessons, frameworks, and industry insight",
+      "length": {"min": 400, "max": 1500, "unit": "characters"},
+      "format": ["text", "document", "native_video", "image", "poll"],
+      "audienceIntent": ["professional_learning", "networking", "credibility", "opportunity"],
+      "cadence": "2-4 thoughtful posts per week with active first-hour discussion",
+      "cta": "end with a genuine professional question or invite a relevant perspective",
+      "hashtagKeywordPolicy": "use 2-4 professional hashtags and plain-language industry keywords",
+      "engagementSignals": ["dwell_time", "meaningful_comments", "shares", "profile_views"],
+      "qualityDimensions": ["insight_depth", "professional_relevance", "readability", "discussion"]
+    }
+  }
+}

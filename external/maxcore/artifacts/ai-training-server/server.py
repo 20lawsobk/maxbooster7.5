@@ -1223,6 +1223,56 @@ def _as_text(v: Any) -> str:
     return v.strip() if isinstance(v, str) else ""
 
 
+_SOCIAL_PLATFORM_REGISTRY: Optional[Dict[str, Any]] = None
+
+
+def _platform_optimization_awareness(req: Any) -> str:
+    """Load the closed social platform registry into the actual model prompt."""
+    global _SOCIAL_PLATFORM_REGISTRY
+    raw_platform = _as_text(getattr(req, "platform", ""))
+    if not raw_platform or raw_platform.lower().strip() in {"general", "music", "songwriting"}:
+        return ""
+    if _SOCIAL_PLATFORM_REGISTRY is None:
+        registry_path = Path(__file__).resolve().parents[4] / "shared" / "social-platform-optimization.json"
+        with registry_path.open("r", encoding="utf-8") as handle:
+            _SOCIAL_PLATFORM_REGISTRY = json.load(handle)
+    aliases = {
+        "google business": "google_business",
+        "googlebusiness": "google_business",
+        "google-business": "google_business",
+        "twitter": "x",
+        "twitter/x": "x",
+    }
+    platform = aliases.get(raw_platform.lower().strip(), raw_platform.lower().strip().replace(" ", "_"))
+    profiles = _SOCIAL_PLATFORM_REGISTRY["platforms"]
+    if platform not in profiles or set(profiles) != {
+        "facebook", "instagram", "youtube", "tiktok", "threads",
+        "google_business", "x", "linkedin",
+    }:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "UNSUPPORTED_SOCIAL_PLATFORM",
+                "platform": raw_platform,
+                "allowed": [
+                    "facebook", "instagram", "youtube", "tiktok",
+                    "threads", "google_business", "x", "linkedin",
+                ],
+            },
+        )
+    profile = profiles[platform]
+    return "\n".join([
+        f"[PLATFORM_OPTIMIZATION platform={platform} revision={_SOCIAL_PLATFORM_REGISTRY['revision']}]",
+        f"Content shape: {profile['contentShape']}.",
+        f"Length: {profile['length']['min']}-{profile['length']['max']} {profile['length']['unit']}. Formats: {', '.join(profile['format'])}.",
+        f"Audience intent: {', '.join(profile['audienceIntent'])}.",
+        f"Cadence: {profile['cadence']}. CTA: {profile['cta']}.",
+        f"Hashtag/keyword policy: {profile['hashtagKeywordPolicy']}.",
+        f"Primary engagement signals: {', '.join(profile['engagementSignals'])}.",
+        f"Quality dimensions: {', '.join(profile['qualityDimensions'])}.",
+    ])
+
+
 def _merged_awareness_for(req: Any) -> str:
     """Build one endpoint's awareness-bridge input, now with intent detection.
 
@@ -1298,9 +1348,10 @@ def _merged_awareness_for(req: Any) -> str:
 
     # ── Base awareness merge (direction + external + platform) ───────────
     base_awareness = merge_awareness(req)
+    platform_optimization = _platform_optimization_awareness(req)
 
     # ── Assemble final cascade ────────────────────────────────────────────
-    parts = [p for p in (intent_lines, base_awareness) if p]
+    parts = [p for p in (intent_lines, base_awareness, platform_optimization) if p]
     return "\n".join(parts)
 
 
@@ -3949,7 +4000,8 @@ async def generate_content(req: ContentRequest, _key = Depends(require_scope("ge
         # Identical concurrent requests collapse to one compute; all share result.
         _orch = _get_pdim_orchestrator()
         _cache_key = {"platform": platform, "topic": topic, "tone": req.tone,
-                      "goal": req.goal, "awareness": effective_awareness}
+                      "goal": req.goal, "awareness": effective_awareness,
+                      "platform_optimization": _platform_optimization_awareness(req)}
         _out = await _in_thread(lambda: _orch.compute(_cache_key, _build_result, namespace="api_content_v6"))
         _result = dict(_out["result"])
         if _out.get("source") in ("cache", "coalesced"):
@@ -7319,6 +7371,7 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
             "tone":     req.tone or "",
             "goal":     goal,
             "awareness": str(req.awareness or ""),
+            "platform_optimization": _platform_optimization_awareness(req),
             "instruction":   req.instruction or "",
             "extra_context": req.extra_context or "",
             "themes":        req.content_themes or [],
@@ -7753,6 +7806,7 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
             "tone":     getattr(req, "tone", "") or "",
             "goal":     getattr(req, "goal", "") or "",
             "awareness": str(getattr(req, "awareness", "") or ""),
+            "platform_optimization": _platform_optimization_awareness(req),
         }
         async def _coalesced_social():
             # Leader spawns ONE GPU life from the pocket for this unique request.

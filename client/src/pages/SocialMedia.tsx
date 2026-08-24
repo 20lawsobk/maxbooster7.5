@@ -357,8 +357,8 @@ interface AutopilotStatus {
 // Social Media Platforms
 const SOCIAL_PLATFORMS: SocialPlatform[] = [
   {
-    id: "meta",
-    name: "Meta (Facebook + Instagram)",
+    id: "facebook",
+    name: "Facebook",
     icon: MetaIcon,
     color: "#0081FB",
     isConnected: false,
@@ -368,8 +368,19 @@ const SOCIAL_PLATFORMS: SocialPlatform[] = [
     status: "inactive",
   },
   {
-    id: "twitter",
-    name: "X (Twitter)",
+    id: "instagram",
+    name: "Instagram",
+    icon: MetaIcon,
+    color: "#E1306C",
+    isConnected: false,
+    followers: 0,
+    engagement: 0,
+    lastSync: "",
+    status: "inactive",
+  },
+  {
+    id: "x",
+    name: "X",
     icon: XIcon,
     color: "#000000",
     isConnected: false,
@@ -423,7 +434,7 @@ const SOCIAL_PLATFORMS: SocialPlatform[] = [
     status: "inactive",
   },
   {
-    id: "googlebusiness",
+    id: "google_business",
     name: "Google Business",
     icon: GoogleIcon,
     color: "#4285F4",
@@ -687,8 +698,7 @@ export default function SocialMedia() {
     return [id];
   };
   const fromMultimodalPlatform = (id: string): string => {
-    if (id === "facebook" || id === "instagram") return "meta";
-    if (id === "google_business") return "googlebusiness";
+    if (id === "google_business") return "google_business";
     return id;
   };
   const mapAssetsToGeneratedContent = (

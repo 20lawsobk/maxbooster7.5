@@ -16,6 +16,11 @@
  */
 
 import { logger } from "../logger.js";
+import {
+  getPlatformOptimization,
+  normalizeSocialAwarenessPlatform,
+  platformAwarenessOptimization,
+} from "./platformAwarenessOptimization.js";
 
 export type AwarenessMode =
   | "social"
@@ -42,6 +47,12 @@ export interface AwarenessContext {
   platformAlgorithmNotes: string[];
   [key: string]: unknown;
 }
+
+export {
+  getPlatformOptimization,
+  normalizeSocialAwarenessPlatform,
+  platformAwarenessOptimization,
+};
 
 const AWARENESS_TIMEOUT_MS = 2500;
 
