@@ -297,8 +297,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       bullmq:
-        specifier: ^5.70.1
-        version: 5.80.10(redis@6.1.0(@opentelemetry/api@1.9.1))(supports-color@7.2.0)
+        specifier: ^5.81.3
+        version: 5.81.3(redis@6.1.0(@opentelemetry/api@1.9.1))(supports-color@7.2.0)
       canvas-confetti:
         specifier: ^1.9.4
         version: 1.9.4
@@ -3938,8 +3938,8 @@ packages:
     resolution: {integrity: sha512-q2hn7Mbo2nFNkVekPiHFx6Nfo3hURmES3tfBn+k5Pqxl2RkmP3QGqZUhH/q9Pch/4G05NRhPjDlVj1O8q4Txvw==}
     engines: {node: '>=14.0.0'}
 
-  bullmq@5.80.10:
-    resolution: {integrity: sha512-lhfWJ3ojsU4FGjhV5b+CRHT3nFx9TX6sIsoGQGCIPoYvTmBeRmJ4sOYWTx0l8gdKnuEF3e5GfuYVLSAs97VvUw==}
+  bullmq@5.81.3:
+    resolution: {integrity: sha512-Q7uEH2G92rVjX3Yl2qw3+6VEO15uxehC6DfeTHQBQTehddcRDSDuquD9zuvDjxiCffXsPUaBwrRlvlbVcgKs7g==}
     engines: {node: '>=12.22.0'}
     peerDependencies:
       redis: '>=5.0.0'
@@ -5759,9 +5759,6 @@ packages:
   msgpackr-extract@3.0.4:
     resolution: {integrity: sha512-4kmO/MdyUIkLIvTPr8VHLil4AtoKIoniWPIEk5+CDy0xnWC84azhSFmuJ7PxZdsYtiP5kEeQsORAVIeMgxT+Hw==}
     hasBin: true
-
-  msgpackr@2.0.4:
-    resolution: {integrity: sha512-o1C5KRmuRt+apqMr1HuGSqWStZoRBUpEsCsl15uM9VdAF1qHLtvMOU2En747EnTyEl6c4pzPewRMFF31s1CNbA==}
 
   msgpackr@2.0.5:
     resolution: {integrity: sha512-cef05H/dSYpLpqp3sj/qyZh5vhUYCalnaLO7j1yOmpsR0y/XwLVtK7r5gn+U/F7CTEfMowcGhlUQJDLcLf7jcA==}
@@ -11018,11 +11015,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  bullmq@5.80.10(redis@6.1.0(@opentelemetry/api@1.9.1))(supports-color@7.2.0):
+  bullmq@5.81.3(redis@6.1.0(@opentelemetry/api@1.9.1))(supports-color@7.2.0):
     dependencies:
       cron-parser: 4.9.0
       ioredis: 5.11.1(supports-color@7.2.0)
-      msgpackr: 2.0.4
+      msgpackr: 2.0.5
       node-abort-controller: 3.1.1
       semver: 7.8.5
       tslib: 2.8.1
@@ -12940,10 +12937,6 @@ snapshots:
       '@msgpackr-extract/msgpackr-extract-linux-x64': 3.0.4
       '@msgpackr-extract/msgpackr-extract-win32-x64': 3.0.4
     optional: true
-
-  msgpackr@2.0.4:
-    optionalDependencies:
-      msgpackr-extract: 3.0.4
 
   msgpackr@2.0.5:
     optionalDependencies:
