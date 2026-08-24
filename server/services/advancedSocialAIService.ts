@@ -602,9 +602,9 @@ export interface AudienceResonance {
 // ============================================================================
 
 const PLATFORM_PROFILES: Record<string, PlatformProfile> = {
-  twitter: {
-    id: "twitter",
-    name: "Twitter/X",
+  x: {
+    id: "x",
+    name: "X",
     maxChars: 280,
     hashtagRange: { min: 1, max: 3 },
     emojiRange: { min: 0, max: 2 },
@@ -697,6 +697,38 @@ const PLATFORM_PROFILES: Record<string, PlatformProfile> = {
     audienceDemo: { minAge: 18, maxAge: 44 },
     contentTypes: ["video", "short", "live", "community"],
     tonePreference: 0.4,
+  },
+  threads: {
+    id: "threads",
+    name: "Threads",
+    maxChars: 500,
+    hashtagRange: { min: 0, max: 3 },
+    emojiRange: { min: 0, max: 2 },
+    peakHours: [9, 12, 18, 21],
+    bestDays: [1, 2, 3, 4, 5],
+    hookWeight: 0.8,
+    ctaWeight: 0.55,
+    hashtagWeight: 0.08,
+    viralMultiplier: 0.72,
+    audienceDemo: { minAge: 18, maxAge: 44 },
+    contentTypes: ["text", "image", "video"],
+    tonePreference: 0.45,
+  },
+  google_business: {
+    id: "google_business",
+    name: "Google Business",
+    maxChars: 1500,
+    hashtagRange: { min: 0, max: 2 },
+    emojiRange: { min: 0, max: 2 },
+    peakHours: [9, 12, 17],
+    bestDays: [1, 2, 3, 4, 5],
+    hookWeight: 0.55,
+    ctaWeight: 0.9,
+    hashtagWeight: 0.05,
+    viralMultiplier: 0.35,
+    audienceDemo: { minAge: 18, maxAge: 65 },
+    contentTypes: ["text", "image", "video", "event", "offer"],
+    tonePreference: 0.7,
   },
 };
 
