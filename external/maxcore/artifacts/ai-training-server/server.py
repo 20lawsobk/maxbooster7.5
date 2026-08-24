@@ -1348,10 +1348,8 @@ def _merged_awareness_for(req: Any) -> str:
 
     # ── Base awareness merge (direction + external + platform) ───────────
     base_awareness = merge_awareness(req)
-    platform_optimization = _platform_optimization_awareness(req)
-
     # ── Assemble final cascade ────────────────────────────────────────────
-    parts = [p for p in (intent_lines, base_awareness, platform_optimization) if p]
+    parts = [p for p in (intent_lines, base_awareness) if p]
     return "\n".join(parts)
 
 
@@ -3830,6 +3828,8 @@ def _effective_awareness(platform: str, raw_awareness: str) -> str:
     arousal-rich [HIGH] signals available. When the caller sends no awareness,
     only platform signals are used. Never-raise.
     """
+    if "[PLATFORM_OPTIMIZATION platform=" in (raw_awareness or ""):
+        return raw_awareness
     try:
         from ai_model.quality_awareness import platform_awareness_string
         platform_awareness = platform_awareness_string(platform)

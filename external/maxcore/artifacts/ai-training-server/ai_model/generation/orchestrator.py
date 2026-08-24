@@ -35,6 +35,12 @@ def merge_awareness(req: Any) -> str:
     prompt-engineering instructions the awareness parser would quote verbatim).
     Returns ``""`` when there is no real context. Never raises.
     """
+    raw_platform = _as_text(getattr(req, "platform", None))
+    platform_awareness = ""
+    if raw_platform and raw_platform.lower() not in {"general", "music", "songwriting"}:
+        from ai_model.platform_optimization import format_platform_optimization
+        platform_awareness = format_platform_optimization(raw_platform)
+
     try:
         from ai_model import request_intelligence as ri
         direction = " ".join(s for s in (
@@ -51,6 +57,7 @@ def merge_awareness(req: Any) -> str:
         return "\n".join(p for p in (
             ri.awareness_from_direction(direction, getattr(req, "content_themes", None)),
             _coerce_aw(getattr(req, "awareness", "")),
+            platform_awareness,
         ) if p)
     except Exception:
         _aw_raw = getattr(req, "awareness", "")
