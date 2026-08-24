@@ -25,6 +25,11 @@ import { MaxCoreAIClient } from "./unifiedAIController.js";
 import { requireMaxCore } from "../lib/aiSource.js";
 import { evolutionRegistry } from "./evolutionRegistry.js";
 import {
+  getPlatformOptimization,
+  normalizeSocialAwarenessPlatform,
+  platformAwarenessOptimization,
+} from "./awarenessContext.js";
+import {
   cleanMaxCoreContent,
   selectBestVariant,
   normalizeHashtags,
@@ -455,6 +460,7 @@ export interface AdvancedContentRequest {
   storefrontUrl?: string;
   beatContext?: string;
   promotionContext?: string;
+  awareness?: string;
 }
 
 /**
@@ -1272,9 +1278,11 @@ class AdvancedSocialAIService {
   private static readonly _CACHE_MAX = 200;
 
   private static cacheKey(r: AdvancedContentRequest): string {
+    const platform = normalizeSocialAwarenessPlatform(r.platforms?.[0] || "instagram");
     return [
       r.userId || "anon",
-      (r.platforms || []).join(","),
+      platform,
+      getPlatformOptimization(platform).revision,
       r.topic || "",
       r.tone || "",
       r.genre || "",
@@ -1284,6 +1292,8 @@ class AdvancedSocialAIService {
       r.storefrontUrl || "",
       r.beatContext || "",
       r.promotionContext || "",
+      r.awareness || "",
+      (r.trendContext || []).join(","),
     ].join("|");
   }
 
@@ -1359,7 +1369,20 @@ class AdvancedSocialAIService {
     // before anything else (cache key, MaxCore hints, post-processing) so the
     // override is honored on manual / scheduled / direct paths, not just autopilot.
     const request = this.applyPostingOptimization(rawRequest);
-    const cacheKey = AdvancedSocialAIService.cacheKey(request);
+    const canonicalPlatform = normalizeSocialAwarenessPlatform(
+      request.platforms?.[0] || "instagram",
+    );
+    const effectiveAwareness = [
+      request.awareness || "",
+      platformAwarenessOptimization(canonicalPlatform),
+      ...(request.trendContext || []),
+    ].filter(Boolean).join("\n");
+    const conditionedRequest = {
+      ...request,
+      platforms: [canonicalPlatform, ...request.platforms.slice(1)],
+      awareness: effectiveAwareness,
+    };
+    const cacheKey = AdvancedSocialAIService.cacheKey(conditionedRequest);
     const cached = AdvancedSocialAIService._contentCache.get(cacheKey);
     if (
       cached &&
@@ -1375,7 +1398,7 @@ class AdvancedSocialAIService {
 
     const userContext = await this.getUserContext(request.userId);
     const primaryPlatform =
-      PLATFORM_PROFILES[request.platforms[0].toLowerCase()] ||
+      PLATFORM_PROFILES[canonicalPlatform] ||
       PLATFORM_PROFILES.instagram;
     const tone =
       TONE_PROFILES[request.tone || "casual"] || TONE_PROFILES.casual;
@@ -1404,7 +1427,7 @@ class AdvancedSocialAIService {
         hashtags?: string[];
       }>;
     }>("/api/platform/social/generate", {
-      platform: request.platforms[0] || "instagram",
+      platform: canonicalPlatform,
       topic: request.topic || "new music",
       tone: request.tone || "energetic",
       genre: request.genre || (userContext as any).genre,
@@ -1413,6 +1436,7 @@ class AdvancedSocialAIService {
       target_audience: request.targetAudience,
       storefront_url: request.storefrontUrl,
       beat_context: request.beatContext,
+      awareness: effectiveAwareness,
       // Server-side: pass purchase intent + platform constraints so MaxCore
       // optimises copy for conversion and avoids platform-inappropriate CTAs.
       goal: request.beatContext ? "drive_purchase" : undefined,
