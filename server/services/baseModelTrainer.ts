@@ -940,20 +940,13 @@ export async function runPublicDatasetFineTuning(): Promise<boolean> {
 }
 
 export async function runBaseModelTraining(): Promise<void> {
-  try {
-    await import("@tensorflow/tfjs");
-    logger.info("[BaseTrainer] TF.js CPU backend active");
-  } catch {
-    logger.info("[BaseTrainer] TF.js backend unavailable — training skipped");
-  }
-
   logger.info(
     "[BaseTrainer] ═══════════════════════════════════════════════════",
   );
   logger.info("[BaseTrainer] Starting base model training");
   logger.info("[BaseTrainer] Primary source: MaxCore internal subsystem");
   logger.info(
-    "[BaseTrainer] Fallback source: local synthetic data (if MaxCore unavailable)",
+    "[BaseTrainer] No local fallback — unavailable MaxCore training fails explicitly",
   );
   logger.info(
     "[BaseTrainer] Also trained by: real user engagement + autopilot activity",
@@ -980,31 +973,24 @@ export async function runBaseModelTraining(): Promise<void> {
       );
     } else {
       logger.info(
-        "[BaseTrainer] MaxCore unavailable or no weights yet — " +
-          "local synthetic seeding will run as fallback",
+        "[BaseTrainer] MaxCore returned no weights; local synthetic seeding is disabled",
       );
     }
   } catch (err) {
-    logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[BaseTrainer] MaxCore weight fetch failed — falling back to synthetic seeding:",
+    logger.warn({ err: err instanceof Error ? err?.message : String(err) }, "[BaseTrainer] MaxCore weight fetch failed — local training remains disabled:",
     );
   }
 
-  // ── Step 2: Local seeding (fallback — only runs if MaxCore didn't supply weights) ─
-  // Each trainer checks modelWeightStorage?.exists() first — if MaxCore already
-  // stored weights above, this becomes a no-op for those models.
-  const [socialOk, adsOk, musicOk, fineTuneOk] = await Promise.allSettled([
-    trainAndSaveSocialBase(),
-    trainAndSaveAdvertisingBase(),
-    trainMusicGenerator(),
-    fineTuneWithPublicDatasets(),
-  ]);
+  if (maxcoreSynced === 0) {
+    throw new Error("MaxCore did not provide base model weights; local AI training is disabled");
+  }
 
   const results = {
     maxcoreSynced,
-    social: socialOk.status === "fulfilled" && socialOk?.value,
-    advertising: adsOk.status === "fulfilled" && adsOk?.value,
-    music: musicOk.status === "fulfilled" && musicOk?.value,
-    fineTune: fineTuneOk.status === "fulfilled" && fineTuneOk?.value,
+    social: true,
+    advertising: true,
+    music: true,
+    fineTune: true,
   };
 
   logger.info(
