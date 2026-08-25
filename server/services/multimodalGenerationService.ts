@@ -4,6 +4,7 @@ import path from "path";
 import { promises as fsPromises } from "fs";
 import { logger } from "../logger.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import { normalizeHashtags } from "../lib/contentPostProcessor.js";
 import {
   getMaxcoreGenerationKey,
   getMaxcoreOriginOrDefault,
@@ -2646,6 +2647,30 @@ const textWorker = {
           let body: string = (mc as any).body ?? "";
           let cta: string = (mc as any).cta ?? "";
           const knobs = req.constraints;
+
+          // MaxCore occasionally jams the full topic/description into a single
+          // "hashtag" (or embeds it in the caption's hashtag line) instead of
+          // real tags — the same failure mode already guarded against in
+          // unifiedAIController/cleanMaxCoreContent. Always sanitize hashtags
+          // here too, regardless of whether the Self-Evolution knobs are set,
+          // so a raw topic echo never reaches the user's post.
+          {
+            const hashtagRegex = /#[\w\u0080-\uFFFF]+/g;
+            const rawHashtags: string[] = Array.isArray((mc as any).hashtags)
+              ? (mc as any).hashtags
+              : caption.match(hashtagRegex) ?? [];
+            const captionNoTags = caption.replace(hashtagRegex, "").trim();
+            const sanitizedHashtags = normalizeHashtags(
+              rawHashtags,
+              resolvedGenre || "hip-hop",
+              platform,
+            );
+            caption = sanitizedHashtags.length
+              ? `${captionNoTags}\n\n${sanitizedHashtags.join(" ")}`
+              : captionNoTags;
+            (mc as any).hashtags = sanitizedHashtags;
+          }
+
           if (knobs?.hashtagStrategy || knobs?.captionLength || knobs?.callToActionStrength) {
             const hashtagRegex = /#[\w\u0080-\uFFFF]+/g;
             let hashtags: string[] = Array.isArray((mc as any).hashtags)
