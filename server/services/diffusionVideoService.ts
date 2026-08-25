@@ -21,7 +21,6 @@ const __filename = __metaUrl
   : path?.resolve(process.argv[1] ?? "");
 const __dirname = path?.dirname(__filename);
 
-const SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
 // synthesizer.py uses package-relative imports (`from .scheduler import ...`),
 // so it must run as `python -m diffusion.synthesizer` with cwd=__dirname
 // (the parent of the diffusion/ package) — invoking the .py path directly

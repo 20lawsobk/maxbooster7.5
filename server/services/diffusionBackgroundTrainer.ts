@@ -42,7 +42,10 @@ const __filename = __metaUrl
   : path?.resolve(process.argv[1] ?? "");
 const __dirname = path?.dirname(__filename);
 
-const SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
+// synthesizer.py uses package-relative imports, so it must be launched as a
+// module from the parent of the diffusion package. Running its file path makes
+// Python treat it as a standalone script and fails before training can begin.
+const SYNTH_MODULE = "diffusion.synthesizer";
 const META_PATH = path?.join(__dirname, "diffusion", "meta.json");
 const MEMORY_PATH = path?.join(__dirname, "diffusion", "memory.json");
 const STATUS_PATH = path?.join(os?.tmpdir(), "diffusion_bg_status.json");
@@ -146,10 +149,11 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
     );
     _saveStatus();
 
-    const args = [SYNTH_SCRIPT, "--train-only", "--tier", tier];
+    const args = ["-m", SYNTH_MODULE, "--train-only", "--tier", tier];
     _proc = spawn(PYTHON, args, {
       stdio: ["ignore", "pipe", "pipe"],
       detached: false,
+      cwd: __dirname,
     });
 
     state.pid = _proc?.pid ?? null;
