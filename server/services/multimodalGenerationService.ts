@@ -24,6 +24,11 @@ import {
   PACK_DEFINITIONS,
 } from "@shared/types/multimodalGeneration.js";
 import { PLATFORM_RULES, getRules, enforceTextLength, type PlatformRules } from "@shared/config/platformRules.js";
+import {
+  getAwarenessContext,
+  normalizeSocialAwarenessPlatform,
+  platformAwarenessOptimization,
+} from "./awarenessContext.js";
 
 // Resolved through the shared connector (single MaxCore contract boundary);
 // the connector normalizes root-vs-/api URL forms.
@@ -2550,6 +2555,26 @@ const textWorker = {
         rawSlots.map(async (slot: Record<string, unknown>) => {
           const platform: string =
             (slot.platform as string) ?? req.platforms[0] ?? "instagram";
+
+          // This is the primary composer's generation path — it must route
+          // through the same shared awareness layer as unifiedAIController /
+          // advancedSocialAIService instead of relying only on MaxCore's
+          // server-side merge of instruction/extra_context. Without this,
+          // live trend/platform signals never reached the main app's
+          // generation flow.
+          let platformOptimization: string | null = null;
+          try {
+            platformOptimization = platformAwarenessOptimization(
+              normalizeSocialAwarenessPlatform(platform),
+            );
+          } catch {
+            // outside the closed platform optimization set — skip
+          }
+          const awareness = await getAwarenessContext("social");
+          const extraContextParts = [awareness?.contextString, platformOptimization].filter(
+            (v): v is string => Boolean(v),
+          );
+
           const mc = await maxcorePost(
             "/generate/content",
             {
@@ -2567,6 +2592,21 @@ const textWorker = {
                 : {}),
               ...(userCtx.avoidTopics?.length
                 ? { avoid_topics: userCtx.avoidTopics }
+                : {}),
+              ...(extraContextParts.length
+                ? { extra_context: extraContextParts.join("\n\n") }
+                : {}),
+              ...(awareness
+                ? {
+                    awareness: {
+                      trendingGenres: awareness.trendingGenres,
+                      trendingMoods: awareness.trendingMoods,
+                      contentAngles: awareness.contentAngles,
+                      ctaPatterns: awareness.ctaPatterns,
+                      emotionalTriggers: awareness.emotionalTriggers,
+                      platformAlgorithmNotes: awareness.platformAlgorithmNotes,
+                    },
+                  }
                 : {}),
             },
             20_000,
@@ -2946,6 +2986,17 @@ const imageWorker = {
       }));
 
     try {
+      const primaryPlatform = req.platforms[0];
+      let platformOptimization: string | null = null;
+      try {
+        platformOptimization = primaryPlatform
+          ? platformAwarenessOptimization(normalizeSocialAwarenessPlatform(primaryPlatform))
+          : null;
+      } catch {
+        // outside the closed platform optimization set — skip
+      }
+      const awareness = await getAwarenessContext("content");
+
       const result = await maxcorePost("/generate/image", {
         step,
         inputs,
@@ -2956,6 +3007,17 @@ const imageWorker = {
         platformRules: Object.fromEntries(
           req.platforms.map((p) => [p, getRules(p).image]),
         ),
+        ...(awareness || platformOptimization
+          ? {
+              awareness: {
+                contextString: awareness?.contextString,
+                trendingGenres: awareness?.trendingGenres,
+                trendingMoods: awareness?.trendingMoods,
+                platformAlgorithmNotes: awareness?.platformAlgorithmNotes,
+                platformOptimization,
+              },
+            }
+          : {}),
       });
       const allOutputs = Array.isArray((result as any).outputs) ? (result as any).outputs : [];
       // MaxCore returns relative /uploads/images/... URLs — absolute-ize them

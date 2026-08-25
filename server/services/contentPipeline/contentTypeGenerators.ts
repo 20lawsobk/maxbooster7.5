@@ -13,6 +13,11 @@
 
 import { MaxCoreAIClient } from "../unifiedAIController.js";
 import { requireMaxCore, AIUnavailableError } from "../../lib/aiSource.js";
+import {
+  getAwarenessContext,
+  normalizeSocialAwarenessPlatform,
+  platformAwarenessOptimization,
+} from "../awarenessContext.js";
 import type { SupportedPlatform } from "./platformFormatters.js";
 
 // ─── Shared Context ───────────────────────────────────────────────────────────
@@ -158,7 +163,37 @@ async function callMaxCoreStructured(
     target_audience: ctx.targetAudience,
     instruction: opts.instruction,
   };
-  if (ctx.extraContext) payload.extra_context = ctx?.extraContext;
+
+  // Route through the shared awareness layer (live trend/platform signals)
+  // instead of relying solely on locally-passed context — every other
+  // MaxCore content-generation call site does this via
+  // unifiedAIController/advancedSocialAIService, and this pipeline was the
+  // one gap that skipped it.
+  let platformOptimization: string | null = null;
+  try {
+    const canonicalPlatform = normalizeSocialAwarenessPlatform(ctx.platform);
+    platformOptimization = platformAwarenessOptimization(canonicalPlatform);
+  } catch {
+    // Platform outside the closed optimization set (e.g. an internal-only
+    // platform value) — proceed without platform-specific formatting rather
+    // than failing generation.
+  }
+  const awareness = await getAwarenessContext("content");
+  const extraContextParts: string[] = [];
+  if (ctx.extraContext) extraContextParts.push(ctx.extraContext);
+  if (awareness?.contextString) extraContextParts.push(awareness.contextString);
+  if (platformOptimization) extraContextParts.push(platformOptimization);
+  if (extraContextParts.length) payload.extra_context = extraContextParts.join("\n\n");
+  if (awareness) {
+    payload.awareness = {
+      trendingGenres: awareness.trendingGenres,
+      trendingMoods: awareness.trendingMoods,
+      contentAngles: awareness.contentAngles,
+      ctaPatterns: awareness.ctaPatterns,
+      emotionalTriggers: awareness.emotionalTriggers,
+      platformAlgorithmNotes: awareness.platformAlgorithmNotes,
+    };
+  }
   // Keywords are thematic direction, NOT ready-made hashtags — MaxCore echoes
   // preferred_hashtags verbatim into its hashtag output, so raw keywords like
   // "hip-hop" would surface as malformed tags. content_themes is the designed

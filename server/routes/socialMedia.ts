@@ -19,6 +19,11 @@ import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import {
+  getAwarenessContext,
+  normalizeSocialAwarenessPlatform,
+  platformAwarenessOptimization,
+} from "../services/awarenessContext.js";
 import { notificationService } from "../services/notificationService.js";
 import {
   audioUpload,
@@ -4245,11 +4250,31 @@ router.post(
       let imageUrl: string | null = null;
       try {
         type McImgResp = { url?: string; image_url?: string; outputs?: { url?: string }[] };
+        let platformOptimization: string | null = null;
+        try {
+          platformOptimization = platformAwarenessOptimization(
+            normalizeSocialAwarenessPlatform(resolvedPlatform),
+          );
+        } catch {
+          // outside the closed platform optimization set — skip
+        }
+        const awareness = await getAwarenessContext("content");
         const imgData = await MaxCoreAIClient?.infer<McImgResp>("/api/generate/image", {
           prompt: enrichedTopic || topic,
           style: resolvedTone,
           platform: resolvedPlatform,
           genre: genre || "",
+          ...(awareness || platformOptimization
+            ? {
+                awareness: {
+                  contextString: awareness?.contextString,
+                  trendingGenres: awareness?.trendingGenres,
+                  trendingMoods: awareness?.trendingMoods,
+                  platformAlgorithmNotes: awareness?.platformAlgorithmNotes,
+                  platformOptimization,
+                },
+              }
+            : {}),
         });
         const raw = imgData?.url ?? imgData?.image_url ?? imgData?.outputs?.[0]?.url ?? null;
         // MaxCore may return relative paths like /uploads/images/img_xxx.png —

@@ -10174,7 +10174,12 @@ async def api_video_extend(req: ApiVideoExtendRequest, _key=Depends(require_scop
                 width, height = _img.size
             first_frame_b64 = _b64.b64encode(frame_png.read_bytes()).decode("ascii")
 
-            # 2) Render the continuation clip at the source's exact dimensions
+            # 2) Render the continuation clip at the source's exact dimensions.
+            # Continuation must be conditioned by the SAME awareness merge as
+            # every other generation endpoint — previously this built
+            # VideoAgentRequest with no awareness field at all, so a
+            # continuation clip lost all brand/trend/platform conditioning
+            # the original video had.
             agent = VideoAgent(_creative_model, _script_agent, _visual_spec_agent)
             agent_req = VideoAgentRequest(
                 idea=req.idea.strip(),
@@ -10191,6 +10196,7 @@ async def api_video_extend(req: ApiVideoExtendRequest, _key=Depends(require_scop
                 color_temperature=req.color_temperature or "",
                 composition=req.composition or "",
                 first_frame_b64=first_frame_b64,
+                awareness=_merged_awareness_for(req),
             )
             production = agent.plan(agent_req)
             production.total_duration = add_dur

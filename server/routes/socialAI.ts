@@ -13,6 +13,11 @@ import {
 import { aiContentService } from "../services/aiContentService";
 import { analyzeUrl } from "../services/mediaAnalyzerService";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import {
+  getAwarenessContext,
+  normalizeSocialAwarenessPlatform,
+  platformAwarenessOptimization,
+} from "../services/awarenessContext.js";
 import { logger } from "../logger";
 import { requireAuth } from "../middleware/auth.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
@@ -1431,18 +1436,40 @@ router.post(
           caption,
         );
 
+      // Predictions must see the same awareness context (genre, live trend
+      // signals, platform profile) the content itself was generated with —
+      // previously these calls sent bare {platform, content} with nothing
+      // for MaxCore's model to condition on.
+      const predictionAwareness = await getAwarenessContext("social");
+      let predictionPlatformOptimization: string | null = null;
+      try {
+        predictionPlatformOptimization = platformAwarenessOptimization(
+          normalizeSocialAwarenessPlatform(resolvedPlatform),
+        );
+      } catch {
+        // outside the closed platform set — proceed without it
+      }
+      const awarenessPayload = {
+        genre,
+        contextString: predictionAwareness?.contextString,
+        trendingGenres: predictionAwareness?.trendingGenres,
+        trendingMoods: predictionAwareness?.trendingMoods,
+        platformAlgorithmNotes: predictionAwareness?.platformAlgorithmNotes,
+        platformOptimization: predictionPlatformOptimization,
+      };
+
       const [mcViral, mcEngagement, mcBestTime] = await Promise.allSettled([
         MaxCoreAIClient.infer<{ viralScore?: number; score?: number }>(
           "/api/predict/engagement",
-          { action: "viral_potential", platform: resolvedPlatform, content: caption },
+          { action: "viral_potential", platform: resolvedPlatform, content: caption, awareness: awarenessPayload },
         ),
         MaxCoreAIClient.infer<{ engagementRate?: number; predicted_engagement?: number }>(
           "/api/predict/engagement",
-          { action: "predict_engagement", platform: resolvedPlatform, content: caption, postsPerWeek: 4 },
+          { action: "predict_engagement", platform: resolvedPlatform, content: caption, postsPerWeek: 4, awareness: awarenessPayload },
         ),
         MaxCoreAIClient.infer<{ bestTime?: string }>(
           "/api/predict/engagement",
-          { action: "best_time", platform: resolvedPlatform },
+          { action: "best_time", platform: resolvedPlatform, awareness: awarenessPayload },
         ),
       ]);
 
