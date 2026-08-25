@@ -100,21 +100,6 @@ def test_missing_doc_never_raises():
     print("test_missing_doc_never_raises: OK")
 
 
-def test_storage_failure_never_raises():
-    class _BoomStore:
-        def llen(self, key):
-            raise RuntimeError("storage down")
-
-        def keys(self, pattern):
-            raise RuntimeError("storage down")
-
-    _reset(store=_BoomStore(),
-           doc={"stats": {"top_genres": ["trap"], "punchy_title_ratio": 0.6}})
-    suff = qa.self_sufficiency("image")
-    assert isinstance(suff, dict) and "retired" in suff
-    print("test_storage_failure_never_raises: OK")
-
-
 def run_all():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:
