@@ -39,6 +39,32 @@ interface SelfTestReport {
   recommendation: "healthy" | "degraded" | "rollback";
 }
 
+// Bound any single self-test check so a stalled DB/Redis connection can't
+// block the whole self-test (and the rollback decision it drives) for
+// minutes. Without this, a Neon blip made testDatabase() hang for 24+
+// minutes inside Promise.all, delaying the automatic rollback that exists
+// specifically to react to that failure quickly.
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> {
+  let timer: NodeJS.Timeout;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`${label} timed out after ${timeoutMs}ms`)),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+
 class PostDeploySelfTest {
   private isRunning = false;
   private lastReport: SelfTestReport | null = null;
@@ -57,15 +83,19 @@ class PostDeploySelfTest {
     const startTime = Date?.now();
     try {
       // Test basic connectivity
-      await db.execute(sql`SELECT 1`);
+      await withTimeout(db.execute(sql`SELECT 1`), 8_000, "database connectivity check");
 
       // Check if key tables exist
-      const result = await db.execute(sql`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name IN ('users', 'sessions', 'projects')
-      `);
+      const result = await withTimeout(
+        db.execute(sql`
+          SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name IN ('users', 'sessions', 'projects')
+        `),
+        8_000,
+        "database schema check",
+      );
 
       const tables = (result?.rows as { table_name: string }[]).map(
         (r) => r?.table_name,
@@ -93,12 +123,19 @@ class PostDeploySelfTest {
       const { getRedisClient } = await import(
         "./lib/redisConnectionFactory.js"
       );
-      const client = await getRedisClient();
+      const client = await withTimeout(getRedisClient(), 8_000, "redis client acquisition");
 
       const testKey = `selftest:${Date?.now()}`;
-      await (client as any)?.setex(testKey, 10, "test");
-      const value = await (client as any)?.get(testKey);
-      await (client as any)?.del(testKey);
+      const value = await withTimeout(
+        (async () => {
+          await (client as any)?.setex(testKey, 10, "test");
+          const v = await (client as any)?.get(testKey);
+          await (client as any)?.del(testKey);
+          return v;
+        })(),
+        8_000,
+        "redis roundtrip",
+      );
 
       return {
         name: "pdim",
