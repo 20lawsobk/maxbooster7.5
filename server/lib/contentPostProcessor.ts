@@ -89,7 +89,7 @@ const LINKEDIN_TAGS = [
 ];
 
 /** A hashtag is "broken" if it contains characters that platforms won't parse. */
-function isBrokenHashtag(tag: string): boolean {
+export function isBrokenHashtag(tag: string): boolean {
   const stripped = tag.startsWith("#") ? tag.slice(1) : tag;
   // em-dash, regular hyphen, en-dash, comma, period, parens, brackets,
   // or any whitespace → broken. Also reject suspiciously long strings
@@ -439,7 +439,16 @@ const DIRECTIVE_TAG_BLOCK_RE =
 
 export function stripLeakedDirectives(text: string): string {
   if (!text) return text;
-  return text.replace(DIRECTIVE_TAG_BLOCK_RE, "").replace(/\n{3,}/g, "\n\n").trim();
+  return text
+    .replace(DIRECTIVE_TAG_BLOCK_RE, "")
+    // The directive was often inserted mid-sentence after a colon lead-in
+    // ("...put everything into this:  Drop a fire emoji..."). Once the
+    // block is gone that colon dangles with nothing to introduce — turn it
+    // into a sentence break instead of leaving a naked ":  ".
+    .replace(/:(\s{2,})/g, ".$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 /**
@@ -456,12 +465,12 @@ export function cleanMaxCoreContent(
 
   // Replace stale hooks with mood-matched originals so every beat caption
   // has a unique, conversion-optimised opening line.
-  const rawHook = args.hook || "";
+  const rawHook = stripLeakedDirectives(args.hook || "");
   const hook = isStaleHook(rawHook)
     ? freshHook(args.mood || "dark", args.title || "")
     : rawHook;
 
-  const cta = fixPlatformCta(args.cta || "", args.platform, args.isBeatPost ?? false);
+  const cta = fixPlatformCta(stripLeakedDirectives(args.cta || ""), args.platform, args.isBeatPost ?? false);
   const hashtags = normalizeHashtags(
     args.hashtags || [],
     args.genre || "hip-hop",

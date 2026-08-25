@@ -4,7 +4,7 @@ import path from "path";
 import { promises as fsPromises } from "fs";
 import { logger } from "../logger.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
-import { normalizeHashtags, stripLeakedDirectives } from "../lib/contentPostProcessor.js";
+import { normalizeHashtags, stripLeakedDirectives, isBrokenHashtag } from "../lib/contentPostProcessor.js";
 import {
   getMaxcoreGenerationKey,
   getMaxcoreOriginOrDefault,
@@ -2664,11 +2664,33 @@ const textWorker = {
               ? (mc as any).hashtags
               : caption.match(hashtagRegex) ?? [];
             const captionNoTags = caption.replace(hashtagRegex, "").trim();
-            const sanitizedHashtags = normalizeHashtags(
-              rawHashtags,
-              resolvedGenre || "hip-hop",
-              platform,
-            );
+            // Only force-in the music-genre tag pool (normalizeHashtags) when
+            // this post actually has a real genre attached — e.g. a beat/
+            // release post. For genre-less content (a platform/app URL, a
+            // press link, etc.) forcing #hiphop-style tags in makes them
+            // irrelevant to the post; just drop the broken ones and keep
+            // whatever real tags MaxCore/the category library provided.
+            let sanitizedHashtags: string[];
+            if (resolvedGenre) {
+              sanitizedHashtags = normalizeHashtags(rawHashtags, resolvedGenre, platform);
+            } else {
+              const cleanTags = [
+                ...new Set(
+                  rawHashtags.filter((t) => typeof t === "string" && !isBrokenHashtag(t)),
+                ),
+              ];
+              sanitizedHashtags = cleanTags.length
+                ? cleanTags.slice(0, 8)
+                : getHashtagsForPlatform(
+                    (normalized as any).urlCategory ?? "social_post",
+                    platform,
+                    5,
+                    resolvedArtistName,
+                  )
+                    .replace(/^\n\n/, "")
+                    .split(" ")
+                    .filter(Boolean);
+            }
             caption = sanitizedHashtags.length
               ? `${captionNoTags}\n\n${sanitizedHashtags.join(" ")}`
               : captionNoTags;
