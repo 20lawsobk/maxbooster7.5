@@ -1219,80 +1219,12 @@ def generate_audio(req: GenerateAudioRequest):
     return {"job_id": job_id}
 
 
-# ── Video generation endpoints ─────────────────────────────────────────────────
-
-@app.post("/api/generate-video")
-def generate_video(req: GenerateVideoRequest):
-    """Kick off an async video render job."""
-    job_id = str(_uuid.uuid4())
-    with _jobs_lock:
-        _video_jobs[job_id] = {
-            "status":         "pending",
-            "created_at":     datetime.utcnow().isoformat() + "Z",
-            "hook":           req.hook,
-            "body":           req.body,
-            "cta":            req.cta,
-            "template":       req.template,
-            "template_name":  req.template,
-            "platform":       req.platform,
-            "aspect_ratio":   req.aspect_ratio or ("9:16" if req.platform.lower() in ("tiktok", "instagram") else "16:9"),
-            "duration":       req.duration,
-            "width":          None,
-            "height":         None,
-            "url":            None,
-            "filename":       None,
-            "scenes_rendered": 0,
-        }
-
-    def _render():
-        import time as _time
-        _time.sleep(3)
-        ar  = _video_jobs[job_id]["aspect_ratio"]
-        w, h = (1080, 1920) if ar == "9:16" else (1920, 1080)
-        fname = f"video_{job_id}.mp4"
-        with _jobs_lock:
-            if job_id in _video_jobs:
-                _video_jobs[job_id].update({
-                    "status":         "done",
-                    "url":            f"/uploads/{fname}",
-                    "filename":       fname,
-                    "width":          w,
-                    "height":         h,
-                    "scenes_rendered": req.duration // 3,
-                })
-
-    threading.Thread(target=_render, daemon=True, name=f"VideoJob-{job_id}").start()
-    return {"job_id": job_id}
-
-
 # ── Job polling endpoints ──────────────────────────────────────────────────────
-
-@app.get("/api/video-job/{job_id}")
-def poll_video_job(job_id: str):
-    """Poll a video render job."""
-    with _jobs_lock:
-        job = _video_jobs.get(job_id)
-    if job is None:
-        return {"status": "error", "error": "Job not found"}
-    if job["status"] == "done":
-        return {
-            "status":         "done",
-            "url":            job["url"],
-            "filename":       job["filename"],
-            "width":          job["width"],
-            "height":         job["height"],
-            "duration":       job["duration"],
-            "hook":           job["hook"],
-            "body":           job["body"],
-            "cta":            job["cta"],
-            "template":       job["template"],
-            "template_name":  job["template_name"],
-            "scenes_rendered": job["scenes_rendered"],
-        }
-    if job["status"] == "error":
-        return {"status": "error", "error": job.get("error", "Unknown error")}
-    return {"status": job["status"]}
-
+# NOTE: the real video generation + polling endpoints (/api/generate-video,
+# /api/video-job/{job_id}) live in server.py, which is the active
+# ai-training-server implementation. The dead stub versions previously here
+# faked a "done" response pointing at a file they never rendered — removed to
+# prevent accidental reuse.
 
 @app.get("/api/audio-job/{job_id}")
 def poll_audio_job(job_id: str):

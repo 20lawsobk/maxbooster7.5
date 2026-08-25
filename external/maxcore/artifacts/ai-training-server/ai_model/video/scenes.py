@@ -432,7 +432,32 @@ def _render_pil_based(
             )
             _stdout, _stderr = proc.communicate(input=png_bytes, timeout=20)
             if proc.returncode == 0:
-                _pipe_ok = True
+                # `-loop 1` over the image2pipe demuxer re-loops a single
+                # piped frame via an internal buffer rather than a seekable
+                # file. Under real server load (concurrent encodes + a large
+                # resident model competing for memory/scheduling) that
+                # buffered re-loop can silently give up after the first
+                # frame: ffmpeg still exits 0, but the file is one frame
+                # (~1/fps sec) instead of the requested duration. Verify the
+                # actual encoded duration before trusting rc==0 — the
+                # disk-based `-loop 1 -i <file>` path below is immune to this
+                # (a real file is trivially re-seekable) and bg_png is
+                # already on disk, so falling through is nearly free.
+                # Tolerance is a small, fixed number of frame-times (container
+                # timestamp/rounding slop), NOT a percentage of `dur` — a
+                # percentage would let multi-second shortfalls on longer
+                # scenes through silently.
+                _tolerance = max(0.25, 2.0 / max(scene.fps, 1))
+                _actual_dur = _get_clip_duration(out_path)
+                if _actual_dur >= dur - _tolerance:
+                    _pipe_ok = True
+                else:
+                    print(
+                        f"[VideoRender][WARN] ffmpeg pipe render produced a truncated clip "
+                        f"(actual={_actual_dur:.3f}s, expected={dur:.3f}s) despite rc=0 — "
+                        f"falling back to disk render",
+                        file=sys.stderr,
+                    )
             else:
                 print(
                     f"[VideoRender][WARN] ffmpeg pipe render failed (rc={proc.returncode}), "
