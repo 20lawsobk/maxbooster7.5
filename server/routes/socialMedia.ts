@@ -765,7 +765,7 @@ router.get(
         0,
       );
       const engagementRate =
-        totalReach > 0 ? Number(((totalEngagement / totalReach) * 100).toFixed(2)) : 0;
+        totalReach > 0 ? Number(((totalEngagement / (totalReach || 1)) * 100).toFixed(2)) : 0;
       const dailyEngagement = daily.map((d: any) => ({
         date: d?.date,
         engagement: Number(d?.engagement) || 0,
