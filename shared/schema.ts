@@ -5395,6 +5395,11 @@ export const socialInboxMessages = pgTable("social_inbox_messages", {
   threadId: varchar("thread_id"),
   parentMessageId: varchar("parent_message_id"),
   repliedAt: timestamp("replied_at"),
+  // Saved reply text — there is no platform-delivery integration yet, so
+  // this preserves what the user wrote instead of discarding it once the
+  // message is marked "replied".
+  replyContent: text("reply_content"),
+  replyDelivered: boolean("reply_delivered").default(false),
   readAt: timestamp("read_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -5405,6 +5410,37 @@ export const insertSocialInboxMessageSchema = createInsertSchema(
 ).omit({ id: true, createdAt: true });
 export type InsertSocialInboxMessage = z.infer<
   typeof insertSocialInboxMessageSchema
+>;
+
+// Adds a durable reply-content field to the existing socialInboxMessages
+// table so a saved-but-not-yet-delivered reply is never lost — see
+// server/routes/socialMedia.ts POST /inbox/:id/reply.
+export const socialReplyTemplates = pgTable(
+  "social_reply_templates",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id").notNull(),
+    name: text("name").notNull(),
+    content: text("content").notNull(),
+    category: text("category").default("general"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [
+    index("social_reply_templates_user_id_created_at_idx").on(
+      t.userId,
+      t.createdAt,
+    ),
+  ],
+);
+
+export type SocialReplyTemplate = typeof socialReplyTemplates.$inferSelect;
+export const insertSocialReplyTemplateSchema = createInsertSchema(
+  socialReplyTemplates,
+).omit({ id: true, createdAt: true });
+export type InsertSocialReplyTemplate = z.infer<
+  typeof insertSocialReplyTemplateSchema
 >;
 
 // ============================================================================

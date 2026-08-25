@@ -12,7 +12,7 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { logger } from "../logger";
 import { db } from "../db";
-import { socialInboxMessages, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles, campaigns, contentCalendar } from "@shared/schema";
+import { socialInboxMessages, socialReplyTemplates, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles, campaigns, contentCalendar, users } from "@shared/schema";
 import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
 import { syncPlatformData } from "../services/socialSyncService";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
@@ -1494,12 +1494,14 @@ router.get(
           createdAt: m.createdAt,
           readAt: m.readAt,
           repliedAt: m.repliedAt,
+          replyContent: m.replyContent,
+          replyDelivered: m.replyDelivered,
         })),
         total: filteredMessages.length,
       });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get inbox messages:");
-      res.json({ messages: [], total: 0 });
+      res.status(500).json({ error: "Failed to load inbox messages" });
     }
   },
 );
@@ -1538,13 +1540,149 @@ router.get(
       res.json(stats);
     } catch (error) {
       logger.warn({ err: error }, "Failed to get inbox stats:");
-      res.json({
-        total: 0,
-        unread: 0,
-        highPriority: 0,
-        negative: 0,
-        byPlatform: {},
-      });
+      res.status(500).json({ error: "Failed to load inbox stats" });
+    }
+  },
+);
+
+function parseBulkMessageIds(body: unknown): string[] | null {
+  const messageIds = (body as { messageIds?: unknown } | null)?.messageIds;
+  if (!Array.isArray(messageIds) || messageIds.length === 0) return null;
+  if (messageIds.length > 500) return null;
+  if (!messageIds.every((id) => typeof id === "string")) return null;
+  return messageIds as string[];
+}
+
+// NOTE: all "/inbox/bulk/*" routes MUST be registered before "/inbox/:id/*"
+// routes below — Express matches routes in registration order, and
+// "/inbox/:id/read" would otherwise greedily match "/inbox/bulk/read" with
+// id="bulk", silently no-opping every bulk action.
+
+// Mark multiple messages as read — single batched query, not one round-trip
+// per id, so bulk-selecting hundreds of messages doesn't serialize into a
+// slow sequential loop.
+router.post(
+  "/inbox/bulk/read",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const messageIds = parseBulkMessageIds(req.body);
+      if (!messageIds) {
+        return res
+          .status(400)
+          .json({ error: "messageIds must be a non-empty array (max 500)" });
+      }
+
+      await db
+        .update(socialInboxMessages)
+        .set({ status: "read", readAt: new Date() })
+        .where(
+          and(
+            inArray(socialInboxMessages.id, messageIds),
+            eq(socialInboxMessages.userId, userId),
+          ),
+        );
+
+      res.json({ success: true, updated: messageIds.length });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to mark messages as read:");
+      res.status(500).json({ error: "Failed to mark messages as read" });
+    }
+  },
+);
+
+// Mark multiple messages as unread
+router.post(
+  "/inbox/bulk/unread",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const messageIds = parseBulkMessageIds(req.body);
+      if (!messageIds) {
+        return res
+          .status(400)
+          .json({ error: "messageIds must be a non-empty array (max 500)" });
+      }
+
+      await db
+        .update(socialInboxMessages)
+        .set({ status: "unread", readAt: null })
+        .where(
+          and(
+            inArray(socialInboxMessages.id, messageIds),
+            eq(socialInboxMessages.userId, userId),
+          ),
+        );
+
+      res.json({ success: true, updated: messageIds.length });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to mark messages as unread:");
+      res.status(500).json({ error: "Failed to mark messages as unread" });
+    }
+  },
+);
+
+// Archive multiple messages
+router.post(
+  "/inbox/bulk/archive",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const messageIds = parseBulkMessageIds(req.body);
+      if (!messageIds) {
+        return res
+          .status(400)
+          .json({ error: "messageIds must be a non-empty array (max 500)" });
+      }
+
+      await db
+        .update(socialInboxMessages)
+        .set({ status: "archived" })
+        .where(
+          and(
+            inArray(socialInboxMessages.id, messageIds),
+            eq(socialInboxMessages.userId, userId),
+          ),
+        );
+
+      res.json({ success: true, updated: messageIds.length });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to archive messages:");
+      res.status(500).json({ error: "Failed to archive messages" });
+    }
+  },
+);
+
+// Delete multiple messages permanently
+router.post(
+  "/inbox/bulk/delete",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const messageIds = parseBulkMessageIds(req.body);
+      if (!messageIds) {
+        return res
+          .status(400)
+          .json({ error: "messageIds must be a non-empty array (max 500)" });
+      }
+
+      await db
+        .delete(socialInboxMessages)
+        .where(
+          and(
+            inArray(socialInboxMessages.id, messageIds),
+            eq(socialInboxMessages.userId, userId),
+          ),
+        );
+
+      res.json({ success: true, deleted: messageIds.length });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to delete messages:");
+      res.status(500).json({ error: "Failed to delete messages" });
     }
   },
 );
@@ -1575,42 +1713,6 @@ router.post(
     } catch (error) {
       logger.warn({ err: error }, "Failed to mark message as read:");
       res.status(500).json({ error: "Failed to mark message as read" });
-    }
-  },
-);
-
-// Mark multiple messages as read
-router.post(
-  "/inbox/bulk/read",
-  requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const { messageIds } = req.body;
-
-      if (!Array.isArray(messageIds)) {
-        return res.status(400).json({ error: "messageIds must be an array" });
-      }
-
-      for (const id of messageIds) {
-        await db
-          .update(socialInboxMessages)
-          .set({
-            status: "read",
-            readAt: new Date(),
-          })
-          .where(
-            and(
-              eq(socialInboxMessages.id, id),
-              eq(socialInboxMessages.userId, userId),
-            ),
-          );
-      }
-
-      res.json({ success: true, updated: messageIds.length });
-    } catch (error) {
-      logger.warn({ err: error }, "Failed to mark messages as read:");
-      res.status(500).json({ error: "Failed to mark messages as read" });
     }
   },
 );
@@ -1660,11 +1762,23 @@ router.post(
         });
       }
 
+      // NOTE: there is no platform-side comment/DM reply delivery wired up
+      // yet (that requires a per-platform "reply to comment/message" API
+      // call using the connected account's OAuth token, which does not
+      // exist in this codebase). We persist the reply text itself (not just
+      // a status flag) so it is never silently discarded, and the response
+      // echoes it back so the client can keep it visible for the user to
+      // copy and send manually.
+      // Do NOT flip status to "replied" — that would misleadingly remove an
+      // undelivered draft from the actionable/unread work queue as if it
+      // were actually handled. Persist the draft text and a savedAt
+      // timestamp only; status changes only happen via explicit read/
+      // archive actions or (in the future) real delivery.
       await db
         .update(socialInboxMessages)
         .set({
-          status: "replied",
-          repliedAt: new Date(),
+          replyContent: content,
+          replyDelivered: false,
         })
         .where(
           and(
@@ -1675,13 +1789,16 @@ router.post(
 
       res.json({
         success: true,
+        delivered: false,
+        replyContent: content,
         outcome: {
           status: "success",
           category: "inbox",
-          title: "Reply Sent",
-          message: `Your reply to @${message?.authorHandle} on ${message?.platform} has been sent.`,
+          title: "Reply Saved (Not Sent to Platform)",
+          message: `Your reply to @${message?.authorHandle} was saved, but automatic delivery to ${message?.platform} is not available yet. Copy it below and send it manually from the ${message?.platform} app.`,
           platform: message.platform,
           author: message.authorHandle,
+          delivered: false,
         },
       });
     } catch (error) {
@@ -1692,7 +1809,7 @@ router.post(
           status: "error",
           category: "inbox",
           title: "Reply Failed",
-          message: "Failed to send your reply. Please try again.",
+          message: "Failed to save your reply. Please try again.",
           retryable: true,
         },
       });
@@ -1700,49 +1817,25 @@ router.post(
   },
 );
 
-// Assign message to team member
+// Assign message to team member — team collaboration is not implemented
+// (see GET /inbox/team, which truthfully reports enabled:false). This
+// endpoint must not accept a caller-supplied assignee and fake a
+// successful assignment; it explicitly refuses instead.
 router.post(
   "/inbox/:id/assign",
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const { id } = req.params as Record<string, string>;
-      const { assigneeId, assigneeName } = req.body;
-
-      await db
-        .update(socialInboxMessages)
-        .set({ assignedTo: assigneeId })
-        .where(
-          and(
-            eq(socialInboxMessages.id, id),
-            eq(socialInboxMessages.userId, userId),
-          ),
-        );
-
-      res.json({
-        success: true,
-        outcome: {
-          status: "success",
-          category: "inbox",
-          title: "Message Assigned",
-          message: `Message has been assigned to ${assigneeName || "team member"}.`,
-          assigneeName: assigneeName || "Team Member",
-        },
-      });
-    } catch (error) {
-      logger.warn({ err: error }, "Failed to assign message:");
-      res.status(500).json({
-        error: "Failed to assign message",
-        outcome: {
-          status: "error",
-          category: "inbox",
-          title: "Assignment Failed",
-          message: "Failed to assign the message. Please try again.",
-          retryable: true,
-        },
-      });
-    }
+  async (_req: AuthenticatedRequest, res: Response) => {
+    res.status(501).json({
+      error: "Team assignment is not available",
+      outcome: {
+        status: "error",
+        category: "inbox",
+        title: "Assignment Not Available",
+        message:
+          "Team collaboration is not available on this account yet, so messages cannot be assigned to a team member.",
+        retryable: false,
+      },
+    });
   },
 );
 
@@ -1773,31 +1866,180 @@ router.post(
   },
 );
 
-// Get reply templates - returns empty array when no templates exist
+// Default canned replies seeded for a user the first time they open the
+// reply-template picker with no saved templates of their own.
+const DEFAULT_REPLY_TEMPLATES: Array<{
+  name: string;
+  content: string;
+  category: string;
+}> = [
+  {
+    name: "Thank you",
+    content: "Thank you so much for the love — really appreciate you!",
+    category: "general",
+  },
+  {
+    name: "New release plug",
+    content: "Glad you're vibing with it! New music dropping soon, stay tuned.",
+    category: "promotional",
+  },
+  {
+    name: "Support follow-up",
+    content:
+      "Sorry for the trouble — send us a DM with more details and we'll get it sorted.",
+    category: "support",
+  },
+];
+
+// Get reply templates - backed by durable per-user storage; seeds a set of
+// default canned replies on first use so the picker is never empty for no
+// good reason, but stays truthfully empty if the user deletes them all.
 router.get(
   "/inbox/templates",
   requireAuth,
-  async (_req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response) => {
     try {
-      res.status(500).json({ error: "Internal server error" });
+      const userId = req.user!.id;
+
+      let templates = await db
+        .select()
+        .from(socialReplyTemplates)
+        .where(eq(socialReplyTemplates.userId, userId))
+        .orderBy(desc(socialReplyTemplates.createdAt))
+        .limit(100);
+
+      if (templates.length === 0) {
+        // Only seed defaults on a genuine first-ever use, tracked via a
+        // per-user flag — otherwise a user who deletes every template would
+        // see them reappear on the next page load.
+        const [user] = await db
+          .select({ preferences: users.preferences })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+        const prefs = (user?.preferences as Record<string, unknown>) || {};
+        const alreadySeeded = prefs?.socialReplyTemplatesSeeded === true;
+
+        if (!alreadySeeded) {
+          const seeded = await db
+            .insert(socialReplyTemplates)
+            .values(
+              DEFAULT_REPLY_TEMPLATES.map((t) => ({
+                userId,
+                name: t.name,
+                content: t.content,
+                category: t.category,
+              })),
+            )
+            .returning();
+          templates = seeded;
+
+          await db
+            .update(users)
+            .set({ preferences: { ...prefs, socialReplyTemplatesSeeded: true } })
+            .where(eq(users.id, userId));
+        }
+      }
+
+      res.json({
+        templates: templates.map((t) => ({
+          id: t.id,
+          name: t.name,
+          content: t.content,
+          category: t.category,
+        })),
+        total: templates.length,
+      });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get reply templates:");
-      res.status(500).json({ error: "Failed to get reply templates:" });
+      res.status(500).json({ error: "Failed to load reply templates" });
     }
   },
 );
 
-// Get team members for assignment - returns empty array when no team exists
+// Create a custom reply template
+router.post(
+  "/inbox/templates",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { name, content, category } = req.body || {};
+
+      if (!name || typeof name !== "string" || !name.trim()) {
+        return res.status(400).json({ error: "Template name is required" });
+      }
+      if (!content || typeof content !== "string" || !content.trim()) {
+        return res.status(400).json({ error: "Template content is required" });
+      }
+
+      const [template] = await db
+        .insert(socialReplyTemplates)
+        .values({
+          userId,
+          name: name.trim().slice(0, 100),
+          content: content.trim().slice(0, 2000),
+          category:
+            typeof category === "string" && category.trim()
+              ? category.trim().slice(0, 50)
+              : "general",
+        })
+        .returning();
+
+      res.status(201).json({
+        template: {
+          id: template.id,
+          name: template.name,
+          content: template.content,
+          category: template.category,
+        },
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to create reply template:");
+      res.status(500).json({ error: "Failed to create reply template" });
+    }
+  },
+);
+
+// Delete a custom reply template
+router.delete(
+  "/inbox/templates/:id",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { id } = req.params as Record<string, string>;
+
+      await db
+        .delete(socialReplyTemplates)
+        .where(
+          and(
+            eq(socialReplyTemplates.id, id),
+            eq(socialReplyTemplates.userId, userId),
+          ),
+        );
+
+      res.json({ success: true });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to delete reply template:");
+      res.status(500).json({ error: "Failed to delete reply template" });
+    }
+  },
+);
+
+// Get team members for assignment. This product has no multi-seat team
+// infrastructure (no team/member tables, invites, or roles) — rather than
+// fake a team feature or silently 500, tell the client the truth so the UI
+// can show an honest "not available" state instead of an empty picker.
 router.get(
   "/inbox/team",
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
-    try {
-      res.status(500).json({ error: "Internal server error" });
-    } catch (error) {
-      logger.warn({ err: error }, "Failed to get team members:");
-      res.status(500).json({ error: "Failed to get team members:" });
-    }
+    res.json({
+      enabled: false,
+      members: [],
+      reason: "Team collaboration is not available on this account yet.",
+    });
   },
 );
 
@@ -1926,7 +2168,7 @@ router.get(
       return res.json({ posts: allPosts, total: allPosts.length });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get unified calendar posts:");
-      return res.json({ posts: [], total: 0 });
+      return res.status(500).json({ error: "Failed to load calendar posts" });
     }
   },
 );
@@ -1951,7 +2193,9 @@ router.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get unified calendar campaigns:");
-      return res.json({ campaigns: [], total: 0 });
+      return res
+        .status(500)
+        .json({ error: "Failed to load calendar campaigns" });
     }
   },
 );
@@ -2072,7 +2316,7 @@ router.get(
       return res.json({ queue: queuedPosts, total: queuedPosts.length });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get unified calendar queue:");
-      return res.json({ queue: [], total: 0 });
+      return res.status(500).json({ error: "Failed to load calendar queue" });
     }
   },
 );

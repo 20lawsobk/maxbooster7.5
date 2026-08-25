@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Card,
   CardContent,
@@ -70,6 +71,8 @@ interface Message {
   };
   postContent?: string;
   postUrl?: string;
+  replyContent?: string | null;
+  replyDelivered?: boolean | null;
   sentiment: "positive" | "neutral" | "negative";
   priority: "high" | "medium" | "low";
   status: "unread" | "read" | "replied" | "archived" | "snoozed";
@@ -147,11 +150,161 @@ export function UnifiedInbox() {
   const [showSnoozeDialog, setShowSnoozeDialog] = useState(false);
   const [snoozeUntil, setSnoozeUntil] = useState("");
 
-  const { data: messagesData } = useQuery({
+  const {
+    data: messagesData,
+    isError: messagesError,
+    isFetching: messagesFetching,
+    refetch: refetchMessages,
+  } = useQuery({
     queryKey: ["/api/social/inbox"],
   });
 
+  const { data: templatesData } = useQuery({
+    queryKey: ["/api/social/inbox/templates"],
+  });
+  const templates: ReplyTemplate[] = templatesData?.templates || [];
+
+  const { data: teamData } = useQuery({
+    queryKey: ["/api/social/inbox/team"],
+  });
+  const teamEnabled = teamData?.enabled ?? false;
+  const teamMembers: TeamMember[] = teamData?.members || [];
+
   const messages: Message[] = messagesData?.messages || [];
+
+  const invalidateInbox = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/social/inbox"] });
+  };
+
+  const replyMutation = useMutation({
+    mutationFn: async ({ id, content }: { id: string; content: string }) => {
+      const res = await apiRequest("POST", `/api/social/inbox/${id}/reply`, {
+        content,
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: data?.outcome?.title || "Reply Saved",
+        description:
+          data?.outcome?.message ||
+          "Your reply was saved but not automatically delivered.",
+      });
+      // Delivery isn't automated yet, so keep the composed text visible
+      // (instead of clearing it) so the user can copy it and send it
+      // manually on the platform.
+      if (data?.delivered) {
+        setReplyContent("");
+      }
+      setSelectedMessage((prev) =>
+        prev
+          ? {
+              ...prev,
+              replyContent: data?.replyContent ?? prev.replyContent,
+              replyDelivered: !!data?.delivered,
+            }
+          : prev,
+      );
+      invalidateInbox();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Reply Failed",
+        description: error?.userMessage || "Failed to send your reply.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: async ({
+      id,
+      assigneeId,
+      assigneeName,
+    }: {
+      id: string;
+      assigneeId: string;
+      assigneeName: string;
+    }) => {
+      const res = await apiRequest("POST", `/api/social/inbox/${id}/assign`, {
+        assigneeId,
+        assigneeName,
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: data?.outcome?.title || "Message Assigned",
+        description: data?.outcome?.message || "Message has been assigned.",
+      });
+      setShowAssignDialog(false);
+      invalidateInbox();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Assignment Failed",
+        description: error?.userMessage || "Failed to assign the message.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("POST", `/api/social/inbox/${id}/archive`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Message Archived" });
+      invalidateInbox();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Archive Failed",
+        description: error?.userMessage || "Failed to archive the message.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkActionMutation = useMutation({
+    mutationFn: async ({
+      action,
+      messageIds,
+    }: {
+      action: "archive" | "read" | "unread" | "delete";
+      messageIds: string[];
+    }) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/social/inbox/bulk/${action}`,
+        { messageIds },
+      );
+      return res.json();
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Bulk Action Applied",
+        description: `${variables.messageIds.length} messages ${
+          variables.action === "archive"
+            ? "archived"
+            : variables.action === "read"
+              ? "marked as read"
+              : variables.action === "unread"
+                ? "marked as unread"
+                : "deleted"
+        }`,
+      });
+      invalidateInbox();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Bulk Action Failed",
+        description: error?.userMessage || "Failed to update messages.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const filteredMessages = messages.filter((msg: Message) => {
     if (activeTab === "unread" && msg.status !== "unread") return false;
@@ -207,21 +360,16 @@ export function UnifiedInbox() {
   const handleBulkAction = (
     action: "archive" | "read" | "unread" | "delete",
   ) => {
-    toast({
-      title: "Bulk Action Applied",
-      description: `${selectedMessages.length} messages ${action === "archive" ? "archived" : action === "read" ? "marked as read" : action === "unread" ? "marked as unread" : "deleted"}`,
-    });
-    setSelectedMessages([]);
+    if (selectedMessages.length === 0) return;
+    bulkActionMutation.mutate(
+      { action, messageIds: selectedMessages },
+      { onSuccess: () => setSelectedMessages([]) },
+    );
   };
 
   const handleReply = () => {
     if (!replyContent.trim() || !selectedMessage) return;
-
-    toast({
-      title: "Reply Sent",
-      description: `Your reply has been sent to @${selectedMessage.author.username}`,
-    });
-    setReplyContent("");
+    replyMutation.mutate({ id: selectedMessage.id, content: replyContent });
   };
 
   const handleTemplateSelect = (template: ReplyTemplate) => {
@@ -230,17 +378,23 @@ export function UnifiedInbox() {
   };
 
   const handleAssign = (teamMember: TeamMember) => {
-    toast({
-      title: "Message Assigned",
-      description: `Message assigned to ${teamMember.name}`,
+    if (!selectedMessage) return;
+    assignMutation.mutate({
+      id: selectedMessage.id,
+      assigneeId: teamMember.id,
+      assigneeName: teamMember.name,
     });
-    setShowAssignDialog(false);
   };
 
+  // Snoozing is UI-only preference (no server-side reminder scheduling
+  // exists for the inbox yet); be explicit about that rather than pretending
+  // a reminder will fire.
   const handleSnooze = () => {
     toast({
-      title: "Message Snoozed",
-      description: `Message snoozed until ${snoozeUntil}`,
+      title: "Snooze Not Available",
+      description:
+        "Snooze reminders aren't wired up to a backend scheduler yet — archive or reply instead.",
+      variant: "destructive",
     });
     setShowSnoozeDialog(false);
     setSnoozeUntil("");
@@ -278,6 +432,35 @@ export function UnifiedInbox() {
           Refresh
         </Button>
       </div>
+
+      {messagesError && (
+        <Card className="border-red-500/40 bg-red-500/10">
+          <CardContent className="p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+              <div>
+                <p className="font-medium text-red-500">
+                  Failed to load inbox messages
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  This is a loading error, not an empty inbox.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => refetchMessages()}
+              disabled={messagesFetching}
+            >
+              <RefreshCw
+                className={`w-4 h-4 mr-2 ${messagesFetching ? "animate-spin" : ""}`}
+              />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
@@ -471,7 +654,13 @@ export function UnifiedInbox() {
                           className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
                             message.status === "unread" ? "bg-primary/5" : ""
                           } ${selectedMessage?.id === message.id ? "bg-muted" : ""}`}
-                          onClick={() => setSelectedMessage(message)}
+                          onClick={() => {
+                            setSelectedMessage(message);
+                            // Restore any previously saved (but undelivered)
+                            // draft so the user's earlier reply text is
+                            // never lost when reopening the message.
+                            setReplyContent(message.replyContent || "");
+                          }}
                         >
                           <div className="flex items-start gap-3">
                             <Checkbox
@@ -641,16 +830,29 @@ export function UnifiedInbox() {
                           <Clock className="w-4 h-4 mr-2" />
                           Snooze
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Tag className="w-4 h-4 mr-2" />
-                          Add Tag
-                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            selectedMessage &&
+                            archiveMutation.mutate(selectedMessage.id)
+                          }
+                        >
                           <Archive className="w-4 h-4 mr-2" />
                           Archive
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-500">
+                        <DropdownMenuItem
+                          className="text-red-500"
+                          onClick={() =>
+                            selectedMessage &&
+                            bulkActionMutation.mutate(
+                              {
+                                action: "delete",
+                                messageIds: [selectedMessage.id],
+                              },
+                              { onSuccess: () => setSelectedMessage(null) },
+                            )
+                          }
+                        >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
@@ -707,12 +909,42 @@ export function UnifiedInbox() {
 
                     {showTemplates && (
                       <div className="p-3 border rounded-lg space-y-2 bg-muted/50">
-                        <p className="text-sm text-muted-foreground text-center py-2">
-                          No templates available. Connect your social accounts
-                          to get started.
-                        </p>
+                        {templates.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-2">
+                            No reply templates yet.
+                          </p>
+                        ) : (
+                          templates.map((template) => (
+                            <button
+                              key={template.id}
+                              type="button"
+                              onClick={() => handleTemplateSelect(template)}
+                              className="w-full text-left p-2 rounded hover:bg-muted transition-colors"
+                            >
+                              <p className="text-sm font-medium">
+                                {template.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {template.content}
+                              </p>
+                            </button>
+                          ))
+                        )}
                       </div>
                     )}
+
+                    {selectedMessage?.replyContent &&
+                      !selectedMessage?.replyDelivered && (
+                        <div className="flex items-start gap-2 p-2 rounded border border-amber-500/40 bg-amber-500/10 text-xs text-amber-700 dark:text-amber-400">
+                          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                          <span>
+                            This reply was saved but not automatically sent —
+                            automated delivery to {selectedMessage.platform}{" "}
+                            isn't available yet. Copy the text below and send
+                            it manually.
+                          </span>
+                        </div>
+                      )}
 
                     <Textarea
                       placeholder="Type your reply..."
@@ -723,11 +955,11 @@ export function UnifiedInbox() {
 
                     <Button
                       onClick={handleReply}
-                      disabled={!replyContent.trim()}
+                      disabled={!replyContent.trim() || replyMutation.isPending}
                       className="w-full"
                     >
                       <Send className="w-4 h-4 mr-2" />
-                      Send Reply
+                      {replyMutation.isPending ? "Save Reply..." : "Save Reply"}
                     </Button>
                   </div>
                 </CardContent>
@@ -753,10 +985,34 @@ export function UnifiedInbox() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No team members available. Add team members in your workspace
-              settings.
-            </p>
+            {!teamEnabled ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Team collaboration is not available on this account yet.
+              </p>
+            ) : teamMembers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No team members available. Add team members in your workspace
+                settings.
+              </p>
+            ) : (
+              teamMembers.map((member) => (
+                <button
+                  key={member.id}
+                  type="button"
+                  onClick={() => handleAssign(member)}
+                  disabled={assignMutation.isPending}
+                  className="w-full flex items-center gap-3 text-left p-2 rounded hover:bg-muted transition-colors"
+                >
+                  <User className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">{member.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {member.email}
+                    </p>
+                  </div>
+                </button>
+              ))
+            )}
           </div>
         </DialogContent>
       </Dialog>

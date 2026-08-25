@@ -185,11 +185,21 @@ export function UnifiedCalendar() {
     budget: 0,
   });
 
-  const { data: postsData } = useQuery({
+  const {
+    data: postsData,
+    isError: postsError,
+    isFetching: postsFetching,
+    refetch: refetchPosts,
+  } = useQuery({
     queryKey: ["/api/social/unified-calendar/posts"],
   });
 
-  const { data: campaignsData } = useQuery({
+  const {
+    data: campaignsData,
+    isError: campaignsError,
+    isFetching: campaignsFetching,
+    refetch: refetchCampaigns,
+  } = useQuery({
     queryKey: ["/api/social/unified-calendar/campaigns"],
   });
 
@@ -197,9 +207,25 @@ export function UnifiedCalendar() {
     queryKey: ["/api/social/unified-calendar/holidays"],
   });
 
-  const { data: queueData } = useQuery({
+  const {
+    data: queueData,
+    isError: queueError,
+    isFetching: queueFetching,
+    refetch: refetchQueue,
+  } = useQuery({
     queryKey: ["/api/social/unified-calendar/queue"],
   });
+
+  // Distinguish "the backend failed" from "there is legitimately nothing
+  // scheduled yet" — swallowing errors into empty arrays made outages look
+  // like an empty calendar.
+  const hasLoadError = postsError || campaignsError || queueError;
+  const isRetrying = postsFetching || campaignsFetching || queueFetching;
+  const retryFailedCalendarData = () => {
+    if (postsError) refetchPosts();
+    if (campaignsError) refetchCampaigns();
+    if (queueError) refetchQueue();
+  };
 
   const posts: ScheduledPost[] = postsData?.posts || [];
   const campaigns: Campaign[] = campaignsData?.campaigns || [];
@@ -801,6 +827,36 @@ export function UnifiedCalendar() {
           </Button>
         </div>
       </div>
+
+      {hasLoadError && (
+        <Card className="border-red-500/40 bg-red-500/10">
+          <CardContent className="p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+              <div>
+                <p className="font-medium text-red-500">
+                  Some calendar data failed to load
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  This is a loading error, not an empty calendar — your
+                  scheduled posts, campaigns, or queue may not be shown below.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={retryFailedCalendarData}
+              disabled={isRetrying}
+            >
+              <RefreshCw
+                className={`w-4 h-4 mr-2 ${isRetrying ? "animate-spin" : ""}`}
+              />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
