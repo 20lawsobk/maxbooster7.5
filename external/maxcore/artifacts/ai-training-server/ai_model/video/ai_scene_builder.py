@@ -331,6 +331,21 @@ def build_scenes(
 
     dna = build_dna(idea, genre, tone)
 
+    # ── Awareness-buffer camera-motion fallback ─────────────────────────────
+    # Only fills in when the caller left camera_motion unset/auto — explicit
+    # caller intent always wins. Bridges the same industry-peak signal that
+    # already reaches hooks/headlines/scene copy into the renderer's own
+    # camera-motion choice; self-retires as the video corpus grows (see
+    # quality_awareness.editing_pattern). Never-raise.
+    if not camera_motion or camera_motion.lower() == "auto":
+        try:
+            from ai_model.quality_awareness import editing_pattern
+            _pattern = editing_pattern(f"{idea}|{genre}|{tone}")
+            if _pattern and _pattern.get("camera_motion"):
+                camera_motion = _pattern["camera_motion"]
+        except Exception:  # noqa: BLE001 - awareness buffer must never break scene building
+            pass
+
     # ── Apply Veo-parity caller overrides to the derived DNA ────────────────
     # Never-raise: a bad value leaves the DNA at its genre-derived default.
     if seed_override is not None:

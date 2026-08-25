@@ -601,8 +601,21 @@ def _get_clip_duration(clip_path: str) -> float:
 
 
 def _xfade_transition_for_genre(genre: str) -> str:
-    """Map genre to an xfade transition type."""
+    """Map genre to an xfade transition type.
+
+    Prefers the live quality-awareness buffer's studied editing pattern when
+    active (self-retiring — its influence fades out as the video corpus
+    grows); falls back to the static genre heuristic otherwise or when the
+    buffer has nothing to say. Never lets buffer access break rendering.
+    """
     g = genre.lower()
+    try:
+        from ai_model.quality_awareness import editing_pattern
+        pattern = editing_pattern(g)
+        if pattern and pattern.get("transition"):
+            return pattern["transition"]
+    except Exception:  # noqa: BLE001 - awareness buffer must never break rendering
+        pass
     if any(k in g for k in ("trap", "drill", "phonk")):
         return "wipeleft"
     if any(k in g for k in ("lofi", "lo_fi", "lo-fi", "jazz", "rnb", "r&b")):

@@ -10,6 +10,9 @@ stored in pdim and blends it into generation:
     idea as hook_candidates() but with its own graduation corpus so image
     generation independently contributes to buffer retirement
   * brief_enrichment() — an extra directive + note for every GenerationBrief
+  * editing_pattern()  — transition-type and camera-motion preference for the
+    video renderer's own editing decisions, distilled from the same studied
+    genres/title-punchiness the buffer already uses elsewhere
 
 Self-sufficiency & retirement
 -----------------------------
@@ -321,6 +324,88 @@ def scene_phrases(scene_type: str) -> List[str]:
         return []
     n = max(1, math.ceil(len(bank) * suff["buffer_weight"]))
     return list(bank[:n])
+
+
+_TRANSITION_BY_GENRE_HINT: Dict[str, str] = {
+    "trap": "wipeleft", "drill": "wipeleft", "phonk": "wipeleft",
+    "lofi": "dissolve", "lo-fi": "dissolve", "lo_fi": "dissolve",
+    "jazz": "dissolve", "rnb": "dissolve", "r&b": "dissolve",
+    "cinematic": "circleopen",
+}
+
+
+def _stable_bucket(key: str) -> float:
+    """Deterministic pseudo-random value in [0, 1) from a string key.
+
+    Used to gate a borrowed editing signal by the retirement weight without
+    an RNG or extra per-call plumbing: the same seed_key always resolves the
+    same way (so one video's editing choices stay internally consistent),
+    while different seed_keys spread evenly across [0, 1) so the *fraction*
+    of calls that pick up the buffer signal tracks buffer_weight, mirroring
+    how scene_phrases() trims its bank by the same weight.
+    """
+    import hashlib
+    digest = hashlib.md5(key.encode("utf-8", "ignore")).hexdigest()
+    return (int(digest[:8], 16) % 10_000) / 10_000.0
+
+
+def editing_pattern(seed_key: str) -> Optional[Dict[str, Any]]:
+    """Transition-type and camera-motion preference for the video renderer's
+    own editing decisions, bridged from the same industry-peak signal that
+    already reaches hooks/headlines/scene copy — the "wiring" gap between
+    the awareness buffer and the render layer's genre/tone heuristics.
+
+    `seed_key` should be something stable per generation (e.g. idea/genre/
+    tone combined) so a single video's editing choices stay consistent, while
+    gating overall usage by the modality's self-retirement weight: as the
+    video corpus grows, buffer_weight decays toward 0 and this signal fades
+    out on its own, exactly like scene_phrases()/hook_candidates() — it can
+    never become a permanent dependency. Never-raise; returns None when
+    inactive, the buffer has nothing to say, or this call is weighted out.
+    """
+    suff = self_sufficiency()
+    if suff["retired"]:
+        return None
+    doc = get_doc()
+    if not doc:
+        return None
+    stats = doc.get("stats", {})
+    genres = stats.get("top_genres", [])
+    if not genres:
+        return None
+
+    weight = suff["buffer_weight"]
+    if _stable_bucket(seed_key or "") >= weight:
+        # Weighted out this call — genre/tone heuristics stay authoritative,
+        # the same fallback contract every other consumer of this buffer has.
+        return None
+
+    top_genre = str(genres[0]).lower()
+    transition: Optional[str] = None
+    for key, xfade in _TRANSITION_BY_GENRE_HINT.items():
+        if key in top_genre:
+            transition = xfade
+            break
+
+    camera: Optional[str] = None
+    try:
+        punchy = float(stats.get("punchy_title_ratio", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        punchy = 0.0
+    if punchy >= 0.5:
+        camera = "zoom_in"
+    elif punchy >= 0.25:
+        camera = "pan_left"
+
+    if not transition and not camera:
+        return None
+
+    return {
+        "transition": transition,
+        "camera_motion": camera,
+        "source_genre": top_genre,
+        "weight": weight,
+    }
 
 
 def hook_candidates(topic: str, artist: str) -> List[str]:
