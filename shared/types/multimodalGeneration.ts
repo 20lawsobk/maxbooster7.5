@@ -204,6 +204,7 @@ export interface GenerationRequest {
     length?: "short" | "medium" | "long";
     styleTags?: string[];
     language?: string;
+    tone?: string;
   };
 }
 

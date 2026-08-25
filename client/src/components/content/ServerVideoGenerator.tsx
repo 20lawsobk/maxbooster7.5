@@ -279,22 +279,6 @@ const PLATFORM_DEFAULT_RATIO: Record<string, string> = {
   threads: "1:1",
 };
 
-// Platform-specific visual templates — each platform has a distinct look & feel:
-//  TikTok/Reels: fast neon energy  |  YouTube: dark cinematic  |  LinkedIn: clean minimal
-//  Instagram: plasma promo  |  Twitter: punchy quick promo  |  Threads: storyteller
-//  Facebook: announcement  |  Google Business: gold luxury branding
-const PLATFORM_DEFAULT_TEMPLATE: Record<string, string> = {
-  tiktok: "neon_pulse",
-  instagram: "cinematic_promo",
-  instagram_reels: "neon_pulse",
-  youtube: "dark_cinema",
-  facebook: "announcement",
-  twitter: "promo",
-  linkedin: "elegant_minimal",
-  threads: "storyteller",
-  google_business: "gold_luxury",
-};
-
 export function ServerVideoGenerator({
   platform,
   topic: topicProp,
@@ -349,11 +333,9 @@ export function ServerVideoGenerator({
     useState<ImageAnalysisResponse | null>(null);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
 
-  // Voiceover
-  const [voiceover, setVoiceover] = useState(false);
-
-  // Photorealistic mode — MaxCore AI image + Ken Burns animation as the visual base
-  const [photorealistic, setPhotorealistic] = useState(false);
+  // Voiceover and photorealistic mode are auto-decided from the post's own
+  // context rather than manual toggles — see `autoVoiceover`/`autoPhotorealistic`
+  // computed below, next to the data they're derived from.
 
   // Music Video Studio mode state — beat-synced full-song AI video
   const [studioAudioFile, setStudioAudioFile] = useState<File | null>(null);
@@ -474,7 +456,13 @@ export function ServerVideoGenerator({
 
   const pollJobUntilDone = async (jobId: string): Promise<VideoJobData> => {
     activeJobIdRef.current = jobId;
-    const maxAttempts = 90; // 3 min budget (90 × 2s)
+    // Server-side render budget is 5 min (POLL_MAX_ATTEMPTS=150 × 2s in
+    // advancedVideoRendererService.ts) plus up to ~60s to cache the finished
+    // file locally before the job map is updated to "done". The client must
+    // outlast that worst case or it abandons a render the server is still
+    // legitimately completing. 210 × 2s = 7 min covers 5 min render + 60s
+    // caching + margin for network jitter.
+    const maxAttempts = 210; // 7 min budget (210 × 2s)
     let consecutiveErrors = 0;
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise((r) => setTimeout(r, 2000));
@@ -528,7 +516,8 @@ export function ServerVideoGenerator({
 
     // 45-second timeout on the initial POST — the server responds immediately
     // (job queued) so >45s means the server is unreachable or the session is
-    // stuck.  Polling has its own 120-second budget via maxAttempts.
+    // stuck. Polling has its own 7-minute budget via maxAttempts (see
+    // pollJobUntilDone) that outlasts the server's render + caching budget.
     userCancelledRef.current = false;
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -666,16 +655,18 @@ export function ServerVideoGenerator({
         initialBody?.trim() ||
         initialCta?.trim()
       );
-      const platformTemplate =
-        PLATFORM_DEFAULT_TEMPLATE[platform] || "cinematic_promo";
-      const chosenTemplate = initialTemplate || platformTemplate;
+      // Mirror the manual text-mode decision: only honor a template when the
+      // caller genuinely passed one explicitly. Without that, default to a
+      // real photorealistic visual instead of silently picking a generic
+      // platform template the user never chose.
+      const explicitTemplate = initialTemplate?.trim();
       callGenerateVideo({
         topic: topicProp.trim() || initialHook?.trim(),
         hook: initialHook || undefined,
         body: initialBody || undefined,
         cta: initialCta || undefined,
-        template: chosenTemplate,
-        quality: "cinematic",
+        template: explicitTemplate || undefined,
+        quality: explicitTemplate ? "cinematic" : "photorealistic",
         bg_color: initialBgColor || undefined,
         accent_color: initialAccentColor || undefined,
         voiceover: hasScript,
@@ -697,6 +688,15 @@ export function ServerVideoGenerator({
 
   // ── Text mode ────────────────────────────────────────────────────────────────
 
+  // Auto-decide voiceover from context: only add narration when there's
+  // actually a script to read (hook/body/cta). No script → nothing to narrate.
+  const autoVoiceoverForText = !!(hook.trim() || body.trim() || cta.trim());
+  // Auto-decide photorealistic from context: it's the AI-photo alternative to
+  // a picked motion-graphics template. If the user explicitly chose a
+  // template, honor that choice; otherwise a free-form topic defaults to a
+  // real photorealistic visual instead of a generic template look.
+  const autoPhotorealisticForText = !useTemplate;
+
   const handleGenerateFromText = async () => {
     const topic = textTopic.trim() || topicProp.trim();
     if (!topic && !hook) {
@@ -707,6 +707,8 @@ export function ServerVideoGenerator({
       });
       return;
     }
+    const photorealistic = autoPhotorealisticForText;
+    const voiceover = autoVoiceoverForText;
     await callGenerateVideo({
       topic: topic || hook,
       hook: hook || undefined,
@@ -772,13 +774,16 @@ export function ServerVideoGenerator({
       return;
     }
     const vc: VideoConfig = audioAnalysis.video_config || {};
+    // Real uploaded audio already anchors the video to real content — use a
+    // photorealistic visual base to match. No script field in this mode, so
+    // there's nothing to narrate: the uploaded track is the audio track.
     await callGenerateVideo({
       topic: vc.topic || audioAnalysis.seed?.topic || "music",
       tone: vc.tone || tone,
       bg_color: vc.bg,
       accent_color: vc.ac,
-      quality: photorealistic ? "photorealistic" : undefined,
-      voiceover,
+      quality: "photorealistic",
+      voiceover: false,
     });
   };
 
@@ -837,13 +842,16 @@ export function ServerVideoGenerator({
       return;
     }
     const vc: VideoConfig = imageAnalysis.video_config || {};
+    // Real uploaded image already anchors the video to a real photo — use a
+    // photorealistic visual base to match. No script field in this mode, so
+    // there's nothing to narrate.
     await callGenerateVideo({
       topic: vc.topic || imageAnalysis.seed?.topic || "music aesthetic",
       tone: vc.tone || tone,
       bg_color: vc.bg,
       accent_color: vc.ac,
-      quality: photorealistic ? "photorealistic" : undefined,
-      voiceover,
+      quality: "photorealistic",
+      voiceover: false,
     });
   };
 
@@ -1703,33 +1711,45 @@ export function ServerVideoGenerator({
                 />
               </div>
 
-              {/* Voiceover + Photorealistic toggles */}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setVoiceover(!voiceover)}
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                    voiceover
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border text-muted-foreground hover:border-primary/50"
-                  }`}
-                >
-                  <Mic className="h-3 w-3" />
-                  {voiceover ? "Voiceover: ON" : "Add voiceover"}
-                </button>
+              {/* Voiceover + photorealistic are auto-decided from context (not manual
+                  toggles) — this readout shows what will be applied and why. */}
+              {inputMode !== "studio" && (
+                <div className="flex flex-wrap gap-2">
+                  <span
+                    className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border ${
+                      (inputMode === "text" ? autoVoiceoverForText : false)
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border text-muted-foreground"
+                    }`}
+                    title={
+                      inputMode === "text"
+                        ? autoVoiceoverForText
+                          ? "Your hook/body/CTA script will be narrated automatically."
+                          : "Add a hook, body, or CTA to have it narrated automatically."
+                        : "No script to narrate for this content type."
+                    }
+                  >
+                    <Mic className="h-3 w-3" />
+                    {(inputMode === "text" ? autoVoiceoverForText : false)
+                      ? "Voiceover: auto-applied"
+                      : "Voiceover: not needed"}
+                  </span>
 
-                <button
-                  onClick={() => setPhotorealistic(!photorealistic)}
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                    photorealistic
-                      ? "border-violet-500 bg-violet-500/10 text-violet-500"
-                      : "border-border text-muted-foreground hover:border-violet-500/50"
-                  }`}
-                  title="Use MaxCore AI to generate a photorealistic background image animated with a cinematic zoom effect"
-                >
-                  <Camera className="h-3 w-3" />
-                  {photorealistic ? "Photorealistic: ON" : "Photorealistic (AI photo)"}
-                </button>
-              </div>
+                  <span
+                    className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border ${
+                      (inputMode === "text" ? autoPhotorealisticForText : true)
+                        ? "border-violet-500 bg-violet-500/10 text-violet-500"
+                        : "border-border text-muted-foreground"
+                    }`}
+                    title="MaxCore AI photorealistic visuals are used automatically unless a specific template is chosen."
+                  >
+                    <Camera className="h-3 w-3" />
+                    {(inputMode === "text" ? autoPhotorealisticForText : true)
+                      ? "Photorealistic: auto-applied"
+                      : "Using selected template"}
+                  </span>
+                </div>
+              )}
 
               {/* Generate button */}
               <Button

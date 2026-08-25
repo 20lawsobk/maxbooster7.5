@@ -908,6 +908,7 @@ export default function SocialMedia() {
       platforms: string[];
       targetAudience: string;
       format: string;
+      tone: string;
     }) => {
       const mappedPlatforms = [
         ...new Set(data.platforms.flatMap(expandPlatform)),
@@ -920,7 +921,11 @@ export default function SocialMedia() {
         },
         platforms: mappedPlatforms.length > 0 ? mappedPlatforms : ["instagram"],
         intent: data.targetAudience || undefined,
-        constraints: { outputModality, styleTags: [outputModality] },
+        constraints: {
+          outputModality,
+          styleTags: [outputModality],
+          tone: data.tone || undefined,
+        },
       });
       return response.json();
     },
@@ -1480,6 +1485,7 @@ export default function SocialMedia() {
       platforms: selectedPlatforms,
       targetAudience: targetAudience,
       format: contentFormat,
+      tone: selectedTone,
     });
   };
 
@@ -2640,6 +2646,31 @@ export default function SocialMedia() {
                       </div>
 
                       <div>
+                        <Label>Content Tone</Label>
+                        <Select
+                          value={selectedTone}
+                          onValueChange={setSelectedTone}
+                        >
+                          <SelectTrigger data-testid="select-url-tone">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="professional">
+                              Professional
+                            </SelectItem>
+                            <SelectItem value="casual">Casual</SelectItem>
+                            <SelectItem value="funny">Funny</SelectItem>
+                            <SelectItem value="inspirational">
+                              Inspirational
+                            </SelectItem>
+                            <SelectItem value="promotional">
+                              Promotional
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
                         <Label>Content Format</Label>
                         <Select
                           value={contentFormat}
@@ -2958,7 +2989,11 @@ export default function SocialMedia() {
                                               ? "music_video"
                                               : item.genre === "edm"
                                                 ? "neon_pulse"
-                                                : "cinematic_promo"
+                                                // No recognized genre signal — leave
+                                                // unset so the generator defaults to
+                                                // a photorealistic visual instead of
+                                                // silently forcing a generic template.
+                                                : undefined
                                       }
                                       initialBgColor={item.bg_color || ""}
                                       initialAccentColor={

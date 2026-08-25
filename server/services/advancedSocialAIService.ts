@@ -1801,7 +1801,19 @@ class AdvancedSocialAIService {
       if (!platform) continue;
 
       let content = `${hook}\n\n${body}\n\n${cta}`;
-      const platformHashtags = hashtags.slice(0, platform.hashtagRange.max);
+      // Calibrate the count per platform instead of always maxing out the
+      // range: platforms where hashtags matter less for reach (hashtagWeight
+      // close to 0, e.g. Google Business, Threads, Facebook) target near the
+      // platform minimum, while discovery-driven platforms (hashtagWeight
+      // close to 1, e.g. Instagram, TikTok) target near the platform maximum.
+      const { min: tagMin, max: tagMax } = platform.hashtagRange;
+      const idealTagCount = Math.round(
+        tagMin + (tagMax - tagMin) * platform.hashtagWeight,
+      );
+      const platformHashtags = hashtags.slice(
+        0,
+        Math.max(tagMin, Math.min(idealTagCount, tagMax, hashtags.length)),
+      );
 
       if (platformHashtags.length > 0) {
         content += "\n\n" + platformHashtags.join(" ");

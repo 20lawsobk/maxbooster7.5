@@ -3392,7 +3392,10 @@ router.post(
             await getRenderAdvancedVideo()
           )({
             ...videoParams,
-            template: template || "cinematic_promo",
+            // Preserve an intentionally-absent template: the client omits it
+            // to signal "use a photorealistic visual base", not "pick one
+            // for me". Forcing a default here would silently defeat that.
+            template: template || undefined,
           });
 
           if (result?.success) {

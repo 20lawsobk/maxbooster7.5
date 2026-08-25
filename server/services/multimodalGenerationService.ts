@@ -2526,7 +2526,8 @@ const textWorker = {
         (normalized as any).targetAudience ??
         semantic.target_audience ??
         undefined;
-      const resolvedTone = userCtx.contentTone ?? req.intent ?? "professional";
+      const resolvedTone =
+        req.constraints?.tone ?? userCtx.contentTone ?? req.intent ?? "professional";
       // Merge preferred hashtags: DB list first, then any from normalized (deduplicated)
       const dbHashtags = userCtx.preferredHashtags ?? [];
       const normHashtags =
