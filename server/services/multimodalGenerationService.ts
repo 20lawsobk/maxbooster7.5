@@ -2255,6 +2255,18 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
       : "text";
 
     if (outputModality === "image") {
+      // Always include a text step so the URL-extracted topic/hook is returned
+      // in data.assets — the client uses it to seed the image generator topic,
+      // the same way the video path seeds ServerVideoGenerator.
+      for (const platform of req.platforms) {
+        steps.push({
+          id: `step_text_${platform}`,
+          type: "generate",
+          worker: "text",
+          inputFrom: "normalizedInput",
+          params: buildStepParamsForPlatform(platform, "text"),
+        });
+      }
       const imageSlots = req.platforms.map((p) => ({
         id: `${p}_image`,
         platform: p,

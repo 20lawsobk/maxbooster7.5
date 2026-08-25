@@ -334,7 +334,7 @@ export function ServerVideoGenerator({
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
 
   // Voiceover and photorealistic mode are auto-decided from the post's own
-  // context rather than manual toggles — see `autoVoiceover`/`autoPhotorealistic`
+  // context rather than manual toggles — see `autoVoiceoverForText`/`autoPhotorealisticForText`
   // computed below, next to the data they're derived from.
 
   // Music Video Studio mode state — beat-synced full-song AI video

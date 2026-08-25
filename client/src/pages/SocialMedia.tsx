@@ -700,11 +700,52 @@ export default function SocialMedia() {
   const expandPlatform = (id: string): string[] => {
     if (id === "meta") return ["facebook", "instagram"];
     if (id === "googlebusiness") return ["google_business"];
+    if (id === "x") return ["twitter"];
     return [id];
   };
   const fromMultimodalPlatform = (id: string): string => {
     if (id === "google_business") return "google_business";
     return id;
+  };
+  // AIImageGenerator only supports a fixed platform set — map anything else
+  // (meta, google_business, etc.) to the closest supported platform instead of
+  // passing through an unsupported id via a blind cast.
+  const toImageGeneratorPlatform = (id: string): AIImagePlatform => {
+    const supported: AIImagePlatform[] = [
+      "instagram",
+      "instagram_reels",
+      "tiktok",
+      "youtube",
+      "facebook",
+      "twitter",
+      "linkedin",
+      "threads",
+    ];
+    if (id === "meta") return "instagram";
+    if (id === "google_business") return "facebook";
+    if (id === "x") return "twitter";
+    return (supported as string[]).includes(id)
+      ? (id as AIImagePlatform)
+      : "instagram";
+  };
+  // AIImageGenerator's tone set is narrower than the post-tone selector's
+  // (professional/casual/funny/inspirational/promotional); map to the closest
+  // supported tone instead of casting unsupported values through.
+  const toImageGeneratorTone = (tone: string): ImageTone => {
+    switch (tone) {
+      case "professional":
+        return "professional";
+      case "casual":
+        return "playful";
+      case "funny":
+        return "playful";
+      case "inspirational":
+        return "dramatic";
+      case "promotional":
+        return "energetic";
+      default:
+        return "energetic";
+    }
   };
   const mapAssetsToGeneratedContent = (
     assets: MultimodalAsset[],
@@ -981,6 +1022,34 @@ export default function SocialMedia() {
         });
       }
 
+      // Image: always route through the same AIImageGenerator the main Post
+      // Generator uses instead of the generic multimodal image output, so URL
+      // posts get the same quality. Ignore any image asset the generic worker
+      // may have produced and inject a synthetic (mediaUrl-less) item per
+      // platform, seeded with the URL-extracted topic/hook, so the real
+      // generator always surfaces — mirrors the video handling above.
+      if (outputModality === "image") {
+        const platforms =
+          selectedPlatforms.length > 0 ? selectedPlatforms : ["instagram"];
+        const textAssets = mapAssetsToGeneratedContent(data.assets, "text");
+        generatedContent = platforms.map((pid) => {
+          const asset =
+            textAssets.find((a) => a.platform === pid) || textAssets[0];
+          return {
+            platform: pid,
+            content: asset?.content || "",
+            format: "image",
+            mediaUrl: undefined,
+            source: "python_ai_model",
+            extractedTitle:
+              asset?.hook?.slice(0, 80) ||
+              asset?.extractedTitle?.slice(0, 80) ||
+              asset?.content?.slice(0, 80) ||
+              "",
+          } as GeneratedContent;
+        });
+      }
+
       // Audio: if MaxCore audio generation is unavailable and no audio assets came
       // back, inject a synthetic item per platform so the voiceover-script fallback UI
       // renders instead of a silent blank.
@@ -1008,7 +1077,37 @@ export default function SocialMedia() {
       });
       setIsGeneratingFromUrl(false);
     },
-    onError: () => {
+    onError: (_error, variables) => {
+      // Image: MaxCore-only image generation throws (503) instead of returning
+      // an empty asset list, unlike video. Still surface AIImageGenerator per
+      // platform (seeded from the URL/target-audience context we have) instead
+      // of leaving the user with a dead end.
+      if (variables?.format === "image") {
+        const platforms =
+          selectedPlatforms.length > 0 ? selectedPlatforms : ["instagram"];
+        const fallbackTopic = variables.targetAudience || variables.url || "";
+        setUrlGeneratedContent(
+          platforms.map(
+            (pid) =>
+              ({
+                platform: pid,
+                content: "",
+                format: "image",
+                mediaUrl: undefined,
+                source: "python_ai_model",
+                extractedTitle: fallbackTopic,
+              }) as GeneratedContent,
+          ),
+        );
+        toast({
+          title: "Generate Your Image",
+          description:
+            "Automatic extraction wasn't available — use the image generator below.",
+        });
+        setIsGeneratingFromUrl(false);
+        return;
+      }
+
       toast({
         title: "Generation Failed",
         description:
@@ -2194,12 +2293,11 @@ export default function SocialMedia() {
                         </div>
 
                         <AIImageGenerator
-                          platform={
-                            (selectedPlatforms[0] ||
-                              "instagram") as AIImagePlatform
-                          }
+                          platform={toImageGeneratorPlatform(
+                            selectedPlatforms[0] || "instagram",
+                          )}
                           topic={postContent || ""}
-                          tone={selectedTone as ImageTone}
+                          tone={toImageGeneratorTone(selectedTone)}
                           goal="growth"
                           artistName={userDisplayName || user?.username || ""}
                           endpoint="/api/social/generate-image"
@@ -2994,6 +3092,43 @@ export default function SocialMedia() {
                                       src={item.mediaUrl}
                                       alt="Generated content"
                                       className="max-w-full h-auto rounded-lg border"
+                                    />
+                                  </div>
+                                ) : item.format === "image" &&
+                                  !item.mediaUrl ? (
+                                  <div className="mb-2">
+                                    <AIImageGenerator
+                                      platform={toImageGeneratorPlatform(
+                                        item.platform || "instagram",
+                                      )}
+                                      topic={
+                                        item.extractedTitle ||
+                                        item.content ||
+                                        "New music"
+                                      }
+                                      tone={toImageGeneratorTone(selectedTone)}
+                                      goal="growth"
+                                      artistName={
+                                        item.artist_name ||
+                                        userDisplayName ||
+                                        user?.username ||
+                                        ""
+                                      }
+                                      endpoint="/api/social/generate-image"
+                                      onImageGenerated={(url) => {
+                                        setUrlGeneratedContent((prev) => {
+                                          const updated = [...prev];
+                                          updated[index] = {
+                                            ...updated[index],
+                                            mediaUrl: url,
+                                          };
+                                          return updated;
+                                        });
+                                        toast({
+                                          title: "Image Ready!",
+                                          description: `Image generated for ${platform?.name || item.platform}.`,
+                                        });
+                                      }}
                                     />
                                   </div>
                                 ) : item.format === "audio" && item.mediaUrl ? (
