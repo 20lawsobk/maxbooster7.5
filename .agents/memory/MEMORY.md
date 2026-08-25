@@ -93,4 +93,5 @@
 - [Shared compute-sizing source](shared-compute-sizing.md) — server/computeSizing.ts is the ONE place that reads os.cpus()/freemem() for worker/lane sizing; cluster.ts, maxcoreLocalSupervisor.ts, and HyperGPU (via env) all derive from it
 - [Pocket-backed elastic compute](pocket-elastic-compute.md) — PocketFabric node lifecycles and MaxCore GPU lives are uncapped logical resources backed by compressed pocket state
 - [Awareness conditioning contract](awareness-conditioning-contract.md) — every model seam uses the shared cascade, and media coalescing identities include effective awareness
+- [Diffusion trainer invocation + memory ceiling](diffusion-trainer-invocation.md) — synthesizer.py needs `-m diffusion.synthesizer` (relative imports), and training OOMs in the shared dev container (needs the Reserved VM)
 - [Honest-placeholder control checklist](honest-placeholder-controls.md) — a "fixed" placeholder endpoint isn't done until: static routes registered before conflicting `:id` routes, user input actually persisted (not discarded), status only flips to a terminal value on real success, and the GET/list DTO echoes back what was saved so a reload doesn't lose it

@@ -22,6 +22,12 @@ const __filename = __metaUrl
 const __dirname = path?.dirname(__filename);
 
 const SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
+// synthesizer.py uses package-relative imports (`from .scheduler import ...`),
+// so it must run as `python -m diffusion.synthesizer` with cwd=__dirname
+// (the parent of the diffusion/ package) — invoking the .py path directly
+// makes Python treat it as a standalone script with no package context and
+// every relative import fails at startup.
+const SYNTH_MODULE = "diffusion.synthesizer";
 
 const WEIGHTS_PATH = path?.join(__dirname, "diffusion", "weights.npz");
 const META_PATH = path?.join(__dirname, "diffusion", "meta.json");
@@ -100,11 +106,14 @@ export function trainDiffusionModel(
   } = {},
 ): Promise<TrainingStatus> {
   return new Promise((resolve, reject) => {
-    const args = [SYNTH_SCRIPT, "--train-only", "--tier", opts?.tier ?? "quick"];
+    const args = ["-m", SYNTH_MODULE, "--train-only", "--tier", opts?.tier ?? "quick"];
     if (opts?.nSamples) args?.push("--samples", String(opts?.nSamples));
     if (opts?.nEpochs) args?.push("--epochs", String(opts?.nEpochs));
 
-    const proc = spawn(PYTHON, args, { stdio: ["ignore", "pipe", "pipe"] });
+    const proc = spawn(PYTHON, args, {
+      stdio: ["ignore", "pipe", "pipe"],
+      cwd: __dirname,
+    });
 
     proc?.stdout.on("data", (d) => {
       const line = d?.toString().trim();
@@ -150,7 +159,8 @@ export function generateDiffusionFrames(
     fs?.mkdirSync(outDir, { recursive: true });
 
     const args: string[] = [
-      SYNTH_SCRIPT,
+      "-m",
+      SYNTH_MODULE,
       prompt || `${genre} music video`,
       "--genre",
       genre,
