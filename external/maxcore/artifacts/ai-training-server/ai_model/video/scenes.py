@@ -611,8 +611,14 @@ def _xfade_transition_for_genre(genre: str) -> str:
     g = genre.lower()
     try:
         from ai_model.quality_awareness import editing_pattern
-        pattern = editing_pattern(g)
+        pattern = editing_pattern(g, modality="video")
         if pattern and pattern.get("transition"):
+            import logging
+            logging.getLogger("quality_awareness").info(
+                "[Awareness] video transition applied buffer genre=%s "
+                "transition=%s (weight=%.2f)", pattern.get("source_genre"),
+                pattern["transition"], pattern.get("weight", 0.0),
+            )
             return pattern["transition"]
     except Exception:  # noqa: BLE001 - awareness buffer must never break rendering
         pass
@@ -646,7 +652,15 @@ def _composite_xfade(
     if n < 2:
         return False
 
-    xfade_type = _xfade_transition_for_genre(genre) if genre else "fade"
+    # Respect an explicit, already-resolved caller transition (e.g. callers
+    # that derive it themselves from DNA darkness/energy) instead of always
+    # silently overwriting it with the genre/buffer heuristic below — only
+    # the "auto"/unset sentinel defers to genre. This mirrors camera_motion's
+    # existing explicit-caller-wins convention in ai_scene_builder.
+    if transition and transition not in ("auto", ""):
+        xfade_type = transition
+    else:
+        xfade_type = _xfade_transition_for_genre(genre) if genre else "fade"
     td = max(0.1, min(float(transition_dur), 1.0))
 
     # Get durations for offset calculation

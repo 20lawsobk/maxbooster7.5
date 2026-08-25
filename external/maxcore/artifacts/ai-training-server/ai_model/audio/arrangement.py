@@ -122,7 +122,7 @@ def _grammar_for(genre: Optional[str], mood: Optional[str],
     retired = True
     try:
         from ai_model.quality_awareness import self_sufficiency
-        retired = bool(self_sufficiency().get("retired"))
+        retired = bool(self_sufficiency("audio").get("retired"))
     except Exception:
         retired = True  # awareness unavailable → only the safety net
     if retired:
@@ -149,10 +149,16 @@ def _grammar_for(genre: Optional[str], mood: Optional[str],
     # second, uncoordinated retirement path.
     try:
         from ai_model.quality_awareness import editing_pattern
-        _pattern = editing_pattern(seed_key or "|".join(candidates))
+        _pattern = editing_pattern(seed_key or "|".join(candidates), modality="audio")
         if _pattern and _pattern.get("source_genre"):
             fam = _GENRE_FAMILY.get(_pattern["source_genre"])
             if fam:
+                import logging
+                logging.getLogger("quality_awareness").info(
+                    "[Awareness] audio arrangement applied buffer genre=%s "
+                    "(weight=%.2f)", _pattern["source_genre"],
+                    _pattern.get("weight", 0.0),
+                )
                 return list(_GENRE_GRAMMARS[fam])
     except Exception:  # noqa: BLE001 - awareness buffer must never break arrangement
         pass

@@ -340,9 +340,15 @@ def build_scenes(
     if not camera_motion or camera_motion.lower() == "auto":
         try:
             from ai_model.quality_awareness import editing_pattern
-            _pattern = editing_pattern(f"{idea}|{genre}|{tone}")
+            _pattern = editing_pattern(f"{idea}|{genre}|{tone}", modality="video")
             if _pattern and _pattern.get("camera_motion"):
                 camera_motion = _pattern["camera_motion"]
+                import logging
+                logging.getLogger("quality_awareness").info(
+                    "[Awareness] video camera_motion applied buffer genre=%s "
+                    "camera_motion=%s (weight=%.2f)", _pattern.get("source_genre"),
+                    camera_motion, _pattern.get("weight", 0.0),
+                )
         except Exception:  # noqa: BLE001 - awareness buffer must never break scene building
             pass
 

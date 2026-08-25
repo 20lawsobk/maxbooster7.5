@@ -8279,6 +8279,14 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
     style_tags  = constraints.get("styleTags") or step.get("params", {}).get("styleTags", ["cinematic"])
     if isinstance(style_tags, str):
         style_tags = [style_tags]
+    # Explicit caller intent (constraints/step params, or style/video_style
+    # below) must always win over the awareness buffer's own style-tag
+    # suggestion further down — never silently override what was actually
+    # requested.
+    _explicit_style_tags = bool(
+        constraints.get("styleTags") or step.get("params", {}).get("styleTags")
+        or req.style or req.video_style
+    )
     # MaxBooster single-frame requests pass style/video_style directly
     for _extra_style in (req.style, req.video_style):
         if _extra_style and _extra_style not in style_tags:
@@ -8372,14 +8380,23 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
         # transition/camera-motion choices into the image renderer's own
         # style tags — self-retiring as the video/image corpus grows (see
         # quality_awareness.editing_pattern). Never-raise.
-        try:
-            from ai_model.quality_awareness import editing_pattern as _editing_pattern
-            _img_pattern = _editing_pattern(f"{topic}|{req.genre}|{slot_id}")
-            if _img_pattern and _img_pattern.get("style_tag") \
-                    and _img_pattern["style_tag"] not in slot_style_tags:
-                slot_style_tags.append(_img_pattern["style_tag"])
-        except Exception:  # noqa: BLE001 - awareness buffer must never break image generation
-            pass
+        if not _explicit_style_tags:
+            try:
+                from ai_model.quality_awareness import editing_pattern as _editing_pattern
+                _img_pattern = _editing_pattern(
+                    f"{topic}|{req.genre}|{slot_id}", modality="image",
+                )
+                if _img_pattern and _img_pattern.get("style_tag") \
+                        and _img_pattern["style_tag"] not in slot_style_tags:
+                    slot_style_tags.append(_img_pattern["style_tag"])
+                    _srv_logger.info(
+                        "[Awareness] image slot=%s applied buffer style_tag=%s "
+                        "(genre=%s weight=%.2f)", slot_id,
+                        _img_pattern["style_tag"], _img_pattern.get("source_genre"),
+                        _img_pattern.get("weight", 0.0),
+                    )
+            except Exception:  # noqa: BLE001 - awareness buffer must never break image generation
+                pass
 
         if _visual_spec_agent:
             try:

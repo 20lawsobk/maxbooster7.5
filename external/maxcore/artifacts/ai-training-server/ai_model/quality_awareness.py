@@ -106,15 +106,73 @@ def _own_corpus_size() -> int:
     return total
 
 
-def self_sufficiency() -> Dict[str, Any]:
-    own = _own_corpus_size()
-    threshold = retire_threshold()
+# Modalities that track their own graduation corpus today (see graduate_hook /
+# graduate_image_headline). Video/audio have no dedicated corpus of their own
+# yet, so they fall back to the combined corpus below — documented rather than
+# silently pretending a per-modality signal exists where none is graduated.
+_MODALITY_CORPUS_PREFIX: Dict[str, str] = {
+    "text": "phrases:hook",
+    "hook": "phrases:hook",
+    "image": "phrases:image_headline",
+    "image_headline": "phrases:image_headline",
+}
+
+
+def _modality_corpus_size(modality: str) -> int:
+    """Size of a single modality's own graduated corpus (`mb:<prefix>`).
+
+    Falls back to the combined `_own_corpus_size()` for modalities with no
+    dedicated corpus key (currently video/audio) — same never-raise, TTL-
+    cached contract as `_own_corpus_size`.
+    """
+    prefix = _MODALITY_CORPUS_PREFIX.get(modality)
+    if not prefix:
+        return _own_corpus_size()
+    store = _store()
+    if store is None:
+        return _own_corpus_size()
+    try:
+        return int(store.llen(prefix))
+    except Exception:  # noqa: BLE001 - buffer must never break generation
+        return _own_corpus_size()
+
+
+def _modality_retire_threshold(modality: Optional[str]) -> int:
+    """Per-modality retirement threshold, e.g. MB_AWARENESS_RETIRE_AT_IMAGE.
+    Falls back to the global MB_AWARENESS_RETIRE_AT when unset or invalid."""
+    if modality:
+        env_key = f"MB_AWARENESS_RETIRE_AT_{modality.upper()}"
+        raw = os.environ.get(env_key)
+        if raw:
+            try:
+                return max(1, int(raw))
+            except ValueError:
+                pass
+    return retire_threshold()
+
+
+def self_sufficiency(modality: Optional[str] = None) -> Dict[str, Any]:
+    """Self-sufficiency/retirement state, optionally scoped to one modality.
+
+    With no argument, behaves exactly as before (global corpus + global
+    threshold) — every pre-existing caller (scene_phrases, hook_candidates,
+    image_headline_candidates, brief_enrichment) is unaffected. Passing a
+    modality (``"video"``, ``"image"``, ``"audio"``, ``"text"``) lets that
+    modality retire the buffer's influence on its OWN pace: e.g. an app with
+    thousands of generated images but few full videos won't have images
+    dragging out video's retirement or vice versa. Modalities with no
+    dedicated graduation corpus yet (video/audio) currently measure against
+    the combined corpus until they get one — see _MODALITY_CORPUS_PREFIX.
+    """
+    own = _modality_corpus_size(modality) if modality else _own_corpus_size()
+    threshold = _modality_retire_threshold(modality)
     weight = max(0.0, 1.0 - own / threshold)
     return {
         "own_corpus": own,
         "retire_threshold": threshold,
         "buffer_weight": round(weight, 3),
         "retired": weight <= 0.0,
+        "modality": modality,
     }
 
 
@@ -359,7 +417,7 @@ def _stable_bucket(key: str) -> float:
     return (int(digest[:8], 16) % 10_000) / 10_000.0
 
 
-def editing_pattern(seed_key: str) -> Optional[Dict[str, Any]]:
+def editing_pattern(seed_key: str, modality: str = "video") -> Optional[Dict[str, Any]]:
     """Transition-type and camera-motion preference for the video renderer's
     own editing decisions, bridged from the same industry-peak signal that
     already reaches hooks/headlines/scene copy — the "wiring" gap between
@@ -373,7 +431,7 @@ def editing_pattern(seed_key: str) -> Optional[Dict[str, Any]]:
     never become a permanent dependency. Never-raise; returns None when
     inactive, the buffer has nothing to say, or this call is weighted out.
     """
-    suff = self_sufficiency()
+    suff = self_sufficiency(modality)
     if suff["retired"]:
         return None
     doc = get_doc()
