@@ -574,7 +574,7 @@ export default function StorefrontBuilder() {
           : "Your storefront has been hidden from the marketplace.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/storefront/my"] });
-      if (selectedStorefront.id === variables.storefrontId) {
+      if (selectedStorefront?.id === variables.storefrontId) {
         setSelectedStorefront({
           ...selectedStorefront,
           isPublic: variables.isPublished,
@@ -604,7 +604,7 @@ export default function StorefrontBuilder() {
         description: "The storefront has been permanently removed.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/storefront/my"] });
-      if (selectedStorefront.id === storefrontToDelete.id) {
+      if (selectedStorefront?.id === storefrontToDelete?.id) {
         setSelectedStorefront(null);
       }
       setShowDeleteDialog(false);
@@ -672,7 +672,7 @@ export default function StorefrontBuilder() {
         });
         queryClient.invalidateQueries({ queryKey: ["/api/storefront/my"] });
         queryClient.invalidateQueries({
-          queryKey: ["/api/storefront-domains", selectedStorefront.id],
+          queryKey: ["/api/storefront-domains", selectedStorefront?.id],
         });
       } else {
         toast({
@@ -751,7 +751,7 @@ export default function StorefrontBuilder() {
       selectedStorefront
         ? apiRequest(
             "GET",
-            `/api/storefront-domains/platform/${selectedStorefront.id}`,
+            `/api/storefront-domains/platform/${selectedStorefront!.id}`,
           ).then((r) => r.json())
         : Promise.resolve({ ok: true, domain: null, status: null }),
     enabled: !!selectedStorefront,
@@ -2538,13 +2538,13 @@ export default function StorefrontBuilder() {
 
                     <TabsContent value="promotions" className="space-y-4 mt-4">
                       <BogoPromotionsManager
-                        storefrontId={selectedStorefront.id}
+                        storefrontId={selectedStorefront!.id}
                       />
                     </TabsContent>
 
                     <TabsContent value="dns" className="space-y-4 mt-4">
                       <StorefrontDnsZoneManager
-                        storefrontId={selectedStorefront.id}
+                        storefrontId={selectedStorefront!.id}
                         onCustomizeStorefront={() => setActiveTab("overview")}
                       />
                     </TabsContent>
@@ -2618,7 +2618,7 @@ export default function StorefrontBuilder() {
                                 customization.fonts?.heading || "Inter",
                             }}
                           >
-                            {selectedStorefront.name}
+                            {selectedStorefront!.name}
                           </h3>
                           <p
                             className="text-sm opacity-70 line-clamp-2"
@@ -2697,7 +2697,7 @@ export default function StorefrontBuilder() {
                       <div className="mt-4 pt-4 border-t border-current/10">
                         <p className="text-xs text-center opacity-50">
                           Preview of your storefront at /
-                          {selectedStorefront.slug}
+                          {selectedStorefront!.slug}
                         </p>
                       </div>
                     </div>
