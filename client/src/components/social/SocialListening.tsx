@@ -131,19 +131,35 @@ export function SocialListening() {
   const [_showAlertSettings, _setShowAlertSettings] = useState(false);
   const [_alertThreshold, _setAlertThreshold] = useState(10);
 
-  const { data: keywordsData } = useQuery({
+  const {
+    data: keywordsData,
+    isLoading: keywordsLoading,
+    isError: keywordsError,
+  } = useQuery({
     queryKey: ["/api/social/listening/keywords"],
   });
 
-  const { data: trendingData } = useQuery({
+  const {
+    data: trendingData,
+    isLoading: trendingLoading,
+    isError: trendingError,
+  } = useQuery({
     queryKey: ["/api/social/listening/trending"],
   });
 
-  const { data: influencersData } = useQuery({
+  const {
+    data: influencersData,
+    isLoading: influencersLoading,
+    isError: influencersError,
+  } = useQuery({
     queryKey: ["/api/social/listening/influencers"],
   });
 
-  const { data: alertsData } = useQuery({
+  const {
+    data: alertsData,
+    isLoading: alertsLoading,
+    isError: alertsError,
+  } = useQuery({
     queryKey: ["/api/social/listening/alerts"],
   });
 
@@ -151,6 +167,18 @@ export function SocialListening() {
   const trending = trendingData?.topics || [];
   const influencers = influencersData?.influencers || [];
   const alerts = alertsData?.alerts || [];
+  const listeningLoading =
+    keywordsLoading ||
+    trendingLoading ||
+    influencersLoading ||
+    alertsLoading;
+  const listeningError =
+    keywordsError || trendingError || influencersError || alertsError;
+  const hasListeningData =
+    keywords.length > 0 ||
+    trending.length > 0 ||
+    influencers.length > 0 ||
+    alerts.length > 0;
 
   const totalMentions = keywords.reduce(
     (acc: number, k: TrackedKeyword) => acc + k.mentionCount,
@@ -260,6 +288,24 @@ export function SocialListening() {
           </Button>
         </div>
       </div>
+
+      {listeningError && (
+        <Card className="border-destructive/50 bg-destructive/10">
+          <CardContent className="p-4 text-sm text-destructive">
+            We couldn’t load all social listening data. Please try again.
+          </CardContent>
+        </Card>
+      )}
+      {listeningLoading && !listeningError && (
+        <p className="text-sm text-muted-foreground">Loading social listening data…</p>
+      )}
+      {!listeningLoading && !listeningError && !hasListeningData && (
+        <Card>
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            No social listening data yet. Add a keyword to start tracking mentions.
+          </CardContent>
+        </Card>
+      )}
 
       {activeAlerts > 0 && (
         <Card className="border-red-500/50 bg-red-500/10">

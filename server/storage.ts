@@ -1477,25 +1477,55 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialListeningKeywords(userId: string): Promise<any[]> {
-    return await db
+    const rows = await db
       .select()
       .from(socialKeywords)
       .where(eq(socialKeywords.userId, userId))
       .orderBy(desc(socialKeywords.createdAt))
       .limit(100);
+    return rows.map((keyword) => ({
+      id: keyword.id,
+      keyword: keyword.keyword,
+      type: keyword.keyword.startsWith("#")
+        ? "hashtag"
+        : keyword.keyword.startsWith("@")
+          ? "mention"
+          : "keyword",
+      platforms: [],
+      alertsEnabled: keyword.isActive ?? true,
+      mentionCount: keyword.mentionCount ?? 0,
+      sentiment: { positive: 0, neutral: 100, negative: 0 },
+      recentMentions: [],
+      createdAt: keyword.createdAt?.toISOString() ?? new Date(0).toISOString(),
+    }));
   }
 
   async getSocialListeningTrending(userId: string): Promise<any[]> {
-    return await db
+    const rows = await db
       .select()
       .from(socialMentions)
       .where(eq(socialMentions.userId, userId))
       .orderBy(desc(socialMentions.engagement))
       .limit(20);
+    return rows.map((mention, index) => {
+      const keywords = Array.isArray(mention.keywords)
+        ? mention.keywords.filter((keyword): keyword is string => typeof keyword === "string")
+        : [];
+      const volume = mention.reach ?? mention.engagement ?? 0;
+      return {
+        id: mention.id,
+        topic: keywords[0] ?? mention.content?.slice(0, 80) ?? `Mention ${index + 1}`,
+        volume,
+        volumeChange: 0,
+        sentiment: Math.round(((mention.sentimentScore ?? 0) + 1) * 50),
+        relevanceScore: Math.min(100, Math.max(0, volume > 0 ? 100 : 0)),
+        platforms: mention.platform ? [mention.platform] : [],
+      };
+    });
   }
 
   async getSocialListeningInfluencers(userId: string): Promise<any[]> {
-    return await db
+    const rows = await db
       .select()
       .from(socialMentions)
       .where(
@@ -1506,10 +1536,28 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(socialMentions.authorFollowers))
       .limit(20);
+    return rows.map((mention) => ({
+      id: mention.id,
+      name: mention.author ?? mention.authorHandle ?? "Unknown influencer",
+      username: mention.authorHandle?.replace(/^@/, "") ?? "",
+      platform: mention.platform,
+      followers: mention.authorFollowers ?? 0,
+      engagement: mention.engagement ?? 0,
+      mentionedYou: 1,
+      sentiment:
+        mention.sentiment === "positive" || mention.sentiment === "negative"
+          ? mention.sentiment
+          : "neutral",
+      topics: Array.isArray(mention.keywords)
+        ? mention.keywords.filter((keyword): keyword is string => typeof keyword === "string")
+        : [],
+      avatar: mention.authorAvatar ?? undefined,
+      verified: false,
+    }));
   }
 
   async getSocialListeningAlerts(userId: string): Promise<any[]> {
-    return await db
+    const rows = await db
       .select()
       .from(socialMentions)
       .where(
@@ -1520,6 +1568,24 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(socialMentions.createdAt))
       .limit(20);
+    return rows.map((mention) => {
+      const sentimentScore = mention.sentimentScore ?? -1;
+      const mentions = mention.reach ?? mention.engagement ?? 1;
+      return {
+        id: mention.id,
+        type: mentions > 1000 ? "viral" : "negative",
+        severity: mentions > 10000 ? "critical" : mentions > 1000 ? "high" : "medium",
+        title: "Negative mention detected",
+        description: mention.content ?? "A negative mention requires review.",
+        mentions,
+        sentiment: Math.round(sentimentScore * 100),
+        keywords: Array.isArray(mention.keywords)
+          ? mention.keywords.filter((keyword): keyword is string => typeof keyword === "string")
+          : [],
+        createdAt: mention.createdAt?.toISOString() ?? new Date(0).toISOString(),
+        acknowledged: mention.responded ?? false,
+      };
+    });
   }
 
   async getSocialAIInsights(userId: string): Promise<any[]> {

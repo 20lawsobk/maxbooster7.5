@@ -1058,7 +1058,9 @@ router.post(
 // SOCIAL LISTENING ROUTES
 // =========================================
 
-// Get social listening keywords - returns empty array when no real data exists
+// Social listening response contract:
+// keywords -> { keywords }, trending -> { topics }, influencers -> { influencers },
+// alerts -> { alerts }. Empty datasets remain successful responses with empty arrays.
 router.get(
   "/listening/keywords",
   requireAuth,
@@ -1067,7 +1069,7 @@ router.get(
       const userId = req.user!.id;
       const keywords =
         (await storage.getSocialListeningKeywords?.(userId)) || [];
-      res.json(keywords);
+      res.json({ keywords });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get social listening keywords:");
       res
@@ -1190,7 +1192,6 @@ router.get(
   },
 );
 
-// Get social listening trending - returns empty array when no real data exists
 router.get(
   "/listening/trending",
   requireAuth,
@@ -1199,7 +1200,7 @@ router.get(
       const userId = req.user!.id;
       const trending =
         (await storage.getSocialListeningTrending?.(userId)) || [];
-      res.json(trending);
+      res.json({ topics: trending });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get social listening trending:");
       res
@@ -1209,7 +1210,6 @@ router.get(
   },
 );
 
-// Get social listening influencers - returns empty array when no real data exists
 router.get(
   "/listening/influencers",
   requireAuth,
@@ -1218,7 +1218,7 @@ router.get(
       const userId = req.user!.id;
       const influencers =
         (await storage.getSocialListeningInfluencers?.(userId)) || [];
-      res.json(influencers);
+      res.json({ influencers });
     } catch (error) {
       logger.warn(
         { err: error },
@@ -1231,7 +1231,6 @@ router.get(
   },
 );
 
-// Get social listening alerts - returns empty array when no real data exists
 router.get(
   "/listening/alerts",
   requireAuth,
@@ -1239,7 +1238,7 @@ router.get(
     try {
       const userId = req.user!.id;
       const alerts = (await storage.getSocialListeningAlerts?.(userId)) || [];
-      res.json(alerts);
+      res.json({ alerts });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get social listening alerts:");
       res.status(500).json({ error: "Failed to get social listening alerts:" });
