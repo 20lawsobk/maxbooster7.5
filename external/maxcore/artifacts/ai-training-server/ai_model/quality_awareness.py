@@ -333,6 +333,16 @@ _TRANSITION_BY_GENRE_HINT: Dict[str, str] = {
     "cinematic": "circleopen",
 }
 
+# Same genre buckets, mapped onto an ImageEngine-compatible style tag instead
+# of a video transition — the image renderer's own equivalent of the
+# transition/camera-motion bridge below.
+_STYLE_TAG_BY_GENRE_HINT: Dict[str, str] = {
+    "trap": "gritty", "drill": "gritty", "phonk": "gritty",
+    "lofi": "moody", "lo-fi": "moody", "lo_fi": "moody",
+    "jazz": "moody", "rnb": "moody", "r&b": "moody",
+    "cinematic": "cinematic",
+}
+
 
 def _stable_bucket(key: str) -> float:
     """Deterministic pseudo-random value in [0, 1) from a string key.
@@ -382,9 +392,11 @@ def editing_pattern(seed_key: str) -> Optional[Dict[str, Any]]:
 
     top_genre = str(genres[0]).lower()
     transition: Optional[str] = None
+    style_tag: Optional[str] = None
     for key, xfade in _TRANSITION_BY_GENRE_HINT.items():
         if key in top_genre:
             transition = xfade
+            style_tag = _STYLE_TAG_BY_GENRE_HINT.get(key)
             break
 
     camera: Optional[str] = None
@@ -397,12 +409,13 @@ def editing_pattern(seed_key: str) -> Optional[Dict[str, Any]]:
     elif punchy >= 0.25:
         camera = "pan_left"
 
-    if not transition and not camera:
+    if not transition and not camera and not style_tag:
         return None
 
     return {
         "transition": transition,
         "camera_motion": camera,
+        "style_tag": style_tag,
         "source_genre": top_genre,
         "weight": weight,
     }

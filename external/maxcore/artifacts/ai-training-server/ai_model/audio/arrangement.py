@@ -114,7 +114,8 @@ _GENERIC_ARC: List[Tuple[str, int]] = [
 
 
 def _grammar_for(genre: Optional[str], mood: Optional[str],
-                 trending_genres: Optional[Sequence[str]]) -> List[Tuple[str, int]]:
+                 trending_genres: Optional[Sequence[str]],
+                 seed_key: str = "") -> List[Tuple[str, int]]:
     """Pick a grammar.  Borrowed genre grammars gate on the awareness
     retirement contract; live awareness genres refine the choice when the
     request itself has no genre (caller awareness leads)."""
@@ -138,6 +139,24 @@ def _grammar_for(genre: Optional[str], mood: Optional[str],
         fam = _GENRE_FAMILY.get(c)
         if fam:
             return list(_GENRE_GRAMMARS[fam])
+
+    # No explicit/caller-supplied genre matched a family — fall back to the
+    # SAME live quality-buffer signal that already reaches hooks/headlines/
+    # video editing decisions, so a caller that never wires up its own
+    # trending_genres still benefits from the buffer once it exists. Bridges
+    # editing_pattern()'s source_genre (self-retiring; weighted out on some
+    # calls exactly like the video/image consumers) rather than adding a
+    # second, uncoordinated retirement path.
+    try:
+        from ai_model.quality_awareness import editing_pattern
+        _pattern = editing_pattern(seed_key or "|".join(candidates))
+        if _pattern and _pattern.get("source_genre"):
+            fam = _GENRE_FAMILY.get(_pattern["source_genre"])
+            if fam:
+                return list(_GENRE_GRAMMARS[fam])
+    except Exception:  # noqa: BLE001 - awareness buffer must never break arrangement
+        pass
+
     return list(_GENERIC_ARC)
 
 
@@ -157,7 +176,8 @@ def build_plan(duration_sec: float, bpm: float, *,
         duration_sec = float(duration_sec)
         bpm = float(bpm) if bpm and bpm > 0 else 120.0
         bar = 4.0 * 60.0 / max(40.0, min(300.0, bpm))  # 4/4 assumption
-        grammar = _grammar_for(genre, mood, trending_genres)
+        _seed_key = f"{genre or ''}|{mood or ''}|{bpm}|{duration_sec}|{seed}"
+        grammar = _grammar_for(genre, mood, trending_genres, seed_key=_seed_key)
 
         total_bars = max(2, int(duration_sec // bar))
         gram_bars = sum(b for _, b in grammar)

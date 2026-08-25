@@ -8368,6 +8368,19 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
             if _mtag not in slot_style_tags:
                 slot_style_tags.append(_mtag)
 
+        # Bridge the same industry-peak signal that already reaches video's
+        # transition/camera-motion choices into the image renderer's own
+        # style tags — self-retiring as the video/image corpus grows (see
+        # quality_awareness.editing_pattern). Never-raise.
+        try:
+            from ai_model.quality_awareness import editing_pattern as _editing_pattern
+            _img_pattern = _editing_pattern(f"{topic}|{req.genre}|{slot_id}")
+            if _img_pattern and _img_pattern.get("style_tag") \
+                    and _img_pattern["style_tag"] not in slot_style_tags:
+                slot_style_tags.append(_img_pattern["style_tag"])
+        except Exception:  # noqa: BLE001 - awareness buffer must never break image generation
+            pass
+
         if _visual_spec_agent:
             try:
                 from ai_model.agents.visual_spec_agent import VisualSpecRequest
