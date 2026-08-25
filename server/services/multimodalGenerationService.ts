@@ -4,7 +4,7 @@ import path from "path";
 import { promises as fsPromises } from "fs";
 import { logger } from "../logger.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
-import { normalizeHashtags } from "../lib/contentPostProcessor.js";
+import { normalizeHashtags, stripLeakedDirectives } from "../lib/contentPostProcessor.js";
 import {
   getMaxcoreGenerationKey,
   getMaxcoreOriginOrDefault,
@@ -2634,7 +2634,11 @@ const textWorker = {
           // the local fallback is instant, so this still fits the 30 s client window.
 
           // /generate/content always returns { caption, hook, body, cta, hashtags, confidence }
-          let caption: string = (mc as any).caption ?? "";
+          // MaxCore is fed the platform-optimization block as a hidden
+          // instruction (extra_context) — it should never appear in the
+          // output, but under load MaxCore sometimes echoes it back verbatim.
+          // Strip any such leaked directive block before the caption is used.
+          let caption: string = stripLeakedDirectives((mc as any).caption ?? "");
           if (!caption) throw new Error("empty caption");
 
           const rules = getRules(platform as Platform);
@@ -2643,9 +2647,9 @@ const textWorker = {
           // caption length, CTA strength) when the caller set them. These were
           // previously only reachable through the video-generation pipeline;
           // this is the primary text-generation path most users hit.
-          let hook: string = (mc as any).hook ?? "";
-          let body: string = (mc as any).body ?? "";
-          let cta: string = (mc as any).cta ?? "";
+          let hook: string = stripLeakedDirectives((mc as any).hook ?? "");
+          let body: string = stripLeakedDirectives((mc as any).body ?? "");
+          let cta: string = stripLeakedDirectives((mc as any).cta ?? "");
           const knobs = req.constraints;
 
           // MaxCore occasionally jams the full topic/description into a single

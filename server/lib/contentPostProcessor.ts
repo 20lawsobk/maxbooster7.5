@@ -423,6 +423,25 @@ function repairBody(body: string, title?: string): string {
   return cleaned;
 }
 
+// ── Fix 7: Strip leaked internal directive blocks ───────────────────────────
+
+/**
+ * MaxCore is fed structured internal instructions (e.g. the
+ * `[PLATFORM_OPTIMIZATION platform=... revision=...]` block from
+ * platformAwarenessOptimization()) as extra_context/instruction text meant to
+ * *guide* generation — never to appear in the output. Under load MaxCore
+ * sometimes echoes this block verbatim into the caption/hook/body/cta instead
+ * of following it. Strip any such bracketed-tag directive block (tag line +
+ * its structured follow-on lines) from user-facing text before it's used.
+ */
+const DIRECTIVE_TAG_BLOCK_RE =
+  /\[[A-Z_]+(?:\s+[a-z_]+=\S+)*\]\n?(?:(?:Content shape|Length|Audience intent|Cadence|Hashtag\/keyword policy|Primary engagement signals|Quality dimensions):[^\n]*\n?)*/g;
+
+export function stripLeakedDirectives(text: string): string {
+  if (!text) return text;
+  return text.replace(DIRECTIVE_TAG_BLOCK_RE, "").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 /**
  * Apply all seven fixes to a MaxCore content response in one call.
  * Safe to call on already-clean content — functions are idempotent.
@@ -431,7 +450,7 @@ export function cleanMaxCoreContent(
   args: CleanContentArgs,
 ): CleanContentResult {
   const body = repairBody(
-    killFillerLines(stripAudienceMetadata(args.body || "")),
+    killFillerLines(stripAudienceMetadata(stripLeakedDirectives(args.body || ""))),
     args.title,
   );
 
