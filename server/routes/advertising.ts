@@ -1085,13 +1085,14 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
 
     // Build campaign object for MaxCore organic-amplification optimization
     // All metrics are organic (no ad spend — adSpend is always 0)
-    const platform = performance.platform || "instagram";
-    const organicReach = performance.organicReach || performance.impressions || 1000;
+    const perf = performance || {};
+    const platform = perf.platform || "instagram";
+    const organicReach = perf.organicReach || perf.impressions || 1000;
     const campaign = {
       id: campaignId,
-      name: performance.name || "Campaign",
+      name: perf.name || "Campaign",
       platform,
-      objective: performance.objective || "engagement",
+      objective: perf.objective || "engagement",
       status: "active" as const,
       budget: 0,
       dailyBudget: 0,
@@ -1119,14 +1120,14 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
       metrics: {
         organicReach,
         impressions: organicReach,
-        clicks: performance.clicks || Math.round(organicReach * 0.05),
-        conversions: performance.conversions || Math.round(organicReach * 0.005),
-        engagements: performance.engagements || Math.round(organicReach * 0.08),
+        clicks: perf.clicks || Math.round(organicReach * 0.05),
+        conversions: perf.conversions || Math.round(organicReach * 0.005),
+        engagements: perf.engagements || Math.round(organicReach * 0.08),
         adSpend: 0,
         adEquivalentValue: adEquivalentValue(platform, organicReach),
-        ctr: performance.ctr || 0.05,
-        engagementRate: performance.engagementRate || 0.08,
-        viralScore: performance.viralScore || 0,
+        ctr: perf.ctr || 0.05,
+        engagementRate: perf.engagementRate || 0.08,
+        viralScore: perf.viralScore || 0,
       },
     };
 

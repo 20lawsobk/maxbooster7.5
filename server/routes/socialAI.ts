@@ -1085,13 +1085,13 @@ router.get(
 
       res.json({
         hasContext,
-        artistName: prefs.artistName ?? null,
-        genre: prefs.genre ?? null,
-        brandVoice: prefs.brandVoice ?? null,
-        targetAudience: prefs.targetAudience ?? null,
-        contentThemes: prefs.contentThemes ?? [],
-        avoidTopics: prefs.avoidTopics ?? [],
-        preferredHashtags: prefs.preferredHashtags ?? [],
+        artistName: prefs?.artistName ?? null,
+        genre: prefs?.genre ?? null,
+        brandVoice: prefs?.brandVoice ?? null,
+        targetAudience: prefs?.targetAudience ?? null,
+        contentThemes: prefs?.contentThemes ?? [],
+        avoidTopics: prefs?.avoidTopics ?? [],
+        preferredHashtags: prefs?.preferredHashtags ?? [],
         recentPostCount: recentPostRows.length,
         platformBreakdown,
       });
