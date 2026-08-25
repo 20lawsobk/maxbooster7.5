@@ -25,6 +25,11 @@ import {
 } from "@shared/types/multimodalGeneration.js";
 import { PLATFORM_RULES, getRules, enforceTextLength, type PlatformRules } from "@shared/config/platformRules.js";
 import {
+  applyHashtagStrategyPure,
+  applyCaptionLengthPure,
+  applyCtaStrengthPure,
+} from "./advancedSocialAIService.js";
+import {
   getAwarenessContext,
   normalizeSocialAwarenessPlatform,
   platformAwarenessOptimization,
@@ -2616,16 +2621,54 @@ const textWorker = {
           // the local fallback is instant, so this still fits the 30 s client window.
 
           // /generate/content always returns { caption, hook, body, cta, hashtags, confidence }
-          const caption: string = (mc as any).caption ?? "";
+          let caption: string = (mc as any).caption ?? "";
           if (!caption) throw new Error("empty caption");
 
           const rules = getRules(platform as Platform);
+
+          // Apply the Self-Evolution content-shaping knobs (hashtag strategy,
+          // caption length, CTA strength) when the caller set them. These were
+          // previously only reachable through the video-generation pipeline;
+          // this is the primary text-generation path most users hit.
+          let hook: string = (mc as any).hook ?? "";
+          let body: string = (mc as any).body ?? "";
+          let cta: string = (mc as any).cta ?? "";
+          const knobs = req.constraints;
+          if (knobs?.hashtagStrategy || knobs?.captionLength || knobs?.callToActionStrength) {
+            const hashtagRegex = /#[\w\u0080-\uFFFF]+/g;
+            let hashtags: string[] = Array.isArray((mc as any).hashtags)
+              ? (mc as any).hashtags
+              : caption.match(hashtagRegex) ?? [];
+            const captionNoTags = caption.replace(hashtagRegex, "").trim();
+
+            if (knobs.hashtagStrategy) {
+              const maxTags = rules.text.hashtags?.allowed
+                ? (rules.text.hashtags.max ?? 5)
+                : 0;
+              hashtags = applyHashtagStrategyPure(hashtags, knobs.hashtagStrategy, {
+                min: 0,
+                max: maxTags,
+              });
+            }
+            if (knobs.callToActionStrength && cta) {
+              cta = applyCtaStrengthPure(cta, knobs.callToActionStrength);
+            }
+            if (knobs.captionLength) {
+              body = applyCaptionLengthPure(body || captionNoTags, knobs.captionLength);
+            }
+
+            const rebuilt = [hook, body, cta].filter(Boolean).join("\n\n");
+            caption = hashtags.length
+              ? `${rebuilt}\n\n${hashtags.join(" ")}`
+              : rebuilt;
+          }
+
           const payload = enforceTextLength(caption, rules.text);
           const enriched = enrichTextAssetMetadata(payload, platform, rules, {
             platformRules: rules.text,
-            hook: (mc as any).hook ?? "",
-            body: (mc as any).body ?? "",
-            cta: (mc as any).cta ?? "",
+            hook,
+            body,
+            cta,
           });
 
           return {

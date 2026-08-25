@@ -1284,6 +1284,81 @@ const SEMANTIC_WORD_WEIGHTS: Record<
 // consistently outperform standard hooks by 30-50% in click-through rate.
 
 // ============================================================================
+// SELF-EVOLUTION KNOB SHAPING (pure functions, reused by both the advanced
+// pipeline below and the primary /api/multimodal/generate pipeline, which
+// otherwise never applies these knobs even though callers can set them)
+// ============================================================================
+
+export function applyHashtagStrategyPure(
+  hashtags: string[],
+  strategy: AdvancedContentRequest["hashtagStrategy"],
+  range: { min: number; max: number },
+): string[] {
+  if (!strategy || !Array.isArray(hashtags) || hashtags.length === 0)
+    return hashtags;
+  const { min, max } = range;
+  switch (strategy) {
+    case "niche":
+      return hashtags.slice(0, Math.max(min, Math.min(3, hashtags.length)));
+    case "trending":
+      return hashtags.slice(0, Math.max(max, min));
+    case "branded": {
+      const branded = hashtags.filter((h) =>
+        /brand|official|artist|music/i.test(h),
+      );
+      const rest = hashtags.filter((h) => !branded.includes(h));
+      return [...branded, ...rest].slice(0, max);
+    }
+    case "balanced":
+    default:
+      return hashtags;
+  }
+}
+
+export function applyCaptionLengthPure(
+  text: string,
+  captionLength: AdvancedContentRequest["captionLength"],
+): string {
+  if (!text || !captionLength) return text;
+  const caps: Record<
+    NonNullable<AdvancedContentRequest["captionLength"]>,
+    number
+  > = {
+    short: 280,
+    optimal: 600,
+    long: Number.POSITIVE_INFINITY,
+  };
+  const cap = caps[captionLength];
+  if (!Number.isFinite(cap) || text.length <= cap) return text;
+  const sliced = text.slice(0, cap - 1);
+  const lastSpace = sliced.lastIndexOf(" ");
+  return (
+    (lastSpace > cap * 0.6 ? sliced.slice(0, lastSpace) : sliced).trimEnd() +
+    "…"
+  );
+}
+
+export function applyCtaStrengthPure(
+  cta: string,
+  strength: AdvancedContentRequest["callToActionStrength"],
+): string {
+  if (!cta || !strength || strength === "medium") return cta;
+  if (strength === "high") {
+    const emphasized = /[!?]$/.test(cta.trim())
+      ? cta.trim()
+      : `${cta.trim()}!`;
+    return /\b(now|today|don't miss|limited)\b/i?.test(emphasized)
+      ? emphasized
+      : `${emphasized} Don't miss out!`;
+  }
+  // low
+  return cta
+    .replace(/[!]+/g, ".")
+    .replace(/\.\s*\.+/g, ".")
+    .trim();
+}
+
+// ============================================================================
 // MAIN SERVICE CLASS
 // ============================================================================
 
@@ -1675,25 +1750,7 @@ class AdvancedSocialAIService {
     strategy: AdvancedContentRequest["hashtagStrategy"],
     platform: PlatformProfile,
   ): string[] {
-    if (!strategy || !Array.isArray(hashtags) || hashtags.length === 0)
-      return hashtags;
-    const { min, max } = platform.hashtagRange;
-    switch (strategy) {
-      case "niche":
-        return hashtags.slice(0, Math.max(min, Math.min(3, hashtags.length)));
-      case "trending":
-        return hashtags.slice(0, Math.max(max, min));
-      case "branded": {
-        const branded = hashtags.filter((h) =>
-          /brand|official|artist|music/i.test(h),
-        );
-        const rest = hashtags.filter((h) => !branded.includes(h));
-        return [...branded, ...rest].slice(0, max);
-      }
-      case "balanced":
-      default:
-        return hashtags;
-    }
+    return applyHashtagStrategyPure(hashtags, strategy, platform.hashtagRange);
   }
 
   /**
@@ -1707,23 +1764,7 @@ class AdvancedSocialAIService {
     text: string,
     captionLength: AdvancedContentRequest["captionLength"],
   ): string {
-    if (!text || !captionLength) return text;
-    const caps: Record<
-      NonNullable<AdvancedContentRequest["captionLength"]>,
-      number
-    > = {
-      short: 280,
-      optimal: 600,
-      long: Number.POSITIVE_INFINITY,
-    };
-    const cap = caps[captionLength];
-    if (!Number.isFinite(cap) || text.length <= cap) return text;
-    const sliced = text.slice(0, cap - 1);
-    const lastSpace = sliced.lastIndexOf(" ");
-    return (
-      (lastSpace > cap * 0.6 ? sliced.slice(0, lastSpace) : sliced).trimEnd() +
-      "…"
-    );
+    return applyCaptionLengthPure(text, captionLength);
   }
 
   /**
@@ -1738,20 +1779,7 @@ class AdvancedSocialAIService {
     cta: string,
     strength: AdvancedContentRequest["callToActionStrength"],
   ): string {
-    if (!cta || !strength || strength === "medium") return cta;
-    if (strength === "high") {
-      const emphasized = /[!?]$/.test(cta.trim())
-        ? cta.trim()
-        : `${cta.trim()}!`;
-      return /\b(now|today|don't miss|limited)\b/i?.test(emphasized)
-        ? emphasized
-        : `${emphasized} Don't miss out!`;
-    }
-    // low
-    return cta
-      .replace(/[!]+/g, ".")
-      .replace(/\.\s*\.+/g, ".")
-      .trim();
+    return applyCtaStrengthPure(cta, strength);
   }
 
   private selectEmojis(

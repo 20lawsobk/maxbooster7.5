@@ -205,6 +205,11 @@ export interface GenerationRequest {
     styleTags?: string[];
     language?: string;
     tone?: string;
+    // Self-Evolution content-shaping knobs (see advancedSocialAIService's
+    // applyHashtagStrategyPure / applyCaptionLengthPure / applyCtaStrengthPure).
+    hashtagStrategy?: "trending" | "niche" | "branded" | "balanced";
+    captionLength?: "short" | "optimal" | "long";
+    callToActionStrength?: "low" | "medium" | "high";
   };
 }
 

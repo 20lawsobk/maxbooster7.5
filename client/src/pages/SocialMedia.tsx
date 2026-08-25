@@ -487,6 +487,11 @@ export default function SocialMedia() {
   const [isGeneratingFromUrl, setIsGeneratingFromUrl] = useState(false);
   const [contentFormat, setContentFormat] = useState("text");
   const [regularContentFormat, setRegularContentFormat] = useState("text");
+  // Self-Evolution content-shaping knobs, now user-controllable instead of
+  // only ever being set internally by the autopilot/self-evolution engines.
+  const [hashtagStrategy, setHashtagStrategy] = useState("balanced");
+  const [captionLength, setCaptionLength] = useState("optimal");
+  const [ctaStrength, setCtaStrength] = useState("medium");
   const [, setEditingPost] = useState<string | null>(null);
   const [uploadedMedia, setUploadedMedia] = useState<File | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
@@ -834,7 +839,14 @@ export default function SocialMedia() {
         },
         platforms: mappedPlatforms.length > 0 ? mappedPlatforms : ["instagram"],
         intent: data.tone,
-        constraints: { outputModality, styleTags: [outputModality] },
+        constraints: {
+          outputModality,
+          styleTags: [outputModality],
+          tone: data.tone,
+          hashtagStrategy: hashtagStrategy || undefined,
+          captionLength: captionLength || undefined,
+          callToActionStrength: ctaStrength || undefined,
+        },
       });
       return response.json();
     },
@@ -925,6 +937,9 @@ export default function SocialMedia() {
           outputModality,
           styleTags: [outputModality],
           tone: data.tone || undefined,
+          hashtagStrategy: hashtagStrategy || undefined,
+          captionLength: captionLength || undefined,
+          callToActionStrength: ctaStrength || undefined,
         },
       });
       return response.json();
@@ -2079,6 +2094,55 @@ export default function SocialMedia() {
                       </Select>
                     </div>
 
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <Label className="text-xs">Hashtag Strategy</Label>
+                        <Select
+                          value={hashtagStrategy}
+                          onValueChange={setHashtagStrategy}
+                        >
+                          <SelectTrigger data-testid="select-hashtag-strategy">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="balanced">Balanced</SelectItem>
+                            <SelectItem value="niche">Niche</SelectItem>
+                            <SelectItem value="trending">Trending</SelectItem>
+                            <SelectItem value="branded">Branded</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Caption Length</Label>
+                        <Select
+                          value={captionLength}
+                          onValueChange={setCaptionLength}
+                        >
+                          <SelectTrigger data-testid="select-caption-length">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="short">Short</SelectItem>
+                            <SelectItem value="optimal">Optimal</SelectItem>
+                            <SelectItem value="long">Long</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">CTA Strength</Label>
+                        <Select value={ctaStrength} onValueChange={setCtaStrength}>
+                          <SelectTrigger data-testid="select-cta-strength">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
                     {regularContentFormat === "video" ? (
                       <>
                         <ServerVideoGenerator
@@ -2688,6 +2752,58 @@ export default function SocialMedia() {
                             <SelectItem value="video">Video / MP4</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs">Hashtag Strategy</Label>
+                          <Select
+                            value={hashtagStrategy}
+                            onValueChange={setHashtagStrategy}
+                          >
+                            <SelectTrigger data-testid="select-url-hashtag-strategy">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="balanced">Balanced</SelectItem>
+                              <SelectItem value="niche">Niche</SelectItem>
+                              <SelectItem value="trending">Trending</SelectItem>
+                              <SelectItem value="branded">Branded</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Caption Length</Label>
+                          <Select
+                            value={captionLength}
+                            onValueChange={setCaptionLength}
+                          >
+                            <SelectTrigger data-testid="select-url-caption-length">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="short">Short</SelectItem>
+                              <SelectItem value="optimal">Optimal</SelectItem>
+                              <SelectItem value="long">Long</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">CTA Strength</Label>
+                          <Select
+                            value={ctaStrength}
+                            onValueChange={setCtaStrength}
+                          >
+                            <SelectTrigger data-testid="select-url-cta-strength">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Low</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
                       <div>
