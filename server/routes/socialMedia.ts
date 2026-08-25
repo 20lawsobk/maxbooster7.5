@@ -402,7 +402,14 @@ router.get(
   "/calendar/stats",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const emptyStats = { totalScheduled: 0, pendingApproval: 0, published: 0, drafts: 0 };
+    const emptyStats = {
+      totalScheduled: 0,
+      pendingApproval: 0,
+      published: 0,
+      totalPublished: 0,
+      upcomingThisWeek: 0,
+      drafts: 0,
+    };
     try {
       const userId = req.user!.id;
       const stats = await Promise.race([
@@ -739,8 +746,26 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
-      const stats = (await storage.getSocialWeeklyStats?.(userId)) || [];
-      res.json(stats);
+      const daily = (await storage.getSocialWeeklyStats?.(userId)) || [];
+      const totalReach = daily.reduce(
+        (sum: number, d: any) => sum + (Number(d?.views) || 0) + (Number(d?.impressions) || 0),
+        0,
+      );
+      const postsThisWeek = daily.reduce(
+        (sum: number, d: any) => sum + (Number(d?.posts) || 0),
+        0,
+      );
+      const totalEngagement = daily.reduce(
+        (sum: number, d: any) => sum + (Number(d?.engagement) || 0),
+        0,
+      );
+      const engagementRate =
+        totalReach > 0 ? Number(((totalEngagement / totalReach) * 100).toFixed(2)) : 0;
+      const dailyEngagement = daily.map((d: any) => ({
+        date: d?.date,
+        engagement: Number(d?.engagement) || 0,
+      }));
+      res.json({ totalReach, engagementRate, postsThisWeek, dailyEngagement });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get weekly stats:");
       res.status(500).json({ error: "Failed to get weekly stats:" });

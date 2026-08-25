@@ -919,7 +919,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialCalendarStats(userId: string): Promise<unknown> {
-    const [calendarRows, postRows] = await Promise.all([
+    const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const [calendarRows, postRows, upcomingCalendarCount, upcomingPostCount] = await Promise.all([
       db
         .select({
           status: contentCalendar.status,
@@ -941,6 +942,26 @@ export class DatabaseStorage implements IStorage {
           ),
         )
         .groupBy(posts.status),
+      db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(contentCalendar)
+        .where(
+          and(
+            eq(contentCalendar.userId, userId),
+            eq(contentCalendar.status, "scheduled"),
+            sql`${contentCalendar.scheduledAt} BETWEEN NOW() AND ${sevenDaysFromNow}`,
+          ),
+        ),
+      db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(posts)
+        .where(
+          and(
+            eq(posts.userId, userId),
+            sql`${posts.status} IN ('scheduled', 'pending')`,
+            sql`${posts.scheduledAt} BETWEEN NOW() AND ${sevenDaysFromNow}`,
+          ),
+        ),
     ]);
 
     const calendarCounts = Object.fromEntries(
@@ -958,12 +979,18 @@ export class DatabaseStorage implements IStorage {
       postCounts[mapped] = (postCounts[mapped] ?? 0) + row?.count;
     }
 
+    const totalPublished =
+      (calendarCounts["published"] ?? 0) + (postCounts["published"] ?? 0);
+    const upcomingThisWeek =
+      (upcomingCalendarCount?.[0]?.count ?? 0) + (upcomingPostCount?.[0]?.count ?? 0);
+
     return {
       totalScheduled:
         (calendarCounts["scheduled"] ?? 0) + (postCounts["scheduled"] ?? 0),
       pendingApproval: calendarCounts["pending_approval"] ?? 0,
-      published:
-        (calendarCounts["published"] ?? 0) + (postCounts["published"] ?? 0),
+      published: totalPublished,
+      totalPublished,
+      upcomingThisWeek,
       drafts: calendarCounts["draft"] ?? 0,
     };
   }
