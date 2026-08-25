@@ -706,7 +706,7 @@ export default function StorefrontBuilder() {
     queryFn: () =>
       apiRequest("GET", "/api/dns-manager/zones").then((r) => r.json()),
   });
-  const dnsZones = dnsZonesData.zones ?? [];
+  const dnsZones = dnsZonesData?.zones ?? [];
 
   const addDnsZoneMutation = useMutation({
     mutationFn: (domain: string) =>

@@ -1684,7 +1684,7 @@ export function StorefrontDnsZoneManager({
     enabled: searchName.length >= 2,
     staleTime: 30_000,
   });
-  const searchResults: DomainSearchResult[] = searchData.results ?? [];
+  const searchResults: DomainSearchResult[] = searchData?.results ?? [];
 
   // My claimed domains
   const { data: myDomainsData, isLoading: myDomainsLoading } = useQuery({
@@ -1694,7 +1694,7 @@ export function StorefrontDnsZoneManager({
         r.json(),
       ),
   });
-  const myDomains: ClaimedDomain[] = myDomainsData.domains ?? [];
+  const myDomains: ClaimedDomain[] = myDomainsData?.domains ?? [];
 
   // DNS zones (for the DNS manager tab)
   const { data: zonesData, isLoading: zonesLoading } = useQuery({
@@ -1702,7 +1702,7 @@ export function StorefrontDnsZoneManager({
     queryFn: () =>
       apiRequest("GET", "/api/dns-manager/zones").then((r) => r.json()),
   });
-  const zones: DnsZone[] = zonesData.zones ?? [];
+  const zones: DnsZone[] = zonesData?.zones ?? [];
 
   function copy(text: string, label: string) {
     navigator.clipboard.writeText(text);
