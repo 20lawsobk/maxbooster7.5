@@ -1,5 +1,6 @@
 node_modules
 # Server build artifacts — generated fresh on each deployment by npm run build
+dist/.db-indexes-ok
 dist/index.cjs
 dist/index.cjs.map
 dist/index.mjs
