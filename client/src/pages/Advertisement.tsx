@@ -238,6 +238,176 @@ interface CompetitorInsight {
   lastSeen: string;
 }
 
+const PROMOTABLE_CONTENT_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "beat", label: "Beat listing" },
+  { value: "release", label: "Release / track" },
+  { value: "storefront", label: "Storefront" },
+  { value: "social_post", label: "Social media post" },
+  { value: "epk", label: "Artist profile / EPK" },
+];
+
+interface PromotableItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  thumbnailUrl?: string;
+  status?: string;
+  promotable: boolean;
+  reason?: string;
+}
+
+function PromoteContentCard() {
+  const { toast } = useToast();
+  const [contentType, setContentType] = useState<string>("beat");
+  const [contentId, setContentId] = useState<string>("");
+
+  const { data: itemsData, isLoading: itemsLoading } = useQuery<{
+    items: PromotableItem[];
+  }>({
+    queryKey: [`/api/social/promotable-content?type=${contentType}`],
+  });
+  const items = itemsData?.items || [];
+
+  const promoteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest(
+        "POST",
+        "/api/social/veo-campaign/promote",
+        { contentType, contentId: contentId || undefined },
+      );
+      return response.json();
+    },
+    onSuccess: (data: { success?: boolean; message?: string }) => {
+      if (data?.success === false) {
+        toast({
+          title: "Promotion Failed",
+          description: data?.message || "Failed to generate campaign",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Ad Campaign Generated",
+        description:
+          "Your AI-generated campaign is ready — check your campaigns below.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Promotion Failed",
+        description: error.message || "Failed to generate campaign",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const selectedItem = items.find((i) => i.id === contentId);
+  // Storefront and EPK are singular-per-user in most accounts, so an item
+  // pick isn't mandatory for them — the backend falls back to the user's
+  // own record when no contentId is supplied.
+  const requiresItemPick = !["storefront", "epk"].includes(contentType);
+  const canGenerate =
+    (!requiresItemPick || !!contentId) &&
+    (!selectedItem || selectedItem.promotable);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Rocket className="w-5 h-5 mr-2 text-blue-600" />
+          Promote Your Content
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Generate a real AI ad campaign for anything you own on the
+          platform — a beat, a release, your storefront, a post, or your
+          artist profile.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>What do you want to promote?</Label>
+            <Select
+              value={contentType}
+              onValueChange={(v) => {
+                setContentType(v);
+                setContentId("");
+              }}
+            >
+              <SelectTrigger data-testid="select-promote-content-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PROMOTABLE_CONTENT_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>
+              {requiresItemPick ? "Which one?" : "Which one? (optional)"}
+            </Label>
+            <Select value={contentId} onValueChange={setContentId}>
+              <SelectTrigger data-testid="select-promote-content-item">
+                <SelectValue
+                  placeholder={
+                    itemsLoading
+                      ? "Loading..."
+                      : items.length === 0
+                        ? "Nothing available yet"
+                        : "Select..."
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {items.map((item) => (
+                  <SelectItem
+                    key={item.id}
+                    value={item.id}
+                    disabled={!item.promotable}
+                  >
+                    {item.title}
+                    {item.subtitle ? ` — ${item.subtitle}` : ""}
+                    {!item.promotable ? " (not ready)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {selectedItem && !selectedItem.promotable && (
+          <div className="flex items-center text-sm text-amber-600">
+            <AlertTriangle className="w-4 h-4 mr-1.5 shrink-0" />
+            {selectedItem.reason || "This item isn't ready to promote yet."}
+          </div>
+        )}
+
+        <Button
+          onClick={() => promoteMutation.mutate()}
+          disabled={!canGenerate || promoteMutation.isPending}
+          data-testid="button-generate-promotion"
+        >
+          {promoteMutation.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Generating Campaign...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Generate Ad Campaign
+            </>
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Advertisement() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
@@ -1185,6 +1355,8 @@ export default function Advertisement() {
                   </CardContent>
                 </Card>
               </div>
+
+              <PromoteContentCard />
 
               <Card>
                 <CardHeader>

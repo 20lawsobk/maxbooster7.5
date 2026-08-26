@@ -15,6 +15,13 @@ import { db } from "../db";
 import { socialInboxMessages, socialReplyTemplates, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles, campaigns, contentCalendar, users } from "@shared/schema";
 import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
 import { syncPlatformData } from "../services/socialSyncService";
+import {
+  listPromotableContent,
+  resolvePromotableContent,
+  PromotableContentError,
+  PROMOTABLE_CONTENT_TYPES,
+  type PromotableContentType,
+} from "../services/promotableContentService.js";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
@@ -4161,6 +4168,127 @@ router.post(
           success: false,
           message: "Campaign generation from URL failed",
         });
+    }
+  },
+);
+
+// Lists the authenticated user's own items for a given promotable content
+// type (beat listing, release, storefront, published social post, artist
+// EPK) so the Advertising page / autopilot can offer a real picker instead
+// of being hardcoded to beats only.
+router.get(
+  "/promotable-content",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const type = req.query.type as string;
+      if (!PROMOTABLE_CONTENT_TYPES.includes(type as PromotableContentType)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid type. Must be one of: ${PROMOTABLE_CONTENT_TYPES.join(", ")}`,
+        });
+      }
+      const items = await listPromotableContent(
+        userId,
+        type as PromotableContentType,
+      );
+      res.json({ success: true, type, items });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to list promotable content:");
+      res
+        .status(500)
+        .json({ success: false, message: "Failed to load promotable content" });
+    }
+  },
+);
+
+// Generic "promote this" campaign generator — works for any owned content
+// type (beat, release, storefront, social post, artist EPK), not just
+// marketplace beats. Used by the manual Advertising page, the advertising
+// autopilot, and automation pipelines.
+router.post(
+  "/veo-campaign/promote",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId)
+        return res
+          .status(401)
+          .json({ success: false, message: "Not authenticated" });
+
+      const {
+        contentType,
+        contentId,
+        platforms,
+        mood,
+        brand_notes,
+        campaign_notes,
+      } = req.body as Record<string, any>;
+
+      if (!PROMOTABLE_CONTENT_TYPES.includes(contentType)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid contentType. Must be one of: ${PROMOTABLE_CONTENT_TYPES.join(", ")}`,
+        });
+      }
+
+      let source;
+      try {
+        source = await resolvePromotableContent(userId, contentType, contentId);
+      } catch (err) {
+        if (err instanceof PromotableContentError) {
+          return res
+            .status(err.status)
+            .json({ success: false, message: err.message });
+        }
+        throw err;
+      }
+
+      const campaignRequest: Record<string, any> = {
+        title: source.title,
+        artist: source.artist || source.title,
+        mood: mood || (source.category ? "energetic" : "uplifting"),
+        era: "modern",
+        story: source.description,
+        primary_platforms: platforms || [
+          "tiktok",
+          "instagram",
+          "reels",
+          "shorts",
+        ],
+        audio_duration_sec: 180,
+        source_url: source.sourceUrl,
+        source_platform: source.sourcePlatform,
+        content_type: source.veoContentType,
+      };
+
+      if (brand_notes) campaignRequest.brand_notes = brand_notes;
+      if (campaign_notes) campaignRequest.campaign_notes = campaign_notes;
+      if (source.artworkUrl) campaignRequest.artwork_url = source.artworkUrl;
+      if (source.category) campaignRequest.genre = source.category;
+
+      const result = await (
+        await getVeoMusic()
+      ).generateCampaign(campaignRequest as import("../services/veoMusicService.js").VeoCampaignRequest);
+      if (!result || !result.success) {
+        return res.status(500).json({
+          success: false,
+          message: result?.error || "Campaign generation failed",
+        });
+      }
+
+      res.json({
+        ...result,
+        contentType: source.contentType,
+        source: source.summary,
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to promote content:");
+      res
+        .status(500)
+        .json({ success: false, message: "Promotion campaign failed" });
     }
   },
 );

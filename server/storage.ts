@@ -325,6 +325,27 @@ export class DatabaseStorage implements IStorage {
     return config;
   }
 
+  async getAllEnabledAdvertisingAutopilotConfigs(): Promise<any[]> {
+    const result = await dbRead?.execute(sql`
+      SELECT id, preferences
+      FROM users
+      WHERE (preferences->>'advertisingAutopilotConfig')::jsonb->>'isRunning' = 'true'
+      LIMIT 1000
+    `);
+    const rows = (result as { rows?: unknown[] }).rows ?? result;
+    return Array.isArray(rows)
+      ? rows?.map((row: unknown) => {
+          const user = row as Record<string, unknown>;
+          const prefs =
+            typeof user?.preferences === "string"
+              ? JSON.parse(user?.preferences)
+              : (user?.preferences ?? {});
+          const config = prefs?.advertisingAutopilotConfig;
+          return { userId: user.id, ...config };
+        })
+      : [];
+  }
+
   async getAllEnabledAutopilotConfigs(): Promise<any[]> {
     const result = await dbRead?.execute(sql`
       SELECT id, preferences

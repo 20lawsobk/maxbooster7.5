@@ -229,6 +229,13 @@ async function processAutonomousJob(job: Job): Promise<void> {
         );
       break;
     }
+    case "advertising-autopilot-tick": {
+      const { runAdvertisingAutopilotSweep } = await import(
+        "./advertisingAutopilotRunner.js"
+      );
+      await runAdvertisingAutopilotSweep();
+      break;
+    }
     default:
       if (jobName.startsWith("campaign-optimize-")) {
         const campaignId = job?.data?.campaignId as string | undefined;
@@ -356,6 +363,7 @@ const REPEATABLE_JOBS = [
   { name: "prune-upload-dirs", every: 86_400_000 },
   { name: "beat-money-loop-tick", every: 1_800_000 }, // 30 min heartbeat; cycle fires only when due
   { name: "payout-drain", every: 21_600_000 }, // every 6h; auto-drains balances past threshold
+  { name: "advertising-autopilot-tick", every: 1_800_000 }, // 30 min heartbeat; per-user cadence enforced inside the sweep
 ] as const;
 
 const SCHED_DEFAULTS = {
