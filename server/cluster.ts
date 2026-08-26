@@ -293,14 +293,12 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
   const isDeployment = !!process.env.REPLIT_DEPLOYMENT;
 
-  // Deployed workers get the full 4 GiB heap; dev gets 3 GiB to avoid OOM
-  // on smaller dev containers that share RAM with the IDE and sidecars.
+  // Deployed workers get up to a 4 GiB heap; dev gets up to 3 GiB to avoid
+  // OOM on smaller dev containers that share RAM with the IDE and sidecars.
+  // These are CEILINGS, not guarantees — the actual cap applied below is
+  // clamped to what the VM really has (see workerHeapMB).
   const memPerWorkerGB = isDeployment ? 4.5 : 6.0;
-
-  // V8 heap cap applied to each forked worker (MiB).
-  // Workers do NOT inherit the primary's --max-old-space-size CLI flag —
-  // it must be passed explicitly via execArgv (done below).
-  const workerHeapMB = isDeployment ? 4096 : 3072;
+  const workerHeapCeilingMB = isDeployment ? 4096 : 3072;
 
   // Sizing derivation lives in server/computeSizing.ts — the single shared
   // source of truth also consumed by maxcoreLocalSupervisor.ts (its own Node
@@ -330,6 +328,37 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   }
 
   const workerCount = sizing.workerCount;
+
+  // V8 heap cap applied to each forked worker (MiB).
+  // Workers do NOT inherit the primary's --max-old-space-size CLI flag —
+  // it must be passed explicitly via execArgv (done below).
+  //
+  // CRITICAL: this must be clamped to what the VM actually has, not a flat
+  // per-tier constant. A hardcoded "deployed = 4096 MB" assumes every
+  // deployment lands on a large VM. On a small VM (e.g. 2 GB total RAM) a
+  // 4096 MB V8 heap ceiling lets the worker's heap grow to more than 2x
+  // physical memory before V8 even starts feeling heap pressure — the OS
+  // then thrashes (swap or reclaim) under real memory pressure, which can
+  // stall the entire event loop (including logging) for tens of minutes
+  // while the process looks "alive" but serves nothing. Deriving the cap
+  // from `sizing.freeMemGB` keeps the ceiling honest for whatever box this
+  // process actually landed on.
+  const HEAP_SAFETY_FRACTION = 0.6; // leave headroom for native overhead (TF.js, sharp, libuv) + primary + OS
+  const MIN_WORKER_HEAP_MB = 512;
+  const memAwareHeapMB = Math.floor(
+    (sizing.freeMemGB * 1024 * HEAP_SAFETY_FRACTION) / workerCount,
+  );
+  const workerHeapMB = Math.max(
+    MIN_WORKER_HEAP_MB,
+    Math.min(workerHeapCeilingMB, memAwareHeapMB),
+  );
+  if (workerHeapMB < workerHeapCeilingMB) {
+    console.warn(
+      `[Cluster] ⚠️  Worker heap capped to ${workerHeapMB} MB (below the ${workerHeapCeilingMB} MB ceiling) — ` +
+        `this VM only has ${sizing.freeMemGB.toFixed(1)} GB free for ${workerCount} worker(s). ` +
+        `Raising CLUSTER_WORKERS or the box size lets workers use more heap.`,
+    );
+  }
 
   const workerScript = path?.join(__dirname, "index.mjs");
 
