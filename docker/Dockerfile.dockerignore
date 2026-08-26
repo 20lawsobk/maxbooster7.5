@@ -1,0 +1,27 @@
+# Ignore file scoped to docker/Dockerfile (BuildKit convention:
+# <dockerfile>.dockerignore overrides the root .dockerignore for this build).
+# The root .dockerignore is tuned for Replit's own post-build artifact
+# packaging (it deliberately drops shared/, scripts/, boosterstate sources
+# once dist/ exists) — this build compiles FROM source, so it needs those.
+
+.git
+node_modules
+dist
+data/
+uploads/
+boostersheets_db/
+pocket-dimensions/
+*.log
+.env
+.env.*
+!.env.example
+python_runtime/
+.venv/
+boosterstate/target/
+attached_assets/
+.agents/
+.local/
+android/
+ios/
+electron/
+electron-out/
