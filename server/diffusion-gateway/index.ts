@@ -32,11 +32,12 @@ import {
   getMaxcoreGenerationKey,
   getMaxcoreOrigin,
 } from "../services/maxcoreConnector.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = parseInt(process.env.VIDEO_DIFFUSION_PORT ?? "8008", 10);
+const PORT = runtimePorts.diffusionGateway;
 const MC_URL = getMaxcoreOrigin();
 const MC_KEY = getMaxcoreGenerationKey();
 const PDIM_URL =
@@ -49,8 +50,7 @@ const PDIM_TOKEN =
 const PDIM_INST =
   process.env.PDIM_INSTANCE_ID || process.env.REPLIT_BUCKET_ID || "";
 // Max Booster internal URL — used to trigger an immediate weight sync after each session
-const APP_PORT = parseInt(process.env.PORT ?? "5000", 10);
-const APP_URL = `http://127.0.0.1:${APP_PORT}`;
+const APP_URL = loopbackUrl(runtimePorts.app);
 const APP_SECRET = process.env.BOOSTERSTATE_SECRET || "";
 
 const DIFFUSION_DIR = path.join(__dirname, "..", "services", "diffusion");
@@ -800,7 +800,7 @@ app.post("/memory/flush", (_req: Request, res: Response) => {
 
 // ── Start ──────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, "127.0.0.1", () => {
   console?.log(
     `[DiffGateway] MaxCore Diffusion Gateway listening on port ${PORT}`,
   );

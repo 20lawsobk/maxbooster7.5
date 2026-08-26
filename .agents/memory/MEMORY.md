@@ -94,3 +94,4 @@
 - [Pocket-backed elastic compute](pocket-elastic-compute.md) — PocketFabric node lifecycles and MaxCore GPU lives are uncapped logical resources backed by compressed pocket state
 - [Awareness conditioning contract](awareness-conditioning-contract.md) — every model seam uses the shared cascade, and media coalescing identities include effective awareness
 - [Honest-placeholder control checklist](honest-placeholder-controls.md) — a "fixed" placeholder endpoint isn't done until: static routes registered before conflicting `:id` routes, user input actually persisted (not discarded), status only flips to a terminal value on real success, and the GET/list DTO echoes back what was saved so a reload doesn't lose it
+- [Port contract boundaries](port-contract-boundaries.md) — PORT is public-only; every sidecar needs a validated named loopback port and no external mapping

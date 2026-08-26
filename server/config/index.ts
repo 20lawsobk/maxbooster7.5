@@ -18,6 +18,7 @@ export {
   isReplitWorkspace,
   getBaseUrl,
 } from "./defaults.js";
+import { runtimePorts } from "./ports.js";
 
 // ─── Unified config object (self-confinement spec) ───────────────────────────
 
@@ -27,7 +28,7 @@ const p = process.env;
 // Local mode is the default: the imported MaxCore repo runs as a supervised
 // child on loopback. MAXCORE_LOCAL=0 restores the remote-URL behavior.
 const _maxcoreLocalEnabled = p.MAXCORE_LOCAL !== "0";
-const _maxcoreLocalPort = Number(p.MAXCORE_LOCAL_PORT) || 8090;
+const _maxcoreLocalPort = runtimePorts.maxcoreApi;
 // Deterministic loopback credentials, derived from SESSION_SECRET, used only
 // when no explicit MaxCore key is configured in local mode. Never used for a
 // remote MaxCore (remote mode without keys keeps keys empty → callers fail
@@ -43,7 +44,7 @@ function _maxcoreDerivedKey(scope: "gen" | "admin"): string {
 
 export const config = {
   // Core
-  port: Number(p.PORT) || 5000,
+  port: runtimePorts.app,
   nodeEnv: (p.NODE_ENV as "development" | "production" | "test") || "development",
 
   // Database — prefer Neon URL, fall back to DATABASE_URL
@@ -59,7 +60,7 @@ export const config = {
   maxcoreLocal: {
     enabled: _maxcoreLocalEnabled,
     port: _maxcoreLocalPort,
-    modelApiPort: Number(p.MODEL_API_PORT) || 9878,
+    modelApiPort: runtimePorts.maxcoreModelApi,
   },
   maxcoreUrl: _maxcoreLocalEnabled
     ? `http://127.0.0.1:${_maxcoreLocalPort}`

@@ -14,6 +14,7 @@
  */
 
 import { logger } from "../logger.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
 // ── Local PDIM repoint ────────────────────────────────────────────────────────
 // PDIM is an internal subsystem now (server/lib/localPdimServer.ts on :5556).
@@ -22,7 +23,7 @@ import { logger } from "../logger.js";
 // Set PDIM_FORCE_REMOTE=1 to opt back into a remote instance.
 if (process.env.PDIM_FORCE_REMOTE !== "1") {
   const LOCAL_EXEC_URL =
-    "http://127.0.0.1:5556/api/redis/instances/local/exec";
+    `${loopbackUrl(runtimePorts.localPdim)}/api/redis/instances/local/exec`;
   const prev = process.env.STORAGE_HTTP_URL;
   process.env.STORAGE_HTTP_URL = LOCAL_EXEC_URL;
   process.env.PDIM_EXEC_URL = LOCAL_EXEC_URL;

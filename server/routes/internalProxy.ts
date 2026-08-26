@@ -10,9 +10,9 @@
  */
 import { Router, Request, Response } from "express";
 import { logger } from "../logger.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
-const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || "9878", 10);
-const AI_SERVICE_TARGET = `http://127.0.0.1:${PYTHON_AI_PORT}`;
+const AI_SERVICE_TARGET = loopbackUrl(runtimePorts.legacyPythonAi);
 const INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || "";
 
 function checkInternalSecret(req: Request, res: Response): boolean {
@@ -88,14 +88,7 @@ aiServiceProxyRouter?.use((req: Request, res: Response) => {
   proxyTo(AI_SERVICE_TARGET, req, res, "PythonAI");
 });
 
-// BOOSTERSTATE_SIDECAR_PORT is the binary's actual internal listen port.
-// BOOSTERSTATE_PORT may equal PORT when the one-port config is active; never use
-// it here — that would proxy back to the main app and create a loop.
-const BOOSTERSTATE_SIDECAR_PORT = parseInt(
-  process.env.BOOSTERSTATE_SIDECAR_PORT || "9877",
-  10,
-);
-const BOOSTERSTATE_TARGET = `http://127.0.0.1:${BOOSTERSTATE_SIDECAR_PORT}`;
+const BOOSTERSTATE_TARGET = loopbackUrl(runtimePorts.boosterState);
 
 export const boosterstateProxyRouter = Router();
 

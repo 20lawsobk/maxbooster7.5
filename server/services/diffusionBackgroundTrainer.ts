@@ -29,6 +29,7 @@ import fs from "fs";
 import os from "os";
 import { fileURLToPath } from "url";
 import { logger } from "../logger.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 import {
   getMaxcoreGenerationKey,
   getMaxcoreOrigin,
@@ -248,7 +249,7 @@ async function _isMaxCoreGatewayRunning(): Promise<boolean> {
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl?.abort(), 4_000);
-    const res = await fetch("http://localhost:8008/health", {
+    const res = await fetch(`${loopbackUrl(runtimePorts.diffusionGateway)}/health`, {
       signal: ctrl.signal,
     });
     clearTimeout(timer);

@@ -13,6 +13,7 @@
 import { EventEmitter } from "events";
 import os from "os";
 import { logger } from "../logger.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 import { execLuaViaPdim } from "./luaExecutor.js";
 import { cbAllowRequest, cbRecordFailure as cbRecord503, cbRecordSuccess, cbHalfOpenFailed, cbForceClose, cbGetState } from "./pdimCircuitBreaker.js";
 
@@ -2002,9 +2003,7 @@ export function isPdimConfigured(): boolean {
 
   // The in-process PDIM server is intentionally loopback-only and has no
   // bearer-auth boundary. Remote PDIM must still provide its credential.
-  const isLocal =
-    execUrl.startsWith("http://127.0.0.1:5556/") ||
-    execUrl.startsWith("http://localhost:5556/");
+  const isLocal = execUrl.startsWith(`${loopbackUrl(runtimePorts.localPdim)}/`);
   return isLocal || !!(process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN);
 }
 

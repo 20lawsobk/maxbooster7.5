@@ -89,6 +89,12 @@ fi
 export PATH="$(dirname "$_NODE_BIN"):$PATH"
 echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 
+# ── 1a. Validate and export the runtime port contract ─────────────────────────
+# This must happen before the liveness stub or any sidecar starts. A duplicate
+# assignment is a configuration failure, never something to "work around" by
+# letting one process silently take another service's socket.
+source "$_SCRIPT_DIR/scripts/port-contract.sh"
+
 # ── 1b. Boot-time liveness stub ───────────────────────────────────────────────
 # Binds the real port immediately (before node_modules even exists) so the
 # platform's health check against "/" gets a 200 from second one, instead of
@@ -163,7 +169,7 @@ if ! pgrep -x boosterstate >/dev/null 2>&1; then
     _BOOSTER_BIN="./boosterstate/target/release/boosterstate"
 
   if [ -n "$_BOOSTER_BIN" ]; then
-    _SIDECAR_PORT="${BOOSTERSTATE_SIDECAR_PORT:-9877}"
+    _SIDECAR_PORT="${BOOSTERSTATE_SIDECAR_PORT}"
     BOOSTERSTATE_PORT="$_SIDECAR_PORT" "$_BOOSTER_BIN" &
     echo "[start.sh] boosterstate started (pid $!) on internal port $_SIDECAR_PORT via $_BOOSTER_BIN"
   else
@@ -210,9 +216,9 @@ if [ "${ENABLE_LEGACY_AI_SIDECAR:-0}" = "1" ] && ! pgrep -f "ai_content_sidecar.
   fi
 
   if [ -n "$_PY_BIN" ]; then
-    PYTHON_AI_PORT="${PYTHON_AI_PORT:-9878}" "$_PY_BIN" server/services/ai_content_sidecar.py \
+    PYTHON_AI_PORT="${PYTHON_AI_PORT}" "$_PY_BIN" server/services/ai_content_sidecar.py \
       >> /tmp/ai_content_sidecar.log 2>&1 &
-    echo "[start.sh] Python AI Content Sidecar started (pid $!) on port ${PYTHON_AI_PORT:-9878} via $_PY_BIN"
+    echo "[start.sh] Python AI Content Sidecar started (pid $!) on port ${PYTHON_AI_PORT} via $_PY_BIN"
   else
     echo "[start.sh] WARNING: Python not found — legacy AI sidecar unavailable"
   fi

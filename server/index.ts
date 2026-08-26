@@ -15,6 +15,7 @@ import "./lib/consoleErrorFilter.js";
 import "./instrument.js";
 // Typed env — validates critical vars at startup, throws if DATABASE_URL/SESSION_SECRET missing
 import { env } from "./config/env.js";
+import { runtimePorts } from "./config/ports.js";
 
 import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
@@ -157,7 +158,7 @@ httpServer?.on("connection", (socket) => {
 // requests that arrive before they are ready will get 404/503 for a few seconds,
 // which is acceptable; the deployment health check only needs /health to pass.
 {
-  const _earlyPort = env?.PORT;
+  const _earlyPort = runtimePorts.app;
   httpServer?.listen(
     { port: _earlyPort, host: "0.0.0.0", reusePort: true },
     () =>

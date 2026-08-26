@@ -1,6 +1,7 @@
 import { logger } from "../logger.js";
 import os from "os";
 import { env } from "./env.js";
+import { runtimePorts } from "./ports.js";
 
 // VM Reserve auto-sizing: scale queue concurrency proportionally to available CPU cores.
 // Formula: floor(cpuCount / 4) gives a whole-number multiplier:
@@ -38,7 +39,7 @@ export function getBaseUrl(): string {
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   }
-  return `http://localhost:${process.env.PORT || 5000}`;
+  return `http://127.0.0.1:${runtimePorts.app}`;
 }
 
 export interface AppConfig {
@@ -167,7 +168,7 @@ export const config: AppConfig = {
   nodeEnv: parseNodeEnv(process.env.NODE_ENV),
   isReplitDeployment,
   isReplitWorkspace,
-  port: parseEnvInt("PORT", 5000),
+  port: runtimePorts.app,
 
   database: {
     url: env.NEON_DATABASE_URL || env.DATABASE_URL || "",
@@ -204,7 +205,7 @@ export const config: AppConfig = {
   },
 
   boosterState: {
-    port: parseEnvInt("BOOSTERSTATE_PORT", 9877), // sidecar listens here; clients route through PORT/api/boosterstate
+    port: runtimePorts.boosterState,
     shards: parseEnvInt("BOOSTERSTATE_SHARDS", 16),
     dataDir: process.env.BOOSTERSTATE_DATA_DIR || "./boosterstate-data",
   },

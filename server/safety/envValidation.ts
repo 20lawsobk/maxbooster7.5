@@ -92,10 +92,10 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     description: "Server listen port (default 5000)",
   },
   {
-    name: "BOOSTERSTATE_PORT",
+    name: "BOOSTERSTATE_SIDECAR_PORT",
     required: false,
     category: "critical",
-    description: "BoosterState sidecar port",
+    description: "BoosterState loopback sidecar port",
     validator: (v) => !isNaN(parseInt(v)) && parseInt(v) > 0,
   },
   {

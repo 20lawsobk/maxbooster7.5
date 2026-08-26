@@ -1,12 +1,12 @@
 """
-Max Booster AI Content Sidecar — port 9878 (PYTHON_AI_PORT)
+Max Booster AI Content Sidecar — port 9880 (PYTHON_AI_PORT)
 ------------------------------------------------------------
 Thin MaxCore proxy that fulfils every endpoint consumed by
 server/services/pythonAIService.ts.  Uses only Python stdlib
 so zero pip installs are required.
 
 Architecture (direct-call path — bypasses Express CSRF):
-  pythonAIService.ts  →  THIS SIDECAR (port 9878, 127.0.0.1 only)
+  pythonAIService.ts  →  THIS SIDECAR (port 9880, 127.0.0.1 only)
                                 ↓
                           MaxCore  (local loopback / MAXCORE_URL)
 
@@ -35,7 +35,7 @@ from urllib.parse import urlparse
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 HOST   = '127.0.0.1'
-PORT   = int(os.environ.get('PYTHON_AI_PORT', 9878))
+PORT   = int(os.environ.get('PYTHON_AI_PORT', 9880))
 
 
 def _resolve_maxcore_url() -> str:

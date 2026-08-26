@@ -1,8 +1,8 @@
 import { logger } from "../logger.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
-const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || "9878", 10);
 const AI_MODEL_URL =
-  process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
+  process.env.AI_MODEL_SERVICE_URL || loopbackUrl(runtimePorts.legacyPythonAi);
 const VEO_TIMEOUT_MS = 180_000; // raised: full Veo campaign generation and multi-platform video rendering
 
 const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || "";

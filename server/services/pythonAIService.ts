@@ -1,11 +1,11 @@
 import { logger } from "../logger.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
 // Call the Python AI sidecar directly (loopback, no CSRF/auth layer needed).
 // Routing through the main Express server (/api/ai-service) would hit the CSRF
 // middleware and fail because server-to-server fetches carry no CSRF cookie.
-const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || "9878", 10);
 const AI_MODEL_URL =
-  process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
+  process.env.AI_MODEL_SERVICE_URL || loopbackUrl(runtimePorts.legacyPythonAi);
 const TIMEOUT_MS = 120_000; // raised: audio analysis, transcription, and heavy ML inference can exceed 30s
 
 // Kept for any callers that still pass through Express; unused when calling the

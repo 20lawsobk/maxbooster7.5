@@ -57,6 +57,7 @@ import {
   getMaxcoreOriginOrDefault,
 } from "./maxcoreConnector.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
 // ─── MaxCore connection (via the shared connector contract boundary) ──────────
 
@@ -65,7 +66,7 @@ const MAXCORE_KEY = getMaxcoreGenerationKey();
 
 // ─── DiT-24 local relay (three-tier architecture: Max Booster → DiT-24 → MaxCore) ──
 
-const DIT24_RELAY_URL = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
+const DIT24_RELAY_URL = loopbackUrl(runtimePorts.diffusionGateway);
 
 async function dit24Post(
   path: string,

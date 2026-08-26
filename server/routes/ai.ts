@@ -17,6 +17,7 @@ import {
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
 import { notificationService } from "../services/notificationService.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
 const router = Router();
 
@@ -990,7 +991,7 @@ router.get(
 // Port 8008 (api_server_v4?.py) is the primary content generation gateway.
 // These routes expose its training state and simulator progress to the frontend.
 
-const DIT24_BASE = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
+const DIT24_BASE = loopbackUrl(runtimePorts.diffusionGateway);
 
 router.get(
   "/diffusion/status",
@@ -1003,7 +1004,7 @@ router.get(
       if (!ctrl?.ok) {
         return res
           .status(502)
-          .json({ error: "Diffusion gateway unavailable", port: 8008 });
+          .json({ error: "Diffusion gateway unavailable", port: runtimePorts.diffusionGateway });
       }
       const data = await ctrl?.json();
       res.json({ success: true, data });

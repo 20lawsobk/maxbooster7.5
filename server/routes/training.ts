@@ -2,12 +2,12 @@ import { Router, Request, Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import { syncWeightsNow } from "../services/maxcoreSync.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
 const router = Router();
 
-const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || "9878", 10);
 const AI_URL =
-  process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
+  process.env.AI_MODEL_SERVICE_URL || loopbackUrl(runtimePorts.legacyPythonAi);
 const TRAIN_TIMEOUT = 60_000;
 const LONG_TIMEOUT = 3_600_000;
 

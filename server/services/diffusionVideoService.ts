@@ -279,8 +279,10 @@ export interface DigitalGPUStatus {
   available_scenes: string[];
 }
 
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
+
 const PYTORCH_API_BASE =
-  process.env.VIDEO_DIFFUSION_URL ?? "http://127.0.0.1:8008";
+  process.env.VIDEO_DIFFUSION_URL ?? loopbackUrl(runtimePorts.diffusionGateway);
 
 /** Query DigitalGPU backend capabilities from the diffusion API server. */
 export async function getDigitalGPUStatus(): Promise<DigitalGPUStatus | null> {

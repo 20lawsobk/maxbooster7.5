@@ -20,6 +20,7 @@ import {
 import { eq, and, desc, count, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -384,7 +385,8 @@ router.post("/generate-pitch", async (req, res) => {
     }
 
     // Attempt MaxCore generation
-    const MAXCORE_URL = process.env.MAXCORE_URL ?? "http://localhost:8090";
+    const MAXCORE_URL =
+      process.env.MAXCORE_URL ?? loopbackUrl(runtimePorts.maxcoreApi);
     let pitchBody = "";
 
     try {

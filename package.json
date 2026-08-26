@@ -12,7 +12,7 @@
   "packageManager": "pnpm@11.22.0",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "bash -c '([ -x ./boosterstate/target/debug/boosterstate ] && ./boosterstate/target/debug/boosterstate &); sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
+    "dev": "bash scripts/start-dev.sh",
     "security-fix": "npx tsx script/security-fix.ts",
     "build": "npx tsx script/build.ts",
     "build:clean": "DEPLOY_CLEAN=1 npx tsx script/build.ts",

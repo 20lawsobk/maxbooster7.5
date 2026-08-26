@@ -24,8 +24,9 @@ import http from "http";
 import fs from "fs";
 import path from "path";
 import { logger } from "../logger.js";
+import { runtimePorts } from "../config/ports.js";
 
-const LOCAL_PORT = 5556;
+const LOCAL_PORT = runtimePorts.localPdim;
 const PERSIST_FILE = path.resolve("./data/local-pdim-store.json");
 const PERSIST_INTERVAL_MS = 30_000;
 

@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 import { createRequire } from "module";
 import { spawnSync, spawn } from "child_process";
 import { computeWorkerSizing } from "./computeSizing";
+import { runtimePorts } from "./config/ports.js";
 
 // ── Boosterstate sidecar startup ──────────────────────────────────────────────
 // Previously handled by start?.sh. Moved here so the run command can be a plain
@@ -74,12 +75,12 @@ import { computeWorkerSizing } from "./computeSizing";
     return;
   }
 
-  // BOOSTERSTATE_PORT may equal PORT (5000) when the "one external port" configuration
-  // is active — clients reach boosterstate via the /api/boosterstate Express proxy.
-  // The sidecar binary itself must always bind to a different internal port.
-  // BOOSTERSTATE_SIDECAR_PORT (default 9877) is the binary's actual listen address.
-  const sidecarPort = process.env.BOOSTERSTATE_SIDECAR_PORT || "9877";
-  const sidecarEnv = { ...process.env, BOOSTERSTATE_PORT: sidecarPort };
+  // Clients reach BoosterState through the main application's authenticated
+  // proxy. The binary always owns its distinct loopback port.
+  const sidecarEnv = {
+    ...process.env,
+    BOOSTERSTATE_PORT: String(runtimePorts.boosterState),
+  };
   const proc = spawn(bin, [], {
     detached: true,
     stdio: "ignore",
@@ -307,7 +308,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   //   • Once workers come online they share port 5000 and handle real traffic.
   //   • If ALL workers crash and restart the primary's socket keeps the port
   //     alive so the health check never sees a connection-refused.
-  const primaryPort = parseInt(process.env.PORT || "5000", 10);
+  const primaryPort = runtimePorts.app;
   // Health paths answered by the primary itself.
   // MUST include every path Replit's deployment health checker may use — if the
   // primary returns 503 on any health path, the deployment times out even after

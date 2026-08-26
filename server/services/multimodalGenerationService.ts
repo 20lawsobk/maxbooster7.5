@@ -35,6 +35,7 @@ import {
   normalizeSocialAwarenessPlatform,
   platformAwarenessOptimization,
 } from "./awarenessContext.js";
+import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
 // Resolved through the shared connector (single MaxCore contract boundary);
 // the connector normalizes root-vs-/api URL forms.
@@ -45,7 +46,7 @@ const MAXCORE_KEY = getMaxcoreGenerationKey();
 // This is the primary gateway for ALL content generation on the platform.
 // Proxies to MaxCore when local model is untrained; gradually switches to
 // local inference as the model accumulates simulated training years.
-const DIT24_GATEWAY = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
+const DIT24_GATEWAY = loopbackUrl(runtimePorts.diffusionGateway);
 const DIT24_PROXY_TIMEOUT_MS = 8_000; // fast timeout — fall through to direct MaxCore if 8008 is down
 
 async function dit24GatewayPost(
