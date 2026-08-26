@@ -1,4 +1,5 @@
 - [Express 5 req.params typing](express5-params-string-array.md) — ParamsDictionary values are string|string[]; named params are strings at runtime, wildcard routes get arrays
+- [Deploy boot-stub → primary port gap](deploy-boot-stub-port-gap.md) — anything sync/CPU-blocking before the real server's listen() call reopens the port-unbound window the boot-stub was meant to close
 - [Boot-window 404s](boot-window-404s.md) — registerRoutes takes minutes; mixed some-routes-work/some-404 after restart means registration still in progress, check "[Boot] Routes registered"
 - [PDIM script-chain split](pdim-script-chain.md) — scripts must use a dedicated chain or Workers time out behind the direct-call queue
 - [PDIM startup gap cap](pdim-startup-gap-cap.md) — PermanentFixer restored gap must be capped at 400ms or the startup queue takes 28 min to drain

@@ -103,44 +103,91 @@ import { runtimePorts } from "./config/ports.js";
 // The Repl layer (pushed during deployment) cannot contain binary files.
 // The deploy:build script deletes all .br/.gz files before layer push.
 // Re-generate them here at VM startup so static serving stays fast.
-(function compressAssetsAtStartup() {
+//
+// IMPORTANT: this MUST run asynchronously and MUST be kicked off only after
+// the primary has bound the health-check port. It used to run synchronously
+// as a top-level IIFE, executed during module load BEFORE the primary ever
+// called `.listen()`. Compressing hundreds of built assets with sync
+// readFileSync/brotliCompressSync/writeFileSync blocked the event loop for
+// 20-30+ seconds on every deploy — and start.sh had ALREADY killed the
+// boot-stub liveness server and released port 5000 before launching this
+// process, so during that whole window nothing was listening on the port at
+// all. Any request (or the platform's own health check) arriving in that gap
+// got connection-refused instead of a slow-but-successful response. Async
+// zlib + fs.promises here means the primary's listen() fires first and the
+// compression work interleaves with request handling on the event loop
+// instead of pre-empting it.
+async function compressAssetsAtStartup(): Promise<void> {
   const COMPRESSIBLE = /\.(js|css|svg|html|json|txt|xml|webmanifest)$/;
   const assetsDir = path?.join(process.cwd(), "dist", "public", "assets");
   if (!fs?.existsSync(assetsDir)) return;
 
-  function compressDir(dir: string) {
-    let count = 0;
-    for (const entry of fs?.readdirSync(dir, { withFileTypes: true }) ?? []) {
-      const full = path?.join(dir, entry?.name);
-      if (entry?.isDirectory()) {
-        count += compressDir(full);
+  const fsp = fs.promises;
+  const brotliCompress = (buf: Buffer) =>
+    new Promise<Buffer>((resolve, reject) => {
+      zlib.brotliCompress(
+        buf,
+        { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 6 } },
+        (err, res) => (err ? reject(err) : resolve(res)),
+      );
+    });
+  const gzipCompress = (buf: Buffer) =>
+    new Promise<Buffer>((resolve, reject) => {
+      zlib.gzip(buf, { level: 9 }, (err, res) => (err ? reject(err) : resolve(res)));
+    });
+
+  async function listFiles(dir: string): Promise<string[]> {
+    const out: string[] = [];
+    for (const entry of (await fsp.readdir(dir, { withFileTypes: true })) ?? []) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        out.push(...(await listFiles(full)));
         continue;
       }
-      if (!COMPRESSIBLE?.test(entry?.name)) continue;
-      if (entry?.name?.endsWith(".br") || entry?.name?.endsWith(".gz")) continue;
-      try {
-        const src = fs?.readFileSync(full);
-        if (!fs?.existsSync(full + ".br")) {
-          const br = zlib?.brotliCompressSync(src, {
-            params: { [zlib?.constants?.BROTLI_PARAM_QUALITY]: 6 },
-          });
-          fs?.writeFileSync(full + ".br", br);
-          count++;
-        }
-        if (!fs?.existsSync(full + ".gz")) {
-          const gz = zlib?.gzipSync(src, { level: 9 });
-          fs?.writeFileSync(full + ".gz", gz);
-          count++;
-        }
-      } catch {
-        /* intentional: gzip backup is best-effort; main data file already written */
+      if (!COMPRESSIBLE.test(entry.name)) continue;
+      if (entry.name.endsWith(".br") || entry.name.endsWith(".gz")) continue;
+      out.push(full);
+    }
+    return out;
+  }
+
+  async function compressOne(full: string): Promise<number> {
+    let count = 0;
+    try {
+      const [hasBr, hasGz] = await Promise.all([
+        fsp.access(full + ".br").then(() => true).catch(() => false),
+        fsp.access(full + ".gz").then(() => true).catch(() => false),
+      ]);
+      if (hasBr && hasGz) return 0;
+      const src = await fsp.readFile(full);
+      if (!hasBr) {
+        await fsp.writeFile(full + ".br", await brotliCompress(src));
+        count++;
       }
+      if (!hasGz) {
+        await fsp.writeFile(full + ".gz", await gzipCompress(src));
+        count++;
+      }
+    } catch {
+      /* intentional: gzip backup is best-effort; main data file already written */
     }
     return count;
   }
 
   try {
-    const compressed = compressDir(assetsDir);
+    const files = await listFiles(assetsDir);
+    // Small bounded concurrency so this never competes hard with request
+    // handling — it's a background nice-to-have, not startup-critical.
+    const CONCURRENCY = 4;
+    let compressed = 0;
+    let cursor = 0;
+    async function worker() {
+      while (cursor < files.length) {
+        const file = files[cursor++];
+        compressed += await compressOne(file);
+      }
+    }
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
     if (compressed > 0)
       console.log(
         `[Cluster] Asset pre-compression complete — ${compressed} file(s) written`,
@@ -151,7 +198,7 @@ import { runtimePorts } from "./config/ports.js";
       (err as Error).message,
     );
   }
-})();
+}
 
 // CJS-safe: import.meta.url is undefined when bundled to CJS by esbuild.
 // Fall back to process.argv[1] (the entry file path) for __dirname resolution.
@@ -182,6 +229,9 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     console.error("[Cluster] Failed to load server entry:", err);
     process.exit(1);
   });
+  // Safe to kick off in the background here too — index.mjs binds its own
+  // listener synchronously at import time, so the port is already live.
+  void compressAssetsAtStartup();
 } else {
   const totalMemGB = os?.totalmem() / 1024 ** 3;
 
@@ -348,6 +398,10 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
       console.log(
         `[Cluster] Primary health server on :${primaryPort} (pid=${process.pid}) — workers starting`,
       );
+      // Only start the (CPU-bound but now async) asset compression once the
+      // port is actually bound, so it never delays — or races — the moment
+      // the platform's health check can get a response.
+      void compressAssetsAtStartup();
     },
   );
 
