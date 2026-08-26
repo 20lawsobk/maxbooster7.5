@@ -2944,6 +2944,128 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  /**
+   * Public single-beat detail — mirrors getBeatListings()'s per-item shape
+   * (producer name, genre/mood/tempo, discount fields) plus the full
+   * licenseTiers array, so a beat reached via a deep link (e.g. from an ad)
+   * always renders with a complete, working buy flow even when it isn't in
+   * the caller's paginated/filtered browse feed.
+   */
+  async getBeatListingDetail(id: string): Promise<any | null> {
+    try {
+      const [listing] = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.id, id))
+        .limit(1);
+      if (!listing) return null;
+
+      const [owner] = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        })
+        .from(users)
+        .where(eq(users.id, listing.userId))
+        .limit(1);
+      const producerName =
+        owner?.username ||
+        `${owner?.firstName || ""} ${owner?.lastName || ""}`.trim() ||
+        "Producer";
+
+      const meta = (listing?.metadata as Record<string, unknown>) || {};
+
+      const tiers = await db
+        .select()
+        .from(listingLicenseTiers)
+        .where(
+          and(
+            eq(listingLicenseTiers.listingId, id),
+            eq(listingLicenseTiers.isActive, true),
+          ),
+        )
+        .orderBy(asc(listingLicenseTiers.sortOrder))
+        .limit(20);
+
+      const licenseTiers = tiers?.map((t) => ({
+        id: t.id,
+        licenseType: t.licenseType,
+        label: t.label,
+        price: (t?.priceCents || 0) / 100,
+        discountType: t.discountType,
+        discountPercent: t.discountPercent,
+        discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null,
+        bogoEnabled: t.bogoEnabled,
+        bogoGetType: t.bogoGetType,
+        bogoGetPercent: t.bogoGetPercent,
+        fileFormats: t.fileFormats,
+        audioUrls: t.audioUrls || {},
+        isActive: t.isActive,
+      }));
+
+      return {
+        id: listing.id,
+        userId: listing.userId,
+        producerId: listing.userId,
+        producer: producerName,
+        title: listing.title,
+        description: listing.description || "",
+        price: (listing?.priceCents || 0) / 100,
+        currency: listing.currency || "usd",
+        category: listing.category,
+        genre: meta.genre || listing?.category || "",
+        mood: meta.mood || "",
+        tempo: meta.bpm || 0,
+        bpm: meta.bpm || 0,
+        key: meta.key || "",
+        duration: meta.duration || 0,
+        audioUrl: listing.audioUrl,
+        artworkUrl: listing.artworkUrl,
+        coverArt: listing.artworkUrl,
+        previewUrl: listing.previewUrl,
+        isPublished: listing.isPublished,
+        status: listing.isPublished ? "active" : "inactive",
+        isExclusive: meta.isExclusive || false,
+        isLease: meta.isLease !== false,
+        licenseType: meta.licenseType || "basic",
+        metadata: listing.metadata,
+        avgRating: meta.avgRating || 0,
+        ratingCount: meta.ratingCount || 0,
+        likes: meta.likes || 0,
+        plays: meta.plays || 0,
+        downloads: meta.downloads || 0,
+        tags: meta.tags || [],
+        waveformData: meta.waveformData || [],
+        discountPercent: listing.discountPercent ?? null,
+        discountPriceCents: listing.discountPriceCents ?? null,
+        discountExpiresAt: listing.discountExpiresAt ?? null,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt ?? listing?.createdAt,
+        hasLicenseTiers: licenseTiers.length > 0,
+        licenseTiers,
+        licenses:
+          licenseTiers.length > 0
+            ? licenseTiers.map((t) => ({ type: t.licenseType, price: t.price }))
+            : [
+                { type: "basic", price: (listing?.priceCents || 0) / 100 },
+                {
+                  type: "premium",
+                  price: ((listing?.priceCents || 0) / 100) * 2,
+                },
+                {
+                  type: "exclusive",
+                  price: ((listing?.priceCents || 0) / 100) * 5,
+                },
+              ],
+      };
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching beat listing detail:");
+      return null;
+    }
+  }
+
   async updateListing(
     id: string,
     data: Record<string, unknown>,

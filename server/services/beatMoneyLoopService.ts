@@ -87,6 +87,17 @@ const TRENDING_MOOD_FALLBACK = "dark";
 // All platforms the admin account can have connected. Expired tokens are
 // filtered out at the storage layer (getUserSocialToken), so this list is
 // safe to include broadly — platforms without valid tokens skip gracefully.
+// Single source of truth for the buyer-facing beat link every ad/caption
+// generator embeds. Must match the client route in App.tsx
+// (/marketplace/beat/:beatId) and the server detail endpoint
+// (GET /api/marketplace/beats/:beatId) so the link an ad ships with — on
+// whichever connected social account it's dispatched through — always
+// resolves to that beat's real buy flow instead of the generic homepage.
+function getBeatLandingUrl(beatId: string): string {
+  const origin = process.env.APP_URL || "https://max-booster.com";
+  return `${origin.replace(/\/$/, "")}/marketplace/beat/${beatId}`;
+}
+
 const PLATFORMS_FOR_CAMPAIGN = [
   "instagram", "facebook", "tiktok", "twitter", "threads", "linkedin",
 ] as const;
@@ -1736,6 +1747,7 @@ class BeatMoneyLoopService {
             "[BeatMoneyLoop] MaxCore caption generation failed — using local fallback",
           );
           return this._buildAdCaption({
+            beatId: args.beatId,
             title: args.title,
             scan: args.scan,
             price: args.price,
@@ -1813,7 +1825,7 @@ class BeatMoneyLoopService {
           description: caption,
           mediaUrl,
           callToAction: "License This Beat",
-          landingUrl: "/marketplace",
+          landingUrl: getBeatLandingUrl(args.beatId),
           status: "active",
           ...(mediaLocalPath
             ? { variants: { localMediaPath: mediaLocalPath, kind: "beat-audio-video" } }
@@ -1999,9 +2011,7 @@ class BeatMoneyLoopService {
     },
     hashtags: string[],
   ): Promise<string> {
-    const marketplaceUrl =
-      process.env.MARKETPLACE_URL || "https://blawz.com/marketplace";
-    const listenUrl = `${marketplaceUrl}?beat=${args.beatId}`;
+    const listenUrl = getBeatLandingUrl(args.beatId);
 
     // Live trend/industry awareness — CTA library, emotional triggers, and
     // trending hooks feed the caption so beat drops read like current market
@@ -2093,6 +2103,7 @@ class BeatMoneyLoopService {
   }
 
   private _buildAdCaption(args: {
+    beatId: string;
     title: string;
     scan: { genre: string; mood: string; tempo: number; hooks: string[] };
     price: number;
@@ -2120,14 +2131,15 @@ class BeatMoneyLoopService {
     const genrePart = `${args.scan.mood} ${args.scan.genre}`.toLowerCase();
     const tagStr = args.hashtags.join(" ");
 
-    // Fix 7: inject price anchor, scarcity signal, and direct marketplace link
-    // so the post does conversion work, not just awareness.
-    const marketplaceUrl = process.env.MARKETPLACE_URL || "https://blawz.com/marketplace";
+    // Fix 7: inject price anchor, scarcity signal, and a direct link to this
+    // specific beat's buy page (not just the marketplace homepage) so the
+    // post does conversion work, not just awareness.
+    const beatUrl = getBeatLandingUrl(args.beatId);
 
     const lines = [
       `🔥 "${args.title}" — ${args.scan.tempo} BPM ${genrePart} type beat.`,
       hookSentence ?? `Professional-grade production built for artists who take their craft seriously.`,
-      `Non-exclusive lease from $${cleanPrice} · Limited slots · Stream + license 🎧 ${marketplaceUrl}`,
+      `Non-exclusive lease from $${cleanPrice} · Limited slots · Stream + license 🎧 ${beatUrl}`,
       tagStr,
     ];
     return lines.join("\n").trim();

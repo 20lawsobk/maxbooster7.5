@@ -8,7 +8,7 @@ import {
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { SafeImg } from "@/components/ui/safe-img";
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { Howl } from "howler";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -1031,7 +1031,33 @@ export default function Marketplace() {
     queryClient.invalidateQueries({ queryKey: ["/api/marketplace/my-beats"] });
   };
 
-  const { data: beats = [], isLoading: beatsLoading } = useQuery<Beat[]>({
+  // Deep link from a share/ad link, e.g. /marketplace/beat/:beatId. Ads and
+  // shared links point here so a specific beat's buy flow is always reachable
+  // even if it wouldn't appear on the default browse feed (filters, sort,
+  // pagination). See getBeatListingDetail on the server for the matching
+  // single-beat endpoint.
+  const [isDeepLinkedBeat, deepLinkParams] = useRoute<{ beatId: string }>(
+    "/marketplace/beat/:beatId",
+  );
+  const deepLinkedBeatId = isDeepLinkedBeat ? deepLinkParams?.beatId : undefined;
+
+  const { data: deepLinkedBeat } = useQuery<Beat | null>({
+    queryKey: ["/api/marketplace/beats", "detail", deepLinkedBeatId],
+    queryFn: async () => {
+      const res = await fetch(`/api/marketplace/beats/${deepLinkedBeatId}`, {
+        credentials: "include",
+      });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return await res.json();
+    },
+    enabled: !!deepLinkedBeatId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: browsedBeats = [], isLoading: beatsLoading } = useQuery<
+    Beat[]
+  >({
     queryKey: [
       "/api/marketplace/beats",
       searchQuery,
@@ -1057,6 +1083,14 @@ export default function Marketplace() {
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  // Guarantee the deep-linked beat is always present for lookups (cart,
+  // license pricing, purchase) even when it's absent from the current
+  // filtered/paginated browse feed.
+  const beats =
+    deepLinkedBeat && !browsedBeats.some((b) => b.id === deepLinkedBeat.id)
+      ? [deepLinkedBeat, ...browsedBeats]
+      : browsedBeats;
 
   const { data: producersData } =
     useQuery<ProducersResponse>({
@@ -2229,6 +2263,12 @@ export default function Marketplace() {
   }, []);
 
   const handleAddToCart = (beat: Beat, licenseType: string) => {
+    if (!user) {
+      setLocation(
+        `/login?redirect=${encodeURIComponent(`/marketplace/beat/${beat.id}`)}`,
+      );
+      return;
+    }
     const existingItem = cart.find(
       (item) => item.beatId === beat.id && item.licenseType === licenseType,
     );
@@ -2255,6 +2295,17 @@ export default function Marketplace() {
     licenseType: string,
     useEscrow = false,
   ) => {
+    // Anonymous ad clicks can now land directly on a beat's page
+    // (/marketplace/beat/:id is public). Checkout itself still requires an
+    // account, so send them to sign in first and bring them right back to
+    // this beat instead of letting the purchase call fail with an opaque
+    // "Purchase Failed" toast.
+    if (!user) {
+      setLocation(
+        `/login?redirect=${encodeURIComponent(`/marketplace/beat/${beat.id}`)}`,
+      );
+      return;
+    }
     purchaseBeatMutation.mutate({ beatId: beat.id, licenseType, useEscrow });
   };
 

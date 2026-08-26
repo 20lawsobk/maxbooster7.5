@@ -2460,6 +2460,28 @@ router.post("/unfollow/:producerId", async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/marketplace/beats/:beatId — public single-beat detail. Unlike the
+// paginated /beats browse feed, this always resolves a beat regardless of
+// filters/pagination, so deep links from ads and shared links (e.g.
+// /marketplace/beat/:beatId) reliably land on a working buy flow.
+router.get("/beats/:beatId", async (req: Request, res: Response) => {
+  try {
+    const { beatId } = req.params as { beatId: string };
+    const beat = await storage.getBeatListingDetail(beatId);
+    if (!beat) {
+      return res.status(404).json({ error: "Beat not found" });
+    }
+    const viewerId = req.user?.id;
+    if (!beat.isPublished && beat.userId !== viewerId) {
+      return res.status(404).json({ error: "Beat not found" });
+    }
+    res.json(beat);
+  } catch (error) {
+    logger.warn({ err: error }, "Error fetching beat detail:");
+    res.status(500).json({ error: "Failed to fetch beat" });
+  }
+});
+
 // Like a beat (toggle)
 router.post("/beats/:beatId/like", async (req: Request, res: Response) => {
   try {

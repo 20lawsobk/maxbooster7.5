@@ -190,12 +190,43 @@ export class AdvertisingDispatchService {
         const isAbsolute = !!rawMediaUrl && /^https?:\/\//i.test(rawMediaUrl);
         const isPostableMedia =
           isAbsolute && !/\.(wav|mp3|flac|ogg|aiff?)(\?|$)/i.test(rawMediaUrl!);
+
+        // The creative's landingUrl/callToAction were previously generated
+        // (e.g. by the Beat Money Loop) but dropped here, so the post that
+        // actually reached the user's connected social account never carried
+        // the buy link or CTA — only the caption body. Social platforms don't
+        // accept a separate "link" field on an organic text post, so the link
+        // and CTA must be appended into the copy itself. Skip if the caption
+        // already embeds the same link (MaxCore-generated captions already do).
+        const landingUrl =
+          typeof creative.landingUrl === "string" && creative.landingUrl
+            ? creative.landingUrl
+            : null;
+        const callToAction =
+          typeof creative.callToAction === "string" && creative.callToAction
+            ? creative.callToAction
+            : null;
+        const linkAlreadyInCopy = !!landingUrl && copy.includes(landingUrl);
+        const copyWithCta = [
+          copy,
+          !linkAlreadyInCopy && callToAction && landingUrl
+            ? `${callToAction}: ${landingUrl}`
+            : !linkAlreadyInCopy && landingUrl
+              ? landingUrl
+              : null,
+        ]
+          .filter(Boolean)
+          .join("\n")
+          .trim();
+
         const content = {
-          text: copy,
-          body: copy,
+          text: copyWithCta,
+          body: copyWithCta,
           mediaUrl: isPostableMedia ? rawMediaUrl : null,
           mediaLocalPath: localMediaPath,
           hashtags: this.extractHashtags(copy),
+          ...(landingUrl ? { landingUrl } : {}),
+          ...(callToAction ? { callToAction } : {}),
         };
 
         // Post to each platform

@@ -205,6 +205,7 @@ function Router() {
       <Route path="/social-media" component={SocialMedia} />
       <Route path="/advertising" component={Advertisement} />
       <Route path="/marketplace" component={Marketplace} />
+      <Route path="/marketplace/beat/:beatId" component={Marketplace} />
       <Route
         path="/marketplace/producer/:producerId"
         component={ProducerProfilePage}
@@ -344,6 +345,10 @@ function AppWithKeyboardShortcuts() {
       PUBLIC_ONLY_PREFIXES.some((p) => location.startsWith(p)) ||
       location.startsWith("/storefront/") ||
       location.startsWith("/store/") ||
+      // A specific beat's landing page must be viewable by anonymous ad
+      // clickers — only this deep-link path is public, not the full
+      // marketplace browse/grid experience.
+      location.startsWith("/marketplace/beat/") ||
       location.startsWith("/handle-link") ||
       location === "/verification" ||
       location === "/pricing";
