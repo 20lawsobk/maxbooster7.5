@@ -59,6 +59,7 @@
     "security:audit": "npm audit --omit=dev --audit-level=high",
     "test:all": "npm run security:audit && npm run test:load && npm run test:security",
     "prelaunch": "tsx scripts/pre-launch-check.ts",
+    "check:ports": "tsx scripts/check-port-contract.ts",
     "autofix:deploy": "node scripts/deployment-autofix.mjs",
     "validate:error-research": "node scripts/validate-error-research.mjs",
     "feature-matrix": "node scripts/generate-feature-matrix.mjs",

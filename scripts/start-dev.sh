@@ -4,6 +4,13 @@ set -euo pipefail
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${_SCRIPT_DIR}/port-contract.sh"
 
+# Cross-check the shell/runtime port contract above against .replit's own
+# [[ports]] table, catching drift between the two before the app boots.
+if ! npx tsx "${_SCRIPT_DIR}/check-port-contract.ts"; then
+  echo "[Ports] FATAL: port contract check failed; aborting startup" >&2
+  exit 1
+fi
+
 _BOOSTER_PID=""
 cleanup() {
   if [ -n "$_BOOSTER_PID" ] && kill -0 "$_BOOSTER_PID" 2>/dev/null; then

@@ -95,6 +95,20 @@ echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 # letting one process silently take another service's socket.
 source "$_SCRIPT_DIR/scripts/port-contract.sh"
 
+# ── 1a-2. Cross-check against .replit's own [[ports]] table ──────────────────
+# Runs once node_modules is confirmed present (tsx is a production dependency);
+# node_modules is guaranteed to exist by this point because deploy builds run
+# `npm ci` ahead of start.sh. Deferred until after the port-contract.sh env
+# vars above are exported so the check observes the exact values the app will.
+if [ -d "$_SCRIPT_DIR/node_modules/.bin" ] && [ -x "$_SCRIPT_DIR/node_modules/.bin/tsx" ]; then
+  if ! "$_NODE_BIN" "$_SCRIPT_DIR/node_modules/.bin/tsx" "$_SCRIPT_DIR/scripts/check-port-contract.ts"; then
+    echo "[start.sh] FATAL: port contract check failed against .replit; aborting startup" >&2
+    exit 1
+  fi
+else
+  echo "[start.sh] WARNING: tsx not found — skipping .replit port-contract cross-check (internal port validation above still applies)"
+fi
+
 # ── 1b. Boot-time liveness stub ───────────────────────────────────────────────
 # Binds the real port immediately (before node_modules even exists) so the
 # platform's health check against "/" gets a 200 from second one, instead of
