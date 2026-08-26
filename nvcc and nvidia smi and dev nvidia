@@ -1,0 +1,296 @@
+`python
+
+tools/digital_nvcc.py
+
+Theoretical "compiler" for digital GPU kernels:
+
+- Validates kernel specs
+
+- Resolves dependencies
+
+- Builds an opcode registry
+
+- Performs simple static checks
+
+from future import annotations
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Dict, Any, List, Tuple
+
+
+REQUIRED_FIELDS = {
+    "name": str,
+    "opcode": str,
+    "version": int,
+    "inputs": dict,
+    "outputs": dict,
+    "dtypes": dict,
+    "numeric_profile": str,
+    "deterministic": bool,
+    "doc": str,
+}
+
+
+def validate_types(spec: Dict[str, Any], src: Path) -> None:
+    for field, expectedtype in REQUIREDFIELDS.items():
+        if field not in spec:
+            raise ValueError(f"{src}: missing required field '{field}'")
+        if not isinstance(spec[field], expected_type):
+            raise TypeError(
+                f"{src}: field '{field}' expected {expectedtype.name_}, "
+                f"got {type(spec[field]).name}"
+            )
+
+
+def validate_shapes(spec: Dict[str, Any], src: Path) -> None:
+    inputs = spec["inputs"]
+    outputs = spec["outputs"]
+    if not inputs:
+        raise ValueError(f"{src}: kernel must have at least one input")
+    if not outputs:
+        raise ValueError(f"{src}: kernel must have at least one output")
+    for name, shape in inputs.items():
+        if not isinstance(shape, list) or not all(isinstance(s, str) for s in shape):
+            raise TypeError(f"{src}: input '{name}' shape must be list[str]")
+    for name, shape in outputs.items():
+        if not isinstance(shape, list) or not all(isinstance(s, str) for s in shape):
+            raise TypeError(f"{src}: output '{name}' shape must be list[str]")
+
+
+def validate_dtypes(spec: Dict[str, Any], src: Path) -> None:
+    dtypes = spec["dtypes"]
+    allowed = {"fp32", "fp16", "bf16", "fp8", "int32", "int64"}
+    for name, dt in dtypes.items():
+        if dt not in allowed:
+            raise ValueError(f"{src}: dtype '{dt}' for '{name}' not in {sorted(allowed)}")
+
+
+def validatenumericprofile(spec: Dict[str, Any], src: Path) -> None:
+    allowed = {"fp32strict", "fp16mixed", "fp8_mixed"}
+    if spec["numeric_profile"] not in allowed:
+        raise ValueError(
+            f"{src}: numericprofile '{spec['numericprofile']}' not in {sorted(allowed)}"
+        )
+
+
+def compilekernelspec(src: Path) -> Dict[str, Any]:
+    spec = json.loads(src.read_text())
+    validate_types(spec, src)
+    validate_shapes(spec, src)
+    validate_dtypes(spec, src)
+    validatenumericprofile(spec, src)
+    return spec
+
+
+def build_registry(specs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    registry: Dict[str, Any] = {}
+    for spec in specs:
+        opcode = spec["opcode"]
+        version = spec["version"]
+        key = f"{opcode}:v{version}"
+        if key in registry:
+            raise ValueError(f"duplicate opcode version: {key}")
+        registry[key] = spec
+    return registry
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="digital-nvcc",
+        description="Digital GPU kernel compiler and registry builder",
+    )
+    parser.add_argument("inputs", nargs="+", help="Kernel spec JSON files")
+    parser.add_argument("-o", "--output", required=True, help="Output registry file (.json)")
+    args = parser.parse_args()
+
+    specs: List[Dict[str, Any]] = []
+    for inp in args.inputs:
+        spec = compilekernelspec(Path(inp))
+        specs.append(spec)
+
+    registry = build_registry(specs)
+    Path(args.output).write_text(json.dumps(registry, indent=2))
+    print(f"digital-nvcc: wrote registry with {len(registry)} entries to {args.output}")
+
+
+if name == "main":
+    main()
+`
+
+`python
+
+tools/digitalnvidiasmi.py
+
+Telemetry + health view for digital GPU:
+
+- Aggregates op measurements
+
+- Computes totals and averages
+
+- Exposes query interface
+
+from future import annotations
+import argparse
+import json
+from pathlib import Path
+from typing import Any, Dict, List
+
+
+def load_telemetry(path: Path) -> List[Dict[str, Any]]:
+    data = json.loads(path.read_text())
+    if not isinstance(data, list):
+        raise TypeError("telemetry file must contain a list of measurements")
+    return data
+
+
+def summarize(ops: List[Dict[str, Any]]) -> Dict[str, Any]:
+    total_flops = 0.0
+    total_ms = 0.0
+    total_bytes = 0
+    for m in ops:
+        total_flops += float(m.get("flops", 0.0))
+        totalms += float(m.get("durationms", 0.0))
+        totalbytes += int(m.get("bytesmoved", 0))
+    avgms = totalms / len(ops) if ops else 0.0
+    return {
+        "count": len(ops),
+        "totalflops": totalflops,
+        "totalms": totalms,
+        "avgms": avgms,
+        "totalbytes": totalbytes,
+    }
+
+
+def print_default(ops: List[Dict[str, Any]]) -> None:
+    summary = summarize(ops)
+    print("+-----------------------------------------------------------------------------+")
+    print("| Digital NVIDIA-SMI            Backend: digital_gpu          Version: 1.1.0  |")
+    print("+-------------------------------+----------------------+----------------------+")
+    print("| Opcode                        | Duration (ms)        | FLOPs               |")
+    print("+-------------------------------+----------------------+----------------------+")
+    for m in ops:
+        print(
+            f"| {m.get('opcode',''): <29} | "
+            f"{float(m.get('duration_ms',0.0)): >20.3f} | "
+            f"{float(m.get('flops',0.0)): >20.3e} |"
+        )
+    print("+-------------------------------+----------------------+----------------------+")
+    print(f"| Total ops: {summary['count']: <6}  Total ms: {summary['total_ms']: >10.3f}  "
+          f"Total FLOPs: {summary['total_flops']: >12.3e} |")
+    print(f"| Avg ms/op: {summary['avgms']: >10.3f}  Total bytes moved: {summary['totalbytes']: >12d} |")
+    print("+-----------------------------------------------------------------------------+")
+
+
+def print_query(ops: List[Dict[str, Any]], fields: List[str]) -> None:
+    for m in ops:
+        row = []
+        for f in fields:
+            row.append(str(m.get(f, "N/A")))
+        print(",".join(row))
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="digital-nvidia-smi",
+        description="Digital GPU telemetry and health viewer",
+    )
+    parser.add_argument("--telemetry", required=True, help="Telemetry JSON file")
+    parser.add_argument(
+        "--query-op",
+        dest="query",
+        help="Comma-separated fields (e.g. opcode,durationms,flops,bytesmoved)",
+    )
+    args = parser.parse_args()
+
+    ops = load_telemetry(Path(args.telemetry))
+    if not args.query:
+        print_default(ops)
+    else:
+        fields = [f.strip() for f in args.query.split(",") if f.strip()]
+        print_query(ops, fields)
+
+
+if name == "main":
+    main()
+`
+
+`python
+
+tools/digitaldevnvidia.py
+
+Device abstraction for digital GPUs:
+
+- Represents logical devices
+
+- Tracks memory, utilization, and status
+
+- Provides a query interface similar to /dev/nvidia*
+
+from future import annotations
+import json
+import os
+import stat
+from pathlib import Path
+from typing import Dict, Any, List
+
+
+class DigitalNvidiaDevice:
+    def init(self, base_dir: str) -> None:
+        self.basedir = Path(basedir)
+        self.basedir.mkdir(parents=True, existok=True)
+        self.devices: Dict[int, Path] = {}
+        self.meta: Dict[int, Dict[str, Any]] = {}
+
+    def createdevice(self, index: int, name: str, memorytotal_mb: int) -> Path:
+        devpath = self.basedir / f"nvidia{index}"
+        meta = {
+            "index": index,
+            "name": name,
+            "memorytotalmb": memorytotalmb,
+            "memoryusedmb": 0,
+            "utilization_pct": 0.0,
+            "status": "idle",
+        }
+        devpath.writetext(json.dumps(meta, indent=2))
+        os.chmod(devpath, stat.SIRUSR | stat.S_IWUSR)
+        self.devices[index] = dev_path
+        self.meta[index] = meta
+        return dev_path
+
+    def list_devices(self) -> List[Dict[str, Any]]:
+        return [self.meta[i] for i in sorted(self.meta.keys())]
+
+    def update_usage(
+        self,
+        index: int,
+        memoryusedmb: int | None = None,
+        utilization_pct: float | None = None,
+        status: str | None = None,
+    ) -> None:
+        if index not in self.meta:
+            raise KeyError(f"device {index} not found")
+        m = self.meta[index]
+        if memoryusedmb is not None:
+            m["memoryusedmb"] = memoryusedmb
+        if utilization_pct is not None:
+            m["utilizationpct"] = utilizationpct
+        if status is not None:
+            m["status"] = status
+        self.devices[index].write_text(json.dumps(m, indent=2))
+
+    def read_device(self, index: int) -> Dict[str, Any]:
+        if index not in self.devices:
+            raise KeyError(f"device {index} not found")
+        return json.loads(self.devices[index].read_text())
+
+
+def exampleinit(basedir: str) -> DigitalNvidiaDevice:
+    dev = DigitalNvidiaDevice(base_dir)
+    dev.createdevice(0, "Digital GPU 0", memorytotal_mb=16384)
+    dev.createdevice(1, "Digital GPU 1", memorytotal_mb=16384)
+    dev.updateusage(0, memoryusedmb=2048, utilizationpct=35.0, status="busy")
+    dev.updateusage(1, memoryusedmb=512, utilizationpct=5.0, status="idle")
+    return dev
+`
