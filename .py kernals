@@ -1,0 +1,114 @@
+`python
+
+digitalgpu/kernels/flashattention_optimized.py
+
+from future import annotations
+import numpy as np
+from typing import Literal
+
+FP8Format = Literal["e4m3", "e5m2"]
+
+
+def fp8tofloat(x: np.ndarray, fmt: FP8Format) -> np.ndarray:
+    i = x.view(np.int8).astype(np.float32)
+    scale = 16.0 if fmt == "e4m3" else 8.0
+    return i / scale
+
+
+def flashattentionfp8_optimized(
+    Q_fp8: np.ndarray,
+    K_fp8: np.ndarray,
+    V_fp8: np.ndarray,
+    fmt: FP8Format = "e4m3",
+    causal: bool = False,
+) -> np.ndarray:
+    """
+    Python/NumPy version of the optimized FP8 FlashAttention kernel.
+    Shapes: Q,K,V: (B, H, T, D) fp8-packed as uint8
+    Returns: O: (B, H, T, D) fp16
+    """
+    B, H, T, D = Q_fp8.shape
+
+    Q = fp8tofloat(Q_fp8, fmt).astype(np.float32)
+    K = fp8tofloat(K_fp8, fmt).astype(np.float32)
+    V = fp8tofloat(V_fp8, fmt).astype(np.float32)
+
+    scale = 1.0 / np.sqrt(D)
+
+    # scores[b,h,tq,tk] = sumd Q[b,h,tq,d] * K[b,h,t_k,d]
+    scores = np.einsum("bhtd,bhtd->bhtt", Q, K) * scale
+
+    if causal:
+        mask = np.triu(np.ones((T, T), dtype=bool), k=1)
+        scores = np.where(mask[None, None, :, :], -np.inf, scores)
+
+    scores = scores - scores.max(axis=-1, keepdims=True)
+    weights = np.exp(scores)
+    weights /= weights.sum(axis=-1, keepdims=True)
+
+    # O[b,h,tq,d] = sum{tk} weights[b,h,tq,tk] * V[b,h,tk,d]
+    O = np.einsum("bhtt,bhtd->bhtd", weights, V.astype(np.float16)).astype(np.float16)
+    return O
+`
+
+`python
+
+digitalgpu/kernels/conv2doptimized.py
+
+from future import annotations
+import numpy as np
+
+
+def conv2dim2coloptimized(
+    x: np.ndarray,
+    w: np.ndarray,
+    stride: int = 1,
+    padding: int = 0,
+) -> np.ndarray:
+    """
+    Python/NumPy version of optimized conv2d via im2col + GEMM.
+
+    x: (N, C, H, W)
+    w: (F, C, KH, KW)
+    """
+    N, C, H, W = x.shape
+    F, _, KH, KW = w.shape
+
+    out_h = (H + 2 * padding - KH) // stride + 1
+    out_w = (W + 2 * padding - KW) // stride + 1
+
+    x_pad = np.pad(x, ((0, 0), (0, 0), (padding, padding), (padding, padding)))
+    cols = np.zeros((N, C  KH  KW, outh * outw), dtype=x.dtype)
+
+    idx = 0
+    for oh in range(out_h):
+        for ow in range(out_w):
+            h_start = oh * stride
+            w_start = ow * stride
+            patch = xpad[:, :, hstart:hstart + KH, wstart:w_start + KW]
+            cols[:, :, idx] = patch.reshape(N, C  KH  KW)
+            idx += 1
+
+    w_mat = w.reshape(F, C  KH  KW)          # (F, K)
+    y = np.einsum("fk,nkq->nfq", wmat, cols)  # (N, F, outh*out_w)
+    return y.reshape(N, F, outh, outw)
+`
+
+`python
+
+digitalgpu/kernels/reductionoptimized.py
+
+from future import annotations
+import numpy as np
+
+
+def reduction_optimized(x: np.ndarray, y: np.ndarray) -> float:
+    """
+    Python/NumPy version of optimized reduction:
+    Computes sum_i x[i] * y[i] with good cache behavior.
+    """
+    if x.shape != y.shape:
+        raise ValueError("x and y must have the same shape")
+    # vectorized dot product is already optimal in NumPy
+    return float(np.dot(x.ravel(), y.ravel()))
+`
