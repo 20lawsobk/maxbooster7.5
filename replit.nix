@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.cudatoolkit
     pkgs.libarchive
     pkgs.psmisc
     pkgs.redis
