@@ -6,7 +6,12 @@
 # routing (05b) always has a safe, independent point to resume from instead
 # of re-running global route after every interruption.
 #
-# Invoke as:  source flow/pdk_env.sh && openroad -exit flow/05a_global_route.tcl
+# Invoke via the shared runner (real multi-threading + real elapsed/peak-RSS
+# measurement -- see run_stage.sh's own header for why):
+#   flow/run_stage.sh 05a_global_route.tcl /path/to/log_prefix
+#
+# Raw invocation still works as:
+#   source flow/pdk_env.sh && openroad -exit flow/05a_global_route.tcl
 
 read_lef $::env(TECH_LEF)
 read_lef $::env(CELL_LEF)

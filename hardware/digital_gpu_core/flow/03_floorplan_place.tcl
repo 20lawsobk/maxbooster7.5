@@ -1,6 +1,11 @@
 # Stage 3: floorplan + global/detailed placement.
 #
-# Invoke as:  source flow/pdk_env.sh && openroad -exit flow/03_floorplan_place.tcl
+# Invoke via the shared runner (real multi-threading + real elapsed/peak-RSS
+# measurement -- see run_stage.sh's own header for why):
+#   flow/run_stage.sh 03_floorplan_place.tcl /path/to/log_prefix
+#
+# Raw invocation still works as:
+#   source flow/pdk_env.sh && openroad -exit flow/03_floorplan_place.tcl
 #
 # Design raw standard-cell area (from stage-2 STA's report_design_area) is
 # ~689,715 um^2. Targeting 45% utilization (not 100%) deliberately leaves

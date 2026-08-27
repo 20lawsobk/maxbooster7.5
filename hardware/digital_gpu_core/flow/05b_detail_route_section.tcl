@@ -7,7 +7,14 @@
 # process, and an interruption only loses the current section instead of
 # the whole detailed-route run.
 #
-# Invoke as:
+# Invoke via the shared runner (applies real multi-threading + real
+# elapsed/peak-RSS measurement -- see run_stage.sh's own header for why):
+#   SECTION_INPUT_DB=/path/in.odb \
+#   SECTION_OUTPUT_PREFIX=/path/out_prefix \
+#   SECTION_END_ITER=3 \
+#     flow/run_stage.sh 05b_detail_route_section.tcl /path/to/log_prefix
+#
+# Raw invocation (no threading, no timing/memory capture) still works as:
 #   source flow/pdk_env.sh
 #   SECTION_INPUT_DB=/path/in.odb \
 #   SECTION_OUTPUT_PREFIX=/path/out_prefix \

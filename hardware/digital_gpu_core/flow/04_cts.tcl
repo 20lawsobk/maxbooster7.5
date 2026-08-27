@@ -1,6 +1,11 @@
 # Stage 4: clock tree synthesis + post-CTS legalization/timing repair.
 #
-# Invoke as:  source flow/pdk_env.sh && openroad -exit flow/04_cts.tcl
+# Invoke via the shared runner (real multi-threading + real elapsed/peak-RSS
+# measurement -- see run_stage.sh's own header for why):
+#   flow/run_stage.sh 04_cts.tcl /path/to/log_prefix
+#
+# Raw invocation still works as:
+#   source flow/pdk_env.sh && openroad -exit flow/04_cts.tcl
 #
 # Loads the already-placed/repaired design (gpu_core_placed.odb) rather than
 # re-synthesizing/re-placing from scratch. SDC-style constraints (clocks,
