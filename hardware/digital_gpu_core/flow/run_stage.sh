@@ -38,6 +38,20 @@
 
 set -uo pipefail
 cd "$(dirname "$0")/.."
+
+# Fusion lock: the app-start guard (flow/app_start_guard.sh) polls this file for
+# the whole lifetime of this script, not just while openroad itself is running,
+# so the app cannot come back up during PDK sourcing/setup either. A plain EXIT
+# trap covers normal completion, error exit, and this script being signaled --
+# it does NOT cover this process itself being OOM-killed, but the OOM killer
+# targets the largest resident consumer (openroad, launched below), not this
+# lightweight wrapper, so the wrapper reliably survives to clean up the lock
+# even when its child does not.
+ROUTER_LOCK="/tmp/gpu_core_router_active.lock"
+echo "$$" > "$ROUTER_LOCK"
+cleanup_router_lock() { rm -f "$ROUTER_LOCK"; }
+trap cleanup_router_lock EXIT
+
 source flow/pdk_env.sh
 
 STAGE="$1"
