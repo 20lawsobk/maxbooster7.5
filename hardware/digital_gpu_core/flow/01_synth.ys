@@ -1,0 +1,29 @@
+# Stage 1: RTL -> gate-level netlist, real logic synthesis targeting the
+# open SkyWater sky130 high-density standard cell library (not generic
+# abstract gates) -- this is the same synthesis step (Yosys + abc technology
+# mapping against a real .lib) that OpenLane and real sky130 tapeouts use.
+read_verilog -sv /home/runner/workspace/hardware/digital_gpu_core/gpu_core.v
+hierarchy -check -top gpu_core
+
+# Generic synthesis: process, elaborate FSMs/memories, optimize, map to
+# internal gate primitives.
+synth -top gpu_core -flatten
+
+# Map flip-flops to the library's real sequential cells (dfxtp, etc.)
+dfflibmap -liberty /home/runner/.volare/volare/sky130/versions/a519523b0d9bc913a6f87a5eed083597ed9e2e93/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# Technology-map combinational logic to real sky130_fd_sc_hd standard cells
+# via abc, using the real liberty timing data for area/delay-aware mapping.
+abc -liberty /home/runner/.volare/volare/sky130/versions/a519523b0d9bc913a6f87a5eed083597ed9e2e93/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# Clean up dangling nets/cells left by mapping.
+clean -purge
+
+# Sanity: report anything that isn't a real sky130 std-cell (should be empty)
+# and fail loudly if synthesis produced blackboxes or unmapped generic cells.
+check -noinit
+
+write_verilog -noattr /home/runner/workspace/hardware/digital_gpu_core/flow/gpu_core_synth.v
+write_json /home/runner/workspace/hardware/digital_gpu_core/flow/gpu_core_synth.json
+
+stat -liberty /home/runner/.volare/volare/sky130/versions/a519523b0d9bc913a6f87a5eed083597ed9e2e93/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib

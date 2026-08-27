@@ -35,11 +35,44 @@ module gpu_core #(
     parameter REGS       = 16,
     parameter DATA_W     = 32,
     parameter MEM_DEPTH  = 64,
-    parameter IMEM_DEPTH = 32
+    parameter IMEM_DEPTH = 32,
+    // Derived address widths -- declared here (rather than in the module
+    // body) so they are usable in the port list below for the real
+    // program-load / result-readback ports.
+    localparam MEM_AW  = $clog2(MEM_DEPTH),
+    localparam IMEM_AW = $clog2(IMEM_DEPTH),
+    localparam LANE_AW = $clog2(LANES),
+    localparam REG_AW  = $clog2(REGS)
 )(
     input  wire clk,
     input  wire rst,
-    output reg  halted
+    output reg  halted,
+
+    // ---- Real program-load port ---------------------------------------
+    // Added after the first real synthesis run: the original module had NO
+    // way for anything outside the simulator to get a program into imem --
+    // the testbench loaded it by poking dut.imem[...] directly, which only
+    // a simulator can do. A fabricated chip cannot be hierarchically poked
+    // from outside, so this is a real addressable write port, the same
+    // mechanism a real host uses to load a kernel into an accelerator's
+    // instruction memory before launching it.
+    input  wire                    imem_we,
+    input  wire [IMEM_AW-1:0]      imem_waddr,
+    input  wire [31:0]             imem_wdata,
+
+    // ---- Real result-readback ports ------------------------------------
+    // Also added after the first synthesis run: with only `halted` as an
+    // output, the compute datapath (regfile/gmem) had no observable effect
+    // on any primary output, so real logic synthesis correctly optimized
+    // ALL of it away as dead logic -- a genuine finding, not a tooling
+    // glitch. These combinational read ports make the results of a kernel
+    // actually observable from outside the core, exactly like a real
+    // accelerator's host-readable result registers/memory.
+    input  wire [LANE_AW-1:0]      rd_lane,
+    input  wire [REG_AW-1:0]       rd_reg,
+    output wire [DATA_W-1:0]       rd_data,
+    input  wire [MEM_AW-1:0]       rd_mem_addr,
+    output wire [DATA_W-1:0]       rd_mem_data
 );
 
     localparam OP_NOP   = 4'h0;
@@ -53,8 +86,6 @@ module gpu_core #(
     localparam OP_PRED  = 4'h8;
     localparam OP_RSTP  = 4'h9;
     localparam OP_HALT  = 4'hA;
-
-    localparam MEM_AW = $clog2(MEM_DEPTH);
 
     // Shared fetch: ONE instruction stream for the whole warp -- this is the
     // literal meaning of "SIMT": all lanes are always at the same PC.
@@ -72,6 +103,22 @@ module gpu_core #(
     reg [DATA_W-1:0] regfile [0:LANES-1][0:REGS-1];
     reg              active  [0:LANES-1];
     reg [DATA_W-1:0] gmem    [0:MEM_DEPTH-1];   // shared "global memory"
+
+    // Real instruction-memory write port: an external host loads a program
+    // one word at a time before running the core. Independent of rst/halted
+    // so a host can load while the core sits in reset, exactly like loading
+    // a kernel before a launch.
+    always @(posedge clk) begin
+        if (imem_we) imem[imem_waddr] <= imem_wdata;
+    end
+
+    // Real result-readback ports: purely combinational reads of regfile and
+    // gmem, addressed from outside the core. This is what makes the
+    // compute datapath observable (and therefore not dead logic) from
+    // synthesis's point of view, and it is how a real host would actually
+    // read a kernel's results back off the chip.
+    assign rd_data     = regfile[rd_lane][rd_reg];
+    assign rd_mem_data = gmem[rd_mem_addr];
 
     integer i;
 

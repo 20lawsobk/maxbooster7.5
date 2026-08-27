@@ -1,5 +1,10 @@
 {pkgs}: {
   deps = [
+    pkgs.netgen
+    pkgs.klayout
+    pkgs.magic-vlsi
+    pkgs.openroad
+    pkgs.yosys
     pkgs.gtkwave
     pkgs.verilator
     pkgs.iverilog
