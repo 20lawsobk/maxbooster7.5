@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Shared PDK path resolution for every stage of the RTL-to-GDSII flow.
 # Sourced by each stage script so paths are defined exactly once.
-export PDK_VERSION_ROOT="/home/runner/.volare/volare/sky130/versions/a519523b0d9bc913a6f87a5eed083597ed9e2e93/sky130A"
+# PDK root lives under workspace/ (not $HOME) so it survives a full container
+# restart -- $HOME-installed caches (volare's default) do not; see
+# .agents/memory/replit-home-vs-workspace-persistence.md.
+export PDK_VERSION_ROOT="/home/runner/workspace/.cache/volare/volare/sky130/versions/a519523b0d9bc913a6f87a5eed083597ed9e2e93/sky130A"
 export STD_CELL="sky130_fd_sc_hd"
 
 export LIB_TT="$PDK_VERSION_ROOT/libs.ref/$STD_CELL/lib/${STD_CELL}__tt_025C_1v80.lib"
