@@ -1,0 +1,13 @@
+---
+name: Replit container home dir is ephemeral; only workspace/ persists
+description: /home/runner (outside workspace/) is a small ephemeral overlay filesystem that can be wiped by a container restart; only /home/runner/workspace survives. Any tool that installs to $HOME by default needs this accounted for.
+---
+
+## The container can fully restart mid-session, not just crash a workflow
+During a single long agent session, the underlying container was observed to fully restart on its own (`uptime` reset to a few minutes, not just the app process dying) while a sustained heavy native compute job (OpenROAD place-and-route, single core pegged near 100% for 15+ minutes) was running in the background. This is a different failure mode from a workflow crash: a workflow crash leaves the filesystem untouched and only needs a restart of that workflow; a container restart can silently wipe anything that lived outside the persistent mount, and kills every shell/background task at once.
+
+## Only /home/runner/workspace is durable; /home/runner itself is not
+`df -h` shows `/home/runner` mounted as a small `overlay` filesystem (container-local, ephemeral) while `/home/runner/workspace` is a separate, much larger persistent volume (e.g. `/dev/vdf`). A tool that defaults to installing under `$HOME` (e.g. `volare`'s `~/.volare/` PDK cache, and by extension likely other tools defaulting to `~/.cache`, `~/.local`, etc.) can vanish completely after a container restart even though every file under `workspace/` (source, scripts, previously-written build/checkpoint outputs) survived untouched with correct timestamps.
+
+**Why:** confirmed directly — after an unplanned restart, `ls /home/runner/.volare` failed with "No such file or directory" (the entire multi-GB PDK install was gone, breaking every subsequent tool invocation that referenced it) while every file under `/home/runner/workspace/hardware/...`, including multi-stage EDA checkpoint outputs (`.def`/`.odb`) written minutes before the restart, was intact.
+**How to apply:** for any tool whose install/cache location you don't explicitly control and which is expensive to regenerate (large downloads, compiled caches, PDKs, model weights fetched ad hoc), either redirect its install path to somewhere under `workspace/` (env var, `--prefix`/`--root`, or a symlink from the `$HOME` path into `workspace/`) or budget for reinstalling it after any unexplained restart — don't assume "it worked once" means it is still there later in the same session. Always write real progress checkpoints (intermediate build artifacts) under `workspace/`, never only under `$HOME` or `/tmp` (also ephemeral), so a restart loses only in-flight compute, not completed stages.

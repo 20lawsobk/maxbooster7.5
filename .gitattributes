@@ -19,3 +19,5 @@
 *.dylib  binary
 *.br     binary
 *.gz     binary
+hardware/digital_gpu_core/flow/gpu_core_cts.odb filter=lfs diff=lfs merge=lfs -text
+hardware/digital_gpu_core/flow/gpu_core_placed.odb filter=lfs diff=lfs merge=lfs -text
