@@ -1,0 +1,31 @@
+{
+  "optimized_vs_numpy_ceiling": {
+    "numpy_blas_ms": 35.2419,
+    "numpy_gflops": 154.8701,
+    "optimized_gflops": 214.8442,
+    "optimized_ms": 25.4041,
+    "ratio_to_blas": 0.721,
+    "shape": "1025x2048 @ 2048x1300"
+  },
+  "reference_vs_optimized_gemm": {
+    "optimized_gflops": 1.8333,
+    "optimized_ms": 0.0168,
+    "reference_ms": 3.8875,
+    "shape": "24x32 @ 32x20",
+    "speedup_x": 231.99
+  },
+  "stream_overlap_large": {
+    "branches": 4,
+    "overlap_speedup_x": 0.35,
+    "parallel_ms": 113.4013,
+    "serial_ms": 39.4582,
+    "shape": "1024x1024 @ 1024x1024"
+  },
+  "stream_overlap_small": {
+    "branches": 8,
+    "overlap_speedup_x": 0.12,
+    "parallel_ms": 25.9019,
+    "serial_ms": 3.0016,
+    "shape": "96x256 @ 256x96"
+  }
+}

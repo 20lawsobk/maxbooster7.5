@@ -41,6 +41,8 @@ Architectural honesty about what is, and isn't, "custom" here:
 """
 from __future__ import annotations
 
+import threading
+
 import numpy as np
 
 LANES = 8  # matches `parameter LANES = 8` in hardware/digital_gpu_core/gpu_core.v
@@ -75,6 +77,16 @@ class SiliconSimtEngine:
         self.cycles_issued = 0
         self.lanes_committed = 0
         self.instructions_retired = 0
+        # Real hardware performance counters are atomic increments shared
+        # across every lane/SM; this engine now has genuine concurrent
+        # callers (the orchestration layer's stream scheduler dispatches
+        # independent graph nodes to worker threads that share one engine
+        # instance), so the same counters need the software equivalent -- a
+        # lock around the read-modify-write -- or concurrent `+=` calls lose
+        # updates. The lock only guards the cheap bookkeeping increment, not
+        # the actual FMA compute, so genuine cross-thread execution overlap
+        # is preserved.
+        self._counter_lock = threading.Lock()
 
     # ── ISA-mirroring predicate primitives (OP_RSTP / OP_PRED) ───────────────
     def reset_predicate(self, shape) -> np.ndarray:
@@ -93,13 +105,16 @@ class SiliconSimtEngine:
         shared instruction and commits its result; predicated-off lanes do
         not commit. Mirrors gpu_core.v's single-PC fetch + per-lane
         predicate-gated writeback."""
-        self.cycles_issued += 1
-        self.lanes_committed += int(np.count_nonzero(active))
+        committed = int(np.count_nonzero(active))
+        with self._counter_lock:
+            self.cycles_issued += 1
+            self.lanes_committed += committed
 
     def reset_stats(self) -> None:
-        self.cycles_issued = 0
-        self.lanes_committed = 0
-        self.instructions_retired = 0
+        with self._counter_lock:
+            self.cycles_issued = 0
+            self.lanes_committed = 0
+            self.instructions_retired = 0
 
     def stats(self) -> dict:
         return {

@@ -103,3 +103,5 @@
 - [Replit home dir is ephemeral, workspace/ is not](replit-home-vs-workspace-persistence.md) — container can fully restart mid-session; only /home/runner/workspace survives, $HOME-installed tool caches (e.g. PDKs) can vanish
 - [Heavy background compute vs live app workflow](heavy-background-compute-vs-live-app.md) — a memory-heavy native background job can OOM-kill the app workflow with no stack trace; pause the workflow first if headroom is thin
 - [MaxCore status route topology](maxcore-status-route-topology.md) — /gpu/* status endpoints are loopback-only (8090→9878 chain), never bridged to the public app; dashboard SPA never serves in dev mode
+- [GIL blocks thread speedup](gil-blocks-thread-speedup.md) — measured: thread-based num_streams made this project's NumPy-bound GEMMs 3-8x slower, not faster; default concurrency knobs to serial, make it opt-in
+- [Dependency-graph scheduler traps](dependency-graph-scheduler-traps.md) — free-on-last-consumer needs live countdown not precomputed index; Future/error checks need the lock BEFORE creating the future or failure-during-wait deadlocks

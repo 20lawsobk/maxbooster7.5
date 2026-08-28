@@ -35,6 +35,11 @@ if _SERVER_DIR not in sys.path:
 
 from ai_model.maxcore.backend.cpu_backend import DigitalGPUBackend  # noqa: E402
 from ai_model.maxcore.backend.silicon_simt_backend import SiliconSimtBackend  # noqa: E402
+from ai_model.maxcore.kernels.reference import (  # noqa: E402
+    reference_attention as _ref_attention,
+    reference_conv2d as _ref_conv2d,
+    reference_softmax as _ref_softmax,
+)
 
 RTOL = 1e-3
 ATOL = 1e-3
@@ -44,46 +49,6 @@ _rng = np.random.default_rng(1234)
 
 def _close(a, b, rtol=RTOL, atol=ATOL):
     return np.allclose(a, b, rtol=rtol, atol=atol)
-
-
-def _ref_softmax(x, axis=-1):
-    x = x - np.max(x, axis=axis, keepdims=True)
-    e = np.exp(x)
-    return e / np.sum(e, axis=axis, keepdims=True)
-
-
-def _ref_attention(q, k, v, mask=None, causal=False):
-    d = q.shape[-1]
-    scores = np.matmul(q, np.swapaxes(k, -1, -2)) / np.sqrt(np.float32(d))
-    if causal:
-        t_q, t_k = scores.shape[-2], scores.shape[-1]
-        cm = np.triu(np.full((t_q, t_k), -1e9, dtype=scores.dtype), k=1)
-        scores = scores + cm
-    if mask is not None:
-        scores = scores + mask
-    probs = _ref_softmax(scores, axis=-1)
-    return np.matmul(probs, v)
-
-
-def _ref_conv2d(x, w, bias=None, stride=1, padding=0):
-    n, c, h, ww = x.shape
-    o, cw, kh, kw = w.shape
-    s, p = stride, padding
-    if p > 0:
-        x = np.pad(x, ((0, 0), (0, 0), (p, p), (p, p)))
-    hp, wp = x.shape[2], x.shape[3]
-    ho = (hp - kh) // s + 1
-    wo = (wp - kw) // s + 1
-    out = np.zeros((n, o, ho, wo), dtype=np.float32)
-    for ni in range(n):
-        for oi in range(o):
-            for i in range(ho):
-                for j in range(wo):
-                    patch = x[ni, :, i * s:i * s + kh, j * s:j * s + kw]
-                    out[ni, oi, i, j] = np.sum(patch * w[oi])
-    if bias is not None:
-        out = out + bias.reshape(1, o, 1, 1)
-    return out
 
 
 def _backends():

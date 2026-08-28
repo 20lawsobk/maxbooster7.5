@@ -29,14 +29,16 @@ _DEFAULT_BACKEND = "silicon_simt"
 
 class DigitalGPU:
     def __init__(self, backend: str | Backend | None = None, deterministic: bool = False,
-                 compiler: Compiler | None = None, **backend_kwargs):
+                 compiler: Compiler | None = None, num_streams: int | None = None,
+                 vram_capacity_bytes: int | None = None, **backend_kwargs):
         if backend is None:
             backend = os.environ.get("MAXCORE_BACKEND", _DEFAULT_BACKEND)
         self.backend: Backend = (
             backend if isinstance(backend, Backend) else get_backend(backend, **backend_kwargs)
         )
         self.compiler = compiler or Compiler()
-        self.runtime = Runtime(self.backend)
+        self.runtime = Runtime(self.backend, num_streams=num_streams,
+                                vram_capacity_bytes=vram_capacity_bytes)
         self.deterministic = deterministic
 
     # ── tensors / graph construction ─────────────────────────────────────────
@@ -88,3 +90,19 @@ class DigitalGPU:
     def backends(self) -> dict:
         return {"registered": available(), "runnable": available_runtime(),
                 "active": self.backend.name}
+
+    def smi(self) -> dict:
+        """A `nvidia-smi`-style device snapshot: real memory-pool state,
+        stream/backend config, and per-op telemetry from this process. There
+        is no vendor GPU in this environment to query instead -- every field
+        here is a live figure from this runtime, not a modeled/estimated one.
+        """
+        snap = METRICS.snapshot()
+        return {
+            "backend": self.backend.info(),
+            "num_streams": self.runtime.num_streams,
+            "memory": self.runtime.pool.snapshot(),
+            "counters": snap["counters"],
+            "gauges": snap["gauges"],
+            "op_timers": snap["timers"],
+        }
