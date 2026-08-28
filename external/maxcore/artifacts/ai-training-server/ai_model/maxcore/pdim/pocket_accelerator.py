@@ -17,9 +17,13 @@ At 90 000 concurrent unique requests, each making N GEMM calls, the lock wait
 is proportional to (90 000 × N) / 256 — roughly 350 waiters per shard instead
 of 90 000 × N waiters on a single lock.
 
-Results are stored in FP16 to halve cache footprint (doubles achievable hit
-rate before eviction kicks in).  Stored FP16 is promoted back to FP32 on the
-way out so callers see the same dtype as a fresh compute() result.
+Results are stored as lossless copies in the caller's original dtype — a hit
+is byte-identical to what a fresh compute() call would have returned. This
+cache used to quantize floating results to FP16 to stretch capacity, but that
+silently broke the byte-identical contract (a stored value could differ from
+a fresh compute by more than this codebase's own correctness tolerance).
+Capacity pressure must be handled via the per-shard byte budget / LRU
+eviction below, never by lowering stored precision.
 
 Adaptive gate
 ─────────────
@@ -114,11 +118,12 @@ class _ShardedLRU:
             return entry
 
     def put(self, key: str, value: np.ndarray, compute_seconds: float) -> None:
-        # FP16-compress floating results to double effective cache capacity.
-        if np.issubdtype(value.dtype, np.floating):
-            arr = np.ascontiguousarray(value).astype(np.float16, copy=False).copy()
-        else:
-            arr = np.ascontiguousarray(value).copy()
+        # Lossless copy in the caller's own dtype: a hit must be byte-identical
+        # to what a fresh compute() call would have returned. Never quantize —
+        # that silently breaks correctness for every caller of this cache. If
+        # capacity pressure matters, tune the per-shard byte budget / eviction
+        # below instead of stored precision.
+        arr = np.ascontiguousarray(value).copy()
         size = arr.nbytes
         if size > self._shard_budget:
             return   # single result too large for any shard
@@ -347,10 +352,8 @@ class PocketAccelerator:
                 self._hit_serving_seconds   += dt
             self._settle(pocket, hit=True)
             METRICS.incr("pocket_accel.hit")
-            # Dequantize: FP16-stored results promoted to FP32 on the way out
-            # so callers see the same dtype as a fresh compute() result.
-            if stored.dtype == np.float16:
-                return stored.astype(np.float32), "pocket"   # always a new copy
+            # Lossless: stored is an exact copy in the original dtype, so a
+            # hit is byte-identical to what compute() would have returned.
             return stored.copy(), "pocket"
 
         # ── cache miss path ───────────────────────────────────────────────────

@@ -53,6 +53,19 @@ from ..tensor import Tensor, to_numpy
 from .base import Backend
 from .cpu_backend import _activate, _stable_softmax
 
+# ── pocket accelerator (lazy: avoids import cycles at package load) ───────────
+# Same dedup cache DigitalGPUBackend.gemm() uses -- kept lazy/module-level here
+# too so identical GEMMs are deduped regardless of which backend serves them.
+_POCKET_ACCEL = None
+
+
+def _pocket_accel():
+    global _POCKET_ACCEL
+    if _POCKET_ACCEL is None:
+        from ..pdim.pocket_accelerator import get_pocket_accelerator
+        _POCKET_ACCEL = get_pocket_accelerator()
+    return _POCKET_ACCEL
+
 # ── Load the engine in isolation (no torch, no ai_model.gpu package __init__) ─
 _Engine = None
 _ENGINE_LOAD_ERROR = None
@@ -139,12 +152,20 @@ class SiliconSimtBackend(Backend):
         A = to_numpy(a).astype(np.float32, copy=False)
         B = to_numpy(b).astype(np.float32, copy=False)
         bias_np = None if bias is None else to_numpy(bias).astype(np.float32, copy=False)
-        with METRICS.timer("silicon_simt.gemm"):
-            out = self._engine_matmul(A, B)
-            if bias_np is not None:
-                out = out + bias_np
-            out = _activate(out, activation)
-        METRICS.incr("silicon_simt.gemm")
+
+        def _compute() -> np.ndarray:
+            with METRICS.timer("silicon_simt.gemm"):
+                out = self._engine_matmul(A, B)
+                if bias_np is not None:
+                    out = out + bias_np
+                out = _activate(out, activation)
+            METRICS.incr("silicon_simt.gemm")
+            return out
+
+        flops = 2.0 * float(A.size) * float(B.shape[-1])
+        operands = (A, B) if bias_np is None else (A, B, bias_np)
+        out, _src = _pocket_accel().accelerate(
+            "gemm", operands, flops, _compute, extra_key=f"|act={activation}")
         return Tensor(out, dtype=None)
 
     def add(self, a, b):
