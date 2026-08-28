@@ -115,6 +115,27 @@ export const GetHyperGpuStatusResponse = zod.object({
 });
 
 /**
+ * @summary Get Silicon SIMT backend status
+ */
+export const GetSiliconGpuStatusResponse = zod.object({
+  backend: zod.string(),
+  available: zod.boolean(),
+  primary_compute_backend: zod.string().optional(),
+  role: zod.string().optional(),
+  is_maxcore_default: zod.boolean().optional(),
+  name: zod.string().optional(),
+  engine_load_error: zod.string().nullish(),
+  lanes: zod.number().optional(),
+  m_tile: zod.number().optional(),
+  k_tile: zod.number().optional(),
+  reduce_tile: zod.number().optional(),
+  cycles_issued: zod.number().optional(),
+  lanes_committed: zod.number().optional(),
+  instructions_retired: zod.number().optional(),
+  error: zod.string().optional(),
+});
+
+/**
  * @summary Get training status
  */
 export const GetTrainingStatusResponse = zod.object({

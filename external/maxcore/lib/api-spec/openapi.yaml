@@ -150,6 +150,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/HyperGpuStatus"
 
+  /gpu/silicon/status:
+    get:
+      operationId: getSiliconGpuStatus
+      tags: [gpu]
+      summary: Get Silicon SIMT backend status
+      responses:
+        "200":
+          description: Silicon SIMT status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiliconGpuStatus"
+
   /training/status:
     get:
       operationId: getTrainingStatus
@@ -429,6 +442,44 @@ components:
         - lanes
         - tensor_cores
         - precision
+
+    SiliconGpuStatus:
+      type: object
+      properties:
+        backend:
+          type: string
+        available:
+          type: boolean
+        primary_compute_backend:
+          type: string
+        role:
+          type: string
+        is_maxcore_default:
+          type: boolean
+        name:
+          type: string
+        engine_load_error:
+          type: string
+          nullable: true
+        lanes:
+          type: integer
+        m_tile:
+          type: integer
+        k_tile:
+          type: integer
+        reduce_tile:
+          type: integer
+        cycles_issued:
+          type: integer
+        lanes_committed:
+          type: integer
+        instructions_retired:
+          type: integer
+        error:
+          type: string
+      required:
+        - backend
+        - available
 
     TrainingStatus:
       type: object

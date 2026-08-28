@@ -29,6 +29,7 @@ import type {
   HealthStatus,
   HyperGpuStatus,
   ModelStatus,
+  SiliconGpuStatus,
   StartTrainingRequest,
   TrainingLogs,
   TrainingStarted,
@@ -68,8 +69,10 @@ export const getHealthCheckQueryOptions = <
   TData = Awaited<ReturnType<typeof healthCheck>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof healthCheck>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
@@ -101,8 +104,10 @@ export function useHealthCheck<
   TData = Awaited<ReturnType<typeof healthCheck>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof healthCheck>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -139,8 +144,10 @@ export const getListApiKeysQueryOptions = <
   TData = Awaited<ReturnType<typeof listApiKeys>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof listApiKeys>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listApiKeys>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
@@ -172,8 +179,10 @@ export function useListApiKeys<
   TData = Awaited<ReturnType<typeof listApiKeys>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof listApiKeys>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listApiKeys>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -464,8 +473,10 @@ export const getGetModelStatusQueryOptions = <
   TData = Awaited<ReturnType<typeof getModelStatus>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof getModelStatus>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getModelStatus>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
@@ -497,8 +508,10 @@ export function useGetModelStatus<
   TData = Awaited<ReturnType<typeof getModelStatus>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof getModelStatus>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getModelStatus>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -535,8 +548,10 @@ export const getGetGpuStatusQueryOptions = <
   TData = Awaited<ReturnType<typeof getGpuStatus>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof getGpuStatus>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getGpuStatus>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
@@ -568,8 +583,10 @@ export function useGetGpuStatus<
   TData = Awaited<ReturnType<typeof getGpuStatus>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof getGpuStatus>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getGpuStatus>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -606,12 +623,10 @@ export const getGetHyperGpuStatusQueryOptions = <
   TData = Awaited<ReturnType<typeof getHyperGpuStatus>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getHyperGpuStatus>>,
-      TError,
-      TData
-    >
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getHyperGpuStatus>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
@@ -643,16 +658,89 @@ export function useGetHyperGpuStatus<
   TData = Awaited<ReturnType<typeof getHyperGpuStatus>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getHyperGpuStatus>>,
-      TError,
-      TData
-    >
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getHyperGpuStatus>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetHyperGpuStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get Silicon SIMT backend status
+ */
+export const getGetSiliconGpuStatusUrl = () => {
+  return `/api/gpu/silicon/status`;
+};
+
+export const getSiliconGpuStatus = async (
+  options?: RequestInit,
+): Promise<SiliconGpuStatus> => {
+  return customFetch<SiliconGpuStatus>(getGetSiliconGpuStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSiliconGpuStatusQueryKey = () => {
+  return [`/api/gpu/silicon/status`] as const;
+};
+
+export const getGetSiliconGpuStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSiliconGpuStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getSiliconGpuStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSiliconGpuStatusQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSiliconGpuStatus>>
+  > = ({ signal }) => getSiliconGpuStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSiliconGpuStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSiliconGpuStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSiliconGpuStatus>>
+>;
+export type GetSiliconGpuStatusQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get Silicon SIMT backend status
+ */
+
+export function useGetSiliconGpuStatus<
+  TData = Awaited<ReturnType<typeof getSiliconGpuStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getSiliconGpuStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSiliconGpuStatusQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -685,12 +773,10 @@ export const getGetTrainingStatusQueryOptions = <
   TData = Awaited<ReturnType<typeof getTrainingStatus>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getTrainingStatus>>,
-      TError,
-      TData
-    >
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getTrainingStatus>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
@@ -722,12 +808,10 @@ export function useGetTrainingStatus<
   TData = Awaited<ReturnType<typeof getTrainingStatus>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getTrainingStatus>>,
-      TError,
-      TData
-    >
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getTrainingStatus>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -850,8 +934,10 @@ export const getGetTrainingLogsQueryOptions = <
   TData = Awaited<ReturnType<typeof getTrainingLogs>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof getTrainingLogs>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getTrainingLogs>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
@@ -883,8 +969,10 @@ export function useGetTrainingLogs<
   TData = Awaited<ReturnType<typeof getTrainingLogs>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof getTrainingLogs>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getTrainingLogs>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1007,8 +1095,10 @@ export const getListBoostsheetsQueryOptions = <
   TData = Awaited<ReturnType<typeof listBoostsheets>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof listBoostsheets>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listBoostsheets>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
@@ -1040,8 +1130,10 @@ export function useListBoostsheets<
   TData = Awaited<ReturnType<typeof listBoostsheets>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof listBoostsheets>>, TError, TData>
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listBoostsheets>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1078,12 +1170,10 @@ export const getGetDashboardStatsQueryOptions = <
   TData = Awaited<ReturnType<typeof getDashboardStats>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getDashboardStats>>,
-      TError,
-      TData
-    >
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardStats>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
@@ -1115,12 +1205,10 @@ export function useGetDashboardStats<
   TData = Awaited<ReturnType<typeof getDashboardStats>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getDashboardStats>>,
-      TError,
-      TData
-    >
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardStats>>,
+    TError,
+    TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {

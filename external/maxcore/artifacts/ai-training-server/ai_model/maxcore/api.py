@@ -7,6 +7,7 @@ pluggable backend (default: the in-house Digital GPU engine).
 """
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from .backend.base import Backend
@@ -19,10 +20,18 @@ from .runtime.engine import Runtime
 from .session import Session
 from .tensor import Tensor
 
+# Default backend when the caller doesn't pin one explicitly. `silicon_simt`
+# (the from-scratch, RTL-derived SIMT engine) is the live default execution
+# engine. Set MAXCORE_BACKEND=digital_gpu (or pass backend="digital_gpu"
+# explicitly) to fall back to the legacy NumPy/SIMD engine.
+_DEFAULT_BACKEND = "silicon_simt"
+
 
 class DigitalGPU:
-    def __init__(self, backend: str | Backend = "digital_gpu", deterministic: bool = False,
+    def __init__(self, backend: str | Backend | None = None, deterministic: bool = False,
                  compiler: Compiler | None = None, **backend_kwargs):
+        if backend is None:
+            backend = os.environ.get("MAXCORE_BACKEND", _DEFAULT_BACKEND)
         self.backend: Backend = (
             backend if isinstance(backend, Backend) else get_backend(backend, **backend_kwargs)
         )

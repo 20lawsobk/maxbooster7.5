@@ -19,6 +19,7 @@ export * from "./gpuStatus";
 export * from "./healthStatus";
 export * from "./hyperGpuStatus";
 export * from "./modelStatus";
+export * from "./siliconGpuStatus";
 export * from "./startTrainingRequest";
 export * from "./trainingLogEntry";
 export * from "./trainingLogs";

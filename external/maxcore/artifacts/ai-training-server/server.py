@@ -647,6 +647,7 @@ _render_manager = None
 _image_engine = None
 _hyper_backend = None
 _digital_gpu_backend = None
+_silicon_simt_backend = None
 _model_config: dict[str, Any] = {}
 
 _model_lock = threading.Lock()
@@ -2492,9 +2493,51 @@ async def hyper_gpu_status():
         # rest of this payload.
         return {"available": False, "engine": "HyperGPU", "role": "primary", "error": str(e)}
 
+# ─── Silicon SIMT Status ─────────────────────────────────────────────────────
+#
+# /gpu/silicon/status reports on `ai_model.maxcore.backend.silicon_simt_backend.
+# SiliconSimtBackend` — the from-scratch, RTL-derived lockstep-SIMT engine (see
+# ai_model/gpu/silicon_simt_engine.py and hardware/digital_gpu_core/gpu_core.v).
+# `ai_model.maxcore.api.DigitalGPU` (the MaxCore facade) now resolves to this
+# backend by DEFAULT; set MAXCORE_BACKEND=digital_gpu to restore the legacy
+# NumPy/SIMD engine. This facade currently powers audio synthesis
+# (ai_model/audio/digital_gpu_synth.py) and the PDIM pocket-multiply path —
+# it is NOT the main model inference/training route, which stays on HyperGPU
+# (see /gpu/hyper/status). Distinct from /gpu/status (the older SIMD-lane
+# accounting shim).
+
+@app.get("/gpu/silicon/status")
+async def silicon_simt_status():
+    global _silicon_simt_backend
+    try:
+        if _silicon_simt_backend is None:
+            sys.path.insert(0, str(Path(__file__).parent))
+            from ai_model.maxcore.backend.silicon_simt_backend import SiliconSimtBackend
+            _silicon_simt_backend = SiliconSimtBackend()
+        info = _silicon_simt_backend.info()
+        is_default = os.environ.get("MAXCORE_BACKEND", "silicon_simt") == "silicon_simt"
+        return {
+            "backend": "silicon_simt",
+            "primary_compute_backend": "hyper_gpu",
+            "role": (
+                "MaxCore DigitalGPU facade default — audio synth + PDIM pocket-multiply"
+                if is_default else
+                "MaxCore DigitalGPU facade (inactive: MAXCORE_BACKEND overrides to legacy digital_gpu)"
+            ),
+            "is_maxcore_default": is_default,
+            **info,
+        }
+    except Exception as e:
+        return {
+            "backend": "silicon_simt",
+            "available": False,
+            "primary_compute_backend": "hyper_gpu",
+            "error": str(e),
+        }
+
 @app.get("/gpu/capabilities")
 async def gpu_capabilities():
-    global _hyper_backend, _digital_gpu_backend
+    global _hyper_backend, _digital_gpu_backend, _silicon_simt_backend
     hyper_ok = True
     hyper_err = None
     _lanes, _tensor_cores = _hyper_gpu_sizing()
@@ -2525,12 +2568,31 @@ async def gpu_capabilities():
         digital_ok = False
         digital_err = str(e)
 
+    silicon_ok = True
+    silicon_err = None
+    try:
+        if _silicon_simt_backend is None:
+            sys.path.insert(0, str(Path(__file__).parent))
+            from ai_model.maxcore.backend.silicon_simt_backend import SiliconSimtBackend
+            _silicon_simt_backend = SiliconSimtBackend()
+        silicon_ok = _silicon_simt_backend.is_available()
+    except Exception as e:
+        silicon_ok = False
+        silicon_err = str(e)
+    maxcore_default_backend = os.environ.get("MAXCORE_BACKEND", "silicon_simt")
+
     return {
         "success": hyper_ok,
         "primary_compute_backend": "hyper_gpu",
+        "maxcore_default_backend": maxcore_default_backend,
         "digital_gpu": {
             "backend": "digital_gpu", "lanes": 32, "type": "SIMD", "role": "secondary",
             "available": digital_ok, **({"error": digital_err} if digital_err else {}),
+        },
+        "silicon_simt": {
+            "backend": "silicon_simt", "type": "lockstep-SIMT",
+            "role": "MaxCore DigitalGPU facade default" if maxcore_default_backend == "silicon_simt" else "MaxCore DigitalGPU facade (inactive)",
+            "available": silicon_ok, **({"error": silicon_err} if silicon_err else {}),
         },
         "hyper_gpu": {
             "engine": "HyperGPU", "lanes": _lanes, "tensor_cores": _tensor_cores, "precision": "MIXED", "role": "primary",

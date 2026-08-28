@@ -177,6 +177,7 @@ const CACHE_TTL_MS: Record<string, number> = {
   "/model/status": 8_000,
   "/gpu/status": 6_000,
   "/gpu/hyper/status": 6_000,
+  "/gpu/silicon/status": 6_000,
   "/gpu/capabilities": 15_000,
   "/storage/status": 10_000,
   "/watchdog/status": 10_000,
@@ -613,6 +614,10 @@ router.get("/gpu/status", async (req, res) => {
 
 router.get("/gpu/hyper/status", async (req, res) => {
   await proxyRequest(req, res, "/gpu/hyper/status");
+});
+
+router.get("/gpu/silicon/status", async (req, res) => {
+  await proxyRequest(req, res, "/gpu/silicon/status");
 });
 
 router.get("/gpu/capabilities", async (req, res) => {

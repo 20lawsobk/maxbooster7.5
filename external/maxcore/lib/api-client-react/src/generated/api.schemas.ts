@@ -80,6 +80,24 @@ export interface HyperGpuStatus {
   uptime_s?: number;
 }
 
+export interface SiliconGpuStatus {
+  backend: string;
+  available: boolean;
+  primary_compute_backend?: string;
+  role?: string;
+  is_maxcore_default?: boolean;
+  name?: string;
+  engine_load_error?: string | null;
+  lanes?: number;
+  m_tile?: number;
+  k_tile?: number;
+  reduce_tile?: number;
+  cycles_issued?: number;
+  lanes_committed?: number;
+  instructions_retired?: number;
+  error?: string;
+}
+
 export interface TrainingStatus {
   state: string;
   epoch?: number;
