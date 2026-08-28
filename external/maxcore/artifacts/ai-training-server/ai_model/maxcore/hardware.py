@@ -36,6 +36,25 @@ def cpu_count() -> int:
     return os.cpu_count() or 1
 
 
+def reserve_cpus_for(cpus: int) -> int:
+    """Cores intentionally left out of the BLAS/process budget for the event
+    loop, web-server I/O, and other non-numeric work.
+
+    Modest and host-scaled: a small box can't spare a whole core (reserving
+    one from a 2-CPU dev box would halve its already-tiny BLAS budget for
+    little benefit), a mid box spares one, a big box spares two. Deliberately
+    not a fixed fraction of ``cpus`` -- that would reserve implausibly many
+    cores on a large host for no added benefit.
+    """
+    if cpus < 1:
+        raise ValueError(f"cpus must be >= 1, got {cpus}")
+    if cpus <= 2:
+        return 0
+    if cpus <= 8:
+        return 1
+    return 2
+
+
 def plan_blas_threads(cpus: int, num_workers: int = 1, reserve: int = 0) -> int:
     """Threads each worker should use so the total stays within ``cpus``.
 

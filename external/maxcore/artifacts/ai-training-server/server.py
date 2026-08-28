@@ -30,15 +30,44 @@ from urllib.parse import urlparse
 import html as _html
 import urllib.request as _urllib_request
 
-# ── BLAS/OpenMP thread pools — minimal on the host ───────────────────────────
-# The Digital GPU backend handles all heavy compute. The Python process is an
-# API surface; its numpy usage is bookkeeping only. One BLAS thread is correct —
-# we do not want host CPU thread pools competing with the GPU engine.
-for _blas_var in (
-    "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
-    "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS",
-):
-    os.environ.setdefault(_blas_var, "1")
+# ── BLAS/OpenMP thread pools — sized to the actual host, before numpy loads ──
+# The default MaxCore path (MAXCORE_NUM_STREAMS unset/1) runs every
+# GEMM/attention/conv2d op directly in *this* process via numpy — it is not
+# "bookkeeping only", so it genuinely needs a real, host-scaled BLAS thread
+# pool. Hardcoding every BLAS var to "1" (the old policy here) left 15/16
+# cores idle on a 16-CPU host for the most common execution path. When a
+# caller opts into MAXCORE_NUM_STREAMS > 1, LaneProcessPool spawns separate
+# worker processes and re-plans BLAS threads for its own worker count right
+# before spawning them (see ai_model/maxcore/runtime/process_pool.py) — that
+# re-plan uses override=True specifically so it can shrink whatever this
+# block sets, so it is never oversubscribed by this process-wide default.
+#
+# UVICORN_WORKERS (also read below, in __main__) matters here too: each
+# uvicorn worker is a separate OS process that re-executes this module from
+# scratch, so every worker independently divides the *same* host by the *same*
+# worker count via plan_blas_threads's num_workers — never N x cpus threads.
+#
+# ai_model.maxcore's package __init__ eagerly imports numpy-heavy submodules,
+# so this can't do `from ai_model.maxcore.hardware import ...` — that would
+# import numpy before these env vars are set, too late for BLAS to see them.
+# Load hardware.py directly, by file path, bypassing the package __init__
+# entirely (the same isolation trick silicon_simt_backend.py uses to load the
+# engine module without pulling in the rest of ai_model.gpu).
+import importlib.util as _blas_ilu
+
+_blas_hardware_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "ai_model", "maxcore", "hardware.py"
+)
+_blas_hardware_spec = _blas_ilu.spec_from_file_location("_maxcore_hardware_bootstrap", _blas_hardware_path)
+_blas_hardware = _blas_ilu.module_from_spec(_blas_hardware_spec)
+_blas_hardware_spec.loader.exec_module(_blas_hardware)
+
+_blas_cpus = _blas_hardware.cpu_count()
+_blas_workers = max(1, int(os.environ.get("UVICORN_WORKERS", "1")))
+_blas_hardware.configure_blas_threads(
+    num_workers=_blas_workers,
+    reserve=_blas_hardware.reserve_cpus_for(_blas_cpus),
+)
 
 import psycopg2
 import psycopg2.pool
@@ -11450,8 +11479,10 @@ if __name__ == "__main__":
     # Worker count: default 1 to keep memory footprint small (each worker
     # loads the full ~1.7 GB model independently).  Operators on hosts with
     # more RAM can set UVICORN_WORKERS=N to scale unique-request throughput
-    # linearly.  BLAS thread caps are applied proportionally at module load
-    # time (see _blas_threads_per_worker above) so thread counts stay sane.
+    # linearly.  BLAS thread pools are sized to cpus // UVICORN_WORKERS (see
+    # the bootstrap block at the top of this module, before numpy is
+    # imported) so N worker processes divide the host instead of each
+    # claiming a full-core BLAS pool.
     cpu_count = multiprocessing.cpu_count()
     worker_count = max(1, int(os.environ.get("UVICORN_WORKERS", "1")))
     print(f"[Server] Starting MaxBooster AI Training Server on port {port} "

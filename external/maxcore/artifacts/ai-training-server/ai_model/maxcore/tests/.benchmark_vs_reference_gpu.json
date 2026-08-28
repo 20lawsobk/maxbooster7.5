@@ -58,7 +58,21 @@
       "reference_gpu": "Yes \u2014 a real, fabricated, physically shipping chip"
     }
   ],
-  "generated_at_utc": "2026-08-28T10:47:20.351960+00:00",
+  "generated_at_utc": "2026-08-28T16:20:47.914317+00:00",
+  "host_config": {
+    "blas_threads_num_streams_1": 3,
+    "cache_budget_mb": 250.57,
+    "cpus": 4,
+    "gemm_tile_hint": {
+      "k_tile": 512,
+      "m_tile": 256,
+      "reduce_tile": 128
+    },
+    "memory_gib": 7.779,
+    "note": "This dev host's resource-plan numbers, not the 16-CPU/64GiB production target -- that host has not been benchmarked from this dev container.",
+    "reserve_cpus": 1,
+    "this_process_effective_blas_threads": 3
+  },
   "reference_gpu": {
     "architecture": {
       "process_node": "reported ~3nm-class (third-party figure, not seen confirmed directly by NVIDIA)",
@@ -98,10 +112,10 @@
         "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 0.516222,
         "correct_vs_independent_reference": true,
         "flops": 67108864.0,
-        "gap_factor_our_measured_vs_gpu_ideal": 5053.5,
+        "gap_factor_our_measured_vs_gpu_ideal": 4590.3,
         "max_abs_err_vs_reference": 0.0,
         "note": "attention's internal matmuls call the SIMT engine directly and bypass the pocket accelerator in this backend (see silicon_simt_backend.py), so there is no cache-hit path to measure here -- only a single measured time.",
-        "our_measured_ms": 2.60875,
+        "our_measured_ms": 2.36962,
         "pocket_cached_in_this_backend": false,
         "shape": "short_sequence (B=1,H=4,S=256,D=64)"
       },
@@ -109,10 +123,10 @@
         "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 4.129776,
         "correct_vs_independent_reference": true,
         "flops": 536870912.0,
-        "gap_factor_our_measured_vs_gpu_ideal": 5442.2,
+        "gap_factor_our_measured_vs_gpu_ideal": 7747.8,
         "max_abs_err_vs_reference": 5.960464477539062e-07,
         "note": "attention's internal matmuls call the SIMT engine directly and bypass the pocket accelerator in this backend (see silicon_simt_backend.py), so there is no cache-hit path to measure here -- only a single measured time.",
-        "our_measured_ms": 22.47506,
+        "our_measured_ms": 31.99686,
         "pocket_cached_in_this_backend": false,
         "shape": "medium_sequence (B=1,H=8,S=512,D=64)"
       }
@@ -124,11 +138,11 @@
         "correct_vs_independent_reference": true,
         "correctness_check_shape": "tiny independent shape {'n': 1, 'c': 2, 'h': 8, 'w': 8, 'o': 3, 'kh': 3, 'kw': 3, 'stride': 1, 'padding': 0} (naive reference too slow at realistic size)",
         "flops": 236027904.0,
-        "gap_factor_our_cold_vs_gpu_ideal": 6076.7,
+        "gap_factor_our_cold_vs_gpu_ideal": 11361.0,
         "max_abs_err_vs_reference": 1.430511474609375e-06,
-        "our_cold_gflops": 21.393,
-        "our_cold_ms": 11.03293,
-        "our_warm_cached_ms": 8.33582,
+        "our_cold_gflops": 11.4427,
+        "our_cold_ms": 20.62696,
+        "our_warm_cached_ms": 24.04754,
         "shape": "resnet_stem: [1,3,224,224] * [64,3,7,7] stride=2 pad=3"
       },
       {
@@ -137,11 +151,11 @@
         "correct_vs_independent_reference": true,
         "correctness_check_shape": "tiny independent shape {'n': 1, 'c': 2, 'h': 8, 'w': 8, 'o': 3, 'kh': 3, 'kw': 3, 'stride': 1, 'padding': 0} (naive reference too slow at realistic size)",
         "flops": 231211008.0,
-        "gap_factor_our_cold_vs_gpu_ideal": 6509.5,
+        "gap_factor_our_cold_vs_gpu_ideal": 24486.9,
         "max_abs_err_vs_reference": 1.430511474609375e-06,
-        "our_cold_gflops": 19.9707,
-        "our_cold_ms": 11.57752,
-        "our_warm_cached_ms": 6.34886,
+        "our_cold_gflops": 5.309,
+        "our_cold_ms": 43.55111,
+        "our_warm_cached_ms": 5.60362,
         "shape": "resnet_block: [1,64,56,56] * [64,64,3,3] stride=1 pad=1"
       }
     ],
@@ -151,11 +165,11 @@
         "cache_hit_bit_exact_vs_cold_output": true,
         "correct_vs_independent_reference": true,
         "flops": 33554432.0,
-        "gap_factor_our_cold_vs_gpu_ideal": 8945.6,
+        "gap_factor_our_cold_vs_gpu_ideal": 8616.7,
         "max_abs_err_vs_reference": 0.0,
-        "our_cold_gflops": 14.5323,
-        "our_cold_ms": 2.30895,
-        "our_warm_cached_ms": 0.40758,
+        "our_cold_gflops": 15.087,
+        "our_cold_ms": 2.22406,
+        "our_warm_cached_ms": 0.35444,
         "shape": "256x256 @ 256x256"
       },
       {
@@ -163,11 +177,11 @@
         "cache_hit_bit_exact_vs_cold_output": true,
         "correct_vs_independent_reference": true,
         "flops": 268435456.0,
-        "gap_factor_our_cold_vs_gpu_ideal": 5409.8,
+        "gap_factor_our_cold_vs_gpu_ideal": 4867.0,
         "max_abs_err_vs_reference": 5.340576171875e-05,
-        "our_cold_gflops": 24.0304,
-        "our_cold_ms": 11.17067,
-        "our_warm_cached_ms": 3.67841,
+        "our_cold_gflops": 26.7104,
+        "our_cold_ms": 10.04984,
+        "our_warm_cached_ms": 2.62128,
         "shape": "512x512 @ 512x512"
       },
       {
@@ -175,11 +189,11 @@
         "cache_hit_bit_exact_vs_cold_output": true,
         "correct_vs_independent_reference": true,
         "flops": 2147483648.0,
-        "gap_factor_our_cold_vs_gpu_ideal": 3362.8,
+        "gap_factor_our_cold_vs_gpu_ideal": 2451.5,
         "max_abs_err_vs_reference": 9.1552734375e-05,
-        "our_cold_gflops": 38.6587,
-        "our_cold_ms": 55.54984,
-        "our_warm_cached_ms": 15.18347,
+        "our_cold_gflops": 53.029,
+        "our_cold_ms": 40.49638,
+        "our_warm_cached_ms": 17.11953,
         "shape": "1024x1024 @ 1024x1024"
       },
       {
@@ -187,11 +201,11 @@
         "cache_hit_bit_exact_vs_cold_output": true,
         "correct_vs_independent_reference": true,
         "flops": 17179869184.0,
-        "gap_factor_our_cold_vs_gpu_ideal": 1927.9,
+        "gap_factor_our_cold_vs_gpu_ideal": 1846.7,
         "max_abs_err_vs_reference": 0.0001220703125,
-        "our_cold_gflops": 67.4318,
-        "our_cold_ms": 254.77382,
-        "our_warm_cached_ms": 135.90505,
+        "our_cold_gflops": 70.3972,
+        "our_cold_ms": 244.04196,
+        "our_warm_cached_ms": 101.77822,
         "shape": "2048x2048 @ 2048x2048"
       }
     ],
@@ -201,11 +215,11 @@
         "cache_hit_bit_exact_vs_cold_output": true,
         "correct_vs_independent_reference": true,
         "flops": 4831838208.0,
-        "gap_factor_our_cold_vs_gpu_ideal": 3303.1,
+        "gap_factor_our_cold_vs_gpu_ideal": 11229.4,
         "max_abs_err_vs_reference": 0.00244140625,
-        "our_cold_gflops": 39.3566,
-        "our_cold_ms": 122.77063,
-        "our_warm_cached_ms": 42.24406,
+        "our_cold_gflops": 11.5767,
+        "our_cold_ms": 417.3744,
+        "our_warm_cached_ms": 73.55972,
         "shape": "bert_base_ffn: batch=512 d_model=768 d_ff=3072"
       }
     ]

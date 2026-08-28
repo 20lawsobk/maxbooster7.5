@@ -27,11 +27,31 @@ eviction below, never by lowering stored precision.
 
 Adaptive gate
 ─────────────
-Pockets with consistently low hit rates are muted to avoid wasting hash time on
-matrices whose inputs change every call.  The gate re-probes every
-``reprobe_every`` calls so it can recover if the workload becomes repetitive.
-Small GEMMs (< ``min_flops``) are always bypassed — the hash cost exceeds the
-compute cost.
+Two tiers decide whether a GEMM is worth offering to the cache:
+
+1. **Static prior** — brand-new shapes have no evidence yet, so
+   ``min_flops`` bypasses obviously-tiny GEMMs before any hashing happens
+   (hash cost almost certainly exceeds compute cost for these).
+2. **Measured posterior** — once a pocket (a `kind`+shape bucket) has
+   accumulated ``warmup`` real cache-miss samples, admission switches to
+   *evidence*: every ``accelerate()`` call times its own hashing, LRU
+   lookup, result copy, and store cost, and feeds those seconds into
+   per-pocket EWMAs — kept as separate series for what is paid on *every*
+   call (hash + lookup) versus what is paid only on a hit (copy) or only
+   on a miss (compute, store). From that, the required hit rate to keep
+   this pocket admitted is derived from first principles rather than
+   assumed:
+
+       breakeven_hit_rate = (overhead + store) / (compute + store - copy)
+
+   (caching only lowers expected per-call cost when the hit rate clears
+   this ratio — see the derivation in ``_ShardedBuckets.settle``). The
+   pocket's effective floor is ``max(hit_rate_floor, breakeven_hit_rate)``,
+   so a shape whose hash/lookup overhead is comparable to its own compute
+   cost is held to a stricter bar than the flat 5% default, while cheap
+   overhead relative to expensive compute keeps today's low floor. The
+   gate re-probes every ``reprobe_every`` calls so a muted pocket can
+   recover if the workload becomes repetitive again.
 
 Sharding contract
 ─────────────────
@@ -68,6 +88,12 @@ def _enabled() -> bool:
 
 _NUM_SHARDS = 256   # must be a power-of-two for `& 0xFF` trick; 256 = 2^8
 
+# Exponential-moving-average smoothing for the per-pocket cost estimates used
+# by the evidence-based admission check below. 0.2 tracks a shape's real
+# behavior on this host within a handful of samples without being so
+# reactive that one slow/fast outlier call swings the estimate.
+_EWMA_ALPHA = 0.2
+
 
 # ── adaptive gate bucket ──────────────────────────────────────────────────────
 
@@ -77,6 +103,23 @@ class _PocketBucket:
     hits:     int = 0
     muted:    bool = False
     skipped:  int = field(default=0, repr=False)
+    # Evidence-based cost tracking (seconds, EWMA) — populated by `settle()`
+    # on every call so admission can compare THIS shape's measured costs
+    # against what a hit actually saves, instead of assuming a fixed
+    # hit-rate floor fits every shape on every host. Each series only
+    # updates on the call type that actually pays it: `overhead_ewma`
+    # (hash + lookup) is paid either way so it updates on every call;
+    # `copy_ewma` is paid only on a hit; `compute_ewma`/`store_ewma` are
+    # paid only on a miss. Keeping them separate (rather than blending
+    # copy into "overhead") lets the breakeven formula weigh each cost
+    # against exactly what it replaces.
+    overhead_ewma:    float = field(default=0.0, repr=False)
+    overhead_samples: int   = field(default=0, repr=False)
+    copy_ewma:        float = field(default=0.0, repr=False)
+    copy_samples:     int   = field(default=0, repr=False)
+    compute_ewma:     float = field(default=0.0, repr=False)
+    store_ewma:       float = field(default=0.0, repr=False)
+    compute_samples:  int   = field(default=0, repr=False)
 
 
 # ── 256-shard LRU store ───────────────────────────────────────────────────────
@@ -201,19 +244,73 @@ class _ShardedBuckets:
             return True
 
     def settle(self, pocket: str, hit: bool, warmup: int,
-               hit_rate_floor: float) -> None:
+               hit_rate_floor: float, overhead_seconds: float = 0.0,
+               compute_seconds: "Optional[float]" = None,
+               store_seconds: float = 0.0, copy_seconds: float = 0.0) -> None:
         idx = self._idx(pocket)
         with self._locks[idx]:
             b = self._shards[idx].get(pocket)
             if b is None:
                 return
             b.attempts += 1
+
+            # Evidence-based cost tracking: overhead (hash + lookup) is paid
+            # on every call, hit or miss, so it always updates. copy is
+            # measured only on a hit; compute/store only on a miss — a
+            # hit's whole point is that compute() was never called, and a
+            # miss never copies a stored result. Keeping these as separate
+            # series (rather than folding copy into "overhead") means the
+            # breakeven formula below weighs each cost against exactly what
+            # it replaces instead of a hit-rate-contaminated blend.
+            if b.overhead_samples == 0:
+                b.overhead_ewma = overhead_seconds
+            else:
+                b.overhead_ewma += _EWMA_ALPHA * (overhead_seconds - b.overhead_ewma)
+            b.overhead_samples += 1
+
             if hit:
+                if b.copy_samples == 0:
+                    b.copy_ewma = copy_seconds
+                else:
+                    b.copy_ewma += _EWMA_ALPHA * (copy_seconds - b.copy_ewma)
+                b.copy_samples += 1
                 b.hits   += 1
                 b.muted   = False
                 b.skipped = 0
-            elif (b.attempts >= warmup
-                    and b.hits / b.attempts < hit_rate_floor):
+                return
+
+            if compute_seconds is not None:
+                if b.compute_samples == 0:
+                    b.compute_ewma = compute_seconds
+                    b.store_ewma   = store_seconds
+                else:
+                    b.compute_ewma += _EWMA_ALPHA * (compute_seconds - b.compute_ewma)
+                    b.store_ewma   += _EWMA_ALPHA * (store_seconds - b.store_ewma)
+                b.compute_samples += 1
+
+            # Required hit rate to break even, derived from measured cost.
+            # Expected cost per call WITH caching is
+            #   overhead + hit_rate * copy + (1 - hit_rate) * (compute + store)
+            # (overhead is paid always; copy only on the hit fraction;
+            # compute+store only on the miss fraction). WITHOUT caching
+            # every call simply costs `compute`. Caching only wins once
+            #   hit_rate > (overhead + store) / (compute + store - copy).
+            # Below `warmup` compute samples there isn't enough evidence to
+            # trust that ratio yet, so fall back to the static floor; above
+            # it, never go BELOW the static floor either — only ever raise
+            # the bar for shapes whose overhead isn't cheap relative to what
+            # they'd save. A non-positive denominator (copy cost at or
+            # above compute+store — never expected for a real GEMM, where
+            # copying a result is far cheaper than computing it) skips the
+            # posterior adjustment for this call rather than divide by a
+            # non-positive number.
+            required_floor = hit_rate_floor
+            denom = b.compute_ewma + b.store_ewma - b.copy_ewma
+            if b.compute_samples >= warmup and denom > 0:
+                breakeven = (b.overhead_ewma + b.store_ewma) / denom
+                required_floor = max(hit_rate_floor, min(breakeven, 0.99))
+
+            if b.attempts >= warmup and b.hits / b.attempts < required_floor:
                 b.muted = True
 
     def snapshot(self) -> tuple[int, int]:
@@ -257,7 +354,16 @@ class PocketAccelerator:
         reprobe_every:   int   = 16,
     ) -> None:
         if budget_bytes is None:
-            budget_bytes = int(float(os.environ.get(_ENV_BUDGET_MB, "256")) * 1e6)
+            _budget_mb_override = os.environ.get(_ENV_BUDGET_MB)
+            if _budget_mb_override is not None:
+                budget_bytes = int(float(_budget_mb_override) * 1e6)
+            else:
+                # No operator override: default to a memory-scaled budget
+                # (small fixed fraction of usable host memory, floor/ceiling
+                # bounded) instead of a flat number tuned for one host size —
+                # see resource_plan.py for the exact policy.
+                from ..resource_plan import cache_budget_bytes, planned_memory_bytes
+                budget_bytes = cache_budget_bytes(planned_memory_bytes())
         self.budget_bytes   = max(budget_bytes, 1_000_000)
         self.min_flops      = min_flops
         self.warmup         = warmup
@@ -276,6 +382,14 @@ class PocketAccelerator:
         self._bypass_muted          = 0
         self._compute_seconds_saved = 0.0
         self._hit_serving_seconds   = 0.0
+        # Evidence-based admission (task step 3): measured, aggregate cost of
+        # every phase of the cache path, exposed via stats() so an operator
+        # can see exactly what hashing/lookup/copy/storage cost this process
+        # — not just infer it from hit rate.
+        self._hash_seconds_total    = 0.0
+        self._lookup_seconds_total  = 0.0
+        self._copy_seconds_total    = 0.0
+        self._store_seconds_total   = 0.0
 
     # ── content-hash ──────────────────────────────────────────────────────────
 
@@ -307,8 +421,16 @@ class PocketAccelerator:
                 self._bypass_muted += 1
         return allowed
 
-    def _settle(self, pocket: str, hit: bool) -> None:
-        self._buckets.settle(pocket, hit, self.warmup, self.hit_rate_floor)
+    def _settle(self, pocket: str, hit: bool, overhead_seconds: float = 0.0,
+                compute_seconds: Optional[float] = None,
+                store_seconds: float = 0.0, copy_seconds: float = 0.0) -> None:
+        self._buckets.settle(
+            pocket, hit, self.warmup, self.hit_rate_floor,
+            overhead_seconds=overhead_seconds,
+            compute_seconds=compute_seconds,
+            store_seconds=store_seconds,
+            copy_seconds=copy_seconds,
+        )
 
     # ── wired entry point ─────────────────────────────────────────────────────
 
@@ -338,33 +460,65 @@ class PocketAccelerator:
         if not self._gate(pocket, flops):
             return compute(), "bypass"
 
-        t0  = time.perf_counter()
-        key = f"{pocket}:{self._digest(*operands)}{extra_key}"
+        # Every phase below is timed individually (not just bundled into one
+        # "hit_serving_seconds" blob) so hashing, lookup, copy, and storage
+        # costs are each measured and can each be exposed via stats() —
+        # that measurement is what lets `_settle` admit or mute a pocket on
+        # real evidence instead of a guessed constant.
+        t0     = time.perf_counter()
+        digest = self._digest(*operands)
+        t1     = time.perf_counter()
+        key    = f"{pocket}:{digest}{extra_key}"
 
         # ── cache hit path (acquires only shard lock for this key) ────────────
         entry = self._lru.get(key)
+        t2    = time.perf_counter()
+        hash_seconds, lookup_seconds = t1 - t0, t2 - t1
+
         if entry is not None:
             stored, saved = entry
-            dt = time.perf_counter() - t0
+            # Lossless: stored is an exact copy in the original dtype, so a
+            # hit is byte-identical to what compute() would have returned.
+            result = stored.copy()
+            t3 = time.perf_counter()
+            copy_seconds    = t3 - t2
+            serving_seconds = hash_seconds + lookup_seconds + copy_seconds
             with self._stats_lock:
                 self._hits                  += 1
                 self._compute_seconds_saved += saved
-                self._hit_serving_seconds   += dt
-            self._settle(pocket, hit=True)
+                self._hit_serving_seconds   += serving_seconds
+                self._hash_seconds_total    += hash_seconds
+                self._lookup_seconds_total  += lookup_seconds
+                self._copy_seconds_total    += copy_seconds
+            # Admission overhead (hash+lookup) is passed separately from
+            # copy cost: `settle()` weighs copy against the compute cost it
+            # replaces rather than folding it into "cost paid every call".
+            self._settle(pocket, hit=True,
+                         overhead_seconds=hash_seconds + lookup_seconds,
+                         copy_seconds=copy_seconds)
             METRICS.incr("pocket_accel.hit")
-            # Lossless: stored is an exact copy in the original dtype, so a
-            # hit is byte-identical to what compute() would have returned.
-            return stored.copy(), "pocket"
+            return result, "pocket"
 
         # ── cache miss path ───────────────────────────────────────────────────
         c0             = time.perf_counter()
         result         = compute()
         compute_seconds = time.perf_counter() - c0
 
+        s0 = time.perf_counter()
         self._lru.put(key, result, compute_seconds)
+        store_seconds = time.perf_counter() - s0
+
+        # Overhead paid on a miss is the hash + lookup that turned up nothing
+        # — real cost with zero payoff, which is exactly what admission must
+        # weigh against the compute it's trying to protect.
+        overhead_seconds = hash_seconds + lookup_seconds
         with self._stats_lock:
-            self._misses += 1
-        self._settle(pocket, hit=False)
+            self._misses                += 1
+            self._hash_seconds_total    += hash_seconds
+            self._lookup_seconds_total  += lookup_seconds
+            self._store_seconds_total   += store_seconds
+        self._settle(pocket, hit=False, overhead_seconds=overhead_seconds,
+                     compute_seconds=compute_seconds, store_seconds=store_seconds)
         METRICS.incr("pocket_accel.miss")
         return result, "compute"
 
@@ -378,6 +532,10 @@ class PocketAccelerator:
             bypM    = self._bypass_muted
             saved   = self._compute_seconds_saved
             serving = self._hit_serving_seconds
+            hash_t  = self._hash_seconds_total
+            lookup_t = self._lookup_seconds_total
+            copy_t  = self._copy_seconds_total
+            store_t = self._store_seconds_total
 
         lookups   = hits + misses
         total_pk, muted_pk = self._buckets.snapshot()
@@ -389,6 +547,8 @@ class PocketAccelerator:
             speedup = float("inf")
         else:
             speedup = None
+
+        admission_overhead = hash_t + lookup_t + copy_t + store_t
 
         return {
             "enabled":                    _enabled(),
@@ -407,6 +567,18 @@ class PocketAccelerator:
             "compute_seconds_saved":      round(saved, 6),
             "hit_serving_seconds":        round(serving, 6),
             "effective_speedup_on_hits":  speedup,
+            # Evidence-based admission (task step 3): measured cost of each
+            # cache-path phase, aggregated across every call this process has
+            # served. `admission_overhead_seconds_total` is the full price
+            # paid for caching (hash+lookup on every call, plus copy on hits
+            # and store on misses) — compare it against
+            # `compute_seconds_saved` to see whether this process's cache
+            # traffic is, in aggregate, actually paying for itself.
+            "hash_seconds_total":                round(hash_t, 6),
+            "lookup_seconds_total":              round(lookup_t, 6),
+            "copy_seconds_total":                round(copy_t, 6),
+            "store_seconds_total":               round(store_t, 6),
+            "admission_overhead_seconds_total":  round(admission_overhead, 6),
         }
 
     def clear(self) -> None:
@@ -419,6 +591,10 @@ class PocketAccelerator:
             self._bypass_muted          = 0
             self._compute_seconds_saved = 0.0
             self._hit_serving_seconds   = 0.0
+            self._hash_seconds_total    = 0.0
+            self._lookup_seconds_total  = 0.0
+            self._copy_seconds_total    = 0.0
+            self._store_seconds_total   = 0.0
 
 
 # ── shared singleton (one pocket tree per process, both GPUs feed it) ─────────

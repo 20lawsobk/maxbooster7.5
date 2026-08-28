@@ -590,6 +590,124 @@ def test_pocket_accelerator_adaptive_gating():
     assert "compute" in sources                   # a re-probe actually ran
 
 
+def test_pocket_accelerator_exposes_measured_admission_costs():
+    """Task-170 step 3: hashing/lookup/copy/storage costs must be measured
+    and exposed, not just implied by hit rate."""
+    from ai_model.maxcore.pdim.pocket_accelerator import PocketAccelerator
+    accel = PocketAccelerator(min_flops=0)
+    rng = np.random.default_rng(41)
+    A = rng.standard_normal((64, 64)).astype(np.float32)
+    B = rng.standard_normal((64, 64)).astype(np.float32)
+
+    accel.accelerate("gemm", (A, B), 1.0, lambda: A @ B)   # miss: hash+lookup+store
+    accel.accelerate("gemm", (A, B), 1.0, lambda: A @ B)   # hit:  hash+lookup+copy
+
+    st = accel.stats()
+    for key in ("hash_seconds_total", "lookup_seconds_total",
+                "copy_seconds_total", "store_seconds_total",
+                "admission_overhead_seconds_total"):
+        assert key in st, f"stats() must expose {key}"
+        assert st[key] >= 0.0
+    # A hash happened on both calls (hit and miss alike) and a store only on
+    # the miss, a copy only on the hit — every phase must have run at least
+    # once, i.e. none of these can be a stub reporting a hardcoded zero.
+    assert st["hash_seconds_total"] > 0.0
+    assert st["store_seconds_total"] > 0.0
+    assert st["copy_seconds_total"] > 0.0
+    assert st["admission_overhead_seconds_total"] >= (
+        st["hash_seconds_total"] + st["store_seconds_total"] + st["copy_seconds_total"]
+    ) - 1e-9
+
+
+def test_pocket_bucket_admission_uses_measured_breakeven_not_just_hit_rate():
+    """Task-170 step 3: 'admit reusable computations without charging
+    one-shot work more than the compute it protects' — a pocket whose
+    measured hash/lookup/store overhead is comparable to its own measured
+    compute cost must be held to a stricter bar than the flat hit-rate
+    floor, derived from those measured seconds. A pocket whose overhead is
+    cheap relative to its (expensive) compute must NOT be over-muted —
+    the static floor still governs there, unchanged from before."""
+    from ai_model.maxcore.pdim.pocket_accelerator import _ShardedBuckets
+    warmup, hit_rate_floor = 4, 0.05
+
+    # ── Case 1: overhead ≈ compute cost → breakeven sits well above 0.05 ──
+    # breakeven = (overhead + store) / (compute + store - copy)
+    #           = (0.0008 + 0.0001) / (0.0011 + 0.0001 - 0.0001) = 0.818
+    expensive_overhead = _ShardedBuckets()
+    pocket = "gpu/test/expensive_overhead"
+    assert expensive_overhead.gate(pocket, flops=1.0, min_flops=0.0,
+                                    reprobe_every=999) is True
+    # 1 hit + 7 misses = 12.5% hit rate: clears the OLD static 5% floor.
+    expensive_overhead.settle(pocket, hit=True, warmup=warmup,
+                               hit_rate_floor=hit_rate_floor,
+                               overhead_seconds=0.0008, copy_seconds=0.0001)
+    for _ in range(7):
+        expensive_overhead.settle(pocket, hit=False, warmup=warmup,
+                                   hit_rate_floor=hit_rate_floor,
+                                   overhead_seconds=0.0008,
+                                   compute_seconds=0.0011,
+                                   store_seconds=0.0001)
+    _, muted = expensive_overhead.snapshot()
+    assert muted == 1, (
+        "overhead (~0.0008s hash+lookup, ~0.0001s copy) is nearly as "
+        "expensive as the compute+store (~0.0012s) it protects, so the "
+        "true breakeven hit rate is ~82%% -- a 12.5%% hit rate must mute "
+        "this pocket even though it clears the old flat 5%% floor"
+    )
+
+    # ── Case 2: overhead is cheap relative to compute → old floor governs ──
+    # breakeven = (0.00001 + 0.00001) / (1.0 + 0.00001 - 0.00001) ≈ 0.00002
+    cheap_overhead = _ShardedBuckets()
+    pocket2 = "gpu/test/cheap_overhead"
+    assert cheap_overhead.gate(pocket2, flops=1.0, min_flops=0.0,
+                                reprobe_every=999) is True
+    cheap_overhead.settle(pocket2, hit=True, warmup=warmup,
+                           hit_rate_floor=hit_rate_floor,
+                           overhead_seconds=0.00001, copy_seconds=0.00001)
+    for _ in range(7):
+        cheap_overhead.settle(pocket2, hit=False, warmup=warmup,
+                               hit_rate_floor=hit_rate_floor,
+                               overhead_seconds=0.00001,
+                               compute_seconds=1.0,
+                               store_seconds=0.00001)
+    _, muted2 = cheap_overhead.snapshot()
+    assert muted2 == 0, (
+        "overhead and copy are both negligible next to a 1s compute cost, "
+        "so breakeven is ~0%% -- the same 12.5%% hit rate clears the "
+        "unchanged static 5%% floor and must NOT be muted"
+    )
+
+
+def test_pocket_bucket_copy_cost_never_zerodivides_breakeven():
+    """Degenerate edge case: if measured copy cost ever reached or exceeded
+    measured compute+store (never expected for a real GEMM, where copying
+    a result is far cheaper than computing it), the breakeven denominator
+    would hit zero or go negative. `settle()` must skip the posterior
+    adjustment for that call rather than raise ZeroDivisionError, and the
+    pocket must fall back to the static floor, not the crash."""
+    from ai_model.maxcore.pdim.pocket_accelerator import _ShardedBuckets
+    warmup, hit_rate_floor = 4, 0.05
+    buckets = _ShardedBuckets()
+    pocket = "gpu/test/pathological_copy_cost"
+    assert buckets.gate(pocket, flops=1.0, min_flops=0.0,
+                         reprobe_every=999) is True
+
+    # copy cost (0.002) exceeds compute+store (0.0011) -- denom <= 0.
+    buckets.settle(pocket, hit=True, warmup=warmup,
+                    hit_rate_floor=hit_rate_floor,
+                    overhead_seconds=0.0008, copy_seconds=0.002)
+    for _ in range(7):
+        buckets.settle(pocket, hit=False, warmup=warmup,
+                        hit_rate_floor=hit_rate_floor,
+                        overhead_seconds=0.0008,
+                        compute_seconds=0.0010, store_seconds=0.0001)
+    # No exception raised above is itself the primary assertion; also
+    # confirm the pocket fell back to the static floor's verdict (12.5%
+    # hit rate clears the unmodified 5% floor, so it must NOT be muted).
+    _, muted = buckets.snapshot()
+    assert muted == 0
+
+
 def test_digital_gpu_gemm_served_from_pocket_on_repeat():
     dg = DigitalGPU()
     rng = np.random.default_rng(33)

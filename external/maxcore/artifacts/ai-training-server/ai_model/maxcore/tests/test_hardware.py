@@ -23,12 +23,34 @@ from ai_model.maxcore.hardware import (  # noqa: E402
     configure_blas_threads,
     cpu_count,
     plan_blas_threads,
+    reserve_cpus_for,
 )
 
 
 def test_single_worker_uses_all_cores():
     assert plan_blas_threads(16, 1) == 16
     assert plan_blas_threads(2, 1) == 2
+
+
+def test_reserve_cpus_for_scales_with_host_size():
+    # Tiny hosts can't spare a core; mid hosts spare one; large hosts spare
+    # two -- never a fixed fraction of cpus (see docstring for why).
+    assert reserve_cpus_for(1) == 0
+    assert reserve_cpus_for(2) == 0
+    assert reserve_cpus_for(3) == 1
+    assert reserve_cpus_for(4) == 1  # this project's dev container
+    assert reserve_cpus_for(8) == 1
+    assert reserve_cpus_for(9) == 2
+    assert reserve_cpus_for(16) == 2  # the production target
+    assert reserve_cpus_for(64) == 2
+
+
+def test_reserve_cpus_for_rejects_invalid_cpus():
+    try:
+        reserve_cpus_for(0)
+        raise AssertionError("expected ValueError")
+    except ValueError:
+        pass
 
 
 def test_multi_worker_avoids_oversubscription():

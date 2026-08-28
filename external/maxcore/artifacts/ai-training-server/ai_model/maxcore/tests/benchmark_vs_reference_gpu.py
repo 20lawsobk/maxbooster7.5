@@ -89,6 +89,7 @@ if _SERVER_DIR not in sys.path:
     sys.path.insert(0, _SERVER_DIR)
 
 from ai_model.maxcore.backend.silicon_simt_backend import SiliconSimtBackend  # noqa: E402
+from ai_model.maxcore import resource_plan  # noqa: E402
 
 _rng = np.random.default_rng(11)
 
@@ -490,6 +491,30 @@ def bench_mlp(backend: SiliconSimtBackend, batch, d_model, d_ff, name, repeats=3
 # ───────────────────────────────────────────────────────────────────────────
 # Report
 # ───────────────────────────────────────────────────────────────────────────
+def _host_config_report():
+    """This container's actual resource-plan numbers -- NOT the 16-CPU/64GiB
+    production target this project is tuned for. Every timing in this report
+    is measured on this dev host only; no run of this script has ever
+    executed on that target. Recorded so the JSON report is self-documenting
+    about which host produced it."""
+    cpus = resource_plan.planned_cpu_count()
+    memory_bytes = resource_plan.planned_memory_bytes()
+    plan_1 = resource_plan.compute_resource_plan(num_streams=1)
+    eff_threads = resource_plan.effective_blas_threads()
+    tile = resource_plan.gemm_tile_hint(eff_threads)
+    return {
+        "cpus": cpus,
+        "memory_gib": round(memory_bytes / 1024 ** 3, 3),
+        "reserve_cpus": plan_1.reserve_cpus,
+        "blas_threads_num_streams_1": plan_1.blas_threads_per_stream,
+        "this_process_effective_blas_threads": eff_threads,
+        "cache_budget_mb": round(plan_1.cache_budget_bytes / 1e6, 2),
+        "gemm_tile_hint": {"m_tile": tile.m_tile, "k_tile": tile.k_tile, "reduce_tile": tile.reduce_tile},
+        "note": "This dev host's resource-plan numbers, not the 16-CPU/64GiB production "
+                "target -- that host has not been benchmarked from this dev container.",
+    }
+
+
 def _print_banner():
     print("=" * 78)
     print("CAUTION -- read before quoting any number below out of context:")
@@ -526,6 +551,11 @@ def main() -> int:
           f"@ {REFERENCE_GPU['memory']['bandwidth_tb_s']} TB/s")
     print(f"  fp32 (standard, precision-matched to our backend): {FP32_PEAK_TFLOPS} TFLOPS")
     print(f"  availability: {REFERENCE_GPU['availability']}")
+
+    host_config = _host_config_report()
+    print("\n[this run's host -- NOT the 16-CPU/64GiB production target]")
+    for k, v in host_config.items():
+        print(f"  {k}: {v}")
 
     print("\n[functional capability matrix]")
     matrix = functional_capability_matrix(backend)
@@ -602,6 +632,7 @@ def main() -> int:
 
     out = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "host_config": host_config,
         "reference_gpu": REFERENCE_GPU,
         "functional_capability_matrix": matrix,
         "results": results,

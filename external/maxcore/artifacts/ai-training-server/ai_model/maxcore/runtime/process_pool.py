@@ -96,6 +96,7 @@ import numpy as np
 
 from ..backend.registry import get_backend
 from ..hardware import _BLAS_ENV_VARS, configure_blas_threads
+from ..resource_plan import compute_resource_plan
 from ..memory.pool import VramOOMError
 from ..observability import METRICS
 from ..tensor import Tensor
@@ -536,14 +537,23 @@ class LaneProcessPool:
         # measured net *loss* -- worse than the single-process serial path it
         # is supposed to beat (see benchmark_gpu_native.py's stream_overlap_*
         # "honest takeaway"). Cap each worker to cpus // num_streams before it
-        # starts, exactly as ``hardware.py`` was written to support; restore
-        # the coordinator's own env immediately after spawning so this pool's
-        # sizing can never leak into a later pool's ``configure_blas_threads``
-        # call (which only sets a var when it is still absent) or into an
-        # unrelated child the coordinator process spawns afterwards.
+        # starts, via the same central plan process_pool's own coordinator
+        # process used (`resource_plan.compute_resource_plan`) so the reserve
+        # policy stays identical everywhere. This MUST pass override=True: the
+        # coordinator process's own BLAS vars are already set (by server.py's
+        # bootstrap, sized for its own *single-stream* default use), and a
+        # plain "set if absent" call would leave that larger, wrong-for-N-way
+        # value in place -- guaranteeing oversubscription once workers inherit
+        # it. Restore the coordinator's own env immediately after spawning so
+        # this pool's sizing can never leak into a later pool's own
+        # ``configure_blas_threads`` call or into an unrelated child the
+        # coordinator process spawns afterwards.
         _prior_blas_env = {var: os.environ.get(var) for var in _BLAS_ENV_VARS}
         try:
-            configure_blas_threads(num_workers=self.num_streams)
+            _blas_plan = compute_resource_plan(num_streams=self.num_streams)
+            configure_blas_threads(
+                num_workers=self.num_streams, reserve=_blas_plan.reserve_cpus, override=True
+            )
             for lid in range(self.num_streams):
                 proc = self._ctx.Process(
                     target=_lane_worker_main,

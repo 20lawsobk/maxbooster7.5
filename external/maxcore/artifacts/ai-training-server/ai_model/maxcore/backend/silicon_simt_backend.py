@@ -88,8 +88,24 @@ class SiliconSimtBackend(Backend):
 
     name = "silicon_simt"
 
-    def __init__(self, lanes: int = 8, m_tile: int = 256, k_tile: int = 512,
-                 reduce_tile: int = 128):
+    def __init__(self, lanes: int = 8, m_tile: int | None = None, k_tile: int | None = None,
+                 reduce_tile: int | None = None):
+        # Any tile size left unspecified is filled in from the resource plan,
+        # sized to *this process's own* effective BLAS thread count (not a
+        # raw host CPU count -- correct whether this backend is constructed
+        # in the single-stream coordinator process or inside a LaneProcessPool
+        # worker that only owns a share of the host). On this project's
+        # ~4-thread development host this reproduces the exact long-standing
+        # defaults (256 / 512 / 128); see resource_plan.gemm_tile_hint.
+        if m_tile is None or k_tile is None or reduce_tile is None:
+            from ..resource_plan import effective_blas_threads, gemm_tile_hint
+            hint = gemm_tile_hint(effective_blas_threads())
+            if m_tile is None:
+                m_tile = hint.m_tile
+            if k_tile is None:
+                k_tile = hint.k_tile
+            if reduce_tile is None:
+                reduce_tile = hint.reduce_tile
         self.engine = (
             _Engine(lanes=lanes, m_tile=m_tile, k_tile=k_tile, reduce_tile=reduce_tile)
             if _Engine is not None else None

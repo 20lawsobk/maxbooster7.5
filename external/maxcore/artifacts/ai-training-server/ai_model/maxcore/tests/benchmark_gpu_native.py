@@ -64,6 +64,7 @@ from ai_model.maxcore.api import DigitalGPU  # noqa: E402
 from ai_model.maxcore.backend.silicon_simt_backend import SiliconSimtBackend  # noqa: E402
 from ai_model.maxcore.ir.builder import GraphBuilder  # noqa: E402
 from ai_model.maxcore.kernels.reference import reference_gemm  # noqa: E402
+from ai_model.maxcore import resource_plan  # noqa: E402
 
 BASELINE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".benchmark_baseline.json")
 REGRESSION_TOLERANCE = 0.35  # allow up to 35% slower than baseline before flagging
@@ -212,6 +213,37 @@ def bench_stream_overlap_large():
     return _bench_stream_overlap_at(width=4, m=1024, k=1024, n=1024)
 
 
+def _host_config_report():
+    """This container's actual resource-plan numbers -- NOT the 16-CPU/64GiB
+    production target. No benchmark in this file (or anywhere in this dev
+    container) measures that target; every timing above is this host only.
+    Included in the results/baseline so a future run on different hardware
+    is self-documenting about *why* its numbers differ, and so CI baseline
+    diffs show a resource-plan change (e.g. a reserve/tile policy edit)
+    distinctly from an actual performance regression."""
+    cpus = resource_plan.planned_cpu_count()
+    memory_bytes = resource_plan.planned_memory_bytes()
+    plan_1 = resource_plan.compute_resource_plan(num_streams=1)
+    plan_4 = resource_plan.compute_resource_plan(num_streams=4)
+    plan_8 = resource_plan.compute_resource_plan(num_streams=8)  # LANES=8
+    eff_threads = resource_plan.effective_blas_threads()
+    tile = resource_plan.gemm_tile_hint(eff_threads)
+    return {
+        "cpus": cpus,
+        "memory_gib": round(memory_bytes / 1024 ** 3, 3),
+        "reserve_cpus": plan_1.reserve_cpus,
+        "blas_threads_num_streams_1": plan_1.blas_threads_per_stream,
+        "blas_threads_num_streams_4": plan_4.blas_threads_per_stream,
+        "blas_threads_num_streams_8_lanes": plan_8.blas_threads_per_stream,
+        "this_process_effective_blas_threads": eff_threads,
+        "cache_budget_mb": round(plan_1.cache_budget_bytes / 1e6, 2),
+        "gemm_tile_hint": {"m_tile": tile.m_tile, "k_tile": tile.k_tile, "reduce_tile": tile.reduce_tile},
+        "note": "Planning defaults for THIS host, not a measurement of the 16-CPU/64GiB "
+                "production target -- that host has not been benchmarked from this dev "
+                "container. See resource_plan.py for the policy that produced these numbers.",
+    }
+
+
 def _load_baseline():
     if os.path.exists(BASELINE_PATH):
         with open(BASELINE_PATH) as f:
@@ -262,7 +294,13 @@ def main() -> int:
     print("is compared against one. All figures are real wall-clock measurements.")
     print("=" * 78)
 
+    host_config = _host_config_report()
+    print("\n[host configuration -- THIS run's host, not the production target]")
+    for k, v in host_config.items():
+        print(f"  {k}: {v}")
+
     results = {
+        "host_config": host_config,
         "reference_vs_optimized_gemm": bench_reference_vs_optimized_gemm(),
         "optimized_vs_numpy_ceiling": bench_optimized_vs_numpy_ceiling(),
         "stream_overlap_small": bench_stream_overlap_small(),
@@ -270,6 +308,8 @@ def main() -> int:
     }
 
     for name, metrics in results.items():
+        if name == "host_config":
+            continue  # already printed above, before the timed runs
         print(f"\n[{name}]")
         for k, v in metrics.items():
             print(f"  {k}: {v}")
