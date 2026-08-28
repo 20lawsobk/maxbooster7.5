@@ -1,0 +1,213 @@
+{
+  "all_cache_bit_exactness_checks_passed": true,
+  "all_correctness_checks_passed": true,
+  "functional_capability_matrix": [
+    {
+      "operation": "GEMM / matrix multiply",
+      "ours": "Yes \u2014 verified numerically correct vs. NumPy/BLAS (see gemm benchmarks below)",
+      "reference_gpu": "Yes \u2014 native Tensor Core matmul path (public architecture fact, every NVIDIA GPU since Volta, 2017)"
+    },
+    {
+      "operation": "Self-attention (QK^T -> softmax -> V, incl. causal)",
+      "ours": "Yes \u2014 includes a genuine predicated-exclusion causal path (not additive -1e9 bias); verified vs. an independent NumPy softmax-attention reference below",
+      "reference_gpu": "Yes \u2014 dedicated hardware acceleration via NVIDIA's Transformer Engine (present since Hopper, expanded per the Rubin architecture blog)"
+    },
+    {
+      "operation": "2D convolution",
+      "ours": "Yes \u2014 im2col + engine GEMM; verified vs. an independent naive-loop NumPy reference below",
+      "reference_gpu": "Yes \u2014 native tensor-core convolution path (cuDNN)"
+    },
+    {
+      "operation": "MLP / 2-layer feed-forward (fused activation)",
+      "ours": "Yes \u2014 verified vs. an independent NumPy reference below",
+      "reference_gpu": "Yes \u2014 composed from the same GEMM hardware path"
+    },
+    {
+      "operation": "Elementwise activations (relu/gelu/silu/tanh/sigmoid)",
+      "ours": "Yes",
+      "reference_gpu": "Yes \u2014 standard CUDA-core elementwise ops"
+    },
+    {
+      "operation": "FP32 arithmetic",
+      "ours": "Yes \u2014 this backend's only compute precision (every input is cast to float32 before compute, regardless of input dtype)",
+      "reference_gpu": "Yes \u2014 130 TFLOPS standard, 400 TFLOPS tensor-core"
+    },
+    {
+      "operation": "Reduced precision (FP16 / BF16 / FP8 / FP6 / NVFP4)",
+      "ours": "No \u2014 SiliconSimtBackend unconditionally casts every operand to float32; narrower dtypes are accepted as input but not computed in their native width",
+      "reference_gpu": "Yes \u2014 native hardware datapaths at each width, each dramatically higher peak throughput than FP32 (see peak_tflops table)"
+    },
+    {
+      "operation": "FP64 (double precision)",
+      "ours": "No \u2014 inputs are cast to float32, not float64",
+      "reference_gpu": "Yes, but narrow by design \u2014 33 TFLOPS standard vs. 130 TFLOPS FP32 (AI-optimized silicon deliberately narrows FP64, a well-known industry tradeoff)"
+    },
+    {
+      "operation": "Bit-exact, run-to-run deterministic execution",
+      "ours": "Yes, opt-in \u2014 DigitalGPU(deterministic=True) is a real constructor flag in this project's API",
+      "reference_gpu": "Not by default \u2014 floating-point reduction order on real GPU hardware is scheduling-dependent; bit-reproducibility needs vendor deterministic-algorithm modes that typically cost throughput (a well-documented industry-wide GPU caveat, not specific to Rubin)"
+    },
+    {
+      "operation": "Dedicated on-package memory for weights/activations",
+      "ours": "No \u2014 shares this container's general-purpose system RAM; no dedicated pool",
+      "reference_gpu": "Yes \u2014 288 GB HBM4 at 22.0 TB/s"
+    },
+    {
+      "operation": "Physical existence",
+      "ours": "No \u2014 a software model executing on this container's general-purpose CPU (a separate, not-yet-fabricated RTL/Sky130 hardware track exists in this project under hardware/digital_gpu_core/, but nothing from it executes this path)",
+      "reference_gpu": "Yes \u2014 a real, fabricated, physically shipping chip"
+    }
+  ],
+  "generated_at_utc": "2026-08-28T10:47:20.351960+00:00",
+  "reference_gpu": {
+    "architecture": {
+      "process_node": "reported ~3nm-class (third-party figure, not seen confirmed directly by NVIDIA)",
+      "source": "NVIDIA developer blog, 'Inside NVIDIA Rubin GPU Architecture: Powering the Era of Agentic AI', 2026-07-21, https://developer.nvidia.com/blog/inside-nvidia-rubin-gpu-architecture-powering-the-era-of-agentic-ai/",
+      "streaming_multiprocessors": 224,
+      "tensor_cores": 896,
+      "transistors": "336 billion"
+    },
+    "availability": "Reported entering general availability / full production in H2 2026 (wccftech.com coverage of NVIDIA's architecture disclosure, 2026-07-21).",
+    "chosen_as_of": "2026-08-28",
+    "memory": {
+      "bandwidth_tb_s": 22.0,
+      "capacity_gb": 288,
+      "source": "NVIDIA developer blog, 'Inside NVIDIA Rubin GPU Architecture: Powering the Era of Agentic AI', 2026-07-21, https://developer.nvidia.com/blog/inside-nvidia-rubin-gpu-architecture-powering-the-era-of-agentic-ai/",
+      "type": "HBM4"
+    },
+    "name": "NVIDIA Rubin (SXM)",
+    "peak_tflops": {
+      "bf16": 4000.0,
+      "fp16": 4000.0,
+      "fp32_standard": 130.0,
+      "fp32_tensor_core": 400.0,
+      "fp6": 17500.0,
+      "fp64_standard": 33.0,
+      "fp64_tensor_core": 200.0,
+      "fp8": 17500.0,
+      "int8_tops": 250.0,
+      "nvfp4": 50000.0,
+      "source": "Third-party GPU spec aggregators, cross-checked against each other \u2014 NOT an official NVIDIA datasheet (none was found published at time of writing): flopper.io/gpu/nvidia-rubin-sxm/spec-sheet (2026-08-08) and glennklockwood.com/garden/processors/r200",
+      "tf32": 2000.0
+    },
+    "why_this_one": "Newest / highest-throughput individually-documented GPU package reported entering shipping/general availability at the time this script was written; supersedes Blackwell Ultra (B300), which supersedes B200/H100."
+  },
+  "results": {
+    "attention": [
+      {
+        "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 0.516222,
+        "correct_vs_independent_reference": true,
+        "flops": 67108864.0,
+        "gap_factor_our_measured_vs_gpu_ideal": 5053.5,
+        "max_abs_err_vs_reference": 0.0,
+        "note": "attention's internal matmuls call the SIMT engine directly and bypass the pocket accelerator in this backend (see silicon_simt_backend.py), so there is no cache-hit path to measure here -- only a single measured time.",
+        "our_measured_ms": 2.60875,
+        "pocket_cached_in_this_backend": false,
+        "shape": "short_sequence (B=1,H=4,S=256,D=64)"
+      },
+      {
+        "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 4.129776,
+        "correct_vs_independent_reference": true,
+        "flops": 536870912.0,
+        "gap_factor_our_measured_vs_gpu_ideal": 5442.2,
+        "max_abs_err_vs_reference": 5.960464477539062e-07,
+        "note": "attention's internal matmuls call the SIMT engine directly and bypass the pocket accelerator in this backend (see silicon_simt_backend.py), so there is no cache-hit path to measure here -- only a single measured time.",
+        "our_measured_ms": 22.47506,
+        "pocket_cached_in_this_backend": false,
+        "shape": "medium_sequence (B=1,H=8,S=512,D=64)"
+      }
+    ],
+    "conv2d": [
+      {
+        "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 1.815599,
+        "cache_hit_bit_exact_vs_cold_output": true,
+        "correct_vs_independent_reference": true,
+        "correctness_check_shape": "tiny independent shape {'n': 1, 'c': 2, 'h': 8, 'w': 8, 'o': 3, 'kh': 3, 'kw': 3, 'stride': 1, 'padding': 0} (naive reference too slow at realistic size)",
+        "flops": 236027904.0,
+        "gap_factor_our_cold_vs_gpu_ideal": 6076.7,
+        "max_abs_err_vs_reference": 1.430511474609375e-06,
+        "our_cold_gflops": 21.393,
+        "our_cold_ms": 11.03293,
+        "our_warm_cached_ms": 8.33582,
+        "shape": "resnet_stem: [1,3,224,224] * [64,3,7,7] stride=2 pad=3"
+      },
+      {
+        "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 1.778546,
+        "cache_hit_bit_exact_vs_cold_output": true,
+        "correct_vs_independent_reference": true,
+        "correctness_check_shape": "tiny independent shape {'n': 1, 'c': 2, 'h': 8, 'w': 8, 'o': 3, 'kh': 3, 'kw': 3, 'stride': 1, 'padding': 0} (naive reference too slow at realistic size)",
+        "flops": 231211008.0,
+        "gap_factor_our_cold_vs_gpu_ideal": 6509.5,
+        "max_abs_err_vs_reference": 1.430511474609375e-06,
+        "our_cold_gflops": 19.9707,
+        "our_cold_ms": 11.57752,
+        "our_warm_cached_ms": 6.34886,
+        "shape": "resnet_block: [1,64,56,56] * [64,64,3,3] stride=1 pad=1"
+      }
+    ],
+    "gemm": [
+      {
+        "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 0.258111,
+        "cache_hit_bit_exact_vs_cold_output": true,
+        "correct_vs_independent_reference": true,
+        "flops": 33554432.0,
+        "gap_factor_our_cold_vs_gpu_ideal": 8945.6,
+        "max_abs_err_vs_reference": 0.0,
+        "our_cold_gflops": 14.5323,
+        "our_cold_ms": 2.30895,
+        "our_warm_cached_ms": 0.40758,
+        "shape": "256x256 @ 256x256"
+      },
+      {
+        "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 2.064888,
+        "cache_hit_bit_exact_vs_cold_output": true,
+        "correct_vs_independent_reference": true,
+        "flops": 268435456.0,
+        "gap_factor_our_cold_vs_gpu_ideal": 5409.8,
+        "max_abs_err_vs_reference": 5.340576171875e-05,
+        "our_cold_gflops": 24.0304,
+        "our_cold_ms": 11.17067,
+        "our_warm_cached_ms": 3.67841,
+        "shape": "512x512 @ 512x512"
+      },
+      {
+        "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 16.519105,
+        "cache_hit_bit_exact_vs_cold_output": true,
+        "correct_vs_independent_reference": true,
+        "flops": 2147483648.0,
+        "gap_factor_our_cold_vs_gpu_ideal": 3362.8,
+        "max_abs_err_vs_reference": 9.1552734375e-05,
+        "our_cold_gflops": 38.6587,
+        "our_cold_ms": 55.54984,
+        "our_warm_cached_ms": 15.18347,
+        "shape": "1024x1024 @ 1024x1024"
+      },
+      {
+        "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 132.15284,
+        "cache_hit_bit_exact_vs_cold_output": true,
+        "correct_vs_independent_reference": true,
+        "flops": 17179869184.0,
+        "gap_factor_our_cold_vs_gpu_ideal": 1927.9,
+        "max_abs_err_vs_reference": 0.0001220703125,
+        "our_cold_gflops": 67.4318,
+        "our_cold_ms": 254.77382,
+        "our_warm_cached_ms": 135.90505,
+        "shape": "2048x2048 @ 2048x2048"
+      }
+    ],
+    "mlp": [
+      {
+        "NVIDIA Rubin (SXM)_ideal_us_at_fp32_peak_130TFLOPS": 37.167986,
+        "cache_hit_bit_exact_vs_cold_output": true,
+        "correct_vs_independent_reference": true,
+        "flops": 4831838208.0,
+        "gap_factor_our_cold_vs_gpu_ideal": 3303.1,
+        "max_abs_err_vs_reference": 0.00244140625,
+        "our_cold_gflops": 39.3566,
+        "our_cold_ms": 122.77063,
+        "our_warm_cached_ms": 42.24406,
+        "shape": "bert_base_ffn: batch=512 d_model=768 d_ff=3072"
+      }
+    ]
+  }
+}
