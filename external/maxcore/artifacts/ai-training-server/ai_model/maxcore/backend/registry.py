@@ -12,6 +12,7 @@ from .base import Backend
 from .cpu_backend import DigitalGPUBackend
 from .device_backend import GPUBackend
 from .future_backends import ASICBackend, ClusterBackend
+from .silicon_simt_backend import SiliconSimtBackend
 
 _FACTORIES: dict[str, Callable[..., Backend]] = {}
 _INSTANCES: dict[tuple, Backend] = {}
@@ -97,7 +98,8 @@ def available_runtime() -> dict[str, bool]:
     return out
 
 
-register("digital_gpu", lambda **kw: DigitalGPUBackend(**kw))
-register("gpu",         lambda **kw: GPUBackend(**kw))
-register("cluster",     lambda **kw: ClusterBackend())
-register("asic",        lambda **kw: ASICBackend())
+register("digital_gpu",  lambda **kw: DigitalGPUBackend(**kw))
+register("silicon_simt", lambda **kw: SiliconSimtBackend(**kw))
+register("gpu",          lambda **kw: GPUBackend(**kw))
+register("cluster",      lambda **kw: ClusterBackend())
+register("asic",         lambda **kw: ASICBackend())
