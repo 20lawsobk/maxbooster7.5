@@ -33,12 +33,16 @@ class DigitalGPU:
                  vram_capacity_bytes: int | None = None, **backend_kwargs):
         if backend is None:
             backend = os.environ.get("MAXCORE_BACKEND", _DEFAULT_BACKEND)
-        self.backend: Backend = (
-            backend if isinstance(backend, Backend) else get_backend(backend, **backend_kwargs)
-        )
+        if isinstance(backend, Backend):
+            self.backend: Backend = backend
+            resolved_backend_kwargs: dict = {}
+        else:
+            self.backend = get_backend(backend, **backend_kwargs)
+            resolved_backend_kwargs = dict(backend_kwargs)
         self.compiler = compiler or Compiler()
         self.runtime = Runtime(self.backend, num_streams=num_streams,
-                                vram_capacity_bytes=vram_capacity_bytes)
+                                vram_capacity_bytes=vram_capacity_bytes,
+                                backend_kwargs=resolved_backend_kwargs)
         self.deterministic = deterministic
 
     # ── tensors / graph construction ─────────────────────────────────────────
@@ -80,7 +84,6 @@ class DigitalGPU:
             seed=rc.get("seed", 0),
         )
 
-    # ── sessions / introspection ─────────────────────────────────────────────
     def create_session(self, session_id: str, policy: dict | None = None) -> Session:
         return Session(session_id, self, policy)
 
@@ -106,3 +109,8 @@ class DigitalGPU:
             "gauges": snap["gauges"],
             "op_timers": snap["timers"],
         }
+
+    def close(self) -> None:
+        """Release worker processes owned by this instance's runtime, if any
+        (a no-op for ``num_streams<=1``). See ``Runtime.close``."""
+        self.runtime.close()

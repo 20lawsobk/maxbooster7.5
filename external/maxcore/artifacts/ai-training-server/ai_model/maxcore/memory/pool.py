@@ -29,6 +29,19 @@ The runtime (``runtime/engine.py``) is the only caller that should drive the
 alloc/free lifecycle directly -- it ties each pool handle to a graph
 intermediate's real liveness window (allocate when a node's output is
 produced, free the instant its last consumer has read it).
+
+This thread-safety is what covers the thread-based ``StreamScheduler`` path
+(``num_streams > 1`` before ``runtime/process_pool.py`` existed, and still
+the mechanism for any caller that drives the scheduler directly rather than
+through ``Runtime``). The process-pool path (``LaneProcessPool``, now what
+``Runtime`` actually uses for ``num_streams > 1``) does **not** hand this
+pool to worker processes -- a lock and in-memory dict can't be shared across
+an OS process boundary the way they can across threads. Instead exactly one
+``VramPool`` instance stays owned by the coordinator process; lane workers
+only report their own tensor byte counts back over the coordinator's
+existing result channel, and the coordinator does the real ``alloc``/``free``
+bookkeeping against that telemetry. A worker process never calls a method on
+this class.
 """
 from __future__ import annotations
 
