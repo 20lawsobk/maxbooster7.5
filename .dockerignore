@@ -98,7 +98,13 @@ generated-icon.png
 public/generated-content/
 
 # Development tooling and agent config
-scripts/
+# Keep the small runtime launch helpers below: start.sh invokes them inside the
+# published image before node_modules is restored and before the app can bind.
+scripts/*
+!scripts/
+!scripts/port-contract.sh
+!scripts/boot-stub-server.mjs
+!scripts/check-port-contract.ts
 .agents/
 attached_assets/
 
