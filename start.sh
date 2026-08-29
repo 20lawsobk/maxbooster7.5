@@ -93,14 +93,19 @@ echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 # This must happen before the liveness stub or any sidecar starts. A duplicate
 # assignment is a configuration failure, never something to "work around" by
 # letting one process silently take another service's socket.
-source "$_SCRIPT_DIR/scripts/port-contract.sh"
+if ! source "$_SCRIPT_DIR/scripts/port-contract.sh"; then
+  echo "[start.sh] FATAL: runtime port contract could not be loaded; aborting startup" >&2
+  exit 1
+fi
 
 # ── 1a-2. Cross-check against .replit's own [[ports]] table ──────────────────
 # Runs once node_modules is confirmed present (tsx is a production dependency);
 # node_modules is guaranteed to exist by this point because deploy builds run
 # `npm ci` ahead of start.sh. Deferred until after the port-contract.sh env
 # vars above are exported so the check observes the exact values the app will.
-if [ -d "$_SCRIPT_DIR/node_modules/.bin" ] && [ -x "$_SCRIPT_DIR/node_modules/.bin/tsx" ]; then
+if [ ! -f "$_SCRIPT_DIR/.replit" ]; then
+  echo "[start.sh] .replit not packaged in runtime image — skipping source-config port cross-check"
+elif [ -d "$_SCRIPT_DIR/node_modules/.bin" ] && [ -x "$_SCRIPT_DIR/node_modules/.bin/tsx" ]; then
   if ! "$_NODE_BIN" "$_SCRIPT_DIR/node_modules/.bin/tsx" "$_SCRIPT_DIR/scripts/check-port-contract.ts"; then
     echo "[start.sh] FATAL: port contract check failed against .replit; aborting startup" >&2
     exit 1

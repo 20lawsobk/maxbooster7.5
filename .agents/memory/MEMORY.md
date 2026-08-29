@@ -109,3 +109,4 @@
 - [BLAS thread-count cross-comparison float drift](blas-threadcount-float-drift.md) — serial (multi-threaded BLAS) vs per-worker (single-threaded BLAS) GEMM results legitimately differ in float32 rounding; not a correctness bug, use same-config bit-identical checks instead
 - [Admission breakeven cost-series separation](admission-breakeven-cost-series.md) — every-call/hit-only/miss-only costs feeding a cache-admission breakeven ratio need separate EWMAs; blending drifts the ratio from its stated derivation
 - [MaxCoreLocal is one nested chain](maxcore-two-integration-paths.md) — "workspace bootstrap failed" means the WHOLE chain incl. Python never started, not an independent partial fault; check for `[Python]` lines, don't infer from dev health or /api/ready alone
+- [Deploy runtime helper packaging](deploy-runtime-helper-packaging.md) — launch helpers must survive deployment-context filtering or promote can fail before useful runtime logs appear
