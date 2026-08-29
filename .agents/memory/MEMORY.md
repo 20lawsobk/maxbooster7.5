@@ -115,3 +115,5 @@
 - [MaxCoreLocal is one nested chain](maxcore-two-integration-paths.md) — "workspace bootstrap failed" means the WHOLE chain incl. Python never started, not an independent partial fault; check for `[Python]` lines, don't infer from dev health or /api/ready alone
 - [Deploy runtime helper packaging](deploy-runtime-helper-packaging.md) — launch helpers must survive deployment-context filtering or promote can fail before useful runtime logs appear
 - [Capsule compression codec choice](capsule-compression-codec-choice.md) — real zstd-19 beats gzip/xz on ratio+speed for this project's capsules; benchmark the real restore path (bsdtar), not a raw CLI pipe; hardlink-copy technique for safe destructive-op verification
+- [Live storage codec-mesh integration](live-storage-codec-mesh-integration.md) — PocketDimension wires codecMesh+PDCF directly (not the fuller router); PDCF magic bytes alone gate legacy-vs-new, no schema field needed
+- [AwarenessProfiler detection gaps](awareness-profiler-detection-gaps.md) — RIFF magic collision mislabeled WAV as WebP/already-compressed (fixed); Shannon entropy alone can't see LZ-style repetition (open, follow-up filed)

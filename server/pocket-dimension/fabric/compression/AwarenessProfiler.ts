@@ -66,7 +66,6 @@ const MAGIC_SIGNATURES: MagicSignature[] = [
   { format: "brotli-pdcf", bytes: [0x50, 0x44, 0x43, 0x46] }, // our own container, if double-wrapped
   { format: "png", bytes: [0x89, 0x50, 0x4e, 0x47] },
   { format: "jpeg", bytes: [0xff, 0xd8, 0xff] },
-  { format: "webp", bytes: [0x52, 0x49, 0x46, 0x46], offset: 0 },
   { format: "gif", bytes: [0x47, 0x49, 0x46, 0x38] },
   { format: "mp3-id3", bytes: [0x49, 0x44, 0x33] },
   { format: "mp3-frame", bytes: [0xff, 0xfb] },
@@ -85,7 +84,29 @@ function matchesSignature(data: Buffer, sig: MagicSignature): boolean {
   return true;
 }
 
+// RIFF (bytes 0-3 = "RIFF") is a generic container header shared by WebP,
+// WAV, and AVI alike — the actual format only appears in the 4-byte tag at
+// offset 8. A bare "RIFF" prefix match would misclassify plain, uncompressed
+// PCM WAV audio as an already-compressed image (WebP) and skip compression
+// entirely, which is wrong: WAV is not compressed. Require the "WEBP" tag
+// specifically so only real WebP images are treated as already-compressed.
+const RIFF_MAGIC = [0x52, 0x49, 0x46, 0x46];
+const WEBP_TAG = [0x57, 0x45, 0x42, 0x50];
+const RIFF_FORMAT_TAG_OFFSET = 8;
+
+function isRiffWebp(data: Buffer): boolean {
+  if (data.length < RIFF_FORMAT_TAG_OFFSET + WEBP_TAG.length) return false;
+  for (let i = 0; i < RIFF_MAGIC.length; i++) {
+    if (data[i] !== RIFF_MAGIC[i]) return false;
+  }
+  for (let i = 0; i < WEBP_TAG.length; i++) {
+    if (data[RIFF_FORMAT_TAG_OFFSET + i] !== WEBP_TAG[i]) return false;
+  }
+  return true;
+}
+
 function detectMagicFormat(data: Buffer): string | null {
+  if (isRiffWebp(data)) return "webp";
   for (const sig of MAGIC_SIGNATURES) {
     if (matchesSignature(data, sig)) return sig.format;
   }

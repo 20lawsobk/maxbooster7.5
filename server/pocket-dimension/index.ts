@@ -25,11 +25,18 @@ import {
   randomBytes,
   scryptSync,
 } from "crypto";
-import { createGzip, createGunzip, constants as zlibConstants } from "zlib";
+import { createGunzip } from "zlib";
 import { pipeline, Readable, Writable } from "stream";
 import { promisify } from "util";
 import { EventEmitter } from "events";
 import { getPdimClient } from "../lib/pdimClient.js";
+import { codecMesh } from "./fabric/compression/CodecMesh.js";
+import {
+  encodeContainer,
+  decodeContainer,
+  isContainer,
+  type ContainerHeader,
+} from "./fabric/compression/ContainerFormat.js";
 
 promisify(pipeline);
 
@@ -621,32 +628,53 @@ export class PocketDimension extends EventEmitter {
   // COMPRESSION ENGINE
   // ============================================================================
 
+  /**
+   * Compresses a chunk with the real codec mesh (zstd/xz/store, chosen per
+   * AwarenessProfiler + size) instead of plain gzip, wrapped in the PDCF
+   * container envelope (see ContainerFormat.ts) so the codec, dictionary id,
+   * and block layout travel with the bytes.
+   *
+   * The PDCF magic prefix ("PDCF") is what lets decompress() tell a
+   * newly-written chunk apart from a legacy gzip chunk (magic 0x1f 0x8b) by
+   * its own leading bytes — no separate schema/version field is needed, and
+   * no migration of already-stored chunks is required.
+   *
+   * contentClass is "unknown" because PocketDimension only ever sees raw
+   * chunk bytes here — callers never pass a filename/MIME hint down to this
+   * layer — so claiming a more specific class would not be honest.
+   */
   private async compress(data: Buffer): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      const gzip = createGzip({
-        level: this.compressionLevel,
-        memLevel: 9,
-        strategy: zlibConstants.Z_DEFAULT_STRATEGY,
-      });
+    const result = await codecMesh.compress(data, { contentClass: "unknown" });
 
-      const source = Readable?.from(data);
-      const destination = new Writable({
-        write(chunk, _encoding, callback) {
-          chunks?.push(chunk);
-          callback();
-        },
-        final(callback) {
-          resolve(Buffer?.concat(chunks));
-          callback();
-        },
-      });
+    const header: ContainerHeader = {
+      profile: "lossless-max-dedup",
+      contentClass: "unknown",
+      codec: result.codec,
+      isDelta: false,
+      originalBytes: data.length,
+      ...(result.dictId ? { dictId: result.dictId } : {}),
+      ...(result.blockSizes ? { blockSizes: result.blockSizes } : {}),
+    };
 
-      source?.pipe(gzip).pipe(destination).on("error", reject);
-    });
+    return encodeContainer(header, result.compressed);
   }
 
+  /**
+   * Inverse of compress(). Branches on the chunk's own leading bytes:
+   *   - PDCF magic present  → new codec-mesh path (decodeContainer + codecMesh.decompress)
+   *   - no PDCF magic       → legacy chunk written before this integration;
+   *                           fall back to the original raw-gzip stream decode
+   *                           so already-stored data keeps working forever.
+   */
   private async decompress(data: Buffer): Promise<Buffer> {
+    if (isContainer(data)) {
+      const { header, payload } = decodeContainer(data);
+      return codecMesh.decompress(header.codec, payload, {
+        dictId: header.dictId,
+        blockSizes: header.blockSizes,
+      });
+    }
+
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
       const gunzip = createGunzip();
