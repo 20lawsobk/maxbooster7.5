@@ -161,6 +161,11 @@ python_runtime.pdim
 # in the workspace filesystem (covered by Replit's checkpoint system) plus
 # a tiny .manifest.json (which IS committed) recording how to rebuild/verify
 # them. See local-capsules/*.manifest.json for restore instructions.
+#
+# The EDA/CUDA chip-design toolchain no longer uses this capsule mechanism
+# (Task #181) -- it is fetched on demand via nix-shell instead (see
+# hardware/digital_gpu_core/flow/toolchain_env.sh). This rule is kept for any
+# other capsule that may use the same pattern in the future.
 local-capsules/*.nar.zst
 local-capsules/*.nar.zst.sha256
 
