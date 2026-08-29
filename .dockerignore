@@ -134,6 +134,25 @@ pocket-dimensions/
 data/
 uploads/
 
+# Hardware/chip-design flow (digital_gpu_core) — a separate EDA subsystem the
+# production Node/Python app never invokes (no yosys/openroad/magic/klayout
+# references anywhere in server/, shared/, or start.sh). 140MB of place/route
+# checkpoints, sim models, and flow scripts that only matter when the flow is
+# run interactively in the dev workspace.
+hardware/
+
+# Dev tooling output: typecheck/lint/autofix/production-readiness reports
+# written by scripts/ during local runs. Nothing at runtime reads this
+# directory (the admin "/moderation/reports" route and complianceService's
+# reportPath are DB-backed / logical paths, unrelated to this filesystem dir).
+reports/
+
+# Stale committed build output + accumulated local pocket-dimension runtime
+# state from an earlier maxcore/api-server run (last touched Aug 5). The
+# current maxcoreLocalSupervisor.ts reads external/maxcore/artifacts/api-server
+# (a separate, ~2KB path), never this top-level directory.
+artifacts/
+
 # Source trees are included in the repl layer so the SLOW PATH can do a full
 # build when pre-built artifacts are absent.  The FAST PATH detects dist/
 # artifacts and skips the compile step entirely, so including source here
