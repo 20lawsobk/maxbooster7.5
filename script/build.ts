@@ -3,6 +3,7 @@ import { build as esBuild } from "esbuild";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { packCapsule } from "./lib/capsulePack.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -113,44 +114,23 @@ async function main() {
       // rather than deleted from the image.
       { dir: "external/pdim", capsule: "external_pdim.pdim" },
     ];
-    const { createHash } = await import("crypto");
-    const { spawn } = await import("child_process");
 
     // Pack all capsules CONCURRENTLY instead of one after another. Each
     // targets an independent source directory and writes its own .pdim file,
-    // so there is no shared state to race on. `tar | gzip -9` is otherwise
-    // single-threaded per capsule; running the (up to) four packs in parallel
-    // spreads them across the build container's cores instead of serializing
-    // ~4 single-core jobs back to back, which was blowing the build-step time
-    // budget as more capsules were added.
-    const packOne = ({ dir, capsule }: { dir: string; capsule: string }) =>
-      new Promise<void>((resolveOne, rejectOne) => {
-        const abs = path.resolve(root, dir);
-        if (!fs.existsSync(abs)) return resolveOne();
-        console.log(`==> Packing ${dir}/ → ${capsule} (gzip-9, Extract & Boot)...`);
-        const child = spawn(
-          "bash",
-          ["-c", `tar -cf - ${JSON.stringify(dir)} | gzip -9 > ${JSON.stringify(capsule)}`],
-          { cwd: root, stdio: "inherit" },
-        );
-        child.on("error", rejectOne);
-        child.on("exit", (code) => {
-          if (code !== 0) return rejectOne(new Error(`packing ${dir} exited with code ${code}`));
-          const sha256 = createHash("sha256")
-            .update(fs.readFileSync(path.resolve(root, capsule)))
-            .digest("hex");
-          fs.writeFileSync(
-            path.resolve(root, capsule.replace(/\.pdim$/, ".manifest.json")),
-            JSON.stringify({ compression: "gzip-9", sha256, dir }, null, 2),
-          );
-          fs.rmSync(abs, { recursive: true, force: true });
-          const sizeMB = (fs.statSync(path.resolve(root, capsule)).size / 1048576).toFixed(0);
-          console.log(`   ✅ ${dir}/ packed (${sizeMB}MB) and removed from image`);
-          resolveOne();
-        });
-      });
-
-    await Promise.all(capsuleTargets.map(packOne));
+    // so there is no shared state to race on. The tar|codec pipe is
+    // otherwise single-threaded per capsule (zstd's own -T0 threading is
+    // internal to one capsule's pipeline); running the (up to) four packs in
+    // parallel spreads them across the build container's cores instead of
+    // serializing ~4 jobs back to back, which was blowing the build-step
+    // time budget as more capsules were added. packCapsule (script/lib/
+    // capsulePack.ts) is the same real streaming tar+zstd implementation the
+    // round-trip test (tests/unit/capsule-pack-restore-roundtrip.test.ts)
+    // exercises. zstd -19 --long=27 was chosen over gzip-9 and xz-9e after
+    // benchmarking all three against this project's real capsule directories:
+    // it won on compressed size, compress time, AND decompress time.
+    await Promise.all(
+      capsuleTargets.map(({ dir, capsule }) => packCapsule({ root, dir, capsule })),
+    );
   }
 
   // external/pdim is no longer deleted from the image — per user directive

@@ -6,9 +6,14 @@
  * startup.  Idempotent: skips extraction when the sentinel file
  * node_modules/.pdim-restored already exists.
  *
- * Reads compression format from *.manifest.json written by build.sh:
- *   "xz-9e"  → tar -xJf  (XZ)
- *   "gzip-9" → tar -xzf  (gzip, fallback)
+ * Reads the compression format from *.manifest.json written by the packer
+ * (script/build.ts, via script/lib/capsulePack.ts):
+ *   "zstd-*" → tar --zstd -xf   (zstd, current default — see capsulePack.ts
+ *                                for the real benchmark that picked it)
+ *   "xz-*"   → tar -xJf         (XZ)
+ *   anything else (e.g. "gzip-9") → tar -xzf (gzip, legacy fallback)
+ * bsdtar (preferred below when available) auto-detects the format from the
+ * stream itself and needs no format-specific flag at all.
  */
 
 import {
@@ -26,8 +31,18 @@ import { spawn, spawnSync } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, "..");
+
+// True only when this file was launched directly (`node dist/pdim-restore.mjs
+// <mode>`), not when it's imported as a module (e.g. by the round-trip test
+// importing `restoreCapsule` against a synthetic fixture). Mirrors the
+// CommonJS `require.main === module` check for ESM. Without this guard,
+// merely importing the file for its exports would immediately run the real
+// "restore everything under the actual project ROOT" CLI dispatch below.
+const isMainModule =
+  !!process.argv[1] && resolve(process.argv[1]) === resolve(__filename);
 
 // Resolve bsdtar once per process. bsdtar (libarchive) sets
 // ARCHIVE_EXTRACT_ATOMIC by default, which is libarchive's actual fix for
@@ -111,7 +126,21 @@ function readManifest(manifestPath) {
   return null;
 }
 
-async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
+// GNU tar has no single combined short flag for zstd the way -xzf/-xJf cover
+// gzip/xz; it needs the filter selected explicitly via --zstd alongside -xf.
+// This only matters for the GNU-tar fallback path (bsdtar, preferred when
+// available, auto-detects the format itself and needs no flag at all).
+// Exported as its own pure function so the branch selection for each real
+// codec id the manifest can report is covered directly, independent of
+// whether bsdtar happens to be installed in whatever environment the test
+// runs in.
+export function tarFlagsForCompression(compression) {
+  if (compression && compression.startsWith("zstd")) return ["--zstd", "-xf"];
+  if (compression && compression.startsWith("xz")) return ["-xJf"];
+  return ["-xzf"];
+}
+
+export async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
   const capsulePath = resolve(ROOT, capsuleName);
   const manifestPath = resolve(ROOT, manifestName);
   const sentinelPath = resolve(ROOT, targetDir, sentinel || ".pdim-restored");
@@ -137,7 +166,7 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
 
   const manifest = readManifest(manifestPath);
   const compression = manifest?.compression || "gzip-9";
-  const tarFlag = compression.startsWith("xz") ? "-xJf" : "-xzf";
+  const tarFlags = tarFlagsForCompression(compression);
 
   // Prefer bsdtar (libarchive) over GNU tar for the actual extraction. This
   // isn't a warning-tolerance workaround — libarchive ships a real fix for
@@ -234,7 +263,7 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
       ? spawn(bsdtarBin, ["-x", "-f", "-", "-C", scratchDir], {
           stdio: ["pipe", "inherit", "pipe"],
         })
-      : spawn("tar", [tarFlag, "-", "-C", scratchDir], {
+      : spawn("tar", [...tarFlags, "-", "-C", scratchDir], {
           stdio: ["pipe", "inherit", "pipe"],
         });
     if (usingBsdtar) {
@@ -427,42 +456,48 @@ const CAPSULES = {
     ),
 };
 
-const mode = process.argv[2] || "all";
+// CLI dispatch — only runs when this file is executed directly (`node
+// dist/pdim-restore.mjs <mode>`), never when it's imported for its exports
+// (see isMainModule above). start.sh invokes this with "critical" then
+// "background"; nothing else in the app imports this file at runtime.
+if (isMainModule) {
+  const mode = process.argv[2] || "all";
 
-if (mode === "critical") {
-  const nodeModulesOk = await CAPSULES.nodeModules();
-  if (!nodeModulesOk) {
-    console.error(
-      "[pdim-restore] FATAL: node_modules restore failed — server will crash",
-    );
-    process.exit(1);
+  if (mode === "critical") {
+    const nodeModulesOk = await CAPSULES.nodeModules();
+    if (!nodeModulesOk) {
+      console.error(
+        "[pdim-restore] FATAL: node_modules restore failed — server will crash",
+      );
+      process.exit(1);
+    }
+    console.log("[pdim-restore] Critical capsule (node_modules) restored.");
+  } else if (mode === "background") {
+    await Promise.all([
+      CAPSULES.pythonRuntime(),
+      CAPSULES.maxcore(),
+      CAPSULES.pdim(),
+    ]);
+    console.log("[pdim-restore] Background capsules processed.");
+  } else {
+    // Legacy/dev path: restore everything up front and block on it.
+    const [nodeModulesOk, , maxcoreOk] = await Promise.all([
+      CAPSULES.nodeModules(),
+      CAPSULES.pythonRuntime(),
+      CAPSULES.maxcore(),
+      CAPSULES.pdim(),
+    ]);
+
+    let ok = nodeModulesOk;
+    if (process.env.MAXCORE_LOCAL !== "0") ok = maxcoreOk && ok;
+
+    if (!ok) {
+      console.error(
+        "[pdim-restore] FATAL: a required capsule restore failed — server will crash",
+      );
+      process.exit(1);
+    }
+
+    console.log("[pdim-restore] All capsules processed.");
   }
-  console.log("[pdim-restore] Critical capsule (node_modules) restored.");
-} else if (mode === "background") {
-  await Promise.all([
-    CAPSULES.pythonRuntime(),
-    CAPSULES.maxcore(),
-    CAPSULES.pdim(),
-  ]);
-  console.log("[pdim-restore] Background capsules processed.");
-} else {
-  // Legacy/dev path: restore everything up front and block on it.
-  const [nodeModulesOk, , maxcoreOk] = await Promise.all([
-    CAPSULES.nodeModules(),
-    CAPSULES.pythonRuntime(),
-    CAPSULES.maxcore(),
-    CAPSULES.pdim(),
-  ]);
-
-  let ok = nodeModulesOk;
-  if (process.env.MAXCORE_LOCAL !== "0") ok = maxcoreOk && ok;
-
-  if (!ok) {
-    console.error(
-      "[pdim-restore] FATAL: a required capsule restore failed — server will crash",
-    );
-    process.exit(1);
-  }
-
-  console.log("[pdim-restore] All capsules processed.");
 }

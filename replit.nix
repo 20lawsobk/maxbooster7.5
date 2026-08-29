@@ -1,5 +1,7 @@
 {pkgs}: {
   deps = [
+    pkgs.xz
+    pkgs.zstd
     pkgs.netgen
     pkgs.klayout
     pkgs.magic-vlsi

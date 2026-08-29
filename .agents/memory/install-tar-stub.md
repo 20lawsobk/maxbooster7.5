@@ -19,3 +19,5 @@ Create a local stub at `stubs/tar/` and add `"tar": "file:./stubs/tar"` to `pack
 6. The stub is safe because `--ignore-scripts` means native build tools (which actually use tar) never run.
 
 **Note:** `fast-xml-parser` was also in `overrides` — this conflicts with installing it as a direct dep. Remove it from overrides and add it to `dependencies` directly.
+
+**Confirmed dangling symlinks from this workaround (2026-08-29):** the override leaves relative symlinks at multiple nesting depths — `node_modules/tar -> @capacitor/cli/stubs/tar` and `node_modules/{app-builder-lib,node-gyp}/node_modules/tar -> ../stubs/tar` — and at least the two nested ones are dangling (their relative target doesn't resolve from that depth). `diff -r`/any tool that `stat()`s through a symlink to check its type will error "No such file or directory" on these specific paths. This is expected/pre-existing, not a bug introduced by whatever you're changing — confirm via `readlink` matching on both sides before assuming a real regression. Nothing in the live app has been observed to actually dereference these paths.
