@@ -1,6 +1,7 @@
 import { execSync } from "child_process";
 import { build as esBuild } from "esbuild";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import { packCapsule } from "./lib/capsulePack.js";
@@ -118,10 +119,8 @@ async function main() {
 
     // Pack all capsules CONCURRENTLY instead of one after another. Each
     // targets an independent source directory and writes its own .pdim file,
-    // so there is no shared state to race on. The tar|codec pipe is
-    // otherwise single-threaded per capsule (zstd's own -T0 threading is
-    // internal to one capsule's pipeline); running the (up to) four packs in
-    // parallel spreads them across the build container's cores instead of
+    // so there is no shared state to race on. Running the (up to) four packs
+    // in parallel spreads them across the build container's cores instead of
     // serializing ~4 jobs back to back, which was blowing the build-step
     // time budget as more capsules were added. packCapsule (script/lib/
     // capsulePack.ts) is the same real streaming tar+zstd implementation the
@@ -129,8 +128,30 @@ async function main() {
     // exercises. zstd -19 --long=27 was chosen over gzip-9 and xz-9e after
     // benchmarking all three against this project's real capsule directories:
     // it won on compressed size, compress time, AND decompress time.
+    //
+    // Thread allocation: zstd's own -T0 mode claims every core for ONE
+    // capsule's compression. Left at -T0 while four capsules pack
+    // concurrently, that oversubscribes the CPU 4x — four processes each
+    // trying to use all N cores fight each other instead of finishing
+    // sooner. Only targets that actually exist on disk will really spawn a
+    // process (packCapsule no-ops on a missing dir), so divide the machine's
+    // cores by how many packs will REALLY run concurrently, not by the
+    // static target count, and give each job that many threads (at least 1).
+    const existingTargets = capsuleTargets.filter(({ dir }) =>
+      fs.existsSync(path.resolve(root, dir)),
+    );
+    const cpuCount = os.cpus().length || 1;
+    const perJobThreads = Math.max(
+      1,
+      Math.floor(cpuCount / Math.max(1, existingTargets.length)),
+    );
+    console.log(
+      `==> Packing ${existingTargets.length} capsule(s) concurrently across ${cpuCount} CPU(s) → ${perJobThreads} zstd thread(s) each`,
+    );
     capsuleResults = await Promise.all(
-      capsuleTargets.map(({ dir, capsule }) => packCapsule({ root, dir, capsule })),
+      capsuleTargets.map(({ dir, capsule }) =>
+        packCapsule({ root, dir, capsule, threads: perJobThreads }),
+      ),
     );
   }
 

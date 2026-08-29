@@ -44,8 +44,17 @@ import path from "path";
 export const CAPSULE_COMPRESSION_LEVEL = 19;
 export const CAPSULE_COMPRESSION_ID = `zstd-${CAPSULE_COMPRESSION_LEVEL}`;
 
-function zstdCompressArgs(): string[] {
-  return [`-${CAPSULE_COMPRESSION_LEVEL}`, "--long=27", "-T0", "-c"];
+function zstdCompressArgs(threads: number): string[] {
+  // `-T0` tells zstd to claim every core on the machine for ITS OWN
+  // compression. That is correct when only one capsule packs at a time, but
+  // the caller (script/build.ts) packs all capsules concurrently via
+  // Promise.all — four `-T0` processes racing for the same core pool
+  // oversubscribes the CPU 4x and makes each one slower than a properly
+  // divided share would be, not faster. Callers running N jobs concurrently
+  // should pass `threads = max(1, floor(cpuCount / N))` so the combined
+  // demand matches what the machine actually has; a single caller can still
+  // pass 0 to keep the old all-cores behavior.
+  return [`-${CAPSULE_COMPRESSION_LEVEL}`, "--long=27", `-T${threads}`, "-c"];
 }
 
 export interface PackCapsuleOptions {
@@ -55,6 +64,14 @@ export interface PackCapsuleOptions {
   dir: string;
   /** Output capsule filename, relative to `root` (e.g. "node_modules.pdim"). */
   capsule: string;
+  /**
+   * zstd thread count for THIS capsule's compression (`-T<n>`). Defaults to
+   * 0 (zstd's own "use every core" auto mode) for backward compatibility
+   * with single-capsule callers (e.g. the round-trip test). When packing
+   * several capsules concurrently, pass each one a divided share of the
+   * machine's cores instead of leaving every job to claim all of them.
+   */
+  threads?: number;
 }
 
 export interface PackCapsuleResult {
@@ -90,6 +107,7 @@ export function packCapsule({
   root,
   dir,
   capsule,
+  threads = 0,
 }: PackCapsuleOptions): Promise<PackCapsuleResult | null> {
   return new Promise((resolveOne, rejectOne) => {
     const abs = path.resolve(root, dir);
@@ -97,14 +115,14 @@ export function packCapsule({
 
     const capsulePath = path.resolve(root, capsule);
     console.log(
-      `==> Packing ${dir}/ → ${capsule} (${CAPSULE_COMPRESSION_ID}, Extract & Boot)...`,
+      `==> Packing ${dir}/ → ${capsule} (${CAPSULE_COMPRESSION_ID}, -T${threads}, Extract & Boot)...`,
     );
 
     const child = spawn(
       "bash",
       [
         "-c",
-        `set -o pipefail; tar -cf - ${JSON.stringify(dir)} | zstd ${zstdCompressArgs().join(" ")}`,
+        `set -o pipefail; tar -cf - ${JSON.stringify(dir)} | zstd ${zstdCompressArgs(threads).join(" ")}`,
       ],
       { cwd: root, stdio: ["ignore", "pipe", "inherit"] },
     );
