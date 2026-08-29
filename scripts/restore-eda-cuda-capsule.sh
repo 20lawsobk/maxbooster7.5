@@ -29,7 +29,7 @@ sha256sum -c "$CHECKSUM_FILE"
 echo "Re-adding packages to replit.nix (edit manually if this script is run"
 echo "standalone outside the original restore flow) and importing into the"
 echo "Nix store..."
-zstd -d -c "$CAPSULE" | nix-store --import
+zstd -d --long=27 -c "$CAPSULE" | nix-store --import
 
 echo "Done. Restored paths are re-registered in the Nix store database."
 echo "Remember to also add the 9 packages back to replit.nix's deps list"
