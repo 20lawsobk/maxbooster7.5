@@ -13,7 +13,7 @@ import { isContainer } from "../../server/pocket-dimension/fabric/compression/Co
 // is proven correct without needing real cluster nodes.
 
 function textBuffer(n: number, filler = "the quick brown fox jumps over the lazy dog. "): Buffer {
-  const reps = Math.ceil(n / filler.length);
+  const reps = Math.ceil(n / (filler.length || 1));
   return Buffer.from(filler.repeat(reps).slice(0, n), "utf8");
 }
 

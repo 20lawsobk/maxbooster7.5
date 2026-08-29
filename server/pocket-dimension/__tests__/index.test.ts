@@ -121,7 +121,7 @@ describe("PocketDimension compression engine (codec-mesh integration)", () => {
       id: hash,
       size: plaintext.length,
       compressedSize: legacyCompressed.length,
-      compressionRatio: plaintext.length / legacyCompressed.length,
+      compressionRatio: plaintext.length / (legacyCompressed.length || 1),
       createdAt: new Date(),
       accessCount: 1,
       lastAccessed: new Date(),

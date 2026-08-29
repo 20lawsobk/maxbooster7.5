@@ -123,7 +123,7 @@ function shannonEntropy(sample: Buffer): number {
   const total = sample.length;
   for (let i = 0; i < 256; i++) {
     if (counts[i] === 0) continue;
-    const p = counts[i] / total;
+    const p = counts[i] / (total || 1);
     entropy -= p * Math.log2(p);
   }
   return entropy;
