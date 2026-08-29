@@ -1,6 +1,6 @@
 ---
 name: Deployment autofix system coverage gaps
-description: Two structural blind spots found and CLOSED in scripts/deployment-autofix.mjs's error coverage; how each was fixed and the pitfall avoided along the way.
+description: Durable accounting rules for deployment image preflight and live TypeScript diagnostic coverage.
 ---
 
 ## RESOLVED — build-stage blind spot (no coverage past `npm run build`)
@@ -19,17 +19,20 @@ right after capsule packing, and `error-fix-configuration.json`'s
 gained a drift check that fails if the build.ts check and the config entry
 ever get out of sync.
 
-**Pitfall hit while building the fix, worth remembering for any future
-image-size check on this project:** the obvious approach — raw `du` on the
-whole project root — is a false-positive machine. This workspace measured
-~12 GiB via plain `du`, almost entirely gitignored dev-tooling caches
-(`.cache`, `.pythonlibs`, `uploads`, `.local`, etc.) that never reach the
-deploy image, vs. ~0.5 GiB actually `git ls-files`-tracked. The correct
-measurement is: git-tracked file bytes + built `dist/` output + the real
-post-compression capsule sizes already returned by `packCapsule()` (don't
-re-derive those with `du` — the exact number is already in hand). Any
-future size/footprint check on this repo must use tracked-file accounting,
-not directory-level `du`, or it will constantly block on phantom weight.
+**Rule:** Image preflight must add the deduplicated transitive Nix closure to
+git-tracked payload bytes, built output, and real post-compression capsule
+sizes. It must fail closed when a required payload or Nix root cannot be
+measured; printing a caveat and returning PASS is not mitigation.
+
+**Why:** Replit's 8 GiB image limit includes Nix layers. A payload-only check
+reported 1.10 GiB and passed while CUDA and chip-design dependencies made the
+Nix closure exceed the platform limit by itself. Raw project-root `du` is the
+opposite error because ignored development caches do not ship.
+
+**How to apply:** Use tracked-file accounting instead of workspace `du`; use
+the Nix registration database's `narSize` and reference graph to compute one
+deduplicated closure for the build environment; list per-root closure sizes
+only for attribution because those overlap and must not be summed.
 
 ## RESOLVED — TS-diagnostic coverage self-check read a stale snapshot
 

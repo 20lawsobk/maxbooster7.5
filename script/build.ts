@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { build as esBuild } from "esbuild";
 import fs from "fs";
 import os from "os";
@@ -78,7 +78,9 @@ async function main() {
     const PYURL = `https://github.com/astral-sh/python-build-standalone/releases/download/${PYDATE}/cpython-${PYVER}%2B${PYDATE}-x86_64-unknown-linux-gnu-install_only.tar.gz`;
     try {
       if (!fs.existsSync(pyBin)) {
-        console.log(`\n==> Downloading portable Python ${PYVER} (x86_64-linux-gnu)...`);
+        console.log(
+          `\n==> Downloading portable Python ${PYVER} (x86_64-linux-gnu)...`,
+        );
         fs.mkdirSync(pyDir, { recursive: true });
         execSync(
           `curl -sL --max-time 180 ${JSON.stringify(PYURL)} | tar xz --strip-components=1 -C ${JSON.stringify(pyDir)} python/`,
@@ -86,7 +88,9 @@ async function main() {
         );
       }
       execSync(`${JSON.stringify(pyBin)} --version`, { stdio: "inherit" });
-      console.log("   Installing Python deps (numpy, pillow, scipy, fastapi, uvicorn, pydantic)...");
+      console.log(
+        "   Installing Python deps (numpy, pillow, scipy, fastapi, uvicorn, pydantic)...",
+      );
       execSync(
         `${JSON.stringify(pyBin)} -m pip install --no-cache-dir --quiet numpy pillow "scipy>=1.11.0" "fastapi>=0.100.0" "uvicorn[standard]>=0.23.0" "pydantic>=2.0.0"`,
         { cwd: root, stdio: "inherit", shell: "/bin/bash" },
@@ -141,9 +145,10 @@ async function main() {
       fs.existsSync(path.resolve(root, dir)),
     );
     const cpuCount = os.cpus().length || 1;
+    const concurrentPackCount = existingTargets.length || 1;
     const perJobThreads = Math.max(
       1,
-      Math.floor(cpuCount / Math.max(1, existingTargets.length)),
+      Math.floor(cpuCount / concurrentPackCount),
     );
     console.log(
       `==> Packing ${existingTargets.length} capsule(s) concurrently across ${cpuCount} CPU(s) → ${perJobThreads} zstd thread(s) each`,
@@ -160,54 +165,76 @@ async function main() {
   // restored at first boot alongside node_modules and external/maxcore.
 
   // ─── Pre-flight image size check ───────────────────────────────────────
-  // Everything before this point in the deploy pipeline (scripts/deployment-
-  // autofix.mjs: TS/lint/schema/import/runtime checks) runs BEFORE this
-  // build step and has no visibility into it. Until now, a failure here —
-  // or in the platform's own post-push image-size check — had zero early
-  // diagnosis anywhere in the autofix system: 3 of the last 4 deploy
-  // failures died at the platform's opaque "image size is over the limit of
-  // 8 GiB" rejection with no attribution of which directory caused it (root
-  // cause was capsule packing using gzip-9 instead of zstd-19, since fixed
-  // above). Capsule packing already de-risked the largest movable pieces;
-  // this check catches a REGRESSION of that risk early — before the ~10min
-  // build+push round trip — by measuring what will actually ship: git-
-  // tracked source (a raw `du` on the project root is dominated by gitignored
-  // dev-tooling caches like .cache/.pythonlibs/uploads that never reach the
-  // deploy image and would make this check useless — measured ~12GiB of
-  // workspace vs ~0.5GiB actually tracked), the freshly built dist/ output,
-  // and the real post-compression size of each capsule (already known from
-  // packCapsule's own result, not re-derived). This is still an
-  // approximation of the platform's own layer accounting (it can't see the
-  // separately-cached Nix store layers), so the budget is deliberately
-  // conservative, and a measurement failure fails loud rather than silently
-  // reporting a false "small".
+  // Replit's 8 GiB limit includes BOTH the Repl payload and every transitive
+  // Nix dependency. Measuring only tracked files/capsules is therefore not a
+  // valid pre-flight: a large CUDA or EDA closure can exceed the limit while
+  // the project payload looks small. Query the Nix store registration DB for
+  // the complete, deduplicated closure of every store path exported into this
+  // build environment, add its NAR sizes to the payload, and fail closed if
+  // any root cannot be accounted for. NAR size is the store's own serialized
+  // size metric and is the closest locally available measurement of the Nix
+  // layer that the platform creates after this build command exits.
   if (isDeployBuild) {
-    const budgetBytes = 6 * 1024 ** 3; // 6 GiB conservative budget under the platform's 8 GiB hard image limit
-    const { totalBytes: trackedBytes, byTopDir } = getTrackedSizeBreakdown(root);
-    const distBytes = duBytesOrNull(path.join(root, "dist")) ?? 0;
+    const hardLimitBytes = 8 * 1024 ** 3;
+    const budgetBytes = 7.5 * 1024 ** 3;
+    const { totalBytes: trackedBytes, byTopDir } =
+      getTrackedSizeBreakdown(root);
+    const distBytes = requireMeasuredBytes(path.join(root, "dist"), "dist/");
     const capsuleBreakdown = capsuleResults
       .filter((r): r is NonNullable<typeof r> => r !== null)
-      .map((r) => ({ name: path.basename(r.capsulePath), sizeBytes: r.sizeBytes }));
-    const capsuleBytes = capsuleBreakdown.reduce((sum, c) => sum + c.sizeBytes, 0);
-    const totalBytes = trackedBytes + distBytes + capsuleBytes;
+      .map((r) => ({
+        name: path.basename(r.capsulePath),
+        sizeBytes: r.sizeBytes,
+      }));
+    const capsuleBytes = capsuleBreakdown.reduce(
+      (sum, c) => sum + c.sizeBytes,
+      0,
+    );
+    const nix = getNixClosureSize();
+    const payloadBytes = trackedBytes + distBytes + capsuleBytes;
+    const totalBytes = payloadBytes + nix.totalBytes;
     const totalGiB = totalBytes / 1024 ** 3;
 
     console.log(
-      `==> Pre-flight image size check: ${totalGiB.toFixed(2)} GiB (tracked source ${(trackedBytes / 1024 ** 3).toFixed(2)} GiB + dist/ ${(distBytes / 1024 ** 2).toFixed(0)}MB + capsules ${(capsuleBytes / 1024 ** 3).toFixed(2)} GiB; budget ${(budgetBytes / 1024 ** 3).toFixed(1)} GiB, platform hard limit is 8 GiB and also includes Nix layers this check can't see)`,
+      `==> Pre-flight image size check: ${totalGiB.toFixed(2)} GiB (${(payloadBytes / 1024 ** 3).toFixed(2)} GiB Repl payload + ${(nix.totalBytes / 1024 ** 3).toFixed(2)} GiB deduplicated Nix closure; ${nix.coveredRoots.length}/${nix.roots.length} Nix roots accounted for; safety budget ${(budgetBytes / 1024 ** 3).toFixed(1)} GiB, hard limit ${(hardLimitBytes / 1024 ** 3).toFixed(0)} GiB)`,
     );
 
-    if (totalBytes > budgetBytes) {
+    const unmeasuredRoots = nix.roots.filter(
+      (rootPath) => !nix.coveredRoots.includes(rootPath),
+    );
+    if (totalBytes > budgetBytes || unmeasuredRoots.length > 0) {
       const breakdown = [
-        ...[...byTopDir.entries()].map(([name, sizeBytes]) => ({ name: `${name}/ (tracked)`, sizeBytes })),
+        ...nix.largestRootClosures.map(({ path: nixPath, sizeBytes }) => ({
+          name: `${path.basename(nixPath)} (Nix closure)`,
+          sizeBytes,
+        })),
+        ...[...byTopDir.entries()].map(([name, sizeBytes]) => ({
+          name: `${name}/ (tracked)`,
+          sizeBytes,
+        })),
         { name: "dist/ (build output)", sizeBytes: distBytes },
         ...capsuleBreakdown,
       ].sort((a, b) => b.sizeBytes - a.sizeBytes);
-      console.error("❌ Pre-flight image size budget exceeded. Largest contributors:");
+      console.error(
+        "❌ Pre-flight image size verification failed. Largest contributors:",
+      );
       for (const { name, sizeBytes } of breakdown.slice(0, 10)) {
         console.error(`   ${(sizeBytes / 1024 ** 2).toFixed(0)}MB  ${name}`);
       }
+      if (unmeasuredRoots.length > 0) {
+        console.error(
+          `   ${unmeasuredRoots.length} Nix root(s) could not be found in any readable Nix registration database:`,
+        );
+        for (const rootPath of unmeasuredRoots.slice(0, 10)) {
+          console.error(`      ${rootPath}`);
+        }
+      }
+      const reason =
+        totalBytes > budgetBytes
+          ? `${totalGiB.toFixed(2)} GiB exceeds the ${(budgetBytes / 1024 ** 3).toFixed(1)} GiB safety budget`
+          : `${unmeasuredRoots.length} Nix root(s) are unmeasured`;
       throw new Error(
-        `deploy image pre-flight size check: ${totalGiB.toFixed(2)} GiB exceeds the ${(budgetBytes / 1024 ** 3).toFixed(1)} GiB budget (platform hard limit is 8 GiB total layers) — shrink, exclude, or capsule-pack the directory named above`,
+        `deploy image pre-flight size check: ${reason} (platform hard limit is ${(hardLimitBytes / 1024 ** 3).toFixed(0)} GiB total layers) — remove unnecessary Nix packages or shrink the contributors named above`,
       );
     }
   }
@@ -228,6 +255,138 @@ function duBytesOrNull(target: string): number | null {
   }
 }
 
+function requireMeasuredBytes(target: string, label: string): number {
+  const measured = duBytesOrNull(target);
+  if (measured === null) {
+    throw new Error(
+      `deploy image pre-flight size check: could not measure ${label}; refusing to report a false PASS`,
+    );
+  }
+  return measured;
+}
+
+type NixClosureMeasurement = {
+  roots: string[];
+  coveredRoots: string[];
+  totalBytes: number;
+  largestRootClosures: Array<{ path: string; sizeBytes: number }>;
+};
+
+/**
+ * Measures the complete Nix closure exported into this build environment.
+ *
+ * Replit's cache-mounted store is readable but is not always registered in
+ * /nix/var/nix/db, so `nix-store -qR` can incorrectly call existing paths
+ * invalid. Read both registration databases directly in immutable mode and
+ * union their closure rows by store path. The embedded Python uses only the
+ * standard library supplied by the required python-3.12 Replit module.
+ */
+export function getNixClosureSize(): NixClosureMeasurement {
+  const storePathPattern = /\/nix\/store\/[0-9a-z]{32}-[^/: \t\n]+/g;
+  const roots = [
+    ...new Set(
+      Object.values(process.env).flatMap(
+        (value) => value?.match(storePathPattern) ?? [],
+      ),
+    ),
+  ].sort();
+  if (roots.length === 0) {
+    throw new Error(
+      "deploy image pre-flight size check: no Nix roots were discoverable in the build environment",
+    );
+  }
+
+  const python = String.raw`
+import json, os, sqlite3, sys
+
+roots = set(json.load(sys.stdin))
+databases = [
+    os.path.join(os.environ.get("NIX_STATE_DIR", "/nix/var/nix"), "db", "db.sqlite"),
+    "/nix/var/nix/db/db.sqlite",
+    "/mnt/cacache/nix/var/nix/db/db.sqlite",
+]
+closure_sizes = {}
+covered = set()
+root_closure_sizes = {}
+opened = 0
+
+for db in dict.fromkeys(databases):
+    if not os.path.isfile(db):
+        continue
+    try:
+        con = sqlite3.connect("file:" + db + "?mode=ro&immutable=1", uri=True)
+        con.execute("CREATE TEMP TABLE wanted(path TEXT PRIMARY KEY)")
+        con.executemany("INSERT OR IGNORE INTO wanted VALUES (?)", ((p,) for p in roots))
+        known = {row[0] for row in con.execute(
+            "SELECT path FROM ValidPaths JOIN wanted USING(path)"
+        )}
+        covered.update(known)
+        for store_path, nar_size in con.execute("""
+            WITH RECURSIVE closure(id) AS (
+                SELECT id FROM ValidPaths JOIN wanted USING(path)
+                UNION
+                SELECT Refs.reference FROM Refs JOIN closure ON Refs.referrer = closure.id
+            )
+            SELECT path, COALESCE(narSize, 0)
+            FROM ValidPaths JOIN closure USING(id)
+        """):
+            closure_sizes[store_path] = max(closure_sizes.get(store_path, 0), nar_size)
+        for root_path, size_bytes in con.execute("""
+            WITH RECURSIVE closure(root, id) AS (
+                SELECT id, id FROM ValidPaths JOIN wanted USING(path)
+                UNION
+                SELECT closure.root, Refs.reference
+                FROM Refs JOIN closure ON Refs.referrer = closure.id
+            )
+            SELECT root_path.path, COALESCE(SUM(member.narSize), 0)
+            FROM closure
+            JOIN ValidPaths AS root_path ON root_path.id = closure.root
+            JOIN ValidPaths AS member ON member.id = closure.id
+            GROUP BY closure.root
+        """):
+            root_closure_sizes[root_path] = max(root_closure_sizes.get(root_path, 0), size_bytes)
+        opened += 1
+        con.close()
+    except sqlite3.Error:
+        continue
+
+if opened == 0:
+    raise RuntimeError("no readable Nix registration database")
+
+print(json.dumps({
+    "roots": sorted(roots),
+    "coveredRoots": sorted(covered),
+    "totalBytes": sum(closure_sizes.values()),
+    "largestRootClosures": [
+        {"path": p, "sizeBytes": n}
+        for p, n in sorted(root_closure_sizes.items(), key=lambda item: item[1], reverse=True)[:20]
+    ],
+}))
+`;
+
+  try {
+    const output = execFileSync("python3", ["-c", python], {
+      encoding: "utf8",
+      input: JSON.stringify(roots),
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    const measurement = JSON.parse(output) as NixClosureMeasurement;
+    if (
+      !Number.isFinite(measurement.totalBytes) ||
+      measurement.totalBytes <= 0 ||
+      !Array.isArray(measurement.coveredRoots)
+    ) {
+      throw new Error("invalid Nix closure measurement");
+    }
+    return measurement;
+  } catch (error) {
+    throw new Error(
+      `deploy image pre-flight size check: could not measure the Nix closure; refusing to report a false PASS (${(error as Error).message})`,
+      { cause: error },
+    );
+  }
+}
+
 /** Sums the real on-disk size of every git-tracked file (what a deploy build actually ships,
  * as opposed to `du` on the project root which is dominated by gitignored dev-tooling caches),
  * grouped by top-level directory for attributing which part of the tracked tree is heaviest. */
@@ -235,7 +394,10 @@ function getTrackedSizeBreakdown(root: string): {
   totalBytes: number;
   byTopDir: Map<string, number>;
 } {
-  const out = execSync("git ls-files -z", { cwd: root, maxBuffer: 64 * 1024 * 1024 });
+  const out = execSync("git ls-files -z", {
+    cwd: root,
+    maxBuffer: 64 * 1024 * 1024,
+  });
   const files = out.toString("utf8").split("\0").filter(Boolean);
   let totalBytes = 0;
   const byTopDir = new Map<string, number>();
@@ -253,7 +415,12 @@ function getTrackedSizeBreakdown(root: string): {
   return { totalBytes, byTopDir };
 }
 
-main().catch((err) => {
-  console.error("Build failed:", err);
-  process.exit(1);
-});
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  main().catch((err) => {
+    console.error("Build failed:", err);
+    process.exit(1);
+  });
+}
