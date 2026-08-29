@@ -29,6 +29,18 @@ const MAX_BACKOFF_MS = 60_000;
 // A run this long counts as healthy — resets the backoff.
 const HEALTHY_RUN_MS = 60_000;
 
+// How often to re-check for the nested workspace while a background capsule
+// restore is expected to still be landing it (cheap fs.existsSync — safe to
+// poll frequently so we notice completion promptly).
+const WORKSPACE_RESTORE_POLL_MS = 3_000;
+// Throttle for the "still waiting" log line so a multi-minute restore
+// doesn't flood the log every few seconds.
+const WORKSPACE_RESTORE_LOG_INTERVAL_MS = 30_000;
+// After waiting this long for a background restore that never lands,
+// escalate the log level so operators can find a stuck/failed extraction
+// instead of only ever seeing quiet info lines.
+const WORKSPACE_RESTORE_STALL_MS = 3 * 60_000;
+
 export interface MaxcoreLocalStatus {
   enabled: boolean;
   running: boolean;
@@ -50,6 +62,16 @@ let startupError: string | null = null;
 let lastReady = false;
 let lastReadyCheck = 0;
 const READY_TTL_MS = 5_000;
+
+// Pre-spawn provisioning state — getting the nested workspace installed
+// before there is even a child to crash-restart. Tracked separately from
+// restarts/consecutiveCrashes above, which describe the SPAWNED child's own
+// stability; conflating the two would misrepresent both in status/metrics.
+let startInFlight = false;
+let provisionRetryTimer: NodeJS.Timeout | null = null;
+let provisionAttempts = 0;
+let workspaceWaitStartedAt = 0;
+let lastWorkspaceWaitLogAt = 0;
 
 /** Append `options=-csearch_path=maxcore` to a Postgres URL so the imported
  *  Python service's DDL stays in its own schema, never colliding with Max
@@ -94,6 +116,38 @@ function backoffMs(): number {
     INITIAL_BACKOFF_MS * Math.pow(2, Math.max(0, consecutiveCrashes - 1)),
     MAX_BACKOFF_MS,
   );
+}
+
+function provisionBackoffMs(): number {
+  return Math.min(
+    INITIAL_BACKOFF_MS * Math.pow(2, Math.max(0, provisionAttempts - 1)),
+    MAX_BACKOFF_MS,
+  );
+}
+
+function scheduleProvisionRetry(delayMs: number): void {
+  if (shuttingDown || provisionRetryTimer) return;
+  provisionRetryTimer = setTimeout(() => {
+    provisionRetryTimer = null;
+    void startMaxcoreLocal();
+  }, delayMs);
+  provisionRetryTimer.unref();
+}
+
+/** True only while external/maxcore is both absent AND a packed capsule for
+ *  it sits at the project root — the signature of a deploy-style checkout
+ *  where start.sh's background `dist/pdim-restore.mjs` restore (kicked off
+ *  before this process even starts — see start.sh's "PDIM restore" step and
+ *  the capsule packing in script/build.ts) is still landing it, as opposed
+ *  to a git checkout that simply never had the nested workspace installed.
+ *  Distinguishing the two matters: scripts/bootstrap-maxcore.sh immediately
+ *  fails ("not present — nothing to do") when the directory doesn't exist
+ *  yet, which is the expected, self-resolving state while a restore is in
+ *  flight — not a real bootstrap failure. */
+function backgroundRestorePending(): boolean {
+  if (fs.existsSync(MAXCORE_ROOT)) return false;
+  const capsule = path.resolve(process.cwd(), "external_maxcore.pdim");
+  return fs.existsSync(capsule);
 }
 
 async function spawnChild(): Promise<void> {
@@ -235,23 +289,89 @@ async function bootstrapMaxcoreWorkspace(): Promise<boolean> {
   });
 }
 
-/** Start the local MaxCore subsystem. No-op when local mode is disabled. */
+/** Start the local MaxCore subsystem. No-op when local mode is disabled.
+ *
+ *  Retryable and re-entrancy-safe. On a deploy-style boot, external/maxcore
+ *  is deliberately stripped from the image (see script/build.ts) and lands
+ *  moments later via a detached background capsule restore kicked off by
+ *  start.sh — racing this call, which fires at module load. Previously,
+ *  finding the workspace missing at that instant was treated as a permanent
+ *  "clean checkout" bootstrap failure: bootstrapMaxcoreWorkspace() would run
+ *  scripts/bootstrap-maxcore.sh, which fails immediately when the directory
+ *  doesn't exist yet, latch a fatal startupError, and — because nothing ever
+ *  called this function again — leave the app reporting the MaxCore probe
+ *  degraded forever, even after the background restore finished seconds
+ *  later. This function now distinguishes that transient case (wait, don't
+ *  bootstrap) from a genuine bootstrap failure (retry with backoff), and
+ *  never gives up permanently in either case. */
 export async function startMaxcoreLocal(): Promise<void> {
   if (!config.maxcoreLocal.enabled) {
     logger.info("[MaxCoreLocal] Local mode disabled (MAXCORE_LOCAL=0) — using remote MaxCore URL.");
     return;
   }
-  if (!fs.existsSync(TSX_BIN)) {
-    // Clean checkout: provision the nested workspace automatically.
-    const ok = await bootstrapMaxcoreWorkspace();
-    if (!ok || !fs.existsSync(TSX_BIN)) {
-      startupError =
-        "external/maxcore workspace bootstrap failed (see logs; manual fallback: bash scripts/bootstrap-maxcore.sh)";
-      logger.error(`[MaxCoreLocal] ${startupError}`);
+  // Re-entrancy guard: a scheduled retry can fire while an earlier call is
+  // still mid-bootstrap (that subprocess alone can take up to 10 minutes).
+  // Without this, two overlapping calls could both pass the TSX_BIN check
+  // and both invoke spawnChild(), racing two children for the same port.
+  if (shuttingDown || child || startInFlight) return;
+  startInFlight = true;
+  try {
+    if (fs.existsSync(TSX_BIN)) {
+      workspaceWaitStartedAt = 0;
+      provisionAttempts = 0;
+      startupError = null;
+      await spawnChild();
       return;
     }
+
+    if (backgroundRestorePending()) {
+      // Expected, self-resolving startup condition — not a failure. Report
+      // it as such and keep polling instead of attempting (and failing) the
+      // one-shot bootstrap script.
+      if (!workspaceWaitStartedAt) workspaceWaitStartedAt = Date.now();
+      const waitedMs = Date.now() - workspaceWaitStartedAt;
+      startupError = `external/maxcore background capsule restore still in progress (waited ${Math.round(waitedMs / 1000)}s)`;
+      const now = Date.now();
+      if (now - lastWorkspaceWaitLogAt >= WORKSPACE_RESTORE_LOG_INTERVAL_MS) {
+        lastWorkspaceWaitLogAt = now;
+        if (waitedMs >= WORKSPACE_RESTORE_STALL_MS) {
+          logger.warn(
+            `[MaxCoreLocal] Still waiting for external/maxcore background capsule restore after ${Math.round(waitedMs / 1000)}s — check /tmp/pdim-background-restore.log for a stuck or failed extraction.`,
+          );
+        } else {
+          logger.info(
+            `[MaxCoreLocal] Waiting for external/maxcore background capsule restore to land (${Math.round(waitedMs / 1000)}s)…`,
+          );
+        }
+      }
+      scheduleProvisionRetry(WORKSPACE_RESTORE_POLL_MS);
+      return;
+    }
+
+    // Not a pending background restore: either a genuine clean checkout
+    // (source present via git, nested deps never installed) or nothing will
+    // ever populate the directory. Either way the one-shot bootstrap script
+    // is idempotent and safe to retry with backoff — never latch a
+    // permanent failure with no path back to a spawn attempt.
+    workspaceWaitStartedAt = 0;
+    const ok = await bootstrapMaxcoreWorkspace();
+    if (shuttingDown) return;
+    if (!ok || !fs.existsSync(TSX_BIN)) {
+      provisionAttempts++;
+      const delay = provisionBackoffMs();
+      startupError =
+        "external/maxcore workspace bootstrap failed (see logs; manual fallback: bash scripts/bootstrap-maxcore.sh)";
+      logger.error(`[MaxCoreLocal] ${startupError} — retrying in ${delay}ms`);
+      scheduleProvisionRetry(delay);
+      return;
+    }
+
+    provisionAttempts = 0;
+    startupError = null;
+    await spawnChild();
+  } finally {
+    startInFlight = false;
   }
-  await spawnChild();
 }
 
 /** Ready = the Python-backed model service is actually healthy. The Node
@@ -301,6 +421,10 @@ export function stopMaxcoreLocal(): void {
   if (restartTimer) {
     clearTimeout(restartTimer);
     restartTimer = null;
+  }
+  if (provisionRetryTimer) {
+    clearTimeout(provisionRetryTimer);
+    provisionRetryTimer = null;
   }
   if (child) {
     logger.info("[MaxCoreLocal] Stopping MaxCore api-server…");
