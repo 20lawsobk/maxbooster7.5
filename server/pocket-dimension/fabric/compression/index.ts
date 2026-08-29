@@ -12,3 +12,26 @@ export {
   CompressionProfileRouter,
   compressionRouter,
 } from "./CompressionProfileRouter.js";
+export {
+  AwarenessProfiler,
+  awarenessProfiler,
+  type AwarenessProfile,
+  type CompressRecommendation,
+} from "./AwarenessProfiler.js";
+export { XzEngine, xzEngine } from "./XzEngine.js";
+export {
+  encodeContainer,
+  decodeContainer,
+  isContainer,
+  type ContainerHeader,
+} from "./ContainerFormat.js";
+export {
+  CodecMesh,
+  codecMesh,
+  type MeshCodec,
+  type CodecMeshCompressResult,
+} from "./CodecMesh.js";
+export {
+  parallelBlockCompressor,
+  BLOCK_PARALLEL_THRESHOLD,
+} from "./ParallelBlockCompressor.js";

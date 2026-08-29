@@ -35,6 +35,10 @@ export interface CompressionResult {
   isDelta: boolean;
   deltaBaseId?: string;
   dictId?: string;
+  /** Compressed-length of each block, present only when codec is a
+   *  block-parallel codec (e.g. "brotli-blocked"); lets the container
+   *  format slice the concatenated payload back into per-block segments. */
+  blockSizes?: number[];
   metadata: Record<string, any>;
 }
 

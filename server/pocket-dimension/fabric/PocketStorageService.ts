@@ -21,6 +21,7 @@ import type { PlacementStrategy } from "./control/PlacementStrategy.js";
 import type { ChunkStore } from "./storage/ChunkStore.js";
 import { compressionRouter } from "./compression/CompressionProfileRouter.js";
 import { cdcChunker } from "./compression/ContentDefinedChunker.js";
+import { isContainer } from "./compression/ContainerFormat.js";
 import type { StoreOptions } from "./compression/types.js";
 import { logger } from "../../logger.js";
 
@@ -99,6 +100,22 @@ export class PocketStorageService {
       return duplicate?.id;
     }
 
+    // versionOf must name a real, independently-retrievable object — the
+    // router itself no longer caches version bases in memory, so this is
+    // the only place a prior version's bytes come from. A missing/bad id
+    // degrades to a full (non-delta) store rather than failing the write.
+    let priorVersionData: Buffer | undefined;
+    if (storeOpts.versionOf) {
+      const prior = await this.getObject(storeOpts.versionOf as ObjectId);
+      if (prior) {
+        priorVersionData = prior.data;
+      } else {
+        logger.warn(
+          `[PocketFabric] versionOf=${storeOpts.versionOf} does not resolve to a real object — storing ${originalName} as a full version`,
+        );
+      }
+    }
+
     const compressionResult = await compressionRouter?.process(
       data,
       originalName,
@@ -107,15 +124,18 @@ export class PocketStorageService {
         ...storeOpts,
         sizeHintBytes: data.length,
       },
+      priorVersionData,
     );
+
+    const containerBytes = compressionRouter.encodeForStorage(compressionResult);
 
     logger.info(
       `[PocketFabric] Compressed ${originalName}: ${data?.length} → ${compressionResult?.compressedBytes} bytes ` +
-        `(${compressionResult.ratio.toFixed(2)}×) profile=${compressionResult.profile} codec=${compressionResult?.codec}`,
+        `(${compressionResult.ratio.toFixed(2)}×) profile=${compressionResult.profile} codec=${compressionResult?.codec} ` +
+        `container=${containerBytes.length} bytes`,
     );
 
-    const compressedData = compressionResult?.data;
-    const cdcChunks = cdcChunker?.chunk(compressedData);
+    const cdcChunks = cdcChunker?.chunk(containerBytes);
 
     const objectId = randomUUID() as ObjectId;
 
@@ -209,7 +229,7 @@ export class PocketStorageService {
     const newCount = chunkMetas?.filter((c) => !c?.isDedup).length;
 
     logger.info(
-      `[PocketFabric] Stored ${obj?.id} — ${data?.length} bytes raw → ${compressedData?.length} compressed ` +
+      `[PocketFabric] Stored ${obj?.id} — ${data?.length} bytes raw → ${containerBytes?.length} compressed ` +
         `(${compressionResult?.ratio.toFixed(2)}×) — ${cdcChunks?.length} CDC chunks ` +
         `(${newCount} new, ${dedupCount} deduped) in pocket=${pocketId}`,
     );
@@ -253,7 +273,36 @@ export class PocketStorageService {
       }
     }
 
-    return { data: Buffer.concat(buffers), object: obj };
+    const containerBytes = Buffer.concat(buffers);
+
+    if (!isContainer(containerBytes)) {
+      // Every object written by putObject is wrapped in the compression
+      // container envelope. Bytes that aren't a recognized container can't
+      // be safely decompressed — returning them as-is would silently hand
+      // back raw compressed (or corrupt) bytes as if they were the real
+      // content, which is worse than failing loudly.
+      throw new Error(
+        `Object ${objectId} is not a recognized compression container — cannot decompress. ` +
+          `It may have been written by a path that bypassed putObject's compression pipeline.`,
+      );
+    }
+
+    const resolveDeltaBase = async (deltaBaseId: string): Promise<Buffer> => {
+      const base = await this.getObject(deltaBaseId as ObjectId);
+      if (!base) {
+        throw new Error(
+          `Delta base object ${deltaBaseId} not found — cannot reconstruct ${objectId}`,
+        );
+      }
+      return base.data;
+    };
+
+    const data = await compressionRouter.decodeFromStorage(
+      containerBytes,
+      resolveDeltaBase,
+    );
+
+    return { data, object: obj };
   }
 
   async deleteObject(objectId: ObjectId): Promise<void> {
