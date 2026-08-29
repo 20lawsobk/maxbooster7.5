@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
 const catalogPath = path.join(root, "scripts", "error-research-catalog.json");
@@ -49,21 +50,33 @@ try {
   errors.push(`error-fix-configuration.json invalid or unreadable: ${e.message}`);
 }
 
-// Derive the TS diagnostic codes ACTUALLY observed in the canonical live
-// typecheck snapshot and require every one to have a bespoke entry in
-// typescriptDiagnostics (this is what catches drift when a real diagnostic
-// code appears that the JSON doesn't yet know about).
+// Derive the TS diagnostic codes ACTUALLY present right now by running a
+// fresh split typecheck ourselves (not by reading a committed snapshot file,
+// which can silently go stale — it previously sat 24 days behind the live
+// code with nothing to notice) and require every one to have a bespoke
+// entry in typescriptDiagnostics. This is what catches drift when a real
+// diagnostic code appears that the JSON doesn't yet know about, checked
+// against the code as it stands at validation time, every time.
 if (fixConfig) {
-  const snapshotPaths = fixConfig.liveTsSnapshot?.sourceFiles ?? [];
+  const tsconfigs = fixConfig.liveTsSnapshot?.tsconfigs ?? [];
   const liveCodes = new Set();
-  for (const rel of snapshotPaths) {
+  for (const rel of tsconfigs) {
     const abs = path.join(process.cwd(), rel);
     if (!fs.existsSync(abs)) {
-      errors.push(`liveTsSnapshot source file missing: ${rel}`);
+      errors.push(`liveTsSnapshot tsconfig missing: ${rel}`);
       continue;
     }
-    const text = fs.readFileSync(abs, "utf8");
-    for (const m of text.matchAll(/error (TS\d+)/g)) liveCodes.add(m[1]);
+    const result = spawnSync("npx", ["tsc", "-p", rel, "--noEmit"], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    if (result.error) {
+      errors.push(`could not run live typecheck for ${rel}: ${result.error.message}`);
+      continue;
+    }
+    const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+    for (const m of output.matchAll(/error (TS\d+)/g)) liveCodes.add(m[1]);
   }
   const configuredCodes = new Set(Object.keys(fixConfig.typescriptDiagnostics ?? {}));
   const uncoveredTs = [...liveCodes].filter((code) => !configuredCodes.has(code));
@@ -71,6 +84,28 @@ if (fixConfig) {
     errors.push(
       `error-fix-configuration.json does not cover ${uncoveredTs.length} live TS diagnostic code(s): ${uncoveredTs.join(", ")}`,
     );
+  }
+}
+
+// Keep the build-stage pre-flight image-size guard honest: if
+// script/build.ts's size check is ever removed, error-fix-configuration.json
+// must not keep claiming build/image failures are covered (and vice versa).
+// This is what previously let a whole class of failure — the platform's own
+// "image size is over the limit" rejection, which caused 3 of 4 recent
+// deploy failures — go completely unclassified by this system.
+if (fixConfig) {
+  try {
+    const buildTsPath = path.join(process.cwd(), "script", "build.ts");
+    const buildTsSource = fs.readFileSync(buildTsPath, "utf8");
+    const hasPreflightCheck = /Pre-flight image size/.test(buildTsSource);
+    const hasConfigEntry = Boolean(fixConfig.runtimeAndInfra?.["deploy-image-size-exceeded"]);
+    if (!hasPreflightCheck || !hasConfigEntry) {
+      errors.push(
+        "script/build.ts pre-flight image-size check and error-fix-configuration.json's deploy-image-size-exceeded entry have drifted out of sync (one is missing)",
+      );
+    }
+  } catch (e) {
+    errors.push(`could not validate build.ts pre-flight size check: ${e.message}`);
   }
 }
 

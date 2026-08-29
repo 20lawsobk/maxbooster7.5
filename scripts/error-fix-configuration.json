@@ -139,8 +139,8 @@
     ]
   },
   "liveTsSnapshot": {
-    "note": "Canonical snapshot of TS codes actually observed by the split-config typecheck (server/client), used by scripts/validate-error-research.mjs to enforce that every live diagnostic code has an entry above. Regenerate via `npm run check:server` / `npm run check:client` (see scripts/typecheck-sections.sh for the OOM-safe sectioned runner) and refresh these paths when the code set changes.",
-    "sourceFiles": ["reports/fix-all/tc-server-current.txt", "reports/fix-all/tc-client-current.txt"]
+    "note": "scripts/validate-error-research.mjs runs a fresh split typecheck against these tsconfigs at validation time — not a committed snapshot file, which previously went 24 days stale with nothing to notice — so diagnostic-code coverage is always checked against the code as it stands right now.",
+    "tsconfigs": ["tsconfig.server.json", "tsconfig.client.json"]
   },
   "externalHandlers": [
     { "script": "scripts/fix-params-string.mjs", "targets": "Express 5 ParamsDictionary string|string[] typing drift" },
@@ -160,6 +160,8 @@
     "bullmq-stalled-job": { "strategy": "reportOnly", "verify": "handler must be idempotent so BullMQ's own stall-recovery restart is safe" },
     "http-5xx-from-dependency": { "strategy": "reportOnly", "verify": "circuit breaker state + bounded retry on idempotent calls only" },
     "stripe-webhook-signature-failure": { "strategy": "manualRequired", "verify": "reject and audit; never accept an unverifiable event" },
-    "oom-exit-137": { "strategy": "manualRequired", "verify": "heap snapshot / diagnostic report; never treated as a passing check" }
+    "oom-exit-137": { "strategy": "manualRequired", "verify": "heap snapshot / diagnostic report; never treated as a passing check" },
+    "deploy-image-size-exceeded": { "strategy": "reportOnly", "verify": "script/build.ts's pre-flight size check (post capsule-pack, pre-push) measures the project root and names the largest top-level contributor before the platform's own opaque 'image size is over the limit' rejection; investigate why the named directory grew (dependency bloat, an uncompressed generated asset, a new large binary) and shrink/exclude/capsule-pack it, never raise the budget to paper over growth" },
+    "build-command-failure": { "strategy": "manualRequired", "verify": "vite/esbuild bundling errors in script/build.ts are real compilation failures in application code, never mechanically rewritten; run `npm run build` locally, read the reported file/line, and fix the source" }
   }
 }

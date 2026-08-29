@@ -189,7 +189,7 @@
     },
     {
       "id": "deployment",
-      "signals": ["build artifact missing", "node not found", "capsule", "port", "readiness", "workflow"],
+      "signals": ["build artifact missing", "node not found", "capsule", "port", "readiness", "workflow", "image size is over the limit", "vite build failed", "esbuild"],
       "prevention": "Use one canonical build/start path and verify artifacts, ports, dependencies, and readiness.",
       "safeAction": "Stop promotion on missing artifacts or degraded readiness; do not fall back to stale build outputs.",
       "verifyBy": "A clean build starts through the canonical launcher and settled readiness is healthy."
