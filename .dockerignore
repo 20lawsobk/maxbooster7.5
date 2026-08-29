@@ -58,6 +58,13 @@ AI training server/
 pocket dimension storage tech/
 built-in plugins dsp/
 
+# Archival PDIM capsules (hardware chip-flow checkpoints, Windows plugin build
+# output). These are workspace-local reference material only — nothing in
+# server/ or client/ reads them, and dist/pdim-restore.mjs never restores
+# them at boot, so shipping them would just re-introduce the exact bloat they
+# were packed to remove. Restore manually with scripts/restore-archive-capsule.sh.
+archive-capsules/
+
 # Development and CI files
 *.log
 npm-debug.log*
