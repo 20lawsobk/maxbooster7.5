@@ -2,15 +2,6 @@
   deps = [
     pkgs.xz
     pkgs.zstd
-    pkgs.netgen
-    pkgs.klayout
-    pkgs.magic-vlsi
-    pkgs.openroad
-    pkgs.yosys
-    pkgs.gtkwave
-    pkgs.verilator
-    pkgs.iverilog
-    pkgs.cudatoolkit
     pkgs.libarchive
     pkgs.psmisc
     pkgs.redis

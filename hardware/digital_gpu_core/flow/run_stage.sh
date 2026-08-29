@@ -68,17 +68,52 @@ START_EPOCH=$(date +%s)
 
 echo "===== run_stage: $STAGE threads=$THREADS start=$(date -u -d "@$START_EPOCH" +%FT%TZ) =====" | tee "$STDOUT_LOG"
 
-openroad -threads "$THREADS" -exit "flow/$STAGE" >> "$STDOUT_LOG" 2>&1 &
+# openroad is deliberately NOT on the persistent PATH (see Task #181 /
+# toolchain_env.sh) -- fetch it into a throwaway nix-shell for this one
+# invocation instead of baking the ~10.5 GiB EDA/CUDA closure into the
+# always-on project environment that the deploy build also measures.
+./flow/toolchain_env.sh openroad -threads "$THREADS" -exit "flow/$STAGE" >> "$STDOUT_LOG" 2>&1 &
 OR_PID=$!
+
+# nix-shell interposes a wrapper process between $OR_PID and the real
+# openroad process (nix-shell forks a child shell rather than exec'ing it),
+# so $OR_PID's own VmHWM is no longer the real memory consumer. Sum VmHWM
+# across the whole live process subtree rooted at $OR_PID instead, so the
+# peak-RSS numbers this script reports stay meaningful after Task #181.
+collect_pids() {
+  local -a frontier=("$1") all=("$1")
+  while [ "${#frontier[@]}" -gt 0 ]; do
+    local -a next=()
+    for status_file in /proc/[0-9]*/status; do
+      local cpid ppid
+      ppid=$(grep -m1 '^PPid:' "$status_file" 2>/dev/null | awk '{print $2}')
+      [ -z "${ppid:-}" ] && continue
+      for f in "${frontier[@]}"; do
+        if [ "$ppid" = "$f" ]; then
+          cpid=$(basename "$(dirname "$status_file")")
+          next+=("$cpid")
+          all+=("$cpid")
+          break
+        fi
+      done
+    done
+    frontier=("${next[@]}")
+  done
+  printf '%s\n' "${all[@]}"
+}
 
 PEAK_KB=0
 while kill -0 "$OR_PID" 2>/dev/null; do
-  HWM=$(grep -m1 VmHWM "/proc/$OR_PID/status" 2>/dev/null | awk '{print $2}')
-  if [ -n "${HWM:-}" ]; then
+  SAMPLE_KB=0
+  while IFS= read -r p; do
+    HWM=$(grep -m1 '^VmHWM:' "/proc/$p/status" 2>/dev/null | awk '{print $2}')
+    [ -n "${HWM:-}" ] && SAMPLE_KB=$((SAMPLE_KB + HWM))
+  done < <(collect_pids "$OR_PID")
+  if [ "$SAMPLE_KB" -gt 0 ]; then
     FLAG=""
-    if [ "$HWM" -gt "$MEM_CEILING_KB" ]; then FLAG=" ALERT_APPROACHING_CGROUP_LIMIT"; fi
-    echo "$(date +%s) ${HWM}${FLAG}" >> "$MEM_LOG"
-    if [ "$HWM" -gt "$PEAK_KB" ]; then PEAK_KB=$HWM; fi
+    if [ "$SAMPLE_KB" -gt "$MEM_CEILING_KB" ]; then FLAG=" ALERT_APPROACHING_CGROUP_LIMIT"; fi
+    echo "$(date +%s) ${SAMPLE_KB}${FLAG}" >> "$MEM_LOG"
+    if [ "$SAMPLE_KB" -gt "$PEAK_KB" ]; then PEAK_KB=$SAMPLE_KB; fi
   fi
   sleep 5
 done

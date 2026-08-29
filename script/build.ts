@@ -283,16 +283,33 @@ type NixClosureMeasurement = {
  */
 export function getNixClosureSize(): NixClosureMeasurement {
   const storePathPattern = /\/nix\/store\/[0-9a-z]{32}-[^/: \t\n]+/g;
-  const roots = [
+  const discoveredRoots = [
     ...new Set(
       Object.values(process.env).flatMap(
         (value) => value?.match(storePathPattern) ?? [],
       ),
     ),
   ].sort();
-  if (roots.length === 0) {
+  if (discoveredRoots.length === 0) {
     throw new Error(
       "deploy image pre-flight size check: no Nix roots were discoverable in the build environment",
+    );
+  }
+  // A store path can appear in an environment variable (e.g. Nix's own $out
+  // during a `nix-shell` invocation) without ever having been realized on
+  // disk, or after its content has been garbage-collected. Such a path
+  // contributes nothing to the actual image and can never be measured, so
+  // it must not count as a Nix root at all -- otherwise a stale env var
+  // permanently trips the "unmeasured root" fail-closed check even though
+  // every real dependency is accounted for. Any root that DOES exist on
+  // disk still must be measured or covered below; only genuinely absent
+  // paths are dropped here.
+  const roots = discoveredRoots.filter(
+    (root) => fs.existsSync(root) || fs.lstatSync(root, { throwIfNoEntry: false }) != null,
+  );
+  if (roots.length === 0) {
+    throw new Error(
+      "deploy image pre-flight size check: no on-disk Nix roots were discoverable in the build environment",
     );
   }
 
@@ -352,6 +369,40 @@ for db in dict.fromkeys(databases):
 
 if opened == 0:
     raise RuntimeError("no readable Nix registration database")
+
+# Some roots exported into this environment are Replit-provisioned "module"
+# packages (language runtimes, package-manager CLIs, browser binaries, etc.)
+# rather than plain nixpkgs derivations -- confirmed by direct lookup that
+# their store paths are genuinely absent from every readable registration
+# database (not a transient miss), even though the paths exist on disk and
+# are real environment dependencies. Treating them as "unmeasured" would
+# fail the whole preflight even when they are honestly small. Since there is
+# no registration row, their own transitive Nix references can't be
+# resolved from the db, but their real on-disk footprint can be measured
+# directly (walking the directory, real file sizes, no estimate) and
+# reported as its own closure -- covering them without pretending to know
+# dependencies that were never recorded.
+for p in sorted(roots - covered):
+    if not os.path.isdir(p) and not os.path.isfile(p):
+        continue
+    total = 0
+    if os.path.isfile(p):
+        try:
+            total = os.path.getsize(p)
+        except OSError:
+            continue
+    else:
+        for dirpath, _dirnames, filenames in os.walk(p):
+            for fn in filenames:
+                fp = os.path.join(dirpath, fn)
+                try:
+                    if not os.path.islink(fp):
+                        total += os.path.getsize(fp)
+                except OSError:
+                    pass
+    closure_sizes[p] = max(closure_sizes.get(p, 0), total)
+    root_closure_sizes[p] = max(root_closure_sizes.get(p, 0), total)
+    covered.add(p)
 
 print(json.dumps({
     "roots": sorted(roots),

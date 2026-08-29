@@ -118,3 +118,4 @@
 - [Live storage codec-mesh integration](live-storage-codec-mesh-integration.md) — PocketDimension wires codecMesh+PDCF directly (not the fuller router); PDCF magic bytes alone gate legacy-vs-new, no schema field needed
 - [AwarenessProfiler detection gaps](awareness-profiler-detection-gaps.md) — RIFF magic collision mislabeled WAV as WebP/already-compressed (fixed); Shannon entropy alone can't see LZ-style repetition (open, follow-up filed)
 - [Deploy autofix coverage gaps](deploy-autofix-coverage-gaps.md) — image checks must add the deduplicated Nix closure to tracked payload bytes and fail closed on unmeasured roots
+- [replit.nix feeds deploy closure too](replit-nix-feeds-deploy-closure.md) — heavy dev-only toolchains must never live in replit.nix; use an on-demand nix-shell wrapper; some module pkgs are unregistered in the sqlite DB and need direct measurement
