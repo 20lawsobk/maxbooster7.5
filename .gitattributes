@@ -24,3 +24,4 @@ hardware/digital_gpu_core/flow/gpu_core_placed.odb filter=lfs diff=lfs merge=lfs
 hardware/digital_gpu_core/flow/gpu_core_globalroute.odb filter=lfs diff=lfs merge=lfs -text
 .tmp_verify/real_export_test.nar filter=lfs diff=lfs merge=lfs -text
 *.nar filter=lfs diff=lfs merge=lfs -text
+*.rar filter=lfs diff=lfs merge=lfs -text
