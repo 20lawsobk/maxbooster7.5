@@ -200,7 +200,7 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@replit/object-storage": "^1.0.0",
-    "@replit/vite-plugin-cartographer": "^0.4.6",
+    "@replit/vite-plugin-cartographer": "^0.6.1",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.4",
     "@sendgrid/mail": "^8.1.6",
