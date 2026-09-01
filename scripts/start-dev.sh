@@ -20,18 +20,39 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-if [ -x "./boosterstate/target/debug/boosterstate" ]; then
-  BOOSTERSTATE_PORT="${BOOSTERSTATE_SIDECAR_PORT}" \
-    ./boosterstate/target/debug/boosterstate &
-  _BOOSTER_PID=$!
-  # Surface a bind failure before starting the app. A short check is enough:
-  # BoosterState binds its socket before entering its serve loop.
-  sleep 0.25
-  if ! kill -0 "$_BOOSTER_PID" 2>/dev/null; then
-    wait "$_BOOSTER_PID"
-    echo "[Ports] FATAL: BoosterState did not remain running on ${BOOSTERSTATE_SIDECAR_PORT}" >&2
-    exit 1
+# Prefer the prebuilt binary (produced by build.sh; present even without a
+# Rust toolchain in this environment), same order start.sh uses in
+# production, then fall back to a local debug/release cargo build if one
+# happens to exist. Without this fallback chain, dev environments that only
+# ever ran build.sh (no `cargo build`) would silently skip BoosterState even
+# though a working binary is sitting right there.
+_BOOSTER_BIN=""
+if [ -x "./bin/boosterstate" ]; then
+  _BOOSTER_BIN="./bin/boosterstate"
+elif [ -x "./boosterstate/target/release/boosterstate" ]; then
+  _BOOSTER_BIN="./boosterstate/target/release/boosterstate"
+elif [ -x "./boosterstate/target/debug/boosterstate" ]; then
+  _BOOSTER_BIN="./boosterstate/target/debug/boosterstate"
+fi
+
+if [ -n "$_BOOSTER_BIN" ]; then
+  if pgrep -x boosterstate >/dev/null 2>&1; then
+    echo "[start-dev] boosterstate already running — skipping"
+  else
+    BOOSTERSTATE_PORT="${BOOSTERSTATE_SIDECAR_PORT}" "$_BOOSTER_BIN" &
+    _BOOSTER_PID=$!
+    # Surface a bind failure before starting the app. A short check is enough:
+    # BoosterState binds its socket before entering its serve loop.
+    sleep 0.25
+    if ! kill -0 "$_BOOSTER_PID" 2>/dev/null; then
+      wait "$_BOOSTER_PID"
+      echo "[Ports] FATAL: BoosterState did not remain running on ${BOOSTERSTATE_SIDECAR_PORT}" >&2
+      exit 1
+    fi
+    echo "[start-dev] boosterstate started (pid ${_BOOSTER_PID}) on internal port ${BOOSTERSTATE_SIDECAR_PORT} via ${_BOOSTER_BIN}"
   fi
+else
+  echo "[start-dev] boosterstate binary not found (bin/boosterstate or boosterstate/target/{release,debug}) — skipping sidecar"
 fi
 
 set +e
