@@ -195,3 +195,156 @@ export function packCapsule({
     });
   });
 }
+
+export interface PackCapsuleMembersOptions {
+  /** Absolute path to the root every path below is relative to. */
+  root: string;
+  /**
+   * Explicit list of FILE paths (relative to `root`) to pack — not whole
+   * directories. Used for the "everything else" app-remainder capsule,
+   * where the member set is the survivors of a .dockerignore-aware scan
+   * (see dockerignoreScan.ts) rather than one clean top-level directory,
+   * and where files that must stay physically outside any capsule can live
+   * in the very same parent directory as files that must be packed (e.g.
+   * dist/pdim-restore.mjs must survive next to dist/cluster.mjs, which must
+   * not).
+   */
+  members: string[];
+  /** Output capsule filename, relative to `root`. */
+  capsule: string;
+  /** zstd thread count for this capsule's compression (`-T<n>`). See packCapsule. */
+  threads?: number;
+}
+
+/**
+ * Same real streaming tar+zstd pipeline as packCapsule() above, but for an
+ * explicit file list instead of one whole directory — `tar -T <filelist>`
+ * instead of `tar -cf - <dir>`, so members can be cherry-picked out of
+ * directories that also contain files which must NOT be packed (dist/ is
+ * the reason this exists: dist/pdim-restore.mjs and dist/.db-indexes-ok
+ * must remain on disk outside every capsule while the rest of dist/ is
+ * packed here). Deletes only the packed files afterward — never a whole
+ * directory — so anything deliberately left out of `members` is untouched
+ * on disk, including any file that happens to share a parent directory with
+ * packed members.
+ *
+ * Resolves `null` if `members` is empty (nothing to pack — e.g. a from-
+ * scratch checkout where the .dockerignore-survivor scan found nothing).
+ */
+export function packCapsuleMembers({
+  root,
+  members,
+  capsule,
+  threads = 0,
+}: PackCapsuleMembersOptions): Promise<PackCapsuleResult | null> {
+  return new Promise((resolveOne, rejectOne) => {
+    const existingMembers = members.filter((m) =>
+      fs.existsSync(path.resolve(root, m)),
+    );
+    if (existingMembers.length === 0) return resolveOne(null);
+
+    const capsulePath = path.resolve(root, capsule);
+    const fileListPath = path.resolve(
+      root,
+      `.${capsule.replace(/[\/.]/g, "_")}.filelist`,
+    );
+    fs.writeFileSync(fileListPath, existingMembers.join("\n") + "\n");
+
+    console.log(
+      `==> Packing ${existingMembers.length} remaining app files → ${capsule} (${CAPSULE_COMPRESSION_ID}, -T${threads}, Extract & Boot)...`,
+    );
+
+    const cleanupFileList = () => {
+      try {
+        fs.rmSync(fileListPath, { force: true });
+      } catch {}
+    };
+
+    const child = spawn(
+      "bash",
+      [
+        "-c",
+        `set -o pipefail; tar -cf - --no-recursion -T ${JSON.stringify(fileListPath)} | zstd ${zstdCompressArgs(threads).join(" ")}`,
+      ],
+      { cwd: root, stdio: ["ignore", "pipe", "inherit"] },
+    );
+
+    const out = fs.createWriteStream(capsulePath);
+    const hash = createHash("sha256");
+    let settled = false;
+
+    const fail = (err: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanupFileList();
+      try {
+        child.kill("SIGKILL");
+      } catch {}
+      rejectOne(err);
+    };
+
+    child.on("error", (err) => fail(err));
+    child.stdout.on("data", (chunk: Buffer) => hash.update(chunk));
+    child.stdout.pipe(out);
+    out.on("error", (err) => fail(err));
+
+    let childExited = false;
+    let childExitCode: number | null = null;
+    let outFinished = false;
+
+    const maybeFinish = () => {
+      if (settled || !childExited || !outFinished) return;
+      if (childExitCode !== 0) {
+        return fail(
+          new Error(`packing app remainder exited with code ${childExitCode}`),
+        );
+      }
+      settled = true;
+      cleanupFileList();
+      const sha256 = hash.digest("hex");
+      const manifestPath = path.resolve(
+        root,
+        capsule.replace(/\.pdim$/, ".manifest.json"),
+      );
+      fs.writeFileSync(
+        manifestPath,
+        JSON.stringify(
+          {
+            compression: CAPSULE_COMPRESSION_ID,
+            sha256,
+            dir: "<multiple>",
+            memberCount: existingMembers.length,
+          },
+          null,
+          2,
+        ),
+      );
+      for (const member of existingMembers) {
+        try {
+          fs.rmSync(path.resolve(root, member), { force: true });
+        } catch {}
+      }
+      const sizeBytes = fs.statSync(capsulePath).size;
+      console.log(
+        `   ✅ ${existingMembers.length} files packed (${(sizeBytes / 1048576).toFixed(0)}MB) and removed from image`,
+      );
+      resolveOne({
+        capsulePath,
+        manifestPath,
+        sizeBytes,
+        sha256,
+        compression: CAPSULE_COMPRESSION_ID,
+      });
+    };
+
+    child.on("exit", (code) => {
+      childExited = true;
+      childExitCode = code ?? -1;
+      maybeFinish();
+    });
+    out.on("finish", () => {
+      outFinished = true;
+      maybeFinish();
+    });
+  });
+}

@@ -4,9 +4,14 @@ import path from "path";
 import { randomBytes } from "crypto";
 import {
   packCapsule,
+  packCapsuleMembers,
   CAPSULE_COMPRESSION_ID,
 } from "../../script/lib/capsulePack.js";
-import { restoreCapsule, tarFlagsForCompression } from "../../dist/pdim-restore.mjs";
+import {
+  restoreCapsule,
+  restoreAppRemainderCapsule,
+  tarFlagsForCompression,
+} from "../../dist/pdim-restore.mjs";
 
 // Real, non-mocked build-then-restore round trip for the "Extract & Boot"
 // deploy capsule system (script/build.ts packs; dist/pdim-restore.mjs
@@ -212,6 +217,122 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
     );
     expect(leftoverScratch).toEqual([]);
   }, 30000);
+
+  it("packs a scattered file list (app remainder) and restores it byte-identical, leaving untouched siblings alone", async () => {
+    // Mirrors the real app-remainder shape: files to pack are scattered
+    // across several directories, and some of those directories ALSO
+    // contain a file that must be left alone (like dist/pdim-restore.mjs
+    // sitting next to dist/cluster.mjs) — the whole reason
+    // packCapsuleMembers/restoreAppRemainderCapsule exist instead of
+    // reusing packCapsule(dir)/restoreCapsule(dir), which assume the WHOLE
+    // named directory belongs to one capsule.
+    const base = `${ROOT_RELATIVE}/remainder`;
+    const baseAbs = path.resolve(projectRoot, base);
+    const capsuleRelative = `${ROOT_RELATIVE}/remainder.pdim`;
+    const manifestRelative = `${ROOT_RELATIVE}/remainder.manifest.json`;
+    const sentinelRelative = `${ROOT_RELATIVE}/.remainder-sentinel`;
+
+    await fs.mkdir(path.join(baseAbs, "client"), { recursive: true });
+    await fs.mkdir(path.join(baseAbs, "dist"), { recursive: true });
+    await fs.mkdir(path.join(baseAbs, "server", "nested"), {
+      recursive: true,
+    });
+
+    await fs.writeFile(
+      path.join(baseAbs, "client", "index.html"),
+      "<html>packed</html>",
+    );
+    await fs.writeFile(
+      path.join(baseAbs, "dist", "cluster.mjs"),
+      "console.log('packed cluster');",
+    );
+    // The sibling that must survive untouched: analogous to
+    // dist/pdim-restore.mjs, which lives beside dist/cluster.mjs but is
+    // never a member of the app-remainder capsule.
+    await fs.writeFile(
+      path.join(baseAbs, "dist", "pdim-restore.mjs"),
+      "// must never be packed",
+    );
+    await fs.writeFile(
+      path.join(baseAbs, "server", "nested", "deep.ts"),
+      randomBytes(4096).toString("base64"),
+    );
+
+    const members = [
+      `${base}/client/index.html`,
+      `${base}/dist/cluster.mjs`,
+      `${base}/server/nested/deep.ts`,
+    ];
+    const untouchedRelative = `${base}/dist/pdim-restore.mjs`;
+    const untouchedAbs = path.resolve(projectRoot, untouchedRelative);
+    const untouchedExpected = await fs.readFile(untouchedAbs, "utf8");
+
+    // Sanity-anchor on the REAL sibling tree this fixture is scoped
+    // underneath — if the merge step below ever regresses to deleting an
+    // existing destination directory before merging into it (the exact bug
+    // class this test exists to catch), this snapshot proves it by name
+    // rather than the test silently passing because the loss happened to
+    // land only inside disposable fixture paths.
+    const realTestsUnitBefore = (
+      await fs.readdir(path.resolve(projectRoot, "tests/unit"))
+    ).sort();
+
+    const packResult = await packCapsuleMembers({
+      root: projectRoot,
+      members,
+      capsule: capsuleRelative,
+    });
+    expect(packResult).not.toBeNull();
+    expect(packResult!.compression).toBe(CAPSULE_COMPRESSION_ID);
+
+    // Every packed member must be gone; the untouched sibling must remain,
+    // byte-identical, exactly proving the "cherry-pick, don't wipe the
+    // whole directory" contract packCapsuleMembers exists for.
+    for (const member of members) {
+      await expect(
+        fs.access(path.resolve(projectRoot, member)),
+      ).rejects.toThrow();
+    }
+    await expect(fs.access(untouchedAbs)).resolves.toBeUndefined();
+    expect(await fs.readFile(untouchedAbs, "utf8")).toBe(untouchedExpected);
+
+    const restored = await restoreAppRemainderCapsule(
+      capsuleRelative,
+      manifestRelative,
+      sentinelRelative,
+    );
+    expect(restored).toBe(true);
+
+    for (const member of members) {
+      await expect(
+        fs.access(path.resolve(projectRoot, member)),
+      ).resolves.toBeUndefined();
+    }
+    expect(
+      await fs.readFile(path.resolve(projectRoot, members[0]), "utf8"),
+    ).toBe("<html>packed</html>");
+    expect(
+      await fs.readFile(path.resolve(projectRoot, members[1]), "utf8"),
+    ).toBe("console.log('packed cluster');");
+    // The never-packed sibling must still be exactly what it was before —
+    // restore must never clobber a file that pack never touched.
+    expect(await fs.readFile(untouchedAbs, "utf8")).toBe(untouchedExpected);
+
+    // The real tests/unit/ directory (an ancestor of every path this test
+    // touches) must be completely unaffected by the merge step.
+    const realTestsUnitAfter = (
+      await fs.readdir(path.resolve(projectRoot, "tests/unit"))
+    ).sort();
+    expect(realTestsUnitAfter).toEqual(realTestsUnitBefore);
+
+    // Idempotent second restore hits the sentinel skip path.
+    const second = await restoreAppRemainderCapsule(
+      capsuleRelative,
+      manifestRelative,
+      sentinelRelative,
+    );
+    expect(second).toBe(true);
+  }, 60000);
 
   it("selects the correct GNU-tar extraction flag for every real capsule codec id", () => {
     // Covers the GNU-tar fallback branch directly: bsdtar (preferred when

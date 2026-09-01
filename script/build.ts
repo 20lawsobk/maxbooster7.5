@@ -4,7 +4,11 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
-import { packCapsule } from "./lib/capsulePack.js";
+import { packCapsule, packCapsuleMembers } from "./lib/capsulePack.js";
+import {
+  computeRemainingAppMembers,
+  BOOTSTRAP_AND_CAPSULE_OWN_PATHS,
+} from "./lib/dockerignoreScan.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -164,6 +168,40 @@ async function main() {
   // (2026-08-14) the entire project ships; it is capsule-packed above and
   // restored at first boot alongside node_modules and external/maxcore.
 
+  // ─── App remainder capsule (everything else) ───────────────────────────
+  // The four capsules above cover the big, well-known deploy directories.
+  // Everything ELSE that would still ship in the image — client/, server/,
+  // migrations/, bin/, dist/'s own build output (minus dist/pdim-restore.mjs
+  // itself, which must stay outside every capsule), top-level config files,
+  // and any other file .dockerignore does not filter out — is scanned and
+  // packed here too, so "the whole app" ships as compressed Extract & Boot
+  // capsules rather than as raw files. Must run AFTER the four capsules
+  // above have been packed (and their source directories removed) so the
+  // .dockerignore-aware scan below sees the same post-capsule tree the
+  // image will actually have, and after the Vite/esbuild build steps above
+  // so dist/public and dist/*.mjs already exist to be included.
+  //
+  // This capsule restores in the CRITICAL (boot-blocking) tier, not the
+  // background tier the other three use: it contains dist/cluster.mjs,
+  // dist/index.mjs, and dist/gateway.mjs, which start.sh execs/spawns
+  // synchronously right after the critical restore step, plus the
+  // boosterstate binary and legacy AI sidecar source start.sh also touches
+  // synchronously before backgrounding would finish. See dist/pdim-restore.mjs.
+  let appRemainderResult: Awaited<ReturnType<typeof packCapsuleMembers>> =
+    null;
+  if (isDeployBuild) {
+    const remainingMembers = computeRemainingAppMembers(root);
+    console.log(
+      `==> Scanned .dockerignore-survivor payload: ${remainingMembers.length} file(s) remaining outside the four existing capsules and the boot bootstrap set (${BOOTSTRAP_AND_CAPSULE_OWN_PATHS.join(", ")})`,
+    );
+    appRemainderResult = await packCapsuleMembers({
+      root,
+      members: remainingMembers,
+      capsule: "app_remainder.pdim",
+      threads: Math.max(1, os.cpus().length || 1),
+    });
+  }
+
   // ─── Pre-flight image size check ───────────────────────────────────────
   // Replit's 8 GiB limit includes BOTH the Repl payload and every transitive
   // Nix dependency. Measuring only tracked files/capsules is therefore not a
@@ -180,7 +218,7 @@ async function main() {
     const { totalBytes: trackedBytes, byTopDir } =
       getTrackedSizeBreakdown(root);
     const distBytes = requireMeasuredBytes(path.join(root, "dist"), "dist/");
-    const capsuleBreakdown = capsuleResults
+    const capsuleBreakdown = [...capsuleResults, appRemainderResult]
       .filter((r): r is NonNullable<typeof r> => r !== null)
       .map((r) => ({
         name: path.basename(r.capsulePath),

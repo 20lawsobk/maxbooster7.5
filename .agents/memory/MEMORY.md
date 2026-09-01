@@ -1,4 +1,5 @@
 - [Express 5 req.params typing](express5-params-string-array.md) — ParamsDictionary values are string|string[]; named params are strings at runtime, wildcard routes get arrays
+- [Multi-member capsule restore merge](capsule-multi-member-merge-restore.md) — a scattered-file-list capsule restore must recursively MERGE into a pre-existing destination dir, never rmSync-then-replace it (destroyed a real tests/ dir once)
 - [Software-GPU "rebuild it" categories](software-gpu-rebuild-categories.md) — which of ZLUDA/vGPU-MIG/from-scratch-silicon are honestly buildable on CPU-only, plus DRR-fairness and job-payload OOM test pitfalls
 - [Deploy boot-stub → primary port gap](deploy-boot-stub-port-gap.md) — anything sync/CPU-blocking before the real server's listen() call reopens the port-unbound window the boot-stub was meant to close
 - [Boot-window 404s](boot-window-404s.md) — registerRoutes takes minutes; mixed some-routes-work/some-404 after restart means registration still in progress, check "[Boot] Routes registered"
