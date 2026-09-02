@@ -19,75 +19,13 @@ interface AuthenticatedRequest extends Request {
   user?: { id: string; email?: string };
 }
 
-router.post(
-  "/refresh-token",
-  requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const sessionId = req.session?.id;
-
-      if (!sessionId) {
-        return res.status(400).json({
-          success: false,
-          error: "no_session",
-          message: "No active session found",
-          action: "reauth_required",
-        });
-      }
-
-      const existingSession = await db
-        .select()
-        .from(sessions)
-        .where(eq(sessions.id, sessionId))
-        .limit(1);
-
-      if (existingSession?.length === 0) {
-        return res.status(401).json({
-          success: false,
-          error: "session_not_found",
-          message: "Session not found or expired",
-          action: "reauth_required",
-        });
-      }
-
-      const session = existingSession[0];
-
-      if (session?.expiresAt && new Date(session?.expiresAt) < new Date()) {
-        return res.status(401).json({
-          success: false,
-          error: "session_expired",
-          message: "Session has expired",
-          action: "reauth_required",
-        });
-      }
-
-      const newExpiresAt = new Date(Date?.now() + 24 * 60 * 60 * 1000);
-
-      await db
-        .update(sessions)
-        .set({
-          lastActivity: new Date(),
-          expiresAt: newExpiresAt,
-        })
-        .where(eq(sessions.id, sessionId));
-
-      res.json({
-        success: true,
-        message: "Token refreshed successfully",
-        expiresAt: newExpiresAt.toISOString(),
-        outcome: "token_refresh_successful",
-      });
-    } catch (error) {
-      logger.warn({ err: error }, "Token refresh error:");
-      res.status(500).json({
-        success: false,
-        error: "refresh_failed",
-        message: "Failed to refresh token",
-        action: "retry",
-      });
-    }
-  },
-);
+// NOTE: POST "/refresh-token" used to be registered here too, but
+// server/routes.ts registers the same "/api/auth/refresh-token" path earlier
+// (Express dispatches to the first match), so this copy was permanently dead
+// code. The live routes.ts handler additionally re-issues a JWT access token
+// for the Bearer-token fallback path (mobile/API clients), which this copy did
+// not do, so it was kept as the base rather than swapped in; this dead
+// duplicate has been removed instead.
 
 router.post(
   "/extend-session",

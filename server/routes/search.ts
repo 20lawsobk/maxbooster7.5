@@ -346,7 +346,7 @@ router.get("/unified", async (req: Request, res: Response) => {
       sort = "relevance",
     } = req.query as unknown as SearchQuery;
 
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     const numLimit = Math.min(Number(limit) || 20, 100);
     const numOffset = Math.min(Math.max(0, Number(offset) || 0), 100_000);
 
@@ -616,7 +616,7 @@ router.get("/trending", async (_req: Request, res: Response) => {
 
 router.get("/history", async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     if (!userId)
       return res.status(401).json({ error: "Authentication required" });
 
@@ -636,7 +636,7 @@ router.get("/history", async (req: Request, res: Response) => {
 
 router.delete("/history", async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     if (!userId)
       return res.status(401).json({ error: "Authentication required" });
 
@@ -651,7 +651,7 @@ router.delete("/history", async (req: Request, res: Response) => {
 
 router.delete("/history/:query", async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     const { query } = req.params as Record<string, string>;
     if (!userId)
       return res.status(401).json({ error: "Authentication required" });
@@ -671,7 +671,7 @@ router.delete("/history/:query", async (req: Request, res: Response) => {
 
 router.get("/discover", async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
 
     const newReleases = await db
       .select()
@@ -831,7 +831,7 @@ router.get("/similar/:beatId", async (req: Request, res: Response) => {
 
 router.post("/filter-presets", async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     if (!userId)
       return res.status(401).json({ error: "Authentication required" });
 
@@ -853,7 +853,7 @@ router.post("/filter-presets", async (req: Request, res: Response) => {
 
 router.get("/filter-presets", async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     const { context = "global" } = req.query;
     if (!userId)
       return res.status(401).json({ error: "Authentication required" });
@@ -1008,7 +1008,7 @@ router.get("/filter-presets", async (req: Request, res: Response) => {
 
 router.put("/filter-presets", async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     if (!userId)
       return res.status(401).json({ error: "Authentication required" });
 
@@ -1035,7 +1035,7 @@ router.delete(
   "/filter-presets/:presetId",
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.user?.id;
       const { presetId } = req.params as Record<string, string>;
       if (!userId)
         return res.status(401).json({ error: "Authentication required" });
@@ -1058,7 +1058,7 @@ router.post(
   "/filter-presets/:presetId/default",
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.user?.id;
       const { presetId } = req.params as Record<string, string>;
       if (!userId)
         return res.status(401).json({ error: "Authentication required" });
@@ -1173,7 +1173,7 @@ router.get("/suggestions", async (req: Request, res: Response) => {
 
 router.get("/distribution", async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     const { q = "", status } = req.query;
     const limit = Math.min(Math.max(1, Number(req.query.limit ?? 20)), 500);
     const offset = Math.min(
@@ -1250,7 +1250,7 @@ router.get("/distribution", async (req: Request, res: Response) => {
 
 router.get("/analytics/search", async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     const { dateRange, platform, metric } = req.query;
 
     if (!userId) {
@@ -1411,7 +1411,7 @@ router.get("/analytics/search", async (req: Request, res: Response) => {
 
 router.get("/social/search", async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     const { q = "", platform, status, dateFrom, dateTo } = req.query;
     const limit = Math.min(Math.max(1, Number(req.query.limit ?? 20)), 500);
 

@@ -2065,17 +2065,45 @@ router.get(
 
       res.json(
         connections
+          // NOTE: keep filtering to isActive only — the platform-connections.tsx
+          // frontend derives its "connected" badge purely from whether a
+          // platform appears in this list at all (`connections.some(...)`), not
+          // from a status field, so an inactive entry must not be included.
           .filter((c) => c?.isActive)
-          .map((c) => ({
-            platform: c.platform,
-            username: c.username,
-            connected: c.isActive,
-            connectedAt: c.createdAt,
-            followers: c.followerCount || 0,
-            profileUrl: c.profileUrl || "",
-            platformUserId: c.platformUserId || "",
-            metadata: c.metadata || {},
-          })),
+          .map((c) => {
+            const isTokenExpired = c.tokenExpiresAt
+              ? new Date(c.tokenExpiresAt) < new Date()
+              : false;
+            const tokenExpiresIn = c.tokenExpiresAt
+              ? Math.max(
+                  0,
+                  Math.floor(
+                    (new Date(c.tokenExpiresAt).getTime() - Date.now()) /
+                      1000,
+                  ),
+                )
+              : null;
+            const status: "connected" | "expired" = isTokenExpired
+              ? "expired"
+              : "connected";
+
+            return {
+              platform: c.platform,
+              username: c.username,
+              connected: c.isActive,
+              connectedAt: c.createdAt,
+              followers: c.followerCount || 0,
+              followerCount: c.followerCount || 0,
+              profileUrl: c.profileUrl || "",
+              platformUserId: c.platformUserId || "",
+              metadata: c.metadata || {},
+              status,
+              tokenExpiresAt: c.tokenExpiresAt,
+              tokenExpiresIn,
+              requiresReauth: isTokenExpired,
+              lastSync: c.createdAt,
+            };
+          }),
       );
     } catch (error) {
       logger.warn({ err: error }, "Failed to get connections:");

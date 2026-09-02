@@ -834,9 +834,12 @@ router.get("/:storefrontId/listings", async (req, res) => {
 
     res.json(listings);
   } catch (error: unknown) {
-    logger.warn({ err: error }, "Error fetching storefront listings:");
     const errorMessage =
       error instanceof Error ? error?.message : "Failed to fetch listings";
+    if (errorMessage === "Storefront not found") {
+      return res.status(404).json({ error: errorMessage });
+    }
+    logger.warn({ err: error }, "Error fetching storefront listings:");
     res.status(500).json({ error: errorMessage });
   }
 });
@@ -1745,6 +1748,10 @@ router.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       }>;
     };
 
+    if (!Array.isArray(tiers)) {
+      return res.status(400).json({ error: "tiers must be an array" });
+    }
+
     const [listing] = await db
       .select()
       .from(listings)
@@ -1915,139 +1922,14 @@ router.post(
   },
 );
 
-router.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const { listingId } = req.params as Record<string, string>;
-    const { tiers } = req.body;
-
-    if (!Array.isArray(tiers)) {
-      return res.status(400).json({ error: "tiers must be an array" });
-    }
-
-    const [listing] = await db
-      .select()
-      .from(listings)
-      .where(eq(listings.id, listingId))
-      .limit(1);
-    if (!listing) {
-      return res.status(404).json({ error: "Listing not found" });
-    }
-    if (listing?.userId !== req.user!.id) {
-      return res
-        .status(403)
-        .json({ error: "You can only edit your own listings" });
-    }
-
-    await db
-      .delete(listingLicenseTiers)
-      .where(eq(listingLicenseTiers.listingId, listingId));
-
-    const savedTiers = [];
-    for (let i = 0; i < tiers?.length; i++) {
-      const t = tiers[i];
-      const [saved] = await db
-        .insert(listingLicenseTiers)
-        .values({
-          listingId,
-          licenseType: t.licenseType,
-          label: t.label || t?.licenseType,
-          priceCents: t.priceCents,
-          discountType: t.discountType || "none",
-          discountPercent: t.discountPercent || 0,
-          discountPriceCents:
-            t?.discountType === "percent" && t?.discountPercent
-              ? Math.round(t?.priceCents * (1 - t?.discountPercent / 100))
-              : null,
-          discountExpiresAt: t.discountExpiresAt
-            ? new Date(t?.discountExpiresAt)
-            : null,
-          bogoEnabled: t.bogoEnabled || false,
-          bogoGetType: t.bogoGetType || null,
-          bogoGetPercent: t.bogoGetPercent || 100,
-          fileFormats: t.fileFormats || ["mp3"],
-          audioUrls: t.audioUrls || {},
-          isActive: t.isActive !== false,
-          sortOrder: i,
-        })
-        .returning();
-      savedTiers?.push(saved);
-    }
-
-    const currentMeta = (listing?.metadata as Record<string, any>) || {};
-    await db
-      .update(listings)
-      .set({
-        metadata: { ...currentMeta, hasLicenseTiers: true },
-      })
-      .where(eq(listings.id, listingId));
-
-    res.json({ success: true, tiers: savedTiers });
-  } catch (error) {
-    logger.warn({ err: error }, "Error saving license tiers:");
-    res.status(500).json({ error: "Failed to save license tiers" });
-  }
-});
-
-router.delete("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const { listingId } = req.params as Record<string, string>;
-
-    const [listing] = await db
-      .select()
-      .from(listings)
-      .where(eq(listings.id, listingId))
-      .limit(1);
-    if (!listing) {
-      return res.status(404).json({ error: "Listing not found" });
-    }
-    if (listing?.userId !== req.user!.id) {
-      return res
-        .status(403)
-        .json({ error: "You can only edit your own listings" });
-    }
-
-    await db
-      .delete(listingLicenseTiers)
-      .where(eq(listingLicenseTiers.listingId, listingId));
-
-    const currentMeta = (listing?.metadata as Record<string, any>) || {};
-    await db
-      .update(listings)
-      .set({
-        metadata: { ...currentMeta, hasLicenseTiers: false },
-      })
-      .where(eq(listings.id, listingId));
-
-    res.json({ success: true });
-  } catch (error) {
-    logger.warn({ err: error }, "Error deleting license tiers:");
-    res.status(500).json({ error: "Failed to delete license tiers" });
-  }
-});
-
-router.get("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
-  try {
-    const { listingId } = req.params as Record<string, string>;
-    const tiers = await db
-      .select()
-      .from(listingLicenseTiers)
-      .where(eq(listingLicenseTiers.listingId, listingId))
-      .orderBy(listingLicenseTiers.sortOrder)
-      .limit(20);
-    res.json(tiers);
-  } catch (error) {
-    logger.warn({ err: error }, "Error fetching license tiers:");
-    res.status(500).json({ error: "Failed to fetch license tiers" });
-  }
-});
+// NOTE: GET/PUT/DELETE "/:storefrontId/listings/:listingId/tiers" were each
+// registered twice in this file. Express always dispatches to the FIRST
+// matching registration, so the three duplicates that used to follow here
+// (a byte-identical GET, a PUT missing discount bounds-checking that allowed
+// negative prices, and a DELETE using a separate 403 branch instead of baking
+// ownership into the lookup query) were permanently dead code. Their one
+// useful difference (an explicit `Array.isArray(tiers)` 400 guard) has been
+// ported into the live PUT handler above; the duplicates have been removed.
 
 // ============================================================================
 // BOGO PROMOTIONS

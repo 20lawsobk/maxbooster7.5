@@ -131,9 +131,41 @@ const PDIM_INV_TTL_S = 300; // 5 min TTL on invalidation data structures
 const BUST_PDIM_TTL_S = 120;
 const PDIM_PATTERNS_KEEP = 100; // LTRIM: keep only last N pattern events
 
+// Concurrent invalidations for the same user each launch an independent
+// fire-and-forget PDIM write. PDIM round-trip latency is highly variable
+// under load (empirically observed 20ms-200ms+ for calls issued within the
+// same 50ms window), so two writes CAN complete in the opposite order from
+// which they were issued. A plain SETEX is a blind overwrite: if an older
+// (smaller-timestamp) write lands after a newer one, it reverts the shared
+// bust flag backward and un-busts entries that must stay invalidated —
+// this was empirically confirmed (19 of 60 completions out of order in one
+// concurrent-invalidation burst against this exact key). This script makes
+// the write monotonic and atomic (single EVAL — no read-then-write TOCTOU
+// gap), so the stored value can only ever move forward regardless of
+// completion order. Do not replace with a plain SET/SETEX.
+const BUST_MONOTONIC_SET_LUA = `
+local current = redis.call('GET', KEYS[1])
+if (not current) or (tonumber(ARGV[1]) > tonumber(current)) then
+  redis.call('SETEX', KEYS[1], ARGV[2], ARGV[1])
+  return 1
+end
+return 0
+`;
+
 // ── Tuning constants ──────────────────────────────────────────────────────────
 const L1_ENTRY_TTL_MS = 4_000; // in-process entry TTL
-const BUST_L1_TTL_MS = 500; // defense-in-depth bust-key L1 (500 ms safety net)
+// Defense-in-depth bust-key L1 safety net. This must outlive the longest
+// plausible "delayed write" race: a GET that started reading before a
+// mutation's invalidation ran, but whose response (and cache write) doesn't
+// land until after it. Under concurrent load (many simultaneous requests
+// contending for the event loop / DB pool), that gap was directly measured
+// exceeding 500 ms — a short TTL let the flag expire mid-race, after which
+// getBustAt() fell through to the PDIM path (or returned 0 if disconnected),
+// silently failing open and letting stale entries slip through undetected
+// for the rest of the flag's dead window. 10 s comfortably covers realistic
+// request latency spikes; the cost is trivial (one small Map entry per
+// recently-mutated user, self-expiring).
+const BUST_L1_TTL_MS = 10_000;
 const L1_MAX = 5_000;
 // ── Adaptive poll backoff ─────────────────────────────────────────────────────
 // The cross-pod invalidation poller used to run at a fixed 100 ms interval,
@@ -228,7 +260,24 @@ export class APIResponseCache {
     return hit?.bustAt;
   }
 
+  /**
+   * Monotonic write: refuses to move a user's bust flag backward.
+   *
+   * Concurrent invalidations for the same user race independently (PDIM
+   * round-trip latency is highly variable under load — observed 20-200ms+
+   * for calls issued within the same 50ms window). Even after the PDIM
+   * write itself is made monotonic (see invalidateForUser's Lua EVAL),
+   * concurrent getBustAt() reads of that store can still RESOLVE out of
+   * order in this process (older read's promise settling after a newer
+   * read's). Without this guard, the later-settling-but-older read would
+   * revert the local L1 bust flag backward, un-busting entries that must
+   * stay invalidated. Never remove this without re-verifying the race
+   * harness (empirically confirmed: 19/60 out-of-order completions in one
+   * burst of concurrent invalidations against the PDIM store).
+   */
   private bustL1Set(userId: string, bustAt: number): void {
+    const existing = this.bustL1.get(userId);
+    if (existing && existing.bustAt > bustAt) return;
     this.bustL1.set(userId, { bustAt, expiresAt: Date.now() + BUST_L1_TTL_MS });
   }
 
@@ -242,7 +291,7 @@ export class APIResponseCache {
       );
       const bustAt = typeof val === "number" ? val : 0;
       this.bustL1Set(userId, bustAt);
-      return bustAt;
+      return this.bustL1Get(userId) ?? bustAt;
     } catch {
       return 0;
     }
@@ -443,10 +492,18 @@ export class APIResponseCache {
     this.bustL1.delete(userId);
     this.processedUsers.set(userId, Date?.now());
 
-    if (!distributedCache?.isConnected()) return;
-
+    // Local synchronous defense-in-depth flag — MUST be set unconditionally,
+    // not gated behind PDIM connectivity. This is what get() compares a cache
+    // entry's read-start timestamp against to reject a "delayed-write" race
+    // (a concurrent GET that started reading before this mutation committed
+    // but finishes — and caches its now-stale result — after this
+    // invalidation ran). Single-instance deployments have no PDIM connection
+    // at all, so if this stayed gated behind isConnected() the defense would
+    // never activate for them.
     const bustAt = Date?.now();
     this.bustL1Set(userId, bustAt);
+
+    if (!distributedCache?.isConnected()) return;
 
     (async () => {
       try {
@@ -454,10 +511,15 @@ export class APIResponseCache {
         await redis?.hset(PDIM_INV_USERS, userId, String(bustAt));
         await redis?.expire(PDIM_INV_USERS, PDIM_INV_TTL_S);
         await redis?.incr(PDIM_INV_SEQ);
-        await distributedCache?.set(
+        // Atomic monotonic write — see BUST_MONOTONIC_SET_LUA comment above
+        // for why a plain distributedCache.set() (blind overwrite) is unsafe
+        // here under concurrent invalidations for the same user.
+        await redis?.eval(
+          BUST_MONOTONIC_SET_LUA,
+          1,
           `${PDIM_BUST_PFX}${userId}`,
-          bustAt,
-          BUST_PDIM_TTL_S,
+          String(bustAt),
+          String(BUST_PDIM_TTL_S),
         );
       } catch (err) {
         logger.warn(
@@ -551,6 +613,16 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       return;
     }
 
+    // Captured before any cache lookup or route-handler DB work begins.
+    // Stamped onto the cache entry (instead of the time res.json() fires) so
+    // invalidateForUser()'s bust-flag comparison reflects when THIS request
+    // started reading data, not when it finished writing to cache. Without
+    // this, a GET that starts before a concurrent mutation commits but
+    // finishes after the mutation's invalidation ran would cache its stale
+    // read with a fresh-looking write timestamp, defeating the bust-flag
+    // check entirely (see invalidateForUser's comment).
+    const requestStartTime = Date?.now();
+
     const userId = varyByUser ? extractUserIdFromRequest(req) : "shared";
     const queryStr = varyByQuery ? JSON.stringify(req.query) : "";
     const cacheKey = `u:${userId}:${req.path}:${queryStr}`;
@@ -604,7 +676,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
             body,
             headers: { "Content-Type": "application/json" },
             statusCode: res.statusCode,
-            timestamp: Date.now(),
+            timestamp: requestStartTime,
             etag,
           } as CacheEntry,
           ttlSeconds,

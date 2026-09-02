@@ -3213,7 +3213,11 @@ router.post("/schedule/validate", async (req: Request, res: Response) => {
 // GET /api/distribution/schedule/lead-time - Get recommended lead time for platforms
 router.get("/schedule/lead-time", async (req: Request, res: Response) => {
   try {
-    const platforms = (req.query.platforms as string).split(",") || [];
+    const platformsParam = req.query.platforms;
+    const platforms =
+      typeof platformsParam === "string" && platformsParam.length > 0
+        ? platformsParam.split(",")
+        : [];
     const recommendation = releaseScheduler.getRecommendedLeadTime(platforms);
     res.json(recommendation);
   } catch (error: unknown) {

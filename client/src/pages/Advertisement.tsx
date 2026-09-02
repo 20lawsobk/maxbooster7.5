@@ -32,10 +32,21 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest, uploadWithProgress } from "@/lib/queryClient";
@@ -52,7 +63,7 @@ import {
   type ImagePlatform,
 } from "@/components/content/AIImageGenerator";
 import { CreativeVariantGenerator, CreativeAutomation } from "@/components/advertising";
-import { Target, TrendingUp, TrendingDown, Users, Play, Eye, MousePointerClick, Plus, Music, Tv, Zap, Brain, Rocket, Sparkles, Globe, CheckCircle, AlertTriangle, Lightbulb, Clock, Upload, X, Bot, RefreshCw, Layers, Network, PieChart, Timer, Radio, UserPlus, Copy, Search, Lock, Unlock, FileImage, Loader2, Trash2 } from "lucide-react";
+import { Target, TrendingUp, TrendingDown, Users, Play, Eye, MousePointerClick, Plus, Music, Tv, Zap, Brain, Rocket, Sparkles, Globe, CheckCircle, AlertTriangle, Lightbulb, Clock, Upload, X, Bot, RefreshCw, Layers, Network, PieChart, Timer, Radio, UserPlus, Copy, Search, Lock, Unlock, FileImage, Loader2, Trash2, Pencil } from "lucide-react";
 
 interface PressKitPhoto {
   url: string;
@@ -91,38 +102,32 @@ interface StorageUploadResponse {
 interface AdCampaign {
   id: string;
   name: string;
-  objective: string;
+  platform: string;
+  objective: string | null;
+  budget: number | null;
+  dailyBudget: number | null;
   impressions: number;
   clicks: number;
-  conversions: number;
-  status: "active" | "paused" | "completed";
-  startDate: Date;
-  endDate: Date;
-  platforms: string[];
-  connectedPlatforms?: {
-    facebook: string;
-    instagram: string;
-    twitter: string;
-    linkedin: string;
-    tiktok: string;
-    youtube: string;
-    threads: string;
-    googleBusiness: string;
-  };
-  personalAdNetwork?: {
-    connectedAccounts: number;
-    totalPlatforms: number;
-    networkStrength: number;
-    personalizedReach: string;
-    organicAmplification: string;
-  };
+  status: "active" | "paused" | "completed" | "draft";
+  startDate: string | null;
+  endDate: string | null;
+  targetAudience?: {
+    ageMin?: number;
+    ageMax?: number;
+    interests?: string[];
+    locations?: string[];
+    platforms?: string[];
+  } | null;
+  creativeIds?: string[] | null;
+  organicMetrics?: Record<string, unknown> | null;
+  connectedPlatforms?: Record<string, unknown> | null;
   aiOptimizations?: {
     performanceBoost: string;
     costReduction: string;
     viralityScore: number;
     algorithmicAdvantage: string;
     realTimeOptimization: boolean;
-  };
+  } | null;
 }
 
 interface SocialConnection {
@@ -137,39 +142,6 @@ interface SocialConnection {
 }
 
 type SocialConnections = SocialConnection[];
-
-interface AutopilotStatus {
-  isRunning: boolean;
-  status: {
-    activeCampaigns: number;
-    performanceMetrics?: {
-      conversions: number;
-      reach: number;
-      engagement: number;
-      revenue: number;
-    };
-    recentActions?: Array<{
-      action: string;
-      campaign: string;
-      status: string;
-      timestamp?: string;
-    }>;
-  };
-  config: {
-    campaignMode?: string;
-    objective?: string;
-    targetAudience?: {
-      ageMin: number;
-      ageMax: number;
-      interests: string[];
-      locations: string[];
-    };
-    optimizationSettings?: {
-      viralOptimization: boolean;
-      algorithmicTargeting: boolean;
-    };
-  };
-}
 
 interface AIInsights {
   recommendations: Array<{
@@ -536,6 +508,7 @@ export default function Advertisement() {
     name: "",
     objective: "",
     duration: 7,
+    creativeIds: [] as string[],
     targetAudience: {
       ageMin: 18,
       ageMax: 65,
@@ -544,6 +517,24 @@ export default function Advertisement() {
       platforms: [] as string[],
     },
   });
+  const [attachedCreativeKeys, setAttachedCreativeKeys] = useState<
+    Set<string>
+  >(new Set());
+  const [editingCampaign, setEditingCampaign] = useState<AdCampaign | null>(
+    null,
+  );
+  const [isEditCampaignOpen, setIsEditCampaignOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    objective: "",
+    budget: 0,
+    dailyBudget: "" as number | "",
+    startDate: "",
+    endDate: "",
+  });
+  const [deletingCampaignId, setDeletingCampaignId] = useState<string | null>(
+    null,
+  );
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -727,6 +718,7 @@ export default function Advertisement() {
         name: "",
         objective: "",
         duration: 7,
+        creativeIds: [],
         targetAudience: {
           ageMin: 18,
           ageMax: 65,
@@ -735,6 +727,7 @@ export default function Advertisement() {
           platforms: [],
         },
       });
+      setAttachedCreativeKeys(new Set());
       setUploadedImage(null);
       setImagePreviewUrl(null);
       queryClient.invalidateQueries({
@@ -751,12 +744,175 @@ export default function Advertisement() {
     },
   });
 
-  useQuery<AutopilotStatus>({
-      queryKey: ["/api/autopilot/status"],
-      enabled: !!user,
-      refetchInterval: 30000,
-      meta: { silentError: true },
+  const updateCampaignMutation = useMutation({
+    mutationFn: async ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Record<string, unknown>;
+    }) => {
+      const response = await apiRequest(
+        "PATCH",
+        `/api/advertising/campaigns/${id}`,
+        updates,
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/advertising/campaigns"],
+      });
+      invalidateOnCampaignChange();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest(
+        "DELETE",
+        `/api/advertising/campaigns/${id}`,
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Campaign Deleted",
+        description: "The campaign has been removed.",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/advertising/campaigns"],
+      });
+      invalidateOnCampaignChange();
+      setDeletingCampaignId(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setDeletingCampaignId(null);
+    },
+  });
+
+  const handleTogglePause = (campaign: AdCampaign) => {
+    const nextStatus = campaign.status === "active" ? "paused" : "active";
+    updateCampaignMutation.mutate(
+      { id: campaign.id, updates: { status: nextStatus } },
+      {
+        onSuccess: () => {
+          toast({
+            title:
+              nextStatus === "paused"
+                ? "Campaign Paused"
+                : "Campaign Resumed",
+            description: `${campaign.name} is now ${nextStatus}.`,
+          });
+        },
+      },
+    );
+  };
+
+  const openEditCampaign = (campaign: AdCampaign) => {
+    setEditingCampaign(campaign);
+    setEditForm({
+      name: campaign.name || "",
+      objective: campaign.objective || "",
+      budget: campaign.budget || 0,
+      dailyBudget: campaign.dailyBudget ?? "",
+      startDate: campaign.startDate
+        ? new Date(campaign.startDate).toISOString().slice(0, 10)
+        : "",
+      endDate: campaign.endDate
+        ? new Date(campaign.endDate).toISOString().slice(0, 10)
+        : "",
     });
+    setIsEditCampaignOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingCampaign) return;
+    if (!editForm.name.trim()) {
+      toast({
+        title: "Campaign Name Required",
+        description: "Please enter a name for your campaign.",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateCampaignMutation.mutate(
+      {
+        id: editingCampaign.id,
+        updates: {
+          name: editForm.name,
+          objective: editForm.objective || null,
+          budget: Number(editForm.budget) || 0,
+          dailyBudget:
+            editForm.dailyBudget === ""
+              ? null
+              : Number(editForm.dailyBudget),
+          startDate: editForm.startDate || null,
+          endDate: editForm.endDate || null,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Campaign Updated",
+            description: `${editForm.name} has been updated.`,
+          });
+          setIsEditCampaignOpen(false);
+          setEditingCampaign(null);
+        },
+      },
+    );
+  };
+
+  const handleAttachCreative = async (
+    kind: "image" | "video",
+    mediaUrl: string,
+    thumbnailUrl?: string,
+  ) => {
+    const key = `${kind}-${mediaUrl}`;
+    try {
+      const response = await apiRequest(
+        "POST",
+        "/api/advertising/creatives",
+        {
+          name: `AI ${kind} creative`,
+          type: kind,
+          mediaUrl,
+          thumbnailUrl,
+        },
+      );
+      const data = await response.json();
+      setCampaignForm((prev) => ({
+        ...prev,
+        creativeIds: [...prev.creativeIds, data.creative.id],
+      }));
+      setAttachedCreativeKeys((prev) => new Set(prev).add(key));
+      toast({
+        title: "Added to Campaign",
+        description:
+          "This creative will be attached to the next campaign you activate.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Attach Creative",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (authLoading) {
     return (
@@ -851,12 +1007,12 @@ export default function Advertisement() {
     createCampaignMutation.mutate(campaignForm);
   };
 
-  campaigns.reduce(
-    (acc: number, campaign: AdCampaign) => acc + campaign.impressions,
+  const totalImpressions = campaigns.reduce(
+    (acc: number, campaign: AdCampaign) => acc + (campaign.impressions ?? 0),
     0,
   );
-  campaigns.reduce(
-    (acc: number, campaign: AdCampaign) => acc + campaign.clicks,
+  const totalClicks = campaigns.reduce(
+    (acc: number, campaign: AdCampaign) => acc + (campaign.clicks ?? 0),
     0,
   );
 
@@ -1209,6 +1365,157 @@ export default function Advertisement() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            <Dialog
+              open={isEditCampaignOpen}
+              onOpenChange={setIsEditCampaignOpen}
+            >
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Edit Campaign</DialogTitle>
+                  <DialogDescription>
+                    Update your campaign's details. Targeting and platform
+                    changes require creating a new campaign.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Campaign Name</Label>
+                    <Input
+                      value={editForm.name}
+                      onChange={(e) =>
+                        setEditForm((p) => ({ ...p, name: e.target.value }))
+                      }
+                      data-testid="input-edit-campaign-name"
+                    />
+                  </div>
+                  <div>
+                    <Label>Objective</Label>
+                    <Input
+                      value={editForm.objective}
+                      onChange={(e) =>
+                        setEditForm((p) => ({
+                          ...p,
+                          objective: e.target.value,
+                        }))
+                      }
+                      data-testid="input-edit-campaign-objective"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Total Budget ($)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={editForm.budget}
+                        onChange={(e) =>
+                          setEditForm((p) => ({
+                            ...p,
+                            budget: Number(e.target.value),
+                          }))
+                        }
+                        data-testid="input-edit-campaign-budget"
+                      />
+                    </div>
+                    <div>
+                      <Label>Daily Budget ($)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={editForm.dailyBudget}
+                        onChange={(e) =>
+                          setEditForm((p) => ({
+                            ...p,
+                            dailyBudget:
+                              e.target.value === ""
+                                ? ""
+                                : Number(e.target.value),
+                          }))
+                        }
+                        data-testid="input-edit-campaign-daily-budget"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Start Date</Label>
+                      <Input
+                        type="date"
+                        value={editForm.startDate}
+                        onChange={(e) =>
+                          setEditForm((p) => ({
+                            ...p,
+                            startDate: e.target.value,
+                          }))
+                        }
+                        data-testid="input-edit-campaign-start-date"
+                      />
+                    </div>
+                    <div>
+                      <Label>End Date</Label>
+                      <Input
+                        type="date"
+                        value={editForm.endDate}
+                        onChange={(e) =>
+                          setEditForm((p) => ({
+                            ...p,
+                            endDate: e.target.value,
+                          }))
+                        }
+                        data-testid="input-edit-campaign-end-date"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditCampaignOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveEdit}
+                    disabled={updateCampaignMutation.isPending}
+                    data-testid="button-save-campaign-edit"
+                  >
+                    {updateCampaignMutation.isPending
+                      ? "Saving..."
+                      : "Save Changes"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <AlertDialog
+              open={!!deletingCampaignId}
+              onOpenChange={(open) => !open && setDeletingCampaignId(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this campaign?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes the campaign. Its creatives are
+                    kept and can be reused in a new campaign. This cannot be
+                    undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 hover:bg-red-700"
+                    onClick={() =>
+                      deletingCampaignId &&
+                      deleteCampaignMutation.mutate(deletingCampaignId)
+                    }
+                    data-testid="button-confirm-delete-campaign"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
 
           <Card className="border-2 border-gradient-to-r from-purple-500 to-pink-600 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950">
@@ -1355,6 +1662,125 @@ export default function Advertisement() {
                   </CardContent>
                 </Card>
               </div>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <CardTitle className="flex items-center">
+                      <Target className="w-5 h-5 mr-2 text-blue-600" />
+                      Your Campaigns
+                    </CardTitle>
+                    {campaigns.length > 0 && (
+                      <div className="flex gap-4 text-sm text-muted-foreground">
+                        <span>
+                          {totalImpressions.toLocaleString()} impressions
+                        </span>
+                        <span>{totalClicks.toLocaleString()} clicks</span>
+                      </div>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {campaigns.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Target className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                      <p>
+                        No campaigns yet. Create one below to start reaching a
+                        wider audience.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {campaigns.map((campaign) => (
+                        <div
+                          key={campaign.id}
+                          className="p-4 rounded-lg border flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                          data-testid={`campaign-row-${campaign.id}`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-medium truncate">
+                                {campaign.name}
+                              </h4>
+                              <Badge
+                                className={
+                                  campaign.status === "active"
+                                    ? "bg-green-500/10 text-green-600"
+                                    : campaign.status === "paused"
+                                      ? "bg-yellow-500/10 text-yellow-600"
+                                      : campaign.status === "completed"
+                                        ? "bg-blue-500/10 text-blue-600"
+                                        : "bg-gray-500/10 text-gray-600"
+                                }
+                              >
+                                {campaign.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {campaign.platform}
+                              {campaign.objective
+                                ? ` • ${campaign.objective}`
+                                : ""}
+                              {campaign.startDate
+                                ? ` • Started ${new Date(campaign.startDate).toLocaleDateString()}`
+                                : ""}
+                            </p>
+                            <div className="flex gap-4 mt-2 text-sm">
+                              <span>
+                                <strong>
+                                  {(campaign.impressions ?? 0).toLocaleString()}
+                                </strong>{" "}
+                                impressions
+                              </span>
+                              <span>
+                                <strong>
+                                  {(campaign.clicks ?? 0).toLocaleString()}
+                                </strong>{" "}
+                                clicks
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditCampaign(campaign)}
+                              data-testid={`button-edit-campaign-${campaign.id}`}
+                            >
+                              <Pencil className="w-3.5 h-3.5 mr-1" />
+                              Edit
+                            </Button>
+                            {campaign.status !== "completed" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleTogglePause(campaign)}
+                                disabled={updateCampaignMutation.isPending}
+                                data-testid={`button-toggle-campaign-${campaign.id}`}
+                              >
+                                {campaign.status === "active"
+                                  ? "Pause"
+                                  : "Resume"}
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() =>
+                                setDeletingCampaignId(campaign.id)
+                              }
+                              data-testid={`button-delete-campaign-${campaign.id}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               <PromoteContentCard />
 
@@ -1669,21 +2095,42 @@ export default function Advertisement() {
                         Generated Video Creatives ({generatedVideos.length})
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {generatedVideos.slice(-6).map((video, index) => (
-                          <div
-                            key={index}
-                            className="rounded-lg overflow-hidden border bg-card"
-                          >
-                            <VideoPlayer
-                              src={video.url}
-                              poster={video.posterUrl}
-                              className="w-full aspect-video object-cover"
-                            />
-                            <div className="p-2 text-xs text-muted-foreground">
-                              {video.createdAt.toLocaleString()}
+                        {generatedVideos.slice(-6).map((video, index) => {
+                          const creativeKey = `video-${video.url}`;
+                          const isAttached =
+                            attachedCreativeKeys.has(creativeKey);
+                          return (
+                            <div
+                              key={index}
+                              className="rounded-lg overflow-hidden border bg-card"
+                            >
+                              <VideoPlayer
+                                src={video.url}
+                                poster={video.posterUrl}
+                                className="w-full aspect-video object-cover"
+                              />
+                              <div className="p-2 text-xs text-muted-foreground flex items-center justify-between gap-2">
+                                <span>{video.createdAt.toLocaleString()}</span>
+                                <Button
+                                  size="sm"
+                                  variant={isAttached ? "secondary" : "outline"}
+                                  className="h-6 px-2 text-xs shrink-0"
+                                  disabled={isAttached}
+                                  onClick={() =>
+                                    handleAttachCreative(
+                                      "video",
+                                      video.url,
+                                      video.posterUrl,
+                                    )
+                                  }
+                                  data-testid={`button-use-video-${index}`}
+                                >
+                                  {isAttached ? "Added ✓" : "Use in Campaign"}
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1695,21 +2142,38 @@ export default function Advertisement() {
                         Generated Image Creatives ({generatedAdImages.length})
                       </h4>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {generatedAdImages.slice(-8).map((img, index) => (
-                          <div
-                            key={index}
-                            className="rounded-lg overflow-hidden border bg-card"
-                          >
-                            <img
-                              src={img.url}
-                              alt="Ad creative"
-                              className="w-full aspect-square object-cover"
-                            />
-                            <div className="p-1.5 text-xs text-muted-foreground">
-                              {img.createdAt.toLocaleString()}
+                        {generatedAdImages.slice(-8).map((img, index) => {
+                          const creativeKey = `image-${img.url}`;
+                          const isAttached =
+                            attachedCreativeKeys.has(creativeKey);
+                          return (
+                            <div
+                              key={index}
+                              className="rounded-lg overflow-hidden border bg-card"
+                            >
+                              <img
+                                src={img.url}
+                                alt="Ad creative"
+                                className="w-full aspect-square object-cover"
+                              />
+                              <div className="p-1.5 text-xs text-muted-foreground space-y-1">
+                                <div>{img.createdAt.toLocaleString()}</div>
+                                <Button
+                                  size="sm"
+                                  variant={isAttached ? "secondary" : "outline"}
+                                  className="h-6 px-2 text-xs w-full"
+                                  disabled={isAttached}
+                                  onClick={() =>
+                                    handleAttachCreative("image", img.url)
+                                  }
+                                  data-testid={`button-use-image-${index}`}
+                                >
+                                  {isAttached ? "Added ✓" : "Use in Campaign"}
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

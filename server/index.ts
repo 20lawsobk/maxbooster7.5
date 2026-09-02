@@ -432,10 +432,13 @@ app.get("/api/boot-status", (_req: Request, res: Response) => {
 });
 
 // Early client-error collector — registered here so it is reachable immediately
-// after the server starts listening (before registerRoutes completes).  The full
-// route at routes?.ts also registers this path; once that handler is active it
-// takes precedence because Express matches the first registered handler.
-app.post("/api/errors", (_req: Request, res: Response) => {
+// after the server starts listening (before registerRoutes completes). The full
+// route at routes.ts also registers this path; Express always matches the FIRST
+// registered handler, so once _routesReady flips this stub calls next() and
+// hands off to the real handler. Without that handoff this stub would
+// permanently shadow the real one instead of merely covering the boot window.
+app.post("/api/errors", (_req: Request, res: Response, next: NextFunction) => {
+  if (_routesReady) return next();
   res.json({ received: true });
 });
 
@@ -503,12 +506,18 @@ const bootReadinessStub = (
 app.get("/api/ready", bootReadinessStub);
 app.get("/api/health/ready", bootReadinessStub);
 
-app.post("/api/metrics/web-vitals", (_req: Request, res: Response) => {
-  // Silently accept browser web-vitals payloads during the boot window so the
-  // browser doesn't log 404 errors on first paint.  Metrics from this window
-  // are lost; that's acceptable — the real handler registers within seconds.
-  res.status(204).end();
-});
+app.post(
+  "/api/metrics/web-vitals",
+  (_req: Request, res: Response, next: NextFunction) => {
+    // Silently accept browser web-vitals payloads during the boot window so the
+    // browser doesn't log 404 errors on first paint. Metrics from this window
+    // are lost; that's acceptable — the real handler registers within seconds.
+    // Once _routesReady flips, hand off to that real handler instead of
+    // permanently swallowing every future submission.
+    if (_routesReady) return next();
+    res.status(204).end();
+  },
+);
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   // Once the real SPA handler is wired, this middleware is a no-op.
@@ -972,26 +981,20 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Autonomous systems initialization is deferred to after server starts
   // to ensure fast cold start times for landing page loading
 
-  // Import the four /api middleware modules concurrently — their initialization is
+  // Import the three /api middleware modules concurrently — their initialization is
   // independent so there is no reason to await them one at a time (~1s saved).
-  const [demoAuthResult, rateLimiterResult, admissionResult, apiCacheResult] =
+  // NOTE: blockDemoWrite is intentionally NOT loaded/mounted here. It must run
+  // after attachUser populates req.user, and attachUser is only mounted inside
+  // registerRoutes() (called later, below). It is now statically imported and
+  // mounted directly in server/routes.ts, immediately after attachUser.
+  const [rateLimiterResult, admissionResult, apiCacheResult] =
     await Promise.allSettled([
-      import("./auth.js"),
       import("./middleware/scalableRateLimiter.js"),
       import("./middleware/admissionControl.js"),
       import("./middleware/apiCache.js"),
     ]);
 
   // Apply each in the correct precedence order (import order above matches use order)
-  if (demoAuthResult?.status === "fulfilled") {
-    app.use("/api", demoAuthResult?.value.blockDemoWrite);
-    logger.info("✅ Demo write protection applied");
-  } else {
-    logger.warn(
-      `⚠️ Demo write protection not available: ${((demoAuthResult as PromiseRejectedResult).reason as Error)?.message}`,
-    );
-  }
-
   if (rateLimiterResult?.status === "fulfilled") {
     app.use("/api", rateLimiterResult?.value.globalScalableRateLimiter);
     logger.info("✅ Scalable rate limiter applied");
@@ -1140,6 +1143,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   logger.info(
     "[Boot] Routes registered — boot stubs deactivated, real handlers active",
   );
+
+  // Register Swagger/OpenAPI docs (/api-docs, /api-docs.json) now that the real
+  // routes are live, but before setupVite()/serveStatic() mount their catch-all
+  // middleware below — otherwise these two paths fall through to Vite's dev
+  // middleware (which fails trying to parse them as a JSON asset) or the SPA's
+  // index.html fallback in production, neither serving real API docs.
+  const { setupSwagger } = await import("./swagger.js");
+  setupSwagger(app);
 
   // Eagerly initialize push services so credentials are validated and status
   // is logged at startup rather than on first route hit.

@@ -14,8 +14,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Progress } from "@/components/ui/progress";
-import { Download, Waves, Clock, HardDrive, Zap } from "lucide-react";
+import {
+  Download,
+  Waves,
+  Clock,
+  HardDrive,
+  Zap,
+  AlertTriangle,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ExportSettings {
@@ -106,10 +112,10 @@ export function FlowStateExport({
 }: FlowStateExportProps) {
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
-  const [exportProgress, setExportProgress] = useState(0);
   const [exportPhase, setExportPhase] = useState<
-    "preparing" | "rendering" | "encoding" | "complete"
+    "preparing" | "rendering" | "complete" | "error"
   >("preparing");
+  const [exportError, setExportError] = useState<string | null>(null);
   const [estimatedSize, setEstimatedSize] = useState<string>("");
   const [estimatedTime, setEstimatedTime] = useState<string>("");
 
@@ -173,27 +179,12 @@ export function FlowStateExport({
 
   const startExport = useCallback(async () => {
     setIsExporting(true);
-    setExportProgress(0);
     setExportPhase("preparing");
+    setExportError(null);
     onExportStart?.(settings);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
       setExportPhase("rendering");
-
-      for (let i = 0; i <= 70; i += 5) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        setExportProgress(i);
-      }
-
-      setExportPhase("encoding");
-
-      for (let i = 70; i <= 100; i += 5) {
-        await new Promise((resolve) => setTimeout(resolve, 80));
-        setExportProgress(i);
-      }
-
-      setExportPhase("complete");
 
       const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/studio/projects/${projectId}/render`, {
@@ -206,26 +197,46 @@ export function FlowStateExport({
         body: JSON.stringify(settings),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        onExportComplete?.(data.downloadUrl);
-        toast({
-          title: "Export complete!",
-          description: `${settings.filename}.${settings.format} is ready for download.`,
-        });
-      } else {
-        throw new Error("Export failed");
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.downloadUrl) {
+        throw new Error(
+          data?.error || "Export failed. Please try again.",
+        );
       }
-    } catch (error) {
+
+      setExportPhase("complete");
+      onExportComplete?.(data.downloadUrl);
       toast({
-        title: "Export complete",
-        description: "Your file is ready for download.",
+        title: "Export complete!",
+        description: `${settings.filename}.${settings.format} is ready for download.`,
       });
-      onExportComplete?.(`/api/studio/projects/${projectId}/download`);
-    } finally {
-      setIsExporting(false);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to export your audio. Please try again.";
+      setExportPhase("error");
+      setExportError(message);
+      toast({
+        title: "Export Failed",
+        description: message,
+        variant: "destructive",
+      });
     }
   }, [projectId, settings, onExportStart, onExportComplete, toast]);
+
+  const handleTryAgain = useCallback(() => {
+    setIsExporting(false);
+    setExportPhase("preparing");
+    setExportError(null);
+  }, []);
+
+  const handleDoneExporting = useCallback(() => {
+    setIsExporting(false);
+    setExportPhase("preparing");
+    onOpenChange(false);
+  }, [onOpenChange]);
 
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -249,32 +260,58 @@ export function FlowStateExport({
             >
               <div className="text-center space-y-2">
                 <motion.div
-                  animate={{ rotate: 360 }}
+                  animate={
+                    exportPhase === "rendering" || exportPhase === "preparing"
+                      ? { rotate: 360 }
+                      : {}
+                  }
                   transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                  className="w-16 h-16 mx-auto rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center"
+                  className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${
+                    exportPhase === "error"
+                      ? "bg-red-500"
+                      : exportPhase === "complete"
+                        ? "bg-green-500"
+                        : "bg-gradient-to-r from-blue-500 to-purple-500"
+                  }`}
                 >
-                  <Waves className="h-8 w-8 text-white" />
+                  {exportPhase === "error" ? (
+                    <AlertTriangle className="h-8 w-8 text-white" />
+                  ) : (
+                    <Waves className="h-8 w-8 text-white" />
+                  )}
                 </motion.div>
                 <h2 className="text-xl font-bold text-white">
                   {exportPhase === "preparing" && "Preparing export..."}
                   {exportPhase === "rendering" && "Rendering audio..."}
-                  {exportPhase === "encoding" && "Encoding file..."}
                   {exportPhase === "complete" && "Export complete!"}
+                  {exportPhase === "error" && "Export failed"}
                 </h2>
                 <p className="text-white/60">
-                  {settings.filename}.{settings.format}
+                  {exportPhase === "error"
+                    ? exportError
+                    : `${settings.filename}.${settings.format}`}
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/60">Progress</span>
-                  <span className="text-white font-mono">
-                    {exportProgress}%
-                  </span>
+              {exportPhase !== "error" && (
+                <div className="space-y-2">
+                  <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden relative">
+                    {exportPhase === "complete" ? (
+                      <div className="h-full w-full bg-green-500" />
+                    ) : (
+                      <motion.div
+                        className="h-full w-1/3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                        animate={{ x: ["-10%", "310%"] }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 1.2,
+                          ease: "easeInOut",
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
-                <Progress value={exportProgress} className="h-2" />
-              </div>
+              )}
 
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="p-3 bg-slate-900 rounded-lg">
@@ -299,6 +336,31 @@ export function FlowStateExport({
                   </p>
                 </div>
               </div>
+
+              {exportPhase === "error" && (
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleTryAgain}
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              )}
+
+              {exportPhase === "complete" && (
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleDoneExporting}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Done
+                  </Button>
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div

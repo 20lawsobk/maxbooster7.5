@@ -30,6 +30,7 @@ import {
   cacheMiddleware,
   invalidateCacheOnMutation,
 } from "./middleware/apiCache.js";
+import { blockDemoWrite } from "./auth.js";
 
 const authenticator = {
   generateSecret: () => otpGenerateSecret(),
@@ -262,6 +263,15 @@ export async function registerRoutes(
 
   // Apply user attachment middleware to all routes
   app.use(attachUser);
+
+  // Demo-account write protection. MUST be mounted after attachUser: it
+  // gates on req.user.email, and attachUser is the only middleware in the
+  // app that populates req.user (session-based auth, no Passport). Mounting
+  // this any earlier means req.user is always undefined here, so the gate's
+  // `req.user?.email !== "demo@maxbooster.ai"` check is always true and it
+  // silently allows every write, for every user — this previously happened
+  // because it was mounted in index.ts before registerRoutes() ran.
+  app.use("/api", blockDemoWrite);
 
   // Smart per-user API response caching (30 s TTL, ETag, stale-while-revalidate)
   // GET responses are cached per-user+path+query; any mutation clears that user's cache.
@@ -649,7 +659,7 @@ export async function registerRoutes(
   // Auth: Inactivity heartbeat — called by the frontend whenever the user is active.
   // Rolling session auto-extends the cookie. No DB update needed.
   app.post("/api/auth/heartbeat", (req: Request, res: Response) => {
-    const userId = req.session.userId || req.user!.id;
+    const userId = req.session.userId || req.user?.id;
     if (!userId) {
       return res.status(401).json({ ok: false });
     }
@@ -659,7 +669,7 @@ export async function registerRoutes(
 
   // Auth: Session refresh heartbeat (keeps session alive, renews CSRF)
   app.post("/api/auth/refresh-token", async (req: Request, res: Response) => {
-    const userId = req.session.userId || req.user!.id;
+    const userId = req.session.userId || req.user?.id;
 
     if (!userId) {
       return res.status(401).json({
@@ -938,54 +948,10 @@ export async function registerRoutes(
     }
   });
 
-  // Auth: Get sessions
-  app.get("/api/auth/sessions", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    try {
-      // Get user sessions from database
-      const userSessions = await storage.getSessionsByUserId(req.user.id);
-
-      // Format sessions for frontend display
-      const formattedSessions = userSessions.map((session) => ({
-        id: session.id,
-        device: session.userAgent || "Unknown Device",
-        location: "Unknown",
-        time: session.lastActivity
-          ? new Date(session.lastActivity).toLocaleString()
-          : "Unknown",
-        current: session.id === req.session.id,
-      }));
-
-      // Always include current session if not in list
-      const currentSessionExists = formattedSessions.some((s) => s.current);
-      if (!currentSessionExists) {
-        formattedSessions.unshift({
-          id: req.session.id,
-          device: "Current Device",
-          location: "Unknown",
-          time: new Date().toLocaleString(),
-          current: true,
-        });
-      }
-
-      return res.json(formattedSessions);
-    } catch (error) {
-      logger.warn({ err: error }, "Get sessions error");
-      // Fallback to current session only
-      return res.json([
-        {
-          id: req.session.id,
-          device: "Current Device",
-          location: "Unknown",
-          time: new Date().toLocaleString(),
-          current: true,
-        },
-      ]);
-    }
-  });
+  // Auth: Get sessions — handled by the dedicated, requireAuth-gated router in
+  // server/routes/auth.ts (GET /api/auth/sessions), which additionally decodes
+  // device/browser/OS from the user agent. This inline copy was dead code
+  // (registered later than the dynamic auth router mount) and has been removed.
 
   // Auth: Terminate session
   app.post(
@@ -1097,53 +1063,12 @@ export async function registerRoutes(
     },
   );
 
-  // Auth: Delete all other sessions (alias for terminate-all)
-  app.delete(
-    "/api/auth/sessions/other",
-    async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      try {
-        const currentSessionId = req.session.id;
-        const userSessions = await storage.getSessionsByUserId(req.user.id);
-        let terminatedCount = 0;
-
-        for (const session of userSessions) {
-          if (session.id !== currentSessionId) {
-            const deleted = await storage.deleteSession(session.id);
-            if (deleted) {
-              terminatedCount++;
-              try {
-                const { getRedisClient } = await import(
-                  "./lib/redisConnectionFactory.js"
-                );
-                const redisClient = await getRedisClient();
-                if (redisClient) {
-                  await (redisClient as any).del(`maxbooster:sess:${session.id}`);
-                }
-              } catch (redisError) {
-                logger.warn(
-                  { err: redisError, sessionId: session.id },
-                  "[Sessions] Failed to clean up Redis session key after DB delete",
-                );
-              }
-            }
-          }
-        }
-
-        return res.json({
-          success: true,
-          message: `${terminatedCount} session(s) terminated`,
-        });
-      } catch (error) {
-        logger.warn({ err: error }, "Delete other sessions error");
-        return res
-          .status(500)
-          .json({ message: "Failed to terminate other sessions" });
-      }
-    },
-  );
+  // Auth: Delete all other sessions — handled by the dedicated, requireAuth-gated
+  // router in server/routes/auth.ts (DELETE /api/auth/sessions/other), which also
+  // records a securityThreats audit entry for the remote termination. This inline
+  // copy was dead code (registered later than the dynamic auth router mount) and
+  // lacked that audit logging, so it has been removed rather than kept as a
+  // shadowed duplicate.
 
   // Auth: Get login history
   app.get("/api/auth/login-history", async (req: Request, res: Response) => {
@@ -1643,6 +1568,13 @@ export async function registerRoutes(
   // Storage: Serve files from hybrid storage (Replit hot + Pocket Dimension cold)
   app.get("/api/storage/file/*key", async (req: Request, res: Response) => {
     try {
+      // Requires auth: files under users/<ownerId>/... are private, and without
+      // this check any anonymous caller who knows/guesses a storage key could
+      // download any user's private uploads.
+      if (!req.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
       // Express 5 already percent-decodes params — decoding again would allow
       // double-encoded ".." traversal. Only join the wildcard segments.
       const rawKey = (req.params as Record<string, string | string[]>).key;
@@ -1650,6 +1582,16 @@ export async function registerRoutes(
 
       if (!key || key.startsWith("/") || key.includes("..") || key.includes("\0") || key.includes("\\")) {
         return res.status(400).json({ message: "File key is required" });
+      }
+
+      // Per-user files are keyed "users/<ownerId>/...". Without this check any
+      // authenticated user could read any other user's private uploads just by
+      // knowing/guessing their storage key.
+      if (key.startsWith("users/")) {
+        const ownerId = key.split("/")[1];
+        if (ownerId !== req.user.id) {
+          return res.status(403).json({ message: "Access denied" });
+        }
       }
 
       const { storageService } = await import("./services/storageService.js");
@@ -1713,7 +1655,10 @@ export async function registerRoutes(
 
       res.setHeader("Content-Type", contentType);
       res.setHeader("Content-Length", fileBuffer.length);
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      // "private" (not "public") — this endpoint now requires auth and gates
+      // users/* keys by owner, so a shared/CDN cache must never store a
+      // response that was only authorized for one specific requester.
+      res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
       res.setHeader("X-Storage-Tier", storageTier);
 
       return res.send(fileBuffer);
@@ -4710,55 +4655,12 @@ export async function registerRoutes(
     },
   );
 
-  // AI: Insights
-  app.get("/api/ai/insights", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    try {
-      // Calculate a basic performance score based on user activity
-      const projects = await storage.getProjectsByUserId(req.user.id);
-      const projectCount = projects.length || 0;
-
-      // Calculate performance score (0-100 scale)
-      let performanceScore = 25; // Base score for having an account
-      if (projectCount > 0) performanceScore += 15; // Has projects
-      if (projectCount >= 3) performanceScore += 10; // Multiple projects
-      if (projectCount >= 5) performanceScore += 10; // Active user
-      if (req.user.subscriptionTier && req.user.subscriptionTier !== "free")
-        performanceScore += 15; // Paying customer
-      if (req.user.onboardingCompleted) performanceScore += 10; // Completed onboarding
-      if (req.user.twoFactorEnabled) performanceScore += 5; // Security conscious
-      if (req.user.firstName || req.user.lastName) performanceScore += 5; // Profile filled
-      if (req.user.bio) performanceScore += 5; // Has bio
-
-      // Cap at 100
-      performanceScore = Math.min(performanceScore, 100);
-
-      return res.json({
-        performanceScore,
-        recommendations: [
-          {
-            id: "upload-track",
-            title: "Upload Your First Track",
-            description: "Get started by uploading music to distribute",
-            priority: projectCount === 0 ? "high" : "low",
-          },
-          {
-            id: "connect-social",
-            title: "Connect Social Accounts",
-            description: "Link your social media for better reach",
-            priority: "medium",
-          },
-        ],
-        trends: [],
-        opportunities: [],
-      });
-    } catch (error) {
-      logger.warn({ err: error }, "AI insights error");
-      return res.status(500).json({ message: "Failed to fetch AI insights" });
-    }
-  });
+  // AI: Insights — handled by the dedicated, requireAuth + MaxCore-gated router
+  // in server/routes/ai.ts (GET /api/ai/insights), which calls the real
+  // unifiedAIController instead of a hand-rolled account-activity heuristic.
+  // This inline copy was dead code (registered earlier, so it always shadowed
+  // the real handler) and returned a fabricated "performance score" rather than
+  // real insights, so it has been removed.
 
   // Accessibility preferences endpoints
   try {
@@ -5110,75 +5012,12 @@ export async function registerRoutes(
     },
   );
 
-  // Audit and testing endpoints
-  app.get("/api/audit/results", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    try {
-      return res.json({
-        overallScore: 88,
-        securityScore: 90,
-        functionalityScore: 92,
-        performanceScore: 85,
-        codeQualityScore: 87,
-        accessibilityScore: 80,
-        seoScore: 82,
-        issues: [],
-        recommendations: [
-          {
-            title: "Enable 2FA enforcement",
-            description: "Require 2FA for all admin accounts.",
-            priority: "medium",
-          },
-          {
-            title: "Review rate limits",
-            description: "Tune per-route rate limits for public endpoints.",
-            priority: "low",
-          },
-        ],
-        compliance: {
-          GDPR: true,
-          CCPA: true,
-          SOC2: false,
-          HIPAA: false,
-          PCI: false,
-        },
-        lastAudit: new Date().toISOString(),
-      });
-    } catch (error) {
-      logger.warn({ err: error }, "Audit results error");
-      return res.status(500).json({ message: "Failed to fetch audit results" });
-    }
-  });
-
-  app.get("/api/testing/results", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    try {
-      return res.json({
-        overallScore: 80,
-        unitTestScore: 85,
-        integrationTestScore: 78,
-        e2eTestScore: 72,
-        performanceTestScore: 80,
-        securityTestScore: 88,
-        accessibilityTestScore: 70,
-        passedTests: 142,
-        failedTests: 8,
-        skippedTests: 12,
-        totalTests: 162,
-        coverage: { statements: 74, branches: 68, functions: 79, lines: 75 },
-        lastRun: new Date().toISOString(),
-      });
-    } catch (error) {
-      logger.warn({ err: error }, "Testing results error");
-      return res
-        .status(500)
-        .json({ message: "Failed to fetch testing results" });
-    }
-  });
+  // Audit and testing endpoints — handled by the dedicated, admin + 2FA-gated
+  // routers in server/routes/audit.ts (GET /api/audit/results) and
+  // server/routes/testing.ts (GET /api/testing/results). Both inline copies
+  // below were dead code (registered earlier, so they always shadowed the real
+  // handlers) AND returned fully hardcoded fake scores with no admin/2FA gate,
+  // so they have been removed rather than kept as shadowed duplicates.
 
   // Complete onboarding endpoint
   app.post(

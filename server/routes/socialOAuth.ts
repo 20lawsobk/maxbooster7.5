@@ -320,61 +320,9 @@ function getCallbackUrl(platform: string): string {
   return `${baseUrl}${path}`;
 }
 
-router.get(
-  "/connections",
-  requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const connections = await db
-        .select()
-        .from(socialAccounts)
-        .where(eq(socialAccounts.userId, userId))
-        .limit(50);
-
-      const enrichedConnections = connections.map((c) => {
-        const isTokenExpired = c.tokenExpiresAt
-          ? new Date(c.tokenExpiresAt) < new Date()
-          : false;
-        const tokenExpiresIn = c.tokenExpiresAt
-          ? Math.max(
-              0,
-              Math.floor(
-                (new Date(c.tokenExpiresAt).getTime() - Date.now()) / 1000,
-              ),
-            )
-          : null;
-
-        let status: "connected" | "disconnected" | "expired" | "error" =
-          "connected";
-        if (!c.isActive) status = "disconnected";
-        else if (isTokenExpired) status = "expired";
-
-        return {
-          platform: c.platform,
-          username: c.username,
-          connected: c.isActive && !isTokenExpired,
-          connectedAt: c.createdAt,
-          status,
-          tokenExpiresAt: c.tokenExpiresAt,
-          tokenExpiresIn,
-          followers: c.followerCount || 0,
-          followerCount: c.followerCount || 0,
-          profileUrl: c.profileUrl || "",
-          platformUserId: c.platformUserId || "",
-          metadata: c.metadata || {},
-          lastSync: c.createdAt,
-          requiresReauth: isTokenExpired,
-        };
-      });
-
-      res.json(enrichedConnections);
-    } catch (error) {
-      logger.warn({ err: error }, "Failed to get social connections:");
-      res.status(500).json({ error: "Failed to get social connections" });
-    }
-  },
-);
+// GET /connections is handled by the socialMedia router (registered first, at
+// the same /api/social mount) which now includes this handler's expiry/status
+// enrichment. This copy was dead code and has been removed.
 
 router.get(
   "/platforms",

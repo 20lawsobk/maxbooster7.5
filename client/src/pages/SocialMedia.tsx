@@ -346,14 +346,6 @@ interface CalendarStats {
   totalPublished?: number;
 }
 
-interface AutopilotStatus {
-  isRunning?: boolean;
-  postsGenerated?: number;
-  postsPublished?: number;
-  engagement?: number;
-  lastActivity?: string;
-}
-
 // Social Media Platforms
 const SOCIAL_PLATFORMS: SocialPlatform[] = [
   {
@@ -454,11 +446,8 @@ export default function SocialMedia() {
   const queryClient = useQueryClient();
   const { invalidateOnSocialChange } = useAnalyticsInvalidation();
   const [location, navigate] = useLocation();
-  const {
-    trackSocialAccountConnected,
-    trackSocialAutopilotActivated,
-    trackFirstPostScheduled,
-  } = useOnboardingProgress();
+  const { trackSocialAccountConnected, trackFirstPostScheduled } =
+    useOnboardingProgress();
   const {
     outcome,
     showOutcome,
@@ -1385,84 +1374,9 @@ export default function SocialMedia() {
     },
   });
 
-  // Autopilot Queries and Mutations
-  useQuery<AutopilotStatus>({
-      queryKey: ["/api/autopilot/status"],
-      enabled: !!user,
-      refetchInterval: 30000,
-      meta: { silentError: true },
-    });
-
-  useMutation({
-    mutationFn: async (config: unknown) => {
-      const response = await apiRequest(
-        "POST",
-        "/api/autopilot/configure",
-        config,
-      );
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Autopilot Configured",
-        description: "Your autopilot settings have been updated.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/autopilot/status"] });
-      invalidateOnSocialChange();
-    },
-    onError: () => {
-      toast({
-        title: "Configuration Failed",
-        description: "Failed to configure autopilot. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/autopilot/start", {});
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Autopilot Started",
-        description: "Autopilot is now managing your social media posts.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/autopilot/status"] });
-      invalidateOnSocialChange();
-      trackSocialAutopilotActivated();
-    },
-    onError: () => {
-      toast({
-        title: "Start Failed",
-        description: "Failed to start autopilot. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/autopilot/stop", {});
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Autopilot Stopped",
-        description: "Autopilot has been stopped.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/autopilot/status"] });
-      invalidateOnSocialChange();
-    },
-    onError: () => {
-      toast({
-        title: "Stop Failed",
-        description: "Failed to stop autopilot. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+  // Note: Autopilot is managed entirely by AutopilotDashboard (rendered in the
+  // "Autopilot" tab below), which has its own status query and
+  // configure/start/stop mutations against the same /api/autopilot/* routes.
 
   // Handler Functions
   const handleConnectPlatform = async (platformId: string) => {

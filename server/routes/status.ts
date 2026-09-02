@@ -102,9 +102,12 @@ router.get("/services/:serviceId/uptime", async (req, res) => {
 
     res.json(uptime);
   } catch (error: unknown) {
-    logger.warn({ err: error }, "Error fetching uptime history:");
     const message =
       error instanceof Error ? error?.message : "Failed to fetch uptime history";
+    if (message === "Service not found") {
+      return res.status(404).json({ error: message });
+    }
+    logger.warn({ err: error }, "Error fetching uptime history:");
     res.status(500).json({ error: message });
   }
 });

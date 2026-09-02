@@ -460,6 +460,184 @@ router.post(
   },
 );
 
+router.patch(
+  "/campaigns/:id",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { id } = req.params as Record<string, string>;
+
+      const [existing] = await db
+        .select()
+        .from(adCampaigns)
+        .where(and(eq(adCampaigns.id, id), eq(adCampaigns.userId, userId)))
+        .limit(1);
+
+      if (!existing) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      const {
+        name,
+        objective,
+        budget,
+        dailyBudget,
+        startDate,
+        endDate,
+        targetAudience,
+        status,
+      } = (req.body ?? {}) as Record<string, unknown>;
+
+      const updates: Record<string, unknown> = { updatedAt: new Date() };
+
+      if (name !== undefined) {
+        if (typeof name !== "string" || !name.trim()) {
+          return res
+            .status(400)
+            .json({ error: "Campaign name cannot be empty" });
+        }
+        updates.name = name;
+      }
+
+      if (objective !== undefined) {
+        updates.objective = objective || null;
+      }
+
+      if (budget !== undefined) {
+        const parsedBudget = Number(budget);
+        if (!Number.isFinite(parsedBudget) || parsedBudget < 0) {
+          return res
+            .status(400)
+            .json({ error: "Budget must be a non-negative number" });
+        }
+        updates.budget = parsedBudget;
+      }
+
+      if (dailyBudget !== undefined) {
+        if (dailyBudget === null || dailyBudget === "") {
+          updates.dailyBudget = null;
+        } else {
+          const parsedDaily = Number(dailyBudget);
+          if (!Number.isFinite(parsedDaily) || parsedDaily < 0) {
+            return res
+              .status(400)
+              .json({ error: "Daily budget must be a non-negative number" });
+          }
+          updates.dailyBudget = parsedDaily;
+        }
+      }
+
+      if (startDate !== undefined) {
+        updates.startDate = startDate ? new Date(startDate as string) : null;
+      }
+
+      if (endDate !== undefined) {
+        updates.endDate = endDate ? new Date(endDate as string) : null;
+      }
+
+      if (targetAudience !== undefined) {
+        updates.targetAudience = targetAudience;
+      }
+
+      if (status !== undefined) {
+        const validStatuses = ["active", "paused", "completed", "draft"];
+        if (typeof status !== "string" || !validStatuses.includes(status)) {
+          return res.status(400).json({
+            error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+          });
+        }
+        updates.status = status;
+      }
+
+      const [updated] = await db
+        .update(adCampaigns)
+        .set(updates)
+        .where(and(eq(adCampaigns.id, id), eq(adCampaigns.userId, userId)))
+        .returning();
+
+      res.json({ success: true, campaign: updated });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to update campaign:");
+      res.status(500).json({ error: "Failed to update campaign" });
+    }
+  },
+);
+
+router.delete(
+  "/campaigns/:id",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { id } = req.params as Record<string, string>;
+
+      const [existing] = await db
+        .select()
+        .from(adCampaigns)
+        .where(and(eq(adCampaigns.id, id), eq(adCampaigns.userId, userId)))
+        .limit(1);
+
+      if (!existing) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      await db
+        .delete(adCampaigns)
+        .where(and(eq(adCampaigns.id, id), eq(adCampaigns.userId, userId)));
+
+      res.json({ success: true });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to delete campaign:");
+      res.status(500).json({ error: "Failed to delete campaign" });
+    }
+  },
+);
+
+router.post(
+  "/creatives",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { name, type, mediaUrl, thumbnailUrl } = (req.body ?? {}) as Record<
+        string,
+        unknown
+      >;
+
+      if (!mediaUrl || typeof mediaUrl !== "string") {
+        return res.status(400).json({ error: "mediaUrl is required" });
+      }
+      if (type !== "image" && type !== "video") {
+        return res
+          .status(400)
+          .json({ error: "type must be 'image' or 'video'" });
+      }
+
+      const [creative] = await db
+        .insert(adCreatives)
+        .values({
+          userId,
+          campaignId: null,
+          name:
+            typeof name === "string" && name.trim()
+              ? name
+              : `AI ${type} creative`,
+          type,
+          mediaUrl,
+          thumbnailUrl: typeof thumbnailUrl === "string" ? thumbnailUrl : null,
+          status: "draft",
+        })
+        .returning();
+
+      res.status(201).json({ success: true, creative });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to create creative:");
+      res.status(500).json({ error: "Failed to create creative" });
+    }
+  },
+);
+
 router.post(
   "/upload-image",
   requireAuth,

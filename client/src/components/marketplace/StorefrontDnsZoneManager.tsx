@@ -1667,10 +1667,10 @@ export function StorefrontDnsZoneManager({
     queryFn: () =>
       apiRequest("GET", "/api/dns-manager/usage").then((r) => r.json()),
   });
-  const domainLimit: number = usageData.limit ?? 2;
-  const domainsUsed: number = usageData.used ?? 0;
-  const domainsRemaining: number = usageData.remaining ?? 2;
-  const hasSubscription: boolean = usageData.hasSubscription ?? false;
+  const domainLimit: number = usageData?.limit ?? 2;
+  const domainsUsed: number = usageData?.used ?? 0;
+  const domainsRemaining: number = usageData?.remaining ?? 2;
+  const hasSubscription: boolean = usageData?.hasSubscription ?? false;
   const atLimit: boolean = domainsRemaining <= 0;
 
   // Domain search query

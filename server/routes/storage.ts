@@ -618,96 +618,15 @@ router.delete(
   },
 );
 
-router.get("/file/*key", requireAuth, async (req: Request, res: Response) => {
-  try {
-    const _rawKey = (req.params as Record<string, string | string[]>).key;
-    const key = normalizeStorageKey(_rawKey);
-    if (key === null) {
-      return res.status(400).json({ error: "Invalid file key" });
-    }
-    const requestingUserId = req.user!.id;
-
-    if (key?.startsWith("users/")) {
-      const parts = key?.split("/");
-      const fileOwnerId = parts[1];
-      if (fileOwnerId !== requestingUserId) {
-        return res.status(403).json({ error: "Access denied" });
-      }
-    }
-
-    if (await isFileDeleted(key)) {
-      invalidateCachedAudio(key);
-      return res.status(404).json({ error: "File not found" });
-    }
-
-    let buffer = getCachedAudio(key);
-    if (!buffer) {
-      buffer = await storageService?.downloadFile(key);
-      const ext = path?.extname(key).toLowerCase();
-      if (
-        [
-          ".wav",
-          ".mp3",
-          ".flac",
-          ".ogg",
-          ".aac",
-          ".m4a",
-          ".webm",
-          ".aiff",
-          ".aif",
-        ].includes(ext)
-      ) {
-        setCachedAudio(key, buffer);
-      }
-    }
-
-    const ext = path?.extname(key).toLowerCase();
-    const mimeTypes: Record<string, string> = {
-      ".wav": "audio/wav",
-      ".mp3": "audio/mpeg",
-      ".flac": "audio/flac",
-      ".ogg": "audio/ogg",
-      ".aac": "audio/aac",
-      ".m4a": "audio/mp4",
-      ".webm": "audio/webm",
-      ".aiff": "audio/aiff",
-      ".aif": "audio/aiff",
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".png": "image/png",
-      ".gif": "image/gif",
-      ".webp": "image/webp",
-    };
-
-    const contentType = mimeTypes[ext] || "application/octet-stream";
-    const total = buffer?.length;
-
-    res.setHeader("Accept-Ranges", "bytes");
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "private, max-age=3600");
-
-    const range = req.headers.range;
-    if (range) {
-      const parts = range.replace(/bytes=/, "").split("-");
-      const start = parseInt(parts[0], 10);
-      const end = parts[1]
-        ? parseInt(parts[1], 10)
-        : Math.min(start + 1024 * 1024 - 1, total - 1);
-      const chunkSize = end - start + 1;
-
-      res.status(206);
-      res.setHeader("Content-Range", `bytes ${start}-${end}/${total}`);
-      res.setHeader("Content-Length", chunkSize);
-      res.end(buffer?.subarray(start, end + 1));
-    } else {
-      res.setHeader("Content-Length", total);
-      res.send(buffer);
-    }
-  } catch (error) {
-    logger.warn({ err: error }, "File download failed:");
-    res.status(404).json({ error: "File not found" });
-  }
-});
+// NOTE: GET "/file/*key" used to be registered here too, but server/routes.ts
+// registers the same "/api/storage/file/*key" path earlier (Express dispatches
+// to the first match), so this copy was permanently dead code. The live
+// routes.ts handler now carries this handler's two essential protections
+// (requireAuth + the users/<ownerId> ownership check) plus hybrid-storage
+// cold-tier reads and a soft-delete check that this copy did not have, so it
+// has been removed rather than kept as an unreachable, feature-incomplete
+// duplicate. Range-request support (seeking) present here but absent from the
+// live handler is a follow-up enhancement, not a bug fix.
 
 router.get("/public/*key", async (req: Request, res: Response) => {
   try {
