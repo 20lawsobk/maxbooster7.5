@@ -27,6 +27,10 @@ import {
   storeUploadedFile,
   handleUploadError,
 } from "../middleware/uploadHandler.js";
+import {
+  duplicateProject,
+  ProjectNotFoundError,
+} from "../services/projectDuplicationService.js";
 
 const router = Router();
 
@@ -186,27 +190,47 @@ router.post("/projects", requireAuth, async (req: Request, res: Response) => {
       bitDepth,
       workflowStage,
       status,
+      duplicateFrom,
     } = req.body;
-    const projectId = randomBytes(8).toString("hex");
 
-    const [project] = await db
-      .insert(projects)
-      .values({
-        id: projectId,
-        userId,
-        title: title || "Untitled Project",
-        description: description || null,
-        genre: genre || null,
-        key: key || null,
-        bpm: bpm ?? tempo ?? 120,
-        timeSignature: timeSignature || "4/4",
-        sampleRate: sampleRate || 44100,
-        bitDepth: bitDepth || 24,
-        isStudioProject: true,
-        workflowStage: workflowStage || "writing",
-        status: status || "draft",
-      })
-      .returning();
+    let project;
+
+    if (typeof duplicateFrom === "string" && duplicateFrom.trim()) {
+      try {
+        project = await duplicateProject(duplicateFrom.trim(), userId, {
+          title,
+          description,
+        });
+      } catch (err) {
+        if (err instanceof ProjectNotFoundError) {
+          return res
+            .status(404)
+            .json({ error: "Source project not found or access denied" });
+        }
+        throw err;
+      }
+    } else {
+      const projectId = randomBytes(8).toString("hex");
+
+      [project] = await db
+        .insert(projects)
+        .values({
+          id: projectId,
+          userId,
+          title: title || "Untitled Project",
+          description: description || null,
+          genre: genre || null,
+          key: key || null,
+          bpm: bpm ?? tempo ?? 120,
+          timeSignature: timeSignature || "4/4",
+          sampleRate: sampleRate || 44100,
+          bitDepth: bitDepth || 24,
+          isStudioProject: true,
+          workflowStage: workflowStage || "writing",
+          status: status || "draft",
+        })
+        .returning();
+    }
 
     res.status(201).json(project);
 
@@ -229,6 +253,44 @@ router.post("/projects", requireAuth, async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to create project" });
   }
 });
+
+// POST deep-duplicate an existing project (tracks, clips, markers, plugin instances)
+router.post(
+  "/projects/:projectId/duplicate",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.params;
+      const userId = req.user!.id;
+
+      const project = await duplicateProject(projectId, userId);
+      res.status(201).json(project);
+
+      setImmediate(async () => {
+        try {
+          await notificationService.sendProjectCreatedNotification(
+            userId,
+            project?.title || "Untitled Project",
+            project?.genre,
+          );
+        } catch (err) {
+          logger.warn(
+            { err: err },
+            "[Studio] project created notification error:",
+          );
+        }
+      });
+    } catch (error: unknown) {
+      if (error instanceof ProjectNotFoundError) {
+        return res
+          .status(404)
+          .json({ error: "Project not found or access denied" });
+      }
+      logger.warn({ err: error }, "Error duplicating project:");
+      res.status(500).json({ error: "Failed to duplicate project" });
+    }
+  },
+);
 
 // DELETE project
 router.delete(

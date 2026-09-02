@@ -33,7 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
 import { StudioProjectDialog } from "@/components/studio/StudioProjectDialog";
-import { Music, Upload, Play, Pause, Loader2, MoreVertical, Edit, Trash2, TrendingUp, Calendar, Clock, FileAudio, Sparkles, Mic2, PenLine, Plus, Lightbulb, ChevronRight, Target } from "lucide-react";
+import { Music, Upload, Play, Pause, Loader2, MoreVertical, Edit, Trash2, TrendingUp, Calendar, Clock, FileAudio, Sparkles, Mic2, PenLine, Plus, Lightbulb, ChevronRight, Target, Copy } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -133,6 +133,37 @@ export default function Projects() {
         title: "Delete Failed",
         description:
           apiError.message || "Failed to delete project. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/studio/projects/${projectId}/duplicate`,
+      );
+      return response.json();
+    },
+    onSuccess: (newProject: Project) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/studio/start-hub/summary"],
+      });
+      invalidateOnProjectChange();
+      toast({
+        title: "Project Duplicated",
+        description: `"${newProject?.title || "Untitled Project"}" is ready to edit.`,
+      });
+    },
+    onError: (error: Error) => {
+      const apiError = error as ApiError;
+      toast({
+        title: "Duplicate Failed",
+        description:
+          apiError.message || "Failed to duplicate project. Please try again.",
         variant: "destructive",
       });
     },
@@ -621,6 +652,21 @@ export default function Projects() {
                             >
                               <Edit className="h-4 w-4 mr-2" />
                               Edit Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                duplicateMutation.mutate(project.id)
+                              }
+                              disabled={duplicateMutation.isPending}
+                              data-testid={`button-duplicate-${project.id}`}
+                            >
+                              {duplicateMutation.isPending &&
+                              duplicateMutation.variables === project.id ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Copy className="h-4 w-4 mr-2" />
+                              )}
+                              Duplicate
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>

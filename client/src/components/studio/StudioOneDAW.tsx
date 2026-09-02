@@ -41,6 +41,7 @@ import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
 import { CrashRecoveryDialog } from "./CrashRecoveryDialog";
 import { VersionManagementDialog } from "./VersionManagementDialog";
 import { FlowStateExport } from "./FlowStateExport";
+import { WarpDialog } from "./WarpDialog";
 import { RecordingPanel } from "./RecordingPanel";
 import { FlowStateAutomation } from "./FlowStateAutomation";
 import { SpatialAudioMixer } from "./SpatialAudioMixer";
@@ -210,12 +211,13 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       }
     >
   >({});
-  const [_showTimeStretchDialog, _setShowTimeStretchDialog] = useState<
-    string | null
-  >(null);
   const [_showPitchShiftDialog, _setShowPitchShiftDialog] = useState<
     string | null
   >(null);
+  const [warpDialogClip, setWarpDialogClip] = useState<{
+    clipId: string;
+    trackId: string;
+  } | null>(null);
   const {
     ref: containerRef,
     
@@ -2201,6 +2203,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                     }
                     onDeleteTrack={handleDeleteTrack}
                     onOpenPluginRack={(trackId) => setShowPluginRackTrackId(trackId)}
+                    onOpenWarpDialog={(clipId, trackId) =>
+                      setWarpDialogClip({ clipId, trackId })
+                    }
                     onDuplicateTrack={(id) => {
                       store.duplicateTrack(id);
                       toast({ title: "Track Duplicated" });
@@ -2838,6 +2843,18 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           });
         }}
       />
+
+      {warpDialogClip && (
+        <WarpDialog
+          key={warpDialogClip.clipId}
+          clipId={warpDialogClip.clipId}
+          trackId={warpDialogClip.trackId}
+          open={!!warpDialogClip}
+          onOpenChange={(o) => {
+            if (!o) setWarpDialogClip(null);
+          }}
+        />
+      )}
 
       <FlowStateExport
         open={showExportDialog}
@@ -3773,6 +3790,7 @@ interface ArrangeViewProps {
   onDeleteTrack: (id: string) => void;
   onDuplicateTrack: (id: string) => void;
   onOpenPluginRack?: (trackId: string) => void;
+  onOpenWarpDialog?: (clipId: string, trackId: string) => void;
   showAutomation?: boolean;
   automationLanes?: Record<string, unknown>[];
   onAutomationLanesChange?: (lanes: Record<string, unknown>[]) => void;
@@ -3799,6 +3817,7 @@ function ArrangeView({
   onDeleteTrack,
   onDuplicateTrack,
   onOpenPluginRack,
+  onOpenWarpDialog,
   showAutomation,
   automationLanes = [],
   onAutomationLanesChange,
@@ -3967,6 +3986,7 @@ function ArrangeView({
               onDelete={() => onDeleteTrack(track.id)}
               onDuplicate={() => onDuplicateTrack(track.id)}
               onOpenPluginRack={onOpenPluginRack ? () => onOpenPluginRack(track.id as string) : undefined}
+              onOpenWarpDialog={onOpenWarpDialog}
               allTracks={allTracks}
             />
             {showAutomation && (
@@ -4031,6 +4051,7 @@ interface TrackLaneProps {
   onDelete: () => void;
   onDuplicate: () => void;
   onOpenPluginRack?: () => void;
+  onOpenWarpDialog?: (clipId: string, trackId: string) => void;
   allTracks?: Record<string, unknown>[];
 }
 
@@ -4047,6 +4068,7 @@ function TrackLane({
   onDelete,
   onDuplicate,
   onOpenPluginRack,
+  onOpenWarpDialog,
   allTracks = [],
 }: TrackLaneProps) {
   const height = track.collapsed ? 40 : track.height || 80;
@@ -4277,6 +4299,7 @@ function TrackLane({
                   trackId={track.id}
                   isSelected={clip.id === selectedClipId}
                   onSelect={() => onSelectClip(clip.id)}
+                  onOpenWarpDialog={onOpenWarpDialog}
                 />
               ))}
             {!track.collapsed &&
@@ -4317,6 +4340,7 @@ interface AudioClipViewProps {
   trackId: string;
   isSelected: boolean;
   onSelect: () => void;
+  onOpenWarpDialog?: (clipId: string, trackId: string) => void;
 }
 
 function AudioClipView({
@@ -4327,6 +4351,7 @@ function AudioClipView({
   trackId,
   isSelected,
   onSelect,
+  onOpenWarpDialog,
 }: AudioClipViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const timeSignatureNumerator =
@@ -4652,12 +4677,11 @@ function AudioClipView({
       <ContextMenuContent>
         <ContextMenuItem
           onClick={() => {
-            const s = useStudioStore.getState();
-            (s as Record<string, unknown>)._showTimeStretchDialog = clip.id;
+            onOpenWarpDialog?.(clip.id as string, trackId);
           }}
         >
           <Waves className="h-3.5 w-3.5 mr-2" />
-          Time Stretch...
+          Warp / Time Stretch...
         </ContextMenuItem>
         <ContextMenuItem
           onClick={() => {

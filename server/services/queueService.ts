@@ -36,42 +36,6 @@ export interface EmailJobData {
   from?: string;
 }
 
-export interface WarpJobPayload {
-  userId: string;
-  clipId: string;
-  storageKey: string;
-  markers: Array<{ id: string; sourceTime: number; targetTime: number }>;
-  pitchShift?: number;
-  preserveFormants?: boolean;
-  algorithm?: "rubberband" | "phase_vocoder" | "wsola";
-  quality?: "fast" | "normal" | "high";
-}
-
-export interface WarpPreviewPayload extends WarpJobPayload {
-  startTime: number;
-  endTime: number;
-  previewDuration?: number;
-}
-
-export interface TransientDetectionPayload {
-  userId: string;
-  clipId: string;
-  storageKey: string;
-  sensitivity?: number;
-  minTransientGap?: number;
-}
-
-export interface WarpJobResult {
-  storageKey: string;
-  duration: number;
-  format: string;
-  markers?: Array<{
-    sourceTime: number;
-    targetTime: number;
-    transientStrength?: number;
-  }>;
-}
-
 export interface TransientDetectionResult {
   transients: Array<{ time: number; strength: number; suggestedBeat?: number }>;
   detectedBpm?: number;

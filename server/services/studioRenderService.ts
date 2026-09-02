@@ -26,7 +26,7 @@ import { randomUUID } from "crypto";
 import { db } from "../db.js";
 import { studioTracks, audioClips, projects } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { storageService } from "./storageService.js";
+import { resolveAudioUrlToLocalFile } from "./audioSourceResolver.js";
 import { logger } from "../logger.js";
 import {
   IntelligentMasteringEngine,
@@ -57,42 +57,17 @@ async function ensureRenderDir() {
   await fsPromises.mkdir(RENDER_DIR, { recursive: true });
 }
 
+// Delegates to the shared resolver (also used by warp/transient processing)
+// which additionally understands the `/api/storage/file/<key>` form. Render
+// keeps its existing lenient policy of skipping a clip it can't resolve
+// rather than failing the whole mixdown.
 async function resolveClipToLocalFile(audioUrl: string): Promise<string | null> {
   if (!audioUrl) return null;
-
-  // Already a local path served from this app (uploads/, samples/, attached_assets/)
-  if (audioUrl.startsWith("/uploads/") || audioUrl.startsWith("/samples/") || audioUrl.startsWith("/attached_assets/")) {
-    const rel = audioUrl.replace(/^\//, "");
-    const abs = path.resolve(".", rel.startsWith("uploads/") ? rel : path.join("client/public", rel));
-    const candidates = [path.resolve(".", rel), abs];
-    for (const c of candidates) {
-      if (fs.existsSync(c)) return c;
-    }
-    return null;
-  }
-
-  if (audioUrl.startsWith("http://") || audioUrl.startsWith("https://")) {
-    try {
-      const resp = await fetch(audioUrl);
-      if (!resp.ok) return null;
-      const buf = Buffer.from(await resp.arrayBuffer());
-      const tmp = path.join(os.tmpdir(), `render_clip_${randomUUID()}.wav`);
-      await fsPromises.writeFile(tmp, buf);
-      return tmp;
-    } catch (err) {
-      logger.warn({ err, audioUrl }, "[StudioRender] failed to fetch remote clip");
-      return null;
-    }
-  }
-
-  // Otherwise treat as a storage key
   try {
-    const buf = await storageService.downloadFile(audioUrl);
-    const tmp = path.join(os.tmpdir(), `render_clip_${randomUUID()}.wav`);
-    await fsPromises.writeFile(tmp, buf);
-    return tmp;
+    const { localPath } = await resolveAudioUrlToLocalFile(audioUrl);
+    return localPath;
   } catch (err) {
-    logger.warn({ err, audioUrl }, "[StudioRender] failed to resolve clip from storage");
+    logger.warn({ err, audioUrl }, "[StudioRender] failed to resolve clip audio");
     return null;
   }
 }

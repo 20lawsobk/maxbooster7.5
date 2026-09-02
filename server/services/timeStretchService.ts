@@ -4,13 +4,8 @@ import path from "path";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import os from "os";
-import { storageService } from "./storageService.js";
-import { queueService } from "./queueService.js";
-import type { WarpJobPayload, TransientDetectionPayload, WarpJobResult, TransientDetectionResult } from "./queueService.js";
+import type { TransientDetectionResult } from "./queueService.js";
 import { logger } from "../logger.js";
-import { db } from "../db.js";
-import { warpMarkers, audioClips } from "@shared/schema";
-import { eq, asc } from "drizzle-orm";
 import type FfmpegType from "fluent-ffmpeg";
 
 // Runtime type: fluent-ffmpeg's default export is a callable constructor with
@@ -53,7 +48,6 @@ export interface WarpMarkerData {
   id: string;
   sourceTime: number;
   targetTime: number;
-  isAnchor?: boolean;
   transientStrength?: number;
 }
 
@@ -85,7 +79,47 @@ interface AudioMetadata {
   format: string;
 }
 
+/**
+ * Warp markers are persisted in beat/sample space (the only units the DB
+ * schema supports) but the ffmpeg-based processing in this service works in
+ * seconds. These helpers are the ONE place that conversion happens, so every
+ * route that touches warp markers stays consistent.
+ *
+ *   sourceTime (s) = samplePosition / sampleRate — where in the SOURCE audio
+ *   targetTime (s) = beatPosition * (60 / bpm)   — where it lands on the beat grid
+ */
+export interface WarpMarkerRow {
+  id: string;
+  beatPosition: number;
+  samplePosition: number;
+}
 
+export function dbMarkersToWarpMarkerData(
+  rows: WarpMarkerRow[],
+  bpm: number,
+  sampleRate: number,
+): WarpMarkerData[] {
+  const safeBpm = bpm > 0 ? bpm : 120;
+  const safeSampleRate = sampleRate > 0 ? sampleRate : 44100;
+  return rows.map((r) => ({
+    id: r.id,
+    sourceTime: r.samplePosition / safeSampleRate,
+    targetTime: r.beatPosition * (60 / safeBpm),
+  }));
+}
+
+export function warpMarkerDataToDbFields(
+  marker: Pick<WarpMarkerData, "sourceTime" | "targetTime">,
+  bpm: number,
+  sampleRate: number,
+): { beatPosition: number; samplePosition: number } {
+  const safeBpm = bpm > 0 ? bpm : 120;
+  const safeSampleRate = sampleRate > 0 ? sampleRate : 44100;
+  return {
+    samplePosition: marker.sourceTime * safeSampleRate,
+    beatPosition: marker.targetTime / (60 / safeBpm),
+  };
+}
 
 export class TimeStretchService {
   private tempDir: string;
@@ -106,7 +140,7 @@ export class TimeStretchService {
     }
   }
 
-  private async getAudioMetadata(filePath: string): Promise<AudioMetadata> {
+  async getAudioMetadata(filePath: string): Promise<AudioMetadata> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       throw new Error(
@@ -615,119 +649,6 @@ export class TimeStretchService {
     }
   }
 
-  async commitWarp(
-    clipId: string,
-    userId: string,
-  ): Promise<{ storageKey: string; duration: number }> {
-    const clip = await db.query.audioClips.findFirst({
-      where: eq(audioClips.id, clipId),
-    });
-
-    if (!clip) {
-      throw new Error("Audio clip not found");
-    }
-
-    const markers = await db.query.warpMarkers.findMany({
-      where: eq(warpMarkers.clipId, clipId),
-      orderBy: [asc(warpMarkers.beatPosition)],
-    });
-
-    if (markers?.length === 0) {
-      throw new Error("No warp markers found for clip");
-    }
-
-    const jobId = randomUUID();
-    const payload: WarpJobPayload = {
-      userId,
-      clipId,
-      storageKey: (clip as any).filePath,
-      markers: markers.map((m) => ({
-        id: m.id,
-        sourceTime: (m as any).sourceTime,
-        targetTime: (m as any).targetTime,
-      })),
-      pitchShift: (clip as any).pitchShift ?? undefined,
-      preserveFormants: (clip as any).preserveFormants ?? true,
-      algorithm: "phase_vocoder",
-      quality: "high",
-    };
-
-    await (queueService as any)?.addJob("audio-warp", `warp-${jobId}`, payload, {
-      priority: 1,
-      attempts: 3,
-    });
-
-    return {
-      storageKey: `${(clip as any)?.filePath}_warped`,
-      duration: clip.duration ?? 0,
-    };
-  }
-
-  async processWarpJob(payload: WarpJobPayload): Promise<WarpJobResult> {
-    const tempInput = path?.join(this.tempDir, `warp_input_${randomUUID()}.wav`);
-    const tempOutput = path?.join(
-      this.tempDir,
-      `warp_output_${randomUUID()}.wav`,
-    );
-
-    try {
-      const inputBuffer = await storageService?.downloadFile(payload?.storageKey);
-      await fsPromises?.writeFile(tempInput, inputBuffer);
-
-      await this.processWarpMarkers(tempInput, tempOutput, payload?.markers, {
-        pitchShift: payload.pitchShift,
-        preserveFormants: payload.preserveFormants,
-        algorithm: payload.algorithm,
-        quality: payload.quality,
-      });
-
-      const outputBuffer = await fsPromises?.readFile(tempOutput);
-      const newStorageKey = `${payload?.storageKey}_warped_${Date?.now()}`;
-      await storageService?.uploadFile(outputBuffer, "warp", `${newStorageKey}.wav`);
-
-      const metadata = await this.getAudioMetadata(tempOutput);
-
-      return {
-        storageKey: newStorageKey,
-        duration: metadata.duration,
-        format: "wav",
-        markers: payload.markers.map((m) => ({
-          sourceTime: m.sourceTime,
-          targetTime: m.targetTime,
-        })),
-      };
-    } finally {
-      try {
-        if (fs?.existsSync(tempInput)) await fsPromises?.unlink(tempInput);
-        if (fs?.existsSync(tempOutput)) await fsPromises?.unlink(tempOutput);
-      } catch {}
-    }
-  }
-
-  async processTransientDetectionJob(
-    payload: TransientDetectionPayload,
-  ): Promise<TransientDetectionResult> {
-    const tempInput = path?.join(
-      this.tempDir,
-      `transient_input_${randomUUID()}.wav`,
-    );
-
-    try {
-      const inputBuffer = await storageService?.downloadFile(payload?.storageKey);
-      await fsPromises?.writeFile(tempInput, inputBuffer);
-
-      return await this.detectTransients(tempInput, {
-        sensitivity: payload.sensitivity,
-        minTransientGap: payload.minTransientGap,
-        detectBeats: true,
-      });
-    } finally {
-      try {
-        if (fs?.existsSync(tempInput)) await fsPromises?.unlink(tempInput);
-      } catch {}
-    }
-  }
-
   calculateTempoMapping(
     sourceBpm: number,
     targetBpm: number,
@@ -755,13 +676,19 @@ export class TimeStretchService {
     };
   }
 
-  async quantizeToGrid(
-    inputPath: string,
-    outputPath: string,
+  /**
+   * Pure function: maps detected transients onto a target beat grid and
+   * returns the resulting warp markers. Produces marker DATA ONLY — no audio
+   * is rendered here. Callers persist the markers; the user separately
+   * previews/commits the actual audio render, exactly like manually-placed
+   * markers do. (The audio-rendering side effect this used to have was dead
+   * code — nothing ever read its output.)
+   */
+  quantizeToGrid(
     transients: TransientData[],
     beatGrid: number[],
     strength: number = 1.0,
-  ): Promise<WarpMarkerData[]> {
+  ): WarpMarkerData[] {
     const markers: WarpMarkerData[] = [];
 
     for (const transient of transients) {
@@ -780,10 +707,6 @@ export class TimeStretchService {
           });
         }
       }
-    }
-
-    if (markers?.length > 0) {
-      await this.processWarpMarkers(inputPath, outputPath, markers);
     }
 
     return markers;
