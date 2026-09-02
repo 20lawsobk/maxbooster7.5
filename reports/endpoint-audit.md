@@ -1,6 +1,6 @@
 # Endpoint Audit Report
 
-Generated 2026-09-02T11:29:17.328Z against `http://127.0.0.1:5000`.
+Generated 2026-09-02T12:44:43.387Z against `http://127.0.0.1:5000`.
 
 Backend routes statically found: 2209 (unique method+path: 2190). Frontend `/api/*` call sites found: 2219 (unique method+path: 1126). Unresolved dynamic registrations: 3.
 
@@ -500,7 +500,7 @@ Backend routes statically found: 2209 (unique method+path: 2190). Frontend `/api
 
 ### live-error-238: live-error — POST /api/auth/refresh-token
 - **Location:** server/routes/auth.ts:22
-- **Description:** A live POST probe to /api/auth/refresh-token returned HTTP 500 (expected a clean 401/403 if auth-gated, or a 2xx/4xx business response if public). Response snippet: "{\"success\":false,\"error\":\"Cannot read properties of undefined (reading 'id')\",\"requestId\":\"7a16dd93-d629-43e8-b151-6d30dd93011f\"}"
+- **Description:** A live POST probe to /api/auth/refresh-token returned HTTP 500 (expected a clean 401/403 if auth-gated, or a 2xx/4xx business response if public). Response snippet: "{\"success\":false,\"error\":\"Cannot read properties of undefined (reading 'id')\",\"requestId\":\"827d6ac1-c718-46f0-8576-7b0b981263e1\"}"
 - **Recommendation:** Fix the unhandled error in the handler or its middleware at server/routes/auth.ts:22; reproduce with curl -i -X POST http://127.0.0.1:5000/api/auth/refresh-token.
 
 ### live-error-239: live-error — GET /api/distribution/schedule/lead-time
@@ -556,8 +556,8 @@ Backend routes statically found: 2209 (unique method+path: 2190). Frontend `/api
 ## MEDIUM severity (12)
 
 ### duplicate-registration-250: duplicate-registration — GET /health
-- **Location:** server/diffusion-gateway/index.ts:540, server/startup-probes.ts:436
-- **Description:** GET /health is registered 2 times: server/diffusion-gateway/index.ts:540, server/startup-probes.ts:436. Express dispatches to the first matching registration only.
+- **Location:** server/diffusion-gateway/index.ts:540, server/startup-probes.ts:441
+- **Description:** GET /health is registered 2 times: server/diffusion-gateway/index.ts:540, server/startup-probes.ts:441. Express dispatches to the first matching registration only.
 - **Recommendation:** Keep the intended handler and delete, rename, or remount the others -- the later registration(s) are unreachable dead code today.
 
 ### duplicate-registration-256: duplicate-registration — GET /api/ai/insights
@@ -1328,13 +1328,13 @@ Backend routes statically found: 2209 (unique method+path: 2190). Frontend `/api
 - **Recommendation:** Confirm the earlier handler's next()-handoff condition genuinely defers to the later handler in every case it should (e.g. it doesn't stay "active" forever due to a flag that's never flipped); if it does, no change is needed.
 
 ### duplicate-registration-253: duplicate-registration — GET /api/ready
-- **Location:** server/index.ts:503, server/routes.ts:7298
-- **Description:** GET /api/ready is registered 2 times: server/index.ts:503, server/routes.ts:7298. At least one registration calls next() conditionally, which is this codebase's pattern for a deliberate early/fallback handler that hands off to a later one rather than a true conflicting duplicate -- likely intentional, but verify the handoff condition is actually correct.
+- **Location:** server/index.ts:503, server/routes.ts:7304
+- **Description:** GET /api/ready is registered 2 times: server/index.ts:503, server/routes.ts:7304. At least one registration calls next() conditionally, which is this codebase's pattern for a deliberate early/fallback handler that hands off to a later one rather than a true conflicting duplicate -- likely intentional, but verify the handoff condition is actually correct.
 - **Recommendation:** Confirm the earlier handler's next()-handoff condition genuinely defers to the later handler in every case it should (e.g. it doesn't stay "active" forever due to a flag that's never flipped); if it does, no change is needed.
 
 ### duplicate-registration-254: duplicate-registration — GET /api/health/ready
-- **Location:** server/index.ts:504, server/routes.ts:7299
-- **Description:** GET /api/health/ready is registered 2 times: server/index.ts:504, server/routes.ts:7299. At least one registration calls next() conditionally, which is this codebase's pattern for a deliberate early/fallback handler that hands off to a later one rather than a true conflicting duplicate -- likely intentional, but verify the handoff condition is actually correct.
+- **Location:** server/index.ts:504, server/routes.ts:7305
+- **Description:** GET /api/health/ready is registered 2 times: server/index.ts:504, server/routes.ts:7305. At least one registration calls next() conditionally, which is this codebase's pattern for a deliberate early/fallback handler that hands off to a later one rather than a true conflicting duplicate -- likely intentional, but verify the handoff condition is actually correct.
 - **Recommendation:** Confirm the earlier handler's next()-handoff condition genuinely defers to the later handler in every case it should (e.g. it doesn't stay "active" forever due to a flag that's never flipped); if it does, no change is needed.
 
 ### duplicate-registration-255: duplicate-registration — POST /api/metrics/web-vitals
