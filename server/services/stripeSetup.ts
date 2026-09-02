@@ -31,14 +31,14 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
   }
 
   if (!stripe) {
-    logger.warn("⚠️  Stripe not configured - using fallback price IDs");
-    // Return fallback IDs that will fail at payment time (graceful degradation)
-    cachedPriceIds = {
-      monthly: "price_monthly_placeholder",
-      yearly: "price_yearly_placeholder",
-      lifetime: "price_lifetime_placeholder",
-    };
-    return cachedPriceIds;
+    // Do NOT fabricate price IDs — a placeholder ID looks like success here and
+    // only fails later, at checkout, with a confusing Stripe error. Throwing now
+    // surfaces the real cause immediately and leaves cachedPriceIds null so
+    // getStripePriceIds()'s "not initialized" guard fires correctly instead of
+    // being bypassed by fake IDs.
+    throw new Error(
+      "Stripe is not configured (missing/invalid STRIPE_SECRET_KEY) — cannot set up products and prices",
+    );
   }
 
   try {

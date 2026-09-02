@@ -91,10 +91,13 @@ export async function withLock<T>(
 //   2. The token comparison (get → compare → del) prevents us from deleting a
 //      lock that another pod re-acquired after our TTL expired.
 //
-// Graceful degradation:
-//   - PDIM not configured (single-instance mode): always executes, no lock needed.
-//   - PDIM error: allows execution on this pod (better than silently skipping jobs
-//     cluster-wide during a PDIM outage).
+// Failure handling:
+//   - PDIM not configured (single-instance mode): always executes, no lock needed
+//     — there is no other pod to race against.
+//   - PDIM error (acquisition itself failed): fail-closed — skip this tick rather
+//     than run unlocked. Running anyway when multiple pods hit the same PDIM blip
+//     simultaneously would let every pod execute the "exclusive" task at once,
+//     which is a real duplicate-execution risk, not a safe degradation.
 
 /** Number of scheduler locks currently held by this pod (for /api/system/health). */
 let _heldLockCount = 0;
@@ -142,19 +145,13 @@ export async function withSchedLock(
   try {
     token = await acquireLock(name, ttlSecs);
   } catch (err) {
-    // PDIM unavailable — degrade gracefully: allow this pod to execute rather
-    // than leaving the job unrun across the entire cluster during an outage.
+    // PDIM unavailable — fail closed. We cannot tell whether another pod
+    // already holds (or is about to acquire) the lock, so running here risks
+    // every pod in the cluster executing this "exclusive" task at once during
+    // the same PDIM blip. Skip this tick; the next interval retries the lock.
     logger.warn(
-      `[SchedLock] PDIM error for ${name}, allowing execution: ${(err as Error).message}`,
+      `[SchedLock] PDIM error for ${name}, skipping this tick (fail-closed): ${(err as Error).message}`,
     );
-    _heldLockCount++;
-    try {
-      await fn();
-    } catch (fnErr) {
-      logger.warn(`[SchedLock] ${name} error: ${(fnErr as Error).message}`);
-    } finally {
-      _heldLockCount--;
-    }
     return;
   }
 

@@ -217,9 +217,12 @@ class RoyaltySplitsDispatcher {
           collaboratorId: split.collaboratorId,
           amountCents: shareCents,
         });
-        if (riskResult.risk === "high") {
+        if (riskResult.risk === "high" || riskResult.risk === "unknown") {
           status = "failed";
-          errorMsg = `HELD — suspicious payout detected (score ${riskResult.score}): ${riskResult.reason}`;
+          errorMsg =
+            riskResult.risk === "unknown"
+              ? `HELD — risk check unavailable: ${riskResult.reason}`
+              : `HELD — suspicious payout detected (score ${riskResult.score}): ${riskResult.reason}`;
           logger.warn({ orderId, splitId: split.id, ...riskResult }, "[RoyaltySplits] payout held for review");
           results.push({
             collaboratorEmail: split.collaboratorEmail,

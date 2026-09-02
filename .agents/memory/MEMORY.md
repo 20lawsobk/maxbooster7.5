@@ -121,3 +121,5 @@
 - [Deploy autofix coverage gaps](deploy-autofix-coverage-gaps.md) — image checks must add the deduplicated Nix closure to tracked payload bytes and fail closed on unmeasured roots
 - [replit.nix feeds deploy closure too](replit-nix-feeds-deploy-closure.md) — heavy dev-only toolchains must never live in replit.nix; use an on-demand nix-shell wrapper; some module pkgs are unregistered in the sqlite DB and need direct measurement
 - [.replit port-mapping edits](dotreplit-port-mapping-edits.md) — externalPort=80 must map to the app's real PORT localPort or boot FATALs; edit via verifyAndReplaceDotReplit only, never the file-edit tool
+- [Fail-open triage framework](fail-open-vs-unknown-status.md) — a broken gating check (payout risk, IP blacklist, webhook sig, notif prefs) must return a distinguishable "unknown" the caller treats as worst-case, never a fabricated safe verdict
+- [Dev capsule self-restore](dev-capsule-self-restore.md) — external/maxcore, python_runtime, external/pdim can vanish forever in dev (deploy build deletes them after packing); dev now self-heals via attemptDevSelfRestore in maxcoreLocalSupervisor.ts

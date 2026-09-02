@@ -19,6 +19,7 @@ import fs from "node:fs";
 import { config } from "../config/index.js";
 import { logger } from "../logger.js";
 import { computeWorkerSizing, computeHyperGpuSizing } from "../computeSizing.js";
+import { isDevEnv } from "../lib/envHelpers.js";
 
 const MAXCORE_ROOT = path.resolve(process.cwd(), "external", "maxcore");
 const API_SERVER_DIR = path.join(MAXCORE_ROOT, "artifacts", "api-server");
@@ -148,6 +149,62 @@ function backgroundRestorePending(): boolean {
   if (fs.existsSync(MAXCORE_ROOT)) return false;
   const capsule = path.resolve(process.cwd(), "external_maxcore.pdim");
   return fs.existsSync(capsule);
+}
+
+// In production, start.sh already kicked off dist/pdim-restore.mjs in the
+// background before this process even started, so backgroundRestorePending()
+// waiting it out (above) is genuinely self-resolving there. But
+// scripts/start-dev.sh (dev mode) never runs that restore step at all — it
+// only execs `tsx server/index.ts` directly. If a capsule is present here
+// (e.g. because a deploy build previously ran in this same workspace: the
+// build packs external/maxcore into external_maxcore.pdim and deletes the
+// source directory, same as node_modules/python_runtime/external/pdim),
+// nothing will EVER extract it in dev, so the "waiting, self-resolving" log
+// line would be silently, permanently false for the rest of the process
+// lifetime — the exact dishonest-degrade shape this pass targets everywhere
+// else. Self-heal once by running the identical restore mechanism start.sh
+// uses, instead of polling forever for a restorer that was never started.
+let devSelfRestoreAttempted = false;
+async function attemptDevSelfRestore(): Promise<void> {
+  if (devSelfRestoreAttempted || !isDevEnv()) return;
+  devSelfRestoreAttempted = true;
+  const restoreScript = path.resolve(process.cwd(), "dist", "pdim-restore.mjs");
+  if (!fs.existsSync(restoreScript)) {
+    logger.error(
+      "[MaxCoreLocal] external/maxcore is missing, a restore capsule (external_maxcore.pdim) is present, but dist/pdim-restore.mjs does not exist so it cannot be auto-restored in dev — run `npm run build` once to produce it, or `bash scripts/bootstrap-maxcore.sh` after restoring the directory manually. MaxCore will stay unreachable until then.",
+    );
+    return;
+  }
+  logger.warn(
+    "[MaxCoreLocal] external/maxcore is missing with a restore capsule present and no production boot restorer running (dev mode) — self-restoring now via dist/pdim-restore.mjs...",
+  );
+  await new Promise<void>((resolve) => {
+    const proc = spawn(process.execPath, [restoreScript, "background"], {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const pipe = (d: Buffer) => {
+      const t = d.toString().trimEnd();
+      if (t) logger.info(`[MaxCoreLocal] [self-restore] ${t.slice(0, 1_000)}`);
+    };
+    proc.stdout?.on("data", pipe);
+    proc.stderr?.on("data", pipe);
+    proc.on("exit", (code) => {
+      if (code === 0) {
+        logger.info("[MaxCoreLocal] Self-restore finished successfully.");
+      } else {
+        logger.error(
+          `[MaxCoreLocal] Self-restore exited with code ${code ?? "?"} — external/maxcore may still be missing or incomplete.`,
+        );
+      }
+      resolve();
+    });
+    proc.on("error", (err) => {
+      logger.error({ err }, "[MaxCoreLocal] Self-restore failed to spawn:");
+      resolve();
+    });
+  });
 }
 
 async function spawnChild(): Promise<void> {
@@ -325,9 +382,11 @@ export async function startMaxcoreLocal(): Promise<void> {
     }
 
     if (backgroundRestorePending()) {
-      // Expected, self-resolving startup condition — not a failure. Report
-      // it as such and keep polling instead of attempting (and failing) the
-      // one-shot bootstrap script.
+      // In production this is expected and self-resolving: start.sh's own
+      // background restore is already landing it independently. In dev
+      // mode nothing else will ever restore it, so trigger the same restore
+      // ourselves (once) instead of only polling — see attemptDevSelfRestore.
+      void attemptDevSelfRestore();
       if (!workspaceWaitStartedAt) workspaceWaitStartedAt = Date.now();
       const waitedMs = Date.now() - workspaceWaitStartedAt;
       startupError = `external/maxcore background capsule restore still in progress (waited ${Math.round(waitedMs / 1000)}s)`;
@@ -336,7 +395,7 @@ export async function startMaxcoreLocal(): Promise<void> {
         lastWorkspaceWaitLogAt = now;
         if (waitedMs >= WORKSPACE_RESTORE_STALL_MS) {
           logger.warn(
-            `[MaxCoreLocal] Still waiting for external/maxcore background capsule restore after ${Math.round(waitedMs / 1000)}s — check /tmp/pdim-background-restore.log for a stuck or failed extraction.`,
+            `[MaxCoreLocal] Still waiting for external/maxcore background capsule restore after ${Math.round(waitedMs / 1000)}s — check /tmp/pdim-background-restore.log for a stuck or failed extraction (production), or the [self-restore] log lines above (dev).`,
           );
         } else {
           logger.info(

@@ -283,11 +283,20 @@ class NotificationDispatcher {
           (settings?.quietHours as Record<string, unknown>)?.allowUrgent ?? true,
         categories: (push?.categories as Record<string, boolean>) || {},
       };
-    } catch {
+    } catch (err) {
+      // We couldn't read the user's real preferences, which may include an
+      // explicit opt-out or quiet-hours mute. Defaulting to "fully opted
+      // in" would silently override that on every DB hiccup. Fail closed
+      // (skip this send) instead — dispatch() treats enabled:false as "skip
+      // and return ZERO", which is honest: we don't know, so we don't send.
+      logger.warn(
+        { err, userId },
+        "[Dispatcher] Failed to load push preferences — defaulting to disabled for this send instead of assuming opt-in",
+      );
       return {
-        enabled: true,
-        muteAll: false,
-        allowUrgentDuringQuietHours: true,
+        enabled: false,
+        muteAll: true,
+        allowUrgentDuringQuietHours: false,
         categories: {},
       };
     }

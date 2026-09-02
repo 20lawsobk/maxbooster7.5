@@ -911,10 +911,14 @@ class LabelGridService {
 
   verifyWebhookSignature(payload: string, signature: string): boolean {
     if (!this.webhookSecret) {
-      logger.warn(
-        "⚠️  LabelGrid webhook secret not configured - skipping verification",
+      // Fail closed: an unconfigured secret means we cannot verify the
+      // signature, which must never be treated as "verified". Returning
+      // true here would let anyone POST a forged LabelGrid webhook if
+      // LABELGRID_WEBHOOK_SECRET were ever unset in production.
+      logger.error(
+        "⚠️  LabelGrid webhook secret not configured — rejecting webhook signature verification (fail closed)",
       );
-      return true;
+      return false;
     }
 
     try {

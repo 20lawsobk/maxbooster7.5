@@ -250,6 +250,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     this.startDetectionLoop();
     this.startHealingLoop();
     this.startMetricsCollection();
+    this.startBlockedIpResyncLoop();
 
     this.isRunning = true;
 
@@ -262,7 +263,15 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     );
   }
 
-  private async loadBlockedIps(): Promise<void> {
+  // This engine is mounted as MANDATORY request middleware (isIpBlocked() gates
+  // every request) and blockedIps is only ever bulk-loaded from the DB here —
+  // there is no per-request DB check. A transient DB hiccup during boot must
+  // not permanently and silently blind this security control for the entire
+  // process lifetime, so the initial load retries before giving up, a failure
+  // is logged loudly (error, not warn), and a periodic re-sync (below) gives
+  // the engine a real chance to self-heal without requiring a restart.
+  private async loadBlockedIps(attempt = 1): Promise<void> {
+    const MAX_ATTEMPTS = 3;
     try {
       const now = new Date();
       const blocked = await db
@@ -279,8 +288,35 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
       logger.info(`   └─ Loaded ${blocked?.length} blocked IPs from database`);
     } catch (error) {
-      logger.warn({ err: error }, "Failed to load blocked IPs:");
+      if (attempt < MAX_ATTEMPTS) {
+        const backoffMs = attempt * 1000;
+        logger.warn(
+          { err: error, attempt, maxAttempts: MAX_ATTEMPTS },
+          `Failed to load blocked IPs — retrying in ${backoffMs}ms`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        return this.loadBlockedIps(attempt + 1);
+      }
+      // Do not swallow this quietly: every previously-blocked IP is being
+      // treated as unblocked until the periodic re-sync below succeeds.
+      logger.error(
+        { err: error, attempts: attempt },
+        "Failed to load blocked IPs after all retries — the IP blocklist is EMPTY until the next periodic re-sync succeeds; previously-blocked IPs will NOT be blocked in the meantime",
+      );
     }
+  }
+
+  // Self-heals a failed/partial initial load and picks up IPs blocked by other
+  // instances in a multi-instance deployment. Additive only (never removes an
+  // in-memory entry) so a transient re-sync failure can't undo a block that
+  // was already correctly applied.
+  private startBlockedIpResyncLoop(): void {
+    const RESYNC_INTERVAL_MS = 5 * 60 * 1000;
+    setInterval(() => {
+      this.loadBlockedIps().catch((err) =>
+        logger.error({ err }, "Blocked-IP re-sync loop failed unexpectedly:"),
+      );
+    }, RESYNC_INTERVAL_MS).unref?.();
   }
 
   public processSecurityEvent(event: Partial<SecurityEvent>): void {

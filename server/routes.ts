@@ -7243,8 +7243,14 @@ export async function registerRoutes(
   app.get("/api/health/live", livenessHandler);
 
   // Readiness — checks downstream subsystems (DB, Redis, audit, automation).
-  // Returns 503 if any subsystem is `down`, 200 otherwise (degraded is still
-  // considered ready, since the platform self-heals around degraded deps).
+  // Returns 200 only when every subsystem is fully `ok`; `degraded` or `down`
+  // both return 503 so a caller relying on the status code alone never reads
+  // a degraded system as fully ready. `unknown` (e.g. MaxCore intentionally
+  // not configured) does not count against the aggregate — see healthRegistry
+  // checkAll() — so an honest absence signal doesn't produce a false 503.
+  // Note: this is stricter than before — transient dependency congestion
+  // (e.g. a PDIM blip) now surfaces as a real, self-resolving 503 here instead
+  // of being silently reported as ready.
   // Registered under both /api/ready and /api/health/ready (k8s convention).
   const readinessHandler = async (_req: Request, res: Response) => {
     res.set("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -7265,7 +7271,7 @@ export async function registerRoutes(
           p99Ms: Math.round(e.p99),
           samples: e.count,
         }));
-      const code = result.status === "down" ? 503 : 200;
+      const code = result.status === "ok" ? 200 : 503;
       res.status(code).json({
         status: result.status,
         timestamp: new Date().toISOString(),

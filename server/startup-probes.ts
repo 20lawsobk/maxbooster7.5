@@ -395,7 +395,12 @@ class StartupProbeManager {
 
   // Check if system is ready
   isReady(): boolean {
-    return this.status.phase === "ready" || this.status.phase === "degraded";
+    // "degraded" means at least one probe (PDIM/Redis, TensorFlow, or local
+    // MaxCore) is not fully healthy. Each of those already has a real,
+    // self-healing fallback path (circuit breaker, in-memory rate limiting,
+    // supervisor restart) — but this gate must report that honestly rather
+    // than calling a degraded system "ready".
+    return this.status.phase === "ready";
   }
 
   // Get full status for /startup endpoint

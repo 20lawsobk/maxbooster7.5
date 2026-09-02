@@ -10,8 +10,13 @@
  *   • Frequency spike      — ≥3 payouts in the last 24 hours for the same user
  *   • Large absolute value — single transfer > $2,000 with no prior history
  *
- * Returns { risk: "high" | "low", reason, score } synchronously from DB.
- * The caller (royaltySplitsDispatcher) decides whether to hold or proceed.
+ * Returns { risk: "high" | "low" | "unknown", reason, score } synchronously
+ * from DB. The caller (royaltySplitsDispatcher) decides whether to hold or
+ * proceed — "unknown" means the check itself could not run (e.g. a DB
+ * error) and must NOT be treated as a "low"/passed verdict: a broken
+ * detector is not evidence a payout is safe, so the caller holds it the
+ * same way it holds a "high" verdict, just with a distinguishable reason so
+ * ops can tell "flagged as suspicious" apart from "we couldn't check".
  */
 
 import { db } from "../db.js";
@@ -26,9 +31,9 @@ const FREQUENCY_MAX_PAYOUTS = 3; // max payouts per user per window
 const LARGE_ABSOLUTE_CENTS = 200_000; // $2,000 with no prior history
 
 export interface PayoutRiskResult {
-  risk: "high" | "low";
+  risk: "high" | "low" | "unknown";
   reason: string;
-  score: number; // 0–100; higher = more suspicious
+  score: number; // 0–100; higher = more suspicious. -1 when risk === "unknown".
   checks: {
     spikeCheck: boolean;
     frequencyCheck: boolean;
@@ -114,12 +119,18 @@ export async function checkPayoutRisk(
 
     return { risk, reason, score: Math.min(100, score), checks };
   } catch (err) {
-    logger.error({ err }, "[SuspiciousPayoutDetector] risk check failed — defaulting to low risk");
-    // Fail open: don't block all payouts if the detector itself errors
+    logger.error(
+      { err, collaboratorId, amountCents },
+      "[SuspiciousPayoutDetector] risk check failed — reporting unknown risk so the caller holds the payout instead of assuming it's safe",
+    );
+    // Fail closed: a broken detector is not evidence the payout is safe.
+    // "unknown" is distinguishable from "low" so the caller can hold the
+    // payout for review without falsely logging it as a confirmed high-risk
+    // fraud flag.
     return {
-      risk: "low",
-      reason: "Risk check unavailable — passed by default",
-      score: 0,
+      risk: "unknown",
+      reason: `Risk check unavailable (${err instanceof Error ? err.message : String(err)}) — held pending manual review`,
+      score: -1,
       checks,
     };
   }

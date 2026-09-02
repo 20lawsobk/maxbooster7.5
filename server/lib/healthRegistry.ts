@@ -105,8 +105,10 @@ class HealthRegistry {
         status = "down";
         break;
       }
-      if (r?.status === "degraded" || r?.status === "unknown")
-        status = "degraded";
+      // "unknown" (e.g. MaxCore intentionally not configured) is an honest
+      // absence signal, not a fault — it must not drag an otherwise-healthy
+      // system down to "degraded".
+      if (r?.status === "degraded") status = "degraded";
     }
     return { status, subsystems: results };
   }
@@ -128,18 +130,22 @@ export function registerCoreProbes(): void {
     }
   });
 
-  // Redis probe — degraded (not down) when Redis is unavailable, since the
-  // platform falls back to in-memory rate limiting.
+  // Redis/PDIM probe. Not configured → "unknown" (honest absence signal, same
+  // pattern as the MaxCore probe below). Configured but unreachable → let the
+  // error propagate to runProbe()'s wrapper, which already distinguishes a
+  // timeout ("degraded" — dependency busy/congested, matches the in-memory
+  // rate-limit fallback that's actually in effect) from a hard failure
+  // ("down"). Catching every error here to "degraded" would hide a genuine
+  // outage behind the same label as ordinary PDIM congestion.
   healthRegistry?.register("redis", async () => {
-    try {
-      const { getRedisClient } = await import("./redisConnectionFactory.js");
-      const client = await getRedisClient();
-      if (!client) return { status: "degraded", detail: "no client" };
-      await (client as { ping(): Promise<unknown> }).ping();
-      return { status: "ok" };
-    } catch (e) {
-      return { status: "degraded", detail: (e as Error).message };
+    const { isPdimConfigured } = await import("./pdimClient.js");
+    if (!isPdimConfigured()) {
+      return { status: "unknown", detail: "PDIM not configured" };
     }
+    const { getRedisClient } = await import("./redisConnectionFactory.js");
+    const client = await getRedisClient();
+    await (client as { ping(): Promise<unknown> }).ping();
+    return { status: "ok" };
   });
 
   // Route-registration probe — registerRoutes takes minutes after the port

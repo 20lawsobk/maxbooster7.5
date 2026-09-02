@@ -65,14 +65,16 @@ async function proxyTo(
       res.send(await upstream?.text());
     }
   } catch (err) {
-    // For health probes: return 200/degraded instead of 503 so monitoring does not
-    // treat an offline Python sidecar as a full server outage and log at error level.
+    // Health probes must report their real status. A 200 here would tell any
+    // status-code-only consumer (load balancer, uptime monitor) that the
+    // sidecar is fine when it is actually unreachable. The JSON body still
+    // carries the descriptive "degraded" detail for consumers that inspect it.
     if (isHealthProbe) {
       logger.debug(
-        `[${label}] sidecar unreachable on health probe — reporting degraded`,
+        `[${label}] sidecar unreachable on health probe — reporting unavailable`,
       );
       res
-        .status(200)
+        .status(503)
         .json({ status: "degraded", available: false, service: label });
       return;
     }

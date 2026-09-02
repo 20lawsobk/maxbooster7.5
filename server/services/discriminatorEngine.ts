@@ -196,7 +196,7 @@ export async function judgeContent(
       source = "heuristic+maxcore";
     }
   } catch (e) {
-    logger.debug(
+    logger.warn(
       { err: e },
       "[Discriminator] MaxCore content-score unavailable — realism axis omitted, heuristic critic still applies",
     );

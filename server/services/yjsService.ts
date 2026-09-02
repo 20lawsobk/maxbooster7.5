@@ -93,7 +93,10 @@ export class YjsCollaborationService {
         cachedState = await (redis as any)?.get(redisKey);
       }
     } catch (error: unknown) {
-      // Gracefully degrade to database if Redis unavailable
+      // Redis is a cache; the database below is the authoritative source, so
+      // falling through is correct. Still log — a chronically failing cache
+      // read should be visible, not invisible just because it isn't fatal.
+      logger.warn("Redis cache read failed, falling back to database:", projectId, error);
     }
 
     const doc = new Y.Doc();
@@ -136,7 +139,11 @@ export class YjsCollaborationService {
               );
             }
           } catch (error: unknown) {
-            // Redis cache update failed, but document is loaded from DB
+            // The document itself loaded fine from DB — this only means the
+            // next request will also miss cache. Log it; silent, repeated
+            // cache-write failures are exactly the kind of thing an operator
+            // needs to see to notice Redis is unhealthy.
+            logger.warn("Redis cache write-back failed for project:", projectId, error);
           }
         } catch (error: unknown) {
           logger.warn("Failed to load snapshot for project:", projectId, error);

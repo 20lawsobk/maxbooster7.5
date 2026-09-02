@@ -1231,8 +1231,13 @@ export class SelfHealingSecuritySystem {
 
       return blocked.length > 0;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error checking IP blacklist:");
-      return false;
+      // Do NOT swallow this to `false` ("not blacklisted") — that would fail
+      // OPEN on a security control: a transient DB hiccup would silently let
+      // an already-flagged malicious IP through with no signal anything was
+      // wrong. Whoever calls this must see the failure and explicitly choose
+      // fail-open vs fail-closed with full knowledge, not have it hidden here.
+      logger.warn({ err: error }, "Error checking IP blacklist — could not determine blacklist status:");
+      throw error;
     }
   }
 

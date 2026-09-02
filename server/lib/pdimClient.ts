@@ -1822,16 +1822,14 @@ export class PdimRedisClient extends EventEmitter {
   }
   /**
    * XREADGROUP GROUP group consumer [COUNT count] [BLOCK milliseconds] [NOACK] STREAMS key [key ...] id [id ...]
-   * Attempts to forward to PDIM exec endpoint; falls back to null (graceful degradation)
-   * if PDIM does not support the command.
+   * Forwards to the PDIM exec endpoint. exec() itself already returns null for a
+   * genuinely unsupported command (HTTP 4xx / "ERR unknown command") and throws
+   * for everything else (timeouts, 5xx, network failures, circuit-open). Do not
+   * re-catch here — that would mask a real PDIM outage as an empty read instead
+   * of surfacing it to the caller.
    */
   async xreadgroup(...args: unknown[]): Promise<any[] | null> {
-    try {
-      return await this.exec<any[] | null>(["XREADGROUP", ...args]);
-    } catch {
-      // PDIM may not support XREADGROUP — return null so callers degrade gracefully
-      return null;
-    }
+    return this.exec<any[] | null>(["XREADGROUP", ...args]);
   }
 
   // ── camelCase stream aliases (node-redis v4 compat) ───────────────────────
