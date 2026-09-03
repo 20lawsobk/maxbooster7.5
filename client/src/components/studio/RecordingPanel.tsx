@@ -21,6 +21,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { logger } from "@/lib/logger";
+import { apiRequest } from "@/lib/queryClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -86,6 +87,10 @@ export function RecordingPanel({
   const [isUploading, setIsUploading] = useState(false);
   const [recordStartTime, setRecordStartTime] = useState(0);
   const [hasRecording, setHasRecording] = useState(false);
+  const [takeMode, setTakeMode] = useState(false);
+  const [takeGroupsByTrack, setTakeGroupsByTrack] = useState<
+    Record<string, { id: string; count: number }>
+  >({});
 
   useEffect(() => {
     setHasRecording(!!recordedBlob);
@@ -167,6 +172,56 @@ export function RecordingPanel({
           });
         }
 
+        if (result && takeMode) {
+          let group = takeGroupsByTrack[track.id];
+          if (!group) {
+            const groupResponse = await apiRequest(
+              "POST",
+              `/api/studio/projects/${projectId}/comping/groups`,
+              {
+                trackId: track.id,
+                name: `${track.name} Takes`,
+                startTime: recordStartTime,
+                endTime: recordStartTime + duration,
+              },
+            );
+            const createdGroup = await groupResponse.json();
+            group = { id: createdGroup.id, count: 0 };
+          }
+          const laneResponse = await apiRequest(
+            "POST",
+            `/api/studio/projects/${projectId}/comping/lanes`,
+            {
+              takeGroupId: group.id,
+              audioClipId: result.clipId,
+              name: `Take ${group.count + 1}`,
+              laneIndex: group.count,
+            },
+          );
+          const lane = await laneResponse.json();
+          if (group.count === 0) {
+            await apiRequest(
+              "POST",
+              `/api/studio/projects/${projectId}/comping/segments`,
+              {
+                takeGroupId: group.id,
+                takeLaneId: lane.id,
+                startTime: recordStartTime,
+                endTime: recordStartTime + duration,
+                isSelected: true,
+                order: 0,
+              },
+            );
+          }
+          setTakeGroupsByTrack((current) => ({
+            ...current,
+            [track.id]: { id: group!.id, count: group!.count + 1 },
+          }));
+          queryClient.invalidateQueries({
+            queryKey: ["/api/studio/projects", projectId, "comping", "groups"],
+          });
+        }
+
         queryClient.invalidateQueries({
           queryKey: ["/api/studio/tracks", track.id, "audio-clips"],
         });
@@ -204,6 +259,8 @@ export function RecordingPanel({
     toast,
     clearRecording,
     onClipUploaded,
+    takeMode,
+    takeGroupsByTrack,
   ]);
 
   const handleDiscardRecording = useCallback(() => {
@@ -311,6 +368,17 @@ export function RecordingPanel({
       </div>
 
       <div className="flex items-center gap-2 border-l pl-4">
+        <Button
+          variant={takeMode ? "secondary" : "ghost"}
+          size="sm"
+          className="h-7 px-2 text-[10px]"
+          onClick={() => setTakeMode((enabled) => !enabled)}
+          disabled={isRecording || hasRecording}
+          title="Group consecutive recordings as take lanes for comping"
+        >
+          <Mic className="h-3 w-3 mr-1" />
+          Take mode
+        </Button>
         {isRecording ? (
           <>
             <Badge

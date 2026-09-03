@@ -2,7 +2,15 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db";
-import { projects } from "@shared/schema";
+import {
+  audioClips,
+  compVersions,
+  projects,
+  studioTracks,
+  takeGroups,
+  takeLanes,
+  takeSegments,
+} from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { compingService } from "../services/compingService";
@@ -118,6 +126,80 @@ async function verifyProjectOwnership(
   return !!project;
 }
 
+async function verifyTrackOwnership(
+  trackId: string,
+  projectId: string,
+  userId: string,
+): Promise<boolean> {
+  if (!(await verifyProjectOwnership(projectId, userId))) return false;
+  return !!(await db.query.studioTracks.findFirst({
+    where: and(eq(studioTracks.id, trackId), eq(studioTracks.projectId, projectId)),
+  }));
+}
+
+async function verifyTakeGroupOwnership(
+  groupId: string,
+  projectId: string,
+  userId: string,
+) {
+  if (!(await verifyProjectOwnership(projectId, userId))) return undefined;
+  return db.query.takeGroups.findFirst({
+    where: and(eq(takeGroups.id, groupId), eq(takeGroups.projectId, projectId)),
+  });
+}
+
+async function verifyTakeLaneOwnership(
+  laneId: string,
+  projectId: string,
+  userId: string,
+) {
+  if (!(await verifyProjectOwnership(projectId, userId))) return undefined;
+  const lane = await db.query.takeLanes.findFirst({
+    where: eq(takeLanes.id, laneId),
+  });
+  if (!lane) return undefined;
+  const group = await db.query.takeGroups.findFirst({
+    where: and(
+      eq(takeGroups.id, lane.takeGroupId),
+      eq(takeGroups.projectId, projectId),
+    ),
+  });
+  return group ? { lane, group } : undefined;
+}
+
+async function verifyTakeSegmentOwnership(
+  segmentId: string,
+  projectId: string,
+  userId: string,
+) {
+  if (!(await verifyProjectOwnership(projectId, userId))) return undefined;
+  const segment = await db.query.takeSegments.findFirst({
+    where: eq(takeSegments.id, segmentId),
+  });
+  if (!segment) return undefined;
+  const group = await db.query.takeGroups.findFirst({
+    where: and(
+      eq(takeGroups.id, segment.takeGroupId),
+      eq(takeGroups.projectId, projectId),
+    ),
+  });
+  return group ? { segment, group } : undefined;
+}
+
+async function verifyCompVersionOwnership(
+  versionId: string,
+  projectId: string,
+  userId: string,
+) {
+  if (!(await verifyProjectOwnership(projectId, userId))) return undefined;
+  return db.query.compVersions.findFirst({
+    where: and(
+      eq(compVersions.id, versionId),
+      eq(compVersions.projectId, projectId),
+    ),
+  });
+}
+
 router.post(
   "/projects/:projectId/comping/groups",
   requireAuth,
@@ -131,6 +213,9 @@ router.post(
       }
 
       const data = createTakeGroupSchema?.parse(req.body);
+      if (!(await verifyTrackOwnership(data.trackId, projectId, userId))) {
+        return res.status(404).json({ error: "Track not found" });
+      }
 
       const takeGroup = await compingService?.createTakeGroup({
         projectId,
@@ -204,8 +289,8 @@ router.put(
       const { projectId, groupId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeGroupOwnership(groupId, projectId, userId))) {
+        return res.status(404).json({ error: "Take group not found" });
       }
 
       const updates = updateTakeGroupSchema?.parse(req.body);
@@ -232,8 +317,8 @@ router.delete(
       const { projectId, groupId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeGroupOwnership(groupId, projectId, userId))) {
+        return res.status(404).json({ error: "Take group not found" });
       }
 
       await compingService?.deleteTakeGroup(groupId);
@@ -253,8 +338,8 @@ router.post(
       const { projectId, groupId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeGroupOwnership(groupId, projectId, userId))) {
+        return res.status(404).json({ error: "Take group not found" });
       }
 
       const newGroup = await compingService?.duplicateTakeGroup(groupId);
@@ -279,6 +364,25 @@ router.post(
       }
 
       const data = createTakeLaneSchema?.parse(req.body);
+      const group = await verifyTakeGroupOwnership(
+        data.takeGroupId,
+        projectId,
+        userId,
+      );
+      if (!group) {
+        return res.status(404).json({ error: "Take group not found" });
+      }
+      if (data.audioClipId) {
+        const clip = await db.query.audioClips.findFirst({
+          where: and(
+            eq(audioClips.id, data.audioClipId),
+            eq(audioClips.projectId, projectId),
+          ),
+        });
+        if (!clip || clip.trackId !== group.trackId) {
+          return res.status(404).json({ error: "Audio clip not found" });
+        }
+      }
       const takeLane = await compingService?.createTakeLane(data);
 
       res.status(201).json(takeLane);
@@ -302,8 +406,8 @@ router.get(
       const { projectId, groupId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeGroupOwnership(groupId, projectId, userId))) {
+        return res.status(404).json({ error: "Take group not found" });
       }
 
       const lanes = await compingService?.getGroupLanes(groupId);
@@ -323,11 +427,23 @@ router.put(
       const { projectId, laneId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      const owned = await verifyTakeLaneOwnership(laneId, projectId, userId);
+      if (!owned) {
+        return res.status(404).json({ error: "Take lane not found" });
       }
 
       const updates = updateTakeLaneSchema?.parse(req.body);
+      if (updates.audioClipId) {
+        const clip = await db.query.audioClips.findFirst({
+          where: and(
+            eq(audioClips.id, updates.audioClipId),
+            eq(audioClips.projectId, projectId),
+          ),
+        });
+        if (!clip || clip.trackId !== owned.group.trackId) {
+          return res.status(404).json({ error: "Audio clip not found" });
+        }
+      }
       const lane = await compingService?.updateTakeLane(laneId, updates);
 
       res.json(lane);
@@ -351,8 +467,8 @@ router.delete(
       const { projectId, laneId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeLaneOwnership(laneId, projectId, userId))) {
+        return res.status(404).json({ error: "Take lane not found" });
       }
 
       await compingService?.deleteTakeLane(laneId);
@@ -372,11 +488,19 @@ router.put(
       const { projectId, groupId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeGroupOwnership(groupId, projectId, userId))) {
+        return res.status(404).json({ error: "Take group not found" });
       }
 
       const { laneIds } = reorderLanesSchema?.parse(req.body) ?? {};
+      const ownedLanes = await Promise.all(
+        laneIds.map((laneId) =>
+          verifyTakeLaneOwnership(laneId, projectId, userId),
+        ),
+      );
+      if (ownedLanes.some((entry) => !entry || entry.group.id !== groupId)) {
+        return res.status(400).json({ error: "laneIds must belong to this take group" });
+      }
       await compingService?.reorderLanes(groupId, laneIds);
 
       res.json({ success: true });
@@ -405,6 +529,32 @@ router.post(
       }
 
       const data = createTakeSegmentSchema?.parse(req.body);
+      const group = await verifyTakeGroupOwnership(
+        data.takeGroupId,
+        projectId,
+        userId,
+      );
+      const lane = await verifyTakeLaneOwnership(
+        data.takeLaneId,
+        projectId,
+        userId,
+      );
+      if (!group || !lane || lane.group.id !== group.id) {
+        return res.status(404).json({ error: "Take group or lane not found" });
+      }
+      if (data.compVersionId) {
+        const version = await verifyCompVersionOwnership(
+          data.compVersionId,
+          projectId,
+          userId,
+        );
+        if (!version || version.takeGroupId !== group.id) {
+          return res.status(404).json({ error: "Comp version not found" });
+        }
+      }
+      if (data.endTime <= data.startTime) {
+        return res.status(400).json({ error: "endTime must be greater than startTime" });
+      }
       const segment = await compingService?.createTakeSegment(data);
 
       res.status(201).json(segment);
@@ -428,8 +578,8 @@ router.get(
       const { projectId, groupId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeGroupOwnership(groupId, projectId, userId))) {
+        return res.status(404).json({ error: "Take group not found" });
       }
 
       const segments = await compingService?.getGroupSegments(groupId);
@@ -449,11 +599,21 @@ router.put(
       const { projectId, segmentId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      const owned = await verifyTakeSegmentOwnership(
+        segmentId,
+        projectId,
+        userId,
+      );
+      if (!owned) {
+        return res.status(404).json({ error: "Take segment not found" });
       }
 
       const updates = updateTakeSegmentSchema?.parse(req.body);
+      const nextStart = updates.startTime ?? owned.segment.startTime;
+      const nextEnd = updates.endTime ?? owned.segment.endTime;
+      if (nextEnd <= nextStart) {
+        return res.status(400).json({ error: "endTime must be greater than startTime" });
+      }
       const segment = await compingService?.updateTakeSegment(
         segmentId,
         updates,
@@ -480,8 +640,8 @@ router.delete(
       const { projectId, segmentId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeSegmentOwnership(segmentId, projectId, userId))) {
+        return res.status(404).json({ error: "Take segment not found" });
       }
 
       await compingService?.deleteTakeSegment(segmentId);
@@ -501,8 +661,8 @@ router.post(
       const { projectId, groupId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeGroupOwnership(groupId, projectId, userId))) {
+        return res.status(404).json({ error: "Take group not found" });
       }
 
       const data = createCompVersionSchema?.parse(req.body);
@@ -532,8 +692,8 @@ router.get(
       const { projectId, groupId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeGroupOwnership(groupId, projectId, userId))) {
+        return res.status(404).json({ error: "Take group not found" });
       }
 
       const history = await compingService?.getCompHistory(groupId);
@@ -553,8 +713,14 @@ router.put(
       const { projectId, groupId, versionId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      const group = await verifyTakeGroupOwnership(groupId, projectId, userId);
+      const version = await verifyCompVersionOwnership(
+        versionId,
+        projectId,
+        userId,
+      );
+      if (!group || !version || version.takeGroupId !== group.id) {
+        return res.status(404).json({ error: "Comp version not found" });
       }
 
       await compingService?.setActiveCompVersion(groupId, versionId);
@@ -574,8 +740,8 @@ router.delete(
       const { projectId, versionId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyCompVersionOwnership(versionId, projectId, userId))) {
+        return res.status(404).json({ error: "Comp version not found" });
       }
 
       await compingService?.deleteCompVersion(versionId);
@@ -608,8 +774,8 @@ router.post(
         return res.status(400).json({ error: "groupId is required" });
       }
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (!(await verifyTakeGroupOwnership(groupId, projectId, userId))) {
+        return res.status(404).json({ error: "Take group not found" });
       }
 
       const result = await compingService?.renderComp(groupId, userId);

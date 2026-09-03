@@ -315,14 +315,13 @@ export function useAudioRecorder() {
         }
 
         const result = await response?.json();
-        clearRecording();
         return result;
       } catch (error) {
         logger.error("Error uploading recording:", error);
         throw error;
       }
     },
-    [state?.recordedBlob, state?.duration, clearRecording],
+    [state?.recordedBlob, state?.duration],
   );
 
   useEffect(() => {

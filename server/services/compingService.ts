@@ -1,5 +1,10 @@
 // @ts-nocheck
 import { randomBytes } from "crypto";
+import fsPromises from "fs/promises";
+import os from "os";
+import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { db } from "../db";
 import { takeGroups, takeLanes, takeSegments, compVersions, audioClips, type TakeGroup, type TakeLane, type TakeSegment, type CompVersion } from "@shared/schema";
 type InsertTakeGroup = typeof takeGroups.$inferInsert;
@@ -8,10 +13,14 @@ type InsertTakeSegment = typeof takeSegments.$inferInsert;
 import { eq, and, desc, asc } from "drizzle-orm";
 
 import { logger } from "../logger.js";
+import { resolveAudioUrlToLocalFile } from "./audioSourceResolver.js";
+import { storageService } from "./storageService.js";
+
+const execFileAsync = promisify(execFile);
 
 export interface CompRenderResult {
   clipId: string;
-  filePath: string;
+  audioUrl: string;
   duration: number;
   status: "processing" | "completed" | "failed";
 }
@@ -173,6 +182,13 @@ export class CompingService {
         } as any)
         .where(eq(takeGroups.id, data?.takeGroupId));
 
+      if (takeLane.audioClipId) {
+        await db
+          .update(audioClips)
+          .set({ hiddenInTimeline: true })
+          .where(eq(audioClips.id, takeLane.audioClipId));
+      }
+
       return takeLane;
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error creating take lane:");
@@ -235,6 +251,13 @@ export class CompingService {
       }
 
       await db.delete(takeLanes).where(eq(takeLanes.id, laneId));
+
+      if (lane.audioClipId) {
+        await db
+          .update(audioClips)
+          .set({ hiddenInTimeline: false })
+          .where(eq(audioClips.id, lane.audioClipId));
+      }
 
       const remainingLanes = await this.getGroupLanes(lane?.takeGroupId);
       await db
@@ -397,6 +420,10 @@ export class CompingService {
     },
   ): Promise<CompVersion> {
     try {
+      const group = await this.getTakeGroup(groupId);
+      if (!group) {
+        throw new Error("Take group not found");
+      }
       const existingVersions = await this.getCompVersions(groupId);
       const nextVersionNumber =
         data?.versionNumber ?? existingVersions?.length + 1;
@@ -407,12 +434,14 @@ export class CompingService {
         .insert(compVersions)
         .values({
           id: `cv_${randomBytes(8).toString("hex")}`,
+          projectId: group.projectId,
+          trackId: group.trackId,
           takeGroupId: groupId,
           name: data.name,
           versionNumber: nextVersionNumber,
           description: data.description,
           createdBy: data.createdBy,
-          segmentData: segments,
+          segments,
           isActive: false,
         } as any)
         .returning();
@@ -473,12 +502,12 @@ export class CompingService {
         .where(eq(takeGroups.id, groupId));
 
       const version = await this.getCompVersion(versionId);
-      if ((version as any)?.segmentData) {
+      if (Array.isArray(version?.segments)) {
         await db
           .delete(takeSegments)
           .where(eq((takeSegments as any)?.takeGroupId, groupId));
 
-        const segments = (version as any)?.segmentData as TakeSegment[];
+        const segments = version.segments as TakeSegment[];
         for (const segment of segments) {
           await this.createTakeSegment({
             takeGroupId: groupId,
@@ -520,6 +549,10 @@ export class CompingService {
   }
 
   async renderComp(groupId: string, _userId: string): Promise<CompRenderResult> {
+    const tempDir = await fsPromises.mkdtemp(
+      path.join(os.tmpdir(), "studio-comp-"),
+    );
+    const sources: Array<{ cleanup: () => Promise<void> }> = [];
     try {
       const takeGroup = await this.getTakeGroup(groupId);
       if (!takeGroup) {
@@ -527,25 +560,115 @@ export class CompingService {
       }
 
       const segments = await this.getGroupSegments(groupId);
-      const selectedSegments = segments?.filter((s) => (s as any)?.isSelected);
+      const selectedSegments = segments
+        .filter((segment) => segment.isSelected)
+        .sort((a, b) => a.startTime - b.startTime || (a.order ?? 0) - (b.order ?? 0));
 
       if (selectedSegments?.length === 0) {
         throw new Error("No segments selected for rendering");
       }
 
+      const ffmpegModule = await import("ffmpeg-static");
+      const ffmpegPath = ffmpegModule.default;
+      if (!ffmpegPath) {
+        throw new Error("FFmpeg is not available");
+      }
+
+      const renderedParts: string[] = [];
+      let cursor = takeGroup.startTime ?? selectedSegments[0].startTime;
+      let partIndex = 0;
+      for (const segment of selectedSegments) {
+        if (segment.endTime <= segment.startTime) {
+          throw new Error(`Invalid comp segment ${segment.id}`);
+        }
+        if (segment.startTime < cursor - 0.001) {
+          throw new Error("Selected comp segments overlap");
+        }
+
+        const lane = await this.getTakeLane(segment.takeLaneId);
+        if (!lane || lane.takeGroupId !== groupId || !lane.audioClipId) {
+          throw new Error(`Comp segment ${segment.id} has no valid source lane`);
+        }
+        const clip = await db.query.audioClips.findFirst({
+          where: eq(audioClips.id, lane.audioClipId),
+        });
+        if (
+          !clip ||
+          clip.projectId !== takeGroup.projectId ||
+          clip.trackId !== takeGroup.trackId ||
+          !clip.audioUrl
+        ) {
+          throw new Error(`Comp segment ${segment.id} has no valid source clip`);
+        }
+
+        const gap = segment.startTime - cursor;
+        if (gap > 0.001) {
+          const silencePath = path.join(tempDir, `${partIndex++}_silence.wav`);
+          await execFileAsync(ffmpegPath, [
+            "-y", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
+            "-t", gap.toFixed(6), "-c:a", "pcm_s24le", silencePath,
+          ]);
+          renderedParts.push(silencePath);
+        }
+
+        const source = await resolveAudioUrlToLocalFile(clip.audioUrl);
+        sources.push(source);
+        const duration = segment.endTime - segment.startTime;
+        const sourceOffset = Math.max(0, segment.startTime - (clip.startTime ?? 0));
+        const fadeIn = Math.min(segment.fadeIn ?? 0, duration);
+        const fadeOut = Math.min(segment.fadeOut ?? 0, duration);
+        const filters = [`volume=${segment.gain ?? 1}`];
+        if (fadeIn > 0) filters.push(`afade=t=in:st=0:d=${fadeIn}`);
+        if (fadeOut > 0) {
+          filters.push(`afade=t=out:st=${Math.max(0, duration - fadeOut)}:d=${fadeOut}`);
+        }
+        const partPath = path.join(tempDir, `${partIndex++}_segment.wav`);
+        await execFileAsync(ffmpegPath, [
+          "-y", "-ss", sourceOffset.toFixed(6), "-t", duration.toFixed(6),
+          "-i", source.localPath, "-af", filters.join(","),
+          "-ar", "48000", "-ac", "2", "-c:a", "pcm_s24le", partPath,
+        ]);
+        renderedParts.push(partPath);
+        cursor = segment.endTime;
+      }
+
+      const concatList = path.join(tempDir, "concat.txt");
+      await fsPromises.writeFile(
+        concatList,
+        renderedParts.map((part) => `file '${part.replace(/'/g, "'\\''")}'`).join("\n"),
+      );
+      const outputPath = path.join(tempDir, "comp.wav");
+      await execFileAsync(ffmpegPath, [
+        "-y", "-f", "concat", "-safe", "0", "-i", concatList,
+        "-c:a", "pcm_s24le", outputPath,
+      ]);
+      const outputBuffer = await fsPromises.readFile(outputPath);
+      if (outputBuffer.length < 44 || outputBuffer.subarray(0, 4).toString() !== "RIFF") {
+        throw new Error("Rendered comp is not a valid WAV file");
+      }
+
       const clipId = `comp_${randomBytes(8).toString("hex")}`;
-      const filePath = `/uploads/audio/comps/${clipId}.wav`;
+      const storageKey = await storageService.uploadFile(
+        outputBuffer,
+        "studio-comps",
+        `${clipId}.wav`,
+        "audio/wav",
+      );
+      const audioUrl = await storageService.getDownloadUrl(storageKey);
+      const duration =
+        selectedSegments[selectedSegments.length - 1].endTime -
+        (takeGroup.startTime ?? selectedSegments[0].startTime);
 
       const [newClip] = await db
         .insert(audioClips)
         .values({
           id: clipId,
+          projectId: takeGroup.projectId,
           trackId: takeGroup.trackId,
           name: `${takeGroup?.name} (Comp)`,
-          filePath,
-          duration: (takeGroup as any).endTime - (takeGroup as any)?.startTime,
-          startTime: (takeGroup as any).startTime,
-          endTime: (takeGroup as any).endTime,
+          audioUrl,
+          duration,
+          startTime: takeGroup.startTime,
           isComped: true,
           compSourceIds: selectedSegments.map((s) => s?.id),
         } as any)
@@ -562,13 +685,16 @@ export class CompingService {
 
       return {
         clipId: newClip.id,
-        filePath: (newClip as any).filePath,
-        duration: newClip.duration,
+        audioUrl: newClip.audioUrl!,
+        duration: newClip.duration!,
         status: "completed",
       };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error rendering comp:");
-      throw new Error("Failed to render comp");
+      throw error instanceof Error ? error : new Error("Failed to render comp");
+    } finally {
+      await Promise.all(sources.map((source) => source.cleanup()));
+      await fsPromises.rm(tempDir, { recursive: true, force: true });
     }
   }
 
