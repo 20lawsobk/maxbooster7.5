@@ -26,7 +26,7 @@ import {
   projects,
   audioClips,
 } from "@shared/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { storageService } from "./storageService.js";
 import { logger } from "../logger.js";
 import { SAMPLE_RATES, BIT_DEPTHS, isSupportedSampleRate, isSupportedBitDepth, type SampleRate, type BitDepth } from "../../shared/audioConstants.js";

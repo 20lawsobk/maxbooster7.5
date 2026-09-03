@@ -84,11 +84,13 @@ export function StemExportDialog({
   const [exportJobId, setExportJobId] = useState<string | null>(null);
   const [exportStatus, setExportStatus] = useState<StemExport | null>(null);
 
-  const { data: tracksData, isLoading: isLoadingTracks } = useQuery<Track[]>({
+  const { data: tracksData, isLoading: isLoadingTracks } = useQuery<{
+    tracks: Track[];
+  }>({
     queryKey: ["/api/studio/projects", projectId, "tracks"],
     enabled: !!projectId && open,
   });
-  const tracks: Track[] = Array.isArray(tracksData) ? tracksData : [];
+  const tracks = Array.isArray(tracksData?.tracks) ? tracksData.tracks : [];
 
   useEffect(() => {
     if (open && tracks.length > 0) {
@@ -105,10 +107,10 @@ export function StemExportDialog({
         try {
           const res = await apiRequest(
             "GET",
-            `/api/studio/stem-exports/${exportJobId}`,
+            `/api/studio/projects/${projectId}/stems/status/${exportJobId}`,
           );
           const data = await res.json();
-          setExportStatus(data);
+          setExportStatus({ ...data, id: data.exportId || exportJobId });
 
           if (data.status === "completed" || data.status === "failed") {
             if (pollInterval) clearInterval(pollInterval);
@@ -139,7 +141,7 @@ export function StemExportDialog({
     return () => {
       if (pollInterval) clearInterval(pollInterval);
     };
-  }, [exportJobId, toast]);
+  }, [exportJobId, projectId, toast]);
 
   const handleToggleTrack = (trackId: string) => {
     setSelectedTracks((prev) => {
@@ -184,7 +186,7 @@ export function StemExportDialog({
       format: exportFormat,
       sampleRate: exportFormat === "wav" ? sampleRate : 44100,
       bitDepth: exportFormat === "wav" ? bitDepth : 16,
-      bitrate: exportFormat === "mp3" ? bitrate : 320,
+      bitrate: `${exportFormat === "mp3" ? bitrate : 320}k`,
       normalize,
       includeEffects,
       keepSpeakerFormat,
@@ -196,12 +198,12 @@ export function StemExportDialog({
     try {
       const res = await apiRequest(
         "POST",
-        `/api/studio/projects/${projectId}/export-stems`,
+        `/api/studio/projects/${projectId}/stems/export`,
         exportOptions,
       );
 
       const data = await res.json();
-      setExportJobId(data.jobId);
+      setExportJobId(data.exportId);
     } catch (error: unknown) {
       logger.error("Error starting stem export:", error);
       toast({

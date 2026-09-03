@@ -55,7 +55,7 @@ export interface StudioMarker {
 }
 
 export interface StemExportConfig {
-  format: "wav" | "flac" | "aiff" | "mp3";
+  format: "wav" | "flac" | "mp3" | "aac";
   sampleRate: number;
   bitDepth: number;
   trackIds?: string[];
@@ -348,11 +348,11 @@ export const studioApi = {
       projectId: number,
       config: StemExportConfig,
     ): Promise<{ exportId: string }> {
-      return apiRequest(
+      return (await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/stems/export`,
         config,
-      );
+      )).json();
     },
 
     async getExportStatus(
@@ -428,11 +428,11 @@ export const studioApi = {
       projectId: number,
       data: Omit<MidiClip, "id" | "notes">,
     ): Promise<MidiClip> {
-      return apiRequest(
+      return (await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/midi/clips`,
         data,
-      );
+      )).json();
     },
 
     async updateClip(
@@ -440,11 +440,11 @@ export const studioApi = {
       clipId: string,
       data: Partial<MidiClip>,
     ): Promise<MidiClip> {
-      return apiRequest(
+      return (await apiRequest(
         "PUT",
         `/api/studio/projects/${projectId}/midi/clips/${clipId}`,
         data,
-      );
+      )).json();
     },
 
     async deleteClip(projectId: number, clipId: string): Promise<void> {
@@ -459,11 +459,11 @@ export const studioApi = {
       clipId: string,
       note: Omit<MidiNote, "id" | "clipId">,
     ): Promise<MidiNote> {
-      return apiRequest(
+      return (await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/midi/clips/${clipId}/notes`,
         note,
-      );
+      )).json();
     },
 
     async updateNote(
@@ -472,11 +472,11 @@ export const studioApi = {
       noteId: string,
       data: Partial<MidiNote>,
     ): Promise<MidiNote> {
-      return apiRequest(
+      return (await apiRequest(
         "PUT",
         `/api/studio/projects/${projectId}/midi/clips/${clipId}/notes/${noteId}`,
         data,
-      );
+      )).json();
     },
 
     async deleteNote(

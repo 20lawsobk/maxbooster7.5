@@ -639,11 +639,14 @@ export function CompetitorBenchmark() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
+                  onClick={() => {
                     queryClient.invalidateQueries({
-                      queryKey: ["/api/social/benchmark"],
-                    })
-                  }
+                      queryKey: ["/api/social/benchmark/competitors"],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["/api/social/benchmark/insights"],
+                    });
+                  }}
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Refresh Data

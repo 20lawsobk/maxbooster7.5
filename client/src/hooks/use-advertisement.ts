@@ -117,7 +117,7 @@ export function useAdvertisement() {
       updates: Partial<AdCampaign>;
     }) => {
       const response = await apiRequest(
-        "PUT",
+        "PATCH",
         `/api/advertising/campaigns/${id}`,
         updates,
       );

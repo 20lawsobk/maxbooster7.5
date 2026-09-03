@@ -1647,10 +1647,87 @@ router.get(
         fadeOut: clip.fadeOut || 0,
       }));
 
-      res.json({ tracks, clips: mappedClips });
+      res.json({
+        tracks: tracks.map((track) => ({
+          ...track,
+          effects:
+            track.metadata && typeof track.metadata === "object"
+              ? (track.metadata as Record<string, unknown>).effects
+              : undefined,
+        })),
+        clips: mappedClips,
+      });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error getting tracks:");
       res.status(500).json({ error: "Failed to get tracks" });
+    }
+  },
+);
+
+const trackEffectsSchema = z.object({
+  eq: z
+    .object({
+      lowGain: z.number().min(-24).max(24).optional(),
+      midGain: z.number().min(-24).max(24).optional(),
+      highGain: z.number().min(-24).max(24).optional(),
+      bypass: z.boolean().optional(),
+    })
+    .optional(),
+  compressor: z
+    .object({
+      threshold: z.number().min(-100).max(0).optional(),
+      ratio: z.number().min(1).max(100).optional(),
+      attack: z.number().min(0).max(1000).optional(),
+      release: z.number().min(0).max(5000).optional(),
+      bypass: z.boolean().optional(),
+    })
+    .optional(),
+  reverb: z
+    .object({
+      mix: z.number().min(0).max(1).optional(),
+      bypass: z.boolean().optional(),
+    })
+    .optional(),
+});
+
+router.patch(
+  "/projects/:projectId/tracks/:trackId/effects",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { projectId, trackId } = req.params as Record<string, string>;
+      if (!(await verifyProjectOwnership(projectId, req.user!.id))) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      const effects = trackEffectsSchema.parse(req.body);
+      const track = await db.query.studioTracks.findFirst({
+        where: and(
+          eq(studioTracks.id, trackId),
+          eq(studioTracks.projectId, projectId),
+        ),
+      });
+      if (!track) return res.status(404).json({ error: "Track not found" });
+
+      const metadata =
+        track.metadata && typeof track.metadata === "object"
+          ? (track.metadata as Record<string, unknown>)
+          : {};
+      const existingEffects =
+        metadata.effects && typeof metadata.effects === "object"
+          ? (metadata.effects as Record<string, unknown>)
+          : {};
+      const [updated] = await db
+        .update(studioTracks)
+        .set({ metadata: { ...metadata, effects: { ...existingEffects, ...effects } } })
+        .where(eq(studioTracks.id, trackId))
+        .returning();
+      res.json({ ...updated, effects: (updated.metadata as Record<string, unknown>)?.effects });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid effects settings", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error updating track effects:");
+      res.status(500).json({ error: "Failed to update track effects" });
     }
   },
 );

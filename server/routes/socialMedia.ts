@@ -2635,8 +2635,11 @@ router.post(
         targetAudience = "",
       } = req.body;
 
-      if (!url) {
+      if (typeof url !== "string" || !url.trim()) {
         return res.status(400).json({ error: "URL is required" });
+      }
+      if (!Array.isArray(platforms)) {
+        return res.status(400).json({ error: "platforms must be an array" });
       }
 
       // Reject obviously oversized URLs before any parsing or network fetch
@@ -2653,89 +2656,20 @@ router.post(
           .json({ error: (ssrfErr as Error).message || "Invalid URL" });
       }
 
-      // Use the in-house URL parser for metadata extraction. If it throws
-      // (e.g. an SSRF-blocked target) we fall back to a minimal URL-derived
-      // stub so MaxCore can still generate relevant content from the URL.
+      // Content must be based on a successfully retrieved and analyzed source.
+      // Do not fabricate URL metadata when fetching or parsing fails: doing so
+      // produces plausible-looking posts that make unsupported claims.
       let analysis: import("../services/mediaAnalyzerService.js").UrlAnalysis;
       try {
         analysis = await analyzeUrl(url?.trim());
       } catch (analyzeErr) {
         logger.warn(
-          "[generate-from-url] URL analysis failed — using URL-derived stub:",
+          "[generate-from-url] URL analysis failed:",
           (analyzeErr as any)?.message,
         );
-        const parsedUrl = (() => {
-          try {
-            return new URL(url?.trim());
-          } catch {
-            return null;
-          }
-        })();
-        const domain = parsedUrl?.hostname?.replace(/^www\./, "") || url;
-        const pathWords = (parsedUrl?.pathname || "")
-          .replace(/[-_/]/g, " ")
-          .trim();
-        analysis = {
-          url,
-          domain,
-          platform: "web",
-          platform_category: "web",
-          is_music: false,
-          title: pathWords || domain,
-          description: "",
-          author: "",
-          published: "",
-          modified: "",
-          og_image: "",
-          thumbnail_url: "",
-          canonical: "",
-          language: "",
-          content_type: "website",
-          content_category: "general",
-          genre: "default",
-          tone: "default",
-          artist: "",
-          track: "",
-          album: "",
-          duration: "",
-          release_date: "",
-          label: "",
-          isrc: "",
-          bpm: "",
-          keywords: [],
-          tags: [],
-          headings: [],
-          body_preview: "",
-          summary: domain,
-          view_count: null,
-          like_count: null,
-          comment_count: null,
-          play_count: null,
-          share_count: null,
-          subscriber_count: null,
-          embed_url: "",
-          reading_time_minutes: null,
-          word_count: null,
-          section: "",
-          event_date: "",
-          event_end_date: "",
-          event_location: "",
-          performers: [],
-          organizer: "",
-          price: "",
-          currency: "",
-          brand: "",
-          rating: "",
-          review_count: null,
-          final_url: url,
-          youtube_id: "",
-          spotify_type: "",
-          spotify_id: "",
-          apple_music_type: "",
-          apple_music_id: "",
-          data_sources: ["url_fallback"],
-          error: (analyzeErr as Error).message,
-        } as import("../services/mediaAnalyzerService.js").UrlAnalysis;
+        return res.status(422).json({
+          error: "Unable to retrieve analyzable content from this URL",
+        });
       }
 
       const seed = urlToContentSeed(analysis);
@@ -2774,6 +2708,18 @@ router.post(
         "googlebusiness",
       ];
       const validTones = ["professional", "casual", "energetic", "promotional"];
+      const requestedPlatforms = [
+        ...new Set(
+          platforms
+            .filter((platform: unknown): platform is string => typeof platform === "string")
+            .map((platform: string) => platform.toLowerCase()),
+        ),
+      ].filter((platform) => validPlatforms.includes(platform));
+      if (requestedPlatforms.length === 0) {
+        return res.status(400).json({
+          error: `At least one supported platform is required: ${validPlatforms.join(", ")}`,
+        });
+      }
       const generatedContent: Record<string, unknown>[] = [];
 
       // Combine keywords + tags from URL analysis into a deduplicated keyword list
@@ -2809,8 +2755,7 @@ router.post(
 
       // MaxCore AI is the only source — generate for all platforms in parallel
       const platformResults = await Promise.allSettled(
-        platforms
-          .filter((p: string) => validPlatforms?.includes(p))
+        requestedPlatforms
           .map(async (platform: string) => {
             const ai = await getUnifiedAI();
             const result = await ai?.generateContent({
@@ -2897,8 +2842,7 @@ router.post(
           `[generate-from-url] All ${platforms.length} parallel generateContent calls ` +
             `returned no data — retrying serially (topic="${topic.slice(0, 60)}")`,
         );
-        for (const platform of platforms) {
-          if (!validPlatforms?.includes(platform)) continue;
+        for (const platform of requestedPlatforms) {
 
           const result = await (
             await getUnifiedAI()

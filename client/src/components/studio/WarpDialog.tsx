@@ -635,6 +635,11 @@ export function WarpDialog({ clipId, trackId, open, onOpenChange }: WarpDialogPr
   };
 
   const isLoading = isEnsuring || tempoQuery.isLoading || markersQuery.isLoading;
+  const isQueryError = tempoQuery.isError || markersQuery.isError;
+  const queryErrorMessage =
+    (tempoQuery.error as Error | null)?.message ||
+    (markersQuery.error as Error | null)?.message ||
+    undefined;
   const isBusy =
     quantizeMutation.isPending ||
     previewMutation.isPending ||
@@ -655,6 +660,24 @@ export function WarpDialog({ clipId, trackId, open, onOpenChange }: WarpDialogPr
           <div className="flex items-center justify-center py-16 text-white/60 gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
             Preparing clip...
+          </div>
+        ) : isQueryError ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+            <p className="text-sm text-red-400">
+              Couldn't load warp data for this clip
+              {queryErrorMessage ? `: ${queryErrorMessage}` : "."}
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-white/20"
+              onClick={() => {
+                tempoQuery.refetch();
+                markersQuery.refetch();
+              }}
+            >
+              Retry
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">

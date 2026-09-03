@@ -1256,7 +1256,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     (type: "audio" | "instrument" | "midi" | "bus") => {
       const color = TRACK_COLORS[tracks.length % TRACK_COLORS.length];
       const name = `${type.charAt(0).toUpperCase() + type.slice(1)} ${tracks.length + 1}`;
-      store.addTrack(type, name);
+      const localTrackId = store.addTrack(type, name);
       toast({
         title: "Track Added",
         description: `New ${type} track created.`,
@@ -1272,14 +1272,22 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           mute: false,
           solo: false,
           armed: false,
-        }).catch((err) => {
-          logger.error("[DAW] Failed to sync new track to backend:", err);
-          toast({
-            title: "Sync Error",
-            description: "Track created locally but failed to sync to server.",
-            variant: "destructive",
+        })
+          .then(async (res) => {
+            const data = await res.json().catch(() => null);
+            const realTrackId = data?.track?.id || data?.id;
+            if (realTrackId && localTrackId && realTrackId !== localTrackId) {
+              store.updateTrack(localTrackId, { id: realTrackId });
+            }
+          })
+          .catch((err) => {
+            logger.error("[DAW] Failed to sync new track to backend:", err);
+            toast({
+              title: "Sync Error",
+              description: "Track created locally but failed to sync to server.",
+              variant: "destructive",
+            });
           });
-        });
       }
     },
     [store, tracks.length, toast, projectId],

@@ -5,8 +5,190 @@ import { logger } from "../logger.js";
 import { midiGeneratorService } from "../services/midiGeneratorService";
 import { midiTransformService } from "../services/midiTransformService";
 import { microtonalService } from "../services/microtonalService";
+import { db } from "../db.js";
+import { midiClips, midiNotes, projects, studioProjects, studioTracks } from "@shared/schema";
+import { and, eq } from "drizzle-orm";
 
 const router = Router();
+
+const midiClipSchema = z.object({
+  trackId: z.string().min(1),
+  name: z.string().min(1).max(255),
+  startBeat: z.number().min(0).default(0),
+  durationBeats: z.number().positive().default(4),
+  color: z.string().max(32).default("#8b5cf6"),
+  looped: z.boolean().default(false),
+  loopLength: z.number().positive().default(4),
+});
+
+const midiClipUpdateSchema = midiClipSchema.partial().omit({ trackId: true });
+
+const persistedMidiNoteSchema = z.object({
+  pitch: z.number().int().min(0).max(127),
+  velocity: z.number().int().min(0).max(127),
+  startBeat: z.number().min(0),
+  durationBeats: z.number().positive(),
+  channel: z.number().int().min(0).max(15).default(0),
+});
+
+const quantizeSchema = z.object({
+  value: z.number().positive(),
+  strength: z.number().min(0).max(1).default(1),
+  selectedOnly: z.boolean().optional(),
+});
+
+async function verifyProjectOwnership(projectId: string, userId: string) {
+  const project = await db.query.projects.findFirst({
+    where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+  });
+  if (project) return true;
+  const studioProject = await db.query.studioProjects.findFirst({
+    where: and(eq(studioProjects.id, projectId), eq(studioProjects.userId, userId)),
+  });
+  return !!studioProject;
+}
+
+async function getOwnedClip(projectId: string, clipId: string, userId: string) {
+  if (!(await verifyProjectOwnership(projectId, userId))) return null;
+  return db.query.midiClips.findFirst({
+    where: and(eq(midiClips.id, clipId), eq(midiClips.projectId, projectId)),
+  });
+}
+
+function serializeClip(clip: typeof midiClips.$inferSelect, notes: (typeof midiNotes.$inferSelect)[]) {
+  return { ...clip, notes };
+}
+
+router.get("/projects/:projectId/midi/clips", requireAuth, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const trackId = z.string().min(1).safeParse(req.query.trackId);
+    if (!trackId.success) return res.status(400).json({ error: "trackId is required" });
+    if (!(await verifyProjectOwnership(projectId, req.user!.id))) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    const clips = await db.query.midiClips.findMany({
+      where: and(eq(midiClips.projectId, projectId), eq(midiClips.trackId, trackId.data)),
+    });
+    const result = await Promise.all(clips.map(async (clip) =>
+      serializeClip(clip, await db.query.midiNotes.findMany({ where: eq(midiNotes.clipId, clip.id) })),
+    ));
+    res.json(result);
+  } catch (error) {
+    logger.warn({ err: error }, "Error fetching MIDI clips:");
+    res.status(500).json({ error: "Failed to fetch MIDI clips" });
+  }
+});
+
+router.post("/projects/:projectId/midi/clips", requireAuth, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    if (!(await verifyProjectOwnership(projectId, req.user!.id))) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    const data = midiClipSchema.parse(req.body);
+    const track = await db.query.studioTracks.findFirst({
+      where: and(eq(studioTracks.id, data.trackId), eq(studioTracks.projectId, projectId)),
+    });
+    if (!track) return res.status(400).json({ error: "Track does not belong to this project" });
+    const [clip] = await db.insert(midiClips).values({ ...data, projectId }).returning();
+    res.status(201).json(serializeClip(clip, []));
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: "Invalid MIDI clip", details: error.issues });
+    logger.warn({ err: error }, "Error creating MIDI clip:");
+    res.status(500).json({ error: "Failed to create MIDI clip" });
+  }
+});
+
+router.put("/projects/:projectId/midi/clips/:clipId", requireAuth, async (req, res) => {
+  try {
+    const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
+    if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
+    const data = midiClipUpdateSchema.parse(req.body);
+    const [updated] = await db.update(midiClips).set({ ...data, updatedAt: new Date() }).where(eq(midiClips.id, clip.id)).returning();
+    const notes = await db.query.midiNotes.findMany({ where: eq(midiNotes.clipId, clip.id) });
+    res.json(serializeClip(updated, notes));
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: "Invalid MIDI clip", details: error.issues });
+    logger.warn({ err: error }, "Error updating MIDI clip:");
+    res.status(500).json({ error: "Failed to update MIDI clip" });
+  }
+});
+
+router.delete("/projects/:projectId/midi/clips/:clipId", requireAuth, async (req, res) => {
+  try {
+    const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
+    if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
+    await db.delete(midiNotes).where(eq(midiNotes.clipId, clip.id));
+    await db.delete(midiClips).where(eq(midiClips.id, clip.id));
+    res.status(204).send();
+  } catch (error) {
+    logger.warn({ err: error }, "Error deleting MIDI clip:");
+    res.status(500).json({ error: "Failed to delete MIDI clip" });
+  }
+});
+
+router.post("/projects/:projectId/midi/clips/:clipId/notes", requireAuth, async (req, res) => {
+  try {
+    const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
+    if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
+    const data = persistedMidiNoteSchema.parse(req.body);
+    const [note] = await db.insert(midiNotes).values({ ...data, clipId: clip.id }).returning();
+    res.status(201).json(note);
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: "Invalid MIDI note", details: error.issues });
+    logger.warn({ err: error }, "Error adding MIDI note:");
+    res.status(500).json({ error: "Failed to add MIDI note" });
+  }
+});
+
+router.put("/projects/:projectId/midi/clips/:clipId/notes/:noteId", requireAuth, async (req, res) => {
+  try {
+    const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
+    if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
+    const data = persistedMidiNoteSchema.partial().parse(req.body);
+    const [note] = await db.update(midiNotes).set({ ...data, updatedAt: new Date() }).where(and(eq(midiNotes.id, req.params.noteId), eq(midiNotes.clipId, clip.id))).returning();
+    if (!note) return res.status(404).json({ error: "MIDI note not found" });
+    res.json(note);
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: "Invalid MIDI note", details: error.issues });
+    logger.warn({ err: error }, "Error updating MIDI note:");
+    res.status(500).json({ error: "Failed to update MIDI note" });
+  }
+});
+
+router.delete("/projects/:projectId/midi/clips/:clipId/notes/:noteId", requireAuth, async (req, res) => {
+  try {
+    const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
+    if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
+    const deleted = await db.delete(midiNotes).where(and(eq(midiNotes.id, req.params.noteId), eq(midiNotes.clipId, clip.id))).returning();
+    if (!deleted.length) return res.status(404).json({ error: "MIDI note not found" });
+    res.status(204).send();
+  } catch (error) {
+    logger.warn({ err: error }, "Error deleting MIDI note:");
+    res.status(500).json({ error: "Failed to delete MIDI note" });
+  }
+});
+
+router.post("/projects/:projectId/midi/clips/:clipId/quantize", requireAuth, async (req, res) => {
+  try {
+    const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
+    if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
+    const { value, strength } = quantizeSchema.parse(req.body);
+    const notes = await db.query.midiNotes.findMany({ where: eq(midiNotes.clipId, clip.id) });
+    const updated = await Promise.all(notes.map(async (note) => {
+      const target = Math.round(note.startBeat / value) * value;
+      const startBeat = note.startBeat + (target - note.startBeat) * strength;
+      const [result] = await db.update(midiNotes).set({ startBeat, updatedAt: new Date() }).where(eq(midiNotes.id, note.id)).returning();
+      return result;
+    }));
+    res.json({ success: true, notes: updated });
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: "Invalid quantize options", details: error.issues });
+    logger.warn({ err: error }, "Error quantizing MIDI notes:");
+    res.status(500).json({ error: "Failed to quantize MIDI notes" });
+  }
+});
 
 const midiNoteSchema = z.object({
   note: z.number().int().min(0).max(127),

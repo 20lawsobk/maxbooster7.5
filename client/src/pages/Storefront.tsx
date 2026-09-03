@@ -370,7 +370,7 @@ export default function Storefront() {
         `/api/storefront/${storefront!.id}/checkout/preview`,
         { listingIds: cart },
       );
-      return res as CheckoutPreview;
+      return res.json();
     },
   });
 

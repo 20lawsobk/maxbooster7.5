@@ -158,6 +158,21 @@ export function ApprovalDashboard() {
     enabled: !!selectedPost && showHistoryDialog,
   });
 
+  const invalidateApprovalData = () => {
+    queryClient.invalidateQueries({
+      queryKey: ["/api/social/approvals/stats"],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["/api/social/approvals/pending"],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["/api/social/approvals/my-posts"],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["/api/social/approvals/history"],
+    });
+  };
+
   const submitForReviewMutation = useMutation({
     mutationFn: async (postId: string) => {
       const csrfToken = getCsrfTokenFromCookie();
@@ -177,7 +192,7 @@ export function ApprovalDashboard() {
         title: "Success",
         description: "Post submitted for review",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/social/approvals"] });
+      invalidateApprovalData();
     },
     onError: (error: Error) => {
       toast({
@@ -214,7 +229,7 @@ export function ApprovalDashboard() {
         title: "Success",
         description: "Post approved successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/social/approvals"] });
+      invalidateApprovalData();
       setShowApproveDialog(false);
       setApproveComment("");
       setSelectedPost(null);
@@ -256,7 +271,7 @@ export function ApprovalDashboard() {
         title: "Success",
         description: "Post rejected",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/social/approvals"] });
+      invalidateApprovalData();
       setShowRejectDialog(false);
       setRejectReason("");
       setSelectedPost(null);

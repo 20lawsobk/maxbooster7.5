@@ -602,8 +602,8 @@ router.get("/platform/:storefrontId", async (req, res) => {
       .limit(1);
     return res.json({
       ok: true,
-      domain: row.domain ?? null,
-      status: row.status ?? null,
+      domain: row?.domain ?? null,
+      status: row?.status ?? null,
     });
   } catch (err) {
     logger.warn({ err: err }, "[domains] platform get error:");

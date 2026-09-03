@@ -1,9 +1,9 @@
 {
   "meta": {
-    "backendCount": 2201,
-    "uniqueBackendCount": 2193,
-    "frontendCallCount": 2215,
-    "uniqueFrontendCount": 1127,
+    "backendCount": 2204,
+    "uniqueBackendCount": 2196,
+    "frontendCallCount": 2220,
+    "uniqueFrontendCount": 1128,
     "unresolvedDynamicCount": 3
   },
   "findings": [
@@ -1141,18 +1141,6 @@
       "id": "missing-route-90",
       "class": "missing-route",
       "severity": "high",
-      "method": "POST",
-      "path": "/api/studio/projects/:param/duplicate",
-      "locations": [
-        "client/src/components/studio/FlowStateProjectSelector.tsx:121"
-      ],
-      "description": "The frontend calls POST /api/studio/projects/:param/duplicate (methodConfidence: detected) from client/src/components/studio/FlowStateProjectSelector.tsx:121. Live evidence: a live GET probe to the same path also hit this server's generic \"route does not exist\" handler, and no static registration for POST at this path was found either. This endpoint will 404 for every real user.",
-      "recommendation": "Register a matching route in the appropriate server/routes/*.ts file (no similarly-named existing route was found, so this is likely an entirely unbuilt endpoint, not a typo)."
-    },
-    {
-      "id": "missing-route-91",
-      "class": "missing-route",
-      "severity": "high",
       "method": "GET",
       "path": "/api/studio/projects/:param/comping/groups",
       "locations": [
@@ -1163,7 +1151,7 @@
       "recommendation": "Register a matching route in the appropriate server/routes/*.ts file (no similarly-named existing route was found, so this is likely an entirely unbuilt endpoint, not a typo)."
     },
     {
-      "id": "missing-route-92",
+      "id": "missing-route-91",
       "class": "missing-route",
       "severity": "high",
       "method": "POST",
@@ -1176,7 +1164,7 @@
       "recommendation": "Register a matching route in the appropriate server/routes/*.ts file, or fix the frontend call -- closest existing registered path(s): /api/studio/projects/:projectId/render."
     },
     {
-      "id": "method-unconfirmed-93",
+      "id": "method-unconfirmed-92",
       "class": "method-unconfirmed",
       "severity": "low",
       "method": "GET",
@@ -1188,7 +1176,7 @@
       "recommendation": "Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request."
     },
     {
-      "id": "missing-route-94",
+      "id": "missing-route-93",
       "class": "missing-route",
       "severity": "high",
       "method": "PATCH",
@@ -1200,7 +1188,7 @@
       "recommendation": "Register a matching route in the appropriate server/routes/*.ts file (no similarly-named existing route was found, so this is likely an entirely unbuilt endpoint, not a typo)."
     },
     {
-      "id": "method-unconfirmed-95",
+      "id": "method-unconfirmed-94",
       "class": "method-unconfirmed",
       "severity": "low",
       "method": "GET",
@@ -1212,7 +1200,7 @@
       "recommendation": "Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request."
     },
     {
-      "id": "method-unconfirmed-96",
+      "id": "method-unconfirmed-95",
       "class": "method-unconfirmed",
       "severity": "low",
       "method": "GET",
@@ -1224,7 +1212,7 @@
       "recommendation": "Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request."
     },
     {
-      "id": "method-unconfirmed-97",
+      "id": "method-unconfirmed-96",
       "class": "method-unconfirmed",
       "severity": "low",
       "method": "GET",
@@ -1236,7 +1224,7 @@
       "recommendation": "Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request."
     },
     {
-      "id": "method-unconfirmed-98",
+      "id": "method-unconfirmed-97",
       "class": "method-unconfirmed",
       "severity": "low",
       "method": "GET",
@@ -1248,6 +1236,18 @@
       ],
       "description": "The frontend calls GET /api/studio/record/upload from client/src/components/studio/UltimateDAW.tsx:474, client/src/hooks/useAudioRecorder.ts:303, client/src/hooks/useMultiTrackRecorder.ts:339. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.",
       "recommendation": "Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request."
+    },
+    {
+      "id": "missing-route-98",
+      "class": "missing-route",
+      "severity": "high",
+      "method": "GET",
+      "path": "/api/studio/warping",
+      "locations": [
+        "client/src/components/studio/WarpDialog.tsx:65"
+      ],
+      "description": "The frontend calls GET /api/studio/warping (methodConfidence: assumed) from client/src/components/studio/WarpDialog.tsx:65. Live evidence: a live GET probe to the same path also hit this server's generic \"route does not exist\" handler, and no static registration for GET at this path was found either. This endpoint will 404 for every real user.",
+      "recommendation": "Register a matching route in the appropriate server/routes/*.ts file, or fix the frontend call -- closest existing registered path(s): /api/studio/samples, /api/studio/lyrics."
     },
     {
       "id": "method-unconfirmed-99",
@@ -1560,10 +1560,10 @@
         "client/src/lib/audioEngine.ts:765",
         "client/src/lib/daw/AudioWorkletEngine.ts:760",
         "client/src/pages/Marketplace.tsx:2146",
-        "client/src/pages/Projects.tsx:205",
+        "client/src/pages/Projects.tsx:236",
         "client/src/pages/Storefront.tsx:211"
       ],
-      "description": "The frontend calls GET /api/ from client/src/hooks/useProjectSync.ts:647, client/src/lib/audioEngine.ts:765, client/src/lib/daw/AudioWorkletEngine.ts:760, client/src/pages/Marketplace.tsx:2146, client/src/pages/Projects.tsx:205, client/src/pages/Storefront.tsx:211. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.",
+      "description": "The frontend calls GET /api/ from client/src/hooks/useProjectSync.ts:647, client/src/lib/audioEngine.ts:765, client/src/lib/daw/AudioWorkletEngine.ts:760, client/src/pages/Marketplace.tsx:2146, client/src/pages/Projects.tsx:236, client/src/pages/Storefront.tsx:211. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.",
       "recommendation": "Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request."
     },
     {
@@ -2583,9 +2583,9 @@
       "method": "DELETE",
       "path": "/api/songwriting",
       "locations": [
-        "client/src/pages/Projects.tsx:837"
+        "client/src/pages/Projects.tsx:883"
       ],
-      "description": "The frontend calls DELETE /api/songwriting from client/src/pages/Projects.tsx:837. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic \"does not exist\" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.",
+      "description": "The frontend calls DELETE /api/songwriting from client/src/pages/Projects.tsx:883. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic \"does not exist\" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.",
       "recommendation": "Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request."
     },
     {
@@ -3064,6 +3064,6 @@
       "recommendation": "Trace the expression to its source and confirm it resolves to the intended path(s); re-run this audit's static extractor logic manually against it if it represents many routes."
     }
   ],
-  "generatedAt": "2026-09-02T16:17:55.656Z",
+  "generatedAt": "2026-09-03T01:09:06.419Z",
   "baseUrl": "http://127.0.0.1:5000"
 }

@@ -15,7 +15,7 @@ import {
   createHardenedUpload,
 } from "../middleware/uploadHandler.js";
 import { db } from "../db.js";
-import { eq, desc, and, isNotNull } from "drizzle-orm";
+import { eq, desc, and, isNotNull, inArray } from "drizzle-orm";
 import { adCampaigns, adCreatives, systemSettings } from "@shared/schema";
 import { aiModelManager } from "../services/aiModelManager.js";
 import { autopilotEngine } from "../autopilot-engine.js";
@@ -314,28 +314,74 @@ router.get("/ab-tests", requireAuth, async (req: AuthenticatedRequest, res) => {
     const creatives = await db
       .select()
       .from(adCreatives)
-      .where(
-        and(eq(adCreatives.userId, userId), isNotNull(adCreatives.variants)),
-      )
+      .where(eq(adCreatives.userId, userId))
       .orderBy(desc(adCreatives.createdAt))
-      .limit(50);
+      .limit(100);
 
-    const tests = creatives
-      .filter(
-        (c) =>
-          c?.variants &&
-          Array.isArray(c?.variants) &&
-          (c?.variants as unknown[]).length > 1,
-      )
-      .map((c) => ({
-        id: c.id,
-        name: c.name,
-        status: c.status || "draft",
-        campaignId: c.campaignId,
-        variants: c.variants,
-        performance: c.performance || null,
-        createdAt: c.createdAt,
-      }));
+    // A campaign with two or more attached creatives is an A/B test.  The
+    // campaign builder previously persisted that relationship only in
+    // ad_campaigns.creative_ids, while this endpoint looked exclusively for a
+    // legacy JSON variants field, so legitimate tests never appeared.
+    const groups = new Map<string, typeof creatives>();
+    for (const creative of creatives) {
+      if (!creative.campaignId) continue;
+      const group = groups.get(creative.campaignId) ?? [];
+      group.push(creative);
+      groups.set(creative.campaignId, group);
+    }
+
+    const normalizeVariant = (creative: (typeof creatives)[number]) => {
+      const performance =
+        (creative.performance as Record<string, unknown> | null) ?? {};
+      const impressions = Number(performance.impressions ?? 0);
+      const clicks = Number(performance.clicks ?? 0);
+      const conversions = Number(performance.conversions ?? 0);
+      return {
+        id: creative.id,
+        name: creative.name,
+        headline: creative.headline ?? "",
+        description: creative.description ?? "",
+        cta: creative.callToAction ?? "",
+        imageUrl: creative.thumbnailUrl ?? creative.mediaUrl ?? undefined,
+        status: creative.status ?? "draft",
+        impressions,
+        clicks,
+        conversions,
+        ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+        conversionRate: clicks > 0 ? (conversions / clicks) * 100 : 0,
+        confidence: 0,
+        predictionScore: 0,
+        aiScore: 0,
+        revenue: Number(performance.revenue ?? 0),
+        createdAt: creative.createdAt,
+      };
+    };
+
+    const tests = Array.from(groups.entries())
+      .filter(([, variants]) => variants.length > 1)
+      .map(([campaignId, variants]) => {
+        const normalized = variants.map(normalizeVariant);
+        const sampleSize = normalized.reduce(
+          (total, variant) => total + variant.impressions,
+          0,
+        );
+        return {
+          id: campaignId,
+          campaignId,
+          name: `Campaign creative test`,
+          status: variants.some((variant) => variant.status === "active")
+            ? "running"
+            : "draft",
+          startDate: variants
+            .map((variant) => variant.createdAt)
+            .filter(Boolean)
+            .sort()[0] ?? null,
+          variants: normalized,
+          statisticalSignificance: 0,
+          sampleSize,
+          targetSampleSize: 0,
+        };
+      });
 
     res.json({ tests });
   } catch (error) {
@@ -384,6 +430,27 @@ router.post(
           ? targetAudience?.platforms
           : [platform];
 
+      const selectedCreativeIds = Array.isArray(creativeIds)
+        ? [...new Set(creativeIds.filter((id) => typeof id === "string"))]
+        : [];
+
+      if (selectedCreativeIds.length > 0) {
+        const ownedCreatives = await db
+          .select({ id: adCreatives.id })
+          .from(adCreatives)
+          .where(
+            and(
+              eq(adCreatives.userId, userId),
+              inArray(adCreatives.id, selectedCreativeIds),
+            ),
+          );
+        if (ownedCreatives.length !== selectedCreativeIds.length) {
+          return res.status(400).json({
+            error: "One or more selected creatives do not exist or are not yours",
+          });
+        }
+      }
+
       const [campaign] = await db
         .insert(adCampaigns)
         .values({
@@ -396,10 +463,26 @@ router.post(
           startDate: startDate ? new Date(startDate) : null,
           endDate: endDate ? new Date(endDate) : null,
           targetAudience: targetAudience || null,
-          creativeIds: Array.isArray(creativeIds) ? creativeIds : [],
+          creativeIds: selectedCreativeIds,
           status: "active",
         })
         .returning();
+
+      // Creatives selected in the campaign builder must be linked in both
+      // directions.  The previous implementation only populated the campaign
+      // array, leaving every creative unassigned and invisible to downstream
+      // performance and A/B-test queries.
+      if (selectedCreativeIds.length > 0) {
+        await db
+          .update(adCreatives)
+          .set({ campaignId: campaign.id })
+          .where(
+            and(
+              eq(adCreatives.userId, userId),
+              inArray(adCreatives.id, selectedCreativeIds),
+            ),
+          );
+      }
 
       // Kick off AI pipeline in the background — campaign immediately primes MaxCore
       // and ensures content generation is queued for all target platforms
@@ -848,17 +931,47 @@ router.get("/variants", requireAuth, async (req: AuthenticatedRequest, res) => {
       .orderBy(desc(adCreatives.createdAt))
       .limit(100);
 
-    const variants = creatives?.flatMap((c) => {
-      if (!c?.variants || !Array.isArray(c?.variants)) return [];
-      return (c?.variants as Record<string, unknown>[]).map(
-        (v: Record<string, unknown>, idx: number) => ({
-          id: `${c?.id}-v${idx}`,
-          creativeId: c.id,
-          creativeName: c.name,
-          variantIndex: idx,
-          ...v,
-        }),
-      );
+    const variants = creatives.flatMap((creative) => {
+      const performance =
+        (creative.performance as Record<string, unknown> | null) ?? {};
+      const impressions = Number(performance.impressions ?? 0);
+      const clicks = Number(performance.clicks ?? 0);
+      const conversions = Number(performance.conversions ?? 0);
+
+      const persistedCreative = creative.campaignId
+        ? [
+            {
+              id: creative.id,
+              creativeId: creative.id,
+              creativeName: creative.name,
+              name: creative.name,
+              headline: creative.headline ?? "",
+              description: creative.description ?? "",
+              cta: creative.callToAction ?? "",
+              imageUrl: creative.thumbnailUrl ?? creative.mediaUrl ?? undefined,
+              status: creative.status ?? "draft",
+              impressions,
+              clicks,
+              conversions,
+              ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+              conversionRate: clicks > 0 ? (conversions / clicks) * 100 : 0,
+              confidence: 0,
+              predictionScore: 0,
+              createdAt: creative.createdAt,
+            },
+          ]
+        : [];
+
+      const legacyVariants = Array.isArray(creative.variants)
+        ? (creative.variants as Record<string, unknown>[]).map((variant, idx) => ({
+            id: `${creative.id}-v${idx}`,
+            creativeId: creative.id,
+            creativeName: creative.name,
+            variantIndex: idx,
+            ...variant,
+          }))
+        : [];
+      return [...persistedCreative, ...legacyVariants];
     });
 
     res.json({ variants });
@@ -912,13 +1025,27 @@ router.get(
 
       const channels = Array.from(channelMap?.entries()).map(
         ([platform, data]) => ({
+          // Attribution models require ordered touchpoint events, which are
+          // not stored for campaigns.  Preserve the real aggregate metrics,
+          // but report zero model credit rather than inventing a journey.
+          channel: platform,
           platform,
+          color: undefined,
           organicReach: data.organicReach,
           conversions: data.conversions,
           engagements: data.engagements,
           campaigns: data.campaigns,
           adEquivalentValue: Math.round(adEquivalentValue(platform, data.organicReach) * 100) / 100,
           adSpend: 0,
+          revenue: 0,
+          assists: 0,
+          avgTouchpoints: 0,
+          firstTouch: 0,
+          lastTouch: 0,
+          linear: 0,
+          timeDecay: 0,
+          positionBased: 0,
+          dataDriven: 0,
         }),
       );
 
@@ -951,18 +1078,10 @@ router.get(
         )
         .limit(100);
 
-      const paths = campaigns
-        .filter(
-          (c) => (c?.performance as Record<string, unknown>)?.conversions > 0,
-        )
-        .map((c) => ({
-          path: [c?.platform, c?.objective || "conversion"].filter(Boolean),
-          conversions:
-            (c?.performance as Record<string, unknown>)?.conversions || 0,
-          revenue: (c?.performance as Record<string, unknown>)?.revenue || 0,
-        }));
-
-      res.json({ paths });
+      // A campaign platform/objective is not a conversion path.  No
+      // touchpoint event store exists yet, so exposing those fields as a
+      // customer journey was fabricated attribution data.
+      res.json({ paths: [] });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get attribution paths:");
       res.status(500).json({ error: "Failed to get attribution paths" });
@@ -990,21 +1109,27 @@ router.get(
       let total = 0;
       for (const c of campaigns) {
         const perf = (c?.performance || {}) as Record<string, unknown>;
-        const reach = Number(perf?.organicReach || perf?.reach || 0);
-        const rev = Number(perf?.revenue || adEquivalentValue(c?.platform, reach));
+        const rev = Number(perf?.revenue ?? 0);
         channelMap?.set(c?.platform, (channelMap?.get(c?.platform) || 0) + rev);
         total += rev;
       }
 
-      const channels = Array.from(channelMap?.entries()).map(
+      const channels = Array.from(channelMap.entries()).map(
         ([platform, revenue]) => ({
-          platform,
+          channel: platform,
           revenue,
-          share: total > 0 ? revenue / (total || 1) : 0,
+          conversions: 0,
+          assists: 0,
+          firstClick: 0,
+          lastClick: 0,
+          linear: 0,
+          timeDecay: 0,
+          positionBased: 0,
+          share: total > 0 ? revenue / total : 0,
         }),
       );
 
-      res.json({ attribution: { channels, total } });
+      res.json({ channels, total });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get dashboard attribution:");
       res.status(500).json({ error: "Failed to get dashboard attribution" });
@@ -1029,16 +1154,7 @@ router.get(
         .where(eq(adCampaigns.userId, userId))
         .limit(100);
 
-      const paths = campaigns
-        .filter((c) => c?.status === "active" || c?.status === "completed")
-        .map((c) => ({
-          channel: c.platform,
-          objective: c.objective,
-          conversions:
-            (c?.performance as Record<string, unknown>)?.conversions || 0,
-        }));
-
-      res.json({ paths });
+      res.json({ paths: [] });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get dashboard paths:");
       res.status(500).json({ error: "Failed to get dashboard paths" });

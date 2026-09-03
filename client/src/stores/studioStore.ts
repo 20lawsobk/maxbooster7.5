@@ -206,7 +206,7 @@ interface StudioState {
   setPosition: (position: number) => void;
   setTempo: (tempo: number) => void;
 
-  addTrack: (type: TrackType, name?: string) => string;
+  addTrack: (type: TrackType, name?: string, id?: string) => string;
   setTracksDirectly: (tracks: Track[]) => void;
   setMasterTrackDirectly: (masterTrack: Track) => void;
   removeTrack: (trackId: string) => void;
@@ -232,7 +232,10 @@ interface StudioState {
   togglePluginBypass: (trackId: string, pluginId: string) => void;
   reorderPlugins: (trackId: string, fromIndex: number, toIndex: number) => void;
 
-  addAudioClip: (trackId: string, clip: Omit<AudioClip, "id">) => string;
+  addAudioClip: (
+    trackId: string,
+    clip: Omit<AudioClip, "id"> & { id?: string },
+  ) => string;
   removeAudioClip: (trackId: string, clipId: string) => void;
   updateAudioClip: (
     trackId: string,
@@ -529,8 +532,8 @@ export const useStudioStore = create<StudioState>()(
               },
             })),
 
-          addTrack: (type, name) => {
-            const id = generateId();
+          addTrack: (type, name, idOverride) => {
+            const id = idOverride || generateId();
             const { tracks } = get();
             const trackName =
               name ||
@@ -849,7 +852,7 @@ export const useStudioStore = create<StudioState>()(
             }),
 
           addAudioClip: (trackId, clip) => {
-            const id = generateId();
+            const id = clip?.id || generateId();
             const newClip = { ...clip, id };
             set((state) => ({
               tracks: state.tracks.map((t) =>

@@ -706,6 +706,43 @@ router.get(
   },
 );
 
+const abVariantsRequestSchema = z.object({
+  content: z.string().min(1).max(10_000),
+  variationType: z.enum(["headline", "CTA", "emoji", "length", "tone"]).optional(),
+  variantCount: z.coerce.number().int().min(1).max(5).optional(),
+});
+
+router.post(
+  "/ai-content/ab-variants",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const parsed = abVariantsRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          error: "Invalid request",
+          details: parsed.error.issues,
+        });
+      }
+
+      const { content, variationType = "tone", variantCount } = parsed.data;
+      const variants = await aiContentService.generateABVariants(
+        content,
+        variationType,
+      );
+      return res.json({
+        variants:
+          variantCount === undefined ? variants : variants.slice(0, variantCount),
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Generate AB variants error:");
+      return res
+        .status(aiErrorStatus(error))
+        .json({ error: "Failed to generate AB variants" });
+    }
+  },
+);
+
 router.post(
   "/ai-content/analyze-brand-voice",
   requireAuth,

@@ -112,12 +112,9 @@ export function CreativeAutomation() {
     maxLength: 150,
   });
 
-  const handleGenerateVariants = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-    }, 3000);
-  };
+  // This dashboard reports persisted tests. Generation belongs to the
+  // creative generator; a timer here used to simulate work without writing a
+  // creative or a test.
 
   const getStatusBadge = (status: CreativeVariant["status"]) => {
     const styles = {
@@ -166,40 +163,12 @@ export function CreativeAutomation() {
     confidence: { label: "Confidence", color: "#8b5cf6" },
   };
 
-  const performanceTrendData = ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7"].map(
-    (day, i) => ({
-      day,
-      variantA: 5.2 + i * 0.15,
-      variantB: 6.1 + i * 0.25,
-      variantC: 4.8 + i * 0.1,
-      variantD: 5.5 + i * 0.18,
-    }),
-  );
-
-  const confidenceHistoryData = ["0h", "12h", "24h", "36h", "48h", "60h", "72h"].map((hour, i) => ({
-    hour,
-    variantA: Math.min(100, 50 + i * 6),
-    variantB: Math.min(100, 55 + i * 7),
-    variantC: Math.min(100, 45 + i * 5),
-    variantD: Math.min(100, 48 + i * 5.5),
-  }));
-
-  const elementPerformanceData = [
-    { element: "Headline", variantA: 85, variantB: 92, variantC: 78 },
-    { element: "CTA", variantA: 78, variantB: 88, variantC: 82 },
-    { element: "Imagery", variantA: 82, variantB: 75, variantC: 90 },
-    { element: "Copy", variantA: 88, variantB: 84, variantC: 76 },
-    { element: "Offer", variantA: 90, variantB: 86, variantC: 80 },
-    { element: "Layout", variantA: 76, variantB: 82, variantC: 85 },
-  ];
-
-  const conversionFunnelData = [
-    { stage: "Impressions", variantA: 100, variantB: 100, variantC: 100, variantD: 100 },
-    { stage: "Clicks", variantA: 8, variantB: 10, variantC: 7, variantD: 9 },
-    { stage: "Engaged", variantA: 5, variantB: 7, variantC: 4, variantD: 6 },
-    { stage: "Add to Cart", variantA: 3, variantB: 4, variantC: 2, variantD: 3 },
-    { stage: "Conversions", variantA: 2, variantB: 3, variantC: 1.5, variantD: 2.2 },
-  ];
+  // Only cumulative creative metrics are stored.  Historical and
+  // element-level data must stay empty until an event source records them.
+  const performanceTrendData: Array<Record<string, unknown>> = [];
+  const confidenceHistoryData: Array<Record<string, unknown>> = [];
+  const elementPerformanceData: Array<Record<string, unknown>> = [];
+  const conversionFunnelData: Array<Record<string, unknown>> = [];
 
   variants.reduce((acc, v) => acc + v.impressions, 0);
   variants.reduce((acc, v) => acc + v.conversions, 0);
@@ -232,9 +201,9 @@ export function CreativeAutomation() {
             Create your first A/B test to start optimizing your ad creatives
             with AI.
           </p>
-          <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+          <Button disabled title="Attach two or more creatives to a campaign to create a test.">
             <Plus className="w-4 h-4 mr-2" />
-            Create A/B Test
+            Attach Creatives to a Campaign
           </Button>
         </Card>
       </div>
@@ -267,18 +236,6 @@ export function CreativeAutomation() {
               Auto Winner Selection
             </Label>
           </div>
-          <Button
-            onClick={handleGenerateVariants}
-            disabled={isGenerating}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-          >
-            {isGenerating ? (
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Brain className="w-4 h-4 mr-2" />
-            )}
-            Generate AI Variants
-          </Button>
         </div>
       </div>
 
@@ -318,7 +275,9 @@ export function CreativeAutomation() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Avg CTR Lift</p>
-                <p className="text-2xl font-bold text-green-500">+28.4%</p>
+                <p className="text-2xl font-bold text-green-500">
+                  {avgCtr.toFixed(2)}%
+                </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-green-500" />
@@ -363,10 +322,6 @@ export function CreativeAutomation() {
       <Tabs defaultValue="variants" className="space-y-4">
         <TabsList>
           <TabsTrigger value="variants">Active Variants</TabsTrigger>
-          <TabsTrigger value="generate">AI Generation</TabsTrigger>
-          <TabsTrigger value="testing">A/B Test Setup</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="winner">Winner Selection</TabsTrigger>
         </TabsList>
 
         <TabsContent value="variants" className="space-y-4">
@@ -685,23 +640,10 @@ export function CreativeAutomation() {
                   <Label htmlFor="include-emoji">Include emojis in copy</Label>
                 </div>
 
-                <Button
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                  onClick={handleGenerateVariants}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Generating {aiConfig.variantCount} Variants...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="w-4 h-4 mr-2" />
-                      Generate {aiConfig.variantCount} AI Variants
-                    </>
-                  )}
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Generate and attach creatives in the Creative Generator to
+                  create a persisted campaign test.
+                </p>
               </CardContent>
             </Card>
 
@@ -717,66 +659,11 @@ export function CreativeAutomation() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {isGenerating ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                      <RefreshCw className="w-12 h-12 text-purple-500 animate-spin mb-4" />
-                      <p className="text-muted-foreground">
-                        Generating AI variants...
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Analyzing target audience and optimizing copy
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {[
-                        "Headline Focus",
-                        "Social Proof",
-                        "Urgency",
-                        "Benefit-Led",
-                        "Question-Based",
-                      ]
-                        .slice(
-                          0,
-                          aiConfig.variantCount > 5 ? 5 : aiConfig.variantCount,
-                        )
-                        .map((type, idx) => (
-                          <div
-                            key={idx}
-                            className="p-4 rounded-lg border border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <Badge variant="outline" className="text-xs">
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                {type}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                AI Score: {75 + idx * 3}
-                              </span>
-                            </div>
-                            <p className="text-sm font-medium mb-1">
-                              {idx === 0 && "Stream Your Music to the World"}
-                              {idx === 1 &&
-                                "Join 500K+ Artists Already Distributing"}
-                              {idx === 2 &&
-                                "Limited Time: Unlimited Distribution Free"}
-                              {idx === 3 && "Earn More from Every Stream"}
-                              {idx === 4 &&
-                                "Ready to Go Global with Your Music?"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Predicted CTR: {(6.5 + idx * 0.3).toFixed(1)}%
-                            </p>
-                          </div>
-                        ))}
-                      {aiConfig.variantCount > 5 && (
-                        <p className="text-center text-sm text-muted-foreground">
-                          + {aiConfig.variantCount - 5} more variants will be
-                          generated
-                        </p>
-                      )}
-                    </>
-                  )}
+                  <p className="text-sm text-muted-foreground">
+                    Predictions appear only after creatives have recorded
+                    delivery data. No generated preview is shown as a
+                    performance result.
+                  </p>
                 </div>
               </CardContent>
             </Card>

@@ -61,8 +61,13 @@ router.post("/run-now", async (req, res) => {
   };
   const overrides = (genre || mood || key) ? { genre, mood, key } : undefined;
   try {
+    if (beatMoneyLoopService.isCycleInFlight()) {
+      return res.status(409).json({
+        error: "A Beat Money Loop cycle is already in-flight",
+      });
+    }
     beatMoneyLoopService
-      ?.runCycle("manual", overrides)
+      .runCycle("manual", overrides)
       .then((result) => {
         logger.info(
           `[BeatMoneyLoop] manual cycle finished: ${JSON.stringify(result)?.slice(0, 300)}`,

@@ -101,7 +101,13 @@ root.render(
                         k.includes("contracts") ||
                         k.includes("invoices") ||
                         k.includes("presence") ||
-                        k.includes("heartbeat")),
+                        k.includes("heartbeat") ||
+                        // Warp editing state (markers/tempo snapshots) is live,
+                        // frequently-mutated per-clip analysis data. It must always
+                        // be fetched fresh when the Warp dialog opens -- a value
+                        // rehydrated from an IndexedDB cache up to 24h old can show
+                        // a stale marker count/positions before any real fetch runs.
+                        k.includes("warp")),
                   ),
               },
             }}

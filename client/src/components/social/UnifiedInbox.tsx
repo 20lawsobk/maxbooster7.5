@@ -275,9 +275,15 @@ export function UnifiedInbox() {
       action: "archive" | "read" | "unread" | "delete";
       messageIds: string[];
     }) => {
+      const endpoints = {
+        archive: "/api/social/inbox/bulk/archive",
+        read: "/api/social/inbox/bulk/read",
+        unread: "/api/social/inbox/bulk/unread",
+        delete: "/api/social/inbox/bulk/delete",
+      } as const;
       const res = await apiRequest(
         "POST",
-        `/api/social/inbox/bulk/${action}`,
+        endpoints[action],
         { messageIds },
       );
       return res.json();

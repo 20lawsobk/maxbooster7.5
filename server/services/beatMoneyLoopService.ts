@@ -149,6 +149,12 @@ class BeatMoneyLoopService {
   /** Resolved once at startup; null means no matching admin was found. */
   private _adminId: string | null = null;
 
+  /** Used by the admin endpoint to avoid falsely accepting a run-now request
+   * when an existing long-running MaxCore cycle already owns the single slot. */
+  isCycleInFlight(): boolean {
+    return this._runningCycle;
+  }
+
   /**
    * Resolve and cache the admin user ID from the DB.
    * Looks up users WHERE role='admin' AND email=ADMIN_EMAIL.
@@ -908,6 +914,22 @@ class BeatMoneyLoopService {
     };
 
     const backend = data.backend ?? (mode === "C" ? "maxcore" : "dsp_b");
+    const validateWav = (bytes: Buffer): Buffer => {
+      // A successful HTTP response is not sufficient evidence that MaxCore
+      // produced playable audio: upstream error pages and truncated payloads
+      // have previously been persisted as ".wav" files. Require the minimum
+      // RIFF/WAVE container signature before a listing can ever be created.
+      if (bytes.length < 1_024) {
+        throw new Error(`MaxCore audio payload too small (${bytes.length} bytes)`);
+      }
+      if (
+        bytes.subarray(0, 4).toString("ascii") !== "RIFF" ||
+        bytes.subarray(8, 12).toString("ascii") !== "WAVE"
+      ) {
+        throw new Error("MaxCore audio payload is not a RIFF/WAVE file");
+      }
+      return bytes;
+    };
     const finish = async (d: typeof data): Promise<{
       wavBytes: Buffer;
       mcKey?: string;
@@ -932,7 +954,7 @@ class BeatMoneyLoopService {
       };
       const b64 = d.wav_b64 ?? d.audio_b64;
       if (b64) {
-        return { wavBytes: Buffer.from(b64, "base64"), ...extras };
+        return { wavBytes: validateWav(Buffer.from(b64, "base64")), ...extras };
       }
       const rawUrl = d.url ?? d.audio_url;
       if (rawUrl) {
@@ -950,9 +972,7 @@ class BeatMoneyLoopService {
           signal: AbortSignal.timeout(120_000),
         });
         if (!dl.ok) throw new Error(`MaxCore audio download HTTP ${dl.status}`);
-        const bytes = Buffer.from(await dl.arrayBuffer());
-        if (bytes.length < 1_024)
-          throw new Error(`MaxCore audio download too small (${bytes.length} bytes)`);
+        const bytes = validateWav(Buffer.from(await dl.arrayBuffer()));
         return { wavBytes: bytes, ...extras };
       }
       throw new Error("MaxCore returned no audio payload (no wav_b64/url)");
@@ -1505,141 +1525,76 @@ class BeatMoneyLoopService {
       ]),
     ).filter(Boolean);
 
-    const [created] = await db
-      .insert(beats)
-      .values({
-        userId: adminId,
-        title: args.title,
-        description: this._buildBeatDescription(args.scan, args.price),
-        price: args.price,
-        genre: args.scan.genre,
-        bpm: args.scan.tempo,
-        key: keyDisplay,
-        audioUrl,
-        artworkUrl,
-        licenseType: "basic",
-        tags,
-        isPublished: true,
-      })
-      .returning({ id: beats.id });
+    // A beat is sellable only when all three records exist: the source beat,
+    // the buyer-facing listing, and its royalty ownership. Keep those database
+    // writes atomic; a failed split/listing must fail the cycle rather than
+    // leave an invisible beat or a chargeable listing with no booked owner.
+    const beatId = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(beats)
+        .values({
+          userId: adminId,
+          title: args.title,
+          description: this._buildBeatDescription(args.scan, args.price),
+          price: args.price,
+          genre: args.scan.genre,
+          bpm: args.scan.tempo,
+          key: keyDisplay,
+          audioUrl,
+          artworkUrl,
+          licenseType: "basic",
+          tags,
+          isPublished: true,
+        })
+        .returning({ id: beats.id });
 
-    const beatId = created.id;
-
-    // Create a royalty_splits record: admin owns 100% of this beat's revenue.
-    // This ensures a "revenue row" exists in the DB immediately after listing —
-    // the marketplace payment flow uses royalty_splits to route earnings.
-    try {
-      const adminEmail = process.env.ADMIN_EMAIL || "admin@platform.com";
-      await db.insert(royaltySplits).values({
-        releaseId: beatId,            // repurpose releaseId as beatId (varchar, no FK)
+      await tx.insert(royaltySplits).values({
+        releaseId: created.id,
         userId: adminId,
         collaboratorName: "Platform Admin",
-        collaboratorEmail: adminEmail,
+        // _requireAdminId() above only resolves an admin matching this required
+        // environment value, so the non-null assertion is a real invariant.
+        collaboratorEmail: process.env.ADMIN_EMAIL!,
         role: "producer",
         percentage: 100,
         status: "active",
         metadata: {
           source: "beat-money-loop",
-          beatId,
+          beatId: created.id,
           genre: args.scan.genre,
           mood: args.scan.mood,
           listingDate: new Date().toISOString(),
         } as Record<string, unknown>,
       });
-      logger.info(`[BeatMoneyLoop] Royalty split created for beat ${beatId} (admin 100%)`);
-    } catch (splitErr) {
-      // Non-fatal — beat is still listed even without the royalty record
-      logger.warn({ err: splitErr, beatId }, "[BeatMoneyLoop] Royalty split creation failed (non-fatal)");
-    }
 
-    // Bridge the beat into the marketplace `listings` table. The entire
-    // marketplace (producer list, beats feed, producer profile page) reads
-    // exclusively from `listings`, never from `beats`. Without a matching
-    // listing row the auto-generated beat is invisible in the store and the
-    // producer profile shows zero beats. Genre/bpm/key/tags are read from
-    // `metadata` by the marketplace queries, and `category` powers the genre
-    // filter. Non-fatal + idempotent: a listing failure must never abort the
-    // money loop, and the same shape is reused by the one-time backfill so an
-    // orphaned beat self-heals if this insert ever fails.
-    try {
-      const existing = await db
-        .select({ id: listings.id })
-        .from(listings)
-        .where(sql`metadata->>'sourceBeatId' = ${beatId}`)
-        .limit(1);
-      if (existing.length === 0) {
-        await db.insert(listings).values({
-          userId: adminId,
-          title: args.title,
-          description: this._buildBeatDescription(args.scan, args.price),
-          priceCents: Math.round(args.price * 100),
-          category: args.scan.genre,
-          audioUrl,
-          artworkUrl,
-          previewUrl,
-          isPublished: true,
-          metadata: {
-            genre: args.scan.genre,
-            mood: args.scan.mood,
-            bpm: args.scan.tempo,
-            key: keyDisplay,
-            tempo: args.scan.tempo,
-            licenseType: "basic",
-            tags,
-            sourceBeatId: beatId,
-          },
-        });
-        // Immediately bust marketplace caches so the new beat appears without
-        // waiting for the 30–60 s TTL to expire naturally.
-        distributedCache.invalidatePattern("marketplace:beats:*").catch(() => {});
-      }
-    } catch (err) {
-      logger.warn(
-        { err, beatId },
-        "[BeatMoneyLoop] Listings insert failed — retrying in 2 s…",
-      );
-      // One-shot retry: transient DB connectivity blips should resolve quickly.
-      await new Promise((r) => setTimeout(r, 2_000));
-      try {
-        const existing2 = await db
-          .select({ id: listings.id })
-          .from(listings)
-          .where(sql`metadata->>'sourceBeatId' = ${beatId}`)
-          .limit(1);
-        if (existing2.length === 0) {
-          await db.insert(listings).values({
-            userId: adminId,
-            title: args.title,
-            description: this._buildBeatDescription(args.scan, args.price),
-            priceCents: Math.round(args.price * 100),
-            category: args.scan.genre,
-            audioUrl,
-            artworkUrl,
-            previewUrl,
-            isPublished: true,
-            metadata: {
-              genre: args.scan.genre,
-              mood: args.scan.mood,
-              bpm: args.scan.tempo,
-              key: keyDisplay,
-              tempo: args.scan.tempo,
-              licenseType: "basic",
-              tags,
-              sourceBeatId: beatId,
-            },
-          });
-          distributedCache.invalidatePattern("marketplace:beats:*").catch(() => {});
-          logger.info(
-            `[BeatMoneyLoop] Listings retry succeeded for beat ${beatId}`,
-          );
-        }
-      } catch (retryErr) {
-        logger.error(
-          { err: retryErr, beatId },
-          "[BeatMoneyLoop] Listings retry also failed — beat created; listing missing (self-heals on next backfill)",
-        );
-      }
-    }
+      await tx.insert(listings).values({
+        userId: adminId,
+        title: args.title,
+        description: this._buildBeatDescription(args.scan, args.price),
+        priceCents: Math.round(args.price * 100),
+        category: args.scan.genre,
+        audioUrl,
+        artworkUrl,
+        previewUrl,
+        isPublished: true,
+        metadata: {
+          genre: args.scan.genre,
+          mood: args.scan.mood,
+          bpm: args.scan.tempo,
+          key: keyDisplay,
+          tempo: args.scan.tempo,
+          licenseType: "basic",
+          tags,
+          // `beatId` is the payment flow's royalty lookup key; retain
+          // sourceBeatId for existing marketplace queries/backfills.
+          beatId: created.id,
+          sourceBeatId: created.id,
+        },
+      });
+      return created.id;
+    });
+    distributedCache.invalidatePattern("marketplace:beats:*").catch(() => {});
+    logger.info(`[BeatMoneyLoop] Marketplace listing and 100% royalty split created for beat ${beatId}`);
 
     // ── Auto-distribution queue entry ─────────────────────────────────────
     // When BEAT_AUTO_DISTRIBUTION=true, create a draft `releases` row so the

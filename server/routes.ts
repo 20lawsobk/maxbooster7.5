@@ -6582,7 +6582,7 @@ export async function registerRoutes(
       loader: () => import("./routes/studioPlugins"),
     },
     {
-      path: "/api/studio/stems",
+      path: "/api/studio",
       name: "studioStems",
       loader: () => import("./routes/studioStems"),
     },
@@ -6597,7 +6597,7 @@ export async function registerRoutes(
       loader: () => import("./routes/studioGeneration"),
     },
     {
-      path: "/api/studio/midi",
+      path: "/api/studio",
       name: "studioMidi",
       loader: () => import("./routes/studioMidi"),
     },

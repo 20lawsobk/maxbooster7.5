@@ -2971,12 +2971,60 @@ export const audioClips = pgTable(
     gain: real("gain").default(1),
     warpMode: text("warp_mode"),
     warpSettings: jsonb("warp_settings"),
+    isComped: boolean("is_comped").default(false),
+    compSourceIds: jsonb("comp_source_ids"),
+    hiddenInTimeline: boolean("hidden_in_timeline").default(false),
     metadata: jsonb("metadata"),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (t) => ({
     byProject: index("audio_clips_project_idx").on(t.projectId),
     byTrack: index("audio_clips_track_idx").on(t.trackId),
+  }),
+);
+
+// ============================================================================
+// MIDI CLIPS AND NOTES (Studio)
+// ============================================================================
+export const midiClips = pgTable(
+  "midi_clips",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    projectId: varchar("project_id").notNull(),
+    trackId: varchar("track_id").notNull(),
+    name: text("name").notNull(),
+    startBeat: real("start_beat").notNull().default(0),
+    durationBeats: real("duration_beats").notNull().default(4),
+    color: text("color").notNull().default("#8b5cf6"),
+    looped: boolean("looped").notNull().default(false),
+    loopLength: real("loop_length").notNull().default(4),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => ({
+    byProjectTrack: index("midi_clips_project_track_idx").on(t.projectId, t.trackId),
+  }),
+);
+
+export const midiNotes = pgTable(
+  "midi_notes",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    clipId: varchar("clip_id").notNull(),
+    pitch: integer("pitch").notNull(),
+    velocity: integer("velocity").notNull(),
+    startBeat: real("start_beat").notNull(),
+    durationBeats: real("duration_beats").notNull(),
+    channel: integer("channel").notNull().default(0),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => ({
+    byClip: index("midi_notes_clip_idx").on(t.clipId),
   }),
 );
 
@@ -3264,10 +3312,16 @@ export const compVersions = pgTable("comp_versions", {
     .default(sql`gen_random_uuid()`),
   projectId: varchar("project_id").notNull(),
   trackId: varchar("track_id").notNull(),
+  takeGroupId: varchar("take_group_id").notNull(),
   name: text("name").notNull(),
+  versionNumber: integer("version_number").default(1),
+  description: text("description"),
+  createdBy: varchar("created_by"),
   segments: jsonb("segments"),
+  renderedClipId: varchar("rendered_clip_id"),
   isActive: boolean("is_active").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // ============================================================================
@@ -3507,9 +3561,16 @@ export const takeGroups = pgTable("take_groups", {
   projectId: varchar("project_id").notNull(),
   trackId: varchar("track_id").notNull(),
   name: text("name").notNull(),
+  startTime: real("start_time").default(0),
+  endTime: real("end_time"),
+  status: text("status").default("recording"),
+  takeCount: integer("take_count").default(0),
+  color: text("color"),
   takes: jsonb("takes"),
-  activeCompId: varchar("active_comp_id"),
+  activeCompVersionId: varchar("active_comp_version_id"),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // ============================================================================
@@ -3689,10 +3750,18 @@ export const takeLanes = pgTable("take_lanes", {
     .default(sql`gen_random_uuid()`),
   takeGroupId: varchar("take_group_id").notNull(),
   name: text("name").notNull(),
-  clipId: varchar("clip_id"),
+  audioClipId: varchar("audio_clip_id"),
   isActive: boolean("is_active").default(false),
-  order: integer("order").default(0),
+  isMuted: boolean("is_muted").default(false),
+  isSolo: boolean("is_solo").default(false),
+  volume: real("volume").default(1),
+  color: text("color"),
+  rating: integer("rating"),
+  notes: text("notes"),
+  laneIndex: integer("lane_index").default(0),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // ============================================================================
@@ -3805,14 +3874,20 @@ export const takeSegments = pgTable("take_segments", {
   id: varchar("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  compVersionId: varchar("comp_version_id").notNull(),
+  compVersionId: varchar("comp_version_id"),
+  takeGroupId: varchar("take_group_id").notNull(),
   takeLaneId: varchar("take_lane_id").notNull(),
   startTime: real("start_time").notNull(),
   endTime: real("end_time").notNull(),
   fadeIn: real("fade_in").default(0),
   fadeOut: real("fade_out").default(0),
+  crossfadeType: text("crossfade_type").default("linear"),
+  gain: real("gain").default(1),
+  isSelected: boolean("is_selected").default(false),
   order: integer("order").default(0),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // ============================================================================

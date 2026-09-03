@@ -1,8 +1,8 @@
 # Endpoint Audit Report
 
-Generated 2026-09-02T16:17:55.665Z against `http://127.0.0.1:5000`.
+Generated 2026-09-03T01:09:06.426Z against `http://127.0.0.1:5000`.
 
-Backend routes statically found: 2201 (unique method+path: 2193). Frontend `/api/*` call sites found: 2215 (unique method+path: 1127). Unresolved dynamic registrations: 3.
+Backend routes statically found: 2204 (unique method+path: 2196). Frontend `/api/*` call sites found: 2220 (unique method+path: 1128). Unresolved dynamic registrations: 3.
 
 **Findings: 245 total — 96 high, 1 medium, 148 low.**
 
@@ -148,25 +148,25 @@ Backend routes statically found: 2201 (unique method+path: 2193). Frontend `/api
 - **Description:** The frontend calls GET /api/studio/comp/:param/flattened (methodConfidence: assumed) from client/src/components/studio/FlowStateComping.tsx:272. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for GET at this path was found either. This endpoint will 404 for every real user.
 - **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file (no similarly-named existing route was found, so this is likely an entirely unbuilt endpoint, not a typo).
 
-### missing-route-90: missing-route — POST /api/studio/projects/:param/duplicate
-- **Location:** client/src/components/studio/FlowStateProjectSelector.tsx:121
-- **Description:** The frontend calls POST /api/studio/projects/:param/duplicate (methodConfidence: detected) from client/src/components/studio/FlowStateProjectSelector.tsx:121. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for POST at this path was found either. This endpoint will 404 for every real user.
-- **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file (no similarly-named existing route was found, so this is likely an entirely unbuilt endpoint, not a typo).
-
-### missing-route-91: missing-route — GET /api/studio/projects/:param/comping/groups
+### missing-route-90: missing-route — GET /api/studio/projects/:param/comping/groups
 - **Location:** client/src/components/studio/FlowStateTakeComping.tsx:152, client/src/lib/studioApi.ts:122
 - **Description:** The frontend calls GET /api/studio/projects/:param/comping/groups (methodConfidence: detected) from client/src/components/studio/FlowStateTakeComping.tsx:152, client/src/lib/studioApi.ts:122. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for GET at this path was found either. This endpoint will 404 for every real user.
 - **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file (no similarly-named existing route was found, so this is likely an entirely unbuilt endpoint, not a typo).
 
-### missing-route-92: missing-route — POST /api/studio/projects/:param/comping/render
+### missing-route-91: missing-route — POST /api/studio/projects/:param/comping/render
 - **Location:** client/src/components/studio/FlowStateTakeComping.tsx:199, client/src/lib/studioApi.ts:308
 - **Description:** The frontend calls POST /api/studio/projects/:param/comping/render (methodConfidence: detected) from client/src/components/studio/FlowStateTakeComping.tsx:199, client/src/lib/studioApi.ts:308. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for POST at this path was found either. This endpoint will 404 for every real user.
 - **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file, or fix the frontend call -- closest existing registered path(s): /api/studio/projects/:projectId/render.
 
-### missing-route-94: missing-route — PATCH /api/projects/:param/tracks/:param/effects
+### missing-route-93: missing-route — PATCH /api/projects/:param/tracks/:param/effects
 - **Location:** client/src/components/studio/MixerPanel.tsx:223
 - **Description:** The frontend calls PATCH /api/projects/:param/tracks/:param/effects (methodConfidence: detected) from client/src/components/studio/MixerPanel.tsx:223. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for PATCH at this path was found either. This endpoint will 404 for every real user.
 - **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file (no similarly-named existing route was found, so this is likely an entirely unbuilt endpoint, not a typo).
+
+### missing-route-98: missing-route — GET /api/studio/warping
+- **Location:** client/src/components/studio/WarpDialog.tsx:65
+- **Description:** The frontend calls GET /api/studio/warping (methodConfidence: assumed) from client/src/components/studio/WarpDialog.tsx:65. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for GET at this path was found either. This endpoint will 404 for every real user.
+- **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file, or fix the frontend call -- closest existing registered path(s): /api/studio/samples, /api/studio/lyrics.
 
 ### missing-route-101: missing-route — PUT /api/advertising/campaigns/:param
 - **Location:** client/src/hooks/use-advertisement.ts:121
@@ -802,27 +802,27 @@ Backend routes statically found: 2201 (unique method+path: 2193). Frontend `/api
 - **Description:** The frontend calls DELETE /api/studio/projects from client/src/components/studio/FlowStateProjectSelector.tsx:109, client/src/hooks/useFlowStateAdapter.ts:202, client/src/hooks/useStudioController.ts:304, client/src/hooks/useStudioController.ts:334. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
 - **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
 
-### method-unconfirmed-93: method-unconfirmed — GET /api/studio/templates/:param/create-project
+### method-unconfirmed-92: method-unconfirmed — GET /api/studio/templates/:param/create-project
 - **Location:** client/src/components/studio/FlowStateTemplateDialog.tsx:80
 - **Description:** The frontend calls GET /api/studio/templates/:param/create-project from client/src/components/studio/FlowStateTemplateDialog.tsx:80. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
 - **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
 
-### method-unconfirmed-95: method-unconfirmed — GET /api/uploads/chunk
+### method-unconfirmed-94: method-unconfirmed — GET /api/uploads/chunk
 - **Location:** client/src/components/studio/StudioProjectDialog.tsx:122
 - **Description:** The frontend calls GET /api/uploads/chunk from client/src/components/studio/StudioProjectDialog.tsx:122. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
 - **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
 
-### method-unconfirmed-96: method-unconfirmed — GET /api/uploads/assemble
+### method-unconfirmed-95: method-unconfirmed — GET /api/uploads/assemble
 - **Location:** client/src/components/studio/StudioProjectDialog.tsx:163
 - **Description:** The frontend calls GET /api/uploads/assemble from client/src/components/studio/StudioProjectDialog.tsx:163. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
 - **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
 
-### method-unconfirmed-97: method-unconfirmed — GET /api/studio/upload-from-url
+### method-unconfirmed-96: method-unconfirmed — GET /api/studio/upload-from-url
 - **Location:** client/src/components/studio/StudioProjectDialog.tsx:197
 - **Description:** The frontend calls GET /api/studio/upload-from-url from client/src/components/studio/StudioProjectDialog.tsx:197. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
 - **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
 
-### method-unconfirmed-98: method-unconfirmed — GET /api/studio/record/upload
+### method-unconfirmed-97: method-unconfirmed — GET /api/studio/record/upload
 - **Location:** client/src/components/studio/UltimateDAW.tsx:474, client/src/hooks/useAudioRecorder.ts:303, client/src/hooks/useMultiTrackRecorder.ts:339
 - **Description:** The frontend calls GET /api/studio/record/upload from client/src/components/studio/UltimateDAW.tsx:474, client/src/hooks/useAudioRecorder.ts:303, client/src/hooks/useMultiTrackRecorder.ts:339. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
 - **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
@@ -903,8 +903,8 @@ Backend routes statically found: 2201 (unique method+path: 2193). Frontend `/api
 - **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
 
 ### method-unconfirmed-122: method-unconfirmed — GET /api/
-- **Location:** client/src/hooks/useProjectSync.ts:647, client/src/lib/audioEngine.ts:765, client/src/lib/daw/AudioWorkletEngine.ts:760, client/src/pages/Marketplace.tsx:2146, client/src/pages/Projects.tsx:205, client/src/pages/Storefront.tsx:211
-- **Description:** The frontend calls GET /api/ from client/src/hooks/useProjectSync.ts:647, client/src/lib/audioEngine.ts:765, client/src/lib/daw/AudioWorkletEngine.ts:760, client/src/pages/Marketplace.tsx:2146, client/src/pages/Projects.tsx:205, client/src/pages/Storefront.tsx:211. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
+- **Location:** client/src/hooks/useProjectSync.ts:647, client/src/lib/audioEngine.ts:765, client/src/lib/daw/AudioWorkletEngine.ts:760, client/src/pages/Marketplace.tsx:2146, client/src/pages/Projects.tsx:236, client/src/pages/Storefront.tsx:211
+- **Description:** The frontend calls GET /api/ from client/src/hooks/useProjectSync.ts:647, client/src/lib/audioEngine.ts:765, client/src/lib/daw/AudioWorkletEngine.ts:760, client/src/pages/Marketplace.tsx:2146, client/src/pages/Projects.tsx:236, client/src/pages/Storefront.tsx:211. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
 - **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
 
 ### method-unconfirmed-124: method-unconfirmed — PATCH /api/studio/projects
@@ -1063,8 +1063,8 @@ Backend routes statically found: 2201 (unique method+path: 2193). Frontend `/api
 - **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
 
 ### method-unconfirmed-206: method-unconfirmed — DELETE /api/songwriting
-- **Location:** client/src/pages/Projects.tsx:837
-- **Description:** The frontend calls DELETE /api/songwriting from client/src/pages/Projects.tsx:837. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
+- **Location:** client/src/pages/Projects.tsx:883
+- **Description:** The frontend calls DELETE /api/songwriting from client/src/pages/Projects.tsx:883. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
 - **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
 
 ### method-unconfirmed-208: method-unconfirmed — DELETE /api/publishing

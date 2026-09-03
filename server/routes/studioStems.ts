@@ -17,7 +17,7 @@ import { logger } from "../logger.js";
 import { stemExportService } from "../services/stemExportService.js";
 import { notificationService } from "../services/notificationService.js";
 import { db } from "../db.js";
-import { projects } from "@shared/schema";
+import { projects, studioProjects } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
 const router = Router();
@@ -58,7 +58,14 @@ async function verifyProjectOwnership(
   const project = await db.query.projects.findFirst({
     where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
   });
-  return !!project;
+  if (project) return true;
+  const studioProject = await db.query.studioProjects.findFirst({
+    where: and(
+      eq(studioProjects.id, projectId),
+      eq(studioProjects.userId, userId),
+    ),
+  });
+  return !!studioProject;
 }
 
 router.post(

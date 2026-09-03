@@ -220,7 +220,7 @@ export function MixerPanel({
       }
       await apiRequest(
         "PATCH",
-        `/api/projects/${projectId}/tracks/${trackId}/effects`,
+        `/api/studio/projects/${projectId}/tracks/${trackId}/effects`,
         effects,
       );
     },

@@ -397,6 +397,111 @@ router.delete("/:storefrontId/credentials/:credentialId", async (req, res) => {
   }
 });
 
+/**
+ * Export the current provider-managed zone in BIND format.
+ *
+ * This route deliberately reads from the provider rather than the local cache:
+ * an export is normally used to migrate a domain and must not omit a record
+ * that was changed at the registrar since the last refresh.
+ */
+router.get("/:storefrontId/export", async (req, res) => {
+  try {
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Unauthorized" });
+
+    const userId = req.user!.id;
+    const { storefrontId } = req.params;
+    const domain =
+      typeof req.query.domain === "string"
+        ? req.query.domain.trim().toLowerCase()
+        : "";
+
+    if (!domain)
+      return res.status(400).json({ error: "Domain query parameter required" });
+
+    const storefront = await getStorefrontForUser(storefrontId, userId);
+    if (!storefront)
+      return res.status(404).json({ error: "Storefront not found" });
+    if (!domainBelongsToStorefront(domain, storefront))
+      return res
+        .status(403)
+        .json({ error: "Domain does not belong to this storefront" });
+
+    const credential = await getCredentials(userId, domain);
+    if (!credential)
+      return res
+        .status(400)
+        .json({ error: "No credentials saved for this domain" });
+
+    const provider = getProvider(credential.provider);
+    const records = await provider.listRecords(domain, credential.credentials as {
+      apiKey: string;
+      apiSecret: string;
+    });
+    const origin = domain.endsWith(".") ? domain : `${domain}.`;
+    const toFqdn = (value: string) =>
+      value.endsWith(".") ? value : `${value}.`;
+    const formatValue = (record: DnsRecord) => {
+      if (record.type === "TXT")
+        return `"${record.value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+      if (record.type === "MX")
+        return `${record.priority ?? 0} ${toFqdn(record.value)}`;
+      if (record.type === "SRV")
+        return `${record.priority ?? 0} ${record.weight ?? 0} ${record.port ?? 0} ${toFqdn(record.value)}`;
+      return ["CNAME", "NS"].includes(record.type)
+        ? toFqdn(record.value)
+        : record.value;
+    };
+    const lines = [
+      `; Zone file for ${domain}`,
+      `; Exported from Max Booster on ${new Date().toUTCString()}`,
+      "$TTL 3600",
+      `$ORIGIN ${origin}`,
+      ...records.map((record: DnsRecord) => {
+        const name = record.name === "@" ? "@" : record.name;
+        return `${name} ${record.ttl ?? 3600} IN ${record.type} ${formatValue(record)}`;
+      }),
+      "",
+    ];
+
+    await db
+      .delete(dnsRecordCache)
+      .where(
+        and(
+          eq(dnsRecordCache.storefrontId, storefrontId),
+          eq(dnsRecordCache.domain, domain),
+        ),
+      );
+    if (records.length) {
+      await db.insert(dnsRecordCache).values(
+        records.map((record: DnsRecord) => ({
+          storefrontId,
+          domain,
+          provider: credential.provider,
+          recordType: record.type,
+          name: record.name,
+          value: record.value,
+          ttl: record.ttl,
+          priority: record.priority ?? null,
+          isLocal: false,
+          lastSyncedAt: new Date(),
+        })),
+      );
+    }
+    await db
+      .update(dnsProviderCredentials)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(dnsProviderCredentials.id, credential.id));
+
+    res.type("text/plain");
+    res.attachment(`${domain.replace(/[^a-z0-9.-]/g, "_")}.zone`);
+    return res.send(lines.join("\n"));
+  } catch (error: unknown) {
+    logger.warn({ error }, "Error exporting DNS zone");
+    return res.status(500).json({ error: "Failed to export DNS zone" });
+  }
+});
+
 router.get("/:storefrontId/records", async (req, res) => {
   try {
     if (!req.isAuthenticated())
@@ -494,7 +599,7 @@ router.get("/:storefrontId/records", async (req, res) => {
       res.json({
         records,
         source: "cache",
-        syncedAt: lastSync!.toISOString() ?? null,
+        syncedAt: lastSync?.toISOString() ?? null,
       });
     }
   } catch (error: unknown) {

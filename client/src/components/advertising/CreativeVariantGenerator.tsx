@@ -93,67 +93,26 @@ export function CreativeVariantGenerator() {
   const abTests: ABTest[] = testsData?.tests || [];
   const variants: CreativeVariant[] = variantsData?.variants || [];
 
-  const performanceData = [
-    {
-      day: "Mon",
-      variantA: variants[0]?.ctr ?? 2.1,
-      variantB: variants[1]?.ctr ?? 1.8,
-      variantC: variants[2]?.ctr ?? 1.5,
-    },
-    {
-      day: "Tue",
-      variantA: (variants[0]?.ctr ?? 2.1) * 1.05,
-      variantB: (variants[1]?.ctr ?? 1.8) * 0.98,
-      variantC: (variants[2]?.ctr ?? 1.5) * 1.1,
-    },
-    {
-      day: "Wed",
-      variantA: (variants[0]?.ctr ?? 2.1) * 1.12,
-      variantB: (variants[1]?.ctr ?? 1.8) * 1.04,
-      variantC: (variants[2]?.ctr ?? 1.5) * 0.95,
-    },
-    {
-      day: "Thu",
-      variantA: (variants[0]?.ctr ?? 2.1) * 1.08,
-      variantB: (variants[1]?.ctr ?? 1.8) * 1.1,
-      variantC: (variants[2]?.ctr ?? 1.5) * 1.15,
-    },
-    {
-      day: "Fri",
-      variantA: (variants[0]?.ctr ?? 2.1) * 1.2,
-      variantB: (variants[1]?.ctr ?? 1.8) * 1.15,
-      variantC: (variants[2]?.ctr ?? 1.5) * 1.08,
-    },
-    {
-      day: "Sat",
-      variantA: (variants[0]?.ctr ?? 2.1) * 1.18,
-      variantB: (variants[1]?.ctr ?? 1.8) * 1.22,
-      variantC: (variants[2]?.ctr ?? 1.5) * 1.2,
-    },
-    {
-      day: "Sun",
-      variantA: (variants[0]?.ctr ?? 2.1) * 1.25,
-      variantB: (variants[1]?.ctr ?? 1.8) * 1.18,
-      variantC: (variants[2]?.ctr ?? 1.5) * 1.25,
-    },
-  ];
+  // The database records aggregate creative performance; it does not contain
+  // historical daily samples.  Do not draw an invented trend from a snapshot.
+  const performanceData: Array<Record<string, unknown>> = [];
 
   const predictionDistribution = [
     {
       name: "High Performing",
-      value: variants.filter((v) => v.status === "winner").length || 3,
+      value: variants.filter((v) => v.status === "winner").length,
       color: "#22c55e",
     },
     {
       name: "Medium Performing",
-      value: variants.filter((v) => v.status === "active").length || 5,
+      value: variants.filter((v) => v.status === "active").length,
       color: "#eab308",
     },
     {
       name: "Low Performing",
       value:
         variants.filter((v) => v.status === "paused" || v.status === "draft")
-          .length || 2,
+          .length,
       color: "#ef4444",
     },
   ];
@@ -204,7 +163,8 @@ export function CreativeVariantGenerator() {
         });
         toast({
           title: "Variants Generated",
-          description: `AI created ${bulkCount} creative variants for your campaign.`,
+          description:
+            "AI copy is ready to review. Attach the resulting creative to a campaign to test it.",
         });
       } else {
         toast({
@@ -645,9 +605,9 @@ export function CreativeVariantGenerator() {
                   </div>
                 </div>
 
-                <Button className="w-full">
+                <Button className="w-full" disabled title="Create creatives from the campaign creative generator so they can be attached to a campaign.">
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Variant
+                  Attach a Campaign Creative First
                 </Button>
               </CardContent>
             </Card>

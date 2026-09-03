@@ -655,13 +655,14 @@ export function useProjectSync(projectId: string | null) {
           const trackType = (track?.trackType ||
             track?.type ||
             "audio") as TrackType;
-          const newTrackId = store?.addTrack(trackType, track?.name);
+          const newTrackId = store?.addTrack(trackType, track?.name, track?.id);
 
           const trackClips = backendClips?.filter((c) => c?.trackId === track?.id);
           for (const clip of trackClips) {
             const normalizedPath = normalizeAudioUrl(clip?.filePath);
             const clipDuration = clip?.duration > 0 ? clip?.duration : 0;
             store?.addAudioClip(newTrackId, {
+              id: clip?.id,
               trackId: newTrackId,
               name: clip.name || "Audio Clip",
               sourceUrl: normalizedPath,
