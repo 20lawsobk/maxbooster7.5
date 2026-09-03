@@ -15,7 +15,7 @@ import {
   insertWarpMarkerSchema,
   updateWarpMarkerSchema,
 } from "@shared/schema";
-import { eq, and, asc, sql } from "drizzle-orm";
+import { eq, and, or, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { logger } from "../logger.js";
 import { resolveAudioUrlToLocalFile } from "../services/audioSourceResolver.js";
@@ -193,10 +193,20 @@ router.post("/clips/ensure", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Track not found or unauthorized" });
     }
 
+    // A clientClipId matches an existing row two ways: (a) it's already a
+    // real audioClips.id — the common case (record/import/AI-gen clips are
+    // real from creation, so WarpDialog's clipId prop IS the real id), or
+    // (b) it was a client-only id already materialized by a PRIOR ensure
+    // call, recoverable only via the metadata stamp. Checking only (b) (as
+    // this used to) means every already-real clip fails the lookup and gets
+    // a duplicate orphan row inserted on every dialog open.
     const existing = await db.query.audioClips.findFirst({
       where: and(
         eq(audioClips.trackId, data.trackId),
-        sql`${audioClips.metadata}->>'clientClipId' = ${data.clientClipId}`,
+        or(
+          eq(audioClips.id, data.clientClipId),
+          sql`${audioClips.metadata}->>'clientClipId' = ${data.clientClipId}`,
+        ),
       ),
     });
 

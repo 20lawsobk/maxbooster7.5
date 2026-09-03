@@ -532,6 +532,22 @@ export class TimeStretchService {
     };
   }
 
+  /**
+   * Short-time RMS energy envelope, used by detectTransients for onset
+   * peak-picking. Decodes to raw mono PCM (ffmpeg is used purely as a codec
+   * here, same as every other method in this file) and computes the
+   * envelope ourselves — deliberately NOT the ffmpeg `showwavespic` image
+   * trick this used to use, which renders a 1px-tall waveform picture and
+   * reads its pixel brightness as "amplitude". That collapses to near-binary
+   * lit/unlit values and reflects raw waveform oscillation rather than a
+   * smoothed envelope, so a single sustained tone gets read back as dozens
+   * of spurious up/down "peaks" instead of one plateau — verified against a
+   * real 8-click test track, which it mis-detected as 59 transients.
+   * Windowed RMS (rectify + average energy per ~10ms hop) is the standard
+   * fix: it tracks loudness over time instead of instantaneous waveform
+   * value, so a steady or decaying sound reads as a smooth rise/fall with
+   * exactly one local maximum.
+   */
   private async extractPeakEnvelope(inputPath: string): Promise<number[]> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
@@ -539,36 +555,76 @@ export class TimeStretchService {
       return this.generateSyntheticPeaks(inputPath);
     }
     const ffmpegFn = ffmpeg;
-    const outputFile = path?.join(this.tempDir, `peaks_${randomUUID()}.raw`);
+    const analysisSampleRate = 11025;
+    const outputFile = path?.join(this.tempDir, `pcm_${randomUUID()}.f32le`);
 
     try {
-      await new Promise<void>((resolve, _reject) => {
+      await new Promise<void>((resolve, reject) => {
         ffmpegFn(inputPath)
-          .audioFilters([
-            "aformat=channel_layouts=mono",
-            "asplit[a][b]",
-            "[a]showwavespic=s=1000x1:colors=white[wave]",
+          .audioFilters(["aformat=channel_layouts=mono"])
+          .outputOptions([
+            "-f",
+            "f32le",
+            "-ac",
+            "1",
+            "-ar",
+            String(analysisSampleRate),
+            "-y",
           ])
-          .outputOptions(["-f", "rawvideo", "-pix_fmt", "gray", "-y"])
           .output(outputFile)
           .on("end", () => resolve())
-          .on("error", () => {
-            resolve();
-          })
+          .on("error", (err: Error) => reject(err))
           .run();
       });
 
-      if (fs?.existsSync(outputFile)) {
-        const data = await fsPromises?.readFile(outputFile);
-        const peaks = Array.from(data).map((v) => v / 255);
-        await fsPromises?.unlink(outputFile);
-        return peaks?.length > 0
-          ? peaks
-          : this.generateSyntheticPeaks(inputPath);
+      if (!fs?.existsSync(outputFile)) {
+        return this.generateSyntheticPeaks(inputPath);
       }
-    } catch {}
 
-    return this.generateSyntheticPeaks(inputPath);
+      const raw = await fsPromises?.readFile(outputFile);
+      await fsPromises?.unlink(outputFile).catch(() => {});
+
+      const bytesPerSample = 4;
+      const sampleCount = Math.floor(raw.length / bytesPerSample);
+      if (sampleCount === 0) {
+        return this.generateSyntheticPeaks(inputPath);
+      }
+
+      const windowSize = Math.max(
+        1,
+        Math.round(analysisSampleRate * 0.01), // 10ms hop
+      );
+      const numWindows = Math.ceil(sampleCount / windowSize);
+      const envelope: number[] = new Array(numWindows).fill(0);
+
+      for (let w = 0; w < numWindows; w++) {
+        const start = w * windowSize;
+        const end = Math.min(start + windowSize, sampleCount);
+        let sumSquares = 0;
+        for (let i = start; i < end; i++) {
+          const sample = raw.readFloatLE(i * bytesPerSample);
+          sumSquares += sample * sample;
+        }
+        envelope[w] = end > start ? Math.sqrt(sumSquares / (end - start)) : 0;
+      }
+
+      const peak = Math.max(...envelope, 1e-9);
+      const normalized = envelope.map((v) => v / peak);
+      return normalized?.length > 0
+        ? normalized
+        : this.generateSyntheticPeaks(inputPath);
+    } catch (err) {
+      logger.warn(
+        { err },
+        "Peak envelope extraction failed - using synthetic peak data",
+      );
+      try {
+        if (fs?.existsSync(outputFile)) {
+          await fsPromises?.unlink(outputFile);
+        }
+      } catch {}
+      return this.generateSyntheticPeaks(inputPath);
+    }
   }
 
   private async generateSyntheticPeaks(inputPath: string): Promise<number[]> {
