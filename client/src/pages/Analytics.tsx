@@ -43,6 +43,12 @@ import { StreamingAnalytics } from "./analytics/StreamingAnalytics";
 import { RevenueAnalytics } from "./analytics/RevenueAnalytics";
 import { AudienceInsights } from "./analytics/AudienceInsights";
 import { ExportAnalytics } from "./analytics/ExportAnalytics";
+import ARDiscoveryPanel from "./analytics/ARDiscoveryPanel";
+import GlobalRankingDashboard from "./analytics/GlobalRankingDashboard";
+import HistoricalAnalyticsView from "./analytics/HistoricalAnalyticsView";
+import NaturalLanguageQuery from "./analytics/NaturalLanguageQuery";
+import PlaylistJourneysVisualization from "./analytics/PlaylistJourneysVisualization";
+import { PlaylistTracking } from "./analytics/PlaylistTracking";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface AnalyticsWebSocketMessage {
@@ -75,9 +81,9 @@ interface CrossPlatformMetric {
   platform: string;
   streams: number;
   listeners: number;
-  engagement: number;
+  engagement?: number;
   revenue: number;
-  growthRate: number;
+  growthRate?: number;
 }
 
 interface CrossPlatformComparisonData {
@@ -1600,6 +1606,8 @@ export default function Analytics() {
   const {
     data: analyticsData,
     isLoading: analyticsLoading,
+    isError: analyticsIsError,
+    error: analyticsError,
     refetch,
   } = useQuery<AnalyticsData>({
     queryKey: ["/api/analytics/dashboard", timeRange],
@@ -1897,6 +1905,29 @@ export default function Analytics() {
 
   if (!user) return null;
 
+  if (analyticsIsError) {
+    return (
+      <AppLayout>
+        <div className="max-w-7xl mx-auto">
+          <Card className="border-destructive">
+            <CardContent className="p-6">
+              <p className="font-semibold">Could not load analytics</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {analyticsError instanceof Error
+                  ? analyticsError.message
+                  : "Unable to load your analytics data."}
+              </p>
+              <Button className="mt-4" variant="outline" onClick={() => refetch()}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto space-y-6">
@@ -1943,7 +1974,6 @@ export default function Analytics() {
                 <SelectItem value="30d">Last 30 days</SelectItem>
                 <SelectItem value="90d">Last 90 days</SelectItem>
                 <SelectItem value="1y">Last year</SelectItem>
-                <SelectItem value="all">All time</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -2172,6 +2202,13 @@ export default function Analytics() {
               Playlists
             </TabsTrigger>
             <TabsTrigger
+              value="playlists-enhanced"
+              data-testid="tab-playlists-enhanced"
+              className="text-xs px-2"
+            >
+              Playlists+
+            </TabsTrigger>
+            <TabsTrigger
               value="revenue"
               data-testid="tab-revenue"
               className="text-xs px-2"
@@ -2205,6 +2242,34 @@ export default function Analytics() {
               className="text-xs px-2"
             >
               Audience+
+            </TabsTrigger>
+            <TabsTrigger
+              value="ar-discovery"
+              data-testid="tab-ar-discovery"
+              className="text-xs px-2"
+            >
+              A&amp;R Discovery
+            </TabsTrigger>
+            <TabsTrigger
+              value="global-ranking"
+              data-testid="tab-global-ranking"
+              className="text-xs px-2"
+            >
+              Global Ranking
+            </TabsTrigger>
+            <TabsTrigger
+              value="historical"
+              data-testid="tab-historical"
+              className="text-xs px-2"
+            >
+              Historical
+            </TabsTrigger>
+            <TabsTrigger
+              value="ask-ai"
+              data-testid="tab-ask-ai"
+              className="text-xs px-2"
+            >
+              Ask AI
             </TabsTrigger>
             <TabsTrigger
               value="export"
@@ -2502,7 +2567,9 @@ export default function Analytics() {
                               Engagement
                             </span>
                             <span className="font-medium">
-                              {platform.engagement?.toFixed(1)}%
+                              {platform.engagement !== undefined && platform.engagement !== 0
+                                ? `${platform.engagement.toFixed(1)}%`
+                                : "Unavailable"}
                             </span>
                           </div>
                           <div className="flex justify-between text-sm">
@@ -2513,7 +2580,8 @@ export default function Analytics() {
                               ${platform.revenue?.toLocaleString()}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1 mt-2">
+                          {platform.growthRate !== undefined && platform.growthRate !== 0 ? (
+                            <div className="flex items-center gap-1 mt-2">
                             {platform.growthRate > 0 ? (
                               <ArrowUp className="h-4 w-4 text-green-500" />
                             ) : (
@@ -2532,6 +2600,11 @@ export default function Analytics() {
                               growth
                             </span>
                           </div>
+                          ) : (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              Growth unavailable
+                            </p>
+                          )}
                         </CardContent>
                       </Card>
                     );
@@ -2948,6 +3021,30 @@ export default function Analytics() {
             </ErrorBoundary>
           </TabsContent>
 
+          <TabsContent value="ar-discovery" className="space-y-6">
+            <ErrorBoundary>
+              <ARDiscoveryPanel />
+            </ErrorBoundary>
+          </TabsContent>
+
+          <TabsContent value="global-ranking" className="space-y-6">
+            <ErrorBoundary>
+              <GlobalRankingDashboard />
+            </ErrorBoundary>
+          </TabsContent>
+
+          <TabsContent value="historical" className="space-y-6">
+            <ErrorBoundary>
+              <HistoricalAnalyticsView />
+            </ErrorBoundary>
+          </TabsContent>
+
+          <TabsContent value="ask-ai" className="space-y-6">
+            <ErrorBoundary>
+              <NaturalLanguageQuery />
+            </ErrorBoundary>
+          </TabsContent>
+
           <TabsContent value="export" className="space-y-6">
             <ErrorBoundary>
               <ExportAnalytics
@@ -3112,6 +3209,18 @@ export default function Analytics() {
                 <PlaylistTracker playlists={data?.playlists} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="playlists-enhanced" className="space-y-6">
+            <ErrorBoundary>
+              <PlaylistTracking
+                timeRange={timeRange}
+                onTimeRangeChange={handleTimeRangeChange}
+              />
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <PlaylistJourneysVisualization />
+            </ErrorBoundary>
           </TabsContent>
 
           <TabsContent value="revenue" className="space-y-6">

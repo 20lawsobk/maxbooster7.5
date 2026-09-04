@@ -43,10 +43,20 @@ export interface LabelGridPlatformStatus {
   status:
     | "draft"
     | "not_submitted"
+    | "queued"
     | "pending"
     | "processing"
+    | "submitted"
+    | "accepted"
+    | "success"
+    | "delivered"
     | "live"
-    | "failed";
+    | "failed"
+    | "rejected"
+    | "unsupported"
+    | "not_supported"
+    | "not_configured"
+    | "error";
   liveDate?: string;
   errorMessage?: string;
 }

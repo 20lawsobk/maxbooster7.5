@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,6 @@ const getPasswordStrength = (password: string): PasswordStrength => {
 };
 
 export default function ResetPassword() {
-  const [, _navigate] = useLocation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -112,26 +111,40 @@ export default function ResetPassword() {
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ token, password, confirmPassword }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      const data: unknown = contentType.includes("application/json")
+        ? await response.json().catch(() => null)
+        : null;
+      const message =
+        data &&
+        typeof data === "object" &&
+        "message" in data &&
+        typeof data.message === "string"
+          ? data.message
+          : "";
 
       if (!response.ok) {
-        if (data.message?.toLowerCase().includes("expired")) {
+        if (message.toLowerCase().includes("already used")) {
+          setError(
+            "This password reset link has already been used. Please request a new one.",
+          );
+        } else if (message.toLowerCase().includes("expired")) {
           setError(
             "This password reset link has expired. Please request a new one.",
           );
-        } else if (data.message?.toLowerCase().includes("invalid")) {
+        } else if (message.toLowerCase().includes("invalid")) {
           setError(
             "This password reset link is invalid. Please request a new one.",
           );
         } else {
           setError(
-            data.message || "Failed to reset password. Please try again.",
+            message ||
+              `The server returned an unexpected response (${response.status}). Please try again.`,
           );
         }
-        setLoading(false);
         return;
       }
 
@@ -276,13 +289,24 @@ export default function ResetPassword() {
                     placeholder="Enter your new password"
                     value={password}
                     onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (fieldErrors.password) {
-                        setFieldErrors((prev) => ({
-                          ...prev,
-                          password: validatePassword(e.target.value),
-                        }));
-                      }
+                      const nextPassword = e.target.value;
+                      setPassword(nextPassword);
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        ...(prev.password
+                          ? {
+                              password: validatePassword(e.target.value),
+                            }
+                          : {}),
+                        ...(confirmPassword
+                          ? {
+                              confirmPassword:
+                                confirmPassword !== nextPassword
+                                  ? "Passwords do not match"
+                                  : undefined,
+                            }
+                          : {}),
+                      }));
                     }}
                     onBlur={() =>
                       setFieldErrors((prev) => ({
@@ -302,6 +326,9 @@ export default function ResetPassword() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={
+                      showPassword ? "Hide new password" : "Show new password"
+                    }
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -397,6 +424,11 @@ export default function ResetPassword() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={
+                      showConfirmPassword
+                        ? "Hide confirmed password"
+                        : "Show confirmed password"
+                    }
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="h-4 w-4" />

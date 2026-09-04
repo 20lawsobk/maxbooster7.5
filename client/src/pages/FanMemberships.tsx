@@ -6,7 +6,7 @@
  * tracking monthly recurring revenue, and configuring the loyalty wallet.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -124,6 +124,31 @@ interface LeaderEntry {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+function QueryError({
+  message,
+  error,
+  onRetry,
+}: {
+  message: string;
+  error: unknown;
+  onRetry: () => void;
+}) {
+  const detail = error instanceof Error ? error.message : "Please try again.";
+  return (
+    <Card>
+      <CardContent className="py-6 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium">{message}</p>
+          <p className="text-xs text-muted-foreground mt-1">{detail}</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          Retry
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function TierCard({
   tier,
   onEdit,
@@ -202,11 +227,13 @@ function TierDialog({
   onClose,
   initial,
   onSave,
+  isSaving = false,
 }: {
   open: boolean;
   onClose: () => void;
   initial?: MembershipTier | null;
   onSave: (data: Partial<MembershipTier>) => void;
+  isSaving?: boolean;
 }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -218,6 +245,16 @@ function TierDialog({
   );
   const [benefitInput, setBenefitInput] = useState("");
   const [benefits, setBenefits] = useState<string[]>(initial?.benefits ?? []);
+
+  useEffect(() => {
+    if (!open) return;
+    setName(initial?.name ?? "");
+    setDescription(initial?.description ?? "");
+    setPriceCents(initial ? String(initial.priceCents / 100) : "5.00");
+    setInterval(initial?.interval ?? "month");
+    setBenefitInput("");
+    setBenefits(initial?.benefits ?? []);
+  }, [open, initial]);
 
   function addBenefit() {
     const b = benefitInput.trim();
@@ -322,7 +359,8 @@ function TierDialog({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!name.trim()}>
+          <Button onClick={handleSave} disabled={!name.trim() || isSaving}>
+            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {initial ? "Save Changes" : "Create Tier"}
           </Button>
         </DialogFooter>
@@ -341,25 +379,49 @@ export default function FanMemberships() {
   const [tierDialogOpen, setTierDialogOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<MembershipTier | null>(null);
 
-  const { data: tiers = [], isLoading: tiersLoading } = useQuery<MembershipTier[]>({
+  const {
+    data: tiers = [],
+    isLoading: tiersLoading,
+    isError: tiersError,
+    error: tiersQueryError,
+    refetch: refetchTiers,
+  } = useQuery<MembershipTier[]>({
     queryKey: ["fan-membership-tiers"],
     queryFn: () =>
       apiRequest("GET", "/api/fan-memberships/tiers").then((r) => r.json()),
   });
 
-  const { data: revenue } = useQuery<Revenue>({
+  const {
+    data: revenue,
+    isLoading: revenueLoading,
+    isError: revenueError,
+    error: revenueQueryError,
+    refetch: refetchRevenue,
+  } = useQuery<Revenue>({
     queryKey: ["fan-membership-revenue"],
     queryFn: () =>
       apiRequest("GET", "/api/fan-memberships/revenue").then((r) => r.json()),
   });
 
-  const { data: membersResp } = useQuery<MembersResponse>({
+  const {
+    data: membersResp,
+    isLoading: membersLoading,
+    isError: membersError,
+    error: membersQueryError,
+    refetch: refetchMembers,
+  } = useQuery<MembersResponse>({
     queryKey: ["fan-membership-members"],
     queryFn: () =>
       apiRequest("GET", "/api/fan-memberships/members").then((r) => r.json()),
   });
 
-  const { data: loyaltyConfig } = useQuery<LoyaltyConfig>({
+  const {
+    data: loyaltyConfig,
+    isLoading: loyaltyLoading,
+    isError: loyaltyError,
+    error: loyaltyQueryError,
+    refetch: refetchLoyalty,
+  } = useQuery<LoyaltyConfig>({
     queryKey: ["fan-loyalty-config"],
     queryFn: () =>
       apiRequest("GET", "/api/fan-memberships/wallet-config").then((r) =>
@@ -367,7 +429,12 @@ export default function FanMemberships() {
       ),
   });
 
-  const { data: leaderboard = [] } = useQuery<LeaderEntry[]>({
+  const {
+    data: leaderboard = [],
+    isError: leaderboardError,
+    error: leaderboardQueryError,
+    refetch: refetchLeaderboard,
+  } = useQuery<LeaderEntry[]>({
     queryKey: ["fan-wallet-leaderboard"],
     queryFn: () =>
       apiRequest("GET", "/api/fan-memberships/wallet-leaderboard").then((r) =>
@@ -384,7 +451,12 @@ export default function FanMemberships() {
       setTierDialogOpen(false);
       toast({ title: "Tier created" });
     },
-    onError: () => toast({ title: "Failed to create tier", variant: "destructive" }),
+    onError: (error: Error) =>
+      toast({
+        title: "Failed to create tier",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   const updateTier = useMutation({
@@ -394,10 +466,17 @@ export default function FanMemberships() {
       ),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["fan-membership-tiers"] });
+      qc.invalidateQueries({ queryKey: ["fan-membership-revenue"] });
       setEditingTier(null);
+      setTierDialogOpen(false);
       toast({ title: "Tier updated" });
     },
-    onError: () => toast({ title: "Failed to update tier", variant: "destructive" }),
+    onError: (error: Error) =>
+      toast({
+        title: "Failed to update tier",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   const deleteTier = useMutation({
@@ -408,7 +487,12 @@ export default function FanMemberships() {
       qc.invalidateQueries({ queryKey: ["fan-membership-revenue"] });
       toast({ title: "Tier deactivated" });
     },
-    onError: () => toast({ title: "Failed to deactivate tier", variant: "destructive" }),
+    onError: (error: Error) =>
+      toast({
+        title: "Failed to deactivate tier",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   const saveLoyalty = useMutation({
@@ -420,7 +504,12 @@ export default function FanMemberships() {
       qc.invalidateQueries({ queryKey: ["fan-loyalty-config"] });
       toast({ title: "Loyalty config saved" });
     },
-    onError: () => toast({ title: "Failed to save loyalty config", variant: "destructive" }),
+    onError: (error: Error) =>
+      toast({
+        title: "Failed to save loyalty config",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   function handleSaveTier(data: Partial<MembershipTier>) {
@@ -460,7 +549,15 @@ export default function FanMemberships() {
         </div>
 
         {/* MRR Summary */}
-        {revenue && (
+        {revenueLoading ? (
+          <p className="text-sm text-muted-foreground">Loading membership revenue…</p>
+        ) : revenueError ? (
+          <QueryError
+            message="Could not load membership revenue."
+            error={revenueQueryError}
+            onRetry={refetchRevenue}
+          />
+        ) : revenue && (
           <div className="grid grid-cols-3 gap-4">
             <Card>
               <CardContent className="pt-4">
@@ -520,6 +617,12 @@ export default function FanMemberships() {
           <TabsContent value="tiers" className="space-y-4 mt-4">
             {tiersLoading ? (
               <p className="text-muted-foreground text-sm">Loading tiers…</p>
+            ) : tiersError ? (
+              <QueryError
+                message="Could not load membership tiers."
+                error={tiersQueryError}
+                onRetry={refetchTiers}
+              />
             ) : tiers.length === 0 ? (
               <Card>
                 <CardContent className="py-16 text-center">
@@ -558,7 +661,15 @@ export default function FanMemberships() {
 
           {/* ── Members tab ── */}
           <TabsContent value="members" className="mt-4">
-            {membersResp?.members.length === 0 ? (
+            {membersLoading ? (
+              <p className="text-muted-foreground text-sm">Loading members…</p>
+            ) : membersError ? (
+              <QueryError
+                message="Could not load members."
+                error={membersQueryError}
+                onRetry={refetchMembers}
+              />
+            ) : membersResp?.members.length === 0 ? (
               <Card>
                 <CardContent className="py-16 text-center">
                   <Users className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
@@ -615,7 +726,15 @@ export default function FanMemberships() {
 
           {/* ── Loyalty Wallet tab ── */}
           <TabsContent value="wallet" className="mt-4 space-y-4">
-            {lf && (
+            {loyaltyLoading ? (
+              <p className="text-muted-foreground text-sm">Loading loyalty settings…</p>
+            ) : loyaltyError ? (
+              <QueryError
+                message="Could not load loyalty settings."
+                error={loyaltyQueryError}
+                onRetry={refetchLoyalty}
+              />
+            ) : lf && (
               <>
                 <Card>
                   <CardHeader>
@@ -709,7 +828,13 @@ export default function FanMemberships() {
                 </Card>
 
                 {/* Leaderboard */}
-                {leaderboard.length > 0 && (
+                {leaderboardError ? (
+                  <QueryError
+                    message="Could not load the wallet leaderboard."
+                    error={leaderboardQueryError}
+                    onRetry={refetchLeaderboard}
+                  />
+                ) : leaderboard.length > 0 ? (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">
@@ -752,6 +877,12 @@ export default function FanMemberships() {
                       </Table>
                     </CardContent>
                   </Card>
+                ) : (
+                  <Card>
+                    <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                      No fan credit balances yet.
+                    </CardContent>
+                  </Card>
                 )}
               </>
             )}
@@ -768,6 +899,7 @@ export default function FanMemberships() {
         }}
         initial={editingTier}
         onSave={handleSaveTier}
+        isSaving={createTier.isPending || updateTier.isPending}
       />
     </AppLayout>
   );

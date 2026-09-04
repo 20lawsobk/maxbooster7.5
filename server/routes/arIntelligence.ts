@@ -9,10 +9,10 @@
  *     → Rising BPMs, keys, and genres from live industry signals
  *
  *   GET /api/ar-intelligence/catalog-gap
- *     → Compares the user's beat catalog against trending demand, flags gaps
+ *     → Compares the user's beat catalog against live detected genres
  *
  *   GET /api/ar-intelligence/release-timing
- *     → Optimal day/time to release based on industry signals + platform data
+ *     → Returns unavailable until audience-performance data is connected
  *
  * Endpoints must not present static suggestions as live intelligence. When a
  * requested capability lacks a data source, they report that honestly.
@@ -23,10 +23,11 @@ import { db } from "../db.js";
 import { beats } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
+import { requirePremium } from "../middleware/requirePremium.js";
 import { logger } from "../logger.js";
 
 const router = Router();
-router.use(requireAuth);
+router.use(requireAuth, requirePremium);
 
 // ─── Awareness layer loader (same pattern as maxcoreProxy) ────────────────────
 
@@ -82,8 +83,7 @@ router.get("/trend-forecast", (_req, res) => {
  * GET /api/ar-intelligence/catalog-gap
  *
  * Compares the authenticated user's beat catalog (genres, BPMs, keys) against
- * trending demand from the awareness layer and returns a list of gaps with
- * opportunity scores.
+ * genres detected by the live awareness layer and returns uncovered genres.
  */
 router.get("/catalog-gap", async (req, res) => {
   try {
@@ -109,66 +109,38 @@ router.get("/catalog-gap", async (req, res) => {
       catalogGenres[g] = (catalogGenres[g] ?? 0) + 1;
     }
 
-    // Fetch awareness context
+    // Only compare a catalog with genres actually detected by the live
+    // awareness layer. Fixed "high-demand" genres would make this look like
+    // a live analysis when the feed is unavailable.
     const ctx = await getAwarenessContext("music");
-    const hints = ctx?.hints ?? {};
+    const liveGenres = Array.isArray(ctx?.trendingGenres)
+      ? ctx.trendingGenres
+      : [];
+    const trendingGenres = [...new Set(
+      liveGenres
+        .filter((genre) => typeof genre === "string")
+        .map((genre) => genre.toLowerCase().trim())
+        .filter(Boolean),
+    )];
 
-    // Derive trending genres from awareness layer
-    const trendingGenres: Array<{ genre: string; demandScore: number }> = [];
-    const seenGenres = new Set<string>();
-
-    for (const kw of hints.productionKeywords ?? []) {
-      const g = kw.toLowerCase().trim();
-      if (!seenGenres.has(g)) {
-        seenGenres.add(g);
-        trendingGenres.push({ genre: g, demandScore: 80 });
-      }
-    }
-    for (const fmt of hints.contentFormats ?? []) {
-      const g = fmt.format.toLowerCase().trim();
-      if (!seenGenres.has(g)) {
-        seenGenres.add(g);
-        trendingGenres.push({
-          genre: g,
-          demandScore:
-            fmt.momentum === "rising"
-              ? 90
-              : fmt.momentum === "peak"
-                ? 70
-                : 40,
-        });
-      }
+    if (trendingGenres.length === 0) {
+      res.status(503).json({
+        error: "Live trend data is currently unavailable",
+        detail:
+          "Catalog gaps are shown only when the live industry feed returns detected genres.",
+      });
+      return;
     }
 
-    // Add static high-demand genres if awareness didn't return enough
-    for (const g of [
-      "hip-hop",
-      "trap",
-      "afrobeats",
-      "jersey club",
-      "drill",
-      "r&b",
-      "pop",
-      "dancehall",
-      "amapiano",
-    ]) {
-      if (!seenGenres.has(g)) {
-        trendingGenres.push({ genre: g, demandScore: 60 });
-        seenGenres.add(g);
-      }
-    }
-
-    // Compute gaps: high demand genres not in catalog
+    // A gap is a genre detected in the live feed that the user has not yet
+    // covered. The feed provides no defensible demand volume, so this endpoint
+    // intentionally does not manufacture demand or opportunity scores.
     const gaps = trendingGenres
-      .map(({ genre, demandScore }) => {
+      .map((genre) => {
         const catalogCount = catalogGenres[genre] ?? 0;
-        const opportunityScore = Math.round(
-          demandScore * (1 - Math.min(catalogCount / 10, 1)),
-        );
-        return { genre, demandScore, catalogCount, opportunityScore };
+        return { genre, catalogCount };
       })
-      .filter((g) => g.opportunityScore > 20)
-      .sort((a, b) => b.opportunityScore - a.opportunityScore)
+      .filter((g) => g.catalogCount === 0)
       .slice(0, 10);
 
     // Catalog summary
@@ -196,8 +168,8 @@ router.get("/catalog-gap", async (req, res) => {
       gaps,
       message:
         gaps.length > 0
-          ? `You're missing ${gaps.length} high-demand genre${gaps.length > 1 ? "s" : ""}. Top opportunity: ${gaps[0]?.genre ?? ""}.`
-          : "Your catalog covers all trending genres well.",
+          ? `${gaps.length} genre${gaps.length > 1 ? "s are" : " is"} appearing in the live industry feed but not yet in your published catalog.`
+          : "Your published catalog covers every genre detected in the live industry feed.",
       updatedAt: new Date().toISOString(),
     });
   } catch (err) {
@@ -211,63 +183,18 @@ router.get("/catalog-gap", async (req, res) => {
 /**
  * GET /api/ar-intelligence/release-timing
  *
- * Returns day-of-week and time-of-day recommendations for dropping a release,
- * based on awareness layer signals and industry best practices.
+ * This capability requires creator audience and release-performance data and
+ * is unavailable until that source is connected.
  */
-router.get("/release-timing", async (_req, res) => {
-  try {
-    const ctx = await getAwarenessContext("content");
-    const audiencePsychology = ctx?.hints?.audiencePsychology ?? [];
-
-    // Industry best-practice timing anchors (day index 0=Sun)
-    const dayScores: Record<number, number> = {
-      0: 60, // Sunday
-      1: 85, // Monday — streams reset, playlist refresh
-      2: 75, // Tuesday — DSP release day
-      3: 90, // Wednesday — Spotify Fresh Finds updates
-      4: 80, // Thursday — pre-weekend hype
-      5: 70, // Friday — global new music day (mainstream but noisy)
-      6: 55, // Saturday
-    };
-
-    // Boost days mentioned in urgency signals
-    for (const sig of ctx?.signals ?? []) {
-      const desc = (sig.description ?? "").toLowerCase();
-      if (desc.includes("friday")) dayScores[5] = Math.min(dayScores[5] + 10, 100);
-      if (desc.includes("wednesday")) dayScores[3] = Math.min(dayScores[3] + 5, 100);
-    }
-
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const bestDays = Object.entries(dayScores)
-      .sort((a, b) => Number(b[1]) - Number(a[1]))
-      .slice(0, 3)
-      .map(([day, score]) => ({ day: dayNames[Number(day)], score }));
-
-    // Time-of-day anchors (based on general streaming data)
-    const timeWindows = [
-      { window: "8:00 AM – 10:00 AM", reasoning: "Morning commute / gym listeners", score: 85 },
-      { window: "12:00 PM – 2:00 PM", reasoning: "Lunch break listening spike", score: 78 },
-      { window: "6:00 PM – 9:00 PM", reasoning: "Evening wind-down — highest sustained engagement", score: 95 },
-      { window: "9:00 PM – 11:00 PM", reasoning: "Late-night focus and study sessions", score: 72 },
-    ];
-
-    const psychologyInsights = audiencePsychology.slice(0, 3).map((p) => ({
-      trigger: p.trigger,
-      pattern: p.pattern,
-    }));
-
-    res.json({
-      bestDays,
-      bestTimeWindows: timeWindows,
-      recommendation: `Drop on a ${bestDays[0]?.day ?? "Wednesday"} between 6–9 PM for maximum first-day streams.`,
-      audiencePsychologyInsights: psychologyInsights,
-      trendingContext: ctx?.contextString?.slice(0, 300) ?? null,
-      updatedAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    logger.warn({ err }, "[ARIntelligence] /release-timing failed");
-    res.status(500).json({ error: "Failed to compute release timing" });
-  }
+router.get("/release-timing", (_req, res) => {
+  // The awareness feed has industry topics, not this creator's audience and
+  // release-performance history. Do not represent static best-practice times
+  // as a personalized optimizer.
+  res.status(501).json({
+    error: "Release timing optimization is not yet available",
+    detail:
+      "Audience engagement and release-performance data must be connected before personalized timing recommendations can be calculated.",
+  });
 });
 
 export default router;

@@ -117,7 +117,12 @@ router.get("/keys", async (req: Request, res: Response) => {
         id: key.id,
         keyName: key.keyName,
         apiKeyPreview: (key as any).apiKeyPreview,
-        tier: (key as any).tier,
+        tier:
+          key.rateLimit === 5000
+            ? "enterprise"
+            : key.rateLimit === 1000
+              ? "pro"
+              : "free",
         rateLimit: key.rateLimit,
         isActive: key.isActive,
         lastUsedAt: key.lastUsedAt,
@@ -141,14 +146,14 @@ router.get("/keys", async (req: Request, res: Response) => {
 router.delete("/keys/:keyId", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
-    if (!req.user!.id) {
+    if (!req.user?.id) {
       return res.status(401).json({
         error: "Unauthorized",
         message: "You must be logged in to revoke API keys",
       });
     }
 
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const keyId = (req.params.keyId as string);
 
     if (!keyId) {
@@ -286,7 +291,12 @@ router.get("/usage/:keyId", async (req: Request, res: Response) => {
       apiKey: {
         id: apiKey.id,
         keyName: (apiKey as any).keyName,
-        tier: (apiKey as any).tier,
+        tier:
+          apiKey.rateLimit === 5000
+            ? "enterprise"
+            : apiKey.rateLimit === 1000
+              ? "pro"
+              : "free",
         rateLimit: apiKey.rateLimit,
       },
       timeRange: {

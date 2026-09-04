@@ -84,13 +84,16 @@ class EmailService {
     const startTime = Date?.now();
 
     try {
-      await this.resend.emails?.send({
+      const result = await this.resend.emails?.send({
         from: emailData.from,
         to: emailData.to as string,
         subject: emailData.subject,
         html: emailData.html,
         text: emailData.text,
       });
+      if (result?.error) {
+        throw new Error(result.error.message);
+      }
       const deliveryTime = Date?.now() - startTime;
       emailMonitor?.logEmail(emailData as any, "sent", undefined, deliveryTime);
       return true;

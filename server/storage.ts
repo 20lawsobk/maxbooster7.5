@@ -2392,9 +2392,18 @@ export class DatabaseStorage implements IStorage {
     data: Record<string, unknown>,
   ): Promise<Record<string, unknown> | null> {
     const dispatches = await this._loadDispatches(releaseId);
-    if (data?.platform) {
+    if (data?.platform || data?.providerId) {
+      const requestedPlatform = String(data.platform || data.providerId).replace(
+        /_/g,
+        "-",
+      );
       const dispatch = dispatches?.find(
-        (d: Record<string, unknown>) => d?.platform === data?.platform,
+        (d: Record<string, unknown>) =>
+          d?.platform === data?.platform ||
+          d?.providerId === data?.providerId ||
+          d?.providerId === data?.platform ||
+          String(d?.platform || d?.providerId || "").replace(/_/g, "-") ===
+            requestedPlatform,
       );
       if (dispatch) {
         Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });

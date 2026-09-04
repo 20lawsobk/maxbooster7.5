@@ -4,9 +4,10 @@ import { db } from "../db";
 import { invoices, orders } from "@shared/schema";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { logger } from "../logger";
-import { invoiceService } from "../services/invoiceService";
 import { randomBytes } from "crypto";
 import { requireAuth } from "../middleware/auth.js";
+import { jsPDF } from "jspdf";
+import { emailService } from "../services/emailService.js";
 
 const router = Router();
 
@@ -21,6 +22,37 @@ function generateInvoiceNumber(): string {
   const year = new Date().getFullYear();
   const unique = randomBytes(4).toString("hex").toUpperCase();
   return `INV-${year}-${unique}`;
+}
+
+function toInvoiceResponse(invoice: typeof invoices.$inferSelect) {
+  const toAddress = (invoice.toAddress || {}) as Record<string, unknown>;
+  const lineItems = Array.isArray(invoice.lineItems) ? invoice.lineItems : [];
+
+  return {
+    ...invoice,
+    clientName: typeof toAddress.name === "string" ? toAddress.name : "Client not provided",
+    clientEmail: typeof toAddress.email === "string" ? toAddress.email : "",
+    amount: Number(invoice.totalCents || 0) / 100,
+    currency: (invoice.currency || "usd").toUpperCase(),
+    dueDate: invoice.dueDate?.toISOString() ?? null,
+    createdAt: invoice.createdAt?.toISOString() ?? null,
+    paidAt: invoice.paidAt?.toISOString() ?? null,
+    items: lineItems.map((item: Record<string, unknown>) => ({
+      description: String(item.description || ""),
+      quantity: Number(item.quantity || 0),
+      unitPrice: Number(item.unitPrice || 0),
+    })),
+  };
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character] as string);
 }
 
 router.get(
@@ -44,7 +76,10 @@ router.get(
         .offset(offset);
 
       const userInvoices = await query;
-      res.json({ invoices: userInvoices, pagination: { limit, offset } });
+      res.json({
+        invoices: userInvoices.map(toInvoiceResponse),
+        pagination: { limit, offset },
+      });
     } catch (error) {
       logger.warn({ err: error }, "[Invoices] Failed to get invoices:");
       res.status(500).json({ error: "Failed to get invoices" });
@@ -73,7 +108,7 @@ router.get(
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      res.json(invoice);
+      res.json(toInvoiceResponse(invoice));
     } catch (error) {
       logger.warn({ err: error }, "[Invoices] Failed to get invoice:");
       res.status(500).json({ error: "Failed to get invoice" });
@@ -95,16 +130,45 @@ router.post(
         notes,
         terms,
         invoiceType,
+        currency,
       } = req.body;
 
       if (!lineItems || !Array.isArray(lineItems) || lineItems?.length === 0) {
         return res.status(400).json({ error: "Line items are required" });
       }
+      const clientEmail =
+        toAddress && typeof toAddress.email === "string"
+          ? toAddress.email.trim()
+          : "";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
+        return res.status(400).json({ error: "A valid client email is required" });
+      }
+      if (typeof currency !== "undefined" && !/^[A-Za-z]{3}$/.test(currency)) {
+        return res.status(400).json({ error: "Currency must be a three-letter ISO code" });
+      }
 
-      const subtotalCents = lineItems?.reduce(
-        (sum: number, item: { quantity: number; unitPrice: number }) => {
-          return sum + item?.quantity * item?.unitPrice * 100;
-        },
+      const normalizedLineItems = [];
+      for (const item of lineItems as Record<string, unknown>[]) {
+        const description = typeof item.description === "string" ? item.description.trim() : "";
+        const quantity = Number(item.quantity);
+        const unitPrice = Number(item.unitPrice);
+        if (
+          !description ||
+          !Number.isSafeInteger(quantity) ||
+          quantity < 1 ||
+          !Number.isFinite(unitPrice) ||
+          unitPrice < 0
+        ) {
+          return res.status(400).json({
+            error: "Each line item needs a description, whole-number quantity, and non-negative price",
+          });
+        }
+        normalizedLineItems.push({ description, quantity, unitPrice });
+      }
+
+      const subtotalCents = normalizedLineItems.reduce(
+        (sum: number, item: { quantity: number; unitPrice: number }) =>
+          sum + Math.round(item.quantity * item.unitPrice * 100),
         0,
       );
 
@@ -121,11 +185,12 @@ router.post(
           invoiceType: invoiceType || "sale",
           status: "draft",
           fromAddress: fromAddress || null,
-          toAddress: toAddress || null,
-          lineItems,
+          toAddress: { ...toAddress, email: clientEmail },
+          lineItems: normalizedLineItems,
           subtotalCents,
           taxCents,
           totalCents,
+          currency: typeof currency === "string" ? currency.toLowerCase() : "usd",
           dueDate: dueDate
             ? new Date(dueDate)
             : new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000),
@@ -138,7 +203,7 @@ router.post(
         invoiceId: invoice.id,
         invoiceNumber,
       }, "[Invoices] Invoice created:");
-      res.status(201).json(invoice);
+      res.status(201).json(toInvoiceResponse(invoice));
     } catch (error) {
       logger.warn({ err: error }, "[Invoices] Failed to create invoice:");
       res.status(500).json({ error: "Failed to create invoice" });
@@ -233,6 +298,31 @@ router.post(
       if (!invoice) {
         return res.status(404).json({ error: "Invoice not found" });
       }
+      if (invoice.status !== "draft") {
+        return res.status(400).json({ error: "Only draft invoices can be sent" });
+      }
+
+      const toAddress = (invoice.toAddress || {}) as Record<string, unknown>;
+      const clientEmail =
+        typeof toAddress.email === "string" ? toAddress.email.trim() : "";
+      if (!clientEmail) {
+        return res.status(400).json({ error: "Invoice client email is required before sending" });
+      }
+
+      const sent = await emailService.send({
+        to: clientEmail,
+        subject: `Invoice ${invoice.invoiceNumber}`,
+        html: `<h1>Invoice ${escapeHtml(invoice.invoiceNumber)}</h1><p>Your invoice total is ${escapeHtml(
+          `${(Number(invoice.totalCents || 0) / 100).toFixed(2)} ${(invoice.currency || "USD").toUpperCase()}`,
+        )}.</p><p>Due date: ${escapeHtml(
+          invoice.dueDate?.toLocaleDateString() || "Not set",
+        )}</p>`,
+      });
+      if (!sent) {
+        return res.status(503).json({
+          error: "Invoice email could not be delivered; the invoice remains a draft",
+        });
+      }
 
       await db
         .update(invoices)
@@ -243,51 +333,10 @@ router.post(
         invoiceId,
         invoiceNumber: invoice.invoiceNumber,
       }, "[Invoices] Invoice sent:");
-      res.json({ success: true, message: "Invoice sent successfully" });
+      res.json({ success: true, message: "Invoice emailed successfully" });
     } catch (error) {
       logger.warn({ err: error }, "[Invoices] Failed to send invoice:");
       res.status(500).json({ error: "Failed to send invoice" });
-    }
-  },
-);
-
-router.post(
-  "/:invoiceId/mark-paid",
-  requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { invoiceId } = req.params as Record<string, string>;
-      const userId = req.user!.id;
-      const { paymentMethod } = req.body;
-
-      const [invoice] = await db
-        .select()
-        .from(invoices)
-        .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
-        .limit(1);
-
-      if (!invoice) {
-        return res.status(404).json({ error: "Invoice not found" });
-      }
-
-      await db
-        .update(invoices)
-        .set({
-          status: "paid",
-          paidAt: new Date(),
-          paymentMethod: paymentMethod || "manual",
-          updatedAt: new Date(),
-        })
-        .where(eq(invoices.id, invoiceId));
-
-      logger.info({
-        invoiceId,
-        invoiceNumber: invoice.invoiceNumber,
-      }, "[Invoices] Invoice marked paid:");
-      res.json({ success: true, message: "Invoice marked as paid" });
-    } catch (error) {
-      logger.warn({ err: error }, "[Invoices] Failed to mark invoice paid:");
-      res.status(500).json({ error: "Failed to mark invoice as paid" });
     }
   },
 );
@@ -310,68 +359,72 @@ router.get(
         return res.status(404).json({ error: "Invoice not found" });
       }
 
-      const pdfData = await invoiceService?.generatePDF({
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        userId: invoice.userId,
-        type:
-          (invoice?.invoiceType as
-            | "sale"
-            | "purchase"
-            | "royalty"
-            | "service") || "sale",
-        status:
-          (invoice?.status as
-            | "draft"
-            | "sent"
-            | "paid"
-            | "overdue"
-            | "cancelled"
-            | "refunded") || "draft",
-        from: (invoice?.fromAddress as Record<string, unknown>) || {
-          name: "Max Booster",
-          street: "123 Music Lane",
-          city: "Los Angeles",
-          state: "CA",
-          postalCode: "90001",
-          country: "US",
-        },
-        to: (invoice?.toAddress as Record<string, unknown>) || {
-          name: "Customer",
-          street: "N/A",
-          city: "N/A",
-          postalCode: "N/A",
-          country: "US",
-        },
-        lineItems: ((invoice?.lineItems as Record<string, unknown>[]) || []).map(
-          (item: Record<string, unknown>, idx: number) => ({
-            id: `item-${idx}`,
-            description: item.description || "Service",
-            quantity: item.quantity || 1,
-            unitPrice: item.unitPrice || 0,
-            total: (Number(item?.quantity) || 1) * (Number(item?.unitPrice) || 0),
-          }),
-        ),
-        subtotal: (invoice?.subtotalCents || 0) / 100,
-        taxes: [],
-        totalTax: (invoice?.taxCents || 0) / 100,
-        total: (invoice?.totalCents || 0) / 100,
-        currency: invoice.currency || "USD",
-        dueDate: invoice.dueDate || new Date(),
-        issuedDate: invoice.createdAt || new Date(),
-        notes: invoice.notes || undefined,
-        terms: invoice.terms || undefined,
-      });
+      const document = new jsPDF();
+      const toAddress = (invoice.toAddress || {}) as Record<string, unknown>;
+      const currency = (invoice.currency || "USD").toUpperCase();
+      const items = Array.isArray(invoice.lineItems) ? invoice.lineItems : [];
+      let y = 20;
+      document.setFontSize(20);
+      document.text(`Invoice ${invoice.invoiceNumber}`, 20, y);
+      y += 14;
+      document.setFontSize(11);
+      document.text(`Bill to: ${String(toAddress.name || "")}`, 20, y);
+      y += 7;
+      document.text(`Email: ${String(toAddress.email || "")}`, 20, y);
+      y += 7;
+      document.text(`Status: ${invoice.status || "draft"}`, 20, y);
+      y += 7;
+      document.text(`Due: ${invoice.dueDate?.toLocaleDateString() || "Not set"}`, 20, y);
+      y += 12;
+      for (const item of items as Record<string, unknown>[]) {
+        const quantity = Number(item.quantity || 0);
+        const unitPrice = Number(item.unitPrice || 0);
+        const line = `${String(item.description || "")} - ${quantity} x ${unitPrice.toFixed(2)} ${currency} = ${(quantity * unitPrice).toFixed(2)} ${currency}`;
+        const lines = document.splitTextToSize(line, 170);
+        if (y + lines.length * 7 > 280) {
+          document.addPage();
+          y = 20;
+        }
+        document.text(lines, 20, y);
+        y += lines.length * 7;
+      }
+      y += 8;
+      document.setFontSize(13);
+      document.text(`Total: ${(Number(invoice.totalCents || 0) / 100).toFixed(2)} ${currency}`, 20, y);
 
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader(
         "Content-Disposition",
         `attachment; filename="${invoice.invoiceNumber}.pdf"`,
       );
-      res.send(Buffer?.from(pdfData as string, "base64"));
+      res.send(Buffer.from(document.output("arraybuffer")));
     } catch (error) {
       logger.warn({ err: error }, "[Invoices] Failed to generate PDF:");
       res.status(500).json({ error: "Failed to generate PDF" });
+    }
+  },
+);
+
+router.delete(
+  "/:invoiceId",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { invoiceId } = req.params as Record<string, string>;
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, req.user!.id)))
+        .limit(1);
+      if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+      if (invoice.status !== "draft" && invoice.status !== "cancelled") {
+        return res.status(400).json({ error: "Only draft or cancelled invoices can be deleted" });
+      }
+      await db.delete(invoices).where(eq(invoices.id, invoice.id));
+      res.status(204).end();
+    } catch (error) {
+      logger.warn({ err: error }, "[Invoices] Failed to delete invoice:");
+      res.status(500).json({ error: "Failed to delete invoice" });
     }
   },
 );

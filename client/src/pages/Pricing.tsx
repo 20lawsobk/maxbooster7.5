@@ -96,17 +96,17 @@ export default function Pricing() {
     {
       question: "What payment methods do you accept?",
       answer:
-        "Max Booster accepts all major credit cards (Visa, MasterCard, American Express) and PayPal through secure Stripe payment processing.",
+        "Max Booster accepts major credit and debit cards through secure Stripe payment processing.",
     },
     {
       question: "Can I change my plan later?",
       answer:
-        "Yes! You can upgrade or downgrade your plan at any time. Changes will be prorated and reflected in your next billing cycle.",
+        "Yes. You can change your subscription plan from Settings → Billing. Upgrades take effect immediately, while downgrades take effect at the end of the current billing cycle.",
     },
     {
-      question: "Do you offer a money-back guarantee?",
+      question: "What is your refund policy?",
       answer:
-        "Absolutely! Max Booster offers a full 90-day 100% money-back guarantee. If you're not completely satisfied, you'll receive a full refund of your entire payment, no questions asked.",
+        "A full refund is available within 7 days of your initial purchase. After 7 days, you can cancel to prevent future charges. To request a refund, contact support@maxbooster.com with your account email and purchase date.",
     },
     {
       question: "What happens to my projects if I cancel?",
@@ -114,14 +114,9 @@ export default function Pricing() {
         "Your projects and data remain accessible for 30 days after cancellation. You can download all your content during this period.",
     },
     {
-      question: "Do you offer student discounts?",
-      answer:
-        "Yes! Students receive 50% off all plans with valid student verification through the partner program.",
-    },
-    {
       question: "Are there any hidden fees or feature top-ups?",
       answer:
-        "No. Your Max Booster subscription includes everything — distribution to 150+ platforms, the AI studio, social media autopilot, beat marketplace, analytics, custom storefront, and all future features. The only additional costs are standard Stripe payment processing fees (2.9% + $0.30) when you sell products through your storefront. You keep 100% of your revenue.",
+        "No. Each paid plan includes access to Max Booster's subscriber features without separate feature top-ups. The plan price and billing interval are shown before checkout.",
     },
   ];
 
@@ -197,19 +192,19 @@ export default function Pricing() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
-        {/* 90-Day Guarantee Banner */}
+        {/* Refund Policy Banner */}
         <div className="mb-12 mx-auto max-w-4xl">
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-700 rounded-2xl p-6 shadow-lg">
             <div className="flex items-center justify-center space-x-4">
               <Shield className="h-12 w-12 text-green-600 dark:text-green-400 flex-shrink-0" />
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  90-Day Money Back Guarantee
+                  7-Day Refund Window
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Purchase Max Booster with confidence. If you're not completely
-                  satisfied within 90 days, you'll receive a 100% refund of your
-                  payment—no questions asked.
+                  A full refund is available within 7 days of your initial
+                  purchase. After that, you can cancel anytime to prevent future
+                  charges.
                 </p>
               </div>
             </div>
@@ -233,7 +228,7 @@ export default function Pricing() {
           <div className="flex items-center justify-center space-x-4 flex-wrap gap-2">
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 font-medium">
               <Shield className="h-4 w-4 mr-2 text-green-500" />
-              90-Day Money-Back Guarantee
+              7-Day Refund Window
             </div>
             <span className="text-gray-400 dark:text-gray-500">•</span>
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
@@ -270,7 +265,7 @@ export default function Pricing() {
                 <div className="flex justify-center mb-4">
                   <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700 px-3 py-1">
                     <Shield className="h-4 w-4 mr-2" />
-                    90-Day Guarantee
+                    7-Day Refund Window
                   </Badge>
                 </div>
 
@@ -338,8 +333,8 @@ export default function Pricing() {
 
                 <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
                   {plan.period === "once"
-                    ? "One-time payment, lifetime access • 90-day guarantee"
-                    : "90-day money-back guarantee • Cancel anytime"}
+                    ? "One-time payment, lifetime access • 7-day refund window"
+                    : "7-day refund window • Cancel anytime"}
                 </p>
               </CardContent>
             </Card>

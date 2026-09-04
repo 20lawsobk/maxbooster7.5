@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +25,6 @@ import {
   Target,
   TrendingUp,
   Calendar,
-  CheckCircle,
-  Clock,
   Lightbulb,
   Rocket,
   Star,
@@ -61,23 +59,28 @@ import { Textarea } from "@/components/ui/textarea";
 
 interface CareerGoal {
   id: string;
+  goalType: string;
   title: string;
-  category: "growth" | "revenue" | "releases" | "networking" | "skills";
-  targetDate: string;
-  progress: number;
-  status: "active" | "completed" | "paused";
-  milestones: Array<{ id: string; title: string; completed: boolean }>;
+  description: string | null;
+  targetValue: number;
+  currentValue: number | null;
+  unit: string | null;
+  deadline: string | null;
+  status: string;
 }
 
 interface Recommendation {
   id: string;
-  type: "action" | "insight" | "opportunity";
+  type: string;
   title: string;
   description: string;
-  priority: "high" | "medium" | "low";
-  category: string;
-  estimatedImpact: string;
-  actionUrl?: string;
+  priority: number | null;
+  actionUrl: string | null;
+  metadata?: {
+    area?: string;
+    severity?: "high" | "medium" | "low";
+    expectedImpact?: string;
+  } | null;
 }
 
 interface QuickAction {
@@ -95,7 +98,7 @@ interface CoachMessage {
 }
 
 export default function CareerCoach() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useRequireAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -116,7 +119,11 @@ export default function CareerCoach() {
     description: "",
   });
 
-  const { data: goalsData, isLoading: isLoadingGoals } = useQuery<{
+  const {
+    data: goalsData,
+    isLoading: isLoadingGoals,
+    error: goalsError,
+  } = useQuery<{
     success: boolean;
     data: { goals: CareerGoal[] };
   }>({
@@ -124,7 +131,11 @@ export default function CareerCoach() {
     enabled: !!user,
   });
 
-  const { data: recommendationsData, isLoading: isLoadingRecs } = useQuery<{
+  const {
+    data: recommendationsData,
+    isLoading: isLoadingRecs,
+    error: recommendationsError,
+  } = useQuery<{
     success: boolean;
     data: { recommendations: Recommendation[] };
   }>({
@@ -132,14 +143,22 @@ export default function CareerCoach() {
     enabled: !!user,
   });
 
-  const { data: insightsData, isLoading: isLoadingInsights } = useQuery<{
+  const {
+    data: insightsData,
+    isLoading: isLoadingInsights,
+    error: insightsError,
+  } = useQuery<{
     insights: Record<string, unknown>;
   }>({
     queryKey: ["/api/career-coach/insights"],
     enabled: !!user,
   });
 
-  const { data: historyData } = useQuery<{ messages: unknown[] }>({
+  const {
+    data: historyData,
+    isLoading: isLoadingHistory,
+    error: historyError,
+  } = useQuery<{ messages: unknown[] }>({
     queryKey: ["/api/assistant/history"],
     enabled: !!user,
   });
@@ -221,10 +240,10 @@ export default function CareerCoach() {
       ]);
       inputRef.current?.focus();
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to get AI response",
+        description: error.message || "Failed to get AI response",
         variant: "destructive",
       });
     },
@@ -265,6 +284,13 @@ export default function CareerCoach() {
         description: "Conversation history has been cleared.",
       });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Could not clear conversation",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const createGoalMutation = useMutation({
@@ -295,10 +321,10 @@ export default function CareerCoach() {
         description: "Your career goal has been added.",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to create goal",
+        description: error.message || "Failed to create goal",
         variant: "destructive",
       });
     },
@@ -316,10 +342,10 @@ export default function CareerCoach() {
       queryClient.invalidateQueries({ queryKey: ["/api/career-coach/goals"] });
       toast({ title: "Goal deleted" });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to delete goal",
+        description: error.message || "Failed to delete goal",
         variant: "destructive",
       });
     },
@@ -364,13 +390,23 @@ export default function CareerCoach() {
     }
   };
 
-  const getPriorityBadge = (priority: string) => {
-    const variants: Record<string, "default" | "secondary" | "outline"> = {
-      high: "default",
-      medium: "secondary",
-      low: "outline",
+  const getPriorityBadge = (priority: number | null) => {
+    const labels: Record<number, string> = {
+      1: "high",
+      2: "medium",
+      3: "low",
     };
-    return <Badge variant={variants[priority]}>{priority}</Badge>;
+    const variants: Record<number, "default" | "secondary" | "outline"> = {
+      1: "default",
+      2: "secondary",
+      3: "outline",
+    };
+    const normalizedPriority = priority ?? 2;
+    return (
+      <Badge variant={variants[normalizedPriority] ?? "secondary"}>
+        {labels[normalizedPriority] ?? "medium"}
+      </Badge>
+    );
   };
 
   const getRecommendationIcon = (type: string) => {
@@ -386,8 +422,18 @@ export default function CareerCoach() {
     }
   };
 
+  if (isAuthLoading) {
+    return (
+      <AppLayout>
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-[600px] w-full" />
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (!user) {
-    setLocation("/login");
     return null;
   }
 
@@ -444,6 +490,24 @@ export default function CareerCoach() {
                       </Card>
                     ))}
                   </div>
+                ) : recommendationsError ? (
+                  <Card className="p-8 text-center">
+                    <h3 className="font-medium">Recommendations unavailable</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {recommendationsError.message}
+                    </p>
+                    <Button
+                      className="mt-4"
+                      variant="outline"
+                      onClick={() =>
+                        queryClient.invalidateQueries({
+                          queryKey: ["/api/career-coach/recommendations"],
+                        })
+                      }
+                    >
+                      Try again
+                    </Button>
+                  </Card>
                 ) : recommendations.length === 0 ? (
                   <Card className="p-8 text-center">
                     <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -475,10 +539,14 @@ export default function CareerCoach() {
                         </CardHeader>
                         <CardContent>
                           <div className="flex items-center gap-4 text-sm">
-                            <Badge variant="outline">{rec.category}</Badge>
-                            <span className="text-muted-foreground">
-                              Impact: {rec.estimatedImpact}
-                            </span>
+                            {rec.metadata?.area && (
+                              <Badge variant="outline">{rec.metadata.area}</Badge>
+                            )}
+                            {rec.metadata?.expectedImpact && (
+                              <span className="text-muted-foreground">
+                                Impact: {rec.metadata.expectedImpact}
+                              </span>
+                            )}
                           </div>
                         </CardContent>
                         {rec.actionUrl && (
@@ -545,6 +613,24 @@ export default function CareerCoach() {
                       </Card>
                     ))}
                   </div>
+                ) : goalsError ? (
+                  <Card className="p-8 text-center">
+                    <h3 className="font-medium">Goals unavailable</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {goalsError.message}
+                    </p>
+                    <Button
+                      className="mt-4"
+                      variant="outline"
+                      onClick={() =>
+                        queryClient.invalidateQueries({
+                          queryKey: ["/api/career-coach/goals"],
+                        })
+                      }
+                    >
+                      Try again
+                    </Button>
+                  </Card>
                 ) : goals.length === 0 ? (
                   <Card className="p-8 text-center">
                     <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -572,7 +658,7 @@ export default function CareerCoach() {
                         <CardHeader>
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-base flex items-center gap-2">
-                              {getCategoryIcon(goal.category)}
+                               {getCategoryIcon(goal.goalType)}
                               {goal.title}
                             </CardTitle>
                             <div className="flex items-center gap-2">
@@ -600,42 +686,36 @@ export default function CareerCoach() {
                           </div>
                           <CardDescription className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
-                            Target:{" "}
-                            {new Date(goal.targetDate).toLocaleDateString()}
+                            {goal.deadline
+                              ? `Target: ${new Date(goal.deadline).toLocaleDateString()}`
+                              : "No deadline set"}
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div>
                             <div className="flex items-center justify-between text-sm mb-1">
                               <span>Progress</span>
-                              <span>{goal.progress}%</span>
+                               <span>
+                                 {Math.round(
+                                   ((goal.currentValue ?? 0) / goal.targetValue) * 100,
+                                 )}
+                                 %
+                               </span>
                             </div>
-                            <Progress value={goal.progress} className="h-2" />
+                             <Progress
+                               value={Math.min(
+                                 100,
+                                 ((goal.currentValue ?? 0) / goal.targetValue) * 100,
+                               )}
+                               className="h-2"
+                             />
                           </div>
 
-                          <div className="space-y-2">
-                            {goal.milestones.slice(0, 3).map((milestone) => (
-                              <div
-                                key={milestone.id}
-                                className="flex items-center gap-2 text-sm"
-                              >
-                                {milestone.completed ? (
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
-                                ) : (
-                                  <Clock className="h-4 w-4 text-muted-foreground" />
-                                )}
-                                <span
-                                  className={
-                                    milestone.completed
-                                      ? "line-through text-muted-foreground"
-                                      : ""
-                                  }
-                                >
-                                  {milestone.title}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {goal.currentValue ?? 0} of {goal.targetValue}
+                            {goal.unit ? ` ${goal.unit}` : ""}
+                            {goal.description ? ` — ${goal.description}` : ""}
+                          </p>
                         </CardContent>
                       </Card>
                     ))}
@@ -679,6 +759,24 @@ export default function CareerCoach() {
                       </CardContent>
                     </Card>
                   </div>
+                ) : insightsError ? (
+                  <Card className="p-8 text-center">
+                    <h3 className="font-medium">Insights unavailable</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {insightsError.message}
+                    </p>
+                    <Button
+                      className="mt-4"
+                      variant="outline"
+                      onClick={() =>
+                        queryClient.invalidateQueries({
+                          queryKey: ["/api/career-coach/insights"],
+                        })
+                      }
+                    >
+                      Try again
+                    </Button>
+                  </Card>
                 ) : (
                   <>
                     <div className="grid md:grid-cols-2 gap-4">
@@ -840,11 +938,30 @@ export default function CareerCoach() {
                 ref={scrollRef}
                 className="flex-1 overflow-y-auto p-4 space-y-4"
               >
-                {chatMessages.length === 0 && (
+                {historyError ? (
+                  <div className="text-center text-sm text-destructive">
+                    Could not load conversation: {historyError.message}
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={() =>
+                        queryClient.invalidateQueries({
+                          queryKey: ["/api/assistant/history"],
+                        })
+                      }
+                    >
+                      Try again
+                    </Button>
+                  </div>
+                ) : chatMessages.length === 0 && (
                   <div className="flex justify-center items-center h-full text-muted-foreground">
                     <div className="text-center">
                       <Brain className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                      <p className="text-sm">Loading your conversation...</p>
+                      <p className="text-sm">
+                        {isLoadingHistory
+                          ? "Loading your conversation..."
+                          : "Start a conversation with Max"}
+                      </p>
                     </div>
                   </div>
                 )}

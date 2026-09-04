@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -162,6 +163,125 @@ export default function BlogPost() {
   const params = useParams<{ slug: string }>();
   const post = getBlogPostBySlug(params.slug ?? "");
   const related = getRelatedPosts(params.slug ?? "");
+
+  useEffect(() => {
+    const originalTitle = document.title;
+    const changedElements: Array<{
+      element: HTMLMetaElement | HTMLLinkElement;
+      content: string | null;
+    }> = [];
+    const addedElements: Element[] = [];
+
+    const setMeta = (
+      selector: string,
+      attributes: Record<string, string>,
+      content: string,
+    ) => {
+      let element = document.head.querySelector<HTMLMetaElement>(selector);
+      if (!element) {
+        element = document.createElement("meta");
+        Object.entries(attributes).forEach(([name, value]) =>
+          element!.setAttribute(name, value),
+        );
+        document.head.appendChild(element);
+        addedElements.push(element);
+      } else {
+        changedElements.push({
+          element,
+          content: element.getAttribute("content"),
+        });
+      }
+      element.setAttribute("content", content);
+    };
+
+    const setCanonical = (href: string) => {
+      let element = document.head.querySelector<HTMLLinkElement>(
+        'link[rel="canonical"]',
+      );
+      if (!element) {
+        element = document.createElement("link");
+        element.rel = "canonical";
+        document.head.appendChild(element);
+        addedElements.push(element);
+      } else {
+        changedElements.push({
+          element,
+          content: element.getAttribute("href"),
+        });
+      }
+      element.href = href;
+    };
+
+    const url = window.location.href;
+    if (post) {
+      const title = `${post.title} | Max Booster`;
+      document.title = title;
+      setMeta('meta[name="description"]', { name: "description" }, post.excerpt);
+      setMeta('meta[name="author"]', { name: "author" }, post.author);
+      setMeta('meta[name="robots"]', { name: "robots" }, "index, follow");
+      setMeta('meta[property="og:type"]', { property: "og:type" }, "article");
+      setMeta('meta[property="og:url"]', { property: "og:url" }, url);
+      setMeta('meta[property="og:title"]', { property: "og:title" }, title);
+      setMeta(
+        'meta[property="og:description"]',
+        { property: "og:description" },
+        post.excerpt,
+      );
+      setMeta('meta[name="twitter:url"]', { name: "twitter:url" }, url);
+      setMeta('meta[name="twitter:title"]', { name: "twitter:title" }, title);
+      setMeta(
+        'meta[name="twitter:description"]',
+        { name: "twitter:description" },
+        post.excerpt,
+      );
+      setCanonical(url);
+    } else {
+      document.title = "Article Not Found | Max Booster";
+      setMeta(
+        'meta[name="description"]',
+        { name: "description" },
+        "The Max Booster blog article you requested could not be found.",
+      );
+      setMeta('meta[name="robots"]', { name: "robots" }, "noindex, follow");
+      setMeta('meta[property="og:type"]', { property: "og:type" }, "website");
+      setMeta('meta[property="og:url"]', { property: "og:url" }, url);
+      setMeta(
+        'meta[property="og:title"]',
+        { property: "og:title" },
+        document.title,
+      );
+      setMeta(
+        'meta[property="og:description"]',
+        { property: "og:description" },
+        "The Max Booster blog article you requested could not be found.",
+      );
+      setMeta('meta[name="twitter:url"]', { name: "twitter:url" }, url);
+      setMeta(
+        'meta[name="twitter:title"]',
+        { name: "twitter:title" },
+        document.title,
+      );
+      setMeta(
+        'meta[name="twitter:description"]',
+        { name: "twitter:description" },
+        "The Max Booster blog article you requested could not be found.",
+      );
+      setCanonical(url);
+    }
+
+    return () => {
+      document.title = originalTitle;
+      changedElements.forEach(({ element, content }) => {
+        const attribute = element instanceof HTMLLinkElement ? "href" : "content";
+        if (content === null) {
+          element.removeAttribute(attribute);
+        } else {
+          element.setAttribute(attribute, content);
+        }
+      });
+      addedElements.forEach((element) => element.remove());
+    };
+  }, [post, params.slug]);
 
   if (!post) {
     return (

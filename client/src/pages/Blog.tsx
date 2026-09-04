@@ -21,7 +21,7 @@ export default function Blog() {
   const filtered =
     activeCategory === "All"
       ? regular
-      : regular.filter((p) => p.category === activeCategory);
+      : blogPosts.filter((p) => p.category === activeCategory);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
@@ -185,19 +185,14 @@ export default function Blog() {
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white mb-4">Stay Updated</h2>
           <p className="text-xl text-white/90 mb-8">
-            Get the latest tips, tutorials, and industry insights delivered to
-            your inbox
+            Create a free account to receive product updates and manage your
+            email preferences.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-2 rounded-lg text-gray-900"
-            />
+          <Link href="/register">
             <Button size="lg" variant="secondary">
-              Subscribe
+              Create Free Account
             </Button>
-          </div>
+          </Link>
         </div>
       </section>
     </div>

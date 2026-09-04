@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Download,
   Monitor,
@@ -8,7 +8,6 @@ import {
   HardDrive,
   Globe,
   AlertCircle,
-  FileText,
   CheckCircle,
   Smartphone,
   Tablet,
@@ -64,32 +63,51 @@ const platformDescriptions: Record<string, string> = {
 
 export default function DesktopApp() {
   const { t } = useTranslation();
-  const {  isLoading } = useRequireSubscription();
+  const { isLoading } = useRequireSubscription();
   const [releaseData, setReleaseData] = useState<ReleaseData | null>(null);
   const [loadingRelease, setLoadingRelease] = useState(true);
+  const [releaseError, setReleaseError] = useState<string | null>(null);
   const [expandedLinux, setExpandedLinux] = useState(false);
 
-  useEffect(() => {
-    async function fetchRelease() {
-      try {
-        const response = await fetch("/api/downloads/latest");
-        if (response.ok) {
-          const data = await response.json();
-          setReleaseData(data);
-        } else {
-          setReleaseData({
-            available: false,
-            fallbackUrl: GITHUB_RELEASES_URL,
-          });
-        }
-      } catch {
-        setReleaseData({ available: false, fallbackUrl: GITHUB_RELEASES_URL });
-      } finally {
-        setLoadingRelease(false);
+  const fetchRelease = useCallback(async () => {
+    setLoadingRelease(true);
+    setReleaseError(null);
+
+    try {
+      const response = await fetch("/api/downloads/latest");
+      if (!response.ok) {
+        throw new Error(
+          `The download service returned ${response.status} ${response.statusText}.`,
+        );
       }
+
+      const data: ReleaseData = await response.json();
+      if (!data.available) {
+        setReleaseError(
+          data.message ||
+            "No current desktop release is available from the download service.",
+        );
+      }
+      setReleaseData(data);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "The download service could not be reached.";
+      setReleaseError(message);
+      setReleaseData({
+        available: false,
+        fallbackUrl: GITHUB_RELEASES_URL,
+        allReleasesUrl: GITHUB_RELEASES_URL,
+      });
+    } finally {
+      setLoadingRelease(false);
     }
-    fetchRelease();
   }, []);
+
+  useEffect(() => {
+    fetchRelease();
+  }, [fetchRelease]);
 
   if (isLoading) {
     return (
@@ -225,6 +243,7 @@ export default function DesktopApp() {
 
   function renderFallbackButton(platform: string, isMobile = false) {
     const url = releaseData?.allReleasesUrl || GITHUB_ACTIONS_URL;
+    const opensReleases = Boolean(releaseData?.allReleasesUrl);
     return (
       <div className="space-y-3">
         <Button
@@ -238,7 +257,7 @@ export default function DesktopApp() {
           </a>
         </Button>
         <p className="text-xs text-muted-foreground text-center">
-          Opens CI builds page
+          {opensReleases ? "Opens release downloads" : "Opens CI builds page"}
         </p>
       </div>
     );
@@ -317,36 +336,52 @@ export default function DesktopApp() {
               </span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {desktopPlatformNames.map((platformName) => {
-                const asset = releaseData?.desktop?.find(
-                  (d) => d.platform === platformName,
-                );
-                return (
-                  <Card key={platformName} className="border-2">
-                    <CardHeader className="text-center">
-                      <div className="mb-4">
-                        <Monitor className="w-16 h-16 mx-auto text-primary" />
-                      </div>
-                      <CardTitle className="text-2xl">{platformName}</CardTitle>
-                      <CardDescription className="text-sm">
-                        {t(
-                          `desktopApp.requirements.${platformName === "macOS" ? "mac" : platformName.toLowerCase()}`,
-                        )}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {asset
-                        ? renderDownloadButton(asset)
-                        : renderFallbackButton(platformName)}
-                      <p className="text-xs text-muted-foreground text-center">
-                        {t("desktopApp.version")}: {version}
-                      </p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            <>
+              {releaseError && (
+                <div
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm"
+                  role="alert"
+                >
+                  <span>
+                    Couldn&apos;t retrieve the current download information:{" "}
+                    {releaseError}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={fetchRelease}>
+                    Retry
+                  </Button>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {desktopPlatformNames.map((platformName) => {
+                  const asset = releaseData?.desktop?.find(
+                    (d) => d.platform === platformName,
+                  );
+                  return (
+                    <Card key={platformName} className="border-2">
+                      <CardHeader className="text-center">
+                        <div className="mb-4">
+                          <Monitor className="w-16 h-16 mx-auto text-primary" />
+                        </div>
+                        <CardTitle className="text-2xl">{platformName}</CardTitle>
+                        <CardDescription className="text-sm">
+                          {t(
+                            `desktopApp.requirements.${platformName === "macOS" ? "mac" : platformName.toLowerCase()}`,
+                          )}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {asset
+                          ? renderDownloadButton(asset)
+                          : renderFallbackButton(platformName)}
+                        <p className="text-xs text-muted-foreground text-center">
+                          {t("desktopApp.version")}: {version}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
 
@@ -399,11 +434,11 @@ export default function DesktopApp() {
                         <div className="space-y-3">
                           <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 text-center space-y-2">
                             <p className="text-sm font-medium text-blue-500">
-                              Build in progress
+                              No iOS build is currently published
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              The iOS IPA is built by Codemagic CI and published
-                              here automatically after each commit.
+                              Check the latest release on GitHub for a newly
+                              published IPA.
                             </p>
                             <p className="text-xs text-muted-foreground">
                               Once available, install free via{" "}
@@ -505,12 +540,13 @@ export default function DesktopApp() {
                   <li>Follow the installation wizard</li>
                 </ol>
                 <a
-                  href="/downloads/README-Windows.md"
+                  href={releaseData?.releasesPageUrl || GITHUB_RELEASES_URL}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-xs text-primary hover:underline"
                 >
-                  <FileText className="w-3 h-3" />
-                  View full Windows guide
+                  <ExternalLink className="w-3 h-3" />
+                  View latest release on GitHub
                 </a>
               </div>
 
@@ -537,12 +573,13 @@ export default function DesktopApp() {
                     </code>
                   </p>
                   <a
-                    href="/downloads/README-macOS.md"
+                    href={releaseData?.releasesPageUrl || GITHUB_RELEASES_URL}
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-xs text-primary hover:underline"
                   >
-                    <FileText className="w-3 h-3" />
-                    View full macOS guide
+                    <ExternalLink className="w-3 h-3" />
+                    View latest release on GitHub
                   </a>
                 </div>
               </div>
@@ -564,12 +601,13 @@ export default function DesktopApp() {
                   <li>Or install the .deb package</li>
                 </ol>
                 <a
-                  href="/downloads/README-Linux.md"
+                  href={releaseData?.releasesPageUrl || GITHUB_RELEASES_URL}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-xs text-primary hover:underline"
                 >
-                  <FileText className="w-3 h-3" />
-                  View full Linux guide
+                  <ExternalLink className="w-3 h-3" />
+                  View latest release on GitHub
                 </a>
               </div>
 
@@ -661,8 +699,10 @@ export default function DesktopApp() {
             <p className="text-muted-foreground">
               {t("desktopApp.webVersion.description")}
             </p>
-            <Button variant="outline" size="lg">
-              {t("desktopApp.webVersion.button")}
+            <Button variant="outline" size="lg" asChild>
+              <a href="/dashboard">
+                {t("desktopApp.webVersion.button")}
+              </a>
             </Button>
           </CardContent>
         </Card>

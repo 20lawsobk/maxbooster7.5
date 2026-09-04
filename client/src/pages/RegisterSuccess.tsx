@@ -27,6 +27,7 @@ export default function RegisterSuccess() {
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [paymentValid, setPaymentValid] = useState(false);
+  const [verificationError, setVerificationError] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -47,24 +48,35 @@ export default function RegisterSuccess() {
       return;
     }
 
-    // Verify the payment session
+    let cancelled = false;
+
+    // Do not show the account-creation form until the server has verified this
+    // Checkout session with Stripe. The final registration endpoint repeats this
+    // check to protect against a payment status change between these requests.
     const verifyPayment = async () => {
       try {
-        // We'll verify the session exists and payment was successful on form submit
-        setPaymentValid(true);
-        setIsVerifying(false);
+        await apiRequest("POST", "/api/verify-checkout-session", { sessionId });
+        if (!cancelled) {
+          setPaymentValid(true);
+          setIsVerifying(false);
+        }
       } catch (error) {
-        setIsVerifying(false);
-        toast({
-          title: "Payment Verification Failed",
-          description: "Unable to verify your payment. Please try again.",
-          variant: "destructive",
-        });
-        navigate("/pricing");
+        if (!cancelled) {
+          setPaymentValid(false);
+          setVerificationError(
+            error instanceof Error
+              ? error.message
+              : "Unable to verify your payment. Please try again.",
+          );
+          setIsVerifying(false);
+        }
       }
     };
 
     verifyPayment();
+    return () => {
+      cancelled = true;
+    };
   }, [sessionId, user, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,7 +166,7 @@ export default function RegisterSuccess() {
               Payment Verification Failed
             </h1>
             <p className="text-gray-600 mb-6">
-              We couldn't verify your payment. Please try again.
+              {verificationError || "We couldn't verify your payment. Please try again."}
             </p>
             <Button
               onClick={() => navigate("/pricing")}

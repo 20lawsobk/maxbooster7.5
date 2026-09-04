@@ -96,6 +96,7 @@ export default function RegisterPayment() {
   const [, _navigate] = useLocation();
   const [formData, setFormData] = useState({
     username: "",
+    artistName: "",
     email: "",
     birthdate: "",
   });
@@ -170,6 +171,7 @@ export default function RegisterPayment() {
           tier: plan.id,
           userEmail: formData.email,
           username: formData.username,
+          artistName: formData.artistName,
           birthdate: formData.birthdate,
         },
       );
@@ -338,6 +340,20 @@ export default function RegisterPayment() {
                       required
                       autoComplete="username"
                       data-testid="input-username"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="artistName">Artist / Producer Name (optional)</Label>
+                    <Input
+                      id="artistName"
+                      name="artistName"
+                      type="text"
+                      placeholder="Your stage name or producer alias"
+                      value={formData.artistName}
+                      onChange={handleInputChange}
+                      autoComplete="nickname"
+                      data-testid="input-artist-name"
                     />
                   </div>
 

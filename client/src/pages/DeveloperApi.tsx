@@ -72,13 +72,24 @@ export default function DeveloperApi() {
   >("curl");
 
   // Fetch API keys
-  const { data: apiKeysData, isLoading: keysLoading } = useQuery({
+  const {
+    data: apiKeysData,
+    isLoading: keysLoading,
+    isError: keysError,
+    error: keysQueryError,
+    refetch: refetchKeys,
+  } = useQuery({
     queryKey: ["/api/developer/keys"],
     enabled: !!user,
   });
 
   // Fetch usage statistics
-  const { data: usageData } = useQuery({
+  const {
+    data: usageData,
+    isError: usageError,
+    error: usageQueryError,
+    refetch: refetchUsage,
+  } = useQuery({
     queryKey: ["/api/developer/usage"],
     enabled: !!user,
   });
@@ -156,34 +167,54 @@ export default function DeveloperApi() {
     });
   };
 
-  const handleCopyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
-    toast({
-      title: "Copied",
-      description: "API key copied to clipboard",
-    });
+  const handleCreateDialogOpenChange = (open: boolean) => {
+    setIsCreateDialogOpen(open);
+    if (!open) {
+      setCreatedApiKey(null);
+      setNewKeyName("");
+    }
+  };
+
+  const handleCopyKey = async (key: string) => {
+    try {
+      await navigator.clipboard.writeText(key);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+      toast({
+        title: "Copied",
+        description: "API key copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Your browser could not copy the API key.",
+        variant: "destructive",
+      });
+    }
   };
 
   const apiKeys = apiKeysData?.apiKeys || [];
   const totalRequests = usageData?.totalUsage?.totalRequests || 0;
+  const apiBaseUrl = `${window.location.origin}/api/v1`;
 
   const codeExamples = {
     curl: `# Get streaming analytics
-curl -X GET \\
-  'https://your-domain.com/api/v1/analytics/streams?timeRange=30d' \\
+    curl -X GET \\
+   '${apiBaseUrl}/analytics/streams?timeRange=30d' \\
   -H 'Authorization: Bearer YOUR_API_KEY_HERE'
 
 # Get platform summary
 curl -X GET \\
-  'https://your-domain.com/api/v1/analytics/platforms' \\
+   '${apiBaseUrl}/analytics/platforms' \\
   -H 'Authorization: Bearer YOUR_API_KEY_HERE'`,
     javascript: `// Using fetch API
 const apiKey = 'YOUR_API_KEY_HERE';
 
 // Get streaming analytics
-const response = await fetch('https://your-domain.com/api/v1/analytics/streams?timeRange=30d', {
+const response = await fetch('${apiBaseUrl}/analytics/streams?timeRange=30d', {
   headers: {
     'Authorization': \`Bearer \${apiKey}\`
   }
@@ -193,7 +224,7 @@ const data = await response.json();
 logger.info('Stream data:', data);
 
 // Get engagement metrics
-const engagement = await fetch('https://your-domain.com/api/v1/analytics/engagement', {
+const engagement = await fetch('${apiBaseUrl}/analytics/engagement', {
   headers: {
     'Authorization': \`Bearer \${apiKey}\`
   }
@@ -203,7 +234,7 @@ logger.info('Engagement:', engagement);`,
     python: `import requests
 
 API_KEY = 'YOUR_API_KEY_HERE'
-BASE_URL = 'https://your-domain.com/api/v1'
+BASE_URL = '${apiBaseUrl}'
 
 headers = {
     'Authorization': f'Bearer {API_KEY}'
@@ -284,7 +315,7 @@ print('Demographics:', demographics)`,
                   </div>
                   <Dialog
                     open={isCreateDialogOpen}
-                    onOpenChange={setIsCreateDialogOpen}
+                    onOpenChange={handleCreateDialogOpenChange}
                   >
                     <DialogTrigger asChild>
                       <Button>
@@ -335,9 +366,7 @@ print('Demographics:', demographics)`,
                           <DialogFooter>
                             <Button
                               onClick={() => {
-                                setCreatedApiKey(null);
-                                setIsCreateDialogOpen(false);
-                                setNewKeyName("");
+                                handleCreateDialogOpenChange(false);
                               }}
                             >
                               Done
@@ -386,7 +415,7 @@ print('Demographics:', demographics)`,
                           <DialogFooter>
                             <Button
                               variant="outline"
-                              onClick={() => setIsCreateDialogOpen(false)}
+                              onClick={() => handleCreateDialogOpenChange(false)}
                             >
                               Cancel
                             </Button>
@@ -412,6 +441,20 @@ print('Demographics:', demographics)`,
                       <Skeleton key={i} className="h-20 w-full" />
                     ))}
                   </div>
+                ) : keysError ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between gap-4">
+                      <span>
+                        {keysQueryError instanceof Error
+                          ? keysQueryError.message
+                          : "Unable to load API keys."}
+                      </span>
+                      <Button variant="outline" size="sm" onClick={() => refetchKeys()}>
+                        Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
                 ) : apiKeys.length === 0 ? (
                   <div className="text-center py-12">
                     <Key className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -500,6 +543,21 @@ print('Demographics:', demographics)`,
 
           {/* Usage Tab */}
           <TabsContent value="usage" className="space-y-6">
+            {usageError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="flex items-center justify-between gap-4">
+                  <span>
+                    {usageQueryError instanceof Error
+                      ? usageQueryError.message
+                      : "Unable to load API usage."}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={() => refetchUsage()}>
+                    Retry
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="grid gap-6 md:grid-cols-3">
               <Card>
                 <CardHeader>
@@ -607,7 +665,7 @@ print('Demographics:', demographics)`,
                 <div>
                   <h3 className="font-semibold mb-2">Base URL</h3>
                   <code className="block bg-muted p-3 rounded text-sm">
-                    https://your-domain.com/api/v1
+                    {apiBaseUrl}
                   </code>
                 </div>
 
@@ -730,15 +788,7 @@ print('Demographics:', demographics)`,
                     variant="ghost"
                     size="sm"
                     className="absolute top-2 right-2"
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        codeExamples[selectedLanguage],
-                      );
-                      toast({
-                        title: "Copied",
-                        description: "Code copied to clipboard",
-                      });
-                    }}
+                    onClick={() => handleCopyKey(codeExamples[selectedLanguage])}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>

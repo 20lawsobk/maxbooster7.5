@@ -2,7 +2,7 @@
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,19 @@ interface Beat {
     priceCents: number;
     fileFormats: string[];
   }>;
+  licenseTiers?: Array<{
+    licenseType: string;
+    label?: string;
+    priceCents: number;
+    discountPriceCents?: number | null;
+    fileFormats?: string[];
+    isActive?: boolean;
+  }>;
+  licenses?: Array<{
+    type: string;
+    price: number;
+    features?: string[];
+  }>;
 }
 
 const DEFAULT_LICENSES = [
@@ -94,7 +107,9 @@ const DEFAULT_LICENSES = [
 ];
 
 export default function ProducerProfilePage() {
-  const {  isLoading: authLoading } = useRequireAuth();
+  // Profiles are public. Authentication is required only when a visitor tries
+  // to follow a producer or start a checkout.
+  const { user } = useAuth();
   const params = useParams<{ producerId: string }>();
   const producerId = params.producerId;
   const [, navigate] = useLocation();
@@ -105,6 +120,14 @@ export default function ProducerProfilePage() {
 
   const [purchaseBeat, setPurchaseBeat] = useState<Beat | null>(null);
   const [selectedLicense, setSelectedLicense] = useState<string>("basic");
+
+  const promptForLogin = (action: string) => {
+    toast({
+      title: "Sign in required",
+      description: `Please sign in to ${action}.`,
+    });
+    navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+  };
 
   const purchaseMutation = useMutation({
     mutationFn: async ({
@@ -121,18 +144,16 @@ export default function ProducerProfilePage() {
       return res.json();
     },
     onSuccess: (data: { url?: string }) => {
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
+      if (!data.url) {
         toast({
-          title: "Purchase Successful!",
-          description: `You've successfully purchased "${purchaseBeat.title}". Check your purchases for the download link.`,
+          title: "Checkout unavailable",
+          description:
+            "The payment provider did not return a checkout URL. Your card has not been charged.",
+          variant: "destructive",
         });
-        setPurchaseBeat(null);
-        queryClient.invalidateQueries({
-          queryKey: ["/api/marketplace/purchases"],
-        });
+        return;
       }
+      window.location.assign(data.url);
     },
     onError: (err: Error) => {
       toast({
@@ -152,7 +173,7 @@ export default function ProducerProfilePage() {
       );
       return res.json();
     },
-    enabled: !!producerId,
+    enabled: !!producerId && !!user,
   });
 
   const followMutation = useMutation({
@@ -163,16 +184,23 @@ export default function ProducerProfilePage() {
       );
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: { following?: boolean }) => {
       queryClient.invalidateQueries({
         queryKey: ["producer-follow-status", producerId],
       });
       queryClient.invalidateQueries({ queryKey: ["producer", producerId] });
       toast({
-        title: followStatus.isFollowing ? "Unfollowed" : "Following!",
-        description: followStatus.isFollowing
-          ? "You unfollowed this producer"
-          : "You are now following this producer",
+        title: data.following ? "Following!" : "Unfollowed",
+        description: data.following
+          ? "You are now following this producer"
+          : "You unfollowed this producer",
+      });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: "Could not follow producer",
+        description: err.message || "Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -195,9 +223,22 @@ export default function ProducerProfilePage() {
         description: "You unfollowed this producer",
       });
     },
+    onError: (err: Error) => {
+      toast({
+        title: "Could not unfollow producer",
+        description: err.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
-  const { data: producer, isLoading: producerLoading } = useQuery<Producer>({
+  const {
+    data: producer,
+    isLoading: producerLoading,
+    isError: producerIsError,
+    error: producerError,
+    refetch: refetchProducer,
+  } = useQuery<Producer>({
     queryKey: ["producer", producerId],
     queryFn: async () => {
       const res = await apiRequest(
@@ -209,7 +250,13 @@ export default function ProducerProfilePage() {
     enabled: !!producerId,
   });
 
-  const { data: beatsData, isLoading: beatsLoading } = useQuery<Beat[]>({
+  const {
+    data: beatsData,
+    isLoading: beatsLoading,
+    isError: beatsIsError,
+    error: beatsError,
+    refetch: refetchBeats,
+  } = useQuery<Beat[]>({
     queryKey: ["producer-beats", producerId],
     queryFn: async () => {
       const res = await apiRequest(
@@ -248,9 +295,24 @@ export default function ProducerProfilePage() {
           ? src
           : `${window.location.origin}${src.startsWith("/") ? src : "/" + src}`;
         audioRef.current = new Audio(fullSrc);
-        audioRef.current.play().catch(() => {});
         setPlayingBeatId(beat.id);
         audioRef.current.onended = () => setPlayingBeatId(null);
+        audioRef.current.onerror = () => {
+          setPlayingBeatId(null);
+          toast({
+            title: "Preview unavailable",
+            description: "The audio preview could not be loaded.",
+            variant: "destructive",
+          });
+        };
+        audioRef.current.play().catch(() => {
+          setPlayingBeatId(null);
+          toast({
+            title: "Preview unavailable",
+            description: "Your browser could not start this audio preview.",
+            variant: "destructive",
+          });
+        });
       } else {
         toast({
           title: "Preview unavailable",
@@ -262,17 +324,99 @@ export default function ProducerProfilePage() {
   };
 
   const getLicensePrice = (beat: Beat, licenseType: string) => {
-    const opt = (beat.licenseOptions || []).find((o) => o.licenseType === licenseType);
-    if (opt) return opt.priceCents / 100;
-    const def = DEFAULT_LICENSES.find((l) => l.licenseType === licenseType);
-    return beat.price * (def?.multiplier ?? 1);
+    const tier = (beat.licenseTiers || []).find(
+      (option) => option.licenseType === licenseType && option.isActive !== false,
+    );
+    if (tier) {
+      return (tier.discountPriceCents || tier.priceCents) / 100;
+    }
+    const option = (beat.licenseOptions || []).find(
+      (item) => item.licenseType === licenseType,
+    );
+    if (option) return option.priceCents / 100;
+    return (beat.licenses || []).find((item) => item.type === licenseType)?.price;
   };
 
-  if (authLoading || producerLoading) {
+  const getAvailableLicenses = (beat: Beat) => {
+    if (beat.licenseTiers?.length) {
+      return beat.licenseTiers
+        .filter((license) => license.isActive !== false)
+        .map((license) => ({
+          licenseType: license.licenseType,
+          label:
+            license.label ||
+            DEFAULT_LICENSES.find((item) => item.licenseType === license.licenseType)
+              ?.label ||
+            license.licenseType,
+          description:
+            DEFAULT_LICENSES.find((item) => item.licenseType === license.licenseType)
+              ?.description || "License terms are provided at checkout",
+          fileFormats: license.fileFormats || [],
+          icon:
+            DEFAULT_LICENSES.find((item) => item.licenseType === license.licenseType)
+              ?.icon || "file",
+        }));
+    }
+    if (beat.licenseOptions?.length) {
+      return beat.licenseOptions.map((license) => ({
+        licenseType: license.licenseType,
+        label:
+          DEFAULT_LICENSES.find(
+            (item) => item.licenseType === license.licenseType,
+          )?.label || license.licenseType,
+        description:
+          DEFAULT_LICENSES.find(
+            (item) => item.licenseType === license.licenseType,
+          )?.description || "License terms are provided at checkout",
+        fileFormats: license.fileFormats || [],
+        icon:
+          DEFAULT_LICENSES.find(
+            (item) => item.licenseType === license.licenseType,
+          )?.icon || "file",
+      }));
+    }
+    return (beat.licenses || []).map((license) => ({
+      licenseType: license.type,
+      label:
+        DEFAULT_LICENSES.find((item) => item.licenseType === license.type)?.label ||
+        license.type,
+      description: license.features?.join(", ") || "License terms are provided at checkout",
+      fileFormats: [],
+      icon:
+        DEFAULT_LICENSES.find((item) => item.licenseType === license.type)?.icon ||
+        "file",
+    }));
+  };
+
+  if (producerLoading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-96">
           <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (
+    producerIsError &&
+    (producerError as { status?: number } | null)?.status !== 404
+  ) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-96 space-y-4">
+          <h2 className="text-2xl font-bold">Could Not Load Producer</h2>
+          <p className="text-muted-foreground text-center max-w-md">
+            {producerError instanceof Error
+              ? producerError.message
+              : "Please check your connection and try again."}
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={() => refetchProducer()}>Try Again</Button>
+            <Button variant="outline" onClick={() => navigate("/marketplace")}>
+              Back to Marketplace
+            </Button>
+          </div>
         </div>
       </AppLayout>
     );
@@ -380,11 +524,17 @@ export default function ProducerProfilePage() {
                       : "bg-gradient-to-r from-blue-600 to-purple-600"
                   }
                   variant={followStatus?.isFollowing ? "outline" : "default"}
-                  onClick={() =>
-                    followStatus?.isFollowing
-                      ? unfollowMutation.mutate()
-                      : followMutation.mutate()
-                  }
+                  onClick={() => {
+                    if (!user) {
+                      promptForLogin("follow producers");
+                      return;
+                    }
+                    if (followStatus?.isFollowing) {
+                      unfollowMutation.mutate();
+                    } else {
+                      followMutation.mutate();
+                    }
+                  }}
                   disabled={
                     followMutation.isPending || unfollowMutation.isPending
                   }
@@ -483,6 +633,18 @@ export default function ProducerProfilePage() {
               <div className="flex justify-center py-12">
                 <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
               </div>
+            ) : beatsIsError ? (
+              <Card>
+                <CardContent className="p-12 text-center space-y-4">
+                  <h3 className="text-xl font-semibold">Could Not Load Beats</h3>
+                  <p className="text-muted-foreground">
+                    {beatsError instanceof Error
+                      ? beatsError.message
+                      : "Please check your connection and try again."}
+                  </p>
+                  <Button onClick={() => refetchBeats()}>Try Again</Button>
+                </CardContent>
+              </Card>
             ) : beats.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {beats.map((beat) => (
@@ -493,7 +655,21 @@ export default function ProducerProfilePage() {
                     isPlaying={playingBeatId === beat.id}
                     onPlayToggle={(b) => handlePlayBeat(b as Beat)}
                     onBuy={(b) => {
-                      setSelectedLicense("basic");
+                      if (!user) {
+                        promptForLogin("purchase a license");
+                        return;
+                      }
+                      const licenses = getAvailableLicenses(b as Beat);
+                      if (!licenses.length) {
+                        toast({
+                          title: "Purchase unavailable",
+                          description:
+                            "This beat does not have an active license available for purchase.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      setSelectedLicense(licenses[0].licenseType);
                       setPurchaseBeat(b as Beat);
                     }}
                   />
@@ -669,7 +845,7 @@ export default function ProducerProfilePage() {
                 <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                   Select License
                 </p>
-                {DEFAULT_LICENSES.map((license) => {
+                {getAvailableLicenses(purchaseBeat).map((license) => {
                   const price = getLicensePrice(
                     purchaseBeat,
                     license.licenseType,
@@ -707,11 +883,13 @@ export default function ProducerProfilePage() {
                           {license.description}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {license.fileFormats.join(", ").toUpperCase()}
+                          {license.fileFormats.length > 0
+                            ? license.fileFormats.join(", ").toUpperCase()
+                            : "Formats confirmed at checkout"}
                         </p>
                       </div>
                       <span className="font-bold text-green-600 flex-shrink-0">
-                        ${price.toFixed(2)}
+                       ${price.toFixed(2)}
                       </span>
                     </button>
                   );
@@ -745,9 +923,7 @@ export default function ProducerProfilePage() {
                   ) : (
                     <>
                       <ShoppingCart className="w-4 h-4 mr-2" /> Purchase for $
-                      {getLicensePrice(purchaseBeat, selectedLicense).toFixed(
-                        2,
-                      )}
+                       {getLicensePrice(purchaseBeat, selectedLicense).toFixed(2)}
                     </>
                   )}
                 </Button>

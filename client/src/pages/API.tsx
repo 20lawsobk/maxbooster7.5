@@ -39,8 +39,7 @@ export default function API() {
             </span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Powerful REST API for integrating music distribution, AI tools, and
-            analytics into your applications
+            Programmatic access to your Max Booster streaming analytics
           </p>
         </div>
       </section>
@@ -59,11 +58,12 @@ export default function API() {
                   <h3 className="text-lg font-semibold">1. Get Your API Key</h3>
                 </div>
                 <p className="text-gray-600 mb-4">
-                  API keys are available to all paid subscribers. Access your
-                  keys from the Settings → Developer section.
+                  Sign in, then open the Developer API workspace to create and
+                  manage an API key. Keep each key private and revoke it if it
+                  is ever exposed.
                 </p>
                 <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm">
-                  curl https://api.maxbooster.com/v1/me \<br />
+                  curl https://your-domain.com/api/v1/analytics/streams \<br />
                   &nbsp;&nbsp;-H "Authorization: Bearer YOUR_API_KEY"
                 </div>
               </CardContent>
@@ -74,21 +74,16 @@ export default function API() {
                 <div className="flex items-center mb-4">
                   <Zap className="h-6 w-6 text-green-600 mr-2" />
                   <h3 className="text-lg font-semibold">
-                    2. Make Your First Request
+                    2. Request Your Analytics
                   </h3>
                 </div>
                 <p className="text-gray-600 mb-4">
-                  All API requests use JSON and return standard HTTP status
-                  codes.
+                  The Analytics API returns JSON. Pass the API key in the
+                  Authorization header on every request.
                 </p>
                 <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm">
-                  {`// Create a new release
-POST /api/v1/releases
-{
-  "title": "My Album",
-  "artist": "Artist Name",
-  "releaseDate": "2025-01-01"
-}`}
+                  {`GET /api/v1/analytics/streams?timeRange=30d
+Authorization: Bearer YOUR_API_KEY`}
                 </div>
               </CardContent>
             </Card>
@@ -100,66 +95,56 @@ POST /api/v1/releases
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            API Endpoints
+            Analytics API Endpoints
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
-                category: "Distribution",
+                category: "Streaming",
                 endpoints: [
-                  "POST /releases",
-                  "GET /releases/:id",
-                  "PUT /releases/:id",
-                  "POST /releases/:id/submit",
-                  "GET /releases/:id/status",
-                ],
-              },
-              {
-                category: "Marketplace",
-                endpoints: [
-                  "POST /listings",
-                  "GET /listings",
-                  "GET /listings/:id",
-                  "POST /orders",
-                  "GET /orders/:id",
-                ],
-              },
-              {
-                category: "AI Studio",
-                endpoints: [
-                  "POST /projects",
-                  "GET /projects/:id",
-                  "POST /ai/mix",
-                  "POST /ai/master",
-                  "POST /upload",
-                ],
-              },
-              {
-                category: "Social Media",
-                endpoints: [
-                  "POST /campaigns",
-                  "GET /campaigns/:id",
-                  "POST /social/generate",
-                  "POST /social/schedule",
-                  "GET /social/metrics",
-                ],
-              },
-              {
-                category: "Analytics",
-                endpoints: [
-                  "GET /analytics/dashboard",
                   "GET /analytics/streams",
-                  "GET /analytics/revenue",
-                  "GET /analytics/platforms",
+                  "GET /analytics/streams/:artistId",
+                  "GET /analytics/summary",
+                  "GET /analytics/summary/:artistId",
                 ],
               },
               {
-                category: "User",
+                category: "Audience",
                 endpoints: [
-                  "GET /me",
-                  "PUT /me",
-                  "GET /notifications",
-                  "POST /notifications/read",
+                  "GET /analytics/engagement",
+                  "GET /analytics/engagement/:artistId",
+                  "GET /analytics/demographics",
+                  "GET /analytics/demographics/:artistId",
+                ],
+              },
+              {
+                category: "Discovery",
+                endpoints: [
+                  "GET /analytics/platforms",
+                  "GET /analytics/playlists",
+                  "GET /analytics/playlists/:artistId",
+                  "GET /analytics/tracks",
+                  "GET /analytics/tracks/:artistId",
+                ],
+              },
+              {
+                category: "Advanced Analytics",
+                endpoints: [
+                  "POST /analytics/playlist-journeys",
+                  "GET /analytics/global-ranking",
+                  "GET /analytics/historical",
+                  "GET /analytics/sync-impact",
+                  "GET /analytics/cross-platform",
+                  "GET /analytics/data-sources/shazam",
+                  "GET /analytics/data-sources/radio",
+                  "GET /analytics/data-sources/tour",
+                ],
+              },
+              {
+                category: "Analysis",
+                endpoints: [
+                  "POST /analytics/ar-discovery",
+                  "POST /analytics/nlp-query",
                 ],
               },
             ].map((group, i) => (
@@ -194,19 +179,19 @@ POST /api/v1/releases
                 icon: Shield,
                 title: "Secure Authentication",
                 description:
-                  "Industry-standard OAuth 2.0 and API key authentication",
+                  "Bearer API key authentication for every analytics request",
               },
               {
                 icon: Zap,
-                title: "Real-time Webhooks",
+                title: "Usage Tracking",
                 description:
-                  "Get instant notifications for events like releases going live",
+                  "Track requests and review per-key usage in the Developer API workspace",
               },
               {
                 icon: Database,
                 title: "Rate Limiting",
                 description:
-                  "Fair usage with generous rate limits for all tiers",
+                  "Free, Pro, and Enterprise API-key tiers with per-second limits",
               },
             ].map((feature, i) => (
               <Card key={i} className="text-center">
@@ -230,12 +215,13 @@ POST /api/v1/releases
             Ready to Build?
           </h2>
           <p className="text-xl text-white/90 mb-8">
-            Get started with our API today. All plans include full API access.
+            Sign in to create an API key and start integrating analytics into
+            your application.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/pricing">
+            <Link href="/developer-api">
               <Button size="lg" variant="secondary">
-                Get API Access
+                Open Developer API
               </Button>
             </Link>
             <Link href="/documentation">

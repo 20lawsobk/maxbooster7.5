@@ -35,6 +35,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import {
   Users,
   Search,
@@ -105,6 +106,7 @@ interface FanHubStats {
 }
 
 export default function FanHub() {
+  useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
@@ -128,21 +130,37 @@ export default function FanHub() {
   });
 
   // Queries
-  const { data: subscribersData, isLoading: loadingSubscribers } = useQuery<{
-    subscribers: FanSubscriber[];
-  }>({
+  const {
+    data: subscribersData,
+    isLoading: loadingSubscribers,
+    isError: subscribersError,
+    error: subscribersQueryError,
+    refetch: refetchSubscribers,
+  } = useQuery<{ subscribers: FanSubscriber[] }>({
     queryKey: ["/api/fan-hub/subscribers", { search: searchTerm }],
   });
 
-  const { data: stats } = useQuery<FanHubStats>({
+  const {
+    data: stats,
+    isError: statsError,
+    error: statsQueryError,
+    refetch: refetchStats,
+  } = useQuery<FanHubStats>({
     queryKey: ["/api/fan-hub/stats"],
   });
 
-  const { data: messages } = useQuery<FanMessage[]>(
-    {
-      queryKey: ["/api/fan-hub/messages"],
-    },
-  );
+  const {
+    data: messages,
+    isLoading: loadingMessages,
+    isError: messagesError,
+    error: messagesQueryError,
+    refetch: refetchMessages,
+  } = useQuery<FanMessage[]>({
+    queryKey: ["/api/fan-hub/messages"],
+  });
+
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : "Please try again.";
 
   // Mutations
   const addFanMutation = useMutation({
@@ -159,6 +177,12 @@ export default function FanHub() {
         description: "Fan subscriber added successfully.",
       });
     },
+    onError: (error) =>
+      toast({
+        title: "Could not add fan",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const deleteFanMutation = useMutation({
@@ -171,6 +195,12 @@ export default function FanHub() {
       setSelectedFan(null);
       toast({ title: "Success", description: "Fan subscriber removed." });
     },
+    onError: (error) =>
+      toast({
+        title: "Could not remove fan",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const sendMessageMutation = useMutation({
@@ -178,14 +208,23 @@ export default function FanHub() {
       const res = await apiRequest("POST", "/api/fan-hub/message", message);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (message) => {
       queryClient.invalidateQueries({ queryKey: ["/api/fan-hub/messages"] });
       setIsComposingMessage(false);
       toast({
-        title: "Success",
-        description: "Bulk message sent to your fans!",
+        title: message.failedCount ? "Broadcast partially delivered" : "Broadcast sent",
+        description: message.failedCount
+          ? `${message.recipientCount} delivered; ${message.failedCount} could not be delivered.`
+          : `Delivered to ${message.recipientCount} fan${message.recipientCount === 1 ? "" : "s"}.`,
+        variant: message.failedCount ? "destructive" : "default",
       });
     },
+    onError: (error) =>
+      toast({
+        title: "Could not send broadcast",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const addTagMutation = useMutation({
@@ -203,6 +242,12 @@ export default function FanHub() {
       setTagInput("");
       toast({ title: "Tags updated" });
     },
+    onError: (error) =>
+      toast({
+        title: "Could not update tags",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const updateFanMutation = useMutation({
@@ -227,6 +272,12 @@ export default function FanHub() {
       if (selectedFan) setSelectedFan({ ...selectedFan, ...updated });
       toast({ title: "Fan profile updated" });
     },
+    onError: (error) =>
+      toast({
+        title: "Could not update fan profile",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const handleExport = () => {
@@ -277,11 +328,40 @@ export default function FanHub() {
     setIsImporting(true);
     try {
       const text = await importFile.text();
-      const lines = text
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean);
-      if (lines.length < 2) {
+      const rows: string[][] = [];
+      let row: string[] = [];
+      let value = "";
+      let inQuotes = false;
+
+      for (let index = 0; index < text.length; index += 1) {
+        const character = text[index];
+        if (character === '"') {
+          if (inQuotes && text[index + 1] === '"') {
+            value += '"';
+            index += 1;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (character === "," && !inQuotes) {
+          row.push(value.trim());
+          value = "";
+        } else if ((character === "\n" || character === "\r") && !inQuotes) {
+          if (character === "\r" && text[index + 1] === "\n") index += 1;
+          row.push(value.trim());
+          if (row.some(Boolean)) rows.push(row);
+          row = [];
+          value = "";
+        } else {
+          value += character;
+        }
+      }
+      if (inQuotes) {
+        throw new Error("The CSV has an unclosed quoted value.");
+      }
+      row.push(value.trim());
+      if (row.some(Boolean)) rows.push(row);
+
+      if (rows.length < 2) {
         toast({
           title: "Empty file",
           description: "CSV must have at least a header row and one data row.",
@@ -289,9 +369,7 @@ export default function FanHub() {
         });
         return;
       }
-      const headers = lines[0]
-        .split(",")
-        .map((h) => h.replace(/"/g, "").trim().toLowerCase());
+      const headers = rows[0].map((header) => header.toLowerCase());
       const emailIdx = headers.findIndex((h) => h === "email");
       const nameIdx = headers.findIndex((h) => h === "name");
       const phoneIdx = headers.findIndex((h) => h === "phone");
@@ -304,12 +382,9 @@ export default function FanHub() {
         });
         return;
       }
-      const fans = lines
+      const fans = rows
         .slice(1)
-        .map((line) => {
-          const cols = line
-            .split(",")
-            .map((c) => c.replace(/^"|"$/g, "").trim());
+        .map((cols) => {
           return {
             email: cols[emailIdx] || "",
             name: nameIdx >= 0 ? cols[nameIdx] : undefined,
@@ -325,6 +400,25 @@ export default function FanHub() {
         })
         .filter((f) => f.email && f.email.includes("@"));
 
+      if (fans.length === 0) {
+        toast({
+          title: "No valid subscribers found",
+          description:
+            "Add at least one row with a valid email address before importing.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (fans.length > 1000) {
+        toast({
+          title: "Import limit exceeded",
+          description: "A CSV import can contain at most 1,000 fans.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const res = await apiRequest("POST", "/api/fan-hub/subscribers/import", {
         subscribers: fans,
       });
@@ -334,12 +428,12 @@ export default function FanHub() {
       setImportFile(null);
       toast({
         title: "Import complete!",
-        description: `${result.imported || fans.length} fans imported successfully.`,
+        description: `${result.count} fans imported successfully.`,
       });
-    } catch {
+    } catch (error) {
       toast({
         title: "Import failed",
-        description: "Could not parse CSV. Please check the file format.",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {
@@ -379,6 +473,28 @@ export default function FanHub() {
   return (
     <AppLayout title="Fan Hub">
       <div className="space-y-6">
+        {(subscribersError || statsError || messagesError) && (
+          <Card className="border-destructive">
+            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-destructive">
+                Could not load fan data:{" "}
+                {getErrorMessage(
+                  subscribersQueryError || statsQueryError || messagesQueryError,
+                )}
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void refetchSubscribers();
+                  void refetchStats();
+                  void refetchMessages();
+                }}
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         {/* Stats Header */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -737,7 +853,7 @@ export default function FanHub() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                              {fan.name.charAt(0) ||
+                              {fan.name?.charAt(0) ||
                                 fan.email.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -822,7 +938,18 @@ export default function FanHub() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {vipFans.length === 0 ? (
+                  {loadingSubscribers ? (
+                    Array(5)
+                      .fill(0)
+                      .map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell
+                            colSpan={5}
+                            className="h-12 animate-pulse bg-muted/50"
+                          />
+                        </TableRow>
+                      ))
+                  ) : vipFans.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="h-64 text-center">
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
@@ -876,9 +1003,35 @@ export default function FanHub() {
                           className="text-right"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => setSelectedFan(fan)}
+                              >
+                                View Profile
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setIsTaggingFan(fan);
+                                  setTagInput((fan.tags || []).join(", "));
+                                }}
+                              >
+                                <TagIcon className="h-4 w-4 mr-2" />
+                                Edit Tags
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => setPendingDeleteFanId(fan.id)}
+                              >
+                                Remove Fan
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))
@@ -890,7 +1043,13 @@ export default function FanHub() {
 
           <TabsContent value="messages" className="pt-4">
             <div className="grid gap-4">
-              {messages?.length === 0 ? (
+              {loadingMessages ? (
+                Array(3)
+                  .fill(0)
+                  .map((_, index) => (
+                    <Card key={index} className="h-48 animate-pulse bg-muted/50" />
+                  ))
+              ) : messages?.length === 0 ? (
                 <Card className="p-12 text-center">
                   <div className="flex flex-col items-center justify-center text-muted-foreground">
                     <Mail className="h-12 w-12 mb-4 opacity-20" />

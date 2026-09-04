@@ -39,8 +39,8 @@ export default function Documentation() {
             </span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Comprehensive guides, tutorials, and API documentation for Max
-            Booster
+            An overview of Max Booster features and links to the currently
+            published technical resources.
           </p>
         </div>
       </section>
@@ -193,15 +193,19 @@ export default function Documentation() {
             {[
               {
                 icon: Code,
-                title: "API Reference",
-                description: "Complete REST API documentation with examples",
-                link: "/api-docs",
+                title: "Interactive API Docs",
+                description:
+                  "Browse the currently published OpenAPI documentation.",
+                link: "/api-docs/",
+                external: true,
               },
               {
                 icon: Database,
-                title: "Webhooks",
-                description: "Real-time event notifications for integrations",
-                link: "/api-docs#webhooks",
+                title: "OpenAPI Specification",
+                description:
+                  "Download the machine-readable specification for the published API.",
+                link: "/api-docs.json",
+                external: true,
               },
               {
                 icon: Lock,
@@ -209,21 +213,37 @@ export default function Documentation() {
                 description: "Authentication, encryption, and best practices",
                 link: "/security",
               },
-            ].map((resource, i) => (
-              <Link key={i} href={resource.link}>
-                <Card className="hover-lift cursor-pointer">
-                  <CardContent className="p-6 text-center">
-                    <resource.icon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {resource.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      {resource.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+            ].map((resource, i) =>
+              resource.external ? (
+                <a key={i} href={resource.link}>
+                  <Card className="hover-lift cursor-pointer">
+                    <CardContent className="p-6 text-center">
+                      <resource.icon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {resource.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm">
+                        {resource.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </a>
+              ) : (
+                <Link key={i} href={resource.link}>
+                  <Card className="hover-lift cursor-pointer">
+                    <CardContent className="p-6 text-center">
+                      <resource.icon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {resource.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm">
+                        {resource.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ),
+            )}
           </div>
         </div>
       </section>

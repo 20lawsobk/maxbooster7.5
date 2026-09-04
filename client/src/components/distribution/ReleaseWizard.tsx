@@ -261,11 +261,17 @@ export function ReleaseWizard({
       let submissionError: string | undefined;
       if (releaseData.id) {
         try {
-          await apiRequest(
+          const submissionResponse = await apiRequest(
             "POST",
             `/api/distribution/releases/${releaseData.id}/submit`,
             {},
           );
+          const submissionResult = await submissionResponse.json();
+          if (!submissionResult.success) {
+            throw new Error(
+              "LabelGrid did not accept this release for any selected platform. Review the per-platform delivery status.",
+            );
+          }
           submissionStatus = "submitted";
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);

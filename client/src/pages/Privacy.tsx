@@ -21,16 +21,18 @@ export default function Privacy() {
               <h1 className="text-4xl font-bold mb-0">Privacy Policy</h1>
             </div>
             <p className="text-gray-600 dark:text-gray-300 mb-8">
-              Last updated: {new Date().toLocaleDateString()}
+              Last updated: November 11, 2025
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="flex items-start space-x-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
                 <Lock className="w-5 h-5 text-green-600 dark:text-green-400 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-sm mb-1">Encrypted</h3>
+                  <h3 className="font-semibold text-sm mb-1">
+                    Protected in Transit
+                  </h3>
                   <p className="text-xs text-gray-600 dark:text-gray-300">
-                    Your data is encrypted at rest and in transit
+                    Safeguards are used to protect your data in transit
                   </p>
                 </div>
               </div>
@@ -57,8 +59,8 @@ export default function Privacy() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
               <p>
-                Max Booster (operated by a solo founder) is committed to
-                protecting your privacy. This Privacy Policy explains how I
+                Max Booster, operated by B-Lawz Music LLC, is committed to
+                protecting your privacy. This Privacy Policy explains how we
                 collect, use, disclose, and safeguard your information when you
                 use the AI-powered music platform and distribution services.
               </p>
@@ -78,7 +80,7 @@ export default function Privacy() {
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Name and email address</li>
-                <li>Payment information (processed securely through Stripe)</li>
+                <li>Payment information processed by Stripe</li>
                 <li>Profile information you choose to provide</li>
                 <li>
                   Social media account connections (when you authorize them)
@@ -104,6 +106,7 @@ export default function Privacy() {
                 <li>Browser type and version</li>
                 <li>Session information and cookies</li>
                 <li>Access times and referring URLs</li>
+                <li>Error reports and performance metrics</li>
               </ul>
             </section>
 
@@ -138,14 +141,18 @@ export default function Privacy() {
                   <strong>Stripe:</strong> Payment processing
                 </li>
                 <li>
-                  <strong>SendGrid:</strong> Email delivery
+                  <strong>Resend:</strong> Email delivery
                 </li>
                 <li>
                   <strong>Neon:</strong> Database hosting
                 </li>
                 <li>
-                  <strong>Streaming Platforms:</strong> When you distribute your
-                  music
+                  <strong>LabelGrid and Streaming Platforms:</strong>{" "}
+                  Distribution, release delivery, and related reporting when you
+                  distribute your music
+                </li>
+                <li>
+                  <strong>Sentry:</strong> Error and performance monitoring
                 </li>
               </ul>
 
@@ -170,16 +177,14 @@ export default function Privacy() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">5. Data Security</h2>
               <p className="mb-4">
-                Industry-standard security measures are implemented to protect
-                your data:
+                Technical and organizational safeguards are used to protect your
+                data:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Encryption in transit (HTTPS/TLS)</li>
-                <li>Encryption at rest for sensitive data</li>
                 <li>Secure session management</li>
-                <li>Regular security audits and updates</li>
                 <li>Access controls and authentication</li>
-                <li>24/7 system monitoring</li>
+                <li>Security updates and monitoring</li>
               </ul>
               <p className="mt-4">
                 While I strive to protect your information, no method of
@@ -240,7 +245,9 @@ export default function Privacy() {
 
               <p className="mt-4">
                 To exercise these rights, contact us at{" "}
-                <strong>privacy@maxbooster.ai</strong>
+                <a href="mailto:privacy@maxbooster.ai">
+                  privacy@maxbooster.ai
+                </a>
               </p>
             </section>
 
@@ -279,10 +286,10 @@ export default function Privacy() {
                 9. Children's Privacy
               </h2>
               <p>
-                Max Booster services are not intended for users under 13 years
-                of age. Personal information from children under 13 is not
-                knowingly collected. If such information is discovered, it will
-                be deleted immediately.
+                Max Booster services are not intended for users under 16 years
+                of age. Personal information from children under 16 is not
+                knowingly collected. If such information is discovered, we will
+                take steps to delete it.
               </p>
             </section>
 
@@ -321,13 +328,19 @@ export default function Privacy() {
               </p>
               <ul className="list-none space-y-2">
                 <li>
-                  <strong>Email:</strong> privacy@maxbooster.ai
+                  <strong>Email:</strong>{" "}
+                  <a href="mailto:privacy@maxbooster.ai">
+                    privacy@maxbooster.ai
+                  </a>
                 </li>
                 <li>
-                  <strong>Support:</strong> support@maxbooster.ai
+                  <strong>Support:</strong>{" "}
+                  <a href="mailto:support@maxbooster.ai">
+                    support@maxbooster.ai
+                  </a>
                 </li>
                 <li>
-                  <strong>Address:</strong> Max Booster Inc., United States
+                  <strong>Entity:</strong> B-Lawz Music LLC, United States
                 </li>
               </ul>
             </section>

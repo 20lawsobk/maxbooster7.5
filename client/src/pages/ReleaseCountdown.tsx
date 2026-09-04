@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { apiRequest, ApiError } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -29,7 +29,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Calendar, Plus, Rocket, CheckCircle, Music, Share2, Image, FileText, Bell, ExternalLink, Timer, PartyPopper, Sparkles } from "lucide-react";
+import { Clock, Calendar, Plus, Rocket, CheckCircle, Music, Share2, Image, FileText, Bell, ExternalLink, Timer, PartyPopper } from "lucide-react";
 import {
   format,
   differenceInDays,
@@ -41,12 +41,12 @@ import {
 interface Release {
   id: string;
   title: string;
-  artistName: string;
   releaseDate: string;
   coverArt?: string;
   status: "upcoming" | "today" | "released";
   presaveLink?: string;
-  presaveCount: number;
+  taskCount: number;
+  completedTaskCount: number;
   tasks: Array<{
     id: string;
     title: string;
@@ -54,6 +54,61 @@ interface Release {
     dueDate?: string;
     completed: boolean;
   }>;
+}
+
+interface CountdownApiItem {
+  id: string;
+  title: string;
+  releaseDate: string;
+  artworkUrl?: string | null;
+  presaveUrl?: string | null;
+  timeRemaining: { isReleased: boolean };
+  taskCount: number;
+  progress?: { completed: number };
+  tasks?: Array<{
+    id: string;
+    task: string;
+    category?: string | null;
+    dueDate?: string | null;
+    completedAt?: string | null;
+  }>;
+}
+
+interface CountdownsResponse {
+  success: boolean;
+  data: CountdownApiItem[];
+}
+
+function toRelease(countdown: CountdownApiItem): Release {
+  return {
+    id: countdown.id,
+    title: countdown.title,
+    releaseDate: countdown.releaseDate,
+    coverArt: countdown.artworkUrl || undefined,
+    status: countdown.timeRemaining.isReleased ? "released" : "upcoming",
+    presaveLink: countdown.presaveUrl || undefined,
+    taskCount: countdown.taskCount ?? countdown.tasks?.length ?? 0,
+    completedTaskCount:
+      countdown.progress?.completed ??
+      countdown.tasks?.filter(
+        (task) =>
+          task.completedAt !== null && task.completedAt !== undefined,
+      ).length ??
+      0,
+    tasks: (countdown.tasks || []).map((task) => ({
+      id: task.id,
+      title: task.task,
+      category: task.category || "general",
+      dueDate: task.dueDate || undefined,
+      completed: task.completedAt !== null && task.completedAt !== undefined,
+    })),
+  };
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof ApiError) return error.userMessage;
+  if (error instanceof Error) return error.message;
+  return "Unable to load release countdowns.";
 }
 
 function CountdownTimer({ targetDate }: { targetDate: string }) {
@@ -104,7 +159,7 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 }
 
 export default function ReleaseCountdown() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -113,45 +168,45 @@ export default function ReleaseCountdown() {
   const [selectedRelease, setSelectedRelease] = useState<Release | null>(null);
   const [newRelease, setNewRelease] = useState({
     title: "",
-    artistName: "",
     releaseDate: "",
   });
 
-  const { data: releasesData, isLoading } = useQuery<{ countdowns: Release[] }>(
+  const {
+    data: releasesData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery<CountdownsResponse>(
     {
       queryKey: ["/api/countdowns"],
       enabled: !!user,
     },
   );
+  const { data: selectedCountdownData, isLoading: selectedCountdownLoading } =
+    useQuery<{ success: boolean; data: CountdownApiItem }>({
+      queryKey: [`/api/countdowns/${selectedRelease?.id}`],
+      enabled: !!selectedRelease,
+    });
 
   const createReleaseMutation = useMutation({
     mutationFn: async () => {
-      const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch("/api/countdowns", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-        },
-        credentials: "include",
-        body: JSON.stringify(newRelease),
-      });
-      if (!res.ok) throw new Error("Failed to create countdown");
+      const res = await apiRequest("POST", "/api/countdowns", newRelease);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/countdowns"] });
       setShowCreateDialog(false);
-      setNewRelease({ title: "", artistName: "", releaseDate: "" });
+      setNewRelease({ title: "", releaseDate: "" });
       toast({
         title: "Countdown created",
         description: "Your release countdown is now active!",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -167,30 +222,57 @@ export default function ReleaseCountdown() {
       taskId: string;
       completed: boolean;
     }) => {
-      const csrfToken = getCsrfTokenFromCookie();
-      const res = await fetch(`/api/countdowns/${releaseId}/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-        },
-        credentials: "include",
-        body: JSON.stringify({ completed }),
-      });
-      if (!res.ok) throw new Error("Failed to update task");
+      const res = await apiRequest(
+        "PATCH",
+        `/api/countdowns/${releaseId}/tasks/${taskId}`,
+        { completed },
+      );
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["/api/countdowns"] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/countdowns/${selectedRelease?.id}`],
+      });
+      const completedAt = result?.data?.completedAt;
+      setSelectedRelease((release) =>
+        release
+          ? {
+              ...release,
+              tasks: release.tasks.map((task) =>
+                task.id === result?.data?.id
+                  ? {
+                      ...task,
+                      completed:
+                        completedAt !== null && completedAt !== undefined,
+                    }
+                  : task,
+              ),
+            }
+          : null,
+      );
+    },
+    onError: (mutationError) => {
+      toast({
+        title: "Could not update task",
+        description: getErrorMessage(mutationError),
+        variant: "destructive",
+      });
     },
   });
 
-  if (!user) {
-    setLocation("/login");
+  useEffect(() => {
+    if (!authLoading && !user) setLocation("/login");
+  }, [authLoading, setLocation, user]);
+
+  if (authLoading || !user) {
     return null;
   }
 
-  const releases = releasesData?.countdowns || [];
+  const releases = releasesData?.data.map(toRelease) || [];
+  const activeSelectedRelease = selectedCountdownData?.data
+    ? toRelease(selectedCountdownData.data)
+    : selectedRelease;
   const upcomingReleases = releases.filter((r) => r.status === "upcoming");
   const pastReleases = releases.filter((r) => r.status === "released");
 
@@ -258,21 +340,6 @@ export default function ReleaseCountdown() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="artist">Artist Name</Label>
-                    <Input
-                      id="artist"
-                      value={newRelease.artistName}
-                      onChange={(e) =>
-                        setNewRelease({
-                          ...newRelease,
-                          artistName: e.target.value,
-                        })
-                      }
-                      placeholder="Your artist name"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <Label htmlFor="date">Release Date</Label>
                     <Input
                       id="date"
@@ -323,7 +390,19 @@ export default function ReleaseCountdown() {
             </TabsList>
 
             <TabsContent value="upcoming" className="space-y-4">
-              {upcomingReleases.length === 0 ? (
+              {isError ? (
+                <Card className="p-8 text-center">
+                  <h3 className="text-xl font-medium">
+                    Could not load your release countdowns
+                  </h3>
+                  <p className="text-muted-foreground mt-2">
+                    {getErrorMessage(error)}
+                  </p>
+                  <Button className="mt-6" onClick={() => refetch()}>
+                    Try Again
+                  </Button>
+                </Card>
+              ) : upcomingReleases.length === 0 ? (
                 <Card className="p-12 text-center">
                   <Rocket className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-medium">No upcoming releases</h3>
@@ -362,9 +441,6 @@ export default function ReleaseCountdown() {
                           </div>
                           <div className="flex-1">
                             <CardTitle>{release.title}</CardTitle>
-                            <CardDescription>
-                              {release.artistName}
-                            </CardDescription>
                             <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                               <Calendar className="h-4 w-4" />
                               {format(
@@ -382,14 +458,13 @@ export default function ReleaseCountdown() {
                           <div className="flex items-center justify-between text-sm mb-2">
                             <span>Pre-release tasks</span>
                             <span>
-                              {release.tasks.filter((t) => t.completed).length}/
-                              {release.tasks.length}
+                              {release.completedTaskCount}/{release.taskCount}
                             </span>
                           </div>
                           <Progress
                             value={
-                              (release.tasks.filter((t) => t.completed).length /
-                                (release.tasks.length || 1)) *
+                               (release.completedTaskCount /
+                                 (release.taskCount || 1)) *
                               100
                             }
                             className="h-2"
@@ -397,18 +472,16 @@ export default function ReleaseCountdown() {
                         </div>
 
                         {release.presaveLink && (
-                          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <Sparkles className="h-4 w-4 text-amber-500" />
-                              <span className="text-sm font-medium">
-                                {release.presaveCount} pre-saves
-                              </span>
-                            </div>
-                            <Button size="sm" variant="outline">
-                              <ExternalLink className="h-4 w-4 mr-1" />
-                              Share
-                            </Button>
-                          </div>
+                          <a
+                            href={release.presaveLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-sm text-primary hover:underline"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            Open pre-save page
+                          </a>
                         )}
                       </CardContent>
                     </Card>
@@ -458,12 +531,9 @@ export default function ReleaseCountdown() {
                         </div>
                       </CardHeader>
                       <CardFooter>
-                        <Badge
-                          variant="default"
-                          className="flex items-center gap-1"
-                        >
+                        <Badge variant="default" className="flex items-center gap-1">
                           <PartyPopper className="h-3 w-3" />
-                          {release.presaveCount} pre-saves
+                          Released
                         </Badge>
                       </CardFooter>
                     </Card>
@@ -473,7 +543,7 @@ export default function ReleaseCountdown() {
             </TabsContent>
           </Tabs>
 
-          {selectedRelease && (
+          {selectedRelease && activeSelectedRelease && (
             <Dialog
               open={!!selectedRelease}
               onOpenChange={() => setSelectedRelease(null)}
@@ -482,10 +552,10 @@ export default function ReleaseCountdown() {
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-3">
                     <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
-                      {selectedRelease.coverArt ? (
+                       {activeSelectedRelease.coverArt ? (
                         <img
-                          src={selectedRelease.coverArt}
-                          alt={selectedRelease.title}
+                           src={activeSelectedRelease.coverArt}
+                           alt={activeSelectedRelease.title}
                           className="h-full w-full object-cover"
                         />
                       ) : (
@@ -493,21 +563,20 @@ export default function ReleaseCountdown() {
                       )}
                     </div>
                     <div>
-                      <span>{selectedRelease.title}</span>
-                      <p className="text-sm font-normal text-muted-foreground">
-                        {selectedRelease.artistName}
-                      </p>
+                       <span>{activeSelectedRelease.title}</span>
                     </div>
                   </DialogTitle>
                 </DialogHeader>
 
                 <div className="space-y-6">
-                  <CountdownTimer targetDate={selectedRelease.releaseDate} />
+                   <CountdownTimer targetDate={activeSelectedRelease.releaseDate} />
 
                   <div>
                     <h4 className="font-medium mb-3">Pre-Release Checklist</h4>
                     <div className="space-y-2">
-                      {selectedRelease.tasks.map((task) => (
+                       {selectedCountdownLoading ? (
+                         <p className="text-sm text-muted-foreground">Loading checklist…</p>
+                       ) : activeSelectedRelease.tasks.map((task) => (
                         <div
                           key={task.id}
                           className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
@@ -516,7 +585,7 @@ export default function ReleaseCountdown() {
                             checked={task.completed}
                             onCheckedChange={(checked) =>
                               toggleTaskMutation.mutate({
-                                releaseId: selectedRelease.id,
+                                 releaseId: activeSelectedRelease.id,
                                 taskId: task.id,
                                 completed: !!checked,
                               })
@@ -543,31 +612,32 @@ export default function ReleaseCountdown() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Button
-                      className="flex-1"
-                      onClick={() => {
-                        const link =
-                          selectedRelease.presaveLink ||
-                          `${window.location.origin}/presave/${selectedRelease.id}`;
-                        navigator.clipboard
-                          .writeText(link)
-                          .then(() => {
-                            toast({
-                              title: "Link copied!",
-                              description: "Pre-save link copied to clipboard.",
+                    {activeSelectedRelease.presaveLink && (
+                      <Button
+                        className="flex-1"
+                        onClick={() => {
+                          const link = activeSelectedRelease.presaveLink!;
+                          navigator.clipboard
+                            .writeText(link)
+                            .then(() => {
+                              toast({
+                                title: "Link copied!",
+                                description:
+                                  "Pre-save link copied to clipboard.",
+                              });
+                            })
+                            .catch(() => {
+                              toast({
+                                title: "Pre-save link",
+                                description: link,
+                              });
                             });
-                          })
-                          .catch(() => {
-                            toast({
-                              title: "Pre-save link",
-                              description: link,
-                            });
-                          });
-                      }}
-                    >
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share Pre-save Link
-                    </Button>
+                        }}
+                      >
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share Pre-save Link
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       onClick={() => {

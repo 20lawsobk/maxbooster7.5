@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, ApiError } from "@/lib/queryClient";
 import { Send, Users, Search, ExternalLink, Plus, BarChart3, Clock, CheckCircle, Filter, Trash2 } from "lucide-react";
 import {
   AlertDialog,
@@ -41,7 +41,7 @@ interface PlaylistPitch {
   bpm: number;
   description: string;
   status: "draft" | "submitted" | "under_review" | "accepted" | "rejected";
-  playlistUrl: string;
+  targetPlaylistUrl: string | null;
   curatorName: string;
   submittedAt: string;
 }
@@ -50,9 +50,7 @@ interface Curator {
   id: string;
   name: string;
   genre: string;
-  followers: string;
   submissionUrl: string;
-  email: string;
 }
 
 interface PitchStats {
@@ -72,19 +70,19 @@ export default function PlaylistPitching() {
   const [filterGenre, setFilterGenre] = useState("all");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  const { data: pitches = [], isLoading: pitchesLoading } = useQuery<
+  const { data: pitches = [], isLoading: pitchesLoading, error: pitchesError, refetch: refetchPitches } = useQuery<
     PlaylistPitch[]
   >({
     queryKey: ["/api/playlist-pitching"],
   });
 
-  const { data: curators = [], isLoading: curatorsLoading } = useQuery<
+  const { data: curators = [], isLoading: curatorsLoading, error: curatorsError, refetch: refetchCurators } = useQuery<
     Curator[]
   >({
     queryKey: ["/api/playlist-pitching/curators"],
   });
 
-  const { data: stats } = useQuery<PitchStats>({
+  const { data: stats, error: statsError, refetch: refetchStats } = useQuery<PitchStats>({
     queryKey: ["/api/playlist-pitching/stats"],
   });
 
@@ -93,7 +91,7 @@ export default function PlaylistPitching() {
     artistName: "",
     genre: "",
     curatorName: "",
-    playlistUrl: "",
+    targetPlaylistUrl: "",
     description: "",
     status: "submitted",
   });
@@ -114,7 +112,7 @@ export default function PlaylistPitching() {
         artistName: "",
         genre: "",
         curatorName: "",
-        playlistUrl: "",
+        targetPlaylistUrl: "",
         description: "",
         status: "submitted",
       });
@@ -123,11 +121,18 @@ export default function PlaylistPitching() {
         queryKey: ["/api/playlist-pitching/stats"],
       });
     },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Couldn't save pitch",
+        description: getErrorMessage(error),
+      });
+    },
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const response = await apiRequest("PUT", `/api/playlist-pitching/${id}`, {
+      const response = await apiRequest("PATCH", `/api/playlist-pitching/${id}/status`, {
         status,
       });
       return response.json();
@@ -137,6 +142,13 @@ export default function PlaylistPitching() {
       queryClient.invalidateQueries({ queryKey: ["/api/playlist-pitching"] });
       queryClient.invalidateQueries({
         queryKey: ["/api/playlist-pitching/stats"],
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Couldn't update status",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -152,7 +164,17 @@ export default function PlaylistPitching() {
         queryKey: ["/api/playlist-pitching/stats"],
       });
     },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Couldn't remove pitch",
+        description: getErrorMessage(error),
+      });
+    },
   });
+
+  const getErrorMessage = (error: unknown) =>
+    error instanceof ApiError ? error.userMessage : "Please try again.";
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -306,6 +328,16 @@ export default function PlaylistPitching() {
             </CardContent>
           </Card>
         </div>
+        {statsError && (
+          <div className="flex items-center justify-between rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <span>
+              Unable to load pitch statistics: {getErrorMessage(statsError)}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => refetchStats()}>
+              Retry
+            </Button>
+          </div>
+        )}
 
         <Tabs defaultValue="my-pitches" className="w-full">
           <TabsList className="bg-gray-900 border-gray-800 mb-6">
@@ -314,7 +346,7 @@ export default function PlaylistPitching() {
           </TabsList>
 
           <TabsContent value="my-pitches" className="space-y-4">
-            {!pitchesLoading && pitches.length === 0 && (
+            {!pitchesLoading && !pitchesError && pitches.length === 0 && (
               <div className="rounded-xl border border-dashed border-gray-700 bg-gray-900/50 py-14 px-6 text-center space-y-6">
                 <div className="mx-auto w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center">
                   <Send className="w-7 h-7 text-purple-400" />
@@ -363,7 +395,17 @@ export default function PlaylistPitching() {
                 </Button>
               </div>
             )}
-            {(pitchesLoading || pitches.length > 0) && (
+            {pitchesError && (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 py-10 px-6 text-center space-y-4">
+                <p className="text-destructive">
+                  Unable to load pitches: {getErrorMessage(pitchesError)}
+                </p>
+                <Button variant="outline" onClick={() => refetchPitches()}>
+                  Retry
+                </Button>
+              </div>
+            )}
+            {!pitchesError && (pitchesLoading || pitches.length > 0) && (
               <Card className="bg-gray-900 border-gray-800">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
@@ -508,7 +550,17 @@ export default function PlaylistPitching() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {curatorsLoading ? (
+              {curatorsError ? (
+                <div className="col-span-full py-14 text-center border border-destructive/40 rounded-xl bg-destructive/10 space-y-4">
+                  <p className="text-destructive">
+                    Unable to load the curator directory:{" "}
+                    {getErrorMessage(curatorsError)}
+                  </p>
+                  <Button variant="outline" onClick={() => refetchCurators()}>
+                    Retry
+                  </Button>
+                </div>
+              ) : curatorsLoading ? (
                 Array(6)
                   .fill(0)
                   .map((_, i) => (
@@ -541,18 +593,9 @@ export default function PlaylistPitching() {
                             {curator.genre}
                           </p>
                         </div>
-                        <Badge
-                          variant="secondary"
-                          className="bg-purple-500/10 text-purple-400"
-                        >
-                          {curator.followers}
-                        </Badge>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="flex flex-col gap-1 text-xs text-gray-400">
-                        <span>{curator.email}</span>
-                      </div>
                       <div className="flex gap-2">
                         <Button
                           asChild
@@ -573,7 +616,7 @@ export default function PlaylistPitching() {
                             setNewPitchForm((prev) => ({
                               ...prev,
                               curatorName: curator.name,
-                              playlistUrl: curator.submissionUrl,
+                              targetPlaylistUrl: curator.submissionUrl,
                             }));
                             setIsNewPitchOpen(true);
                           }}
@@ -677,16 +720,16 @@ export default function PlaylistPitching() {
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="playlistUrl">Playlist / Submission URL</Label>
+                <Label htmlFor="targetPlaylistUrl">Playlist / Submission URL</Label>
                 <Input
-                  id="playlistUrl"
+                  id="targetPlaylistUrl"
                   placeholder="https://..."
                   className="bg-gray-800 border-gray-700"
-                  value={newPitchForm.playlistUrl}
+                  value={newPitchForm.targetPlaylistUrl}
                   onChange={(e) =>
                     setNewPitchForm({
                       ...newPitchForm,
-                      playlistUrl: e.target.value,
+                      targetPlaylistUrl: e.target.value,
                     })
                   }
                 />
@@ -717,14 +760,13 @@ export default function PlaylistPitching() {
                 Cancel
               </Button>
               <Button
-                onClick={() =>
-                  createPitchMutation.mutate({
-                    ...newPitchForm,
-                    submittedAt: new Date().toISOString(),
-                  })
-                }
+                onClick={() => createPitchMutation.mutate(newPitchForm)}
                 className="bg-purple-600 hover:bg-purple-700"
-                disabled={createPitchMutation.isPending}
+                disabled={
+                  createPitchMutation.isPending ||
+                  !newPitchForm.trackTitle.trim() ||
+                  !newPitchForm.artistName.trim()
+                }
               >
                 {createPitchMutation.isPending ? "Saving..." : "Save Pitch"}
               </Button>

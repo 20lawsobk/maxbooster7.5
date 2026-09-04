@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ListMusic, Plus, Minus, Users, Play, Star, Clock, ExternalLink, CheckCircle, XCircle, Music, Sparkles } from "lucide-react";
+import { ListMusic, Plus, Minus, Users, Play, Star, Clock, CheckCircle, XCircle, Music, Sparkles, RefreshCw } from "lucide-react";
 import { DateRangePicker } from "@/components/analytics/DateRangePicker";
 import { PlaylistEmptyState } from "@/components/analytics/AnalyticsEmptyStates";
 import { PlaylistTrackingSkeleton } from "@/components/analytics/AnalyticsLoadingSkeletons";
@@ -23,11 +23,11 @@ import { cn } from "@/lib/utils";
 interface PlaylistPlacement {
   id: string;
   playlistName: string;
-  platform: "spotify" | "apple" | "deezer" | "amazon" | "youtube";
-  type: "editorial" | "algorithmic" | "user" | "artist";
+  platform: string;
+  type?: "editorial" | "algorithmic" | "user" | "artist";
   followers: number;
-  trackName: string;
-  position: number;
+  trackName?: string;
+  position?: number;
   addedDate: string;
   status: "active" | "removed";
   estimatedStreams: number;
@@ -91,7 +91,7 @@ const TYPE_BADGES: Record<string, { label: string; color: string }> = {
 
 const PlaylistCard = memo(({ playlist }: { playlist: PlaylistPlacement }) => {
   const platformColor = PLATFORM_COLORS[playlist.platform] || "#6B7280";
-  const typeInfo = TYPE_BADGES[playlist.type] || TYPE_BADGES.user;
+  const typeInfo = playlist.type ? TYPE_BADGES[playlist.type] : undefined;
 
   return (
     <motion.div
@@ -116,9 +116,11 @@ const PlaylistCard = memo(({ playlist }: { playlist: PlaylistPlacement }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="font-semibold truncate">{playlist.playlistName}</h4>
-            <Badge className={cn("text-xs", typeInfo.color)}>
-              {typeInfo.label}
-            </Badge>
+            {typeInfo && (
+              <Badge className={cn("text-xs", typeInfo.color)}>
+                {typeInfo.label}
+              </Badge>
+            )}
             {playlist.status === "active" ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
             ) : (
@@ -126,13 +128,21 @@ const PlaylistCard = memo(({ playlist }: { playlist: PlaylistPlacement }) => {
             )}
           </div>
 
-          <p className="text-sm text-muted-foreground mb-2">
-            <Music className="inline h-3 w-3 mr-1" />
-            {playlist.trackName}
-            {playlist.curatorName && (
-              <span className="ml-2">• Curated by {playlist.curatorName}</span>
-            )}
-          </p>
+          {(playlist.trackName || playlist.curatorName) && (
+            <p className="text-sm text-muted-foreground mb-2">
+              {playlist.trackName && (
+                <>
+                  <Music className="inline h-3 w-3 mr-1" />
+                  {playlist.trackName}
+                </>
+              )}
+              {playlist.curatorName && (
+                <span className={playlist.trackName ? "ml-2" : ""}>
+                  {playlist.trackName && "• "}Curated by {playlist.curatorName}
+                </span>
+              )}
+            </p>
+          )}
 
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -145,7 +155,7 @@ const PlaylistCard = memo(({ playlist }: { playlist: PlaylistPlacement }) => {
             </span>
             <span className="flex items-center gap-1">
               <Star className="h-3 w-3" />
-              Position #{playlist.position}
+              {playlist.position ? `Position #${playlist.position}` : "Position unavailable"}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
@@ -154,9 +164,6 @@ const PlaylistCard = memo(({ playlist }: { playlist: PlaylistPlacement }) => {
           </div>
         </div>
 
-        <Button variant="ghost" size="sm" className="shrink-0">
-          <ExternalLink className="h-4 w-4" />
-        </Button>
       </div>
     </motion.div>
   );
@@ -175,15 +182,22 @@ export function PlaylistTracking({
   onTimeRangeChange,
 }: PlaylistTrackingProps) {
   const [activeTab, setActiveTab] = useState("all");
+  const [localTimeRange, setLocalTimeRange] = useState(timeRange);
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "removed"
   >("all");
+  const selectedTimeRange = onTimeRangeChange ? timeRange : localTimeRange;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["/api/analytics/playlists", timeRange],
+  const handleTimeRangeChange = (range: string) => {
+    setLocalTimeRange(range);
+    onTimeRangeChange?.(range);
+  };
+
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["/api/analytics/dashboard", selectedTimeRange],
     queryFn: async () => {
       const response = await fetch(
-        `/api/analytics/dashboard?range=${timeRange}`,
+        `/api/analytics/dashboard?range=${selectedTimeRange}`,
         {
           credentials: "include",
         },
@@ -195,85 +209,30 @@ export function PlaylistTracking({
   });
 
   const placements = useMemo<PlaylistPlacement[]>(() => {
-    if (!data?.playlists?.current) {
-      return [
-        {
-          id: "1",
-          playlistName: "Today's Top Hits",
-          platform: "spotify",
-          type: "editorial",
-          followers: 35000000,
-          trackName: "Summer Vibes",
-          position: 45,
-          addedDate: "Jan 15, 2025",
-          status: "active",
-          estimatedStreams: 125000,
-          curatorName: "Spotify Editorial",
-        },
-        {
-          id: "2",
-          playlistName: "New Music Friday",
-          platform: "spotify",
-          type: "editorial",
-          followers: 12000000,
-          trackName: "Midnight Dreams",
-          position: 23,
-          addedDate: "Jan 20, 2025",
-          status: "active",
-          estimatedStreams: 85000,
-        },
-        {
-          id: "3",
-          playlistName: "Discover Weekly",
-          platform: "spotify",
-          type: "algorithmic",
-          followers: 0,
-          trackName: "Summer Vibes",
-          position: 5,
-          addedDate: "Jan 18, 2025",
-          status: "active",
-          estimatedStreams: 45000,
-        },
-        {
-          id: "4",
-          playlistName: "A-List Pop",
-          platform: "apple",
-          type: "editorial",
-          followers: 2500000,
-          trackName: "Summer Vibes",
-          position: 32,
-          addedDate: "Jan 12, 2025",
-          status: "active",
-          estimatedStreams: 35000,
-          curatorName: "Apple Music",
-        },
-        {
-          id: "5",
-          playlistName: "Pop Rising",
-          platform: "spotify",
-          type: "editorial",
-          followers: 8000000,
-          trackName: "Midnight Dreams",
-          position: 15,
-          addedDate: "Dec 28, 2024",
-          status: "removed",
-          estimatedStreams: 65000,
-        },
-        {
-          id: "6",
-          playlistName: "Chill Hits",
-          platform: "deezer",
-          type: "editorial",
-          followers: 1500000,
-          trackName: "Easy Listening",
-          position: 8,
-          addedDate: "Jan 22, 2025",
-          status: "active",
-          estimatedStreams: 18000,
-        },
-      ];
-    }
-    return data.playlists.current;
+    const platformMap: Record<string, string> = {
+      spotify: "spotify",
+      apple: "apple",
+      "apple music": "apple",
+      deezer: "deezer",
+      amazon: "amazon",
+      "amazon music": "amazon",
+      youtube: "youtube",
+      "youtube music": "youtube",
+    };
+    return (data?.playlists?.current || []).map((playlist: Record<string, unknown>) => ({
+      id: String(playlist.id),
+      playlistName: String(playlist.name || "Untitled playlist"),
+      platform:
+        platformMap[String(playlist.platform || "").toLowerCase()] ||
+        String(playlist.platform || "unknown"),
+      followers: Number(playlist.followers) || 0,
+      trackName: typeof playlist.trackName === "string" ? playlist.trackName : undefined,
+      position: typeof playlist.position === "number" ? playlist.position : undefined,
+      addedDate: String(playlist.addedDate || ""),
+      status: playlist.status === "removed" ? "removed" : "active",
+      estimatedStreams: Number(playlist.estimatedStreams) || 0,
+      curatorName: typeof playlist.curatorName === "string" ? playlist.curatorName : undefined,
+    }));
   }, [data]);
 
   const metrics = useMemo<PlaylistMetrics>(
@@ -329,14 +288,31 @@ export function PlaylistTracking({
     return <PlaylistTrackingSkeleton />;
   }
 
+  if (isError) {
+    return (
+      <Card className="border-destructive">
+        <CardContent className="p-6">
+          <p className="font-semibold">Could not load playlist tracking</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : "Unable to load playlist data."}
+          </p>
+          <Button className="mt-4" variant="outline" onClick={() => refetch()}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!hasData) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Playlist Tracking</h2>
           <DateRangePicker
-            value={timeRange}
-            onChange={onTimeRangeChange || (() => {})}
+            value={selectedTimeRange}
+            onChange={handleTimeRangeChange}
           />
         </div>
         <PlaylistEmptyState />
@@ -354,8 +330,8 @@ export function PlaylistTracking({
           </p>
         </div>
         <DateRangePicker
-          value={timeRange}
-          onChange={onTimeRangeChange || (() => {})}
+          value={selectedTimeRange}
+          onChange={handleTimeRangeChange}
         />
       </div>
 

@@ -20,7 +20,8 @@ import {
 import { eq, and, desc, count, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
-import { loopbackUrl, runtimePorts } from "../config/ports.js";
+import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import { getAwarenessContext } from "../services/awarenessContext.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -316,7 +317,9 @@ router.patch("/pitches/:pitchId", async (req, res) => {
 /**
  * POST /api/outreach/generate-pitch
  * Generate a personalised pitch body using the awareness layer for industry
- * context. Falls back to a template-based pitch if MaxCore is unavailable.
+ * context. This endpoint never substitutes a template for AI output: callers
+ * get a clear unavailable response when the configured AI service cannot
+ * generate a pitch.
  */
 const generatePitchSchema = z.object({
   recipientName: z.string().min(1).max(200),
@@ -350,106 +353,40 @@ router.post("/generate-pitch", async (req, res) => {
       artistBio,
     } = body.data;
 
-    // Load awareness context for industry-relevant hooks
-    let trendContext = "";
-    try {
-      const candidates = [
-        "../services/contentAwarenessService.js",
-        "../../awareness layer/ContentGenerationAwarenessService.js",
-        "../awareness layer/ContentGenerationAwarenessService.js",
-      ];
-      for (const p of candidates) {
-        try {
-          // @ts-ignore
-          const mod = await import(p);
-          const svc =
-            mod?.contentAwarenessService ??
-            mod?.default?.contentAwarenessService ??
-            mod?.default;
-          if (svc && typeof svc.getContextForMode === "function") {
-            const ctx = await Promise.race([
-              svc.getContextForMode("content"),
-              new Promise<null>((r) => setTimeout(() => r(null), 3000)),
-            ]);
-            if (ctx?.contextString) {
-              trendContext = ctx.contextString.slice(0, 400);
-            }
-            break;
-          }
-        } catch {
-          // try next
-        }
-      }
-    } catch {
-      // non-fatal
-    }
+    const awareness = await getAwarenessContext("email");
+    const prompt = [
+      `Write a professional, personalized pitch email for a ${recipientType.replace("_", " ")}.`,
+      `Recipient: ${recipientName}`,
+      `Track: "${trackTitle}"`,
+      trackGenre ? `Genre: ${trackGenre}` : "",
+      trackMood ? `Mood: ${trackMood}` : "",
+      artistName ? `Artist: ${artistName}` : "",
+      artistBio ? `Bio: ${artistBio}` : "",
+      awareness?.contextString
+        ? `Current industry context (use naturally, do not quote verbatim): ${awareness.contextString.slice(0, 400)}`
+        : "",
+      "Keep it under 200 words. Professional, warm, specific. No generic filler.",
+    ]
+      .filter(Boolean)
+      .join("\n");
 
-    // Attempt MaxCore generation
-    const MAXCORE_URL =
-      process.env.MAXCORE_URL ?? loopbackUrl(runtimePorts.maxcoreApi);
-    let pitchBody = "";
+    const generated = await MaxCoreAIClient.generate<{
+      text?: string;
+      content?: string;
+      output?: string;
+    }>("/generate/text", { prompt, maxTokens: 300 });
+    const pitchBody =
+      generated?.text ?? generated?.content ?? generated?.output ?? "";
 
-    try {
-      const prompt = [
-        `Write a professional, personalized pitch email for a ${recipientType.replace("_", " ")}.`,
-        `Recipient: ${recipientName}`,
-        `Track: "${trackTitle}"`,
-        trackGenre ? `Genre: ${trackGenre}` : "",
-        trackMood ? `Mood: ${trackMood}` : "",
-        artistName ? `Artist: ${artistName}` : "",
-        artistBio ? `Bio: ${artistBio}` : "",
-        trendContext
-          ? `Current industry context (use naturally, do not quote verbatim): ${trendContext}`
-          : "",
-        "Keep it under 200 words. Professional, warm, specific. No generic filler.",
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      const mcRes = await fetch(`${MAXCORE_URL}/generate/text`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, maxTokens: 300 }),
-        signal: AbortSignal.timeout(8000),
+    if (!pitchBody.trim()) {
+      logger.warn("[Outreach] MaxCore did not return a pitch");
+      return res.status(503).json({
+        error:
+          "AI pitch generation is temporarily unavailable. Please try again shortly.",
       });
-
-      if (mcRes.ok) {
-        const mc = await mcRes.json();
-        pitchBody = mc.text ?? mc.content ?? mc.output ?? "";
-      }
-    } catch {
-      // MaxCore unavailable — use template fallback
     }
 
-    if (!pitchBody) {
-      // Template fallback
-      const recipientLabel = {
-        blog: "blog editorial team",
-        playlist: "playlist curator",
-        sync_supervisor: "music supervisor",
-        pr_outlet: "press team",
-        radio: "music director",
-      }[recipientType];
-
-      pitchBody = [
-        `Hi ${recipientName},`,
-        "",
-        `I wanted to reach out because I think my latest track "${trackTitle}" would resonate strongly with your audience${trackGenre ? ` — it's a ${trackGenre} piece` : ""}${trackMood ? ` with a ${trackMood} feel` : ""}.`,
-        "",
-        artistBio
-          ? `${artistBio}`
-          : `I'm ${artistName ?? "an independent artist"} focused on delivering quality music that connects.`,
-        "",
-        `I'd love for you to give it a listen. I've attached the press kit and would be happy to send a direct link to the master stems or any assets you need.`,
-        "",
-        `Thank you for your time — I appreciate everything you do for the music community.`,
-        "",
-        `Best,`,
-        `${artistName ?? "[Your Name]"}`,
-      ].join("\n");
-    }
-
-    res.json({ pitchBody, trendContextUsed: !!trendContext });
+    res.json({ pitchBody, trendContextUsed: !!awareness?.contextString });
   } catch (err) {
     logger.warn({ err }, "[Outreach] POST /generate-pitch failed");
     res.status(500).json({ error: "Failed to generate pitch" });

@@ -711,11 +711,16 @@ export function CustomWorkflowTab() {
     undefined,
   );
 
-  const { data: workflows = [], isLoading } = useQuery<CustomWorkflow[]>({
+  const {
+    data: workflows = [],
+    isLoading,
+    error: workflowsError,
+    refetch: refetchWorkflows,
+  } = useQuery<CustomWorkflow[]>({
     queryKey: ["/api/custom-workflows"],
   });
 
-  const { data: catalog } = useQuery<{
+  const { data: catalog, error: catalogError, isLoading: catalogLoading, refetch: refetchCatalog } = useQuery<{
     triggers: TriggerDef[];
     actions: ActionDef[];
   }>({
@@ -759,6 +764,19 @@ export function CustomWorkflowTab() {
     );
   }
 
+  if (workflowsError) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        <AlertCircle className="h-8 w-8 mx-auto mb-3 text-destructive" />
+        <p className="text-sm font-medium">Could not load custom workflows</p>
+        <p className="text-xs mt-1">{workflowsError.message}</p>
+        <Button size="sm" variant="outline" className="mt-4" onClick={() => refetchWorkflows()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -775,11 +793,26 @@ export function CustomWorkflowTab() {
           size="sm"
           onClick={openCreate}
           className="gap-1.5 flex-shrink-0"
+          disabled={catalogLoading || !!catalogError}
         >
           <Plus className="h-3.5 w-3.5" />
           New Workflow
         </Button>
       </div>
+
+      {catalogError && (
+        <Card className="border-destructive/40">
+          <CardContent className="flex items-center justify-between gap-4 py-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Could not load workflow options</p>
+              <p className="text-xs text-muted-foreground mt-1">{catalogError.message}</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => refetchCatalog()}>
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Info banner (first time) */}
       {workflows.length === 0 && (
@@ -824,7 +857,12 @@ export function CustomWorkflowTab() {
                 </div>
               ))}
             </div>
-            <Button size="sm" onClick={openCreate} className="gap-1.5">
+            <Button
+              size="sm"
+              onClick={openCreate}
+              className="gap-1.5"
+              disabled={catalogLoading || !!catalogError}
+            >
               <Plus className="h-3.5 w-3.5" />
               Create Workflow
             </Button>

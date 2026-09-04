@@ -12,9 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ApiError, apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import type {
   Notification,
@@ -35,23 +35,34 @@ export default function NotificationDetail() {
   const id = params?.id;
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useRequireAuth();
 
   const {
-    data: notification,
+    data: notifications = [],
     isLoading,
     isError,
-  } = useQuery<Notification>({
-    queryKey: ["/api/notifications", id],
-    enabled: !!user && !!id,
+    error,
+    refetch,
+  } = useQuery<Notification[]>({
+    // The notifications API is intentionally a collection endpoint. Reuse it
+    // here so the detail always renders the exact records shown in the list,
+    // rather than requesting a nonexistent /api/notifications/:id endpoint.
+    queryKey: ["/api/notifications"],
+    enabled: !!user,
   });
+  const notification = notifications.find((item) => item.id === id);
 
   const markAsReadMutation = useMutation({
     mutationFn: async () => apiRequest("PUT", `/api/notifications/${id}/read`),
-    onSettled: () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/notifications", id] });
     },
+    onError: () =>
+      toast({
+        title: "Couldn't mark notification as read",
+        description: "Please try again.",
+        variant: "destructive",
+      }),
   });
 
   const deleteMutation = useMutation({
@@ -73,8 +84,7 @@ export default function NotificationDetail() {
     if (notification && !notification.isRead) {
       markAsReadMutation.mutate();
     }
-     
-  }, [notification?.id]);
+  }, [notification?.id, notification?.isRead]);
 
   const category: NotificationCategory =
     (notification?.category as NotificationCategory) ||
@@ -105,11 +115,36 @@ export default function NotificationDetail() {
           <h1 className="text-2xl font-bold">Notification</h1>
         </div>
 
-        {isLoading ? (
+        {isAuthLoading || isLoading ? (
           <div className="flex items-center justify-center p-16">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : isError || !notification ? (
+        ) : isError ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center p-16 text-center">
+              <div className="rounded-full bg-muted p-6 mb-4">
+                <Bell className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">
+                Couldn't load notification
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-[300px] mb-4">
+                {error instanceof ApiError
+                  ? error.userMessage
+                  : "Please check your connection and try again."}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/notifications")}
+                >
+                  Back to notifications
+                </Button>
+                <Button onClick={() => refetch()}>Try again</Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : !notification ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-16 text-center">
               <div className="rounded-full bg-muted p-6 mb-4">

@@ -51,7 +51,8 @@ interface PlatformStatus {
     | "removed"
     | "in_review"
     | "rejected"
-    | "takedown";
+    | "takedown"
+    | "not_supported";
   externalId?: string;
   estimatedGoLive?: string;
   deliveredAt?: string;
@@ -150,6 +151,13 @@ const STATUS_CONFIG = {
     icon: XCircle,
     description: "Release was rejected — check error details",
   },
+  not_supported: {
+    label: "Not Supported by Distributor",
+    color: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+    icon: AlertCircle,
+    description:
+      "LabelGrid did not accept delivery to this platform for this release.",
+  },
   takedown: {
     label: "Takedown Requested",
     color: "bg-gray-500/10 text-gray-400 border-gray-500/20",
@@ -215,6 +223,7 @@ export function ReleaseStatusDashboard({
         "removed",
         "in_review",
         "rejected",
+        "not_supported",
         "takedown",
       ]);
       const v = (s.status ?? "pending").toLowerCase().replace(/-/g, "_");
@@ -222,6 +231,12 @@ export function ReleaseStatusDashboard({
       // Map additional aliases from webhook handler
       if (v === "approved" || v === "distributed") return "live" as const;
       if (v === "error") return "failed" as const;
+      if (
+        v === "unsupported" ||
+        v === "not_configured" ||
+        v === "not_supported_by_distributor"
+      )
+        return "not_supported" as const;
       if (v === "taken_down" || v === "takedown_requested")
         return "takedown" as const;
       return "processing" as const; // safe unknown fallback
@@ -232,7 +247,7 @@ export function ReleaseStatusDashboard({
   const liveCount = statuses.filter((s) => s.status === "live").length;
   const totalCount = statuses.length;
   const failedCount = statuses.filter((s) =>
-    ["failed", "rejected"].includes(s.status),
+    ["failed", "rejected", "not_supported"].includes(s.status),
   ).length;
 
   if (isLoading) {
@@ -339,7 +354,7 @@ export function ReleaseStatusDashboard({
                   <div className="flex items-center gap-3">
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: config.color ?? "#6366f1" }}
+                      style={{ backgroundColor: config?.color ?? "#6366f1" }}
                     >
                       {Icon ? (
                         <Icon className="h-5 w-5 text-white" />
@@ -400,7 +415,9 @@ export function ReleaseStatusDashboard({
                     </div>
                   )}
 
-                {platformStatus.status === "failed" && (
+                {["failed", "rejected", "not_supported"].includes(
+                  platformStatus.status,
+                ) && (
                   <div className="p-2 bg-red-500/10 rounded text-xs text-red-500">
                     <AlertCircle className="h-3 w-3 inline mr-1" />
                     {platformStatus.errorMessage || "Delivery failed"}

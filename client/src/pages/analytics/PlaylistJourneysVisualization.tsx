@@ -381,7 +381,8 @@ export default function PlaylistJourneysVisualization({
   const {
     data: journeysResponse,
     isLoading,
-    
+    isError,
+    error,
     refetch,
   } = useQuery<{
     data: {
@@ -391,7 +392,21 @@ export default function PlaylistJourneysVisualization({
     };
   }>({
     queryKey: ["/api/analytics/playlist-journeys", timeFilter],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/analytics/playlist-journeys?range=${encodeURIComponent(timeFilter)}`,
+        { credentials: "include" },
+      );
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(
+          body?.error || `Unable to load playlist journeys (HTTP ${response.status}).`,
+        );
+      }
+      return body;
+    },
     enabled: !propEvents,
+    retry: false,
   });
 
   const journeysData = journeysResponse?.data ?? journeysResponse;
@@ -482,13 +497,41 @@ export default function PlaylistJourneysVisualization({
         </div>
       </div>
 
+      {isLoading && !journeysData && (
+        <Card>
+          <CardContent className="flex min-h-48 items-center justify-center gap-2 p-12 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Loading playlist journeys…
+          </CardContent>
+        </Card>
+      )}
+
+      {isError && (
+        <Card className="border-destructive">
+          <CardContent className="p-6">
+            <p className="font-semibold">Could not load playlist journeys</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {error instanceof Error
+                ? error.message
+                : "Unable to load playlist journey data."}
+            </p>
+            <Button className="mt-4" variant="outline" onClick={() => refetch()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isLoading && !isError && (
+        <>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">
-                  Active Playlists
+                  Playlist Additions
                 </p>
                 <p className="text-3xl font-bold text-cyan-600">
                   {stats.totalPlaylists}
@@ -597,6 +640,8 @@ export default function PlaylistJourneysVisualization({
           </Card>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }

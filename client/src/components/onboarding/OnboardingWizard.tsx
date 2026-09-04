@@ -378,10 +378,36 @@ export default function OnboardingWizard({
         );
       }
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Setup failed",
-        description: "Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Unable to save your setup. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const skipMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/auth/update-onboarding", {
+        hasCompletedOnboarding: true,
+        onboardingData: {
+          skippedAt: new Date().toISOString(),
+        },
+      });
+      return response.json();
+    },
+    onSuccess: onSkip,
+    onError: (error) => {
+      toast({
+        title: "Unable to skip setup",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Unable to save your choice. Please try again.",
         variant: "destructive",
       });
     },
@@ -544,10 +570,12 @@ export default function OnboardingWizard({
               <span className="text-sm text-white/70">Max Booster Setup</span>
             </div>
             <button
-              onClick={onSkip}
-              className="text-xs text-white/30 hover:text-white/60 transition-colors"
+              type="button"
+              onClick={() => skipMutation.mutate()}
+              disabled={skipMutation.isPending}
+              className="text-xs text-white/30 hover:text-white/60 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Skip setup
+              {skipMutation.isPending ? "Skipping setup…" : "Skip setup"}
             </button>
           </div>
           <XPBar xp={xp} total={TOTAL_XP} />

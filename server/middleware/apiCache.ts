@@ -617,7 +617,10 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     // anonymous, so a per-user write invalidation cannot reliably evict an
     // already-cached anonymous response on every worker. Never cache this
     // access-control-sensitive representation.
-    if (req.path.startsWith("/api/press-kit/public/")) {
+    if (
+      req.path.startsWith("/api/press-kit/public/") ||
+      req.path.startsWith("/api/v1/")
+    ) {
       next();
       return;
     }

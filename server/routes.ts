@@ -31,6 +31,7 @@ import {
   invalidateCacheOnMutation,
 } from "./middleware/apiCache.js";
 import { blockDemoWrite } from "./auth.js";
+import { requireAuth, requireAdmin } from "./middleware/auth.js";
 
 const authenticator = {
   generateSecret: () => otpGenerateSecret(),
@@ -2058,10 +2059,15 @@ export async function registerRoutes(
     forgotPasswordRateLimiter,
     async (req: Request, res: Response) => {
       try {
-        const { email } = req.body;
+        const email =
+          typeof req.body?.email === "string" ? req.body.email.trim() : "";
 
         if (!email) {
           return res.status(400).json({ message: "Email is required" });
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          return res.status(400).json({ message: "Invalid email address" });
         }
 
         const user = await storage.getUserByEmail(email);
@@ -2082,7 +2088,7 @@ export async function registerRoutes(
           const baseUrl = process.env.APP_URL || "https://max-booster.com";
           const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
 
-          await emailService.sendPasswordResetEmail(
+          const emailSent = await emailService.sendPasswordResetEmail(
             {
               firstName: user.firstName || "User",
               resetLink,
@@ -2090,6 +2096,17 @@ export async function registerRoutes(
             },
             user.email,
           );
+
+          if (!emailSent) {
+            logger.error(
+              { userId: user.id },
+              "Password reset email provider did not accept the message",
+            );
+            return res.status(503).json({
+              message:
+                "Unable to send the reset email right now. Please try again shortly.",
+            });
+          }
         }
 
         return res.json({
@@ -2097,10 +2114,9 @@ export async function registerRoutes(
           message: "If the email exists, a reset link has been sent.",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Forgot password error");
-        return res.json({
-          success: true,
-          message: "If the email exists, a reset link has been sent.",
+        logger.error({ err: error }, "Forgot password error");
+        return res.status(500).json({
+          message: "Unable to process the password reset request. Please try again.",
         });
       }
     },
@@ -4782,6 +4798,8 @@ export async function registerRoutes(
   // Analytics: Get anomalies summary
   app.get(
     "/api/analytics/anomalies/summary",
+    requireAuth,
+    requireAdmin,
     async (req: Request, res: Response) => {
       if (!req.user) {
         return res.status(401).json({ message: "Not authenticated" });
@@ -4844,7 +4862,7 @@ export async function registerRoutes(
   );
 
   // Analytics: Get anomalies list
-  app.get("/api/analytics/anomalies", async (req: Request, res: Response) => {
+  app.get("/api/analytics/anomalies", requireAuth, requireAdmin, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -4920,6 +4938,8 @@ export async function registerRoutes(
   // Analytics: Acknowledge anomaly
   app.post(
     "/api/analytics/anomalies/:id/acknowledge",
+    requireAuth,
+    requireAdmin,
     async (req: Request, res: Response) => {
       if (!req.user) {
         return res.status(401).json({ message: "Not authenticated" });
@@ -7706,7 +7726,7 @@ export async function registerRoutes(
             .json({ error: "Payment system not configured" });
         }
 
-        const { tier, userEmail, username, birthdate } = req.body;
+        const { tier, userEmail, username, birthdate, artistName } = req.body;
 
         // Validate required fields
         if (!tier || !userEmail || !username) {
@@ -7723,6 +7743,24 @@ export async function registerRoutes(
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(userEmail)) {
           return res.status(400).json({ error: "Invalid email format" });
+        }
+
+        if (
+          typeof birthdate !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(birthdate)
+        ) {
+          return res.status(400).json({ error: "A valid birthdate is required" });
+        }
+        const parsedBirthdate = new Date(`${birthdate}T00:00:00.000Z`);
+        if (Number.isNaN(parsedBirthdate.getTime())) {
+          return res.status(400).json({ error: "A valid birthdate is required" });
+        }
+        const minimumBirthdate = new Date();
+        minimumBirthdate.setFullYear(minimumBirthdate.getFullYear() - 13);
+        if (parsedBirthdate > minimumBirthdate) {
+          return res.status(400).json({
+            error: "You must be at least 13 years old to create an account",
+          });
         }
 
         // Validate username (alphanumeric, 3-30 chars)
@@ -7792,6 +7830,8 @@ export async function registerRoutes(
             tier,
             username,
             birthdate: birthdate || "",
+            artistName:
+              typeof artistName === "string" ? artistName.trim().slice(0, 100) : "",
             firstName: req.body.firstName || "",
             lastName: req.body.lastName || "",
           },
@@ -7809,6 +7849,56 @@ export async function registerRoutes(
           .json({
             error: "Failed to create checkout session. Please try again.",
           });
+      }
+    },
+  );
+
+  // Verify a registration Checkout session before rendering the password form.
+  // The endpoint deliberately returns no session metadata: the client only needs
+  // to know whether it may continue, and account creation remains server-side.
+  app.post(
+    "/api/verify-checkout-session",
+    registerRateLimiter,
+    async (req: Request, res: Response) => {
+      try {
+        if (!stripe) {
+          return res.status(500).json({ error: "Payment system not configured" });
+        }
+
+        const { sessionId } = req.body;
+        if (typeof sessionId !== "string" || !sessionId.startsWith("cs_")) {
+          return res.status(400).json({ error: "Invalid checkout session" });
+        }
+
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {
+          expand: ["line_items.data.price"],
+        });
+        const tier = session.metadata?.tier;
+        const plan = tier ? SUBSCRIPTION_PLANS[tier] : undefined;
+        const expectedPriceId =
+          plan && getStripePriceIds()[tier as keyof ReturnType<typeof getStripePriceIds>];
+        const paidForExpectedPlan =
+          !!expectedPriceId &&
+          session.payment_status === "paid" &&
+          session.mode === plan?.mode &&
+          session.line_items?.data.some(
+            (item) =>
+              typeof item.price !== "string" && item.price?.id === expectedPriceId,
+          );
+
+        if (!paidForExpectedPlan) {
+          return res.status(400).json({ error: "Payment could not be verified" });
+        }
+
+        return res.json({ verified: true });
+      } catch (error) {
+        logger.warn({ err: error }, "Error verifying registration checkout session:");
+        if ((error as { type?: string }).type === "StripeInvalidRequestError") {
+          return res.status(400).json({ error: "Invalid checkout session" });
+        }
+        return res
+          .status(500)
+          .json({ error: "Unable to verify payment. Please try again." });
       }
     },
   );
@@ -7852,7 +7942,9 @@ export async function registerRoutes(
         }
 
         // Retrieve and verify the Stripe checkout session
-        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {
+          expand: ["line_items.data.price"],
+        });
 
         if (!session) {
           return res.status(400).json({ error: "Invalid checkout session" });
@@ -7865,8 +7957,22 @@ export async function registerRoutes(
         }
 
         const email = session.customer_email;
-        const username = session.metadata!.username;
-        const tier = session.metadata!.tier || "monthly";
+        const username = session.metadata?.username;
+        const tier = session.metadata?.tier;
+        const plan = tier ? SUBSCRIPTION_PLANS[tier] : undefined;
+        const expectedPriceId =
+          plan && getStripePriceIds()[tier as keyof ReturnType<typeof getStripePriceIds>];
+        const paidForExpectedPlan =
+          !!expectedPriceId &&
+          session.mode === plan?.mode &&
+          session.line_items?.data.some(
+            (item) =>
+              typeof item.price !== "string" && item.price?.id === expectedPriceId,
+          );
+
+        if (!paidForExpectedPlan) {
+          return res.status(400).json({ error: "Payment session does not match a valid plan" });
+        }
 
         if (!email || !username) {
           return res
@@ -7924,6 +8030,7 @@ export async function registerRoutes(
         const user = await storage.createUser({
           email,
           password: hashedPassword,
+          username,
           firstName: session.metadata!.firstName || "",
           lastName: session.metadata!.lastName || "",
         });
@@ -7933,6 +8040,10 @@ export async function registerRoutes(
             subscriptionTier: tier ?? undefined,
             subscriptionEndsAt: subscriptionEndsAt ?? undefined,
           });
+        }
+        const artistName = session.metadata?.artistName?.trim();
+        if (artistName) {
+          await storage.updateUser(user.id, { artistName });
         }
 
         // Log the user in (regenerate prevents session fixation)

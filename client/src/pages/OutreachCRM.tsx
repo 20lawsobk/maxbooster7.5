@@ -6,7 +6,7 @@
  * Includes AI pitch writer powered by the awareness layer + MaxCore.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -143,6 +143,10 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Please try again.";
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function OutreachCRM() {
@@ -170,7 +174,13 @@ export default function OutreachCRM() {
   const [genGenre, setGenGenre] = useState("");
   const [genArtist, setGenArtist] = useState("");
 
-  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery<
+  const {
+    data: campaigns = [],
+    isLoading: campaignsLoading,
+    isError: campaignsIsError,
+    error: campaignsError,
+    refetch: refetchCampaigns,
+  } = useQuery<
     Campaign[]
   >({
     queryKey: ["outreach-campaigns"],
@@ -178,7 +188,13 @@ export default function OutreachCRM() {
       apiRequest("GET", "/api/outreach/campaigns").then((r) => r.json()),
   });
 
-  const { data: pitches = [], isLoading: pitchesLoading } = useQuery<Pitch[]>({
+  const {
+    data: pitches = [],
+    isLoading: pitchesLoading,
+    isError: pitchesIsError,
+    error: pitchesError,
+    refetch: refetchPitches,
+  } = useQuery<Pitch[]>({
     queryKey: ["outreach-pitches", selectedCampaign?.id],
     queryFn: () =>
       apiRequest(
@@ -188,11 +204,26 @@ export default function OutreachCRM() {
     enabled: !!selectedCampaign,
   });
 
-  const { data: followUps = [] } = useQuery<Pitch[]>({
+  const {
+    data: followUps = [],
+    isError: followUpsIsError,
+    error: followUpsError,
+    refetch: refetchFollowUps,
+  } = useQuery<Pitch[]>({
     queryKey: ["outreach-followups"],
     queryFn: () =>
       apiRequest("GET", "/api/outreach/follow-ups").then((r) => r.json()),
   });
+
+  useEffect(() => {
+    if (!selectedCampaign) return;
+    const refreshedCampaign = campaigns.find(
+      (campaign) => campaign.id === selectedCampaign.id,
+    );
+    if (refreshedCampaign && refreshedCampaign !== selectedCampaign) {
+      setSelectedCampaign(refreshedCampaign);
+    }
+  }, [campaigns, selectedCampaign]);
 
   const createCampaign = useMutation({
     mutationFn: (data: object) =>
@@ -204,8 +235,12 @@ export default function OutreachCRM() {
       setSelectedCampaign(campaign);
       toast({ title: "Campaign created" });
     },
-    onError: () =>
-      toast({ title: "Failed to create campaign", variant: "destructive" }),
+    onError: (error) =>
+      toast({
+        title: "Failed to create campaign",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const createPitch = useMutation({
@@ -224,8 +259,12 @@ export default function OutreachCRM() {
       setPitchBody("");
       toast({ title: "Pitch added" });
     },
-    onError: () =>
-      toast({ title: "Failed to add pitch", variant: "destructive" }),
+    onError: (error) =>
+      toast({
+        title: "Failed to add pitch",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const updatePitch = useMutation({
@@ -237,8 +276,12 @@ export default function OutreachCRM() {
       qc.invalidateQueries({ queryKey: ["outreach-pitches", selectedCampaign?.id] });
       qc.invalidateQueries({ queryKey: ["outreach-campaigns"] });
     },
-    onError: () =>
-      toast({ title: "Failed to update pitch", variant: "destructive" }),
+    onError: (error) =>
+      toast({
+        title: "Failed to update pitch",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const generatePitch = useMutation({
@@ -254,8 +297,12 @@ export default function OutreachCRM() {
           : "Pitch generated",
       });
     },
-    onError: () =>
-      toast({ title: "Failed to generate pitch", variant: "destructive" }),
+    onError: (error) =>
+      toast({
+        title: "Failed to generate pitch",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const NEXT_STATUS: Record<string, string> = {
@@ -287,7 +334,18 @@ export default function OutreachCRM() {
         </div>
 
         {/* Follow-up alerts */}
-        {followUps.length > 0 && (
+        {followUpsIsError ? (
+          <Card className="border-destructive/50">
+            <CardContent className="pt-4 flex items-center justify-between gap-4">
+              <p className="text-sm text-destructive">
+                Could not load follow-up reminders: {errorMessage(followUpsError)}
+              </p>
+              <Button size="sm" variant="outline" onClick={() => refetchFollowUps()}>
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : followUps.length > 0 && (
           <Card className="border-yellow-500/30">
             <CardContent className="pt-4">
               <p className="text-sm font-medium flex items-center gap-2 text-yellow-400">
@@ -315,6 +373,17 @@ export default function OutreachCRM() {
             </p>
             {campaignsLoading ? (
               <p className="text-sm text-muted-foreground px-1">Loading…</p>
+            ) : campaignsIsError ? (
+              <Card className="border-destructive/50">
+                <CardContent className="py-6 text-center space-y-3">
+                  <p className="text-sm text-destructive">
+                    Could not load campaigns: {errorMessage(campaignsError)}
+                  </p>
+                  <Button size="sm" variant="outline" onClick={() => refetchCampaigns()}>
+                    Retry
+                  </Button>
+                </CardContent>
+              </Card>
             ) : campaigns.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center text-sm text-muted-foreground">
@@ -403,6 +472,17 @@ export default function OutreachCRM() {
                 {/* Pitches table */}
                 {pitchesLoading ? (
                   <p className="text-sm text-muted-foreground">Loading…</p>
+                ) : pitchesIsError ? (
+                  <Card className="border-destructive/50">
+                    <CardContent className="py-8 text-center space-y-3">
+                      <p className="text-sm text-destructive">
+                        Could not load pitches: {errorMessage(pitchesError)}
+                      </p>
+                      <Button size="sm" variant="outline" onClick={() => refetchPitches()}>
+                        Retry
+                      </Button>
+                    </CardContent>
+                  </Card>
                 ) : pitches.length === 0 ? (
                   <Card>
                     <CardContent className="py-12 text-center text-muted-foreground text-sm">

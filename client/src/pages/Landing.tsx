@@ -1,16 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/ui/Logo";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import {
   Sheet,
   SheetContent,
@@ -18,51 +12,33 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Sparkles, BarChart3, Share2, Megaphone, DollarSign, Check, ArrowRight, Play, Star, Music, Shield, Menu, ChevronLeft, ChevronRight, Zap, Brain, Globe, Cpu, Rocket, Crown, Activity } from "lucide-react";
-
-const demoSlides = [
-  {
-    title: "AI-Powered Studio",
-    description:
-      "Professional DAW with AI mixing, mastering, and 1000+ plugins. Create studio-quality music in your browser.",
-    icon: Sparkles,
-    gradient: "from-blue-600 to-cyan-500",
-  },
-  {
-    title: "Analytics Dashboard",
-    description:
-      "Track streams, revenue, and fan growth across all platforms. AI-powered insights to grow your career.",
-    icon: BarChart3,
-    gradient: "from-purple-600 to-pink-500",
-  },
-  {
-    title: "Social Media Autopilot",
-    description:
-      "AI schedules and creates content across all platforms. Grow your audience on autopilot 24/7.",
-    icon: Share2,
-    gradient: "from-green-600 to-teal-500",
-  },
-  {
-    title: "Music Distribution",
-    description:
-      "Release to Spotify, Apple Music, and 150+ platforms. Keep 100% of your royalties.",
-    icon: Music,
-    gradient: "from-orange-600 to-red-500",
-  },
-  {
-    title: "Beat Marketplace",
-    description:
-      "Sell beats and samples directly to artists. Built-in licensing and secure payments.",
-    icon: DollarSign,
-    gradient: "from-indigo-600 to-blue-500",
-  },
-];
+import {
+  Sparkles,
+  BarChart3,
+  Share2,
+  Megaphone,
+  DollarSign,
+  Check,
+  ArrowRight,
+  Play,
+  Star,
+  Music,
+  Shield,
+  Menu,
+  Zap,
+  Brain,
+  Globe,
+  Cpu,
+  Rocket,
+  Crown,
+  Activity,
+} from "lucide-react";
 
 const stats = [
-  { label: "AI-Powered Features", value: "15+", icon: Brain },
-  { label: "Platforms Supported", value: "150+", icon: Globe },
-  { label: "Money-Back Guarantee", value: "90 Days", icon: Shield },
-  { label: "Integrated Tools", value: "7+", icon: Cpu },
+  { label: "Music creation", value: "AI-assisted", icon: Brain },
+  { label: "Connected workflow", value: "Cross-platform", icon: Globe },
+  { label: "Refund policy", value: "90 days", icon: Shield },
+  { label: "Creator tools", value: "All-in-one", icon: Cpu },
 ];
 
 const features = [
@@ -159,6 +135,25 @@ const plans = [
   },
 ];
 
+async function getRequiredCsrfToken(): Promise<string> {
+  const existingToken = getCsrfTokenFromCookie();
+  if (existingToken) {
+    return existingToken;
+  }
+
+  const response = await fetch("/api/csrf-token", {
+    credentials: "include",
+  });
+  const body = (await response.json()) as { csrfToken?: unknown };
+
+  if (!response.ok || typeof body.csrfToken !== "string" || !body.csrfToken) {
+    throw new Error(
+      "Unable to establish the security token required to sign in. Please refresh the page and try again.",
+    );
+  }
+
+  return body.csrfToken;
+}
 
 function useScrollReveal() {
   useEffect(() => {
@@ -177,57 +172,6 @@ function useScrollReveal() {
     return () => observer.disconnect();
   }, []);
 }
-
-const testimonials = [
-  {
-    quote:
-      "Max Booster is the only tool I need. My streams jumped 340% in 3 months. The AI social autopilot posts better content than my old social media manager.",
-    name: "Marcus J.",
-    role: "Independent Hip-Hop Artist",
-    avatar: "MJ",
-    gradient: "from-amber-500 to-orange-600",
-  },
-  {
-    quote:
-      "I replaced 7 separate subscriptions with Max Booster. The analytics alone are worth the price — I finally understand which content actually drives sales.",
-    name: "Priya K.",
-    role: "Singer-Songwriter",
-    avatar: "PK",
-    gradient: "from-violet-500 to-purple-600",
-  },
-  {
-    quote:
-      "The beat marketplace generated $8,400 in my first month. Zero platform fees means I keep every dollar. This platform is a game-changer for producers.",
-    name: "DJ Sable",
-    role: "Producer & Beat Maker",
-    avatar: "DS",
-    gradient: "from-cyan-500 to-blue-600",
-  },
-  {
-    quote:
-      "As someone who hates social media, having AI create and schedule everything automatically felt like a superpower. My fanbase grew 5x without me touching it.",
-    name: "Elena V.",
-    role: "EDM Producer",
-    avatar: "EV",
-    gradient: "from-emerald-500 to-teal-600",
-  },
-  {
-    quote:
-      "The AI mastering is legitimately pro-level. My mixes sound better than before I was paying $500/track at a studio. It's unreal what this thing can do.",
-    name: "Tone Ray",
-    role: "R&B Artist",
-    avatar: "TR",
-    gradient: "from-pink-500 to-rose-600",
-  },
-  {
-    quote:
-      "Signed my first sync licensing deal through Max Booster's pitch tools. The revenue intelligence showed me exactly which playlist editors to target.",
-    name: "Zoe M.",
-    role: "Indie Pop Artist",
-    avatar: "ZM",
-    gradient: "from-indigo-500 to-blue-600",
-  },
-];
 
 function ParticleField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -316,9 +260,7 @@ function ParticleField() {
 
 export default function Landing() {
   const { toast } = useToast();
-  const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -330,34 +272,17 @@ export default function Landing() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Auto-advance demo carousel every 5 seconds when modal is open
-  useEffect(() => {
-    if (!isVideoOpen) return;
-    const id = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % demoSlides.length);
-    }, 5000);
-    return () => clearInterval(id);
-  }, [isVideoOpen]);
-
-  const nextSlide = useCallback(
-    () => setCurrentSlide((prev) => (prev + 1) % demoSlides.length),
-    [],
-  );
-  const prevSlide = useCallback(
-    () =>
-      setCurrentSlide(
-        (prev) => (prev - 1 + demoSlides.length) % demoSlides.length,
-      ),
-    [],
-  );
-
   const startDemo = async () => {
     setIsDemoLoading(true);
     try {
+      const csrfToken = await getRequiredCsrfToken();
       const response = await fetch("/api/auth/demo", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
       });
       if (response.ok) {
         window.location.href = "/dashboard";
@@ -368,10 +293,28 @@ export default function Landing() {
           variant: "destructive",
         });
       } else {
-        setIsVideoOpen(true);
+        const payload = (await response.json().catch(() => null)) as {
+          message?: string;
+          error?: string;
+        } | null;
+        toast({
+          title: "Unable to start demo",
+          description:
+            payload?.message ??
+            payload?.error ??
+            "The demo account could not be started. Please try again.",
+          variant: "destructive",
+        });
       }
-    } catch {
-      setIsVideoOpen(true);
+    } catch (error) {
+      toast({
+        title: "Unable to start demo",
+        description:
+          error instanceof Error
+            ? error.message
+            : "A network error prevented the demo from starting. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsDemoLoading(false);
     }
@@ -497,7 +440,7 @@ export default function Landing() {
             <span className="landing-status-badge">
               <span className="landing-status-dot" />
               <Zap className="h-3.5 w-3.5 text-amber-400" />
-              <span>AI Systems Online — 90-Day Money-Back Guarantee</span>
+              <span>AI-powered tools — 90-Day Money-Back Guarantee</span>
               <Shield className="h-3.5 w-3.5 text-emerald-400" />
             </span>
           </div>
@@ -616,64 +559,6 @@ export default function Landing() {
                   {feature.description}
                 </p>
                 <div className="landing-feature-border" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Social Proof / Testimonials Section */}
-      <section className="py-24 relative overflow-hidden landing-section-divider">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 50% at 50% 50%, rgba(245,158,11,0.05) 0%, transparent 70%)",
-          }}
-        />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-14 reveal">
-            <Badge className="landing-section-badge mb-4">
-              <Star className="h-3.5 w-3.5 mr-1.5" />
-              Artist Success Stories
-            </Badge>
-            <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
-              Artists Love{" "}
-              <span className="landing-hero-gradient">Max Booster</span>
-            </h2>
-            <p className="text-xl text-white/60 max-w-2xl mx-auto">
-              Join thousands of independent artists who are building unstoppable
-              careers with AI.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {testimonials.map((t, index) => (
-              <div
-                key={index}
-                className={`landing-testimonial-card reveal reveal-delay-${(index % 3) + 1}`}
-              >
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className="h-4 w-4 fill-amber-400 text-amber-400"
-                    />
-                  ))}
-                </div>
-                <p className="text-white/75 text-sm leading-relaxed mb-6 italic">
-                  "{t.quote}"
-                </p>
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}
-                  >
-                    {t.avatar}
-                  </div>
-                  <div>
-                    <p className="text-white text-sm font-semibold">{t.name}</p>
-                    <p className="text-white/40 text-xs">{t.role}</p>
-                  </div>
-                </div>
               </div>
             ))}
           </div>
@@ -839,9 +724,8 @@ export default function Landing() {
             Ready to <span className="landing-hero-gradient">Dominate</span>?
           </h2>
           <p className="text-xl text-white/65 mb-10">
-            Join thousands of independent artists using Max Booster to build
-            unstoppable music careers. Protected by our 90-day money-back
-            guarantee.
+            Bring your creation, promotion, analytics, and monetization workflow
+            together. Protected by our 90-day money-back guarantee.
           </p>
           <Link href="/pricing">
             <Button
@@ -858,61 +742,6 @@ export default function Landing() {
           </p>
         </div>
       </section>
-
-      {/* Demo Modal */}
-      <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
-        <DialogContent className="max-w-5xl p-0 landing-demo-modal">
-          <DialogHeader className="p-6 pb-2">
-            <DialogTitle className="text-white">
-              {demoSlides[currentSlide].title}
-            </DialogTitle>
-            <DialogDescription className="text-white/50">
-              {demoSlides[currentSlide].description}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="relative">
-            <div
-              className={`aspect-video w-full bg-gradient-to-br ${demoSlides[currentSlide].gradient} overflow-hidden flex flex-col items-center justify-center text-white`}
-            >
-              {(() => {
-                const IconComponent = demoSlides[currentSlide].icon;
-                return <IconComponent className="h-24 w-24 mb-4 opacity-90" />;
-              })()}
-              <h3 className="text-2xl font-bold mb-2">
-                {demoSlides[currentSlide].title}
-              </h3>
-              <p className="text-lg opacity-90 max-w-md text-center px-4">
-                {demoSlides[currentSlide].description}
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full h-10 w-10"
-              onClick={prevSlide}
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full h-10 w-10"
-              onClick={nextSlide}
-            >
-              <ChevronRight className="h-6 w-6" />
-            </Button>
-          </div>
-          <div className="flex justify-center gap-2 p-4">
-            {demoSlides.map((_, index) => (
-              <button
-                key={index}
-                className={`transition-all duration-300 rounded-full ${index === currentSlide ? "w-6 h-2 bg-amber-400" : "w-2 h-2 bg-white/20 hover:bg-white/40"}`}
-                onClick={() => setCurrentSlide(index)}
-              />
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Footer */}
       <footer className="landing-footer">
@@ -992,7 +821,7 @@ export default function Landing() {
             </p>
             <div className="flex items-center gap-2 text-white/30 text-sm">
               <Activity className="h-3.5 w-3.5 text-emerald-400" />
-              All systems operational
+              Explore Max Booster
             </div>
           </div>
         </div>

@@ -62,14 +62,14 @@ export default function Features() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                title: "AI Mixing",
+                title: "Mixing Controls",
                 description:
-                  "Auto-balance levels, panning, and EQ with AI assistance",
+                  "Adjust track levels, panning, and EQ in the browser-based studio",
               },
               {
-                title: "AI Mastering",
+                title: "AI-Assisted Mixing & Mastering",
                 description:
-                  "Professional mastering with AI-powered audio analysis",
+                  "Analyze your track and apply adaptive, genre-aware mixing and mastering processing",
               },
               {
                 title: "DAW Workspace",
@@ -78,15 +78,16 @@ export default function Features() {
               },
               {
                 title: "Project Storage",
-                description: "Cloud-based project storage with version control",
+                description: "Cloud-based storage for your studio projects",
               },
               {
                 title: "Audio Effects",
-                description: "Professional audio processing and effects suite",
+                description: "Audio processing and effects controls in the Studio",
               },
               {
-                title: "Real-Time Collaboration",
-                description: "Work on projects with collaborators in real-time",
+                title: "Project Royalty Splits",
+                description:
+                  "Set collaborator royalty splits for projects before release",
               },
             ].map((feature, i) => (
               <Card
@@ -116,26 +117,25 @@ export default function Features() {
               Distribution & Royalties
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Get your music on 34+ platforms including Spotify, Apple Music,
-              and YouTube
+              Prepare releases, manage their metadata, and review royalty activity
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                title: "Global Distribution",
+                title: "Music Distribution",
                 description:
-                  "Spotify, Apple Music, YouTube Music, Amazon, TikTok, and 34+ platforms worldwide",
+                  "Submit music to Spotify, Apple Music, YouTube Music, Amazon Music, Deezer, Tidal, SoundCloud, Pandora, TikTok, Instagram, Facebook, and additional platforms in the distribution selector",
               },
               {
-                title: "Instant Payouts",
+                title: "Stripe Payouts",
                 description:
-                  "Stripe-powered fast payout system for earned royalties",
+                  "Receive instant Stripe-backed payouts for your available royalty balances",
               },
               {
-                title: "Split Payments",
+                title: "Automatic Split Payments",
                 description:
-                  "Configure automatic revenue sharing with your collaborators",
+                  "Automatically distribute collaborator royalty splits through Stripe",
               },
               {
                 title: "Release Tracking",
@@ -145,12 +145,12 @@ export default function Features() {
               {
                 title: "ISRC/UPC Codes",
                 description:
-                  "Generate required tracking codes for your releases",
+                  "Create release code records; official registration requires a connected distributor",
               },
               {
-                title: "Analytics Dashboard",
+                title: "Royalty Dashboard",
                 description:
-                  "Track streaming performance and revenue across all platforms",
+                  "Review royalty balances, transaction activity, and release-level splits",
               },
             ].map((feature, i) => (
               <Card
@@ -206,7 +206,7 @@ export default function Features() {
               {
                 title: "Multi-Platform Integration",
                 description:
-                  "Facebook, Instagram, X, TikTok, YouTube, LinkedIn, Threads - connect and manage all in one place",
+                  "Connect supported social accounts and manage their content from one workspace",
               },
               {
                 title: "AI Content Generation",
@@ -219,9 +219,9 @@ export default function Features() {
                   "Monitor engagement, reach, and performance across all connected platforms",
               },
               {
-                title: "Real-Time Analytics",
+                title: "Campaign Activity",
                 description:
-                  "Track audience growth, engagement rates, and campaign performance with detailed insights",
+                  "Review scheduled content and campaign activity for connected accounts",
               },
             ].map((feature, i) => (
               <Card
@@ -258,11 +258,12 @@ export default function Features() {
             {[
               {
                 title: "Secure Transactions",
-                description: "Stripe-powered checkout with buyer protection",
+                description: "Stripe-powered checkout for eligible beat licenses",
               },
               {
                 title: "Automatic Licensing",
-                description: "Generate legal license agreements for all sales",
+                description:
+                  "Generate license agreement documents for completed beat sales",
               },
               {
                 title: "Exclusive & Non-Exclusive",
@@ -270,12 +271,12 @@ export default function Features() {
                   "Support for both licensing types with inventory tracking",
               },
               {
-                title: "Royalty Splits",
-                description: "Automatic payment distribution to collaborators",
+                title: "Royalty Split Configuration",
+                description: "Configure collaborator splits for a beat listing",
               },
               {
-                title: "Preview System",
-                description: "Watermarked previews to protect your work",
+                title: "Preview Controls",
+                description: "Add an audio preview to a listing so buyers can audition it",
               },
               {
                 title: "Instant Downloads",

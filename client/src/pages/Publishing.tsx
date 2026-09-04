@@ -82,17 +82,17 @@ interface PublishingStats {
 }
 
 export default function Publishing() {
-  const { user } = useRequireSubscription();
+  const { user, isLoading: isAuthLoading } = useRequireSubscription();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingWork, setEditingWork] = useState<PublishingWork | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  const { data: works = [], isLoading } = useQuery<PublishingWork[]>({
+  const { data: works = [], isLoading, error: worksError } = useQuery<PublishingWork[]>({
     queryKey: ["/api/publishing"],
   });
 
-  const { data: stats } = useQuery<PublishingStats>({
+  const { data: stats, error: statsError } = useQuery<PublishingStats>({
     queryKey: ["/api/publishing/stats"],
   });
 
@@ -105,8 +105,13 @@ export default function Publishing() {
       queryClient.invalidateQueries({ queryKey: ["/api/publishing"] });
       queryClient.invalidateQueries({ queryKey: ["/api/publishing/stats"] });
       setIsDialogOpen(false);
-      toast({ title: "Work registered successfully" });
+      toast({
+        title: "Work details saved",
+        description: "Submit this work to your PRO separately to register it.",
+      });
     },
+    onError: (error: Error) =>
+      toast({ title: "Could not save work details", description: error.message, variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
@@ -118,8 +123,10 @@ export default function Publishing() {
       queryClient.invalidateQueries({ queryKey: ["/api/publishing"] });
       queryClient.invalidateQueries({ queryKey: ["/api/publishing/stats"] });
       setEditingWork(null);
-      toast({ title: "Work updated" });
+      toast({ title: "Work details updated" });
     },
+    onError: (error: Error) =>
+      toast({ title: "Could not update work details", description: error.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
@@ -131,14 +138,42 @@ export default function Publishing() {
       queryClient.invalidateQueries({ queryKey: ["/api/publishing/stats"] });
       toast({ title: "Work removed" });
     },
+    onError: (error: Error) =>
+      toast({ title: "Could not remove work", description: error.message, variant: "destructive" }),
   });
+
+  const validateSplits = (data: Record<string, FormDataEntryValue>) => {
+    const writerSplit = Number(data.writerSplit);
+    const publishingSplit = Number(data.publishingSplit);
+    if (
+      !Number.isFinite(writerSplit) ||
+      !Number.isFinite(publishingSplit) ||
+      writerSplit < 0 ||
+      writerSplit > 100 ||
+      publishingSplit < 0 ||
+      publishingSplit > 100 ||
+      writerSplit + publishingSplit !== 100
+    ) {
+      toast({
+        title: "Invalid split percentages",
+        description:
+          "Writer and publisher splits must be between 0 and 100 and total exactly 100%.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
+    if (!validateSplits(data)) return;
     createMutation.mutate({
       ...data,
+      writerSplit: Number(data.writerSplit),
+      publishingSplit: Number(data.publishingSplit),
       copyrightYear: data.copyrightYear
         ? parseInt(data.copyrightYear as string)
         : undefined,
@@ -168,10 +203,18 @@ export default function Publishing() {
             },
           ];
         })()
-      : [
-          { name: "Writer Split", value: 50, color: "#3b82f6" },
-          { name: "Publisher Split", value: 50, color: "#10b981" },
-        ];
+      : [];
+
+  if (isAuthLoading) {
+    return (
+      <AppLayout>
+        <div className="p-6 space-y-4">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!user) return null;
 
@@ -185,19 +228,19 @@ export default function Publishing() {
               Publishing Rights
             </h1>
             <p className="text-muted-foreground">
-              Manage your PRO registrations and publishing splits
+              Store work details and publishing splits before submitting to your PRO
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                Register Work
+                Add Work Details
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Register New Work</DialogTitle>
+                <DialogTitle>Add Work Details</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -248,6 +291,9 @@ export default function Publishing() {
                       id="writerSplit"
                       name="writerSplit"
                       type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
                       defaultValue="50"
                     />
                   </div>
@@ -257,6 +303,9 @@ export default function Publishing() {
                       id="publishingSplit"
                       name="publishingSplit"
                       type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
                       defaultValue="50"
                     />
                   </div>
@@ -268,8 +317,8 @@ export default function Publishing() {
                 <DialogFooter>
                   <Button type="submit" disabled={createMutation.isPending}>
                     {createMutation.isPending
-                      ? "Registering..."
-                      : "Register Work"}
+                      ? "Saving..."
+                      : "Save Work Details"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -281,33 +330,35 @@ export default function Publishing() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Registered Works
+                Saved Works
               </CardTitle>
               <FileText className="h-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalWorks || 0}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
-              <CheckCircle className="h-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
               <div className="text-2xl font-bold">
-                {stats?.confirmedCount || 0}
+                {statsError ? "—" : (stats?.totalWorks ?? 0)}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+              <CardTitle className="text-sm font-medium">Marked Confirmed</CardTitle>
+              <CheckCircle className="h-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {statsError ? "—" : (stats?.confirmedCount ?? 0)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Saved Locally</CardTitle>
               <Clock className="h-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats?.pendingCount || 0}
+                {statsError ? "—" : (stats?.pendingCount ?? 0)}
               </div>
             </CardContent>
           </Card>
@@ -318,22 +369,28 @@ export default function Publishing() {
               </CardTitle>
             </CardHeader>
             <CardContent className="h-[150px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Pie
-                    data={splitData}
-                    innerRadius={40}
-                    outerRadius={60}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {splitData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </RechartsPieChart>
-              </ResponsiveContainer>
+              {splitData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={splitData}
+                      innerRadius={40}
+                      outerRadius={60}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {splitData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-center text-xs text-muted-foreground">
+                  Add a work to see its split data.
+                </div>
+              )}
               <div className="mt-4 space-y-1">
                 {splitData.map((item) => (
                   <div
@@ -354,13 +411,22 @@ export default function Publishing() {
             </CardContent>
           </Card>
         </div>
+        {statsError && (
+          <p className="text-sm text-destructive">
+            Unable to load publishing totals: {statsError.message}
+          </p>
+        )}
 
         <Card>
           <CardHeader>
-            <CardTitle>Registered Works</CardTitle>
+            <CardTitle>Saved Work Details</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {worksError ? (
+              <div className="py-10 text-center text-sm text-destructive">
+                Unable to load work details: {worksError.message}
+              </div>
+            ) : isLoading ? (
               <div className="space-y-2 py-2">
                 {[1, 2, 3, 4].map((i) => (
                   <div
@@ -382,12 +448,11 @@ export default function Publishing() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold mb-1">
-                    No registered works yet
+                    No saved works yet
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    Register each track with your PRO to collect performance
-                    royalties whenever your music is played on radio, TV, or
-                    live venues.
+                    Save your details here, then submit each track directly to
+                    your PRO to collect performance royalties.
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
@@ -408,7 +473,7 @@ export default function Publishing() {
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors"
                 >
                   <Plus className="h-4 w-4" />
-                  Register Your First Work
+                  Add Your First Work
                 </button>
               </div>
             ) : (
@@ -452,10 +517,10 @@ export default function Publishing() {
                           }
                         >
                           {work.status === "confirmed"
-                            ? "✓ Confirmed"
+                            ? "Marked confirmed (local)"
                             : work.status === "pending"
-                              ? "⏳ Pending"
-                              : work.status}
+                              ? "Saved locally"
+                              : `${work.status} (local)`}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -505,8 +570,10 @@ export default function Publishing() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Registering your works with a Performing Rights Organization
-                (PRO) is essential to collect performance royalties.
+                Max Booster stores your work details and split information; it
+                does not submit registrations to a PRO. Submit your work
+                directly through your PRO's official portal to register it and
+                collect performance royalties.
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <Button variant="outline" className="justify-start" asChild>
@@ -568,9 +635,12 @@ export default function Publishing() {
                 e.preventDefault();
                 const fd = new FormData(e.currentTarget);
                 const data = Object.fromEntries(fd.entries());
+                if (!validateSplits(data)) return;
                 updateMutation.mutate({
                   id: editingWork.id,
                   ...data,
+                  writerSplit: Number(data.writerSplit),
+                  publishingSplit: Number(data.publishingSplit),
                   copyrightYear: data.copyrightYear
                     ? parseInt(data.copyrightYear as string)
                     : undefined,
@@ -638,6 +708,9 @@ export default function Publishing() {
                     id="edit-writerSplit"
                     name="writerSplit"
                     type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
                     defaultValue={editingWork.writerSplit}
                   />
                 </div>
@@ -649,6 +722,9 @@ export default function Publishing() {
                     id="edit-publishingSplit"
                     name="publishingSplit"
                     type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
                     defaultValue={editingWork.publishingSplit}
                   />
                 </div>

@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/ui/Logo";
+import { getCsrfTokenFromCookie, setAuthToken } from "@/lib/queryClient";
 import {
   Eye,
   EyeOff,
@@ -67,6 +68,50 @@ const OAUTH_ERROR_MESSAGES: Record<
       "Please verify your email address before logging in. Check your inbox for a verification link.",
   },
 };
+
+type AuthResponse = Record<string, unknown>;
+
+async function getRequiredCsrfToken(): Promise<string> {
+  const existingToken = getCsrfTokenFromCookie();
+  if (existingToken) {
+    return existingToken;
+  }
+
+  const response = await fetch("/api/csrf-token", {
+    credentials: "include",
+  });
+  const body = (await response.json()) as { csrfToken?: unknown };
+
+  if (!response.ok || typeof body.csrfToken !== "string" || !body.csrfToken) {
+    throw new Error(
+      "Unable to establish the security token required to sign in. Please refresh the page and try again.",
+    );
+  }
+
+  return body.csrfToken;
+}
+
+async function readAuthResponse(response: Response): Promise<AuthResponse> {
+  const body = await response.text();
+  if (!body) {
+    return {};
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(body);
+    return parsed && typeof parsed === "object"
+      ? (parsed as AuthResponse)
+      : { message: body };
+  } catch {
+    return { message: body };
+  }
+}
+
+function getResponseMessage(data: AuthResponse, fallback: string): string {
+  return typeof data.message === "string" && data.message
+    ? data.message
+    : fallback;
+}
 
 export default function Login() {
   const {  isLoading: authLoading } =
@@ -219,9 +264,13 @@ export default function Login() {
     setIsLoading(true);
 
     try {
+      const csrfToken = await getRequiredCsrfToken();
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
         credentials: "include",
         body: JSON.stringify({
           username,
@@ -230,9 +279,9 @@ export default function Login() {
         }),
       });
 
-      const data = await response.json();
+      const data = await readAuthResponse(response);
 
-      if (data.requiresTwoFactor) {
+      if (data.requiresTwoFactor === true) {
         setRequiresTwoFactor(true);
         setTwoFactorCode("");
         toast({
@@ -246,14 +295,14 @@ export default function Login() {
 
       if (!response.ok) {
         const { title, description } = getEnhancedErrorMessage(
-          data.message || "Login failed",
+          getResponseMessage(data, "Login failed"),
           response.status,
         );
 
         if (
           requiresTwoFactor &&
-          (data.message?.toLowerCase().includes("2fa") ||
-            data.message?.toLowerCase().includes("code"))
+          (getResponseMessage(data, "").toLowerCase().includes("2fa") ||
+            getResponseMessage(data, "").toLowerCase().includes("code"))
         ) {
           setTwoFactorError(description);
           setTwoFactorCode("");
@@ -272,17 +321,33 @@ export default function Login() {
         return;
       }
 
+      if (typeof data.id !== "string") {
+        toast({
+          title: "Login Failed",
+          description:
+            "The server returned an invalid login response. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
         title: "Welcome back!",
         description: "You've successfully signed in.",
       });
-      queryClient.setQueryData(["/api/auth/me"], data);
+      if (typeof data.sessionToken === "string") {
+        setAuthToken(data.sessionToken);
+      }
+      const { sessionToken: _sessionToken, ...user } = data;
+      queryClient.setQueryData(["/api/auth/me"], user);
       navigate(redirectAfterLogin);
     } catch (error: unknown) {
       toast({
-        title: "Connection Error",
+        title: "Login Error",
         description:
-          "Unable to connect to the server. Please check your internet connection and try again.",
+          error instanceof Error && error.message
+            ? error.message
+            : "Unable to connect to the server. Please check your internet connection and try again.",
         variant: "destructive",
       });
     } finally {
@@ -304,34 +369,54 @@ export default function Login() {
   const handleDemoLogin = async () => {
     setIsDemoLoading(true);
     try {
+      const csrfToken = await getRequiredCsrfToken();
       const response = await fetch("/api/auth/demo", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
         credentials: "include",
       });
 
-      const data = await response.json();
+      const data = await readAuthResponse(response);
 
       if (!response.ok) {
         toast({
           title: "Demo Login Failed",
-          description:
-            data.message || "Could not start demo mode. Please try again.",
+          description: getResponseMessage(
+            data,
+            "Could not start demo mode. Please try again.",
+          ),
           variant: "destructive",
         });
         return;
       }
 
-      queryClient.setQueryData(["/api/auth/me"], data);
+      if (typeof data.id !== "string" || data.isDemo !== true) {
+        toast({
+          title: "Demo Login Failed",
+          description:
+            "The server returned an invalid demo login response. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { sessionToken: _sessionToken, ...user } = data;
+      queryClient.setQueryData(["/api/auth/me"], user);
       toast({
         title: "Welcome to Demo Mode!",
         description: "Explore all Max Booster features with sample data.",
       });
       navigate(redirectAfterLogin);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
-        title: "Connection Error",
-        description: "Unable to connect to the server. Please try again.",
+        title: "Demo Login Error",
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : "Unable to connect to the server. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -87,6 +87,9 @@ interface DistributionStorage {
     updates: Record<string, unknown>,
   ): Promise<Release>;
   getDistroRelease(releaseId: string): Promise<EnrichedRelease | undefined>;
+  getAllDSPProviders(): Promise<
+    Array<{ slug: string; isActive?: boolean | null }>
+  >;
 
   createDistributionPackage(
     data: InsertDistributionPackage,
@@ -198,10 +201,15 @@ const storage = baseStorage as unknown as DistributionStorage;
 // LabelGrid integration surface consumed here. The runtime `labelGridService`
 // instance is reached through this typed view; see POSSIBLE UNBUILT FEATURES.
 interface DistributionLabelGrid {
-  isConfigured(): boolean;
-  submitRelease(release: Record<string, unknown>): Promise<{
+  isApiConfigured(): boolean;
+  createRelease(release: Record<string, unknown>): Promise<{
     releaseId: string;
     estimatedLiveDate?: string | Date;
+    platforms: Array<{
+      platform: string;
+      status: string;
+      errorMessage?: string;
+    }>;
   }>;
   getDeliveryStatus(releaseId: string): Promise<{
     status?: string;
@@ -305,7 +313,7 @@ export class DistributionService {
       }
 
       // Check if LabelGrid is configured
-      if (labelGrid.isConfigured()) {
+      if (labelGrid.isApiConfigured()) {
         // PRODUCTION: Use LabelGrid API for real distribution
         try {
           // Prepare release data for LabelGrid
@@ -325,7 +333,36 @@ export class DistributionService {
           };
 
           // Submit to LabelGrid (it handles database updates internally)
-          const result = await labelGrid.submitRelease(labelGridRelease);
+          const result = await labelGrid.createRelease(labelGridRelease);
+          const platformResult = result.platforms?.find(
+            (platform) =>
+              platform.platform === providerId ||
+              platform.platform.replace(/_/g, "-") === providerId ||
+              platform.platform.replace(/-/g, "_") ===
+                providerId.replace(/-/g, "_"),
+          );
+          const accepted = [
+            "queued",
+            "pending",
+            "processing",
+            "submitted",
+            "accepted",
+            "success",
+            "delivered",
+            "live",
+          ].includes(
+            platformResult?.status?.toLowerCase() || "",
+          );
+          if (!accepted) {
+            return {
+              success: false,
+              reason:
+                platformResult?.errorMessage ||
+                (platformResult
+                  ? `LabelGrid reported ${platformResult.status} for ${providerId}`
+                  : `LabelGrid did not report acceptance for ${providerId}`),
+            };
+          }
 
           return {
             success: true,
@@ -616,14 +653,16 @@ export class DistributionService {
         throw new Error("Release not found");
       }
 
-      const platforms = [
-        "spotify",
-        "apple_music",
-        "youtube_music",
-        "amazon_music",
-        "deezer",
-        "tidal",
-      ];
+      // The locally advertised DSP catalog is intentionally not a LabelGrid
+      // capability allowlist. LabelGrid is our gateway and must receive every
+      // advertised active platform; it returns the authoritative per-platform
+      // acceptance or rejection.
+      const platforms = (await storage.getAllDSPProviders())
+        .filter((platform) => platform.isActive !== false)
+        .map((platform) => platform.slug);
+      if (platforms.length === 0) {
+        throw new Error("No advertised distribution platforms are available");
+      }
 
       // Actually submit to each provider (via the same submitToProvider path
       // used elsewhere) instead of fabricating "processing" rows with no
@@ -644,7 +683,7 @@ export class DistributionService {
                 platform,
                 status: "failed" as const,
                 success: false,
-                error: "Provider declined submission",
+                error: result.reason || "Provider declined submission",
               };
             }
             return {

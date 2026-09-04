@@ -11,7 +11,7 @@ import {
   publishingRights,
   venueContacts,
 } from "../../shared/schema.js";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { notificationService } from "./notificationService.js";
 import { emailService } from "./emailService.js";
@@ -1041,10 +1041,10 @@ class MusicWorkflowAutomationService {
       .select()
       .from(musicWorkflowExecutionLogs)
       .where(and(...conditions))
-      .orderBy(musicWorkflowExecutionLogs.executedAt)
+      .orderBy(desc(musicWorkflowExecutionLogs.executedAt))
       .limit(limit);
 
-    return rows?.reverse();
+    return rows;
   }
 
   /**
@@ -1059,31 +1059,40 @@ class MusicWorkflowAutomationService {
   async triggerEvent(
     eventType: string,
     data: WorkflowEventData,
-  ): Promise<void> {
+  ): Promise<
+    Array<{
+      templateId: string;
+      status: "success" | "failed";
+      result: Record<string, unknown> | null;
+      error: string | null;
+    }>
+  > {
     const { userId } = data;
-    if (!userId) return;
+    if (!userId) throw new Error("A user id is required to trigger a workflow");
 
     const relevantTemplates = WORKFLOW_TEMPLATES?.filter(
       (t) => t?.trigger.event === eventType,
     );
-    if (relevantTemplates?.length === 0) return;
+    if (relevantTemplates?.length === 0) return [];
 
     const userAutomations = await this.getUserAutomations(userId);
+    const executions: Array<{
+      templateId: string;
+      status: "success" | "failed";
+      result: Record<string, unknown> | null;
+      error: string | null;
+    }> = [];
 
     for (const template of relevantTemplates) {
       const userConfig = userAutomations[template?.id];
       if (!userConfig?.enabled) continue;
 
       const config = { ...template?.defaultConfig, ...userConfig?.config };
-      this.executeTemplate(template, userId, data, config, eventType).catch(
-        (err) => {
-          logger.warn(
-            { err: err },
-            `[MusicWorkflow] Error executing ${template?.id}:`,
-          );
-        },
+      executions.push(
+        await this.executeTemplate(template, userId, data, config, eventType),
       );
     }
+    return executions;
   }
 
   // ── Execution core ────────────────────────────────────────────────────────
@@ -1094,7 +1103,12 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>,
     eventType: string,
-  ): Promise<void> {
+  ): Promise<{
+    templateId: string;
+    status: "success" | "failed";
+    result: Record<string, unknown> | null;
+    error: string | null;
+  }> {
     logger.info(
       `[MusicWorkflow] Executing "${template.name}" for user ${userId}`,
     );
@@ -1135,6 +1149,8 @@ class MusicWorkflowAutomationService {
       result,
       error,
     });
+
+    return { templateId: template.id, status, result, error };
   }
 
   /**
@@ -2319,18 +2335,26 @@ class MusicWorkflowAutomationService {
       .where(eq(musicWorkflowAutomations.userId, userId));
 
     const enabledCount = userAutomations?.filter((a) => a?.enabled).length;
-    const totalRuns = userAutomations?.reduce(
-      (s, a) => s + (a?.triggerCount ?? 0),
-      0,
-    );
+    const [executionStats] = await db
+      .select({
+        totalRuns: sql<number>`count(*)`,
+        successCount:
+          sql<number>`count(*) filter (where ${musicWorkflowExecutionLogs.status} = 'success')`,
+        failedCount:
+          sql<number>`count(*) filter (where ${musicWorkflowExecutionLogs.status} = 'failed')`,
+        lastRunAt: sql<Date | null>`max(${musicWorkflowExecutionLogs.executedAt})`,
+      })
+      .from(musicWorkflowExecutionLogs)
+      .where(eq(musicWorkflowExecutionLogs.userId, userId));
 
-    const logs = await this.getExecutionLogs(userId, undefined, 500);
-    const successCount = logs?.filter((l) => l?.status === "success").length;
-    const failedCount = logs?.filter((l) => l?.status === "failed").length;
+    const totalRuns = Number(executionStats?.totalRuns ?? 0);
+    const successCount = Number(executionStats?.successCount ?? 0);
+    const failedCount = Number(executionStats?.failedCount ?? 0);
     const successRate =
-      logs?.length > 0 ? Math.round((successCount / logs?.length) * 100) : 100;
-
-    const lastRunAt = logs?.length > 0 ? String(logs[0].executedAt) : null;
+      totalRuns > 0 ? Math.round((successCount / totalRuns) * 100) : 100;
+    const lastRunAt = executionStats?.lastRunAt
+      ? new Date(executionStats.lastRunAt).toISOString()
+      : null;
 
     const now = new Date();
     const nextMonday = new Date(now);

@@ -5,12 +5,13 @@ import { fanSubscribers, fanMessages, users } from "../../shared/schema.js";
 import { eq, and, or, ilike, sql, desc } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
+import { requirePremium } from "../middleware/requirePremium.js";
 import { z } from "zod";
 import { emailService } from "../services/emailService.js";
 
 const router = Router();
 
-router.use(requireAuth);
+router.use(requireAuth, requirePremium);
 
 const createSubscriberSchema = z.object({
   email: z.string().email().max(320),
@@ -268,7 +269,64 @@ router.post("/message", async (req: Request, res: Response) => {
       .from(fanSubscribers)
       .where(eq(fanSubscribers.userId, userId));
 
-    const recipientCount = subscribers?.length;
+    if (subscribers.length === 0) {
+      return res.status(400).json({
+        error: "Add at least one fan before sending a broadcast",
+      });
+    }
+
+    const escapeHtml = (value: string) =>
+      value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    const htmlBody = escapeHtml(body).replace(/\n/g, "<br>");
+    const emailHtml = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+          <div style="background:#1a1a2e;color:#fff;padding:20px;border-radius:8px 8px 0 0">
+            <h2 style="margin:0;color:#a78bfa">${escapeHtml(artistName)}</h2>
+          </div>
+          <div style="background:#fff;padding:24px;border:1px solid #e5e7eb;border-radius:0 0 8px 8px">
+            <p style="color:#374151;font-size:16px;line-height:1.6">${htmlBody}</p>
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">
+            <p style="color:#9ca3af;font-size:12px">You're receiving this because you subscribed to updates from ${escapeHtml(artistName)} via Max Booster.</p>
+          </div>
+        </div>
+      `;
+
+    const BATCH_SIZE = 50;
+    let deliveredCount = 0;
+    let failedCount = 0;
+    for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
+      const batch = subscribers.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(
+        batch.map(async (subscriber) => {
+          try {
+            return await emailService.send({
+              to: subscriber.email,
+              subject: `${artistName}: ${subject}`,
+              html: emailHtml,
+            });
+          } catch (error) {
+            logger.warn(
+              { err: error, subscriberId: subscriber.id },
+              "Fan broadcast email delivery failed",
+            );
+            return false;
+          }
+        }),
+      );
+      deliveredCount += results.filter(Boolean).length;
+      failedCount += results.filter((result) => !result).length;
+    }
+
+    if (deliveredCount === 0) {
+      return res.status(503).json({
+        error: "No broadcast emails could be delivered. Please try again later.",
+      });
+    }
 
     const [message] = await db
       .insert(fanMessages)
@@ -276,58 +334,23 @@ router.post("/message", async (req: Request, res: Response) => {
         userId,
         subject,
         body,
-        recipientCount,
+        recipientCount: deliveredCount,
         sentAt: new Date(),
         segmentFilter: segmentFilter || "all",
       })
       .returning();
 
-    // Fire-and-forget: send emails to all subscribers via SendGrid
-    if (recipientCount > 0) {
-      const htmlBody = body?.replace(/\n/g, "<br>");
-      const emailHtml = `
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
-          <div style="background:#1a1a2e;color:#fff;padding:20px;border-radius:8px 8px 0 0">
-            <h2 style="margin:0;color:#a78bfa">${artistName}</h2>
-          </div>
-          <div style="background:#fff;padding:24px;border:1px solid #e5e7eb;border-radius:0 0 8px 8px">
-            <p style="color:#374151;font-size:16px;line-height:1.6">${htmlBody}</p>
-            <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">
-            <p style="color:#9ca3af;font-size:12px">You're receiving this because you subscribed to updates from ${artistName} via Max Booster.</p>
-          </div>
-        </div>
-      `;
+    logger.info(
+      {
+        messageId: message.id,
+        deliveredCount,
+        failedCount,
+        requestedRecipientCount: subscribers.length,
+      },
+      "Fan broadcast delivery completed",
+    );
 
-      // Send in batches (up to 500 per run to avoid timeouts)
-      const BATCH = 50;
-      const toSend = subscribers?.slice(0, 500);
-      (async () => {
-        for (let i = 0; i < toSend.length; i += BATCH) {
-          const batch = toSend?.slice(i, i + BATCH);
-          await Promise.allSettled(
-            batch?.map((sub) =>
-              emailService
-                .send({
-                  to: sub.email,
-                  subject: `${artistName}: ${subject}`,
-                  html: emailHtml,
-                })
-                .catch((err) =>
-                  logger.warn(
-                    `Fan broadcast email failed to ${sub?.email}:`,
-                    err,
-                  ),
-                ),
-            ),
-          );
-        }
-        logger.info(
-          `Fan broadcast sent: ${toSend?.length} emails for message ${message?.id}`,
-        );
-      })().catch((err) => logger.warn("Fan broadcast error:", err));
-    }
-
-    return res.json({ ...message, recipientCount });
+    return res.json({ ...message, recipientCount: deliveredCount, failedCount });
   } catch (error) {
     logger.warn({ err: error }, "Error sending bulk message:");
     return res.status(500).json({ error: "Failed to send message" });

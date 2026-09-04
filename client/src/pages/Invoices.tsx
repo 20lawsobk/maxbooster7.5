@@ -2,8 +2,7 @@
 import { useState } from "react";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,8 +74,7 @@ interface Invoice {
 }
 
 export default function Invoices() {
-  const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const { user, isLoading: isAuthLoading } = useRequireAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -105,7 +103,7 @@ export default function Invoices() {
     notes: "",
   });
 
-  const { data: invoicesData, isLoading } = useQuery<{ invoices: Invoice[] }>({
+  const { data: invoicesData, isLoading, isError, error, refetch } = useQuery<{ invoices: Invoice[] }>({
     queryKey: ["/api/invoices"],
     enabled: !!user,
   });
@@ -120,9 +118,22 @@ export default function Invoices() {
           ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
         },
         credentials: "include",
-        body: JSON.stringify(newInvoice),
+        body: JSON.stringify({
+          lineItems: newInvoice.items,
+          toAddress: {
+            name: newInvoice.clientName,
+            email: newInvoice.clientEmail,
+          },
+          currency: newInvoice.currency,
+          dueDate: newInvoice.dueDate || undefined,
+          notes: newInvoice.notes || undefined,
+          invoiceType: "service",
+        }),
       });
-      if (!res.ok) throw new Error("Failed to create invoice");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || "Failed to create invoice");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -158,7 +169,10 @@ export default function Invoices() {
         credentials: "include",
         headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
       });
-      if (!res.ok) throw new Error("Failed to send invoice");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || "Failed to send invoice");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -185,7 +199,10 @@ export default function Invoices() {
         credentials: "include",
         headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
       });
-      if (!res.ok) throw new Error("Failed to delete invoice");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || "Failed to delete invoice");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
@@ -205,7 +222,10 @@ export default function Invoices() {
       const res = await fetch(`/api/invoices/${invoiceId}/pdf`, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to generate PDF");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || "Failed to generate PDF");
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -216,14 +236,16 @@ export default function Invoices() {
     } catch (error) {
       toast({
         title: "Download failed",
-        description: "Could not generate PDF. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not generate PDF. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  if (!user) {
-    setLocation("/login");
+  if (isAuthLoading || !user) {
     return null;
   }
 
@@ -319,6 +341,19 @@ export default function Invoices() {
       {isLoading ? (
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      ) : isError ? (
+        <div className="space-y-6">
+          <Card className="p-12 text-center">
+            <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+            <h3 className="text-xl font-medium">Unable to load invoices</h3>
+            <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+              {error instanceof Error ? error.message : "Please try again."}
+            </p>
+            <Button className="mt-6" onClick={() => refetch()}>
+              Retry
+            </Button>
+          </Card>
         </div>
       ) : (
         <div className="space-y-6">
@@ -667,7 +702,9 @@ export default function Invoices() {
                       </TableCell>
                       <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                       <TableCell>
-                        {format(new Date(invoice.dueDate), "MMM d, yyyy")}
+                        {invoice.dueDate
+                          ? format(new Date(invoice.dueDate), "MMM d, yyyy")
+                          : "Not set"}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -805,10 +842,12 @@ export default function Invoices() {
                         Due Date
                       </p>
                       <p>
-                        {format(
-                          new Date(selectedInvoice.dueDate),
-                          "MMM d, yyyy",
-                        )}
+                          {selectedInvoice.dueDate
+                            ? format(
+                                new Date(selectedInvoice.dueDate),
+                                "MMM d, yyyy",
+                              )
+                            : "Not set"}
                       </p>
                     </div>
                   </div>
@@ -830,10 +869,12 @@ export default function Invoices() {
                             {item.quantity}
                           </TableCell>
                           <TableCell className="text-right">
-                            ${item.unitPrice.toFixed(2)}
+                            {CURRENCIES[selectedInvoice.currency]?.symbol ?? "$"}
+                            {item.unitPrice.toFixed(2)}
                           </TableCell>
                           <TableCell className="text-right">
-                            ${(item.quantity * item.unitPrice).toFixed(2)}
+                            {CURRENCIES[selectedInvoice.currency]?.symbol ?? "$"}
+                            {(item.quantity * item.unitPrice).toFixed(2)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -842,7 +883,8 @@ export default function Invoices() {
                           Total
                         </TableCell>
                         <TableCell className="text-right font-bold">
-                          ${selectedInvoice.amount.toFixed(2)}
+                          {CURRENCIES[selectedInvoice.currency]?.symbol ?? "$"}
+                          {selectedInvoice.amount.toFixed(2)}
                         </TableCell>
                       </TableRow>
                     </TableBody>

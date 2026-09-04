@@ -44,7 +44,8 @@ interface PlatformSubmissionStatus {
     | "delivered"
     | "live"
     | "failed"
-    | "rejected";
+    | "rejected"
+    | "not_supported";
   queuePosition?: number;
   estimatedTime?: string;
   estimatedGoLive?: string;
@@ -166,6 +167,13 @@ const STATUS_CONFIG: Record<
     icon: AlertTriangle,
     description: "Platform rejected the submission",
   },
+  not_supported: {
+    label: "Not Supported by Distributor",
+    color: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+    icon: AlertTriangle,
+    description:
+      "LabelGrid did not accept delivery to this platform for this release.",
+  },
 };
 
 export function SubmissionStatusTracker({
@@ -268,7 +276,7 @@ export function SubmissionStatusTracker({
           s.status,
         );
       case "failed":
-        return ["failed", "rejected"].includes(s.status);
+        return ["failed", "rejected", "not_supported"].includes(s.status);
       default:
         return true;
     }
@@ -378,7 +386,12 @@ export function SubmissionStatusTracker({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredStatuses.map((platformStatus) => {
               const config = PLATFORM_CONFIG[platformStatus.platform];
-              const statusConfig = STATUS_CONFIG[platformStatus.status];
+              const statusConfig = STATUS_CONFIG[platformStatus.status] ?? {
+                label: platformStatus.status.replace(/_/g, " "),
+                color: "bg-muted/50 text-muted-foreground border-muted",
+                icon: Clock,
+                description: "Status update pending",
+              };
               const Icon = config?.icon;
               const StatusIcon = statusConfig?.icon;
 
@@ -453,7 +466,9 @@ export function SubmissionStatusTracker({
                         </div>
                       )}
 
-                    {platformStatus.status === "failed" && (
+                     {["failed", "rejected", "not_supported"].includes(
+                       platformStatus.status,
+                     ) && (
                       <div className="space-y-2">
                         <div className="p-2 bg-red-500/10 rounded text-xs text-red-500">
                           <AlertCircle className="h-3 w-3 inline mr-1" />
@@ -547,8 +562,10 @@ export function SubmissionStatusTracker({
               {selectedPlatform?.platformName} Details
             </DialogTitle>
             <DialogDescription>
-              {selectedPlatform &&
-                STATUS_CONFIG[selectedPlatform.status]?.description}
+               {selectedPlatform &&
+                 (STATUS_CONFIG[selectedPlatform.status] ?? {
+                   description: "Status update pending",
+                 }).description}
             </DialogDescription>
           </DialogHeader>
 
@@ -558,9 +575,17 @@ export function SubmissionStatusTracker({
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Status</span>
                   <Badge
-                    className={STATUS_CONFIG[selectedPlatform.status].color}
+                     className={
+                       (STATUS_CONFIG[selectedPlatform.status] ?? {
+                         color: "bg-muted/50 text-muted-foreground",
+                       }).color
+                     }
                   >
-                    {STATUS_CONFIG[selectedPlatform.status].label}
+                     {
+                       (STATUS_CONFIG[selectedPlatform.status] ?? {
+                         label: selectedPlatform.status.replace(/_/g, " "),
+                       }).label
+                     }
                   </Badge>
                 </div>
                 {selectedPlatform.queuePosition && (
@@ -615,7 +640,9 @@ export function SubmissionStatusTracker({
                 )}
               </div>
 
-              {selectedPlatform.status === "failed" &&
+               {["failed", "rejected", "not_supported"].includes(
+                 selectedPlatform.status,
+               ) &&
                 selectedPlatform.errorResolution && (
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
@@ -661,7 +688,10 @@ export function SubmissionStatusTracker({
           )}
 
           <DialogFooter>
-            {selectedPlatform?.status === "failed" && (
+             {selectedPlatform &&
+               ["failed", "rejected", "not_supported"].includes(
+                 selectedPlatform.status,
+               ) && (
               <Button
                 onClick={() => {
                   retryMutation.mutate(selectedPlatform.platform);

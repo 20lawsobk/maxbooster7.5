@@ -173,8 +173,10 @@ const CURATORS = [
   },
 ];
 
-router.get("/curators", (_req, res) => {
-  res.json(CURATORS);
+router.get("/curators", requireAuth, (_req, res) => {
+  res.json(
+    CURATORS.map(({ followers: _followers, email: _email, ...curator }) => curator),
+  );
 });
 
 router.get("/", requireAuth, async (req, res) => {
@@ -196,13 +198,17 @@ router.get("/", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const validatedData = insertPlaylistPitchSchema?.parse({
+    const validatedData = insertPlaylistPitchSchema.parse({
       ...req.body,
       userId: req.user!.id,
     });
+    const submittedAt =
+      validatedData.status && validatedData.status !== "draft"
+        ? new Date()
+        : validatedData.submittedAt;
     const [newPitch] = await db
       .insert(playlistPitches)
-      .values(validatedData)
+      .values({ ...validatedData, submittedAt })
       .returning();
     await queryCache?.invalidate(
       createCacheKey("stats:playlistPitches", req.user!.id),

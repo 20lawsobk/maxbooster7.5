@@ -27,6 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import {
   Loader2,
   Zap,
@@ -302,16 +303,26 @@ function AutomationCard({ automation }: { automation: WorkflowTemplate }) {
       );
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({
         queryKey: ["/api/music-workflow-automations/logs"],
       });
       qc.invalidateQueries({
         queryKey: ["/api/music-workflow-automations/stats"],
       });
+      const executions = data.executions ?? [];
+      const failed = executions.filter(
+        (execution: { status: string }) => execution.status === "failed",
+      );
       toast({
-        title: "Test triggered",
-        description: `"${automation.name}" fired. Check Run History.`,
+        title:
+          executions.length === 0
+            ? "No workflow ran"
+            : failed.length > 0
+              ? "Test run failed"
+              : "Test run completed",
+        description: data.message,
+        variant: failed.length > 0 ? "destructive" : "default",
       });
     },
     onError: () => {
@@ -432,28 +443,29 @@ function AutomationCard({ automation }: { automation: WorkflowTemplate }) {
 function StatsBar({
   stats,
   isLoading,
+  error,
 }: {
   stats?: AutomationStats;
   isLoading: boolean;
+  error?: Error | null;
 }) {
   const cards = [
     {
       label: "Active Automations",
-      value: isLoading
-        ? "—"
+      value: isLoading ? "—" : error ? "Unavailable"
         : `${stats?.enabledCount ?? 0} / ${stats?.totalTemplates ?? 0}`,
       icon: <Zap className="h-4 w-4 text-primary" />,
       sub: "automations running",
     },
     {
       label: "Total Runs",
-      value: isLoading ? "—" : (stats?.totalRuns ?? 0).toLocaleString(),
+      value: isLoading ? "—" : error ? "Unavailable" : (stats?.totalRuns ?? 0).toLocaleString(),
       icon: <Activity className="h-4 w-4 text-blue-500" />,
       sub: "events processed",
     },
     {
       label: "Success Rate",
-      value: isLoading ? "—" : `${stats?.successRate ?? 100}%`,
+      value: isLoading ? "—" : error ? "Unavailable" : `${stats?.successRate ?? 100}%`,
       icon: <TrendingUp className="h-4 w-4 text-green-500" />,
       sub: `${stats?.successCount ?? 0} succeeded · ${stats?.failedCount ?? 0} failed`,
     },
@@ -461,6 +473,8 @@ function StatsBar({
       label: "Last Run",
       value: isLoading
         ? "—"
+        : error
+          ? "Unavailable"
         : stats?.lastRunAt
           ? new Date(stats.lastRunAt).toLocaleDateString(undefined, {
               month: "short",
@@ -468,7 +482,9 @@ function StatsBar({
             })
           : "Never",
       icon: <Clock className="h-4 w-4 text-amber-500" />,
-      sub: stats?.lastRunAt
+      sub: error
+        ? error.message
+        : stats?.lastRunAt
         ? new Date(stats.lastRunAt).toLocaleTimeString(undefined, {
             hour: "2-digit",
             minute: "2-digit",
@@ -527,6 +543,13 @@ function OverviewTab({
       toast({
         title: "All automations enabled",
         description: "Your full automation suite is now active.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Could not enable all automations",
+        description: error.message,
+        variant: "destructive",
       });
     },
   });
@@ -644,7 +667,7 @@ function RunHistoryTab({
 }: {
   templateNameMap: Record<string, string>;
 }) {
-  const { data, isLoading, refetch, isFetching } = useQuery<{
+  const { data, isLoading, error, refetch, isFetching } = useQuery<{
     logs: ExecutionLog[];
   }>({
     queryKey: ["/api/music-workflow-automations/logs"],
@@ -658,6 +681,19 @@ function RunHistoryTab({
       <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin mr-2" />
         Loading run history...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        <AlertCircle className="h-8 w-8 mx-auto mb-3 text-destructive" />
+        <p className="text-sm font-medium">Could not load run history</p>
+        <p className="text-xs mt-1">{error.message}</p>
+        <Button size="sm" variant="outline" className="mt-4" onClick={() => refetch()}>
+          Retry
+        </Button>
       </div>
     );
   }
@@ -891,15 +927,27 @@ function ScheduleTab({
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function MusicWorkflowAutomations() {
-  const { data: automationsData, isLoading: automationsLoading } = useQuery<{
+  const { user, isLoading: authLoading } = useRequireSubscription();
+  const {
+    data: automationsData,
+    isLoading: automationsLoading,
+    error: automationsError,
+    refetch: refetchAutomations,
+  } = useQuery<{
     automations: WorkflowTemplate[];
   }>({
     queryKey: ["/api/music-workflow-automations"],
+    enabled: !authLoading && !!user,
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery<AutomationStats>({
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    error: statsError,
+  } = useQuery<AutomationStats>({
     queryKey: ["/api/music-workflow-automations/stats"],
     refetchInterval: 30000,
+    enabled: !authLoading && !!user,
   });
 
   const automations = automationsData?.automations ?? [];
@@ -929,13 +977,24 @@ export default function MusicWorkflowAutomations() {
           </div>
         </div>
 
-        <StatsBar stats={stats} isLoading={statsLoading} />
+        <StatsBar stats={stats} isLoading={authLoading || statsLoading} error={statsError} />
 
-        {automationsLoading ? (
+        {authLoading || automationsLoading ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground">
             <Loader2 className="h-6 w-6 animate-spin mr-2" />
             Loading your automations...
           </div>
+        ) : automationsError ? (
+          <Card>
+            <CardContent className="py-16 text-center text-muted-foreground">
+              <AlertCircle className="h-8 w-8 mx-auto mb-3 text-destructive" />
+              <p className="text-sm font-medium">Could not load automations</p>
+              <p className="text-xs mt-1">{automationsError.message}</p>
+              <Button size="sm" variant="outline" className="mt-4" onClick={() => refetchAutomations()}>
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <Tabs defaultValue="overview">
             <TabsList className="mb-6 flex-wrap h-auto gap-1">

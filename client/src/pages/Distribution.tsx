@@ -606,7 +606,7 @@ function PlaylistPitchingContent() {
     artistName: "",
     genre: "",
     curatorName: "",
-    playlistUrl: "",
+    targetPlaylistUrl: "",
     description: "",
     status: "submitted",
   });
@@ -624,7 +624,7 @@ function PlaylistPitchingContent() {
         artistName: "",
         genre: "",
         curatorName: "",
-        playlistUrl: "",
+        targetPlaylistUrl: "",
         description: "",
         status: "submitted",
       });
@@ -779,11 +779,11 @@ function PlaylistPitchingContent() {
             <div className="space-y-2">
               <Label>Playlist URL</Label>
               <Input
-                value={newPitchForm.playlistUrl}
+                value={newPitchForm.targetPlaylistUrl}
                 onChange={(e) =>
                   setNewPitchForm({
                     ...newPitchForm,
-                    playlistUrl: e.target.value,
+                    targetPlaylistUrl: e.target.value,
                   })
                 }
               />

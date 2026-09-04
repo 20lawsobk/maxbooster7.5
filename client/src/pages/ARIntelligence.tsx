@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   BarChart3,
   Brain,
@@ -28,7 +29,7 @@ import {
   Target,
   CheckCircle,
 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { ApiError, apiRequest } from "@/lib/queryClient";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -59,9 +60,7 @@ interface CatalogGap {
   };
   gaps: Array<{
     genre: string;
-    demandScore: number;
     catalogCount: number;
-    opportunityScore: number;
   }>;
   message: string;
 }
@@ -91,6 +90,34 @@ function momentumBadge(momentum: string) {
     <Badge className={`text-xs ${cls}`}>
       {momentum}
     </Badge>
+  );
+}
+
+function QueryError({
+  error,
+  onRetry,
+}: {
+  error: unknown;
+  onRetry: () => void;
+}) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : "Unable to load this A&R intelligence data.";
+  const canRetry = !(error instanceof ApiError) || error.retryable;
+
+  return (
+    <Alert variant="destructive">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+        <span>{message}</span>
+        {canRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            Retry
+          </Button>
+        )}
+      </AlertDescription>
+    </Alert>
   );
 }
 
@@ -186,6 +213,8 @@ export default function ARIntelligence() {
                   <Skeleton key={i} className="h-24 w-full" />
                 ))}
               </div>
+            ) : forecast.isError ? (
+              <QueryError error={forecast.error} onRetry={() => forecast.refetch()} />
             ) : forecast.data ? (
               <>
                 {/* Trending Genres */}
@@ -299,6 +328,8 @@ export default function ARIntelligence() {
                   <Skeleton key={i} className="h-16 w-full" />
                 ))}
               </div>
+            ) : gap.isError ? (
+              <QueryError error={gap.error} onRetry={() => gap.refetch()} />
             ) : gap.data ? (
               <>
                 {/* Summary */}
@@ -337,25 +368,19 @@ export default function ARIntelligence() {
                 {gap.data.gaps.length > 0 && (
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Opportunity Gaps</CardTitle>
+                      <CardTitle className="text-sm">Live Catalog Gaps</CardTitle>
                       <CardDescription className="text-xs">
-                        Sorted by opportunity score — higher = more demand, fewer of
-                        your beats
+                        Genres detected in the live industry feed that are not
+                        yet represented in your published catalog
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {gap.data.gaps.map((g) => (
-                        <div key={g.genre} className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium capitalize">{g.genre}</span>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>{g.catalogCount} in catalog</span>
-                              <Badge variant="outline" className="text-xs">
-                                {g.opportunityScore}/100
-                              </Badge>
-                            </div>
-                          </div>
-                          <Progress value={g.opportunityScore} className="h-1.5" />
+                        <div key={g.genre} className="flex items-center justify-between text-sm">
+                          <span className="font-medium capitalize">{g.genre}</span>
+                          <span className="text-xs text-muted-foreground">
+                            Not yet in catalog
+                          </span>
                         </div>
                       ))}
                     </CardContent>
@@ -408,6 +433,8 @@ export default function ARIntelligence() {
                   <Skeleton key={i} className="h-24 w-full" />
                 ))}
               </div>
+            ) : timing.isError ? (
+              <QueryError error={timing.error} onRetry={() => timing.refetch()} />
             ) : timing.data ? (
               <>
                 {/* Main recommendation */}

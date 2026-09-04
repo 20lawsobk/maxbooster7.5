@@ -29,7 +29,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { NotificationItem } from "@/components/notifications/NotificationItem";
 import type {
   Notification,
@@ -63,10 +63,16 @@ const categoryIcons: Record<NotificationCategory, React.ElementType> = {
 export default function Notifications() {
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useRequireAuth();
   const [, navigate] = useLocation();
 
-  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
+  const {
+    data: notifications = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery<Notification[]>({
     queryKey: ["/api/notifications"],
     enabled: !!user,
   });
@@ -313,9 +319,26 @@ export default function Notifications() {
 
         <Card>
           <CardContent className="p-0">
-            {isLoading ? (
+            {isAuthLoading || isLoading ? (
               <div className="flex items-center justify-center p-16">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : isError ? (
+              <div className="flex flex-col items-center justify-center p-16 text-center">
+                <div className="rounded-full bg-destructive/10 p-6 mb-4">
+                  <Bell className="h-10 w-10 text-destructive" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">
+                  Unable to load notifications
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-[360px] mb-4">
+                  {error instanceof Error
+                    ? error.message
+                    : "Please check your connection and try again."}
+                </p>
+                <Button variant="outline" onClick={() => refetch()}>
+                  Retry
+                </Button>
               </div>
             ) : filteredNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-16 text-center">

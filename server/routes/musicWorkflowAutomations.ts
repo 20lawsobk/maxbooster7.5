@@ -148,14 +148,23 @@ router.post("/trigger", requireAuth, async (req: Request, res: Response) => {
     }
 
     const { eventType, data = {} } = parsed.data;
-    await musicWorkflowAutomationService?.triggerEvent(eventType, {
+    const executions = await musicWorkflowAutomationService.triggerEvent(eventType, {
       userId,
       ...data,
     });
+    const failedExecutions = executions.filter(
+      (execution) => execution.status === "failed",
+    );
     res.json({
-      success: true,
+      success: failedExecutions.length === 0 && executions.length > 0,
       eventType,
-      message: "Event triggered. Check your logs for execution status.",
+      executions,
+      message:
+        executions.length === 0
+          ? "No enabled automation is configured for this event."
+          : failedExecutions.length > 0
+            ? `${failedExecutions.length} workflow execution(s) failed. Check Run History for details.`
+            : `${executions.length} workflow execution(s) completed and logged.`,
     });
   } catch (err) {
     logger.warn({ err: err }, "[MusicWorkflow] Error triggering event:");

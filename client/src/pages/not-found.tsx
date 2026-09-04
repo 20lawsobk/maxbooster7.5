@@ -60,7 +60,11 @@ const popularPages = [
 
 const helpResources = [
   { name: "Help Center", href: "/help", icon: HelpCircle },
-  { name: "Contact Support", href: "/help#contact", icon: MessageSquare },
+  {
+    name: "Contact Support",
+    href: "mailto:support@maxbooster.ai?subject=Support%20Request",
+    icon: MessageSquare,
+  },
   { name: "Documentation", href: "/documentation", icon: ExternalLink },
 ];
 
@@ -138,7 +142,11 @@ export default function NotFound() {
                   className="pl-10"
                 />
               </div>
-              <Button type="submit" variant="secondary">
+              <Button
+                type="submit"
+                variant="secondary"
+                disabled={!searchQuery.trim()}
+              >
                 Search
               </Button>
             </form>
@@ -220,7 +228,7 @@ export default function NotFound() {
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Still stuck?{" "}
             <a
-              href="mailto:support@maxbooster.com"
+              href="mailto:support@maxbooster.ai?subject=Support%20Request"
               className="text-primary hover:underline"
             >
               Contact our support team

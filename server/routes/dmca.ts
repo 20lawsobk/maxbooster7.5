@@ -2,6 +2,7 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { dmcaService } from "../services/dmcaService.js";
+import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
 import { logger } from "../logger.js";
 
@@ -82,12 +83,8 @@ router.post("/notice", dmcaNoticeLimiter, async (req, res) => {
   }
 });
 
-router.post("/counter", async (req, res) => {
+router.post("/counter", requireAuth, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     const validated = counterNoticeSchema?.parse(req.body);
     const counterNotice = await dmcaService?.submitCounterNotice(validated);
 
@@ -115,12 +112,8 @@ router.post("/counter", async (req, res) => {
   }
 });
 
-router.get("/notices", async (req, res) => {
+router.get("/notices", requireAuth, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     const notices = await dmcaService?.getNoticesByUser(req.user.id);
     const strikeInfo = await dmcaService?.getStrikeInfo(req.user.id);
 
@@ -136,7 +129,7 @@ router.get("/notices", async (req, res) => {
   }
 });
 
-router.get("/notices/:noticeId", async (req, res) => {
+router.get("/notices/:noticeId", requireAuth, async (req, res) => {
   try {
     const { noticeId } = req.params;
     const notice = await dmcaService?.getNotice(noticeId);
@@ -145,11 +138,7 @@ router.get("/notices/:noticeId", async (req, res) => {
       return res.status(404).json({ error: "Notice not found" });
     }
 
-    if (
-      req.user &&
-      notice?.contentOwnerId !== req.user.id &&
-      (!req.user as any).isAdmin
-    ) {
+    if (notice?.contentOwnerId !== req.user!.id && req.user!.role !== "admin") {
       return res.status(403).json({ error: "Access denied" });
     }
 
@@ -162,12 +151,8 @@ router.get("/notices/:noticeId", async (req, res) => {
   }
 });
 
-router.get("/strikes", async (req, res) => {
+router.get("/strikes", requireAuth, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     const strikeInfo = await dmcaService?.getStrikeInfo(req.user.id);
 
     res.json(strikeInfo);
@@ -181,12 +166,8 @@ router.get("/strikes", async (req, res) => {
   }
 });
 
-router.get("/admin/pending", async (req, res) => {
+router.get("/admin/pending", requireAuth, requireAdmin, async (req, res) => {
   try {
-    if ((!req.user as any)?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     const pending = await dmcaService?.getPendingNotices();
 
     res.json({ notices: pending });
@@ -200,12 +181,8 @@ router.get("/admin/pending", async (req, res) => {
   }
 });
 
-router.get("/admin/all", async (req, res) => {
+router.get("/admin/all", requireAuth, requireAdmin, async (req, res) => {
   try {
-    if ((!req.user as any)?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
     const offset = Math.min(
       Math.max(parseInt(req.query.offset as string) || 0, 0),
@@ -228,14 +205,14 @@ router.get("/admin/all", async (req, res) => {
   }
 });
 
-router.post("/admin/process/:noticeId", async (req, res) => {
-  try {
-    if ((!req.user as any)?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
-    const { noticeId } = req.params;
-    const { action, notes } = req.body;
+router.post(
+  "/admin/process/:noticeId",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { noticeId } = req.params;
+      const { action, notes } = req.body;
 
     if (!["approve", "reject"].includes(action)) {
       return res
@@ -259,18 +236,19 @@ router.post("/admin/process/:noticeId", async (req, res) => {
     logger.warn({ err: error }, "Error processing notice:");
     const message =
       error instanceof Error ? error?.message : "Failed to process notice";
-    res.status(500).json({ error: message });
-  }
-});
-
-router.post("/admin/strikes/:strikeId/revoke", async (req, res) => {
-  try {
-    if ((!req.user as any)?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
+      res.status(500).json({ error: message });
     }
+  },
+);
 
-    const { strikeId } = req.params;
-    const { reason } = req.body;
+router.post(
+  "/admin/strikes/:strikeId/revoke",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { strikeId } = req.params;
+      const { reason } = req.body;
 
     if (!reason) {
       return res.status(400).json({ error: "Revocation reason required" });
@@ -291,16 +269,13 @@ router.post("/admin/strikes/:strikeId/revoke", async (req, res) => {
     logger.warn({ err: error }, "Error revoking strike:");
     const message =
       error instanceof Error ? error?.message : "Failed to revoke strike";
-    res.status(500).json({ error: message });
-  }
-});
-
-router.get("/legal-holds", async (req, res) => {
-  try {
-    if ((!req.user as any)?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
+      res.status(500).json({ error: message });
     }
+  },
+);
 
+router.get("/legal-holds", requireAuth, requireAdmin, async (req, res) => {
+  try {
     const contentId = req.query.contentId as string | undefined;
     const holds = await dmcaService?.getActiveLegalHolds(contentId);
 
@@ -313,14 +288,14 @@ router.get("/legal-holds", async (req, res) => {
   }
 });
 
-router.post("/legal-holds/:holdId/release", async (req, res) => {
-  try {
-    if ((!req.user as any)?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
-    const { holdId } = req.params;
-    const hold = await dmcaService?.releaseLegalHold(holdId, req.user!.id);
+router.post(
+  "/legal-holds/:holdId/release",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { holdId } = req.params;
+      const hold = await dmcaService?.releaseLegalHold(holdId, req.user!.id);
 
     res.json({
       success: true,
@@ -331,8 +306,9 @@ router.post("/legal-holds/:holdId/release", async (req, res) => {
     logger.warn({ err: error }, "Error releasing legal hold:");
     const message =
       error instanceof Error ? error?.message : "Failed to release legal hold";
-    res.status(500).json({ error: message });
-  }
-});
+      res.status(500).json({ error: message });
+    }
+  },
+);
 
 export default router;

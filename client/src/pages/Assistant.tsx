@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Sparkles,
   Send,
@@ -82,30 +83,44 @@ function welcomeMessage(username?: string): Message {
   };
 }
 
-async function apiFetch(path: string, options?: RequestInit) {
-  const res = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    ...options,
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+async function apiFetch(
+  path: string,
+  options: { method?: string; body?: string } = {},
+) {
+  const response = await apiRequest(
+    options.method ?? "GET",
+    path,
+    options.body ? JSON.parse(options.body) : undefined,
+  );
+  return response.json();
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error && typeof error === "object" && "userMessage" in error) {
+    const userMessage = (error as { userMessage?: unknown }).userMessage;
+    if (typeof userMessage === "string" && userMessage) return userMessage;
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
 }
 
 export default function Assistant() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [totalMessages, setTotalMessages] = useState(0);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [isClearingHistory, setIsClearingHistory] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const shouldScrollToBottom = useRef(true);
+  const loadedHistoryForUserId = useRef<string | null | undefined>(undefined);
 
   const mapRow = (m: ApiMessage): Message => ({
     id: m.id,
@@ -115,10 +130,16 @@ export default function Assistant() {
   });
 
   const loadHistory = useCallback(async () => {
-    if (historyLoaded) return;
-    setHistoryLoaded(true);
+    if (isAuthLoading) return;
+    const userId = user?.id ?? null;
+    if (loadedHistoryForUserId.current === userId) return;
+
+    loadedHistoryForUserId.current = userId;
+    setIsLoadingHistory(true);
+    setHistoryError(null);
     if (!user) {
       setMessages([welcomeMessage()]);
+      setIsLoadingHistory(false);
       return;
     }
     try {
@@ -132,10 +153,18 @@ export default function Assistant() {
           ? [welcomeMessage(user.username ?? undefined)]
           : prior,
       );
-    } catch {
+    } catch (error) {
       setMessages([welcomeMessage(user.username ?? undefined)]);
+      setHistoryError(
+        getErrorMessage(
+          error,
+          "Conversation history could not be loaded. Please try again.",
+        ),
+      );
+    } finally {
+      setIsLoadingHistory(false);
     }
-  }, [user, historyLoaded]);
+  }, [user, isAuthLoading]);
 
   useEffect(() => {
     loadHistory();
@@ -155,6 +184,7 @@ export default function Assistant() {
     const scrollEl = scrollRef.current;
     const heightBefore = scrollEl?.scrollHeight ?? 0;
     setIsLoadingOlder(true);
+    setHistoryError(null);
     shouldScrollToBottom.current = false;
     try {
       const data = await apiFetch(
@@ -173,8 +203,14 @@ export default function Assistant() {
         setHasMore(false);
         shouldScrollToBottom.current = true;
       }
-    } catch {
+    } catch (error) {
       shouldScrollToBottom.current = true;
+      setHistoryError(
+        getErrorMessage(
+          error,
+          "Earlier messages could not be loaded. Please try again.",
+        ),
+      );
     } finally {
       setIsLoadingOlder(false);
     }
@@ -222,15 +258,17 @@ export default function Assistant() {
         aiMsg,
       ]);
       setTotalMessages((t) => t + 2);
-    } catch {
+    } catch (error) {
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== optimistic.id),
         optimistic,
         {
           id: `err-${Date.now()}`,
           role: "assistant",
-          content:
+          content: getErrorMessage(
+            error,
             "I'm having trouble connecting right now. Please check your connection and try again.",
+          ),
           timestamp: new Date(),
         },
       ]);
@@ -247,15 +285,28 @@ export default function Assistant() {
       setTotalMessages(0);
       return;
     }
+    setIsClearingHistory(true);
+    setHistoryError(null);
     try {
       await apiFetch("/api/assistant/history", { method: "DELETE" });
-    } catch {
-      /* ignore */
+      setHasMore(false);
+      setTotalMessages(0);
+      setMessages([welcomeMessage(user.username ?? undefined)]);
+    } catch (error) {
+      setHistoryError(
+        getErrorMessage(
+          error,
+          "Conversation history could not be cleared. Please try again.",
+        ),
+      );
+    } finally {
+      setIsClearingHistory(false);
     }
-    setHistoryLoaded(false);
-    setHasMore(false);
-    setTotalMessages(0);
-    setMessages([welcomeMessage(user.username ?? undefined)]);
+  };
+
+  const retryHistory = () => {
+    loadedHistoryForUserId.current = undefined;
+    void loadHistory();
   };
 
   const nonWelcomeCount = messages.filter((m) => m.id !== "welcome").length;
@@ -296,9 +347,19 @@ export default function Assistant() {
               size="sm"
               className="text-gray-400 hover:text-red-400 gap-1.5 text-xs"
               onClick={clearHistory}
+              disabled={isClearingHistory}
             >
-              <Trash2 className="h-3.5 w-3.5" />
-              Clear history
+              {isClearingHistory ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Clearing…
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Clear history
+                </>
+              )}
             </Button>
           )}
         </div>
@@ -307,6 +368,34 @@ export default function Assistant() {
         <div className="flex-1 min-h-0 rounded-xl border border-gray-700/50 bg-[#141414] overflow-hidden flex flex-col">
           <ScrollArea ref={scrollRef} className="flex-1 p-4">
             <div className="space-y-4 pb-2">
+              {isLoadingHistory && (
+                <div
+                  className="flex items-center justify-center gap-2 py-8 text-sm text-gray-400"
+                  role="status"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading conversation…
+                </div>
+              )}
+
+              {historyError && (
+                <div
+                  className="flex items-center justify-between gap-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200"
+                  role="alert"
+                >
+                  <span>{historyError}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-red-200 hover:bg-red-500/20 hover:text-white"
+                    onClick={retryHistory}
+                    disabled={isLoadingHistory}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+
               {hasMore && (
                 <div className="flex justify-center">
                   <Button

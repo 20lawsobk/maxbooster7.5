@@ -16,6 +16,14 @@ export interface ApiKeyRequest extends Request {
   };
 }
 
+function getTierForRateLimit(
+  rateLimit: number | null,
+): "free" | "pro" | "enterprise" {
+  if (rateLimit === 5000) return "enterprise";
+  if (rateLimit === 1000) return "pro";
+  return "free";
+}
+
 /**
  * Generate a secure API key with prefix and hashing
  * Format: mb_live_<random64chars>
@@ -137,7 +145,7 @@ export async function validateApiKey(
     req.apiKey = {
       id: keyRecord.id,
       userId: keyRecord.userId,
-      tier: "free", // Default tier since schema doesn't store tier
+      tier: getTierForRateLimit(keyRecord.rateLimit),
       rateLimit: keyRecord.rateLimit || 1000,
     };
 
@@ -218,12 +226,10 @@ export async function rateLimitApiKey(
         });
       }
 
-      // Record this request and set expiry (fire-and-forget — not on critical path)
-      Promise.resolve(
-        redisClient
-          .zadd(redisKey, now, `${now}-${crypto.randomUUID()}`)
-          .then(() => redisClient.expire(redisKey, 2)),
-      ).catch(() => {});
+      // Record this request before serving it so a storage failure cannot silently
+      // disable enforcement for this request.
+      await redisClient.zadd(redisKey, now, `${now}-${crypto.randomUUID()}`);
+      await redisClient.expire(redisKey, 2);
 
       // Add rate limit headers
       res.setHeader("X-RateLimit-Limit", rateLimit.toString());
@@ -345,7 +351,7 @@ export async function listApiKeys(userId: string) {
       .select({
         id: apiKeys.id,
         keyName: apiKeys.name,
-        keyPrefix: apiKeys.keyPrefix,
+        apiKeyPreview: apiKeys.keyPrefix,
         rateLimit: apiKeys.rateLimit,
         isActive: apiKeys.isActive,
         lastUsedAt: apiKeys.lastUsedAt,
@@ -383,6 +389,9 @@ export async function revokeApiKey(keyId: string, userId: string) {
     return updated;
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error revoking API key:");
+    if ((error as Error).message === "API key not found or unauthorized") {
+      throw error;
+    }
     throw new Error("Failed to revoke API key");
   }
 }
@@ -447,10 +456,21 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
       .groupBy(apiUsage.statusCode);
 
     return {
-      totalRequests: totalRequests.total || 0,
-      byEndpoint,
-      byDay,
-      byStatusCode,
+      totalRequests: Number(totalRequests.total) || 0,
+      byEndpoint: byEndpoint.map((entry) => ({
+        ...entry,
+        requests: Number(entry.requests) || 0,
+        avgResponseTime: Number(entry.avgResponseTime) || 0,
+      })),
+      byDay: byDay.map((entry) => ({
+        ...entry,
+        requests: Number(entry.requests) || 0,
+        avgResponseTime: Number(entry.avgResponseTime) || 0,
+      })),
+      byStatusCode: byStatusCode.map((entry) => ({
+        ...entry,
+        count: Number(entry.count) || 0,
+      })),
     };
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching API usage stats:");
@@ -473,7 +493,7 @@ export async function getUserApiUsageStats(userId: string, days: number = 30) {
         return {
           keyId: key.id,
           keyName: key.keyName,
-          tier: (key as any).tier,
+          tier: getTierForRateLimit(key.rateLimit),
           ...stats,
         };
       }),

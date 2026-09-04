@@ -164,28 +164,28 @@ const faqs = [
 
 const resources = [
   {
-    title: "Video Tutorials",
-    description: "Step-by-step video guides for all features",
-    icon: Video,
-    link: "/tutorials",
-  },
-  {
     title: "Documentation",
-    description: "Comprehensive guides and API references",
+    description: "Browse product guides and technical documentation",
     icon: Book,
-    link: "/docs",
+    link: "/documentation",
   },
   {
-    title: "Feature Updates",
-    description: "Latest features and improvements",
-    icon: Zap,
-    link: "/changelog",
-  },
-  {
-    title: "Music Industry Guide",
-    description: "Learn about distribution and royalties",
+    title: "Developer API",
+    description: "Read API endpoints, authentication, and integration guides",
     icon: FileText,
-    link: "/guides",
+    link: "/api-docs",
+  },
+  {
+    title: "Product Updates",
+    description: "Read the latest Max Booster news and announcements",
+    icon: Zap,
+    link: "/blog",
+  },
+  {
+    title: "Explore Features",
+    description: "See the tools available to grow your music career",
+    icon: Video,
+    link: "/features",
   },
 ];
 
@@ -212,10 +212,21 @@ export default function Help() {
   };
 
   const handleLiveChat = () => {
+    const assistantButton = document.querySelector<HTMLButtonElement>(
+      '[data-testid="ai-assistant-bubble-public"], [data-testid="ai-assistant-bubble-personalized"]',
+    );
+
+    if (assistantButton) {
+      assistantButton.focus();
+      assistantButton.click();
+      return;
+    }
+
     toast({
-      title: "AI Assistant Available",
+      title: "AI Assistant unavailable",
       description:
-        "Use the Max AI chat bubble in the bottom-right corner for instant help.",
+        "The AI Assistant is still loading. Please try again in a moment.",
+      variant: "destructive",
     });
   };
 
@@ -265,7 +276,7 @@ export default function Help() {
           {resources.map((resource, index) => (
             <Card
               key={index}
-              className="hover:shadow-lg transition cursor-pointer group"
+              className="hover:shadow-lg transition group"
             >
               <CardContent className="p-6 text-center">
                 <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition">

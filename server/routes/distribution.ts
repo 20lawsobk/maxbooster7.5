@@ -1297,9 +1297,19 @@ router.get(
           // Update local database with latest status
           if (labelGridStatus.platforms) {
             for (const platformStatus of labelGridStatus.platforms) {
+              const gatewayStatus = platformStatus.status.toLowerCase();
+              const localStatus = [
+                "unsupported",
+                "not_supported",
+                "not_configured",
+              ].includes(gatewayStatus)
+                ? "not_supported"
+                : gatewayStatus === "error"
+                  ? "failed"
+                  : gatewayStatus;
               await storage.updateDistroDispatchStatus(id, {
-                providerId: platformStatus.platform,
-                status: platformStatus.status,
+                platform: platformStatus.platform,
+                status: localStatus,
                 liveAt: platformStatus.liveDate
                   ? new Date(platformStatus.liveDate)
                   : undefined,
@@ -1325,7 +1335,7 @@ router.get(
 
       res.json({
         statuses: statuses.map((status: unknown) => ({
-          platform: (status as any).providerId,
+          platform: (status as any).platform || (status as any).providerId,
           platformName: (status as any).providerName || (status as any).providerId,
           status: (status as any).status,
           externalId: (status as any).externalId,
@@ -1725,8 +1735,21 @@ router.post(
         });
       }
 
-      // HARDENING: Validate selected platforms
-      const selectedPlatforms = metadata.selectedPlatforms || [];
+      // Platform choices come from the advertised local DSP catalog. Do not
+      // pre-filter them based on this LabelGrid account's configuration:
+      // LabelGrid is the gateway and is authoritative about whether it can
+      // accept each requested DSP.
+      const selectedPlatforms = Array.from(
+        new Set(
+          (Array.isArray(metadata.selectedPlatforms)
+            ? metadata.selectedPlatforms
+            : []
+          )
+            .filter((platform): platform is string => typeof platform === "string")
+            .map((platform) => platform.trim())
+            .filter(Boolean),
+        ),
+      );
       if ((selectedPlatforms as any).length === 0) {
         return res.status(400).json({
           error: "No platforms selected",
@@ -1738,11 +1761,11 @@ router.post(
       const lgPayload = await buildLabelGridPayload(
         release,
         tracks,
-        selectedPlatforms as string | string[],
+        selectedPlatforms,
       );
       logger.info(
         { userId, platforms: selectedPlatforms },
-        `[Distribution] Submitting release ${id} to LabelGrid for ${(selectedPlatforms as any).length} platform(s)`,
+        `[Distribution] Submitting release ${id} to LabelGrid for ${selectedPlatforms.length} platform(s)`,
       );
       const lgResult = await labelGridService.createRelease(lgPayload);
 
@@ -1750,19 +1773,68 @@ router.post(
       // This ordering prevents a window where the release is "submitted" but has no dispatch
       // records — which would make per-platform tracking impossible after a mid-flight crash.
       const dispatchResults = await Promise.allSettled(
-        (selectedPlatforms as any).map(async (platformSlug: string) => {
+        selectedPlatforms.map(async (platformSlug) => {
           const provider = await storage.getDSPProviderBySlug(platformSlug);
-          if (!provider) return;
           const lgPlatformStatus = lgResult.platforms.find(
-            (p: any) =>
-              p.platform === platformSlug || p.platform === provider.slug,
+            (p) =>
+              p.platform === platformSlug ||
+              p.platform.replace(/_/g, "-") === platformSlug ||
+              p.platform.replace(/-/g, "_") === platformSlug.replace(/-/g, "_"),
           );
+          const gatewayStatus = lgPlatformStatus?.status?.toLowerCase();
+          const accepted = [
+            "queued",
+            "pending",
+            "processing",
+            "submitted",
+            "accepted",
+            "success",
+            "delivered",
+            "live",
+          ].includes(
+            gatewayStatus || "",
+          );
+          const status =
+            ["live", "delivered"].includes(gatewayStatus || "")
+              ? "delivered"
+              : accepted
+                ? "processing"
+                : ["unsupported", "not_supported", "not_configured"].includes(
+                      gatewayStatus || "",
+                    )
+                  ? "not_supported"
+                  : gatewayStatus === "rejected"
+                    ? "rejected"
+                    : "failed";
+          const errorMessage =
+            lgPlatformStatus?.errorMessage ||
+            (!lgPlatformStatus
+              ? "LabelGrid did not report acceptance for this platform."
+              : status === "not_supported"
+                ? "Not supported by distributor."
+                : status === "rejected"
+                  ? "Rejected by distributor."
+                  : "LabelGrid did not accept this platform submission.");
           await storage.createDistroDispatch({
             releaseId: id,
-            providerId: provider.id,
-            status:
-              lgPlatformStatus!.status === "live" ? "delivered" : "processing",
+            // Keep the gateway's platform slug alongside the local provider
+            // identity. The former is required for later LabelGrid status
+            // updates and lets the UI display a real platform, not a UUID.
+            providerId: provider?.id || platformSlug,
+            providerName: provider?.name || platformSlug,
+            platform: platformSlug,
+            status,
+            logs: JSON.stringify({
+              gatewayStatus: lgPlatformStatus?.status || "not_reported",
+              errorMessage: accepted ? undefined : errorMessage,
+              deliveredAt:
+                ["live", "delivered"].includes(gatewayStatus || "")
+                  ? (lgPlatformStatus?.liveDate || new Date().toISOString())
+                  : undefined,
+              externalId: lgResult.releaseId,
+            }),
           });
+          return { platform: platformSlug, status, accepted, errorMessage };
         }),
       );
       const failedDispatches = dispatchResults.filter(
@@ -1778,12 +1850,18 @@ router.post(
       await storage.updateDistroRelease(id, {
         metadata: {
           ...metadata,
-          status: "submitted",
+          status: dispatchResults.some(
+            (result) =>
+              result.status === "fulfilled" && result.value?.accepted,
+          )
+            ? "submitted"
+            : "rejected",
           labelGridReleaseId: lgResult.releaseId,
           labelGridSubmittedAt: new Date().toISOString(),
           labelGridEstimatedLiveDate: lgResult.estimatedLiveDate,
           dispatchedPlatformCount: dispatchResults.filter(
-            (r: any) => r.status === "fulfilled",
+            (result) =>
+              result.status === "fulfilled" && result.value?.accepted,
           ).length,
         },
       });
@@ -1801,10 +1879,27 @@ router.post(
       );
 
       res.json({
-        success: true,
-        message: "Release submitted for distribution via LabelGrid",
+        success: dispatchResults.some(
+          (result) =>
+            result.status === "fulfilled" && result.value?.accepted,
+        ),
+        message: "Release submitted to LabelGrid; review each platform's delivery status.",
         labelGridReleaseId: lgResult.releaseId,
         estimatedLiveDate: lgResult.estimatedLiveDate,
+        acceptedPlatformCount: dispatchResults.filter(
+          (result) =>
+            result.status === "fulfilled" && result.value?.accepted,
+        ).length,
+        platforms: dispatchResults.map((result, index) =>
+          result.status === "fulfilled"
+            ? result.value
+            : {
+                platform: selectedPlatforms[index],
+                status: "failed",
+                accepted: false,
+                errorMessage: "Could not save the platform dispatch status.",
+              },
+        ),
       });
 
       setImmediate(async () => {
@@ -1812,7 +1907,10 @@ router.post(
           await notificationService.sendReleaseSubmittedNotification(
             userId,
             release.title || "Untitled Release",
-            (selectedPlatforms as any).length,
+            dispatchResults.filter(
+              (result) =>
+                result.status === "fulfilled" && result.value?.accepted,
+            ).length,
             lgResult.estimatedLiveDate,
           );
         } catch (err) {
@@ -5597,9 +5695,14 @@ router.get(
 
       const statuses = dispatches?.map(
         (dispatch: DispatchStatus, index: number) => {
-          const logs = dispatch?.logs ? JSON.parse(dispatch?.logs) : {};
+          let logs: Record<string, unknown> = {};
+          try {
+            logs = dispatch?.logs ? JSON.parse(dispatch.logs) : {};
+          } catch {
+            logs = {};
+          }
           return {
-            platform: dispatch.providerId,
+            platform: (dispatch as any).platform || dispatch.providerId,
             platformName: dispatch.providerName || dispatch?.providerId,
             status: dispatch.status,
             queuePosition: dispatch.status === "queued" ? index + 1 : undefined,
@@ -5627,7 +5730,7 @@ router.get(
       const delivered = statuses?.filter((s) => s?.status === "delivered").length;
       const live = statuses?.filter((s) => s?.status === "live").length;
       const failed = statuses?.filter((s) =>
-        ["failed", "rejected"].includes(s?.status),
+        ["failed", "rejected", "not_supported"].includes(s?.status),
       ).length;
 
       const overallProgress =

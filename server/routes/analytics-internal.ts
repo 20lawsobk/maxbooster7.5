@@ -1908,10 +1908,28 @@ router.get("/playlist-journeys", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
+    const range = String(req.query.range || "30d");
+    const rangeMatch = /^(\d+)d$/.exec(range);
+    if (range !== "all" && (!rangeMatch || Number(rangeMatch[1]) < 1 || Number(rangeMatch[1]) > 365)) {
+      return res.status(400).json({
+        error: "range must be 'all' or a number of days between 1d and 365d.",
+      });
+    }
+    const startDate = rangeMatch
+      ? new Date(Date.now() - Number(rangeMatch[1]) * 24 * 60 * 60 * 1000)
+      : null;
+
     const journeyRows = await db
       .select()
       .from(playlistJourneys)
-      .where(eq(playlistJourneys.userId, userId))
+      .where(
+        startDate
+          ? and(
+              eq(playlistJourneys.userId, userId),
+              gte(playlistJourneys.addedAt, startDate),
+            )
+          : eq(playlistJourneys.userId, userId),
+      )
       .orderBy(desc(playlistJourneys.addedAt))
       .limit(100);
 

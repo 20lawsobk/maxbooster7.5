@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
+import { requirePremium } from "../middleware/requirePremium";
 import { db } from "../db";
 import { publishingRights } from "@shared/schema";
 import { eq, and, desc, count, sql } from "drizzle-orm";
@@ -8,6 +9,8 @@ import { z } from "zod";
 import { logger } from "../logger.js";
 
 const router = Router();
+
+const splitSchema = z.coerce.number().finite().min(0).max(100).optional();
 
 const insertPublishingSchema = z.object({
   trackTitle: z.string().min(1).max(500),
@@ -18,8 +21,8 @@ const insertPublishingSchema = z.object({
   publisherName: z.string().max(500).optional(),
   proName: z.string().max(200).optional(),
   proRegistrationId: z.string().max(200).optional(),
-  publishingSplit: z.string().max(50).optional(),
-  writerSplit: z.string().max(50).optional(),
+  publishingSplit: splitSchema,
+  writerSplit: splitSchema,
   copyrightYear: z
     .number()
     .int()
@@ -30,8 +33,31 @@ const insertPublishingSchema = z.object({
   notes: z.string().max(5000).optional(),
 });
 
+function hasValidSplitTotal(writerSplit: unknown, publishingSplit: unknown) {
+  const writer = Number(writerSplit);
+  const publisher = Number(publishingSplit);
+  return (
+    Number.isFinite(writer) &&
+    Number.isFinite(publisher) &&
+    writer >= 0 &&
+    writer <= 100 &&
+    publisher >= 0 &&
+    publisher <= 100 &&
+    Math.abs(writer + publisher - 100) < 1e-9
+  );
+}
+
+function splitValidationError(res: Parameters<typeof router.post>[1]) {
+  return res.status(400).json({
+    error:
+      "Writer and publisher splits must each be between 0 and 100 and total exactly 100.",
+  });
+}
+
+router.use(requireAuth, requirePremium);
+
 // GET /api/publishing - list registered works (paginated)
-router.get("/", requireAuth, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const userId = req.user!.id;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
@@ -60,7 +86,7 @@ router.get("/", requireAuth, async (req, res) => {
 });
 
 // POST /api/publishing - register new work
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const userId = req.user!.id;
     const parsed = insertPublishingSchema?.safeParse(req.body);
@@ -70,10 +96,17 @@ router.post("/", requireAuth, async (req, res) => {
         .json({ error: "Validation error", details: parsed.error.flatten() });
     }
     const { status: _status, ...data } = parsed?.data ?? {};
+    const writerSplit = data.writerSplit ?? 50;
+    const publishingSplit = data.publishingSplit ?? 50;
+    if (!hasValidSplitTotal(writerSplit, publishingSplit)) {
+      return splitValidationError(res);
+    }
     const [work] = await db
       .insert(publishingRights)
       .values({
         ...data,
+        writerSplit,
+        publishingSplit,
         userId,
         registeredAt: new Date(),
         status: "pending",
@@ -87,7 +120,7 @@ router.post("/", requireAuth, async (req, res) => {
 });
 
 // PUT /api/publishing/:id - update registration
-router.put("/:id", requireAuth, async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params as Record<string, string>;
@@ -98,6 +131,21 @@ router.put("/:id", requireAuth, async (req, res) => {
         .json({ error: "Validation error", details: parsed.error.flatten() });
     }
     const { status: _status, ...updateData } = parsed?.data ?? {};
+    const [existing] = await db
+      .select()
+      .from(publishingRights)
+      .where(
+        and(eq(publishingRights.id, id), eq(publishingRights.userId, userId)),
+      )
+      .limit(1);
+    if (!existing) return res.status(404).json({ error: "Work not found" });
+
+    const writerSplit = updateData.writerSplit ?? existing.writerSplit;
+    const publishingSplit =
+      updateData.publishingSplit ?? existing.publishingSplit;
+    if (!hasValidSplitTotal(writerSplit, publishingSplit)) {
+      return splitValidationError(res);
+    }
     const [updated] = await db
       .update(publishingRights)
       .set(updateData)
@@ -114,7 +162,7 @@ router.put("/:id", requireAuth, async (req, res) => {
 });
 
 // DELETE /api/publishing/:id - delete record
-router.delete("/:id", requireAuth, async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params as Record<string, string>;
@@ -133,7 +181,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
 });
 
 // GET /api/publishing/stats - aggregate stats via SQL
-router.get("/stats", requireAuth, async (req, res) => {
+router.get("/stats", async (req, res) => {
   try {
     const userId = req.user!.id;
     const [stats] = await db
@@ -160,7 +208,7 @@ router.get("/stats", requireAuth, async (req, res) => {
 });
 
 // GET /api/publishing/:id - get single registered work (after /stats to avoid shadowing)
-router.get("/:id", requireAuth, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const [work] = await db
       .select()

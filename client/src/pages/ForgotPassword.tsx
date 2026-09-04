@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +21,18 @@ export default function ForgotPassword() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const resendIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
   const { toast } = useToast();
+
+  useEffect(() => {
+    return () => {
+      if (resendIntervalRef.current) {
+        clearInterval(resendIntervalRef.current);
+      }
+    };
+  }, []);
 
   const validateEmail = (value: string): string | undefined => {
     if (!value.trim()) return "Email is required";
@@ -44,11 +55,17 @@ export default function ForgotPassword() {
   };
 
   const startResendCooldown = () => {
+    if (resendIntervalRef.current) {
+      clearInterval(resendIntervalRef.current);
+    }
     setResendCooldown(60);
-    const interval = setInterval(() => {
+    resendIntervalRef.current = setInterval(() => {
       setResendCooldown((prev) => {
         if (prev <= 1) {
-          clearInterval(interval);
+          if (resendIntervalRef.current) {
+            clearInterval(resendIntervalRef.current);
+            resendIntervalRef.current = null;
+          }
           return 0;
         }
         return prev - 1;
@@ -76,7 +93,7 @@ export default function ForgotPassword() {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (response.status === 429) {
         toast({
@@ -85,12 +102,11 @@ export default function ForgotPassword() {
             "You have made too many password reset requests. Please wait a few minutes before trying again.",
           variant: "destructive",
         });
-        setLoading(false);
         return;
       }
 
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to send reset link");
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Failed to send reset link");
       }
 
       setSubmitted(true);
@@ -101,12 +117,13 @@ export default function ForgotPassword() {
       });
     } catch (error: unknown) {
       toast({
-        title: "Request Sent",
+        title: "Unable to Send Reset Link",
         description:
-          "If an account exists with this email, you will receive a password reset link.",
+          error instanceof Error
+            ? error.message
+            : "Unable to send the reset link. Please try again.",
+        variant: "destructive",
       });
-      setSubmitted(true);
-      startResendCooldown();
     } finally {
       setLoading(false);
     }
@@ -123,23 +140,33 @@ export default function ForgotPassword() {
         body: JSON.stringify({ email }),
       });
 
+      const data = await response.json().catch(() => null);
+
       if (response.status === 429) {
         toast({
           title: "Too Many Requests",
           description: "Please wait before requesting another reset link.",
           variant: "destructive",
         });
-      } else {
-        startResendCooldown();
-        toast({
-          title: "Email Resent",
-          description: "A new password reset link has been sent to your email.",
-        });
+        return;
       }
-    } catch (error) {
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Could not resend the reset link.");
+      }
+
+      startResendCooldown();
+      toast({
+        title: "Email Resent",
+        description: "A new password reset link has been sent to your email.",
+      });
+    } catch (error: unknown) {
       toast({
         title: "Resend Failed",
-        description: "Could not resend the reset link. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not resend the reset link. Please try again.",
         variant: "destructive",
       });
     } finally {
