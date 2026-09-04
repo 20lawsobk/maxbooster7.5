@@ -1,0 +1,10 @@
+---
+name: MaxCore Node api-server proxy allowlist gates every new Python endpoint
+description: Adding a route to MaxCore's Python model server is not enough — the Node api-server between the app and Python only forwards routes explicitly listed in its proxy file. A new capability can exist and work perfectly in Python while being completely unreachable from the app.
+---
+
+**The mechanism:** the app never talks to MaxCore's Python FastAPI model server directly. It calls a separate Node.js "api-server" (`external/maxcore/artifacts/api-server`, port 8090), which proxies to the Python server (port 9878) — but only for routes explicitly registered in its proxy file (`src/routes/model-proxy.ts`), one `router.<method>(path, ...)` call per allowed route. There is no wildcard/passthrough. A brand-new endpoint added to `server.py` is fully real, syntactically valid, and would even respond correctly if the Python port were hit directly — but 404s (or falls through to an unrelated handler) through the actual app→api-server→Python path until a matching proxy route is added.
+
+**Why this is easy to miss:** a build that adds a genuine new capability entirely on the Python side (new Pydantic models, new route, correct logic, verified with a direct curl to the Python port) *looks* complete — code review of the Python diff alone finds nothing wrong. The gap only shows up when you trace the actual request path the live app uses, which is a different, non-obvious layer that isn't part of the feature's own diff.
+
+**How to apply:** whenever you (or a subagent) add a new route to MaxCore's Python model server, grep `external/maxcore/artifacts/api-server/src/routes/model-proxy.ts` for the new path immediately. If it's not there, add a `router.<method>("/your/new/path", ...)` mirroring the pattern of a neighboring existing route (e.g. `/audio/analyze`) before considering the feature reachable. Verify by curling the app-facing port (8090+prefix or whatever the app actually calls), not just the raw Python port (9878) — a successful raw-Python curl proves the Python code works but proves nothing about app reachability.

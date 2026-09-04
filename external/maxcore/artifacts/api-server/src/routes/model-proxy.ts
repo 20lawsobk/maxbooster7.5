@@ -999,6 +999,13 @@ router.post("/audio/analyze", async (req, res) => {
   await proxyRequest(req, res, "/api/audio/analyze");
 });
 
+// Mastering/mixing decisions from measured PCM features (analyzeForMastering
+// output) — the Node DSP extracts+executes, MaxCore decides. See
+// server/services/maxcoreMasteringService.ts for the caller.
+router.post("/audio/mastering-recommendation", async (req, res) => {
+  await proxyRequest(req, res, "/api/audio/mastering-recommendation");
+});
+
 // ─── RTA / Concurrency / Awareness / Digital GPU stats ──────────────────────
 
 router.get("/rta/status", async (req, res) => {

@@ -7,6 +7,8 @@ import {
   IntelligentMasteringEngine,
   type MasteringGenre,
 } from "../../shared/ml/audio/IntelligentMasteringEngine.js";
+import { getMaxCoreMasteringRecommendation } from "../services/maxcoreMasteringService.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 
 const router = Router();
 
@@ -663,10 +665,8 @@ router.get("/presets", requireAuth, async (_req: Request, res: Response) => {
 
 /**
  * POST /api/audio-processing/master
- * Genre-aware AI mastering via IntelligentMasteringEngine: spectral analysis,
- * dynamic multiband compression, stereo width optimization, LUFS-targeted
- * loudness normalization, and a lookahead limiter — replaces the static
- * preset-only mastering chain with real analysis-driven processing.
+ * Genre-aware AI mastering: local DSP extracts PCM features, MaxCore makes the
+ * mastering recommendation, then local DSP executes its bounded config.
  */
 router.post(
   "/master",
@@ -702,10 +702,10 @@ router.post(
       const audioData = new Float32Array(interleaved);
 
       const analysis = engine.analyzeForMastering(audioData, sampleRate);
-      const suggestion = engine.suggestSettings(
-        audioData,
-        genre as MasteringGenre | undefined,
+      const suggestion = await getMaxCoreMasteringRecommendation(
+        analysis,
         sampleRate,
+        genre as MasteringGenre | undefined,
       );
       const mastered = engine.masterTrack(
         audioData,
@@ -731,6 +731,9 @@ router.post(
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "AI mastering error:");
+      if (error instanceof AIUnavailableError) {
+        return res.status(503).json({ error: error.message, code: error.code });
+      }
       res.status(500).json({ error: "AI mastering failed" });
     }
   },

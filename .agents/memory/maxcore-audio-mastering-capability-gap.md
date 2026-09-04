@@ -1,6 +1,6 @@
 ---
-name: MaxCore has no existing-audio mastering/mixing endpoint
-description: Confirmed inventory of MaxCore's real audio-related routes as of Sep 2026 — generation and (fake) analysis only, no input-audio transform capability. Check before assuming a "wire it to MaxCore" fix for mastering/mixing is a small change.
+name: MaxCore has no existing-audio mastering/mixing endpoint (RESOLVED Sep 2026)
+description: Gap closed — MaxCore now has a real mastering-recommendation endpoint. See resolution note at the bottom before assuming this is still open.
 ---
 
 # MaxCore's audio surface does not cover mastering/mixing of existing audio
@@ -10,3 +10,9 @@ description: Confirmed inventory of MaxCore's real audio-related routes as of Se
 **Why this matters:** the real, working mastering/mixing implementation (`shared/ml/audio/IntelligentMasteringEngine.ts`, called from `server/routes/audio-processing.ts` POST `/master` and `/process`, plus `studioRenderService.ts`'s project-mixdown path) is 100% local application code — genuinely functional DSP, not a stub — but it has zero MaxCore backing. A "restore AI labeling and wire it to MaxCore" instruction for this feature cannot be satisfied by pointing to an existing endpoint; MaxCore would need genuine new capability built (a real audio-in analysis/recommendation endpoint), or the app-side engine needs to stay local and NOT be labeled "AI" per the project's own MaxCore-only-AI contract (see maxcore-only-fail-explicit.md). Do not assume this gap has been closed without re-checking `server.py`'s actual route definitions (not `DOCS.md` / `openapi.yaml`, which can be stale) — grep for the audio DSP terms directly.
 
 **How to apply:** before wiring any "AI mastering/mixing" feature to MaxCore, confirm a specific endpoint exists that (a) accepts real input audio and (b) actually reads/processes it (not a hash-seeded placeholder like `/api/analyze/audio`). If none exists, that's a net-new MaxCore-side build, not a rewiring task — surface the distinction rather than faking the connection.
+
+## Resolution (Sep 2026)
+
+The gap was closed by building the missing endpoint rather than faking the connection. MaxCore's Python model server gained a real feature-in/decision-out mastering-recommendation endpoint: it takes extracted audio features (spectral, dynamics, rhythm, timbre, frequency balance) — not raw audio bytes — and returns a genre-aware EQ/multiband-compression/stereo/loudness/limiter recommendation with reasoning strings that cite the actual input numbers. The app's local `analyzeForMastering` (feature extraction) and `masterTrack` (DSP execution) stayed local and unchanged; only the decision layer that used to be a local heuristic now calls MaxCore for the recommendation, through the existing `requireMaxCore`/`AIUnavailableError`→503 fail-explicit contract. Live-verified: distinctly different, musically sensible recommendations for bass-heavy hip-hop, bright/wide electronic, and dynamic-range-preserving classical test inputs — not constant or hash-seeded. `/api/analyze/audio` and `/api/audio/analyze` (whole-track fake analysis, unrelated to mastering) are a **separate, still-open** gap — see fabricated-metrics-presented-as-real.md.
+
+See also: maxcore-proxy-allowlist-gap.md — the Node api-server's per-route allowlist nearly left this new endpoint unreachable from the app despite existing correctly in Python.

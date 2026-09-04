@@ -20,6 +20,7 @@ import { eq, and, or, desc, inArray, sql as drizzleSql, ilike, arrayOverlaps, ty
 import { z } from "zod";
 import { logger } from "../logger.js";
 import { randomBytes } from "crypto";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import {
   audioUpload,
   storeUploadedFile,
@@ -2530,9 +2531,9 @@ router.post("/lyrics", requireAuth, async (req: Request, res: Response) => {
 
 // AI Master endpoint
 // Renders the project's real tracks/clips server-side (ffmpeg mixdown) and
-// runs the result through IntelligentMasteringEngine (spectral analysis,
-// genre-aware EQ/multiband compression, LUFS-targeted loudness, lookahead
-// limiter). Returns a real, downloadable mastered file — never a fake
+// extracts PCM features locally, asks MaxCore for genre-aware mastering
+// decisions, then executes bounded EQ/compression/loudness/limiter DSP locally.
+// Returns a real, downloadable mastered file — never a fake
 // job/notification for work that didn't happen.
 router.post(
   "/ai-master/:projectId",
@@ -2580,7 +2581,7 @@ router.post(
         { err: error },
         `AI mastering failed for project ${projectId}:`,
       );
-      res.status(422).json({
+      res.status(error instanceof AIUnavailableError ? 503 : 422).json({
         success: false,
         projectId,
         message:

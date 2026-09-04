@@ -33,6 +33,7 @@ import {
   IntelligentMasteringEngine,
   type MasteringGenre,
 } from "../../shared/ml/audio/IntelligentMasteringEngine.js";
+import { getMaxCoreMasteringRecommendation } from "./maxcoreMasteringService.js";
 
 let ffmpeg: any = null;
 let ffmpegAvailable = false;
@@ -316,10 +317,11 @@ export async function renderProjectMixdown(
 
     if (options.applyMastering) {
       const engine = new IntelligentMasteringEngine(options.sampleRate);
-      const suggestion = engine.suggestSettings(
-        finalPcm,
-        options.masteringGenre,
+      const analysis = engine.analyzeForMastering(finalPcm, options.sampleRate);
+      const suggestion = await getMaxCoreMasteringRecommendation(
+        analysis,
         options.sampleRate,
+        options.masteringGenre,
       );
       if (typeof options.targetLufs === "number") {
         suggestion.config.loudness.targetLUFS = options.targetLufs;

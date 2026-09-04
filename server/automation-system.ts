@@ -424,7 +424,7 @@ export class AutomationSystem extends EventEmitter {
     });
 
     // AI Master action — routed through the real mastering pipeline
-    // (renderProjectMixdown + IntelligentMasteringEngine) that already backs
+    // (renderProjectMixdown + MaxCore mastering decisions with local DSP) that already backs
     // POST /api/studio/ai-master/:projectId. `trackId` here is the studio
     // project id — the generic automation param name predates that route.
     this.registerAction("ai-master-track", {
