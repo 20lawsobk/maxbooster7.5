@@ -7,31 +7,59 @@ import { z } from "zod";
 
 const router = Router();
 
+const validDateTime = (value: string) => Number.isFinite(Date.parse(value));
+
 const createCountdownSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  releaseDate: z.string().transform((val) => new Date(val)),
+  title: z.string().trim().min(1, "Title is required").max(500),
+  releaseDate: z
+    .string()
+    .refine(validDateTime, "Release date must be a valid date and time")
+    .transform((val) => new Date(val)),
   releaseId: z.string().optional(),
-  artworkUrl: z.string().optional(),
-  presaveUrl: z.string().optional(),
+  artworkUrl: z.string().url().max(2000).optional(),
+  presaveUrl: z.string().url().max(2000).optional(),
 });
 
+const updateCountdownSchema = z
+  .object({
+    title: z.string().trim().min(1).max(500).optional(),
+    releaseDate: z
+      .string()
+      .refine(validDateTime, "Release date must be a valid date and time")
+      .transform((val) => new Date(val))
+      .optional(),
+    artworkUrl: z.string().url().max(2000).nullable().optional(),
+    presaveUrl: z.string().url().max(2000).nullable().optional(),
+  })
+  .strict();
+
 const addTaskSchema = z.object({
-  task: z.string().min(1, "Task description is required"),
+  task: z.string().trim().min(1, "Task description is required").max(1_000),
   dueDate: z
     .string()
+    .refine(validDateTime, "Due date must be a valid date and time")
     .transform((val) => new Date(val))
     .optional(),
-  category: z.string().optional(),
+  category: z.string().trim().max(100).optional(),
 });
 
 const updateTaskSchema = z.object({
-  completed: z.boolean().optional(),
-  task: z.string().optional(),
-  dueDate: z
-    .string()
-    .transform((val) => new Date(val))
-    .optional(),
+  completed: z.boolean(),
 });
+
+const analyticsSchema = z
+  .object({
+    presaves: z.number().int().min(0).max(1_000_000).optional(),
+    shares: z.number().int().min(0).max(1_000_000).optional(),
+    pageViews: z.number().int().min(0).max(1_000_000).optional(),
+  })
+  .refine(
+    (data) =>
+      data.presaves !== undefined ||
+      data.shares !== undefined ||
+      data.pageViews !== undefined,
+    "At least one analytics value is required",
+  );
 
 router.get(
   "/",
@@ -86,7 +114,14 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
-      const data = createCountdownSchema?.parse(req.body);
+      const parsed = createCountdownSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: parsed.error.flatten(),
+        });
+      }
+      const data = parsed.data;
 
       logger.info(`Creating countdown for user ${userId}: ${data?.title}`);
 
@@ -166,11 +201,24 @@ router.patch(
 
       logger.info(`Updating countdown ${countdownId} for user ${userId}`);
 
+      const parsed = updateCountdownSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: parsed.error.flatten(),
+        });
+      }
+
       const countdown = await releaseCountdownService?.updateCountdown(
         countdownId,
         userId,
-        req.body,
+        parsed.data,
       );
+      if (!countdown) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Countdown not found" });
+      }
 
       res.json({
         success: true,
@@ -198,7 +246,14 @@ router.post(
         return res
           .status(404)
           .json({ success: false, message: "Countdown not found" });
-      const data = addTaskSchema?.parse(req.body);
+      const parsed = addTaskSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: parsed.error.flatten(),
+        });
+      }
+      const data = parsed.data;
 
       logger.info(`Adding task to countdown ${countdownId}`);
 
@@ -266,25 +321,28 @@ router.patch(
         return res
           .status(404)
           .json({ success: false, message: "Countdown not found" });
-      const data = updateTaskSchema?.parse(req.body);
+      const parsed = updateTaskSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: parsed.error.flatten(),
+        });
+      }
+      const data = parsed.data;
 
       logger.info(`Updating task ${taskId} for countdown ${countdownId}`);
 
       let task;
-      if (data?.completed !== undefined) {
-        if (data?.completed) {
-          task = await releaseCountdownService?.completeTask(
-            countdownId,
-            taskId,
-          );
-        } else {
-          task = await releaseCountdownService?.uncompleteTask(
-            countdownId,
-            taskId,
-          );
-        }
+      if (data.completed) {
+        task = await releaseCountdownService?.completeTask(
+          countdownId,
+          taskId,
+        );
       } else {
-        task = await releaseCountdownService?.completeTask(countdownId, taskId);
+        task = await releaseCountdownService?.uncompleteTask(
+          countdownId,
+          taskId,
+        );
       }
 
       res.json({
@@ -345,17 +403,19 @@ router.post(
         return res
           .status(404)
           .json({ success: false, message: "Countdown not found" });
-      const { presaves, shares, pageViews } = req.body;
+      const parsed = analyticsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: parsed.error.flatten(),
+        });
+      }
 
       logger.info(`Recording analytics for countdown ${countdownId}`);
 
       const analytics = await releaseCountdownService?.recordAnalytics(
         countdownId,
-        {
-          presaves,
-          shares,
-          pageViews,
-        },
+        parsed.data,
       );
 
       res.json({

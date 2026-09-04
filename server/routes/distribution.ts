@@ -313,6 +313,19 @@ router.patch(
         return res.status(404).json({ error: "Release not found" });
       }
 
+      const currentStatus = String(
+        (release.metadata as Record<string, unknown> | null)?.status ||
+          release.status ||
+          "draft",
+      );
+      if (!["draft", "rejected"].includes(currentStatus)) {
+        return res.status(409).json({
+          error: "Release can no longer be edited",
+          message:
+            "Metadata changes to a submitted release must be made through the distributor so DSP records remain in sync.",
+        });
+      }
+
       const updatedRelease = await storage.updateDistroRelease(id, {
         title: updates.title,
         releaseDate: updates.releaseDate
@@ -388,17 +401,43 @@ router.delete(
         return res.status(404).json({ error: "Release not found" });
       }
 
-      // If release is live on LabelGrid, initiate takedown
+      // A distributed release must be withdrawn upstream before its local
+      // record can be removed. Deleting it locally after a failed request
+      // would incorrectly make a still-live DSP release disappear from the
+      // artist's catalog.
       const metadata = release?.metadata as Record<string, unknown>;
-      if (metadata?.labelGridReleaseId && release?.status !== "draft") {
+      const releaseStatus = String(
+        metadata?.status || release?.status || "draft",
+      );
+      if (metadata?.labelGridReleaseId && releaseStatus !== "draft") {
         try {
-          await labelGridService?.takedownRelease((metadata?.labelGridReleaseId as string));
+          if (!labelGridService.isApiConfigured()) {
+            return res.status(503).json({
+              error: "Distribution service is not configured",
+              message:
+                "This release cannot be deleted because its DSP takedown has not been submitted.",
+            });
+          }
+          const result = await labelGridService.takedownRelease(
+            metadata.labelGridReleaseId as string,
+          );
+          if (!result.success) {
+            return res.status(502).json({
+              error: "DSP takedown was not accepted",
+              message:
+                "The release was not deleted locally because the distributor did not confirm the takedown request.",
+            });
+          }
           logger.info(
             `✅ LabelGrid takedown initiated for release ${metadata?.labelGridReleaseId}`,
           );
         } catch (error: unknown) {
           logger.warn({ err: error }, "Error initiating LabelGrid takedown:");
-          // Continue with local deletion even if LabelGrid fails
+          return res.status(502).json({
+            error: "Failed to submit DSP takedown",
+            message:
+              "The release was not deleted locally. Please retry when the distributor is available.",
+          });
         }
       }
 
@@ -1401,15 +1440,15 @@ router.post(
           message: "Status refreshed successfully",
         });
 
-        // Fire "release live" notification when the release transitions to live status
+        // Only an explicit live status is confirmation that a DSP has made
+        // the release public. "delivered" means the DSP received it.
         if (statusResult.status === "live" && currentStatus !== "live") {
           setImmediate(async () => {
             try {
               const livePlatformCount = Array.isArray(statusResult.platforms)
                 ? statusResult.platforms.filter(
-                    (p: Record<string, unknown>) =>
-                      p.status === "live" || p.status === "delivered",
-                  ).length || statusResult.platforms.length
+                    (p: Record<string, unknown>) => p.status === "live",
+                  ).length
                 : 1;
               await notificationService.sendReleaseLiveNotification(
                 userId,
@@ -1677,6 +1716,39 @@ router.post(
         });
       }
 
+      const requiredMetadata = [
+        ["artistName", "Artist name"],
+        ["releaseType", "Release type"],
+        ["primaryGenre", "Primary genre"],
+        ["language", "Language"],
+        ["copyrightOwner", "Copyright owner"],
+      ] as const;
+      const missingMetadata = requiredMetadata
+        .filter(([key]) => typeof metadata[key] !== "string" || !metadata[key].trim())
+        .map(([, label]) => label);
+      const copyrightYear = Number(metadata.copyrightYear);
+      if (
+        missingMetadata.length > 0 ||
+        !Number.isInteger(copyrightYear) ||
+        copyrightYear < 1900 ||
+        copyrightYear > new Date().getFullYear() + 1
+      ) {
+        return res.status(400).json({
+          error: "Incomplete release metadata",
+          message: `Complete required metadata before submission: ${
+            missingMetadata.length > 0
+              ? missingMetadata.join(", ")
+              : "a valid copyright year"
+          }.`,
+        });
+      }
+      if (!release.artworkUrl) {
+        return res.status(400).json({
+          error: "Missing artwork",
+          message: "Release artwork is required before submission.",
+        });
+      }
+
       // HARDENING: Validate UPC before submission
       const releaseUpc = (release as { upc?: string }).upc;
       if (!releaseUpc) {
@@ -1701,6 +1773,21 @@ router.post(
         return res.status(400).json({
           error: "No tracks",
           message: "At least one track is required before submission.",
+        });
+      }
+      const tracksWithoutAudio = tracks.filter(
+        (t: Record<string, unknown>) =>
+          typeof t.audioUrl !== "string" || !t.audioUrl.trim(),
+      );
+      if (tracksWithoutAudio.length > 0) {
+        return res.status(400).json({
+          error: "Missing audio files",
+          message:
+            "Every track needs an uploaded audio file before submission.",
+          tracksMissing: tracksWithoutAudio.map((t: Record<string, unknown>) => ({
+            id: t.id,
+            title: t.title,
+          })),
         });
       }
 
@@ -1847,15 +1934,14 @@ router.post(
       }
 
       // Persist LabelGrid release ID and update status only after dispatch records exist.
+      const submissionAccepted = dispatchResults.some(
+        (result) => result.status === "fulfilled" && result.value?.accepted,
+      );
       await storage.updateDistroRelease(id, {
+        status: submissionAccepted ? "submitted" : "rejected",
         metadata: {
           ...metadata,
-          status: dispatchResults.some(
-            (result) =>
-              result.status === "fulfilled" && result.value?.accepted,
-          )
-            ? "submitted"
-            : "rejected",
+          status: submissionAccepted ? "submitted" : "rejected",
           labelGridReleaseId: lgResult.releaseId,
           labelGridSubmittedAt: new Date().toISOString(),
           labelGridEstimatedLiveDate: lgResult.estimatedLiveDate,
@@ -1879,10 +1965,7 @@ router.post(
       );
 
       res.json({
-        success: dispatchResults.some(
-          (result) =>
-            result.status === "fulfilled" && result.value?.accepted,
-        ),
+        success: submissionAccepted,
         message: "Release submitted to LabelGrid; review each platform's delivery status.",
         labelGridReleaseId: lgResult.releaseId,
         estimatedLiveDate: lgResult.estimatedLiveDate,
@@ -1953,14 +2036,44 @@ router.post(
       }
 
       const data = takedownSchema.parse(req.body);
+      if (!data.allPlatforms) {
+        return res.status(501).json({
+          error: "Partial DSP takedowns are not available",
+          message:
+            "The connected distributor only supports a release-wide takedown. No platform status was changed.",
+        });
+      }
 
       // Update dispatch statuses for takedown
       const statuses = (await storage.getDistroDispatchStatuses(
         id,
       )) as DispatchStatus[];
-      const platformsToTakedown = data.allPlatforms
-        ? statuses.map((s: DispatchStatus) => s.providerId)
-        : data.platforms || [];
+      const platformsToTakedown = statuses.map(
+        (s: DispatchStatus) => s.providerId,
+      );
+
+      const metadata = (release.metadata || {}) as Record<string, unknown>;
+      if (!metadata.labelGridReleaseId) {
+        return res.status(409).json({
+          error: "Release has not been submitted to a distributor",
+          message: "There is no DSP release to take down.",
+        });
+      }
+      if (!labelGridService.isApiConfigured()) {
+        return res.status(503).json({
+          error: "Distribution service is not configured",
+          message: "The takedown was not submitted. Please try again later.",
+        });
+      }
+      const takedownResult = await labelGridService.takedownRelease(
+        metadata.labelGridReleaseId as string,
+      );
+      if (!takedownResult.success) {
+        return res.status(502).json({
+          error: "DSP takedown was not accepted",
+          message: "No local takedown status was changed.",
+        });
+      }
 
       for (const status of statuses) {
         if (platformsToTakedown.includes(status.providerId)) {
@@ -4323,10 +4436,64 @@ router.post(
         legacyPrice,
         tracks: tracksJson,
         collaborators: collaboratorsJson,
+        rightsConfirmed,
+        contentOriginal,
       } = req.body;
 
-      if (!title) {
-        return res.status(400).json({ error: "Release title is required" });
+      let parsedTracks: unknown;
+      let parsedPlatforms: unknown;
+      let parsedCollaborators: unknown;
+      try {
+        parsedTracks = tracksJson ? JSON.parse(tracksJson) : [];
+        parsedPlatforms = selectedPlatforms
+          ? JSON.parse(selectedPlatforms)
+          : [];
+        parsedCollaborators = collaboratorsJson
+          ? JSON.parse(collaboratorsJson)
+          : [];
+      } catch {
+        return res.status(400).json({
+          error: "Invalid upload metadata",
+          message: "Tracks, platforms, and collaborators must be valid JSON.",
+        });
+      }
+      const metadataResult = createReleaseSchema.safeParse({
+        title,
+        artistName,
+        releaseType,
+        primaryGenre,
+        secondaryGenre: secondaryGenre || undefined,
+        language,
+        labelName: labelName || undefined,
+        copyrightYear: copyrightYear ? Number(copyrightYear) : NaN,
+        copyrightOwner,
+        publishingRights: publishingRights || undefined,
+        isExplicit: isExplicit === "true",
+        releaseDate: releaseDate || undefined,
+        selectedPlatforms: parsedPlatforms,
+      });
+      if (!metadataResult.success) {
+        return res.status(400).json({
+          error: "Invalid release metadata",
+          details: metadataResult.error.issues,
+        });
+      }
+      if (rightsConfirmed !== "true" || contentOriginal !== "true") {
+        return res.status(400).json({
+          error: "Rights confirmation required",
+          message:
+            "Confirm ownership/clearance and original-content acknowledgements before uploading.",
+        });
+      }
+      if (!Array.isArray(parsedTracks) || parsedTracks.length === 0) {
+        return res.status(400).json({
+          error: "At least one track is required",
+        });
+      }
+      if (!Array.isArray(parsedPlatforms) || parsedPlatforms.length === 0) {
+        return res.status(400).json({
+          error: "At least one distribution platform is required",
+        });
       }
 
       let artworkUrl: string | null = null;
@@ -4341,21 +4508,15 @@ router.post(
         artworkUrl = await storageService.getDownloadUrl(artworkKey);
       }
 
-      const parsedTracks = tracksJson ? JSON.parse(tracksJson) : [];
-      const parsedPlatforms = selectedPlatforms
-        ? JSON.parse(selectedPlatforms)
-        : [];
-      const parsedCollaborators = collaboratorsJson
-        ? JSON.parse(collaboratorsJson)
-        : [];
-
       const [release] = await db
         .insert(distroReleases)
         .values({
           artistId: userId,
           title,
           releaseDate: releaseDate ? new Date(releaseDate) : null,
-          status: "processing",
+          // Uploading files does not submit anything to a DSP. The artist
+          // must explicitly submit this draft after identifiers are assigned.
+          status: "draft",
           artworkUrl,
           metadata: {
             artistName,
@@ -4373,7 +4534,9 @@ router.post(
             isExplicit: isExplicit === "true",
             leaveALegacy: leaveALegacy === "true",
             legacyPrice: legacyPrice ? parseFloat(legacyPrice) : null,
-            collaborators: parsedCollaborators,
+            collaborators: Array.isArray(parsedCollaborators)
+              ? parsedCollaborators
+              : [],
           },
         })
         .returning();
@@ -4421,7 +4584,7 @@ router.post(
         releaseId: release.id,
         fileId: release.id,
         message:
-          "Release uploaded successfully and is being processed for distribution.",
+          "Release uploaded and saved as a draft. Submit it for distribution after completing identifiers and review.",
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error uploading distribution release:");
@@ -4494,8 +4657,10 @@ router.post(
 
       const rows = releases?.map((release) => {
         const meta = (release?.metadata ?? {}) as Record<string, unknown>;
-        const platforms = Array.isArray(meta?.platforms)
-          ? (meta?.platforms as unknown[]).length
+        const platforms = Array.isArray(meta?.selectedPlatforms)
+          ? (meta.selectedPlatforms as unknown[]).length
+          : Array.isArray(meta?.platforms)
+            ? (meta.platforms as unknown[]).length
           : 0;
         return [
           release?.id,

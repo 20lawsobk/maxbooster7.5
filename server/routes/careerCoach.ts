@@ -400,7 +400,6 @@ router.get(
         currentAnalytics,
         previousAnalytics,
         recentReleases,
-        _olderReleases,
         recentRevenue,
         previousRevenue,
         recentPosts,
@@ -437,19 +436,6 @@ router.get(
             and(
               eq(releases.userId, userId),
               gte(releases.createdAt, ninetyDaysAgo),
-            ),
-          )
-          .limit(500),
-        db
-          .select({ id: releases.id })
-          .from(releases)
-          .where(
-            and(
-              eq(releases.userId, userId),
-              gte(
-                releases.createdAt,
-                new Date(now?.getTime() - 180 * 24 * 60 * 60 * 1000),
-              ),
             ),
           )
           .limit(500),

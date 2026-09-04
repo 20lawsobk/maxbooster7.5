@@ -2,7 +2,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import fs from "fs";
 import { db, pool } from "../db.js";
-import { users, projects, releases, analytics, orders, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema.js";
+import { users, projects, releases, analytics, orders, posts, artistProfiles, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema.js";
 import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { Sentry } from "../instrument.js";
@@ -226,6 +226,7 @@ adminRouter?.put("/users/:userId", async (req, res) => {
       "inactive",
       "cancelled",
       "past_due",
+      "suspended",
       "banned",
       null,
     ];
@@ -253,7 +254,14 @@ adminRouter?.put("/users/:userId", async (req, res) => {
       return res.status(400).json({ error: "No valid fields to update" });
     }
 
-    await db.update(users).set(updateData).where(eq(users.id, userId));
+    const [updatedUser] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning({ id: users.id });
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     logger.info(updateData, `Admin ${req.user?.email} updated user ${userId}:`);
 
@@ -294,12 +302,16 @@ adminRouter?.post("/users/:userId/suspend", async (req, res) => {
       return res.status(400).json({ error: "Cannot suspend your own account" });
     }
 
-    await db
+    const [suspendedUser] = await db
       .update(users)
       .set({
         subscriptionStatus: "suspended",
       })
-      .where(eq(users.id, userId));
+      .where(eq(users.id, userId))
+      .returning({ id: users.id });
+    if (!suspendedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     logger.info(
       `Admin ${req.user?.email} suspended user ${userId}. Reason: ${reason || "Not specified"}`,
@@ -331,12 +343,16 @@ adminRouter?.post("/users/:userId/reactivate", async (req, res) => {
   try {
     const { userId } = req.params as Record<string, string>;
 
-    await db
+    const [reactivatedUser] = await db
       .update(users)
       .set({
         subscriptionStatus: "active",
       })
-      .where(eq(users.id, userId));
+      .where(eq(users.id, userId))
+      .returning({ id: users.id });
+    if (!reactivatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     logger.info(`Admin ${req.user?.email} reactivated user ${userId}`);
 
@@ -355,7 +371,13 @@ adminRouter?.delete("/users/:userId", async (req, res) => {
       return res.status(400).json({ error: "Cannot delete your own account" });
     }
 
-    await db.delete(users).where(eq(users.id, userId));
+    const [deletedUser] = await db
+      .delete(users)
+      .where(eq(users.id, userId))
+      .returning({ id: users.id });
+    if (!deletedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
     logger.info(`Admin ${req.user?.email} permanently deleted user ${userId}`);
     res.json({ success: true, message: "User deleted" });
   } catch (error) {
@@ -533,25 +555,75 @@ adminRouter?.get("/system-health", async (_req, res) => {
 
 adminRouter?.get("/moderation/reports", async (req, res) => {
   try {
-    const { page = "1", limit = "20" } = req.query;
+    const { page = "1", limit = "20", status = "pending" } = req.query;
     const pageNum = Math.max(1, parseInt(page as string) || 1);
     const limitNum = Math.min(
       Math.max(1, parseInt(limit as string) || 20),
       200,
     );
-
+    const offset = (pageNum - 1) * limitNum;
+    const statusMap: Record<string, string> = {
+      pending: "flagged",
+      reviewed: "dismissed",
+      resolved: "removed",
+    };
+    const postStatus = typeof status === "string" ? statusMap[status] : undefined;
+    const baseQuery = db
+      .select({
+        id: posts.id,
+        userId: posts.userId,
+        platform: posts.platform,
+        content: posts.content,
+        status: posts.status,
+        createdAt: posts.createdAt,
+      })
+      .from(posts);
+    const whereClause =
+      status !== "all" && postStatus ? eq(posts.status, postStatus) : undefined;
+    const [flaggedPosts, totalResult, statusCounts] = await Promise.all([
+      baseQuery
+        .where(whereClause)
+        .orderBy(desc(posts.createdAt))
+        .limit(limitNum)
+        .offset(offset),
+      db.select({ count: count() }).from(posts).where(whereClause),
+      db
+        .select({ status: posts.status, count: count() })
+        .from(posts)
+        .where(or(eq(posts.status, "flagged"), eq(posts.status, "dismissed"), eq(posts.status, "removed")))
+        .groupBy(posts.status),
+    ]);
+    const counts = new Map(statusCounts.map((row) => [row.status, Number(row.count)]));
     res.json({
-      reports: [],
+      reports: flaggedPosts.map((post) => ({
+        id: post.id,
+        contentType: "social_post",
+        contentId: post.id,
+        contentTitle: `${post.platform || "Social"} post`,
+        reportedBy: "Automated moderation",
+        reportedByUsername: "System",
+        reason: "flagged_content",
+        description: post.content,
+        status:
+          post.status === "flagged"
+            ? "pending"
+            : post.status === "removed"
+              ? "resolved"
+              : "reviewed",
+        createdAt: post.createdAt,
+        targetUserId: post.userId,
+        targetUsername: post.userId,
+      })),
       pagination: {
-        total: 0,
+        total: Number(totalResult[0]?.count ?? 0),
         page: pageNum,
         limit: limitNum,
-        totalPages: 0,
+        totalPages: Math.ceil(Number(totalResult[0]?.count ?? 0) / limitNum),
       },
       stats: {
-        pending: 0,
-        reviewed: 0,
-        resolved: 0,
+        pending: counts.get("flagged") ?? 0,
+        reviewed: counts.get("dismissed") ?? 0,
+        resolved: counts.get("removed") ?? 0,
       },
     });
   } catch (error) {
@@ -578,16 +650,30 @@ adminRouter?.post("/moderation/reports/:reportId/review", async (req, res) => {
         .json({ error: `Invalid action. Allowed: ${validActions?.join(", ")}` });
     }
 
-    logger.info(
-      `Admin ${req.user?.email} reviewed report ${reportId} with action: ${action}. Notes: ${notes || "None"}`,
-    );
+    const [report] = await db
+      .select({ id: posts.id, userId: posts.userId })
+      .from(posts)
+      .where(eq(posts.id, reportId))
+      .limit(1);
+    if (!report) return res.status(404).json({ error: "Report not found" });
+    if (action === "ban_user") {
+      const [bannedUser] = await db
+        .update(users)
+        .set({ subscriptionStatus: "banned" })
+        .where(eq(users.id, report.userId))
+        .returning({ id: users.id });
+      if (!bannedUser) return res.status(404).json({ error: "Report owner not found" });
+    }
+    const newStatus = action === "remove_content" ? "removed" : action === "dismiss" ? "dismissed" : "flagged";
+    await db.update(posts).set({ status: newStatus }).where(eq(posts.id, reportId));
+    logger.info(`Admin ${req.user?.email} reviewed report ${reportId} with action: ${action}. Notes: ${notes || "None"}`);
 
     res.json({
       success: true,
       message: `Report reviewed with action: ${action}`,
       report: {
         id: reportId,
-        status: "reviewed",
+        status: newStatus === "removed" ? "resolved" : newStatus === "dismissed" ? "reviewed" : "pending",
         reviewedBy: req.user?.email,
         reviewedAt: new Date().toISOString(),
         action,
@@ -875,11 +961,8 @@ adminRouter?.get("/metrics", async (_req, res) => {
       cpu: getRealCpuUsage(),
       memory: Math.floor((memUsage?.heapUsed / memUsage?.heapTotal) * 100),
       disk: diskUsagePercent,
-      network: 0,
       uptime: Math.floor(process.uptime()),
       activeUsers: activeUsersResult[0]?.count || 0,
-      requestsPerMinute: 0,
-      avgResponseTime: 0,
     });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching metrics:");
@@ -974,24 +1057,55 @@ adminRouter?.post("/settings/registration", async (req, res) => {
   }
 });
 
-adminRouter?.get("/activity", async (_req, res) => {
+adminRouter?.get("/activity", async (req, res) => {
   try {
-    const recentUsers = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .orderBy(desc(users.createdAt))
-      .limit(10);
-
-    const activities = recentUsers?.map((u) => ({
-      type: "success",
-      action: `New user registered: ${u?.email}`,
-      user: "System",
-      time: formatTimeAgo(u?.createdAt),
-    }));
+    const limitNum = Math.min(
+      100,
+      Math.max(1, parseInt(String(req.query.limit ?? "20"), 10) || 20),
+    );
+    const [recentUsers, recentReleases, pendingFixers] = await Promise.all([
+      db
+        .select({ email: users.email, username: users.username, createdAt: users.createdAt })
+        .from(users)
+        .orderBy(desc(users.createdAt))
+        .limit(limitNum),
+      db
+        .select({ title: releases.title, createdAt: releases.createdAt })
+        .from(releases)
+        .orderBy(desc(releases.createdAt))
+        .limit(Math.ceil(limitNum / 2)),
+      db
+        .select({ artistName: artistProfiles.artistName, fixerRequestedAt: artistProfiles.fixerRequestedAt })
+        .from(artistProfiles)
+        .where(and(eq(artistProfiles.fixerPending, true), eq(artistProfiles.fixerStatus, "pending")))
+        .orderBy(desc(artistProfiles.fixerRequestedAt))
+        .limit(5),
+    ]);
+    const activities = [
+      ...recentUsers.map((user) => ({
+        type: "success",
+        action: `New user registered: ${user.email || user.username || "unknown"}`,
+        user: "System",
+        time: formatTimeAgo(user.createdAt),
+        timestamp: user.createdAt,
+      })),
+      ...recentReleases.map((release) => ({
+        type: "info",
+        action: `Release submitted: ${release.title}`,
+        user: "System",
+        time: formatTimeAgo(release.createdAt),
+        timestamp: release.createdAt,
+      })),
+      ...pendingFixers.map((fixer) => ({
+        type: "warning",
+        action: `Artist fixer request pending: ${fixer.artistName}`,
+        user: "System",
+        time: formatTimeAgo(fixer.fixerRequestedAt),
+        timestamp: fixer.fixerRequestedAt,
+      })),
+    ]
+      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())
+      .slice(0, limitNum);
 
     res.json(activities);
   } catch (error) {
@@ -1090,10 +1204,20 @@ adminRouter?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
       return res.status(400).json({ error: "Invalid rate ID" });
     const { baseRatePerStream, premiumMultiplier, notes } = req.body;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (baseRatePerStream !== undefined)
-      updates.baseRatePerStream = parseFloat(baseRatePerStream);
-    if (premiumMultiplier !== undefined)
-      updates.premiumMultiplier = parseFloat(premiumMultiplier);
+    if (baseRatePerStream !== undefined) {
+      const rate = Number(baseRatePerStream);
+      if (!Number.isFinite(rate) || rate < 0) {
+        return res.status(400).json({ error: "baseRatePerStream must be a non-negative number" });
+      }
+      updates.baseRatePerStream = rate;
+    }
+    if (premiumMultiplier !== undefined) {
+      const multiplier = Number(premiumMultiplier);
+      if (!Number.isFinite(multiplier) || multiplier < 0) {
+        return res.status(400).json({ error: "premiumMultiplier must be a non-negative number" });
+      }
+      updates.premiumMultiplier = multiplier;
+    }
     if (notes !== undefined) updates.notes = notes;
 
     const [updated] = await db
@@ -1133,10 +1257,26 @@ adminRouter?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
       return res.status(400).json({ error: "Invalid treaty ID" });
     const { withholdingRate, treatyRate, hasTreaty, notes } = req.body;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (withholdingRate !== undefined)
-      updates.withholdingRate = parseFloat(withholdingRate);
-    if (treatyRate !== undefined) updates.treatyRate = parseFloat(treatyRate);
-    if (hasTreaty !== undefined) updates.hasTreaty = Boolean(hasTreaty);
+    if (withholdingRate !== undefined) {
+      const rate = Number(withholdingRate);
+      if (!Number.isFinite(rate) || rate < 0 || rate > 1) {
+        return res.status(400).json({ error: "withholdingRate must be a number between 0 and 1" });
+      }
+      updates.withholdingRate = rate;
+    }
+    if (treatyRate !== undefined) {
+      const rate = Number(treatyRate);
+      if (!Number.isFinite(rate) || rate < 0 || rate > 1) {
+        return res.status(400).json({ error: "treatyRate must be a number between 0 and 1" });
+      }
+      updates.treatyRate = rate;
+    }
+    if (hasTreaty !== undefined) {
+      if (typeof hasTreaty !== "boolean") {
+        return res.status(400).json({ error: "hasTreaty must be a boolean" });
+      }
+      updates.hasTreaty = hasTreaty;
+    }
     if (notes !== undefined) updates.notes = notes;
 
     const [updated] = await db
@@ -1173,7 +1313,12 @@ adminRouter?.patch("/financial-config/label-settings/:key", async (req, res) => 
   try {
     const { key } = req.params as Record<string, string>;
     const { value } = req.body;
-    if (!value) return res.status(400).json({ error: "value is required" });
+    if (typeof key !== "string" || !/^[a-zA-Z0-9_.-]{1,128}$/.test(key)) {
+      return res.status(400).json({ error: "Invalid setting key" });
+    }
+    if (typeof value !== "string" || value.length > 10_000) {
+      return res.status(400).json({ error: "value must be a string up to 10000 characters" });
+    }
 
     const [updated] = await db
       .update(labelSettings)

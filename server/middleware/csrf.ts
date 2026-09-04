@@ -95,18 +95,19 @@ export const generateCsrfToken: RequestHandler = (
 };
 
 export const getCsrfToken: RequestHandler = (req: Request, res: Response) => {
-  let token = req.cookies?.[CSRF_COOKIE];
-
-  if (!token) {
-    token = randomBytes(32).toString("hex");
-    res.cookie(CSRF_COOKIE, token, {
-      httpOnly: false,
-      secure: isProduction,
-      sameSite: "strict",
-      maxAge: 24 * 60 * 60 * 1000,
-      path: "/",
-    });
-  }
+  // generateCsrfToken is mounted globally ahead of every route and has
+  // already ensured the cookie exists (generating + setting it exactly
+  // once if it didn't) and stashed that same value on req.csrfToken.
+  // Re-deriving from req.cookies here and independently regenerating when
+  // "missing" used to race with that middleware: req.cookies reflects the
+  // *incoming* request, not the Set-Cookie generateCsrfToken had just
+  // queued on the response, so on a client's very first request this
+  // handler would mint a SECOND, different random token and emit a
+  // second Set-Cookie header — leaving the JSON body and the cookie a
+  // client actually ends up storing potentially out of sync.
+  const token =
+    (req as unknown as { csrfToken?: string }).csrfToken ??
+    req.cookies?.[CSRF_COOKIE];
 
   res.json({ csrfToken: token });
 };

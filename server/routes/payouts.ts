@@ -4,6 +4,7 @@ import { instantPayoutService } from "../services/instantPayoutService";
 import {
   requestInstantPayoutSchema,
   users,
+  instantPayouts,
   taxForms,
   royaltyStatements,
   royaltyTransactions,
@@ -13,13 +14,58 @@ import {
 import { z } from "zod";
 import { logger } from "../logger.js";
 import { db } from "../db.js";
-import { eq, and, desc, gte, inArray, lte, sql, sum } from "drizzle-orm";
+import { eq, and, desc, gte, inArray, lte, sql, sum, count } from "drizzle-orm";
 import { getBaseUrl } from "../config/defaults.js";
 import { requireAuth } from "../middleware/auth.js";
 import { payoutsRateLimiter } from "../middleware/rateLimiter.js";
 import { stripeService } from "../services/stripeService.js";
 
 const router = Router();
+const disputeIdSchema = z.string().uuid();
+const disputeTypeSchema = z.enum([
+  "earnings_mismatch",
+  "split_dispute",
+  "payout_issue",
+  "statement_error",
+  "other",
+]);
+const disputeSubmissionSchema = z.object({
+  type: disputeTypeSchema,
+  subject: z.string().trim().min(1).max(500),
+  description: z.string().trim().min(1).max(10_000),
+  amount: z.coerce.number().finite().positive().optional(),
+  period: z.string().trim().max(200).optional(),
+});
+const taxFormSubmissionSchema = z
+  .object({
+    formType: z.enum(["W-9", "W-8BEN", "W-8BEN-E"]),
+    name: z.string().trim().min(1).max(500),
+    businessName: z.string().trim().max(500).optional(),
+    taxClassification: z.string().trim().max(200).optional(),
+    address: z.object({
+      street: z.string().trim().min(1).max(500),
+      city: z.string().trim().min(1).max(200),
+      state: z.string().trim().max(200),
+      postalCode: z.string().trim().min(1).max(50),
+      country: z.string().trim().min(1).max(200),
+    }),
+    tinType: z.enum(["ssn", "ein", "itin", "foreign_tin"]),
+    tin: z.string().trim().min(1).max(100),
+    countryOfCitizenship: z.string().trim().max(200).optional(),
+    claimTreatyBenefits: z.boolean().optional(),
+    treatyCountry: z.string().trim().max(200).optional(),
+    certify: z.literal(true),
+    signature: z.string().trim().min(1).max(500),
+  })
+  .superRefine((form, ctx) => {
+    if (form.claimTreatyBenefits && !form.treatyCountry) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["treatyCountry"],
+        message: "Treaty country is required when claiming treaty benefits",
+      });
+    }
+  });
 
 router.use(requireAuth);
 router.use(payoutsRateLimiter);
@@ -32,16 +78,13 @@ router.get("/", async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
     const [balance, history] = await Promise.all([
-      instantPayoutService
-        .calculateAvailableBalance(req.user.id)
-        .catch(() => 0),
+      instantPayoutService.calculateAvailableBalance(req.user.id),
       db
         .select()
         .from(royaltyStatements)
         .where(eq(royaltyStatements.userId, req.user.id))
         .orderBy(desc(royaltyStatements.createdAt))
-        .limit(5)
-        .catch(() => []),
+        .limit(5),
     ]);
     return res.json({
       balance,
@@ -50,7 +93,7 @@ router.get("/", async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching payout summary:");
-    return res.json({ balance: 0, recentStatements: [], currency: "USD" });
+    return res.status(500).json({ error: "Failed to fetch payout summary" });
   }
 });
 
@@ -141,24 +184,30 @@ router.get("/history", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+    const requestedLimit = parseInt(req.query.limit as string, 10);
+    const limit = Math.min(
+      Math.max(Number.isFinite(requestedLimit) ? requestedLimit : 50, 1),
+      500,
+    );
     const offset = Math.min(
       Math.max(parseInt(req.query.offset as string) || 0, 0),
       100_000,
     );
 
-    const payouts = await instantPayoutService?.getPayoutHistory(
-      req.user.id,
-      limit,
-      offset,
-    );
+    const [payouts, [{ total }]] = await Promise.all([
+      instantPayoutService.getPayoutHistory(req.user.id, limit, offset),
+      db
+        .select({ total: count() })
+        .from(instantPayouts)
+        .where(eq(instantPayouts.userId, req.user.id)),
+    ]);
 
     res.json({
       payouts,
       pagination: {
         limit,
         offset,
-        total: payouts.length,
+        total: Number(total),
       },
     });
   } catch (error: unknown) {
@@ -180,6 +229,9 @@ router.get("/status/:payoutId", async (req, res) => {
     }
 
     const { payoutId } = req.params;
+    if (!payoutId || payoutId.length > 255) {
+      return res.status(400).json({ error: "Invalid payout ID" });
+    }
 
     const payout = await instantPayoutService?.getPayoutStatus(payoutId);
 
@@ -713,7 +765,16 @@ router.get("/tax-forms", async (req, res) => {
       .orderBy(desc(taxForms.taxYear))
       .limit(20);
 
-    res.json({ forms });
+    res.json({
+      forms: forms.map((form) => ({
+        id: form.id,
+        formType: form.formType,
+        taxYear: form.taxYear,
+        status: form.status,
+        submittedAt: form.submittedAt,
+        generatedAt: form.generatedAt,
+      })),
+    });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching tax forms:");
     res
@@ -732,6 +793,13 @@ router.post("/tax-form/submit", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
+    const parsed = taxFormSubmissionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid tax form data",
+        details: parsed.error.flatten(),
+      });
+    }
     const {
       formType,
       name,
@@ -743,46 +811,60 @@ router.post("/tax-form/submit", async (req, res) => {
       countryOfCitizenship,
       claimTreatyBenefits,
       treatyCountry,
-      certify,
       signature,
-    } = req.body;
-
-    if (!formType || !name || !address || !tin || !certify || !signature) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+    } = parsed.data;
 
     const now = new Date();
-
-    const [inserted] = await db
-      .insert(taxForms)
-      .values({
-        userId: req.user.id,
-        formType,
-        status: "pending_review",
-        taxYear: now.getFullYear(),
-        formData: {
-          name,
-          businessName: businessName || null,
-          taxClassification: taxClassification || null,
-          address,
-          tinType,
-          countryOfCitizenship: countryOfCitizenship || null,
-          claimTreatyBenefits: claimTreatyBenefits || false,
-          treatyCountry: treatyCountry || null,
-          signature,
-          signatureDate: now.toISOString(),
-        },
-        submittedAt: now,
-        createdAt: now,
-      })
-      .returning();
+    const taxYear = now.getFullYear();
+    const formData = {
+      name,
+      businessName: businessName || null,
+      taxClassification: taxClassification || null,
+      address,
+      tinType,
+      tin,
+      countryOfCitizenship: countryOfCitizenship || null,
+      claimTreatyBenefits: claimTreatyBenefits || false,
+      treatyCountry: treatyCountry || null,
+      signature,
+      signatureDate: now.toISOString(),
+    };
+    const [existing] = await db
+      .select({ id: taxForms.id })
+      .from(taxForms)
+      .where(
+        and(
+          eq(taxForms.userId, req.user.id),
+          eq(taxForms.formType, formType),
+          eq(taxForms.taxYear, taxYear),
+        ),
+      )
+      .limit(1);
+    const [saved] = existing
+      ? await db
+          .update(taxForms)
+          .set({ status: "pending_review", formData, submittedAt: now })
+          .where(eq(taxForms.id, existing.id))
+          .returning()
+      : await db
+          .insert(taxForms)
+          .values({
+            userId: req.user.id,
+            formType,
+            status: "pending_review",
+            taxYear,
+            formData,
+            submittedAt: now,
+            createdAt: now,
+          })
+          .returning();
 
     res.json({
       success: true,
-      formId: inserted.id,
+      formId: saved.id,
+      formType: saved.formType,
       status: "pending_review",
-      message:
-        "Tax form submitted for review. You will be notified once it is approved.",
+      message: "Tax form submitted for review.",
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error submitting tax form:");
@@ -1027,13 +1109,14 @@ router.post("/disputes", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { type, subject, description, amount, period } = req.body;
-
-    if (!type || !subject || !description) {
-      return res
-        .status(400)
-        .json({ error: "type, subject, and description are required" });
+    const parsed = disputeSubmissionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid dispute data",
+        details: parsed.error.flatten(),
+      });
     }
+    const { type, subject, description, amount, period } = parsed.data;
 
     const now = new Date();
 
@@ -1057,8 +1140,7 @@ router.post("/disputes", async (req, res) => {
       success: true,
       disputeId: newDispute.id,
       status: "open",
-      message:
-        "Dispute filed successfully. We will review within 5 business days.",
+      message: "Dispute filed successfully and is open for review.",
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error filing dispute:");
@@ -1079,10 +1161,29 @@ router.post("/disputes/:id/evidence", async (req, res) => {
     }
 
     const { id } = req.params;
+    if (!disputeIdSchema.safeParse(id).success) {
+      return res.status(400).json({ error: "Invalid dispute ID" });
+    }
     const { description, files } = req.body;
 
-    if (!description) {
-      return res.status(400).json({ error: "description is required" });
+    if (
+      typeof description !== "string" ||
+      !description.trim() ||
+      description.length > 10_000
+    ) {
+      return res
+        .status(400)
+        .json({ error: "A valid evidence description is required" });
+    }
+    if (
+      files !== undefined &&
+      (!Array.isArray(files) ||
+        files.length > 10 ||
+        files.some((file) => typeof file !== "string" || file.length > 2_000))
+    ) {
+      return res.status(400).json({
+        error: "Evidence attachments must be uploaded file URLs",
+      });
     }
 
     const [dispute] = await db
@@ -1105,7 +1206,7 @@ router.post("/disputes/:id/evidence", async (req, res) => {
     await db.insert(disputeMessages).values({
       disputeId: id,
       sender: "user",
-      content: `[Evidence] ${description}`,
+      content: `[Evidence] ${description.trim()}`,
       attachments: files || null,
       createdAt: now,
     });
@@ -1141,10 +1242,17 @@ router.post("/disputes/:id/message", async (req, res) => {
     }
 
     const { id } = req.params;
+    if (!disputeIdSchema.safeParse(id).success) {
+      return res.status(400).json({ error: "Invalid dispute ID" });
+    }
     const { message } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ error: "message is required" });
+    if (
+      typeof message !== "string" ||
+      !message.trim() ||
+      message.length > 10_000
+    ) {
+      return res.status(400).json({ error: "A valid message is required" });
     }
 
     const [dispute] = await db
@@ -1167,7 +1275,7 @@ router.post("/disputes/:id/message", async (req, res) => {
     await db.insert(disputeMessages).values({
       disputeId: id,
       sender: "user",
-      content: message,
+      content: message.trim(),
       createdAt: now,
     });
 

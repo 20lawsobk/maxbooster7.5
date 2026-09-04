@@ -4,11 +4,14 @@ import { playlistPitches, insertPlaylistPitchSchema } from "@shared/schema";
 import { and, eq, desc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
+import { requirePremium } from "../middleware/requirePremium.js";
 import { logger } from "../logger.js";
 import { queryCache, createCacheKey } from "../lib/queryCache.js";
 import { parsePaginationParams } from "../middleware/pagination.js";
 
 const router = Router();
+const pitchIdSchema = z.string().uuid();
+router.use(requireAuth, requirePremium);
 
 const CURATORS = [
   {
@@ -173,13 +176,13 @@ const CURATORS = [
   },
 ];
 
-router.get("/curators", requireAuth, (_req, res) => {
+router.get("/curators", (_req, res) => {
   res.json(
     CURATORS.map(({ followers: _followers, email: _email, ...curator }) => curator),
   );
 });
 
-router.get("/", requireAuth, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
     const pitches = await db
@@ -196,7 +199,7 @@ router.get("/", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const validatedData = insertPlaylistPitchSchema.parse({
       ...req.body,
@@ -225,8 +228,11 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
-router.put("/:id", requireAuth, async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
+    const parsedId = pitchIdSchema.safeParse(req.params.id);
+    if (!parsedId.success)
+      return res.status(400).json({ error: "Invalid pitch ID" });
     const validatedData = insertPlaylistPitchSchema
       .partial()
       .omit({ userId: true })
@@ -236,7 +242,7 @@ router.put("/:id", requireAuth, async (req, res) => {
       .set({ ...validatedData, updatedAt: new Date() })
       .where(
         and(
-          eq(playlistPitches.id, (req.params.id as string)),
+          eq(playlistPitches.id, parsedId.data),
           eq(playlistPitches.userId, req.user!.id),
         ),
       )
@@ -260,10 +266,13 @@ router.put("/:id", requireAuth, async (req, res) => {
 });
 
 // PATCH /api/playlist-pitching/:id/status — record pitch outcome (placed, rejected, etc.)
-router.patch("/:id/status", requireAuth, async (req, res) => {
+router.patch("/:id/status", async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params as Record<string, string>;
+    const parsedId = pitchIdSchema.safeParse(id);
+    if (!parsedId.success)
+      return res.status(400).json({ error: "Invalid pitch ID" });
     const statusSchema = z.object({
       status: z.enum([
         "draft",
@@ -291,7 +300,10 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
       .update(playlistPitches)
       .set(setFields)
       .where(
-        and(eq(playlistPitches.id, id), eq(playlistPitches.userId, userId)),
+        and(
+          eq(playlistPitches.id, parsedId.data),
+          eq(playlistPitches.userId, userId),
+        ),
       )
       .returning();
 
@@ -311,13 +323,16 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
   }
 });
 
-router.delete("/:id", requireAuth, async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
+    const parsedId = pitchIdSchema.safeParse(req.params.id);
+    if (!parsedId.success)
+      return res.status(400).json({ error: "Invalid pitch ID" });
     const [deletedPitch] = await db
       .delete(playlistPitches)
       .where(
         and(
-          eq(playlistPitches.id, (req.params.id as string)),
+          eq(playlistPitches.id, parsedId.data),
           eq(playlistPitches.userId, req.user!.id),
         ),
       )
@@ -335,7 +350,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/stats", requireAuth, async (req, res) => {
+router.get("/stats", async (req, res) => {
   try {
     const userId = req.user!.id;
     const cacheKey = createCacheKey("stats:playlistPitches", userId);
@@ -388,14 +403,17 @@ router.get("/stats", requireAuth, async (req, res) => {
 });
 
 // GET /:id must come after /stats to prevent route shadowing
-router.get("/:id", requireAuth, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
+    const parsedId = pitchIdSchema.safeParse(req.params.id);
+    if (!parsedId.success)
+      return res.status(400).json({ error: "Invalid pitch ID" });
     const [item] = await db
       .select()
       .from(playlistPitches)
       .where(
         and(
-          eq(playlistPitches.id, (req.params.id as string)),
+          eq(playlistPitches.id, parsedId.data),
           eq(playlistPitches.userId, req.user!.id),
         ),
       )

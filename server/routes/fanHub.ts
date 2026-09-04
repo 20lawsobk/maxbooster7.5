@@ -2,7 +2,7 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db.js";
 import { fanSubscribers, fanMessages, users } from "../../shared/schema.js";
-import { eq, and, or, ilike, sql, desc } from "drizzle-orm";
+import { eq, and, or, ilike, gte, sql, desc } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requirePremium } from "../middleware/requirePremium.js";
@@ -36,7 +36,9 @@ const updateSubscriberSchema = z.object({
 const sendMessageSchema = z.object({
   subject: z.string().min(1).max(500),
   body: z.string().min(1).max(100_000),
-  segmentFilter: z.string().max(200).optional().default("all"),
+  // Segmented delivery is not implemented; accepting a segment here would
+  // misleadingly record it while still delivering to every subscriber.
+  segmentFilter: z.literal("all").optional().default("all"),
 });
 
 const importSubscriberSchema = z.object({
@@ -48,12 +50,13 @@ const importSubscriberSchema = z.object({
   isVip: z.boolean().optional(),
   notes: z.string().max(5000).optional(),
 });
+const subscriberIdSchema = z.string().uuid();
 
 router.get("/subscribers", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const page = Math.max(parseInt(req.query.page as string) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 200);
     const search = (req.query.search as string)?.slice(0, 200) || "";
     const offset = (page - 1) * limit;
 
@@ -120,6 +123,10 @@ router.put("/subscribers/:id", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params as Record<string, string>;
+    const parsedId = subscriberIdSchema.safeParse(id);
+    if (!parsedId.success) {
+      return res.status(400).json({ error: "Invalid subscriber ID" });
+    }
 
     const parsed = updateSubscriberSchema?.safeParse(req.body);
     if (!parsed?.success) {
@@ -131,7 +138,12 @@ router.put("/subscribers/:id", async (req: Request, res: Response) => {
     const [updated] = await db
       .update(fanSubscribers)
       .set({ ...parsed?.data })
-      .where(and(eq(fanSubscribers.id, id), eq(fanSubscribers.userId, userId)))
+      .where(
+        and(
+          eq(fanSubscribers.id, parsedId.data),
+          eq(fanSubscribers.userId, userId),
+        ),
+      )
       .returning();
 
     if (!updated) {
@@ -149,10 +161,19 @@ router.delete("/subscribers/:id", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params as Record<string, string>;
+    const parsedId = subscriberIdSchema.safeParse(id);
+    if (!parsedId.success) {
+      return res.status(400).json({ error: "Invalid subscriber ID" });
+    }
 
     const [deleted] = await db
       .delete(fanSubscribers)
-      .where(and(eq(fanSubscribers.id, id), eq(fanSubscribers.userId, userId)))
+      .where(
+        and(
+          eq(fanSubscribers.id, parsedId.data),
+          eq(fanSubscribers.userId, userId),
+        ),
+      )
       .returning();
 
     if (!deleted) {
@@ -175,6 +196,11 @@ router.post("/subscribers/import", async (req: Request, res: Response) => {
       return res
         .status(400)
         .json({ error: "Invalid import data: must be an array" });
+    }
+    if (importData.length === 0) {
+      return res.status(400).json({
+        error: "Import data must contain at least one subscriber",
+      });
     }
 
     if (importData?.length > 1000) {
@@ -212,26 +238,50 @@ router.post("/subscribers/import", async (req: Request, res: Response) => {
 router.get("/stats", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    const [stats] = await db
-      .select({
-        totalFans: sql<number>`count(*)`,
-        vipCount: sql<number>`count(*) filter (where ${fanSubscribers.isVip} = true)`,
-        totalSpent: sql<number>`sum(${fanSubscribers.totalSpent})`,
-      })
-      .from(fanSubscribers)
-      .where(eq(fanSubscribers.userId, userId));
+    const [[stats], [recentStats], [messageStats]] = await Promise.all([
+      db
+        .select({
+          totalFans: sql<number>`count(*)`,
+          vipCount: sql<number>`count(*) filter (where ${fanSubscribers.isVip} = true)`,
+          totalSpent: sql<number>`sum(${fanSubscribers.totalSpent})`,
+        })
+        .from(fanSubscribers)
+        .where(eq(fanSubscribers.userId, userId)),
+      db
+        .select({ totalFans: sql<number>`count(*)` })
+        .from(fanSubscribers)
+        .where(
+          and(
+            eq(fanSubscribers.userId, userId),
+            gte(fanSubscribers.joinedAt, thirtyDaysAgo),
+          ),
+        ),
+      db
+        .select({
+          recipients: sql<number>`coalesce(sum(${fanMessages.recipientCount}), 0)`,
+          opens: sql<number>`coalesce(sum(${fanMessages.openCount}), 0)`,
+        })
+        .from(fanMessages)
+        .where(eq(fanMessages.userId, userId)),
+    ]);
+    const totalFans = Number(stats?.totalFans || 0);
+    const newFansLast30Days = Number(recentStats?.totalFans || 0);
+    const recipients = Number(messageStats?.recipients || 0);
+    const opens = Number(messageStats?.opens || 0);
 
     return res.json({
-      totalFans: Number(stats?.totalFans || 0),
+      totalFans,
       vipCount: Number(stats?.vipCount || 0),
       totalSpent: Number(stats?.totalSpent || 0),
       avgSpend:
-        Number(stats?.totalFans) > 0
-          ? Number(stats?.totalSpent || 0) / Number(stats?.totalFans)
+        totalFans > 0
+          ? Number(stats?.totalSpent || 0) / totalFans
           : 0,
-      growthRate: 15.5,
-      emailOpenRate: 24.8,
+      newFansLast30Days,
+      emailOpenRate:
+        recipients > 0 ? Math.round((opens / recipients) * 1000) / 10 : 0,
     });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching fan hub stats:");
@@ -360,7 +410,7 @@ router.post("/message", async (req: Request, res: Response) => {
 router.get("/messages", async (req: Request, res: Response) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 200);
     const offset = (page - 1) * limit;
     const messages = await db
       .select()
@@ -381,6 +431,10 @@ router.put("/subscribers/:id/tag", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params as Record<string, string>;
+    const parsedId = subscriberIdSchema.safeParse(id);
+    if (!parsedId.success) {
+      return res.status(400).json({ error: "Invalid subscriber ID" });
+    }
     const parsed = z
       .object({ tags: z.array(z.string().max(100)).max(50) })
       .safeParse(req.body);
@@ -394,7 +448,12 @@ router.put("/subscribers/:id/tag", async (req: Request, res: Response) => {
     const [updated] = await db
       .update(fanSubscribers)
       .set({ tags: parsed.data.tags })
-      .where(and(eq(fanSubscribers.id, id), eq(fanSubscribers.userId, userId)))
+      .where(
+        and(
+          eq(fanSubscribers.id, parsedId.data),
+          eq(fanSubscribers.userId, userId),
+        ),
+      )
       .returning();
 
     if (!updated) {

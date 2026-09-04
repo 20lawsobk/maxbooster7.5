@@ -15,15 +15,11 @@ router.get("/metrics", async (_req: Request, res: Response) => {
   try {
     const now = new Date();
     const oneDayAgo = new Date(now?.getTime() - 24 * 60 * 60 * 1000);
-    new Date(now?.getTime() - 60 * 60 * 1000);
-
     const [
       activeSessionsResult,
-      totalThreatsResult,
       blockedThreatsResult,
       suspiciousActivityResult,
       rateLimitThreatsResult,
-      totalUsersResult,
     ] = await Promise.all([
       db
         .select({ count: count() })
@@ -34,10 +30,6 @@ router.get("/metrics", async (_req: Request, res: Response) => {
             gte(sessions.expiresAt, now),
           ),
         ),
-      db
-        .select({ count: count() })
-        .from(securityThreats)
-        .where(gte(securityThreats.detectedAt, oneDayAgo)),
       db
         .select({ count: count() })
         .from(securityThreats)
@@ -65,16 +57,12 @@ router.get("/metrics", async (_req: Request, res: Response) => {
             gte(securityThreats.detectedAt, oneDayAgo),
           ),
         ),
-      db.select({ count: count() }).from(users),
     ]);
 
     const activeSessions = activeSessionsResult[0]?.count || 0;
-    const totalThreats = totalThreatsResult[0]?.count || 0;
     const blockedAttempts = blockedThreatsResult[0]?.count || 0;
     const suspiciousActivity = suspiciousActivityResult[0]?.count || 0;
     const rateLimit = rateLimitThreatsResult[0]?.count || 0;
-    const totalUsers = totalUsersResult[0]?.count || 0;
-
     const failedLogins = await db
       .select({ count: count() })
       .from(securityThreats)
@@ -86,21 +74,12 @@ router.get("/metrics", async (_req: Request, res: Response) => {
       );
 
     const failedLoginCount = failedLogins[0]?.count || 0;
-    const totalLogins = Math.max(totalUsers, activeSessions + failedLoginCount);
-    const successRate =
-      totalLogins > 0
-        ? ((totalLogins - failedLoginCount) / (totalLogins || 1)) * 100
-        : 100;
-
     const uptimeSeconds = Math.floor((Date.now() - processStartTime) / 1000);
-    const errorRate =
-      totalThreats > 0 ? (totalThreats / Math.max(1, totalLogins)) * 100 : 0;
-    const requestsPerMinute = Math.floor(activeSessions * 2.5);
 
     let systemStatus: "healthy" | "degraded" | "critical" = "healthy";
-    if (errorRate > 10 || blockedAttempts > 100) {
+    if (blockedAttempts > 100) {
       systemStatus = "critical";
-    } else if (errorRate > 5 || blockedAttempts > 50) {
+    } else if (blockedAttempts > 50) {
       systemStatus = "degraded";
     }
 
@@ -108,13 +87,14 @@ router.get("/metrics", async (_req: Request, res: Response) => {
       systemHealth: {
         uptime: uptimeSeconds,
         status: systemStatus,
-        errorRate: Math.round(errorRate * 100) / 100,
-        requestsPerMinute,
       },
       authentication: {
-        totalLogins,
+        // The schema records active and created sessions, not successful login
+        // events. Reporting either as a 24-hour login total or deriving a
+        // success rate from the total user count would be misleading.
+        totalLogins: null,
         failedLogins: failedLoginCount,
-        successRate: Math.round(successRate * 100) / 100,
+        successRate: null,
         activeSessions,
       },
       threats: {
@@ -218,10 +198,19 @@ router.patch(
   "/behavioral-alerts/:alertId/resolve",
   async (req: Request, res: Response) => {
     try {
+      const { alertId } = req.params;
+      if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          alertId,
+        )
+      ) {
+        return res.status(400).json({ error: "Invalid security alert ID" });
+      }
+
       const [resolvedThreat] = await db
         .update(securityThreats)
         .set({ status: "resolved", resolvedAt: new Date() })
-        .where(eq(securityThreats.id, req.params.alertId))
+        .where(eq(securityThreats.id, alertId))
         .returning({ id: securityThreats.id });
 
       if (!resolvedThreat) {
@@ -336,105 +325,12 @@ router.get("/anomaly-detection", async (_req: Request, res: Response) => {
 });
 
 router.get("/pentest-results", async (_req: Request, res: Response) => {
-  try {
-    const now = new Date();
-
-    const [threatStats] = await Promise.all([
-      db
-        .select({
-          severity: securityThreats.severity,
-          count: count(),
-        })
-        .from(securityThreats)
-        .groupBy(securityThreats.severity),
-    ]);
-
-    const severityCounts: Record<string, number> = {};
-    threatStats?.forEach((stat) => {
-      severityCounts[stat.severity] = stat?.count;
-    });
-
-    const vulnerabilities: Array<{
-      id: string;
-      severity: "critical" | "high" | "medium" | "low";
-      category: string;
-      description: string;
-      status: "open";
-      detectedDate: string;
-    }> = [];
-
-    const securityChecks = [
-      { check: "HTTPS enforcement", passed: true },
-      { check: "SQL injection protection", passed: true },
-      { check: "XSS protection headers", passed: true },
-      { check: "CSRF token validation", passed: true },
-      { check: "Rate limiting", passed: true },
-      { check: "Session security", passed: true },
-      { check: "Password hashing (bcrypt)", passed: true },
-      { check: "Input validation", passed: true },
-    ];
-
-    const passedCount = securityChecks?.filter((c) => c?.passed).length;
-
-    if (severityCounts["critical"] && severityCounts["critical"] > 0) {
-      vulnerabilities?.push({
-        id: "vuln-001",
-        severity: "critical",
-        category: "Active Threats",
-        description: `${severityCounts["critical"]} critical threats detected in the system`,
-        status: "open",
-        detectedDate: now.toISOString(),
-      });
-    }
-
-    if (severityCounts["high"] && severityCounts["high"] > 5) {
-      vulnerabilities?.push({
-        id: "vuln-002",
-        severity: "high",
-        category: "Elevated Risk",
-        description: `${severityCounts["high"]} high-severity security events logged`,
-        status: "open",
-        detectedDate: now.toISOString(),
-      });
-    }
-
-    const recommendations: string[] = [
-      "Continue monitoring for anomalous authentication patterns",
-      "Review and update security policies quarterly",
-      "Ensure all dependencies are up to date",
-      "Perform regular security awareness training",
-    ];
-
-    if (severityCounts["critical"] && severityCounts["critical"] > 0) {
-      recommendations?.unshift(
-        "Immediately investigate and remediate critical threats",
-      );
-    }
-
-    if (severityCounts["high"] && severityCounts["high"] > 10) {
-      recommendations?.unshift(
-        "Review high-severity events and implement additional monitoring",
-      );
-    }
-
-    const response = {
-      lastScan: now.toISOString(),
-      summary: {
-        critical: severityCounts["critical"] || 0,
-        high: severityCounts["high"] || 0,
-        medium: severityCounts["medium"] || 0,
-        low: severityCounts["low"] || 0,
-        passed: passedCount,
-      },
-      vulnerabilities,
-      recommendations,
-    };
-
-    res.json(response);
-  } catch (error) {
-    logger.warn({ err: error }, "Error fetching pentest results:");
-    res.status(500).json({ error: "Failed to fetch pentest results" });
-  }
+  // No scanner is integrated with this route. Do not convert security-event
+  // counts and a fixed list of checks into a fictional penetration-test result.
+  res.status(501).json({
+    error:
+      "No completed security assessment is available. Connect a security scanner before publishing assessment results.",
+  });
 });
 
 router.get("/threats", async (req: Request, res: Response) => {
@@ -627,8 +523,15 @@ userAlertsRouter?.post(
 
       const userId = req.user!.id;
       const { alertId } = req.params as Record<string, string>;
+      if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          alertId,
+        )
+      ) {
+        return res.status(400).json({ error: "Invalid security alert ID" });
+      }
 
-      await db
+      const [dismissedThreat] = await db
         .update(securityThreats)
         .set({ status: "resolved" })
         .where(
@@ -636,7 +539,12 @@ userAlertsRouter?.post(
             eq(securityThreats.id, alertId),
             eq(securityThreats.userId, userId),
           ),
-        );
+        )
+        .returning({ id: securityThreats.id });
+
+      if (!dismissedThreat) {
+        return res.status(404).json({ error: "Security alert not found" });
+      }
 
       res.json({ success: true, message: "Alert dismissed" });
     } catch (error) {

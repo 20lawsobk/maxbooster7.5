@@ -133,8 +133,6 @@ interface AiInsightsResponse {
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useRequireSubscription();
-  useToast();
-  useQueryClient();
 
   // Show loading skeleton during auth check to prevent flickering
   if (authLoading) {
@@ -319,6 +317,13 @@ function DashboardContent({ user }: { user: User }) {
       });
       invalidateDashboard();
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Content Optimization Failed",
+        description: error.message || "Unable to optimize content. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   // Stats object - no memoization needed as it's just a fallback
@@ -452,8 +457,8 @@ function DashboardContent({ user }: { user: User }) {
     setShowFeatureSpotlight(false);
     setShowFeatureDiscovery(false);
     toast({
-      title: "Feature Navigation",
-      description: `Navigating to ${featureId} feature...`,
+      title: "Feature Selected",
+      description: `Find ${featureId} in the navigation to get started.`,
     });
   };
 
@@ -531,12 +536,24 @@ function DashboardContent({ user }: { user: User }) {
             </Button>
             <Badge
               data-testid="badge-ai-enhanced"
-              className="bg-green-100 text-green-800 border-green-300"
+              className={
+                hasPaidSubscription
+                  ? "bg-green-100 text-green-800 border-green-300"
+                  : "bg-gray-100 text-gray-700 border-gray-300"
+              }
               role="status"
-              aria-label="AI features enabled"
+              aria-label={
+                hasPaidSubscription
+                  ? "AI features enabled"
+                  : "AI features available with a paid subscription"
+              }
             >
-              <CheckCircle className="w-3 h-3 mr-1" aria-hidden="true" />
-              AI Enhanced
+              {hasPaidSubscription ? (
+                <CheckCircle className="w-3 h-3 mr-1" aria-hidden="true" />
+              ) : (
+                <Lock className="w-3 h-3 mr-1" aria-hidden="true" />
+              )}
+              {hasPaidSubscription ? "AI Enhanced" : "AI with subscription"}
             </Badge>
           </nav>
         </header>

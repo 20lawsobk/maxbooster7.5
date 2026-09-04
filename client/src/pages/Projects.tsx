@@ -33,7 +33,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
 import { StudioProjectDialog } from "@/components/studio/StudioProjectDialog";
-import { Music, Upload, Play, Pause, Loader2, MoreVertical, Edit, Trash2, TrendingUp, Calendar, Clock, FileAudio, Sparkles, Mic2, PenLine, Plus, Lightbulb, ChevronRight, Target, Copy } from "lucide-react";
+import { Music, Upload, Play, Pause, Loader2, MoreVertical, Edit, Trash2, TrendingUp, Calendar, Clock, FileAudio, Sparkles, Mic2, PenLine, Plus, Lightbulb, ChevronRight, Target, Copy, Users } from "lucide-react";
+import { RoyaltySplitManager } from "@/components/royalties/RoyaltySplitManager";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,6 +89,9 @@ export default function Projects() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioProjectRef = useRef<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [royaltySplitProject, setRoyaltySplitProject] = useState<Project | null>(
+    null,
+  );
 
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editForm, setEditForm] = useState({
@@ -275,6 +279,11 @@ export default function Projects() {
             setCurrentlyPlaying(null);
             setAudioLoading(null);
             audioProjectRef.current = null;
+            toast({
+              title: "Playback Error",
+              description: "Playback could not be started.",
+              variant: "destructive",
+            });
           }
         });
       };
@@ -283,8 +292,16 @@ export default function Projects() {
         setAudioLoading(null);
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {
-          setCurrentlyPlaying(null);
-          audioProjectRef.current = null;
+          if (audioProjectRef.current === project.id) {
+            setCurrentlyPlaying(null);
+            setAudioLoading(null);
+            audioProjectRef.current = null;
+            toast({
+              title: "Playback Error",
+              description: "Playback could not be started.",
+              variant: "destructive",
+            });
+          }
         });
       } else {
         const audio = audioRef.current || new Audio();
@@ -374,7 +391,7 @@ export default function Projects() {
   };
 
   const getProgressValue = (stage: string, progress?: number) => {
-    if (progress) return progress;
+    if (typeof progress === "number") return progress;
     const stageProgress: Record<string, number> = {
       setup: 10,
       recording: 25,
@@ -526,6 +543,21 @@ export default function Projects() {
               </form>
             </DialogContent>
           </Dialog>
+          <Dialog
+            open={Boolean(royaltySplitProject)}
+            onOpenChange={(open) => !open && setRoyaltySplitProject(null)}
+          >
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  Royalty Splits — {royaltySplitProject?.title}
+                </DialogTitle>
+              </DialogHeader>
+              {royaltySplitProject && (
+                <RoyaltySplitManager projectId={royaltySplitProject.id} />
+              )}
+            </DialogContent>
+          </Dialog>
         </header>
 
         <Tabs
@@ -652,6 +684,13 @@ export default function Projects() {
                             >
                               <Edit className="h-4 w-4 mr-2" />
                               Edit Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setRoyaltySplitProject(project)}
+                              data-testid={`button-royalty-splits-${project.id}`}
+                            >
+                              <Users className="h-4 w-4 mr-2" />
+                              Royalty Splits
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>

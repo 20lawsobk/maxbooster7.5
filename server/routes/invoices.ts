@@ -6,6 +6,7 @@ import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { logger } from "../logger";
 import { randomBytes } from "crypto";
 import { requireAuth } from "../middleware/auth.js";
+import { requireUUIDParam } from "../middleware/requestValidation.js";
 import { jsPDF } from "jspdf";
 import { emailService } from "../services/emailService.js";
 
@@ -55,6 +56,50 @@ function escapeHtml(value: string): string {
   })[character] as string);
 }
 
+function normalizeLineItems(lineItems: unknown) {
+  if (!Array.isArray(lineItems) || lineItems.length === 0) {
+    return { error: "Line items are required" };
+  }
+
+  const normalizedLineItems = [];
+  for (const item of lineItems as Record<string, unknown>[]) {
+    const description =
+      typeof item.description === "string" ? item.description.trim() : "";
+    const quantity = Number(item.quantity);
+    const unitPrice = Number(item.unitPrice);
+    if (
+      !description ||
+      !Number.isSafeInteger(quantity) ||
+      quantity < 1 ||
+      !Number.isFinite(unitPrice) ||
+      unitPrice < 0
+    ) {
+      return {
+        error:
+          "Each line item needs a description, whole-number quantity, and non-negative price",
+      };
+    }
+    normalizedLineItems.push({ description, quantity, unitPrice });
+  }
+
+  const subtotalCents = normalizedLineItems.reduce(
+    (sum, item) => sum + Math.round(item.quantity * item.unitPrice * 100),
+    0,
+  );
+  if (!Number.isSafeInteger(subtotalCents)) {
+    return { error: "Invoice total is too large" };
+  }
+
+  return { normalizedLineItems, subtotalCents };
+}
+
+function parseDueDate(value: unknown): Date | undefined | null {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value !== "string") return null;
+  const dueDate = new Date(value);
+  return Number.isNaN(dueDate.getTime()) ? null : dueDate;
+}
+
 router.get(
   "/",
   requireAuth,
@@ -90,6 +135,7 @@ router.get(
 router.get(
   "/:invoiceId",
   requireAuth,
+  requireUUIDParam("invoiceId"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { invoiceId } = req.params as Record<string, string>;
@@ -133,9 +179,8 @@ router.post(
         currency,
       } = req.body;
 
-      if (!lineItems || !Array.isArray(lineItems) || lineItems?.length === 0) {
-        return res.status(400).json({ error: "Line items are required" });
-      }
+      const normalized = normalizeLineItems(lineItems);
+      if ("error" in normalized) return res.status(400).json(normalized);
       const clientEmail =
         toAddress && typeof toAddress.email === "string"
           ? toAddress.email.trim()
@@ -143,34 +188,21 @@ router.post(
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
         return res.status(400).json({ error: "A valid client email is required" });
       }
+      const clientName =
+        toAddress && typeof toAddress.name === "string"
+          ? toAddress.name.trim()
+          : "";
+      if (!clientName) {
+        return res.status(400).json({ error: "A client name is required" });
+      }
       if (typeof currency !== "undefined" && !/^[A-Za-z]{3}$/.test(currency)) {
         return res.status(400).json({ error: "Currency must be a three-letter ISO code" });
       }
-
-      const normalizedLineItems = [];
-      for (const item of lineItems as Record<string, unknown>[]) {
-        const description = typeof item.description === "string" ? item.description.trim() : "";
-        const quantity = Number(item.quantity);
-        const unitPrice = Number(item.unitPrice);
-        if (
-          !description ||
-          !Number.isSafeInteger(quantity) ||
-          quantity < 1 ||
-          !Number.isFinite(unitPrice) ||
-          unitPrice < 0
-        ) {
-          return res.status(400).json({
-            error: "Each line item needs a description, whole-number quantity, and non-negative price",
-          });
-        }
-        normalizedLineItems.push({ description, quantity, unitPrice });
+      const parsedDueDate = parseDueDate(dueDate);
+      if (parsedDueDate === null) {
+        return res.status(400).json({ error: "Due date must be a valid date" });
       }
-
-      const subtotalCents = normalizedLineItems.reduce(
-        (sum: number, item: { quantity: number; unitPrice: number }) =>
-          sum + Math.round(item.quantity * item.unitPrice * 100),
-        0,
-      );
+      const { normalizedLineItems, subtotalCents } = normalized;
 
       const taxCents = Math.round(subtotalCents * 0.0); // Calculate based on location
       const totalCents = subtotalCents + taxCents;
@@ -185,15 +217,14 @@ router.post(
           invoiceType: invoiceType || "sale",
           status: "draft",
           fromAddress: fromAddress || null,
-          toAddress: { ...toAddress, email: clientEmail },
+          toAddress: { ...toAddress, name: clientName, email: clientEmail },
           lineItems: normalizedLineItems,
           subtotalCents,
           taxCents,
           totalCents,
           currency: typeof currency === "string" ? currency.toLowerCase() : "usd",
-          dueDate: dueDate
-            ? new Date(dueDate)
-            : new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000),
+          dueDate:
+            parsedDueDate ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           notes,
           terms,
         })
@@ -214,6 +245,7 @@ router.post(
 router.put(
   "/:invoiceId",
   requireAuth,
+  requireUUIDParam("invoiceId"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { invoiceId } = req.params as Record<string, string>;
@@ -229,48 +261,60 @@ router.put(
         return res.status(404).json({ error: "Invoice not found" });
       }
 
-      if (existing?.status === "paid") {
-        return res.status(400).json({ error: "Cannot modify paid invoice" });
+      if (existing.status !== "draft") {
+        return res.status(400).json({ error: "Only draft invoices can be modified" });
       }
 
-      const {
-        lineItems,
-        toAddress,
-        fromAddress,
-        dueDate,
-        notes,
-        terms,
-        status,
-      } = req.body;
+      const { lineItems, fromAddress, dueDate, notes, terms, status } = req.body;
+      let { toAddress } = req.body;
 
-      let subtotalCents = existing?.subtotalCents;
-      let totalCents = existing?.totalCents;
-
-      if (lineItems && Array.isArray(lineItems)) {
-        subtotalCents = lineItems?.reduce(
-          (sum: number, item: { quantity: number; unitPrice: number }) => {
-            return sum + item?.quantity * item?.unitPrice * 100;
-          },
-          0,
-        );
-        totalCents = subtotalCents! + (existing?.taxCents || 0);
+      if (status !== undefined) {
+        return res.status(400).json({
+          error: "Invoice status is managed by sending and payment workflows",
+        });
       }
+      if (toAddress !== undefined) {
+        const clientName =
+          toAddress && typeof toAddress.name === "string"
+            ? toAddress.name.trim()
+            : "";
+        const clientEmail =
+          toAddress && typeof toAddress.email === "string"
+            ? toAddress.email.trim()
+            : "";
+        if (
+          !clientName ||
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)
+        ) {
+          return res.status(400).json({
+            error: "A client name and valid client email are required",
+          });
+        }
+        toAddress = { ...toAddress, name: clientName, email: clientEmail };
+      }
+      const normalized = lineItems === undefined ? undefined : normalizeLineItems(lineItems);
+      if (normalized && "error" in normalized) return res.status(400).json(normalized);
+      const parsedDueDate = parseDueDate(dueDate);
+      if (parsedDueDate === null) {
+        return res.status(400).json({ error: "Due date must be a valid date" });
+      }
+      const subtotalCents = normalized?.subtotalCents ?? existing.subtotalCents;
+      const totalCents = subtotalCents + (existing.taxCents || 0);
 
       const [updated] = await db
         .update(invoices)
         .set({
-          lineItems: lineItems || existing?.lineItems,
-          fromAddress: fromAddress || existing?.fromAddress,
-          toAddress: toAddress || existing?.toAddress,
-          dueDate: dueDate ? new Date(dueDate) : existing.dueDate,
-          notes: notes || existing?.notes,
-          terms: terms || existing?.terms,
-          status: status || existing?.status,
+          lineItems: normalized?.normalizedLineItems ?? existing.lineItems,
+          fromAddress: fromAddress ?? existing.fromAddress,
+          toAddress: toAddress ?? existing.toAddress,
+          dueDate: parsedDueDate ?? existing.dueDate,
+          notes: notes ?? existing.notes,
+          terms: terms ?? existing.terms,
           subtotalCents,
           totalCents,
           updatedAt: new Date(),
         })
-        .where(eq(invoices.id, invoiceId))
+        .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
         .returning();
 
       res.json(updated);
@@ -284,6 +328,7 @@ router.put(
 router.post(
   "/:invoiceId/send",
   requireAuth,
+  requireUUIDParam("invoiceId"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { invoiceId } = req.params as Record<string, string>;
@@ -344,6 +389,7 @@ router.post(
 router.get(
   "/:invoiceId/pdf",
   requireAuth,
+  requireUUIDParam("invoiceId"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { invoiceId } = req.params as Record<string, string>;
@@ -408,6 +454,7 @@ router.get(
 router.delete(
   "/:invoiceId",
   requireAuth,
+  requireUUIDParam("invoiceId"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { invoiceId } = req.params as Record<string, string>;
@@ -432,6 +479,7 @@ router.delete(
 router.post(
   "/generate-from-order/:orderId",
   requireAuth,
+  requireUUIDParam("orderId"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { orderId } = req.params as Record<string, string>;
@@ -445,6 +493,22 @@ router.post(
 
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
+      }
+      const [existingInvoice] = await db
+        .select({ id: invoices.id })
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.userId, userId),
+            sql`${invoices.metadata}->>'orderId' = ${orderId}`,
+          ),
+        )
+        .limit(1);
+      if (existingInvoice) {
+        return res.status(409).json({
+          error: "An invoice has already been generated for this order",
+          invoiceId: existingInvoice.id,
+        });
       }
 
       const invoiceNumber = generateInvoiceNumber();

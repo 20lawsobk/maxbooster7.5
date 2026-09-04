@@ -320,12 +320,9 @@ router.get("/ai/forecast-revenue", async (req: Request, res: Response) => {
         projectedMRR = Math.round(
           currentMRR * (1 + calculatedGrowthRate / 100),
         );
-      } else if (currentMRR > 0) {
-        calculatedGrowthRate = 5;
-        projectedMRR = Math.round(currentMRR * 1.05);
       }
-    } catch {
-      // Fall through with null projections on analytics query failure
+    } catch (error) {
+      logger.warn({ err: error }, "Unable to calculate revenue projection");
     }
 
     return res.json({
@@ -474,7 +471,7 @@ router.get("/ai/insights", async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/analytics/music/career-growth
+ * POST /api/analytics/music/career-growth
  * Get career growth predictions
  */
 router.post("/music/career-growth", async (req: Request, res: Response) => {
@@ -527,6 +524,8 @@ router.post("/music/career-growth", async (req: Request, res: Response) => {
         currentValue:
           metric === "streams"
             ? sql<number>`COALESCE(SUM(${analytics.streams}), 0)`
+            : metric === "revenue"
+              ? sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`
             : sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
       })
       .from(analytics)
@@ -539,28 +538,15 @@ router.post("/music/career-growth", async (req: Request, res: Response) => {
     let derivedGrowthRate: number | null = null;
     let confidence: number | null = null;
 
-    if (currentValue > 0) {
-      // Default conservative growth assumption of 8% per 90-day window
-      derivedGrowthRate = 8;
-      const periods =
-        timeline === "3months" ? 1 : timeline === "6months" ? 2 : 4;
-      predictedValue = Math.round(currentValue * Math.pow(1.08, periods));
-      confidence = 0.55;
-    }
-
     return res.json({
       metric,
       currentValue: currentValue || null,
       predictedValue,
       growthRate: derivedGrowthRate,
       timeline,
-      recommendations:
-        currentValue > 0
-          ? [
-              "Consistent release cadence boosts algorithm visibility",
-              "Playlist placements are highest-leverage growth lever",
-            ]
-          : ["Start releasing music to begin tracking career growth"],
+      recommendations: currentValue > 0
+        ? ["More historical data is required before a growth projection can be calculated."]
+        : ["Start releasing music to begin tracking career growth"],
       confidence,
     });
   } catch (error) {
@@ -747,7 +733,7 @@ router.get("/music/fanbase", async (req: Request, res: Response) => {
       topPlatforms,
       demographics: {
         topLocations: [],
-        peakListeningTimes: ["Friday 8PM–12AM", "Saturday 6PM–10PM"],
+        peakListeningTimes: [],
       },
       growthOpportunities,
     });
@@ -859,6 +845,24 @@ router.get("/music/insights", async (req: Request, res: Response) => {
       .limit(1);
     const topPlatform = topPlatformRow[0]?.platform ?? null;
 
+    if (dayRows.length === 0) {
+      return res.json([
+        {
+          category: "data_availability",
+          title: "More data needed",
+          description:
+            "Connect a streaming source or record analytics activity to receive personalized music insights.",
+          impact: "medium" as const,
+          actionable: [
+            "Connect a streaming platform",
+            "Record analytics data from your releases",
+          ],
+          priority: 1,
+          data: {},
+        },
+      ]);
+    }
+
     const insights = [
       {
         category: "release_strategy" as const,
@@ -959,37 +963,21 @@ router.get("/music/release-strategy", async (req: Request, res: Response) => {
     `);
     const dayRowsRS =
       (dayStreamsRS as unknown as Record<string, unknown>).rows ?? dayStreamsRS;
-    const bestDowRS = (dayRowsRS as any)?.length > 0 ? Number(dayRowsRS[0].dow) : 5;
-    const bestDayRS = DAY_NAMES_RS[bestDowRS] ?? "Friday";
-
-    const releaseCountRow = await db
-      .select({ count: count() })
-      .from(releases)
-      .where(eq(releases.userId, userId));
-    const releaseCount = Number(releaseCountRow[0]?.count ?? 0);
+    const bestDowRS =
+      (dayRowsRS as any)?.length > 0 ? Number(dayRowsRS[0].dow) : null;
+    const bestDayRS =
+      bestDowRS === null ? null : DAY_NAMES_RS[bestDowRS] ?? null;
 
     return res.json({
       bestReleaseDay: bestDayRS,
-      bestReleaseTime: "12:00 AM (Midnight)",
-      optimalFrequency:
-        releaseCount > 10
-          ? "Every 2-3 weeks"
-          : releaseCount > 5
-            ? "Every 4-6 weeks"
-            : "Monthly to build momentum",
-      genreTrends: [
-        { genre: "Pop", trend: "rising" as const, score: 85 },
-        { genre: "Hip-Hop", trend: "stable" as const, score: 78 },
-        { genre: "Electronic", trend: "rising" as const, score: 82 },
-        { genre: "Rock", trend: "declining" as const, score: 65 },
-      ],
-      competitorAnalysis: [
-        "Top artists in your genre release monthly",
-        "Average track length is 3:15",
-        "Collaboration tracks perform 40% better",
-      ],
+      bestReleaseTime: null,
+      optimalFrequency: null,
+      genreTrends: [],
+      competitorAnalysis: [],
       recommendations: [
-        `Release singles consistently on ${bestDayRS}s to align with your audience peak`,
+        bestDayRS
+          ? `Release singles consistently on ${bestDayRS}s to align with your audience peak`
+          : "Record streaming activity to identify your audience's peak day",
         "Build anticipation with teasers 1-2 weeks before release",
         "Leverage playlist pitching immediately after release",
         "Create visual content (music videos, lyric videos) for each release",
@@ -1445,11 +1433,14 @@ router.post("/natural-language-query", async (req: Request, res: Response) => {
     }
 
     const { query } = req.body;
-    if (!query) {
+    if (typeof query !== "string" || !query.trim()) {
       return res.status(400).json({ error: "Query is required" });
     }
+    if (query.length > 500) {
+      return res.status(400).json({ error: "Query must be 500 characters or fewer" });
+    }
 
-    const queryLower = query.toLowerCase();
+    const queryLower = query.trim().toLowerCase();
 
     const totalStats = await db
       .select({
@@ -2115,19 +2106,8 @@ router.post(
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-      const { email, frequency, format } = req.body;
-      if (!email || !String(email).includes("@")) {
-        return res.status(400).json({ error: "Valid email required" });
-      }
-
-      logger.info(
-        `Scheduled ${frequency} analytics export for user ${userId} → ${email}`,
-      );
-
-      return res.json({
-        success: true,
-        message: `${frequency === "weekly" ? "Weekly" : "Monthly"} ${(format || "csv").toUpperCase()} report will be sent to ${email}`,
-        scheduledAt: new Date().toISOString(),
+      return res.status(501).json({
+        error: "Recurring analytics exports are not available yet. No export has been scheduled.",
       });
     } catch (error) {
       logger.warn("Error scheduling export:", (error as any)?.message);

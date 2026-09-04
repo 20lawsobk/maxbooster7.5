@@ -129,7 +129,6 @@ export default function Contracts() {
   > | null>(null);
   const [signStep, setSignStep] = useState<"pick" | "draw">("pick");
   const [signingAs, setSigningAs] = useState<string>("");
-  const [pendingContracts, _setPendingContracts] = useState<Contract[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -359,8 +358,9 @@ export default function Contracts() {
       });
       setCurrentOutcome("signature_requested");
       toast({
-        title: "Signature requested",
-        description: "The contract has been sent for signature.",
+        title: "Ready for signature",
+        description:
+          "The contract is now awaiting signatures. Record each verified signature as it is received.",
       });
     },
     onError: (error: Error) => {
@@ -542,11 +542,7 @@ export default function Contracts() {
   const templates = templatesData?.templates || [];
   const categories = templatesData?.categories || [];
   const queryContracts = contractsData?.contracts || [];
-  const pendingIds = new Set(queryContracts.map((c) => c.id));
-  const contracts = [
-    ...queryContracts,
-    ...pendingContracts.filter((c) => !pendingIds.has(c.id)),
-  ];
+  const contracts = queryContracts;
   const stats = statsData?.stats;
 
   const filteredContracts =
@@ -849,7 +845,7 @@ export default function Contracts() {
                           disabled={sendForSignatureMutation.isPending}
                         >
                           <Send className="h-4 w-4 mr-1" />
-                          Send for Signature
+                          Mark Ready for Signature
                         </Button>
                       )}
                       {(contract.status === "pending_signature" ||
@@ -962,7 +958,7 @@ export default function Contracts() {
                           }}
                         >
                           <PenTool className="h-4 w-4 mr-1" />
-                          Sign Now
+                          Record Signature
                         </Button>
                         <Button
                           variant="outline"
@@ -1103,12 +1099,14 @@ export default function Contracts() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <PenTool className="h-5 w-5 text-primary" />
-                {signStep === "pick" ? "Sign Contract" : "Draw Your Signature"}
+                {signStep === "pick"
+                  ? "Record a Signature"
+                  : "Draw the Signature"}
               </DialogTitle>
               <DialogDescription>
                 {signStep === "pick"
-                  ? "Select which party you are signing as."
-                  : "Draw your signature in the box below using your mouse or finger."}
+                    ? "Only record a signature after independently verifying the signer's identity and consent."
+                    : "Draw the signer's signature in the box below using a mouse or finger."}
               </DialogDescription>
             </DialogHeader>
 
@@ -1125,7 +1123,7 @@ export default function Contracts() {
                   </p>
                 </Card>
                 <p className="text-sm text-muted-foreground">
-                  Who are you signing as?
+                  Whose signature are you recording?
                 </p>
                 {selectedContract.signatures.filter((s) => !s.signedAt).length >
                 0 ? (
@@ -1171,7 +1169,7 @@ export default function Contracts() {
             {selectedContract && signStep === "draw" && (
               <div className="space-y-4">
                 <div className="text-sm text-center text-muted-foreground">
-                  Signing as:{" "}
+                  Recording signature for:{" "}
                   <span className="font-semibold text-foreground">
                     {signingAs}
                   </span>
@@ -1191,7 +1189,7 @@ export default function Contracts() {
                     onTouchEnd={() => stopDraw()}
                   />
                   <p className="absolute bottom-2 right-3 text-xs text-muted-foreground pointer-events-none select-none">
-                    Sign here
+                    Signature
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
@@ -1218,14 +1216,14 @@ export default function Contracts() {
                       disabled={signContractMutation.isPending}
                     >
                       {signContractMutation.isPending
-                        ? "Signing..."
-                        : "Submit Signature"}
+                        ? "Recording..."
+                        : "Record Signature"}
                     </Button>
                   </div>
                 </div>
                 <p className="text-xs text-center text-muted-foreground">
-                  By submitting, you agree to all terms of this contract and
-                  confirm this is your legal signature.
+                  By submitting, you confirm you have verified this signer’s
+                  identity and consent to sign this contract.
                 </p>
               </div>
             )}

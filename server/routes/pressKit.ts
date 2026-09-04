@@ -112,6 +112,21 @@ router.put("/", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const validatedData = insertPressKitSchema?.parse({ ...req.body, userId });
+    const photos = validatedData.photos;
+    if (
+      Array.isArray(photos) &&
+      photos.some((photo) => {
+        const url =
+          photo &&
+          typeof photo === "object" &&
+          typeof (photo as { url?: unknown }).url === "string"
+            ? (photo as { url: string }).url
+            : undefined;
+        return !!url?.startsWith("/") && !isOwnedStoragePhotoUrl(url, userId);
+      })
+    ) {
+      return res.status(400).json({ error: "Photos must be your uploaded images" });
+    }
 
     const [existing] = await db
       .select()

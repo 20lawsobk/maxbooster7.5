@@ -67,14 +67,13 @@ type BadgeVariant = "default" | "destructive" | "outline" | "secondary";
 
 interface AnomalyRecord {
   id: string;
-  anomalyType: string;
+  anomalyType?: string;
   severity: string;
   metricType: string;
-  baselineValue: string;
-  actualValue: string;
-  deviationPercentage: string;
+  deviationPercentage: number | null;
   detectedAt: string;
-  acknowledgedAt?: string | null;
+  description: string;
+  acknowledged: boolean;
 }
 
 interface CrossPlatformMetric {
@@ -577,47 +576,23 @@ interface AnalyticsData {
 
 const FanJourneyFunnel = memo(
   ({ data }: { data: AnalyticsData["fanJourney"] | undefined }) => {
-    const defaultStages: FanJourneyStage[] = [
-      {
-        stage: "Awareness",
-        count: 0,
-        percentage: 100,
-        conversionRate: 0,
-        dropOffRate: 0,
-      },
-      {
-        stage: "Discovery",
-        count: 0,
-        percentage: 0,
-        conversionRate: 0,
-        dropOffRate: 0,
-      },
-      {
-        stage: "Engagement",
-        count: 0,
-        percentage: 0,
-        conversionRate: 0,
-        dropOffRate: 0,
-      },
-      {
-        stage: "Conversion",
-        count: 0,
-        percentage: 0,
-        conversionRate: 0,
-        dropOffRate: 0,
-      },
-      {
-        stage: "Advocacy",
-        count: 0,
-        percentage: 0,
-        conversionRate: 0,
-        dropOffRate: 0,
-      },
-    ];
-
-    const stages = data?.stages || defaultStages;
+    const stages = data?.stages || [];
     const stageColors = ["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef"];
     const stageIcons = [Eye, Search, Heart, DollarSign, Megaphone];
+
+    if (stages.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <GitBranch className="h-10 w-10 mb-3 opacity-20" />
+          <p className="text-sm font-medium text-muted-foreground">
+            No fan journey data yet
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            Journey stages will appear when audience activity is recorded.
+          </p>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-6">
@@ -807,16 +782,7 @@ CohortAnalysisChart.displayName = "CohortAnalysisChart";
 
 const ChurnAnalytics = memo(
   ({ churnData }: { churnData: ChurnData[] | undefined }) => {
-    const defaultChurn: ChurnData = {
-      period: "Last 30 days",
-      churnedUsers: 0,
-      churnRate: 0,
-      reasons: [],
-      riskSegments: [],
-    };
-
-    const data =
-      churnData && churnData.length > 0 ? churnData[0] : defaultChurn;
+    const data = churnData?.[0];
 
     const getRiskColor = (risk: string) => {
       switch (risk) {
@@ -830,6 +796,20 @@ const ChurnAnalytics = memo(
           return "bg-green-100 text-green-800 border-green-200";
       }
     };
+
+    if (!data) {
+      return (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <UserMinus className="h-10 w-10 mb-3 opacity-20" />
+          <p className="text-sm font-medium text-muted-foreground">
+            No churn data yet
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            Churn insights will appear when sufficient listener activity is recorded.
+          </p>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-6">
@@ -1045,31 +1025,21 @@ GeographicHeatMap.displayName = "GeographicHeatMap";
 
 const DemographicsBreakdown = memo(
   ({ demographics }: { demographics: DemographicData[] | undefined }) => {
-    const defaultDemographics: DemographicData[] = [
-      {
-        category: "Age",
-        segments: [
-          { name: "18-24", count: 0, percentage: 0, avgEngagement: 0 },
-          { name: "25-34", count: 0, percentage: 0, avgEngagement: 0 },
-          { name: "35-44", count: 0, percentage: 0, avgEngagement: 0 },
-          { name: "45-54", count: 0, percentage: 0, avgEngagement: 0 },
-          { name: "55+", count: 0, percentage: 0, avgEngagement: 0 },
-        ],
-      },
-      {
-        category: "Gender",
-        segments: [
-          { name: "Male", count: 0, percentage: 0, avgEngagement: 0 },
-          { name: "Female", count: 0, percentage: 0, avgEngagement: 0 },
-          { name: "Other", count: 0, percentage: 0, avgEngagement: 0 },
-        ],
-      },
-    ];
+    const data = demographics || [];
 
-    const data =
-      demographics && demographics.length > 0
-        ? demographics
-        : defaultDemographics;
+    if (data.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <Users className="h-10 w-10 mb-3 opacity-20" />
+          <p className="text-sm font-medium text-muted-foreground">
+            No demographic data yet
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            Demographic breakdowns will appear when they are supplied by connected platforms.
+          </p>
+        </div>
+      );
+    }
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1597,7 +1567,7 @@ export default function Analytics() {
     string,
     unknown
   > | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+  const [lastUpdate, setLastUpdate] = useState<number | null>(null);
   const [connectionLostTime, setConnectionLostTime] = useState<number | null>(
     null,
   );
@@ -1643,6 +1613,12 @@ export default function Analytics() {
     reconnectInterval: 3000,
     maxReconnectAttempts: 10,
   });
+
+  useEffect(() => {
+    if (analyticsData) {
+      setLastUpdate(Date.now());
+    }
+  }, [analyticsData]);
 
   useEffect(() => {
     if (connectionLostTime) {
@@ -1807,25 +1783,6 @@ export default function Analytics() {
   });
 
   useEffect(() => {
-    const handleWsMessage = (message: Record<string, unknown>) => {
-      if (message.type === "anomaly_detected") {
-        queryClient.invalidateQueries({
-          queryKey: ["/api/analytics/anomalies"],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["/api/analytics/anomalies/summary"],
-        });
-        toast({
-          variant: message.severity === "critical" ? "destructive" : "default",
-          title: "New Anomaly Detected",
-          description: `${message.metricType} ${message.anomalyType}: ${message.deviationPercentage}% deviation`,
-        });
-      }
-    };
-    return () => {};
-  }, [queryClient, toast]);
-
-  useEffect(() => {
     return () => {
       sendMessage({ type: "unsubscribe_analytics", data: null });
       if (pollingIntervalRef.current) {
@@ -1853,15 +1810,6 @@ export default function Analytics() {
       link.click();
     },
   });
-
-  useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(() => {
-        refetch();
-      }, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [autoRefresh, refetch]);
 
   if (authLoading) {
     return (
@@ -1895,6 +1843,7 @@ export default function Analytics() {
   };
 
   const getTimeSinceUpdate = useCallback(() => {
+    if (!lastUpdate) return "not yet updated";
     const seconds = Math.floor((Date.now() - lastUpdate) / 1000);
     if (seconds < 60) return `${seconds}s ago`;
     const minutes = Math.floor(seconds / 60);
@@ -1998,10 +1947,10 @@ export default function Analytics() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      AI Performance Score
+                      Account Readiness Score
                     </h3>
                     <p className="text-muted-foreground">
-                      Your music performance is optimized with AI insights
+                      Based on the setup information available in your account
                     </p>
                   </div>
                 </div>
@@ -2012,14 +1961,14 @@ export default function Analytics() {
                         {data.aiInsights.performanceScore}%
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Based on your current performance
+                        This is not a streaming-performance measurement
                       </p>
                     </>
                   ) : (
                     <>
                       <div className="text-4xl font-bold text-gray-400">--</div>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Upload music to get your AI score
+                        Complete your account setup to calculate this score
                       </p>
                     </>
                   )}
@@ -2033,8 +1982,8 @@ export default function Analytics() {
           <StatCard
             title="Total Streams"
             value={
-              currentValue("totalStreams") ||
-              data?.overview?.totalStreams ||
+              currentValue("totalStreams") ??
+              data?.overview?.totalStreams ??
               0
             }
             change={data?.overview?.growthRate || 0}
@@ -2053,8 +2002,8 @@ export default function Analytics() {
           <StatCard
             title="Total Revenue"
             value={
-              currentValue("totalRevenue") ||
-              data?.overview?.totalRevenue ||
+              currentValue("totalRevenue") ??
+              data?.overview?.totalRevenue ??
               0
             }
             change={data?.overview?.growthRate || 0}
@@ -2074,8 +2023,8 @@ export default function Analytics() {
           <StatCard
             title="Total Listeners"
             value={
-              currentValue("totalListeners") ||
-              data?.overview?.totalListeners ||
+              currentValue("totalListeners") ??
+              data?.overview?.totalListeners ??
               0
             }
             change={data?.overview?.growthRate || 0}
@@ -3435,25 +3384,10 @@ export default function Analytics() {
                                   </div>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-4">
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">
-                                      Baseline
-                                    </p>
-                                    <p className="text-lg font-semibold">
-                                      {parseFloat(
-                                        anomaly.baselineValue,
-                                      ).toLocaleString()}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">
-                                      Actual
-                                    </p>
-                                    <p className="text-lg font-semibold">
-                                      {parseFloat(
-                                        anomaly.actualValue,
-                                      ).toLocaleString()}
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                  <div className="sm:col-span-2">
+                                    <p className="text-sm text-muted-foreground">
+                                      {anomaly.description}
                                     </p>
                                   </div>
                                   <div>
@@ -3461,16 +3395,11 @@ export default function Analytics() {
                                       Deviation
                                     </p>
                                     <p
-                                      className={`text-lg font-semibold ${parseFloat(anomaly.deviationPercentage) > 0 ? "text-green-600" : "text-red-600"}`}
+                                      className={`text-lg font-semibold ${(anomaly.deviationPercentage ?? 0) > 0 ? "text-green-600" : "text-red-600"}`}
                                     >
-                                      {parseFloat(anomaly.deviationPercentage) >
-                                      0
-                                        ? "+"
-                                        : ""}
-                                      {parseFloat(
-                                        anomaly.deviationPercentage,
-                                      ).toFixed(1)}
-                                      %
+                                      {anomaly.deviationPercentage === null
+                                        ? "—"
+                                        : `${anomaly.deviationPercentage > 0 ? "+" : ""}${anomaly.deviationPercentage.toFixed(1)}%`}
                                     </p>
                                   </div>
                                 </div>
@@ -3482,7 +3411,7 @@ export default function Analytics() {
                                       anomaly.detectedAt,
                                     ).toLocaleString()}
                                   </div>
-                                  {anomaly.acknowledgedAt && (
+                                  {anomaly.acknowledged && (
                                     <div className="flex items-center gap-1 text-green-600">
                                       <CheckCircle className="w-4 h-4" />
                                       Acknowledged
@@ -3491,7 +3420,7 @@ export default function Analytics() {
                                 </div>
                               </div>
 
-                              {!anomaly.acknowledgedAt && (
+                              {!anomaly.acknowledged && (
                                 <Button
                                   size="sm"
                                   variant="outline"

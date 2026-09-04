@@ -269,30 +269,25 @@ router.patch("/pitches/:pitchId", async (req, res) => {
       )
         updates.resolvedAt = now;
 
-      // Update campaign counters
-      if (body.data.status === "opened") {
+      // These are funnel counters, not counts of pitches currently in each
+      // status. Increment only the first time the associated event is
+      // recorded; moving a pitch back and forth must not inflate them.
+      const counterForStatus: Record<
+        string,
+        { field: "openCount" | "replyCount" | "placementCount"; wasRecorded: boolean }
+      > = {
+        opened: { field: "openCount", wasRecorded: !!existing.openedAt },
+        replied: { field: "replyCount", wasRecorded: !!existing.repliedAt },
+        // resolvedAt is also set for a decline, so it cannot tell us whether
+        // this pitch has previously produced a placement.
+        added: { field: "placementCount", wasRecorded: false },
+      };
+      const counter = counterForStatus[body.data.status];
+      if (counter && !counter.wasRecorded) {
         await db
           .update(outreachCampaigns)
           .set({
-            openCount: sql`${outreachCampaigns.openCount} + 1`,
-            updatedAt: now,
-          })
-          .where(eq(outreachCampaigns.id, existing.campaignId));
-      }
-      if (body.data.status === "replied") {
-        await db
-          .update(outreachCampaigns)
-          .set({
-            replyCount: sql`${outreachCampaigns.replyCount} + 1`,
-            updatedAt: now,
-          })
-          .where(eq(outreachCampaigns.id, existing.campaignId));
-      }
-      if (body.data.status === "added") {
-        await db
-          .update(outreachCampaigns)
-          .set({
-            placementCount: sql`${outreachCampaigns.placementCount} + 1`,
+            [counter.field]: sql`${outreachCampaigns[counter.field]} + 1`,
             updatedAt: now,
           })
           .where(eq(outreachCampaigns.id, existing.campaignId));

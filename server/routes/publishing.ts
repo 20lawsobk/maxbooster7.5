@@ -33,6 +33,8 @@ const insertPublishingSchema = z.object({
   notes: z.string().max(5000).optional(),
 });
 
+const workIdSchema = z.string().uuid();
+
 function hasValidSplitTotal(writerSplit: unknown, publishingSplit: unknown) {
   const writer = Number(writerSplit);
   const publisher = Number(publishingSplit);
@@ -124,6 +126,9 @@ router.put("/:id", async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params as Record<string, string>;
+    if (!workIdSchema.safeParse(id).success) {
+      return res.status(400).json({ error: "Invalid work ID" });
+    }
     const parsed = insertPublishingSchema?.partial().safeParse(req.body);
     if (!parsed?.success) {
       return res
@@ -166,6 +171,9 @@ router.delete("/:id", async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params as Record<string, string>;
+    if (!workIdSchema.safeParse(id).success) {
+      return res.status(400).json({ error: "Invalid work ID" });
+    }
     const [deleted] = await db
       .delete(publishingRights)
       .where(
@@ -189,6 +197,7 @@ router.get("/stats", async (req, res) => {
         totalWorks: count(),
         pendingCount: sql<number>`count(*) filter (where status = 'pending')`,
         confirmedCount: sql<number>`count(*) filter (where status in ('confirmed', 'active'))`,
+        avgPublishingSplit: sql<number>`coalesce(avg(publishing_split), 0)`,
       })
       .from(publishingRights)
       .where(eq(publishingRights.userId, userId));
@@ -197,6 +206,7 @@ router.get("/stats", async (req, res) => {
       totalWorks: Number(stats?.totalWorks),
       pendingCount: Number(stats?.pendingCount),
       confirmedCount: Number(stats?.confirmedCount),
+      avgPublishingSplit: Number(stats?.avgPublishingSplit),
     });
   } catch (error) {
     logger.warn(
@@ -210,12 +220,16 @@ router.get("/stats", async (req, res) => {
 // GET /api/publishing/:id - get single registered work (after /stats to avoid shadowing)
 router.get("/:id", async (req, res) => {
   try {
+    const parsedId = workIdSchema.safeParse(req.params.id);
+    if (!parsedId.success) {
+      return res.status(400).json({ error: "Invalid work ID" });
+    }
     const [work] = await db
       .select()
       .from(publishingRights)
       .where(
         and(
-          eq(publishingRights.id, (req.params.id as string)),
+          eq(publishingRights.id, parsedId.data),
           eq(publishingRights.userId, req.user!.id),
         ),
       )

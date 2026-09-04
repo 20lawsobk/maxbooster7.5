@@ -9,11 +9,11 @@
  */
 
 import { Router } from "express";
-import { requireAdmin } from "../../middleware/auth.js";
+import { requireAdmin, requireAuth, require2FA } from "../../middleware/auth.js";
 import { logger } from "../../logger.js";
 
 const router = Router();
-router.use(requireAdmin);
+router.use(requireAuth, requireAdmin, require2FA);
 
 // ─── Domain constants ────────────────────────────────────────────────────────
 
@@ -40,16 +40,7 @@ const CONTENT_TYPES_BY_PLATFORM: Record<string, string[]> = {
   linkedin:  ["article", "video", "poll", "document"],
 };
 
-const _MUSICAL_KEYS = [
-  "C Major","C Minor","C# Minor","Db Major",
-  "D Major","D Minor","Eb Major","Eb Minor",
-  "E Major","E Minor","F Major","F Minor",
-  "F# Minor","G Major","G Minor",
-  "Ab Major","Ab Minor","A Major","A Minor",
-  "Bb Major","Bb Minor","B Major","B Minor",
-];
-
-// ─── Platform benchmark data (2024 industry averages) ────────────────────────
+// ─── Static planning assumptions (not observed platform performance) ─────────
 
 const PLATFORM_BENCHMARKS: Record<string, {
   avgEngagementRate: number; reachMultiplier: number;
@@ -267,8 +258,6 @@ function buildPostCaption(platform: string, contentType: string, genre: string):
 
   const openLine = contentTypePitch[contentType] || `New ${genre} beat available for licensing.`;
   const [minL, maxL] = bench.idealCaptionLength;
-  const _targetLen = Math.round((minL + maxL) / 2);
-
   let caption = openLine.replace(/\${genre}/g, genre);
   // Pad to target length naturally
   if (caption.length < minL) {
@@ -398,7 +387,15 @@ router.get("/beats", (_req, res) => {
       }
     }
     results.sort((a, b) => b.combinedScore - a.combinedScore);
-    res.json({ total: results.length, genres: BEAT_GENRES.length, moods: BEAT_MOODS.length, results });
+    res.json({
+      dataSource: "illustrative_static_model",
+      disclaimer:
+        "These are illustrative planning estimates generated from static assumptions, not live market, audience, or sales data.",
+      total: results.length,
+      genres: BEAT_GENRES.length,
+      moods: BEAT_MOODS.length,
+      results,
+    });
   } catch (err) {
     logger.warn({ err }, "[ContentSampler] /beats failed");
     res.status(500).json({ error: "Failed to generate beat samples" });
@@ -410,7 +407,13 @@ router.get("/beats", (_req, res) => {
  */
 router.get("/posts", (req, res) => {
   try {
-    const genre = (req.query.genre as string) || "trap";
+    const genre =
+      typeof req.query.genre === "string" && req.query.genre
+        ? req.query.genre
+        : "trap";
+    if (!BEAT_GENRES.includes(genre as (typeof BEAT_GENRES)[number])) {
+      return res.status(400).json({ error: "Invalid genre" });
+    }
     const results = [];
     for (const platform of PLATFORMS) {
       for (const contentType of CONTENT_TYPES_BY_PLATFORM[platform]) {
@@ -429,7 +432,15 @@ router.get("/posts", (req, res) => {
       }
     }
     results.sort((a, b) => b.combinedScore - a.combinedScore);
-    res.json({ total: results.length, platforms: PLATFORMS.length, genre, results });
+    res.json({
+      dataSource: "illustrative_static_model",
+      disclaimer:
+        "These are illustrative planning estimates generated from static assumptions, not live platform performance data.",
+      total: results.length,
+      platforms: PLATFORMS.length,
+      genre,
+      results,
+    });
   } catch (err) {
     logger.warn({ err }, "[ContentSampler] /posts failed");
     res.status(500).json({ error: "Failed to generate post samples" });
@@ -477,7 +488,15 @@ router.get("/matrix", (_req, res) => {
     }
     top.sort((a, b) => b.combinedScore - a.combinedScore);
 
-    res.json({ matrix, topCombinations: top.slice(0, 20), platforms: PLATFORMS, genres: BEAT_GENRES });
+    res.json({
+      dataSource: "illustrative_static_model",
+      disclaimer:
+        "This matrix is generated from static planning assumptions, not live platform performance data.",
+      matrix,
+      topCombinations: top.slice(0, 20),
+      platforms: PLATFORMS,
+      genres: BEAT_GENRES,
+    });
   } catch (err) {
     logger.warn({ err }, "[ContentSampler] /matrix failed");
     res.status(500).json({ error: "Failed to generate matrix" });
@@ -529,6 +548,9 @@ router.get("/summary", (_req, res) => {
       .slice(0, 10);
 
     res.json({
+      dataSource: "illustrative_static_model",
+      disclaimer:
+        "These rankings are generated from static planning assumptions, not live market, audience, or sales data.",
       topGenres,
       topContentCombos,
       totalBeatSamples: BEAT_GENRES.length * BEAT_MOODS.length,

@@ -10,7 +10,7 @@ import { Router } from "express";
 import { requireAdmin, requireAuth, require2FA } from "../../middleware/auth.js";
 import { db } from "../../db.js";
 import { auditLogs } from "@shared/schema";
-import { desc, and, eq, gte, ilike, or, inArray } from "drizzle-orm";
+import { desc, and, eq, gte, ilike } from "drizzle-orm";
 import { logger } from "../../logger.js";
 
 const router = Router();
@@ -40,25 +40,42 @@ router.get("/", async (req, res) => {
       Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
     const offset = Math.min((page - 1) * limit, 100_000);
 
-    const riskFilter = req.query.risk as string | undefined;
-    const actionFilter = req.query.action as string | undefined;
-    const userIdFilter = req.query.userId as string | undefined;
-    const since = req.query.since as string | undefined;
+    const riskFilter =
+      typeof req.query.risk === "string" ? req.query.risk : undefined;
+    const actionFilter =
+      typeof req.query.action === "string" ? req.query.action : undefined;
+    const userIdFilter =
+      typeof req.query.userId === "string" ? req.query.userId : undefined;
+    const since =
+      typeof req.query.since === "string" ? req.query.since : undefined;
 
     const conditions: ReturnType<typeof eq>[] = [];
 
-    if (riskFilter && ["low", "medium", "high", "critical"].includes(riskFilter)) {
+    if (
+      riskFilter &&
+      !["low", "medium", "high", "critical"].includes(riskFilter)
+    ) {
+      return res.status(400).json({ error: "Invalid risk filter" });
+    }
+    if (riskFilter) {
       conditions.push(eq(auditLogs.risk, riskFilter));
     }
     if (userIdFilter) {
+      if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          userIdFilter,
+        )
+      ) {
+        return res.status(400).json({ error: "Invalid user ID filter" });
+      }
       conditions.push(eq(auditLogs.userId, userIdFilter));
     }
     if (since) {
-      try {
-        conditions.push(gte(auditLogs.timestamp, new Date(since)));
-      } catch {
-        // invalid date — ignore filter
+      const sinceDate = new Date(since);
+      if (Number.isNaN(sinceDate.getTime())) {
+        return res.status(400).json({ error: "Invalid since date" });
       }
+      conditions.push(gte(auditLogs.timestamp, sinceDate));
     }
     if (actionFilter) {
       conditions.push(ilike(auditLogs.action, `%${actionFilter.slice(0, 64)}%`));

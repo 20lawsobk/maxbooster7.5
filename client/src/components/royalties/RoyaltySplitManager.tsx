@@ -40,6 +40,13 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { ProjectRoyaltySplit } from "@shared/schema";
 
+// The API resolves each split's collaborator to a display name/email
+// server-side so the UI never has to show a raw internal user ID.
+type SplitWithCollaborator = ProjectRoyaltySplit & {
+  collaboratorName?: string;
+  collaboratorEmail?: string;
+};
+
 interface RoyaltySplitManagerProps {
   projectId: string;
 }
@@ -48,17 +55,16 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingSplit, setEditingSplit] = useState<ProjectRoyaltySplit | null>(
-    null,
-  );
+  const [editingSplit, setEditingSplit] =
+    useState<SplitWithCollaborator | null>(null);
   const [formData, setFormData] = useState({
-    collaboratorId: "",
+    collaboratorEmail: "",
     splitPercentage: "",
     role: "",
   });
 
   // Fetch royalty splits for this project
-  const { data: splits = [], isLoading } = useQuery<ProjectRoyaltySplit[]>({
+  const { data: splits = [], isLoading } = useQuery<SplitWithCollaborator[]>({
     queryKey: ["/api/projects", projectId, "royalty-splits"],
     enabled: !!projectId,
   });
@@ -91,7 +97,7 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
         variant: data.isValid ? "default" : "destructive",
       });
       setIsAddDialogOpen(false);
-      setFormData({ collaboratorId: "", splitPercentage: "", role: "" });
+      setFormData({ collaboratorEmail: "", splitPercentage: "", role: "" });
       queryClient.invalidateQueries({
         queryKey: ["/api/projects", projectId, "royalty-splits"],
       });
@@ -174,7 +180,7 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
 
   const handleAddSplit = () => {
     if (
-      !formData.collaboratorId ||
+      !formData.collaboratorEmail ||
       !formData.splitPercentage ||
       !formData.role
     ) {
@@ -197,7 +203,7 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
     }
 
     createSplitMutation.mutate({
-      collaboratorId: formData.collaboratorId,
+      collaboratorEmail: formData.collaboratorEmail,
       splitPercentage: formData.splitPercentage,
       role: formData.role,
     });
@@ -225,10 +231,10 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
     });
   };
 
-  const openEditDialog = (split: ProjectRoyaltySplit) => {
+  const openEditDialog = (split: SplitWithCollaborator) => {
     setEditingSplit(split);
     setFormData({
-      collaboratorId: split.collaboratorId || "",
+      collaboratorEmail: split.collaboratorEmail || split.collaboratorId || "",
       splitPercentage: split.splitPercentage || "",
       role: split.role || "",
     });
@@ -268,16 +274,17 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="collaboratorId">Collaborator ID</Label>
+                  <Label htmlFor="collaboratorEmail">Collaborator Email</Label>
                   <Input
-                    id="collaboratorId"
-                    data-testid="input-collaborator-id"
-                    placeholder="Enter user ID"
-                    value={formData.collaboratorId}
+                    id="collaboratorEmail"
+                    type="email"
+                    data-testid="input-collaborator-email"
+                    placeholder="Enter collaborator's account email"
+                    value={formData.collaboratorEmail}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        collaboratorId: e.target.value,
+                        collaboratorEmail: e.target.value,
                       })
                     }
                   />
@@ -391,7 +398,14 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
               {splits.map((split) => (
                 <TableRow key={split.id} data-testid={`row-split-${split.id}`}>
                   <TableCell data-testid={`text-collaborator-${split.id}`}>
-                    {split.collaboratorId}
+                    <div className="font-medium">
+                      {split.collaboratorName || split.collaboratorId}
+                    </div>
+                    {split.collaboratorEmail && (
+                      <div className="text-xs text-muted-foreground">
+                        {split.collaboratorEmail}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -452,9 +466,9 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Collaborator ID</Label>
+                <Label>Collaborator</Label>
                 <Input
-                  value={formData.collaboratorId}
+                  value={editingSplit?.collaboratorName || formData.collaboratorEmail}
                   disabled
                   data-testid="input-edit-collaborator-id"
                 />

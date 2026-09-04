@@ -18,7 +18,6 @@ import { db } from "../db.js";
 import { eq, desc, and, isNotNull, inArray } from "drizzle-orm";
 import { adCampaigns, adCreatives, systemSettings } from "@shared/schema";
 import { aiModelManager } from "../services/aiModelManager.js";
-import { autopilotEngine } from "../autopilot-engine.js";
 import { advertisingDispatchService } from "../services/advertisingDispatchService.js";
 
 const imageUpload = createHardenedUpload({
@@ -56,8 +55,21 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
-      const insights = await storage.getAdvertisingInsights(userId);
-      res.json(insights);
+      const campaigns = await storage.getAdvertisingCampaigns(userId);
+      // This product dispatches organic posts only. A campaign's configured
+      // budget is a planning limit, not money charged or spent, so it must
+      // never be reported as actual spend.
+      res.json({
+        totalCampaigns: campaigns.length,
+        totalSpend: 0,
+        plannedBudget: campaigns.reduce(
+          (total, campaign) => total + Number(campaign.budget ?? 0),
+          0,
+        ),
+        activeCampaigns: campaigns.filter(
+          (campaign) => campaign.status === "active",
+        ).length,
+      });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get AI insights:");
       res.status(500).json({ error: "Failed to get AI insights" });
@@ -432,6 +444,40 @@ router.post(
         targetAudience?.platforms.length > 0
           ? targetAudience?.platforms
           : [platform];
+      if (
+        !platforms.every(
+          (candidate) =>
+            typeof candidate === "string" && candidate.trim().length > 0,
+        )
+      ) {
+        return res.status(400).json({ error: "All target platforms must be valid strings" });
+      }
+      const normalizedPlatforms = [
+        ...new Set(platforms.map((candidate) => candidate.trim().toLowerCase())),
+      ];
+      if (
+        targetAudience?.ageMin !== undefined &&
+        (!Number.isInteger(targetAudience.ageMin) ||
+          targetAudience.ageMin < 13 ||
+          targetAudience.ageMin > 100)
+      ) {
+        return res.status(400).json({ error: "Target minimum age must be a whole number between 13 and 100" });
+      }
+      if (
+        targetAudience?.ageMax !== undefined &&
+        (!Number.isInteger(targetAudience.ageMax) ||
+          targetAudience.ageMax < 13 ||
+          targetAudience.ageMax > 100)
+      ) {
+        return res.status(400).json({ error: "Target maximum age must be a whole number between 13 and 100" });
+      }
+      if (
+        targetAudience?.ageMin !== undefined &&
+        targetAudience?.ageMax !== undefined &&
+        targetAudience.ageMin > targetAudience.ageMax
+      ) {
+        return res.status(400).json({ error: "Target minimum age cannot exceed target maximum age" });
+      }
 
       const selectedCreativeIds = Array.isArray(creativeIds)
         ? [...new Set(creativeIds.filter((id) => typeof id === "string"))]
@@ -496,7 +542,7 @@ router.post(
         .values({
           userId,
           name,
-          platform,
+          platform: platform.trim().toLowerCase(),
           objective: objective || null,
           budget: 0,
           dailyBudget: null,
@@ -504,6 +550,10 @@ router.post(
           endDate: campaignEndDate,
           targetAudience: targetAudience || null,
           creativeIds: selectedCreativeIds,
+          // The schema has one primary platform column. Preserve every platform
+          // selected in the builder so activation can actually fan out to each
+          // connected target instead of silently delivering only to the first.
+          metadata: { fanOutPlatforms: normalizedPlatforms },
           // A campaign cannot be active until a post actually reaches a
           // connected account. The activation endpoint performs that dispatch.
           status: "draft",
@@ -546,8 +596,8 @@ router.post(
         campaign.creativeIds = selectedCreativeIds;
       }
 
-      // Kick off AI pipeline in the background — campaign immediately primes MaxCore
-      // and ensures content generation is queued for all target platforms
+      // Notify and warm the per-user recommendation model after persistence.
+      // Dispatch remains an explicit, owned activation action.
       setImmediate(async () => {
         try {
           await notificationService?.sendAdCampaignCreatedNotification(
@@ -574,27 +624,6 @@ router.post(
           logger.warn({ err }, "MaxCore ad model priming error (non-fatal):");
         }
 
-        try {
-          // Configure the autopilot engine with this campaign's targeting and start content scheduling
-          const engineConfig = await autopilotEngine.getConfig();
-          await autopilotEngine.configure({
-            ...engineConfig,
-            platforms: platforms.map((p: string) => p.toLowerCase()),
-            campaignObjective:
-              (objective as Record<string, unknown>) || "awareness",
-          });
-          // Start the engine if not already running so it schedules the first content generation
-          const status = await autopilotEngine.getStatus();
-          if (!status.isRunning) {
-            await autopilotEngine.start();
-            logger.info(
-              { userId, campaignId: campaign.id },
-              "Autopilot engine started for new campaign",
-            );
-          }
-        } catch (err) {
-          logger.warn({ err }, "Autopilot engine start error (non-fatal):");
-        }
       });
 
       res.status(201).json({ success: true, campaign });
@@ -902,7 +931,7 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
         .select({
           platform: adCampaigns.platform,
           status: adCampaigns.status,
-          performance: adCampaigns.performance,
+          organicMetrics: adCampaigns.organicMetrics,
         })
         .from(adCampaigns)
         .where(eq(adCampaigns.userId, userId))
@@ -915,17 +944,21 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
       ...new Set(activeCampaigns?.map((c) => c?.platform)),
     ];
     const totalOrganicReach = campaigns?.reduce((sum, c) => {
-      const perf = (c?.performance || {}) as Record<string, unknown>;
-      return sum + Number(perf?.organicReach || perf?.reach || 0);
+      const metrics = (c?.organicMetrics || {}) as Record<string, unknown>;
+      return sum + Number(metrics.totalReach ?? 0);
     }, 0);
     const estimatedAdEquivalent = campaigns?.reduce((sum, c) => {
-      const perf = (c?.performance || {}) as Record<string, unknown>;
-      const reach = Number(perf?.organicReach || perf?.reach || 0);
+      const metrics = (c?.organicMetrics || {}) as Record<string, unknown>;
+      const reach = Number(metrics.totalReach ?? 0);
       return sum + adEquivalentValue(c?.platform, reach);
     }, 0);
 
     res.json({
-      isRunning: autopilotConfig?.isRunning || false,
+      // Config is persisted, but this route does not own a per-user worker
+      // that can execute it. Never present a saved preference as live
+      // automation.
+      isRunning: false,
+      automationAvailable: false,
       config: autopilotConfig || null,
       status: {
         campaignStatus: activeCampaigns.length > 0 ? "active" : "inactive",
@@ -947,21 +980,14 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
 
 // Start advertising autopilot
 router.post("/start", requireAuth, async (req: AuthenticatedRequest, res) => {
-  try {
-    const userId = req.user!.id;
-    let config = await storage.getAdvertisingAutopilotConfig(userId);
-    config = { ...(config || {}), isRunning: true, enabled: true };
-    await storage.saveAdvertisingAutopilotConfig(userId, config);
-    logger.info(`✅ Advertising autopilot started for user ${userId}`);
-    res.json({
-      success: true,
-      message: "Advertising autopilot activated",
-      config,
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "Failed to start advertising autopilot:");
-    res.status(500).json({ error: "Failed to start advertising autopilot" });
-  }
+  // Persisting `isRunning` previously made the UI report that campaigns were
+  // being managed automatically, but no per-user advertising worker is
+  // started by this endpoint. Do not claim delivery or automation until that
+  // worker exists.
+  return res.status(409).json({
+    error:
+      "Advertising autopilot cannot be started because no campaign automation worker is available. You can still create and activate campaigns manually.",
+  });
 });
 
 // Stop advertising autopilot
@@ -1436,64 +1462,23 @@ router.get(
     try {
       const userId = req.user!.id;
       const campaigns = await db
-        .select({
-          budget: adCampaigns.budget,
-          dailyBudget: adCampaigns.dailyBudget,
-          performance: adCampaigns.performance,
-          status: adCampaigns.status,
-        })
+        .select({ id: adCampaigns.id })
         .from(adCampaigns)
         .where(
           and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, "active")),
         )
         .limit(100);
 
-      // Organic reach projection — based on historical performance, grows with active campaigns
-      const baselineDailyReach = campaigns?.reduce((sum, c) => {
-        const perf = (c?.performance || {}) as Record<string, unknown>;
-        const totalReach = Number(perf?.organicReach || perf?.reach || 1000);
-        return sum + Math.round(totalReach / 30);
-      }, 500 * campaigns.length);
-
-      const avgPlatformCpm = campaigns.length > 0
-        ? campaigns.reduce((sum, c) => sum + (PLATFORM_CPM[(c as any)?.platform] ?? 8.0), 0) / (campaigns.length || 1)
-        : 8.0;
-
-      const daily = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date?.setDate(date?.getDate() + i + 1);
-        const growthFactor = 1 + (i * 0.04);
-        const jitter = 0.9 + Math.random() * 0.2;
-        const projectedReach = Math.round(baselineDailyReach * growthFactor * jitter);
-        const adEquiv = Math.round((projectedReach / 1000) * avgPlatformCpm * 100) / 100;
-        return {
-          date: date.toISOString().split("T")[0],
-          projectedOrganicReach: projectedReach,
-          estimatedAdEquivalent: adEquiv,
-          adSpend: 0,
-        };
-      });
-
-      const weekly = Array.from({ length: 4 }, (_, i) => {
-        const projectedReach = Math.round(baselineDailyReach * 7 * (1 + i * 0.06));
-        const adEquiv = Math.round((projectedReach / 1000) * avgPlatformCpm * 100) / 100;
-        return { week: i + 1, projectedOrganicReach: projectedReach, estimatedAdEquivalent: adEquiv, adSpend: 0 };
-      });
-
-      const monthly = Array.from({ length: 3 }, (_, i) => {
-        const projectedReach = Math.round(baselineDailyReach * 30 * (1 + i * 0.08));
-        const adEquiv = Math.round((projectedReach / 1000) * avgPlatformCpm * 100) / 100;
-        return { month: i + 1, projectedOrganicReach: projectedReach, estimatedAdEquivalent: adEquiv, adSpend: 0 };
-      });
-
       res.json({
         forecast: {
-          daily,
-          weekly,
-          monthly,
+          daily: [],
+          weekly: [],
+          monthly: [],
           activeCampaigns: campaigns.length,
-          methodology: "organic_amplification",
+          methodology: "unavailable",
           adSpend: 0,
+          note:
+            "Forecasts are unavailable until a validated forecasting model is connected to platform delivery data.",
         },
       });
     } catch (error) {

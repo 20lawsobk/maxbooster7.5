@@ -5,7 +5,6 @@ import {
   createLocalPreview,
   revokeLocalPreview,
 } from "@/lib/imageUpload";
-import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { SafeImg } from "@/components/ui/safe-img";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useRoute } from "wouter";
@@ -1946,6 +1945,15 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ["/api/marketplace/escrow"] });
       invalidateOnMarketplaceChange();
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Escrow Release Unavailable",
+        description:
+          error.message ||
+          "Escrow releases are not available because escrow checkout is not supported.",
+        variant: "destructive",
+      });
+    },
   });
 
   useMutation({
@@ -2079,27 +2087,6 @@ export default function Marketplace() {
       setShowCollaborationModal(false);
     },
   });
-
-  const handleBeatPurchase = async (
-    beatId: string,
-    interactionType: string,
-    extra?: Record<string, unknown>,
-  ) => {
-    try {
-      const csrfToken = getCsrfTokenFromCookie();
-      await fetch("/api/marketplace/interaction", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-        },
-        credentials: "include",
-        body: JSON.stringify({ beatId, interactionType, ...extra }),
-      });
-    } catch (e) {
-      // Silent fail - don't block UX for analytics
-    }
-  };
 
   const handlePlayPause = async (beatId: string, beatUrl?: string) => {
     if (isPlaying === beatId) {
@@ -2296,6 +2283,15 @@ export default function Marketplace() {
     licenseType: string,
     useEscrow = false,
   ) => {
+    if (useEscrow) {
+      toast({
+        title: "Escrow Checkout Unavailable",
+        description:
+          "Marketplace escrow is not yet supported. Please use standard checkout.",
+        variant: "destructive",
+      });
+      return;
+    }
     // Anonymous ad clicks can now land directly on a beat's page
     // (/marketplace/beat/:id is public). Checkout itself still requires an
     // account, so send them to sign in first and bring them right back to
@@ -8582,7 +8578,7 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
               </ScrollArea>
               <div className="border-t pt-3 space-y-3">
                 <div className="flex justify-between items-center font-semibold">
-                  <span>Total</span>
+                  <span>Estimated total</span>
                   <span className="text-lg">
                     $
                     {cart.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
@@ -8604,6 +8600,15 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                     disabled={purchaseBeatMutation.isPending}
                     onClick={() => {
                       if (cart.length > 0) {
+                        if (cart.length > 1) {
+                          toast({
+                            title: "Checkout one item at a time",
+                            description:
+                              "Marketplace checkout currently supports a single beat. Remove all but the beat you want to purchase.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
                         const item = cart[0];
                         const beat = beats.find(
                           (b: Beat) => b.id === item.beatId,
@@ -8628,8 +8633,11 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                       </>
                     ) : (
                       <>
-                        <CreditCard className="w-4 h-4 mr-2" /> Checkout (
-                        {cart.length} {cart.length === 1 ? "item" : "items"})
+                        <CreditCard className="w-4 h-4 mr-2" />{" "}
+                        {cart.length === 1
+                          ? "Checkout"
+                          : "Checkout First Item"}{" "}
+                        ({cart.length} {cart.length === 1 ? "item" : "items"})
                       </>
                     )}
                   </Button>

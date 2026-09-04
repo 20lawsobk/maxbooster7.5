@@ -79,10 +79,15 @@ const createMerchSchema = z.object({
 
 const updateMerchSchema = createMerchSchema?.partial();
 
-const updateOrderSchema = z.object({
-  status: z.enum(VALID_ORDER_STATUSES).optional(),
-  trackingNumber: z.string().max(200).nullable().optional(),
-});
+const updateOrderSchema = z
+  .object({
+    status: z.enum(VALID_ORDER_STATUSES).optional(),
+    trackingNumber: z.string().max(200).nullable().optional(),
+  })
+  .refine(
+    (data) => data.status !== undefined || data.trackingNumber !== undefined,
+    "Provide an order status or tracking number",
+  );
 
 // GET /api/merch - list user's merch items
 router.get("/", requireAuth, async (req: Request, res: Response) => {
@@ -257,46 +262,90 @@ router.get("/orders", requireAuth, async (req: Request, res: Response) => {
 });
 
 // PUT /api/merch/orders/:id - update order status
-router.put("/orders/:id", requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params as Record<string, string>;
+router.put(
+  "/orders/:id",
+  requireAuth,
+  requireUUIDParam("id"),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params as Record<string, string>;
 
-    const parsed = updateOrderSchema?.safeParse(req.body);
-    if (!parsed?.success) {
-      return res
-        .status(400)
-        .json({ error: "Validation error", details: parsed.error.flatten() });
+      const parsed = updateOrderSchema?.safeParse(req.body);
+      if (!parsed?.success) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: parsed.error.flatten() });
+      }
+
+      const existing = await db
+        .select()
+        .from(merchOrders)
+        .where(
+          and(eq(merchOrders.id, id), eq(merchOrders.userId, req.user!.id)),
+        )
+        .limit(1);
+
+      if (existing?.length === 0) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      const { status, trackingNumber } = parsed?.data ?? {};
+      const currentStatus = existing[0].status || "pending";
+      const nextStatus = status ?? currentStatus;
+      const allowedTransitions: Record<string, string[]> = {
+        pending: ["pending", "processing", "cancelled"],
+        processing: ["processing", "shipped", "cancelled"],
+        shipped: ["shipped", "delivered"],
+        delivered: ["delivered"],
+        cancelled: ["cancelled"],
+        refunded: ["refunded"],
+      };
+
+      if (nextStatus === "refunded") {
+        return res.status(400).json({
+          error:
+            "Refunds must be recorded by the payment system before an order can be marked refunded",
+        });
+      }
+      if (!allowedTransitions[currentStatus]?.includes(nextStatus)) {
+        return res.status(400).json({
+          error: `Cannot change an order from ${currentStatus} to ${nextStatus}`,
+        });
+      }
+
+      const nextTrackingNumber =
+        trackingNumber !== undefined
+          ? trackingNumber
+          : existing[0].trackingNumber;
+      if (
+        ["shipped", "delivered"].includes(nextStatus) &&
+        !nextTrackingNumber?.trim()
+      ) {
+        return res.status(400).json({
+          error:
+            "A tracking number is required before marking an order as shipped or delivered",
+        });
+      }
+
+      const [updated] = await db
+        .update(merchOrders)
+        .set({
+          status: nextStatus,
+          trackingNumber: nextTrackingNumber,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(eq(merchOrders.id, id), eq(merchOrders.userId, req.user!.id)),
+        )
+        .returning();
+
+      res.json(updated);
+    } catch (error) {
+      logger.warn({ err: error }, "Error updating merch order:");
+      res.status(500).json({ error: "Failed to update merch order" });
     }
-
-    const existing = await db
-      .select()
-      .from(merchOrders)
-      .where(and(eq(merchOrders.id, id), eq(merchOrders.userId, req.user!.id)))
-      .limit(1);
-
-    if (existing?.length === 0) {
-      return res.status(404).json({ error: "Order not found" });
-    }
-
-    const { status, trackingNumber } = parsed?.data ?? {};
-    const [updated] = await db
-      .update(merchOrders)
-      .set({
-        status: status ?? existing[0].status,
-        trackingNumber:
-          trackingNumber !== undefined
-            ? trackingNumber
-            : existing[0].trackingNumber,
-      })
-      .where(and(eq(merchOrders.id, id), eq(merchOrders.userId, req.user!.id)))
-      .returning();
-
-    res.json(updated);
-  } catch (error) {
-    logger.warn({ err: error }, "Error updating merch order:");
-    res.status(500).json({ error: "Failed to update merch order" });
-  }
-});
+  },
+);
 
 // GET /api/merch/stats - revenue, orders, bestsellers, inventory alerts
 router.get("/stats", requireAuth, async (req: Request, res: Response) => {
@@ -305,7 +354,7 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
 
     const [orderStats] = await db
       .select({
-        totalRevenue: sql<number>`COALESCE(SUM(${merchOrders.total}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(CASE WHEN ${merchOrders.status} NOT IN ('cancelled', 'refunded') THEN ${merchOrders.total} ELSE 0 END), 0)`,
         totalOrders: sql<number>`COUNT(*)`,
       })
       .from(merchOrders)

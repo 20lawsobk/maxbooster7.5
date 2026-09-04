@@ -21,13 +21,11 @@ interface SecurityMetrics {
   systemHealth: {
     uptime: number;
     status: "healthy" | "degraded" | "critical";
-    errorRate: number;
-    requestsPerMinute: number;
   };
   authentication: {
-    totalLogins: number;
+    totalLogins: number | null;
     failedLogins: number;
-    successRate: number;
+    successRate: number | null;
     activeSessions: number;
   };
   threats: {
@@ -162,7 +160,11 @@ export default function SecurityDashboard() {
   });
 
   const getErrorMessage = (error: unknown, fallback: string) =>
-    error instanceof ApiError ? error.userMessage : fallback;
+    error instanceof ApiError
+      ? error.status === 501
+        ? error.message
+        : error.userMessage
+      : fallback;
 
   const refreshDashboard = () => {
     void Promise.all([
@@ -387,16 +389,21 @@ export default function SecurityDashboard() {
                       </div>
                       <div className="flex items-baseline gap-1">
                         <p className="text-3xl font-bold">
-                          {securityMetrics.authentication.successRate.toFixed(
-                            1,
-                          )}
+                          {securityMetrics.authentication.successRate === null
+                            ? "—"
+                            : securityMetrics.authentication.successRate.toFixed(1)}
                         </p>
                         <p className="text-sm text-muted-foreground">%</p>
                       </div>
                       <Progress
-                        value={securityMetrics.authentication.successRate}
+                        value={securityMetrics.authentication.successRate ?? 0}
                         className="h-2 mt-2"
                       />
+                      {securityMetrics.authentication.successRate === null && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Successful logins are not recorded separately.
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
 
@@ -429,15 +436,19 @@ export default function SecurityDashboard() {
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
                         <h3 className="text-sm font-medium text-muted-foreground">
-                          Total Logins (24h)
+                          Successful Logins (24h)
                         </h3>
                         <CheckCircle2 className="w-4 h-4 text-blue-600" />
                       </div>
                       <div className="flex items-baseline gap-1">
                         <p className="text-3xl font-bold">
-                          {securityMetrics.authentication.totalLogins}
+                          {securityMetrics.authentication.totalLogins ?? "—"}
                         </p>
-                        <p className="text-sm text-muted-foreground">logins</p>
+                        <p className="text-sm text-muted-foreground">
+                          {securityMetrics.authentication.totalLogins === null
+                            ? "not recorded"
+                            : "logins"}
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -692,7 +703,7 @@ export default function SecurityDashboard() {
                   <div>
                     <CardTitle>Security Assessment Results</CardTitle>
                     <CardDescription>
-                      Latest security scan and vulnerability assessment
+                      Completed security assessments from an integrated scanner
                       {penTestData && (
                         <span className="ml-2 text-xs">
                           Last scan: {formatTimestamp(penTestData.lastScan)}
@@ -726,7 +737,7 @@ export default function SecurityDashboard() {
                   <div className="text-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      Running security assessment…
+                      Loading security assessment results…
                     </p>
                   </div>
                 ) : (

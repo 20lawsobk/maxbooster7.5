@@ -14,6 +14,7 @@ import {
   stemExports,
   pluginPresets,
   studioSamples,
+  projectRoyaltySplits,
 } from "@shared/schema";
 import { notificationService } from "../services/notificationService.js";
 import { eq, and, or, desc, inArray, sql as drizzleSql, ilike, arrayOverlaps, type SQL } from "drizzle-orm";
@@ -308,6 +309,12 @@ router.delete(
       await db
         .delete(studioTracks)
         .where(eq(studioTracks.projectId, projectId));
+      // No DB-level cascade exists for project royalty splits (see
+      // shared/schema.ts), so they must be deleted explicitly or they
+      // become permanently orphaned rows once the project is gone.
+      await db
+        .delete(projectRoyaltySplits)
+        .where(eq(projectRoyaltySplits.projectId, projectId));
       await db.delete(projects).where(eq(projects.id, projectId));
 
       res.json({ success: true, message: "Project deleted" });

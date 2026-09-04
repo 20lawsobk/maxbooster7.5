@@ -32,36 +32,24 @@ router.get("/dead-letter", async (_req, res) => {
 });
 
 router.post("/dead-letter/:id/retry", async (req, res) => {
-  try {
-    const { id } = req.params;
-    logger.info(`Retrying webhook: ${id}`);
-    res.json({ success: true, message: "Webhook queued for retry" });
-  } catch (error) {
-    logger.warn({ err: error }, "Error retrying webhook:");
-    res.status(500).json({ error: "Failed to retry webhook" });
-  }
+  logger.warn({ webhookId: req.params.id }, "Webhook retry requested but no durable webhook queue is configured");
+  return res.status(501).json({
+    error: "Webhook retries are unavailable because no durable webhook queue is configured",
+  });
 });
 
 router.post("/:id/retry", async (req, res) => {
-  try {
-    const { id } = req.params;
-    logger.info(`Retrying webhook: ${id}`);
-    res.json({ success: true, message: "Webhook queued for retry" });
-  } catch (error) {
-    logger.warn({ err: error }, "Error retrying webhook:");
-    res.status(500).json({ error: "Failed to retry webhook" });
-  }
+  logger.warn({ webhookId: req.params.id }, "Webhook retry requested but no durable webhook queue is configured");
+  return res.status(501).json({
+    error: "Webhook retries are unavailable because no durable webhook queue is configured",
+  });
 });
 
 router.delete("/dead-letter/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    logger.info(`Deleted webhook from dead letter: ${id}`);
-    res.json({ success: true, message: "Webhook deleted" });
-  } catch (error) {
-    logger.warn({ err: error }, "Error deleting webhook:");
-    res.status(500).json({ error: "Failed to delete webhook" });
-  }
+  logger.warn({ webhookId: req.params.id }, "Webhook deletion requested but no durable webhook queue is configured");
+  return res.status(501).json({
+    error: "Webhook dead-letter deletion is unavailable because no durable webhook queue is configured",
+  });
 });
 
 export default router;

@@ -9,6 +9,32 @@ import {
 
 const router = Router();
 
+function validateConfig(
+  template: (typeof WORKFLOW_TEMPLATES)[number],
+  config: unknown,
+): Record<string, unknown> | null {
+  if (!config || typeof config !== "object" || Array.isArray(config)) {
+    return null;
+  }
+
+  for (const [key, value] of Object.entries(config)) {
+    const field = template.configSchema[key];
+    if (!field) return null;
+    if (
+      (field.type === "boolean" && typeof value !== "boolean") ||
+      (field.type === "string" && typeof value !== "string") ||
+      (field.type === "number" &&
+        (typeof value !== "number" || !Number.isFinite(value))) ||
+      (field.type === "select" &&
+        (typeof value !== "string" || !field.options?.includes(value)))
+    ) {
+      return null;
+    }
+  }
+
+  return config as Record<string, unknown>;
+}
+
 // GET /api/music-workflow-automations/templates
 // Returns all available workflow templates (static, no auth needed)
 router.get("/templates", async (_req: Request, res: Response) => {
@@ -55,17 +81,22 @@ router.post(
     try {
       const userId = req.user!.id;
       const { templateId } = req.params as Record<string, string>;
-      const { config } = req.body;
+      const { config } = req.body ?? {};
 
       const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
       if (!template) {
         return res.status(404).json({ error: "Template not found" });
       }
+      const validatedConfig =
+        config === undefined ? undefined : validateConfig(template, config);
+      if (config !== undefined && !validatedConfig) {
+        return res.status(400).json({ error: "Invalid automation config" });
+      }
 
       await musicWorkflowAutomationService?.enableAutomation(
         userId,
         templateId,
-        config,
+        validatedConfig,
       );
       res.json({ success: true, templateId, enabled: true });
     } catch (err) {
@@ -109,21 +140,22 @@ router.put(
     try {
       const userId = req.user!.id;
       const { templateId } = req.params as Record<string, string>;
-      const { config } = req.body;
-
-      if (!config || typeof config !== "object") {
-        return res.status(400).json({ error: "config object required" });
-      }
+      const { config } = req.body ?? {};
 
       const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
       if (!template) {
         return res.status(404).json({ error: "Template not found" });
       }
 
+      const validatedConfig = validateConfig(template, config);
+      if (!validatedConfig) {
+        return res.status(400).json({ error: "Invalid automation config" });
+      }
+
       await musicWorkflowAutomationService?.updateConfig(
         userId,
         templateId,
-        config,
+        validatedConfig,
       );
       res.json({ success: true, templateId, config });
     } catch (err) {
@@ -149,8 +181,8 @@ router.post("/trigger", requireAuth, async (req: Request, res: Response) => {
 
     const { eventType, data = {} } = parsed.data;
     const executions = await musicWorkflowAutomationService.triggerEvent(eventType, {
-      userId,
       ...data,
+      userId,
     });
     const failedExecutions = executions.filter(
       (execution) => execution.status === "failed",
@@ -189,7 +221,13 @@ router.get("/logs", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const templateId = req.query.templateId as string | undefined;
-    const limit = Math.min(Number(req.query.limit ?? 50), 200);
+    const parsedLimit = z.coerce.number().int().min(1).max(200).safeParse(
+      req.query.limit ?? 50,
+    );
+    if (!parsedLimit.success) {
+      return res.status(400).json({ error: "limit must be an integer from 1 to 200" });
+    }
+    const limit = parsedLimit.data;
 
     const logs = await musicWorkflowAutomationService?.getExecutionLogs(
       userId,

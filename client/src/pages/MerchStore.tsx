@@ -200,7 +200,15 @@ export default function MerchStore() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/merch/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/merch/stats"] });
       toast({ title: "Order updated" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to update order",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -212,6 +220,13 @@ export default function MerchStore() {
       queryClient.invalidateQueries({ queryKey: ["/api/merch"] });
       queryClient.invalidateQueries({ queryKey: ["/api/merch/stats"] });
       toast({ title: "Product deleted" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to delete product",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -540,7 +555,8 @@ export default function MerchStore() {
   const categoryRevenue = (() => {
     const map: Record<string, number> = {};
     for (const item of itemsArr) {
-      const rev = parseFloat(item.price) * (item.soldCount || 0);
+      const rev =
+        parseFloat(item.salePrice || item.price) * (item.soldCount || 0);
       map[item.category] = (map[item.category] || 0) + rev;
     }
     return Object.entries(map)
@@ -933,9 +949,6 @@ export default function MerchStore() {
                                         <SelectItem value="delivered">
                                           Delivered
                                         </SelectItem>
-                                        <SelectItem value="refunded">
-                                          Refunded
-                                        </SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
@@ -1015,7 +1028,7 @@ export default function MerchStore() {
               <Card>
                 <CardHeader className="flex flex-row items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle>Revenue by Category</CardTitle>
+                  <CardTitle>Estimated Sales Value by Category</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {categoryRevenue.length === 0 ? (
@@ -1143,11 +1156,17 @@ export default function MerchStore() {
                                 </div>
                               </div>
                             </div>
-                            <div className="text-sm font-bold text-green-500">
-                              $
-                              {(
-                                parseFloat(item.price) * item.soldCount
-                              ).toFixed(2)}
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-green-500">
+                                $
+                                {(
+                                  parseFloat(item.salePrice || item.price) *
+                                  item.soldCount
+                                ).toFixed(2)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                at current price
+                              </div>
                             </div>
                           </div>
                         ),

@@ -293,6 +293,13 @@ export default function Collaborations() {
       queryClient.invalidateQueries({ queryKey: ["/api/collaborations"] });
       toast({ title: "Connection accepted" });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Could not accept connection",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const declineConnectionMutation = useMutation({
@@ -309,6 +316,13 @@ export default function Collaborations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/collaborations"] });
       toast({ title: "Connection declined" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Could not decline connection",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 

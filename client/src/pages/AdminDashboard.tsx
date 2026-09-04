@@ -77,7 +77,7 @@ interface SystemMetrics {
   cpu: number;
   memory: number;
   disk: number;
-  network: number;
+  network?: number;
   avgResponseTime?: number;
   responseTime?: number;
 }
@@ -157,7 +157,7 @@ interface WebhookDlqItem {
 }
 
 interface WebhookDlqResponse {
-  queue?: WebhookDlqItem[];
+  items?: WebhookDlqItem[];
 }
 
 interface LogEntry {
@@ -591,10 +591,14 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                           </span>
                         </div>
                         <span className="text-sm font-bold">
-                          {metricsData.network}%
+                          {metricsData.network === undefined
+                            ? "Unavailable"
+                            : `${metricsData.network}%`}
                         </span>
                       </div>
-                      <Progress value={metricsData.network} className="h-2" />
+                      {metricsData.network === undefined ? null : (
+                        <Progress value={metricsData.network} className="h-2" />
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -1569,15 +1573,33 @@ function TokenManagementTab() {
         },
         credentials: "include",
       });
-      if (!response.ok) throw new Error("Failed to issue token");
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || `Failed to issue token (${response.status})`);
+      }
       return response.json();
     },
     onSuccess: (data) => {
+      const issuedToken = data.token || data.accessToken;
+      if (!issuedToken) {
+        toast({
+          title: "Token issuance response was invalid",
+          description: "The server did not return an access token.",
+          variant: "destructive",
+        });
+        return;
+      }
       toast({
         title: "Token issued",
-        description: `Access: ${data.accessToken?.substring(0, 20)}...  Refresh: ${data.refreshToken?.substring(0, 20)}...`,
+        description: `Access: ${issuedToken.substring(0, 20)}...`,
       });
     },
+    onError: (e: Error) =>
+      toast({
+        title: "Token issuance unavailable",
+        description: e.message,
+        variant: "destructive",
+      }),
   });
 
   const { mutate: revokeToken, isPending: revokingToken } = useMutation({
@@ -1592,7 +1614,10 @@ function TokenManagementTab() {
         credentials: "include",
         body: JSON.stringify({ tokenId, reason: "Admin revocation" }),
       });
-      if (!response.ok) throw new Error("Failed to revoke token");
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || `Failed to revoke token (${response.status})`);
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -1602,6 +1627,12 @@ function TokenManagementTab() {
       });
       setRevokeTokenId("");
     },
+    onError: (e: Error) =>
+      toast({
+        title: "Token revocation unavailable",
+        description: e.message,
+        variant: "destructive",
+      }),
   });
 
   return (
@@ -1709,7 +1740,7 @@ function WebhookMonitorTab() {
                   className="text-2xl font-bold text-blue-900"
                   data-testid="text-dlq-count"
                 >
-                  {dlqLoading ? "..." : dlqData?.queue?.length || 0}
+                  {dlqLoading ? "..." : dlqData?.items?.length || 0}
                 </p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
@@ -1753,14 +1784,14 @@ function WebhookMonitorTab() {
         </CardContent>
       </Card>
 
-      {dlqData?.queue && dlqData.queue.length > 0 && (
+      {dlqData?.items && dlqData.items.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Dead Letter Queue</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2" data-testid="list-dlq-items">
-              {dlqData.queue.map((item: WebhookDlqItem, index: number) => (
+              {dlqData.items.map((item: WebhookDlqItem, index: number) => (
                 <div
                   key={item.id}
                   className="p-3 bg-gray-50 rounded-lg"
@@ -1796,7 +1827,7 @@ function WebhookMonitorTab() {
 
 // Log Viewer Tab Component
 function LogViewerTab() {
-  const [level, setLevel] = useState("");
+  const [level, setLevel] = useState("all");
   const [service, setService] = useState("");
   const [limit, setLimit] = useState("100");
 
@@ -1828,12 +1859,12 @@ function LogViewerTab() {
                 className="w-full px-3 py-2 border rounded-md mt-1"
                 data-testid="select-log-level"
               >
-                <option value="">All</option>
+                <option value="all">All</option>
                 <option value="debug">Debug</option>
                 <option value="info">Info</option>
                 <option value="warn">Warn</option>
                 <option value="error">Error</option>
-                <option value="critical">Critical</option>
+                <option value="fatal">Fatal</option>
               </select>
             </div>
             <div>

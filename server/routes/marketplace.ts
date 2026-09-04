@@ -74,7 +74,7 @@ const upload = createHardenedUpload({
 });
 
 const purchaseSchema = z.object({
-  beatId: z.string().min(1, "beatId is required"),
+  beatId: z.string().uuid("beatId must be a valid listing ID"),
   licenseType: z.enum(["basic", "premium", "unlimited", "exclusive"], "licenseType is required"),
   useEscrow: z.boolean().optional(),
 });
@@ -1025,9 +1025,24 @@ router.post("/checkout/initiate", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    const { beatId, licenseType } = req.body || {};
-    if (!beatId || !licenseType) {
-      return res.status(400).json({ error: "beatId and licenseType are required" });
+    const parsed = purchaseSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+    const { beatId, licenseType, useEscrow } = parsed.data;
+    if (useEscrow) {
+      return res.status(501).json({
+        error:
+          "Escrow checkout is not available. Please use the standard checkout.",
+      });
+    }
+    const [listing] = await db
+      .select({ userId: listings.userId })
+      .from(listings)
+      .where(eq(listings.id, beatId))
+      .limit(1);
+    if (listing?.userId === req.user!.id) {
+      return res.status(403).json({ error: "Cannot purchase your own beat" });
     }
     const result = await marketplaceService.initiatePurchase(
       req.user!.id,
@@ -1058,7 +1073,21 @@ router.post("/purchase", async (req: Request, res: Response) => {
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
-    const { beatId, licenseType } = parsed.data;
+    const { beatId, licenseType, useEscrow } = parsed.data;
+    if (useEscrow) {
+      return res.status(501).json({
+        error:
+          "Escrow checkout is not available. Please use the standard checkout.",
+      });
+    }
+    const [listing] = await db
+      .select({ userId: listings.userId })
+      .from(listings)
+      .where(eq(listings.id, beatId))
+      .limit(1);
+    if (listing?.userId === req.user!.id) {
+      return res.status(403).json({ error: "Cannot purchase your own beat" });
+    }
 
     const result = await marketplaceService.initiatePurchase(
       req.user!.id,
@@ -1119,6 +1148,11 @@ router.get(
       }
       if (order.userId !== req.user!.id && order.sellerId !== req.user!.id) {
         return res.status(403).json({ error: "Access denied" });
+      }
+      if (order.status !== "completed") {
+        return res.status(409).json({
+          error: "A license agreement is available after payment is completed",
+        });
       }
 
       const [[listing], [buyer], [seller]] = await Promise.all([
@@ -1184,11 +1218,17 @@ router.get(
       };
 
       const template = templateMap[licenseType] || templateMap.basic;
-      const snapshot = order.licenseSnapshot as Record<string, unknown>;
-      const beatTitle = listing.title || "Unknown Beat";
+      const snapshot =
+        order.licenseSnapshot &&
+        typeof order.licenseSnapshot === "object" &&
+        !Array.isArray(order.licenseSnapshot)
+          ? (order.licenseSnapshot as Record<string, unknown>)
+          : {};
+      const beatTitle = listing?.title || "Unknown Beat";
       const producerName =
-        (seller as any).displayName || seller.username || "Producer";
-      const buyerName = (buyer as any).displayName || buyer.username || "Buyer";
+        (seller as any)?.displayName || seller?.username || "Producer";
+      const buyerName =
+        (buyer as any)?.displayName || buyer?.username || "Buyer";
       const purchaseDate = order.createdAt
         ? new Date(order.createdAt).toLocaleDateString("en-US", {
             year: "numeric",
@@ -1197,9 +1237,18 @@ router.get(
           })
         : new Date().toLocaleDateString();
       const amountPaid = `$${(order.amount || 0).toFixed(2)}`;
-      const fileFormats =
-        (snapshot.fileFormats as any).map((f: string) => f.toUpperCase()).join(", ") ||
-        template.fileFormats;
+      const snapshotFileFormats = snapshot.fileFormats;
+      const fileFormats = (
+        Array.isArray(snapshotFileFormats)
+          ? snapshotFileFormats
+          : typeof snapshotFileFormats === "string"
+            ? snapshotFileFormats.split(",")
+            : []
+      )
+        .filter((format): format is string => typeof format === "string")
+        .map((format) => format.trim().toUpperCase())
+        .filter(Boolean)
+        .join(", ") || template.fileFormats;
 
       const isExclusive = licenseType === "exclusive";
       const agreement = [
@@ -1571,6 +1620,16 @@ router.post(
       if (!files?.audioFile?.[0]) {
         return res.status(400).json({ error: "An audio file is required" });
       }
+      const parsedPrice = price === undefined || price === "" ? 50 : Number(price);
+      if (
+        !Number.isFinite(parsedPrice) ||
+        parsedPrice <= 0 ||
+        parsedPrice > 100_000
+      ) {
+        return res.status(400).json({
+          error: "Price must be a positive amount no greater than $100,000",
+        });
+      }
 
       let audioUrl = "";
       let artworkUrl = "";
@@ -1615,14 +1674,14 @@ router.post(
         genre,
         bpm: parseInt(tempo) || undefined,
         key,
-        price: parseFloat(price) || 50,
+        price: parsedPrice,
         audioUrl,
         artworkUrl,
         tags: tags ? tags?.split(",").map((t: string) => t?.trim()) : [],
         licenses: [
           {
             type: licenseType || "basic",
-            price: parseFloat(price) || 50,
+            price: parsedPrice,
             features: ["MP3 Download", "Non-exclusive rights"],
           },
         ],
@@ -1817,7 +1876,7 @@ router.post(
           await notificationService?.sendBeatListingLiveNotification(
             req.user!.id,
             title,
-            parseFloat(price) || 50,
+            parsedPrice,
           );
         } catch (err) {
           logger.warn(
@@ -2005,7 +2064,19 @@ router.put(
       if (mood) updateData.mood = mood;
       if (tempo) updateData.bpm = parseInt(tempo);
       if (key) updateData.key = key;
-      if (price) updateData.price = parseFloat(price);
+      if (price !== undefined) {
+        const parsedPrice = Number(price);
+        if (
+          !Number.isFinite(parsedPrice) ||
+          parsedPrice <= 0 ||
+          parsedPrice > 100_000
+        ) {
+          return res.status(400).json({
+            error: "Price must be a positive amount no greater than $100,000",
+          });
+        }
+        updateData.price = parsedPrice;
+      }
       if (licenseType) updateData.licenseType = licenseType;
       if (tags) updateData.tags = tags?.split(",").map((t: string) => t?.trim());
 
@@ -2135,11 +2206,9 @@ router.post(
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { transactionId } = req.params as Record<string, string>;
-      res.json({
-        success: true,
-        message: "Escrow released successfully",
-        transactionId,
+      return res.status(501).json({
+        error:
+          "Escrow releases are not available because marketplace escrow is not yet supported.",
       });
     } catch (error) {
       logger.warn({ err: error }, "Error releasing escrow:");

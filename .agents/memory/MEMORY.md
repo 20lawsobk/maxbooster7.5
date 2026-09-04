@@ -148,3 +148,7 @@
 - [Curl auth testing with no login route](curl-auth-testing-no-login-route.md) — demo account is write-blocked; add a temp dev-gated login route mirroring it instead of forging session-store entries by hand
 - [Fabricated metrics presented as real](fabricated-metrics-presented-as-real.md) — 4+ live subsystems (audio analysis, ad intel, ML self-monitoring, social trends) return hash/PRNG-seeded fake numbers as if measured; systemic, not one-off
 - [Curl auth: demo route is CSRF-exempt, others aren't](csrf-curl-pattern.md) — GET /api/csrf-token first for any non-exempt POST (temp test-login routes included); demo/login/register are the only CSRF-exempt auth POSTs
+- [CSRF token endpoint must reuse middleware token](csrf-token-endpoint-must-reuse-middleware-token.md) — getCsrfToken must read req.csrfToken, never re-derive independently, or it double-Set-Cookies and races on first request
+- [Entity ID format varies by table](entity-id-format-varies-by-table.md) — check a table's real ID-generation code before adding UUID-format validation middleware; projects.id is non-UUID hex, not every table defaults to gen_random_uuid()
+- ["projects" vs "studio_projects" tables](projects-vs-studio-projects-tables.md) — both real and actively written; dashboard totalTracks reads studio_projects not projects, divergence from Projects-list count unresolved
+- [jsPDF + jspdf-autotable gotchas](jspdf-gotchas.md) — roundedRect not roundRect, charSpace invisible to getTextWidth, WinAnsi drops ≤/≥ symbols, autotable warns on under-filled fixed column widths too

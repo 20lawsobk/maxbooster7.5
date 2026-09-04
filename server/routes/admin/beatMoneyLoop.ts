@@ -6,7 +6,7 @@
  */
 
 import { Router } from "express";
-import { requireAdmin } from "../../middleware/auth.js";
+import { requireAdmin, require2FA } from "../../middleware/auth.js";
 import { beatMoneyLoopService } from "../../services/beatMoneyLoopService.js";
 import { db } from "../../db.js";
 import { beatMoneyLoopCycles, beatMoneyLoopState } from "@shared/schema";
@@ -16,6 +16,7 @@ import { logger } from "../../logger.js";
 const router = Router();
 
 router.use(requireAdmin);
+router.use(require2FA);
 
 router.get("/status", async (_req, res) => {
   try {

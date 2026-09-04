@@ -100,9 +100,10 @@ import { runtimePorts } from "./config/ports.js";
 })();
 
 // ── Startup-time asset pre-compression ────────────────────────────────────────
-// The Repl layer (pushed during deployment) cannot contain binary files.
-// The deploy:build script deletes all .br/.gz files before layer push.
-// Re-generate them here at VM startup so static serving stays fast.
+// script/build.ts (the current production build) never emits .br/.gz files —
+// precompressed variants are generated here, at VM startup, so the deploy
+// image never has to carry precompressed binaries and static serving still
+// gets fast brotli/gzip responses.
 //
 // IMPORTANT: this MUST run asynchronously and MUST be kicked off only after
 // the primary has bound the health-check port. It used to run synchronously

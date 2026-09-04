@@ -163,8 +163,8 @@ export default function ARIntelligence() {
             A&R Intelligence
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            Live music industry signals powering trend forecasts, catalog gaps,
-            and release timing
+            Live music industry signals for catalog gaps. Trend forecasts and
+            release timing require connected performance data.
           </p>
           {forecast.data && (
             <div className="flex items-center gap-2 mt-1">

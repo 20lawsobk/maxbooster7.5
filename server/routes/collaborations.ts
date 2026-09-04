@@ -4,8 +4,13 @@ import { logger } from "../logger";
 import { db } from "../db";
 import { artistConnections } from "@shared/schema";
 import { desc, eq, or } from "drizzle-orm";
+import { z } from "zod";
 
 const router = Router();
+const connectionRequestSchema = z.object({
+  userId: z.string().min(1).max(255),
+  message: z.string().max(5_000).optional(),
+});
 
 router.get("/", async (req: Request, res: Response) => {
   if (!req.user) {
@@ -65,16 +70,15 @@ router.post("/connect", async (req: Request, res: Response) => {
   }
 
   try {
-    const { userId, message } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ error: "User ID is required" });
+    const parsed = connectionRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid connection request" });
     }
 
     const connection = await collaborationService?.sendConnectionRequest(
       req.user.id,
-      userId,
-      message,
+      parsed.data.userId,
+      parsed.data.message,
     );
     return res.json(connection);
   } catch (error) {
@@ -150,8 +154,12 @@ router.get("/suggestions", async (req: Request, res: Response) => {
 });
 
 router.get("/projects", async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const genre = req.query.genre as string | undefined;
     const status = req.query.status as string | undefined;
     const ownOnly = req.query.ownOnly === "true";
@@ -161,7 +169,17 @@ router.get("/projects", async (req: Request, res: Response) => {
       status,
       ownOnly,
     });
-    return res.json(projects);
+    // Private projects and their member lists are only visible to their owner
+    // or an active member. The service also powers public discovery, so it
+    // deliberately returns a broader set than this authenticated endpoint.
+    return res.json(
+      projects.filter(
+        (project) =>
+          project.ownerId === userId ||
+          project.isPublic ||
+          project.members.some((member) => member.userId === userId),
+      ),
+    );
   } catch (error) {
     logger.warn({ err: error }, "Error fetching projects:");
     return res.status(500).json({ error: "Failed to fetch projects" });
@@ -229,6 +247,10 @@ router.post("/projects/:id/leave", async (req: Request, res: Response) => {
 });
 
 router.get("/search", async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
   try {
     const query = (req.query.q as string) || "";
     const genre = req.query.genre as string | undefined;

@@ -100,7 +100,7 @@ interface FanMessage {
 interface FanHubStats {
   totalFans: number;
   vipCount: number;
-  growthRate: number;
+  newFansLast30Days: number;
   emailOpenRate: number;
   avgSpend: number;
 }
@@ -509,9 +509,9 @@ export default function FanHub() {
               <p className="text-xs text-muted-foreground">
                 <span className="text-emerald-500 flex items-center gap-1 font-medium">
                   <TrendingUp className="h-3 w-3" />
-                  {stats?.growthRate || 0}%
+                  {stats?.newFansLast30Days || 0}
                 </span>{" "}
-                from last month
+                new in the last 30 days
               </p>
             </CardContent>
           </Card>
@@ -564,7 +564,7 @@ export default function FanHub() {
                 {stats?.emailOpenRate || 0}%
               </div>
               <p className="text-xs text-muted-foreground">
-                Industry avg: 21.3%
+                Across tracked broadcasts
               </p>
             </CardContent>
           </Card>

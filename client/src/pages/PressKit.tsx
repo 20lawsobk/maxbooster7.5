@@ -154,7 +154,7 @@ export default function PressKit() {
       ...data,
       genres,
       socialLinks,
-      isPublic: pressKit.isPublic ?? false,
+      isPublic: pressKit?.isPublic ?? false,
     });
   };
 

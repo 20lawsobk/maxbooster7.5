@@ -114,8 +114,8 @@ interface PublishingWork {
 interface PublishingStats {
   totalWorks: number;
   pendingCount: number;
-  proIncome: number;
   avgPublishingSplit: number;
+  confirmedCount: number;
 }
 
 export default function Royalties() {
@@ -128,9 +128,9 @@ export default function Royalties() {
     const setupStatus = params.get("setup");
     if (setupStatus === "complete") {
       toast({
-        title: "Bank Account Connected!",
+        title: "Stripe setup returned",
         description:
-          "Your bank account has been successfully connected for payouts.",
+          "Stripe will confirm your account is eligible for payouts after onboarding is complete.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       window.history.replaceState({}, "", window.location.pathname);
@@ -291,8 +291,8 @@ export default function Royalties() {
     },
     onSuccess: () => {
       toast({
-        title: "Work Registered",
-        description: "Your work has been submitted for registration",
+        title: "Work details saved",
+        description: "Submit this work to your PRO separately to register it.",
       });
       setIsRegisterWorkDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/publishing"] });
@@ -589,9 +589,9 @@ export default function Royalties() {
       return response.json();
     },
     onSuccess: (data) => {
-      showOutcome("dispute_filed", {
-        disputeId: data.disputeId,
-        reviewDays: 5,
+      toast({
+        title: "Dispute Filed",
+        description: `Dispute #${data.disputeId} is open for review.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/payouts/disputes"] });
     },
@@ -1552,7 +1552,7 @@ export default function Royalties() {
                 <Card className="glassmorphism">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Total Works Registered
+                      Saved Works
                     </CardTitle>
                     <Music className="w-4 h-4 text-muted-foreground" />
                   </CardHeader>
@@ -1565,7 +1565,7 @@ export default function Royalties() {
                 <Card className="glassmorphism">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Pending Registration
+                      Saved Locally
                     </CardTitle>
                     <Clock className="w-4 h-4 text-muted-foreground" />
                   </CardHeader>
@@ -1578,26 +1578,26 @@ export default function Royalties() {
                 <Card className="glassmorphism">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium">
-                      PRO Income
+                      Marked Confirmed
                     </CardTitle>
                     <DollarSign className="w-4 h-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      ${(publishingStats?.proIncome || 0).toLocaleString()}
+                      {publishingStats?.confirmedCount || 0}
                     </div>
                   </CardContent>
                 </Card>
                 <Card className="glassmorphism">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Publishing Split
+                      Average Publishing Split
                     </CardTitle>
                     <PieChart className="w-4 h-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {publishingStats?.avgPublishingSplit || 0}%
+                      {(publishingStats?.avgPublishingSplit || 0).toFixed(2)}%
                     </div>
                   </CardContent>
                 </Card>
@@ -1605,13 +1605,13 @@ export default function Royalties() {
 
               <Card className="glassmorphism">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Registered Works</CardTitle>
+                  <CardTitle>Saved Work Details</CardTitle>
                   <Button
                     onClick={() => setIsRegisterWorkDialogOpen(true)}
                     data-testid="button-register-work"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Register New Work
+                    Add Work Details
                   </Button>
                 </CardHeader>
                 <CardContent>
@@ -1654,14 +1654,20 @@ export default function Royalties() {
                               <td className="p-3 text-right">
                                 <Badge
                                   className={
-                                    work.status === "registered"
+                                    work.status === "confirmed" ||
+                                    work.status === "active"
                                       ? "bg-green-500/20 text-green-500"
-                                      : work.status === "rejected"
+                                      : work.status === "inactive"
                                         ? "bg-red-500/20 text-red-500"
                                         : "bg-yellow-500/20 text-yellow-500"
                                   }
                                 >
-                                  {work.status}
+                                  {work.status === "confirmed" ||
+                                  work.status === "active"
+                                    ? "Marked confirmed (local)"
+                                    : work.status === "pending"
+                                      ? "Saved locally"
+                                      : `${work.status} (local)`}
                                 </Badge>
                               </td>
                             </tr>
@@ -1671,8 +1677,8 @@ export default function Royalties() {
                     </div>
                   ) : (
                     <EmptyState
-                      title="No works registered"
-                      description="Register your musical works to start tracking publishing royalties."
+                      title="No saved works yet"
+                      description="Save work details and splits before submitting to your PRO."
                       icon={Copyright}
                     />
                   )}
@@ -2497,7 +2503,7 @@ export default function Royalties() {
             </DialogContent>
           </Dialog>
 
-          {/* Register New Work Dialog */}
+          {/* Add Work Details Dialog */}
           <Dialog
             open={isRegisterWorkDialogOpen}
             onOpenChange={setIsRegisterWorkDialogOpen}
@@ -2507,10 +2513,10 @@ export default function Royalties() {
               data-testid="dialog-register-work"
             >
               <DialogHeader>
-                <DialogTitle>Register New Work</DialogTitle>
+                <DialogTitle>Add Work Details</DialogTitle>
                 <DialogDescription className="text-gray-400">
-                  Register your musical work for publishing rights and royalty
-                  tracking.
+                  Save publishing information and splits before submitting to
+                  your PRO.
                 </DialogDescription>
               </DialogHeader>
               <form
@@ -2658,8 +2664,8 @@ export default function Royalties() {
                     disabled={registerWorkMutation.isPending}
                   >
                     {registerWorkMutation.isPending
-                      ? "Registering..."
-                      : "Register Work"}
+                      ? "Saving..."
+                      : "Save Work Details"}
                   </Button>
                 </DialogFooter>
               </form>

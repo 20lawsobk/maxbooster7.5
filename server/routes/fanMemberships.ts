@@ -16,24 +16,20 @@ import {
   customerMemberships,
   storefronts,
   fanWallets,
-  fanCreditTransactions,
   fanLoyaltyConfigs,
-  users,
-  insertFanCreditTransactionSchema,
 } from "@shared/schema";
 import {
   eq,
   and,
   desc,
   count,
-  sql,
-  sum,
 } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
+import { requirePremium } from "../middleware/requirePremium.js";
 import { logger } from "../logger.js";
 
 const router = Router();
-router.use(requireAuth);
+router.use(requireAuth, requirePremium);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,6 +60,7 @@ const createTierSchema = z.object({
 });
 
 const updateTierSchema = createTierSchema.partial();
+const tierIdSchema = z.string().uuid();
 
 /**
  * GET /api/fan-memberships/tiers
@@ -142,6 +139,10 @@ router.put("/tiers/:tierId", async (req, res) => {
   try {
     const userId = req.user!.id;
     const { tierId } = req.params;
+    const parsedTierId = tierIdSchema.safeParse(tierId);
+    if (!parsedTierId.success) {
+      return res.status(400).json({ error: "Invalid tier ID" });
+    }
     const sf = await getArtistStorefront(userId);
     if (!sf) return res.status(403).json({ error: "Unauthorized" });
 
@@ -150,7 +151,7 @@ router.put("/tiers/:tierId", async (req, res) => {
       .from(membershipTiers)
       .where(
         and(
-          eq(membershipTiers.id, tierId),
+          eq(membershipTiers.id, parsedTierId.data),
           eq(membershipTiers.storefrontId, sf.id),
         ),
       )
@@ -173,6 +174,9 @@ router.put("/tiers/:tierId", async (req, res) => {
         ...(body.data.priceCents !== undefined && {
           priceCents: body.data.priceCents,
         }),
+        ...(body.data.currency !== undefined && {
+          currency: body.data.currency,
+        }),
         ...(body.data.interval && { interval: body.data.interval }),
         ...(body.data.benefits !== undefined && {
           benefits: body.data.benefits,
@@ -184,7 +188,12 @@ router.put("/tiers/:tierId", async (req, res) => {
           sortOrder: body.data.sortOrder,
         }),
       })
-      .where(eq(membershipTiers.id, tierId))
+      .where(
+        and(
+          eq(membershipTiers.id, parsedTierId.data),
+          eq(membershipTiers.storefrontId, sf.id),
+        ),
+      )
       .returning();
 
     res.json(updated);
@@ -202,6 +211,10 @@ router.delete("/tiers/:tierId", async (req, res) => {
   try {
     const userId = req.user!.id;
     const { tierId } = req.params;
+    const parsedTierId = tierIdSchema.safeParse(tierId);
+    if (!parsedTierId.success) {
+      return res.status(400).json({ error: "Invalid tier ID" });
+    }
     const sf = await getArtistStorefront(userId);
     if (!sf) return res.status(403).json({ error: "Unauthorized" });
 
@@ -210,7 +223,7 @@ router.delete("/tiers/:tierId", async (req, res) => {
       .from(membershipTiers)
       .where(
         and(
-          eq(membershipTiers.id, tierId),
+          eq(membershipTiers.id, parsedTierId.data),
           eq(membershipTiers.storefrontId, sf.id),
         ),
       )
@@ -221,7 +234,12 @@ router.delete("/tiers/:tierId", async (req, res) => {
     await db
       .update(membershipTiers)
       .set({ isActive: false })
-      .where(eq(membershipTiers.id, tierId));
+      .where(
+        and(
+          eq(membershipTiers.id, parsedTierId.data),
+          eq(membershipTiers.storefrontId, sf.id),
+        ),
+      );
 
     res.json({ ok: true });
   } catch (err) {
@@ -244,7 +262,10 @@ router.get("/members", async (req, res) => {
     if (!sf) return res.json({ members: [], total: 0 });
 
     const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
-    const limit = Math.min(100, parseInt(String(req.query.limit ?? "50"), 10));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(String(req.query.limit ?? "50"), 10) || 50),
+    );
     const offset = (page - 1) * limit;
     const tierId = req.query.tierId as string | undefined;
 
@@ -440,7 +461,10 @@ router.put("/wallet-config", async (req, res) => {
 router.get("/wallet-leaderboard", async (req, res) => {
   try {
     const userId = req.user!.id;
-    const limit = Math.min(50, parseInt(String(req.query.limit ?? "20"), 10));
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(String(req.query.limit ?? "20"), 10) || 20),
+    );
 
     const leaders = await db
       .select({

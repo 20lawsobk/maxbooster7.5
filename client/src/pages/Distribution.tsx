@@ -1636,7 +1636,8 @@ export default function Distribution() {
     onSuccess: () => {
       toast({
         title: "Release uploaded successfully!",
-        description: "Your music is now being processed for distribution.",
+        description:
+          "Your release was saved as a draft. Submit it for distribution after completing identifiers and review.",
       });
       setIsUploadOpen(false);
       setCurrentStep(1);
@@ -2099,6 +2100,8 @@ export default function Distribution() {
     formData.append("iTunesPricing", uploadForm.iTunesPricing);
     formData.append("tracks", JSON.stringify(uploadForm.tracks));
     formData.append("collaborators", JSON.stringify(uploadForm.collaborators));
+    formData.append("rightsConfirmed", uploadForm.rightsConfirmed.toString());
+    formData.append("contentOriginal", uploadForm.contentOriginal.toString());
 
     // Add files
     uploadForm.audioFiles.forEach((file, index) => {

@@ -6,51 +6,74 @@ id = "zfhfPirZsCK4sboc2AIRO"
 uri = "file://daw-plugin-comparison.md"
 type = "text"
 title = "Max Booster DAW Plugins — Professional Comparison"
+logical_id = "d21051ff-381f-4c5a-95eb-5cd445d24464"
 
 [[outputs]]
 id = "CcpE9fHfNNsKReLY2pADX"
 uri = "file://patents/pdf/01_training_time_compression_system.pdf"
 type = "pdf"
 title = "Patent BLM-001 — Training Time Compression System"
+logical_id = "e48d789c-68ed-442d-8680-361305795a6b"
 
 [[outputs]]
 id = "tQj6KDw_9BkPXpGr0YDiw"
 uri = "file://patents/pdf/02_music_scenario_engine.pdf"
 type = "pdf"
 title = "Patent BLM-002 — Music Industry Scenario Engine"
+logical_id = "d692aa56-fbaf-4323-ab6e-3e99d0c5c2aa"
 
 [[outputs]]
 id = "2zc9liFPTu9hgOyfaPSUz"
 uri = "file://patents/pdf/03_ucb1_bandit_caffeine_mode.pdf"
 type = "pdf"
 title = "Patent BLM-003 — UCB1 Bandit & Caffeine Mode"
+logical_id = "0b428868-bc99-447a-bb9b-87fabd45a737"
 
 [[outputs]]
 id = "4SjVCZIz6x3x8-yM9M-FV"
 uri = "file://patents/pdf/04_veo_calibrated_quality_gate.pdf"
 type = "pdf"
 title = "Patent BLM-004 — Veo-Calibrated Quality Gate"
+logical_id = "89b448ba-4d1a-457f-8882-6aff7c7b6083"
 
 [[outputs]]
 id = "_3F6hM4yyqTbrXHOr2u0E"
 uri = "file://patents/pdf/05_four_tier_memory_system.pdf"
 type = "pdf"
 title = "Patent BLM-005 — Four-Tier Memory Replay System"
+logical_id = "a221f665-8df1-46e1-9753-ce2b81c29149"
 
 [[outputs]]
 id = "e2s3HN6DZT2FckLiSiOFn"
 uri = "file://patents/pdf/06_hyperlearning_engine.pdf"
 type = "pdf"
 title = "Patent BLM-006 — HyperLearning Engine (72×)"
+logical_id = "889d7be8-b58e-492f-a9f7-07fbd4b5dee2"
 
 [[outputs]]
 id = "VLLh5EMV-WgVaeWPO2YxI"
 uri = "file://patents/pdf/07_maxcore_score_calibrator.pdf"
 type = "pdf"
 title = "Patent BLM-007 — MaxCore Score Calibrator"
+logical_id = "fc933250-01f3-41b4-a354-6530fe54d3b2"
 
 [[outputs]]
 id = "UMsK4nmnO5ZVs3mQzrtCC"
 uri = "file://public/generated-content/audio/beat_1784973558829_690bf5d3dbb9d57b.wav"
 type = "audio"
 title = "Chill Indie Type Beat (G Major) 95.7 BPM — MaxCore"
+logical_id = "e534efe5-ed02-4b1c-baca-2a753602f4a9"
+
+[[outputs]]
+id = "VoXcCj-cWeS2v_cpGc2VK"
+uri = "file://reports/max-booster-competitive-benchmark.pdf"
+type = "pdf"
+title = "Max Booster — Competitive Benchmark Report"
+description = "29 core product pages benchmarked against their closest 3rd-party equivalents (BandLab, Chartmetric, DistroKid, BeatStars, HubSpot, and more) — with scores, verdicts, honest-gap vs fabricated-data flags, and a prioritized action plan."
+logical_id = "ec6af829-d721-46c2-a9cb-735e90f77543"
+content_hash = "sha256:546157d5a794faa48970c7c8270c88154a5c9af570d7917b655e2e7dd0e85fcd"
+size = 264821
+mtime_ms = 1788560519097
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/ec6af829-d721-46c2-a9cb-735e90f77543/fddcbd89-6a25-45fe-a418-47f31e439442"
+storage_version_token = "1788560533934748"
+content_type = "application/pdf"

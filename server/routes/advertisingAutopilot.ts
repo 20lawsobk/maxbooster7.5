@@ -46,9 +46,7 @@ router.get("/status", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const now = new Date();
 
-    const config = await storage
-      .getAdvertisingAutopilotConfig(userId)
-      .catch(() => null);
+    const config = await storage.getAdvertisingAutopilotConfig(userId);
 
     let modelTrained = false,
       modelVersion = "1.0.0";
@@ -94,7 +92,7 @@ router.get("/status", requireAuth, async (req, res) => {
         .where(eq(adCampaigns.userId, userId))
         .orderBy(desc(adCampaigns.createdAt))
         .limit(10),
-    ]).catch(() => [[], [], []]);
+    ]);
 
     const totalCampaigns = Number(
       (totalRow as { value?: number }[])[0]?.value ?? 0,
@@ -102,15 +100,15 @@ router.get("/status", requireAuth, async (req, res) => {
     const nextScheduledCampaign =
       (nextCampaignRow as { startDate?: string }[])[0]?.startDate ?? null;
 
-    // Aggregate reach and engagement from campaign performance JSON
+    // Aggregate only metrics collected from published organic posts.
     let totalReach = 0;
     let engagementRateSum = 0;
     let engagementRateCount = 0;
     for (const c of recentCampaignRows as Record<string, unknown>[]) {
-      const perf = c?.performance as Record<string, unknown>;
-      if (perf) {
-        totalReach += Number(perf?.reach || perf?.impressions || 0);
-        const rate = perf?.engagementRate || perf?.engagement_rate;
+      const metrics = c?.organicMetrics as Record<string, unknown>;
+      if (metrics) {
+        totalReach += Number(metrics.totalReach ?? 0);
+        const rate = metrics.avgEngagementRate;
         if (rate != null) {
           engagementRateSum += Number(rate);
           engagementRateCount++;
@@ -124,18 +122,17 @@ router.get("/status", requireAuth, async (req, res) => {
       recentCampaignRows as Record<string, unknown>[]
     ).map((c: Record<string, unknown>) => ({
       status:
-        c?.status === "active" || c?.status === "completed"
-          ? "completed"
-          : c?.status === "failed"
-            ? "failed"
-            : "scheduled",
+        typeof c?.status === "string" ? c.status : "draft",
       title: c.name || "Campaign",
       description: `${c?.platform || "multi-platform"} • ${c?.objective || "awareness"}`,
       time: c.startDate || c?.createdAt,
     }));
 
     res.json({
-      isRunning: config?.enabled || false,
+      // Saving a configuration does not start a worker. Keep this false
+      // until a per-user campaign automation worker is implemented.
+      isRunning: false,
+      automationAvailable: false,
       config: config || {
         enabled: false,
         platforms: [],
@@ -185,53 +182,13 @@ router.get("/status", requireAuth, async (req, res) => {
 
 // Start advertising autopilot
 router.post("/start", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user!.id;
-
-    // Get or create config
-    let config = await storage.getAdvertisingAutopilotConfig(userId);
-    if (!config) {
-      config = {
-        enabled: true,
-        platforms: ["facebook", "instagram", "twitter"],
-        campaignObjective: "awareness",
-        campaignFrequency: "daily",
-        brandVoice: "professional",
-        contentTypes: ["brand-awareness", "engagement-boost"],
-        mediaTypes: ["text", "image"],
-        targetAudience: "",
-        ageMin: 18,
-        ageMax: 65,
-        interests: [],
-        locations: [],
-        budgetOptimization: true,
-        dailyBudgetLimit: 0,
-        viralOptimization: true,
-        algorithmicTargeting: true,
-        autoPublish: false,
-        optimalTimesOnly: true,
-        crossPlatformCampaigns: false,
-        engagementThreshold: 0.02,
-        minConfidenceThreshold: 0.7,
-        autoAnalyzeBeforePosting: true,
-      };
-    } else {
-      config.enabled = true;
-    }
-
-    await storage.saveAdvertisingAutopilotConfig(userId, config);
-
-    logger.info(`✅ Advertising Autopilot started for user ${userId}`);
-
-    res.json({
-      success: true,
-      message: "Advertising Autopilot activated",
-      config,
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "Failed to start advertising autopilot:");
-    res.status(500).json({ error: "Failed to start advertising autopilot" });
-  }
+  // This router has no worker to execute a user's configured automation.
+  // Returning success here previously marked it enabled without creating,
+  // publishing, or managing any campaign.
+  return res.status(409).json({
+    error:
+      "Advertising autopilot cannot be started because no campaign automation worker is available. Configure or activate campaigns manually instead.",
+  });
 });
 
 // Stop advertising autopilot
@@ -337,52 +294,44 @@ router.get("/performance", requireAuth, async (req, res) => {
       advertisingModel?.getAvgOrganicReachMultiplier();
     const audienceSegments = advertisingModel?.getAudienceSegments();
 
-    // Compute estimated savings from real organicReachMultiplier
-    // Industry avg CPM for paid social ads: ~$8-12. We use $10 as baseline.
-    // Estimated monthly posts across active campaigns
     const activeCampaigns = await db
-      .select({ id: adCampaigns.id })
+      .select({
+        impressions: adCampaigns.impressions,
+        organicMetrics: adCampaigns.organicMetrics,
+      })
       .from(adCampaigns)
       .where(
         and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, "active")),
       )
       .limit(100);
-    const numCampaigns = activeCampaigns?.length;
-
-    // Baseline: if artist had 0 campaigns, show neutral
-    const multiplier = organicReachMultiplier || 1.0;
-    const pctBetter = Math.round((multiplier - 1) * 100);
-    // Each campaign is estimated to generate ~50k impressions/month organically
-    const estimatedMonthlyImpressions = numCampaigns * 50000;
-    // What those impressions would cost as paid ads at $10 CPM
-    const equivalentPaidSpend = (estimatedMonthlyImpressions / 1000) * 10;
-    const annualSavings = Math.round(equivalentPaidSpend * 12);
-    // Revenue uplift: each campaign that outperforms paid avg generates ~10% more conversions
-    const conversionUplift =
-      numCampaigns > 0 ? Math.round(numCampaigns * multiplier * 500) : 0;
+    const numCampaigns = activeCampaigns.length;
+    const multiplier = organicReachMultiplier ?? 1;
+    const measuredImpressions = activeCampaigns.reduce((total, campaign) => {
+      const organicMetrics =
+        (campaign.organicMetrics as Record<string, unknown> | null) ?? {};
+      return (
+        total +
+        Number(
+          campaign.impressions ??
+            organicMetrics.totalImpressions ??
+            0,
+        )
+      );
+    }, 0);
 
     res.json({
       success: true,
       organicReachMultiplier: multiplier,
-      viralSuccessRate: advertisingModel.getViralSuccessRate() || 0,
-      trained: advertisingModel.getIsTrained(),
+      viralSuccessRate: advertisingModel?.getViralSuccessRate() ?? 0,
+      trained: advertisingModel?.getIsTrained() ?? false,
       audienceSegments: audienceSegments || [],
-      totalSegments: audienceSegments.length || 0,
+      totalSegments: audienceSegments?.length ?? 0,
       activeCampaigns: numCampaigns,
       performance: {
-        vsOrganicBaseline:
-          pctBetter > 0
-            ? `${pctBetter}% above organic baseline`
-            : "Building performance data...",
-        estimatedAnnualSavings:
-          annualSavings > 0
-            ? `~$${annualSavings?.toLocaleString()}/year in equivalent ad spend`
-            : "Activate campaigns to see savings",
-        estimatedRevenueUplift:
-          conversionUplift > 0
-            ? `~$${conversionUplift?.toLocaleString()}/year from AI-optimized reach`
-            : "Based on active campaign data",
-        note: "Estimates based on industry-avg $10 CPM and your real organic reach multiplier",
+        measuredImpressions,
+        organicReachMultiplier: multiplier,
+        note:
+          "Only platform-collected delivery metrics are reported. Cost savings and revenue uplift are unavailable because this organic campaign system does not receive paid-spend or conversion revenue data.",
       },
     });
   } catch (error) {

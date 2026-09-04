@@ -31,6 +31,7 @@ interface ReleaseInfo {
       tarball?: ReleaseAsset;
     };
     android: { apk?: ReleaseAsset; aab?: ReleaseAsset };
+    ios: { ipa?: ReleaseAsset };
   };
 }
 
@@ -44,7 +45,7 @@ function classifyAsset(asset: {
   download_count: number;
   content_type: string;
 }) {
-  const name = asset?.name.toLowerCase();
+  const name = typeof asset?.name === "string" ? asset.name.toLowerCase() : "";
   if (
     name?.endsWith(".exe") &&
     (name?.includes("setup") || name?.includes("install"))
@@ -66,6 +67,7 @@ function classifyAsset(asset: {
     return { platform: "android", type: "apk" } as const;
   if (name?.endsWith(".aab"))
     return { platform: "android", type: "aab" } as const;
+  if (name?.endsWith(".ipa")) return { platform: "ios", type: "ipa" } as const;
   return null;
 }
 
@@ -123,17 +125,25 @@ function processRelease(data: Record<string, unknown>): ReleaseInfo {
     mac: {},
     linux: {},
     android: {},
+    ios: {},
   };
 
-  const assets: ReleaseAsset[] = ((data?.assets || []) as any).map(
-    (a: Record<string, unknown>) => ({
-      name: a.name,
-      browser_download_url: a.browser_download_url,
-      size: a.size,
-      download_count: a.download_count,
-      content_type: a.content_type,
-    }),
-  );
+  const assets: ReleaseAsset[] = Array.isArray(data?.assets)
+    ? (data.assets as Record<string, unknown>[])
+        .filter(
+          (a) =>
+            typeof a?.name === "string" &&
+            typeof a?.browser_download_url === "string" &&
+            Number.isFinite(a?.size),
+        )
+        .map((a) => ({
+          name: a.name as string,
+          browser_download_url: a.browser_download_url as string,
+          size: a.size as number,
+          download_count: typeof a.download_count === "number" ? a.download_count : 0,
+          content_type: typeof a.content_type === "string" ? a.content_type : "",
+        }))
+    : [];
 
   for (const asset of assets) {
     const classification = classifyAsset(asset);
@@ -161,6 +171,7 @@ function processRelease(data: Record<string, unknown>): ReleaseInfo {
 }
 
 function formatSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "Unknown size";
   if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(1)} GB`;
   if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -283,6 +294,16 @@ router.get("/latest", async (_req, res) => {
         downloadUrl: asset.browser_download_url,
         fileName: asset.name,
         fileSize: formatSize(asset?.size),
+      });
+    }
+
+    if (release?.platforms.ios?.ipa) {
+      const asset = release.platforms.ios.ipa;
+      mobileDownloads?.push({
+        platform: "iOS",
+        downloadUrl: asset.browser_download_url,
+        fileName: asset.name,
+        fileSize: formatSize(asset.size),
       });
     }
 

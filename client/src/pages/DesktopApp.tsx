@@ -165,6 +165,7 @@ export default function DesktopApp() {
 
   function renderDownloadButton(asset: DownloadAsset, isMobile = false) {
     const isIos = asset.platform === "iOS";
+    const isZipArchive = asset.fileName.toLowerCase().endsWith(".zip");
     return (
       <div className="space-y-3">
         <Button
@@ -186,9 +187,9 @@ export default function DesktopApp() {
               Built {asset.buildDate}
             </p>
           )}
-          {!isIos && (
+          {isZipArchive && (
             <p className="text-xs text-amber-600 dark:text-amber-400">
-              Downloads as a ZIP — extract to get the installer
+              This download is a ZIP archive — extract it before installing.
             </p>
           )}
         </div>
@@ -506,7 +507,7 @@ export default function DesktopApp() {
               rel="noopener noreferrer"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
-              View CI Builds on GitHub
+              View releases on GitHub
             </a>
           </Button>
         </div>
@@ -523,8 +524,9 @@ export default function DesktopApp() {
           <CardContent className="space-y-6">
             <p className="text-muted-foreground">
               Max Booster is <strong>unsigned indie software</strong>. Your
-              operating system will show a security warning on first launch.
-              This is normal and safe - it's the same code as the web version!
+              operating system may show a security warning on first launch.
+              Only continue if you downloaded the release from the official
+              Max Booster GitHub repository.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

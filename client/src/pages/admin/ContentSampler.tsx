@@ -17,7 +17,7 @@ import { useRequireAdmin } from "@/hooks/useRequireAuth";
 import { apiRequest, ApiError } from "@/lib/queryClient";
 import {
   Music, TrendingUp, DollarSign, Zap, BarChart2, Globe, Hash,
-  Loader2, _RefreshCw, Star, Target, ChevronDown, ChevronUp, _Filter,
+  Loader2, Star, Target, ChevronDown, ChevronUp,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -70,6 +70,8 @@ interface MatrixCell {
 }
 
 interface SummaryData {
+  dataSource?: string;
+  disclaimer?: string;
   topGenres: Array<{
     genre: string; avgScore: number; topMood: string; topScore: number;
     marketDemand: number; avgSalePrice: number; trendMomentum: number;
@@ -136,6 +138,7 @@ function SummaryTab() {
 
   return (
     <div className="space-y-6">
+      <ModelDisclaimer message={data.disclaimer} />
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
@@ -240,6 +243,7 @@ function BeatsTab() {
 
   return (
     <div className="space-y-4">
+      <ModelDisclaimer message={data.disclaimer} />
       {/* Filters */}
       <div className="flex flex-wrap gap-2 items-center">
         <Input placeholder="Search genre, mood, hook…" value={search} onChange={e => setSearch(e.target.value)} className="w-48 h-8 text-sm bg-white/5 border-white/20" />
@@ -270,7 +274,7 @@ function BeatsTab() {
 
       {/* Results grid */}
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-        {results.slice(0, showCount).map((beat, _i) => (
+        {results.slice(0, showCount).map((beat) => (
           <Card key={beat.id} className={`border ${scoreBg(beat.combinedScore)} transition-all hover:scale-[1.01]`}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-2">
@@ -364,6 +368,7 @@ function PostsTab() {
 
   return (
     <div className="space-y-4">
+      <ModelDisclaimer message={data.disclaimer} />
       {/* Filters */}
       <div className="flex flex-wrap gap-2 items-center">
         <Select value={genre} onValueChange={v => { setGenre(v); }}>
@@ -502,6 +507,7 @@ function MatrixTab() {
 
   return (
     <div className="space-y-6">
+      <ModelDisclaimer message={data.disclaimer} />
       {/* Top 20 combos */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader className="pb-2">
@@ -592,6 +598,15 @@ function EmptyState({ message }: { message: string }) {
   return <p className="py-6 text-center text-sm text-muted-foreground">{message}</p>;
 }
 
+function ModelDisclaimer({ message }: { message?: string }) {
+  return (
+    <p className="text-xs text-muted-foreground">
+      {message ??
+        "Illustrative planning estimates generated from static assumptions; not live market, audience, or sales data."}
+    </p>
+  );
+}
+
 function QueryError({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   const message = error instanceof ApiError
     ? error.userMessage
@@ -626,7 +641,7 @@ export default function ContentSampler() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">Content Sampler</h1>
-              <p className="text-muted-foreground text-sm">All genres × moods (96 beats) and all platforms × content types (24 posts) — scored for engagement and sales</p>
+              <p className="text-muted-foreground text-sm">Illustrative genre and platform planning samples — not live performance analytics</p>
             </div>
           </div>
         </div>

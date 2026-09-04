@@ -40,7 +40,14 @@ interface PlaylistPitch {
   mood: string;
   bpm: number;
   description: string;
-  status: "draft" | "submitted" | "under_review" | "accepted" | "rejected";
+  status:
+    | "draft"
+    | "submitted"
+    | "under_review"
+    | "accepted"
+    | "rejected"
+    | "placed"
+    | "following_up";
   targetPlaylistUrl: string | null;
   curatorName: string;
   submittedAt: string;
@@ -212,6 +219,24 @@ export default function PlaylistPitching() {
             className="bg-green-500/10 text-green-400 border-green-500/20"
           >
             Accepted
+          </Badge>
+        );
+      case "placed":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+          >
+            Placed
+          </Badge>
+        );
+      case "following_up":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-orange-500/10 text-orange-400 border-orange-500/20"
+          >
+            Following Up
           </Badge>
         );
       case "rejected":
@@ -497,6 +522,10 @@ export default function PlaylistPitching() {
                                     </SelectItem>
                                     <SelectItem value="rejected">
                                       Rejected
+                                    </SelectItem>
+                                    <SelectItem value="placed">Placed</SelectItem>
+                                    <SelectItem value="following_up">
+                                      Following Up
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>

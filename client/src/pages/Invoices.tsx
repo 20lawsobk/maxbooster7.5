@@ -260,17 +260,31 @@ export default function Invoices() {
     return matchesStatus && matchesSearch;
   });
 
+  const formatInvoiceTotals = (matchingInvoices: Invoice[]) => {
+    const totals = matchingInvoices.reduce<Record<string, number>>(
+      (result, invoice) => {
+        const currency = invoice.currency || "USD";
+        result[currency] = (result[currency] || 0) + invoice.amount;
+        return result;
+      },
+      {},
+    );
+    const entries = Object.entries(totals);
+    return entries.length
+      ? entries
+          .map(
+            ([currency, amount]) =>
+              `${CURRENCIES[currency]?.symbol ?? `${currency} `}${amount.toLocaleString()}`,
+          )
+          .join(" · ")
+      : "$0";
+  };
+
   const stats = {
-    total: invoices.reduce((sum, inv) => sum + inv.amount, 0),
-    paid: invoices
-      .filter((i) => i.status === "paid")
-      .reduce((sum, inv) => sum + inv.amount, 0),
-    pending: invoices
-      .filter((i) => i.status === "sent")
-      .reduce((sum, inv) => sum + inv.amount, 0),
-    overdue: invoices
-      .filter((i) => i.status === "overdue")
-      .reduce((sum, inv) => sum + inv.amount, 0),
+    total: formatInvoiceTotals(invoices),
+    paid: formatInvoiceTotals(invoices.filter((i) => i.status === "paid")),
+    pending: formatInvoiceTotals(invoices.filter((i) => i.status === "sent")),
+    overdue: formatInvoiceTotals(invoices.filter((i) => i.status === "overdue")),
   };
 
   const getStatusBadge = (status: string) => {
@@ -589,7 +603,7 @@ export default function Invoices() {
               <CardHeader className="pb-2">
                 <CardDescription>Total Invoiced</CardDescription>
                 <CardTitle className="text-2xl">
-                  ${stats.total.toLocaleString()}
+                  {stats.total}
                 </CardTitle>
               </CardHeader>
             </Card>
@@ -597,7 +611,7 @@ export default function Invoices() {
               <CardHeader className="pb-2">
                 <CardDescription>Paid</CardDescription>
                 <CardTitle className="text-2xl text-green-500">
-                  ${stats.paid.toLocaleString()}
+                  {stats.paid}
                 </CardTitle>
               </CardHeader>
             </Card>
@@ -605,7 +619,7 @@ export default function Invoices() {
               <CardHeader className="pb-2">
                 <CardDescription>Pending</CardDescription>
                 <CardTitle className="text-2xl text-amber-500">
-                  ${stats.pending.toLocaleString()}
+                  {stats.pending}
                 </CardTitle>
               </CardHeader>
             </Card>
@@ -613,7 +627,7 @@ export default function Invoices() {
               <CardHeader className="pb-2">
                 <CardDescription>Overdue</CardDescription>
                 <CardTitle className="text-2xl text-red-500">
-                  ${stats.overdue.toLocaleString()}
+                  {stats.overdue}
                 </CardTitle>
               </CardHeader>
             </Card>

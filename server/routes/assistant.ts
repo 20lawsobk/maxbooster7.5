@@ -10,6 +10,7 @@ import { generateMaxResponse } from "../services/maxAssistantService.js";
 import { logger } from "../logger.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import rateLimit from "express-rate-limit";
+import { z } from "zod";
 
 // Unauthenticated callers get a tighter IP-based cap.
 // Authenticated users are handled by the Redis-backed aiRateLimiter (100/hr).
@@ -28,6 +29,9 @@ const router = Router();
 
 const PAGE_SIZE = 40;
 const AI_CONTEXT_MESSAGES = 50;
+const historyQuerySchema = z.object({
+  before: z.string().uuid().optional(),
+});
 
 async function getOrCreateConversation(userId: string): Promise<string> {
   const existing = await db
@@ -65,7 +69,11 @@ router.get("/history", async (req: Request, res: Response) => {
       });
     }
 
-    const beforeId = req.query.before as string | undefined;
+    const query = historyQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      return res.status(400).json({ error: "before must be a valid message ID" });
+    }
+    const beforeId = query.data.before;
 
     const conversation = await db
       .select()
@@ -104,7 +112,9 @@ router.get("/history", async (req: Request, res: Response) => {
       const cursorMsg = await db
         .select({ createdAt: assistantMessages.createdAt })
         .from(assistantMessages)
-        .where(eq(assistantMessages.id, beforeId))
+        .where(
+          sql`${assistantMessages.id} = ${beforeId} AND ${assistantMessages.conversationId} = ${convId}`,
+        )
         .limit(1);
 
       if (cursorMsg.length === 0) {
@@ -145,12 +155,7 @@ router.get("/history", async (req: Request, res: Response) => {
     return res.json({ messages, hasMore, total, conversationId: convId });
   } catch (error) {
     logger.warn("[assistant] Error fetching history:", (error as Error).message);
-    return res.json({
-      messages: [],
-      hasMore: false,
-      total: 0,
-      conversationId: null,
-    });
+    return res.status(500).json({ error: "Failed to fetch conversation history" });
   }
 });
 

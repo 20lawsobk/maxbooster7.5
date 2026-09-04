@@ -17,7 +17,6 @@
     "build": "npx tsx script/build.ts",
     "build:clean": "DEPLOY_CLEAN=1 npx tsx script/build.ts",
     "build:full": "npm run security-fix && npm run build",
-    "deploy:build": "npm install --omit=dev --no-audit --no-fund && npx tsx script/security-fix.ts && npx tsx script/build.ts && node script/deploy-clean-binary.mjs",
     "build:deploy": "npm ci --omit=dev --ignore-scripts && node scripts/postinstall.mjs",
     "build:prod": "npx tsx script/build.ts && npm run prune:deploy",
     "prune:deploy": "npm prune --omit=dev --no-audit --no-fund",

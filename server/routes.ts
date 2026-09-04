@@ -11,6 +11,7 @@ import { analytics, userStorage, userStorageFiles, users, notifications, pushSub
 import { sum, count, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.js";
+import { requireUUIDParam } from "./middleware/requestValidation.js";
 import Stripe from "stripe";
 import { getStripePriceIds } from "./services/stripeSetup.js";
 import { getBaseUrl } from "./config/defaults.js";
@@ -2128,9 +2129,14 @@ export async function registerRoutes(
     forgotPasswordRateLimiter,
     async (req: Request, res: Response) => {
       try {
-        const { token, password } = req.body;
+        const { token, password } = req.body ?? {};
 
-        if (!token || !password) {
+        if (
+          typeof token !== "string" ||
+          !token ||
+          typeof password !== "string" ||
+          !password
+        ) {
           return res
             .status(400)
             .json({ message: "Token and password are required" });
@@ -2141,33 +2147,60 @@ export async function registerRoutes(
             .status(400)
             .json({ message: "Password must be at least 8 characters" });
         }
+        if (password.length > 72) {
+          return res
+            .status(400)
+            .json({ message: "Password must be 72 characters or fewer" });
+        }
 
         const hashedToken = crypto
           .createHash("sha256")
           .update(token)
           .digest("hex");
-        const user = await storage.getUserByPasswordResetToken(hashedToken);
 
-        if (!user) {
+        // Cheap fast-fail before paying for bcrypt below. Deliberately the
+        // same message whether the token never existed or already expired,
+        // so the response can't be used to distinguish which case it was.
+        const candidate =
+          await storage.getUserByPasswordResetToken(hashedToken);
+        if (
+          !candidate ||
+          !candidate.passwordResetExpires ||
+          new Date(candidate.passwordResetExpires) < new Date()
+        ) {
           return res
             .status(400)
             .json({ message: "Invalid or expired reset token" });
         }
 
-        if (
-          !user.passwordResetExpires ||
-          new Date(user.passwordResetExpires) < new Date()
-        ) {
-          return res.status(400).json({ message: "Reset token has expired" });
-        }
-
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        await storage.updateUser(user.id, {
-          password: hashedPassword,
-          passwordResetToken: null,
-          passwordResetExpires: null,
-        });
+        // Atomically consume the token: the WHERE clause re-validates the
+        // token and its expiry as part of the same statement that clears
+        // it, so two concurrent submissions of the same token can never
+        // both succeed. Only the request whose UPDATE actually matches a
+        // row wins the race, which closes the TOCTOU gap that the
+        // check-then-act pattern above would leave open on its own.
+        const [resetUser] = await db
+          .update(users)
+          .set({
+            password: hashedPassword,
+            passwordResetToken: null,
+            passwordResetExpires: null,
+          })
+          .where(
+            and(
+              eq(users.passwordResetToken, hashedToken),
+              gte(users.passwordResetExpires, new Date()),
+            ),
+          )
+          .returning({ id: users.id });
+
+        if (!resetUser) {
+          return res
+            .status(400)
+            .json({ message: "Invalid or expired reset token" });
+        }
 
         // SECURITY: Revoke all active sessions after password reset so old sessions
         // are rejected across all pods within ≤5 s (REVOKE_L1_TTL_ACTIVE_MS).
@@ -2175,7 +2208,7 @@ export async function registerRoutes(
           const { revokeUserSessions } = await import(
             "./middleware/sessionConfig.js"
           );
-          await revokeUserSessions(String(user.id));
+          await revokeUserSessions(String(resetUser.id));
         } catch (revokeErr: unknown) {
           logger.warn(
             { err: revokeErr },
@@ -2195,13 +2228,18 @@ export async function registerRoutes(
   );
 
   // Auth: Token management (admin)
+  // There is no backing store for issued tokens and no auth middleware
+  // that accepts one as a Bearer credential, so a "successfully issued"
+  // token here would be unusable, and a "successfully revoked" token
+  // would not actually revoke anything. Fail explicitly rather than
+  // fabricate a working credential/revocation.
   app.post("/api/auth/token", async (req: Request, res: Response) => {
     if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
-    return res.json({
-      token: `max_${crypto.randomBytes(24).toString("hex")}`,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    return res.status(501).json({
+      error:
+        "API token issuance is not implemented yet. No token store or Bearer-token auth path exists to back it.",
     });
   });
 
@@ -2210,7 +2248,10 @@ export async function registerRoutes(
     if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
-    return res.json({ success: true });
+    return res.status(501).json({
+      error:
+        "API token revocation is not implemented yet. No token store exists to revoke against.",
+    });
   });
 
   // Auth: Google OAuth - Start login flow
@@ -2500,8 +2541,10 @@ export async function registerRoutes(
         const { shows } = await import("@shared/schema");
         const [
           trackCountResult,
+          newTracksThisPeriodResult,
           prevTrackCountResult,
           releaseCountResult,
+          newReleasesThisPeriodResult,
           prevReleaseCountResult,
           socialReachResult,
           activeSocialAccountsResult,
@@ -2520,12 +2563,26 @@ export async function registerRoutes(
             .select({ count: count() })
             .from(studioProjects)
             .where(eq(studioProjects.userId, userId)),
+          // Growth badges must compare period-over-period NEW activity (like
+          // revenue/socialReach below), not cumulative totals — otherwise a
+          // complete stall in new tracks/releases this month can still show
+          // 0% ("no change") instead of a real decline versus last month.
           db
             .select({ count: count() })
             .from(studioProjects)
             .where(
               and(
                 eq(studioProjects.userId, userId),
+                gte(studioProjects.createdAt, thirtyDaysAgo),
+              ),
+            ),
+          db
+            .select({ count: count() })
+            .from(studioProjects)
+            .where(
+              and(
+                eq(studioProjects.userId, userId),
+                gte(studioProjects.createdAt, sixtyDaysAgo),
                 sql`${studioProjects.createdAt} < ${thirtyDaysAgo}`,
               ),
             ),
@@ -2545,6 +2602,17 @@ export async function registerRoutes(
               and(
                 eq(releases.userId, userId),
                 eq(releases.status, "distributed"),
+                gte(releases.createdAt, thirtyDaysAgo),
+              ),
+            ),
+          db
+            .select({ count: count() })
+            .from(releases)
+            .where(
+              and(
+                eq(releases.userId, userId),
+                eq(releases.status, "distributed"),
+                gte(releases.createdAt, sixtyDaysAgo),
                 sql`${releases.createdAt} < ${thirtyDaysAgo}`,
               ),
             ),
@@ -2680,8 +2748,11 @@ export async function registerRoutes(
         ]);
 
         const totalTracks = trackCountResult[0]?.count ?? 0;
+        const newTracksThisPeriod = newTracksThisPeriodResult[0]?.count ?? 0;
         const prevTracks = prevTrackCountResult[0]?.count ?? 0;
         const activeDistributions = releaseCountResult[0]?.count ?? 0;
+        const newReleasesThisPeriod =
+          newReleasesThisPeriodResult[0]?.count ?? 0;
         const prevDistributions = prevReleaseCountResult[0]?.count ?? 0;
         const socialReach = Number(socialReachResult[0]?.total ?? 0);
         const activeSocialAccounts =
@@ -2772,8 +2843,11 @@ export async function registerRoutes(
             socialReach,
             activeSocialAccounts,
             monthlyGrowth: {
-              tracks: growthPct(totalTracks, prevTracks),
-              distributions: growthPct(activeDistributions, prevDistributions),
+              tracks: growthPct(newTracksThisPeriod, prevTracks),
+              distributions: growthPct(
+                newReleasesThisPeriod,
+                prevDistributions,
+              ),
               revenue: growthPct(totalRevenue, prevRevenue),
               socialReach: growthPct(socialReach, prevSocialReach),
             },
@@ -4191,17 +4265,67 @@ export async function registerRoutes(
       .reduce((total, split) => total + split.splitPercentage, 0);
   };
 
+  // Resolves a users row into the best available human-readable identity,
+  // so the royalty-split UI never has to show a raw internal user ID.
+  const collaboratorDisplayName = (user: {
+    artistName?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    username?: string | null;
+    email: string;
+  }) =>
+    user.artistName?.trim() ||
+    [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+    user.username?.trim() ||
+    user.email;
+
   app.get(
     "/api/projects/:projectId/royalty-splits",
     async (req: Request, res: Response) => {
       if (!req.user) return res.status(401).json({ message: "Not authenticated" });
-      const { projectId } = req.params;
+      const projectId = req.params.projectId as string;
       const project = await getOwnedProject(projectId, req.user.id);
       if (!project) return res.status(404).json({ message: "Project not found" });
-      const splits = await db
-        .select()
+      const rows = await db
+        .select({
+          id: projectRoyaltySplits.id,
+          projectId: projectRoyaltySplits.projectId,
+          collaboratorId: projectRoyaltySplits.collaboratorId,
+          role: projectRoyaltySplits.role,
+          splitPercentage: projectRoyaltySplits.splitPercentage,
+          createdAt: projectRoyaltySplits.createdAt,
+          collaboratorArtistName: users.artistName,
+          collaboratorFirstName: users.firstName,
+          collaboratorLastName: users.lastName,
+          collaboratorUsername: users.username,
+          collaboratorEmail: users.email,
+        })
         .from(projectRoyaltySplits)
+        .leftJoin(users, eq(projectRoyaltySplits.collaboratorId, users.id))
         .where(eq(projectRoyaltySplits.projectId, projectId));
+      const splits = rows.map((r) => {
+        const {
+          collaboratorArtistName,
+          collaboratorFirstName,
+          collaboratorLastName,
+          collaboratorUsername,
+          collaboratorEmail,
+          ...rest
+        } = r;
+        return {
+          ...rest,
+          collaboratorName: collaboratorEmail
+            ? collaboratorDisplayName({
+                artistName: collaboratorArtistName,
+                firstName: collaboratorFirstName,
+                lastName: collaboratorLastName,
+                username: collaboratorUsername,
+                email: collaboratorEmail,
+              })
+            : "Deleted user",
+          collaboratorEmail,
+        };
+      });
       return res.json(splits);
     },
   );
@@ -4210,39 +4334,62 @@ export async function registerRoutes(
     "/api/projects/:projectId/royalty-splits",
     async (req: Request, res: Response) => {
       if (!req.user) return res.status(401).json({ message: "Not authenticated" });
-      const { projectId } = req.params;
-      const { collaboratorId, role, splitPercentage } = req.body ?? {};
+      const projectId = req.params.projectId as string;
+      const { collaboratorEmail, role, splitPercentage } = req.body ?? {};
       const percentage = validSplitPercentage(splitPercentage);
-      if (typeof collaboratorId !== "string" || !collaboratorId.trim() || !percentage) {
-        return res.status(400).json({ message: "A collaborator and split percentage between 0 and 100 are required" });
+      if (typeof collaboratorEmail !== "string" || !collaboratorEmail.trim() || !percentage) {
+        return res.status(400).json({ message: "A collaborator email and split percentage between 0 and 100 are required" });
       }
       if (typeof role !== "string" || !projectSplitRoles.has(role)) {
         return res.status(400).json({ message: "A valid collaborator role is required" });
       }
       const project = await getOwnedProject(projectId, req.user.id);
       if (!project) return res.status(404).json({ message: "Project not found" });
-      const [collaborator] = await db.select({ id: users.id }).from(users)
-        .where(eq(users.id, collaboratorId)).limit(1);
-      if (!collaborator) return res.status(400).json({ message: "Collaborator not found" });
+      // Collaborators are identified by email, never a raw user ID: an
+      // opaque-ID text field can't be visually confirmed by the project
+      // owner, so a single typo would silently route real future royalty
+      // earnings to an unrelated account.
+      const [collaborator] = await db
+        .select({
+          id: users.id,
+          artistName: users.artistName,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          username: users.username,
+          email: users.email,
+        })
+        .from(users)
+        .where(sql`lower(${users.email}) = lower(${collaboratorEmail.trim()})`)
+        .limit(1);
+      if (!collaborator) {
+        return res.status(400).json({ message: "No account found with that email address" });
+      }
       const total = await splitTotalForProject(projectId);
       if (total + percentage > 100.0001) {
         return res.status(400).json({ message: "Royalty splits cannot exceed 100%" });
       }
       const [split] = await db.insert(projectRoyaltySplits).values({
         projectId,
-        collaboratorId,
+        collaboratorId: collaborator.id,
         role,
         splitPercentage: percentage,
       }).returning();
-      return res.status(201).json({ ...split, isValid: Math.abs(total + percentage - 100) < 0.01 });
+      return res.status(201).json({
+        ...split,
+        collaboratorName: collaboratorDisplayName(collaborator),
+        collaboratorEmail: collaborator.email,
+        isValid: Math.abs(total + percentage - 100) < 0.01,
+      });
     },
   );
 
   app.put(
     "/api/projects/:projectId/royalty-splits/:splitId",
+    requireUUIDParam("splitId"),
     async (req: Request, res: Response) => {
       if (!req.user) return res.status(401).json({ message: "Not authenticated" });
-      const { projectId, splitId } = req.params;
+      const projectId = req.params.projectId as string;
+      const splitId = req.params.splitId as string;
       const { role, splitPercentage } = req.body ?? {};
       const percentage = validSplitPercentage(splitPercentage);
       if (!percentage || (role !== undefined && (typeof role !== "string" || !projectSplitRoles.has(role)))) {
@@ -4266,9 +4413,11 @@ export async function registerRoutes(
 
   app.delete(
     "/api/projects/:projectId/royalty-splits/:splitId",
+    requireUUIDParam("splitId"),
     async (req: Request, res: Response) => {
       if (!req.user) return res.status(401).json({ message: "Not authenticated" });
-      const { projectId, splitId } = req.params;
+      const projectId = req.params.projectId as string;
+      const splitId = req.params.splitId as string;
       const project = await getOwnedProject(projectId, req.user.id);
       if (!project) return res.status(404).json({ message: "Project not found" });
       const [deleted] = await db.delete(projectRoyaltySplits)
@@ -5579,13 +5728,63 @@ export async function registerRoutes(
   });
 
   // Royalties endpoints — backed by real DB data
+  // The royalties page's period selector (client/src/pages/Royalties.tsx)
+  // only ever sends "current" | "last" | "quarter" | "year" — real calendar
+  // boundaries, not rolling day counts. "last month" must exclude the
+  // current month even though "now" falls inside it, so an explicit
+  // optional upper bound is returned alongside the lower bound.
+  function resolveRoyaltyPeriodRange(period: string | undefined): {
+    since: Date;
+    until?: Date;
+  } {
+    const now = new Date();
+    switch (period) {
+      case "last": {
+        const since = new Date(
+          now.getFullYear(),
+          now.getMonth() - 1,
+          1,
+          0,
+          0,
+          0,
+          0,
+        );
+        // Day 0 of the current month normalizes to the last day of the
+        // previous month — end-of-day so the whole last day is included.
+        const until = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          0,
+          23,
+          59,
+          59,
+          999,
+        );
+        return { since, until };
+      }
+      case "quarter": {
+        const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+        return {
+          since: new Date(now.getFullYear(), quarterStartMonth, 1, 0, 0, 0, 0),
+        };
+      }
+      case "year":
+        return { since: new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0) };
+      case "current":
+      default:
+        return {
+          since: new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0),
+        };
+    }
+  }
+
   app.get("/api/royalties", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
       const userId = req.user.id;
-      const { period = "30d", platform } = req.query as {
+      const { period = "current", platform } = req.query as {
         period?: string;
         platform?: string;
       };
@@ -5596,20 +5795,15 @@ export async function registerRoutes(
       );
       const offset = (Math.max(pageParam, 1) - 1) * limitParam;
 
-      const daysMap: Record<string, number> = {
-        "7d": 7,
-        "30d": 30,
-        "90d": 90,
-        "1y": 365,
-        all: 9999,
-      };
-      const days = daysMap[period] ?? 30;
-      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const { since, until } = resolveRoyaltyPeriodRange(period);
 
       const conditions: import("drizzle-orm").SQL<unknown>[] = [
         eq(royaltyTransactions.userId, userId),
         gte(royaltyTransactions.createdAt, since),
       ];
+      if (until) {
+        conditions.push(lte(royaltyTransactions.createdAt, until));
+      }
       if (platform && platform !== "all") {
         conditions.push(eq(royaltyTransactions.platform, platform));
       }
@@ -5638,6 +5832,7 @@ export async function registerRoutes(
             status: royaltyTransactions.status,
             transactionType: royaltyTransactions.transactionType,
             createdAt: royaltyTransactions.createdAt,
+            paidAt: royaltyTransactions.paidAt,
           })
           .from(royaltyTransactions)
           .where(where)
@@ -5693,15 +5888,16 @@ export async function registerRoutes(
       }
       try {
         const userId = req.user.id;
-        const { period = "30d" } = req.query as { period?: string };
-        const daysMap: Record<string, number> = {
-          "7d": 7,
-          "30d": 30,
-          "90d": 90,
-          "1y": 365,
-        };
-        const days = daysMap[period] ?? 30;
-        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+        const { period = "current" } = req.query as { period?: string };
+        const { since, until } = resolveRoyaltyPeriodRange(period);
+
+        const breakdownConditions = [
+          eq(royaltyTransactions.userId, userId),
+          gte(royaltyTransactions.createdAt, since),
+        ];
+        if (until) {
+          breakdownConditions.push(lte(royaltyTransactions.createdAt, until));
+        }
 
         const rows = await db
           .select({
@@ -5711,12 +5907,7 @@ export async function registerRoutes(
             transactionCount: count(royaltyTransactions.id),
           })
           .from(royaltyTransactions)
-          .where(
-            and(
-              eq(royaltyTransactions.userId, userId),
-              gte(royaltyTransactions.createdAt, since),
-            ),
-          )
+          .where(and(...breakdownConditions))
           .groupBy(royaltyTransactions.platform);
 
         return res.json(
@@ -5742,15 +5933,16 @@ export async function registerRoutes(
     }
     try {
       const userId = req.user.id;
-      const { period = "30d" } = req.query as { period?: string };
-      const daysMap: Record<string, number> = {
-        "7d": 7,
-        "30d": 30,
-        "90d": 90,
-        "1y": 365,
-      };
-      const days = daysMap[period] ?? 30;
-      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const { period = "current" } = req.query as { period?: string };
+      const { since, until } = resolveRoyaltyPeriodRange(period);
+
+      const topTracksConditions = [
+        eq(royaltyTransactions.userId, userId),
+        gte(royaltyTransactions.createdAt, since),
+      ];
+      if (until) {
+        topTracksConditions.push(lte(royaltyTransactions.createdAt, until));
+      }
 
       const rows = await db
         .select({
@@ -5759,12 +5951,7 @@ export async function registerRoutes(
           totalStreams: sum(royaltyTransactions.streamCount),
         })
         .from(royaltyTransactions)
-        .where(
-          and(
-            eq(royaltyTransactions.userId, userId),
-            gte(royaltyTransactions.createdAt, since),
-          ),
-        )
+        .where(and(...topTracksConditions))
         .groupBy(royaltyTransactions.releaseId)
         .orderBy(desc(sum(royaltyTransactions.amount)))
         .limit(10);

@@ -17,6 +17,7 @@ import {
 } from "@shared/schema";
 import { eq, and, or, desc, notInArray, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
+import { requireUUIDParam } from "../middleware/requestValidation.js";
 
 interface SplitParticipant {
   userId: string;
@@ -211,11 +212,46 @@ router.post(
 router.put(
   "/templates/custom/:templateId",
   requireAuth,
+  requireUUIDParam("templateId"),
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
       const { templateId } = req.params as Record<string, string>;
-      const updates = req.body;
+      const { name, description, content, category, variables } = req.body;
+      const updates: Record<string, unknown> = {};
+      if (name !== undefined) {
+        if (typeof name !== "string" || !name.trim() || name.length > 200) {
+          return res.status(400).json({ error: "name must be 1-200 characters" });
+        }
+        updates.name = name.trim();
+      }
+      if (description !== undefined) {
+        if (typeof description !== "string" || description.length > 5000) {
+          return res.status(400).json({ error: "description must be at most 5000 characters" });
+        }
+        updates.description = description;
+      }
+      if (content !== undefined) {
+        if (typeof content !== "string" || !content.trim() || content.length > 100_000) {
+          return res.status(400).json({ error: "content must be 1-100000 characters" });
+        }
+        updates.content = content;
+      }
+      if (category !== undefined) {
+        if (typeof category !== "string" || !category.trim() || category.length > 100) {
+          return res.status(400).json({ error: "category must be 1-100 characters" });
+        }
+        updates.category = category.trim();
+      }
+      if (variables !== undefined) {
+        if (!Array.isArray(variables) || variables.some((value) => typeof value !== "string")) {
+          return res.status(400).json({ error: "variables must be an array of strings" });
+        }
+        updates.variables = variables;
+      }
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
 
       const [updated] = await db
         .update(contractTemplates)
@@ -243,6 +279,7 @@ router.put(
 router.delete(
   "/templates/custom/:templateId",
   requireAuth,
+  requireUUIDParam("templateId"),
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -605,7 +642,8 @@ router.post(
 
       return res.json({
         outcome: "signature_requested",
-        message: "Contract sent for signature",
+        message:
+          "Contract marked ready for signature. Record each verified signature as it is received.",
         contract,
       });
     } catch (error) {

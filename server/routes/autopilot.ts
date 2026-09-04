@@ -107,7 +107,7 @@ router.get("/status", requireAuth, async (req, res) => {
           .where(eq(socialAutopilotContent.userId, userId))
           .orderBy(desc(socialAutopilotContent.createdAt))
           .limit(10),
-      ]).catch(() => [[], [], [], [], []]);
+      ]);
 
     const totalGenerated = Number(((totalGenRow as unknown[])[0] as any)?.value ?? 0);
     const totalPublished = Number(((publishedRow as unknown[])[0] as any)?.value ?? 0);

@@ -78,7 +78,19 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
             listingId: beatId,
             amount: (session?.amount_total || 0) / 100,
             currency: session.currency || "usd",
-            status: "completed",
+            // NOTE: must NOT be inserted as "completed". marketplaceService
+            // .processPayment() (called immediately below) treats
+            // status==="completed" as an already-booked replay and SKIPS the
+            // instant payout / license generation / royalty split
+            // distribution / revenue event steps — it only re-sends
+            // notifications. Inserting as "pending" (the schema default)
+            // lets the very first processPayment() call take its real
+            // booking path, which sets status to "completed" itself once
+            // earnings are actually credited. A prior version of this code
+            // set "completed" here, which made the FIRST (not just replayed)
+            // webhook delivery silently skip booking the seller's earnings
+            // for every beat sale.
+            status: "pending",
             licenseType: licenseType || "basic",
             licenseSnapshot: parsedSnapshot,
             stripePaymentIntentId: paymentRef,
