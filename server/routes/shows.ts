@@ -42,7 +42,7 @@ const createShowSchema = z.object({
 
 const createSetlistSchema = z.object({
   name: z.string().min(1).max(200),
-  showId: z.string().optional(),
+  showId: z.string().uuid().optional(),
   tracks: z
     .array(
       z.object({
@@ -56,6 +56,16 @@ const createSetlistSchema = z.object({
     .default([]),
   totalDuration: z.number().min(0).optional().default(0),
 });
+
+async function verifyShowOwnership(showId: string, userId: string) {
+  const [show] = await db
+    .select({ id: shows.id })
+    .from(shows)
+    .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
+    .limit(1);
+
+  return Boolean(show);
+}
 
 // GET /api/shows - list shows with optional filters
 router.get(
@@ -185,6 +195,7 @@ router.delete(
 router.patch(
   "/:id/attendance",
   requireAuth,
+  requireUUIDParam("id"),
   asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const showId = req.params.id;
@@ -242,6 +253,13 @@ router.patch(
       return res
         .status(400)
         .json({ error: "Validation error", details: parsed.error.flatten() });
+    }
+
+    if (parsed.data.status === "completed") {
+      return res.status(400).json({
+        error:
+          "Completed shows must include actual attendance and revenue via the attendance endpoint",
+      });
     }
 
     const [updated] = await db
@@ -332,6 +350,7 @@ router.get(
 router.get(
   "/:id/setlist",
   requireAuth,
+  requireUUIDParam("id"),
   asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const showId = req.params.id;
@@ -353,6 +372,9 @@ router.post(
   asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const data = createSetlistSchema?.parse(req.body);
+    if (data.showId && !(await verifyShowOwnership(data.showId, userId))) {
+      return res.status(404).json({ error: "Show not found" });
+    }
 
     const [newSetlist] = await db
       .insert(setlists)
@@ -367,10 +389,14 @@ router.post(
 router.put(
   "/setlists/:id",
   requireAuth,
+  requireUUIDParam("id"),
   asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const setlistId = req.params.id;
     const data = createSetlistSchema?.partial().parse(req.body);
+    if (data.showId && !(await verifyShowOwnership(data.showId, userId))) {
+      return res.status(404).json({ error: "Show not found" });
+    }
 
     const [updatedSetlist] = await db
       .update(setlists)
@@ -390,6 +416,7 @@ router.put(
 router.delete(
   "/setlists/:id",
   requireAuth,
+  requireUUIDParam("id"),
   asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const setlistId = req.params.id;

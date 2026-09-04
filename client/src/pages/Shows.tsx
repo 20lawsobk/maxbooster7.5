@@ -151,6 +151,13 @@ export default function Shows() {
         description: "Your performance has been scheduled.",
       });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to create show",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteShowMutation = useMutation({
@@ -163,6 +170,13 @@ export default function Shows() {
       toast({
         title: "Show deleted",
         description: "The show has been removed from your calendar.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to delete show",
+        description: error.message,
+        variant: "destructive",
       });
     },
   });
@@ -202,6 +216,13 @@ export default function Shows() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shows/setlists"] });
       toast({ title: "Setlist deleted" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to delete setlist",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -1102,10 +1123,13 @@ export default function Shows() {
                         title: "Show updated",
                         description: "Your show details have been saved.",
                       });
-                    } catch {
+                    } catch (error) {
                       toast({
-                        title: "Error",
-                        description: "Failed to update show.",
+                        title: "Unable to update show",
+                        description:
+                          error instanceof Error
+                            ? error.message
+                            : "Failed to update show.",
                         variant: "destructive",
                       });
                     }

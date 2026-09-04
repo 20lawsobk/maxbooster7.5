@@ -15,7 +15,11 @@ import {
 import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db";
-import { workspaceMembers } from "@shared/schema";
+import {
+  workspaceInvitations,
+  workspaceMembers,
+  workspaceRoles,
+} from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
 const router = Router();
@@ -229,7 +233,7 @@ router.get(
 
 const inviteSchema = z.object({
   email: z.string().email(),
-  role: z.enum(["owner", "admin", "manager", "member", "viewer"]),
+  role: z.enum(["admin", "manager", "member", "viewer"]),
   roleId: z.string().optional(),
   message: z.string().optional(),
 });
@@ -279,6 +283,22 @@ router.post(
         return res.status(400).json({ error: "Invitation token is required" });
       }
 
+      const [invitation] = await db
+        .select({ email: workspaceInvitations.email })
+        .from(workspaceInvitations)
+        .where(eq(workspaceInvitations.token, token))
+        .limit(1);
+
+      if (!invitation) {
+        return res.status(400).json({ error: "Invalid invitation token" });
+      }
+
+      if (invitation.email.trim().toLowerCase() !== req.user!.email.trim().toLowerCase()) {
+        return res.status(403).json({
+          error: "This invitation was sent to a different email address",
+        });
+      }
+
       const result = await workspaceService?.acceptInvitation(
         token,
         req.user!.id,
@@ -319,6 +339,16 @@ router.delete(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const [invitation] = await db
+        .select({ workspaceId: workspaceInvitations.workspaceId })
+        .from(workspaceInvitations)
+        .where(eq(workspaceInvitations.id, req.params.invitationId as string))
+        .limit(1);
+
+      if (!invitation || invitation.workspaceId !== req.params.id) {
+        return res.status(404).json({ error: "Invitation not found" });
+      }
+
       const result = await workspaceService?.cancelInvitation(
         (req.params.invitationId as string),
         req.user!.id,
@@ -337,7 +367,7 @@ router.delete(
 );
 
 const updateMemberRoleSchema = z.object({
-  role: z.enum(["owner", "admin", "manager", "member", "viewer"]),
+  role: z.enum(["admin", "manager", "member", "viewer"]),
   roleId: z.string().optional(),
 });
 
@@ -484,6 +514,16 @@ router.put(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const [role] = await db
+        .select({ workspaceId: workspaceRoles.workspaceId })
+        .from(workspaceRoles)
+        .where(eq(workspaceRoles.id, req.params.roleId as string))
+        .limit(1);
+
+      if (!role || role.workspaceId !== req.params.id) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+
       const result = await rbacService?.updateRole((req.params.roleId as string), req.body);
 
       if (!result?.success) {
@@ -504,6 +544,16 @@ router.delete(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const [role] = await db
+        .select({ workspaceId: workspaceRoles.workspaceId })
+        .from(workspaceRoles)
+        .where(eq(workspaceRoles.id, req.params.roleId as string))
+        .limit(1);
+
+      if (!role || role.workspaceId !== req.params.id) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+
       const result = await rbacService?.deleteRole((req.params.roleId as string));
 
       if (!result?.success) {

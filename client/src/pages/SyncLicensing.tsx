@@ -54,13 +54,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface SyncSubmission {
   id: string;
@@ -69,7 +62,7 @@ interface SyncSubmission {
   genre: string;
   mood: string;
   bpm: number;
-  usageType: string;
+  usageTypes?: string[];
   status: string;
   price: string;
   createdAt: string;
@@ -113,6 +106,13 @@ export default function SyncLicensing() {
         description: "Your track is now in the sync catalog.",
       });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to add track",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const updateMutation = useMutation({
@@ -124,6 +124,13 @@ export default function SyncLicensing() {
       queryClient.invalidateQueries({ queryKey: ["/api/sync-licensing"] });
       setEditingItem(null);
       toast({ title: "Track updated" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to update track",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -137,6 +144,13 @@ export default function SyncLicensing() {
         queryKey: ["/api/sync-licensing/stats"],
       });
       toast({ title: "Track removed from catalog" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to remove track",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -433,7 +447,7 @@ export default function SyncLicensing() {
                         )}
                       </TableCell>
                       <TableCell>{item.bpm || "—"}</TableCell>
-                      <TableCell>{item.usageType || "—"}</TableCell>
+                      <TableCell>{item.usageTypes?.join(", ") || "—"}</TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
                       <TableCell className="font-medium">
                         ${item.price || "0.00"}
@@ -551,7 +565,7 @@ export default function SyncLicensing() {
                   <Input
                     id="edit-usageType"
                     name="usageType"
-                    defaultValue={editingItem.usageType}
+                    defaultValue={editingItem.usageTypes?.join(", ") || ""}
                     placeholder="TV/Film/Ads"
                   />
                 </div>
@@ -564,20 +578,6 @@ export default function SyncLicensing() {
                     step="0.01"
                     defaultValue={editingItem.price}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-status">Status</Label>
-                  <Select name="status" defaultValue={editingItem.status}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="available">Available</SelectItem>
-                      <SelectItem value="submitted">Submitted</SelectItem>
-                      <SelectItem value="under_review">Under Review</SelectItem>
-                      <SelectItem value="licensed">Licensed</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
               <DialogFooter>

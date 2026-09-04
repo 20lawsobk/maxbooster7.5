@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -31,8 +31,8 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Plus, Users, Crown, UserPlus, Music, Briefcase, Home, Shield, Activity, Share2, Eye } from "lucide-react";
-import { WorkspaceOutcomeHandler, useWorkspaceOutcome, MemberManagementCard, type WorkspaceMemberDetails, RolePermissionMatrix, type Role, PresenceAvatars, type Collaborator, ActivityFeed, type ActivityItem, SharingDialog, type SharePermission } from "@/components/workspace";
+import { Building2, Plus, Users, Crown, UserPlus, Music, Briefcase, Home, Shield, Activity, Eye } from "lucide-react";
+import { WorkspaceOutcomeHandler, useWorkspaceOutcome, MemberManagementCard, type WorkspaceMemberDetails, RolePermissionMatrix, type Role, PresenceAvatars, type Collaborator, ActivityFeed, type ActivityItem } from "@/components/workspace";
 
 interface Workspace {
   id: string;
@@ -70,7 +70,6 @@ export default function Workspaces() {
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(
     null,
   );
@@ -84,6 +83,7 @@ export default function Workspaces() {
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
+  const heartbeatFailureNotified = useRef(false);
 
   const workspaceOutcome = useWorkspaceOutcome();
 
@@ -119,11 +119,34 @@ export default function Workspaces() {
 
   useEffect(() => {
     if (!selectedWorkspace) return;
-    const sendHeartbeat = () => {
-      fetch(`/api/workspace/${selectedWorkspace.id}/presence/heartbeat`, {
-        method: "POST",
-        credentials: "include",
-      }).catch(() => {});
+    const sendHeartbeat = async () => {
+      const csrfToken = getCsrfTokenFromCookie();
+      try {
+        const response = await fetch(
+          `/api/workspace/${selectedWorkspace.id}/presence/heartbeat`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+          },
+        );
+        if (!response.ok) {
+          throw new Error("Unable to update workspace presence");
+        }
+        heartbeatFailureNotified.current = false;
+      } catch (error) {
+        if (!heartbeatFailureNotified.current) {
+          heartbeatFailureNotified.current = true;
+          toast({
+            title: "Presence unavailable",
+            description:
+              error instanceof Error
+                ? error.message
+                : "Unable to update workspace presence",
+            variant: "destructive",
+          });
+        }
+      }
     };
     sendHeartbeat();
     const interval = setInterval(sendHeartbeat, 30000);
@@ -133,7 +156,7 @@ export default function Workspaces() {
       clearInterval(interval);
       window.removeEventListener("focus", onFocus);
     };
-  }, [selectedWorkspace?.id]);
+  }, [selectedWorkspace?.id, toast]);
 
   const createWorkspaceMutation = useMutation({
     mutationFn: async () => {
@@ -719,14 +742,6 @@ export default function Workspaces() {
                           {canManageMembers && (
                             <>
                               <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowSharingDialog(true)}
-                              >
-                                <Share2 className="h-4 w-4 mr-1" />
-                                Share
-                              </Button>
-                              <Button
                                 size="sm"
                                 onClick={() => setShowInviteDialog(true)}
                               >
@@ -1071,57 +1086,6 @@ export default function Workspaces() {
             </DialogContent>
           </Dialog>
 
-          {selectedWorkspace && (
-            <SharingDialog
-              open={showSharingDialog}
-              onOpenChange={setShowSharingDialog}
-              projectId=""
-              projectName={selectedWorkspace.name}
-              currentMembers={[]}
-              currentLinks={[]}
-              workspaceMembers={formattedMembers.map((m) => ({
-                id: m.userId,
-                name: m.name,
-                email: m.email,
-                avatar: m.avatar,
-              }))}
-              onShareWithMembers={async (memberIds, _permission) => {
-                workspaceOutcome.projectShared("", memberIds.length);
-              }}
-              onUpdateMemberPermission={async (memberId, permission) => {
-                await updateMemberRoleMutation.mutateAsync({
-                  memberId,
-                  role: permission,
-                });
-              }}
-              onRemoveMember={async (memberId) => {
-                await removeMemberMutation.mutateAsync(memberId);
-              }}
-              onCreateLink={async (settings) => {
-                const link = {
-                  id: crypto.randomUUID(),
-                  url: `https://maxbooster.app/share/${crypto.randomUUID().slice(0, 8)}`,
-                  permission: settings.permission as SharePermission,
-                  expiresAt: settings.expirationDays
-                    ? new Date(
-                        Date.now() + settings.expirationDays * 86400000,
-                      ).toISOString()
-                    : undefined,
-                  password: !!settings.password,
-                  accessCount: 0,
-                  createdAt: new Date().toISOString(),
-                };
-                workspaceOutcome.externalLinkGenerated(
-                  link.url,
-                  link.expiresAt,
-                );
-                return link;
-              }}
-              onRevokeLink={async () => {
-                workspaceOutcome.shareRevoked("");
-              }}
-            />
-          )}
         </div>
       )}
     </AppLayout>

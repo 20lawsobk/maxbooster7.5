@@ -141,10 +141,6 @@ export default function Verification() {
   >("individual");
   const [step, setStep] = useState(1);
   const [verificationId, setVerificationId] = useState<string | null>(null);
-  const [uploadedDocs, setUploadedDocs] = useState<
-    Record<string, UploadedDocument>
-  >({});
-
   const [individualInfo, setIndividualInfo] = useState<IndividualInfo>({
     firstName: "",
     lastName: "",
@@ -335,6 +331,11 @@ export default function Verification() {
 
   const currentVerificationId = verificationId || status?.verificationId;
 
+  const handleUploadComplete = (_doc: UploadedDocument) => {
+    queryClient.invalidateQueries({ queryKey: ["/api/kyc/documents"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/kyc/status"] });
+  };
+
   const getStatusBadge = () => {
     const s = status?.status || "not_started";
     const variants: Record<
@@ -523,7 +524,7 @@ export default function Verification() {
           {getStatusBadge()}
         </div>
 
-        {status.status === "rejected" && (
+        {status?.status === "rejected" && (
           <Card className="border-destructive bg-destructive/10">
             <CardHeader>
               <CardTitle className="text-destructive flex items-center gap-2">
@@ -603,7 +604,7 @@ export default function Verification() {
           </Card>
         )}
 
-        {currentVerificationId && status.status !== "rejected" && (
+        {currentVerificationId && status?.status !== "rejected" && (
           <Card>
             <CardHeader>
               <CardTitle>Verification Progress</CardTitle>
@@ -617,7 +618,7 @@ export default function Verification() {
               </div>
               {status.nextSteps &&
                 status.nextSteps.length > 0 &&
-                status.status === "pending" && (
+                  status?.status === "pending" && (
                   <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                     <p className="text-sm font-medium flex items-center gap-2 mb-2">
                       <ArrowRight className="h-4 w-4" />
@@ -634,7 +635,7 @@ export default function Verification() {
           </Card>
         )}
 
-        {(status.status === "not_started" || !currentVerificationId) &&
+        {(status?.status === "not_started" || !currentVerificationId) &&
           step === 1 && (
             <Card>
               <CardHeader>
@@ -1093,12 +1094,7 @@ export default function Verification() {
                       existingDoc={existingDocs?.documents?.find(
                         (d) => d.documentType === "government_id",
                       )}
-                      onUploadComplete={(doc) =>
-                        setUploadedDocs((prev) => ({
-                          ...prev,
-                          government_id: doc,
-                        }))
-                      }
+                      onUploadComplete={(doc) => handleUploadComplete(doc)}
                     />
                     <DocumentUploadCard
                       title="Proof of Address"
@@ -1108,12 +1104,7 @@ export default function Verification() {
                       existingDoc={existingDocs?.documents?.find(
                         (d) => d.documentType === "proof_of_address",
                       )}
-                      onUploadComplete={(doc) =>
-                        setUploadedDocs((prev) => ({
-                          ...prev,
-                          proof_of_address: doc,
-                        }))
-                      }
+                      onUploadComplete={(doc) => handleUploadComplete(doc)}
                     />
                     <DocumentUploadCard
                       title="Selfie Verification"
@@ -1123,9 +1114,7 @@ export default function Verification() {
                       existingDoc={existingDocs?.documents?.find(
                         (d) => d.documentType === "selfie",
                       )}
-                      onUploadComplete={(doc) =>
-                        setUploadedDocs((prev) => ({ ...prev, selfie: doc }))
-                      }
+                      onUploadComplete={(doc) => handleUploadComplete(doc)}
                     />
                   </>
                 ) : (
@@ -1138,12 +1127,7 @@ export default function Verification() {
                       existingDoc={existingDocs?.documents?.find(
                         (d) => d.documentType === "business_registration",
                       )}
-                      onUploadComplete={(doc) =>
-                        setUploadedDocs((prev) => ({
-                          ...prev,
-                          business_registration: doc,
-                        }))
-                      }
+                      onUploadComplete={(doc) => handleUploadComplete(doc)}
                     />
                     <DocumentUploadCard
                       title="Tax ID Document"
@@ -1153,12 +1137,7 @@ export default function Verification() {
                       existingDoc={existingDocs?.documents?.find(
                         (d) => d.documentType === "tax_id_document",
                       )}
-                      onUploadComplete={(doc) =>
-                        setUploadedDocs((prev) => ({
-                          ...prev,
-                          tax_id_document: doc,
-                        }))
-                      }
+                      onUploadComplete={(doc) => handleUploadComplete(doc)}
                     />
                     <DocumentUploadCard
                       title="Proof of Address"
@@ -1168,12 +1147,7 @@ export default function Verification() {
                       existingDoc={existingDocs?.documents?.find(
                         (d) => d.documentType === "proof_of_address",
                       )}
-                      onUploadComplete={(doc) =>
-                        setUploadedDocs((prev) => ({
-                          ...prev,
-                          proof_of_address: doc,
-                        }))
-                      }
+                      onUploadComplete={(doc) => handleUploadComplete(doc)}
                     />
                   </>
                 )}
@@ -1188,7 +1162,7 @@ export default function Verification() {
                   onClick={() => submitForReviewMutation.mutate()}
                   disabled={
                     submitForReviewMutation.isPending ||
-                    Object.keys(uploadedDocs).length === 0
+                    !status?.allDocumentsUploaded
                   }
                 >
                   {submitForReviewMutation.isPending ? (
@@ -1417,6 +1391,10 @@ function DocumentUploadCard({
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setUploaded(existingDoc || null);
+  }, [existingDoc]);
 
   const createPreview = useCallback((file: File) => {
     if (file.type.startsWith("image/")) {

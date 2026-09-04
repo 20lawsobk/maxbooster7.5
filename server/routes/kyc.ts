@@ -66,23 +66,25 @@ const businessInfoSchema = z.object({
 
 const KYC_STORAGE_PREFIX = "kyc-documents/";
 
+const documentTypeSchema = z.enum([
+  "government_id",
+  "passport",
+  "drivers_license",
+  "proof_of_address",
+  "bank_statement",
+  "business_registration",
+  "articles_of_incorporation",
+  "tax_id_document",
+  "selfie",
+  "w9",
+  "w8ben",
+  "w8bene",
+  "other",
+]);
+
 const documentUploadSchema = z.object({
   verificationId: z.string().min(1),
-  documentType: z.enum([
-    "government_id",
-    "passport",
-    "drivers_license",
-    "proof_of_address",
-    "bank_statement",
-    "business_registration",
-    "articles_of_incorporation",
-    "tax_id_document",
-    "selfie",
-    "w9",
-    "w8ben",
-    "w8bene",
-    "other",
-  ]),
+  documentType: documentTypeSchema,
   fileName: z.string().min(1),
   fileSize: z.number().positive(),
   mimeType: z.string().min(1),
@@ -96,6 +98,11 @@ const documentUploadSchema = z.object({
     .string()
     .transform((s) => new Date(s))
     .optional(),
+});
+
+const multipartDocumentSchema = z.object({
+  verificationId: z.string().uuid(),
+  documentType: documentTypeSchema,
 });
 
 const taxFormSchema = z.object({
@@ -338,6 +345,13 @@ router.post("/documents", async (req, res) => {
     }
 
     const validated = documentUploadSchema.parse(req.body);
+    if (
+      !validated.storagePath.startsWith(
+        `${KYC_STORAGE_PREFIX}${req.user.id}/`,
+      )
+    ) {
+      return res.status(400).json({ error: "Invalid storage path" });
+    }
 
     const document = await kycService.uploadDocument({
       ...validated,
@@ -415,7 +429,18 @@ router.get("/documents", async (req, res) => {
       verification.id,
     );
 
-    res.json({ documents });
+    res.json({
+      documents: documents.map((document) => {
+        const metadata = (document.metadata as Record<string, unknown>) || {};
+        return {
+          id: document.id,
+          documentType: document.documentType,
+          fileName: metadata.fileName || `Document ${document.id}`,
+          status: document.status,
+          rejectionReason: metadata.rejectionReason,
+        };
+      }),
+    });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching documents:");
     const message =
@@ -425,6 +450,8 @@ router.get("/documents", async (req, res) => {
 });
 
 router.post("/documents/upload", upload.single("file"), async (req, res) => {
+  let storagePath: string | undefined;
+  let documentRecorded = false;
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -439,14 +466,26 @@ router.post("/documents/upload", upload.single("file"), async (req, res) => {
       });
     }
 
-    const { verificationId, documentType } = req.body;
-
-    if (!verificationId || !documentType) {
+    const request = multipartDocumentSchema.safeParse(req.body);
+    if (!request.success) {
       return res.status(400).json({
-        error: "Verification ID and document type are required",
-        errorCode: "MISSING_PARAMS",
+        error: "Invalid verification ID or document type",
+        errorCode: "INVALID_PARAMS",
       });
     }
+
+    const verification = await kycService.getVerification(
+      request.data.verificationId,
+    );
+    if (!verification || verification.userId !== req.user.id) {
+      return res.status(404).json({ error: "Verification not found" });
+    }
+    if (verification.status === "verified") {
+      return res
+        .status(409)
+        .json({ error: "Cannot upload documents for a verified account" });
+    }
+    const { verificationId, documentType } = request.data;
 
     const fileValidation = kycService.validateFile(
       req.file.size,
@@ -465,9 +504,9 @@ router.post("/documents/upload", upload.single("file"), async (req, res) => {
       });
     }
 
-    const storagePath = await storageService.uploadFile(
+    storagePath = await storageService.uploadFile(
       req.file.buffer,
-      "kyc-documents",
+      `${KYC_STORAGE_PREFIX}${req.user.id}`,
       req.file.originalname,
       req.file.mimetype,
     );
@@ -481,6 +520,7 @@ router.post("/documents/upload", upload.single("file"), async (req, res) => {
       storagePath,
       userId: req.user.id,
     });
+    documentRecorded = true;
 
     const docInfo = kycService.getDocumentInfo(documentType);
 
@@ -496,6 +536,16 @@ router.post("/documents/upload", upload.single("file"), async (req, res) => {
       estimatedReviewTime: "1-2 business days",
     });
   } catch (error: unknown) {
+    if (storagePath && !documentRecorded) {
+      try {
+        await storageService.deleteFile(storagePath);
+      } catch (cleanupError: unknown) {
+        logger.error(
+          { err: cleanupError, storagePath },
+          "Failed to remove untracked KYC document after persistence failure",
+        );
+      }
+    }
     logger.warn({ err: error }, "Error uploading document:");
     const message =
       error instanceof Error ? error.message : "Failed to upload document";
@@ -508,6 +558,8 @@ router.post("/documents/upload", upload.single("file"), async (req, res) => {
 });
 
 router.post("/documents/resubmit", upload.single("file"), async (req, res) => {
+  let storagePath: string | undefined;
+  let documentRecorded = false;
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -520,13 +572,20 @@ router.post("/documents/resubmit", upload.single("file"), async (req, res) => {
       });
     }
 
-    const { verificationId, documentType } = req.body;
-
-    if (!verificationId || !documentType) {
+    const request = multipartDocumentSchema.safeParse(req.body);
+    if (!request.success) {
       return res
         .status(400)
-        .json({ error: "Verification ID and document type are required" });
+        .json({ error: "Invalid verification ID or document type" });
     }
+
+    const verification = await kycService.getVerification(
+      request.data.verificationId,
+    );
+    if (!verification || verification.userId !== req.user.id) {
+      return res.status(404).json({ error: "Verification not found" });
+    }
+    const { verificationId, documentType } = request.data;
 
     const fileValidation = kycService.validateFile(
       req.file.size,
@@ -539,9 +598,9 @@ router.post("/documents/resubmit", upload.single("file"), async (req, res) => {
       });
     }
 
-    const storagePath = await storageService.uploadFile(
+    storagePath = await storageService.uploadFile(
       req.file.buffer,
-      "kyc-documents",
+      `${KYC_STORAGE_PREFIX}${req.user.id}`,
       req.file.originalname,
       req.file.mimetype,
     );
@@ -555,6 +614,7 @@ router.post("/documents/resubmit", upload.single("file"), async (req, res) => {
       storagePath,
       userId: req.user.id,
     });
+    documentRecorded = true;
 
     const docInfo = kycService.getDocumentInfo(documentType);
 
@@ -570,6 +630,16 @@ router.post("/documents/resubmit", upload.single("file"), async (req, res) => {
       isResubmission: true,
     });
   } catch (error: unknown) {
+    if (storagePath && !documentRecorded) {
+      try {
+        await storageService.deleteFile(storagePath);
+      } catch (cleanupError: unknown) {
+        logger.error(
+          { err: cleanupError, storagePath },
+          "Failed to remove untracked KYC document after persistence failure",
+        );
+      }
+    }
     logger.warn({ err: error }, "Error resubmitting document:");
     const message =
       error instanceof Error ? error.message : "Failed to resubmit document";

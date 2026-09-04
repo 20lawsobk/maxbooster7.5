@@ -37,26 +37,19 @@ async function persistGeneratedSample(opts: {
   audioUrl: string;
   userId: string;
 }) {
-  try {
-    await db.insert(studioSamples).values({
-      id: `ai_${randomBytes(8).toString("hex")}`,
-      name: opts.name,
-      category: opts.category,
-      subcategory: opts.subcategory,
-      tags: opts.tags,
-      duration: opts.duration,
-      tempo: opts.tempo,
-      key: opts.key,
-      audioUrl: opts.audioUrl,
-      isBuiltIn: false,
-      userId: opts.userId,
-    });
-  } catch (err) {
-    logger.warn(
-      { err: err },
-      "[Studio Generation] Could not persist sample to library:",
-    );
-  }
+  await db.insert(studioSamples).values({
+    id: `ai_${randomBytes(8).toString("hex")}`,
+    name: opts.name,
+    category: opts.category,
+    subcategory: opts.subcategory,
+    tags: opts.tags,
+    duration: opts.duration,
+    tempo: opts.tempo,
+    key: opts.key,
+    audioUrl: opts.audioUrl,
+    isBuiltIn: false,
+    userId: opts.userId,
+  });
 }
 
 const router = Router();

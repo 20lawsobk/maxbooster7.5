@@ -986,109 +986,6 @@ function detectGenre(topic: string): string {
   return "pop";
 }
 
-// Viral coefficient score (0–100) based on content attributes
-function calcViralScore(
-  platform: string,
-  genre: string,
-  hasEmoji: boolean,
-  hashtagCount: number,
-  captionLen: number,
-): number {
-  const bench = PLATFORM_BENCHMARKS[platform] || PLATFORM_BENCHMARKS.instagram;
-  const [minH, maxH] = bench.idealHashtagCount;
-  const [minL, maxL] = bench.idealCaptionLength;
-
-  const hashtagScore =
-    hashtagCount >= minH && hashtagCount <= maxH
-      ? 25
-      : hashtagCount < minH
-        ? 10
-        : 15;
-  const lengthScore = captionLen >= minL && captionLen <= maxL ? 25 : 10;
-  const emojiBonus = hasEmoji ? 10 : 0;
-  const genreBonus: Record<string, number> = {
-    "hip-hop": 15,
-    pop: 12,
-    "r&b": 10,
-    electronic: 13,
-    afrobeats: 18,
-    latin: 14,
-    country: 8,
-    rock: 9,
-  };
-  const genre_score = genreBonus[genre] || 10;
-  const platformMultiplier = bench.reachMultiplier;
-
-  return Math.min(
-    100,
-    Math.round(
-      (hashtagScore + lengthScore + emojiBonus + genre_score) *
-        (platformMultiplier * 0.8),
-    ),
-  );
-}
-
-// Predicted engagement count based on real-world benchmarks
-function predictEngagement(
-  platform: string,
-  viralScore: number,
-  followerBase = 1000,
-): {
-  likes: number;
-  comments: number;
-  shares: number;
-  reach: number;
-  engagementRate: number;
-} {
-  const bench = PLATFORM_BENCHMARKS[platform] || PLATFORM_BENCHMARKS.instagram;
-  const modifier = viralScore / 60;
-  const engRate = bench.avgEngagementRate * modifier * bench.reachMultiplier;
-  const reach = Math.round(
-    followerBase * bench.reachMultiplier * (0.15 + modifier * 0.35),
-  );
-  const totalEngagements = Math.round(reach * engRate);
-
-  return {
-    likes: Math.round(totalEngagements * 0.7),
-    comments: Math.round(totalEngagements * 0.15),
-    shares: Math.round(totalEngagements * 0.15),
-    reach,
-    engagementRate: parseFloat((engRate * 100).toFixed(2)),
-  };
-}
-
-// Best posting time for current day/hour
-function getBestPostingTime(platform: string): {
-  dayOfWeek: string;
-  hour: number;
-  label: string;
-} {
-  const bench = PLATFORM_BENCHMARKS[platform] || PLATFORM_BENCHMARKS.instagram;
-  const now = new Date();
-  const days = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
-  const currentDay = days[now.getDay()];
-  const bestDay = bench.peakDays.includes(currentDay)
-    ? currentDay
-    : bench.peakDays[0];
-  const nextHour =
-    bench.peakHours.find((h) => h > now.getHours()) || bench.peakHours[0];
-  const period = nextHour < 12 ? "AM" : nextHour === 12 ? "PM" : "PM";
-  const label12 = nextHour <= 12 ? nextHour : nextHour - 12;
-  return {
-    dayOfWeek: bestDay,
-    hour: nextHour,
-    label: `${label12}:00 ${period}`,
-  };
-}
-
 // ── GET /generate/context ────────────────────────────────────────────────────
 // Returns the active generation context for the authenticated user so the
 // frontend can show what artist identity and preferences will be applied.
@@ -1465,13 +1362,10 @@ router.post(
       const caption: string = (data.caption as string) || `${hook}\n\n${body}\n\n${cta}`;
 
       // ── MaxCore real-time engagement predictions ─────────────────────────────
-      // Run all three prediction modes in parallel; fall back to local estimators
-      // if MaxCore is unavailable or times out.
+      // These measurements are optional enrichment. Content generation remains
+      // successful when a prediction request fails, but no local estimate is
+      // substituted or represented as a measured prediction.
       const genre = detectedGenre;
-      const hasEmoji =
-        /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(
-          caption,
-        );
 
       // Predictions must see the same awareness context (genre, live trend
       // signals, platform profile) the content itself was generated with —
@@ -1510,7 +1404,8 @@ router.post(
         ),
       ]);
 
-      // Merge MaxCore results with local fallbacks
+      // Keep only actual MaxCore prediction values. The local benchmark helpers
+      // are content guidelines, not observed or model-predicted measurements.
       const mcViralVal = mcViral.status === "fulfilled" && mcViral.value
         ? (mcViral.value.viralScore ?? mcViral.value.score ?? null)
         : null;
@@ -1521,14 +1416,8 @@ router.post(
         ? mcBestTime.value.bestTime ?? null
         : null;
 
-      // Local fallbacks used only when MaxCore doesn't return data
-      const localViralScore = calcViralScore(resolvedPlatform, genre, hasEmoji, hashtags.length, caption.length);
-      const viralScore = mcViralVal !== null ? Math.round(mcViralVal * 100) : localViralScore;
-      const localEngagement = predictEngagement(resolvedPlatform, viralScore);
-      const localBestTime = getBestPostingTime(resolvedPlatform);
-
       // Parse MaxCore best-time string "HH:MM" → hour number
-      let bestTime = localBestTime;
+      let bestTime: { dayOfWeek: string; hour: number; label: string } | undefined;
       if (mcBestTimeStr) {
         const parts = mcBestTimeStr.split(":");
         const h = parseInt(parts[0], 10);
@@ -1538,10 +1427,12 @@ router.post(
         }
       }
 
-      // Blend MaxCore engagement rate with local estimate
-      const engagement = mcEngRate !== null
-        ? { ...localEngagement, engagementRate: parseFloat((mcEngRate * 100).toFixed(2)) }
-        : localEngagement;
+      const viralScore =
+        mcViralVal !== null ? Math.round(mcViralVal * 100) : undefined;
+      const engagement =
+        mcEngRate !== null
+          ? { engagementRate: parseFloat((mcEngRate * 100).toFixed(2)) }
+          : undefined;
 
       const bench =
         PLATFORM_BENCHMARKS[resolvedPlatform] || PLATFORM_BENCHMARKS.instagram;
@@ -1560,7 +1451,7 @@ router.post(
         cta,
         caption,
         hashtags,
-        // MaxCore AI analytics (viralScore/engagement from MaxCore; local benchmarks as fallback)
+        // Prediction fields are present only when MaxCore actually produced them.
         analytics: {
           genre: detectedGenre,
           viralScore,

@@ -2333,9 +2333,18 @@ export async function registerRoutes(
           password: "", // No password for OAuth users
           firstName: googleUser.given_name || null,
           lastName: googleUser.family_name || null,
+          googleId: googleUser.id || null,
         });
 
         logger.info(`[Google OAuth] Created new user: ${user.email}`);
+      } else if (googleUser.id && user.googleId !== googleUser.id) {
+        // Existing account (e.g. originally created via email/password) is
+        // completing Google login for the first time - link it so the
+        // Settings "Connected Accounts" disconnect flow has something real
+        // to act on instead of permanently reporting no connection.
+        user = (await storage.updateUser(user.id, {
+          googleId: googleUser.id,
+        })) || user;
       }
 
       // Log the user in using session (regenerate prevents session fixation)

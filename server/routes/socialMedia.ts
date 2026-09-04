@@ -385,29 +385,13 @@ router.post(
         return res.status(404).json({ error: "Post not found" });
       }
 
-      const [updated] = await db
-        .update(posts)
-        .set({ status: "published", publishedAt: new Date() })
-        .where(and(eq(posts.id, postId), eq(posts.userId, userId)))
-        .returning();
-
-      res.json({ success: true, post: updated });
-
-      setImmediate(async () => {
-        try {
-          const platform = post?.platform || "Social";
-          const content = post?.content || "";
-          await notificationService?.sendSocialPostPublishedNotification(
-            userId,
-            platform,
-            content,
-          );
-        } catch (err) {
-          logger.warn(
-            { err: err },
-            "Social post published notification error:",
-          );
-        }
+      // This calendar route has no platform publishing integration. Marking the
+      // record published here would make a scheduled post disappear without
+      // ever being delivered to its connected account.
+      return res.status(409).json({
+        error:
+          "Direct calendar publishing is unavailable until a platform delivery is configured",
+        postId: post.id,
       });
     } catch (error) {
       logger.warn({ err: error }, "Failed to publish post:");
@@ -514,6 +498,12 @@ router.post(
           .status(400)
           .json({ error: "Platform and content are required" });
       }
+      if (status === "published") {
+        return res.status(400).json({
+          error:
+            "Posts cannot be created as published before platform delivery is verified",
+        });
+      }
 
       const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
       const postStatus = status || (scheduledDate ? "scheduled" : "draft");
@@ -572,6 +562,12 @@ router.put(
       if (!existing?.length) {
         return res.status(404).json({ error: "Post not found" });
       }
+      if (status === "published") {
+        return res.status(400).json({
+          error:
+            "Posts cannot be marked published before platform delivery is verified",
+        });
+      }
 
       const updates: Record<string, unknown> = {};
       if (platform !== undefined) updates.platform = platform;
@@ -625,6 +621,12 @@ router.patch(
         return res
           .status(400)
           .json({ error: "updates must contain at least one field" });
+      }
+      if (updates.status === "published") {
+        return res.status(400).json({
+          error:
+            "Posts cannot be marked published before platform delivery is verified",
+        });
       }
 
       // Verify all posts belong to this user
@@ -686,38 +688,13 @@ router.post(
         return res.status(404).json({ error: "No matching posts found" });
       }
 
-      const results: { id: string; success: boolean; error?: string }[] = [];
-
-      for (const post of existing) {
-        try {
-          await db
-            .update(posts)
-            .set({ status: "published", publishedAt: new Date() } as Record<
-              string,
-              unknown
-            >)
-            .where(and(eq(posts.id, post?.id), eq(posts.userId, userId)));
-
-          setImmediate(async () => {
-            try {
-              await notificationService?.sendSocialPostPublishedNotification(
-                userId,
-                post?.platform ?? "unknown",
-                String(post?.content ?? ""),
-              );
-            } catch {
-              /* non-fatal */
-            }
-          });
-
-          results?.push({ id: post.id, success: true });
-        } catch (err) {
-          results?.push({ id: post.id, success: false, error: String(err) });
-        }
-      }
-
-      const successCount = results?.filter((r) => r?.success).length;
-      res.json({ published: successCount, results });
+      // As with the single-post route, do not claim delivery by changing a
+      // terminal status before a platform API has accepted each post.
+      return res.status(409).json({
+        error:
+          "Direct calendar publishing is unavailable until a platform delivery is configured",
+        postIds: existing.map((post) => post.id),
+      });
     } catch (error) {
       logger.warn({ err: error }, "Batch publish error");
       res.status(500).json({ error: "Failed to batch publish posts" });
@@ -1216,15 +1193,6 @@ router.get(
         "trending hashtags",
       );
 
-      function hashVolume(tag: string, base: number): number {
-        let h = 2166136261;
-        for (let i = 0; i < tag?.length; i++) {
-          h ^= tag?.charCodeAt(i);
-          h = Math.imul(h, 16777619) >>> 0;
-        }
-        return base + (h % base);
-      }
-
       const categoryMap: Record<string, string> = {
         production: "production",
         producer: "production",
@@ -1257,32 +1225,15 @@ router.get(
         return "general";
       }
 
-      const dayOfYear = Math.floor(
-        (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
-          86400000,
-      );
-      const hourOfDay = new Date().getUTCHours();
-
-      const trending = rawTags?.map((tag, i) => {
-        const base = hashVolume(tag, 15000);
-        const timeFactor =
-          Math.sin((dayOfYear + i) * 0.3 + hourOfDay * 0.1) * 0.15;
-        const volume = Math.round(base * (1 + timeFactor));
-        return {
+      // MaxCore identifies relevant tags, but it does not provide measured
+      // platform volume or momentum. Do not manufacture those metrics from a
+      // hash/time function or imply that the tags are ranked by live volume.
+      res.json(
+        rawTags.slice(0, 12).map((tag) => ({
           hashtag: tag.startsWith("#") ? tag : `#${tag}`,
-          posts: volume,
-          trend:
-            timeFactor > 0.05
-              ? "up"
-              : timeFactor < -0.05
-                ? "down"
-                : ("stable" as string),
           category: guessCategory(tag),
-        };
-      });
-
-      trending?.sort((a, b) => b?.posts - a?.posts);
-      res.json(trending?.slice(0, 12));
+        })),
+      );
     } catch (error) {
       if (error instanceof AIUnavailableError) {
         return res.status(503).json({ success: false, code: error.code, error: error.message });
@@ -4661,47 +4612,46 @@ router.post(
       // ── Try MaxCore /api/generate/image first ────────────────────────────
       // Uses MaxCoreAIClient so the bulkhead, circuit breaker, and auth
       // centralization all apply (avoids the manual-fetch bypass pattern).
-      let imageUrl: string | null = null;
+      type McImgResp = { url?: string; image_url?: string; outputs?: { url?: string }[] };
+      let platformOptimization: string | null = null;
       try {
-        type McImgResp = { url?: string; image_url?: string; outputs?: { url?: string }[] };
-        let platformOptimization: string | null = null;
-        try {
-          platformOptimization = platformAwarenessOptimization(
-            normalizeSocialAwarenessPlatform(resolvedPlatform),
-          );
-        } catch {
-          // outside the closed platform optimization set — skip
-        }
-        const awareness = await getAwarenessContext("content");
-        const imgData = await MaxCoreAIClient?.infer<McImgResp>("/api/generate/image", {
-          prompt: enrichedTopic || topic,
-          style: resolvedTone,
-          platform: resolvedPlatform,
-          genre: genre || "",
-          ...(awareness || platformOptimization
-            ? {
-                awareness: {
-                  contextString: awareness?.contextString,
-                  trendingGenres: awareness?.trendingGenres,
-                  trendingMoods: awareness?.trendingMoods,
-                  platformAlgorithmNotes: awareness?.platformAlgorithmNotes,
-                  platformOptimization,
-                },
-              }
-            : {}),
-        });
-        const raw = imgData?.url ?? imgData?.image_url ?? imgData?.outputs?.[0]?.url ?? null;
-        // MaxCore may return relative paths like /uploads/images/img_xxx.png —
-        // make them absolute so the browser can load them.
-        if (raw) {
-          const mcBase = getMaxcoreOriginOrDefault();
-          imageUrl = /^https?:\/\//i.test(raw) ? raw : `${mcBase}${raw.startsWith("/") ? "" : "/"}${raw}`;
-        }
-      } catch (imgErr) {
-        throw imgErr;
+        platformOptimization = platformAwarenessOptimization(
+          normalizeSocialAwarenessPlatform(resolvedPlatform),
+        );
+      } catch {
+        // outside the closed platform optimization set — skip
       }
+      const awareness = await getAwarenessContext("content");
+      const imgData = await MaxCoreAIClient.infer<McImgResp>("/api/generate/image", {
+        prompt: enrichedTopic || topic,
+        style: resolvedTone,
+        platform: resolvedPlatform,
+        genre: genre || "",
+        ...(awareness || platformOptimization
+          ? {
+              awareness: {
+                contextString: awareness?.contextString,
+                trendingGenres: awareness?.trendingGenres,
+                trendingMoods: awareness?.trendingMoods,
+                platformAlgorithmNotes: awareness?.platformAlgorithmNotes,
+                platformOptimization,
+              },
+            }
+          : {}),
+      });
+      const raw = imgData?.url ?? imgData?.image_url ?? imgData?.outputs?.[0]?.url ?? null;
+      // MaxCore may return relative paths like /uploads/images/img_xxx.png —
+      // make them absolute so the browser can load them.
+      const imageUrl =
+        raw && /^https?:\/\//i.test(raw)
+          ? raw
+          : raw
+            ? `${getMaxcoreOriginOrDefault()}${raw.startsWith("/") ? "" : "/"}${raw}`
+            : null;
       if (!imageUrl) {
-        throw new Error("Image generation did not return an image URL");
+        throw new AIUnavailableError(
+          "Image generation did not return an image URL",
+        );
       }
 
       // ── Build visual spec for the generated image ────────────────────────
@@ -4726,7 +4676,7 @@ router.post(
         genre: genre || "",
         keywords: Array.isArray(keywords) ? keywords : [],
         description: description || urlDescription || "",
-        source: imageUrl ? "MaxCoreAI" : "local",
+        source: "MaxCoreAI",
       };
 
       res.json({

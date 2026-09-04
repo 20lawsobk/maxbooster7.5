@@ -694,6 +694,9 @@ router.get("/tunings/:id", requireAuth, async (req, res) => {
 router.post("/scale-sync", requireAuth, async (req, res) => {
   try {
     const data = scaleSyncSchema?.parse(req.body);
+    if (!(await verifyProjectOwnership(data.projectId, req.user!.id))) {
+      return res.status(404).json({ error: "Project not found" });
+    }
 
     microtonalService?.setScaleSync({
       projectId: data.projectId,
@@ -721,6 +724,9 @@ router.post("/scale-sync", requireAuth, async (req, res) => {
 router.get("/scale-sync/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params as Record<string, string>;
+    if (!(await verifyProjectOwnership(projectId, req.user!.id))) {
+      return res.status(404).json({ error: "Project not found" });
+    }
 
     const config = microtonalService?.getScaleSync(projectId);
 
@@ -737,6 +743,9 @@ router.get("/scale-sync/:projectId", requireAuth, async (req, res) => {
 router.delete("/scale-sync/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params as Record<string, string>;
+    if (!(await verifyProjectOwnership(projectId, req.user!.id))) {
+      return res.status(404).json({ error: "Project not found" });
+    }
 
     microtonalService?.removeScaleSync(projectId);
 

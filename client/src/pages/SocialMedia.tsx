@@ -886,21 +886,25 @@ export default function SocialMedia() {
         data.assets,
         outputModality,
       );
-      if (generatedContent.length > 0) {
-        setUrlGeneratedContent(generatedContent);
-        const first = generatedContent[0];
-        const fullContent = [first.hook, first.body, first.cta]
-          .filter(Boolean)
-          .join("\n\n");
-        setPostContent(fullContent || first.content || "");
-      } else {
+      if (generatedContent.length === 0) {
         setUrlGeneratedContent([]);
+        handleContentGenerationFailed(
+          "The AI service returned no usable content. Please try again.",
+        );
+        setIsGeneratingContent(false);
+        return;
       }
+      setUrlGeneratedContent(generatedContent);
+      const first = generatedContent[0];
+      const fullContent = [first.hook, first.body, first.cta]
+        .filter(Boolean)
+        .join("\n\n");
+      setPostContent(fullContent || first.content || "");
       const hasHashtags = generatedContent.some(
         (c) => c.hashtags && c.hashtags.length > 0,
       );
       handleContentGenerated(
-        generatedContent.length || 1,
+        generatedContent.length,
         hasHashtags,
         undefined,
       );
@@ -981,82 +985,16 @@ export default function SocialMedia() {
         outputModality,
       );
 
-      // Video: if the server-side FFmpeg generation failed/timed-out and no video
-      // assets came back, inject a synthetic item per platform so ServerVideoGenerator
-      // always surfaces for the user to kick off generation manually.
-      // Pull hook/body/cta from URL-extracted text assets so the topic is real content,
-      // not the "New music" fallback — works for any URL, not just music.
-      if (outputModality === "video" && generatedContent.length === 0) {
-        const platforms =
-          selectedPlatforms.length > 0 ? selectedPlatforms : ["tiktok"];
-        const textAssets = mapAssetsToGeneratedContent(data.assets, "text");
-        generatedContent = platforms.map((pid) => {
-          const asset =
-            textAssets.find((a) => a.platform === pid) || textAssets[0];
-          return {
-            platform: pid,
-            content: asset.content || "",
-            format: "video",
-            mediaUrl: undefined,
-            source: "python_ai_model",
-            extractedTitle:
-              asset?.hook?.slice(0, 80) ||
-              asset?.extractedTitle?.slice(0, 80) ||
-              asset?.content?.slice(0, 80) ||
-              "",
-            hook: asset.hook || "",
-            body: asset.body || "",
-            cta: asset.cta || "",
-          } as GeneratedContent;
+      if (generatedContent.length === 0) {
+        setUrlGeneratedContent([]);
+        toast({
+          title: "Generation Failed",
+          description:
+            "The AI service returned no usable content. Please try again.",
+          variant: "destructive",
         });
-      }
-
-      // Image: always route through the same AIImageGenerator the main Post
-      // Generator uses instead of the generic multimodal image output, so URL
-      // posts get the same quality. Ignore any image asset the generic worker
-      // may have produced and inject a synthetic (mediaUrl-less) item per
-      // platform, seeded with the URL-extracted topic/hook, so the real
-      // generator always surfaces — mirrors the video handling above.
-      if (outputModality === "image") {
-        const platforms =
-          selectedPlatforms.length > 0 ? selectedPlatforms : ["instagram"];
-        const textAssets = mapAssetsToGeneratedContent(data.assets, "text");
-        generatedContent = platforms.map((pid) => {
-          const asset =
-            textAssets.find((a) => a.platform === pid) || textAssets[0];
-          return {
-            platform: pid,
-            content: asset?.content || "",
-            format: "image",
-            mediaUrl: undefined,
-            source: "python_ai_model",
-            extractedTitle:
-              asset?.hook?.slice(0, 80) ||
-              asset?.extractedTitle?.slice(0, 80) ||
-              asset?.content?.slice(0, 80) ||
-              "",
-          } as GeneratedContent;
-        });
-      }
-
-      // Audio: if MaxCore audio generation is unavailable and no audio assets came
-      // back, inject a synthetic item per platform so the voiceover-script fallback UI
-      // renders instead of a silent blank.
-      if (outputModality === "audio" && generatedContent.length === 0) {
-        const allText = mapAssetsToGeneratedContent(data.assets);
-        const platforms =
-          selectedPlatforms.length > 0 ? selectedPlatforms : ["instagram"];
-        const baseText = allText.length > 0 ? allText[0].content || "" : "";
-        generatedContent = platforms.map(
-          (pid) =>
-            ({
-              platform: pid,
-              content: baseText,
-              format: "audio",
-              mediaUrl: undefined,
-              source: "python_ai_model",
-            }) as GeneratedContent,
-        );
+        setIsGeneratingFromUrl(false);
+        return;
       }
 
       setUrlGeneratedContent(generatedContent);
@@ -1066,37 +1004,7 @@ export default function SocialMedia() {
       });
       setIsGeneratingFromUrl(false);
     },
-    onError: (_error, variables) => {
-      // Image: MaxCore-only image generation throws (503) instead of returning
-      // an empty asset list, unlike video. Still surface AIImageGenerator per
-      // platform (seeded from the URL/target-audience context we have) instead
-      // of leaving the user with a dead end.
-      if (variables?.format === "image") {
-        const platforms =
-          selectedPlatforms.length > 0 ? selectedPlatforms : ["instagram"];
-        const fallbackTopic = variables.targetAudience || variables.url || "";
-        setUrlGeneratedContent(
-          platforms.map(
-            (pid) =>
-              ({
-                platform: pid,
-                content: "",
-                format: "image",
-                mediaUrl: undefined,
-                source: "python_ai_model",
-                extractedTitle: fallbackTopic,
-              }) as GeneratedContent,
-          ),
-        );
-        toast({
-          title: "Generate Your Image",
-          description:
-            "Automatic extraction wasn't available — use the image generator below.",
-        });
-        setIsGeneratingFromUrl(false);
-        return;
-      }
-
+    onError: () => {
       toast({
         title: "Generation Failed",
         description:
@@ -1269,10 +1177,10 @@ export default function SocialMedia() {
       });
       invalidateOnSocialChange();
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Publish Failed",
-        description: "Failed to publish post. Please try again.",
+        description: error.message || "Failed to publish post. Please try again.",
         variant: "destructive",
       });
     },
@@ -1365,10 +1273,10 @@ export default function SocialMedia() {
       invalidateOnSocialChange();
       setSelectedCalendarPostIds(new Set());
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Batch Publish Failed",
-        description: "Could not publish the selected posts.",
+        description: error.message || "Could not publish the selected posts.",
         variant: "destructive",
       });
     },

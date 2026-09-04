@@ -91,12 +91,14 @@ router.post("/", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const data = insertSyncSchema?.parse(req.body);
+    const { usageType, ...submissionData } = data;
     const [submission] = await db
       .insert(syncSubmissions)
       .values({
-        ...data,
+        ...submissionData,
         userId,
         status: "available",
+        usageTypes: usageType ? [usageType] : [],
       })
       .returning();
     res.status(201).json(submission);
@@ -116,9 +118,16 @@ router.put("/:id", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const { id } = req.params as Record<string, string>;
     const data = insertSyncSchema?.partial().parse(req.body);
+    const { usageType, ...submissionData } = data;
     const [updated] = await db
       .update(syncSubmissions)
-      .set({ ...data, updatedAt: new Date() })
+      .set({
+        ...submissionData,
+        ...(usageType !== undefined
+          ? { usageTypes: usageType ? [usageType] : [] }
+          : {}),
+        updatedAt: new Date(),
+      })
       .where(
         and(eq(syncSubmissions.id, id), eq(syncSubmissions.userId, userId)),
       )
@@ -141,27 +150,14 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const { id } = req.params as Record<string, string>;
     const statusSchema = z.object({
-      status: z.enum([
-        "available",
-        "under_review",
-        "negotiating",
-        "licensed",
-        "rejected",
-        "withdrawn",
-      ]),
-      licensedTo: z.string().max(200).optional(),
-      licenseFee: z.number().min(0).optional(),
+      status: z.enum(["available", "withdrawn"]),
     });
-    const { status, licensedTo, licenseFee } = statusSchema.parse(req.body);
+    const { status } = statusSchema.parse(req.body);
 
     const setFields: Record<string, unknown> = {
       status,
       updatedAt: new Date(),
     };
-    if (licensedTo !== undefined) setFields.licensedTo = licensedTo;
-    if (licenseFee !== undefined) setFields.licenseFee = licenseFee;
-    if (status === "licensed") setFields.licensedAt = new Date();
-
     const [updated] = await db
       .update(syncSubmissions)
       .set(setFields)
@@ -214,7 +210,7 @@ router.get("/supervisor/browse", async (req, res) => {
   try {
     const { limit = "20", offset = "0", genre, mood, bpm } = req.query as Record<string, string>;
     const conditions: ReturnType<typeof eq>[] = [
-      eq(syncSubmissions.status, "active"),
+      eq(syncSubmissions.status, "available"),
     ];
     if (genre) conditions.push(eq(syncSubmissions.genre, genre));
     if (mood) conditions.push(eq(syncSubmissions.mood, mood));
@@ -270,7 +266,7 @@ router.post("/:syncId/inquire", async (req, res) => {
       .where(
         and(
           eq(syncSubmissions.id, syncId),
-          eq(syncSubmissions.status, "active"),
+          eq(syncSubmissions.status, "available"),
         ),
       )
       .limit(1);

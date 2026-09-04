@@ -77,6 +77,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   firstName: true,
   lastName: true,
+  googleId: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

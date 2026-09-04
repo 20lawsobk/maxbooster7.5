@@ -1217,18 +1217,28 @@ export default function Settings() {
                           <div>
                             <p className="font-medium">Google</p>
                             <p className="text-sm text-muted-foreground">
-                              Connected for login
+                              {user?.googleId
+                                ? "Connected for login"
+                                : "Not connected"}
                             </p>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleGoogleDisconnect}
-                          data-testid="button-disconnect-google"
-                        >
-                          Disconnect
-                        </Button>
+                        {user?.googleId ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleGoogleDisconnect}
+                            data-testid="button-disconnect-google"
+                          >
+                            Disconnect
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href="/api/auth/google" data-testid="link-connect-google">
+                              Connect
+                            </a>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
