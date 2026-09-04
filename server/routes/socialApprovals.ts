@@ -21,6 +21,32 @@ interface AuthenticatedRequest extends Express.Request {
   };
 }
 
+// Approval collection endpoint. Besides being useful to API clients that need
+// a single approvals resource, this keeps the collection URL distinct from the
+// role-gated reviewer queue at /pending: creators can only see their own posts.
+router.get("/", async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const status =
+      typeof req.query.status === "string" ? req.query.status : undefined;
+    const posts = await approvalService.getUserPosts(req.user.id, status);
+    const userRole = await approvalService.getUserRole(req.user.id);
+
+    return res.json({
+      success: true,
+      total: posts.length,
+      posts,
+      userRole,
+    });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Get approvals error:");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/pending", async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.user) {

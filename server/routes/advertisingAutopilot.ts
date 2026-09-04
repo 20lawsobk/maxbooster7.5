@@ -135,7 +135,7 @@ router.get("/status", requireAuth, async (req, res) => {
     }));
 
     res.json({
-      isRunning: config.enabled || false,
+      isRunning: config?.enabled || false,
       config: config || {
         enabled: false,
         platforms: [],

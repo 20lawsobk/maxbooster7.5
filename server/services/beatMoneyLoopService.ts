@@ -1578,6 +1578,7 @@ class BeatMoneyLoopService {
         previewUrl,
         isPublished: true,
         metadata: {
+          source: "beat-money-loop",
           genre: args.scan.genre,
           mood: args.scan.mood,
           bpm: args.scan.tempo,

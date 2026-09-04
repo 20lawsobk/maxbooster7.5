@@ -12,9 +12,8 @@ const router = Router();
 const markerSchema = z.object({
   name: z.string().min(1).max(100),
   time: z.number().min(0),
-  position: z.number().min(0),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
-  type: z.string().optional().default("marker"),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  markerType: z.string().min(1).max(100).optional(),
 });
 
 // Get all markers for a project

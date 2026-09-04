@@ -385,19 +385,70 @@ export class CompingService {
     compVersionId?: string,
   ): Promise<TakeSegment> {
     try {
-      await db
-        .delete(takeSegments)
-        .where(
-          and(
-            eq((takeSegments as any)?.takeGroupId, groupId),
-            eq((takeSegments as any)?.isSelected, true),
-          ),
-        );
+      if (!(endTime > startTime)) {
+        throw new Error("endTime must be greater than startTime");
+      }
+
+      const lane = await this.getTakeLane(laneId);
+      if (!lane || lane.takeGroupId !== groupId) {
+        throw new Error("Take lane does not belong to this take group");
+      }
+
+      // Only remove previously-selected segments whose time range overlaps
+      // the new selection. A blanket "delete every isSelected row in the
+      // group" would silently destroy comp choices already made for other,
+      // non-overlapping time ranges (e.g. a verse picked from a different
+      // lane) every time a new range is comped.
+      const existingSelected = await db.query.takeSegments.findMany({
+        where: and(
+          eq(takeSegments.takeGroupId, groupId),
+          eq(takeSegments.isSelected, true),
+        ),
+      });
+      const overlapping = existingSelected.filter(
+        (seg) => seg.startTime < endTime && seg.endTime > startTime,
+      );
+      for (const seg of overlapping) {
+        await db.delete(takeSegments).where(eq(takeSegments.id, seg.id));
+        // Retain the portions outside the new choice. Deleting an entire
+        // overlapping segment would turn a short punch-in into a destructive
+        // replacement of an otherwise-selected take.
+        if (seg.startTime < startTime) {
+          await this.createTakeSegment({
+            takeGroupId: groupId,
+            takeLaneId: seg.takeLaneId,
+            compVersionId: seg.compVersionId,
+            startTime: seg.startTime,
+            endTime: startTime,
+            fadeIn: seg.fadeIn,
+            fadeOut: 0,
+            crossfadeType: seg.crossfadeType,
+            gain: seg.gain,
+            isSelected: true,
+            metadata: seg.metadata,
+          } as any);
+        }
+        if (seg.endTime > endTime) {
+          await this.createTakeSegment({
+            takeGroupId: groupId,
+            takeLaneId: seg.takeLaneId,
+            compVersionId: seg.compVersionId,
+            startTime: endTime,
+            endTime: seg.endTime,
+            fadeIn: 0,
+            fadeOut: seg.fadeOut,
+            crossfadeType: seg.crossfadeType,
+            gain: seg.gain,
+            isSelected: true,
+            metadata: seg.metadata,
+          } as any);
+        }
+      }
 
       const segment = await this.createTakeSegment({
         takeGroupId: groupId,
         takeLaneId: laneId,
-        compVersionId,
+        compVersionId: compVersionId ?? null,
         startTime,
         endTime,
         isSelected: true,
@@ -406,7 +457,9 @@ export class CompingService {
       return segment;
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error selecting segment from lane:");
-      throw new Error("Failed to select segment from lane");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to select segment from lane");
     }
   }
 

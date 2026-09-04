@@ -1486,7 +1486,7 @@ export default function SocialMedia() {
     schedulePostMutation.mutate({
       content: postContent,
       platforms: selectedPlatforms,
-      scheduledTime: scheduledTime || new Date().toISOString(),
+      scheduledAt: scheduledTime || new Date().toISOString(),
     });
   };
 

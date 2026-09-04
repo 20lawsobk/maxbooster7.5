@@ -4596,6 +4596,51 @@ router.get(
   },
 );
 
+// Disputing a discrepancy must leave a durable review record rather than merely
+// changing the item displayed in the client.
+router.post(
+  "/royalties/discrepancies/:discrepancyId/dispute",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { discrepancyId } = req.params;
+      const [discrepancy] = await db
+        .select()
+        .from(royaltyDisputes)
+        .where(and(eq(royaltyDisputes.id, discrepancyId), eq(royaltyDisputes.userId, userId)))
+        .limit(1);
+      if (!discrepancy) {
+        return res.status(404).json({ error: "Royalty discrepancy not found" });
+      }
+      if (discrepancy.status === "resolved") {
+        return res.status(400).json({ error: "Resolved discrepancies cannot be disputed" });
+      }
+      const reviewMarker = `Source discrepancy: ${discrepancyId}`;
+      const existingReviews = await db.select({ description: royaltyDisputes.description }).from(royaltyDisputes)
+        .where(and(eq(royaltyDisputes.userId, userId), eq(royaltyDisputes.type, "stream_discrepancy_dispute")));
+      if (existingReviews.some((review) => review.description.includes(reviewMarker))) {
+        return res.status(409).json({ error: "A dispute for this discrepancy is already under review" });
+      }
+      const [review] = await db.insert(royaltyDisputes).values({
+        userId,
+        type: "stream_discrepancy_dispute",
+        status: "open",
+        subject: `Stream discrepancy dispute: ${discrepancy.subject}`,
+        description: `${reviewMarker}\n\n${discrepancy.description}`,
+        amount: discrepancy.amount,
+        period: discrepancy.period,
+      }).returning();
+      await db.update(royaltyDisputes).set({ status: "disputed", updatedAt: new Date() })
+        .where(eq(royaltyDisputes.id, discrepancyId));
+      return res.status(201).json({ dispute: review, discrepancyId, status: "disputed" });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error filing royalty discrepancy dispute");
+      return res.status(500).json({ error: "Failed to file royalty discrepancy dispute" });
+    }
+  },
+);
+
 // GET /api/distribution/royalties/payouts - Get royalty payouts (paginated)
 router.get(
   "/royalties/payouts",

@@ -243,10 +243,27 @@ const VALID_PLATFORMS = [
 ] as const;
 
 const schedulePostSchema = z.object({
-  platform: z.enum(VALID_PLATFORMS),
+  platform: z.enum(VALID_PLATFORMS).optional(),
+  platforms: z.array(z.enum(VALID_PLATFORMS)).min(1).max(8).optional(),
   content: z.string().min(1).max(10000),
   mediaUrls: z.array(z.string().url()).max(10).optional(),
   scheduledAt: z.string().optional().nullable(),
+  scheduledTime: z.string().optional().nullable(),
+}).superRefine((value, ctx) => {
+  if (!value.platform && !value.platforms?.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "At least one platform is required",
+      path: ["platforms"],
+    });
+  }
+  if (value.platform && value.platforms?.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Provide platform or platforms, not both",
+      path: ["platforms"],
+    });
+  }
 });
 
 router.post(
@@ -262,32 +279,47 @@ router.post(
           .status(400)
           .json({ error: "Invalid request", details: parsed.error.issues });
       }
-      const { platform, content, mediaUrls, scheduledAt } = parsed?.data ?? {};
+      const { platform, platforms, content, mediaUrls, scheduledAt, scheduledTime } =
+        parsed.data;
+      const requestedSchedule = scheduledAt ?? scheduledTime;
+      const scheduledDate = requestedSchedule ? new Date(requestedSchedule) : null;
+      if (scheduledDate && Number.isNaN(scheduledDate.getTime())) {
+        return res.status(400).json({ error: "scheduledAt must be a valid date" });
+      }
 
-      const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
-
-      const [post] = await db
+      const targetPlatforms = platforms ?? [platform!];
+      const createdPosts = await db
         .insert(posts)
-        .values({
-          userId,
-          platform,
-          content,
-          mediaUrls: mediaUrls || [],
-          status: scheduledDate ? "scheduled" : "draft",
-          scheduledAt: scheduledDate,
-        })
+        .values(
+          targetPlatforms.map((targetPlatform) => ({
+            userId,
+            platform: targetPlatform,
+            content,
+            mediaUrls: mediaUrls || [],
+            status: scheduledDate ? "scheduled" : "draft",
+            scheduledAt: scheduledDate,
+          })),
+        )
         .returning();
 
-      res.json({ success: true, post });
+      res.json({
+        success: true,
+        posts: createdPosts,
+        post: createdPosts[0],
+      });
 
       if (scheduledDate) {
         setImmediate(async () => {
           try {
-            await notificationService?.sendSocialPostScheduledNotification(
-              userId,
-              platform,
-              content,
-              scheduledDate,
+            await Promise.all(
+              targetPlatforms.map((targetPlatform) =>
+                notificationService.sendSocialPostScheduledNotification(
+                  userId,
+                  targetPlatform,
+                  content,
+                  scheduledDate,
+                ),
+              ),
             );
           } catch (err) {
             logger.warn(

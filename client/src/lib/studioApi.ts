@@ -2,55 +2,97 @@
 import { apiRequest } from "./queryClient";
 
 export interface CompingGroup {
-  id: number;
-  projectId: number;
+  id: string;
+  projectId: string;
   trackId: string;
   name: string;
-  activeVersionId?: number;
+  startTime: number;
+  endTime: number | null;
+  status: "recording" | "editing" | "comped" | "rendered" | "archived";
+  takeCount: number;
+  color?: string | null;
+  activeCompVersionId?: string | null;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CompingLane {
-  id: number;
-  groupId: number;
+  id: string;
+  takeGroupId: string;
   name: string;
-  order: number;
-  muted: boolean;
-  color: string;
+  audioClipId?: string | null;
+  isActive: boolean;
+  isMuted: boolean;
+  isSolo: boolean;
+  volume: number;
+  color?: string | null;
+  rating?: number | null;
+  notes?: string | null;
+  laneIndex: number;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CompingSegment {
-  id: number;
-  laneId: number;
-  startBeat: number;
-  endBeat: number;
-  active: boolean;
-  gain: number;
+  id: string;
+  compVersionId?: string | null;
+  takeGroupId: string;
+  takeLaneId: string;
+  startTime: number;
+  endTime: number;
   fadeIn: number;
   fadeOut: number;
+  crossfadeType: string;
+  gain: number;
+  isSelected: boolean;
+  order: number;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CompingVersion {
-  id: number;
-  groupId: number;
+  id: string;
+  projectId: string;
+  trackId: string;
+  takeGroupId: string;
   name: string;
-  segmentData: Record<string, unknown>;
+  versionNumber: number;
+  description?: string | null;
+  createdBy?: string | null;
+  segments?: CompingSegment[] | null;
+  renderedClipId?: string | null;
   isActive: boolean;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface CompingLaneWithSegments extends CompingLane {
+  segments: CompingSegment[];
+}
+
+export interface CompingGroupWithDetails extends CompingGroup {
+  lanes: CompingLaneWithSegments[];
+  versions: CompingVersion[];
+}
+
+export interface CompRenderResult {
+  clipId: string;
+  audioUrl: string;
+  duration: number;
+  status: "processing" | "completed" | "failed";
 }
 
 export interface StudioMarker {
-  id: number;
-  projectId: number;
+  id: string;
+  projectId: string;
   name: string;
-  position: number;
-  color: string;
-  type: "marker" | "region" | "loop" | "punch";
-  endPosition?: number;
-  notes?: string;
+  time: number;
+  color?: string | null;
+  markerType?: string | null;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
 }
 
@@ -107,47 +149,65 @@ export interface MidiClip {
 export const studioApi = {
   comping: {
     async createGroup(
-      projectId: number,
-      data: { trackId: string; name: string },
+      projectId: string,
+      data: {
+        trackId: string;
+        name: string;
+        startTime: number;
+        endTime: number;
+        color?: string;
+        metadata?: Record<string, unknown>;
+      },
     ): Promise<CompingGroup> {
-      return apiRequest(
+      const res = await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/comping/groups`,
         data,
       );
+      return res.json();
     },
 
-    async getGroups(projectId: number): Promise<CompingGroup[]> {
+    async getGroups(projectId: string): Promise<CompingGroup[]> {
       const res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups`,
         { credentials: "include" },
       );
       if (!res?.ok) throw new Error("Failed to fetch comping groups");
-      return res?.json();
+      const data = await res.json();
+      return data.takeGroups;
     },
 
-    async getGroup(projectId: number, groupId: number): Promise<CompingGroup> {
+    async getGroup(
+      projectId: string,
+      groupId: string,
+    ): Promise<CompingGroupWithDetails> {
       const res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}`,
         { credentials: "include" },
       );
       if (!res?.ok) throw new Error("Failed to fetch comping group");
-      return res?.json();
+      return res.json();
     },
 
     async updateGroup(
-      projectId: number,
-      groupId: number,
-      data: Partial<CompingGroup>,
+      projectId: string,
+      groupId: string,
+      data: Partial<
+        Pick<
+          CompingGroup,
+          "name" | "startTime" | "endTime" | "color" | "status" | "metadata"
+        >
+      >,
     ): Promise<CompingGroup> {
-      return apiRequest(
+      const res = await apiRequest(
         "PUT",
         `/api/studio/projects/${projectId}/comping/groups/${groupId}`,
         data,
       );
+      return res.json();
     },
 
-    async deleteGroup(projectId: number, groupId: number): Promise<void> {
+    async deleteGroup(projectId: string, groupId: string): Promise<void> {
       await apiRequest(
         "DELETE",
         `/api/studio/projects/${projectId}/comping/groups/${groupId}`,
@@ -155,48 +215,76 @@ export const studioApi = {
     },
 
     async duplicateGroup(
-      projectId: number,
-      groupId: number,
+      projectId: string,
+      groupId: string,
     ): Promise<CompingGroup> {
-      return apiRequest(
+      const res = await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/duplicate`,
       );
+      return res.json();
     },
 
     async createLane(
-      projectId: number,
-      data: { groupId: number; name: string; color?: string },
+      projectId: string,
+      data: {
+        takeGroupId: string;
+        name: string;
+        audioClipId?: string;
+        laneIndex?: number;
+        volume?: number;
+        color?: string;
+        rating?: number;
+        notes?: string;
+        metadata?: Record<string, unknown>;
+      },
     ): Promise<CompingLane> {
-      return apiRequest(
+      const res = await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/comping/lanes`,
         data,
       );
+      return res.json();
     },
 
-    async getLanes(projectId: number, groupId: number): Promise<CompingLane[]> {
+    async getLanes(projectId: string, groupId: string): Promise<CompingLane[]> {
       const res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/lanes`,
         { credentials: "include" },
       );
       if (!res?.ok) throw new Error("Failed to fetch comping lanes");
-      return res?.json();
+      const data = await res.json();
+      return data.lanes;
     },
 
     async updateLane(
-      projectId: number,
-      laneId: number,
-      data: Partial<CompingLane>,
+      projectId: string,
+      laneId: string,
+      data: Partial<
+        Pick<
+          CompingLane,
+          | "name"
+          | "isMuted"
+          | "isSolo"
+          | "isActive"
+          | "volume"
+          | "color"
+          | "rating"
+          | "notes"
+          | "audioClipId"
+          | "metadata"
+        >
+      >,
     ): Promise<CompingLane> {
-      return apiRequest(
+      const res = await apiRequest(
         "PUT",
         `/api/studio/projects/${projectId}/comping/lanes/${laneId}`,
         data,
       );
+      return res.json();
     },
 
-    async deleteLane(projectId: number, laneId: number): Promise<void> {
+    async deleteLane(projectId: string, laneId: string): Promise<void> {
       await apiRequest(
         "DELETE",
         `/api/studio/projects/${projectId}/comping/lanes/${laneId}`,
@@ -204,9 +292,9 @@ export const studioApi = {
     },
 
     async reorderLanes(
-      projectId: number,
-      groupId: number,
-      laneIds: number[],
+      projectId: string,
+      groupId: string,
+      laneIds: string[],
     ): Promise<void> {
       await apiRequest(
         "PUT",
@@ -216,41 +304,94 @@ export const studioApi = {
     },
 
     async createSegment(
-      projectId: number,
-      data: { laneId: number; startBeat: number; endBeat: number },
+      projectId: string,
+      data: {
+        takeGroupId: string;
+        takeLaneId: string;
+        compVersionId?: string;
+        startTime: number;
+        endTime: number;
+        fadeIn?: number;
+        fadeOut?: number;
+        crossfadeType?: string;
+        gain?: number;
+        isSelected?: boolean;
+        order?: number;
+        metadata?: Record<string, unknown>;
+      },
     ): Promise<CompingSegment> {
-      return apiRequest(
+      const res = await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/comping/segments`,
         data,
       );
+      return res.json();
     },
 
     async getSegments(
-      projectId: number,
-      groupId: number,
+      projectId: string,
+      groupId: string,
     ): Promise<CompingSegment[]> {
       const res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/segments`,
         { credentials: "include" },
       );
       if (!res?.ok) throw new Error("Failed to fetch comping segments");
-      return res?.json();
+      const data = await res.json();
+      return data.segments;
+    },
+
+    /**
+     * Choose which lane covers a given time range for the current comp.
+     * The server only removes previously-selected segments that overlap
+     * [startTime, endTime) — selections made for other time ranges from
+     * other lanes are preserved.
+     */
+    async selectSegment(
+      projectId: string,
+      groupId: string,
+      data: {
+        laneId: string;
+        startTime: number;
+        endTime: number;
+        compVersionId?: string;
+      },
+    ): Promise<CompingSegment> {
+      const res = await apiRequest(
+        "POST",
+        `/api/studio/projects/${projectId}/comping/groups/${groupId}/select`,
+        data,
+      );
+      return res.json();
     },
 
     async updateSegment(
-      projectId: number,
-      segmentId: number,
-      data: Partial<CompingSegment>,
+      projectId: string,
+      segmentId: string,
+      data: Partial<
+        Pick<
+          CompingSegment,
+          | "startTime"
+          | "endTime"
+          | "fadeIn"
+          | "fadeOut"
+          | "crossfadeType"
+          | "gain"
+          | "isSelected"
+          | "order"
+          | "metadata"
+        >
+      >,
     ): Promise<CompingSegment> {
-      return apiRequest(
+      const res = await apiRequest(
         "PUT",
         `/api/studio/projects/${projectId}/comping/segments/${segmentId}`,
         data,
       );
+      return res.json();
     },
 
-    async deleteSegment(projectId: number, segmentId: number): Promise<void> {
+    async deleteSegment(projectId: string, segmentId: string): Promise<void> {
       await apiRequest(
         "DELETE",
         `/api/studio/projects/${projectId}/comping/segments/${segmentId}`,
@@ -258,33 +399,38 @@ export const studioApi = {
     },
 
     async createVersion(
-      projectId: number,
-      groupId: number,
-      name: string,
+      projectId: string,
+      groupId: string,
+      data: { name: string; description?: string },
     ): Promise<CompingVersion> {
-      return apiRequest(
+      const res = await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/versions`,
-        { name },
+        data,
       );
+      return res.json();
     },
 
     async getVersions(
-      projectId: number,
-      groupId: number,
-    ): Promise<CompingVersion[]> {
+      projectId: string,
+      groupId: string,
+    ): Promise<{
+      versions: CompingVersion[];
+      activeVersion: CompingVersion | undefined;
+      totalVersions: number;
+    }> {
       const res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/versions`,
         { credentials: "include" },
       );
       if (!res?.ok) throw new Error("Failed to fetch comping versions");
-      return res?.json();
+      return res.json();
     },
 
     async activateVersion(
-      projectId: number,
-      groupId: number,
-      versionId: number,
+      projectId: string,
+      groupId: string,
+      versionId: string,
     ): Promise<void> {
       await apiRequest(
         "PUT",
@@ -292,7 +438,7 @@ export const studioApi = {
       );
     },
 
-    async deleteVersion(projectId: number, versionId: number): Promise<void> {
+    async deleteVersion(projectId: string, versionId: string): Promise<void> {
       await apiRequest(
         "DELETE",
         `/api/studio/projects/${projectId}/comping/versions/${versionId}`,
@@ -300,45 +446,47 @@ export const studioApi = {
     },
 
     async renderComp(
-      projectId: number,
-      groupId: number,
-    ): Promise<{ audioUrl: string }> {
-      return apiRequest(
+      projectId: string,
+      groupId: string,
+    ): Promise<CompRenderResult> {
+      const res = await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/comping/render`,
         { groupId },
       );
+      return res.json();
     },
   },
 
   markers: {
-    async getMarkers(projectId: number): Promise<StudioMarker[]> {
+    async getMarkers(projectId: string): Promise<StudioMarker[]> {
       const res = await fetch(`/api/studio/projects/${projectId}/markers`, {
         credentials: "include",
       });
       if (!res?.ok) throw new Error("Failed to fetch markers");
-      return res?.json();
+      const data = await res.json();
+      return data.markers;
     },
 
     async createMarker(
-      projectId: number,
+      projectId: string,
       data: Omit<StudioMarker, "id" | "projectId" | "createdAt">,
     ): Promise<StudioMarker> {
-      return apiRequest(
+      return (await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/markers`,
         data,
-      );
+      )).json();
     },
 
     async updateMarker(
-      markerId: number,
+      markerId: string,
       data: Partial<StudioMarker>,
     ): Promise<StudioMarker> {
-      return apiRequest("PATCH", `/api/studio/markers/${markerId}`, data);
+      return (await apiRequest("PATCH", `/api/studio/markers/${markerId}`, data)).json();
     },
 
-    async deleteMarker(markerId: number): Promise<void> {
+    async deleteMarker(markerId: string): Promise<void> {
       await apiRequest("DELETE", `/api/studio/markers/${markerId}`);
     },
   },

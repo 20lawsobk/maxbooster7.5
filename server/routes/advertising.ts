@@ -19,6 +19,7 @@ import { eq, desc, and, isNotNull, inArray } from "drizzle-orm";
 import { adCampaigns, adCreatives, systemSettings } from "@shared/schema";
 import { aiModelManager } from "../services/aiModelManager.js";
 import { autopilotEngine } from "../autopilot-engine.js";
+import { advertisingDispatchService } from "../services/advertisingDispatchService.js";
 
 const imageUpload = createHardenedUpload({
   maxFileSize: 10 * 1024 * 1024,
@@ -404,6 +405,8 @@ router.post(
         endDate,
         targetAudience,
         creativeIds,
+        creativeMediaUrl,
+        duration,
       } = req.body;
       const platform =
         platformDirect ||
@@ -433,6 +436,34 @@ router.post(
       const selectedCreativeIds = Array.isArray(creativeIds)
         ? [...new Set(creativeIds.filter((id) => typeof id === "string"))]
         : [];
+      if (creativeMediaUrl !== undefined && typeof creativeMediaUrl !== "string") {
+        return res.status(400).json({ error: "creativeMediaUrl must be a string" });
+      }
+      const parsedDuration =
+        duration === undefined ? null : Number(duration);
+      if (
+        parsedDuration !== null &&
+        (!Number.isInteger(parsedDuration) ||
+          parsedDuration < 1 ||
+          parsedDuration > 30)
+      ) {
+        return res.status(400).json({ error: "Duration must be a whole number between 1 and 30 days" });
+      }
+      const campaignStartDate = startDate ? new Date(startDate) : new Date();
+      if (Number.isNaN(campaignStartDate.getTime())) {
+        return res.status(400).json({ error: "startDate must be a valid date" });
+      }
+      const campaignEndDate = endDate
+        ? new Date(endDate)
+        : parsedDuration !== null
+          ? new Date(campaignStartDate.getTime() + parsedDuration * 24 * 60 * 60 * 1000)
+          : null;
+      if (campaignEndDate && Number.isNaN(campaignEndDate.getTime())) {
+        return res.status(400).json({ error: "endDate must be a valid date" });
+      }
+      if (campaignEndDate && campaignEndDate <= campaignStartDate) {
+        return res.status(400).json({ error: "endDate must be after startDate" });
+      }
 
       if (selectedCreativeIds.length > 0) {
         const ownedCreatives = await db
@@ -460,11 +491,13 @@ router.post(
           objective: objective || null,
           budget: 0,
           dailyBudget: null,
-          startDate: startDate ? new Date(startDate) : null,
-          endDate: endDate ? new Date(endDate) : null,
+          startDate: campaignStartDate,
+          endDate: campaignEndDate,
           targetAudience: targetAudience || null,
           creativeIds: selectedCreativeIds,
-          status: "active",
+          // A campaign cannot be active until a post actually reaches a
+          // connected account. The activation endpoint performs that dispatch.
+          status: "draft",
         })
         .returning();
 
@@ -482,6 +515,26 @@ router.post(
               inArray(adCreatives.id, selectedCreativeIds),
             ),
           );
+      }
+      if (creativeMediaUrl) {
+        const [creative] = await db
+          .insert(adCreatives)
+          .values({
+            userId,
+            campaignId: campaign.id,
+            name: `${name} image creative`,
+            type: "image",
+            mediaUrl: creativeMediaUrl,
+            thumbnailUrl: creativeMediaUrl,
+            status: "draft",
+          })
+          .returning({ id: adCreatives.id });
+        selectedCreativeIds.push(creative.id);
+        await db
+          .update(adCampaigns)
+          .set({ creativeIds: selectedCreativeIds })
+          .where(eq(adCampaigns.id, campaign.id));
+        campaign.creativeIds = selectedCreativeIds;
       }
 
       // Kick off AI pipeline in the background — campaign immediately primes MaxCore
@@ -540,6 +593,21 @@ router.post(
       logger.warn({ err: error }, "Failed to create campaign:");
       res.status(500).json({ error: "Failed to create campaign" });
     }
+  },
+);
+
+router.post(
+  "/campaigns/:id/activate",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const result = await advertisingDispatchService.activateCampaign(
+      req.params.id,
+      req.user!.id,
+    );
+    if (!result.success || (result.results?.postsCreated ?? 0) === 0) {
+      return res.status(409).json(result);
+    }
+    return res.json(result);
   },
 );
 

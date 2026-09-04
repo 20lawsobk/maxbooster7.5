@@ -415,7 +415,7 @@ export default function StorefrontBuilder() {
   const { data: tiers = [] } = useQuery<
     MembershipTier[]
   >({
-    queryKey: ["/api/storefront", selectedStorefront?.id, "tiers"],
+    queryKey: ["storefront-membership-tiers", selectedStorefront?.id],
     enabled: !!selectedStorefront,
     queryFn: async () => {
       const res = await fetch(
@@ -440,7 +440,7 @@ export default function StorefrontBuilder() {
       createdAt: string;
     }>;
   }>({
-    queryKey: ["/api/storefront-domains", selectedStorefront?.id],
+    queryKey: ["storefront-domains-for-storefront", selectedStorefront?.id],
     enabled: !!selectedStorefront,
     queryFn: async () => {
       const res = await fetch(
@@ -523,7 +523,7 @@ export default function StorefrontBuilder() {
         description: "Your new membership tier is now available.",
       });
       queryClient.invalidateQueries({
-        queryKey: ["/api/storefront", selectedStorefront!.id, "tiers"],
+        queryKey: ["storefront-membership-tiers", selectedStorefront!.id],
       });
       setShowTierDialog(false);
       setTierForm({
@@ -672,7 +672,10 @@ export default function StorefrontBuilder() {
         });
         queryClient.invalidateQueries({ queryKey: ["/api/storefront/my"] });
         queryClient.invalidateQueries({
-          queryKey: ["/api/storefront-domains", selectedStorefront?.id],
+          queryKey: [
+            "storefront-domains-for-storefront",
+            selectedStorefront?.id,
+          ],
         });
       } else {
         toast({
@@ -746,7 +749,7 @@ export default function StorefrontBuilder() {
     domain: string | null;
     status: string | null;
   }>({
-    queryKey: ["/api/storefront-domains/platform", selectedStorefront?.id],
+    queryKey: ["storefront-platform-domain", selectedStorefront?.id],
     queryFn: () =>
       selectedStorefront
         ? apiRequest(
@@ -778,7 +781,7 @@ export default function StorefrontBuilder() {
         });
         queryClient.invalidateQueries({
           queryKey: [
-            "/api/storefront-domains/platform",
+            "storefront-platform-domain",
             selectedStorefront?.id,
           ],
         });

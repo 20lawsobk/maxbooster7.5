@@ -711,7 +711,7 @@ export default function Advertisement() {
       toast({
         title: "Campaign Created",
         description:
-          "Your revolutionary AI advertising campaign has been activated successfully.",
+          "Your campaign is ready. Activate it once you are ready to publish to your connected accounts.",
       });
       setIsCreateCampaignOpen(false);
       setCampaignForm({
@@ -738,6 +738,33 @@ export default function Advertisement() {
     onError: (error: Error) => {
       toast({
         title: "Failed to Create Campaign",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const activateCampaignMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/advertising/campaigns/${id}/activate`,
+      );
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/advertising/campaigns"],
+      });
+      invalidateOnCampaignChange();
+      toast({
+        title: "Campaign Activated",
+        description: `Published ${data.results?.postsCreated ?? 0} post(s) to your connected accounts.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Campaign Not Activated",
         description: error.message,
         variant: "destructive",
       });
@@ -804,7 +831,11 @@ export default function Advertisement() {
   });
 
   const handleTogglePause = (campaign: AdCampaign) => {
-    const nextStatus = campaign.status === "active" ? "paused" : "active";
+    if (campaign.status !== "active") {
+      activateCampaignMutation.mutate(campaign.id);
+      return;
+    }
+    const nextStatus = "paused";
     updateCampaignMutation.mutate(
       { id: campaign.id, updates: { status: nextStatus } },
       {
@@ -1004,7 +1035,19 @@ export default function Advertisement() {
       });
       return;
     }
-    createCampaignMutation.mutate(campaignForm);
+    if (uploadImageMutation.isPending) {
+      toast({
+        title: "Image Still Uploading",
+        description:
+          "Wait for the campaign image upload to finish before creating the campaign.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createCampaignMutation.mutate({
+      ...campaignForm,
+      creativeMediaUrl: imagePreviewUrl || undefined,
+    });
   };
 
   const totalImpressions = campaigns.reduce(
@@ -1755,12 +1798,15 @@ export default function Advertisement() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleTogglePause(campaign)}
-                                disabled={updateCampaignMutation.isPending}
+                                disabled={
+                                  updateCampaignMutation.isPending ||
+                                  activateCampaignMutation.isPending
+                                }
                                 data-testid={`button-toggle-campaign-${campaign.id}`}
                               >
                                 {campaign.status === "active"
                                   ? "Pause"
-                                  : "Resume"}
+                                  : "Activate"}
                               </Button>
                             )}
                             <Button

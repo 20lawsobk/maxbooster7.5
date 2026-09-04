@@ -2144,8 +2144,9 @@ export default function Marketplace() {
       if (!audioUrl.startsWith("/")) {
         audioUrl = `/api/marketplace/audio/${audioUrl}`;
       } else if (!audioUrl.startsWith("/api/")) {
-        // Has leading slash but not going through API
-        audioUrl = `/api/marketplace/audio${audioUrl}`;
+        // Has leading slash but not going through API. Normalize it into the
+        // wildcard audio route with exactly one separator.
+        audioUrl = `/api/marketplace/audio/${audioUrl.replace(/^\/+/, "")}`;
       }
       audioUrl = `${window.location.origin}${audioUrl}`;
     }

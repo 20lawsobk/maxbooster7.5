@@ -400,6 +400,10 @@ export class AdvertisingDispatchService {
       let totalImpressions = 0;
       let totalEngagements = 0;
       let totalReach = 0;
+      const creativeMetrics = new Map<
+        string,
+        { impressions: number; engagements: number; reach: number }
+      >();
 
       for (const post of organicMetrics?.posts ?? []) {
         if (!post?.postId) continue;
@@ -429,6 +433,17 @@ export class AdvertisingDispatchService {
           };
 
           updatedPosts?.push(updatedPost);
+          if (typeof post.creativeId === "string") {
+            const current = creativeMetrics.get(post.creativeId) ?? {
+              impressions: 0,
+              engagements: 0,
+              reach: 0,
+            };
+            current.impressions += Number(updatedPost.metrics.impressions) || 0;
+            current.engagements += Number(updatedPost.metrics.engagements) || 0;
+            current.reach += Number(updatedPost.metrics.reach) || 0;
+            creativeMetrics.set(post.creativeId, current);
+          }
 
           // Aggregate totals
           totalImpressions += updatedPost?.metrics.impressions;
@@ -463,6 +478,30 @@ export class AdvertisingDispatchService {
           organicMetrics: updatedOrganicMetrics as Record<string, unknown>,
         })
         .where(eq(adCampaigns.id, campaignId));
+      // A/B-test and creative-fatigue reads are per creative. Persist the
+      // actual post measurements there as well instead of leaving their
+      // performance JSON permanently at zero.
+      await Promise.all(
+        Array.from(creativeMetrics.entries()).map(([creativeId, metrics]) =>
+          db
+            .update(adCreatives)
+            .set({
+              performance: {
+                impressions: metrics.impressions,
+                clicks: metrics.engagements,
+                engagements: metrics.engagements,
+                reach: metrics.reach,
+              },
+            })
+            .where(
+              and(
+                eq(adCreatives.id, creativeId),
+                eq(adCreatives.campaignId, campaignId),
+                eq(adCreatives.userId, userId),
+              ),
+            ),
+        ),
+      );
 
       logger.info(
         `✅ Updated engagement metrics for campaign ${campaignId}: ${totalImpressions} impressions, ${totalEngagements} engagements`,

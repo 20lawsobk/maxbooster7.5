@@ -209,7 +209,7 @@ export default function Storefront() {
         if (!audioUrl.startsWith("/")) {
           audioUrl = `/api/marketplace/audio/${audioUrl}`;
         } else if (!audioUrl.startsWith("/api/")) {
-          audioUrl = `/api/marketplace/audio${audioUrl}`;
+          audioUrl = `/api/marketplace/audio/${audioUrl.replace(/^\/+/, "")}`;
         }
       }
       const audio = new Audio(audioUrl);
@@ -362,7 +362,7 @@ export default function Storefront() {
   }
 
   const { data: checkoutPreview } = useQuery<CheckoutPreview>({
-    queryKey: [`/api/storefront/${storefront?.id}/checkout/preview`, cart],
+    queryKey: ["storefront-checkout-preview", storefront?.id, cart],
     enabled: !!storefront?.id && cart.length > 0,
     queryFn: async () => {
       const res = await apiRequest(

@@ -7,7 +7,7 @@ import { isProductionEnv } from "./lib/envHelpers.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements } from "../shared/schema.js";
+import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements, projects, projectRoyaltySplits } from "../shared/schema.js";
 import { sum, count, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.js";
@@ -1611,19 +1611,25 @@ export async function registerRoutes(
           .orderBy(dsql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
           .limit(1);
         if (row?.deletedAt) {
+          logger.warn(
+            { key, deletedAt: row.deletedAt },
+            "Storage file serve: rejected, tracking row is soft-deleted",
+          );
           return res.status(404).json({ message: "File not found" });
         }
       }
 
       let fileBuffer: Buffer | null = null;
       let storageTier = "unknown";
+      let hybridReadError: unknown;
 
       const hybridMeta = hybridStorageService.getMetadata(key);
       if (hybridMeta) {
         storageTier = `${hybridMeta.tier}/${hybridMeta.location}`;
         try {
           fileBuffer = await hybridStorageService.read(hybridMeta.userId, key);
-        } catch {
+        } catch (err) {
+          hybridReadError = err;
           fileBuffer = null;
         }
       }
@@ -1632,7 +1638,23 @@ export async function registerRoutes(
         try {
           fileBuffer = await storageService.downloadFile(key);
           storageTier = "replit-direct";
-        } catch {
+        } catch (err) {
+          // Both backends missed this key. Log every input to that outcome
+          // (hybrid metadata presence, any hybrid read error, and the final
+          // downloadFile error) so a future occurrence is diagnosable from
+          // logs alone instead of reproducing a 28-byte 404 with no trail.
+          logger.warn(
+            {
+              key,
+              hadHybridMeta: Boolean(hybridMeta),
+              hybridReadError:
+                hybridReadError instanceof Error
+                  ? hybridReadError.message
+                  : hybridReadError,
+              downloadError: err instanceof Error ? err.message : err,
+            },
+            "Storage file serve: not found in hybrid storage or storageService",
+          );
           return res.status(404).json({ message: "File not found" });
         }
       }
@@ -3960,6 +3982,134 @@ export async function registerRoutes(
     },
   );
 
+  // Project royalty splits are kept separate from marketplace royalty splits:
+  // these are the collaborators a project owner configures before release.
+  const projectSplitRoles = new Set([
+    "producer",
+    "songwriter",
+    "vocalist",
+    "engineer",
+    "instrumentalist",
+    "other",
+  ]);
+  const validSplitPercentage = (value: unknown): number | null => {
+    const percentage = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(percentage) && percentage > 0 && percentage <= 100
+      ? percentage
+      : null;
+  };
+  const getOwnedProject = async (projectId: string, userId: string) => {
+    const [project] = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+      .limit(1);
+    return project;
+  };
+  const splitTotalForProject = async (
+    projectId: string,
+    exceptId?: string,
+  ) => {
+    const existing = await db
+      .select({
+        id: projectRoyaltySplits.id,
+        splitPercentage: projectRoyaltySplits.splitPercentage,
+      })
+      .from(projectRoyaltySplits)
+      .where(eq(projectRoyaltySplits.projectId, projectId));
+    return existing
+      .filter((split) => split.id !== exceptId)
+      .reduce((total, split) => total + split.splitPercentage, 0);
+  };
+
+  app.get(
+    "/api/projects/:projectId/royalty-splits",
+    async (req: Request, res: Response) => {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      const { projectId } = req.params;
+      const project = await getOwnedProject(projectId, req.user.id);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      const splits = await db
+        .select()
+        .from(projectRoyaltySplits)
+        .where(eq(projectRoyaltySplits.projectId, projectId));
+      return res.json(splits);
+    },
+  );
+
+  app.post(
+    "/api/projects/:projectId/royalty-splits",
+    async (req: Request, res: Response) => {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      const { projectId } = req.params;
+      const { collaboratorId, role, splitPercentage } = req.body ?? {};
+      const percentage = validSplitPercentage(splitPercentage);
+      if (typeof collaboratorId !== "string" || !collaboratorId.trim() || !percentage) {
+        return res.status(400).json({ message: "A collaborator and split percentage between 0 and 100 are required" });
+      }
+      if (typeof role !== "string" || !projectSplitRoles.has(role)) {
+        return res.status(400).json({ message: "A valid collaborator role is required" });
+      }
+      const project = await getOwnedProject(projectId, req.user.id);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      const [collaborator] = await db.select({ id: users.id }).from(users)
+        .where(eq(users.id, collaboratorId)).limit(1);
+      if (!collaborator) return res.status(400).json({ message: "Collaborator not found" });
+      const total = await splitTotalForProject(projectId);
+      if (total + percentage > 100.0001) {
+        return res.status(400).json({ message: "Royalty splits cannot exceed 100%" });
+      }
+      const [split] = await db.insert(projectRoyaltySplits).values({
+        projectId,
+        collaboratorId,
+        role,
+        splitPercentage: percentage,
+      }).returning();
+      return res.status(201).json({ ...split, isValid: Math.abs(total + percentage - 100) < 0.01 });
+    },
+  );
+
+  app.put(
+    "/api/projects/:projectId/royalty-splits/:splitId",
+    async (req: Request, res: Response) => {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      const { projectId, splitId } = req.params;
+      const { role, splitPercentage } = req.body ?? {};
+      const percentage = validSplitPercentage(splitPercentage);
+      if (!percentage || (role !== undefined && (typeof role !== "string" || !projectSplitRoles.has(role)))) {
+        return res.status(400).json({ message: "Provide a valid split percentage and collaborator role" });
+      }
+      const project = await getOwnedProject(projectId, req.user.id);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      const [existing] = await db.select().from(projectRoyaltySplits)
+        .where(and(eq(projectRoyaltySplits.id, splitId), eq(projectRoyaltySplits.projectId, projectId))).limit(1);
+      if (!existing) return res.status(404).json({ message: "Royalty split not found" });
+      const total = await splitTotalForProject(projectId, splitId);
+      if (total + percentage > 100.0001) {
+        return res.status(400).json({ message: "Royalty splits cannot exceed 100%" });
+      }
+      const [split] = await db.update(projectRoyaltySplits)
+        .set({ splitPercentage: percentage, ...(role === undefined ? {} : { role }) })
+        .where(eq(projectRoyaltySplits.id, splitId)).returning();
+      return res.json({ ...split, isValid: Math.abs(total + percentage - 100) < 0.01 });
+    },
+  );
+
+  app.delete(
+    "/api/projects/:projectId/royalty-splits/:splitId",
+    async (req: Request, res: Response) => {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      const { projectId, splitId } = req.params;
+      const project = await getOwnedProject(projectId, req.user.id);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      const [deleted] = await db.delete(projectRoyaltySplits)
+        .where(and(eq(projectRoyaltySplits.id, splitId), eq(projectRoyaltySplits.projectId, projectId)))
+        .returning({ id: projectRoyaltySplits.id });
+      if (!deleted) return res.status(404).json({ message: "Royalty split not found" });
+      return res.json({ success: true, message: "Royalty split deleted" });
+    },
+  );
+
   // Analytics: Dashboard summary with real data (with optional period path parameter)
   app.get(
     "/api/analytics/dashboard{/:period}",
@@ -5620,32 +5770,49 @@ export async function registerRoutes(
     }
     try {
       const {
-        collaboratorEmail,
-        collaboratorName,
+        collaboratorEmail: suppliedEmail,
+        collaboratorName: suppliedName,
+        email,
+        name,
         percentage,
         projectId,
         role = "collaborator",
       } = req.body;
-      if (!collaboratorEmail || !percentage) {
+      const collaboratorEmail = suppliedEmail || email;
+      const collaboratorName = suppliedName || name;
+      const normalizedPercentage =
+        typeof percentage === "number" ? percentage : Number(percentage);
+      if (
+        typeof collaboratorEmail !== "string" ||
+        !collaboratorEmail.trim() ||
+        !Number.isFinite(normalizedPercentage)
+      ) {
         return res
           .status(400)
           .json({ message: "Collaborator email and percentage are required" });
       }
-      if (percentage <= 0 || percentage > 100) {
+      if (normalizedPercentage <= 0 || normalizedPercentage > 100) {
         return res
           .status(400)
           .json({ message: "Percentage must be between 1 and 100" });
+      }
+      const releaseId = projectId || "general";
+      const existing = await db.select({ percentage: royaltySplits.percentage })
+        .from(royaltySplits)
+        .where(and(eq(royaltySplits.userId, req.user.id), eq(royaltySplits.releaseId, releaseId)));
+      if (existing.reduce((total, split) => total + split.percentage, 0) + normalizedPercentage > 100.0001) {
+        return res.status(400).json({ message: "Royalty splits cannot exceed 100%" });
       }
 
       const [split] = await db
         .insert(royaltySplits)
         .values({
-          releaseId: projectId || "general",
+          releaseId,
           userId: req.user.id,
           collaboratorEmail,
           collaboratorName: collaboratorName || collaboratorEmail.split("@")[0],
           role,
-          percentage,
+          percentage: normalizedPercentage,
           status: "pending",
         })
         .returning();
@@ -5656,6 +5823,43 @@ export async function registerRoutes(
       return res
         .status(500)
         .json({ message: "Failed to create royalty split" });
+    }
+  });
+
+  app.put("/api/royalties/splits/:splitId", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { splitId } = req.params as Record<string, string>;
+      const [existing] = await db.select().from(royaltySplits)
+        .where(and(eq(royaltySplits.id, splitId), eq(royaltySplits.userId, req.user.id))).limit(1);
+      if (!existing) return res.status(404).json({ message: "Royalty split not found" });
+      const { name, email, role, percentage } = req.body ?? {};
+      const normalizedPercentage = percentage === undefined ? existing.percentage : Number(percentage);
+      if (!Number.isFinite(normalizedPercentage) || normalizedPercentage <= 0 || normalizedPercentage > 100) {
+        return res.status(400).json({ message: "Percentage must be between 1 and 100" });
+      }
+      if (email !== undefined && (typeof email !== "string" || !email.trim())) {
+        return res.status(400).json({ message: "Collaborator email must be a non-empty string" });
+      }
+      if (name !== undefined && (typeof name !== "string" || !name.trim())) {
+        return res.status(400).json({ message: "Collaborator name must be a non-empty string" });
+      }
+      const siblings = await db.select({ percentage: royaltySplits.percentage }).from(royaltySplits)
+        .where(and(eq(royaltySplits.userId, req.user.id), eq(royaltySplits.releaseId, existing.releaseId)));
+      if (siblings.reduce((total, split) => total + split.percentage, 0) - existing.percentage + normalizedPercentage > 100.0001) {
+        return res.status(400).json({ message: "Royalty splits cannot exceed 100%" });
+      }
+      const [split] = await db.update(royaltySplits).set({
+        percentage: normalizedPercentage,
+        ...(name === undefined ? {} : { collaboratorName: name.trim() }),
+        ...(email === undefined ? {} : { collaboratorEmail: email.trim() }),
+        ...(role === undefined ? {} : { role }),
+        updatedAt: new Date(),
+      }).where(eq(royaltySplits.id, splitId)).returning();
+      return res.json(split);
+    } catch (error) {
+      logger.warn({ err: error }, "Update split error");
+      return res.status(500).json({ message: "Failed to update royalty split" });
     }
   });
 
@@ -6567,12 +6771,12 @@ export async function registerRoutes(
       loader: () => import("./routes/studio"),
     },
     {
-      path: "/api/studio/comping",
+      path: "/api/studio",
       name: "studioComping",
       loader: () => import("./routes/studioComping"),
     },
     {
-      path: "/api/studio/markers",
+      path: "/api/studio",
       name: "studioMarkers",
       loader: () => import("./routes/studioMarkers"),
     },

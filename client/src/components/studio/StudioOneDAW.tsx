@@ -43,6 +43,7 @@ import { VersionManagementDialog } from "./VersionManagementDialog";
 import { FlowStateExport } from "./FlowStateExport";
 import { WarpDialog } from "./WarpDialog";
 import { RecordingPanel } from "./RecordingPanel";
+import { CompingEditor } from "./CompingEditor";
 import { FlowStateAutomation } from "./FlowStateAutomation";
 import { SpatialAudioMixer } from "./SpatialAudioMixer";
 import { VideoTrack } from "./VideoTrack";
@@ -218,6 +219,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     clipId: string;
     trackId: string;
   } | null>(null);
+  const [compingTrackId, setCompingTrackId] = useState<string | null>(null);
   const {
     ref: containerRef,
     
@@ -2214,6 +2216,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                     onOpenWarpDialog={(clipId, trackId) =>
                       setWarpDialogClip({ clipId, trackId })
                     }
+                    onOpenComping={(trackId) => setCompingTrackId(trackId)}
                     onDuplicateTrack={(id) => {
                       store.duplicateTrack(id);
                       toast({ title: "Track Duplicated" });
@@ -2862,6 +2865,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             if (!o) setWarpDialogClip(null);
           }}
         />
+      )}
+      {compingTrackId && (
+        <CompingEditor projectId={projectId || ""} trackId={compingTrackId}
+          clips={(tracks.find((track) => track.id === compingTrackId)?.audioClips || [])}
+          open={!!compingTrackId} onOpenChange={(open) => !open && setCompingTrackId(null)} />
       )}
 
       <FlowStateExport
@@ -3799,6 +3807,7 @@ interface ArrangeViewProps {
   onDuplicateTrack: (id: string) => void;
   onOpenPluginRack?: (trackId: string) => void;
   onOpenWarpDialog?: (clipId: string, trackId: string) => void;
+  onOpenComping?: (trackId: string) => void;
   showAutomation?: boolean;
   automationLanes?: Record<string, unknown>[];
   onAutomationLanesChange?: (lanes: Record<string, unknown>[]) => void;
@@ -3826,6 +3835,7 @@ function ArrangeView({
   onDuplicateTrack,
   onOpenPluginRack,
   onOpenWarpDialog,
+  onOpenComping,
   showAutomation,
   automationLanes = [],
   onAutomationLanesChange,
@@ -3995,6 +4005,7 @@ function ArrangeView({
               onDuplicate={() => onDuplicateTrack(track.id)}
               onOpenPluginRack={onOpenPluginRack ? () => onOpenPluginRack(track.id as string) : undefined}
               onOpenWarpDialog={onOpenWarpDialog}
+              onOpenComping={onOpenComping ? () => onOpenComping(track.id as string) : undefined}
               allTracks={allTracks}
             />
             {showAutomation && (
@@ -4060,6 +4071,7 @@ interface TrackLaneProps {
   onDuplicate: () => void;
   onOpenPluginRack?: () => void;
   onOpenWarpDialog?: (clipId: string, trackId: string) => void;
+  onOpenComping?: () => void;
   allTracks?: Record<string, unknown>[];
 }
 
@@ -4077,6 +4089,7 @@ function TrackLane({
   onDuplicate,
   onOpenPluginRack,
   onOpenWarpDialog,
+  onOpenComping,
   allTracks = [],
 }: TrackLaneProps) {
   const height = track.collapsed ? 40 : track.height || 80;
@@ -4230,6 +4243,11 @@ function TrackLane({
                 >
                   FX
                 </button>
+              )}
+              {onOpenComping && (
+                <button onClick={(e) => { e.stopPropagation(); onOpenComping(); }}
+                  className="shrink-0 flex items-center justify-center rounded bg-[#333] hover:bg-emerald-600/60 text-emerald-400 hover:text-white"
+                  style={{ width: 20, height: 20, fontSize: 8 }} title="Open Take Comping">CP</button>
               )}
             </div>
 

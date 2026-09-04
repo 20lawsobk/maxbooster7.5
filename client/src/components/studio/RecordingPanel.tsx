@@ -153,6 +153,7 @@ export function RecordingPanel({
     if (!recordedBlob || armedTracks.length === 0) return;
 
     setIsUploading(true);
+    const takeGroupingFailures: string[] = [];
 
     try {
       for (const track of armedTracks) {
@@ -173,53 +174,55 @@ export function RecordingPanel({
         }
 
         if (result && takeMode) {
-          let group = takeGroupsByTrack[track.id];
-          if (!group) {
-            const groupResponse = await apiRequest(
+          try {
+            let group = takeGroupsByTrack[track.id];
+            if (!group) {
+              const groupResponse = await apiRequest(
+                "POST",
+                `/api/studio/projects/${projectId}/comping/groups`,
+                {
+                  trackId: track.id,
+                  name: `${track.name} Takes`,
+                  startTime: recordStartTime,
+                  endTime: recordStartTime + duration,
+                },
+              );
+              const createdGroup = await groupResponse.json();
+              group = { id: createdGroup.id, count: 0 };
+            }
+            const laneResponse = await apiRequest(
               "POST",
-              `/api/studio/projects/${projectId}/comping/groups`,
-              {
-                trackId: track.id,
-                name: `${track.name} Takes`,
-                startTime: recordStartTime,
-                endTime: recordStartTime + duration,
-              },
-            );
-            const createdGroup = await groupResponse.json();
-            group = { id: createdGroup.id, count: 0 };
-          }
-          const laneResponse = await apiRequest(
-            "POST",
-            `/api/studio/projects/${projectId}/comping/lanes`,
-            {
-              takeGroupId: group.id,
-              audioClipId: result.clipId,
-              name: `Take ${group.count + 1}`,
-              laneIndex: group.count,
-            },
-          );
-          const lane = await laneResponse.json();
-          if (group.count === 0) {
-            await apiRequest(
-              "POST",
-              `/api/studio/projects/${projectId}/comping/segments`,
+              `/api/studio/projects/${projectId}/comping/lanes`,
               {
                 takeGroupId: group.id,
-                takeLaneId: lane.id,
-                startTime: recordStartTime,
-                endTime: recordStartTime + duration,
-                isSelected: true,
-                order: 0,
+                audioClipId: result.clipId,
+                name: `Take ${group.count + 1}`,
+                laneIndex: group.count,
               },
             );
+            const lane = await laneResponse.json();
+            if (group.count === 0) {
+              await apiRequest(
+                "POST",
+                `/api/studio/projects/${projectId}/comping/groups/${group.id}/select`,
+                {
+                  laneId: lane.id,
+                  startTime: recordStartTime,
+                  endTime: recordStartTime + duration,
+                },
+              );
+            }
+            setTakeGroupsByTrack((current) => ({
+              ...current,
+              [track.id]: { id: group!.id, count: group!.count + 1 },
+            }));
+            queryClient.invalidateQueries({
+              queryKey: ["/api/studio/projects", projectId, "comping", "groups"],
+            });
+          } catch (error) {
+            logger.error(`Saved recording but failed to create takes for ${track.name}:`, error);
+            takeGroupingFailures.push(track.name);
           }
-          setTakeGroupsByTrack((current) => ({
-            ...current,
-            [track.id]: { id: group!.id, count: group!.count + 1 },
-          }));
-          queryClient.invalidateQueries({
-            queryKey: ["/api/studio/projects", projectId, "comping", "groups"],
-          });
         }
 
         queryClient.invalidateQueries({
@@ -231,10 +234,16 @@ export function RecordingPanel({
         queryKey: ["/api/studio/projects", projectId, "tracks"],
       });
 
-      toast({
-        title: "Recording Saved",
-        description: `Added to ${armedTracks.length} track${armedTracks.length > 1 ? "s" : ""}`,
-      });
+      toast(takeGroupingFailures.length
+        ? {
+            title: "Recording Saved; Take Grouping Failed",
+            description: `Audio was saved, but take lanes could not be created for ${takeGroupingFailures.join(", ")}. Try enabling Take mode again for the next recording.`,
+            variant: "destructive",
+          }
+        : {
+            title: "Recording Saved",
+            description: `Added to ${armedTracks.length} track${armedTracks.length > 1 ? "s" : ""}`,
+          });
 
       clearRecording();
     } catch (err) {

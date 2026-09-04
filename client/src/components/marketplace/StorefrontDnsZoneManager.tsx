@@ -1736,10 +1736,10 @@ export function StorefrontDnsZoneManager({
       });
       qc.invalidateQueries({ queryKey: ["/api/storefront/my"] });
       qc.invalidateQueries({
-        queryKey: ["/api/storefront-domains", storefrontId],
+        queryKey: ["storefront-domains-for-storefront", storefrontId],
       });
       qc.invalidateQueries({
-        queryKey: ["/api/storefront-domains/platform", storefrontId],
+        queryKey: ["storefront-platform-domain", storefrontId],
       });
       // Clear search so the "Get a Domain" tab looks fresh
       setSearchInput("");
@@ -1780,10 +1780,10 @@ export function StorefrontDnsZoneManager({
       qc.invalidateQueries({ queryKey: ["/api/dns-manager/usage"] });
       qc.invalidateQueries({ queryKey: ["/api/storefront/my"] });
       qc.invalidateQueries({
-        queryKey: ["/api/storefront-domains", storefrontId],
+        queryKey: ["storefront-domains-for-storefront", storefrontId],
       });
       qc.invalidateQueries({
-        queryKey: ["/api/storefront-domains/platform", storefrontId],
+        queryKey: ["storefront-platform-domain", storefrontId],
       });
       toast({ title: "Domain removed" });
     },

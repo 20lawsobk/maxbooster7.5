@@ -116,6 +116,13 @@ const reorderLanesSchema = z.object({
   laneIds: z.array(z.string().min(1)),
 });
 
+const selectSegmentSchema = z.object({
+  laneId: z.string().min(1),
+  startTime: z.number().min(0),
+  endTime: z.number().min(0),
+  compVersionId: z.string().optional(),
+});
+
 async function verifyProjectOwnership(
   projectId: string,
   userId: string,
@@ -566,6 +573,70 @@ router.post(
           .json({ error: "Invalid data", details: error.issues });
       }
       res.status(500).json({ error: "Failed to create take segment" });
+    }
+  },
+);
+
+router.post(
+  "/projects/:projectId/comping/groups/:groupId/select",
+  requireAuth,
+  async (req, res) => {
+    try {
+      const { projectId, groupId } = req.params as Record<string, string>;
+      const userId = req.user!.id;
+
+      const group = await verifyTakeGroupOwnership(groupId, projectId, userId);
+      if (!group) {
+        return res.status(404).json({ error: "Take group not found" });
+      }
+
+      const data = selectSegmentSchema?.parse(req.body);
+      if (data.endTime <= data.startTime) {
+        return res
+          .status(400)
+          .json({ error: "endTime must be greater than startTime" });
+      }
+
+      const lane = await verifyTakeLaneOwnership(data.laneId, projectId, userId);
+      if (!lane || lane.group.id !== group.id) {
+        return res.status(404).json({ error: "Take lane not found" });
+      }
+
+      if (data.compVersionId) {
+        const version = await verifyCompVersionOwnership(
+          data.compVersionId,
+          projectId,
+          userId,
+        );
+        if (!version || version.takeGroupId !== group.id) {
+          return res.status(404).json({ error: "Comp version not found" });
+        }
+      }
+
+      const segment = await compingService?.selectSegmentFromLane(
+        groupId,
+        data.laneId,
+        data.startTime,
+        data.endTime,
+        data.compVersionId,
+      );
+
+      res.status(201).json(segment);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error selecting comp segment:");
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Invalid data", details: error.issues });
+      }
+      if (
+        error instanceof Error &&
+        (error.message === "endTime must be greater than startTime" ||
+          error.message === "Take lane does not belong to this take group")
+      ) {
+        return res.status(400).json({ error: error.message });
+      }
+      res.status(500).json({ error: "Failed to select comp segment" });
     }
   },
 );

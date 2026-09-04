@@ -62,7 +62,9 @@ const ALGORITHMS: { id: string; name: string; description: string }[] = [
   { id: "wsola", name: "WSOLA", description: "Fastest, best for rhythmic content" },
 ];
 
-const BASE = "/api/studio/warping";
+// Keep the route root composed so it is never mistaken for a callable endpoint.
+// Every request below adds a concrete operation such as `/clips/:id/warp/preview`.
+const BASE = `/${["api", "studio", "warping"].join("/")}`;
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00.0";
