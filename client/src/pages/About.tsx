@@ -12,17 +12,15 @@ export default function About() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/">
-              <div className="cursor-pointer">
-                <Logo size="md" />
-              </div>
+              <Logo size="md" />
             </Link>
             <div className="flex items-center space-x-4">
-              <Link href="/solo-founder-story">
-                <Button variant="ghost">Founder Story</Button>
-              </Link>
-              <Link href="/pricing">
-                <Button>Get Started</Button>
-              </Link>
+              <Button asChild variant="ghost">
+                <Link href="/solo-founder-story">Founder Story</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/pricing">Get Started</Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -146,43 +144,23 @@ export default function About() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {[
-              { value: "10,000+", label: "Active Artists" },
-              { value: "500K+", label: "Tracks Distributed" },
-              { value: "$2M+", label: "Artist Earnings" },
-              { value: "150+", label: "DSP Partners" },
-            ].map((stat, i) => (
-              <div key={i}>
-                <div className="text-4xl font-bold text-blue-600 mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-gray-600 dark:text-gray-400">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-cyan-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white mb-6">
-            Join Thousands of Independent Artists
+            Build Your Independent Music Career
           </h2>
           <p className="text-xl text-white/90 mb-8">
-            Start your 90-day risk-free trial today
+            Get started with our 90-day money-back guarantee
           </p>
-          <Link href="/pricing">
-            <Button size="lg" variant="secondary" className="px-8 py-4 text-lg">
-              Get Started Now
-            </Button>
-          </Link>
+          <Button
+            asChild
+            size="lg"
+            variant="secondary"
+            className="px-8 py-4 text-lg"
+          >
+            <Link href="/pricing">Get Started Now</Link>
+          </Button>
         </div>
       </section>
     </div>

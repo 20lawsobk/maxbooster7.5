@@ -205,6 +205,7 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
+  const [usersPage, setUsersPage] = useState(1);
   const [moderationFilter, setModerationFilter] = useState("pending");
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
   const [showDeleteUserDialog, setShowDeleteUserDialog] = useState(false);
@@ -233,15 +234,15 @@ export default function Admin() {
   } = useQuery<UsersResponse>({
     queryKey: [
       "/api/admin/users",
-      { search: searchTerm, status: statusFilter, plan: planFilter },
+      { search: searchTerm, status: statusFilter, plan: planFilter, page: usersPage },
     ],
-    enabled: !!user,
+    enabled: user?.role === "admin",
   });
 
   const { data: adminAnalytics, isLoading: analyticsLoading } =
     useQuery<AdminAnalytics>({
       queryKey: ["/api/admin/analytics"],
-      enabled: !!user,
+      enabled: user?.role === "admin",
     });
 
   const {
@@ -250,7 +251,7 @@ export default function Admin() {
     refetch: refetchHealth,
   } = useQuery<SystemHealth>({
     queryKey: ["/api/admin/system-health"],
-    enabled: !!user,
+    enabled: user?.role === "admin",
     refetchInterval: 30000,
   });
 
@@ -267,7 +268,7 @@ export default function Admin() {
     error?: string;
   }>({
     queryKey: ["/api/dns/resolver/status"],
-    enabled: !!user,
+    enabled: user?.role === "admin",
     refetchInterval: 60000,
     retry: 1,
     queryFn: async () => {
@@ -288,12 +289,12 @@ export default function Admin() {
     refetch: refetchModeration,
   } = useQuery<ModerationReportsResponse>({
     queryKey: ["/api/admin/moderation/reports", { status: moderationFilter }],
-    enabled: !!user,
+    enabled: user?.role === "admin",
   });
 
   const { data: platformSettings } = useQuery<PlatformSettings>({
     queryKey: ["/api/admin/settings"],
-    enabled: !!user,
+    enabled: user?.role === "admin",
   });
 
   const {
@@ -311,9 +312,17 @@ export default function Admin() {
     };
     timeRemaining: string | null;
     timeRemainingMs: number | null;
+      auditTrail?: {
+        action: "activated" | "deactivated" | "extended";
+        adminId: string;
+        occurredAt: string;
+        reason: string | null;
+        expiresAt: string | null;
+        durationHours?: number;
+      }[];
   }>({
     queryKey: ["/api/admin/payment-bypass/status"],
-    enabled: !!user,
+    enabled: user?.role === "admin",
     refetchInterval: 30000,
   });
 
@@ -593,6 +602,24 @@ export default function Admin() {
     },
   });
 
+  const updatePlatformSettingsMutation = useMutation({
+    mutationFn: async (settings: Partial<PlatformSettings>) => {
+      const response = await apiRequest("PUT", "/api/admin/settings", settings);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+      toast({ title: "Settings updated" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Settings update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -604,7 +631,7 @@ export default function Admin() {
     );
   }
 
-  if (!user) return null;
+  if (!user || user.role !== "admin") return null;
 
   const users = usersData?.users || [];
   const reports = moderationReports?.reports || [];
@@ -885,11 +912,17 @@ export default function Admin() {
               <Input
                 placeholder="Search users..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setUsersPage(1);
+                }}
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(value) => {
+              setStatusFilter(value);
+              setUsersPage(1);
+            }}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -901,7 +934,10 @@ export default function Admin() {
                 <SelectItem value="banned">Banned</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={planFilter} onValueChange={setPlanFilter}>
+            <Select value={planFilter} onValueChange={(value) => {
+              setPlanFilter(value);
+              setUsersPage(1);
+            }}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Plan" />
               </SelectTrigger>
@@ -1036,6 +1072,7 @@ export default function Admin() {
                   variant="outline"
                   size="sm"
                   disabled={usersData.pagination.page <= 1}
+                  onClick={() => setUsersPage((page) => Math.max(1, page - 1))}
                 >
                   Previous
                 </Button>
@@ -1044,6 +1081,11 @@ export default function Admin() {
                   size="sm"
                   disabled={
                     usersData.pagination.page >= usersData.pagination.totalPages
+                  }
+                  onClick={() =>
+                    setUsersPage((page) =>
+                      Math.min(usersData.pagination.totalPages, page + 1),
+                    )
                   }
                 >
                   Next
@@ -1922,6 +1964,54 @@ export default function Admin() {
             </Card>
           )}
 
+          {bypassStatus?.auditTrail && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Clock className="h-4 w-4 text-blue-500" />
+                  Payment Bypass Audit Trail
+                </CardTitle>
+                <CardDescription>
+                  Latest administrative bypass changes retained in platform settings.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {bypassStatus.auditTrail.length > 0 ? (
+                  <div className="space-y-2">
+                    {bypassStatus.auditTrail.slice(0, 10).map((event, index) => (
+                      <div
+                        key={`${event.occurredAt}-${index}`}
+                        className="flex flex-col gap-1 border-b pb-2 last:border-0 text-sm"
+                      >
+                        <span className="font-medium capitalize">
+                          {event.action} by {event.adminId}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {new Date(event.occurredAt).toLocaleString()}
+                          {event.durationHours
+                            ? ` · ${event.durationHours} hour(s)`
+                            : ""}
+                          {event.expiresAt
+                            ? ` · expires ${new Date(event.expiresAt).toLocaleString()}`
+                            : ""}
+                        </span>
+                        {event.reason && (
+                          <span className="text-muted-foreground">
+                            Reason: {event.reason}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No payment bypass changes have been recorded.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm">
@@ -1994,6 +2084,18 @@ export default function Admin() {
               >
                 {platformSettings?.maintenanceMode ? "Enabled" : "Disabled"}
               </Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={updatePlatformSettingsMutation.isPending}
+                onClick={() =>
+                  updatePlatformSettingsMutation.mutate({
+                    maintenanceMode: !platformSettings?.maintenanceMode,
+                  })
+                }
+              >
+                {platformSettings?.maintenanceMode ? "Disable" : "Enable"}
+              </Button>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div>
@@ -2011,6 +2113,19 @@ export default function Admin() {
                   ? "Enabled"
                   : "Disabled"}
               </Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={updatePlatformSettingsMutation.isPending}
+                onClick={() =>
+                  updatePlatformSettingsMutation.mutate({
+                    userRegistrationEnabled:
+                      !platformSettings?.userRegistrationEnabled,
+                  })
+                }
+              >
+                {platformSettings?.userRegistrationEnabled ? "Disable" : "Enable"}
+              </Button>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div>
@@ -2024,6 +2139,18 @@ export default function Admin() {
               >
                 {platformSettings?.emailNotifications ? "Enabled" : "Disabled"}
               </Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={updatePlatformSettingsMutation.isPending}
+                onClick={() =>
+                  updatePlatformSettingsMutation.mutate({
+                    emailNotifications: !platformSettings?.emailNotifications,
+                  })
+                }
+              >
+                {platformSettings?.emailNotifications ? "Disable" : "Enable"}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -2103,17 +2230,17 @@ export default function Admin() {
       value: string;
     } | null>(null);
 
-    const { data: ratesData, refetch: refetchRates } = useQuery<{
+    const { data: ratesData, refetch: refetchRates, isLoading: ratesLoading, isError: ratesError, error: ratesQueryError } = useQuery<{
       rates: RoyaltyRateRow[];
     }>({
       queryKey: ["/api/admin/financial-config/royalty-rates"],
     });
-    const { data: treatiesData, refetch: refetchTreaties } = useQuery<{
+    const { data: treatiesData, refetch: refetchTreaties, isLoading: treatiesLoading, isError: treatiesError, error: treatiesQueryError } = useQuery<{
       treaties: TaxTreatyRow[];
     }>({
       queryKey: ["/api/admin/financial-config/tax-treaties"],
     });
-    const { data: settingsData, refetch: refetchSettings } = useQuery<{
+    const { data: settingsData, refetch: refetchSettings, isLoading: settingsLoading, isError: settingsError, error: settingsQueryError } = useQuery<{
       settings: LabelSettingRow[];
     }>({
       queryKey: ["/api/admin/financial-config/label-settings"],
@@ -2185,6 +2312,40 @@ export default function Admin() {
       },
       onError: () => toast({ title: "Update failed", variant: "destructive" }),
     });
+
+    if (ratesLoading || treatiesLoading || settingsLoading) {
+      return <Skeleton className="h-96" />;
+    }
+
+    if (ratesError || treatiesError || settingsError) {
+      const error =
+        ratesQueryError || treatiesQueryError || settingsQueryError;
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Financial configuration unavailable</CardTitle>
+            <CardDescription>
+              {error instanceof Error
+                ? error.message
+                : "The financial configuration could not be loaded."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="outline"
+              onClick={() => {
+                refetchRates();
+                refetchTreaties();
+                refetchSettings();
+              }}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      );
+    }
 
     return (
       <div className="space-y-6">

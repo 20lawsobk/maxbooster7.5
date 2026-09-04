@@ -38,7 +38,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { useRequireSubscription } from "@/hooks/useRequireAuth";
+import { useRequireAdmin } from "@/hooks/useRequireAuth";
 import { format } from "date-fns";
 
 interface AuditLogEntry {
@@ -112,10 +112,11 @@ function ResultBadge({ result }: { result: string }) {
 }
 
 export default function AuditLogPage() {
-  const { user } = useRequireSubscription();
+  const { user, isLoading: authLoading } = useRequireAdmin();
   const [riskFilter, setRiskFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("");
   const [page, setPage] = useState(1);
+  const isAdmin = user?.role === "admin";
 
   const queryParams = new URLSearchParams({
     limit: "50",
@@ -124,7 +125,7 @@ export default function AuditLogPage() {
     ...(actionFilter && { action: actionFilter }),
   });
 
-  const { data, isLoading, refetch, isRefetching } = useQuery<{
+  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery<{
     logs: AuditLogEntry[];
     page: number;
   }>({
@@ -133,25 +134,42 @@ export default function AuditLogPage() {
       apiRequest("GET", `/api/admin/audit-log?${queryParams}`).then((r) =>
         r.json(),
       ),
+    enabled: isAdmin,
     refetchInterval: 30_000,
   });
 
-  const { data: summary } = useQuery<AuditSummary>({
+  const {
+    data: summary,
+    isError: isSummaryError,
+    error: summaryError,
+    refetch: refetchSummary,
+    isRefetching: isSummaryRefetching,
+  } = useQuery<AuditSummary>({
     queryKey: ["admin-audit-log-summary"],
     queryFn: () =>
       apiRequest("GET", "/api/admin/audit-log/summary").then((r) => r.json()),
+    enabled: isAdmin,
     refetchInterval: 60_000,
   });
 
-  if (user?.role !== "admin") {
+  if (authLoading) {
     return (
       <AppLayout>
         <div className="p-6">
-          <p className="text-muted-foreground">Admin access required.</p>
+          <p className="text-muted-foreground">Loading admin access…</p>
         </div>
       </AppLayout>
     );
   }
+
+  if (!isAdmin) return null;
+
+  const errorMessage =
+    error instanceof Error ? error.message : "Failed to load audit events.";
+  const summaryErrorMessage =
+    summaryError instanceof Error
+      ? summaryError.message
+      : "Failed to load the audit summary.";
 
   return (
     <AppLayout>
@@ -170,11 +188,13 @@ export default function AuditLogPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refetch()}
-            disabled={isRefetching}
+            onClick={() => {
+              void Promise.all([refetch(), refetchSummary()]);
+            }}
+            disabled={isRefetching || isSummaryRefetching}
           >
             <RefreshCw
-              className={`w-4 h-4 mr-2 ${isRefetching ? "animate-spin" : ""}`}
+              className={`w-4 h-4 mr-2 ${isRefetching || isSummaryRefetching ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>
@@ -215,6 +235,13 @@ export default function AuditLogPage() {
               </CardContent>
             </Card>
           </div>
+        )}
+        {isSummaryError && (
+          <Card className="border-destructive">
+            <CardContent className="py-4 text-sm text-destructive">
+              {summaryErrorMessage}
+            </CardContent>
+          </Card>
         )}
 
         {/* Filters */}
@@ -274,6 +301,12 @@ export default function AuditLogPage() {
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       Loading…
+                    </TableCell>
+                  </TableRow>
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-destructive">
+                      {errorMessage}
                     </TableCell>
                   </TableRow>
                 ) : (data?.logs ?? []).length === 0 ? (

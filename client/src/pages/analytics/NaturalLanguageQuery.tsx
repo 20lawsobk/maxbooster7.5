@@ -47,14 +47,27 @@ const exampleQueries = [
 ];
 
 const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
+  const values = Array.isArray(data.values)
+    ? data.values.map((value) => Number(value)).filter(Number.isFinite)
+    : [];
+  const labels = Array.isArray(data.labels) ? data.labels : [];
+
   if (data.chartType === "line") {
-    const max = Math.max(...data.values);
-    const min = Math.min(...data.values);
+    if (values.length === 0) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          No chart data is available for this query.
+        </p>
+      );
+    }
+
+    const max = Math.max(...values);
+    const min = Math.min(...values);
     const range = max - min || 1;
 
-    const points = data.values
+    const points = values
       .map((value: number, i: number) => {
-        const x = (i / ((data.values.length - 1 || 1))) * 100;
+        const x = (i / ((values.length - 1 || 1))) * 100;
         const y = 100 - ((value - min) / range) * 80 - 10;
         return `${x},${y}`;
       })
@@ -75,9 +88,9 @@ const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
               </linearGradient>
             </defs>
             <path
-              d={`M0,100 L0,${100 - ((data.values[0] - min) / range) * 80 - 10} ${data.values
+              d={`M0,100 L0,${100 - ((values[0] - min) / range) * 80 - 10} ${values
                 .map((v: number, i: number) => {
-                  const x = (i / ((data.values.length - 1 || 1))) * 100;
+                  const x = (i / ((values.length - 1 || 1))) * 100;
                   const y = 100 - ((v - min) / range) * 80 - 10;
                   return `L${x},${y}`;
                 })
@@ -94,7 +107,7 @@ const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
           </svg>
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
-          {data.labels.map((label: string, i: number) => (
+          {labels.map((label: string, i: number) => (
             <span key={i}>{label}</span>
           ))}
         </div>
@@ -103,26 +116,52 @@ const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
   }
 
   if (data.chartType === "bar") {
+    const items = Array.isArray(data.items)
+      ? data.items
+      : labels.map((label, idx) => ({
+          name: label,
+          value: values[idx] ?? 0,
+        }));
+    const maxValue = Math.max(
+      ...items.map((item) => Number(item.value) || 0),
+      1,
+    );
+
+    if (items.length === 0) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          No chart data is available for this query.
+        </p>
+      );
+    }
+
     return (
       <div className="space-y-3">
-        {data.items.map((item: Record<string, unknown>, idx: number) => (
-          <div key={idx} className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span>{item.name}</span>
-              <span className="font-semibold">
-                ${item.value.toLocaleString()} ({item.percentage}%)
-              </span>
+        {items.map((item: Record<string, unknown>, idx: number) => {
+          const value = Number(item.value) || 0;
+          const percentage =
+            typeof item.percentage === "number"
+              ? item.percentage
+              : Math.round((value / maxValue) * 100);
+          return (
+            <div key={idx} className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span>{item.name}</span>
+                <span className="font-semibold">
+                  {value.toLocaleString()} ({percentage}%)
+                </span>
+              </div>
+              <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${percentage}%` }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                />
+              </div>
             </div>
-            <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${item.percentage}%` }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   }
@@ -239,8 +278,59 @@ const ResultMetric = memo(({ data }: { data: Record<string, unknown> }) => {
 ResultMetric.displayName = "ResultMetric";
 
 const ResultTable = memo(({ data }: { data: Record<string, unknown> }) => {
-  const items = data.tracks || data.platforms || [];
-  const isTrackData = !!data.tracks;
+  const items = Array.isArray(data.tracks)
+    ? data.tracks
+    : Array.isArray(data.releases)
+      ? data.releases
+      : Array.isArray(data.platforms)
+        ? data.platforms
+        : [];
+  const isTrackData = Array.isArray(data.tracks) || Array.isArray(data.releases);
+  const primaryLabel = Array.isArray(data.releases) ? "Release" : "Track";
+  const comparisonRows =
+    data.current && data.previous ? [data.current, data.previous] : [];
+
+  if (comparisonRows.length > 0) {
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left p-3 font-semibold">Period</th>
+              <th className="text-right p-3 font-semibold">Streams</th>
+              <th className="text-right p-3 font-semibold">Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {comparisonRows.map((item, idx) => (
+              <tr
+                key={idx}
+                className={
+                  idx % 2 === 0 ? "bg-slate-50 dark:bg-slate-900/50" : ""
+                }
+              >
+                <td className="p-3 font-medium">{item.label}</td>
+                <td className="p-3 text-right">
+                  {Number(item.streams ?? 0).toLocaleString()}
+                </td>
+                <td className="p-3 text-right">
+                  ${Number(item.revenue ?? 0).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No tabular data is available for this query.
+      </p>
+    );
+  }
 
   return (
     <div className="overflow-x-auto">
@@ -248,7 +338,7 @@ const ResultTable = memo(({ data }: { data: Record<string, unknown> }) => {
         <thead>
           <tr className="border-b">
             <th className="text-left p-3 font-semibold">
-              {isTrackData ? "Track" : "Platform"}
+              {isTrackData ? primaryLabel : "Platform"}
             </th>
             <th className="text-right p-3 font-semibold">
               {isTrackData ? "Streams" : "RPS"}
@@ -273,11 +363,13 @@ const ResultTable = memo(({ data }: { data: Record<string, unknown> }) => {
               <td className="p-3 font-medium">{item.name}</td>
               <td className="p-3 text-right">
                 {isTrackData
-                  ? item.streams.toLocaleString()
-                  : `$${item.rps.toFixed(4)}`}
+                  ? Number(item.streams ?? 0).toLocaleString()
+                  : item.rps === undefined
+                    ? "—"
+                    : `$${Number(item.rps).toFixed(4)}`}
               </td>
               <td className="p-3 text-right">
-                ${item.revenue.toLocaleString()}
+                ${Number(item.revenue ?? 0).toLocaleString()}
               </td>
               <td className="p-3 text-right">
                 {isTrackData ? (
@@ -290,7 +382,7 @@ const ResultTable = memo(({ data }: { data: Record<string, unknown> }) => {
                     {item.growth}%
                   </span>
                 ) : (
-                  item.streams.toLocaleString()
+                  Number(item.streams ?? 0).toLocaleString()
                 )}
               </td>
             </motion.tr>
@@ -311,66 +403,73 @@ export default function NaturalLanguageQuery({
   const [history, setHistory] = useState<QueryHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
-  const handleQuery = useCallback(async (queryText: string) => {
-    setIsLoading(true);
-    setResult(null);
+  const handleQuery = useCallback(
+    async (queryText: string) => {
+      const trimmedQuery = queryText.trim();
+      if (!trimmedQuery || isLoading) return;
 
-    try {
-      const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch("/api/analytics/natural-language-query", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-        },
-        credentials: "include",
-        body: JSON.stringify({ query: queryText }),
-      });
+      setIsLoading(true);
+      setResult(null);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.result) {
-          setResult(data.result);
-          setHistory((prev) => [
-            {
-              query: queryText,
-              timestamp: new Date(),
-              resultType: data.result.type,
-            },
-            ...prev.slice(0, 9),
-          ]);
+      try {
+        let queryResult: QueryResult;
+        if (onQuery) {
+          queryResult = await onQuery(trimmedQuery);
         } else {
-          setResult({
-            type: "text",
-            title: "No Results",
-            summary:
-              data.message ||
-              `No data found for: "${queryText}". Try connecting your streaming platforms in Settings to get real analytics.`,
-            data: null,
+          const csrfToken = getCsrfTokenFromCookie();
+          const response = await fetch("/api/analytics/natural-language-query", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+            },
+            credentials: "include",
+            body: JSON.stringify({ query: trimmedQuery }),
           });
+
+          const data = await response.json().catch(() => null);
+          if (!response.ok) {
+            throw new Error(
+              data?.message ||
+                data?.error ||
+                `Request failed (${response.status})`,
+            );
+          }
+          if (!data?.success || !data.result) {
+            throw new Error(
+              data?.message ||
+                data?.error ||
+                "The analytics service returned an invalid response.",
+            );
+          }
+          queryResult = data.result;
         }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
+
+        setResult(queryResult);
+        setHistory((prev) => [
+          {
+            query: trimmedQuery,
+            timestamp: new Date(),
+            resultType: queryResult.type,
+          },
+          ...prev.slice(0, 9),
+        ]);
+      } catch (error) {
         setResult({
-          type: "text",
+          type: "text" as const,
           title: "Query Failed",
           summary:
-            errorData.message ||
-            `Unable to process your query right now. Please try again later.`,
+            error instanceof Error
+              ? error.message
+              : "The analytics service could not process this query.",
           data: null,
         });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      setResult({
-        type: "text",
-        title: "Connection Error",
-        summary: `Could not reach the analytics service. Please check your connection and try again.`,
-        data: null,
-      });
-    }
-
-    setIsLoading(false);
-  }, []);
+    },
+    [isLoading, onQuery],
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -411,6 +510,7 @@ export default function NaturalLanguageQuery({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Ask anything about your music analytics..."
                 className="pl-12 pr-12 h-14 text-lg"
+                aria-label="Analytics question"
               />
               <Button
                 type="submit"
@@ -441,6 +541,7 @@ export default function NaturalLanguageQuery({
                     variant="outline"
                     size="sm"
                     className="text-xs"
+                    disabled={isLoading}
                     onClick={() => {
                       setQuery(example.text);
                       handleQuery(example.text);
@@ -457,7 +558,7 @@ export default function NaturalLanguageQuery({
       </Card>
 
       <AnimatePresence>
-        {showHistory && history.length > 0 && (
+        {showHistory && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
@@ -480,32 +581,40 @@ export default function NaturalLanguageQuery({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {history.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
-                      onClick={() => {
-                        setQuery(item.query);
-                        handleQuery(item.query);
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Search className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{item.query}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {item.resultType}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {item.timestamp.toLocaleTimeString()}
-                        </span>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {history.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Your submitted queries will appear here during this session.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {history.map((item, idx) => (
+                      <button
+                        type="button"
+                        key={idx}
+                        className="flex w-full items-center justify-between rounded p-2 text-left hover:bg-slate-50 disabled:cursor-not-allowed dark:hover:bg-slate-900"
+                        onClick={() => {
+                          setQuery(item.query);
+                          handleQuery(item.query);
+                        }}
+                        disabled={isLoading}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Search className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{item.query}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {item.resultType}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {item.timestamp.toLocaleTimeString()}
+                          </span>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>

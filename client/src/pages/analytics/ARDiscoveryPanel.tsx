@@ -1,6 +1,7 @@
 import { useState, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import {
   Card,
   CardContent,
@@ -18,21 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, TrendingUp, Users, Globe, Target, Award, Flame, Search, Play, ArrowUp, Zap, BarChart3, Loader2, RefreshCw } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Target, Award, Flame, Search, Play, ArrowUp, Zap, BarChart3, Loader2, RefreshCw } from "lucide-react";
 
 interface EmergingArtist {
   id: string;
   name: string;
-  genre: string;
-  country: string;
-  countryCode: string;
+  location?: string | null;
   growthScore: number;
   signingPotential: "high" | "medium" | "low";
   monthlyListeners: number;
   monthlyGrowth: number;
-  socialFollowing: number;
   recentReleases: number;
-  playlistReach: number;
+  recentStreams: number;
   engagementRate: number;
   imageUrl?: string;
   topTrack?: string;
@@ -43,14 +41,6 @@ interface ARDiscoveryProps {
   artists?: EmergingArtist[];
   onArtistSelect?: (artist: EmergingArtist) => void;
 }
-
-const getCountryFlag = (countryCode: string) => {
-  const codePoints = countryCode
-    .toUpperCase()
-    .split("")
-    .map((char) => 127397 + char.charCodeAt(0));
-  return String.fromCodePoint(...codePoints);
-};
 
 const GrowthTrajectoryMini = memo(
   ({ trajectory }: { trajectory: number[] }) => {
@@ -151,14 +141,11 @@ const ArtistCard = memo(
             <div className="flex items-start justify-between mb-3">
               <div>
                 <h3 className="font-bold text-lg">{artist.name}</h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{getCountryFlag(artist.countryCode)}</span>
-                  <span>{artist.country}</span>
-                  <span>•</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {artist.genre}
-                  </Badge>
-                </div>
+                {artist.location && (
+                  <p className="text-sm text-muted-foreground">
+                    {artist.location}
+                  </p>
+                )}
               </div>
               <div className="text-right">
                 <p
@@ -187,13 +174,13 @@ const ArtistCard = memo(
               </div>
               <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
                 <p className="text-sm font-bold">
-                  {(artist.playlistReach / 1000000).toFixed(1)}M
+                  {(artist.recentStreams / 1000).toFixed(0)}K
                 </p>
-                <p className="text-xs text-muted-foreground">Reach</p>
+                <p className="text-xs text-muted-foreground">Streams</p>
               </div>
               <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                <p className="text-sm font-bold">{artist.engagementRate}%</p>
-                <p className="text-xs text-muted-foreground">Engagement</p>
+                <p className="text-sm font-bold">{artist.recentReleases}</p>
+                <p className="text-xs text-muted-foreground">Releases</p>
               </div>
             </div>
 
@@ -285,8 +272,7 @@ export default function ARDiscoveryPanel({
   artists: propArtists,
   onArtistSelect,
 }: ARDiscoveryProps) {
-  const [genreFilter, setGenreFilter] = useState("all");
-  const [countryFilter, setCountryFilter] = useState("all");
+  const { user, isLoading: authLoading } = useRequireSubscription();
   const [potentialFilter, setPotentialFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("growthScore");
@@ -294,14 +280,14 @@ export default function ARDiscoveryPanel({
   const {
     data: discoveryResponse,
     isLoading,
-    
+    isError,
+    error,
     refetch,
   } = useQuery<{
     data: EmergingArtist[];
-    filters: { genres: string[]; countries: string[] };
   }>({
-    queryKey: ["/api/analytics/ar-discovery", genreFilter, countryFilter],
-    enabled: !propArtists,
+    queryKey: ["/api/analytics/ar-discovery"],
+    enabled: !!user && !propArtists,
   });
 
   const discoveryData = discoveryResponse?.data ?? discoveryResponse;
@@ -309,20 +295,8 @@ export default function ARDiscoveryPanel({
     propArtists ||
     (Array.isArray(discoveryData) ? discoveryData : discoveryData?.data) ||
     [];
-  const availableGenres: string[] = discoveryResponse?.filters?.genres || [
-    ...new Set(artists.map((a: EmergingArtist) => a.genre)),
-  ];
-  const availableCountries: string[] = discoveryResponse?.filters
-    ?.countries || [...new Set(artists.map((a: EmergingArtist) => a.country))];
-
-  const genres = availableGenres;
-  const countries = availableCountries;
-
   const filteredArtists = artists
     .filter((artist: EmergingArtist) => {
-      if (genreFilter !== "all" && artist.genre !== genreFilter) return false;
-      if (countryFilter !== "all" && artist.country !== countryFilter)
-        return false;
       if (
         potentialFilter !== "all" &&
         artist.signingPotential !== potentialFilter
@@ -364,11 +338,15 @@ export default function ARDiscoveryPanel({
             ) / (artists.length || 1),
           )
         : 0,
-    totalReach: artists.reduce(
-      (sum: number, a: EmergingArtist) => sum + a.playlistReach,
+    totalRecentStreams: artists.reduce(
+      (sum: number, a: EmergingArtist) => sum + a.recentStreams,
       0,
     ),
   };
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : "Unable to load A&R discovery data. Please try again.";
 
   return (
     <div className="space-y-6">
@@ -440,12 +418,12 @@ export default function ARDiscoveryPanel({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Reach</p>
+                  <p className="text-sm text-muted-foreground">30-Day Streams</p>
                 <p className="text-3xl font-bold text-orange-600">
-                  {(stats.totalReach / 1000000).toFixed(0)}M
+                  {(stats.totalRecentStreams / 1000).toFixed(0)}K
                 </p>
               </div>
-              <Globe className="h-8 w-8 text-orange-400" />
+              <BarChart3 className="h-8 w-8 text-orange-400" />
             </div>
           </CardContent>
         </Card>
@@ -465,32 +443,6 @@ export default function ARDiscoveryPanel({
                 />
               </div>
             </div>
-            <Select value={genreFilter} onValueChange={setGenreFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Genre" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Genres</SelectItem>
-                {genres.map((genre) => (
-                  <SelectItem key={genre} value={genre}>
-                    {genre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={countryFilter} onValueChange={setCountryFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Country" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Countries</SelectItem>
-                {countries.map((country) => (
-                  <SelectItem key={country} value={country}>
-                    {country}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Select value={potentialFilter} onValueChange={setPotentialFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Potential" />
@@ -517,32 +469,54 @@ export default function ARDiscoveryPanel({
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredArtists.map((artist) => (
-              <ArtistCard
-                key={artist.id}
-                artist={artist}
-                onSelect={onArtistSelect}
-              />
-            ))}
-          </div>
-          {filteredArtists.length === 0 && (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-lg font-semibold">No artists found</p>
-                <p className="text-muted-foreground">
-                  Try adjusting your filters
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+      {(authLoading || (isLoading && !propArtists)) && (
+        <Card>
+          <CardContent className="flex min-h-48 items-center justify-center gap-2 p-12 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Loading artist discovery data…
+          </CardContent>
+        </Card>
+      )}
 
-        <div className="space-y-6">
-          <Card>
+      {isError && (
+        <Card className="border-destructive">
+          <CardContent className="p-6">
+            <p className="font-semibold">Could not load artist discovery data</p>
+            <p className="mt-1 text-sm text-muted-foreground">{errorMessage}</p>
+            <Button className="mt-4" variant="outline" onClick={() => refetch()}>
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {!authLoading && !isLoading && !isError && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredArtists.map((artist) => (
+                <ArtistCard
+                  key={artist.id}
+                  artist={artist}
+                  onSelect={onArtistSelect}
+                />
+              ))}
+            </div>
+            {filteredArtists.length === 0 && (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-lg font-semibold">No artists found</p>
+                  <p className="text-muted-foreground">
+                    Try adjusting your filters
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-indigo-500" />
@@ -553,9 +527,9 @@ export default function ARDiscoveryPanel({
             <CardContent>
               <GrowthTrajectoryChart artists={artists} />
             </CardContent>
-          </Card>
+            </Card>
 
-          <Card>
+            <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Award className="h-5 w-5 text-yellow-500" />
@@ -595,9 +569,10 @@ export default function ARDiscoveryPanel({
                 </div>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

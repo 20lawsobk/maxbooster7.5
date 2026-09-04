@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { requireAdmin } from "../middleware/auth.js";
+import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import { syncWeightsNow } from "../services/maxcoreSync.js";
 import { loopbackUrl, runtimePorts } from "../config/ports.js";
@@ -43,7 +43,7 @@ async function proxyToAI(
   }
 }
 
-router.post("/start", requireAdmin, async (req: Request, res: Response) => {
+router.post("/start", requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { mode = "session", n_sessions = 3, phase_id } = req.body || {};
     const result = await proxyToAI("/train/start", "POST", {
@@ -58,7 +58,7 @@ router.post("/start", requireAdmin, async (req: Request, res: Response) => {
   }
 });
 
-router.post("/stop", requireAdmin, async (_req: Request, res: Response) => {
+router.post("/stop", requireAuth, requireAdmin, async (_req: Request, res: Response) => {
   try {
     const result = await proxyToAI("/train/stop", "POST");
     res.status(result?.ok ? 200 : result?.status).json(result?.data);
@@ -68,7 +68,7 @@ router.post("/stop", requireAdmin, async (_req: Request, res: Response) => {
   }
 });
 
-router.get("/status", requireAdmin, async (_req: Request, res: Response) => {
+router.get("/status", requireAuth, requireAdmin, async (_req: Request, res: Response) => {
   try {
     const result = await proxyToAI("/train/status", "GET");
     res.status(result?.ok ? 200 : result?.status).json(result?.data);
@@ -78,7 +78,7 @@ router.get("/status", requireAdmin, async (_req: Request, res: Response) => {
   }
 });
 
-router.post("/session", requireAdmin, async (req: Request, res: Response) => {
+router.post("/session", requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const body = req.body || {};
     const result = await proxyToAI(
@@ -94,7 +94,7 @@ router.post("/session", requireAdmin, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/datasets", requireAdmin, async (_req: Request, res: Response) => {
+router.get("/datasets", requireAuth, requireAdmin, async (_req: Request, res: Response) => {
   try {
     const result = await proxyToAI("/train/datasets", "GET");
     res.status(result?.ok ? 200 : result?.status).json(result?.data);
@@ -104,7 +104,7 @@ router.get("/datasets", requireAdmin, async (_req: Request, res: Response) => {
   }
 });
 
-router.get("/schedule", requireAdmin, async (_req: Request, res: Response) => {
+router.get("/schedule", requireAuth, requireAdmin, async (_req: Request, res: Response) => {
   try {
     const result = await proxyToAI("/train/schedule", "GET");
     res.status(result?.ok ? 200 : result?.status).json(result?.data);

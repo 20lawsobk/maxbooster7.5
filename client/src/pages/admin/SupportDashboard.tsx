@@ -56,6 +56,8 @@ export default function SupportDashboard() {
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [ticketsError, setTicketsError] = useState<string | null>(null);
+  const [statsError, setStatsError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -66,6 +68,8 @@ export default function SupportDashboard() {
   }, [filterStatus, filterPriority, searchQuery, user]);
 
   const fetchTickets = async () => {
+    setIsLoading(true);
+    setTicketsError(null);
     try {
       const params = new URLSearchParams();
       if (filterStatus !== "all") params.append("status", filterStatus);
@@ -79,15 +83,21 @@ export default function SupportDashboard() {
         },
       );
 
-      if (!response.ok) throw new Error("Failed to fetch tickets");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || `Failed to fetch tickets (${response.status})`);
+      }
 
       const data = await response.json();
       setTickets(data);
     } catch (error: unknown) {
       logger.error("Error fetching tickets:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to load tickets";
+      setTicketsError(message);
       toast({
         title: "Error",
-        description: "Failed to load tickets",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -96,17 +106,24 @@ export default function SupportDashboard() {
   };
 
   const fetchStats = async () => {
+    setStatsError(null);
     try {
       const response = await fetch("/api/support/stats", {
         credentials: "include",
       });
 
-      if (!response.ok) throw new Error("Failed to fetch stats");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || `Failed to fetch stats (${response.status})`);
+      }
 
       const data = await response.json();
       setStats(data);
     } catch (error: unknown) {
       logger.error("Error fetching stats:", error);
+      setStatsError(
+        error instanceof Error ? error.message : "Failed to load ticket statistics",
+      );
     }
   };
 
@@ -123,7 +140,10 @@ export default function SupportDashboard() {
         body: JSON.stringify({ status }),
       });
 
-      if (!response.ok) throw new Error("Failed to update ticket");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || `Failed to update ticket (${response.status})`);
+      }
 
       toast({
         title: "Success",
@@ -248,6 +268,17 @@ export default function SupportDashboard() {
             </CardContent>
           </Card>
         </div>
+        {statsError && (
+          <div
+            className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            role="alert"
+          >
+            <span>Ticket statistics could not be loaded: {statsError}</span>
+            <Button size="sm" variant="outline" onClick={fetchStats}>
+              Retry statistics
+            </Button>
+          </div>
+        )}
 
         <Card>
           <CardHeader>
@@ -302,6 +333,16 @@ export default function SupportDashboard() {
                 <p className="text-sm text-muted-foreground">
                   Fetching support tickets…
                 </p>
+              </div>
+            ) : ticketsError ? (
+              <div
+                className="flex flex-col items-center gap-3 py-8 text-center text-muted-foreground"
+                role="alert"
+              >
+                <p>Support tickets could not be loaded: {ticketsError}</p>
+                <Button size="sm" variant="outline" onClick={fetchTickets}>
+                  Retry
+                </Button>
               </div>
             ) : tickets.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">

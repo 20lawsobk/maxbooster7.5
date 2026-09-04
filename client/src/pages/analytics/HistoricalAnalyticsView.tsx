@@ -54,6 +54,44 @@ const defaultMilestones: Milestone[] = [];
 
 const defaultTrends: TrendData[] = [];
 
+function QueryState({
+  title,
+  error,
+  onRetry,
+}: {
+  title: string;
+  error?: unknown;
+  onRetry: () => void;
+}) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : "The service returned an unexpected error.";
+
+  return (
+    <div
+      role="alert"
+      className="flex flex-col items-center justify-center gap-3 py-12 text-center"
+    >
+      <p className="font-medium">Unable to load {title}</p>
+      <p className="max-w-md text-sm text-muted-foreground">{message}</p>
+      <Button variant="outline" size="sm" onClick={onRetry}>
+        <RefreshCw className="mr-2 h-4 w-4" />
+        Try again
+      </Button>
+    </div>
+  );
+}
+
+function QueryLoading({ title }: { title: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+      <Loader2 className="h-7 w-7 animate-spin" />
+      <p className="text-sm">Loading {title}…</p>
+    </div>
+  );
+}
+
 const YearOverYearComparison = memo(({ data }: { data: YearData[] }) => {
   const [metric, setMetric] = useState<keyof YearData>("streams");
   const sortedData = [...data].sort((a, b) => b.year - a.year);
@@ -249,64 +287,74 @@ const CareerTimeline = memo(({ milestones }: { milestones: Milestone[] }) => {
         Career Milestones
       </h3>
 
-      <div className="relative">
-        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
-
-        <div className="space-y-6">
-          {sortedMilestones.map((milestone, idx) => (
-            <motion.div
-              key={milestone.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="relative flex items-start gap-4"
-            >
-              <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-900 border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center text-2xl z-10">
-                {milestone.icon}
-              </div>
-
-              <Card
-                className={`flex-1 border-l-4 ${getMilestoneColor(milestone.type)}`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-bold text-lg">{milestone.title}</h4>
-                      <p className="text-muted-foreground text-sm">
-                        {milestone.description}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">
-                        {new Date(milestone.date).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                      <Badge
-                        variant="outline"
-                        className="mt-1 capitalize text-xs"
-                      >
-                        {milestone.type}
-                      </Badge>
-                    </div>
-                  </div>
-                  {milestone.value && (
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-2xl font-bold text-indigo-600">
-                        {milestone.type === "revenue"
-                          ? `$${milestone.value.toLocaleString()}`
-                          : milestone.value.toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+      {sortedMilestones.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+          <Milestone className="mb-3 h-12 w-12 opacity-30" />
+          <p className="text-sm">No milestones reached yet</p>
+          <p className="mt-1 text-xs">
+            Milestones will appear here as your audience grows
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="relative">
+          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
+
+          <div className="space-y-6">
+            {sortedMilestones.map((milestone, idx) => (
+              <motion.div
+                key={milestone.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="relative flex items-start gap-4"
+              >
+                <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-900 border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center text-2xl z-10">
+                  {milestone.icon}
+                </div>
+
+                <Card
+                  className={`flex-1 border-l-4 ${getMilestoneColor(milestone.type)}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-bold text-lg">{milestone.title}</h4>
+                        <p className="text-muted-foreground text-sm">
+                          {milestone.description}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">
+                          {new Date(milestone.date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className="mt-1 capitalize text-xs"
+                        >
+                          {milestone.type}
+                        </Badge>
+                      </div>
+                    </div>
+                    {milestone.value && (
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-2xl font-bold text-indigo-600">
+                          {milestone.type === "revenue"
+                            ? `$${milestone.value.toLocaleString()}`
+                            : milestone.value.toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 });
@@ -319,7 +367,19 @@ const LongTermTrends = memo(({ trends }: { trends: TrendData[] }) => {
   const selectedTrend =
     trends.find((t) => t.metric === selectedMetric) || trends[0];
 
-  if (!selectedTrend) return null;
+  if (!selectedTrend || selectedTrend.data.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12 text-slate-500">
+          <LineChart className="mb-3 h-12 w-12 opacity-30" />
+          <p className="text-sm">No long-term trend data available yet</p>
+          <p className="mt-1 text-xs">
+            Trends will appear after analytics have been recorded over time
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const { data } = selectedTrend;
   const maxValue = Math.max(...data.map((d) => d.value));
@@ -462,7 +522,8 @@ export default function HistoricalAnalyticsView({
   const {
     data: yearlyResponse,
     isLoading: yearlyLoading,
-    isError: yearlyError,
+    isError: yearlyIsError,
+    error: yearlyError,
     refetch: refetchYearly,
   } = useQuery<{ data: YearData[] }>({
     queryKey: ["/api/analytics/historical/yearly"],
@@ -472,7 +533,8 @@ export default function HistoricalAnalyticsView({
   const {
     data: milestonesResponse,
     isLoading: milestonesLoading,
-    isError: milestonesError,
+    isError: milestonesIsError,
+    error: milestonesError,
     refetch: refetchMilestones,
   } = useQuery<{ data: Milestone[] }>({
     queryKey: ["/api/analytics/historical/milestones"],
@@ -482,29 +544,18 @@ export default function HistoricalAnalyticsView({
   const {
     data: trendsResponse,
     isLoading: trendsLoading,
-    isError: trendsError,
+    isError: trendsIsError,
+    error: trendsError,
     refetch: refetchTrends,
   } = useQuery<{ data: TrendData[] }>({
     queryKey: ["/api/analytics/historical/trends"],
     enabled: !propTrends,
   });
 
-  const yearlyData =
-    propYearlyData ||
-    (yearlyError
-      ? defaultYearlyData
-      : (yearlyResponse?.data ?? yearlyResponse)) ||
-    defaultYearlyData;
+  const yearlyData = propYearlyData ?? yearlyResponse?.data ?? defaultYearlyData;
   const milestones =
-    propMilestones ||
-    (milestonesError
-      ? defaultMilestones
-      : (milestonesResponse?.data ?? milestonesResponse)) ||
-    defaultMilestones;
-  const trends =
-    propTrends ||
-    (trendsError ? defaultTrends : (trendsResponse?.data ?? trendsResponse)) ||
-    defaultTrends;
+    propMilestones ?? milestonesResponse?.data ?? defaultMilestones;
+  const trends = propTrends ?? trendsResponse?.data ?? defaultTrends;
 
   const isLoading = yearlyLoading || milestonesLoading || trendsLoading;
 
@@ -559,7 +610,17 @@ export default function HistoricalAnalyticsView({
         <TabsContent value="comparison">
           <Card>
             <CardContent className="p-6">
-              <YearOverYearComparison data={yearlyData} />
+              {yearlyLoading ? (
+                <QueryLoading title="yearly comparison" />
+              ) : yearlyIsError ? (
+                <QueryState
+                  title="yearly comparison"
+                  error={yearlyError}
+                  onRetry={() => refetchYearly()}
+                />
+              ) : (
+                <YearOverYearComparison data={yearlyData} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -567,13 +628,41 @@ export default function HistoricalAnalyticsView({
         <TabsContent value="milestones">
           <Card>
             <CardContent className="p-6">
-              <CareerTimeline milestones={milestones} />
+              {milestonesLoading ? (
+                <QueryLoading title="career milestones" />
+              ) : milestonesIsError ? (
+                <QueryState
+                  title="career milestones"
+                  error={milestonesError}
+                  onRetry={() => refetchMilestones()}
+                />
+              ) : (
+                <CareerTimeline milestones={milestones} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="trends">
-          <LongTermTrends trends={trends} />
+          {trendsLoading ? (
+            <Card>
+              <CardContent className="p-6">
+                <QueryLoading title="long-term trends" />
+              </CardContent>
+            </Card>
+          ) : trendsIsError ? (
+            <Card>
+              <CardContent className="p-6">
+                <QueryState
+                  title="long-term trends"
+                  error={trendsError}
+                  onRetry={() => refetchTrends()}
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <LongTermTrends trends={trends} />
+          )}
         </TabsContent>
       </Tabs>
     </div>

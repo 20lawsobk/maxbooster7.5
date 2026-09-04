@@ -14,6 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useRequireAdmin } from "@/hooks/useRequireAuth";
+import { apiRequest, ApiError } from "@/lib/queryClient";
 import {
   Music, TrendingUp, DollarSign, Zap, BarChart2, Globe, Hash,
   Loader2, _RefreshCw, Star, Target, ChevronDown, ChevronUp, _Filter,
@@ -124,13 +125,14 @@ function formatRevenue(n: number) {
 // ─── Summary tab ──────────────────────────────────────────────────────────────
 
 function SummaryTab() {
-  const { data, isLoading } = useQuery<SummaryData>({
+  const { data, isLoading, isError, error, refetch } = useQuery<SummaryData>({
     queryKey: ["/api/admin/content-sampler/summary"],
     staleTime: 1000 * 60 * 5,
   });
 
   if (isLoading) return <LoadingSpinner label="Scoring all genres & platforms…" />;
-  if (!data) return null;
+  if (isError) return <QueryError error={error} onRetry={refetch} />;
+  if (!data) return <QueryError error={new Error("The summary response was empty.")} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">
@@ -158,7 +160,7 @@ function SummaryTab() {
             <CardTitle className="text-sm flex items-center gap-2"><Music className="w-4 h-4 text-purple-400"/>Top Genres by Combined Score</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2.5">
-            {data.topGenres.map((g, i) => (
+            {data.topGenres.length === 0 ? <EmptyState message="No genre scores are available." /> : data.topGenres.map((g, i) => (
               <div key={g.genre} className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground w-4">{i+1}</span>
                 <span className="text-lg">{GENRE_ICONS[g.genre] || "🎵"}</span>
@@ -186,7 +188,7 @@ function SummaryTab() {
             <CardDescription className="text-xs">Averaged across all genres</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2.5">
-            {data.topContentCombos.map((c, i) => (
+            {data.topContentCombos.length === 0 ? <EmptyState message="No platform/content scores are available." /> : data.topContentCombos.map((c, i) => (
               <div key={c.platform+c.contentType} className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground w-4">{i+1}</span>
                 <span className="text-lg">{PLATFORM_ICONS[c.platform] || "📱"}</span>
@@ -219,13 +221,14 @@ function BeatsTab() {
   const [sortBy, setSortBy] = useState<"combinedScore"|"engagementScore"|"salesScore"|"estimatedMonthlyRevenue">("combinedScore");
   const [showCount, setShowCount] = useState(24);
 
-  const { data, isLoading } = useQuery<{ total: number; results: BeatSample[] }>({
+  const { data, isLoading, isError, error, refetch } = useQuery<{ total: number; results: BeatSample[] }>({
     queryKey: ["/api/admin/content-sampler/beats"],
     staleTime: 1000 * 60 * 5,
   });
 
   if (isLoading) return <LoadingSpinner label="Generating 96 beat samples…" />;
-  if (!data) return null;
+  if (isError) return <QueryError error={error} onRetry={refetch} />;
+  if (!data) return <QueryError error={new Error("The beat samples response was empty.")} onRetry={refetch} />;
 
   const moods = ["all","dark","empowering","chill","aggressive","melancholic","energetic","nostalgic","euphoric"];
 
@@ -326,6 +329,7 @@ function BeatsTab() {
           </Card>
         ))}
       </div>
+      {results.length === 0 && <EmptyState message="No beat samples match the selected filters." />}
 
       {results.length > showCount && (
         <Button variant="outline" className="w-full border-white/20" onClick={() => setShowCount(c => c + 24)}>
@@ -344,14 +348,15 @@ function PostsTab() {
   const [sortBy, setSortBy] = useState<"combinedScore"|"engagementScore"|"salesScore"|"estimatedRevenue">("combinedScore");
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const { data, isLoading, _refetch } = useQuery<{ total: number; results: PostSample[] }>({
+  const { data, isLoading, isError, error, refetch } = useQuery<{ total: number; results: PostSample[] }>({
     queryKey: ["/api/admin/content-sampler/posts", genre],
-    queryFn: () => fetch(`/api/admin/content-sampler/posts?genre=${genre}`).then(r => r.json()),
+    queryFn: async () => (await apiRequest("GET", `/api/admin/content-sampler/posts?genre=${encodeURIComponent(genre)}`)).json(),
     staleTime: 1000 * 60 * 5,
   });
 
   if (isLoading) return <LoadingSpinner label="Generating post samples…" />;
-  if (!data) return null;
+  if (isError) return <QueryError error={error} onRetry={refetch} />;
+  if (!data) return <QueryError error={new Error("The post samples response was empty.")} onRetry={refetch} />;
 
   let results = data.results;
   if (filterPlatform !== "all") results = results.filter(p => p.platform === filterPlatform);
@@ -471,6 +476,7 @@ function PostsTab() {
           );
         })}
       </div>
+      {results.length === 0 && <EmptyState message="No post samples match the selected platform." />}
     </div>
   );
 }
@@ -478,7 +484,7 @@ function PostsTab() {
 // ─── Matrix tab ───────────────────────────────────────────────────────────────
 
 function MatrixTab() {
-  const { data, isLoading } = useQuery<{
+  const { data, isLoading, isError, error, refetch } = useQuery<{
     matrix: Record<string, Record<string, MatrixCell>>;
     topCombinations: Array<{ genre: string; platform: string; contentType: string; combinedScore: number; estimatedRevenue: number }>;
     platforms: string[];
@@ -489,7 +495,8 @@ function MatrixTab() {
   });
 
   if (isLoading) return <LoadingSpinner label="Building genre × platform matrix…" />;
-  if (!data) return null;
+  if (isError) return <QueryError error={error} onRetry={refetch} />;
+  if (!data) return <QueryError error={new Error("The matrix response was empty.")} onRetry={refetch} />;
 
   const { matrix, topCombinations, platforms, genres } = data;
 
@@ -503,7 +510,7 @@ function MatrixTab() {
         </CardHeader>
         <CardContent>
           <div className="space-y-1.5">
-            {topCombinations.map((c, i) => (
+            {topCombinations.length === 0 ? <EmptyState message="No scored combinations are available." /> : topCombinations.map((c, i) => (
               <div key={`${c.genre}-${c.platform}`} className="flex items-center gap-3 text-sm">
                 <span className="text-xs text-muted-foreground w-5 text-right">{i+1}</span>
                 <span>{GENRE_ICONS[c.genre] || "🎵"}</span>
@@ -539,7 +546,9 @@ function MatrixTab() {
               </tr>
             </thead>
             <tbody>
-              {genres.map(genre => (
+              {genres.length === 0 ? (
+                <tr><td colSpan={platforms.length + 1}><EmptyState message="No matrix rows are available." /></td></tr>
+              ) : genres.map(genre => (
                 <tr key={genre} className="border-t border-white/5">
                   <td className="py-1.5 pr-3 font-medium capitalize">
                     {GENRE_ICONS[genre]} {genre}
@@ -579,13 +588,32 @@ function LoadingSpinner({ label }: { label: string }) {
   );
 }
 
+function EmptyState({ message }: { message: string }) {
+  return <p className="py-6 text-center text-sm text-muted-foreground">{message}</p>;
+}
+
+function QueryError({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+  const message = error instanceof ApiError
+    ? error.userMessage
+    : error instanceof Error
+      ? error.message
+      : "Unable to load this content. Please try again.";
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+      <p className="text-sm text-destructive">{message}</p>
+      <Button variant="outline" onClick={() => onRetry()}>Try again</Button>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ContentSampler() {
   const { user, isLoading: authLoading } = useRequireAdmin();
 
   if (authLoading) return <LoadingSpinner label="Authenticating…" />;
-  if (!user || user.role !== "admin") return null;
+  if (!user || user.role !== "admin") return <LoadingSpinner label="Redirecting…" />;
 
   return (
     <AppLayout>

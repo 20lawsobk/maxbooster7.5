@@ -1,5 +1,5 @@
-import { Router, Request, Response, RequestHandler } from "express";
-import { require2FA } from "../middleware/auth.js";
+import { Router, Request, Response } from "express";
+import { requireAdmin, requireAuth, require2FA } from "../middleware/auth.js";
 import { db } from "../db.js";
 import { users, sessions, securityThreats } from "../../shared/schema.js";
 import { eq, desc, count, and, gte, sql } from "drizzle-orm";
@@ -7,18 +7,7 @@ import { logger } from "../logger.js";
 
 const router = Router();
 
-const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-  next();
-};
-
-router.use(requireAdmin);
-router.use(require2FA);
+router.use(requireAuth, requireAdmin, require2FA);
 
 const processStartTime = Date.now();
 
@@ -224,6 +213,28 @@ router.get("/behavioral-alerts", async (_req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch behavioral alerts" });
   }
 });
+
+router.patch(
+  "/behavioral-alerts/:alertId/resolve",
+  async (req: Request, res: Response) => {
+    try {
+      const [resolvedThreat] = await db
+        .update(securityThreats)
+        .set({ status: "resolved", resolvedAt: new Date() })
+        .where(eq(securityThreats.id, req.params.alertId))
+        .returning({ id: securityThreats.id });
+
+      if (!resolvedThreat) {
+        return res.status(404).json({ error: "Security alert not found" });
+      }
+
+      res.json({ success: true, alertId: resolvedThreat.id });
+    } catch (error) {
+      logger.warn({ err: error }, "Error resolving behavioral alert:");
+      res.status(500).json({ error: "Failed to resolve behavioral alert" });
+    }
+  },
+);
 
 router.get("/anomaly-detection", async (_req: Request, res: Response) => {
   try {

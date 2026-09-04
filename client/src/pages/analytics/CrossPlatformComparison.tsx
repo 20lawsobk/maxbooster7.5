@@ -2,8 +2,23 @@
 import { useState, useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { motion } from "framer-motion";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+} from "recharts";
 import {
   Card,
   CardContent,
@@ -16,7 +31,6 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GitCompare, ArrowRight, Zap } from "lucide-react";
-import { DateRangePicker } from "@/components/analytics/DateRangePicker";
 import { PlatformFilterChips } from "@/components/analytics/PlatformFilterChips";
 import {
   ChartCardSkeleton,
@@ -29,15 +43,15 @@ interface PlatformData {
   color: string;
   icon: string;
   streams: number;
-  streamChange: number;
+  streamChange?: number;
   followers: number;
-  followerChange: number;
-  engagement: number;
-  engagementChange: number;
+  followerChange?: number;
+  engagement?: number;
+  engagementChange?: number;
   revenue: number;
-  revenueChange: number;
-  saves: number;
-  shares: number;
+  revenueChange?: number;
+  saves?: number;
+  shares?: number;
 }
 
 interface GrowthData {
@@ -117,11 +131,16 @@ const PlatformComparisonCard = memo(
               <div>
                 <h3 className="font-semibold">{platform.platform}</h3>
                 <Badge
-                  variant={platform.streamChange > 0 ? "default" : "secondary"}
+                  variant={
+                    platform.streamChange && platform.streamChange > 0
+                      ? "default"
+                      : "secondary"
+                  }
                   className="text-xs"
                 >
-                  {platform.streamChange > 0 ? "+" : ""}
-                  {platform.streamChange}%
+                  {platform.streamChange === undefined
+                    ? "Trend unavailable"
+                    : `${platform.streamChange > 0 ? "+" : ""}${platform.streamChange}%`}
                 </Badge>
               </div>
             </div>
@@ -139,7 +158,7 @@ const PlatformComparisonCard = memo(
 
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/50">
-                  <p className="text-muted-foreground text-xs">Followers</p>
+                  <p className="text-muted-foreground text-xs">Listeners</p>
                   <div className="flex items-center gap-1">
                     <span className="font-semibold">
                       {(platform.followers / 1000).toFixed(1)}K
@@ -147,13 +166,14 @@ const PlatformComparisonCard = memo(
                     <span
                       className={cn(
                         "text-xs",
-                        platform.followerChange > 0
+                        (platform.followerChange ?? 0) > 0
                           ? "text-green-500"
                           : "text-red-500",
                       )}
                     >
-                      {platform.followerChange > 0 ? "+" : ""}
-                      {platform.followerChange}%
+                      {platform.followerChange === undefined
+                        ? "—"
+                        : `${platform.followerChange > 0 ? "+" : ""}${platform.followerChange}%`}
                     </span>
                   </div>
                 </div>
@@ -161,18 +181,21 @@ const PlatformComparisonCard = memo(
                   <p className="text-muted-foreground text-xs">Engagement</p>
                   <div className="flex items-center gap-1">
                     <span className="font-semibold">
-                      {platform.engagement}%
+                      {platform.engagement === undefined
+                        ? "Unavailable"
+                        : `${platform.engagement}%`}
                     </span>
                     <span
                       className={cn(
                         "text-xs",
-                        platform.engagementChange > 0
+                        (platform.engagementChange ?? 0) > 0
                           ? "text-green-500"
                           : "text-red-500",
                       )}
                     >
-                      {platform.engagementChange > 0 ? "+" : ""}
-                      {platform.engagementChange}%
+                      {platform.engagementChange === undefined
+                        ? "—"
+                        : `${platform.engagementChange > 0 ? "+" : ""}${platform.engagementChange}%`}
                     </span>
                   </div>
                 </div>
@@ -190,7 +213,10 @@ const PlatformComparisonCard = memo(
                   </p>
                   <div className="flex items-center gap-1">
                     <span className="font-semibold">
-                      {(platform.saves + platform.shares).toLocaleString()}
+                      {platform.saves === undefined ||
+                      platform.shares === undefined
+                        ? "Unavailable"
+                        : (platform.saves + platform.shares).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -204,26 +230,17 @@ const PlatformComparisonCard = memo(
 );
 PlatformComparisonCard.displayName = "PlatformComparisonCard";
 
-interface CrossPlatformComparisonProps {
-  userId?: string;
-  timeRange?: string;
-  onTimeRangeChange?: (range: string) => void;
-}
-
-export function CrossPlatformComparison({
-  _userId,
-  timeRange = "30d",
-  onTimeRangeChange,
-}: CrossPlatformComparisonProps) {
+export function CrossPlatformComparison() {
   const [, setLocation] = useLocation();
+  const { user, isLoading: authLoading } = useRequireSubscription();
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["/api/analytics/cross-platform", timeRange],
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["/api/analytics-alerts/cross-platform-comparison"],
     queryFn: async () => {
       const response = await fetch(
-        `/api/analytics-alerts/cross-platform-comparison`,
+        "/api/analytics-alerts/cross-platform-comparison",
         {
           credentials: "include",
         },
@@ -231,31 +248,44 @@ export function CrossPlatformComparison({
       if (!response.ok) throw new Error("Failed to fetch cross-platform data");
       return response.json();
     },
+    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 
   const platformData = useMemo<PlatformData[]>(() => {
     const metrics: unknown[] = data?.data?.metrics ?? data?.metrics ?? [];
     if (!metrics.length) return [];
-    return metrics.map((p: Record<string, unknown>) => ({
-      platform: p.platform || p.name || "",
-      color:
-        PLATFORM_INFO[p.platform?.toLowerCase() ?? p.name?.toLowerCase()]
-          ?.color || "#6B7280",
-      icon:
-        PLATFORM_INFO[p.platform?.toLowerCase() ?? p.name?.toLowerCase()]
-          ?.icon || "🎵",
-      streams: p.streams || 0,
-      streamChange: p.growthRate || 0,
-      followers: p.listeners || 0,
-      followerChange: 0,
-      engagement: p.engagement || 0,
-      engagementChange: 0,
-      revenue: p.revenue || 0,
-      revenueChange: 0,
-      saves: 0,
-      shares: 0,
-    }));
+    return metrics
+      .filter(
+        (p: Record<string, unknown>) =>
+          Number(p.streams ?? 0) > 0 ||
+          Number(p.listeners ?? 0) > 0 ||
+          Number(p.revenue ?? 0) > 0,
+      )
+      .map((p: Record<string, unknown>) => ({
+        platform: p.platform || p.name || "",
+        color:
+          PLATFORM_INFO[p.platform?.toLowerCase() ?? p.name?.toLowerCase()]
+            ?.color || "#6B7280",
+        icon:
+          PLATFORM_INFO[p.platform?.toLowerCase() ?? p.name?.toLowerCase()]
+            ?.icon || "🎵",
+        streams: p.streams || 0,
+        // The alerts endpoint currently does not calculate period-over-period
+        // changes, so do not present its placeholder zero as a real trend.
+        streamChange: undefined,
+        followers: p.listeners || 0,
+        followerChange: undefined,
+        // Engagement, saves, and shares are not returned by this endpoint.
+        // Leaving them unavailable prevents a zero from being misrepresented as
+        // measured platform performance.
+        engagement: undefined,
+        engagementChange: undefined,
+        revenue: p.revenue || 0,
+        revenueChange: undefined,
+        saves: undefined,
+        shares: undefined,
+      }));
   }, [data]);
 
   const maxStreams =
@@ -278,7 +308,7 @@ export function CrossPlatformComparison({
     if (!platformData.length) return [];
     const maxStreams_ = Math.max(...platformData.map((p) => p.streams), 1);
     const maxRevenue = Math.max(...platformData.map((p) => p.revenue), 1);
-    const metrics = ["Streams", "Revenue", "Engagement"];
+    const metrics = ["Streams", "Revenue"];
     return metrics.map((metric) => {
       const row: Record<string, any> = { metric };
       platformData.forEach((p) => {
@@ -287,7 +317,6 @@ export function CrossPlatformComparison({
           row[key] = Math.round((p.streams / maxStreams_) * 100);
         else if (metric === "Revenue")
           row[key] = Math.round((p.revenue / maxRevenue) * 100);
-        else if (metric === "Engagement") row[key] = p.engagement;
       });
       return row;
     });
@@ -300,12 +329,45 @@ export function CrossPlatformComparison({
     );
   }, [platformData, selectedPlatforms]);
 
-  if (isLoading) {
+  const filterPlatforms = useMemo(
+    () =>
+      platformData.map((platform) => ({
+        id: platform.platform.toLowerCase().replace(" ", "_"),
+        name: platform.platform,
+        color: platform.color,
+        icon: platform.icon,
+      })),
+    [platformData],
+  );
+
+  if (authLoading || isLoading) {
     return (
       <div className="space-y-6">
         <StatCardRowSkeleton count={4} />
         <ChartCardSkeleton height={400} />
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardContent className="flex min-h-64 flex-col items-center justify-center gap-4 p-6 text-center">
+          <div>
+            <h2 className="font-semibold">
+              Cross-platform data is unavailable
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {error instanceof Error
+                ? error.message
+                : "We could not load your streaming analytics."}
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => refetch()}>
+            Try again
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -321,16 +383,14 @@ export function CrossPlatformComparison({
             Compare your performance across streaming platforms
           </p>
         </div>
-        <DateRangePicker
-          value={timeRange}
-          onChange={onTimeRangeChange || (() => {})}
-        />
+        <Badge variant="outline">Last 30 days</Badge>
       </div>
 
       <PlatformFilterChips
         selectedPlatforms={selectedPlatforms}
         onChange={setSelectedPlatforms}
         variant="badges"
+        platforms={filterPlatforms}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

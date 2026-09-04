@@ -7,14 +7,17 @@
  */
 
 import { Router } from "express";
-import { requireAdmin } from "../../middleware/auth.js";
+import { requireAdmin, requireAuth, require2FA } from "../../middleware/auth.js";
 import { db } from "../../db.js";
 import { auditLogs } from "@shared/schema";
 import { desc, and, eq, gte, ilike, or, inArray } from "drizzle-orm";
 import { logger } from "../../logger.js";
 
 const router = Router();
-router.use(requireAdmin);
+// Resolve either the session or the Bearer-token fallback before checking the
+// privileged role. Audit records contain sensitive account and IP data, so
+// apply the same 2FA requirement as the rest of the admin surface.
+router.use(requireAuth, requireAdmin, require2FA);
 
 /**
  * GET /api/admin/audit-log

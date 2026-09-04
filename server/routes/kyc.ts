@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { Router } from "express";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { kycRateLimiter } from "../middleware/rateLimiter.js";
 import { kycService } from "../services/kycService.js";
 import { storageService } from "../services/storageService.js";
@@ -19,7 +19,20 @@ const upload = createHardenedUpload({
 const router = Router();
 
 router.use(requireAuth);
-router.use(kycRateLimiter);
+// KYC files and decisions contain sensitive identity data. Apply the same
+// role-based guard to the complete admin surface, rather than relying on
+// individual handlers to inspect an implementation-specific user property.
+router.use("/admin", requireAdmin);
+// The submission limit is intended for applicant KYC actions. Queue review
+// and document viewing must not consume an administrator's five-request
+// applicant allowance.
+router.use((req, res, next) => {
+  if (req.path.startsWith("/admin")) {
+    next();
+    return;
+  }
+  kycRateLimiter(req, res, next);
+});
 
 const startVerificationSchema = z.object({
   type: z.enum(["individual", "business"]),
@@ -653,10 +666,6 @@ router.post("/upgrade", async (req, res) => {
 
 router.get("/admin/pending", async (req, res) => {
   try {
-    if ((!req.user! as any).isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     const status = (req.query.status as string) || "under_review";
     const verifications = await kycService.getVerificationsWithDetails(
       status === "all" ? undefined : status,
@@ -675,10 +684,6 @@ router.get("/admin/pending", async (req, res) => {
 
 router.get("/admin/documents/:documentId/view", async (req, res) => {
   try {
-    if ((!req.user! as any).isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     const { documentId } = req.params;
     const document = await kycService.getDocument(documentId);
 
@@ -710,10 +715,6 @@ router.get("/admin/documents/:documentId/view", async (req, res) => {
 
 router.post("/admin/review/:verificationId", async (req, res) => {
   try {
-    if ((!req.user! as any).isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     const { verificationId } = req.params;
     const { action, notes, reason } = req.body;
 
@@ -756,10 +757,6 @@ router.post("/admin/review/:verificationId", async (req, res) => {
 
 router.post("/admin/documents/:documentId/review", async (req, res) => {
   try {
-    if ((!req.user as any)?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     const { documentId } = req.params;
     const { approved, reason } = req.body;
 

@@ -2,9 +2,10 @@
 import { Router, Request, Response } from "express";
 import { distributedCache } from "../infrastructure/distributedCache.js";
 import { db } from "../db";
-import { analytics, releases, playlistJourneys } from "@shared/schema";
-import { eq, and, desc, sql, gte, lte, count } from "drizzle-orm";
+import { analytics, releases, playlistJourneys, users, studioProjects } from "@shared/schema";
+import { eq, and, desc, sql, gte, lte, count, inArray } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth";
+import { requirePremium } from "../middleware/requirePremium";
 import { logger } from "../logger";
 
 const router = Router();
@@ -1265,117 +1266,93 @@ router.get("/global-ranking", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const totalStats = await db
-      .select({
-        totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-        totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
-      })
-      .from(analytics)
-      .where(eq(analytics.userId, userId));
-
-    const streams = Number(totalStats[0].totalStreams) || 0;
-    const baseScore = Math.min(100, Math.floor(Math.log10(streams + 1) * 15));
-    const globalRank = Math.max(1000, 500000 - Math.floor(streams / 10));
-
-    const platformAnalytics = await db
-      .select({
-        platform: analytics.platform,
-        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-        revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
-        listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
-      })
-      .from(analytics)
-      .where(eq(analytics.userId, userId))
-      .groupBy(analytics.platform)
-      .limit(100);
-
-    const platformMap: Record<
-      string,
-      { streams: number; revenue: number; listeners: number }
-    > = {};
-    for (const row of platformAnalytics) {
-      if (row.platform) {
-        platformMap[row.platform.toLowerCase()] = {
-          streams: Number(row.streams),
-          revenue: Number(row.revenue),
-          listeners: Number(row.listeners),
-        };
-      }
+    const days = Number.parseInt(String(req.query.days ?? "30"), 10);
+    if (!Number.isInteger(days) || ![7, 30, 90].includes(days)) {
+      return res.status(400).json({ error: "days must be one of 7, 30, or 90" });
     }
 
-    const platformConfigs = [
-      {
-        platform: "Spotify",
-        key: "spotify",
-        offset: 0,
-        rankOffset: 0,
-        color: "#1DB954",
-      },
-      {
-        platform: "Apple Music",
-        key: "apple_music",
-        offset: -5,
-        rankOffset: 5000,
-        color: "#FA2D48",
-      },
-      {
-        platform: "YouTube Music",
-        key: "youtube",
-        offset: -10,
-        rankOffset: 10000,
-        color: "#FF0000",
-      },
-      {
-        platform: "Amazon Music",
-        key: "amazon_music",
-        offset: -15,
-        rankOffset: 15000,
-        color: "#00A8E1",
-      },
-      {
-        platform: "Deezer",
-        key: "deezer",
-        offset: -20,
-        rankOffset: 25000,
-        color: "#FEAA2D",
-      },
-    ];
+    const periodStart = new Date();
+    periodStart.setDate(periodStart.getDate() - days);
+    const previousPeriodStart = new Date(periodStart);
+    previousPeriodStart.setDate(previousPeriodStart.getDate() - days);
 
-    const platformScores = platformConfigs.map((cfg) => {
-      const data = platformMap[cfg.key];
-      const platformStreams = data.streams || 0;
-      const platformScore = Math.min(
-        100,
-        Math.floor(Math.log10(platformStreams + 1) * 15) + cfg.offset,
-      );
-      const platformRank =
-        globalRank +
-        cfg.rankOffset +
-        Math.max(0, 5000 - Math.floor(platformStreams / 20));
-      const trendDir =
-        platformStreams > streams * 0.15
-          ? "up"
-          : platformStreams > streams * 0.05
-            ? "stable"
-            : "down";
-      const change =
-        trendDir === "up"
-          ? Math.floor(Math.log10(platformStreams + 1))
-          : trendDir === "down"
-            ? -Math.floor(Math.log10(platformStreams + 1) * 0.5)
-            : 0;
+    // A rank is meaningful only when it is calculated against the recorded
+    // analytics of other accounts. Do not manufacture a placement from a
+    // stream-count formula when there is no comparative data.
+    const accountTotals = await db
+      .select({
+        userId: analytics.userId,
+        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        monthlyListeners: sql<number>`COALESCE(MAX(${analytics.totalListeners}), 0)`,
+      })
+      .from(analytics)
+      .innerJoin(users, eq(analytics.userId, users.id))
+      .where(gte(analytics.date, periodStart))
+      .groupBy(analytics.userId);
+    const rankedAccounts = accountTotals
+      .map((account) => ({
+        userId: account.userId,
+        streams: Number(account.streams) || 0,
+        monthlyListeners: Number(account.monthlyListeners) || 0,
+      }))
+      .sort((a, b) => b.streams - a.streams || a.userId.localeCompare(b.userId));
+    let lastStreams: number | undefined;
+    let rank = 0;
+    const rankedAccountsWithRanks = rankedAccounts.map((account, index) => {
+      if (account.streams !== lastStreams) rank = index + 1;
+      lastStreams = account.streams;
+      return { ...account, rank };
+    });
+    const currentAccount = rankedAccountsWithRanks.find(
+      (account) => account.userId === userId,
+    );
+
+    const userAnalytics = await db
+      .select({
+        platform: analytics.platform,
+        streams: analytics.streams,
+        date: analytics.date,
+      })
+      .from(analytics)
+      .where(and(eq(analytics.userId, userId), gte(analytics.date, previousPeriodStart)));
+    const currentPlatforms = new Map<string, number>();
+    const previousPlatforms = new Map<string, number>();
+    for (const row of userAnalytics) {
+      if (!row.platform) continue;
+      const target = row.date >= periodStart ? currentPlatforms : previousPlatforms;
+      target.set(row.platform, (target.get(row.platform) || 0) + (Number(row.streams) || 0));
+    }
+    const platformTotals = new Map<string, Map<string, number>>();
+    for (const account of rankedAccounts) {
+      platformTotals.set(account.userId, new Map());
+    }
+    const allPeriodAnalytics = await db
+      .select({ userId: analytics.userId, platform: analytics.platform, streams: analytics.streams })
+      .from(analytics)
+      .where(gte(analytics.date, periodStart));
+    for (const row of allPeriodAnalytics) {
+      if (!row.platform || !platformTotals.has(row.userId)) continue;
+      const totals = platformTotals.get(row.userId)!;
+      totals.set(row.platform, (totals.get(row.platform) || 0) + (Number(row.streams) || 0));
+    }
+    const colors = ["#6366f1", "#1DB954", "#FA2D48", "#FF0000", "#00A8E1", "#FEAA2D"];
+    const platformScores = [...currentPlatforms.entries()].map(([platform, streams], index) => {
+      const comparison = [...platformTotals.values()]
+        .map((totals) => totals.get(platform) || 0)
+        .sort((a, b) => b - a);
+      const platformRank = comparison.findIndex((total) => total === streams) + 1;
+      const previous = previousPlatforms.get(platform) || 0;
+      const change = streams - previous;
       return {
-        platform: cfg.platform,
-        score: Math.max(0, platformScore),
-        rank: Math.max(1000, platformRank),
-        trend: trendDir,
+        platform,
+        score: Math.min(100, Math.floor(Math.log10(streams + 1) * 15)),
+        rank: platformRank,
+        trend: change > 0 ? "up" : change < 0 ? "down" : "stable",
         change,
-        color: cfg.color,
+        color: colors[index % colors.length],
       };
     });
 
-    const sixWeeksAgo = new Date();
-    sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 42);
     const weeklyAnalytics = await db
       .select({
         week: sql<string>`DATE_TRUNC('week', ${analytics.date})::date`,
@@ -1383,45 +1360,68 @@ router.get("/global-ranking", async (req: Request, res: Response) => {
       })
       .from(analytics)
       .where(
-        and(eq(analytics.userId, userId), gte(analytics.date, sixWeeksAgo)),
+        and(eq(analytics.userId, userId), gte(analytics.date, periodStart)),
       )
       .groupBy(sql`DATE_TRUNC('week', ${analytics.date})`)
       .orderBy(sql`DATE_TRUNC('week', ${analytics.date})`);
-    const rankingHistory =
-      weeklyAnalytics.length > 0
-        ? weeklyAnalytics.map((row) => {
-            const wk = Number(row.streams);
-            return {
-              date: row.week,
-              score: Math.min(100, Math.floor(Math.log10(wk + 1) * 15)),
-              rank: Math.max(1000, 500000 - Math.floor(wk / 10)),
-            };
-          })
-        : Array.from({ length: 6 }, (_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - i * 7);
-            return {
-              date: d.toISOString().split("T")[0],
-              score: Math.max(0, baseScore - i * 2),
-              rank: globalRank + i * 1000,
-            };
-          }).reverse();
+    const rankingHistory = weeklyAnalytics.map((row) => {
+      const streams = Number(row.streams) || 0;
+      return {
+        date: row.week,
+        score: Math.min(100, Math.floor(Math.log10(streams + 1) * 15)),
+        rank: null,
+      };
+    });
 
-    const similarArtists: {
-      name: string;
-      score: number;
-      rank: number;
-      genre: string;
-      monthlyListeners: number;
-      comparison: string;
-    }[] = [];
+    const currentGenreRow = await db.select({ genre: studioProjects.genre })
+      .from(studioProjects).where(eq(studioProjects.userId, userId))
+      .orderBy(desc(studioProjects.updatedAt)).limit(1);
+    const genre = currentGenreRow[0]?.genre;
+    const genreArtists = genre
+      ? await db.select({ userId: studioProjects.userId }).from(studioProjects)
+          .where(eq(studioProjects.genre, genre)).limit(500)
+      : [];
+    const artistIds = [...new Set(genreArtists.map((artist) => artist.userId))]
+      .filter((id) => id !== userId);
+    const profiles = artistIds.length
+      ? await db.select({ id: users.id, artistName: users.artistName, username: users.username })
+          .from(users).where(inArray(users.id, artistIds))
+      : [];
+    const profileById = new Map(
+      profiles
+        .filter((profile) => profile.artistName || profile.username)
+        .map((profile) => [profile.id, profile]),
+    );
+    const similarArtists = rankedAccounts
+      .filter((account) => profileById.has(account.userId))
+      .sort((a, b) => Math.abs(a.streams - (currentAccount?.streams || 0)) - Math.abs(b.streams - (currentAccount?.streams || 0)))
+      .slice(0, 5)
+      .map((account) => {
+        const profile = profileById.get(account.userId)!;
+        const score = Math.min(100, Math.floor(Math.log10(account.streams + 1) * 15));
+        const currentScore = currentAccount
+          ? Math.min(100, Math.floor(Math.log10(currentAccount.streams + 1) * 15))
+          : 0;
+        return {
+          name: profile.artistName || profile.username!,
+          score,
+          rank: rankedAccountsWithRanks.find(
+            (ranked) => ranked.userId === account.userId,
+          )!.rank,
+          genre,
+          monthlyListeners: account.monthlyListeners,
+          comparison: score > currentScore ? "ahead" : score < currentScore ? "behind" : "similar",
+        };
+      });
 
     return res.json({
       success: true,
       data: {
         maxScore: 100,
-        globalRank,
-        currentScore: baseScore,
+        globalRank: currentAccount?.rank ?? null,
+        currentScore: currentAccount
+          ? Math.min(100, Math.floor(Math.log10(currentAccount.streams + 1) * 15))
+          : null,
         platformScores,
         rankingHistory,
         similarArtists,
@@ -1988,7 +1988,7 @@ router.get("/playlist-journeys", async (req: Request, res: Response) => {
  * GET /api/analytics/ar-discovery
  * Get A&R discovery panel data (emerging artists for scouting)
  */
-router.get("/ar-discovery", async (req: Request, res: Response) => {
+router.get("/ar-discovery", requirePremium, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     if (!userId) {
@@ -2003,17 +2003,20 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
     const growthRows = await db.execute(sql`
       SELECT
         u.id,
-        COALESCE(u.username, 'Artist') AS name,
+        COALESCE(NULLIF(u.artist_name, ''), NULLIF(u.username, ''), 'Unnamed artist') AS name,
+        u.location,
+        COALESCE(u.profile_image_url, u.avatar_url) AS image_url,
         COALESCE(SUM(CASE WHEN a.date >= ${thirtyDaysAgo} THEN a.streams ELSE 0 END), 0)::int AS recent_streams,
         COALESCE(SUM(CASE WHEN a.date >= ${sixtyDaysAgo} AND a.date < ${thirtyDaysAgo} THEN a.streams ELSE 0 END), 0)::int AS prev_streams,
         COALESCE(SUM(CASE WHEN a.date >= ${thirtyDaysAgo} THEN a.total_listeners ELSE 0 END), 0)::int AS monthly_listeners,
         COUNT(DISTINCT a.platform)::int AS platform_count,
-        (SELECT COUNT(*) FROM releases r WHERE r.user_id = u.id AND r.created_at >= ${thirtyDaysAgo})::int AS recent_releases
+        (SELECT COUNT(*) FROM releases r WHERE r.user_id = u.id AND r.created_at >= ${thirtyDaysAgo})::int AS recent_releases,
+        (SELECT r.title FROM releases r WHERE r.user_id = u.id ORDER BY r.created_at DESC LIMIT 1) AS top_track
       FROM users u
       LEFT JOIN analytics a ON a.user_id = u.id
       WHERE u.id != ${userId}
         AND u.subscription_tier IN ('monthly','yearly','lifetime')
-      GROUP BY u.id, u.username
+      GROUP BY u.id, u.artist_name, u.username, u.location, u.profile_image_url, u.avatar_url
       HAVING COALESCE(SUM(a.streams), 0) > 0
       ORDER BY (
         COALESCE(SUM(CASE WHEN a.date >= ${thirtyDaysAgo} THEN a.streams ELSE 0 END), 0)
@@ -2034,38 +2037,32 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
             : 0;
       const monthlyListeners = Number(row?.monthly_listeners ?? 0);
       const recentReleases = Number(row?.recent_releases ?? 0);
-      const growthScore = Math.min(
-        100,
-        Math.floor(Math.log10(recent + 1) * 12 + growth * 0.3),
+      const growthScore = Math.max(
+        0,
+        Math.min(
+          100,
+          Math.floor(Math.log10(recent + 1) * 12 + growth * 0.3),
+        ),
       );
       const signingPotential =
-        growthScore >= 80 ? "high" : growthScore >= 50 ? "medium" : "low";
-      const trajectory = [
-        Math.max(0, growthScore - 20),
-        Math.max(0, growthScore - 14),
-        Math.max(0, growthScore - 8),
-        Math.max(0, growthScore - 3),
-        growthScore,
-      ];
+        growthScore >= 85 ? "high" : growthScore >= 60 ? "medium" : "low";
       return {
         id: row.id,
         name: row.name,
-        genre: "Music",
-        country: "Global",
-        countryCode: "",
+        location: row.location,
         growthScore,
         signingPotential,
         monthlyListeners,
         monthlyGrowth: growth,
-        socialFollowing: 0,
         recentReleases,
-        playlistReach: 0,
+        recentStreams: recent,
         engagementRate:
           monthlyListeners > 0
             ? parseFloat((recent / monthlyListeners).toFixed(1))
             : 0,
-        topTrack: "",
-        trajectory,
+        imageUrl: row.image_url,
+        topTrack: row.top_track,
+        trajectory: [prev, recent],
       };
     });
 
@@ -2079,10 +2076,6 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
     return res.json({
       success: true,
       data: artists.slice(0, 10),
-      filters: {
-        genres: ["All"],
-        countries: ["All"],
-      },
     });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching A&R discovery data:");

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, Link } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
@@ -13,6 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft, Loader2, Send, Tag, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRequireAdmin } from "@/hooks/useRequireAuth";
@@ -44,53 +51,75 @@ export default function SupportTicketDetail() {
   const { ticketId } = useParams<{ ticketId: string }>();
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [newTag, setNewTag] = useState("");
   const [isSavingTag, setIsSavingTag] = useState(false);
+  const [isSavingStatus, setIsSavingStatus] = useState(false);
   const { toast } = useToast();
 
-  const fetchTicket = async () => {
+  const fetchTicket = useCallback(async () => {
+    if (!ticketId) return;
+
+    setIsLoading(true);
+    setLoadError(null);
     try {
       const response = await fetch(`/api/support/tickets/${ticketId}`, {
         credentials: "include",
       });
-      if (!response.ok) throw new Error("Failed to fetch ticket");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(
+          data?.error || `Failed to fetch ticket (${response.status})`,
+        );
+      }
       const data = await response.json();
       setTicket(data);
     } catch (error: unknown) {
       logger.error("Error fetching ticket:", error);
+      setTicket(null);
+      setLoadError(
+        error instanceof Error ? error.message : "Failed to load ticket",
+      );
       toast({
         title: "Error",
-        description: "Failed to load ticket",
+        description:
+          error instanceof Error ? error.message : "Failed to load ticket",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [ticketId, toast]);
 
   useEffect(() => {
     if (user && ticketId) {
-      fetchTicket();
+      void fetchTicket();
     }
-  }, [user, ticketId]);
+  }, [user, ticketId, fetchTicket]);
 
   const sendReply = async () => {
     if (!replyText.trim()) return;
     setIsSendingReply(true);
     try {
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch(`/api/support/tickets/${ticketId}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+      const response = await fetch(
+        `/api/support/tickets/${ticketId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+          },
+          credentials: "include",
+          body: JSON.stringify({ message: replyText.trim() }),
         },
-        credentials: "include",
-        body: JSON.stringify({ message: replyText.trim() }),
-      });
-      if (!response.ok) throw new Error("Failed to send reply");
+      );
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Failed to send reply");
+      }
       setReplyText("");
       toast({ title: "Reply sent", description: "Your reply has been saved" });
       await fetchTicket();
@@ -98,7 +127,8 @@ export default function SupportTicketDetail() {
       logger.error("Error sending reply:", error);
       toast({
         title: "Error",
-        description: "Failed to send reply",
+        description:
+          error instanceof Error ? error.message : "Failed to send reply",
         variant: "destructive",
       });
     } finally {
@@ -134,6 +164,46 @@ export default function SupportTicketDetail() {
       });
     } finally {
       setIsSavingTag(false);
+    }
+  };
+
+  const updateStatus = async (status: string) => {
+    if (!ticket || status === ticket.status) return;
+
+    setIsSavingStatus(true);
+    try {
+      const csrfToken = getCsrfTokenFromCookie();
+      const response = await fetch(`/api/support/tickets/${ticketId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Failed to update ticket status");
+      }
+
+      toast({
+        title: "Status updated",
+        description: "Ticket status has been saved",
+      });
+      await fetchTicket();
+    } catch (error: unknown) {
+      logger.error("Error updating ticket status:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update ticket status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingStatus(false);
     }
   };
 
@@ -177,9 +247,23 @@ export default function SupportTicketDetail() {
 
   if (!ticket) {
     return (
-      <AppLayout title="Ticket not found">
-        <div className="text-center py-12 text-muted-foreground">
-          This ticket could not be found.
+      <AppLayout
+        title={loadError ? "Unable to load ticket" : "Ticket not found"}
+      >
+        <div
+          className="flex flex-col items-center gap-3 py-12 text-center text-muted-foreground"
+          role="alert"
+        >
+          <p>
+            {loadError
+              ? `This ticket could not be loaded: ${loadError}`
+              : "This ticket could not be found."}
+          </p>
+          {loadError && (
+            <Button size="sm" variant="outline" onClick={fetchTicket}>
+              Retry
+            </Button>
+          )}
         </div>
       </AppLayout>
     );
@@ -200,7 +284,24 @@ export default function SupportTicketDetail() {
             <div className="flex items-center justify-between">
               <CardTitle>{ticket.subject}</CardTitle>
               <div className="flex gap-2">
-                <Badge>{ticket.status.replace("_", " ").toUpperCase()}</Badge>
+                <Select
+                  value={ticket.status}
+                  onValueChange={updateStatus}
+                  disabled={isSavingStatus}
+                >
+                  <SelectTrigger
+                    className="h-6 w-36 border-0 bg-primary px-2 text-xs font-medium text-primary-foreground"
+                    aria-label="Ticket status"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="in_progress">In progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Badge variant="outline">{ticket.priority.toUpperCase()}</Badge>
               </div>
             </div>

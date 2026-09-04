@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAdmin } from "@/hooks/useRequireAuth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -81,7 +81,7 @@ interface PendingVerificationsResponse {
 }
 
 export default function KYCReview() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useRequireAdmin();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -93,8 +93,18 @@ export default function KYCReview() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("under_review");
+  const [documentToReject, setDocumentToReject] = useState<KYCDocument | null>(
+    null,
+  );
+  const [documentRejectionReason, setDocumentRejectionReason] = useState("");
 
-  const { data: pendingData, isLoading } =
+  const {
+    data: pendingData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } =
     useQuery<PendingVerificationsResponse>({
       queryKey: ["/api/kyc/admin/pending", statusFilter],
       queryFn: async () => {
@@ -107,7 +117,7 @@ export default function KYCReview() {
         if (!res.ok) throw new Error("Failed to fetch verifications");
         return res.json();
       },
-      enabled: user.role === "admin",
+      enabled: user?.role === "admin",
     });
 
   const reviewMutation = useMutation({
@@ -186,6 +196,8 @@ export default function KYCReview() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/kyc/admin/pending"] });
+      setDocumentToReject(null);
+      setDocumentRejectionReason("");
       toast({
         title: "Document reviewed",
         description: "Document status updated.",
@@ -200,18 +212,10 @@ export default function KYCReview() {
     },
   });
 
-  if (user?.role !== "admin") {
+  if (authLoading || user?.role !== "admin") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="max-w-md">
-          <CardHeader className="text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>
-              You don't have permission to access this page.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -224,7 +228,28 @@ export default function KYCReview() {
     );
   }
 
-  const verifications = pendingData.verifications || [];
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="max-w-md">
+          <CardHeader className="text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <CardTitle>Unable to load verifications</CardTitle>
+            <CardDescription>
+              {error instanceof Error
+                ? error.message
+                : "The verification queue could not be loaded."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <Button onClick={() => refetch()}>Retry</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const verifications = pendingData?.verifications || [];
 
   const getStatusBadge = (status: string) => {
     const variants: Record<
@@ -341,10 +366,10 @@ export default function KYCReview() {
             <CardContent className="flex flex-col items-center justify-center py-12">
               <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
               <h3 className="text-xl font-semibold">
-                No Pending Verifications
+                No {statusFilter === "all" ? "" : statusFilter.replace("_", " ")} Verifications
               </h3>
               <p className="text-muted-foreground">
-                All verification requests have been reviewed.
+                There are no verification requests matching this filter.
               </p>
             </CardContent>
           </Card>
@@ -568,12 +593,7 @@ export default function KYCReview() {
                                           size="sm"
                                           className="text-destructive hover:text-destructive/80"
                                           onClick={() =>
-                                            documentReviewMutation.mutate({
-                                              documentId: doc.id,
-                                              approved: false,
-                                              reason:
-                                                "Document does not meet requirements",
-                                            })
+                                            setDocumentToReject(doc)
                                           }
                                           disabled={
                                             documentReviewMutation.isPending
@@ -733,6 +753,74 @@ export default function KYCReview() {
                     </>
                   )}
                 </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={documentToReject !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDocumentToReject(null);
+            setDocumentRejectionReason("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Document</DialogTitle>
+            <DialogDescription>
+              Provide the specific reason this document cannot be accepted. The
+              applicant will see this reason when resubmitting.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            <Label htmlFor="document-rejection-reason">
+              Rejection Reason *
+            </Label>
+            <Textarea
+              id="document-rejection-reason"
+              value={documentRejectionReason}
+              onChange={(e) => setDocumentRejectionReason(e.target.value)}
+              placeholder="Explain what the applicant needs to correct..."
+              rows={3}
+              required
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDocumentToReject(null);
+                setDocumentRejectionReason("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={
+                documentReviewMutation.isPending ||
+                !documentRejectionReason.trim()
+              }
+              onClick={() => {
+                if (!documentToReject) return;
+                documentReviewMutation.mutate({
+                  documentId: documentToReject.id,
+                  approved: false,
+                  reason: documentRejectionReason.trim(),
+                });
+              }}
+            >
+              {documentReviewMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Rejecting...
+                </>
+              ) : (
+                "Reject Document"
               )}
             </Button>
           </DialogFooter>

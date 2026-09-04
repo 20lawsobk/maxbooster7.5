@@ -12,7 +12,18 @@ interface PaymentBypassConfig {
 }
 
 const PAYMENT_BYPASS_KEY = "payment_bypass";
+const PAYMENT_BYPASS_AUDIT_KEY = "payment_bypass_audit";
 const DEFAULT_BYPASS_DURATION_HOURS = 24;
+const MAX_AUDIT_EVENTS = 500;
+
+interface PaymentBypassAuditEvent {
+  action: "activated" | "deactivated" | "extended";
+  adminId: string;
+  occurredAt: string;
+  reason: string | null;
+  expiresAt: string | null;
+  durationHours?: number;
+}
 
 class PaymentBypassService {
   private cachedConfig: PaymentBypassConfig | null = null;
@@ -95,6 +106,42 @@ class PaymentBypassService {
     }
   }
 
+  private async appendAuditEvent(event: PaymentBypassAuditEvent): Promise<void> {
+    const [existing] = await db
+      .select({ value: systemSettings.value })
+      .from(systemSettings)
+      .where(eq(systemSettings.key, PAYMENT_BYPASS_AUDIT_KEY))
+      .limit(1);
+    const existingEvents = Array.isArray(existing?.value)
+      ? (existing.value as PaymentBypassAuditEvent[])
+      : [];
+    const events = [...existingEvents, event].slice(-MAX_AUDIT_EVENTS);
+
+    await db
+      .insert(systemSettings)
+      .values({
+        key: PAYMENT_BYPASS_AUDIT_KEY,
+        value: events,
+        description: "Immutable-style payment bypass administrative audit trail",
+        updatedBy: event.adminId,
+      })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { value: events, updatedBy: event.adminId, updatedAt: new Date() },
+      });
+  }
+
+  private async getAuditTrail(): Promise<PaymentBypassAuditEvent[]> {
+    const [setting] = await db
+      .select({ value: systemSettings.value })
+      .from(systemSettings)
+      .where(eq(systemSettings.key, PAYMENT_BYPASS_AUDIT_KEY))
+      .limit(1);
+    return Array.isArray(setting?.value)
+      ? (setting.value as PaymentBypassAuditEvent[]).slice().reverse()
+      : [];
+  }
+
   async isPaymentBypassed(): Promise<boolean> {
     const now = Date?.now();
 
@@ -151,6 +198,14 @@ class PaymentBypassService {
     };
 
     await this.saveConfig(config, adminId);
+    await this.appendAuditEvent({
+      action: "activated",
+      adminId,
+      occurredAt: now.toISOString(),
+      reason: config.reason,
+      expiresAt: config.expiresAt,
+      durationHours,
+    });
     logger.info(
       `[PaymentBypass] Activated by ${adminId} until ${expiresAt?.toISOString()}`,
     );
@@ -167,6 +222,13 @@ class PaymentBypassService {
 
     const config = this.getDefaultConfig();
     await this.saveConfig(config, adminId);
+    await this.appendAuditEvent({
+      action: "deactivated",
+      adminId,
+      occurredAt: new Date().toISOString(),
+      reason: reason || "Manual deactivation",
+      expiresAt: null,
+    });
 
     if (wasEnabled) {
       logger.info(
@@ -182,6 +244,7 @@ class PaymentBypassService {
     config: PaymentBypassConfig;
     timeRemaining: string | null;
     timeRemainingMs: number | null;
+    auditTrail: PaymentBypassAuditEvent[];
   }> {
     const config = await this.loadConfig();
     const bypassed = await this.isPaymentBypassed();
@@ -201,11 +264,13 @@ class PaymentBypassService {
       }
     }
 
+    const auditTrail = await this.getAuditTrail();
     return {
       bypassed,
       config,
       timeRemaining,
       timeRemainingMs,
+      auditTrail,
     };
   }
 
@@ -228,6 +293,14 @@ class PaymentBypassService {
     config.reason = `${config?.reason} | Extended by ${additionalHours}h by ${adminId}`;
 
     await this.saveConfig(config, adminId);
+    await this.appendAuditEvent({
+      action: "extended",
+      adminId,
+      occurredAt: new Date().toISOString(),
+      reason: config.reason,
+      expiresAt: config.expiresAt,
+      durationHours: additionalHours,
+    });
     logger.info(
       `[PaymentBypass] Extended by ${adminId} until ${newExpiry?.toISOString()}`,
     );

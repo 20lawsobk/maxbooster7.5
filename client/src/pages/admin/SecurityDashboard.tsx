@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
   Card,
@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRequireAdmin } from "@/hooks/useRequireAuth";
+import { apiRequest, ApiError } from "@/lib/queryClient";
 import { Shield, Activity, AlertTriangle, CheckCircle2, XCircle, Eye, Clock, Target, Loader2, AlertCircle, RefreshCw, Download, Server, Users, Lock } from "lucide-react";
 
 interface SecurityMetrics {
@@ -89,7 +90,9 @@ interface PenTestResponse {
 
 export default function SecurityDashboard() {
   const { user, isLoading: authLoading } = useRequireAdmin();
+  const queryClient = useQueryClient();
   const [refreshInterval, _setRefreshInterval] = useState(30000);
+  const isAdmin = user?.role === "admin";
 
   const {
     data: securityMetrics,
@@ -98,14 +101,12 @@ export default function SecurityDashboard() {
     refetch: refetchMetrics,
   } = useQuery<SecurityMetrics>({
     queryKey: ["/api/security/metrics"],
-    queryFn: async () => {
-      const response = await fetch("/api/security/metrics", {
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to fetch security metrics");
-      return response.json();
-    },
+    queryFn: () =>
+      apiRequest("GET", "/api/security/metrics").then((response) =>
+        response.json(),
+      ),
     refetchInterval: refreshInterval,
+    enabled: isAdmin,
   });
 
   const {
@@ -114,14 +115,12 @@ export default function SecurityDashboard() {
     error: alertsError,
   } = useQuery<BehavioralAlertsResponse>({
     queryKey: ["/api/security/behavioral-alerts"],
-    queryFn: async () => {
-      const response = await fetch("/api/security/behavioral-alerts", {
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to fetch behavioral alerts");
-      return response.json();
-    },
+    queryFn: () =>
+      apiRequest("GET", "/api/security/behavioral-alerts").then((response) =>
+        response.json(),
+      ),
     refetchInterval: refreshInterval,
+    enabled: isAdmin,
   });
 
   const {
@@ -130,14 +129,12 @@ export default function SecurityDashboard() {
     error: anomaliesError,
   } = useQuery<AnomaliesResponse>({
     queryKey: ["/api/security/anomaly-detection"],
-    queryFn: async () => {
-      const response = await fetch("/api/security/anomaly-detection", {
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to detect anomalies");
-      return response.json();
-    },
+    queryFn: () =>
+      apiRequest("GET", "/api/security/anomaly-detection").then((response) =>
+        response.json(),
+      ),
     refetchInterval: refreshInterval,
+    enabled: isAdmin,
   });
 
   const {
@@ -146,14 +143,74 @@ export default function SecurityDashboard() {
     error: penTestError,
   } = useQuery<PenTestResponse>({
     queryKey: ["/api/security/pentest-results"],
-    queryFn: async () => {
-      const response = await fetch("/api/security/pentest-results", {
-        credentials: "include",
+    queryFn: () =>
+      apiRequest("GET", "/api/security/pentest-results").then((response) =>
+        response.json(),
+      ),
+    enabled: isAdmin,
+  });
+
+  const resolveAlertMutation = useMutation({
+    mutationFn: (alertId: string) =>
+      apiRequest("PATCH", `/api/security/behavioral-alerts/${alertId}/resolve`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/security/behavioral-alerts"],
       });
-      if (!response.ok) throw new Error("Failed to fetch pentest results");
-      return response.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/security/metrics"] });
     },
   });
+
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof ApiError ? error.userMessage : fallback;
+
+  const refreshDashboard = () => {
+    void Promise.all([
+      refetchMetrics(),
+      queryClient.refetchQueries({
+        queryKey: ["/api/security/behavioral-alerts"],
+      }),
+      queryClient.refetchQueries({
+        queryKey: ["/api/security/anomaly-detection"],
+      }),
+      queryClient.refetchQueries({
+        queryKey: ["/api/security/pentest-results"],
+      }),
+    ]);
+  };
+
+  const exportSecurityReport = () => {
+    if (!penTestData) return;
+
+    const rows = [
+      ["Security Assessment Report"],
+      ["Generated at", new Date().toISOString()],
+      ["Last scan", penTestData.lastScan],
+      [],
+      ["Severity", "Count"],
+      ["Critical", String(penTestData.summary.critical)],
+      ["High", String(penTestData.summary.high)],
+      ["Medium", String(penTestData.summary.medium)],
+      ["Low", String(penTestData.summary.low)],
+      ["Passed checks", String(penTestData.summary.passed)],
+      [],
+      ["Recommendations"],
+      ...penTestData.recommendations.map((recommendation) => [recommendation]),
+    ];
+    const csv = rows
+      .map((row) =>
+        row
+          .map((value) => `"${value.replace(/"/g, '""')}"`)
+          .join(","),
+      )
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `security-assessment-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -242,7 +299,7 @@ export default function SecurityDashboard() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => refetchMetrics()}
+              onClick={refreshDashboard}
             >
               <RefreshCw className="w-4 h-4 mr-1" />
               Refresh
@@ -254,7 +311,10 @@ export default function SecurityDashboard() {
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Failed to load security metrics. Please try again.
+              {getErrorMessage(
+                metricsError,
+                "Failed to load security metrics. Please try again.",
+              )}
             </AlertDescription>
           </Alert>
         ) : (
@@ -439,7 +499,10 @@ export default function SecurityDashboard() {
                   <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                      Failed to load behavioral alerts. Please try again.
+                      {getErrorMessage(
+                        alertsError,
+                        "Failed to load behavioral alerts. Please try again.",
+                      )}
                     </AlertDescription>
                   </Alert>
                 ) : loadingAlerts ? (
@@ -503,10 +566,15 @@ export default function SecurityDashboard() {
                             </Alert>
                           ) : (
                             <div className="flex gap-2">
-                              <Button size="sm" variant="outline">
-                                Investigate
+                              <Button size="sm" variant="outline" asChild>
+                                <a href="/admin/audit-log">Investigate</a>
                               </Button>
-                              <Button size="sm" variant="ghost">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => resolveAlertMutation.mutate(alert.id)}
+                                disabled={resolveAlertMutation.isPending}
+                              >
                                 Mark as Resolved
                               </Button>
                             </div>
@@ -533,7 +601,10 @@ export default function SecurityDashboard() {
                   <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                      Failed to load anomaly detection data. Please try again.
+                      {getErrorMessage(
+                        anomaliesError,
+                        "Failed to load anomaly detection data. Please try again.",
+                      )}
                     </AlertDescription>
                   </Alert>
                 ) : loadingAnomalies ? (
@@ -629,7 +700,12 @@ export default function SecurityDashboard() {
                       )}
                     </CardDescription>
                   </div>
-                  <Button size="sm" variant="outline">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={exportSecurityReport}
+                    disabled={!penTestData}
+                  >
                     <Download className="w-4 h-4 mr-1" />
                     Export Report
                   </Button>
@@ -640,8 +716,10 @@ export default function SecurityDashboard() {
                   <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                      Failed to load security assessment results. Please try
-                      again.
+                      {getErrorMessage(
+                        penTestError,
+                        "Failed to load security assessment results. Please try again.",
+                      )}
                     </AlertDescription>
                   </Alert>
                 ) : loadingPenTest ? (

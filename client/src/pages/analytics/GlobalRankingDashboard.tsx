@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -371,11 +372,17 @@ export default function GlobalRankingDashboard({
   similarArtists: propSimilarArtists,
 }: GlobalRankingProps) {
   const [timeRange, setTimeRange] = useState("30d");
+  const hasCompletePropData =
+    propMaxScore !== undefined &&
+    propGlobalRank !== undefined &&
+    propPlatformScores !== undefined &&
+    propRankingHistory !== undefined &&
+    propSimilarArtists !== undefined;
 
   const {
     data: rankingResponse,
     isLoading,
-    
+    error,
     refetch,
   } = useQuery<{
     data: {
@@ -387,7 +394,19 @@ export default function GlobalRankingDashboard({
     };
   }>({
     queryKey: ["/api/analytics/global-ranking", timeRange],
-    enabled: !propMaxScore && !propGlobalRank,
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/analytics/global-ranking?days=${encodeURIComponent(timeRange.replace("d", ""))}`,
+        { credentials: "include" },
+      );
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(body?.error || `Unable to load ranking data (HTTP ${response.status}).`);
+      }
+      return body;
+    },
+    enabled: !hasCompletePropData,
+    retry: false,
   });
 
   const rankingData = rankingResponse?.data ?? rankingResponse;
@@ -446,6 +465,21 @@ export default function GlobalRankingDashboard({
           </Select>
         </div>
       </div>
+
+      {isLoading && !rankingData ? (
+        <div className="flex h-32 items-center justify-center gap-3 text-muted-foreground" role="status">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Loading ranking data…
+        </div>
+      ) : null}
+      {error ? (
+        <Alert variant="destructive">
+          <AlertTitle>Ranking data unavailable</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : "Unable to load ranking data."}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1">

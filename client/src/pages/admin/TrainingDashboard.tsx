@@ -215,7 +215,13 @@ export default function TrainingDashboard() {
   const [mode, setMode] = useState<"session" | "day" | "continuous">("session");
   const [nSessions, setNSessions] = useState(3);
 
-  const { data: status, isError: statusError } = useQuery<TrainStatus>({
+  const {
+    data: status,
+    error: statusQueryError,
+    isError: statusError,
+    isLoading: statusLoading,
+    refetch: refetchStatus,
+  } = useQuery<TrainStatus>({
     queryKey: ["training-status"],
     queryFn: () => apiFetch("/api/training/status"),
     refetchInterval: (query) =>
@@ -226,14 +232,26 @@ export default function TrainingDashboard() {
     retry: false,
   });
 
-  const { data: datasets } = useQuery<DatasetInfo>({
+  const {
+    data: datasets,
+    error: datasetsQueryError,
+    isError: datasetsError,
+    isLoading: datasetsLoading,
+    refetch: refetchDatasets,
+  } = useQuery<DatasetInfo>({
     queryKey: ["training-datasets"],
     queryFn: () => apiFetch("/api/training/datasets"),
     staleTime: 60_000,
     retry: false,
   });
 
-  const { data: schedule } = useQuery<ScheduleInfo>({
+  const {
+    data: schedule,
+    error: scheduleQueryError,
+    isError: scheduleError,
+    isLoading: scheduleLoading,
+    refetch: refetchSchedule,
+  } = useQuery<ScheduleInfo>({
     queryKey: ["training-schedule"],
     queryFn: () => apiFetch("/api/training/schedule"),
     staleTime: 300_000,
@@ -256,7 +274,10 @@ export default function TrainingDashboard() {
 
   const isRunning = status?.status === "running";
   const isStopping = status?.status === "stopping";
-  const canStart = !isRunning && !isStopping;
+  // Do not offer a start action until the current state has been read. Without
+  // that check an unavailable status service made the page appear safe to start
+  // even though a trainer could already be active.
+  const canStart = !!status && !isRunning && !isStopping;
 
   if (authLoading) {
     return (
@@ -289,9 +310,7 @@ export default function TrainingDashboard() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() =>
-                qc.invalidateQueries({ queryKey: ["training-status"] })
-              }
+              onClick={() => refetchStatus()}
               className="text-gray-400"
             >
               <RefreshCw className="w-4 h-4" />
@@ -313,7 +332,16 @@ export default function TrainingDashboard() {
           <Alert className="border-yellow-500/30 bg-yellow-500/10">
             <AlertTriangle className="w-4 h-4 text-yellow-400" />
             <AlertDescription className="text-yellow-300 text-sm">
-              Python AI service unavailable — make sure the server is running.
+              Unable to load trainer status:{" "}
+              {(statusQueryError as Error)?.message || "Unknown error"}
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 ml-2 text-yellow-300"
+                onClick={() => refetchStatus()}
+              >
+                Retry
+              </Button>
             </AlertDescription>
           </Alert>
         )}
@@ -535,6 +563,16 @@ export default function TrainingDashboard() {
                       {(startMutation.error as Error).message}
                     </p>
                   )}
+                    {stopMutation.isError && (
+                      <p className="text-red-400 text-xs">
+                        {(stopMutation.error as Error).message}
+                      </p>
+                    )}
+                    {statusLoading && (
+                      <p className="text-gray-400 text-xs">
+                        Checking trainer status…
+                      </p>
+                    )}
                 </CardContent>
               </Card>
 
@@ -673,31 +711,31 @@ export default function TrainingDashboard() {
                 {[
                   {
                     label: "HMDB-51 Clips",
-                    value: datasets.stats?.hmdb51_clips,
+                    value: datasets?.stats?.hmdb51_clips,
                     icon: "🎬",
                     color: "text-blue-400",
                   },
                   {
                     label: "UCF-101 Clips",
-                    value: datasets.stats?.ucf101_clips,
+                    value: datasets?.stats?.ucf101_clips,
                     icon: "🎬",
                     color: "text-blue-400",
                   },
                   {
                     label: "MusicCaps Captions",
-                    value: datasets.stats?.musiccaps_captions,
+                    value: datasets?.stats?.musiccaps_captions,
                     icon: "🎵",
                     color: "text-purple-400",
                   },
                   {
                     label: "AudioCaps Captions",
-                    value: datasets.stats?.audiocaps_captions,
+                    value: datasets?.stats?.audiocaps_captions,
                     icon: "🔊",
                     color: "text-teal-400",
                   },
                   {
                     label: "FMA Tracks",
-                    value: datasets.stats?.fma_tracks,
+                    value: datasets?.stats?.fma_tracks,
                     icon: "🎼",
                     color: "text-orange-400",
                   },
@@ -732,6 +770,28 @@ export default function TrainingDashboard() {
                   </Card>
                 ))}
               </div>
+              {datasetsError && (
+                <Alert className="border-yellow-500/30 bg-yellow-500/10">
+                  <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                  <AlertDescription className="text-yellow-300 text-sm">
+                    Unable to load dataset information:{" "}
+                    {(datasetsQueryError as Error)?.message || "Unknown error"}
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 ml-2 text-yellow-300"
+                      onClick={() => refetchDatasets()}
+                    >
+                      Retry
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              {datasetsLoading && (
+                <p className="text-center text-gray-500 text-sm">
+                  Loading dataset information…
+                </p>
+              )}
 
               <Card className="bg-gray-900 border-gray-700">
                 <CardHeader className="pb-2">
@@ -767,9 +827,15 @@ export default function TrainingDashboard() {
                           </div>
                         ))}
                     </div>
-                  ) : (
+                  ) : datasetsLoading ? (
                     <p className="text-sm text-gray-500 text-center py-4">
                       Loading dataset info…
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      {datasetsError
+                        ? "Dataset size information is unavailable."
+                        : "No dataset files reported."}
                     </p>
                   )}
                 </CardContent>
@@ -887,9 +953,29 @@ export default function TrainingDashboard() {
                       );
                     })}
                   </div>
-                ) : (
+                ) : scheduleError ? (
+                  <Alert className="border-yellow-500/30 bg-yellow-500/10">
+                    <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                    <AlertDescription className="text-yellow-300 text-sm">
+                      Unable to load curriculum:{" "}
+                      {(scheduleQueryError as Error)?.message || "Unknown error"}
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 ml-2 text-yellow-300"
+                        onClick={() => refetchSchedule()}
+                      >
+                        Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                ) : scheduleLoading ? (
                   <div className="text-center py-8 text-gray-500 text-sm">
                     Loading curriculum…
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500 text-sm">
+                    Curriculum data is not available.
                   </div>
                 )}
               </CardContent>

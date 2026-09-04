@@ -1,23 +1,13 @@
-import { Router, type RequestHandler } from "express";
+import { Router } from "express";
 import { db } from "../db.js";
 import { supportTickets } from "../../shared/schema.js";
 import { eq, desc, like, or, sql, count, avg, and } from "drizzle-orm";
 import { logger } from "../logger.js";
-import { requireAuth, require2FA } from "../middleware/auth.js";
+import { requireAdmin, requireAuth, require2FA } from "../middleware/auth.js";
 import { notificationService } from "../services/notificationService.js";
 import { supportTicketService } from "../services/supportTicketService.js";
 
 const router = Router();
-
-const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-  next();
-};
 
 // Get user's own tickets
 router.get("/tickets", requireAuth, async (req, res) => {
@@ -42,7 +32,7 @@ router.get("/tickets", requireAuth, async (req, res) => {
 });
 
 // Get all tickets (admin only)
-router.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
+router.get("/tickets/all", requireAuth, requireAdmin, require2FA, async (req, res) => {
   try {
     const { status, priority, search } = req.query;
 
@@ -95,7 +85,7 @@ router.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
   }
 });
 
-router.get("/stats", requireAdmin, require2FA, async (_req, res) => {
+router.get("/stats", requireAuth, requireAdmin, require2FA, async (_req, res) => {
   try {
     const [ticketStatsResult, avgResponseResult, avgSatisfactionResult] =
       await Promise.all([
@@ -132,7 +122,7 @@ router.get("/stats", requireAdmin, require2FA, async (_req, res) => {
   }
 });
 
-router.get("/tickets/:ticketId", requireAdmin, require2FA, async (req, res) => {
+router.get("/tickets/:ticketId", requireAuth, requireAdmin, require2FA, async (req, res) => {
   try {
     const { ticketId } = req.params as Record<string, string>;
 
@@ -163,6 +153,7 @@ router.get("/tickets/:ticketId", requireAdmin, require2FA, async (req, res) => {
 // table does not exist in the schema yet.
 router.post(
   "/tickets/:ticketId/messages",
+  requireAuth,
   requireAdmin,
   require2FA,
   async (req, res) => {
@@ -203,6 +194,7 @@ router.post(
 // Add tags to a ticket — admin only. Persisted in metadata.tags (deduplicated).
 router.post(
   "/tickets/:ticketId/tags",
+  requireAuth,
   requireAdmin,
   require2FA,
   async (req, res) => {
@@ -244,6 +236,7 @@ router.post(
 // Remove a tag from a ticket — admin only.
 router.delete(
   "/tickets/:ticketId/tags/:tag",
+  requireAuth,
   requireAdmin,
   require2FA,
   async (req, res) => {
@@ -280,6 +273,7 @@ router.delete(
 
 router.patch(
   "/tickets/:ticketId",
+  requireAuth,
   requireAdmin,
   require2FA,
   async (req, res) => {
@@ -327,10 +321,15 @@ router.patch(
         updateData.resolvedAt = new Date();
       }
 
-      await db
+      const updatedTickets = await db
         .update(supportTickets)
         .set(updateData)
-        .where(eq(supportTickets.id, ticketId));
+        .where(eq(supportTickets.id, ticketId))
+        .returning({ id: supportTickets.id });
+
+      if (!updatedTickets.length) {
+        return res.status(404).json({ error: "Ticket not found" });
+      }
 
       logger.info({ detail: updateData }, `Admin ${req.user?.email} updated ticket ${ticketId}:`,
       );

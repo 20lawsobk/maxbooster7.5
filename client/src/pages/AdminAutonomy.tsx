@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, ApiError } from "@/lib/queryClient";
 import { Play, Square, Shield, Cpu, Activity, Zap, TrendingUp, AlertTriangle, CheckCircle, Clock, RefreshCw, FlaskConical, Radio, Globe, Music, BarChart3, PowerOff, Power, Loader2, Wrench, Bug, HeartPulse, Server } from "lucide-react";
 
 const URGENCY_COLORS: Record<string, string> = {
@@ -88,14 +88,22 @@ interface AutoUpdateStatus {
 }
 
 interface SecurityMetrics {
-  securityScore?: number;
-  activeThreats?: number;
-  totalThreats?: number;
+  systemHealth?: {
+    status?: string;
+  };
+  threats?: {
+    blockedAttempts?: number;
+    suspiciousActivity?: number;
+  };
 }
 
 interface SecurityThreat {
-  type?: string;
+  threatType?: string;
   severity?: string;
+}
+
+interface SecurityThreatsResponse {
+  threats?: SecurityThreat[];
 }
 
 interface RunningStatus {
@@ -201,29 +209,63 @@ export default function AdminAutonomy() {
   const securityThreatsKey = ["/api/security/threats"];
   const autopilotKey = ["/api/autopilot/status"];
   const autonomousKey = ["/api/auto/social/status"];
+  const errorMessage = (error: unknown) =>
+    error instanceof ApiError ? error.userMessage : "Please try again.";
 
-  const { data: status, isLoading: statusLoading } =
+  const {
+    data: status,
+    isLoading: statusLoading,
+    error: statusError,
+    refetch: refetchStatus,
+  } =
     useQuery<AutoUpdateStatus>({
       queryKey: updatesKey,
       refetchInterval: 30000,
+      enabled: !!user,
     });
-  useQuery<Record<string, unknown>>({
+  const { error: changesError, refetch: refetchChanges } = useQuery<
+    Record<string, unknown>
+  >({
     queryKey: changesKey,
+    enabled: !!user,
   });
-  useQuery<Record<string, unknown>>({
+  const { error: upgradesError, refetch: refetchUpgrades } = useQuery<
+    Record<string, unknown>
+  >({
     queryKey: upgradesKey,
+    enabled: !!user,
   });
-  const { data: securityMetrics } = useQuery<SecurityMetrics>({
+  const {
+    data: securityMetrics,
+    error: securityMetricsError,
+    refetch: refetchSecurityMetrics,
+  } = useQuery<SecurityMetrics>({
     queryKey: securityMetricsKey,
+    enabled: !!user,
   });
-  const { data: securityThreats } = useQuery<SecurityThreat[]>({
+  const {
+    data: securityThreatsResponse,
+    error: securityThreatsError,
+    refetch: refetchSecurityThreats,
+  } = useQuery<SecurityThreatsResponse>({
     queryKey: securityThreatsKey,
+    enabled: !!user,
   });
-  const { data: autopilotStatus } = useQuery<RunningStatus>({
+  const {
+    data: autopilotStatus,
+    error: autopilotError,
+    refetch: refetchAutopilot,
+  } = useQuery<RunningStatus>({
     queryKey: autopilotKey,
+    enabled: !!user,
   });
-  const { data: autonomousStatus } = useQuery<RunningStatus>({
+  const {
+    data: autonomousStatus,
+    error: autonomousError,
+    refetch: refetchAutonomous,
+  } = useQuery<RunningStatus>({
     queryKey: autonomousKey,
+    enabled: !!user,
   });
 
   const invalidateAll = () => {
@@ -252,6 +294,12 @@ export default function AdminAutonomy() {
       }
       invalidateAll();
     },
+    onError: (error) =>
+      toast({
+        title: "Could not start engine",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const stopEngine = useMutation({
@@ -261,6 +309,12 @@ export default function AdminAutonomy() {
       toast({ title: "Engine paused" });
       invalidateAll();
     },
+    onError: (error) =>
+      toast({
+        title: "Could not stop engine",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const runOnce = useMutation({
@@ -273,28 +327,69 @@ export default function AdminAutonomy() {
       });
       invalidateAll();
     },
-    onError: () => toast({ title: "Cycle failed", variant: "destructive" }),
+    onError: (error) =>
+      toast({
+        title: "Cycle failed",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const startAutopilot = useMutation({
     mutationFn: async () =>
       (await apiRequest("POST", "/api/autopilot/start")).json(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: autopilotKey }),
+    onSuccess: (data) => {
+      toast({ title: "Content Autopilot started", description: data.message });
+      queryClient.invalidateQueries({ queryKey: autopilotKey });
+    },
+    onError: (error) =>
+      toast({
+        title: "Could not start Content Autopilot",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
   const stopAutopilot = useMutation({
     mutationFn: async () =>
       (await apiRequest("POST", "/api/autopilot/stop")).json(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: autopilotKey }),
+    onSuccess: (data) => {
+      toast({ title: "Content Autopilot stopped", description: data.message });
+      queryClient.invalidateQueries({ queryKey: autopilotKey });
+    },
+    onError: (error) =>
+      toast({
+        title: "Could not stop Content Autopilot",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
   const startAutonomous = useMutation({
     mutationFn: async () =>
       (await apiRequest("POST", "/api/auto/social/start", {})).json(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: autonomousKey }),
+    onSuccess: (data) => {
+      toast({ title: "Autonomous Social started", description: data.message });
+      queryClient.invalidateQueries({ queryKey: autonomousKey });
+    },
+    onError: (error) =>
+      toast({
+        title: "Could not start Autonomous Social",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
   const stopAutonomous = useMutation({
     mutationFn: async () =>
       (await apiRequest("POST", "/api/auto/social/stop", {})).json(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: autonomousKey }),
+    onSuccess: (data) => {
+      toast({ title: "Autonomous Social stopped", description: data.message });
+      queryClient.invalidateQueries({ queryKey: autonomousKey });
+    },
+    onError: (error) =>
+      toast({
+        title: "Could not stop Autonomous Social",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const chainFixerKey = ["/api/admin/chain-fixer/status"];
@@ -302,24 +397,40 @@ export default function AdminAutonomy() {
   const selfHealingStatusKey = ["/api/security/self-healing/status"];
   const selfHealingMetricsKey = ["/api/security/self-healing/metrics"];
 
-  const { data: chainFixerStatus, refetch: refetchChainFixer } =
+  const {
+    data: chainFixerStatus,
+    error: chainFixerError,
+    refetch: refetchChainFixer,
+  } =
     useQuery<ChainFixerResponse>({
       queryKey: chainFixerKey,
       refetchInterval: 15000,
       enabled: !!user,
     });
-  const { data: platformFixerStatus, refetch: refetchPlatformFixer } =
+  const {
+    data: platformFixerStatus,
+    error: platformFixerError,
+    refetch: refetchPlatformFixer,
+  } =
     useQuery<PlatformFixerResponse>({
       queryKey: platformFixerKey,
       refetchInterval: 15000,
       enabled: !!user,
     });
-  const { data: selfHealingStatusData } = useQuery<SelfHealingStatusResponse>({
+  const {
+    data: selfHealingStatusData,
+    error: selfHealingStatusError,
+    refetch: refetchSelfHealingStatus,
+  } = useQuery<SelfHealingStatusResponse>({
     queryKey: selfHealingStatusKey,
     refetchInterval: 10000,
     enabled: !!user,
   });
-  const { data: selfHealingMetricsData } = useQuery<SelfHealingMetricsResponse>({
+  const {
+    data: selfHealingMetricsData,
+    error: selfHealingMetricsError,
+    refetch: refetchSelfHealingMetrics,
+  } = useQuery<SelfHealingMetricsResponse>({
     queryKey: selfHealingMetricsKey,
     refetchInterval: 10000,
     enabled: !!user,
@@ -336,8 +447,12 @@ export default function AdminAutonomy() {
       toast({ title: "Health check complete" });
       refetchChainFixer();
     },
-    onError: () =>
-      toast({ title: "Health check failed", variant: "destructive" }),
+    onError: (error) =>
+      toast({
+        title: "Health check failed",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const forcePlatformScan = useMutation({
@@ -347,11 +462,20 @@ export default function AdminAutonomy() {
       toast({ title: "Platform scan triggered" });
       refetchPlatformFixer();
     },
-    onError: () => toast({ title: "Scan failed", variant: "destructive" }),
+    onError: (error) =>
+      toast({
+        title: "Scan failed",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const killSwitchKey = ["/api/kill-switch/status"];
-  const { data: killSwitchData, refetch: refetchKillSwitch } =
+  const {
+    data: killSwitchData,
+    error: killSwitchError,
+    refetch: refetchKillSwitch,
+  } =
     useQuery<KillSwitchResponse>({
       queryKey: killSwitchKey,
       refetchInterval: 30000,
@@ -368,8 +492,12 @@ export default function AdminAutonomy() {
       toast({ title: "All autonomous systems halted", variant: "destructive" });
       refetchKillSwitch();
     },
-    onError: () =>
-      toast({ title: "Kill switch failed", variant: "destructive" }),
+    onError: (error) =>
+      toast({
+        title: "Kill switch failed",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const resumeAll = useMutation({
@@ -383,7 +511,12 @@ export default function AdminAutonomy() {
       toast({ title: "All autonomous systems resumed" });
       refetchKillSwitch();
     },
-    onError: () => toast({ title: "Resume failed", variant: "destructive" }),
+    onError: (error) =>
+      toast({
+        title: "Resume failed",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const killSystem = useMutation({
@@ -397,6 +530,12 @@ export default function AdminAutonomy() {
       toast({ title: `${system} halted` });
       refetchKillSwitch();
     },
+    onError: (error) =>
+      toast({
+        title: "Could not halt system",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const resumeSystem = useMutation({
@@ -410,6 +549,12 @@ export default function AdminAutonomy() {
       toast({ title: `${system} resumed` });
       refetchKillSwitch();
     },
+    onError: (error) =>
+      toast({
+        title: "Could not resume system",
+        description: errorMessage(error),
+        variant: "destructive",
+      }),
   });
 
   const runSimulation = async () => {
@@ -423,14 +568,18 @@ export default function AdminAutonomy() {
         title: "Simulation complete",
         description: `${data.mainResults?.totalScenarios ?? 0} scenarios verified`,
       });
-    } catch {
-      toast({ title: "Simulation failed", variant: "destructive" });
+    } catch (error) {
+      toast({
+        title: "Simulation failed",
+        description: errorMessage(error),
+        variant: "destructive",
+      });
     } finally {
       setSimRunning(false);
     }
   };
 
-  if (authLoading || statusLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-4">
@@ -445,6 +594,35 @@ export default function AdminAutonomy() {
 
   if (!user) return null;
 
+  const securityThreats = securityThreatsResponse?.threats ?? [];
+  const failedQueries = [
+    ["Self-Evolution Engine", statusError],
+    ["industry changes", changesError],
+    ["upgrade history", upgradesError],
+    ["security metrics", securityMetricsError],
+    ["security threats", securityThreatsError],
+    ["Content Autopilot", autopilotError],
+    ["Autonomous Social", autonomousError],
+    ["Self-Healing Security", selfHealingStatusError ?? selfHealingMetricsError],
+    ["Chain Error Auto-Fixer", chainFixerError],
+    ["Platform Auto-Fixer", platformFixerError],
+    ["Emergency Kill Switch", killSwitchError],
+  ].filter(([, error]) => error);
+  const retryFailedQueries = () => {
+    if (statusError) void refetchStatus();
+    if (changesError) void refetchChanges();
+    if (upgradesError) void refetchUpgrades();
+    if (securityMetricsError) void refetchSecurityMetrics();
+    if (securityThreatsError) void refetchSecurityThreats();
+    if (autopilotError) void refetchAutopilot();
+    if (autonomousError) void refetchAutonomous();
+    if (selfHealingStatusError) void refetchSelfHealingStatus();
+    if (selfHealingMetricsError) void refetchSelfHealingMetrics();
+    if (chainFixerError) void refetchChainFixer();
+    if (platformFixerError) void refetchPlatformFixer();
+    if (killSwitchError) void refetchKillSwitch();
+  };
+
   const isRunning = status?.isRunning ?? false;
   const safetyStatus = status?.safety;
   const recentChanges: IndustryChange[] = status?.recentChanges ?? [];
@@ -456,6 +634,36 @@ export default function AdminAutonomy() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar title="Admin Autonomy" />
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
+          {statusLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading live autonomy status…
+            </div>
+          )}
+          {failedQueries.length > 0 && (
+            <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+              <CardContent className="flex items-center justify-between gap-4 py-4">
+                <div className="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-100">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium">Some autonomy data could not be loaded.</p>
+                    <p className="text-xs mt-0.5">
+                      Failed: {failedQueries.map(([name]) => name).join(", ")}.
+                    </p>
+                    <p className="text-xs mt-0.5">
+                      {failedQueries
+                        .map(([name, error]) => `${name}: ${errorMessage(error)}`)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" onClick={retryFailedQueries}>
+                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                  Retry
+                </Button>
+              </CardContent>
+            </Card>
+          )}
           {/* Emergency Kill Switch */}
           {(() => {
             const ksData: KillSwitchState =
@@ -954,17 +1162,19 @@ export default function AdminAutonomy() {
                   <Button
                     size="sm"
                     onClick={() => startAutopilot.mutate()}
-                    disabled={autopilotStatus?.isRunning}
+                    disabled={autopilotStatus?.isRunning || startAutopilot.isPending}
                   >
-                    <Play className="w-3 h-3 mr-1" /> Start
+                    <Play className="w-3 h-3 mr-1" />{" "}
+                    {startAutopilot.isPending ? "Starting…" : "Start"}
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => stopAutopilot.mutate()}
-                    disabled={!autopilotStatus?.isRunning}
+                    disabled={!autopilotStatus?.isRunning || stopAutopilot.isPending}
                   >
-                    <Square className="w-3 h-3 mr-1" /> Stop
+                    <Square className="w-3 h-3 mr-1" />{" "}
+                    {stopAutopilot.isPending ? "Stopping…" : "Stop"}
                   </Button>
                 </div>
               </CardContent>
@@ -992,17 +1202,19 @@ export default function AdminAutonomy() {
                   <Button
                     size="sm"
                     onClick={() => startAutonomous.mutate()}
-                    disabled={autonomousStatus?.isRunning}
+                    disabled={autonomousStatus?.isRunning || startAutonomous.isPending}
                   >
-                    <Play className="w-3 h-3 mr-1" /> Start
+                    <Play className="w-3 h-3 mr-1" />{" "}
+                    {startAutonomous.isPending ? "Starting…" : "Start"}
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => stopAutonomous.mutate()}
-                    disabled={!autonomousStatus?.isRunning}
+                    disabled={!autonomousStatus?.isRunning || stopAutonomous.isPending}
                   >
-                    <Square className="w-3 h-3 mr-1" /> Stop
+                    <Square className="w-3 h-3 mr-1" />{" "}
+                    {stopAutonomous.isPending ? "Stopping…" : "Stop"}
                   </Button>
                 </div>
               </CardContent>
@@ -1017,25 +1229,27 @@ export default function AdminAutonomy() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Score</span>
-                  <Badge>{securityMetrics?.securityScore ?? 100}</Badge>
+                  <span className="text-sm text-muted-foreground">Health</span>
+                  <Badge>{securityMetrics?.systemHealth?.status ?? "Unavailable"}</Badge>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Active threats: {securityMetrics?.activeThreats ?? 0}
+                  Blocked attempts (24h):{" "}
+                  {securityMetrics?.threats?.blockedAttempts ?? "—"}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Total logged: {securityMetrics?.totalThreats ?? 0}
+                  Suspicious activity (24h):{" "}
+                  {securityMetrics?.threats?.suspiciousActivity ?? "—"}
                 </div>
-                {(securityThreats ?? []).length > 0 && (
+                {securityThreats.length > 0 && (
                   <ScrollArea className="h-24 mt-2">
-                    {(securityThreats ?? [])
+                    {securityThreats
                       .slice(-5)
                       .map((t: SecurityThreat, i: number) => (
                         <div
                           key={i}
                           className="text-xs p-1.5 border rounded mb-1"
                         >
-                          <span className="font-medium">{t.type}</span>
+                          <span className="font-medium">{t.threatType}</span>
                           <span className="text-muted-foreground ml-2">
                             {t.severity}
                           </span>
