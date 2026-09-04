@@ -11,6 +11,7 @@ import { updateSchedulePressure } from "./services/contentQualityPipeline.js";
 import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
 import { autopilotLearningService } from "./services/autopilotLearningService.js";
 import { evolutionRegistry } from "./services/evolutionRegistry.js";
+import { selectArm } from "./services/adaptiveGenerationEngine.js";
 
 import {
   advancedUrlParser,
@@ -558,15 +559,32 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   // Resolve an optional advanced-URL-parser content brief from configured
-  // source links. Deterministic pick per (topic, platform); undefined when no
-  // links are configured or on any parse/SSRF failure (falls back to topic-only).
+  // source links. Rotates across all configured URLs via the shared adaptive
+  // bandit (scoped per user) instead of freezing on one URL forever for a
+  // given (topic, platform) pair. Falls back to the original seeded pick if
+  // the bandit call errors. Undefined when no links are configured or on any
+  // parse/SSRF failure (falls back to topic-only).
   private async resolveUrlBrief(
     platform: string,
     topic: string,
   ): Promise<UrlContentBrief | undefined> {
     const urls = this.config.sourceUrls;
     if (!urls || urls.length === 0) return undefined;
-    const chosen = urls[seededIndex(`${topic}|${platform}`, urls.length)];
+    let chosen: string;
+    try {
+      const { chosen: picked } = await selectArm({
+        domain: "autonomous_source_url",
+        scope: this.userId,
+        candidates: urls,
+      });
+      chosen = picked;
+    } catch (err) {
+      logger.warn(
+        { err },
+        `[AutonomousAutopilot] Adaptive source-URL selection failed, falling back to seeded pick`,
+      );
+      chosen = urls[seededIndex(`${topic}|${platform}`, urls.length)];
+    }
     try {
       const parsed = await advancedUrlParser.parseUrl(chosen);
       return advancedUrlParser.toContentBrief(parsed);

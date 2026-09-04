@@ -421,7 +421,7 @@ class UnifiedContentOrchestrator {
     logger.info(
       `[UCO:${runId}] Step 2: Generating Max Booster feature content`,
     );
-    const maxBoosterContent = generateAllMaxBoosterContent(
+    const maxBoosterContent = await generateAllMaxBoosterContent(
       platforms,
       targetArtistSegment,
     );
@@ -640,7 +640,7 @@ class UnifiedContentOrchestrator {
     input: UnifiedContentInput,
   ): Promise<MaxBoosterContentPiece[]> {
     const { platforms, targetArtistSegment } = normalizeInput(input);
-    return generateAllMaxBoosterContent(platforms, targetArtistSegment);
+    return await generateAllMaxBoosterContent(platforms, targetArtistSegment);
   }
 }
 

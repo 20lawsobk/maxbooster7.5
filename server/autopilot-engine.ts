@@ -683,16 +683,34 @@ export class AutopilotEngine extends EventEmitter {
   }
 
   // Resolve an optional advanced-URL-parser content brief from the configured
-  // source links. Deterministic pick per (topic, platform) so a given cycle is
-  // reproducible. Returns undefined when no links are configured or on any
-  // parse/SSRF failure, in which case generation falls back to topic-only.
+  // source links. Rotates across all configured URLs via the shared adaptive
+  // bandit (scoped per user) instead of freezing on one URL forever for a
+  // given (topic, platform) pair — the old seed had no time/history/outcome
+  // component, so a repeat topic+platform combo always parsed the same source
+  // link. Falls back to the original seeded pick if the bandit call errors.
+  // Returns undefined when no links are configured or on any parse/SSRF
+  // failure, in which case generation falls back to topic-only.
   private async resolveUrlBrief(
     topic: string,
     platform: string,
   ): Promise<UrlContentBrief | undefined> {
     const urls = this.config.sourceUrls;
     if (!urls || urls.length === 0) return undefined;
-    const chosen = urls[seededIndex(`${topic}|${platform}`, urls.length)];
+    let chosen: string;
+    try {
+      const { chosen: picked } = await selectArm({
+        domain: "autopilot_source_url",
+        scope: this.userId,
+        candidates: urls,
+      });
+      chosen = picked;
+    } catch (err) {
+      logger.warn(
+        { err },
+        `[Autopilot] Adaptive source-URL selection failed, falling back to seeded pick`,
+      );
+      chosen = urls[seededIndex(`${topic}|${platform}`, urls.length)];
+    }
     try {
       const parsed = await advancedUrlParser.parseUrl(chosen);
       return advancedUrlParser.toContentBrief(parsed);

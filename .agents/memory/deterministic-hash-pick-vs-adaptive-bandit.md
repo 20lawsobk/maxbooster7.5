@@ -64,3 +64,50 @@ inputs; fixed by switching to `?.`.
   it. Always confirm a call site is actually *reached* (grep the singleton/import name for real usage in
   its importers, not just that the importer itself is wired up) before spending time classifying bug vs.
   intentional on that file's internals — dead code makes the whole question moot.
+
+**Full-codebase survey (round 3) — grep needs multiple hash-shape patterns, not just one:**
+
+- The FNV-1a/`seededIndex`-named search from round 2 is not exhaustive. A separate inline
+  Java-`String.hashCode()`-style idiom (`hash = (hash << 5) - hash + charCode; hash = hash & hash`, both as
+  a `reduce` one-liner and as an unrolled `for` loop) hides the exact same bug shape and needs its own grep
+  pass. Found this way: a content-angle picker keyed only on a feature's static registry `id` (`feature.id`
+  never changes) — every piece of self-promotional content generated for a given product feature, on any
+  platform, forever, used the identical "angle" out of several available. Same fix shape (bandit + fallback
+  to the old hash on error), same ripple (the picking function and its one caller both had to become
+  `async`, two call sites needed `await`).
+- Confirmed duplicate-bug-in-sibling-files instance: two independent, structurally-parallel engine classes
+  (`autopilot-engine.ts` and `autonomous-autopilot.ts`) each had their own near-identical
+  `resolveUrlBrief(topic, platform)` method (params reversed order between the two files, same seed
+  construction inside), both with the exact same stable-key-only hash bug, both needing the same fix
+  independently — one already had the bandit imported (from a previously-fixed sibling method in the same
+  file), the other needed a fresh import added. When one file in a pair/family has already been fixed for
+  this bug class, always check its siblings for a copy-pasted twin before declaring the class closed.
+- **Verified NOT bugs, expanding the round-2 catalog:** (d) a stable per-identity visual assignment (e.g.
+  assigning each collaborator/user a consistent color from a fixed palette keyed on their user id) — users
+  *expect* the same identity to render identically forever; that consistency is the entire point, not a
+  variety failure. Same reasoning for a per-item deterministic placeholder visual (e.g. a fake waveform
+  shape seeded by a stable item id so the same item always renders the same placeholder). (e) a hash
+  labeled/used as a checksum, ETag, or content-addressed version identifier — these are correctness
+  mechanisms (detect-if-changed / cache-validity / dedup key), not a "pick from N options," regardless of
+  which hash algorithm they use internally. (f) a hash used only to break ties *within* the bandit's own
+  forced-exploration logic, self-commented as such — that is part of the fix mechanism, not an instance of
+  the bug. (g) a per-position round-robin over a fixed external list (`list.indexOf(x) % otherList.length`,
+  no hashing at all) used to spread a small set of variants evenly across the items of a *single batch
+  call* — legitimate batch-diversity distribution, not a disguised-as-random pick that's supposed to change
+  across separate calls; do not "fix" this into a bandit, since per-batch positional spread is the actual
+  intended property and an adaptive pick could cluster multiple items on the same variant within one batch.
+- Live-verification trick worth reusing: when a fix's effect is only visible inside one field of a larger
+  response (e.g. one content "format" among several echoes the picked value into its headline, the others
+  don't), compute which specific input reaches that lucky format/branch ahead of time instead of sampling
+  request shapes blindly — turns "call it a bunch of times and hope" into a deterministic, minimal repro.
+- **Adjacent but NOT the same bug shape — do not force a bandit fix onto this:** a procedural generator
+  (e.g. a melody generator making dozens of sequential note/rhythm decisions off one seeded PRNG instance)
+  seeded only by stable, low-cardinality inputs (a hardcoded key + a tempo value collapsed to one of two
+  buckets by an upstream mapping) is frozen for the same reason — no time/history/entropy component — but
+  there is no enumerable candidate list for the *whole output*, so `selectArm` does not fit. The honest fix
+  is mixing real per-call entropy (e.g. `randomBytes`) into the seed itself, not swapping the pick
+  mechanism. Tell these apart by asking "can I enumerate the finite set of things being chosen between?" —
+  yes (a named format/angle/hook/progression) → bandit; no (a whole generated artifact built from many
+  internal pseudo-random decisions) → the seed needs real entropy instead. Verify this shape by importing
+  the generator function directly in a throwaway script and diffing output across repeated identical calls
+  — far cheaper than a live HTTP round-trip when the function has no auth/DB dependency of its own.

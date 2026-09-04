@@ -365,7 +365,15 @@ export function generateMelody(
   const scaleArray = scaleNotes[scaleKey] || scaleNotes["C major"];
 
   const notes: Note[] = [];
-  const seed = new SeededRandom(key?.charCodeAt(0) + tempo);
+  // NOTE: key/tempo alone give only a handful of distinct seed values across
+  // every call (promptToMusicParams' upstream caller hardcodes key="C" and
+  // collapses tempo to one of two values), which made every in-house melody
+  // byte-identical for the same mood bucket. Mix in real per-call entropy so
+  // repeated "generate audio" requests produce genuinely different melodies;
+  // no caller exposes or relies on a reproducible seed for this path.
+  const seed = new SeededRandom(
+    key?.charCodeAt(0) + tempo + randomBytes(4).readUInt32BE(0),
+  );
 
   // Rhythmic patterns (in beats)
   const rhythmPatterns = [

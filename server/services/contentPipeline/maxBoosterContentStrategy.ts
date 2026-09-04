@@ -20,6 +20,8 @@
 
 import type { GeneratorContext } from "./contentTypeGenerators.js";
 import type { SupportedPlatform } from "./platformFormatters.js";
+import { selectArm } from "../adaptiveGenerationEngine.js";
+import { logger } from "../../logger.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -336,9 +338,9 @@ export function getFeaturesForPlatform(
  * Generates a complete content piece for a Max Booster feature on a given platform.
  * Uses the feature registry to pick the right angle and assembles platform-aware copy.
  */
-export function generateMaxBoosterContent(
+export async function generateMaxBoosterContent(
   ctx: MaxBoosterContentContext,
-): MaxBoosterContentPiece {
+): Promise<MaxBoosterContentPiece> {
   const { feature, platform, format, targetArtistSegment } = ctx;
 
   const segmentAdjective: Record<string, string> = {
@@ -348,12 +350,31 @@ export function generateMaxBoosterContent(
     professional: "professional artist",
   };
 
-  const angle =
-    feature?.contentAngles[
-      Math.abs(
-        [...(feature?.id ?? [])].reduce((h, c) => (h * 31 + c?.charCodeAt(0)) | 0, 0),
-      ) % feature?.contentAngles.length
-    ];
+  // Rotates across this feature's content angles via the shared adaptive
+  // bandit instead of freezing on one angle forever — the old hash keyed only
+  // on feature.id (a stable identifier), so every piece of content generated
+  // for a given feature, on any platform, at any time, always used the exact
+  // same angle. Falls back to the original hashed pick if the bandit errors.
+  let angle: string;
+  try {
+    const { chosen } = await selectArm({
+      domain: "maxbooster_content_angle",
+      scope: feature.id,
+      candidates: feature.contentAngles,
+    });
+    angle = chosen;
+  } catch (err) {
+    logger.warn(
+      { err },
+      `[MaxBoosterContentStrategy] Adaptive angle selection failed for ${feature?.id}, falling back to hashed pick`,
+    );
+    angle =
+      feature?.contentAngles[
+        Math.abs(
+          [...(feature?.id ?? [])].reduce((h, c) => (h * 31 + c?.charCodeAt(0)) | 0, 0),
+        ) % feature?.contentAngles.length
+      ];
+  }
 
   const formatTemplates: Record<
     MaxBoosterContentContext["format"],
@@ -504,10 +525,10 @@ function buildMaxBoosterHashtags(
  * Generates content pieces for ALL Max Booster features across given platforms.
  * Returns a flat array of content pieces ready for formatting and scheduling.
  */
-export function generateAllMaxBoosterContent(
+export async function generateAllMaxBoosterContent(
   platforms: SupportedPlatform[],
   targetSegment: MaxBoosterContentContext["targetArtistSegment"] = "emerging_artist",
-): MaxBoosterContentPiece[] {
+): Promise<MaxBoosterContentPiece[]> {
   const pieces: MaxBoosterContentPiece[] = [];
   const formats: MaxBoosterContentContext["format"][] = [
     "feature_highlight",
@@ -521,12 +542,12 @@ export function generateAllMaxBoosterContent(
       const format =
         formats[MAX_BOOSTER_FEATURES?.indexOf(feature) % formats?.length];
       pieces?.push({
-        ...generateMaxBoosterContent({
+        ...(await generateMaxBoosterContent({
           feature,
           targetArtistSegment: targetSegment,
           platform,
           format,
-        }),
+        })),
         source: "MaxCoreAI",
       });
     }
