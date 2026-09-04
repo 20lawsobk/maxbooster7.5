@@ -13,6 +13,7 @@ import { parsePaginationParams } from "../middleware/pagination.js";
 import { queryCache, createCacheKey } from "../lib/queryCache.js";
 import { unifiedAIController } from "../services/unifiedAIController.js";
 import { musicIndustryContextFilter } from "../services/musicIndustryContextFilter.js";
+import { selectArm } from "../services/adaptiveGenerationEngine.js";
 
 const router = Router();
 const CACHE_TTL = 120;
@@ -362,10 +363,16 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
       suggestions = getDefaultSuggestions(prompt, genreNorm, moodNorm);
     }
 
+    const chordProgression = await getChordSuggestion(
+      genreNorm,
+      moodNorm,
+      req.user!.id,
+    );
+
     res.json({
       suggestions,
       rhymes,
-      chordProgression: getChordSuggestion(genreNorm, moodNorm),
+      chordProgression,
       structures: getSongStructures(),
     });
   } catch (error) {
@@ -1026,7 +1033,11 @@ function seededIndex(seed: string, length: number): number {
 }
 // ────────────────────────────────────────────────────────────────────────────
 
-function getChordSuggestion(genre?: string, mood?: string): string {
+async function getChordSuggestion(
+  genre?: string,
+  mood?: string,
+  userId?: string,
+): Promise<string> {
   const progressions: Record<string, string[]> = {
     pop: [
       "I – V – vi – IV (C–G–Am–F)",
@@ -1190,7 +1201,31 @@ function getChordSuggestion(genre?: string, mood?: string): string {
   }
 
   const options = progressions[g] || progressions["pop"];
-  return options[seededIndex(g + ":" + m, options?.length)];
+  if (options.length <= 1) return options[0];
+
+  // Rotate through this genre's chord progressions instead of freezing on
+  // one forever: the old seed (genre+mood only, with no time/history/outcome
+  // component) mathematically always returned the same progression once mood
+  // didn't hit an override above. selectArm forces exploration of untried
+  // progressions and avoids repeating the last pick, scoped per user so each
+  // songwriter sees real variety across repeated "AI assist" requests for the
+  // same genre. No measured reward exists for progression quality, so this
+  // is rotation-only (forced exploration + anti-repeat), never a fabricated
+  // outcome.
+  try {
+    const { chosen } = await selectArm({
+      domain: "songwriting_chord_progression",
+      scope: userId ? `${userId}:${g}` : g,
+      candidates: options,
+    });
+    return chosen;
+  } catch (err) {
+    logger.warn(
+      { err },
+      "[Songwriting] Adaptive chord-progression selection failed, falling back to seeded pick",
+    );
+    return options[seededIndex(g + ":" + m, options?.length)];
+  }
 }
 
 function getSongStructures(): string[] {

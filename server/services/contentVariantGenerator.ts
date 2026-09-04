@@ -7,6 +7,7 @@ import {
 
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import { selectArm } from "./adaptiveGenerationEngine.js";
 
 function seededIndex(seed: string, len: number): number {
   let h = 0x811c9dc5;
@@ -294,13 +295,34 @@ class ContentVariantGeneratorService {
 
     const config =
       platformOptimal[content?.platform] || platformOptimal?.instagram;
+    const scopeKey = `${content?.id || content?.caption}`;
 
     for (let i = 0; i < count; i++) {
       const set: string[] = [];
 
-      const viralTags = this.shuffleArray([
-        ...this.hashtagCategories.viral,
-      ]).slice(0, config?.viral);
+      // Adaptive, anti-repeat pick across the viral tag pool. Falls back to
+      // the old (unseeded) shuffle if the bandit is unavailable. Replaces a
+      // shuffle call that always used the literal default seed - every
+      // user, every piece of content, got the exact same "shuffled" order
+      // forever, and every one of these `count` sets was therefore
+      // identical since the loop index never fed into the old seed either.
+      let viralTags: string[];
+      try {
+        viralTags = await this.pickDistinctArms(
+          "content_hashtag_viral",
+          scopeKey,
+          [...this.hashtagCategories.viral],
+          config?.viral,
+        );
+      } catch (err) {
+        logger.warn(
+          { err },
+          "[ContentVariantGenerator] Adaptive viral-hashtag selection failed, falling back to shuffle",
+        );
+        viralTags = this.shuffleArray([
+          ...this.hashtagCategories.viral,
+        ]).slice(0, config?.viral);
+      }
       set?.push(...viralTags);
 
       const topicHashtags = this.generateTopicHashtags(content?.caption);
@@ -311,35 +333,66 @@ class ContentVariantGeneratorService {
         content?.caption?.toLowerCase().includes("beat") ||
         content?.caption?.toLowerCase().includes("song")
       ) {
-        const musicTags = seededShuffle(
-          [...this.hashtagCategories.music],
-          `${content?.id || content?.caption}:music-tags`,
-        ).slice(0, 2);
+        let musicTags: string[];
+        try {
+          musicTags = await this.pickDistinctArms(
+            "content_hashtag_music",
+            scopeKey,
+            [...this.hashtagCategories.music],
+            2,
+          );
+        } catch (err) {
+          logger.warn(
+            { err },
+            "[ContentVariantGenerator] Adaptive music-hashtag selection failed, falling back to seeded shuffle",
+          );
+          musicTags = seededShuffle(
+            [...this.hashtagCategories.music],
+            `${scopeKey}:music-tags`,
+          ).slice(0, 2);
+        }
         set?.push(...musicTags);
       }
 
-      while (set?.length < config?.total) {
+      if (set?.length < config?.total) {
         const allTags = Object.values(this.hashtagCategories).flat();
-        const randomTag =
-          allTags[
-            seededIndex(
-              `${content?.id || content?.caption}:hashtag-fill:${set?.length}`,
-              allTags?.length,
-            )
-          ];
-        if (!set?.includes(randomTag)) {
-          set?.push(randomTag);
-        } else {
-          set?.push(
-            allTags[
-              (seededIndex(
-                `${content?.id || content?.caption}:hashtag-fill:${set?.length}`,
-                allTags?.length,
-              ) +
-                set?.length) %
-                allTags?.length
-            ],
+        const need = config.total - set.length;
+        try {
+          const fillTags = await this.pickDistinctArms(
+            "content_hashtag_fill",
+            scopeKey,
+            allTags.filter((t) => !set.includes(t)),
+            need,
           );
+          set?.push(...fillTags);
+        } catch (err) {
+          logger.warn(
+            { err },
+            "[ContentVariantGenerator] Adaptive hashtag-fill selection failed, falling back to seeded pick",
+          );
+          while (set?.length < config?.total) {
+            const randomTag =
+              allTags[
+                seededIndex(
+                  `${scopeKey}:hashtag-fill:${set?.length}`,
+                  allTags?.length,
+                )
+              ];
+            if (!set?.includes(randomTag)) {
+              set?.push(randomTag);
+            } else {
+              set?.push(
+                allTags[
+                  (seededIndex(
+                    `${scopeKey}:hashtag-fill:${set?.length}`,
+                    allTags?.length,
+                  ) +
+                    set?.length) %
+                    allTags?.length
+                ],
+              );
+            }
+          }
         }
       }
 
@@ -355,15 +408,27 @@ class ContentVariantGeneratorService {
   async generateHookVariants(content: ContentData): Promise<Hook[]> {
     const hooks: Hook[] = [];
     const topic = this.extractTopic(content?.caption);
+    const scopeKey = `${content?.id || content?.caption}`;
 
     for (const [type, templates] of Object.entries(this.hookTemplates)) {
-      const template =
-        templates[
-          seededIndex(
-            `${content?.id || content?.caption}:hook:${type}`,
-            templates?.length,
-          )
-        ];
+      let template: string;
+      try {
+        const { chosen } = await selectArm({
+          domain: "content_hook_template",
+          scope: `${scopeKey}:${type}`,
+          candidates: templates,
+        });
+        template = chosen;
+      } catch (err) {
+        logger.warn(
+          { err },
+          "[ContentVariantGenerator] Adaptive hook-template selection failed, falling back to seeded pick",
+        );
+        template =
+          templates[
+            seededIndex(`${scopeKey}:hook:${type}`, templates?.length)
+          ];
+      }
       const hookText = template
         .replace("{topic}", topic)
         .replace("{Topic}", topic?.charAt(0).toUpperCase() + topic?.slice(1))
@@ -533,6 +598,37 @@ class ContentVariantGeneratorService {
 
   private shuffleArray<T>(array: T[], seed: string = "default"): T[] {
     return seededShuffle(array, seed);
+  }
+
+  /**
+   * Picks `n` distinct arms from `pool` via the shared adaptive bandit,
+   * shrinking the candidate pool after each pick so one call never repeats
+   * a tag within the same set. Trial history is persisted per (domain,
+   * scope) across SEPARATE calls too, so repeated requests for the same
+   * piece of content keep rotating through untried options instead of
+   * freezing on the same hashtags forever the way a plain hash-based pick
+   * would. There is no measured per-hashtag engagement signal to feed back
+   * as a reward, so this only uses selectArm's forced-exploration/
+   * anti-repeat rotation - never a fabricated outcome.
+   */
+  private async pickDistinctArms(
+    domain: string,
+    scope: string,
+    pool: string[],
+    n: number,
+  ): Promise<string[]> {
+    const chosen: string[] = [];
+    let remaining = [...new Set(pool)];
+    for (let k = 0; k < n && remaining.length > 0; k++) {
+      const { chosen: pick } = await selectArm({
+        domain,
+        scope,
+        candidates: remaining,
+      });
+      chosen.push(pick);
+      remaining = remaining.filter((t) => t !== pick);
+    }
+    return chosen;
   }
 
   private predictHookStrength(hookText: string, type: string): number {

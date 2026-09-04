@@ -38,3 +38,29 @@ only ever exercised the WITH-override path. It was silently caught by a surround
 logged as a warning, so it never crashed anything, but it meant a scary stack-trace-bearing warning fired
 on nearly every real call. Caught only by actually running the changed code path live against real
 inputs; fixed by switching to `?.`.
+
+**Full-codebase survey (round 2) — confirmed instances and the shape that separates bug from fine:**
+
+- `contentVariantGenerator.ts` hashtag-set generation was a *more severe* sub-variant: a loop meant to
+  return N distinct candidate sets never folded the loop index into any seed, and one shuffle used a
+  hardcoded literal seed with no content-specific salt at all — so every one of the N "sets" was
+  provably byte-identical, for every user, every time (not just frozen across separate calls, frozen
+  *within a single call*). Fix pattern for this shape: a helper that calls the bandit sequentially per
+  slot, shrinking the candidate pool after each pick (guarantees in-set distinctness for free), while the
+  bandit's own persisted trial state gives cross-call rotation with no fabricated reward needed. Same
+  file's hook-template pick was the plain frozen-per-content variant (one bandit call per hook type).
+- A second confirmed plain instance: a chord-progression picker keyed on genre+mood only. A handful of
+  fixed mood values intentionally short-circuit to a hardcoded progression *before* reaching the pick —
+  that's a legitimate product override, not the bug — but every other mood (including blank) fell through
+  to the frozen seeded pick and is a real, reachable, authenticated gap.
+- **Verified NOT bugs, do not re-flag:** (a) a selector producing a continuous synthetic score instead of
+  a discrete candidate choice — wrong shape for a bandit entirely; (b) a seed that already incorporates
+  the live request/message text, not just stable attributes — genuinely request-scoped, not frozen; (c)
+  cosmetic per-prompt formatting micro-choices (emoji, an inclusion gate, a phrase pick) — converting a
+  coin-flip-level formatting detail into an async DB-backed bandit call is over-engineering, not a fix,
+  even though it is technically "frozen for identical input."
+- A whole legacy engine file full of `seededIndex` call sites (20+) turned out to be **dead code**: its
+  singleton export was imported by exactly two otherwise-live files, but neither ever called a method on
+  it. Always confirm a call site is actually *reached* (grep the singleton/import name for real usage in
+  its importers, not just that the importer itself is wired up) before spending time classifying bug vs.
+  intentional on that file's internals — dead code makes the whole question moot.
