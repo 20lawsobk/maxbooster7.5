@@ -924,10 +924,7 @@ export async function registerRoutes(
         autoSave,
         betaFeatures,
       } = req.body;
-      const currentPreferences =
-        (req.user.preferences as Record<string, any>) || {};
-      const updatedPreferences = {
-        ...currentPreferences,
+      const preferenceUpdates = {
         ...(theme !== undefined && { theme }),
         ...(language !== undefined && { language }),
         ...(timezone !== undefined && { timezone }),
@@ -938,9 +935,25 @@ export async function registerRoutes(
         ...(autoSave !== undefined && { autoSave }),
         ...(betaFeatures !== undefined && { betaFeatures }),
       };
-      await storage.updateUser(req.user.id, {
-        preferences: updatedPreferences,
-      });
+      if (
+        (theme !== undefined && !["dark", "light", "system"].includes(theme)) ||
+        (defaultBPM !== undefined &&
+          (!Number.isInteger(defaultBPM) || defaultBPM < 20 || defaultBPM > 400)) ||
+        (autoSave !== undefined && typeof autoSave !== "boolean") ||
+        (betaFeatures !== undefined && typeof betaFeatures !== "boolean")
+      ) {
+        return res.status(400).json({ message: "Invalid preference value" });
+      }
+      if (Object.keys(preferenceUpdates).length === 0) {
+        return res.status(400).json({ message: "No preferences supplied" });
+      }
+      await db
+        .update(users)
+        .set({
+          preferences: sql`coalesce(${users.preferences}, '{}'::jsonb) || ${JSON.stringify(preferenceUpdates)}::jsonb`,
+        })
+        .where(eq(users.id, req.user.id));
+      userCacheInvalidate(req.user.id);
       return res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Update preferences error");
@@ -1155,19 +1168,18 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      // Return user's privacy settings from their profile.
-      // NOTE: these preference columns are not in the users table yet — the
-      // values below are the served defaults (kept identical to prior runtime).
-      const u = req.user as any;
+      const preferences =
+        (req.user.preferences as Record<string, any> | null) || {};
+      const privacy = (preferences.privacy as Record<string, any> | undefined) || {};
       const settings = {
-        profileVisibility: u.profileVisibility || "public",
-        showEmail: u.showEmail ?? false,
-        showLocation: u.showLocation ?? true,
-        allowMessages: u.allowMessages ?? true,
-        allowSearchIndexing: u.allowSearchIndexing ?? true,
+        profileVisibility: privacy.profileVisibility || "public",
+        showEmail: privacy.showEmail ?? false,
+        showLocation: privacy.showLocation ?? true,
+        allowMessages: privacy.allowMessages ?? true,
+        allowSearchIndexing: privacy.allowSearchIndexing ?? true,
         gdprDataProcessing: true, // Required for service
-        gdprMarketing: u.gdprMarketing ?? false,
-        gdprAnalytics: u.gdprAnalytics ?? true,
+        gdprMarketing: privacy.gdprMarketing ?? false,
+        gdprAnalytics: privacy.gdprAnalytics ?? true,
       };
       return res.json(settings);
     } catch (error) {
@@ -1197,17 +1209,30 @@ export async function registerRoutes(
       const privacyUpdates: Record<string, any> = {};
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
+          if (
+            (field === "profileVisibility" &&
+              !["public", "private", "connections"].includes(req.body[field])) ||
+            (field !== "profileVisibility" && typeof req.body[field] !== "boolean")
+          ) {
+            return res.status(400).json({ message: `Invalid ${field}` });
+          }
           privacyUpdates[field] = req.body[field];
         }
       }
 
       if (Object.keys(privacyUpdates).length > 0) {
-        // Privacy settings are stored in the preferences JSONB column
-        // (no dedicated columns exist on the users table for these fields)
-        const existing = (req.user.preferences as Record<string, any>) || {};
-        await storage.updateUser(req.user.id, {
-          preferences: { ...existing, privacy: { ...((existing.privacy as Record<string, any>) || {}), ...privacyUpdates } },
-        });
+        await db
+          .update(users)
+          .set({
+            preferences: sql`jsonb_set(
+              coalesce(${users.preferences}, '{}'::jsonb),
+              '{privacy}',
+              coalesce(${users.preferences}->'privacy', '{}'::jsonb) || ${JSON.stringify(privacyUpdates)}::jsonb,
+              true
+            )`,
+          })
+          .where(eq(users.id, req.user.id));
+        userCacheInvalidate(req.user.id);
       }
 
       return res.json({ success: true, message: "Privacy settings updated" });
@@ -1227,39 +1252,24 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        // Store export request timestamp (fields stored in preferences jsonb at runtime)
-        await storage.updateUser(req.user.id, {
-          preferences: {
-            ...(req.user.preferences as Record<string, unknown> ?? {}),
-            dataExportRequestedAt: new Date().toISOString(),
-            dataExportStatus: "pending",
-          },
-        });
-
-        // In production, this would trigger an async job
-        // For now, simulate immediate completion
-        const exportUserId = req.user.id;
-        setTimeout(async () => {
-          try {
-            const u = await storage.getUser(exportUserId);
-            await storage.updateUser(exportUserId, {
-              preferences: {
-                ...(u?.preferences as Record<string, unknown> ?? {}),
-                dataExportStatus: "ready",
-                dataExportExpiresAt: new Date(
-                  Date.now() + 7 * 24 * 60 * 60 * 1000,
-                ).toISOString(),
-              },
-            });
-          } catch (e) {
-            logger.warn({ err: e }, "Failed to update export status");
-          }
-        }, 5000);
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        await db
+          .update(users)
+          .set({
+            preferences: sql`coalesce(${users.preferences}, '{}'::jsonb) || ${JSON.stringify({
+              dataExportRequestedAt: now.toISOString(),
+              dataExportStatus: "ready",
+              dataExportExpiresAt: expiresAt.toISOString(),
+            })}::jsonb`,
+          })
+          .where(eq(users.id, req.user.id));
+        userCacheInvalidate(req.user.id);
 
         return res.json({
           success: true,
           message:
-            "Data export requested. You will receive an email when it's ready.",
+            "Your data export is ready to download.",
         });
       } catch (error) {
         logger.warn({ err: error }, "Request data export error");
@@ -1278,10 +1288,19 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
+        const preferences =
+          (req.user.preferences as Record<string, any> | null) || {};
+        const expiresAt = preferences.dataExportExpiresAt;
+        const expired =
+          typeof expiresAt === "string" && new Date(expiresAt).getTime() <= Date.now();
         const status = {
-          status: (req.user as any).dataExportStatus || "none",
-          requestedAt: (req.user as any).dataExportRequestedAt.toISOString(),
-          expiresAt: (req.user as any).dataExportExpiresAt.toISOString(),
+          status: expired ? "expired" : preferences.dataExportStatus || "none",
+          requestedAt: preferences.dataExportRequestedAt || undefined,
+          expiresAt: expiresAt || undefined,
+          downloadUrl:
+            !expired && preferences.dataExportStatus === "ready"
+              ? "/api/auth/export-data"
+              : undefined,
         };
         return res.json(status);
       } catch (error) {
@@ -2447,23 +2466,25 @@ export async function registerRoutes(
         const userId = req.user!.id;
         const { studioProjects, releases, socialAccounts, analytics } =
           await import("@shared/schema");
-        const { count, sum, gte, eq, and } = await import("drizzle-orm");
+        const { count, sum, gte, eq, and, desc: descOrder } =
+          await import("drizzle-orm");
 
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
 
         const { shows } = await import("@shared/schema");
-        const { desc: descOrder } = await import("drizzle-orm");
-
         const [
           trackCountResult,
           prevTrackCountResult,
           releaseCountResult,
           prevReleaseCountResult,
           socialReachResult,
+          activeSocialAccountsResult,
           revenueResult,
           prevRevenueResult,
           prevSocialReachResult,
+          currentPlatformPerformance,
+          previousPlatformPerformance,
           recentNotifications,
           upcomingReleasesResult,
           recentProjects,
@@ -2512,6 +2533,15 @@ export async function registerRoutes(
               ),
             ),
           db
+            .select({ count: count() })
+            .from(socialAccounts)
+            .where(
+              and(
+                eq(socialAccounts.userId, userId),
+                eq(socialAccounts.isActive, true),
+              ),
+            ),
+          db
             .select({ total: sum(analytics.revenue) })
             .from(analytics)
             .where(
@@ -2543,6 +2573,38 @@ export async function registerRoutes(
                 sql`${analytics.date} < ${thirtyDaysAgo}`,
               ),
             ),
+          db
+            .select({
+              name: analytics.platform,
+              streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+              revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+            })
+            .from(analytics)
+            .where(
+              and(
+                eq(analytics.userId, userId),
+                gte(analytics.date, thirtyDaysAgo),
+                sql`${analytics.platform} IS NOT NULL`,
+              ),
+            )
+            .groupBy(analytics.platform)
+            .orderBy(descOrder(sql`COALESCE(SUM(${analytics.streams}), 0)`))
+            .limit(5),
+          db
+            .select({
+              name: analytics.platform,
+              streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+            })
+            .from(analytics)
+            .where(
+              and(
+                eq(analytics.userId, userId),
+                gte(analytics.date, sixtyDaysAgo),
+                sql`${analytics.date} < ${thirtyDaysAgo}`,
+                sql`${analytics.platform} IS NOT NULL`,
+              ),
+            )
+            .groupBy(analytics.platform),
           storage.getNotifications(userId).catch(() => []),
           db
             .select()
@@ -2597,18 +2659,37 @@ export async function registerRoutes(
         const activeDistributions = releaseCountResult[0]?.count ?? 0;
         const prevDistributions = prevReleaseCountResult[0]?.count ?? 0;
         const socialReach = Number(socialReachResult[0]?.total ?? 0);
+        const activeSocialAccounts =
+          activeSocialAccountsResult[0]?.count ?? 0;
         const totalRevenue = Number(revenueResult[0]?.total ?? 0);
         const prevRevenue = Number(prevRevenueResult[0]?.total ?? 0);
         const prevSocialReach = Number(
           prevSocialReachResult[0]?.followers ?? 0,
         );
-
         const growthPct = (curr: number, prev: number) =>
           prev === 0
             ? curr > 0
               ? 100
               : 0
             : Math.round(((curr - prev) / prev) * 100);
+        const previousPlatformStreams = new Map(
+          previousPlatformPerformance.map((platform) => [
+            platform.name,
+            Number(platform.streams ?? 0),
+          ]),
+        );
+        const topPlatforms = currentPlatformPerformance.map((platform) => {
+          const streams = Number(platform.streams ?? 0);
+          return {
+            name: platform.name!,
+            streams,
+            revenue: Number(platform.revenue ?? 0),
+            growth: growthPct(
+              streams,
+              previousPlatformStreams.get(platform.name) ?? 0,
+            ),
+          };
+        });
 
         // Build real recent activity feed from DB data
         const activityItems: Array<{
@@ -2659,16 +2740,20 @@ export async function registerRoutes(
         const recentActivity = activityItems.slice(0, 10);
 
         return res.json({
-          totalTracks,
-          activeDistributions,
-          totalRevenue,
-          socialReach,
-          monthlyGrowth: {
-            tracks: growthPct(totalTracks, prevTracks),
-            distributions: growthPct(activeDistributions, prevDistributions),
-            revenue: growthPct(totalRevenue, prevRevenue),
-            socialReach: growthPct(socialReach, prevSocialReach),
+          stats: {
+            totalTracks,
+            activeDistributions,
+            totalRevenue,
+            socialReach,
+            activeSocialAccounts,
+            monthlyGrowth: {
+              tracks: growthPct(totalTracks, prevTracks),
+              distributions: growthPct(activeDistributions, prevDistributions),
+              revenue: growthPct(totalRevenue, prevRevenue),
+              socialReach: growthPct(socialReach, prevSocialReach),
+            },
           },
+          topPlatforms,
           recentActivity,
           upcomingReleases: upcomingReleasesResult,
           notifications: (recentNotifications || [])
@@ -2740,6 +2825,10 @@ export async function registerRoutes(
           action: "subscribe",
           title: "Start Your Subscription",
           description: "Unlock all features with a Max Booster subscription.",
+          ctaText: "View plans",
+          ctaLink: "/pricing",
+          reason: "An active subscription is required before you can publish or promote music.",
+          icon: "Sparkles",
           priority: "high",
           estimatedTime: "2 minutes",
         });
@@ -2750,6 +2839,10 @@ export async function registerRoutes(
           title: "Upload Your First Track",
           description:
             "Get started by uploading your first track to the studio.",
+          ctaText: "Open studio",
+          ctaLink: "/studio",
+          reason: "You do not have a studio project yet.",
+          icon: "Music",
           priority: "high",
           estimatedTime: "5 minutes",
         });
@@ -2759,6 +2852,10 @@ export async function registerRoutes(
           action: "create_release",
           title: "Create Your First Release",
           description: "Distribute your music to 97+ platforms worldwide.",
+          ctaText: "Create release",
+          ctaLink: "/distribution",
+          reason: "You have projects ready, but no releases have been created.",
+          icon: "Upload",
           priority: "high",
           estimatedTime: "10 minutes",
         });
@@ -2769,6 +2866,10 @@ export async function registerRoutes(
           title: "Connect Social Media",
           description:
             "Connect your social accounts to schedule posts and grow your audience.",
+          ctaText: "Connect accounts",
+          ctaLink: "/settings?tab=connected-accounts",
+          reason: "No active social accounts are connected.",
+          icon: "Share2",
           priority: "medium",
           estimatedTime: "3 minutes",
         });
@@ -2777,6 +2878,10 @@ export async function registerRoutes(
         action: "view_analytics",
         title: "Review Your Analytics",
         description: "Check your streaming performance and audience insights.",
+        ctaText: "View analytics",
+        ctaLink: "/analytics",
+        reason: "You have projects, releases, and connected social accounts.",
+        icon: "BarChart3",
         priority: "low",
         estimatedTime: "5 minutes",
       });
@@ -3927,7 +4032,7 @@ export async function registerRoutes(
               .status(413)
               .json({ message: "File too large. Maximum size is 500MB." });
           }
-          if (errMsg!.includes("Invalid file type")) {
+          if (errMsg?.includes("Invalid file type")) {
             return res.status(400).json({ message: errMsg });
           }
           return res.status(400).json({ message: errMsg || "Upload failed" });
@@ -3950,15 +4055,54 @@ export async function registerRoutes(
           );
           const storedFile = await storeUploadedFile(
             req.file,
-            "audio",
             req.user.id,
+            "audio",
           );
           audioUrl = storedFile.url;
           fileSize = req.file.size;
         } else if (req.body.audioUrl) {
-          // Pre-assembled chunked upload — audioUrl already in Object Storage
+          // Pre-assembled chunked uploads must refer to this user's PDIM
+          // object. Never persist a caller-provided local or third-party URL.
+          const urlMatch =
+            typeof req.body.audioUrl === "string" &&
+            req.body.audioUrl.match(/^\/api\/storage\/file\/([^/?#]+)$/);
+          if (!urlMatch) {
+            return res.status(400).json({
+              message: "audioUrl must be a Pocket Dimension storage URL",
+            });
+          }
+
+          let storageKey: string;
+          try {
+            storageKey = decodeURIComponent(urlMatch[1]);
+          } catch {
+            return res
+              .status(400)
+              .json({ message: "audioUrl contains an invalid storage key" });
+          }
+          if (!storageKey.startsWith(`audio/${req.user.id}/`)) {
+            return res.status(403).json({
+              message: "audioUrl does not belong to the authenticated user",
+            });
+          }
+
+          const { storageService } = await import(
+            "./services/storageService.js"
+          );
+          if (!(await storageService.fileExists(storageKey))) {
+            return res
+              .status(400)
+              .json({ message: "audioUrl does not reference a stored file" });
+          }
+
           audioUrl = req.body.audioUrl;
-          fileSize = req.body.fileSize ? Number(req.body.fileSize) : null;
+          if (req.body.fileSize !== undefined && req.body.fileSize !== null) {
+            const parsedFileSize = Number(req.body.fileSize);
+            if (!Number.isFinite(parsedFileSize) || parsedFileSize < 0) {
+              return res.status(400).json({ message: "Invalid fileSize" });
+            }
+            fileSize = parsedFileSize;
+          }
         }
 
         const project = await storage.createProject({
@@ -4120,9 +4264,18 @@ export async function registerRoutes(
       try {
         const periodParam = (req.params.period as string);
         const timeRange =
-          periodParam || (req.query.timeRange as string) || "30d";
+          periodParam ||
+          (req.query.timeRange as string) ||
+          (req.query.range as string) ||
+          "30d";
+        const rangeMatch = /^(\d+)(d|y)$/.exec(timeRange);
+        if (!rangeMatch) {
+          return res.status(400).json({
+            message: "timeRange must use the form '<number>d' or '<number>y'",
+          });
+        }
         const days =
-          parseInt(timeRange.replace("d", "").replace("y", "365")) || 30;
+          Number(rangeMatch[1]) * (rangeMatch[2] === "y" ? 365 : 1);
         const endDate = new Date();
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
@@ -4149,6 +4302,7 @@ export async function registerRoutes(
             date: sql<string>`DATE(${analytics.date})`,
             streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
             revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+            listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
           })
           .from(analytics)
           .where(
@@ -4188,7 +4342,7 @@ export async function registerRoutes(
         thirtyDaysAgo30.setDate(thirtyDaysAgo30.getDate() - 30);
         const oneYearAgo = new Date();
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const [monthlyRevResult, yearlyRevResult, userReleasesRaw] =
+        const [monthlyRevResult, yearlyRevResult] =
           await Promise.all([
             db
               .select({
@@ -4212,18 +4366,6 @@ export async function registerRoutes(
                   gte(analytics.date, oneYearAgo),
                 ),
               ),
-            db
-              .select({
-                id: releases.id,
-                title: releases.title,
-                releaseDate: releases.releaseDate,
-                status: releases.status,
-                artworkUrl: releases.artworkUrl,
-              })
-              .from(releases)
-              .where(eq(releases.userId, req.user.id))
-              .orderBy(desc(releases.createdAt))
-              .limit(20),
           ]);
         const monthlyRev = parseFloat(String(monthlyRevResult[0]?.total ?? 0)) || 0;
         const yearlyRev = parseFloat(String(yearlyRevResult[0]?.total ?? 0)) || 0;
@@ -4262,33 +4404,12 @@ export async function registerRoutes(
           a.date.localeCompare(b.date),
         );
 
-        // Distribute total streams across releases for per-track display
+        // Aggregate platform reports do not identify a release, so per-release
+        // totals cannot be derived honestly from this data.
         const totalStreams = Number(analyticsData[0].totalStreams) || 0;
         const totalRevenue =
           parseFloat(String(analyticsData[0].totalRevenue)) || 0;
-        const byTrack = userReleasesRaw.map((rel, idx) => {
-          // Weight streams inversely by release age (newer = more streams assumed)
-          const weight = Math.max(1, userReleasesRaw.length - idx);
-          const totalWeight = userReleasesRaw.reduce(
-            (acc, _, i) => acc + Math.max(1, userReleasesRaw.length - i),
-            0,
-          );
-          const trackStreams =
-            totalWeight > 0
-              ? Math.round((weight / (totalWeight || 1)) * totalStreams)
-              : 0;
-          const trackRevenue =
-            totalWeight > 0 ? (weight / (totalWeight || 1)) * totalRevenue : 0;
-          return {
-            trackId: rel.id,
-            trackTitle: rel.title,
-            artworkUrl: rel.artworkUrl,
-            streams: trackStreams,
-            revenue: parseFloat(trackRevenue.toFixed(4)),
-            releaseDate: rel.releaseDate,
-            status: rel.status,
-          };
-        });
+        const byTrack: Array<Record<string, never>> = [];
 
         // Calculate performance score
         let performanceScore = 25;
@@ -4333,6 +4454,7 @@ export async function registerRoutes(
               date: d.date,
               streams: Number(d.streams),
               revenue: parseFloat(String(d.revenue)) || 0,
+              listeners: Number(d.listeners),
             })),
             weekly: weeklyData,
             monthly: monthlyData,
@@ -4590,10 +4712,20 @@ export async function registerRoutes(
     }
     try {
       const { format = "csv", filters = {} } = req.body;
+      if (format !== "csv") {
+        return res.status(400).json({
+          message: "Only CSV export is currently available for analytics data",
+        });
+      }
       const { timeRange = "30d" } = filters;
+      const rangeMatch = /^(\d+)(d|y)$/.exec(String(timeRange));
+      if (!rangeMatch) {
+        return res.status(400).json({
+          message: "timeRange must use the form '<number>d' or '<number>y'",
+        });
+      }
       const days =
-        parseInt((timeRange as string).replace("d", "").replace("y", "365")) ||
-        30;
+        Number(rangeMatch[1]) * (rangeMatch[2] === "y" ? 365 : 1);
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
@@ -4633,6 +4765,7 @@ export async function registerRoutes(
           format: "csv",
           downloadUrl: `data:text/csv;base64,${base64Data}`,
           fileName: `analytics-${new Date().toISOString().split("T")[0]}.csv`,
+          size: Buffer.byteLength(csvContent),
         });
       }
 
@@ -4654,16 +4787,52 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        // Return summary of anomalies (can be expanded with real detection logic)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const metricsData = await db
+          .select({
+            date: sql<string>`DATE(${analytics.date})`,
+            streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+            revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+            streamsAcknowledged: sql<boolean>`BOOL_OR(COALESCE((${analytics.metadata} -> 'anomalyAcknowledgements' ->> 'streams') IS NOT NULL, false))`,
+            revenueAcknowledged: sql<boolean>`BOOL_OR(COALESCE((${analytics.metadata} -> 'anomalyAcknowledgements' ->> 'revenue') IS NOT NULL, false))`,
+          })
+          .from(analytics)
+          .where(and(eq(analytics.userId, req.user.id), gte(analytics.date, thirtyDaysAgo)))
+          .groupBy(sql`DATE(${analytics.date})`)
+          .orderBy(sql`DATE(${analytics.date})`);
+        const detected = ["streams", "revenue"].flatMap((metricType) =>
+          metricsData.flatMap((point, index) => {
+            const history = metricsData
+              .slice(Math.max(0, index - 7), index)
+              .map((row) => Number(row[metricType as "streams" | "revenue"]))
+              .filter((value) => Number.isFinite(value));
+            if (history.length < 7) return [];
+            const mean = history.reduce((sum, value) => sum + value, 0) / history.length;
+            const variance = history.reduce((sum, value) => sum + (value - mean) ** 2, 0) / history.length;
+            const standardDeviation = Math.sqrt(variance);
+            const current = Number(point[metricType as "streams" | "revenue"]);
+            if (standardDeviation === 0 || Math.abs((current - mean) / standardDeviation) < 2) return [];
+            const zScore = (current - mean) / standardDeviation;
+            const severity = Math.abs(zScore) >= 3 ? "critical" : "warning";
+            return [{
+              metricType,
+              severity,
+              acknowledged: metricType === "streams" ? point.streamsAcknowledged : point.revenueAcknowledged,
+            }];
+          }),
+        );
+        const bySeverity = { critical: 0, warning: 0, info: 0 };
+        const byMetric: Record<string, number> = {};
+        for (const anomaly of detected) {
+          bySeverity[anomaly.severity as "critical" | "warning" | "info"]++;
+          byMetric[anomaly.metricType] = (byMetric[anomaly.metricType] || 0) + 1;
+        }
         return res.json({
-          total: 0,
-          unacknowledged: 0,
-          bySeverity: {
-            critical: 0,
-            warning: 0,
-            info: 0,
-          },
-          byMetric: {},
+          total: detected.length,
+          unacknowledged: detected.filter((anomaly) => !anomaly.acknowledged).length,
+          bySeverity,
+          byMetric,
         });
       } catch (error) {
         logger.warn({ err: error }, "Anomalies summary error");
@@ -4691,6 +4860,8 @@ export async function registerRoutes(
           date: sql<string>`DATE(${analytics.date})`,
           streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
           revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+          streamsAcknowledged: sql<boolean>`BOOL_OR(COALESCE((${analytics.metadata} -> 'anomalyAcknowledgements' ->> 'streams') IS NOT NULL, false))`,
+          revenueAcknowledged: sql<boolean>`BOOL_OR(COALESCE((${analytics.metadata} -> 'anomalyAcknowledgements' ->> 'revenue') IS NOT NULL, false))`,
         })
         .from(analytics)
         .where(
@@ -4703,33 +4874,25 @@ export async function registerRoutes(
         .orderBy(sql`DATE(${analytics.date})`);
 
       const anomalies: Record<string, unknown>[] = [];
-
-      // Simple anomaly detection: look for significant changes
-      for (let i = 1; i < metricsData.length; i++) {
-        const prev = Number(metricsData[i - 1].streams);
-        const curr = Number(metricsData[i].streams);
-
-        if (prev > 0 && curr < prev * 0.5) {
+      for (const metric of ["streams", "revenue"] as const) {
+        for (let index = 7; index < metricsData.length; index++) {
+          const history = metricsData.slice(index - 7, index).map((row) => Number(row[metric]));
+          const mean = history.reduce((sum, value) => sum + value, 0) / history.length;
+          const variance = history.reduce((sum, value) => sum + (value - mean) ** 2, 0) / history.length;
+          const standardDeviation = Math.sqrt(variance);
+          const current = Number(metricsData[index][metric]);
+          if (standardDeviation === 0) continue;
+          const zScore = (current - mean) / standardDeviation;
+          if (Math.abs(zScore) < 2) continue;
+          const deviationPercentage = mean === 0 ? null : Number((((current - mean) / mean) * 100).toFixed(1));
           anomalies.push({
-            id: `anomaly-streams-${i}`,
-            metricType: "streams",
-            severity: "warning",
-            detectedAt: metricsData[i].date,
-            deviationPercentage: -(((prev - curr) / prev) * 100).toFixed(1),
-            description: "Significant drop in stream count detected",
-            acknowledged: false,
-          });
-        }
-
-        if (prev > 0 && curr > prev * 2) {
-          anomalies.push({
-            id: `anomaly-streams-spike-${i}`,
-            metricType: "streams",
-            severity: "info",
-            detectedAt: metricsData[i].date,
-            deviationPercentage: (((curr - prev) / prev) * 100).toFixed(1),
-            description: "Unusual spike in stream count detected",
-            acknowledged: false,
+            id: `${metric}:${metricsData[index].date}`,
+            metricType: metric,
+            severity: Math.abs(zScore) >= 3 ? "critical" : "warning",
+            detectedAt: metricsData[index].date,
+            deviationPercentage,
+            description: `${metric === "streams" ? "Stream count" : "Revenue"} is ${zScore > 0 ? "above" : "below"} its trailing 7-day baseline (z-score ${zScore.toFixed(2)})`,
+            acknowledged: metric === "streams" ? metricsData[index].streamsAcknowledged : metricsData[index].revenueAcknowledged,
           });
         }
       }
@@ -4763,10 +4926,27 @@ export async function registerRoutes(
       }
       try {
         const { id } = req.params as Record<string, string>;
-        // In production, this would update a database record
+        const match = /^(streams|revenue):(\d{4}-\d{2}-\d{2})$/.exec(id);
+        if (!match) {
+          return res.status(400).json({ message: "Invalid anomaly id" });
+        }
+        const [, metricType, date] = match;
+        const dayStart = new Date(`${date}T00:00:00.000Z`);
+        const dayEnd = new Date(`${date}T23:59:59.999Z`);
+        const updated = await db
+          .update(analytics)
+          .set({
+            metadata: sql`jsonb_set(COALESCE(${analytics.metadata}, '{}'::jsonb), ARRAY['anomalyAcknowledgements', ${metricType}], to_jsonb(${new Date().toISOString()}::text), true)`,
+          })
+          .where(and(eq(analytics.userId, req.user.id), gte(analytics.date, dayStart), lte(analytics.date, dayEnd)))
+          .returning({ id: analytics.id });
+        if (updated.length === 0) {
+          return res.status(404).json({ message: "Analytics data for this anomaly was not found" });
+        }
         return res.json({
           success: true,
-          message: `Anomaly ${id} acknowledged`,
+          id,
+          acknowledged: true,
         });
       } catch (error) {
         logger.warn({ err: error }, "Acknowledge anomaly error");
@@ -4785,19 +4965,52 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { eventType, eventData } = req.body;
+        const { eventType, eventData = {} } = req.body;
 
-        if (!eventType) {
+        if (typeof eventType !== "string" || !eventType.trim()) {
           return res.status(400).json({ message: "Event type is required" });
         }
+        if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) {
+          return res.status(400).json({ message: "eventData must be an object" });
+        }
 
-        // Log the event for analytics (in production, store to database)
-        logger.info(
-          { eventData },
-          `[Analytics] User ${req.user.id}: ${eventType}`,
-        );
+        const data = eventData as Record<string, unknown>;
+        const metricKeys = ["streams", "revenue", "totalListeners", "followers"] as const;
+        const values: Record<string, number> = {};
+        for (const key of metricKeys) {
+          if (data[key] === undefined) continue;
+          const value = Number(data[key]);
+          if (!Number.isFinite(value) || value < 0) {
+            return res.status(400).json({ message: `${key} must be a non-negative number` });
+          }
+          values[key] = value;
+        }
+        const occurredAt = data.occurredAt ? new Date(String(data.occurredAt)) : new Date();
+        if (Number.isNaN(occurredAt.getTime())) {
+          return res.status(400).json({ message: "occurredAt must be a valid date" });
+        }
+        if (occurredAt > new Date(Date.now() + 5 * 60 * 1000)) {
+          return res.status(400).json({ message: "occurredAt cannot be in the future" });
+        }
+        const platform =
+          typeof data.platform === "string" && data.platform.trim()
+            ? data.platform.trim().slice(0, 100)
+            : null;
+        const [event] = await db
+          .insert(analytics)
+          .values({
+            userId: req.user.id,
+            date: occurredAt,
+            platform,
+            streams: values.streams ?? 0,
+            revenue: values.revenue ?? 0,
+            totalListeners: values.totalListeners ?? 0,
+            followers: values.followers ?? 0,
+            metadata: { eventType: eventType.trim(), eventData: data },
+          })
+          .returning({ id: analytics.id, date: analytics.date });
 
-        return res.json({ success: true, message: "Event tracked" });
+        return res.status(201).json({ success: true, event });
       } catch (error) {
         logger.warn({ err: error }, "Track event error");
         return res.status(500).json({ message: "Failed to track event" });
@@ -5251,11 +5464,33 @@ export async function registerRoutes(
       }
       try {
         const { statementId } = req.params as Record<string, string>;
-        return res.json({
-          success: true,
-          downloadUrl: `/exports/statement_${statementId}.pdf`,
-          expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        });
+        const userId = req.user.id;
+        const [statement] = await db.select().from(royaltyStatements)
+          .where(and(eq(royaltyStatements.id, statementId), eq(royaltyStatements.userId, userId))).limit(1);
+        const rows = statement
+          ? await db.select().from(royaltyTransactions).where(and(
+              eq(royaltyTransactions.userId, userId),
+              gte(royaltyTransactions.createdAt, statement.periodStart),
+              lte(royaltyTransactions.createdAt, statement.periodEnd),
+            )).orderBy(desc(royaltyTransactions.createdAt))
+          : await db.select().from(royaltyTransactions).where(and(
+              eq(royaltyTransactions.id, statementId),
+              eq(royaltyTransactions.userId, userId),
+            )).limit(1);
+        if (!statement && rows.length === 0) {
+          return res.status(404).json({ message: "Statement not found" });
+        }
+        const cell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+        const csv = [
+          "Date,Period Start,Period End,Platform,Release,Amount,Currency,Streams,Status",
+          ...rows.map((row) => [
+            row.createdAt?.toISOString(), row.periodStart?.toISOString(), row.periodEnd?.toISOString(),
+            row.platform, row.releaseId, row.amount, row.currency, row.streamCount, row.status,
+          ].map(cell).join(",")),
+        ].join("\n");
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="royalty-statement-${statementId}.csv"`);
+        return res.send(csv);
       } catch (error) {
         logger.warn({ err: error }, "Download statement error");
         return res
@@ -5396,7 +5631,16 @@ export async function registerRoutes(
 
       const agg = aggregates[0];
       return res.json({
-        data: rows,
+        data: rows.map((row) => ({
+          ...row,
+          amount: Number(row.amount),
+          streams: row.streamCount ?? 0,
+          payoutStatus: row.status ?? "pending",
+          payoutDate: row.paidAt?.toISOString(),
+          period: row.periodStart && row.periodEnd
+            ? `${row.periodStart.toLocaleDateString()} – ${row.periodEnd.toLocaleDateString()}`
+            : row.createdAt?.toLocaleDateString() ?? "",
+        })),
         totalEarnings: Number(agg.totalEarnings || 0),
         pendingPayouts: Number(agg.pendingPayouts || 0),
         lastPayout: lastPaidRow?.paidAt ?? null,
@@ -5528,7 +5772,8 @@ export async function registerRoutes(
       }
       try {
         const user = req.user!;
-        const prefs = (user.preferences as any).payout || {};
+        const preferences = (user.preferences as any) || {};
+        const prefs = preferences.payoutSettings || preferences.payout || {};
         const methods = [];
         if (user.stripeConnectedAccountId) {
           methods.push({
@@ -5571,22 +5816,30 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { type, paypalEmail, bankDetails } = req.body;
-        if (!type)
+        const { type, paypalEmail, bankDetails } = req.body ?? {};
+        if (type !== "paypal" && type !== "bank_transfer")
           return res
             .status(400)
-            .json({ message: "Payment method type required" });
+            .json({ message: "Payment method must be PayPal or bank transfer" });
+        if (type === "paypal" && (typeof paypalEmail !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalEmail.trim()))) {
+          return res.status(400).json({ message: "A valid PayPal email is required" });
+        }
+        if (type === "bank_transfer" && (!bankDetails || ["accountHolderName", "bankName", "accountNumber", "routingNumber"].some(
+          (key) => typeof bankDetails[key] !== "string" || !bankDetails[key].trim(),
+        ))) {
+          return res.status(400).json({ message: "Complete bank details are required" });
+        }
 
         const user = req.user!;
         const currentPrefs = user.preferences || {};
         const updated = {
           ...currentPrefs,
-          payout: { ...((currentPrefs as any).payout || {}) },
+          payoutSettings: { ...((currentPrefs as any).payoutSettings || {}) },
         };
         if (type === "paypal" && paypalEmail)
-          updated.payout.paypalEmail = paypalEmail;
+          updated.payoutSettings.paypalEmail = paypalEmail.trim();
         if (type === "bank_transfer" && bankDetails)
-          updated.payout.bankDetails = bankDetails;
+          updated.payoutSettings.bankDetails = bankDetails;
 
         await db
           .update(users)
@@ -5662,14 +5915,26 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { minimumPayout, payoutSchedule, preferredMethod } = req.body;
+        const { minimumPayout, payoutSchedule, preferredMethod } = req.body ?? {};
+        if (
+          minimumPayout != null &&
+          (!Number.isFinite(Number(minimumPayout)) || Number(minimumPayout) < 0)
+        ) {
+          return res.status(400).json({ message: "Minimum payout must be a non-negative number" });
+        }
+        if (
+          payoutSchedule != null &&
+          !["weekly", "monthly", "quarterly"].includes(payoutSchedule)
+        ) {
+          return res.status(400).json({ message: "Payout schedule must be weekly, monthly, or quarterly" });
+        }
         const user = req.user!;
         const currentPrefs = user.preferences || {};
         const updated = {
           ...currentPrefs,
           payoutSettings: {
             ...((currentPrefs as any).payoutSettings || {}),
-            ...(minimumPayout != null && { minimumPayout }),
+            ...(minimumPayout != null && { minimumPayout: Number(minimumPayout) }),
             ...(payoutSchedule && { payoutSchedule }),
             ...(preferredMethod && { preferredMethod }),
           },
@@ -5978,11 +6243,16 @@ export async function registerRoutes(
           req.user.id,
           availableAmount,
         );
+        if (!result.success || !result.payoutId) {
+          return res.status(400).json({
+            message: result.error || "Payout request could not be submitted",
+          });
+        }
         return res.json({
           success: true,
-          payoutId: (result as any).id || `payout_${Date.now()}`,
+          payoutId: result.payoutId,
           message: "Payout request submitted",
-          amount: availableAmount,
+          amount: result.amount ?? availableAmount,
         });
       } catch (error) {
         logger.warn({ err: error }, "Request payout error");
@@ -6033,7 +6303,7 @@ export async function registerRoutes(
       });
     } catch (error) {
       logger.warn({ err: error }, "Get royalty transactions error");
-      return res.json({ transactions: [], total: 0, limit: 50, offset: 0 });
+      return res.status(500).json({ message: "Failed to fetch royalty transactions" });
     }
   });
 
@@ -6051,7 +6321,7 @@ export async function registerRoutes(
       return res.json({ statements, total: statements.length });
     } catch (error) {
       logger.warn({ err: error }, "Get royalty statements error");
-      return res.json({ statements: [], total: 0 });
+      return res.status(500).json({ message: "Failed to fetch royalty statements" });
     }
   });
 
@@ -6085,7 +6355,7 @@ export async function registerRoutes(
               ? "1 Year"
               : `${months} Months`,
         projected: parseFloat((monthlyAvg * months).toFixed(2)),
-        growthRate: 0.05,
+        growthRate: 0,
         confidence: months <= 3 ? "high" : months <= 6 ? "medium" : "low",
       }));
       const byPlatform: Record<string, number> = {};
@@ -6103,14 +6373,7 @@ export async function registerRoutes(
       });
     } catch (error) {
       logger.warn({ err: error }, "Get royalty forecast error");
-      return res.json({
-        monthlyAverage: 0,
-        annualProjected: 0,
-        forecast: [],
-        byPlatform: {},
-        basedOnMonths: 3,
-        dataPoints: 0,
-      });
+      return res.status(500).json({ message: "Failed to calculate royalty forecast" });
     }
   });
 
@@ -6301,22 +6564,45 @@ export async function registerRoutes(
       if (!/^[a-zA-Z0-9-]{8,64}$/.test(uploadId)) {
         return res.status(400).json({ message: "Invalid uploadId" });
       }
+      const index = Number(chunkIndex);
+      const count = Number(totalChunks);
+      if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        !Number.isInteger(count) ||
+        count < 1 ||
+        count > 10_000 ||
+        index >= count
+      ) {
+        return res.status(400).json({ message: "Invalid chunk index or count" });
+      }
 
+      let dir: string | undefined;
       try {
         const fsPromises = await import("fs/promises");
         const pathMod = await import("path");
         const osMod = await import("os");
-        const dir = pathMod.join(osMod.tmpdir(), "uploads", uploadId);
+        dir = pathMod.join(
+          osMod.tmpdir(),
+          "uploads",
+          encodeURIComponent(req.user.id),
+          uploadId,
+        );
         await fsPromises.mkdir(dir, { recursive: true });
         const chunkPath = pathMod.join(
           dir,
-          String(chunkIndex).padStart(6, "0") + ".bin",
+          String(index).padStart(6, "0") + ".bin",
         );
         await fsPromises.writeFile(chunkPath, req.file.buffer);
-        return res.json({ received: Number(chunkIndex), uploadId });
+        return res.json({ received: index, uploadId });
       } catch (err) {
         logger.warn({ err: err }, "[ChunkUpload] Failed to store chunk");
         return res.status(500).json({ message: "Failed to store chunk" });
+      } finally {
+        if (dir && res.statusCode >= 500) {
+          const fsPromises = await import("fs/promises");
+          await fsPromises.rm(dir, { recursive: true, force: true });
+        }
       }
     },
   );
@@ -6337,12 +6623,21 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Invalid uploadId" });
     }
 
+    let dir: string | undefined;
     try {
       const fsPromises = await import("fs/promises");
       const pathMod = await import("path");
       const osMod = await import("os");
-      const dir = pathMod.join(osMod.tmpdir(), "uploads", uploadId);
+      dir = pathMod.join(
+        osMod.tmpdir(),
+        "uploads",
+        encodeURIComponent(req.user.id),
+        uploadId,
+      );
       const count = Number(totalChunks);
+      if (!Number.isInteger(count) || count < 1 || count > 10_000) {
+        return res.status(400).json({ message: "Invalid totalChunks" });
+      }
 
       const chunkBuffers: Buffer[] = [];
       for (let i = 0; i < count; i++) {
@@ -6377,13 +6672,15 @@ export async function registerRoutes(
       );
       const url = await storageService.getDownloadUrl(finalKey);
 
-      // Clean up temp chunks (best-effort, non-blocking)
-      fsPromises.rm(dir, { recursive: true, force: true }).catch(() => {});
-
       return res.json({ url, key: finalKey, size: assembled.length });
     } catch (err) {
       logger.warn({ err: err }, "[ChunkUpload] Assembly failed");
       return res.status(500).json({ message: "Failed to assemble upload" });
+    } finally {
+      if (dir) {
+        const fsPromises = await import("fs/promises");
+        await fsPromises.rm(dir, { recursive: true, force: true });
+      }
     }
   });
   // ── End chunked upload ─────────────────────────────────────────────────────

@@ -268,14 +268,22 @@ export function DistributionDialog({
         setExportProgress((prev) => Math.min(prev + 10, 90));
       }, 200);
 
-      const response = await apiRequest(
-        "POST",
-        `/api/distribution/packages/${existingPackage.id}/export`,
-        {},
-      );
-      clearInterval(interval);
-      setExportProgress(100);
-      return response;
+      try {
+        // The export route serves the package as a downloadable JSON document.
+        const response = await fetch(
+          `/api/distribution/packages/${existingPackage.id}/export`,
+          { credentials: "include" },
+        );
+        if (!response.ok) {
+          const error = await response.json().catch(() => null);
+          throw new Error(error?.error || "Failed to export package");
+        }
+
+        return { downloadUrl: URL.createObjectURL(await response.blob()) };
+      } finally {
+        clearInterval(interval);
+        setExportProgress(100);
+      }
     },
     onSuccess: (data: unknown) => {
       setDownloadUrl(data.downloadUrl);

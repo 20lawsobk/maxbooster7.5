@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
@@ -124,6 +124,18 @@ export function BulkFileManager({
   const totalSelectedSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
   const allSelected = files.length > 0 && selectedCount === files.length;
 
+  useEffect(() => {
+    const availableIds = new Set(files.map((file) => file.id));
+    setSelectedIds((previous) => {
+      const next = new Set(
+        [...previous].filter((id) => availableIds.has(id)),
+      );
+      if (next.size === previous.size) return previous;
+      onSelectionChange?.(Array.from(next));
+      return next;
+    });
+  }, [files, onSelectionChange]);
+
   const toggleSelection = useCallback(
     (id: string) => {
       setSelectedIds((prev) => {
@@ -191,6 +203,10 @@ export function BulkFileManager({
               },
               body: JSON.stringify({ fileIds: ids }),
             });
+            if (!response.ok) {
+              const error = await response.json().catch(() => ({}));
+              throw new Error(error.message || error.error || "Failed to delete files");
+            }
             result = await response.json();
           }
           break;
@@ -198,52 +214,28 @@ export function BulkFileManager({
           if (onMove) {
             result = await onMove(ids, selectedFolder);
           } else {
-            result = {
-              success: ids,
-              failed: [],
-              totalRequested: ids.length,
-              totalSucceeded: ids.length,
-              totalFailed: 0,
-            };
+            throw new Error("Moving files is not available in this workspace");
           }
           break;
         case "download":
           if (onDownload) {
             result = await onDownload(ids);
           } else {
-            result = {
-              success: ids,
-              failed: [],
-              totalRequested: ids.length,
-              totalSucceeded: ids.length,
-              totalFailed: 0,
-            };
+            throw new Error("Downloading files is not available in this workspace");
           }
           break;
         case "duplicate":
           if (onDuplicate) {
             result = await onDuplicate(ids);
           } else {
-            result = {
-              success: ids,
-              failed: [],
-              totalRequested: ids.length,
-              totalSucceeded: ids.length,
-              totalFailed: 0,
-            };
+            throw new Error("Duplicating files is not available in this workspace");
           }
           break;
         case "restore":
           if (onRestore) {
             result = await onRestore(ids);
           } else {
-            result = {
-              success: ids,
-              failed: [],
-              totalRequested: ids.length,
-              totalSucceeded: ids.length,
-              totalFailed: 0,
-            };
+            throw new Error("Restoring files is not available in this workspace");
           }
           break;
         default:
@@ -268,7 +260,7 @@ export function BulkFileManager({
         });
       }
 
-      queryClient.invalidateQueries({ queryKey: ["/api/files"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/files/list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/files/storage-usage"] });
     } catch (error) {
       setOperationStatus("error");
@@ -349,7 +341,7 @@ export function BulkFileManager({
                     Download
                   </Button>
                 )}
-                {folders.length > 0 && (
+                {folders.length > 0 && onMove && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -381,14 +373,16 @@ export function BulkFileManager({
               </>
             ) : (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => startOperation("restore")}
-                >
-                  <Undo2 className="h-4 w-4 mr-1" />
-                  Restore
-                </Button>
+                {onRestore && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => startOperation("restore")}
+                  >
+                    <Undo2 className="h-4 w-4 mr-1" />
+                    Restore
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -426,6 +420,7 @@ export function BulkFileManager({
               >
                 <Checkbox
                   checked={isSelected}
+                  onClick={(event) => event.stopPropagation()}
                   onCheckedChange={() => toggleSelection(file.id)}
                   aria-label={`Select ${file.name}`}
                 />

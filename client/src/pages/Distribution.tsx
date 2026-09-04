@@ -1512,8 +1512,6 @@ export default function Distribution() {
   });
 
   // Chunked Upload State
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [isPaused] = useState(false);
   const [, setGeneratedISRC] = useState<string>("");
   const [, setGeneratedUPC] = useState<string>("");
 
@@ -1770,78 +1768,6 @@ export default function Distribution() {
     },
   });
 
-  // Chunked Upload Mutations
-  useMutation({
-    mutationFn: async ({
-      filename,
-      totalSize,
-    }: {
-      filename: string;
-      totalSize: number;
-    }) => {
-      const response = await apiRequest(
-        "POST",
-        "/api/distribution/upload/init",
-        {
-          filename,
-          totalSize,
-        },
-      );
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setActiveSessionId(data.sessionId);
-      toast({
-        title: "Upload session initialized",
-        description: `Ready to upload ${data.totalChunks} chunks`,
-      });
-    },
-  });
-
-  useMutation({
-    mutationFn: async ({
-      sessionId,
-      chunkIndex,
-      chunkData,
-      chunkHash,
-    }: {
-      sessionId: string;
-      chunkIndex: number;
-      chunkData: ArrayBuffer;
-      chunkHash: string;
-    }) => {
-      const formData = new FormData();
-      formData.append("chunk", new Blob([chunkData]));
-      formData.append("chunkIndex", chunkIndex.toString());
-      formData.append("chunkHash", chunkHash);
-
-      const response = await apiRequest(
-        "POST",
-        `/api/distribution/upload/${sessionId}/chunk`,
-        formData,
-      );
-      return response.json();
-    },
-  });
-
-  useMutation({
-    mutationFn: async (sessionId: string) => {
-      const response = await apiRequest(
-        "POST",
-        `/api/distribution/upload/${sessionId}/finalize`,
-        {},
-      );
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Upload complete!",
-        description: "Your file has been uploaded successfully",
-      });
-      setActiveSessionId(null);
-    },
-  });
-
   useMutation({
     mutationFn: async ({
       trackId,
@@ -1982,22 +1908,6 @@ export default function Distribution() {
         queryKey: ["/api/distribution/releases"],
       });
       invalidateOnDistributionChange();
-    },
-  });
-
-  useQuery<UploadSessionStatus | null>({
-    queryKey: ["/api/distribution/upload", activeSessionId, "status"],
-    enabled: !!activeSessionId && !isPaused,
-    refetchInterval: 5000,
-    queryFn: async () => {
-      if (!activeSessionId) return null;
-      const response = await fetch(
-        `/api/distribution/upload/${activeSessionId}/status`,
-        {
-          credentials: "include",
-        },
-      );
-      return response.json();
     },
   });
 

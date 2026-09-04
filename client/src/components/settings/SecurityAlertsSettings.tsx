@@ -38,17 +38,21 @@ export function SecurityAlertsSettings() {
   const [saving, setSaving] = useState<string | null>(null);
 
   const { data: settings, isLoading } = useQuery<SecurityAlertSettings>({
-    queryKey: ["/api/auth/security-alerts"],
+    queryKey: ["/api/preferences/security-alerts"],
   });
 
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<SecurityAlertSettings>) => {
-      const res = await apiRequest("PUT", "/api/auth/security-alerts", updates);
+      const res = await apiRequest(
+        "PUT",
+        "/api/preferences/security-alerts",
+        updates,
+      );
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/auth/security-alerts"],
+        queryKey: ["/api/preferences/security-alerts"],
       });
       toast({
         title: "Security Alerts Updated",

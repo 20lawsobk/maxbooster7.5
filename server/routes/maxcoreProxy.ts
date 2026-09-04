@@ -330,27 +330,40 @@ const POST_PATHS = [
   "/api/platform/model/reload",
 ];
 
-const GET_PATHS = [
-  "/api/platform/video/generate",
-  "/api/platform/ads/performance/:userId",
-  "/api/video-jobs",
-  "/api/video-job/:jobId",
-  "/api/video-job/:jobId/preview/:sceneIdx",
-  "/api/video-job/:jobId/download",
-  "/api/video-job/:jobId/file",
-  "/api/video-job/:jobId/video",
-  "/api/audio-job/:jobId",
-  "/api/storage/artist/:profileId",
-  "/api/platform/model/info",
-];
-
-const DELETE_PATHS = ["/api/video-job/:jobId"];
-
 for (const p of POST_PATHS) {
   const isAdminPath = ADMIN_PATH_SUFFIXES.some((suffix) => p === `/api${suffix}`);
   router.post(p, isAdminPath ? requireAdmin : requireAuthOnly, proxyToMaxCore);
 }
-for (const p of GET_PATHS) router.get(p, requireAuthOnly, proxyToMaxCore);
-for (const p of DELETE_PATHS) router.delete(p, requireAuthOnly, proxyToMaxCore);
+// Keep these registrations explicit: besides making the proxied contract easy to
+// inspect, this lets route tooling enumerate the protected GET/DELETE endpoints.
+router.get("/api/platform/video/generate", requireAuthOnly, proxyToMaxCore);
+router.get(
+  "/api/platform/ads/performance/:userId",
+  requireAuthOnly,
+  proxyToMaxCore,
+);
+router.get("/api/video-jobs", requireAuthOnly, proxyToMaxCore);
+router.get("/api/video-job/:jobId", requireAuthOnly, proxyToMaxCore);
+router.get(
+  "/api/video-job/:jobId/preview/:sceneIdx",
+  requireAuthOnly,
+  proxyToMaxCore,
+);
+router.get(
+  "/api/video-job/:jobId/download",
+  requireAuthOnly,
+  proxyToMaxCore,
+);
+router.get("/api/video-job/:jobId/file", requireAuthOnly, proxyToMaxCore);
+router.get("/api/video-job/:jobId/video", requireAuthOnly, proxyToMaxCore);
+router.get("/api/audio-job/:jobId", requireAuthOnly, proxyToMaxCore);
+router.get(
+  "/api/storage/artist/:profileId",
+  requireAuthOnly,
+  proxyToMaxCore,
+);
+router.get("/api/platform/model/info", requireAuthOnly, proxyToMaxCore);
+
+router.delete("/api/video-job/:jobId", requireAuthOnly, proxyToMaxCore);
 
 export default router;

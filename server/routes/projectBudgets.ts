@@ -5,6 +5,7 @@ import {
   budgetLineItems,
   insertProjectBudgetSchema,
   insertBudgetLineItemSchema,
+  projects,
 } from "@shared/schema";
 import { and, eq, desc } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
@@ -12,6 +13,15 @@ import { logger } from "../logger.js";
 import { parsePaginationParams } from "../middleware/pagination.js";
 
 const router = Router();
+
+async function getOwnedProjectName(projectId: string, userId: string) {
+  const [project] = await db
+    .select({ title: projects.title })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+    .limit(1);
+  return project?.title;
+}
 
 router.get("/", requireAuth, async (req, res) => {
   try {
@@ -83,9 +93,20 @@ router.get("/:id/items", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   try {
+    const projectId =
+      typeof req.body.projectId === "string" && req.body.projectId.trim()
+        ? req.body.projectId
+        : undefined;
+    const projectName = projectId
+      ? await getOwnedProjectName(projectId, req.user!.id)
+      : undefined;
+    if (projectId && !projectName) {
+      return res.status(404).json({ error: "Project not found" });
+    }
     const data = insertProjectBudgetSchema?.parse({
       ...req.body,
       userId: req.user!.id,
+      ...(projectId ? { projectId, projectName } : {}),
     });
     const [item] = await db.insert(projectBudgets).values(data).returning();
     res.status(201).json(item);
@@ -115,10 +136,24 @@ router.put("/:id", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Budget not found" });
     }
 
+    const projectId =
+      typeof req.body.projectId === "string" && req.body.projectId.trim()
+        ? req.body.projectId
+        : undefined;
+    const projectName = projectId
+      ? await getOwnedProjectName(projectId, userId)
+      : undefined;
+    if (projectId && !projectName) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
     const data = insertProjectBudgetSchema
       .partial()
       .omit({ userId: true })
-      .parse(req.body);
+      .parse({
+        ...req.body,
+        ...(projectId ? { projectId, projectName } : {}),
+      });
     const [item] = await db
       .update(projectBudgets)
       .set({ ...data, updatedAt: new Date() })

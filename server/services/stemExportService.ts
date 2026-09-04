@@ -28,6 +28,8 @@ import {
 } from "@shared/schema";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { storageService } from "./storageService.js";
+import { resolveAudioUrlToLocalFile } from "./audioSourceResolver.js";
+import { apiCache } from "../middleware/apiCache.js";
 import { logger } from "../logger.js";
 import { SAMPLE_RATES, BIT_DEPTHS, isSupportedSampleRate, isSupportedBitDepth, type SampleRate, type BitDepth } from "../../shared/audioConstants.js";
 
@@ -189,8 +191,15 @@ class StemExportService {
         projectId,
         userId,
         jobId,
+        // `name`/`format` are the original (legacy) required columns on this
+        // table; `exportName`/`exportFormat` are the richer fields the rest
+        // of this service actually reads. Keep both populated with the same
+        // values so the row satisfies the legacy NOT NULL constraint on
+        // `name` and neither column silently drifts from the truth.
+        name: generatedExportName,
         exportName: generatedExportName,
         trackIds: trackIds.length > 0 ? trackIds : tracks?.map((t) => t?.id),
+        format,
         exportFormat: format,
         sampleRate,
         bitDepth,
@@ -234,6 +243,13 @@ class StemExportService {
         .update(stemExports)
         .set({ status: "processing" })
         .where(eq(stemExports.id, exportId));
+      // Background job writes bypass invalidateCacheOnMutation() (that
+      // middleware only fires on synchronous POST/PUT/PATCH/DELETE HTTP
+      // requests). Without this, the client's status-polling GET can keep
+      // serving an L1/PDIM-cached snapshot from before this write for up to
+      // the cache's TTL, making a genuinely-progressing/completed export
+      // look stuck. Bust explicitly after every state-changing write below.
+      apiCache?.invalidateForUser(options?.userId);
 
       const individualFiles: IndividualStemFile[] = [];
       let totalDuration = 0;
@@ -248,6 +264,7 @@ class StemExportService {
             currentTrack: track.name,
           })
           .where(eq(stemExports.id, exportId));
+        apiCache?.invalidateForUser(options?.userId);
 
         try {
           const stemFile = await this.renderTrackStem(track, options, tempDir);
@@ -269,6 +286,7 @@ class StemExportService {
             currentTrack: "Master Bus",
           })
           .where(eq(stemExports.id, exportId));
+        apiCache?.invalidateForUser(options?.userId);
 
         try {
           const masterFile = await this.renderMasterBus(
@@ -307,6 +325,7 @@ class StemExportService {
           completedAt: new Date(),
         })
         .where(eq(stemExports.id, exportId));
+      apiCache?.invalidateForUser(options?.userId);
 
       logger.info(
         `✅ Stem export ${exportId} completed: ${individualFiles?.length} files`,
@@ -325,6 +344,7 @@ class StemExportService {
           currentTrack: null,
         })
         .where(eq(stemExports.id, exportId));
+      apiCache?.invalidateForUser(options?.userId);
     } finally {
       try {
         await fsPromises?.rm(tempDir, { recursive: true, force: true });
@@ -408,13 +428,25 @@ class StemExportService {
     const fileName = `${sanitizedName}.${extension}`;
     const outputPath = path?.join(tempDir, fileName);
 
+    // Silence source: raw zeroed PCM samples read from /dev/zero, decoded as
+    // signed 16-bit little-endian. This is used instead of the libavfilter
+    // "anullsrc" virtual input (-f lavfi) because fluent-ffmpeg's capability
+    // probe only parses `ffmpeg -formats`, and current ffmpeg builds list
+    // lavfi under `-devices` instead — so fluent-ffmpeg wrongly reports the
+    // format as unavailable and refuses to run, even though the real ffmpeg
+    // binary supports it. The raw PCM demuxer is a universally-present core
+    // ffmpeg format (always listed under `-formats`), and a stream of zero
+    // bytes is exact digital silence, so this produces an identical result
+    // without depending on lavfi at all.
+    const sampleRate = options?.sampleRate || 48000;
     await new Promise<void>((resolve, reject) => {
       (ffmpeg as any)()
-        .input("anullsrc=r=" + (options.sampleRate || 48000) + ":cl=stereo")
-        .inputFormat("lavfi")
+        .input("/dev/zero")
+        .inputFormat("s16le")
+        .inputOptions([`-ar ${sampleRate}`, "-ac 2"])
         .duration(1)
         .audioCodec(this.getAudioCodec(options?.format, options?.bitDepth))
-        .audioFrequency(options?.sampleRate || 48000)
+        .audioFrequency(sampleRate)
         .audioChannels(2)
         .outputOptions(this.getOutputOptions(options))
         .on("end", () => resolve())
@@ -442,29 +474,16 @@ class StemExportService {
     };
   }
 
-  private async renderSingleClip(
-    clip: Record<string, unknown>,
+  /**
+   * Run the shared ffmpeg encode step against a file that is already on
+   * local disk. Factored out so both the single-clip and mixdown paths
+   * share one encode implementation instead of drifting independently.
+   */
+  private async encodeLocalFileToOutput(
+    inputPath: string,
     outputPath: string,
     options: StemExportOptions,
   ): Promise<void> {
-    const hasFFmpeg = await initializeFfmpeg();
-    if (!hasFFmpeg) {
-      throw new Error(
-        "FFmpeg is not available - stem export features are disabled",
-      );
-    }
-    let inputPath: string;
-
-    if ((clip?.filePath as any)?.startsWith("/") || (clip?.filePath as any)?.startsWith("./")) {
-      inputPath = clip?.filePath as string;
-    } else if (clip?.filePath) {
-      const buffer = await storageService?.downloadFile((clip?.filePath as string));
-      inputPath = path?.join(os?.tmpdir(), `clip_${clip?.id}.wav`);
-      await fsPromises?.writeFile(inputPath, buffer);
-    } else {
-      throw new Error("Clip has no audio file");
-    }
-
     await new Promise<void>((resolve, reject) => {
       let command = (ffmpeg as any)(inputPath)
         .audioCodec(this.getAudioCodec(options?.format, options?.bitDepth))
@@ -483,6 +502,33 @@ class StemExportService {
     });
   }
 
+  private async renderSingleClip(
+    clip: Record<string, unknown>,
+    outputPath: string,
+    options: StemExportOptions,
+  ): Promise<void> {
+    const hasFFmpeg = await initializeFfmpeg();
+    if (!hasFFmpeg) {
+      throw new Error(
+        "FFmpeg is not available - stem export features are disabled",
+      );
+    }
+    // `audio_clips` stores the clip's audio reference in `audioUrl` (an
+    // `/api/storage/file/<key>` app route, a legacy bare storage key, or a
+    // local/remote URL) — there is no `filePath` column. Resolution of every
+    // form is centralized in audioSourceResolver so this stays consistent
+    // with the rest of the studio subsystem (render/warp/transient paths).
+    if (!clip?.audioUrl) {
+      throw new Error("Clip has no audio file");
+    }
+    const resolved = await resolveAudioUrlToLocalFile(clip.audioUrl as string);
+    try {
+      await this.encodeLocalFileToOutput(resolved.localPath, outputPath, options);
+    } finally {
+      await resolved.cleanup();
+    }
+  }
+
   private async mixAndRenderClips(
     clips: unknown[],
     _track: Record<string, unknown>,
@@ -495,67 +541,60 @@ class StemExportService {
         "FFmpeg is not available - stem export features are disabled",
       );
     }
-    const tempClipPaths: string[] = [];
+    const resolvedClips: { localPath: string; cleanup: () => Promise<void> }[] = [];
 
     for (const clip of clips) {
-      if ((clip as any)?.filePath) {
-        let clipPath: string;
-
-        if ((clip as any)?.filePath.startsWith("/") || (clip as any)?.filePath.startsWith("./")) {
-          clipPath = (clip as any)?.filePath;
-        } else {
-          const buffer = await storageService?.downloadFile((clip as any)?.filePath);
-          clipPath = path?.join(
-            os?.tmpdir(),
-            `clip_${(clip as any)?.id}_${randomUUID()}.wav`,
-          );
-          await fsPromises?.writeFile(clipPath, buffer);
-        }
-        tempClipPaths?.push(clipPath);
+      const audioUrl = (clip as any)?.audioUrl;
+      if (!audioUrl) continue;
+      try {
+        resolvedClips?.push(await resolveAudioUrlToLocalFile(audioUrl));
+      } catch (error: unknown) {
+        // Documented lenient-skip: one unresolvable clip among many
+        // shouldn't fail the whole track mixdown.
+        logger.warn(
+          { err: error },
+          `Skipping unresolvable clip ${(clip as any)?.id} during mixdown:`,
+        );
       }
     }
 
-    if (tempClipPaths?.length === 0) {
-      throw new Error("No clip audio files found");
-    }
+    try {
+      if (resolvedClips?.length === 0) {
+        throw new Error("No clip audio files found");
+      }
 
-    if (tempClipPaths?.length === 1) {
-      await this.renderSingleClip(
-        { filePath: tempClipPaths[0] },
-        outputPath,
-        options,
-      );
-      return;
-    }
+      if (resolvedClips?.length === 1) {
+        await this.encodeLocalFileToOutput(
+          resolvedClips[0].localPath,
+          outputPath,
+          options,
+        );
+        return;
+      }
 
-    await new Promise<void>((resolve, reject) => {
-      let command = (ffmpeg as any)!();
+      await new Promise<void>((resolve, reject) => {
+        let command = (ffmpeg as any)!();
 
-      tempClipPaths?.forEach((clipPath) => {
-        command = command?.input(clipPath);
+        resolvedClips?.forEach(({ localPath }) => {
+          command = command?.input(localPath);
+        });
+
+        const filterComplex =
+          resolvedClips?.map((_, i) => `[${i}:a]`).join("") +
+          `amix=inputs=${resolvedClips.length}:duration=longest:dropout_transition=0`;
+
+        command
+          .complexFilter(filterComplex)
+          .audioCodec(this.getAudioCodec(options?.format, options?.bitDepth))
+          .audioFrequency(options?.sampleRate || 48000)
+          .audioChannels(2)
+          .outputOptions(this.getOutputOptions(options))
+          .on("end", () => resolve())
+          .on("error", reject)
+          .save(outputPath);
       });
-
-      const filterComplex =
-        tempClipPaths?.map((_, i) => `[${i}:a]`).join("") +
-        `amix=inputs=${tempClipPaths.length}:duration=longest:dropout_transition=0`;
-
-      command
-        .complexFilter(filterComplex)
-        .audioCodec(this.getAudioCodec(options?.format, options?.bitDepth))
-        .audioFrequency(options?.sampleRate || 48000)
-        .audioChannels(2)
-        .outputOptions(this.getOutputOptions(options))
-        .on("end", () => resolve())
-        .on("error", reject)
-        .save(outputPath);
-    });
-
-    for (const tempPath of tempClipPaths) {
-      if (tempPath?.includes(os?.tmpdir())) {
-        try {
-          await fsPromises?.unlink(tempPath);
-        } catch {}
-      }
+    } finally {
+      await Promise.all(resolvedClips?.map((rc) => rc.cleanup()));
     }
   }
 
@@ -583,32 +622,27 @@ class StemExportService {
 
     const trackStemPaths: string[] = [];
     const trackVolumes: number[] = [];
+    const masterCleanups: (() => Promise<void>)[] = [];
 
     for (const track of tracks) {
       const clips = await db.query.audioClips.findMany({
         where: eq(audioClips.trackId, track?.id),
       });
 
-      if (clips?.length > 0 && (clips[0] as any).filePath) {
-        let clipPath: string;
-
-        if (
-          (clips[0] as any).filePath?.startsWith("/") ||
-          (clips[0] as any).filePath?.startsWith("./")
-        ) {
-          clipPath = (clips[0] as any).filePath;
-        } else {
-          try {
-            const buffer = await storageService?.downloadFile((clips[0] as any).filePath);
-            clipPath = path?.join(os?.tmpdir(), `master_clip_${track?.id}.wav`);
-            await fsPromises?.writeFile(clipPath, buffer);
-          } catch {
-            continue;
-          }
+      const audioUrl = (clips[0] as any)?.audioUrl;
+      if (clips?.length > 0 && audioUrl) {
+        try {
+          const resolved = await resolveAudioUrlToLocalFile(audioUrl);
+          trackStemPaths?.push(resolved.localPath);
+          trackVolumes?.push(track?.volume || 0.8);
+          masterCleanups?.push(resolved.cleanup);
+        } catch (error: unknown) {
+          logger.warn(
+            { err: error },
+            `Skipping unresolvable clip for track ${track?.id} during master bus render:`,
+          );
+          continue;
         }
-
-        trackStemPaths?.push(clipPath);
-        trackVolumes?.push(track?.volume || 0.8);
       }
     }
 
@@ -620,31 +654,35 @@ class StemExportService {
     const fileName = `Master.${extension}`;
     const outputPath = path?.join(tempDir, fileName);
 
-    await new Promise<void>((resolve, reject) => {
-      let command = (ffmpeg as any)!();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        let command = (ffmpeg as any)!();
 
-      trackStemPaths?.forEach((stemPath) => {
-        command = command?.input(stemPath);
+        trackStemPaths?.forEach((stemPath) => {
+          command = command?.input(stemPath);
+        });
+
+        const filterParts = trackStemPaths?.map(
+          (_, i) => `[${i}:a]volume=${trackVolumes[i]}[a${i}]`,
+        );
+        const mixInputs = trackStemPaths?.map((_, i) => `[a${i}]`).join("");
+        const mixFilter = `${mixInputs}amix=inputs=${trackStemPaths.length}:duration=longest:normalize=0`;
+
+        filterParts?.push(mixFilter);
+
+        command
+          .complexFilter(filterParts?.join(";"))
+          .audioCodec(this.getAudioCodec(options?.format, options?.bitDepth))
+          .audioFrequency(options?.sampleRate || 48000)
+          .audioChannels(2)
+          .outputOptions(this.getOutputOptions(options))
+          .on("end", () => resolve())
+          .on("error", reject)
+          .save(outputPath);
       });
-
-      const filterParts = trackStemPaths?.map(
-        (_, i) => `[${i}:a]volume=${trackVolumes[i]}[a${i}]`,
-      );
-      const mixInputs = trackStemPaths?.map((_, i) => `[a${i}]`).join("");
-      const mixFilter = `${mixInputs}amix=inputs=${trackStemPaths.length}:duration=longest:normalize=0`;
-
-      filterParts?.push(mixFilter);
-
-      command
-        .complexFilter(filterParts?.join(";"))
-        .audioCodec(this.getAudioCodec(options?.format, options?.bitDepth))
-        .audioFrequency(options?.sampleRate || 48000)
-        .audioChannels(2)
-        .outputOptions(this.getOutputOptions(options))
-        .on("end", () => resolve())
-        .on("error", reject)
-        .save(outputPath);
-    });
+    } finally {
+      await Promise.all(masterCleanups?.map((cleanup) => cleanup()));
+    }
 
     if (options?.normalize && options?.normalizationType !== "none") {
       await this.normalizeAudio(outputPath, options);
@@ -660,14 +698,6 @@ class StemExportService {
 
     const stats = await fsPromises?.stat(outputPath);
     const duration = await this.getAudioDuration(outputPath);
-
-    for (const tempPath of trackStemPaths) {
-      if (tempPath?.includes(os?.tmpdir())) {
-        try {
-          await fsPromises?.unlink(tempPath);
-        } catch {}
-      }
-    }
 
     return {
       trackId: "master",
@@ -860,6 +890,7 @@ class StemExportService {
     userId: string,
   ): Promise<{
     downloadUrl: string;
+    storageKey: string;
     fileName: string;
     fileSize: number;
   }> {
@@ -879,12 +910,12 @@ class StemExportService {
       throw new Error("Export file not found");
     }
 
-    const downloadUrl = await storageService?.getDownloadUrl(
-      (exportRecord as any)?.zipStorageKey,
-    );
+    const storageKey = (exportRecord as any)?.zipStorageKey as string;
+    const downloadUrl = await storageService?.getDownloadUrl(storageKey);
 
     return {
       downloadUrl,
+      storageKey,
       fileName: `${(exportRecord as any)?.exportName || "stems"}.zip`,
       fileSize: Number((exportRecord as any)?.totalFileSize) || 0,
     };

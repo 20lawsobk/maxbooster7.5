@@ -3,7 +3,6 @@ import { Router, Request, Response } from "express";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import path from "path";
 import crypto from "crypto";
-import fs from "fs";
 import fsPromises from "fs/promises";
 import os from "os";
 import { z } from "zod";
@@ -126,6 +125,29 @@ const interactionSchema = z.object({
   sessionId: z.string().max(100).optional(),
 });
 
+const PDIM_FILE_URL_PREFIX = "/api/storage/file/";
+
+function getPdimStorageKey(fileUrl: unknown): string | null {
+  if (typeof fileUrl !== "string" || !fileUrl.startsWith(PDIM_FILE_URL_PREFIX)) {
+    return null;
+  }
+
+  try {
+    const key = decodeURIComponent(fileUrl.slice(PDIM_FILE_URL_PREFIX.length));
+    if (
+      !key ||
+      key.startsWith("/") ||
+      key.includes("\0") ||
+      key.split("/").some((segment) => segment === "." || segment === "..")
+    ) {
+      return null;
+    }
+    return key;
+  } catch {
+    return null;
+  }
+}
+
 const contractSchema = z.object({
   name: z.string().min(1).max(200),
   content: z.string().min(1),
@@ -172,9 +194,9 @@ router.get("/beats", async (req: Request, res: Response) => {
     // If filtering by producer, get their beats directly (short TTL since producer pages update often)
     if (producerId) {
       const cacheKey = `marketplace:producer-beats:${producerId}`;
-      const producerBeats = await distributedCache?.getOrSet(
+      const producerBeats = await distributedCache.getOrSet(
         cacheKey,
-        () => marketplaceService?.getListingsByProducer(producerId as string),
+        () => marketplaceService.getListingsByProducer(producerId as string),
         30,
       );
       return res.json(producerBeats);
@@ -198,7 +220,7 @@ router.get("/beats", async (req: Request, res: Response) => {
     if (userId) {
       const filterSig = `${genre ?? ""}:${mood ?? ""}:${search ?? ""}:${sortBy ?? ""}:${limit ?? 20}:${offset ?? 0}`;
       const cacheKey = `marketplace:beats:user:${userId}:${filterSig}`;
-      const personalizedBeats = await distributedCache?.getOrSet(
+      const personalizedBeats = await distributedCache.getOrSet(
         cacheKey,
         () => discoveryAlgorithmService?.getPersonalizedFeed(userId, filters),
         30,
@@ -1546,21 +1568,18 @@ router.post(
       if (!title || !genre) {
         return res.status(400).json({ error: "Title and genre are required" });
       }
+      if (!files?.audioFile?.[0]) {
+        return res.status(400).json({ error: "An audio file is required" });
+      }
 
       let audioUrl = "";
       let artworkUrl = "";
       let uploadedAudioKey = "";
 
       if (files?.audioFile?.[0]) {
-        const audioFile = files?.audioFile[0];
-        const ext = path?.extname(audioFile?.originalname) || ".mp3";
-        const filename = `${Date.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
-        uploadedAudioKey = await storageService?.uploadFile(
-          audioFile?.buffer,
-          "beats",
-          filename,
-          audioFile?.mimetype,
-        );
+        const audioFile = files.audioFile[0];
+        const result = await storeUploadedFile(audioFile, req.user!.id, "audio");
+        uploadedAudioKey = result.key;
         audioUrl = `/api/marketplace/audio/${uploadedAudioKey}`;
         logger.info(`Audio file saved: ${uploadedAudioKey}`);
       }
@@ -1580,11 +1599,16 @@ router.post(
         req.body.artworkUrl &&
         typeof req.body.artworkUrl === "string"
       ) {
-        // Cover art pre-uploaded separately — use the URL directly
+        if (!getPdimStorageKey(req.body.artworkUrl)) {
+          return res.status(400).json({
+            error: "Cover art must be uploaded through Pocket Dimension",
+          });
+        }
+        // Cover art was pre-uploaded through the canonical PDIM endpoint.
         artworkUrl = req.body.artworkUrl;
       }
 
-      const listing = await marketplaceService?.createListing({
+      const listing = await marketplaceService.createListing({
         userId: req.user!.id,
         title,
         description,
@@ -1855,48 +1879,14 @@ router.get("/audio/*path", async (req: Request, res: Response) => {
     res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 
-    // Fast path: stream directly from local disk (avoids PDIM round-trip for large files)
-    const LOCAL_STORAGE_DIR = path?.resolve("./uploads/files");
-    const localPath = path?.join(
-      LOCAL_STORAGE_DIR,
-      fileKey?.replace(/\//g, path?.sep),
-    );
-
-    try {
-      const stat = await fsPromises?.stat(localPath);
-      const fileSize = stat?.size;
-      const range = req.headers.range;
-
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Accept-Ranges", "bytes");
-
-      if (range) {
-        const parts = range.replace(/bytes=/, "").split("-");
-        const start = parseInt(parts[0], 10);
-        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-        const chunkSize = end - start + 1;
-
-        res.status(206);
-        res.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
-        res.setHeader("Content-Length", chunkSize);
-        fs?.createReadStream(localPath, { start, end }).pipe(res);
-      } else {
-        res.setHeader("Content-Length", fileSize);
-        fs?.createReadStream(localPath).pipe(res);
-      }
-      return;
-    } catch {
-      // File not on local disk — fall through to PDIM
-    }
-
-    // Fallback: load from PDIM into buffer (for files not yet written to disk)
-    const exists = await storageService?.fileExists(fileKey);
+    // Load the file from PDIM-backed storage — the sole storage source.
+    const exists = await storageService.fileExists(fileKey);
     if (!exists) {
       logger.warn(`Audio file not found: ${fileKey}`);
       return res.status(404).json({ error: "Audio file not found" });
     }
 
-    const fileBuffer = await storageService?.downloadFile(fileKey);
+    const fileBuffer = await storageService.downloadFile(fileKey);
     const fileSize = fileBuffer?.length;
     const range = req.headers.range;
 
@@ -1904,9 +1894,18 @@ router.get("/audio/*path", async (req: Request, res: Response) => {
     res.setHeader("Accept-Ranges", "bytes");
 
     if (range) {
-      const parts = range.replace(/bytes=/, "").split("-");
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const rangeMatch = /^bytes=(\d+)-(\d*)$/.exec(range);
+      if (!rangeMatch) {
+        res.setHeader("Content-Range", `bytes */${fileSize}`);
+        return res.status(416).json({ error: "Invalid byte range" });
+      }
+      const start = Number(rangeMatch[1]);
+      const requestedEnd = rangeMatch[2] ? Number(rangeMatch[2]) : fileSize - 1;
+      const end = Math.min(requestedEnd, fileSize - 1);
+      if (start >= fileSize || start > end) {
+        res.setHeader("Content-Range", `bytes */${fileSize}`);
+        return res.status(416).json({ error: "Requested range not satisfiable" });
+      }
       const chunkSize = end - start + 1;
 
       res.status(206);
@@ -1941,7 +1940,7 @@ router.get("/cover/*path", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid cover path" });
     }
 
-    const exists = await storageService?.fileExists(fileKey);
+    const exists = await storageService.fileExists(fileKey);
     if (!exists) {
       logger.warn(`Cover image not found: ${fileKey}`);
       return res.status(404).json({ error: "Cover image not found" });
@@ -1956,7 +1955,7 @@ router.get("/cover/*path", async (req: Request, res: Response) => {
       ".webp": "image/webp",
     };
 
-    const fileBuffer = await storageService?.downloadFile(fileKey);
+    const fileBuffer = await storageService.downloadFile(fileKey);
 
     // CORS headers for image loading - override Helmet restrictions
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -2012,14 +2011,8 @@ router.put(
 
       if (files?.audio?.[0]) {
         const audioFile = files?.audio[0];
-        const ext = path?.extname(audioFile?.originalname).toLowerCase();
-        const filename = `${Date.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
-        const audioKey = await storageService?.uploadFile(
-          audioFile?.buffer,
-          "beats",
-          filename,
-          audioFile?.mimetype,
-        );
+        const result = await storeUploadedFile(audioFile, req.user!.id, "audio");
+        const audioKey = result.key;
         updateData.audioUrl = `/api/marketplace/audio/${audioKey}`;
       }
 
@@ -2038,11 +2031,16 @@ router.put(
         req.body.artworkUrl &&
         typeof req.body.artworkUrl === "string"
       ) {
-        // Cover art pre-uploaded separately — use the URL directly
+        if (!getPdimStorageKey(req.body.artworkUrl)) {
+          return res.status(400).json({
+            error: "Cover art must be uploaded through Pocket Dimension",
+          });
+        }
+        // Cover art was pre-uploaded through the canonical PDIM endpoint.
         updateData.artworkUrl = req.body.artworkUrl;
       }
 
-      const updatedListing = await marketplaceService?.updateListing(
+      const updatedListing = await marketplaceService.updateListing(
         id,
         req.user!.id,
         updateData,
@@ -2069,7 +2067,7 @@ router.delete("/listings/:id", async (req: Request, res: Response) => {
     }
 
     const { id } = req.params as Record<string, string>;
-    await marketplaceService?.deleteListing(id, req.user!.id);
+    await marketplaceService.deleteListing(id, req.user!.id);
     res.json({ success: true, message: "Beat deleted successfully" });
   } catch (error) {
     logger.warn({ err: error }, "Error deleting listing:");
@@ -2094,7 +2092,7 @@ router.post("/connect-stripe", async (req: Request, res: Response) => {
     const returnUrl = `${baseUrl}/marketplace?tab=payouts&setup=complete`;
     const refreshUrl = `${baseUrl}/marketplace?tab=payouts&setup=refresh`;
 
-    const result = await marketplaceService?.setupStripeConnect(
+    const result = await marketplaceService.setupStripeConnect(
       req.user!.id,
       returnUrl,
       refreshUrl,
@@ -2321,7 +2319,7 @@ router.get("/producers/:producerId", async (req: Request, res: Response) => {
     }
 
     const producerBeats =
-      await marketplaceService?.getListingsByProducer(producerId);
+      await marketplaceService.getListingsByProducer(producerId);
     const beatCount = producerBeats?.length;
 
     const userStorefront = await db
@@ -2715,14 +2713,28 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { stemId } = req.params as Record<string, string>;
-      res.json({
-        id: stemId,
-        name: "Stem",
-        type: "wav",
-        duration: 180,
-        price: 29.99,
-        downloadUrl: null,
-      });
+      const [stem] = await db
+        .select()
+        .from(listingStems)
+        .where(eq(listingStems.id, stemId))
+        .limit(1);
+      if (!stem) return res.status(404).json({ error: "Stem not found" });
+
+      const [purchase] = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(
+          and(
+            eq(orders.listingId, stem.listingId),
+            eq(orders.userId, req.user!.id),
+            eq(orders.status, "completed"),
+          ),
+        )
+        .limit(1);
+      if (stem.userId !== req.user!.id && !purchase) {
+        return res.status(403).json({ error: "Not authorized to access this stem" });
+      }
+      res.json(stem);
     } catch (error) {
       logger.warn({ err: error }, "Error fetching stem:");
       res.status(500).json({ error: "Failed to fetch stem" });
@@ -2731,35 +2743,10 @@ router.get(
 );
 
 router.post("/stems/:stemId/purchase", async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    const { stemId } = req.params as { stemId: string };
-    res.json({
-      success: true,
-      purchaseId: `purchase_${Date.now()}`,
-      stemId,
-      downloadUrl: `/api/marketplace/stems/${stemId}/download`,
-    });
-
-    setImmediate(async () => {
-      try {
-        await notificationService?.sendStemsPurchasedNotification(
-          req.user!.id,
-          stemId,
-        );
-      } catch (err) {
-        logger.warn(
-          { err: err },
-          "[Marketplace] stems purchase notification error:",
-        );
-      }
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "Error purchasing stem:");
-    res.status(500).json({ error: "Failed to purchase stem" });
-  }
+  return res.status(501).json({
+    error:
+      "Individual stem checkout is not available. Purchase the listing's eligible license tier instead.",
+  });
 });
 
 router.get(
@@ -2770,10 +2757,41 @@ router.get(
         return res.status(401).json({ error: "Unauthorized" });
       }
       const { stemId, trackId } = req.params as Record<string, string>;
+      const [stem] = await db
+        .select()
+        .from(listingStems)
+        .where(eq(listingStems.id, stemId))
+        .limit(1);
+      if (!stem) return res.status(404).json({ error: "Stem not found" });
+      if (trackId !== stem.id) {
+        return res.status(400).json({ error: "Track does not belong to this stem" });
+      }
+      const [purchase] = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(
+          and(
+            eq(orders.listingId, stem.listingId),
+            eq(orders.userId, req.user!.id),
+            eq(orders.status, "completed"),
+          ),
+        )
+        .limit(1);
+      if (stem.userId !== req.user!.id && !purchase) {
+        return res.status(403).json({ error: "Not authorized to download this stem" });
+      }
+      const key = getPdimStorageKey(stem.fileUrl);
+      if (!key) {
+        return res.status(409).json({ error: "Stem is not stored in Pocket Dimension" });
+      }
+      const downloadUrl = await storageService.getDownloadUrl(key);
+      await db
+        .update(listingStems)
+        .set({ downloadCount: sql`${listingStems.downloadCount} + 1` })
+        .where(eq(listingStems.id, stem.id));
       res.json({
         success: true,
-        downloadUrl: `/uploads/stems/${stemId}_${trackId}.wav`,
-        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        downloadUrl,
       });
     } catch (error) {
       logger.warn({ err: error }, "Error generating stem download:");
@@ -2842,6 +2860,23 @@ router.post(
         return res
           .status(400)
           .json({ error: "stemName and fileUrl are required" });
+      }
+      const fileKey = getPdimStorageKey(fileUrl);
+      if (!fileKey) {
+        return res.status(400).json({
+          error: "Stem file must be uploaded through Pocket Dimension",
+        });
+      }
+      const [listing] = await db
+        .select({ id: listings.id })
+        .from(listings)
+        .where(and(eq(listings.id, listingId), eq(listings.userId, userId)))
+        .limit(1);
+      if (!listing) {
+        return res.status(404).json({ error: "Listing not found" });
+      }
+      if (!(await storageService.fileExists(fileKey))) {
+        return res.status(400).json({ error: "Stem file not found in Pocket Dimension" });
       }
 
       const [stem] = await db

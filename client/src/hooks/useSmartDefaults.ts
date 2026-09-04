@@ -5,7 +5,7 @@ import { ArtistType, CareerStage, UserPreferences } from "./useUserPreferences";
 export interface SmartDefault {
   category: string;
   key: string;
-  value: Record<string, unknown>;
+  value: unknown;
   confidence: number;
   reasoning: string;
 }
@@ -61,7 +61,7 @@ export function useSmartDefaults() {
     fallback: T,
   ): T => {
     const def = getDefault(category, key);
-    return def ? def?.value : fallback;
+    return def ? (def.value as T) : fallback;
   };
 
   const getCategoryDefaults = (category: string): SmartDefault[] => {
@@ -185,7 +185,7 @@ export function useArtistTypeDefaults(
     error,
   } = useQuery<Partial<UserPreferences>>({
     queryKey: [
-      "/api/preferences/defaults",
+      "/api/preferences/smart-defaults",
       artistType,
       genreParam,
       careerStage,

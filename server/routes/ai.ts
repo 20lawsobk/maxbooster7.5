@@ -757,6 +757,42 @@ router.post(
   },
 );
 
+/**
+ * Generate a personal analytics interpretation through MaxCore.
+ *
+ * MaxCore's only text-generation endpoint (`/api/generate/content`) is a
+ * template-based social-caption composer: its `hook`/`body` are built from a
+ * hardcoded f-string ("{artist} just dropped something you need to hear —
+ * {topic}") and the free-text fields we could send (`instruction`,
+ * `extra_context`) only feed the awareness/conditioning channel, never get
+ * analyzed or quoted back. Verified live: sending it the user's real
+ * analytics data produced a generic hype caption with no reference to any
+ * supplied number. There is currently no MaxCore capability that reasons
+ * over arbitrary business data, so this always reports honest
+ * unavailability rather than presenting mismatched caption text as AI
+ * analysis (see .agents/memory/maxcore-only-fail-explicit.md).
+ */
+router.post(
+  "/analytics/insights",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      throw new AIUnavailableError("analytics insights");
+    } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+      logger.warn({ err: error }, "Analytics insight route error:");
+      return res.status(500).json({ error: "Failed to generate analytics insight" });
+    }
+  },
+);
+
 router.get("/insights", requireAuth, async (_req: Request, res: Response) => {
   try {
     const insights = await unifiedAIController?.generateInsights();

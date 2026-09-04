@@ -14,8 +14,8 @@
  *   GET /api/ar-intelligence/release-timing
  *     → Optimal day/time to release based on industry signals + platform data
  *
- * All endpoints degrade gracefully — if the awareness layer is unavailable,
- * they return a fallback response rather than a 500.
+ * Endpoints must not present static suggestions as live intelligence. When a
+ * requested capability lacks a data source, they report that honestly.
  */
 
 import { Router } from "express";
@@ -62,100 +62,18 @@ async function getAwarenessContext(mode: string) {
 /**
  * GET /api/ar-intelligence/trend-forecast
  *
- * Returns genre/mood/BPM/key trends derived from the live awareness layer.
+ * This capability requires stored performance data and is unavailable until
+ * that source is connected.
  */
-router.get("/trend-forecast", async (req, res) => {
-  try {
-    const ctx = await getAwarenessContext("music");
-
-    if (!ctx) {
-      // Graceful fallback — static placeholder so the UI never crashes
-      return res.json({
-        source: "fallback",
-        trendingGenres: ["Hip-Hop", "Trap", "Afrobeats", "Jersey Club", "Drill"],
-        risingBpmRanges: [
-          { label: "Slow Trap", bpmMin: 60, bpmMax: 80, momentum: "rising" },
-          { label: "Afrobeats", bpmMin: 96, bpmMax: 112, momentum: "peak" },
-          { label: "Drill", bpmMin: 138, bpmMax: 148, momentum: "rising" },
-        ],
-        risingKeys: ["C minor", "G minor", "A minor"],
-        trendingMoods: ["dark", "energetic", "melancholic", "euphoric"],
-        platformSignals: [],
-        updatedAt: new Date().toISOString(),
-      });
-    }
-
-    // Extract structured trend data from awareness context
-    const hints = ctx.hints ?? {};
-    const signals = ctx.signals ?? [];
-
-    // Derive genre trends from production keywords + platform signals
-    const genreMentions: Record<string, number> = {};
-    for (const kw of hints.productionKeywords ?? []) {
-      const genre = kw.toLowerCase();
-      genreMentions[genre] = (genreMentions[genre] ?? 0) + 1;
-    }
-    for (const fmt of hints.contentFormats ?? []) {
-      if (fmt.platform && fmt.momentum === "rising") {
-        genreMentions[fmt.format] = (genreMentions[fmt.format] ?? 0) + 2;
-      }
-    }
-
-    const trendingGenres = Object.entries(genreMentions)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([g]) => g);
-
-    // BPM trends derived from platform trend signals
-    const bpmRanges: Array<{
-      label: string;
-      bpmMin: number;
-      bpmMax: number;
-      momentum: string;
-    }> = [];
-    const platformSignals = ctx.platformTrends ?? [];
-    for (const ps of platformSignals) {
-      if (ps.trend?.toLowerCase().includes("trap")) {
-        bpmRanges.push({ label: "Trap", bpmMin: 130, bpmMax: 160, momentum: ps.strength });
-      }
-      if (ps.trend?.toLowerCase().includes("afro")) {
-        bpmRanges.push({ label: "Afrobeats", bpmMin: 96, bpmMax: 112, momentum: ps.strength });
-      }
-      if (ps.trend?.toLowerCase().includes("drill")) {
-        bpmRanges.push({ label: "Drill", bpmMin: 138, bpmMax: 148, momentum: ps.strength });
-      }
-      if (ps.trend?.toLowerCase().includes("amapiano")) {
-        bpmRanges.push({ label: "Amapiano", bpmMin: 110, bpmMax: 116, momentum: ps.strength });
-      }
-    }
-    if (bpmRanges.length === 0) {
-      bpmRanges.push(
-        { label: "Trap", bpmMin: 130, bpmMax: 160, momentum: "moderate" },
-        { label: "Afrobeats", bpmMin: 96, bpmMax: 112, momentum: "rising" },
-      );
-    }
-
-    res.json({
-      source: "awareness_layer",
-      confidence: ctx.confidence ?? 0,
-      trendingGenres:
-        trendingGenres.length > 0
-          ? trendingGenres
-          : ["Hip-Hop", "Trap", "Afrobeats"],
-      risingBpmRanges: bpmRanges.slice(0, 6),
-      risingKeys: ["C minor", "G minor", "A minor", "F# minor"],
-      trendingMoods: hints.suggestedMood
-        ? [hints.suggestedMood]
-        : ["dark", "energetic"],
-      trendingTopics: hints.trendingTopics ?? [],
-      platformSignals: platformSignals.slice(0, 5),
-      rawContext: ctx.contextString?.slice(0, 500),
-      updatedAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    logger.warn({ err }, "[ARIntelligence] /trend-forecast failed");
-    res.status(500).json({ error: "Failed to load trend forecast" });
-  }
+router.get("/trend-forecast", (_req, res) => {
+  // The awareness layer does not supply performance data from which a forecast
+  // can be calculated. Returning fixed genre/BPM/key suggestions previously
+  // made this endpoint look data-backed when it was not.
+  res.status(501).json({
+    error: "Trend forecasting is not yet available",
+    detail:
+      "No stored performance-data source is currently configured for this forecast.",
+  });
 });
 
 // ─── Catalog Gap Analysis ─────────────────────────────────────────────────────

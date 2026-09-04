@@ -286,79 +286,14 @@ app.use(
   }),
 );
 
-// Serve generated audio content from root public folder
-app.use(
-  "/generated-content",
-  express?.static(path?.join(process.cwd(), "public", "generated-content"), {
-    setHeaders: (res, filePath) => {
-      if (filePath?.endsWith(".wav") || filePath?.endsWith(".mp3")) {
-        res.setHeader(
-          "Content-Type",
-          filePath?.endsWith(".wav") ? "audio/wav" : "audio/mpeg",
-        );
-        res.setHeader("Accept-Ranges", "bytes");
-      }
-    },
-  }),
-);
-
-app.use(
-  "/uploads/images",
-  express?.static(path?.join(process.cwd(), "uploads", "images"), {
-    setHeaders: (res, filePath) => {
-      if (
-        filePath?.endsWith(".png") ||
-        filePath?.endsWith(".jpg") ||
-        filePath?.endsWith(".jpeg") ||
-        filePath?.endsWith(".webp")
-      ) {
-        res.setHeader(
-          "Cache-Control",
-          "public, max-age=2592000, stale-while-revalidate=86400",
-        );
-      }
-    },
-  }),
-);
-
-app.use(
-  "/uploads/videos",
-  express?.static(path?.join(process.cwd(), "uploads", "videos"), {
-    setHeaders: (res, filePath) => {
-      if (filePath?.endsWith(".mp4")) {
-        res.setHeader("Content-Type", "video/mp4");
-        res.setHeader("Accept-Ranges", "bytes");
-        res.setHeader(
-          "Cache-Control",
-          "public, max-age=2592000, stale-while-revalidate=86400",
-        );
-      }
-    },
-  }),
-);
-
-app.use(
-  "/uploads/audio",
-  express?.static(path?.join(process.cwd(), "uploads", "audio"), {
-    setHeaders: (res, filePath) => {
-      if (filePath?.endsWith(".mp3")) {
-        res.setHeader("Content-Type", "audio/mpeg");
-        res.setHeader("Accept-Ranges", "bytes");
-        res.setHeader(
-          "Cache-Control",
-          "public, max-age=2592000, stale-while-revalidate=86400",
-        );
-      } else if (filePath?.endsWith(".wav")) {
-        res.setHeader("Content-Type", "audio/wav");
-        res.setHeader("Accept-Ranges", "bytes");
-        res.setHeader(
-          "Cache-Control",
-          "public, max-age=2592000, stale-while-revalidate=86400",
-        );
-      }
-    },
-  }),
-);
+// NOTE: generated audio/images and uploaded audio/images are no longer served
+// from local disk. Every writer now uploads to PDIM-backed storage and returns
+// an authenticated app URL (/api/storage/file/... or the PDIM-backed
+// marketplace proxy routes); serving ./uploads or ./public/generated-content
+// directly would let anyone read whatever residual scratch files happen to be
+// on disk, and those directories hold no durable content to serve. See
+// pdim-disk-scope-boundary in project memory for the storage-source-of-truth
+// rule this enforces.
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

@@ -222,20 +222,23 @@ export async function bootstrapUserData(qc: QueryClient): Promise<void> {
       qc?.setQueryData(["/api/auth/me"], data?.user, fresh);
     }
     if (Array.isArray(data?.projects)) {
-      qc?.setQueryData(["/api/projects"], data?.projects, fresh);
+      // `/api/projects` returns `{ data: Project[] }`; keep the bootstrap
+      // cache shape identical so consumers do not render an empty list until
+      // their next network refetch.
+      qc?.setQueryData(["/api/projects"], { data: data.projects }, fresh);
       qc?.setQueryData(
         ["/api/projects", { limit: "5" }],
-        data?.projects.slice(0, 5),
+        { data: data.projects.slice(0, 5) },
         fresh,
       );
       qc?.setQueryData(
         ["/api/projects", { limit: "10" }],
-        data?.projects.slice(0, 10),
+        { data: data.projects.slice(0, 10) },
         fresh,
       );
       qc?.setQueryData(
         ["/api/projects", { limit: "12" }],
-        data?.projects.slice(0, 12),
+        { data: data.projects.slice(0, 12) },
         fresh,
       );
     }
@@ -244,7 +247,10 @@ export async function bootstrapUserData(qc: QueryClient): Promise<void> {
       qc?.setQueryData(["/api/notifications/unread"], data?.notifications, fresh);
     }
     if (Array.isArray(data?.releases)) {
-      qc?.setQueryData(["/api/releases"], data?.releases, fresh);
+      // Real consumers (DataTransferWizard, EmbedCodeGenerator) read the
+      // distribution-prefixed key; seeding the bare "/api/releases" key
+      // warmed a cache no query ever reads.
+      qc?.setQueryData(["/api/distribution/releases"], data?.releases, fresh);
     }
   } catch {
     // Silent — bootstrap is a best-effort optimisation; individual queries

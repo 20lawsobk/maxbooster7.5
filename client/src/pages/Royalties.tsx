@@ -88,9 +88,9 @@ interface PaymentMethod {
 }
 
 interface PayoutSettings {
-  minimumPayoutAmount: number;
-  payoutFrequency: string;
-  taxFormCompleted: boolean;
+  minimumPayout: number;
+  payoutSchedule: string;
+  taxFormStatus: string | null;
   taxCountry: string | null;
   taxId: string | null;
 }
@@ -173,6 +173,8 @@ export default function Royalties() {
   const { data: royaltiesResponse, isLoading } = useQuery<{
     data: Royalty[];
     pagination: Record<string, unknown>;
+    totalEarnings: number;
+    pendingPayouts: number;
   }>({
     queryKey: [
       "/api/royalties",
@@ -312,12 +314,17 @@ export default function Royalties() {
         period: selectedPeriod,
         platform: selectedPlatform,
       });
-      return response.json();
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `royalties-${selectedPeriod}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
     },
-    onSuccess: (data) => {
-      if (data.url) {
-        window.open(data.url, "_blank");
-      }
+    onSuccess: () => {
       toast({
         title: "Report Exported",
         description: "Your royalty report has been generated",
@@ -389,7 +396,10 @@ export default function Royalties() {
       const response = await apiRequest(
         "PUT",
         "/api/royalties/payout-settings",
-        data,
+        {
+          minimumPayout: data.minimumPayoutAmount,
+          payoutSchedule: data.payoutFrequency,
+        },
       );
       return response.json();
     },
@@ -710,7 +720,7 @@ export default function Royalties() {
 
   // Handler functions
   const handleDownloadStatement = (statementId: string) => {
-    window.open(`/api/payouts/statements/${statementId}/download`, "_blank");
+    window.open(`/api/royalties/download-statement/${statementId}`, "_blank");
     toast({
       title: "Downloading Statement",
       description: "Your statement is being downloaded",
@@ -752,17 +762,19 @@ export default function Royalties() {
     }
   };
 
-  const totalEarnings = royalties.reduce(
+  const pageEarnings = royalties.reduce(
     (sum: number, royalty: Royalty) => sum + royalty.amount,
     0,
   );
+  const totalEarnings = royaltiesResponse?.totalEarnings ?? pageEarnings;
   const pendingPayouts = royalties.filter(
     (r: Royalty) => r.payoutStatus === "pending",
   );
-  const totalPending = pendingPayouts.reduce(
+  const pagePending = pendingPayouts.reduce(
     (sum: number, r: Royalty) => sum + r.amount,
     0,
   );
+  const totalPending = royaltiesResponse?.pendingPayouts ?? pagePending;
   royalties.filter(
     (r: Royalty) => r.payoutStatus === "paid",
   );
@@ -1800,7 +1812,7 @@ export default function Royalties() {
                             </div>
                             <Select
                               value={
-                                payoutSettings?.minimumPayoutAmount?.toString() ||
+                                payoutSettings?.minimumPayout?.toString() ||
                                 "100"
                               }
                               onValueChange={(value) => {
@@ -1851,7 +1863,7 @@ export default function Royalties() {
                             </div>
                             <Select
                               value={
-                                payoutSettings?.payoutFrequency || "monthly"
+                                payoutSettings?.payoutSchedule || "monthly"
                               }
                               onValueChange={(value) => {
                                 updatePayoutSettingsMutation.mutate({
@@ -1897,7 +1909,7 @@ export default function Royalties() {
                       <div className="p-4 bg-muted/20 rounded-lg">
                         <div className="flex items-center justify-between mb-3">
                           <p className="font-medium">Tax Forms</p>
-                          {payoutSettings?.taxFormCompleted ? (
+                          {payoutSettings?.taxFormStatus === "submitted" ? (
                             <Badge className="bg-accent/20 text-accent">
                               Completed
                             </Badge>
@@ -1919,7 +1931,7 @@ export default function Royalties() {
                           data-testid="button-update-tax-info"
                           onClick={() => {
                             setTaxCountry(payoutSettings?.taxCountry || "");
-                            setTaxId(payoutSettings?.taxId || "");
+                            setTaxId("");
                             setIsTaxInfoDialogOpen(true);
                           }}
                         >

@@ -66,7 +66,6 @@ interface PressKitData {
   photos?: PressKitPhoto[];
   technicalRider?: string;
   hospitalityRider?: string;
-  hospitality?: string;
   isPublic?: boolean;
   slug?: string;
 }
@@ -124,6 +123,13 @@ export default function PressKit() {
         description: "Press kit updated successfully",
       });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to save press kit",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
@@ -169,7 +175,7 @@ export default function PressKit() {
       const photoUrl = res.file.url;
 
       const currentPhotos = pressKit?.photos || [];
-      updatePressKitMutation.mutate({
+      await updatePressKitMutation.mutateAsync({
         ...pressKit,
         photos: [...currentPhotos, { url: photoUrl, caption: "" }],
       });
@@ -660,11 +666,13 @@ export default function PressKit() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="hospitality">Hospitality Rider</Label>
+                          <Label htmlFor="hospitalityRider">
+                            Hospitality Rider
+                          </Label>
                       <Textarea
-                        id="hospitality"
-                        name="hospitality"
-                        defaultValue={pressKit?.hospitality}
+                            id="hospitalityRider"
+                            name="hospitalityRider"
+                            defaultValue={pressKit?.hospitalityRider}
                         placeholder="Food/drink requirements, dressing room needs..."
                       />
                     </div>
@@ -760,7 +768,7 @@ export default function PressKit() {
             </div>
 
             <div className="flex justify-end gap-4 pb-12">
-              <Button type="button" variant="ghost">
+              <Button type="reset" variant="ghost">
                 Cancel Changes
               </Button>
               <Button type="submit" disabled={updatePressKitMutation.isPending}>

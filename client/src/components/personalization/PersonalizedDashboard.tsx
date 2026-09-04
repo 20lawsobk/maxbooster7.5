@@ -219,12 +219,22 @@ function SocialReachWidget({ size }: { size: "small" | "medium" | "large" }) {
 }
 
 function NextReleaseWidget({ size }: { size: "small" | "medium" | "large" }) {
-  const { data: releases } = useQuery({
-    queryKey: ["/api/releases/upcoming"],
+  const { data: releases } = useQuery<
+    Array<{ title: string; releaseDate: string | null }>
+  >({
+    queryKey: ["/api/distribution/releases"],
     staleTime: 5 * 60 * 1000,
   });
 
-  const nextRelease = (releases as Record<string, unknown>)?.[0];
+  const nextRelease = releases
+    ?.filter(
+      (release) =>
+        release.releaseDate && new Date(release.releaseDate) > new Date(),
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.releaseDate!).getTime() - new Date(b.releaseDate!).getTime(),
+    )[0];
 
   return (
     <Card className={size === "small" ? "p-3" : ""}>

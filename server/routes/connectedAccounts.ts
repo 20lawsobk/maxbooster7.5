@@ -5,6 +5,7 @@ import { socialAccounts } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { notificationService } from "../services/notificationService.js";
+import { socialOAuth } from "../services/socialOAuthService.js";
 
 const router = Router();
 
@@ -75,6 +76,21 @@ function getAccountStatus(
   return "connected";
 }
 
+function getAccountPermissions(account: Record<string, unknown>) {
+  const metadata = (account.metadata as Record<string, unknown> | null) ?? {};
+  const savedPermissions = metadata.permissions;
+  return Array.isArray(savedPermissions) &&
+    savedPermissions.every(
+      (permission) =>
+        permission &&
+        typeof permission === "object" &&
+        typeof (permission as Record<string, unknown>).id === "string" &&
+        typeof (permission as Record<string, unknown>).enabled === "boolean",
+    )
+    ? savedPermissions
+    : getDefaultPermissions(account.platform as string);
+}
+
 router.get("/", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
@@ -98,11 +114,13 @@ router.get("/", async (req: Request, res: Response) => {
       email: undefined,
       avatarUrl: undefined,
       connectedAt: account.createdAt?.toISOString() || new Date().toISOString(),
-      lastSyncedAt: account.createdAt?.toISOString(),
+      lastSyncedAt:
+        ((account.metadata as Record<string, unknown> | null)
+          ?.lastSyncedAt as string | undefined) || account.createdAt?.toISOString(),
       expiresAt: account.tokenExpiresAt?.toISOString(),
       status: getAccountStatus(account),
       scopes: [],
-      permissions: getDefaultPermissions(account?.platform),
+      permissions: getAccountPermissions(account),
     }));
 
     res.json(safeAccounts);
@@ -167,9 +185,12 @@ router.post("/:accountId/refresh", async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { accountId } = req.params as Record<string, string>;
 
-    const now = new Date();
-    const result = await db
-      .select({ id: socialAccounts.id })
+    const [account] = await db
+      .select({
+        id: socialAccounts.id,
+        platform: socialAccounts.platform,
+        refreshToken: socialAccounts.refreshToken,
+      })
       .from(socialAccounts)
       .where(
         and(
@@ -179,16 +200,22 @@ router.post("/:accountId/refresh", async (req: Request, res: Response) => {
       )
       .limit(1);
 
-    if (result?.length === 0) {
+    if (!account) {
       return res.status(404).json({ error: "Connected account not found" });
     }
+    if (!account.refreshToken) {
+      return res.status(400).json({
+        error: "No refresh token available. Please reconnect this account.",
+      });
+    }
 
+    const refreshed = await socialOAuth.refreshAccessToken(userId, account.platform);
     res.json({
       message: "Connection refreshed successfully",
       account: {
         id: accountId,
         status: "connected",
-        lastSyncedAt: now.toISOString(),
+        expiresIn: refreshed.expiresIn,
       },
     });
   } catch (error) {
@@ -319,14 +346,30 @@ router.put("/:accountId/permissions", async (req: Request, res: Response) => {
     }
 
     const account = accounts[0];
-    const permissions = getDefaultPermissions(account?.platform);
+    const permissions = getAccountPermissions(account);
+    let changed = false;
 
     for (const [permId, enabled] of Object.entries(permissionUpdates)) {
       const permission = permissions?.find((p) => p?.id === permId);
       if (permission && !permission?.required) {
-        permission.enabled = !!enabled;
+        if (typeof enabled !== "boolean") {
+          return res
+            .status(400)
+            .json({ error: `Permission ${permId} must be a boolean` });
+        }
+        permission.enabled = enabled;
+        changed = true;
       }
     }
+    if (!changed) {
+      return res.status(400).json({ error: "No editable permissions supplied" });
+    }
+
+    const metadata = (account.metadata as Record<string, unknown> | null) ?? {};
+    await db
+      .update(socialAccounts)
+      .set({ metadata: { ...metadata, permissions } })
+      .where(eq(socialAccounts.id, account.id));
 
     res.json({
       message: "Permissions updated successfully",

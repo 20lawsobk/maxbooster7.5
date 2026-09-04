@@ -34,7 +34,7 @@ export function CollaboratorCard({
   const queryClient = useQueryClient();
 
   const { data: connectionStatus } = useQuery({
-    queryKey: ["/api/collaborations/connection-status", user.id],
+    queryKey: [`/api/collaborations/connection-status/${user.id}`],
     queryFn: async () => {
       const res = await fetch(
         `/api/collaborations/connection-status/${user.id}`,
@@ -42,7 +42,9 @@ export function CollaboratorCard({
           credentials: "include",
         },
       );
-      if (!res.ok) return { status: null, connectionId: null };
+      if (!res.ok) {
+        throw new Error("Failed to fetch connection status");
+      }
       return res.json();
     },
     enabled: showConnectButton,
@@ -61,7 +63,7 @@ export function CollaboratorCard({
         description: `Request sent to ${user.username || user.firstName || "this artist"}`,
       });
       queryClient.invalidateQueries({
-        queryKey: ["/api/collaborations/connection-status", user.id],
+        queryKey: [`/api/collaborations/connection-status/${user.id}`],
       });
       queryClient.invalidateQueries({
         queryKey: ["/api/collaborations/suggestions"],

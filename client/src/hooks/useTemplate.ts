@@ -2,7 +2,7 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "./use-toast";
-import { apiRequest, getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 
 export type TemplateType =
   | "release"
@@ -59,7 +59,7 @@ export interface UseTemplateResult {
   deleteTemplate: (id: string) => Promise<void>;
   applyTemplate: (
     templateId: string,
-    targetIds: string[],
+    projectTitles: string[],
   ) => Promise<ApplyTemplateResult>;
   duplicateTemplate: (id: string, newName: string) => Promise<Template>;
   getTemplate: (id: string) => Template | undefined;
@@ -72,6 +72,49 @@ export interface UseTemplateResult {
   isApplying: boolean;
 }
 
+function normalizeTemplate(template: any): Template {
+  return {
+    id: template.id,
+    name: template.name,
+    description: template.description || undefined,
+    type: template.category as TemplateType,
+    data: template.templateData || {},
+    isDefault: Boolean(template.isBuiltIn),
+    isShared: Boolean(template.isBuiltIn),
+    createdAt: template.createdAt,
+    updatedAt: template.updatedAt,
+    usageCount: template.usageCount || 0,
+    tags: template.tags || template.templateData?.tags || [],
+  };
+}
+
+function toStudioTemplatePayload(input: CreateTemplateInput) {
+  return {
+    name: input.name,
+    description: input.description,
+    category: input.type,
+    templateData: input.data,
+    tags: input.tags || [],
+  };
+}
+
+function toStudioTemplateUpdatePayload(input: Partial<CreateTemplateInput>) {
+  if (input.data !== undefined) {
+    throw new Error(
+      "Editing template configuration is not supported; create a new template instead",
+    );
+  }
+  if (input.isShared !== undefined) {
+    throw new Error("Template sharing settings cannot be changed");
+  }
+  return {
+    ...(input.name !== undefined && { name: input.name }),
+    ...(input.description !== undefined && { description: input.description }),
+    ...(input.type !== undefined && { category: input.type }),
+    ...(input.tags !== undefined && { tags: input.tags }),
+  };
+}
+
 export function useTemplate(
   options: UseTemplateOptions = {},
 ): UseTemplateResult {
@@ -81,7 +124,9 @@ export function useTemplate(
 
   const [isApplying, setIsApplying] = useState(false);
 
-  const queryKey = type ? ["/api/templates", type] : ["/api/templates"];
+  const queryKey = type
+    ? ["/api/studio/templates", type]
+    : ["/api/studio/templates"];
 
   const {
     data: templates = [],
@@ -90,17 +135,25 @@ export function useTemplate(
   } = useQuery<Template[]>({
     queryKey,
     queryFn: async () => {
-      const endpoint = type ? `/api/templates?type=${type}` : "/api/templates";
-      return apiRequest("GET", endpoint);
+      const endpoint = type
+        ? `/api/studio/templates?category=${encodeURIComponent(type)}`
+        : "/api/studio/templates";
+      const result = await apiRequest("GET", endpoint);
+      return (result.templates || []).map(normalizeTemplate);
     },
   });
 
   const createMutation = useMutation({
     mutationFn: async (input: CreateTemplateInput) => {
-      return apiRequest("POST", "/api/templates", input);
+      const result = await apiRequest(
+        "POST",
+        "/api/studio/templates",
+        toStudioTemplatePayload(input),
+      );
+      return normalizeTemplate(result);
     },
     onSuccess: (template) => {
-      queryClient?.invalidateQueries({ queryKey: ["/api/templates"] });
+      queryClient?.invalidateQueries({ queryKey: ["/api/studio/templates"] });
       toast({
         title: "Template created",
         description: `"${template.name}" has been saved`,
@@ -125,10 +178,15 @@ export function useTemplate(
       id: string;
       input: Partial<CreateTemplateInput>;
     }) => {
-      return apiRequest("PUT", `/api/templates/${id}`, input);
+      const result = await apiRequest(
+        "PATCH",
+        `/api/studio/templates/${id}`,
+        toStudioTemplateUpdatePayload(input),
+      );
+      return normalizeTemplate(result);
     },
     onSuccess: (template) => {
-      queryClient?.invalidateQueries({ queryKey: ["/api/templates"] });
+      queryClient?.invalidateQueries({ queryKey: ["/api/studio/templates"] });
       toast({
         title: "Template updated",
         description: `"${template.name}" has been updated`,
@@ -145,10 +203,10 @@ export function useTemplate(
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/templates/${id}`);
+      return apiRequest("DELETE", `/api/studio/templates/${id}`);
     },
     onSuccess: () => {
-      queryClient?.invalidateQueries({ queryKey: ["/api/templates"] });
+      queryClient?.invalidateQueries({ queryKey: ["/api/studio/templates"] });
       toast({ title: "Template deleted" });
     },
     onError: (error: Error) => {
@@ -187,15 +245,40 @@ export function useTemplate(
   const applyTemplate = useCallback(
     async (
       templateId: string,
-      targetIds: string[],
+      projectTitles: string[],
     ): Promise<ApplyTemplateResult> => {
       setIsApplying(true);
       try {
-        const result = await apiRequest(
-          "POST",
-          `/api/templates/${templateId}/apply`,
-          { targetIds },
+        if (projectTitles.length === 0) {
+          throw new Error("Provide at least one project title");
+        }
+        const settled = await Promise.allSettled(
+          projectTitles.map((title) =>
+            apiRequest(
+              "POST",
+              `/api/studio/templates/${templateId}/create-project`,
+              { title },
+            ),
+          ),
         );
+        const result: ApplyTemplateResult = {
+          success: settled.flatMap((entry, index) =>
+            entry.status === "fulfilled" ? [projectTitles[index]] : [],
+          ),
+          failed: settled.flatMap((entry, index) =>
+            entry.status === "rejected"
+              ? [
+                  {
+                    id: projectTitles[index],
+                    error:
+                      entry.reason instanceof Error
+                        ? entry.reason.message
+                        : "Failed to create project from template",
+                  },
+                ]
+              : [],
+          ),
+        };
 
         if (result?.failed?.length === 0) {
           toast({
@@ -210,6 +293,10 @@ export function useTemplate(
           });
         }
 
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+        queryClient.invalidateQueries({
+          queryKey: ["/api/studio/templates"],
+        });
         return result;
       } catch (error) {
         const err =
@@ -226,7 +313,7 @@ export function useTemplate(
         setIsApplying(false);
       }
     },
-    [toast],
+    [queryClient, toast],
   );
 
   const duplicateTemplate = useCallback(
@@ -315,8 +402,11 @@ export function useTemplateLibrary() {
   const queryClient = useQueryClient();
 
   const { data: allTemplates = [], isLoading } = useQuery<Template[]>({
-    queryKey: ["/api/templates"],
-    queryFn: () => apiRequest("GET", "/api/templates"),
+    queryKey: ["/api/studio/templates"],
+    queryFn: async () => {
+      const result = await apiRequest("GET", "/api/studio/templates");
+      return (result.templates || []).map(normalizeTemplate);
+    },
   });
 
   const templatesByType = allTemplates?.reduce<Record<TemplateType, Template[]>>(
@@ -343,18 +433,30 @@ export function useTemplateLibrary() {
     .slice(0, 5);
 
   const importTemplate = async (file: File): Promise<Template> => {
-    const formData = new FormData();
-    formData?.append("file", file);
+    const raw = await file.text();
+    let imported: CreateTemplateInput;
+    try {
+      imported = JSON.parse(raw) as CreateTemplateInput;
+    } catch {
+      throw new Error("The selected file is not valid template JSON");
+    }
+    if (
+      !imported.name ||
+      !imported.type ||
+      !imported.data ||
+      typeof imported.data !== "object"
+    ) {
+      throw new Error("The template file is missing required fields");
+    }
+    const result = normalizeTemplate(
+      await apiRequest(
+        "POST",
+        "/api/studio/templates",
+        toStudioTemplatePayload(imported),
+      ),
+    );
 
-    const csrfToken = getCsrfTokenFromCookie();
-    const result = await fetch("/api/templates/import", {
-      method: "POST",
-      credentials: "include",
-      headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
-      body: formData,
-    }).then((res) => res?.json());
-
-    queryClient?.invalidateQueries({ queryKey: ["/api/templates"] });
+    queryClient?.invalidateQueries({ queryKey: ["/api/studio/templates"] });
     toast({
       title: "Template imported",
       description: `"${result.name}" has been imported`,
@@ -363,8 +465,15 @@ export function useTemplateLibrary() {
   };
 
   const exportTemplate = async (id: string): Promise<void> => {
-    const response = await fetch(`/api/templates/${id}/export`);
-    const blob = await response?.blob();
+    const template = allTemplates.find((item) => item.id === id);
+    if (!template) throw new Error("Template not found");
+    const blob = new Blob([JSON.stringify({
+      name: template.name,
+      description: template.description,
+      type: template.type,
+      data: template.data,
+      tags: template.tags,
+    }, null, 2)], { type: "application/json" });
     const url = URL?.createObjectURL(blob);
     const a = document?.createElement("a");
     a.href = url;

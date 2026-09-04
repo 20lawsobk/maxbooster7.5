@@ -337,6 +337,43 @@ router.patch(
   },
 );
 
+// POST /api/distribution/releases/:id/artwork - Upload artwork for an owned draft/release
+router.post(
+  "/releases/:id/artwork",
+  requireAuth,
+  upload.single("artwork"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      if (!req.file) {
+        return res.status(400).json({ error: "Artwork file is required" });
+      }
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const key = await storageService.uploadFile(
+        req.file.buffer,
+        `users/${userId}/artwork`,
+        req.file.originalname,
+        req.file.mimetype,
+      );
+      const artworkUrl = await storageService.getDownloadUrl(key);
+      const updated = await storage.updateDistroRelease(id, { artworkUrl });
+      if (!updated) {
+        return res.status(409).json({ error: "Release could not be updated" });
+      }
+      return res.json({ artworkUrl, release: updated });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error uploading release artwork:");
+      return res.status(500).json({ error: "Failed to upload release artwork" });
+    }
+  },
+);
+
 // DELETE /api/distribution/releases/:id - Delete/takedown release
 router.delete(
   "/releases/:id",
@@ -540,17 +577,28 @@ router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
       isOfficiallyRegistered = false;
     }
 
-    if (trackId && trackId !== `temp_${Date.now()}`) {
-      try {
-        await codeGenerationService?.generateISRC(
-          userId,
-          trackId,
-          artist,
-          title,
-        );
-      } catch (storeErr) {
-        logger.warn({ err: storeErr }, "Failed to store ISRC in database:");
+    if (trackId && !trackId.startsWith("temp_")) {
+      const [track] = await db
+        .select()
+        .from(distroTracks)
+        .where(eq(distroTracks.id, trackId))
+        .limit(1);
+      if (!track) return res.status(404).json({ error: "Track not found" });
+      const release = await storage.getDistroRelease(track.releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Track not found" });
       }
+      await db.insert(isrcRegistry).values({
+        isrc: isrcCode,
+        trackId,
+        releaseId: track.releaseId,
+        artistId: userId,
+        title,
+      });
+      await db
+        .update(distroTracks)
+        .set({ isrc: isrcCode })
+        .where(eq(distroTracks.id, trackId));
     }
 
     res.json({
@@ -603,12 +651,17 @@ router.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
       isOfficiallyRegistered = false;
     }
 
-    if (releaseId && releaseId !== `temp_${Date.now()}`) {
-      try {
-        await codeGenerationService?.generateUPC(userId, releaseId, title);
-      } catch (storeErr) {
-        logger.warn({ err: storeErr }, "Failed to store UPC in database:");
+    if (releaseId && !releaseId.startsWith("temp_")) {
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
       }
+      await db.insert(upcRegistry).values({
+        upc: upcCode,
+        releaseId,
+        artistId: userId,
+        title,
+      });
     }
 
     res.json({
@@ -1554,6 +1607,11 @@ router.get(
         );
       } catch (packageError) {
         logger.warn({ err: packageError }, "Error generating DDEX package content:");
+        // createDDEXPackage may have partially written outputPath (e.g. the
+        // zip write stream started before archiving failed) — the success
+        // path's cleanup below never runs when we bail out here, so this is
+        // the only chance to keep ./uploads from accumulating orphaned zips.
+        fsPromises.unlink(outputPath).catch(() => {});
         return res
           .status(500)
           .json({
@@ -2712,16 +2770,22 @@ router.post(
           .json({ error: "Audio file or path is required" });
       }
 
-      const result = await audioFingerprintService.checkDuplicates(
-        audioPath,
-        data.trackId,
-        data.releaseId,
-        {
-          threshold: data.threshold,
-          excludeOwn: data.excludeOwn,
-        },
-      );
-      if (tmpPath) fs.unlink(tmpPath, () => {});
+      let result;
+      try {
+        result = await audioFingerprintService.checkDuplicates(
+          audioPath,
+          data.trackId,
+          data.releaseId,
+          {
+            threshold: data.threshold,
+            excludeOwn: data.excludeOwn,
+          },
+        );
+      } finally {
+        // Scratch file must be removed on every path, including a thrown
+        // error from checkDuplicates — otherwise it leaks in os.tmpdir().
+        if (tmpPath) fs.unlink(tmpPath, () => {});
+      }
 
       res.json({
         isDuplicate: result.isDuplicate,
@@ -4000,6 +4064,101 @@ router.get("/takedowns", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// A DMCA strike records a notice received from a claimant. It is intentionally
+// not used for creator-initiated distribution takedowns: creating one here
+// would falsely represent that a notice had been sent to a DSP. The distribution
+// provider handoff for creator takedowns has not been implemented yet.
+router.post("/takedowns", requireAuth, (_req: Request, res: Response) => {
+  return res.status(501).json({
+    error: "Creator-initiated distribution takedowns are not available yet",
+  });
+});
+
+// Record the creator's dispute in the real royalty-disputes ledger. Submission
+// to the claim's DSP remains an operational review step rather than being
+// reported as complete before that handoff has occurred.
+router.post("/disputes", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { claimId, reason, explanation, supportingDocs } = req.body ?? {};
+
+    if (
+      typeof claimId !== "string" ||
+      !claimId ||
+      typeof reason !== "string" ||
+      !reason ||
+      typeof explanation !== "string" ||
+      !explanation
+    ) {
+      return res.status(400).json({
+        error: "claimId, reason, and explanation are required",
+      });
+    }
+    if (
+      supportingDocs !== undefined &&
+      (!Array.isArray(supportingDocs) ||
+        !supportingDocs.every((document) => typeof document === "string"))
+    ) {
+      return res.status(400).json({ error: "supportingDocs must be an array" });
+    }
+
+    const [claim] = await db
+      .select({ id: dmcaStrikes.id })
+      .from(dmcaStrikes)
+      .where(and(eq(dmcaStrikes.id, claimId), eq(dmcaStrikes.userId, userId)))
+      .limit(1);
+    if (!claim) return res.status(404).json({ error: "Claim not found" });
+
+    const [dispute] = await db
+      .insert(royaltyDisputes)
+      .values({
+        userId,
+        type: reason,
+        status: "open",
+        subject: claimId,
+        description:
+          supportingDocs?.length > 0
+            ? `${explanation}\n\nSupporting documents:\n${supportingDocs.join("\n")}`
+            : explanation,
+        evidenceCount: supportingDocs?.length ?? 0,
+      })
+      .returning();
+
+    return res.status(201).json({ dispute });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error submitting distribution dispute:");
+    return res.status(500).json({ error: "Failed to submit dispute" });
+  }
+});
+
+// These records represent active DMCA strikes, not user-created distribution
+// takedown requests. A creator cannot cancel a claimant's active notice; they
+// must file a dispute instead. Return a deliberate conflict rather than
+// reporting a local cancellation that has not occurred at the DSP.
+router.post(
+  "/takedowns/:id/cancel",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const [strike] = await db
+        .select({ id: dmcaStrikes.id })
+        .from(dmcaStrikes)
+        .where(and(eq(dmcaStrikes.id, id), eq(dmcaStrikes.userId, userId)))
+        .limit(1);
+      if (!strike) return res.status(404).json({ error: "Takedown not found" });
+      return res.status(409).json({
+        error: "This takedown cannot be cancelled by the creator",
+        details: "It is an active DMCA claim. Submit a dispute or contact the claimant to resolve it.",
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error checking takedown cancellation:");
+      return res.status(500).json({ error: "Failed to cancel takedown" });
+    }
+  },
+);
+
 // GET /api/distribution/reinstatements — DMCA strikes that have expired (content reinstated)
 router.get(
   "/reinstatements",
@@ -4028,6 +4187,15 @@ router.get(
     }
   },
 );
+
+// Reinstatement requires confirmation from the DSP that removed the content.
+// There is no local request table or provider integration yet, so do not claim
+// a request was submitted when no external action has been taken.
+router.post("/reinstatements", requireAuth, (_req: Request, res: Response) => {
+  return res.status(501).json({
+    error: "Distribution reinstatement requests are not available yet",
+  });
+});
 
 // POST /api/distribution/upload - Upload distribution release with audio files and artwork
 router.post(
@@ -4298,6 +4466,145 @@ router.get("/codes/stats", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/distribution/codes/isrc - List ISRCs registered to the caller.
+// Registry rows are created only when a code is attached to a concrete track.
+router.get("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    const userId = (req.user as AuthenticatedUser).id;
+    const codes = await db
+      .select()
+      .from(isrcRegistry)
+      .where(eq(isrcRegistry.artistId, userId))
+      .orderBy(desc(isrcRegistry.registeredAt));
+    return res.json(
+      codes.map((entry) => ({
+        id: entry.id,
+        code: entry.isrc,
+        trackTitle: entry.title,
+        artistName: "",
+        releaseId: entry.releaseId,
+        assignedAt: entry.registeredAt ?? entry.createdAt,
+        status: "active",
+        registrar: "PDIM",
+        countryCode: entry.isrc.slice(0, 2),
+        year: entry.isrc.slice(5, 7),
+        designationCode: entry.isrc.slice(7),
+      })),
+    );
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error listing ISRC codes:");
+    return res.status(500).json({ error: "Failed to fetch ISRC codes" });
+  }
+});
+
+// GET /api/distribution/codes/upc - List UPCs registered to the caller.
+router.get("/codes/upc", requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    const userId = (req.user as AuthenticatedUser).id;
+    const codes = await db
+      .select()
+      .from(upcRegistry)
+      .where(eq(upcRegistry.artistId, userId))
+      .orderBy(desc(upcRegistry.registeredAt));
+    return res.json(
+      codes.map((entry) => ({
+        id: entry.id,
+        code: entry.upc,
+        releaseTitle: entry.title,
+        artistName: "",
+        releaseId: entry.releaseId,
+        releaseType: "album",
+        assignedAt: entry.registeredAt ?? entry.createdAt,
+        status: "active",
+        trackCount: 0,
+      })),
+    );
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error listing UPC codes:");
+    return res.status(500).json({ error: "Failed to fetch UPC codes" });
+  }
+});
+
+// POST /api/distribution/codes/:id/assign - Associate a registered code with
+// an owned release (and, for ISRCs, its owned track).
+router.post(
+  "/codes/:id/assign",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      res.set("Cache-Control", "no-store");
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const { releaseId, trackId } = z
+        .object({ releaseId: z.string().min(1), trackId: z.string().min(1).optional() })
+        .parse(req.body);
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const [isrc] = await db
+        .select()
+        .from(isrcRegistry)
+        .where(and(eq(isrcRegistry.id, id), eq(isrcRegistry.artistId, userId)))
+        .limit(1);
+      if (isrc) {
+        if (!trackId) {
+          return res.status(400).json({ error: "trackId is required for an ISRC" });
+        }
+        const [track] = await db
+          .select()
+          .from(distroTracks)
+          .where(and(eq(distroTracks.id, trackId), eq(distroTracks.releaseId, releaseId)))
+          .limit(1);
+        if (!track) return res.status(404).json({ error: "Track not found in this release" });
+        const [assigned] = await db
+          .update(isrcRegistry)
+          .set({ releaseId, trackId })
+          .where(and(eq(isrcRegistry.id, id), eq(isrcRegistry.artistId, userId)))
+          .returning();
+        await db
+          .update(distroTracks)
+          .set({ isrc: assigned.isrc })
+          .where(eq(distroTracks.id, trackId));
+        return res.json({ code: assigned.isrc, type: "isrc", releaseId, trackId });
+      }
+
+      const [upc] = await db
+        .select()
+        .from(upcRegistry)
+        .where(and(eq(upcRegistry.id, id), eq(upcRegistry.artistId, userId)))
+        .limit(1);
+      if (!upc) return res.status(404).json({ error: "Code not found" });
+      const [assigned] = await db
+        .update(upcRegistry)
+        .set({ releaseId, title: release.title })
+        .where(and(eq(upcRegistry.id, id), eq(upcRegistry.artistId, userId)))
+        .returning();
+      return res.json({ code: assigned.upc, type: "upc", releaseId });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error assigning distribution code:");
+      return res.status(500).json({ error: "Failed to assign code" });
+    }
+  },
+);
+
+// A registered ISRC/UPC identifies a released recording and must remain in
+// the registry. Removing it would permit accidental reuse and corrupt DSP
+// reporting, so revocation is deliberately rejected rather than pretending it
+// succeeded.
+router.post("/codes/:id/revoke", requireAuth, async (_req, res) => {
+  return res.status(409).json({
+    error: "Registered distribution codes cannot be revoked",
+    details: "ISRC and UPC assignments are permanent identifiers. Contact support if a correction is required.",
+  });
+});
+
 // ===========================
 // EARNINGS ENDPOINTS
 // ===========================
@@ -4389,6 +4696,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
+      res.set("Cache-Control", "no-store");
       const userId = (req.user as AuthenticatedUser).id;
       const statements = await db
         .select()
@@ -4400,6 +4708,42 @@ router.get(
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching earnings statements:");
       res.status(500).json({ error: "Failed to fetch earnings statements" });
+    }
+  },
+);
+
+// POST /api/distribution/earnings/statements/:id/reconcile
+router.post(
+  "/earnings/statements/:id/reconcile",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const [statement] = await db
+        .select()
+        .from(royaltyStatements)
+        .where(
+          and(eq(royaltyStatements.id, id), eq(royaltyStatements.userId, userId)),
+        )
+        .limit(1);
+      if (!statement) {
+        return res.status(404).json({ error: "Statement not found" });
+      }
+      if (statement.status === "reconciled") {
+        return res.json({ statement, alreadyReconciled: true });
+      }
+      const [reconciled] = await db
+        .update(royaltyStatements)
+        .set({ status: "reconciled" })
+        .where(
+          and(eq(royaltyStatements.id, id), eq(royaltyStatements.userId, userId)),
+        )
+        .returning();
+      return res.json({ statement: reconciled });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error reconciling earnings statement:");
+      return res.status(500).json({ error: "Failed to reconcile statement" });
     }
   },
 );
@@ -6534,7 +6878,7 @@ router.post(
 
       const ext = file?.originalname.split(".").pop() || "jpg";
       const key = `distribution/artwork/${userId}/${Date.now()}.${ext}`;
-      await storageService?.uploadFile(file?.buffer, key, file?.mimetype);
+      await storageService?.uploadFileAtKey(file?.buffer, key, file?.mimetype);
 
       const artworkUrl = await storageService?.getDownloadUrl(key);
       logger.info(`[Distribution] Artwork uploaded for user ${userId}: ${key}`);
@@ -6629,7 +6973,7 @@ router.post("/packages", requireAuth, async (req: Request, res: Response) => {
     };
 
     const key = `distribution/packages/${userId}/${projectId}.json`;
-    await storageService?.uploadFile(
+    await storageService?.uploadFileAtKey(
       Buffer?.from(JSON.stringify(pkg)),
       key,
       "application/json",
@@ -6693,7 +7037,7 @@ router.put(
         updatedAt: new Date().toISOString(),
       };
 
-      await storageService?.uploadFile(
+      await storageService?.uploadFileAtKey(
         Buffer?.from(JSON.stringify(updated)),
         key,
         "application/json",
@@ -6777,7 +7121,7 @@ router.post(
       };
       tracks?.push(track);
 
-      await storageService?.uploadFile(
+      await storageService?.uploadFileAtKey(
         Buffer?.from(JSON.stringify(tracks)),
         key,
         "application/json",

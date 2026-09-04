@@ -15,6 +15,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
 import { logger } from "../logger.js";
 import { stemExportService } from "../services/stemExportService.js";
+import { storageService } from "../services/storageService.js";
 import { notificationService } from "../services/notificationService.js";
 import { db } from "../db.js";
 import { projects, studioProjects } from "@shared/schema";
@@ -179,19 +180,21 @@ router.get(
         userId,
       );
 
-      if (
-        download?.downloadUrl.startsWith("/") ||
-        download?.downloadUrl.startsWith("./")
-      ) {
-        return res.download(download?.downloadUrl, download?.fileName);
-      }
-
-      res.json({
-        success: true,
-        downloadUrl: download.downloadUrl,
-        fileName: download.fileName,
-        fileSize: download.fileSize,
-      });
+      // download.downloadUrl is an app route (/api/storage/file/<key>), not a
+      // filesystem path — res.download() would try to read it off local disk
+      // and always fail. The client expects the raw zip bytes (it calls
+      // .blob() on this response), so read the PDIM-backed file here and
+      // stream it directly with proper download headers.
+      const zipBuffer = await storageService.downloadFile(
+        download.storageKey,
+      );
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${download.fileName.replace(/["\r\n]/g, "")}"`,
+      );
+      res.setHeader("Content-Length", zipBuffer.length);
+      return res.send(zipBuffer);
     } catch (error) {
       logger.warn({ err: error }, "Error getting export download:");
       if ((error as any)?.message === "Export not found") {

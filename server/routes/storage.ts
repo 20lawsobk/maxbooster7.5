@@ -13,19 +13,6 @@ import { notificationService } from "../services/notificationService.js";
 
 const router = Router();
 
-const audioCache = new Map<string, { buffer: Buffer; timestamp: number }>();
-const AUDIO_CACHE_MAX_SIZE = 5;
-const AUDIO_CACHE_TTL = 300000;
-
-function getCachedAudio(key: string): Buffer | null {
-  const entry = audioCache?.get(key);
-  if (entry && Date.now() - entry?.timestamp < AUDIO_CACHE_TTL) {
-    return entry?.buffer;
-  }
-  if (entry) audioCache?.delete(key);
-  return null;
-}
-
 /**
  * Normalize an Express-5 wildcard param into a canonical storage key.
  * Express has ALREADY percent-decoded params — do NOT decode again (double
@@ -37,34 +24,6 @@ function normalizeStorageKey(raw: string | string[] | undefined): string | null 
   if (!key || key.includes("\0") || key.includes("\\")) return null;
   if (key.startsWith("/") || key.includes("..")) return null;
   return key;
-}
-
-function invalidateCachedAudio(key: string) {
-  audioCache?.delete(key);
-}
-
-/**
- * Returns true when the key is tracked in user_storage_files and marked
- * deleted (soft or otherwise). Deleted files must not be served — the soft
- * delete keeps the storage object only so /restore can undo within the
- * retention window.
- */
-async function isFileDeleted(key: string): Promise<boolean> {
-  const [row] = await db
-    .select({ deletedAt: userStorageFiles.deletedAt })
-    .from(userStorageFiles)
-    .where(eq(userStorageFiles.fileKey, key))
-    .orderBy(sql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
-    .limit(1);
-  return !!row?.deletedAt;
-}
-
-function setCachedAudio(key: string, buffer: Buffer) {
-  if (audioCache?.size >= AUDIO_CACHE_MAX_SIZE) {
-    const oldest = audioCache?.keys().next().value;
-    if (oldest) audioCache?.delete(oldest);
-  }
-  audioCache?.set(key, { buffer, timestamp: Date.now() });
 }
 
 // Cleanup soft-deleted files older than 30 days (permanent deletion)
@@ -712,7 +671,6 @@ router.delete(
       if (permanent === "true") {
         // Permanent delete: remove from storage and database
         await storageService?.deleteFile(key);
-        invalidateCachedAudio(key);
         await db
           .delete(userStorageFiles)
           .where(eq(userStorageFiles.id, file?.id));
@@ -727,7 +685,6 @@ router.delete(
           .set({ deletedAt: new Date() })
           .where(eq(userStorageFiles.id, file?.id));
 
-        invalidateCachedAudio(key);
         logger.info(`[SoftDelete] File soft deleted: ${key} by user ${userId}`);
         res.json({
           success: true,
@@ -1168,14 +1125,46 @@ router.get(
         ".png": "image/png",
         ".gif": "image/gif",
         ".webp": "image/webp",
+        ".mp4": "video/mp4",
+        ".webm": "video/webm",
+        ".mov": "video/quicktime",
       };
 
-      res.setHeader(
-        "Content-Type",
-        metadata?.mimeType || mimeTypes[ext] || "application/octet-stream",
-      );
-      res.setHeader("Content-Length", buffer?.length);
+      const contentType =
+        metadata?.mimeType || mimeTypes[ext] || "application/octet-stream";
+      const totalLength = buffer.length;
+      const range = req.headers.range;
+      res.setHeader("Content-Type", contentType);
       res.setHeader("X-Storage-Tier", metadata?.tier || "unknown");
+      res.setHeader("Accept-Ranges", "bytes");
+
+      if (range) {
+        const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+        if (!match) {
+          res.setHeader("Content-Range", `bytes */${totalLength}`);
+          return res.status(416).end();
+        }
+        const start = match[1] ? Number(match[1]) : 0;
+        const end = match[2] ? Number(match[2]) : totalLength - 1;
+        if (
+          !Number.isSafeInteger(start) ||
+          !Number.isSafeInteger(end) ||
+          start < 0 ||
+          end < start ||
+          start >= totalLength
+        ) {
+          res.setHeader("Content-Range", `bytes */${totalLength}`);
+          return res.status(416).end();
+        }
+        const boundedEnd = Math.min(end, totalLength - 1);
+        const chunk = buffer.subarray(start, boundedEnd + 1);
+        res.status(206);
+        res.setHeader("Content-Range", `bytes ${start}-${boundedEnd}/${totalLength}`);
+        res.setHeader("Content-Length", chunk.length);
+        return res.end(chunk);
+      }
+
+      res.setHeader("Content-Length", totalLength);
       res.send(buffer);
     } catch (error) {
       logger.warn({ err: error }, "[HybridStorage] Download failed:");

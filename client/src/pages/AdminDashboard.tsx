@@ -2012,6 +2012,15 @@ function BeatMoneyLoopTab() {
   const runNowMut = useMutation({
     mutationFn: () => callAction("run-now"),
     onSuccess: (data: any) => {
+      if (data?.status === "started") {
+        toast({
+          title: "Beat Money Loop cycle started",
+          description:
+            "Generation is running in the background. This page refreshes automatically with its progress.",
+        });
+        refetch();
+        return;
+      }
       const r = data?.result;
       const title =
         r?.status === "completed"

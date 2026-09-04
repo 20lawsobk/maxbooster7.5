@@ -92,6 +92,10 @@ async function pruneUploadDirs(days = 7): Promise<void> {
     path?.join(process.cwd(), "uploads", "videos"),
     path?.join(process.cwd(), "uploads", "processed"),
     path?.join(process.cwd(), "uploads", "normalized"),
+    // Music Video Studio's MaxCore photo scratch (advancedVideoRendererService.ts
+    // fetchPhotorealisticImage) — FFmpeg input only, never deleted by its
+    // consumer, so it must be swept here or it grows unbounded.
+    path?.join(process.cwd(), "uploads", "photo_cache"),
   ];
   const cutoffMs = Date.now() - days * 86_400_000;
   let total = 0;

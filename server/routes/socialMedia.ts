@@ -6,6 +6,9 @@ import {
   getMaxcoreOriginOrDefault,
 } from "../services/maxcoreConnector.js";
 import fsPromises from "fs/promises";
+import { storageService } from "../services/storageService.js";
+import { pocketManager } from "../pocket-dimension/index.js";
+import { generateAndStorePosterThumbnail } from "../services/advancedVideoRendererService.js";
 import path from "path";
 import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
@@ -63,6 +66,35 @@ let competitorBenchmarkService:
 let pythonAIService:
   | typeof import("../services/pythonAIService.js").pythonAIService
   | null = null;
+
+function cleanupMediaUploadFiles(req: Request): Promise<void> {
+  const fieldFiles = Array.isArray(req.files)
+    ? req.files
+    : Object.values(
+        (req.files || {}) as Record<string, Express.Multer.File[]>,
+      ).flat();
+  const files = [
+    ...(req.file ? [req.file] : []),
+    ...fieldFiles,
+  ];
+  return Promise.all(
+    files
+      .map((file) => file?.path)
+      .filter((filePath): filePath is string => Boolean(filePath))
+      .map((filePath) => fsPromises.unlink(filePath).catch(() => {})),
+  ).then(() => undefined);
+}
+
+function handleMediaUpload(
+  upload: (req: Request, res: Response, callback: (error?: unknown) => void) => void,
+) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    upload(req, res, (error?: unknown) => {
+      if (!error) return next();
+      void cleanupMediaUploadFiles(req).finally(() => next(error));
+    });
+  };
+}
 let veoMusicService:
   | typeof import("../services/veoMusicService.js").veoMusicService
   | null = null;
@@ -3548,27 +3580,32 @@ router.get(
     const MC_AI_URL = getMaxcoreOrigin();
     const MC_AI_KEY = getMaxcoreGenerationKey();
 
-    // 1. Check local cache first — if it was written to disk AND is a real video, serve it directly.
-    //    Minimum 10 KB: MaxCore's SPA returns ~683-byte HTML pages for unknown paths.
-    //    Anything smaller than 10 KB is a corrupted/HTML cache entry — skip and re-proxy.
-    const localPath = path?.join(process.cwd(), "uploads", "videos", filename);
+    // 1. Check the PDIM cache first — if a validated video was cached from an
+    //    earlier proxy fetch, serve it directly. Every entry ever written here
+    //    already passed the >10 KB + magic-byte check below, so a bad/small
+    //    entry should never exist; the size guard is defense in depth only.
+    const videoCachePocket = await pocketManager.openPocket("video-proxy-cache");
     try {
-      const stat = await fsPromises?.stat(localPath);
-      if (stat?.size > 10_240) {
-        res.setHeader("Content-Type", "video/mp4");
-        res.setHeader("Cache-Control", "public, max-age=86400");
-        res.setHeader("Accept-Ranges", "bytes");
-        return fs?.createReadStream(localPath).pipe(res);
+      if (videoCachePocket.exists(filename)) {
+        const cached = await videoCachePocket.read(filename);
+        if (cached?.length > 10_240) {
+          res.setHeader("Content-Type", "video/mp4");
+          res.setHeader("Cache-Control", "public, max-age=86400");
+          res.setHeader("Accept-Ranges", "bytes");
+          return res.send(cached);
+        }
+        logger.warn(
+          `[VideoProxy] PDIM cache entry ${filename} is too small (${cached?.length ?? 0} bytes) — deleting stale cache`,
+        );
+        await videoCachePocket.delete(filename).catch(() => {
+          /* intentional: stale cache cleanup */
+        });
       }
-      // Corrupted/HTML entry — delete it so we re-fetch from MaxCore
+    } catch (err) {
       logger.warn(
-        `[VideoProxy] Local cache entry ${filename} is too small (${stat?.size} bytes) — deleting stale cache`,
+        { err },
+        `[VideoProxy] PDIM cache read failed for ${filename} — falling through to MaxCore proxy`,
       );
-      await fsPromises?.unlink(localPath).catch(() => {
-        /* intentional: stale cache cleanup */
-      });
-    } catch {
-      // File not on local disk — fall through to MaxCore proxy
     }
 
     // 2. Try to fetch from MaxCore using stored URL or candidate paths
@@ -3725,16 +3762,12 @@ router.get(
               }
             }
             nodeStream?.end();
-            // Cache to disk after full stream
+            // Cache to PDIM after full stream
             const buf = Buffer?.concat(chunks);
             if (buf?.length > 10_240) {
-              await fsPromises?.mkdir(
-                path?.join(process.cwd(), "uploads", "videos"),
-                { recursive: true },
-              );
-              await fsPromises?.writeFile(localPath, buf);
+              await videoCachePocket.write(filename, buf);
               logger.info(
-                `[VideoProxy] Cached ${filename} to disk (${(buf?.length / 1024).toFixed(0)} KB)`,
+                `[VideoProxy] Cached ${filename} to PDIM (${(buf?.length / 1024).toFixed(0)} KB)`,
               );
             }
           } catch {
@@ -4665,11 +4698,13 @@ router.post(
           imageUrl = /^https?:\/\//i.test(raw) ? raw : `${mcBase}${raw.startsWith("/") ? "" : "/"}${raw}`;
         }
       } catch (imgErr) {
-        if (imgErr instanceof AIUnavailableError) throw imgErr;
-        // Any other error — fall through to visual spec
+        throw imgErr;
+      }
+      if (!imageUrl) {
+        throw new Error("Image generation did not return an image URL");
       }
 
-      // ── Build visual spec (always returned as UI fallback) ───────────────
+      // ── Build visual spec for the generated image ────────────────────────
       const toneColorMap: Record<string, string[]> = {
         energetic: ["#ff6b35", "#f7c59f", "#1a1a2e", "#ffffff"],
         chill: ["#a8dadc", "#457b9d", "#1d3557", "#f1faee"],
@@ -5148,14 +5183,7 @@ router.get(
 router.post(
   "/synthesize-voice",
   requireAuthOnly,
-  (req, res, next) => {
-    // mediaUpload → disk storage so referenceAudioPath has a real file path for FFmpeg
-    mediaUpload.single("reference_audio")(
-      req as unknown as import("express").Request,
-      res as unknown as import("express").Response,
-      next,
-    );
-  },
+  handleMediaUpload(mediaUpload.single("reference_audio")),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const {
@@ -5179,7 +5207,7 @@ router.post(
       };
 
       const svc = await getVoiceSynthService();
-      const referenceAudioPath = req.file!.path;
+      const referenceAudioPath = req.file?.path;
 
       const options = {
         profileId,
@@ -5194,49 +5222,55 @@ router.post(
       };
 
       let result;
-      if (segments) {
-        let parsedSegments: Array<{ text: string; pause?: number }> = [];
-        try {
-          parsedSegments = JSON.parse(segments);
-        } catch {
-          return res
-            .status(400)
-            .json({ success: false, error: "Invalid segments JSON" });
+      try {
+        if (segments) {
+          let parsedSegments: Array<{ text: string; pause?: number }> = [];
+          try {
+            parsedSegments = JSON.parse(segments);
+          } catch {
+            return res
+              .status(400)
+              .json({ success: false, error: "Invalid segments JSON" });
+          }
+          result = await svc.synthesizeSegments(parsedSegments, options);
+        } else {
+          if (!text?.trim())
+            return res
+              .status(400)
+              .json({ success: false, error: "text is required" });
+          result = await svc.synthesizeVoice(text!, options);
         }
-        result = await svc.synthesizeSegments(parsedSegments, options);
-      } else {
-        if (!text!.trim())
-          return res
-            .status(400)
-            .json({ success: false, error: "text is required" });
-        result = await svc.synthesizeVoice(text!, options);
+      } finally {
+        // The uploaded reference-audio sample was only needed to steer
+        // synthesis — it is never re-read or served, so clean it up now
+        // regardless of whether synthesis succeeded, failed, or threw.
+        if (referenceAudioPath) {
+          await fsPromises.unlink(referenceAudioPath).catch(() => {});
+        }
       }
 
       if (!result.success)
         return res.status(500).json({ success: false, error: result.error });
 
-      const filename = result.outputPath!.split("/").pop();
-      const publicUrl = `/uploads/voices/${filename}`;
-      const legacyUser = req.user as UserWithLegacyId | undefined;
-      const userId =
-        legacyUser?.id?.toString() ||
-        legacyUser?.userId?.toString() ||
-        "anonymous";
-
-      // ── Persist to PDIM (non-blocking — response already sent after this) ──
-      let pdimMeta: import("../services/pdimMediaStorageService.js").StoredVoiceFile | null = null;
+      // ffmpeg needed a real file path to write the synthesized output, but
+      // PDIM-backed storage is the only durable/servable copy — upload the
+      // finished file, then delete the local scratch copy immediately.
+      const outputPath = result.outputPath!;
+      const filename = outputPath.split("/").pop()!;
+      const contentType =
+        options.outputFormat === "mp3" ? "audio/mpeg" : "audio/wav";
+      let publicUrl: string;
       try {
-        const { storeVoiceFile } = await import(
-          "../services/pdimMediaStorageService.js"
+        const audioBuffer = await fsPromises.readFile(outputPath);
+        const storageKey = await storageService.uploadFile(
+          audioBuffer,
+          "voices",
+          filename,
+          contentType,
         );
-        pdimMeta = await storeVoiceFile(userId, result.outputPath!, {
-          profileUsed: result.profileUsed || profileId || "smooth_narrator",
-          voiceUsed: result.voiceUsed || "flite",
-          durationSeconds: result.durationSeconds,
-          text: typeof text === "string" ? text : undefined,
-        });
-      } catch (e) {
-        logger.warn(`[Route] voice PDIM store skipped: ${(e as Error).message.slice(0, 80)}`);
+        publicUrl = await storageService.getDownloadUrl(storageKey);
+      } finally {
+        await fsPromises.unlink(outputPath).catch(() => {});
       }
 
       res.json({
@@ -5246,10 +5280,6 @@ router.post(
         durationSeconds: result.durationSeconds,
         profileUsed: result.profileUsed,
         voiceUsed: result.voiceUsed,
-        outputPath: result.outputPath,
-        pdim: pdimMeta
-          ? { key: pdimMeta.pdimKey, compressedSize: pdimMeta.compressedSize }
-          : null,
       });
     } catch (e) {
       if (e instanceof AIUnavailableError) {
@@ -5278,24 +5308,22 @@ router.post(
 router.post(
   "/analyze-reference-voice",
   requireAuthOnly,
-  (req, res, next) => {
-    mediaUpload.single("audio")(
-      req as unknown as import("express").Request,
-      res as unknown as import("express").Response,
-      next,
-    );
-  },
+  handleMediaUpload(mediaUpload.single("audio")),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const file = req.file;
-      if (!file!.path) {
+      if (!file?.path) {
         return res
           .status(400)
           .json({ success: false, error: "Audio file required" });
       }
-      const svc = await getVoiceSynthService();
-      const characteristics = await svc.analyzeReferenceVoice(file!.path);
-      res.json({ success: true, characteristics });
+      try {
+        const svc = await getVoiceSynthService();
+        const characteristics = await svc.analyzeReferenceVoice(file.path);
+        res.json({ success: true, characteristics });
+      } finally {
+        await fsPromises.unlink(file.path).catch(() => {});
+      }
     } catch (e) {
       logger.warn(`[Route] analyze-reference-voice: ${(e as Error).message}`);
       res
@@ -5318,18 +5346,11 @@ router.post(
 router.post(
   "/analyze-audio-beats",
   requireAuthOnly,
-  (req, res, next) => {
-    // mediaUpload → disk storage gives us a real file path for FFmpeg analysis
-    mediaUpload.single("audio")(
-      req as unknown as import("express").Request,
-      res as unknown as import("express").Response,
-      next,
-    );
-  },
+  handleMediaUpload(mediaUpload.single("audio")),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const file = req.file;
-      if (!file!.path) {
+      if (!file?.path) {
         return res
           .status(400)
           .json({
@@ -5338,10 +5359,10 @@ router.post(
           });
       }
 
-      // ── Check PDIM cache first ────────────────────────────────────────────
       let analysis;
       let cacheHit = false;
       try {
+        // ── Check PDIM cache first ────────────────────────────────────────────
         const { getCachedBeatAnalysis, cacheBeatAnalysis } = await import(
           "../services/pdimMediaStorageService.js"
         );
@@ -5355,14 +5376,24 @@ router.post(
           // Cache the result in PDIM for 24 hours
           await cacheBeatAnalysis(file!.path, analysis);
         }
-      } catch {
-        // PDIM unavailable — fall through to direct analysis
+      } catch (cacheError) {
+        logger.warn(
+          { err: cacheError },
+          "PDIM beat-analysis cache unavailable; performing uncached analysis",
+        );
         const svc = await getBeatSyncService();
-        analysis = await svc.analyzeAudio(file!.path);
+        analysis = await svc.analyzeAudio(file.path);
+        cacheHit = false;
       }
-
-      res.json({ success: true, analysis, cacheHit });
+      try {
+        res.json({ success: true, analysis, cacheHit });
+      } finally {
+        await fsPromises.unlink(file.path).catch(() => {});
+      }
     } catch (e) {
+      if (req.file?.path) {
+        await fsPromises.unlink(req.file.path).catch(() => {});
+      }
       logger.warn(`[Route] analyze-audio-beats: ${(e as Error).message}`);
       res
         .status(500)
@@ -5383,13 +5414,7 @@ router.post(
 router.post(
   "/beat-analyze",
   requireAuthOnly,
-  (req, res, next) => {
-    mediaUpload.fields([{ name: "audio", maxCount: 1 }])(
-      req as unknown as import("express").Request,
-      res as unknown as import("express").Response,
-      next,
-    );
-  },
+  handleMediaUpload(mediaUpload.fields([{ name: "audio", maxCount: 1 }])),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const files = req.files as Record<string, Express.Multer.File[]> | undefined;
@@ -5397,14 +5422,18 @@ router.post(
       if (!audioFile) {
         return res.status(400).json({ success: false, error: "audio file required" });
       }
-      const svc = await getMusicVideoStudioService();
-      const result = await Promise.race([
-        svc.quickBeatAnalyze(audioFile.path),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Beat analysis timed out after 30s")), 30_000)
-        ),
-      ]);
-      return res.json({ success: true, ...result });
+      try {
+        const svc = await getMusicVideoStudioService();
+        const result = await Promise.race([
+          svc.quickBeatAnalyze(audioFile.path),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Beat analysis timed out after 30s")), 30_000)
+          ),
+        ]);
+        return res.json({ success: true, ...result });
+      } finally {
+        await fsPromises.unlink(audioFile.path).catch(() => {});
+      }
     } catch (err) {
       logger.warn("[BeatAnalyze]", (err as any)?.message);
       return res.status(500).json({ success: false, error: (err as any)?.message || "Analysis failed" });
@@ -5450,14 +5479,13 @@ setInterval(
 router.post(
   "/generate-music-video",
   requireAuthOnly,
-  (req, res, next) => {
-    // mediaUpload → disk storage, accepts both images + audio in one request
+  handleMediaUpload(
     mediaUpload.fields([
       { name: "images", maxCount: 10 },
       { name: "audio", maxCount: 1 },
       { name: "reference_voice", maxCount: 1 },
-    ])(req as unknown as import("express").Request, res as unknown as import("express").Response, next);
-  },
+    ]),
+  ),
   async (req: AuthenticatedRequest, res: Response) => {
     const jobId = `mvjob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     musicVideoJobs.set(jobId, { status: "processing", createdAt: Date.now() });
@@ -5471,6 +5499,7 @@ router.post(
 
     // Process async
     (async () => {
+      let voiceSynthPath: string | undefined;
       try {
         const files = req.files as
           | Record<string, Express.Multer.File[]>
@@ -5527,42 +5556,33 @@ router.post(
             return;
           }
 
-          // Persist to PDIM — best-effort and time-bounded: when PDIM is
-          // congested this upload can hang for minutes, and it must never
-          // block the job from reporting "done" (the file is already served
-          // locally from /uploads/videos).
+          const videoFilePath = `${process.cwd()}/uploads/videos/${studioResult.filename}`;
+          // The local render is scratch space only. Do not complete a job until
+          // its authoritative PDIM copy exists.
           try {
             const { storeMusicVideo } = await import("../services/pdimMediaStorageService.js");
-            const videoFilePath = `${process.cwd()}/uploads/videos/${studioResult.filename}`;
-            const pdimMeta = await Promise.race([
-              storeMusicVideo(userId, videoFilePath, studioResult as unknown as Record<string, unknown>).catch(() => null),
-              new Promise<null>((resolve) =>
-                setTimeout(() => resolve(null), 30_000),
-              ),
-            ]);
-            if (pdimMeta) studioResult.pdim = { key: pdimMeta.pdimKey, tier: (pdimMeta as any).tier };
-            else logger.warn("[MusicVideo/Studio] PDIM store slow/unavailable — continuing without PDIM metadata");
-          } catch (e) {
-            logger.warn(`[MusicVideo/Studio] PDIM store skipped: ${(e as any)?.message?.slice(0, 80)}`);
-          }
-
-          // Extract a real first-frame poster so mobile shows a frame instead of
-          // a grey box (mirrors the /generate-video path).
-          try {
-            const { generatePosterThumbnail } = await import(
-              "../services/advancedVideoRendererService.js"
+            const pdimMeta = await storeMusicVideo(
+              userId,
+              videoFilePath,
+              studioResult as unknown as Record<string, unknown>,
             );
-            if (studioResult.filename) {
-              const poster = await generatePosterThumbnail(
-                `${process.cwd()}/uploads/videos/${studioResult.filename}`,
-              );
-              if (poster)
-                (studioResult as unknown as Record<string, unknown>).thumbnail_url = poster;
-            }
+            if (!pdimMeta) throw new Error("PDIM did not return video metadata");
+            studioResult.pdim = { key: pdimMeta.pdimKey, tier: (pdimMeta as any).tier };
+            (studioResult as any).url = pdimMeta.publicUrl;
+            (studioResult as any).video_url = pdimMeta.publicUrl;
+            // Best-effort mobile poster — extracted from the scratch file
+            // below before it's deleted, then persisted to PDIM itself.
+            (studioResult as any).thumbnail_url =
+              await generateAndStorePosterThumbnail(videoFilePath, userId);
           } catch (e) {
-            logger.warn(
-              `[MusicVideo/Studio] poster skipped: ${(e as Error)?.message?.slice(0, 80)}`,
-            );
+            musicVideoJobs.set(jobId, {
+              status: "error",
+              error: `PDIM video storage failed: ${(e as Error).message}`,
+              createdAt: Date.now(),
+            });
+            return;
+          } finally {
+            await fsPromises.unlink(videoFilePath).catch(() => undefined);
           }
 
           musicVideoJobs.set(jobId, {
@@ -5590,7 +5610,6 @@ router.post(
         const audioPath = audioFile?.path;
 
         // Optional: synthesize voice narration before rendering
-        let voiceSynthPath: string | undefined;
         if (body.synthesize_voice === "true" && body.voice_text?.trim()) {
           try {
             const voiceSvc = await getVoiceSynthService();
@@ -5598,14 +5617,16 @@ router.post(
               body.voice_text,
               {
                 profileId: body.voice_profile_id || "smooth_narrator",
-                referenceAudioPath: voiceRef!.path,
+                referenceAudioPath: voiceRef?.path,
               },
             );
             if (voiceResult.success && voiceResult.outputPath) {
               voiceSynthPath = voiceResult.outputPath;
+            } else {
+              throw new Error(voiceResult.error || "Voice synthesis failed");
             }
           } catch (e) {
-            logger.warn(`[MusicVideo] Voice synthesis skipped: ${(e as Error).message}`);
+            throw new Error(`Voice synthesis failed: ${(e as Error).message}`);
           }
         }
 
@@ -5656,47 +5677,36 @@ router.post(
           legacyUser?.id?.toString() ||
           legacyUser?.userId?.toString() ||
           "anonymous";
+        const videoFilePath = `${process.cwd()}/uploads/videos/${result.filename}`;
         let pdimVideoMeta: import("../services/pdimMediaStorageService.js").StoredMusicVideo | null = null;
         try {
           const { storeMusicVideo } = await import(
             "../services/pdimMediaStorageService.js"
           );
-          const videoFilePath = `${process.cwd()}/uploads/videos/${result.filename}`;
-          // Time-bounded: a congested PDIM must never block job completion —
-          // the file is already served locally from /uploads/videos.
-          pdimVideoMeta = await Promise.race([
-            storeMusicVideo(userId, videoFilePath, result).catch(() => null),
-            new Promise<null>((resolve) =>
-              setTimeout(() => resolve(null), 30_000),
-            ),
-          ]);
-          if (pdimVideoMeta) {
-            (result as any).pdim = {
-              key: pdimVideoMeta.pdimKey,
-              compressedSize: pdimVideoMeta.compressedSize,
-              tier: (pdimVideoMeta as any).tier,
-            };
-          }
-        } catch (e) {
-          logger.warn(`[MusicVideo] PDIM store skipped for job ${jobId}: ${(e as Error).message.slice(0, 80)}`);
-        }
-
-        // Extract a real first-frame poster (mobile grey-box fix).
-        try {
-          const { generatePosterThumbnail } = await import(
-            "../services/advancedVideoRendererService.js"
+          pdimVideoMeta = await storeMusicVideo(userId, videoFilePath, result);
+          if (!pdimVideoMeta) throw new Error("PDIM did not return video metadata");
+          (result as any).pdim = {
+            key: pdimVideoMeta.pdimKey,
+            compressedSize: pdimVideoMeta.compressedSize,
+            tier: (pdimVideoMeta as any).tier,
+          };
+          (result as any).url = pdimVideoMeta.publicUrl;
+          (result as any).video_url = pdimVideoMeta.publicUrl;
+          // Best-effort mobile poster — extracted from the scratch file
+          // below before it's deleted, then persisted to PDIM itself.
+          (result as any).thumbnail_url = await generateAndStorePosterThumbnail(
+            videoFilePath,
+            userId,
           );
-          if (result.filename) {
-            const poster = await generatePosterThumbnail(
-              `${process.cwd()}/uploads/videos/${result.filename}`,
-            );
-            if (poster)
-              (result as unknown as Record<string, unknown>).thumbnail_url = poster;
-          }
         } catch (e) {
-          logger.warn(
-            `[MusicVideo] poster skipped: ${(e as Error)?.message?.slice(0, 80)}`,
-          );
+          musicVideoJobs.set(jobId, {
+            status: "error",
+            error: `PDIM video storage failed: ${(e as Error).message}`,
+            createdAt: Date.now(),
+          });
+          return;
+        } finally {
+          await fsPromises.unlink(videoFilePath).catch(() => undefined);
         }
 
         musicVideoJobs.set(jobId, {
@@ -5714,6 +5724,20 @@ router.post(
           error: (e as Error).message || "Music video generation failed",
           createdAt: Date.now(),
         });
+      } finally {
+        const files = req.files as
+          | Record<string, Express.Multer.File[]>
+          | undefined;
+        const uploadPaths = Object.values(files || {})
+          .flat()
+          .map((file) => file?.path)
+          .filter((filePath): filePath is string => Boolean(filePath));
+        await Promise.all(
+          uploadPaths.map((filePath) => fsPromises.unlink(filePath).catch(() => {})),
+        );
+        if (voiceSynthPath) {
+          await fsPromises.unlink(voiceSynthPath).catch(() => {});
+        }
       }
     })();
   },

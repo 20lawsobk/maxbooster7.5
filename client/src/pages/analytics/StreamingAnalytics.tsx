@@ -245,8 +245,8 @@ export function StreamingAnalytics({
         day: "numeric",
       }),
       streams: d.streams || 0,
-      uniqueListeners: d.listeners || Math.round((d.streams || 0) * 0.6),
-      completionRate: d.completionRate || 75,
+      uniqueListeners: d.listeners || 0,
+      completionRate: d.completionRate || 0,
     }));
   }, [data]);
 

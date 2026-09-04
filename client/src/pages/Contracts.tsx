@@ -96,6 +96,11 @@ interface TimelineEvent {
   details?: string;
 }
 
+async function getResponseError(res: Response, fallback: string): Promise<Error> {
+  const body = await res.json().catch(() => null);
+  return new Error(body?.error || fallback);
+}
+
 export default function Contracts() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
@@ -268,7 +273,7 @@ export default function Contracts() {
   });
 
   const { data: timelineData } = useQuery<{ timeline: TimelineEvent[] }>({
-    queryKey: ["/api/contracts", selectedContract?.id, "timeline"],
+    queryKey: [`/api/contracts/${selectedContract?.id}/timeline`],
     enabled: !!selectedContract?.id && showDetailsDialog,
   });
 
@@ -284,7 +289,7 @@ export default function Contracts() {
     }>;
     allSigned: boolean;
   }>({
-    queryKey: ["/api/contracts", selectedContract?.id, "signature-status"],
+    queryKey: [`/api/contracts/${selectedContract?.id}/signature-status`],
     enabled: !!selectedContract?.id && showDetailsDialog,
   });
 
@@ -301,7 +306,7 @@ export default function Contracts() {
         credentials: "include",
         body: JSON.stringify({ templateId: selectedTemplate.id, variables }),
       });
-      if (!res.ok) throw new Error("Failed to generate contract");
+      if (!res.ok) throw await getResponseError(res, "Failed to generate contract");
       return res.json();
     },
     onSuccess: (newContract: Contract) => {
@@ -341,7 +346,8 @@ export default function Contracts() {
           headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
         },
       );
-      if (!res.ok) throw new Error("Failed to send for signature");
+      if (!res.ok)
+        throw await getResponseError(res, "Failed to send for signature");
       return res.json();
     },
     onSuccess: () => {
@@ -386,7 +392,7 @@ export default function Contracts() {
         credentials: "include",
         body: JSON.stringify({ partyName, signature: signatureData }),
       });
-      if (!res.ok) throw new Error("Failed to sign contract");
+      if (!res.ok) throw await getResponseError(res, "Failed to sign contract");
       return res.json();
     },
     onSuccess: (data) => {
@@ -438,7 +444,8 @@ export default function Contracts() {
         credentials: "include",
         body: JSON.stringify({ partyName, reason }),
       });
-      if (!res.ok) throw new Error("Failed to decline signature");
+      if (!res.ok)
+        throw await getResponseError(res, "Failed to decline signature");
       return res.json();
     },
     onSuccess: () => {
@@ -477,7 +484,7 @@ export default function Contracts() {
         credentials: "include",
         body: JSON.stringify({ reason: "Cancelled by user" }),
       });
-      if (!res.ok) throw new Error("Failed to void contract");
+      if (!res.ok) throw await getResponseError(res, "Failed to void contract");
       return res.json();
     },
     onSuccess: () => {
@@ -508,7 +515,7 @@ export default function Contracts() {
       const res = await fetch(`/api/contracts/${contractId}/pdf`, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to download PDF");
+      if (!res.ok) throw await getResponseError(res, "Failed to download PDF");
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

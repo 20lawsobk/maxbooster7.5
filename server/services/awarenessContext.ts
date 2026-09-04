@@ -110,3 +110,68 @@ export async function getAwarenessContext(
     return null;
   }
 }
+
+export interface MaxCoreAwarenessPayload {
+  /** Cherry-picked MaxCore `awareness` object fields - omitted entirely when no live context was available. */
+  awareness?: {
+    trendingGenres: string[];
+    trendingMoods: string[];
+    contentAngles: string[];
+    ctaPatterns: string[];
+    emotionalTriggers: string[];
+    platformAlgorithmNotes: string[];
+  };
+  /** Joined free-text direction for MaxCore's `extra_context` field. */
+  extraContext: string;
+}
+
+/**
+ * Builds the exact `awareness` / `extra_context` payload shape MaxCore's
+ * generation endpoints expect, from this same live awareness layer plus
+ * platform-specific formatting rules - the same mapping already proven out
+ * in contentTypeGenerators.ts's callMaxCoreStructured(), extracted here so
+ * every other MaxCore call site (including a shared transport-layer
+ * fallback) can reuse ONE implementation instead of re-deriving it.
+ *
+ * Returns null when there is truly nothing to add (no live awareness
+ * signal, no recognized platform, no extra direction) - callers should skip
+ * setting these fields in that case rather than sending an empty payload.
+ */
+export async function buildMaxCoreAwarenessPayload(
+  mode: AwarenessMode,
+  platform?: string,
+  extraDirection?: string,
+): Promise<MaxCoreAwarenessPayload | null> {
+  let platformOptimization: string | null = null;
+  if (platform) {
+    try {
+      const canonicalPlatform = normalizeSocialAwarenessPlatform(platform);
+      platformOptimization = platformAwarenessOptimization(canonicalPlatform);
+    } catch {
+      // Platform outside the closed optimization set - proceed without
+      // platform-specific formatting rather than failing generation.
+    }
+  }
+
+  const awareness = await getAwarenessContext(mode);
+  if (!awareness && !platformOptimization && !extraDirection) return null;
+
+  const extraContextParts: string[] = [];
+  if (extraDirection) extraContextParts.push(extraDirection);
+  if (awareness?.contextString) extraContextParts.push(awareness.contextString);
+  if (platformOptimization) extraContextParts.push(platformOptimization);
+
+  return {
+    awareness: awareness
+      ? {
+          trendingGenres: awareness.trendingGenres,
+          trendingMoods: awareness.trendingMoods,
+          contentAngles: awareness.contentAngles,
+          ctaPatterns: awareness.ctaPatterns,
+          emotionalTriggers: awareness.emotionalTriggers,
+          platformAlgorithmNotes: awareness.platformAlgorithmNotes,
+        }
+      : undefined,
+    extraContext: extraContextParts.join("\n\n"),
+  };
+}

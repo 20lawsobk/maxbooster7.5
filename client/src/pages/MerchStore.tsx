@@ -45,6 +45,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { uploadImageFile } from "@/lib/imageUpload";
 import {
   ShoppingCart,
   Package,
@@ -214,35 +215,81 @@ export default function MerchStore() {
     },
   });
 
-  const handleAddItem = (e: React.FormEvent<HTMLFormElement>) => {
+  const uploadProductFile = async (formData: FormData, fieldName: string) => {
+    const file = formData.get(fieldName);
+    if (!(file instanceof File) || file.size === 0) return undefined;
+    return uploadImageFile(file, "/api/storage/upload", "file");
+  };
+
+  const handleAddItem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
-    addItemMutation.mutate({
-      ...data,
-      price: parseFloat(data.price as string),
-      salePrice: data.salePrice ? parseFloat(data.salePrice as string) : null,
-      inventory: parseInt(data.inventory as string) || 0,
-      isDigital: data.isDigital === "on",
-      isActive: true,
-      variants: addVariants,
-    });
+    try {
+      const [imageUrl, downloadUrl] = await Promise.all([
+        uploadProductFile(formData, "imageFile"),
+        uploadProductFile(formData, "downloadFile"),
+      ]);
+      if (data.isDigital === "on" && !downloadUrl) {
+        throw new Error("Digital products require a downloadable file.");
+      }
+      delete data.imageFile;
+      delete data.downloadFile;
+      addItemMutation.mutate({
+        ...data,
+        ...(imageUrl ? { imageUrl } : {}),
+        ...(downloadUrl ? { downloadUrl } : {}),
+        price: parseFloat(data.price as string),
+        salePrice: data.salePrice ? parseFloat(data.salePrice as string) : null,
+        inventory: parseInt(data.inventory as string) || 0,
+        isDigital: data.isDigital === "on",
+        isActive: true,
+        variants: addVariants,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description:
+          error instanceof Error ? error.message : "Unable to upload product files.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditItem = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleEditItem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingItem) return;
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
-    updateItemMutation.mutate({
-      id: editingItem.id,
-      ...data,
-      price: parseFloat(data.price as string),
-      salePrice: data.salePrice ? parseFloat(data.salePrice as string) : null,
-      inventory: parseInt(data.inventory as string) || 0,
-      isDigital: data.isDigital === "on",
-      variants: editVariants,
-    });
+    try {
+      const [imageUrl, downloadUrl] = await Promise.all([
+        uploadProductFile(formData, "imageFile"),
+        uploadProductFile(formData, "downloadFile"),
+      ]);
+      if (data.isDigital === "on" && !downloadUrl && !editingItem.downloadUrl) {
+        throw new Error("Digital products require a downloadable file.");
+      }
+      delete data.imageFile;
+      delete data.downloadFile;
+      updateItemMutation.mutate({
+        id: editingItem.id,
+        ...data,
+        ...(imageUrl ? { imageUrl } : {}),
+        ...(downloadUrl ? { downloadUrl } : {}),
+        price: parseFloat(data.price as string),
+        salePrice: data.salePrice ? parseFloat(data.salePrice as string) : null,
+        inventory: parseInt(data.inventory as string) || 0,
+        isDigital: data.isDigital === "on",
+        variants: editVariants,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description:
+          error instanceof Error ? error.message : "Unable to upload product files.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredItems = items?.filter(
@@ -370,8 +417,11 @@ export default function MerchStore() {
     submitLabel: string;
     variants: Variant[];
     setVariants: (v: Variant[]) => void;
-  }) => (
-    <form onSubmit={onSubmit} className="space-y-4 py-4">
+  }) => {
+    const [category, setCategory] = useState(defaultValues?.category || "clothing");
+
+    return (
+      <form onSubmit={onSubmit} className="space-y-4 py-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="name">Product Name</Label>
@@ -385,8 +435,8 @@ export default function MerchStore() {
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
           <Select
-            name="category"
-            defaultValue={defaultValues?.category || "clothing"}
+            value={category}
+            onValueChange={setCategory}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select category" />
@@ -399,6 +449,7 @@ export default function MerchStore() {
               <SelectItem value="bundle">Bundle</SelectItem>
             </SelectContent>
           </Select>
+          <input type="hidden" name="category" value={category} />
         </div>
       </div>
       <div className="space-y-2">
@@ -447,12 +498,12 @@ export default function MerchStore() {
           <Input id="sku" name="sku" defaultValue={defaultValues?.sku} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="imageUrl">Image URL</Label>
+          <Label htmlFor="imageFile">Product Image</Label>
           <Input
-            id="imageUrl"
-            name="imageUrl"
-            placeholder="https://..."
-            defaultValue={defaultValues?.imageUrl}
+            id="imageFile"
+            name="imageFile"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
           />
         </div>
       </div>
@@ -465,12 +516,12 @@ export default function MerchStore() {
         <Label htmlFor="isDigital">Digital Product</Label>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="downloadUrl">Download URL (digital products)</Label>
+          <Label htmlFor="downloadFile">Download file (digital products)</Label>
         <Input
-          id="downloadUrl"
-          name="downloadUrl"
-          placeholder="https://..."
-          defaultValue={defaultValues?.downloadUrl}
+            id="downloadFile"
+            name="downloadFile"
+            type="file"
+            accept="audio/*,video/*,image/*"
         />
       </div>
       <VariantEditor variants={variants} setVariants={setVariants} />
@@ -479,8 +530,9 @@ export default function MerchStore() {
           {isLoading ? "Saving..." : submitLabel}
         </Button>
       </DialogFooter>
-    </form>
-  );
+      </form>
+    );
+  };
 
   const itemsArr = items || [];
   const ordersArr = orders || [];
@@ -556,6 +608,7 @@ export default function MerchStore() {
                 </DialogDescription>
               </DialogHeader>
               <ProductForm
+                key="new-product"
                 onSubmit={handleAddItem}
                 isLoading={addItemMutation.isPending}
                 submitLabel="Add Product"
@@ -1171,6 +1224,7 @@ export default function MerchStore() {
             </DialogHeader>
             {editingItem && (
               <ProductForm
+                key={editingItem.id}
                 defaultValues={editingItem}
                 onSubmit={handleEditItem}
                 isLoading={updateItemMutation.isPending}

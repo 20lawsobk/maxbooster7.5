@@ -20,8 +20,6 @@ function seededIndex(seed: string, length: number): number {
 import { aiModels, aiModelVersions, inferenceRuns, explanationLogs, userBrandVoices, hashtagResearch, bestPostingTimes, autopilotPreferences, type AutopilotPreference } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
-import * as fs from "fs/promises";
-import * as path from "path";
 
 // Sharp-based image generation (production-ready, replaces Canvas)
 import { sharpImageService } from "./sharpImageService.js";
@@ -1275,50 +1273,27 @@ export class AIContentService {
     platform: string,
     tone?: string,
   ): Promise<GeneratedContent> {
-    const filename = `${randomBytes(8).toString("hex")}.wav`;
-    const outputDir = path?.join(
-      process.cwd(),
-      "public",
-      "generated-content",
-      "audio",
-    );
-    const outputPath = path?.join(outputDir, filename);
-    const publicUrl = `/generated-content/audio/${filename}`;
-
     try {
-      await fs?.mkdir(outputDir, { recursive: true });
-
       // Use in-house music generation service
       const musicParams = this.promptToMusicParams(prompt, tone);
       const chords = generateChordProgression(musicParams);
       const melody = generateMelody(musicParams, chords);
-      // synthesizeToWAV signature: (notes, chords, params)
-      const audioPath = await synthesizeToWAV(melody, chords, musicParams);
+      // synthesizeToWAV uploads to PDIM-backed storage itself and returns
+      // the servable URL directly — no local file ever exists for this
+      // caller to read back.
+      const { url, sizeBytes } = await synthesizeToWAV(melody, chords, musicParams);
 
-      // synthesizeToWAV returns a public URL path, get the full filesystem path
-      const generatedPath = path?.join(process.cwd(), "public", audioPath);
-
-      // Verify the file was generated before copying
-      try {
-        await fs?.access(generatedPath);
-        await fs?.copyFile(generatedPath, outputPath);
-      } catch (accessError) {
-        logger.warn(`Generated audio file not found: ${generatedPath}`);
-        throw new Error("Audio generation failed: output file not created");
-      }
-
-      const stats = await fs?.stat(outputPath);
-      logger.info(`✅ Generated audio: ${publicUrl} (${stats?.size} bytes)`);
+      logger.info(`✅ Generated audio: ${url} (${sizeBytes} bytes)`);
 
       return {
         id: `aud_${randomBytes(8).toString("hex")}`,
         type: "audio",
         content: prompt,
-        url: publicUrl,
+        url,
         metadata: {
           platform,
           musicParams,
-          fileSize: stats.size,
+          fileSize: sizeBytes,
         },
         createdAt: new Date(),
       };

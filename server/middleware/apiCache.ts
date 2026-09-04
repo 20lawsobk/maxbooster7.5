@@ -613,6 +613,15 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       return;
     }
 
+    // A kit can be unpublished at any moment. Its public endpoint is
+    // anonymous, so a per-user write invalidation cannot reliably evict an
+    // already-cached anonymous response on every worker. Never cache this
+    // access-control-sensitive representation.
+    if (req.path.startsWith("/api/press-kit/public/")) {
+      next();
+      return;
+    }
+
     // Captured before any cache lookup or route-handler DB work begins.
     // Stamped onto the cache entry (instead of the time res.json() fires) so
     // invalidateForUser()'s bust-flag comparison reflects when THIS request

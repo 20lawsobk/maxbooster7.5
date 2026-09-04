@@ -9,6 +9,9 @@ import {
   collaborationAccessRequests,
   studioProjects,
   projects,
+  collaborationProjects,
+  projectMembers,
+  users,
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
@@ -35,7 +38,53 @@ async function verifyProjectAccess(
     .from(projects)
     .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
     .limit(1);
-  return !!regularProject;
+  if (regularProject) return true;
+
+  const [collaborationProject] = await db
+    .select({ ownerId: collaborationProjects.ownerId })
+    .from(collaborationProjects)
+    .where(eq(collaborationProjects.id, projectId))
+    .limit(1);
+  if (!collaborationProject) return false;
+  if (collaborationProject.ownerId === userId) return true;
+
+  const [membership] = await db
+    .select({ id: projectMembers.id })
+    .from(projectMembers)
+    .where(
+      and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, userId),
+        eq(projectMembers.status, "active"),
+      ),
+    )
+    .limit(1);
+  return !!membership;
+}
+
+async function getCommentAuthor(userId: string, email: string) {
+  const [user] = await db
+    .select({
+      username: users.username,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!user) {
+    throw new Error("Authenticated user record not found");
+  }
+
+  return {
+    name:
+      user.username ||
+      [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+      email,
+    avatar: user.avatarUrl,
+  };
 }
 
 interface AuthenticatedRequest extends Request {
@@ -884,6 +933,10 @@ router.post(
     try {
       const validatedData = commentSchema.parse(req.body);
       const userId = req.user!.id;
+      if (!(await verifyProjectAccess(validatedData.projectId, userId))) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      const author = await getCommentAuthor(userId, req.user!.email);
 
       const [inserted] = await db
         .insert(collaborationComments)
@@ -891,7 +944,8 @@ router.post(
           projectId: validatedData.projectId,
           elementId: validatedData.elementId || null,
           userId,
-          userName: "You",
+          userName: author.name,
+          userAvatar: author.avatar || null,
           content: validatedData.content,
           parentId: validatedData.parentId || null,
           mentions: validatedData.mentions || [],
@@ -935,6 +989,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { projectId } = req.params as Record<string, string>;
+      if (!(await verifyProjectAccess(projectId, req.user!.id))) {
+        return res.status(403).json({ error: "Access denied" });
+      }
       const rows = await db
         .select()
         .from(collaborationComments)
@@ -956,6 +1013,17 @@ router.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { commentId } = req.params as Record<string, string>;
+      const [comment] = await db
+        .select({ projectId: collaborationComments.projectId })
+        .from(collaborationComments)
+        .where(eq(collaborationComments.id, commentId))
+        .limit(1);
+      if (!comment) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      if (!(await verifyProjectAccess(comment.projectId, req.user!.id))) {
+        return res.status(403).json({ error: "Access denied" });
+      }
 
       const [resolved] = await db
         .update(collaborationComments)
@@ -987,21 +1055,12 @@ router.put(
   "/comments/:commentId/mention-resolved",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { commentId } = req.params as Record<string, string>;
-
-      res.json({
-        success: true,
-        outcome: {
-          type: "mention_resolved",
-          message: "Mention marked as read",
-          commentId,
-        },
-      });
-    } catch (error) {
-      logger.warn({ err: error }, "Resolve mention error:");
-      res.status(500).json({ error: "Failed to resolve mention" });
-    }
+    // Mentions have no persisted read-state in the collaboration schema.
+    // Reporting success here previously made the UI claim an update occurred
+    // even though no database record was changed.
+    return res.status(501).json({
+      error: "Mention read-state is not available for collaboration comments",
+    });
   },
 );
 

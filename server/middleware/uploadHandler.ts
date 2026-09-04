@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import { existsSync, mkdirSync } from "fs";
+import { readFile as readFileAsync, unlink as unlinkAsync } from "fs/promises";
 import { randomBytes } from "crypto";
 import { Request } from "express";
 import { storageService } from "../services/storageService.js";
@@ -471,6 +472,19 @@ export async function storeUploadedFile(
   userId: string,
   category: UploadCategory | string = "uploads",
 ): Promise<{ key: string; url: string; processed?: boolean }> {
+  // Disk-storage multer engines (e.g. the large-file-safe `upload` export used
+  // for uploads up to 500 MB) land the raw file at `file.path` and never
+  // populate `file.buffer`. Read the scratch copy into memory so the
+  // buffer-based validation/processing pipeline below works the same way
+  // regardless of which multer storage engine produced `file`, then always
+  // erase the on-disk scratch copy in `finally` — it must never linger as an
+  // unintended local storage copy once its bytes are safely in Pocket Dimension
+  // (or once storing them has failed for good).
+  const diskScratchPath = !file?.buffer && file?.path ? file.path : null;
+  if (diskScratchPath) {
+    file = { ...file, buffer: await readFileAsync(diskScratchPath) };
+  }
+
   try {
     if (!file?.buffer) {
       throw new Error("File buffer is missing");
@@ -569,6 +583,10 @@ export async function storeUploadedFile(
     throw error instanceof Error
       ? error
       : new Error("Failed to store uploaded file");
+  } finally {
+    if (diskScratchPath) {
+      await unlinkAsync(diskScratchPath).catch(() => {});
+    }
   }
 }
 

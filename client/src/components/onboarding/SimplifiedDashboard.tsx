@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Music, Share2, Target, Play, Upload, Settings, Sparkles, Zap, Crown, ArrowRight, CheckCircle } from "lucide-react";
+import { Music, Share2, Target, Play, Upload, Settings, Sparkles, Zap, Crown, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 
 interface SimplifiedDashboardProps {
   onUpgrade: () => void;
@@ -16,7 +16,19 @@ export default function SimplifiedDashboard({
   userLevel,
 }: SimplifiedDashboardProps) {
   const [, setLocation] = useLocation();
-  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  const { data: dashboardData, isLoading, error, refetch } = useQuery<{
+    stats: {
+      totalTracks: number;
+      activeDistributions: number;
+      activeSocialAccounts: number;
+    };
+    recentActivity: Array<{
+      id: string;
+      title: string;
+      description: string;
+      timestamp: string;
+    }>;
+  }>({ queryKey: ["/api/dashboard/comprehensive"] });
 
   const quickActions = [
     {
@@ -53,34 +65,31 @@ export default function SimplifiedDashboard({
     },
   ];
 
+  const stats = dashboardData?.stats;
   const beginnerTasks = [
-    {
-      id: "setup-profile",
-      title: "Complete Your Profile",
-      description: "Add your artist information and bio",
-      completed: completedTasks.includes("setup-profile"),
-      points: 10,
-    },
     {
       id: "upload-first-track",
       title: "Upload Your First Track",
       description: "Get your music on streaming platforms",
-      completed: completedTasks.includes("upload-first-track"),
+      completed: (stats?.totalTracks ?? 0) > 0,
       points: 25,
+      href: "/studio",
+    },
+    {
+      id: "create-first-release",
+      title: "Create Your First Release",
+      description: "Prepare your music for distribution",
+      completed: (stats?.activeDistributions ?? 0) > 0,
+      points: 25,
+      href: "/distribution",
     },
     {
       id: "connect-social",
       title: "Connect Social Media",
       description: "Link your social media accounts",
-      completed: completedTasks.includes("connect-social"),
+      completed: (stats?.activeSocialAccounts ?? 0) > 0,
       points: 15,
-    },
-    {
-      id: "create-first-post",
-      title: "Create Your First Post",
-      description: "Share your music with AI-optimized content",
-      completed: completedTasks.includes("create-first-post"),
-      points: 20,
+      href: "/settings?tab=connected-accounts",
     },
   ];
 
@@ -89,10 +98,6 @@ export default function SimplifiedDashboard({
     .filter((task) => task.completed)
     .reduce((sum, task) => sum + task.points, 0);
   const progressPercentage = (earnedPoints / (totalPoints || 1)) * 100;
-
-  const handleTaskComplete = (taskId: string) => {
-    setCompletedTasks((prev) => [...prev, taskId]);
-  };
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -106,6 +111,29 @@ export default function SimplifiedDashboard({
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="max-w-7xl mx-auto flex justify-center py-24">
+          <Loader2 className="w-8 h-8 animate-spin" aria-label="Loading dashboard" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !dashboardData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <Card className="max-w-lg mx-auto mt-24">
+          <CardContent className="p-6 text-center">
+            <p className="text-sm text-muted-foreground">Unable to load your dashboard.</p>
+            <Button className="mt-4" variant="outline" onClick={() => refetch()}>Retry</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
@@ -247,10 +275,10 @@ export default function SimplifiedDashboard({
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => handleTaskComplete(task.id)}
+                                onClick={() => setLocation(task.href)}
                                 className="text-xs"
                               >
-                                Mark Complete
+                                Get Started
                               </Button>
                             )}
                           </div>
@@ -270,37 +298,29 @@ export default function SimplifiedDashboard({
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                <div className="p-2 bg-blue-500 rounded-lg text-white">
-                  <Play className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Welcome to Max Booster!</p>
-                  <p className="text-xs text-gray-600">
-                    Your account has been created successfully
-                  </p>
-                </div>
-                <Badge variant="secondary" className="ml-auto">
-                  Just now
-                </Badge>
+            {isLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
+            ) : error ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">Unable to load recent activity.</p>
+                <Button size="sm" variant="outline" className="mt-3" onClick={() => refetch()}>Retry</Button>
               </div>
-
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="p-2 bg-gray-400 rounded-lg text-white">
-                  <Settings className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Complete your profile</p>
-                  <p className="text-xs text-gray-600">
-                    Add your artist information to get started
-                  </p>
-                </div>
-                <Button size="sm" variant="outline">
-                  Complete
-                </Button>
+            ) : dashboardData?.recentActivity.length ? (
+              <div className="space-y-3">
+                {dashboardData.recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                    <div className="p-2 bg-blue-500 rounded-lg text-white"><Play className="w-4 h-4" /></div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{activity.title}</p>
+                      <p className="text-xs text-gray-600">{activity.description}</p>
+                    </div>
+                    <Badge variant="secondary">{new Date(activity.timestamp).toLocaleDateString()}</Badge>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <p className="py-4 text-center text-sm text-muted-foreground">No activity yet. Create a project to get started.</p>
+            )}
           </CardContent>
         </Card>
 

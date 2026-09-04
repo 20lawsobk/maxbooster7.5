@@ -2,9 +2,12 @@
 /**
  * PDIM Media Storage Service
  *
- * Central integration layer that routes ALL generated media
- * (voice files, beat-sync analysis, music videos) through the
- * PDIM (Pocket Dimension) storage architecture.
+ * Central integration layer that routes generated media (beat-sync
+ * analysis, music videos) through the PDIM (Pocket Dimension) storage
+ * architecture. Synthesized voice files are uploaded directly by their
+ * route handler via storageService — see server/routes/socialMedia.ts —
+ * since that is a single synchronous upload with no extra metadata cache
+ * needed, unlike the richer video-render bookkeeping below.
  *
  * Two PDIM layers used:
  *
@@ -35,7 +38,6 @@ import type { BeatAnalysis } from "./beatSyncService.js";
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const PDIM_KEY_PREFIX = "pdim_media";
 const BEAT_CACHE_TTL = 60 * 60 * 24; // 24 hours
-const VOICE_META_TTL = 60 * 60 * 48; // 48 hours
 const VIDEO_META_TTL = 60 * 60 * 48; // 48 hours
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -117,93 +119,6 @@ export async function getCachedBeatAnalysis(
   }
 }
 
-// ── VOICE FILE STORAGE ────────────────────────────────────────────────────────
-export interface StoredVoiceFile {
-  pdimKey: string;
-  publicUrl: string;
-  sizeBytes: number;
-  compressedSize: number;
-  profileUsed: string;
-  durationSeconds?: number;
-  storedAt: string;
-}
-
-/**
- * Upload a synthesized voice file into PDIM for the given user.
- * File is stored under the 'voices' folder in the user's hybrid storage.
- * Metadata is also written to the PDIM Redis cache.
- */
-export async function storeVoiceFile(
-  userId: string,
-  filePath: string,
-  metadata: {
-    profileUsed: string;
-    voiceUsed: string;
-    durationSeconds?: number;
-    text?: string;
-  },
-): Promise<StoredVoiceFile | null> {
-  if (!existsSync(filePath)) {
-    logger.warn(`[PDIM Media] storeVoiceFile: path not found: ${filePath}`);
-    return null;
-  }
-
-  try {
-    const buffer = await fsReadFile(filePath);
-    const filename = filePath?.split("/").pop() || `voice_${Date?.now()}.wav`;
-    const ext = filename?.split(".").pop()?.toLowerCase() || "wav";
-    const mimeType = ext === "mp3" ? "audio/mpeg" : "audio/wav";
-
-    const result = await hybridStorageService?.upload(
-      userId,
-      filename,
-      buffer,
-      mimeType,
-      {
-        folder: "voices",
-        isPublic: false,
-        metadata: {
-          type: "voice_synthesis",
-          profileUsed: metadata.profileUsed,
-          voiceUsed: metadata.voiceUsed,
-          durationSeconds: metadata.durationSeconds,
-          textPreview: metadata.text?.slice(0, 80),
-          generatedAt: new Date().toISOString(),
-        },
-      },
-    );
-
-    const publicUrl = `/uploads/voices/${filename}`;
-
-    const voiceMeta: StoredVoiceFile = {
-      pdimKey: result.key,
-      publicUrl,
-      sizeBytes: result.sizeBytes,
-      compressedSize: result.compressedSize,
-      profileUsed: metadata.profileUsed,
-      durationSeconds: metadata.durationSeconds,
-      storedAt: new Date().toISOString(),
-    };
-
-    // Write metadata to PDIM Redis cache
-    await pdimSet(
-      `voice:${userId}:${result?.key}`,
-      JSON.stringify(voiceMeta),
-      VOICE_META_TTL,
-    );
-
-    logger.info(
-      `[PDIM Media] Voice file stored → PDIM key=${result.key} tier=${result?.tier} ` +
-        `size=${(result.sizeBytes / 1024).toFixed(1)}KB → compressed=${(result?.compressedSize / 1024).toFixed(1)}KB`,
-    );
-
-    return voiceMeta;
-  } catch (e) {
-    logger.warn("[PDIM Media] storeVoiceFile failed:", (e as any)?.message);
-    return null;
-  }
-}
-
 // ── MUSIC VIDEO STORAGE ───────────────────────────────────────────────────────
 export interface StoredMusicVideo {
   pdimKey: string;
@@ -262,7 +177,10 @@ export async function storeMusicVideo(
       },
     );
 
-    const publicUrl = `/uploads/videos/${filename}`;
+    const publicUrl = await hybridStorageService.getDownloadUrl(
+      userId,
+      result.key,
+    );
 
     const videoMeta: StoredMusicVideo = {
       pdimKey: result.key,
@@ -301,41 +219,5 @@ export async function storeMusicVideo(
   } catch (e) {
     logger.warn("[PDIM Media] storeMusicVideo failed:", (e as any)?.message);
     return null;
-  }
-}
-
-// ── USER MEDIA LIBRARY ────────────────────────────────────────────────────────
-/**
- * List all PDIM-stored videos for a user using hybridStorageService.
- * Returns metadata from both the file index and PDIM Redis cache.
- */
-export async function getUserMediaLibrary(userId: string): Promise<{
-  voices: StoredVoiceFile[];
-  videos: StoredMusicVideo[];
-  totalStorageBytes: number;
-  totalCompressedBytes: number;
-}> {
-  try {
-    const analytics = await hybridStorageService?.getAnalytics(userId);
-    const voices: StoredVoiceFile[] = [];
-    const videos: StoredMusicVideo[] = [];
-
-    // The file index is internal to hybridStorageService — we rely on PDIM Redis
-    // for the typed metadata (voice vs video). In production with many files,
-    // this would scan PDIM keys; for now we return counts from analytics.
-    return {
-      voices,
-      videos,
-      totalStorageBytes: analytics.totalSizeBytes,
-      totalCompressedBytes: (analytics as any).totalCompressedBytes,
-    };
-  } catch (e) {
-    logger.warn("[PDIM Media] getUserMediaLibrary failed:", (e as any)?.message);
-    return {
-      voices: [],
-      videos: [],
-      totalStorageBytes: 0,
-      totalCompressedBytes: 0,
-    };
   }
 }

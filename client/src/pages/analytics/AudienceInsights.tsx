@@ -197,16 +197,20 @@ export function AudienceInsights({
   }, [data]);
 
   const listenerTrends = useMemo<ListenerTrend[]>(() => {
-    if (!data?.audience?.trends) {
-      return [];
-    }
-    return data.audience.trends;
+    if (!data?.streams?.daily) return [];
+    return data.streams.daily.map((point: Record<string, unknown>) => ({
+      date: String(point.date),
+      // Aggregate analytics does not identify individual listeners, so new and
+      // returning listeners are intentionally unavailable rather than inferred.
+      newListeners: 0,
+      returningListeners: 0,
+      totalListeners: Number(point.listeners) || 0,
+    }));
   }, [data]);
 
   const fanGrowthMetrics = useMemo<FanGrowthMetric[]>(() => {
     const totalListeners = data?.audience?.totalListeners || 0;
     const totalStreams = data?.overview?.totalStreams || 0;
-    const superFans = Math.round(totalListeners * 0.12);
     const engagementRate =
       totalListeners > 0 && totalStreams > 0
         ? parseFloat((totalStreams / (totalListeners || 1)).toFixed(1))
@@ -215,20 +219,13 @@ export function AudienceInsights({
       {
         label: "Total Followers",
         current: data.overview?.totalFollowers || 0,
-        previous: 0,
+          previous: 0,
         change: data.overview?.growthRate || 0,
         target: 0,
       },
       {
-        label: "Monthly Listeners",
+          label: "Listeners",
         current: totalListeners,
-        previous: 0,
-        change: 0,
-        target: 0,
-      },
-      {
-        label: "Super Fans",
-        current: superFans,
         previous: 0,
         change: 0,
         target: 0,
@@ -294,21 +291,21 @@ export function AudienceInsights({
         <MetricCard
           title="Total Listeners"
           value={totalListeners.toLocaleString()}
-          change={12}
+          change={data?.audience?.listenerGrowth}
           icon={Users}
           color="blue"
         />
         <MetricCard
-          title="New This Month"
-          value="12.5K"
-          change={8}
+          title="New Listeners"
+          value={data?.audience?.newListeners || 0}
+          change={undefined}
           icon={UserPlus}
           color="green"
         />
         <MetricCard
-          title="Returning"
-          value="68%"
-          change={5}
+          title="Returning Listeners"
+          value={data?.audience?.returningListeners || 0}
+          change={undefined}
           icon={Heart}
           color="purple"
         />
@@ -322,9 +319,9 @@ export function AudienceInsights({
 
       <Card>
         <CardHeader>
-          <CardTitle>Listener Trends</CardTitle>
+          <CardTitle>Daily Listener Totals</CardTitle>
           <CardDescription>
-            New vs returning listeners over time
+            Reported listeners by day
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -357,21 +354,11 @@ export function AudienceInsights({
                 <Legend />
                 <Area
                   type="monotone"
-                  dataKey="newListeners"
-                  name="New Listeners"
+                  dataKey="totalListeners"
+                  name="Listeners"
                   stroke="#10b981"
                   fill="url(#colorNew)"
                   strokeWidth={2}
-                  stackId="1"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="returningListeners"
-                  name="Returning Listeners"
-                  stroke="#8b5cf6"
-                  fill="url(#colorReturning)"
-                  strokeWidth={2}
-                  stackId="1"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -386,11 +373,16 @@ export function AudienceInsights({
               <Globe className="h-5 w-5" />
               Geographic Distribution
             </CardTitle>
-            <CardDescription>Where your listeners are located</CardDescription>
+              <CardDescription>Location is unavailable until connected analytics sources provide it</CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[350px]">
               <div className="space-y-3">
+                {geoData.length === 0 && (
+                  <p className="text-sm text-muted-foreground py-6 text-center">
+                    No geographic listener data has been reported.
+                  </p>
+                )}
                 {geoData.map((geo, index) => (
                   <motion.div
                     key={geo.code}
@@ -513,7 +505,7 @@ export function AudienceInsights({
         <CardContent>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {fanGrowthMetrics.map((metric, index) => {
-              const progress = (metric.current / metric.target) * 100;
+              const progress = metric.target > 0 ? (metric.current / metric.target) * 100 : 0;
               return (
                 <motion.div
                   key={metric.label}
@@ -542,7 +534,7 @@ export function AudienceInsights({
                     className="h-2 mb-1"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Target: {metric.target.toLocaleString()}
+                    {metric.target > 0 ? `Target: ${metric.target.toLocaleString()}` : "No goal set"}
                   </p>
                 </motion.div>
               );

@@ -14,9 +14,7 @@ import { SmartNextActionWidget } from "@/components/dashboard/SmartNextActionWid
 import FirstWeekSuccessPath from "@/components/onboarding/FirstWeekSuccessPath";
 import PowerFeatureSpotlight from "@/components/onboarding/PowerFeatureSpotlight";
 import ContextualFeatureHint from "@/components/onboarding/ContextualFeatureHint";
-import { ArtistProgressDashboard } from "@/components/dashboard/ArtistProgressDashboard";
 import { AICareerCoach } from "@/components/dashboard/AICareerCoach";
-import RevenueForecast from "@/components/dashboard/RevenueForecast";
 import { LoopHealthScore } from "@/components/dashboard/LoopHealthScore";
 import { StreakCounter } from "@/components/achievements/StreakCounter";
 import { AchievementNotification } from "@/components/achievements/AchievementNotification";
@@ -280,11 +278,15 @@ function DashboardContent({ user }: { user: User }) {
   }, [onboardingStatus]);
 
   // Fetch comprehensive dashboard data - now only called when user is authenticated
-  const { data: dashboardData } = useQuery<ComprehensiveDashboardData>({
+  const {
+    data: dashboardData,
+    isLoading: dashboardLoading,
+    error: dashboardError,
+    refetch: refetchDashboard,
+  } = useQuery<ComprehensiveDashboardData>({
     queryKey: ["/api/dashboard/comprehensive"],
     refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
-    meta: { silentError: true }, // Background polls must never show a red banner
   });
 
   const { data: projectsData, isLoading: projectsLoading } = useQuery<ProjectsResponse>({
@@ -303,26 +305,6 @@ function DashboardContent({ user }: { user: User }) {
     queryKey: ["/api/ai/insights"],
     enabled: hasPaidSubscription, // Only fetch if user has paid subscription
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
-  });
-
-  // Quick action mutations
-  const createProjectMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/projects", {
-        title: "New Project",
-        description: "AI-generated project",
-        genre: "Electronic",
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Project Created",
-        description: "New project created successfully with AI optimization.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      invalidateOnProjectChange();
-    },
   });
 
   const optimizeContentMutation = useMutation({
@@ -372,7 +354,7 @@ function DashboardContent({ user }: { user: User }) {
     },
     {
       title: "Total Revenue",
-      value: `$${stats.totalRevenue?.toLocaleString() || "0.00"}`,
+      value: `$${stats.totalRevenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`,
       change: `${stats.monthlyGrowth.revenue || 0}%`,
       icon: DollarSign,
       color: "text-green-600",
@@ -629,6 +611,16 @@ function DashboardContent({ user }: { user: User }) {
         )}
 
         {/* Stats Grid */}
+        {dashboardError && (
+          <Card className="border-destructive">
+            <CardContent className="flex items-center justify-between gap-4 p-4">
+              <p className="text-sm">Dashboard data could not be loaded. Please try again.</p>
+              <Button variant="outline" onClick={() => refetchDashboard()}>
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         <section
           className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
           role="region"
@@ -663,14 +655,15 @@ function DashboardContent({ user }: { user: User }) {
                       >
                         {stat.value}
                       </p>
-                      <p
-                        className="text-[10px] sm:text-xs text-green-600 flex items-center mt-1"
+                       <p
+                         className={`text-[10px] sm:text-xs flex items-center mt-1 ${Number(stat.change.replace("%", "")) >= 0 ? "text-green-600" : "text-red-600"}`}
                         id={`stat-change-${index}`}
                       >
-                        <ArrowUp
-                          className="w-3 h-3 mr-1 flex-shrink-0"
-                          aria-label="Increase"
-                        />
+                         {Number(stat.change.replace("%", "")) >= 0 ? (
+                           <ArrowUp className="w-3 h-3 mr-1 flex-shrink-0" aria-label="Increase" />
+                         ) : (
+                           <ArrowDown className="w-3 h-3 mr-1 flex-shrink-0" aria-label="Decrease" />
+                         )}
                         <span className="truncate">
                           {stat.change} from last month
                         </span>
@@ -770,7 +763,13 @@ function DashboardContent({ user }: { user: User }) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {dashboardData?.topPlatforms ? (
+                  {dashboardLoading ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4].map((i) => (
+                        <Skeleton key={i} className="h-16 w-full" />
+                      ))}
+                    </div>
+                  ) : (dashboardData?.topPlatforms?.length ?? 0) > 0 ? (
                     <div className="space-y-4">
                       {dashboardData.topPlatforms.map((platform, index) => (
                         <div
@@ -815,10 +814,8 @@ function DashboardContent({ user }: { user: User }) {
                       ))}
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {[1, 2, 3, 4].map((i) => (
-                        <Skeleton key={i} className="h-16 w-full" />
-                      ))}
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      No platform analytics have been reported yet.
                     </div>
                   )}
                 </CardContent>
@@ -881,7 +878,7 @@ function DashboardContent({ user }: { user: User }) {
                       <p className="text-muted-foreground mb-4">
                         Create your first project to get started
                       </p>
-                      <Button onClick={() => createProjectMutation.mutate()}>
+                      <Button onClick={() => setLocation("/projects")}>
                         <Plus className="w-4 h-4 mr-2" />
                         Create Project
                       </Button>
@@ -909,16 +906,6 @@ function DashboardContent({ user }: { user: User }) {
                 <SuggestedCollaborators />
               </div>
             </div>
-
-            {/* Artist Progress Dashboard */}
-            <ErrorBoundary>
-              <ArtistProgressDashboard />
-            </ErrorBoundary>
-
-            {/* Revenue Forecast */}
-            <ErrorBoundary>
-              <RevenueForecast />
-            </ErrorBoundary>
 
             {/* Beat Money Loop Health Score (admin-only — hides for non-admin) */}
             <ErrorBoundary>
@@ -1088,7 +1075,13 @@ function DashboardContent({ user }: { user: User }) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {dashboardData?.recentActivity ? (
+                {dashboardLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : (dashboardData?.recentActivity?.length ?? 0) > 0 ? (
                   <div className="space-y-4">
                     {dashboardData.recentActivity.map((activity) => (
                       <div
@@ -1129,10 +1122,8 @@ function DashboardContent({ user }: { user: User }) {
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Skeleton key={i} className="h-16 w-full" />
-                    ))}
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    No recent activity yet.
                   </div>
                 )}
               </CardContent>

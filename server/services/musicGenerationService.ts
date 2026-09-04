@@ -1,10 +1,9 @@
 // @ts-nocheck
-import path from "path";
-import fs from "fs/promises";
 import { randomBytes } from "crypto";
 import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { requireMaxCore } from "../lib/aiSource.js";
+import { storageService } from "./storageService.js";
 import { logger as mgLogger } from "../logger.js";
 
 // ============================================================================
@@ -423,7 +422,7 @@ export async function synthesizeToWAV(
   notes: Note[],
   chords: Chord[],
   params: MusicParameters,
-): Promise<string> {
+): Promise<{ url: string; sizeBytes: number }> {
   // ── MaxCore primary audio synthesis ──────────────────────────────────────
   const mcAudio = requireMaxCore(
     await MaxCoreAIClient.generate<{
@@ -451,29 +450,30 @@ export async function synthesizeToWAV(
     throw new Error("MaxCore music generation returned no audio");
   }
 
-  const outputDir = path.join(
-    process.cwd(),
-    "public",
-    "generated-content",
-    "audio",
-  );
-  await fs.mkdir(outputDir, { recursive: true });
   const filename = `melody_mc_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
-  const filepath = path.join(outputDir, filename);
 
+  let buffer: Buffer;
   if (audioData) {
-    await fs.writeFile(filepath, Buffer.from(audioData, "base64"));
-  } else if (audioSrc) {
-    const resp = await fetch(audioSrc);
-    if (resp.ok) {
-      await fs.writeFile(filepath, Buffer.from(await resp.arrayBuffer()));
-    } else {
+    buffer = Buffer.from(audioData, "base64");
+  } else {
+    const resp = await fetch(audioSrc!);
+    if (!resp.ok) {
       throw new Error(`MaxCore audio download failed: ${resp.status}`);
     }
+    buffer = Buffer.from(await resp.arrayBuffer());
   }
 
+  // PDIM-backed storage is the only durable/servable copy — no local write.
+  const storageKey = await storageService.uploadFile(
+    buffer,
+    "audio",
+    filename,
+    "audio/wav",
+  );
+  const url = await storageService.getDownloadUrl(storageKey);
+
   mgLogger.info(`[MusicGen] MaxCore audio synthesized → ${filename}`);
-  return `/generated-content/audio/${filename}`;
+  return { url, sizeBytes: buffer.length };
 }
 
 // ============================================================================

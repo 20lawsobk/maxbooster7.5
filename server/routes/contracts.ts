@@ -9,7 +9,12 @@ import { taxFormService, TaxpayerInfo } from "../services/taxFormService";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 import { db } from "../db";
-import { marketplaceDisputes, contractTemplates, splitSheets } from "@shared/schema";
+import {
+  generatedContracts,
+  marketplaceDisputes,
+  contractTemplates,
+  splitSheets,
+} from "@shared/schema";
 import { eq, and, or, desc, notInArray, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -23,44 +28,101 @@ interface SplitParticipant {
 
 const router = Router();
 
+const toTemplateResponse = (template: any, isCustom = false) => ({
+  id: template.id,
+  type: template.content,
+  name: template.name,
+  description: template.description || "",
+  category: template.category || "Custom",
+  variables: Array.isArray(template.variables) ? template.variables : [],
+  isPremium: false,
+  isCustom,
+});
+
+async function resolveTemplateId(templateId: string): Promise<string> {
+  const builtInTemplate = contractTemplateService.getTemplateById(templateId);
+  if (builtInTemplate) return templateId;
+
+  const [storedTemplate] = await db
+    .select()
+    .from(contractTemplates)
+    .where(eq(contractTemplates.id, templateId))
+    .limit(1);
+  if (!storedTemplate || !storedTemplate.isDefault) {
+    throw new Error("Template not found");
+  }
+
+  const matchingBuiltIn = contractTemplateService
+    .getTemplates()
+    .find((template) => template.type === storedTemplate.content);
+  if (!matchingBuiltIn) {
+    throw new Error("Template type is not supported");
+  }
+  return matchingBuiltIn.id;
+}
+
+async function persistContract(contract: any): Promise<void> {
+  await db
+    .insert(generatedContracts)
+    .values({
+      id: contract.id,
+      userId: contract.createdBy,
+      templateId: contract.templateId,
+      type: contract.type,
+      title: contract.title,
+      status: contract.status,
+      content: contract.content,
+      variables: contract.variables,
+      parties: contract.parties,
+      signatures: contract.signatures.map((signature: any) => ({
+        ...signature,
+        signedAt: signature.signedAt
+          ? new Date(signature.signedAt).toISOString()
+          : undefined,
+      })),
+      createdAt: contract.createdAt,
+      expiresAt: contract.expiresAt || null,
+      pdfUrl: contract.pdfUrl || null,
+    })
+    .onConflictDoUpdate({
+      target: generatedContracts.id,
+      set: {
+        status: contract.status,
+        content: contract.content,
+        variables: contract.variables,
+        parties: contract.parties,
+        signatures: contract.signatures.map((signature: any) => ({
+          ...signature,
+          signedAt: signature.signedAt
+            ? new Date(signature.signedAt).toISOString()
+            : undefined,
+        })),
+        expiresAt: contract.expiresAt || null,
+        pdfUrl: contract.pdfUrl || null,
+      },
+    });
+}
+
+async function getOwnedContract(contractId: string, userId: string) {
+  await contractTemplateService.waitForInit();
+  const contract = contractTemplateService.getContract(contractId);
+  if (!contract || contract.createdBy !== userId) {
+    return undefined;
+  }
+  return contract;
+}
+
 router.get("/templates", requireAuth, async (req: Request, res: Response) => {
   try {
-    const builtInTemplates = contractTemplateService?.getTemplates();
     const { category } = req.query;
-    const userId = req.user?.id;
-
-    let userCustomTemplates: Record<string, unknown>[] = [];
-    if (userId) {
-      try {
-        const dbTemplates = await db
-          .select()
-          .from(contractTemplates)
-          .where(
-            and(
-              eq(contractTemplates.userId, userId),
-              eq(contractTemplates.isDefault, false),
-            ),
-          )
-          .limit(50);
-        userCustomTemplates = dbTemplates?.map((t) => ({
-          id: t.id,
-          type: t.content as string,
-          name: t.name,
-          description: t.description || "",
-          category: t.category || "Custom",
-          variables: Array.isArray(t?.variables) ? t?.variables : [],
-          isPremium: false,
-          isCustom: true,
-        }));
-      } catch (e) {
-        logger.warn(
-          { err: e },
-          "Failed to fetch user custom contract templates:",
-        );
-      }
-    }
-
-    const allTemplates = [...builtInTemplates, ...userCustomTemplates];
+    const dbTemplates = await db
+      .select()
+      .from(contractTemplates)
+      .where(eq(contractTemplates.isDefault, true))
+      .limit(50);
+    const allTemplates = dbTemplates.map((template) =>
+      toTemplateResponse(template),
+    );
 
     if (category) {
       const filtered = allTemplates?.filter((t) => t?.category === category);
@@ -81,7 +143,25 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { templateId } = req.params as Record<string, string>;
-      const template = contractTemplateService?.getTemplateById(templateId);
+      const [storedTemplate] = await db
+        .select()
+        .from(contractTemplates)
+        .where(
+          and(
+            eq(contractTemplates.id, templateId),
+            or(
+              eq(contractTemplates.isDefault, true),
+              eq(contractTemplates.userId, req.user!.id),
+            ),
+          ),
+        )
+        .limit(1);
+      const template = storedTemplate
+        ? toTemplateResponse(
+            storedTemplate,
+            !storedTemplate.isDefault,
+          )
+        : contractTemplateService.getTemplateById(templateId);
 
       if (!template) {
         return res.status(404).json({ error: "Template not found" });
@@ -198,18 +278,42 @@ router.delete(
 router.post("/generate", requireAuth, async (req: Request, res: Response) => {
   try {
     await contractTemplateService?.waitForInit();
-    const { templateId, variables } = req.body;
+    const { templateId, variables = {} } = req.body;
 
     if (!templateId) {
       return res.status(400).json({ error: "templateId is required" });
     }
 
-    const contract = contractTemplateService?.generateContract(
-      templateId,
+    const resolvedTemplateId = await resolveTemplateId(templateId);
+    const validation = contractTemplateService.validateContractVariables(
+      resolvedTemplateId,
+      variables as ContractVariables,
+    );
+    if (
+      Array.isArray(variables.splits) &&
+      variables.splits.some(
+        (split) =>
+          !split?.name?.trim() ||
+          !split?.role?.trim() ||
+          !Number.isFinite(Number(split?.percentage)) ||
+          Number(split.percentage) < 0 ||
+          Number(split.percentage) > 100,
+      )
+    ) {
+      validation.valid = false;
+      validation.errors.push(
+        "Each split participant must have a name, role, and percentage between 0 and 100",
+      );
+    }
+    if (!validation.valid) {
+      return res.status(422).json(validation);
+    }
+    const contract = contractTemplateService.generateContract(
+      resolvedTemplateId,
       variables as ContractVariables,
       req.user!.id,
     );
-
+    await persistContract(contract);
     return res.status(201).json(contract);
   } catch (error) {
     logger.warn({ err: error }, "Error generating contract:");
@@ -224,7 +328,9 @@ router.get(
     try {
       await contractTemplateService?.waitForInit();
       const userId = req.user!.id;
-      const contracts = contractTemplateService?.getContractsByUser(userId);
+      const contracts = contractTemplateService
+        .getContractsByUser(userId)
+        .filter((contract) => contract.createdBy === userId);
       return res.json({ contracts });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching user contracts:");
@@ -236,7 +342,9 @@ router.get(
 router.get("/my", requireAuth, async (req: Request, res: Response) => {
   try {
     await contractTemplateService?.waitForInit();
-    const contracts = contractTemplateService?.getContractsByUser(req.user!.id);
+    const contracts = contractTemplateService
+      .getContractsByUser(req.user!.id)
+      .filter((contract) => contract.createdBy === req.user!.id);
     return res.json({ contracts });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching user contracts:");
@@ -312,7 +420,7 @@ router.get("/:contractId", async (req: Request, res: Response) => {
     }
 
     const { contractId } = req.params as Record<string, string>;
-    const contract = contractTemplateService?.getContract(contractId);
+    const contract = await getOwnedContract(contractId, req.user!.id);
 
     if (!contract) {
       return res.status(404).json({ error: "Contract not found" });
@@ -337,6 +445,9 @@ router.post("/:contractId/sign", async (req: Request, res: Response) => {
     if (!partyName) {
       return res.status(400).json({ error: "partyName is required" });
     }
+    if (!(await getOwnedContract(contractId, req.user!.id))) {
+      return res.status(404).json({ error: "Contract not found" });
+    }
 
     const signatureHash = crypto
       .createHash("sha256")
@@ -347,7 +458,7 @@ router.post("/:contractId/sign", async (req: Request, res: Response) => {
 
     const ipAddress = req.ip || req.socket.remoteAddress || "unknown";
 
-    const contract = await contractTemplateService?.signContract(
+    const contract = await contractTemplateService.signContract(
       contractId,
       partyName,
       {
@@ -355,7 +466,7 @@ router.post("/:contractId/sign", async (req: Request, res: Response) => {
         ipAddress,
       },
     );
-
+    await persistContract(contract);
     return res.json(contract);
   } catch (error) {
     logger.warn({ err: error }, "Error signing contract:");
@@ -370,7 +481,10 @@ router.get("/:contractId/pdf", async (req: Request, res: Response) => {
     }
 
     const { contractId } = req.params as Record<string, string>;
-    const pdfBuffer = contractTemplateService?.generatePDF(contractId);
+    if (!(await getOwnedContract(contractId, req.user!.id))) {
+      return res.status(404).json({ error: "Contract not found" });
+    }
+    const pdfBuffer = contractTemplateService.generatePDF(contractId);
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -386,16 +500,34 @@ router.get("/:contractId/pdf", async (req: Request, res: Response) => {
 
 router.post("/validate", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { templateId, variables } = req.body;
+    const { templateId, variables = {} } = req.body;
 
     if (!templateId) {
       return res.status(400).json({ error: "templateId is required" });
     }
 
-    const validation = contractTemplateService?.validateContractVariables(
-      templateId,
+    await contractTemplateService.waitForInit();
+    const resolvedTemplateId = await resolveTemplateId(templateId);
+    const validation = contractTemplateService.validateContractVariables(
+      resolvedTemplateId,
       variables as ContractVariables,
     );
+    if (
+      Array.isArray(variables.splits) &&
+      variables.splits.some(
+        (split) =>
+          !split?.name?.trim() ||
+          !split?.role?.trim() ||
+          !Number.isFinite(Number(split?.percentage)) ||
+          Number(split.percentage) < 0 ||
+          Number(split.percentage) > 100,
+      )
+    ) {
+      validation.valid = false;
+      validation.errors.push(
+        "Each split participant must have a name, role, and percentage between 0 and 100",
+      );
+    }
 
     return res.json({
       outcome: validation.valid ? "validation_passed" : "validation_errors",
@@ -409,14 +541,16 @@ router.post("/validate", requireAuth, async (req: Request, res: Response) => {
 
 router.post("/preview", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { templateId, variables } = req.body;
+    const { templateId, variables = {} } = req.body;
 
     if (!templateId) {
       return res.status(400).json({ error: "templateId is required" });
     }
 
-    const content = contractTemplateService?.getContractPreview(
-      templateId,
+    await contractTemplateService.waitForInit();
+    const resolvedTemplateId = await resolveTemplateId(templateId);
+    const content = contractTemplateService.getContractPreview(
+      resolvedTemplateId,
       variables as ContractVariables,
     );
 
@@ -438,11 +572,14 @@ router.patch(
       const { contractId } = req.params as Record<string, string>;
       const { variables } = req.body;
 
-      const contract = contractTemplateService?.updateContractDraft(
+      if (!(await getOwnedContract(contractId, req.user!.id))) {
+        return res.status(404).json({ error: "Contract not found" });
+      }
+      const contract = contractTemplateService.updateContractDraft(
         contractId,
         variables,
       );
-
+      await persistContract(contract);
       return res.json({
         outcome: "contract_customization_saved",
         contract,
@@ -460,8 +597,11 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const { contractId } = req.params as Record<string, string>;
-
-      const contract = contractTemplateService?.sendForSignature(contractId);
+      if (!(await getOwnedContract(contractId, req.user!.id))) {
+        return res.status(404).json({ error: "Contract not found" });
+      }
+      const contract = contractTemplateService.sendForSignature(contractId);
+      await persistContract(contract);
 
       return res.json({
         outcome: "signature_requested",
@@ -481,8 +621,10 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { contractId } = req.params as Record<string, string>;
-
-      const status = contractTemplateService?.getSignatureStatus(contractId);
+      if (!(await getOwnedContract(contractId, req.user!.id))) {
+        return res.status(404).json({ error: "Contract not found" });
+      }
+      const status = contractTemplateService.getSignatureStatus(contractId);
 
       let outcome = "signature_pending";
       if (status?.allSigned) {
@@ -515,13 +657,15 @@ router.post(
           .status(400)
           .json({ error: "partyName and reason are required" });
       }
-
-      const contract = contractTemplateService?.declineSignature(
+      if (!(await getOwnedContract(contractId, req.user!.id))) {
+        return res.status(404).json({ error: "Contract not found" });
+      }
+      const contract = contractTemplateService.declineSignature(
         contractId,
         partyName,
         reason,
       );
-
+      await persistContract(contract);
       return res.json({
         outcome: "signature_declined",
         reason,
@@ -541,12 +685,14 @@ router.post(
     try {
       const { contractId } = req.params as Record<string, string>;
       const { reason } = req.body;
-
-      const contract = contractTemplateService?.voidContract(
+      if (!(await getOwnedContract(contractId, req.user!.id))) {
+        return res.status(404).json({ error: "Contract not found" });
+      }
+      const contract = contractTemplateService.voidContract(
         contractId,
         reason || "No reason provided",
       );
-
+      await persistContract(contract);
       return res.json({
         outcome: "contract_terminated",
         contract,
@@ -564,8 +710,10 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { contractId } = req.params as Record<string, string>;
-
-      const timeline = contractTemplateService?.getContractTimeline(contractId);
+      if (!(await getOwnedContract(contractId, req.user!.id))) {
+        return res.status(404).json({ error: "Contract not found" });
+      }
+      const timeline = contractTemplateService.getContractTimeline(contractId);
 
       return res.json({
         outcome: "timeline_loaded",
@@ -583,7 +731,27 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const stats = contractTemplateService?.getContractStats(req.user!.id);
+      await contractTemplateService.waitForInit();
+      const contracts = contractTemplateService
+        .getContractsByUser(req.user!.id)
+        .filter((contract) => contract.createdBy === req.user!.id);
+      const stats = {
+        total: contracts.length,
+        draft: contracts.filter((contract) => contract.status === "draft").length,
+        pendingSignature: contracts.filter(
+          (contract) => contract.status === "pending_signature",
+        ).length,
+        partiallySigned: contracts.filter(
+          (contract) => contract.status === "partially_signed",
+        ).length,
+        fullyExecuted: contracts.filter(
+          (contract) => contract.status === "fully_executed",
+        ).length,
+        voided: contracts.filter((contract) => contract.status === "voided")
+          .length,
+        expired: contracts.filter((contract) => contract.status === "expired")
+          .length,
+      };
 
       return res.json({
         outcome: "stats_loaded",

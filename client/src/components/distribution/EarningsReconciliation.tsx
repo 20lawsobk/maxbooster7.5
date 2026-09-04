@@ -174,6 +174,8 @@ export function EarningsReconciliation() {
     RoyaltyStatement[]
   >({
     queryKey: ["/api/distribution/earnings/statements", dateRange],
+    select: (response: { statements?: RoyaltyStatement[] }) =>
+      response.statements ?? [],
   });
 
   const { data: earnings = [] } = useQuery<
@@ -184,12 +186,14 @@ export function EarningsReconciliation() {
       dateRange,
       selectedPlatform,
     ],
+    select: (response: { entries?: EarningsEntry[] }) => response.entries ?? [],
   });
 
   const { data: payouts = [] } = useQuery<
     PayoutRecord[]
   >({
     queryKey: ["/api/distribution/earnings/payouts"],
+    select: (response: { payouts?: PayoutRecord[] }) => response.payouts ?? [],
   });
 
   const { data: summary } = useQuery<ReconciliationSummary>({
@@ -198,6 +202,8 @@ export function EarningsReconciliation() {
 
   const { data: territoryData = [] } = useQuery<TerritoryBreakdown[]>({
     queryKey: ["/api/distribution/earnings/territories", dateRange],
+    select: (response: { territories?: TerritoryBreakdown[] }) =>
+      response.territories ?? [],
   });
 
   const importStatementMutation = useMutation({

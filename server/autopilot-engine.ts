@@ -9,6 +9,10 @@ import {
   advancedUrlParser,
   type UrlContentBrief,
 } from "./services/advancedUrlParser.js";
+import {
+  selectArm,
+  recordOutcome,
+} from "./services/adaptiveGenerationEngine.js";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -249,7 +253,7 @@ export class AutopilotEngine extends EventEmitter {
         data: {
           topic: this.selectNextTopic(),
           brandVoice: this.config.brandVoice,
-          contentType: this.selectContentType(platform),
+          contentType: await this.selectContentType(platform),
         },
         status: "pending",
         retries: 0,
@@ -410,23 +414,21 @@ export class AutopilotEngine extends EventEmitter {
     return this.config.topics[Math.floor(topicIndex)];
   }
 
-  private selectContentType(platform?: string): string {
+  private async selectContentType(platform?: string): Promise<string> {
     const types = this.config.contentTypes;
     if (types.length === 0) return "insights";
-    const seeded =
-      types[seededIndex(this.userId + ":" + types.join(","), types.length)];
 
     // A self-evolution posting_optimization override may prioritize certain
     // media formats (from a real detected industry change). Bias the configured
     // content type toward the highest-priority format the artist actually
     // produces; if none of the configured types map to a prioritized format,
-    // keep the deterministic seeded pick. Sits ABOVE the seeded default and is
-    // fully reversible (deactivating the enhancement restores the seeded pick).
+    // fall through to adaptive selection below. Sits ABOVE adaptive selection
+    // and is fully reversible (deactivating the enhancement restores it).
     try {
       const posting = platform
         ? evolutionRegistry.getPostingOptimization(platform)
         : null;
-      const priority = posting!.contentFormatPriority;
+      const priority = posting?.contentFormatPriority;
       if (priority && priority.length > 0) {
         let best: string | undefined;
         let bestRank = Infinity;
@@ -454,7 +456,26 @@ export class AutopilotEngine extends EventEmitter {
       );
     }
 
-    return seeded;
+    // Adaptive pick: favors content types that have actually engaged this
+    // artist's audience (fed by real analytics in learnFromPerformance below)
+    // while guaranteeing rotation across untried types instead of resolving
+    // to one fixed type forever. Replaces a static per-user hash pick that,
+    // having no time/history/outcome component, always returned the same
+    // content type for a given (userId, contentTypes) pair.
+    try {
+      const { chosen } = await selectArm({
+        domain: "autopilot_content_type",
+        scope: this.userId,
+        candidates: types,
+      });
+      return chosen;
+    } catch (err) {
+      logger.warn(
+        { err },
+        `[Autopilot] Adaptive content-type selection failed, falling back to seeded pick`,
+      );
+      return types[seededIndex(this.userId + ":" + types.join(","), types.length)];
+    }
   }
 
   // Job Processing
@@ -919,6 +940,24 @@ export class AutopilotEngine extends EventEmitter {
       logger.warn(
         { err },
         `[Autopilot] Failed to record performance for ${contentId}`,
+      );
+    }
+
+    // Feed the SAME real, measured engagement rate back into the
+    // content-type bandit that picked this piece's contentType (see
+    // selectContentType) so future selections actually converge toward
+    // what this artist's audience engages with — never a fabricated reward.
+    try {
+      await recordOutcome({
+        domain: "autopilot_content_type",
+        scope: this.userId,
+        armKey: String(cached?.contentType ?? "social_post"),
+        reward: engagementRate,
+      });
+    } catch (err) {
+      logger.warn(
+        { err },
+        `[Autopilot] Failed to record content-type outcome for ${contentId}`,
       );
     }
 

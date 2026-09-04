@@ -264,7 +264,7 @@ export default function PublicPressKit() {
               )}
             </div>
 
-            {(pressKit.technicalRider || pressKit.hospitality) && (
+            {(pressKit.technicalRider || pressKit.hospitalityRider) && (
               <div className="rounded-2xl border bg-card p-6 space-y-4">
                 <h3 className="text-lg font-semibold">
                   Performance Requirements
@@ -279,13 +279,13 @@ export default function PublicPressKit() {
                   </div>
                 )}
 
-                {pressKit.hospitality && (
+                {pressKit.hospitalityRider && (
                   <>
                     <Separator />
                     <div>
                       <p className="text-sm font-medium mb-2">Hospitality</p>
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {pressKit.hospitality}
+                          {pressKit.hospitalityRider}
                       </p>
                     </div>
                   </>

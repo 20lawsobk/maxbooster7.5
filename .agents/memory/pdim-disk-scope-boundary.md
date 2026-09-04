@@ -1,0 +1,10 @@
+---
+name: PDIM-only storage mandate — what counts as disk usage
+description: The operative interpretation of "storage must be PDIM-only, never local disk" used across this app's audit/fix passes — ephemeral scratch is fine, durable/served copies are not.
+---
+
+Rule: "never use local disk for storage" in this app does not mean literal zero-disk-I/O. The governing distinction: FORBIDDEN is local disk (or, just as much, a database column) acting as the durable source of truth or a fallback source of truth for user-facing content — anything express.static-served from a local directory, any multer diskStorage result that gets read back later instead of being immediately forwarded to storage and deleted, any write-through/fallback path that persists content locally (or inlines it into the DB) when the real storage backend (PDIM, via storageService) fails or is slow. ALLOWED is purely ephemeral scratch: multer buffering a large upload to a temp path, ffmpeg intermediate files, a zip assembled in os.tmpdir(), PROVIDED the scratch file is always read once and handed to the storage backend, and always deleted afterward on both success and error paths, and the app never re-reads or serves that scratch copy as the answer. Internal/operational state (job-status caches, boot-time verification caches, audit/security logs, ML training-state files) is out of scope entirely — it is regeneratable process state, not user-facing content storage.
+
+**Why:** a literal reading of "never touch disk" is both impossible (ffmpeg, multer, and zip libraries all require real file handles) and not what the underlying risk actually is — the risk is data loss / serving-from-an-ephemeral-container, which only applies to the DURABLE copy, not a consumed-and-deleted scratch copy.
+
+**How to apply:** when auditing a code path against a "PDIM/storage-backend only" mandate, ask "if the container restarted right now, would this specific local file's disappearance lose or break anything a user relies on later?" If yes, it's a violation. If the file was already consumed and deleted before that point, it's fine.

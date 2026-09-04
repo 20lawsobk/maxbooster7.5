@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Loop Health Score Widget
  *
@@ -133,6 +132,7 @@ export function LoopHealthScore() {
         r.json(),
       ),
     refetchInterval: 60_000,
+    staleTime: 0,
     retry: false,
   });
 

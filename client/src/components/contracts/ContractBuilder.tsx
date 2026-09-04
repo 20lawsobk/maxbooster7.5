@@ -62,6 +62,10 @@ export function ContractBuilder({
     warnings: string[];
   } | null>(null);
   const validationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestError = async (res: Response) => {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || "Unable to process the contract request");
+  };
 
   const validateMutation = useMutation({
     mutationFn: async () => {
@@ -80,6 +84,7 @@ export function ContractBuilder({
             : variables,
         }),
       });
+      if (!res.ok) await requestError(res);
       return res.json();
     },
     onSuccess: (data) => {
@@ -108,6 +113,7 @@ export function ContractBuilder({
             : variables,
         }),
       });
+      if (!res.ok) await requestError(res);
       return res.json();
     },
     onSuccess: (data) => {
@@ -167,7 +173,7 @@ export function ContractBuilder({
       splits.reduce((sum, s) => sum + (Number(s.percentage) || 0), 0) * 100,
     ) / 100;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validationTimerRef.current || validateMutation.isPending) {
       toast({
         title: "Validating…",
@@ -176,7 +182,21 @@ export function ContractBuilder({
       });
       return;
     }
-    if (validation?.errors && validation.errors.length > 0) {
+    const currentVariables = template.variables.includes("splits")
+      ? { ...variables, splits }
+      : variables;
+    let result;
+    try {
+      result = await validateMutation.mutateAsync();
+    } catch (error) {
+      toast({
+        title: "Validation failed",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!result.valid) {
       toast({
         title: "Validation Errors",
         description: "Please fix all errors before creating the contract.",
@@ -184,11 +204,7 @@ export function ContractBuilder({
       });
       return;
     }
-    onSubmit(
-      template.variables.includes("splits")
-        ? { ...variables, splits }
-        : variables,
-    );
+    onSubmit(currentVariables);
   };
 
   const getVariableLabel = (variable: string) => {
@@ -444,7 +460,7 @@ export function ContractBuilder({
             </Button>
             <Button
               className="flex-1"
-              onClick={handleSubmit}
+              onClick={() => void handleSubmit()}
               disabled={isSubmitting || validation?.valid === false}
             >
               {isSubmitting ? "Creating..." : "Create Contract"}

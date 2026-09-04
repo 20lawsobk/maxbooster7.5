@@ -160,8 +160,11 @@ export function FileOperationsMenu({
               title: "File Restored",
               description: `"${file.name}" has been restored successfully`,
             });
-            queryClient.invalidateQueries({ queryKey: ["files"] });
-            queryClient.invalidateQueries({ queryKey: ["storage"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/files/list"] });
+            queryClient.invalidateQueries({
+              queryKey: ["/api/files/storage-usage"],
+            });
+            queryClient.invalidateQueries({ queryKey: ["/api/storage/quota"] });
           } else {
             toast({
               title: "Restore Failed",

@@ -586,6 +586,12 @@ export default function Advertisement() {
       });
     },
     onError: (error: Error) => {
+      setUploadedImage(null);
+      setImagePreviewUrl((prev) => {
+        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return null;
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
       toast({
         title: "Upload Failed",
         description:

@@ -1,8 +1,35 @@
 import { Router, Request, Response } from "express";
 import { collaborationService } from "../services/collaborationService";
 import { logger } from "../logger";
+import { db } from "../db";
+import { artistConnections } from "@shared/schema";
+import { desc, eq, or } from "drizzle-orm";
 
 const router = Router();
+
+router.get("/", async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  try {
+    const collaborations = await db
+      .select()
+      .from(artistConnections)
+      .where(
+        or(
+          eq(artistConnections.requesterId, req.user.id),
+          eq(artistConnections.receiverId, req.user.id),
+        ),
+      )
+      .orderBy(desc(artistConnections.createdAt));
+
+    return res.json(collaborations);
+  } catch (error) {
+    logger.warn({ err: error }, "Error fetching collaborations:");
+    return res.status(500).json({ error: "Failed to fetch collaborations" });
+  }
+});
 
 router.get("/connections", async (req: Request, res: Response) => {
   if (!req.user) {

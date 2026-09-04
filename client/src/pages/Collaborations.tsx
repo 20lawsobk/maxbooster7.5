@@ -44,7 +44,7 @@ interface Connection {
   name: string;
   email: string;
   avatar?: string;
-  role: string;
+  role?: string;
   genres?: string[];
   location?: string;
   status: "connected" | "pending_sent" | "pending_received";
@@ -56,7 +56,7 @@ interface Suggestion {
   userId: string;
   name: string;
   avatar?: string;
-  role: string;
+  role?: string;
   genres?: string[];
   location?: string;
   matchScore: number;
@@ -66,10 +66,72 @@ interface Suggestion {
 interface CollabProject {
   id: string;
   name: string;
-  status: "active" | "completed" | "pending";
+  status: "open" | "completed" | "pending";
   collaborators: Array<{ id: string; name: string; avatar?: string }>;
   createdAt: string;
 }
+
+interface ConnectionResponse {
+  id: string;
+  requesterId: string;
+  receiverId: string;
+  status: string;
+  acceptedAt?: string;
+  connectedUser?: {
+    id?: string;
+    username?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    avatarUrl?: string | null;
+    location?: string | null;
+  };
+  requester?: {
+    id?: string;
+    username?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    avatarUrl?: string | null;
+    location?: string | null;
+  };
+}
+
+interface SuggestionResponse {
+  user: {
+    id: string;
+    username?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    avatarUrl?: string | null;
+    location?: string | null;
+  };
+  matchScore: number;
+  matchReasons: string[];
+}
+
+interface ProjectResponse {
+  id: string;
+  title: string;
+  status: string | null;
+  createdAt: string | null;
+  members: Array<{
+    user: {
+      id?: string;
+      username?: string | null;
+      firstName?: string | null;
+      lastName?: string | null;
+      avatarUrl?: string | null;
+    };
+  }>;
+}
+
+const displayName = (person?: {
+  username?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+}) =>
+  person?.username ||
+  [person?.firstName, person?.lastName].filter(Boolean).join(" ") ||
+  "Anonymous Artist";
 
 export default function Collaborations() {
   const { user } = useAuth();
@@ -87,25 +149,95 @@ export default function Collaborations() {
   const [newProjectGenre, setNewProjectGenre] = useState("");
 
   const { data: connectionsData, isLoading: loadingConnections } = useQuery<
+    ConnectionResponse[],
+    Error,
     Connection[]
   >({
     queryKey: ["/api/collaborations/connections"],
     enabled: !!user,
+    select: (rows) =>
+      rows.map((connection) => {
+        const connectedUser = connection.connectedUser;
+        return {
+          id: connection.id,
+          userId:
+            connectedUser?.id ||
+            (connection.requesterId === user?.id
+              ? connection.receiverId
+              : connection.requesterId),
+          name: displayName(connectedUser),
+          email: "",
+          avatar: connectedUser?.avatarUrl || undefined,
+          location: connectedUser?.location || undefined,
+          status: "connected",
+          connectedAt: connection.acceptedAt,
+        };
+      }),
   });
 
-  const { data: pendingData } = useQuery<Connection[]>({
+  const { data: pendingData } = useQuery<
+    ConnectionResponse[],
+    Error,
+    Connection[]
+  >({
     queryKey: ["/api/collaborations/connections/pending"],
     enabled: !!user,
+    select: (rows) =>
+      rows.map((connection) => {
+        const requester = connection.requester;
+        return {
+          id: connection.id,
+          userId: requester?.id || connection.requesterId,
+          name: displayName(requester),
+          email: "",
+          avatar: requester?.avatarUrl || undefined,
+          location: requester?.location || undefined,
+          status: "pending_received",
+        };
+      }),
   });
 
-  const { data: suggestionsData } = useQuery<Suggestion[]>({
+  const { data: suggestionsData } = useQuery<
+    SuggestionResponse[],
+    Error,
+    Suggestion[]
+  >({
     queryKey: ["/api/collaborations/suggestions"],
     enabled: !!user,
+    select: (rows) =>
+      rows.map((suggestion) => ({
+        id: suggestion.user.id,
+        userId: suggestion.user.id,
+        name: displayName(suggestion.user),
+        avatar: suggestion.user.avatarUrl || undefined,
+        location: suggestion.user.location || undefined,
+        matchScore: suggestion.matchScore,
+        matchReasons: suggestion.matchReasons,
+      })),
   });
 
-  const { data: projectsData } = useQuery<{ projects: CollabProject[] }>({
+  const { data: projectsData } = useQuery<
+    ProjectResponse[],
+    Error,
+    CollabProject[]
+  >({
     queryKey: ["/api/collaborations/projects"],
     enabled: !!user,
+    select: (rows) =>
+      rows.map((project) => ({
+        id: project.id,
+        name: project.title,
+        status:
+          project.status === "completed" || project.status === "pending"
+            ? project.status
+            : "open",
+        collaborators: project.members.map((member) => ({
+          id: member.user.id || "",
+          name: displayName(member.user),
+          avatar: member.user.avatarUrl || undefined,
+        })),
+        createdAt: project.createdAt || "",
+      })),
   });
 
   const sendConnectionMutation = useMutation({
@@ -223,13 +355,13 @@ export default function Collaborations() {
   const connections = connectionsData || [];
   const pendingRequests = pendingData || [];
   const suggestions = suggestionsData || [];
-  const projects = projectsData?.projects || [];
+  const projects = projectsData || [];
 
   const filteredConnections = searchQuery
     ? connections.filter(
         (c) =>
           c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.role.toLowerCase().includes(searchQuery.toLowerCase()),
+          (c.role || "").toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : connections;
 
@@ -278,9 +410,11 @@ export default function Collaborations() {
                           </Avatar>
                           <div>
                             <p className="font-medium">{request.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {request.role}
-                            </p>
+                            {request.role && (
+                              <p className="text-sm text-muted-foreground">
+                                {request.role}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -356,9 +490,11 @@ export default function Collaborations() {
                               <CardTitle className="text-base">
                                 {connection.name}
                               </CardTitle>
-                              <CardDescription>
-                                {connection.role}
-                              </CardDescription>
+                              {connection.role && (
+                                <CardDescription>
+                                  {connection.role}
+                                </CardDescription>
+                              )}
                             </div>
                           </div>
                         </CardHeader>
@@ -388,7 +524,7 @@ export default function Collaborations() {
                             className="flex-1"
                             onClick={() => {
                               toast({
-                                title: "Message sent",
+                                title: "Opening messages",
                                 description: `Opening conversation with ${connection.name}`,
                               });
                               setLocation("/social-media");
@@ -403,7 +539,12 @@ export default function Collaborations() {
                             onClick={() => {
                               toast({
                                 title: connection.name,
-                                description: `${connection.role}${connection.location ? ` · ${connection.location}` : ""}`,
+                                description: [
+                                  connection.role,
+                                  connection.location,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · "),
                               });
                             }}
                           >
@@ -450,9 +591,11 @@ export default function Collaborations() {
                               <CardTitle className="text-base">
                                 {suggestion.name}
                               </CardTitle>
-                              <CardDescription>
-                                {suggestion.role}
-                              </CardDescription>
+                              {suggestion.role && (
+                                <CardDescription>
+                                  {suggestion.role}
+                                </CardDescription>
+                              )}
                             </div>
                             <Badge variant="secondary" className="text-xs">
                               <Star className="h-3 w-3 mr-1" />
@@ -537,7 +680,7 @@ export default function Collaborations() {
                             </CardTitle>
                             <Badge
                               variant={
-                                project.status === "active"
+                                 project.status === "open"
                                   ? "default"
                                   : "secondary"
                               }
@@ -675,9 +818,11 @@ export default function Collaborations() {
                     </Avatar>
                     <div>
                       <p className="font-medium">{selectedUser.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedUser.role}
-                      </p>
+                      {selectedUser.role && (
+                        <p className="text-sm text-muted-foreground">
+                          {selectedUser.role}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}

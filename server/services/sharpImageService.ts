@@ -7,9 +7,8 @@ import { randomBytes } from "crypto";
 
 import sharp from "sharp";
 
-import * as fs from "fs/promises";
-import * as path from "path";
 import { logger } from "../logger.js";
+import { storageService } from "./storageService.js";
 
 export interface ImageDimensions {
   width: number;
@@ -62,17 +61,6 @@ const PLATFORM_DIMENSIONS: Record<string, ImageDimensions> = {
 };
 
 class SharpImageService {
-  private outputDir: string;
-
-  constructor() {
-    this.outputDir = path?.join(
-      process.cwd(),
-      "public",
-      "generated-content",
-      "images",
-    );
-  }
-
   /**
    * Get platform-specific dimensions
    */
@@ -279,13 +267,8 @@ class SharpImageService {
     const dimensions = this.getDimensions(platform);
     const { width, height } = dimensions;
     const filename = `${randomBytes(8).toString("hex")}.png`;
-    const outputPath = path.join(this.outputDir, filename);
-    const publicUrl = `/generated-content/images/${filename}`;
 
     try {
-      // Ensure output directory exists
-      await fs.mkdir(this.outputDir, { recursive: true });
-
       const colors = TONE_GRADIENTS[tone] || TONE_GRADIENTS.creative;
 
       // Create layers
@@ -327,13 +310,18 @@ class SharpImageService {
         .png({ quality: 90 })
         .toBuffer();
 
-      // Write to file
-      await fs.writeFile(outputPath, finalImage);
-
-      // Verify file was created
-      const stats = await fs.stat(outputPath);
+      // PDIM-backed storage is the only durable/servable copy — the image
+      // never touches local disk, it goes straight from the in-memory
+      // buffer to storageService.
+      const storageKey = await storageService.uploadFile(
+        finalImage,
+        "images",
+        filename,
+        "image/png",
+      );
+      const publicUrl = await storageService.getDownloadUrl(storageKey);
       logger.info(
-        `✅ Sharp generated image: ${publicUrl} (${width}x${height}, ${stats.size} bytes)`,
+        `✅ Sharp generated image: ${publicUrl} (${width}x${height}, ${finalImage.length} bytes)`,
       );
 
       return {
@@ -399,13 +387,18 @@ class SharpImageService {
       .toBuffer();
 
     const thumbnailFilename = result.filename.replace(".png", "-thumb.png");
-    const thumbnailPath = path.join(this.outputDir, thumbnailFilename);
-    await fs.writeFile(thumbnailPath, thumbnailBuffer);
+    const storageKey = await storageService.uploadFile(
+      thumbnailBuffer,
+      "images",
+      thumbnailFilename,
+      "image/png",
+    );
+    const publicUrl = await storageService.getDownloadUrl(storageKey);
 
     return {
       buffer: thumbnailBuffer,
       filename: thumbnailFilename,
-      publicUrl: `/generated-content/images/${thumbnailFilename}`,
+      publicUrl,
     };
   }
 

@@ -37,6 +37,7 @@ import path from "path";
 import { randomBytes } from "crypto";
 import { contentQualityPipeline } from "./contentQualityPipeline.js";
 import { logger } from "../logger.js";
+import { hybridStorageService } from "./hybridStorageService.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -1435,6 +1436,7 @@ export interface VideoGenOptions {
 export interface VideoGenResult {
   success: boolean;
   url?: string;
+  thumbnail_url?: string | null;
   filename?: string;
   width?: number;
   height?: number;
@@ -1656,9 +1658,25 @@ export async function generateVideo(
         `[VideoGen] ✅ ${filename} — ${width}x${height} ${totalDur}s | 3 scenes | ${style.bgType} bg | ${genre} audio | ${renderMs}ms`,
       );
 
+      let url: string;
+      try {
+        const upload = await hybridStorageService.upload(
+          opts.userId || "anonymous",
+          filename,
+          await import("fs/promises").then(({ readFile }) => readFile(finalPath)),
+          "video/mp4",
+          { folder: "videos", isPublic: true },
+        );
+        url = await hybridStorageService.getDownloadUrl(
+          opts.userId || "anonymous",
+          upload.key,
+        );
+      } finally {
+        try { unlinkSync(finalPath); } catch { /* scratch cleanup */ }
+      }
       return {
         success: true,
-        url: `/uploads/videos/${filename}`,
+        url,
         filename,
         width,
         height,
@@ -1863,9 +1881,25 @@ export async function generateVideo(
         `[VideoGen] ✅ ${filename} — ${width}x${height} ${totalDur}s | single scene | ${style.bgType} bg | ${genre} audio | ${renderMs}ms`,
       );
 
+      let url: string;
+      try {
+        const upload = await hybridStorageService.upload(
+          opts.userId || "anonymous",
+          filename,
+          await import("fs/promises").then(({ readFile }) => readFile(finalPath)),
+          "video/mp4",
+          { folder: "videos", isPublic: true },
+        );
+        url = await hybridStorageService.getDownloadUrl(
+          opts.userId || "anonymous",
+          upload.key,
+        );
+      } finally {
+        try { unlinkSync(finalPath); } catch { /* scratch cleanup */ }
+      }
       return {
         success: true,
-        url: `/uploads/videos/${filename}`,
+        url,
         filename,
         width,
         height,

@@ -15,6 +15,7 @@ import type {
   VideoGenResult,
 } from "./videoGeneratorService.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { hybridStorageService } from "./hybridStorageService.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 import {
   getMaxcoreGenerationKey,
@@ -99,10 +100,7 @@ function extractJobUuid(filename: string): string | null {
 }
 
 /**
- * Candidate URL paths to try when downloading a video from MaxCore.
- * Ordered: the raw URL MaxCore reported FIRST (its file-serving layer now
- * serves /uploads/videos/* directly — verified 2026-07-14), then legacy API
- * download routes as fallbacks for older MaxCore deployments.
+ * Candidate MaxCore URL paths to try while retrieving a video for PDIM storage.
  */
 function candidateUrls(rawUrl: string): string[] {
   const absolute = rawUrl?.startsWith("http")
@@ -162,33 +160,32 @@ function candidateUrls(rawUrl: string): string[] {
 }
 
 /**
- * Attempt to download the rendered video from MaxCore and cache it locally.
+ * Download the rendered video from MaxCore and persist it to PDIM.
  * Always sends auth headers. Tries multiple URL path variants.
  *
- * Returns:
- *   - `/uploads/videos/<filename>`  if local caching succeeds (served from our origin)
- *   - `/api/social/video-proxy/<filename>` as fallback (server-side proxy with auth)
- *
- * The raw MaxCore URL is stored in maxcoreVideoUrlStore so the proxy can use it.
+ * The local process only holds the response buffer while it is uploaded; client
+ * URLs always resolve through the authenticated PDIM hybrid-storage route. A
+ * scratch copy is written briefly so ffmpeg can extract a poster frame — it is
+ * deleted immediately after, whether or not poster extraction succeeds.
  */
-async function cacheVideoLocally(rawUrl: string): Promise<string> {
+async function cacheVideoLocally(
+  rawUrl: string,
+  userId: string,
+): Promise<{ videoUrl: string; posterUrl: string | null }> {
   const filename = path?.basename(rawUrl?.split("?")[0]);
-  const localPath = path?.join(LOCAL_VIDEO_DIR, filename);
 
-  // Log the exact URL MaxCore returned so we can diagnose path issues
+  // Log the exact URL MaxCore returned so we can diagnose retrieval issues.
   logger.info(
     `[AdvancedVideoRenderer] cacheVideoLocally — rawUrl from MaxCore: "${rawUrl}"`,
   );
 
-  // Register the raw MaxCore URL for the proxy route regardless of what happens below
+  // Retain the source URL for diagnostics only; it is never served to clients.
   const absoluteForProxy = rawUrl?.startsWith("http")
     ? rawUrl
     : `${MAXCORE_ORIGIN}${rawUrl}`;
   urlStoreSet(filename, absoluteForProxy);
 
   try {
-    await fsPromises?.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
-
     const candidates = candidateUrls(rawUrl);
     for (const url of candidates) {
       try {
@@ -221,12 +218,36 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
           continue;
         }
 
-        await fsPromises.writeFile(localPath, buffer);
+        const upload = await hybridStorageService.upload(
+          userId,
+          filename,
+          buffer,
+          "video/mp4",
+          { folder: "videos", isPublic: true },
+        );
+        const pdimUrl = await hybridStorageService.getDownloadUrl(userId, upload.key);
         logger.info(
-          `[AdvancedVideoRenderer] Video cached from ${url} — ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`,
+          `[AdvancedVideoRenderer] Video stored in PDIM from ${url} — ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`,
         );
         urlStoreSet(filename, url);
-        return `/uploads/videos/${filename}`;
+
+        // Best-effort poster: write a scratch copy only long enough for
+        // ffmpeg to grab a frame, then delete it — never served from disk.
+        let posterUrl: string | null = null;
+        const scratchPath = path.join(LOCAL_VIDEO_DIR, filename);
+        try {
+          await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
+          await fsPromises.writeFile(scratchPath, buffer);
+          posterUrl = await generateAndStorePosterThumbnail(scratchPath, userId);
+        } catch (posterErr) {
+          logger.info(
+            `[AdvancedVideoRenderer] Poster scratch step skipped: ${posterErr instanceof Error ? posterErr.message : String(posterErr)}`,
+          );
+        } finally {
+          await fsPromises.unlink(scratchPath).catch(() => {});
+        }
+
+        return { videoUrl: pdimUrl, posterUrl };
       } catch (err) {
         logger.info(
           `[AdvancedVideoRenderer] Candidate ${url} fetch error: ${err instanceof Error ? err.message : String(err)}`,
@@ -235,16 +256,15 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
     }
 
     logger.warn(
-      `[AdvancedVideoRenderer] All ${candidates.length} candidates failed for "${filename}" — proxy will stream from MaxCore: ${absoluteForProxy}`,
+      `[AdvancedVideoRenderer] All ${candidates.length} candidates failed for "${filename}" — cannot persist to PDIM`,
     );
   } catch (err) {
     logger.warn(
-      `[AdvancedVideoRenderer] Local cache setup failed: ${err instanceof Error ? err.message : String(err)}`,
+      `[AdvancedVideoRenderer] PDIM video retrieval setup failed: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 
-  // Return proxy URL — our server will stream from MaxCore with auth
-  return `/api/social/video-proxy/${filename}`;
+  throw new Error(`Unable to download MaxCore video ${filename} for PDIM storage`);
 }
 
 // ── MaxCore video job status type ─────────────────────────────────────────────
@@ -274,7 +294,7 @@ interface MaxCoreVideoStatus {
  * Poll MaxCore until the video job finishes, errors, or times out.
  * Uses poll() (not get()) so each attempt is a real HTTP request with no suppression.
  */
-async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
+async function pollVideoJob(jobId: string, userId: string): Promise<VideoGenResult | null> {
   logger.info(
     `[AdvancedVideoRenderer] Polling MaxCore job ${jobId} (max ${POLL_MAX_ATTEMPTS} × ${POLL_INTERVAL_MS / 1000}s)`,
   );
@@ -288,14 +308,15 @@ async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
     if (!status) continue;
 
     if (status.status === "done" && status.url) {
-      const servedUrl = await cacheVideoLocally(status.url);
+      const { videoUrl, posterUrl } = await cacheVideoLocally(status.url, userId);
 
       logger.info(
-        `[AdvancedVideoRenderer] Job ${jobId} done after ${attempt + 1} poll(s) — serving: ${servedUrl}`,
+        `[AdvancedVideoRenderer] Job ${jobId} done after ${attempt + 1} poll(s) — serving: ${videoUrl}`,
       );
       return {
         success: true,
-        url: servedUrl,
+        url: videoUrl,
+        thumbnail_url: posterUrl,
         filename: status.filename,
         width: status.width,
         height: status.height,
@@ -448,26 +469,41 @@ export async function fetchPhotorealisticImage(
 
 
 /**
- * Grab a real first-frame poster from a rendered MP4 so the client `<video>`
- * shows an actual frame instead of a grey placeholder on mobile (where browsers
- * won't decode a frame without a poster). Best-effort: returns the poster URL,
- * or null if extraction fails — it must never fail the video render itself.
+ * Grab a real first-frame poster from a local MP4 and persist it to PDIM so
+ * the client `<video>` shows an actual frame instead of a grey placeholder on
+ * mobile (where browsers won't decode a frame without a poster). Best-effort:
+ * returns a durable PDIM-backed thumbnail URL, or null if extraction/upload
+ * fails — it must never fail the video render itself.
  *
- * posterForServedUrl: best-effort poster for a served video URL. Only locally-served files
- * (`/uploads/videos/...`) can be frame-extracted; proxy URLs return null.
- * Prefix-guarded so contract drift can never resolve an unexpected path
- * into the ffmpeg input. Never throws.
+ * localMp4Path must be a real local file (scratch space is fine — this is
+ * exactly the kind of ephemeral, immediately-deleted use PDIM-only storage
+ * allows). The caller keeps ownership of localMp4Path's lifecycle; this
+ * function only manages the poster JPEG it creates internally.
  */
-async function posterForServedUrl(
-  servedUrl: string | null | undefined,
+export async function generateAndStorePosterThumbnail(
+  localMp4Path: string,
+  userId: string,
 ): Promise<string | null> {
-  if (!servedUrl || !servedUrl.startsWith("/uploads/videos/")) return null;
+  let localPosterPath: string | null = null;
   try {
-    return await generatePosterThumbnail(
-      path.join(process.cwd(), servedUrl.replace(/^\/+/, "")),
+    localPosterPath = await generatePosterThumbnail(localMp4Path);
+    if (!localPosterPath) return null;
+    const jpegBuffer = await fsPromises.readFile(localPosterPath);
+    const upload = await hybridStorageService.upload(
+      userId,
+      path.basename(localPosterPath),
+      jpegBuffer,
+      "image/jpeg",
+      { folder: "videos", isPublic: true },
     );
-  } catch {
+    return await hybridStorageService.getDownloadUrl(userId, upload.key);
+  } catch (err) {
+    logger.warn(
+      `[PhotoReal] Poster PDIM upload failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
     return null;
+  } finally {
+    if (localPosterPath) await fsPromises.unlink(localPosterPath).catch(() => {});
   }
 }
 
@@ -601,7 +637,10 @@ export async function generatePosterThumbnail(
     logger.info(
       `[PhotoReal] Poster frame → ${outFilename} (${Math.round(stat.size / 1024)} KB)`,
     );
-    return `/uploads/videos/${outFilename}`;
+    // Caller is responsible for uploading this scratch file to durable
+    // storage and deleting it — this function only ever produces local,
+    // ephemeral output (it shells out to ffmpeg, which needs a real path).
+    return outPath;
   } catch (err: unknown) {
     logger.warn(
       `[PhotoReal] Poster extraction failed (${(err as Error).message ?? String(err)}) — no poster`,
@@ -694,14 +733,17 @@ export async function renderVideo(
   // Synchronous response — MaxCore rendered immediately
   const syncUrl = jobResp.url || jobResp.video_url;
   if (syncUrl) {
-    const servedUrl = await cacheVideoLocally(syncUrl);
+    const { videoUrl, posterUrl } = await cacheVideoLocally(
+      syncUrl,
+      opts.userId || "anonymous",
+    );
     logger.info(
       `[AdvancedVideoRenderer] Synchronous MaxCore render complete in ${Date.now() - startMs}ms`,
     );
     return {
       success: true,
-      url: servedUrl,
-      thumbnail_url: await posterForServedUrl(servedUrl),
+      url: videoUrl,
+      thumbnail_url: posterUrl,
       filename: jobResp.filename,
       width: jobResp.width,
       height: jobResp.height,
@@ -721,7 +763,7 @@ export async function renderVideo(
 
   // Async job — poll MaxCore until the video is rendered and served
   if (jobResp.job_id) {
-    const result = await pollVideoJob(jobResp.job_id);
+    const result = await pollVideoJob(jobResp.job_id, opts.userId || "anonymous");
     if (result && !result.success) {
       // Explicit MaxCore job error — surface its own error text.
       return {
@@ -732,7 +774,6 @@ export async function renderVideo(
     if (result) {
       return {
         ...result,
-        thumbnail_url: await posterForServedUrl(result.url as string),
         hook: result.hook || opts.hook,
         body: result.body || opts.body,
         cta: result.cta || opts.cta,

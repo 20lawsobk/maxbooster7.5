@@ -27,13 +27,7 @@ import { logger } from "../logger.js";
 
 const execFileAsync = promisify(execFile);
 
-const LOCAL_STORAGE_DIR = path?.resolve("./uploads/files");
 const PYTHON_SCRIPT = path?.resolve("./server/services/audioSeparator.py");
-
-/** Resolve the on-disk path of a storage key. */
-function localFilePath(key: string): string {
-  return path?.join(LOCAL_STORAGE_DIR, key?.replace(/\//g, path?.sep));
-}
 
 /** Run the Python separator script; returns parsed JSON output. */
 async function runSeparator(
@@ -123,27 +117,33 @@ export async function processUploadedBeat(
   audioKey: string,
   licenseType?: string,
 ): Promise<AudioSeparationResult> {
-  const localWavPath = localFilePath(audioKey);
-
-  if (
-    !(await fsPromises
-      .access(localWavPath)
-      .then(() => true)
-      .catch(() => false))
-  ) {
-    logger.warn(`[AudioSeparator] WAV file not found on disk: ${localWavPath}`);
-    return { stemsAvailable: false };
-  }
-
   const modes = resolveModes(licenseType);
   const tmpDir = path?.join(os?.tmpdir(), `audio_sep_${listingId}`);
   await fsPromises?.mkdir(tmpDir, { recursive: true });
 
-  logger.info(
-    `[AudioSeparator] Processing beat ${listingId} — MP3=${modes.mp3} stems=${modes?.stems}`,
-  );
+  // Pull the source WAV from PDIM-backed storage into a transient scratch
+  // file. This is process-local scratch space for the one separator run —
+  // never a storage source — and is deleted in the `finally` block below
+  // regardless of outcome.
+  const sourceExt = path?.extname(audioKey) || ".wav";
+  const localWavPath = path?.join(tmpDir, `source${sourceExt}`);
 
   try {
+    try {
+      const wavBuffer = await storageService?.downloadFile(audioKey);
+      await fsPromises?.writeFile(localWavPath, wavBuffer);
+    } catch (fetchErr) {
+      logger.warn(
+        { err: fetchErr },
+        `[AudioSeparator] Could not fetch source WAV from storage for key=${audioKey}`,
+      );
+      return { stemsAvailable: false };
+    }
+
+    logger.info(
+      `[AudioSeparator] Processing beat ${listingId} — MP3=${modes.mp3} stems=${modes?.stems}`,
+    );
+
     const output = await runSeparator(localWavPath, tmpDir, modes?.stems);
 
     const result: AudioSeparationResult = { stemsAvailable: false };

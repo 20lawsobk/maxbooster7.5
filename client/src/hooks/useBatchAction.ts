@@ -346,7 +346,7 @@ export function useDistributionBatchActions(
         data,
         successMessage: "Releases submitted successfully",
         errorMessage: "Failed to submit releases",
-        invalidateQueries: ["/api/releases", "/api/distribution"],
+        invalidateQueries: ["/api/distribution/releases"],
       });
     },
     [batchAction],
@@ -360,7 +360,7 @@ export function useDistributionBatchActions(
         ids,
         successMessage: "Releases taken down successfully",
         errorMessage: "Failed to takedown releases",
-        invalidateQueries: ["/api/releases", "/api/distribution"],
+        invalidateQueries: ["/api/distribution/releases"],
       });
     },
     [batchAction],
@@ -375,7 +375,7 @@ export function useDistributionBatchActions(
         data,
         successMessage: "Releases updated successfully",
         errorMessage: "Failed to update releases",
-        invalidateQueries: ["/api/releases", "/api/distribution"],
+        invalidateQueries: ["/api/distribution/releases"],
       });
     },
     [batchAction],
@@ -389,7 +389,7 @@ export function useDistributionBatchActions(
         ids,
         successMessage: "Releases deleted successfully",
         errorMessage: "Failed to delete releases",
-        invalidateQueries: ["/api/releases", "/api/distribution"],
+        invalidateQueries: ["/api/distribution/releases"],
       });
     },
     [batchAction],
@@ -555,7 +555,11 @@ export function useFileBatchActions(options: UseBatchActionOptions = {}) {
         ids,
         successMessage: "Files deleted successfully",
         errorMessage: "Failed to delete files",
-        invalidateQueries: ["/api/files", "/api/storage"],
+        invalidateQueries: [
+          "/api/files/list",
+          "/api/files/storage-usage",
+          "/api/storage/quota",
+        ],
       });
     },
     [batchAction],
@@ -570,7 +574,11 @@ export function useFileBatchActions(options: UseBatchActionOptions = {}) {
         data: { folder },
         successMessage: "Files moved successfully",
         errorMessage: "Failed to move files",
-        invalidateQueries: ["/api/files", "/api/storage"],
+        invalidateQueries: [
+          "/api/files/list",
+          "/api/files/storage-usage",
+          "/api/storage/quota",
+        ],
       });
     },
     [batchAction],
@@ -598,7 +606,7 @@ export function useFileBatchActions(options: UseBatchActionOptions = {}) {
         data,
         successMessage: "Files updated successfully",
         errorMessage: "Failed to update files",
-        invalidateQueries: ["/api/files"],
+        invalidateQueries: ["/api/files/list"],
       });
     },
     [batchAction],

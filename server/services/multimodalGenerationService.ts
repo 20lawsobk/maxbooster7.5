@@ -11,6 +11,7 @@ import {
 } from "./maxcoreConnector.js";
 import { generateAudio as generateLocalAudio } from "./audioGeneratorService.js";
 import { sharpImageService as _sharpImageService } from "./sharpImageService.js";
+import { storageService } from "./storageService.js";
 import { db } from "../db.js";
 import { eq } from "drizzle-orm";
 import { autopilotPreferences, userBrandVoices } from "@shared/schema";
@@ -150,6 +151,25 @@ const MEDIA_MAGIC: Record<string, (b: Buffer) => boolean> = {
     (b.length > 12 && b.slice(4, 8).toString("ascii") === "ftyp"), // M4A/MP4
 };
 
+/** Best-effort content-type sniff from the same magic bytes already used to
+ * validate the payload, so the PDIM-backed upload carries a real MIME type
+ * instead of a generic octet-stream. */
+function sniffContentType(kind: "images" | "audio", b: Buffer): string {
+  if (kind === "images") {
+    if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "image/png";
+    if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+    if (b.length > 12 && b.slice(8, 12).toString("ascii") === "WEBP") return "image/webp";
+    if (b.length > 6 && b.slice(0, 4).toString("ascii") === "GIF8") return "image/gif";
+    return "image/jpeg";
+  }
+  if (b.length > 3 && b.slice(0, 3).toString("ascii") === "ID3") return "audio/mpeg";
+  if (b.length > 2 && b[0] === 0xff && (b[1] & 0xe0) === 0xe0) return "audio/mpeg";
+  if (b.length > 12 && b.slice(0, 4).toString("ascii") === "RIFF") return "audio/wav";
+  if (b.length > 4 && b.slice(0, 4).toString("ascii") === "OggS") return "audio/ogg";
+  if (b.length > 12 && b.slice(4, 8).toString("ascii") === "ftyp") return "audio/mp4";
+  return "audio/wav";
+}
+
 function absolutizeMaxCoreUrl(rawUrl: string): string {
   if (!rawUrl) return "";
   return rawUrl.startsWith("http://") || rawUrl.startsWith("https://")
@@ -194,10 +214,14 @@ async function mirrorRemoteAssetLocally(
       .basename(absolute.split("?")[0])
       .replace(/[^A-Za-z0-9._-]/g, "_");
     const filename = `mc_${baseName || randomUUID()}`;
-    const dir = path.join(process.cwd(), "public", "generated-content", kind);
-    await fsPromises.mkdir(dir, { recursive: true });
-    await fsPromises.writeFile(path.join(dir, filename), buffer);
-    return `/generated-content/${kind}/${filename}`;
+    // PDIM-backed storage is the only durable/servable copy — no local mirror.
+    const storageKey = await storageService.uploadFile(
+      buffer,
+      kind,
+      filename,
+      sniffContentType(kind, buffer),
+    );
+    return await storageService.getDownloadUrl(storageKey);
   } catch (err) {
     logger.warn(
       { err },

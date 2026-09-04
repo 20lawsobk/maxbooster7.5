@@ -3359,6 +3359,29 @@ export const stemExports = pgTable("stem_exports", {
   status: text("status").default("pending"),
   outputUrl: text("output_url"),
   createdAt: timestamp("created_at").defaultNow(),
+  // Added to match stemExportService.ts's actual read/write contract — the
+  // columns above predate that service and never covered its full lifecycle
+  // (job tracking, per-track progress, ZIP archive result, failure state).
+  jobId: varchar("job_id"),
+  exportName: text("export_name"),
+  exportFormat: text("export_format"),
+  bitrate: text("bitrate"),
+  normalize: boolean("normalize").default(false),
+  normalizationType: text("normalization_type"),
+  normalizeTargetLevel: real("normalize_target_level"),
+  includeEffects: boolean("include_effects").default(true),
+  includeMasterBus: boolean("include_master_bus").default(false),
+  fileCount: integer("file_count"),
+  progress: integer("progress").default(0),
+  metadata: jsonb("metadata"),
+  currentTrack: text("current_track"),
+  individualFiles: jsonb("individual_files"),
+  totalDuration: real("total_duration"),
+  totalFileSize: integer("total_file_size"),
+  zipArchiveUrl: text("zip_archive_url"),
+  zipStorageKey: text("zip_storage_key"),
+  completedAt: timestamp("completed_at"),
+  errorMessage: text("error_message"),
 });
 
 // ============================================================================
@@ -5229,6 +5252,86 @@ export const insertSocialPatternAggregateSchema = createInsertSchema(
 ).omit({ id: true, createdAt: true });
 export type InsertSocialPatternAggregate = z.infer<
   typeof insertSocialPatternAggregateSchema
+>;
+
+// ============================================================================
+// ADAPTIVE GENERATION ENGINE - shared self-optimization + anti-repetition
+// (server/services/adaptiveGenerationEngine.ts is the only reader/writer)
+// ============================================================================
+
+// Persisted multi-armed-bandit (UCB1) arm statistics. One row per
+// (domain, scope, armKey) - domain identifies the decision type (e.g.
+// 'social_hook_style', 'beat_genre', 'ad_creative_hour'), scope is a userId
+// or 'global' for platform-wide decisions, armKey is the option itself.
+export const generationArmStats = pgTable(
+  "generation_arm_stats",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    domain: text("domain").notNull(),
+    scope: text("scope").notNull(),
+    armKey: text("arm_key").notNull(),
+    trials: integer("trials").notNull().default(0),
+    rewardSum: real("reward_sum").notNull().default(0),
+    lastSelectedAt: timestamp("last_selected_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => ({
+    armUnique: unique("generation_arm_stats_unique").on(
+      table.domain,
+      table.scope,
+      table.armKey,
+    ),
+    scopeIdx: index("generation_arm_stats_scope_idx").on(
+      table.domain,
+      table.scope,
+    ),
+  }),
+);
+
+export type GenerationArmStat = typeof generationArmStats.$inferSelect;
+export const insertGenerationArmStatSchema = createInsertSchema(
+  generationArmStats,
+).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertGenerationArmStat = z.infer<
+  typeof insertGenerationArmStatSchema
+>;
+
+// Anti-repetition log: a fingerprint of every generated output's meaningful
+// "shape" (domain-specific attributes - hook style, genre, hashtag set,
+// etc). Generation call sites check recent rows before finalizing output so
+// the same shape is never repeated back-to-back, then record what was
+// actually used once the output is final.
+export const generationHistory = pgTable(
+  "generation_history",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id"),
+    domain: text("domain").notNull(),
+    signatureHash: text("signature_hash").notNull(),
+    armKey: text("arm_key"),
+    attributes: jsonb("attributes"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => ({
+    lookupIdx: index("generation_history_lookup_idx").on(
+      table.userId,
+      table.domain,
+      table.createdAt,
+    ),
+  }),
+);
+
+export type GenerationHistoryEntry = typeof generationHistory.$inferSelect;
+export const insertGenerationHistorySchema = createInsertSchema(
+  generationHistory,
+).omit({ id: true, createdAt: true });
+export type InsertGenerationHistoryEntry = z.infer<
+  typeof insertGenerationHistorySchema
 >;
 
 // ============================================================================

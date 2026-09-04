@@ -17,8 +17,27 @@ const VALID_CATEGORIES = [
   "music",
   "digital",
   "art",
+  "bundle",
   "other",
 ] as const;
+const PDIM_FILE_URL_PREFIX = "/api/storage/file/";
+
+function isPdimStorageUrl(value: unknown): value is string {
+  if (typeof value !== "string" || !value.startsWith(PDIM_FILE_URL_PREFIX)) {
+    return false;
+  }
+  try {
+    const key = decodeURIComponent(value.slice(PDIM_FILE_URL_PREFIX.length));
+    return (
+      !!key &&
+      !key.startsWith("/") &&
+      !key.includes("\0") &&
+      !key.split("/").some((part) => part === "." || part === "..")
+    );
+  } catch {
+    return false;
+  }
+}
 const VALID_ORDER_STATUSES = [
   "pending",
   "processing",
@@ -33,7 +52,14 @@ const createMerchSchema = z.object({
   description: z.string().max(2000).optional(),
   price: z.number().min(0).max(1_000_000),
   salePrice: z.number().min(0).max(1_000_000).nullable().optional(),
-  imageUrl: z.string().url().max(2048).optional().or(z.literal("")),
+  imageUrl: z
+    .string()
+    .max(2048)
+    .refine(
+      (url) => url === "" || isPdimStorageUrl(url),
+      "Product image must be uploaded through Pocket Dimension",
+    )
+    .optional(),
   category: z.enum(VALID_CATEGORIES).optional().default("clothing"),
   variants: z.array(z.record(z.string(), z.unknown())).optional().default([]),
   inventory: z.number().int().min(0).optional().default(0),
@@ -42,10 +68,12 @@ const createMerchSchema = z.object({
   isDigital: z.boolean().optional().default(false),
   downloadUrl: z
     .string()
-    .url()
     .max(2048)
+    .refine(
+      (url) => url === "" || isPdimStorageUrl(url),
+      "Digital download must be uploaded through Pocket Dimension",
+    )
     .optional()
-    .or(z.literal(""))
     .nullable(),
 });
 

@@ -7,8 +7,97 @@ import {
 import { smartDefaultsEngine } from "../services/smartDefaultsEngine";
 import { logger } from "../logger";
 import { requireAuth } from "../middleware/auth.js";
+import { db } from "../db.js";
+import { users } from "../../shared/schema.js";
+import { eq, sql } from "drizzle-orm";
 
 const router = Router();
+
+const securityAlertDefaults = {
+  emailOnNewLogin: true,
+  emailOnPasswordChange: true,
+  emailOn2FAChange: true,
+  emailOnSuspiciousActivity: true,
+  emailOnNewDevice: true,
+  pushOnLogin: false,
+  pushOnSecurityChange: true,
+  loginAlertFrequency: "new_device",
+} as const;
+
+const securityAlertBooleanFields = [
+  "emailOnNewLogin",
+  "emailOnPasswordChange",
+  "emailOn2FAChange",
+  "emailOnSuspiciousActivity",
+  "emailOnNewDevice",
+  "pushOnLogin",
+  "pushOnSecurityChange",
+] as const;
+
+router.get("/security-alerts", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const [user] = await db
+      .select({ preferences: users.preferences })
+      .from(users)
+      .where(eq(users.id, req.user!.id))
+      .limit(1);
+    const preferences = (user?.preferences as Record<string, unknown> | null) ?? {};
+    const stored = (preferences.securityAlerts as Record<string, unknown> | undefined) ?? {};
+
+    return res.json({ ...securityAlertDefaults, ...stored });
+  } catch (error) {
+    logger.warn({ err: error }, "Error fetching security alert preferences");
+    return res.status(500).json({ error: "Failed to fetch security alert preferences" });
+  }
+});
+
+router.put("/security-alerts", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const updates: Record<string, boolean | string> = {};
+    for (const field of securityAlertBooleanFields) {
+      if (req.body[field] !== undefined) {
+        if (typeof req.body[field] !== "boolean") {
+          return res.status(400).json({ error: `${field} must be a boolean` });
+        }
+        updates[field] = req.body[field];
+      }
+    }
+
+    if (req.body.loginAlertFrequency !== undefined) {
+      const frequency = req.body.loginAlertFrequency;
+      if (!["always", "new_device", "suspicious_only"].includes(frequency)) {
+        return res.status(400).json({ error: "Invalid login alert frequency" });
+      }
+      updates.loginAlertFrequency = frequency;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No security alert settings supplied" });
+    }
+
+    const [updated] = await db
+      .update(users)
+      .set({
+        preferences: sql`jsonb_set(
+          coalesce(${users.preferences}, '{}'::jsonb),
+          '{securityAlerts}',
+          coalesce(${users.preferences}->'securityAlerts', '{}'::jsonb) || ${JSON.stringify(updates)}::jsonb,
+          true
+        )`,
+      })
+      .where(eq(users.id, req.user!.id))
+      .returning({ preferences: users.preferences });
+
+    const preferences = (updated?.preferences as Record<string, unknown> | null) ?? {};
+    return res.json({
+      ...securityAlertDefaults,
+      ...((preferences.securityAlerts as Record<string, unknown> | undefined) ?? {}),
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "Error updating security alert preferences");
+    return res.status(500).json({ error: "Failed to update security alert preferences" });
+  }
+});
 
 router.get("/user", requireAuth, async (req: Request, res: Response) => {
   try {

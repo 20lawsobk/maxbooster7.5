@@ -66,6 +66,22 @@ vi.mock("../../server/services/advancedSocialAIService.js", () => ({
   },
 }));
 
+// The adaptive content-type bandit (selectArm/recordOutcome) persists to a
+// real Postgres table and is stateful/exploratory by design — exactly the
+// opposite of what a deterministic override-reversibility test needs. Stub it
+// to a fixed, stateless choice so these tests stay focused on the
+// evolutionRegistry override logic (this file's actual subject) instead of
+// coupling to live DB state or the bandit's own exploration behavior, which
+// is a separate concern.
+const mockSelectArm = vi
+  .fn()
+  .mockResolvedValue({ chosen: "tips", reason: "forced_explore", ranked: [] });
+const mockRecordOutcome = vi.fn().mockResolvedValue(undefined);
+vi.mock("../../server/services/adaptiveGenerationEngine.js", () => ({
+  selectArm: mockSelectArm,
+  recordOutcome: mockRecordOutcome,
+}));
+
 import { evolutionRegistry } from "../../server/services/evolutionRegistry.js";
 
 // Reset the singleton's in-memory state between tests. Setting lastLoadedAt to
@@ -287,7 +303,7 @@ describe("Self-Evolution → autopilot content-format & engagement targeting (in
   });
 
   type FormatEngine = {
-    selectContentType(platform?: string): string;
+    selectContentType(platform?: string): Promise<string>;
     generateContentForAutopilot(params: {
       topic: string;
       platform: string;
@@ -307,8 +323,8 @@ describe("Self-Evolution → autopilot content-format & engagement targeting (in
       "format-user-1",
     ) as unknown as FormatEngine;
 
-    // Baseline (no override): the deterministic seeded pick, a configured type.
-    const baseline = engine.selectContentType("tiktok");
+    // Baseline (no override): the adaptive pick, a configured type.
+    const baseline = await engine.selectContentType("tiktok");
     expect(["tips", "insights", "questions", "announcements"]).toContain(
       baseline,
     );
@@ -328,7 +344,7 @@ describe("Self-Evolution → autopilot content-format & engagement targeting (in
         contentFormatPriority: ["text", "carousel"],
       },
     });
-    expect(engine.selectContentType("tiktok")).toBe("questions");
+    expect(await engine.selectContentType("tiktok")).toBe("questions");
 
     await evolutionRegistry.deactivateAll();
     await evolutionRegistry.apply({
@@ -339,11 +355,11 @@ describe("Self-Evolution → autopilot content-format & engagement targeting (in
       source: "rss",
       payload: { platform: "tiktok", contentFormatPriority: ["image"] },
     });
-    expect(engine.selectContentType("tiktok")).toBe("announcements");
+    expect(await engine.selectContentType("tiktok")).toBe("announcements");
 
-    // Deactivating reverts to the seeded baseline.
+    // Deactivating reverts to the adaptive baseline.
     await evolutionRegistry.deactivateAll();
-    expect(engine.selectContentType("tiktok")).toBe(baseline);
+    expect(await engine.selectContentType("tiktok")).toBe(baseline);
   });
 
   it('an engagementTargeting=high override steers the real generation objective to "engagement", and reverts on rollback', async () => {

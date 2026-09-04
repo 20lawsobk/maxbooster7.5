@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { logger } from "@/lib/logger";
 import {
   Music,
   Upload,
@@ -40,7 +39,12 @@ interface NextActionRecommendation {
     | "distribute"
     | "promote_social"
     | "launch_ads"
-    | "check_analytics";
+    | "check_analytics"
+    | "subscribe"
+    | "upload_first_track"
+    | "create_release"
+    | "connect_social"
+    | "view_analytics";
   title: string;
   description: string;
   ctaText: string;
@@ -53,7 +57,6 @@ interface NextActionRecommendation {
 export function SmartNextActionWidget() {
   const [_location, setLocation] = useLocation();
   const { toast } = useToast();
-  useQueryClient();
   const [isDismissed, setIsDismissed] = useState(() => {
     return localStorage.getItem("smartNextActionDismissed") === "true";
   });
@@ -78,27 +81,19 @@ export function SmartNextActionWidget() {
 
   const trackImpressionMutation = useMutation({
     mutationFn: async (action: string) => {
-      try {
-        await apiRequest("POST", "/api/analytics/track-event", {
-          eventType: "smart_next_action_view",
-          eventData: { action },
-        });
-      } catch (error: unknown) {
-        logger.error("Failed to track impression:", error);
-      }
+      await apiRequest("POST", "/api/analytics/track-event", {
+        eventType: "smart_next_action_view",
+        eventData: { action },
+      });
     },
   });
 
   const trackClickMutation = useMutation({
     mutationFn: async (action: string) => {
-      try {
-        await apiRequest("POST", "/api/analytics/track-event", {
-          eventType: "smart_next_action_click",
-          eventData: { action },
-        });
-      } catch (error: unknown) {
-        logger.error("Failed to track click:", error);
-      }
+      await apiRequest("POST", "/api/analytics/track-event", {
+        eventType: "smart_next_action_click",
+        eventData: { action },
+      });
     },
   });
 
@@ -144,14 +139,16 @@ export function SmartNextActionWidget() {
     );
   }
 
-  // Silently return null on error or no data
-  // This prevents any rendering issues or loops
   if (error || !recommendation) {
-    // Log error for debugging but don't show to user
-    if (error) {
-      logger.debug("SmartNextActionWidget error:", error);
-    }
-    return null;
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Unable to load your next recommended action.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   const Icon = iconMap[recommendation.icon] || Sparkles;

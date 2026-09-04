@@ -27,6 +27,7 @@ import { db } from "../db.js";
 import { studioTracks, audioClips, projects } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { resolveAudioUrlToLocalFile } from "./audioSourceResolver.js";
+import { storageService } from "./storageService.js";
 import { logger } from "../logger.js";
 import {
   IntelligentMasteringEngine,
@@ -345,15 +346,38 @@ export async function renderProjectMixdown(
       throw new Error("Render produced an empty file");
     }
 
+    // Local disk is scratch space only — the durable, servable copy lives in
+    // PDIM-backed storage. Upload the finished render, then delete the local
+    // copy so ./uploads/audio/renders never becomes a second source of truth.
+    const contentTypeMap: Record<string, string> = {
+      wav: "audio/wav",
+      aiff: "audio/aiff",
+      flac: "audio/flac",
+      mp3: "audio/mpeg",
+      aac: "audio/aac",
+      ogg: "audio/ogg",
+    };
+    const finalBuffer = await fsPromises.readFile(finalPath);
+    const storageKey = await storageService.uploadFile(
+      finalBuffer,
+      "studio-renders",
+      `${renderId}.${ext}`,
+      contentTypeMap[format] || "application/octet-stream",
+    );
+    const servedUrl = await storageService.getDownloadUrl(storageKey);
+
+    await fsPromises.unlink(finalPath).catch(() => {});
+    await fsPromises.rmdir(projectDir).catch(() => {});
+
     logger.info(
-      { projectId, renderId, fileSize: stat.size, durationSec },
-      "[StudioRender] Real mixdown rendered",
+      { projectId, renderId, fileSize: stat.size, durationSec, storageKey },
+      "[StudioRender] Real mixdown rendered and uploaded to PDIM storage",
     );
 
     return {
       renderId,
-      filePath: finalPath,
-      downloadPath: `/uploads/audio/renders/${projectId}/${renderId}.${ext}`,
+      filePath: servedUrl,
+      downloadPath: servedUrl,
       fileSize: stat.size,
       durationSec,
       mastering: masteringInfo,

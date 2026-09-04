@@ -60,11 +60,13 @@ import {
   selectBestVariant,
 } from "../lib/contentPostProcessor.js";
 import { MaxCoreAIClient } from "./unifiedAIController.js";
-import { getAwarenessContext } from "./awarenessContext.js";
+import { getAwarenessContext, buildMaxCoreAwarenessPayload } from "./awarenessContext.js";
+import { isRecentlyUsed, recordGeneration } from "./adaptiveGenerationEngine.js";
 import { autonomousService } from "./autonomousService.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
 import path from "path";
 import fsPromises from "fs/promises";
+import os from "os";
 import { randomBytes } from "crypto";
 import {
   getMaxcoreGenerationKey,
@@ -93,9 +95,23 @@ const TRENDING_MOOD_FALLBACK = "dark";
 // (GET /api/marketplace/beats/:beatId) so the link an ad ships with — on
 // whichever connected social account it's dispatched through — always
 // resolves to that beat's real buy flow instead of the generic homepage.
+function getPublicAppOrigin(): string {
+  const origin =
+    process.env.PUBLIC_BASE_URL ||
+    process.env.APP_URL ||
+    (process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : "");
+  if (!origin) {
+    throw new Error(
+      "PUBLIC_BASE_URL or APP_URL must be configured before Beat Money Loop can publish buyer-facing links",
+    );
+  }
+  return origin.replace(/\/$/, "");
+}
+
 function getBeatLandingUrl(beatId: string): string {
-  const origin = process.env.APP_URL || "https://max-booster.com";
-  return `${origin.replace(/\/$/, "")}/marketplace/beat/${beatId}`;
+  return `${getPublicAppOrigin()}/marketplace/beat/${beatId}`;
 }
 
 const PLATFORMS_FOR_CAMPAIGN = [
@@ -317,8 +333,9 @@ class BeatMoneyLoopService {
       logger.warn(
         "[BeatMoneyLoop] Cannot enable — admin user not found. Set ADMIN_EMAIL and ensure the account exists (role='admin').",
       );
-      // Return current status (loop stays disabled); caller sees enabled=false.
-      return this.getStatus();
+      throw new Error(
+        "Cannot enable Beat Money Loop: ADMIN_EMAIL is unset or does not identify an admin user",
+      );
     }
     // Whitelist admin so launchCampaign() auto-approves rather than routing through approvals.
     try {
@@ -326,7 +343,10 @@ class BeatMoneyLoopService {
     } catch (err) {
       logger.warn(
         { err },
-        "[BeatMoneyLoop] Failed to whitelist admin for autonomous mode (non-fatal)",
+        "[BeatMoneyLoop] Failed to enable autonomous mode for loop admin",
+      );
+      throw new Error(
+        `Cannot enable Beat Money Loop: autonomous campaign mode could not be enabled (${(err as Error).message})`,
       );
     }
     const nextRunAt = new Date(Date.now() + MIN_CADENCE_MS); // first cycle fires within ~1 h
@@ -362,7 +382,12 @@ class BeatMoneyLoopService {
             `[BeatMoneyLoop] MaxCore reconnected — rescheduled next cycle to ${sooner.toISOString()} (was ${msUntil / 60_000 | 0} min away)`,
           );
         }
-      } catch { /* non-fatal — next tick will run when due */ }
+      } catch (err) {
+        logger.warn(
+          { err },
+          "[BeatMoneyLoop] MaxCore reconnect reschedule failed",
+        );
+      }
     };
 
     return this.getStatus();
@@ -455,6 +480,7 @@ class BeatMoneyLoopService {
     }
     this._runningCycle = true;
     const startedAt = Date.now();
+    let scratchDir: string | null = null;
 
     // Create the cycle row first so failures anywhere have a row to attach to.
     const [cycleRow] = await db
@@ -511,8 +537,15 @@ class BeatMoneyLoopService {
       }
 
       // 2b. GENERATE
-      const { audioRelUrl, audioAbsPath, previewRelUrl, previewAbsPath, title, audioGenBackend, musicalKey } =
-        await this._generateBeat(scan);
+      const generated = await this._generateBeat(scan);
+      const {
+        audioAbsPath,
+        previewAbsPath,
+        title,
+        audioGenBackend,
+        musicalKey,
+      } = generated;
+      scratchDir = generated.scratchDir;
       await db
         .update(beatMoneyLoopCycles)
         .set({
@@ -529,9 +562,7 @@ class BeatMoneyLoopService {
       const { beatId, audioUrl, socialPostId } = await this._createBeatRecord({
         scan,
         price,
-        audioRelUrl,
         audioAbsPath,
-        previewRelUrl,
         previewAbsPath,
         title,
         musicalKey,
@@ -543,6 +574,25 @@ class BeatMoneyLoopService {
       logger.info(
         `[BeatMoneyLoop] ${cycleId} beat ${beatId} listed at $${price.toFixed(2)}`,
       );
+
+      // Anti-repetition memory: log what was ACTUALLY produced now that the
+      // beat is durably persisted (never before _createBeatRecord succeeds —
+      // a discarded/failed attempt must never pollute future repeat checks).
+      // Attribute set MUST exactly match _distillScan's isRecentlyUsed() call
+      // (genre+mood only) — the signature hash is keyed on the full
+      // attribute set, so any mismatch (e.g. adding musicalKey here) would
+      // make the two hashes never equal and silently defeat the check.
+      try {
+        await recordGeneration({
+          userId: null,
+          domain: "beat_generation",
+          attributes: { genre: scan.genre, mood: scan.mood },
+        });
+      } catch (e) {
+        logger.warn(
+          `[BeatMoneyLoop] recordGeneration failed (non-fatal): ${(e as Error).message}`,
+        );
+      }
 
       // 5. ADVERTISE (organic, MaxCore/PDIM-driven — budget=0)
       const ad = await this._launchCampaign({
@@ -644,6 +694,16 @@ class BeatMoneyLoopService {
       });
       return { cycleId, status: "failed", durationMs, error: msg };
     } finally {
+      if (scratchDir) {
+        try {
+          await fsPromises.rm(scratchDir, { recursive: true, force: true });
+        } catch (cleanupErr) {
+          logger.warn(
+            { err: cleanupErr, scratchDir },
+            "[BeatMoneyLoop] Failed to remove local generation scratch directory",
+          );
+        }
+      }
       this._runningCycle = false;
       // Auto-chain: if someone enqueued more overrides while this cycle ran,
       // kick off the next one immediately rather than waiting for a scheduler tick.
@@ -761,6 +821,38 @@ class BeatMoneyLoopService {
     }
     const mood = pickRandom(moodPool, TRENDING_MOOD_FALLBACK);
 
+    // Anti-repetition: _weightedGenrePick already biases toward genres that
+    // earn, but it is still a probabilistic draw and can hand back the same
+    // genre+mood combo as a recent cycle by chance. Only rotate mood (never
+    // override an explicit operator request) and only when a real
+    // alternative exists — this must never block generation.
+    let finalMood = mood;
+    if (!overrides?.mood) {
+      try {
+        const repeatCheck = await isRecentlyUsed({
+          userId: null,
+          domain: "beat_generation",
+          attributes: { genre, mood: finalMood },
+        });
+        if (repeatCheck.isRecentlyUsed) {
+          const altMood = pickRandom(
+            moodPool.filter((m) => m !== finalMood),
+            finalMood,
+          );
+          if (altMood !== finalMood) {
+            logger.info(
+              `[BeatMoneyLoop] Anti-repetition: genre+mood "${genre}+${finalMood}" matched a recent cycle — rotating mood to "${altMood}"`,
+            );
+            finalMood = altMood;
+          }
+        }
+      } catch (e) {
+        logger.warn(
+          `[BeatMoneyLoop] Anti-repetition lookup failed (non-fatal): ${(e as Error).message}`,
+        );
+      }
+    }
+
     // Tempo: bias from hint + ±5 BPM jitter so consecutive cycles differ.
     const baseTemp =
       ctx.generationHints.tempoBias === "up"
@@ -772,7 +864,7 @@ class BeatMoneyLoopService {
     const tempo = baseTemp + tempoJitter;
     return {
       genre,
-      mood,
+      mood: finalMood,
       tempo,
       confidence: ctx.confidence,
       hooks: ctx.viralHookPatterns.slice(0, 5),
@@ -840,6 +932,21 @@ class BeatMoneyLoopService {
       body.style = scan.productionStyles.slice(0, 5).join(", ");
     if (scan.hooks.length > 0)
       body.context = scan.hooks.slice(0, 5).join("; ");
+
+    // Awareness cascade — live trend/CTA/emotional-trigger signals so this
+    // cycle's audio generation is conditioned like every other MaxCore call.
+    // This call bypasses MaxCoreAIClient via a raw fetch below, so it must
+    // build its own awareness payload rather than relying on the shared
+    // transport-layer injection. Best-effort: never blocks generation.
+    try {
+      const awarenessPayload = await buildMaxCoreAwarenessPayload("music");
+      if (awarenessPayload?.awareness) body.awareness = awarenessPayload.awareness;
+      if (awarenessPayload?.extraContext) body.extra_context = awarenessPayload.extraContext;
+    } catch (awarenessErr) {
+      logger.debug(
+        `[BeatMoneyLoop] _maxcoreAudio awareness lookup failed (non-fatal): ${(awarenessErr as Error).message}`,
+      );
+    }
 
     // Bearer ONLY — MaxCore 401s the whole request when X-API-Key/X-Admin-Key
     // are present (see replit.md / maxcore-auth-header memory).
@@ -1092,14 +1199,20 @@ class BeatMoneyLoopService {
     productionStyles: string[];
     hooks: string[];
     requestedKey?: string;
-  }): Promise<{ audioRelUrl: string; audioAbsPath: string; previewRelUrl: string; previewAbsPath: string; title: string; audioGenBackend: string; musicalKey: string }> {
-    const outputDir = path.join(
-      process.cwd(),
-      "public",
-      "generated-content",
-      "audio",
+  }): Promise<{
+    audioAbsPath: string;
+    previewAbsPath: string;
+    scratchDir: string;
+    title: string;
+    audioGenBackend: string;
+    musicalKey: string;
+  }> {
+    // MaxCore bytes are persisted to PDIM later in the pipeline.  A private
+    // system temp directory is only an ffmpeg staging area; it is never served
+    // and runCycle removes it in a finally block on both success and failure.
+    const outputDir = await fsPromises.mkdtemp(
+      path.join(os.tmpdir(), "beat-money-loop-"),
     );
-    await fsPromises.mkdir(outputDir, { recursive: true });
 
     // Use the key from the override/scan if present; otherwise pick at random.
     // IMPORTANT: MaxCore's audio endpoint always returns C Minor regardless of
@@ -1124,13 +1237,11 @@ class BeatMoneyLoopService {
         const filename = `beat_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
         const audioAbsPath = path.join(outputDir, filename);
         await fsPromises.writeFile(audioAbsPath, mc.wavBytes);
-        const audioRelUrl = `/generated-content/audio/${filename}`;
 
         // Trim a 30 s preview from the full-length WAV using ffmpeg so buyers
         // can audition the beat before purchasing. This is non-blocking — if
         // the trim fails we fall back to using the full-length URL as preview.
         let previewAbsPath = audioAbsPath;
-        let previewRelUrl = audioRelUrl;
         try {
           const { execFile } = await import("child_process");
           const { promisify } = await import("util");
@@ -1144,7 +1255,6 @@ class BeatMoneyLoopService {
             previewAbs,
           ], { timeout: 30_000 });
           previewAbsPath = previewAbs;
-          previewRelUrl = `/generated-content/audio/${previewFilename}`;
           logger.info(`[BeatMoneyLoop] 30 s preview trimmed → ${previewFilename}`);
         } catch (previewErr) {
           logger.warn(`[BeatMoneyLoop] Preview trim failed (non-fatal) — using full URL as preview: ${(previewErr as Error).message}`);
@@ -1214,7 +1324,14 @@ class BeatMoneyLoopService {
         logger.info(
           `[BeatMoneyLoop] Beat generated via MaxCore mode ${mode} (backend=${mc.backend}, key=${musicalKey}) → "${title}"`,
         );
-        return { audioRelUrl, audioAbsPath, previewRelUrl, previewAbsPath, title, audioGenBackend: mc.backend, musicalKey: musicalKey || requestedKey };
+        return {
+          audioAbsPath,
+          previewAbsPath,
+          scratchDir: outputDir,
+          title,
+          audioGenBackend: mc.backend,
+          musicalKey: musicalKey || requestedKey,
+        };
       } catch (err) {
         const msg = (err as Error).message;
         modeErrors.push(`mode ${mode}: ${msg}`);
@@ -1225,6 +1342,13 @@ class BeatMoneyLoopService {
     }
 
     // MaxCore is the ONLY audio source — fail the cycle explicitly.
+    await fsPromises.rm(outputDir, { recursive: true, force: true }).catch(
+      (cleanupErr) =>
+        logger.warn(
+          { err: cleanupErr, outputDir },
+          "[BeatMoneyLoop] Failed to remove unsuccessful generation scratch directory",
+        ),
+    );
     throw new Error(
       `MaxCore audio generation failed (MaxCore subsystem is the only allowed source) — ${modeErrors.join("; ")}`,
     );
@@ -1237,13 +1361,12 @@ class BeatMoneyLoopService {
    */
   private async _renderAdVideo(
     audioAbsPath: string,
-  ): Promise<{ absPath: string; relUrl: string; publicUrl: string }> {
+  ): Promise<{ absPath: string; storageUrl: string }> {
     const { execFile } = await import("child_process");
     const { promisify } = await import("util");
     const run = promisify(execFile);
 
-    const outDir = path.join(process.cwd(), "public", "generated-content", "videos");
-    await fsPromises.mkdir(outDir, { recursive: true });
+    const outDir = path.dirname(audioAbsPath);
     const filename = `beat_ad_${Date.now()}_${randomBytes(6).toString("hex")}.mp4`;
     const absPath = path.join(outDir, filename);
 
@@ -1275,14 +1398,18 @@ class BeatMoneyLoopService {
       throw new Error(`rendered ad video too small (${st.size} bytes)`);
     }
 
-    const relUrl = `/generated-content/videos/${filename}`;
-    // Platforms fetch media over the public internet — the URL must be absolute.
-    const base =
-      process.env.PUBLIC_BASE_URL ||
-      (process.env.REPLIT_DEV_DOMAIN
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : "");
-    return { absPath, relUrl, publicUrl: base ? `${base}${relUrl}` : relUrl };
+    // PDIM is the only durable/public media store. Keep the local MP4 only
+    // through the synchronous dispatcher call (Twitter consumes its path);
+    // runCycle removes the containing scratch directory afterwards.
+    const storageKey = await storageService.uploadFile(
+      await fsPromises.readFile(absPath),
+      "beat-ad-videos",
+      filename,
+      "video/mp4",
+    );
+    const publicUrl =
+      getPublicAppOrigin() + (await storageService.getDownloadUrl(storageKey));
+    return { absPath, storageUrl: publicUrl };
   }
 
   /**
@@ -1433,9 +1560,7 @@ class BeatMoneyLoopService {
   private async _createBeatRecord(args: {
     scan: { genre: string; mood: string; tempo: number; hooks: string[] };
     price: number;
-    audioRelUrl: string;
     audioAbsPath: string;
-    previewRelUrl?: string;
     previewAbsPath?: string;
     title: string;
     musicalKey?: string;
@@ -1443,7 +1568,8 @@ class BeatMoneyLoopService {
     const adminId = await this._requireAdminId();
     const keyDisplay = args.musicalKey || "C Minor";
 
-    // Read the WAV bytes MaxCore generation just wrote to disk
+    // Read the WAV bytes from the private scratch directory and persist them
+    // before creating any buyer-facing rows.
     const buf = await fsPromises.readFile(args.audioAbsPath);
     const filename = path.basename(args.audioAbsPath);
     // storageService.uploadFile(buffer, category, filename, contentType): Promise<string>
@@ -1482,6 +1608,11 @@ class BeatMoneyLoopService {
       const aiKey = getMaxcoreGenerationKey();
       const artPrompt =
         `${args.scan.mood} ${args.scan.genre} music producer — album cover art, cinematic, high contrast`;
+      // Deliberately NOT awareness-injected: /generate/image renders its
+      // input as a literal PIL typographic card (see maxcore-image-pil-card
+      // memory) - unverified extra fields risk bleeding into the rendered
+      // artwork as garbled overlaid text, so this endpoint is excluded from
+      // the awareness cascade rollout rather than risking corrupted cover art.
       const artRes = await fetch(`${base}/api/generate/image`, {
         method: "POST",
         headers: {
@@ -1503,10 +1634,30 @@ class BeatMoneyLoopService {
           artData.image_url ??
           artData.outputs?.[0]?.url;
         if (rawUrl) {
-          // Absolutize relative paths returned by MaxCore
-          artworkUrl = /^https?:\/\//i.test(rawUrl)
+          const sourceUrl = /^https?:\/\//i.test(rawUrl)
             ? rawUrl
             : `${base}${rawUrl}`;
+          if (new URL(sourceUrl).origin !== new URL(base).origin) {
+            throw new Error("MaxCore returned artwork URL on an unexpected origin");
+          }
+          const download = await fetch(sourceUrl, {
+            headers: aiKey ? { Authorization: `Bearer ${aiKey}` } : {},
+            signal: AbortSignal.timeout(60_000),
+          });
+          if (!download.ok) {
+            throw new Error(`MaxCore artwork download HTTP ${download.status}`);
+          }
+          const contentType = download.headers.get("content-type") ?? "";
+          if (!contentType.startsWith("image/")) {
+            throw new Error(`MaxCore artwork returned unexpected content type: ${contentType || "missing"}`);
+          }
+          const artworkKey = await storageService.uploadFile(
+            Buffer.from(await download.arrayBuffer()),
+            "beat-artwork",
+            `beat-artwork-${randomBytes(8).toString("hex")}.${contentType.split("/")[1].split(";")[0]}`,
+            contentType,
+          );
+          artworkUrl = await storageService.getDownloadUrl(artworkKey);
         }
       }
     } catch (_artErr) {
@@ -1752,9 +1903,9 @@ class BeatMoneyLoopService {
         try {
           const vid = await this._renderAdVideo(args.audioAbsPath);
           mediaLocalPath = vid.absPath;
-          mediaUrl = vid.publicUrl;
+          mediaUrl = vid.storageUrl;
           logger.info(
-            `[BeatMoneyLoop] Ad video rendered from beat audio: ${vid.relUrl}`,
+            `[BeatMoneyLoop] Ad video rendered and uploaded to PDIM`,
           );
         } catch (err) {
           // Social platforms cannot accept raw WAV audio — skip the dispatch

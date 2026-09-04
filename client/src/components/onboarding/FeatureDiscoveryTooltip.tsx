@@ -1,7 +1,7 @@
 import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -346,14 +346,11 @@ export function ContextSensitiveHelp({
 }) {
   const [showHelp, setShowHelp] = useState(false);
 
-  const { data: helpContent } = useQuery<{ title: string; content: string }>({
-    queryKey: ["/api/help/context", featureId],
-    enabled: showHelp,
-    staleTime: 60000,
-  });
-
   return (
-    <div className={cn("relative inline-block", className)}>
+    <div
+      className={cn("relative inline-block", className)}
+      data-feature-id={featureId}
+    >
       <button
         onClick={() => setShowHelp(!showHelp)}
         className="p-1 rounded-full hover:bg-muted transition-colors"
@@ -363,7 +360,7 @@ export function ContextSensitiveHelp({
       </button>
 
       <AnimatePresence>
-        {showHelp && helpContent && (
+        {showHelp && (
           <motion.div
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
@@ -371,13 +368,13 @@ export function ContextSensitiveHelp({
             className="absolute z-50 top-full mt-2 left-0 w-64 p-3 bg-popover border rounded-lg shadow-lg"
           >
             <div className="flex items-start justify-between gap-2">
-              <h4 className="font-medium text-sm">{helpContent.title}</h4>
+              <h4 className="font-medium text-sm">Help unavailable</h4>
               <button onClick={() => setShowHelp(false)}>
                 <X className="w-3 h-3 text-muted-foreground" />
               </button>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {helpContent.content}
+              Contextual help is not available for this feature yet.
             </p>
           </motion.div>
         )}

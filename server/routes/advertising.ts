@@ -464,6 +464,15 @@ router.post(
       if (campaignEndDate && campaignEndDate <= campaignStartDate) {
         return res.status(400).json({ error: "endDate must be after startDate" });
       }
+      if (
+        creativeMediaUrl &&
+        !creativeMediaUrl.startsWith("/api/storage/file/")
+      ) {
+        return res.status(400).json({
+          error:
+            "creativeMediaUrl must be a Pocket Dimension storage URL returned by the upload or generation service",
+        });
+      }
 
       if (selectedCreativeIds.length > 0) {
         const ownedCreatives = await db
@@ -680,11 +689,32 @@ router.patch(
       }
 
       if (startDate !== undefined) {
-        updates.startDate = startDate ? new Date(startDate as string) : null;
+        const parsedStartDate = startDate ? new Date(startDate as string) : null;
+        if (parsedStartDate && Number.isNaN(parsedStartDate.getTime())) {
+          return res.status(400).json({ error: "startDate must be a valid date" });
+        }
+        updates.startDate = parsedStartDate;
       }
 
       if (endDate !== undefined) {
-        updates.endDate = endDate ? new Date(endDate as string) : null;
+        const parsedEndDate = endDate ? new Date(endDate as string) : null;
+        if (parsedEndDate && Number.isNaN(parsedEndDate.getTime())) {
+          return res.status(400).json({ error: "endDate must be a valid date" });
+        }
+        updates.endDate = parsedEndDate;
+      }
+
+      const effectiveStartDate =
+        updates.startDate === undefined ? existing.startDate : updates.startDate;
+      const effectiveEndDate =
+        updates.endDate === undefined ? existing.endDate : updates.endDate;
+      if (
+        effectiveStartDate &&
+        effectiveEndDate &&
+        new Date(effectiveEndDate as Date).getTime() <=
+          new Date(effectiveStartDate as Date).getTime()
+      ) {
+        return res.status(400).json({ error: "endDate must be after startDate" });
       }
 
       if (targetAudience !== undefined) {
@@ -696,6 +726,19 @@ router.patch(
         if (typeof status !== "string" || !validStatuses.includes(status)) {
           return res.status(400).json({
             error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+          });
+        }
+        // A campaign may only become active by actually posting to a
+        // connected account (see POST /campaigns/:id/activate, which sets
+        // status:"active" solely when successfulPosts > 0). Allowing this
+        // generic PATCH to set status:"active" directly would let a
+        // campaign claim to be running with zero real posts, and would
+        // then permanently block the real activation endpoint (it refuses
+        // to re-activate a campaign that is already "active").
+        if (status === "active" && existing.status !== "active") {
+          return res.status(400).json({
+            error:
+              "Campaigns can only become active through POST /campaigns/:id/activate, which posts to your connected accounts before marking the campaign active.",
           });
         }
         updates.status = status;
@@ -734,6 +777,13 @@ router.delete(
       }
 
       await db
+        .update(adCreatives)
+        .set({ campaignId: null })
+        .where(
+          and(eq(adCreatives.campaignId, id), eq(adCreatives.userId, userId)),
+        );
+
+      await db
         .delete(adCampaigns)
         .where(and(eq(adCampaigns.id, id), eq(adCampaigns.userId, userId)));
 
@@ -763,6 +813,23 @@ router.post(
         return res
           .status(400)
           .json({ error: "type must be 'image' or 'video'" });
+      }
+      if (!mediaUrl.startsWith("/api/storage/file/")) {
+        return res.status(400).json({
+          error:
+            "mediaUrl must be a Pocket Dimension storage URL returned by the upload or generation service",
+        });
+      }
+      if (
+        thumbnailUrl !== undefined &&
+        thumbnailUrl !== null &&
+        (typeof thumbnailUrl !== "string" ||
+          !thumbnailUrl.startsWith("/api/storage/file/"))
+      ) {
+        return res.status(400).json({
+          error:
+            "thumbnailUrl must be a Pocket Dimension storage URL returned by the upload or generation service",
+        });
       }
 
       const [creative] = await db
@@ -1440,56 +1507,83 @@ router.get(
 router.post("/optimize-campaign", requireAuth, async (req, res) => {
   try {
     const { campaignId, performance } = req.body;
+    const userId = (req as AuthenticatedRequest).user!.id;
 
     if (!campaignId) {
       return res.status(400).json({ error: "Campaign ID is required" });
     }
 
-    // Build campaign object for MaxCore organic-amplification optimization
-    // All metrics are organic (no ad spend — adSpend is always 0)
-    const perf = performance || {};
-    const platform = perf.platform || "instagram";
-    const organicReach = perf.organicReach || perf.impressions || 1000;
+    const [storedCampaign] = await db
+      .select()
+      .from(adCampaigns)
+      .where(
+        and(eq(adCampaigns.id, campaignId), eq(adCampaigns.userId, userId)),
+      )
+      .limit(1);
+    if (!storedCampaign) {
+      return res.status(404).json({ error: "Campaign not found" });
+    }
+    const campaignCreatives = await db
+      .select({
+        id: adCreatives.id,
+        type: adCreatives.type,
+        headline: adCreatives.headline,
+        description: adCreatives.description,
+        callToAction: adCreatives.callToAction,
+      })
+      .from(adCreatives)
+      .where(
+        and(
+          eq(adCreatives.campaignId, campaignId),
+          eq(adCreatives.userId, userId),
+        ),
+      );
+
+    // Optimize only the persisted campaign the caller owns. Use actual
+    // delivery data rather than manufacturing metrics for an arbitrary ID.
+    const persistedPerformance =
+      (storedCampaign.performance as Record<string, unknown> | null) ?? {};
+    const perf = persistedPerformance;
+    const platform = storedCampaign.platform;
+    const organicReach = Number(perf.organicReach ?? perf.impressions ?? 0);
     const campaign = {
       id: campaignId,
-      name: perf.name || "Campaign",
+      name: storedCampaign.name,
       platform,
-      objective: perf.objective || "engagement",
-      status: "active" as const,
-      budget: 0,
-      dailyBudget: 0,
-      startDate: new Date(),
+      objective: storedCampaign.objective || "awareness",
+      status: storedCampaign.status || "draft",
+      budget: Number(storedCampaign.budget ?? 0),
+      dailyBudget: Number(storedCampaign.dailyBudget ?? 0),
+      startDate: storedCampaign.startDate ?? new Date(),
       targeting: {
-        ageMin: 18,
-        ageMax: 44,
-        genders: ["male", "female"] as ("male" | "female")[],
-        locations: ["US"],
-        interests: ["music"],
+        ageMin: Number((storedCampaign.targetAudience as any)?.ageMin ?? 0),
+        ageMax: Number((storedCampaign.targetAudience as any)?.ageMax ?? 0),
+        genders: [] as ("male" | "female")[],
+        locations: (storedCampaign.targetAudience as any)?.locations ?? [],
+        interests: (storedCampaign.targetAudience as any)?.interests ?? [],
         behaviors: [],
         customAudiences: [],
         lookalikes: [],
         excludedAudiences: [],
       },
-      creatives: [
-        {
-          id: "c1",
-          type: "image" as const,
-          headline: "Check it out",
-          body: "New content",
-          callToAction: "Learn More",
-        },
-      ],
+      creatives: campaignCreatives.map((creative) => ({
+        id: creative.id,
+        type: creative.type === "video" ? ("video" as const) : ("image" as const),
+        headline: creative.headline ?? "",
+        body: creative.description ?? "",
+        callToAction: creative.callToAction ?? "",
+      })),
       metrics: {
         organicReach,
         impressions: organicReach,
-        clicks: perf.clicks || Math.round(organicReach * 0.05),
-        conversions: perf.conversions || Math.round(organicReach * 0.005),
-        engagements: perf.engagements || Math.round(organicReach * 0.08),
+        clicks: Number(perf.clicks ?? 0),
+        conversions: Number(perf.conversions ?? 0),
+        engagements: Number(perf.engagements ?? 0),
         adSpend: 0,
         adEquivalentValue: adEquivalentValue(platform, organicReach),
-        ctr: perf.ctr || 0.05,
-        engagementRate: perf.engagementRate || 0.08,
-        viralScore: perf.viralScore || 0,
+        ctr: Number(perf.ctr ?? 0),
+        engagementRate: Number(perf.engagementRate ?? 0),
+        viralScore: Number(perf.viralScore ?? 0),
       },
     };
 
@@ -1509,11 +1603,9 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
       recommendations: (result.data as any)?.recommendations || [],
     });
 
-    const userId = (req as AuthenticatedRequest).user?.id;
-    if (userId) {
-      setImmediate(async () => {
+    setImmediate(async () => {
         try {
-          const campaignName = performance?.name || `Campaign ${campaignId}`;
+          const campaignName = storedCampaign.name;
           const topRec =
             ((result?.data as any)?.recommendations as string[] | undefined)?.[0] ||
             "Review your targeting and creatives for better performance.";
@@ -1528,8 +1620,7 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
             "Ad campaign optimized notification error:",
           );
         }
-      });
-    }
+    });
   } catch (error) {
     if (error instanceof AIUnavailableError) {
       return res.status(error.statusCode).json({ error: error.message });
@@ -1616,6 +1707,7 @@ router.post(
         goal: goal || "growth",
         artist_name,
         quality: quality || "cinematic",
+        userId: req.user!.id,
       });
 
       if (!result?.success) {
@@ -1681,26 +1773,25 @@ router.post(
         mcImageData = null;
       }
 
-      if (mcImageData?.url || mcImageData?.image_url) {
-        return res.json({ success: true, ...mcImageData });
+      const imageUrl = mcImageData?.url ?? mcImageData?.image_url;
+      if (imageUrl?.startsWith("/api/storage/file/")) {
+        return res.json({ success: true, ...mcImageData, url: imageUrl });
+      }
+      if (imageUrl) {
+        logger.warn(
+          { userId: req.user!.id },
+          "MaxCore returned an image outside Pocket Dimension storage",
+        );
+        return res.status(502).json({
+          success: false,
+          error:
+            "Image generation returned content that was not persisted to Pocket Dimension",
+        });
       }
 
-      // MaxCore is the sole image generation source — no Python AI fallback.
-      // Return a structured visual spec so the caller can render a placeholder
-      // until the next MaxCore request succeeds.
-      return res.json({
+      return res.status(503).json({
         success: false,
-        image_url: null,
-        visual_spec: {
-          topic,
-          platform: platform || "instagram",
-          tone: tone || "energetic",
-          goal: goal || "growth",
-          artist_name: artist_name || "",
-          style: style || "modern",
-        },
-        message:
-          "MaxCore image generation temporarily unavailable — retry shortly",
+        error: "MaxCore image generation returned no image",
       });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
@@ -1723,45 +1814,8 @@ router.get(
       if (result?.success && result?.data) {
         res.json(result?.data);
       } else {
-        res.json({
-          templates: [
-            {
-              id: "cinematic_promo",
-              name: "Cinematic Promo",
-              description: "Film-quality promotional video",
-              category: "promo",
-            },
-            {
-              id: "neon_pulse",
-              name: "Neon Pulse",
-              description: "Vibrant neon with plasma backgrounds",
-              category: "energetic",
-            },
-            {
-              id: "dark_cinema",
-              name: "Dark Cinema",
-              description: "Moody atmospheric film look",
-              category: "dramatic",
-            },
-            {
-              id: "music_video",
-              name: "Music Video",
-              description: "High-energy music video style",
-              category: "music",
-            },
-            {
-              id: "gold_luxury",
-              name: "Gold Luxury",
-              description: "Premium gold and black aesthetic",
-              category: "luxury",
-            },
-            {
-              id: "elegant_minimal",
-              name: "Elegant Minimal",
-              description: "Clean sophisticated design",
-              category: "professional",
-            },
-          ],
+        res.status(503).json({
+          error: "Video template service is unavailable",
         });
       }
     } catch (error) {

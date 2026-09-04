@@ -1,8 +1,6 @@
 // @ts-nocheck
 import express, { Router, Request, Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
-import { promises as fsPromises } from "fs";
-import path from "path";
 import { db } from "../db";
 import {
   projects,
@@ -5556,60 +5554,13 @@ router.post(
         where: eq(users.id, userId),
       });
 
-      if (user!.role !== "admin") {
+      if (!user || user.role !== "admin") {
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      const uploadsDir = path.join(process.cwd(), "uploads", "audio");
-
-      let cleaned = 0;
-      let errors = 0;
-      const maxAgeHours = parseInt(req.body.maxAgeHours) || 24;
-      const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
-      const now = Date.now();
-
-      try {
-        const files = await fsPromises.readdir(uploadsDir);
-
-        for (const file of files) {
-          const filePath = path.join(uploadsDir, file);
-
-          try {
-            const stats = await fsPromises.stat(filePath);
-            const fileAge = now - stats.mtimeMs;
-
-            if (fileAge > maxAgeMs) {
-              const clip = await db.query.audioClips.findFirst({
-                where: eq(audioClips.audioUrl, `/uploads/audio/${file}`),
-              });
-
-              if (!clip) {
-                await fsPromises.unlink(filePath);
-                cleaned++;
-                logger.info(`Cleaned orphaned upload: ${file}`);
-              }
-            }
-          } catch (err) {
-            errors++;
-            logger.warn(
-              { err: err },
-              `Error processing file during cleanup: ${file}`,
-            );
-          }
-        }
-      } catch (err) {
-        logger.warn({ err: err }, "Error reading uploads directory:");
-        return res
-          .status(500)
-          .json({ error: "Failed to access uploads directory" });
-      }
-
-      res.json({
-        success: true,
-        cleaned,
-        errors,
-        maxAgeHours,
-        message: `Cleaned ${cleaned} orphaned uploads, ${errors} errors encountered`,
+      return res.status(410).json({
+        error:
+          "Local upload cleanup is retired: audio is stored only in Pocket Dimension.",
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error cleaning orphaned uploads:");
@@ -5629,52 +5580,13 @@ router.get(
         where: eq(users.id, userId),
       });
 
-      if (user!.role !== "admin") {
+      if (!user || user.role !== "admin") {
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      const uploadsDir = path.join(process.cwd(), "uploads", "audio");
-
-      let orphanedCount = 0;
-      let orphanedSize = 0;
-      let totalFiles = 0;
-      const maxAgeMs = 24 * 60 * 60 * 1000;
-      const now = Date.now();
-
-      try {
-        const files = await fsPromises.readdir(uploadsDir);
-        totalFiles = files.length;
-
-        for (const file of files) {
-          const filePath = path.join(uploadsDir, file);
-
-          try {
-            const stats = await fsPromises.stat(filePath);
-            const fileAge = now - stats.mtimeMs;
-
-            if (fileAge > maxAgeMs) {
-              const clip = await db.query.audioClips.findFirst({
-                where: eq(audioClips.audioUrl, `/uploads/audio/${file}`),
-              });
-
-              if (!clip) {
-                orphanedCount++;
-                orphanedSize += stats.size;
-              }
-            }
-          } catch {
-            // Skip files that can't be accessed
-          }
-        }
-      } catch (err) {
-        logger.warn({ err: err }, "Error reading uploads directory:");
-      }
-
-      res.json({
-        totalFiles,
-        orphanedCount,
-        orphanedSizeBytes: orphanedSize,
-        orphanedSizeMB: Math.round((orphanedSize / (1024 * 1024)) * 100) / 100,
+      return res.status(410).json({
+        error:
+          "Local upload statistics are retired: audio is stored only in Pocket Dimension.",
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error getting orphaned uploads stats:");

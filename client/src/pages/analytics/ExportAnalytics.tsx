@@ -37,14 +37,6 @@ import { ExportEmptyState } from "@/components/analytics/AnalyticsEmptyStates";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 
 interface ExportOption {
   id: string;
@@ -103,18 +95,6 @@ const FORMAT_OPTIONS = [
     label: "CSV",
     description: "Spreadsheet compatible",
     icon: FileSpreadsheet,
-  },
-  {
-    value: "pdf",
-    label: "PDF",
-    description: "Print-ready report",
-    icon: FileText,
-  },
-  {
-    value: "xlsx",
-    label: "Excel",
-    description: "Full Excel workbook",
-    icon: File,
   },
 ];
 
@@ -274,9 +254,7 @@ export function ExportAnalytics({
     "streaming",
     "revenue",
   ]);
-  const [exportFormat, setExportFormat] = useState<"csv" | "pdf" | "xlsx">(
-    "csv",
-  );
+  const [exportFormat, setExportFormat] = useState<"csv">("csv");
   const [exportProgress, setExportProgress] = useState(0);
   const [exportStatus, setExportStatus] = useState<
     "idle" | "processing" | "complete" | "error"
@@ -284,11 +262,6 @@ export function ExportAnalytics({
   const [progressMessage, setProgressMessage] = useState("");
 
   const [reportHistory, setReportHistory] = useState<ReportHistory[]>([]);
-  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-  const [scheduleFrequency, setScheduleFrequency] = useState<
-    "weekly" | "monthly"
-  >("monthly");
-  const [scheduleEmail, setScheduleEmail] = useState("");
 
   const exportMutation = useMutation({
     mutationFn: async () => {
@@ -477,7 +450,7 @@ export function ExportAnalytics({
                 onValueChange={(v) =>
                   setExportFormat(v as Record<string, unknown>)
                 }
-                className="grid grid-cols-3 gap-4"
+                className="grid grid-cols-1 gap-4"
               >
                 {FORMAT_OPTIONS.map((format) => {
                   const Icon = format.icon;
@@ -525,13 +498,6 @@ export function ExportAnalytics({
           )}
 
           <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              disabled={exportStatus === "processing"}
-              onClick={() => setShowScheduleDialog(true)}
-            >
-              Schedule Export
-            </Button>
             <Button
               onClick={() => exportMutation.mutate()}
               disabled={!canExport}
@@ -593,92 +559,6 @@ export function ExportAnalytics({
         </CardContent>
       </Card>
 
-      <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Schedule Recurring Export</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Delivery Email</Label>
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                value={scheduleEmail}
-                onChange={(e) => setScheduleEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Frequency</Label>
-              <RadioGroup
-                value={scheduleFrequency}
-                onValueChange={(v) =>
-                  setScheduleFrequency(v as "weekly" | "monthly")
-                }
-                className="flex gap-4"
-              >
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="weekly" id="sched-weekly" />
-                  <Label htmlFor="sched-weekly">Weekly</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="monthly" id="sched-monthly" />
-                  <Label htmlFor="sched-monthly">Monthly</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              A {exportFormat.toUpperCase()} report will be emailed to you{" "}
-              {scheduleFrequency === "weekly"
-                ? "every Monday"
-                : "on the 1st of each month"}
-              .
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowScheduleDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (!scheduleEmail.trim() || !scheduleEmail.includes("@")) {
-                  toast({
-                    title: "Valid email required",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                apiRequest("POST", "/api/analytics/schedule-export", {
-                  email: scheduleEmail,
-                  frequency: scheduleFrequency,
-                  format: exportFormat,
-                  sections: selectedSections,
-                })
-                  .then(() => {
-                    toast({
-                      title: "Export scheduled!",
-                      description: `You'll receive a ${scheduleFrequency} ${exportFormat.toUpperCase()} report at ${scheduleEmail}.`,
-                    });
-                  })
-                  .catch(() => {
-                    toast({
-                      title: "Export scheduled!",
-                      description: `You'll receive a ${scheduleFrequency} ${exportFormat.toUpperCase()} report at ${scheduleEmail}.`,
-                    });
-                  })
-                  .finally(() => {
-                    setShowScheduleDialog(false);
-                  });
-              }}
-            >
-              Schedule
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

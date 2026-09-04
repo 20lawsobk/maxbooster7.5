@@ -416,7 +416,7 @@ export function useReleaseBatchActions(options: UseBatchActionsOptions = {}) {
         data,
         successMessage: "Releases submitted successfully",
         errorMessage: "Failed to submit releases",
-        invalidateQueries: ["/api/releases", "/api/distribution"],
+        invalidateQueries: ["/api/distribution/releases"],
       });
     },
     [batchActions],
@@ -430,7 +430,7 @@ export function useReleaseBatchActions(options: UseBatchActionsOptions = {}) {
         ids,
         successMessage: "Releases deleted successfully",
         errorMessage: "Failed to delete releases",
-        invalidateQueries: ["/api/releases", "/api/distribution"],
+        invalidateQueries: ["/api/distribution/releases"],
       });
     },
     [batchActions],
@@ -445,7 +445,7 @@ export function useReleaseBatchActions(options: UseBatchActionsOptions = {}) {
         data,
         successMessage: "Releases updated successfully",
         errorMessage: "Failed to update releases",
-        invalidateQueries: ["/api/releases", "/api/distribution"],
+        invalidateQueries: ["/api/distribution/releases"],
       });
     },
     [batchActions],
@@ -466,7 +466,7 @@ export function useTrackBatchActions(options: UseBatchActionsOptions = {}) {
         data: { targetFolder },
         successMessage: "Tracks moved successfully",
         errorMessage: "Failed to move tracks",
-        invalidateQueries: ["/api/tracks", "/api/files"],
+        invalidateQueries: ["/api/studio/projects"],
       });
     },
     [batchActions],
@@ -481,7 +481,7 @@ export function useTrackBatchActions(options: UseBatchActionsOptions = {}) {
         data: { tags },
         successMessage: "Tags applied successfully",
         errorMessage: "Failed to apply tags",
-        invalidateQueries: ["/api/tracks"],
+        invalidateQueries: ["/api/studio/projects"],
       });
     },
     [batchActions],
@@ -509,7 +509,7 @@ export function useTrackBatchActions(options: UseBatchActionsOptions = {}) {
         ids,
         successMessage: "Tracks deleted successfully",
         errorMessage: "Failed to delete tracks",
-        invalidateQueries: ["/api/tracks"],
+        invalidateQueries: ["/api/studio/projects"],
       });
     },
     [batchActions],

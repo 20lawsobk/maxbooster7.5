@@ -21,6 +21,7 @@
 import { logger } from "../logger.js";
 import { config } from "../config/index.js";
 import { getMaxcoreOrigin } from "./maxcoreConnector.js";
+import { buildMaxCoreAwarenessPayload, type AwarenessMode } from "./awarenessContext.js";
 
 // Resolved through the shared connector — the single MaxCore contract boundary.
 const MC_AI_URL = getMaxcoreOrigin();
@@ -77,6 +78,77 @@ export class MaxCoreAIClient {
     return {
       Authorization: `Bearer ${MC_AI_KEY}`,
     };
+  }
+
+  // ── Awareness cascade auto-injection ──────────────────────────────────────
+  // Best-effort guess at which awareness "mode" (see awarenessContext.ts) a
+  // generation call belongs to, purely from its endpoint path and body shape.
+  // Defaults to "content" — the same general-purpose mode every content-pipeline
+  // call site already uses regardless of specific content type.
+  private static inferAwarenessMode(
+    path: string,
+    body: Record<string, unknown>,
+  ): AwarenessMode {
+    const contentType = String(
+      (body as any)?.content_type ?? (body as any)?.contentType ?? "",
+    ).toLowerCase();
+    if (path.includes("/generate/audio") || path.includes("/generate-audio"))
+      return "music";
+    if (
+      path.includes("/generate-video") ||
+      path.includes("/generate/video") ||
+      path.includes("/platform/video") ||
+      contentType.includes("video")
+    )
+      return "video_script";
+    if (path.includes("advertis") || contentType.includes("ad"))
+      return "ad_copy";
+    return "content";
+  }
+
+  /**
+   * Fills in `awareness` / `extra_context` from the live awareness layer
+   * when the caller's body doesn't already carry its own `awareness` field —
+   * so every generate()/infer() call is awareness-conditioned even when the
+   * calling service never built its own (see awarenessContext.ts). Never
+   * overrides an already-provided `awareness` value. Best-effort: any
+   * failure here is swallowed and the original body is used unmodified —
+   * this must never block or break a real generation call.
+   */
+  private static async withInjectedAwareness(
+    path: string,
+    body: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    if (body && (body as any).awareness) return body; // caller already built its own
+    // /generate/image renders its input directly onto the artwork as literal
+    // typography (PIL card, not a diffusion model — see maxcore-image-pil-card
+    // memory). Unverified extra fields risk bleeding into the rendered image
+    // as garbled overlaid text, so this endpoint is deliberately excluded.
+    if (path.includes("/generate/image")) return body;
+    try {
+      const platform =
+        (body as any)?.platform ?? (body as any)?.targetPlatform ?? undefined;
+      const mode = MaxCoreAIClient.inferAwarenessMode(path, body);
+      const payload = await buildMaxCoreAwarenessPayload(mode, platform);
+      if (!payload) return body;
+
+      const patched: Record<string, unknown> = { ...body };
+      if (payload.awareness) patched.awareness = payload.awareness;
+      if (payload.extraContext) {
+        patched.extra_context = (patched as any).extra_context
+          ? `${(patched as any).extra_context}\n\n${payload.extraContext}`
+          : payload.extraContext;
+      }
+      logger.debug(
+        `[MaxCoreAI] ${path} — injected awareness cascade (mode=${mode}, caller had none)`,
+      );
+      return patched;
+    } catch (e) {
+      logger.debug(
+        `[MaxCoreAI] ${path} — awareness injection skipped: ${(e as Error).message}`,
+      );
+      return body;
+    }
   }
 
   /** Always returns true — MaxCore is always running.
@@ -335,6 +407,11 @@ export class MaxCoreAIClient {
       return null;
     }
 
+    // Awareness cascade: fill in awareness/extra_context from real signals
+    // when the caller didn't already supply them (never overrides an
+    // explicitly-provided value). Best-effort — see withInjectedAwareness.
+    body = await MaxCoreAIClient.withInjectedAwareness(path, body);
+
     // Bulkhead: cap concurrent long-held sockets.
     if (!(await MaxCoreAIClient.acquireSlot())) {
       // Not a MaxCore failure — free the half-open probe slot if we held it.
@@ -454,6 +531,11 @@ export class MaxCoreAIClient {
       logger.debug(`[MaxCoreAI] infer ${path} — health probe says unreachable, skipping`);
       return null;
     }
+
+    // Awareness cascade: fill in awareness/extra_context from real signals
+    // when the caller didn't already supply them (never overrides an
+    // explicitly-provided value). Best-effort — see withInjectedAwareness.
+    body = await MaxCoreAIClient.withInjectedAwareness(path, body);
 
     // Bulkhead: cap concurrent long-held sockets.
     if (!(await MaxCoreAIClient.acquireSlot())) {

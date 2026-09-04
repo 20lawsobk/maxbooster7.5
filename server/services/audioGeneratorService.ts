@@ -5,7 +5,9 @@
  *   - Genre-calibrated procedural music bed (bass + beat + pad via aevalsrc)
  *   - Optional TTS voiceover (espeak-ng → espeak → FFmpeg flite → music-bed-only)
  *
- * Output is saved to uploads/audio/ and served at /uploads/audio/<filename>
+ * FFmpeg renders to a process-local scratch file, which is uploaded to
+ * PDIM-backed storage and deleted immediately after — PDIM is the only
+ * durable/servable copy, never local disk.
  */
 
 import { execFile, execFileSync } from "child_process";
@@ -16,6 +18,7 @@ import { randomBytes } from "crypto";
 import path from "path";
 import os from "os";
 import { logger } from "../logger.js";
+import { storageService } from "./storageService.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -42,7 +45,9 @@ function resolveFFmpegPath(): string {
 }
 
 const FFMPEG = resolveFFmpegPath();
-const AUDIO_DIR = path?.join(process.cwd(), "uploads", "audio");
+// Process-local scratch space only — never a storage source. The rendered
+// file is uploaded to PDIM-backed storage and deleted immediately after.
+const AUDIO_DIR = path?.join(os.tmpdir(), "audio-gen-scratch");
 
 interface AudioProfile {
   bass: string;
@@ -302,13 +307,36 @@ export async function generateAudio(
     return { success: false, error: "FFmpeg produced no output file" };
   }
 
-  logger.info(
-    `[AudioGen] ✅ ${filename} — ${genre} | ${duration}s | TTS: ${!!voPath}`,
-  );
-  return {
-    success: true,
-    url: `/uploads/audio/${filename}`,
-    filename,
-    durationSec: duration,
-  };
+  // PDIM-backed storage is the only durable/servable copy — upload then
+  // delete the scratch file regardless of outcome.
+  try {
+    const buffer = await fsPromises.readFile(outputPath);
+    const storageKey = await storageService.uploadFile(
+      buffer,
+      "generated-audio",
+      filename,
+      "audio/mpeg",
+    );
+    const url = await storageService.getDownloadUrl(storageKey);
+    logger.info(
+      `[AudioGen] ✅ ${filename} — ${genre} | ${duration}s | TTS: ${!!voPath}`,
+    );
+    return {
+      success: true,
+      url,
+      filename,
+      durationSec: duration,
+    };
+  } catch (err) {
+    logger.warn(
+      { err },
+      `[AudioGen] Failed to upload generated audio to storage: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return {
+      success: false,
+      error: `Failed to persist generated audio: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  } finally {
+    await fsPromises.unlink(outputPath).catch(() => {});
+  }
 }

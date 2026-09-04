@@ -97,9 +97,8 @@ export function PrivacySettings() {
         queryKey: ["/api/auth/data-export-status"],
       });
       toast({
-        title: "Export Requested",
-        description:
-          "Your data export is being prepared. You will receive an email when it is ready.",
+        title: "Export Ready",
+        description: "Your data export is ready to download.",
       });
       setExportDataOpen(false);
     },
@@ -458,8 +457,7 @@ export function PrivacySettings() {
               <div className="space-y-1">
                 <p className="font-medium">Download Your Data</p>
                 <p className="text-sm text-muted-foreground">
-                  Get a copy of all your data including profile, projects, and
-                  activity
+                  Download your account information and settings
                 </p>
                 {exportStatus?.status === "pending" &&
                   exportStatus.requestedAt && (
@@ -527,16 +525,15 @@ export function PrivacySettings() {
           <AlertDialogHeader>
             <AlertDialogTitle>Request Data Export</AlertDialogTitle>
             <AlertDialogDescription>
-              We will prepare a complete export of your data including:
+              Your download includes the account information and settings
+              currently stored in MaxBooster:
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>Profile information</li>
-                <li>Projects and releases</li>
-                <li>Analytics and activity history</li>
-                <li>Payment history</li>
-                <li>Connected accounts</li>
+                <li>Account preferences and privacy choices</li>
+                <li>Notification settings</li>
               </ul>
               <p className="mt-3">
-                You will receive an email when your export is ready to download.
+                Your export will be available to download immediately.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>

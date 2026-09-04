@@ -2,7 +2,7 @@
  * Beat Money Loop — Admin Routes
  *
  * All endpoints require admin role (requireAdmin middleware).
- * The loop runs as user 31b06dba-b992-4da5-90ef-3dac95692716 (blawzmusic).
+ * The loop runs as the admin account matched by ADMIN_EMAIL at startup.
  */
 
 import { Router } from "express";
@@ -10,7 +10,7 @@ import { requireAdmin } from "../../middleware/auth.js";
 import { beatMoneyLoopService } from "../../services/beatMoneyLoopService.js";
 import { db } from "../../db.js";
 import { beatMoneyLoopCycles, beatMoneyLoopState } from "@shared/schema";
-import { desc, gte } from "drizzle-orm";
+import { desc, eq, gte } from "drizzle-orm";
 import { logger } from "../../logger.js";
 
 const router = Router();
@@ -19,7 +19,7 @@ router.use(requireAdmin);
 
 router.get("/status", async (_req, res) => {
   try {
-    const status = await beatMoneyLoopService?.getStatus();
+    const status = await beatMoneyLoopService.getStatus();
     res.json(status);
   } catch (err) {
     logger.warn({ err }, "[BeatMoneyLoop] /status failed");
@@ -124,8 +124,18 @@ export default router;
 
 router.get("/health-score", async (_req, res) => {
   try {
+    // The score is an operator-facing current-state view, not a snapshot from
+    // the scheduler's last heartbeat. Refresh real beat outcomes first; an
+    // inability to refresh is surfaced as a 500 rather than presenting stale
+    // revenue/conversion data as current.
+    await beatMoneyLoopService.analyseRecentCycles();
+
     // Fetch loop state singleton
-    const [state] = await db.select().from(beatMoneyLoopState).limit(1);
+    const [state] = await db
+      .select()
+      .from(beatMoneyLoopState)
+      .where(eq(beatMoneyLoopState.id, "singleton"))
+      .limit(1);
 
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

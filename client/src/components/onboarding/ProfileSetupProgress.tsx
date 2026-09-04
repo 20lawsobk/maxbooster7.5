@@ -116,7 +116,7 @@ const PROFILE_STEPS: ProfileSetupStatus[] = [
 
 export function useProfileCompletion() {
   const { data, isLoading, refetch } = useQuery<ProfileCompletionData>({
-    queryKey: ["/api/profile/completion"],
+    queryKey: ["/api/onboarding/profile/completion"],
     staleTime: 60000,
   });
 
