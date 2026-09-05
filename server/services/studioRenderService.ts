@@ -34,6 +34,11 @@ import {
   type MasteringGenre,
 } from "../../shared/ml/audio/IntelligentMasteringEngine.js";
 import { getMaxCoreMasteringRecommendation } from "./maxcoreMasteringService.js";
+import {
+  getMaxCoreMixingRecommendation,
+  type TrackMixConfig,
+  type TrackMixRole,
+} from "./maxcoreMixingService.js";
 
 let ffmpeg: any = null;
 let ffmpegAvailable = false;
@@ -82,39 +87,104 @@ interface RenderInput {
   isTempFile: boolean;
   /** Optional ffmpeg filter chain (no brackets) applied before volume/pan — auto-mix EQ + compression. */
   preFilter?: string;
+  /** Carried through only to build the MaxCore mixing-recommendation role hint; unused by ffmpeg. */
+  trackName?: string;
+  trackType?: string;
 }
 
 /**
- * Role-based corrective EQ + leveling compression for the auto-mix engine.
- * This is real per-track DSP applied through ffmpeg's audio filters
- * (highpass/lowshelf/peaking EQ + acompressor) — not a score or a fake
- * "mixed" flag. Roles are inferred from the track name/type since that's
- * the only per-track semantic signal the schema stores; unrecognized roles
- * get generic corrective EQ + gentle leveling rather than no processing.
+ * Infer an instrumental role from the only per-track semantic signal the
+ * schema stores (name/type). Role is a hint MaxCore's decision uses alongside
+ * the track's actually measured audio — it is not itself the decision.
  */
-function autoMixFilterForTrack(
+function inferTrackRole(
   name: string | undefined,
   trackType: string | undefined,
-): string {
+): TrackMixRole {
   const n = `${name ?? ""} ${trackType ?? ""}`.toLowerCase();
-  const isBass = /\bbass\b|808/.test(n);
-  const isKickOrDrum = /\bkick\b|\bdrum|\bpercussion/.test(n);
-  const isVocal = /\bvocal|\bvox\b|\blead\b|\brap\b/.test(n);
+  if (/\bbass\b|808/.test(n)) return "bass";
+  if (/\bkick\b/.test(n)) return "kick";
+  if (/\bdrum|\bpercussion/.test(n)) return "drums";
+  if (/\bvocal|\bvox\b|\blead\b|\brap\b/.test(n)) return "vocal";
+  return "generic";
+}
 
-  if (isBass) {
-    // Keep sub weight, tame boxy mids, prevent bass from clashing with kick.
-    return "highpass=f=30,equalizer=f=250:width_type=o:width=1.5:g=-3,acompressor=threshold=-16dB:ratio=3.5:attack=8:release=90:makeup=2";
+/** Render a MaxCore mixing recommendation into an ffmpeg filter chain (no brackets). */
+function buildMixFilterString(config: TrackMixConfig): string {
+  const parts: string[] = [`highpass=f=${config.highpassFreq}`];
+  for (const band of config.eq) {
+    if (Math.abs(band.gain) < 0.05) continue; // skip no-op bands
+    parts.push(
+      `equalizer=f=${band.frequency}:width_type=q:width=${band.q}:g=${band.gain}`,
+    );
   }
-  if (isKickOrDrum) {
-    // Punch through with a small low-mid scoop for clarity against bass.
-    return "highpass=f=35,equalizer=f=400:width_type=o:width=1.5:g=-2,acompressor=threshold=-14dB:ratio=4:attack=3:release=60:makeup=2";
-  }
-  if (isVocal) {
-    // Clear the low end, add presence, gentle leveling compression.
-    return "highpass=f=100,equalizer=f=3000:width_type=o:width=1.8:g=2.5,acompressor=threshold=-18dB:ratio=2.5:attack=5:release=80:makeup=2.5";
-  }
-  // Generic instrument/other: reduce sub-bass mud, light leveling.
-  return "highpass=f=60,acompressor=threshold=-20dB:ratio=2.5:attack=10:release=100:makeup=1.5";
+  const c = config.compressor;
+  parts.push(
+    `acompressor=threshold=${c.threshold}dB:ratio=${c.ratio}:attack=${c.attack}:release=${c.release}:makeup=${Math.max(1, c.makeupGain)}`,
+  );
+  return parts.join(",");
+}
+
+/**
+ * Decode ONE track to PCM, measure its real audio features (same extractor
+ * used for mastering), and ask MaxCore how to correct it before mixdown.
+ * Two tracks with the same inferred role get different results if their
+ * measured content differs — this is not a per-role fixed preset.
+ */
+async function analyzeAndRecommendTrackMix(
+  input: RenderInput,
+  sampleRate: number,
+  genre: MasteringGenre | undefined,
+  tempFiles: string[],
+): Promise<string> {
+  const role = inferTrackRole(input.trackName, input.trackType);
+  const { pcmPath } = await mixToRawPcm(
+    [{ path: input.path, volume: 1, pan: 0, startTimeMs: 0, isTempFile: false }],
+    sampleRate,
+  );
+  tempFiles.push(pcmPath);
+  const pcm = await pcmFileToFloat32(pcmPath);
+  const engine = new IntelligentMasteringEngine(sampleRate);
+  const analysis = engine.analyzeForMastering(pcm, sampleRate);
+  const recommendation = await getMaxCoreMixingRecommendation(
+    analysis,
+    role,
+    genre,
+    sampleRate,
+  );
+  return buildMixFilterString(recommendation.config);
+}
+
+const AUTO_MIX_CONCURRENCY = 6;
+
+/**
+ * Fill in `preFilter` on every input from a real, MaxCore-backed per-track
+ * decision. Runs a bounded number of tracks in parallel so a large project
+ * doesn't fire dozens of simultaneous MaxCore calls. Any AIUnavailableError
+ * propagates — auto-mix has no silent local fallback.
+ */
+async function applyAutoMixFilters(
+  inputs: RenderInput[],
+  sampleRate: number,
+  genre: MasteringGenre | undefined,
+  tempFiles: string[],
+): Promise<void> {
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < inputs.length) {
+      const index = cursor++;
+      const input = inputs[index];
+      input.preFilter = await analyzeAndRecommendTrackMix(
+        input,
+        sampleRate,
+        genre,
+        tempFiles,
+      );
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(AUTO_MIX_CONCURRENCY, inputs.length) }, worker),
+  );
 }
 
 async function mixToRawPcm(
@@ -299,14 +369,22 @@ export async function renderProjectMixdown(
         pan: track?.pan ?? 0,
         startTimeMs: (clip.startTime ?? 0) * 1000,
         isTempFile: isTemp,
-        preFilter: options.applyAutoMix
-          ? autoMixFilterForTrack(track?.name, track?.trackType ?? undefined)
-          : undefined,
+        trackName: track?.name,
+        trackType: track?.trackType ?? undefined,
       });
     }
 
     if (inputs.length === 0) {
       throw new Error("No clip audio could be resolved to real files for rendering");
+    }
+
+    if (options.applyAutoMix) {
+      await applyAutoMixFilters(
+        inputs,
+        options.sampleRate,
+        options.masteringGenre,
+        tempFiles,
+      );
     }
 
     const { pcmPath, durationSec } = await mixToRawPcm(inputs, options.sampleRate);
@@ -364,7 +442,7 @@ export async function renderProjectMixdown(
       finalBuffer,
       "studio-renders",
       `${renderId}.${ext}`,
-      contentTypeMap[format] || "application/octet-stream",
+      contentTypeMap[options.format] || "application/octet-stream",
     );
     const servedUrl = await storageService.getDownloadUrl(storageKey);
 

@@ -152,3 +152,4 @@
 - [Entity ID format varies by table](entity-id-format-varies-by-table.md) — check a table's real ID-generation code before adding UUID-format validation middleware; projects.id is non-UUID hex, not every table defaults to gen_random_uuid()
 - ["projects" vs "studio_projects" tables](projects-vs-studio-projects-tables.md) — both real and actively written; dashboard totalTracks reads studio_projects not projects, divergence from Projects-list count unresolved
 - [jsPDF + jspdf-autotable gotchas](jspdf-gotchas.md) — roundedRect not roundRect, charSpace invisible to getTextWidth, WinAnsi drops ≤/≥ symbols, autotable warns on under-filled fixed column widths too
+- [Vite scope bug vs tooling bug](vite-scope-bug-vs-tooling-bug.md) — a renamed-declaration-vs-unsuffixed-usage pattern in dev output usually means JSX was pasted into the wrong sibling component, not a bundler bug; always check for `@ts-nocheck` before trusting a clean tsc

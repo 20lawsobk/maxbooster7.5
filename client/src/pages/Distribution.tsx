@@ -108,6 +108,7 @@ import {
   LineMusIcon,
 } from "@/components/ui/brand-icons";
 import { ReleaseWizard } from "@/components/distribution/ReleaseWizard";
+import { HyperFollowBuilder } from "@/components/distribution/HyperFollowBuilder";
 import { AutomatedQC } from "@/components/distribution/AutomatedQC";
 import { ISRCManager } from "@/components/distribution/ISRCManager";
 import { TakedownManager } from "@/components/distribution/TakedownManager";
@@ -1468,7 +1469,7 @@ export default function Distribution() {
   const [activeTab, setActiveTab] = useState("releases");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [, setIsHyperFollowOpen] = useState(false);
+  const [isHyperFollowOpen, setIsHyperFollowOpen] = useState(false);
   const [showReleaseDetails, setShowReleaseDetails] = useState(false);
   const [showEditRelease, setShowEditRelease] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1745,26 +1746,6 @@ export default function Distribution() {
         title: "Delete Failed",
         description: error.message || "Failed to delete release.",
         variant: "destructive",
-      });
-    },
-  });
-
-  useMutation({
-    mutationFn: async (releaseId: string) => {
-      const response = await apiRequest(
-        "POST",
-        "/api/distribution/hyperfollow",
-        { releaseId },
-      );
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "HyperFollow page created!",
-        description: `Your pre-save page is live at ${data.url}`,
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/distribution/hyperfollow"],
       });
     },
   });
@@ -3563,6 +3544,33 @@ export default function Distribution() {
                   Create HyperFollow Page
                 </Button>
               </div>
+
+              {/* HyperFollow Campaign Builder */}
+              <Dialog
+                open={isHyperFollowOpen}
+                onOpenChange={setIsHyperFollowOpen}
+              >
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader className="sr-only">
+                    <DialogTitle>HyperFollow Campaign Builder</DialogTitle>
+                    <DialogDescription>
+                      Create a pre-save landing page for your release
+                    </DialogDescription>
+                  </DialogHeader>
+                  <HyperFollowBuilder
+                    onComplete={() => {
+                      setIsHyperFollowOpen(false);
+                      queryClient.invalidateQueries({
+                        queryKey: ["/api/distribution/hyperfollow"],
+                      });
+                      queryClient.invalidateQueries({
+                        queryKey: ["/api/distribution/hyperfollow/analytics"],
+                      });
+                    }}
+                    onCancel={() => setIsHyperFollowOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
 
               {/* HyperFollow Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

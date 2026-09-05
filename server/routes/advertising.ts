@@ -954,11 +954,16 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
     }, 0);
 
     res.json({
-      // Config is persisted, but this route does not own a per-user worker
-      // that can execute it. Never present a saved preference as live
-      // automation.
-      isRunning: false,
-      automationAvailable: false,
+      // A real dedicated advertising-autopilot worker exists
+      // (advertisingAutopilotRunner.ts, ticked every 30 min by
+      // autonomousJobScheduler.ts) and is genuinely reachable via /start —
+      // report its actual persisted state instead of a hardcoded value.
+      isRunning: Boolean(
+        (autopilotConfig as { enabled?: boolean; isRunning?: boolean } | null)
+          ?.enabled &&
+          (autopilotConfig as { isRunning?: boolean } | null)?.isRunning,
+      ),
+      automationAvailable: true,
       config: autopilotConfig || null,
       status: {
         campaignStatus: activeCampaigns.length > 0 ? "active" : "inactive",
@@ -980,14 +985,25 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
 
 // Start advertising autopilot
 router.post("/start", requireAuth, async (req: AuthenticatedRequest, res) => {
-  // Persisting `isRunning` previously made the UI report that campaigns were
-  // being managed automatically, but no per-user advertising worker is
-  // started by this endpoint. Do not claim delivery or automation until that
-  // worker exists.
-  return res.status(409).json({
-    error:
-      "Advertising autopilot cannot be started because no campaign automation worker is available. You can still create and activate campaigns manually.",
-  });
+  try {
+    const userId = req.user!.id;
+    // The dedicated advertising-autopilot worker (advertisingAutopilotRunner.ts)
+    // is genuinely scheduled every 30 min by autonomousJobScheduler.ts and only
+    // acts on users whose persisted config has enabled+isRunning true. Flip
+    // that real switch instead of claiming no worker exists.
+    const existing = await storage.getAdvertisingAutopilotConfig(userId);
+    const config = { ...(existing || {}), enabled: true, isRunning: true };
+    await storage.saveAdvertisingAutopilotConfig(userId, config);
+    logger.info(`▶️ Advertising autopilot started for user ${userId}`);
+    res.json({
+      success: true,
+      message: "Advertising autopilot started",
+      config,
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to start advertising autopilot:");
+    res.status(500).json({ error: "Failed to start advertising autopilot" });
+  }
 });
 
 // Stop advertising autopilot

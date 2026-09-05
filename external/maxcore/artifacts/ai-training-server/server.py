@@ -7199,6 +7199,26 @@ class AudioMasteringRecommendationRequest(BaseModel):
     sampleRate: int = 44100
 
 
+class AudioMixingRecommendationRequest(BaseModel):
+    """Per-track feature summary for pre-mixdown corrective EQ + compression.
+
+    Same measured-feature contract as mastering, minus whole-mix-only fields
+    (stereo width, integrated LUFS) that don't apply to a single unmixed
+    track, plus the track's inferred instrumental role: role -- not overall
+    genre -- is the dominant signal for how one track should be corrected.
+    """
+    role: str = "generic"
+    spectral: MasteringSpectralFeatures
+    dynamics: MasteringDynamicsFeatures
+    rhythm: MasteringRhythmFeatures
+    timbre: MasteringTimbreFeatures
+    currentPeak: float
+    dynamicRange: float
+    frequencyBalance: MasteringFrequencyBalance
+    genre: Optional[str] = None
+    sampleRate: int = 44100
+
+
 class ApiViralScoreRequest(BaseModel):
     """MaxBooster /api/infer/viral-score contract."""
     model: Optional[str] = None
@@ -11482,6 +11502,117 @@ async def audio_mastering_recommendation(
             "limiter": {"ceiling": round(limiter_ceiling, 3), "release": 90 if dynamic_range > 13 else 50,
                         "lookahead": 1.5, "softClip": dynamic_range < 8},
             "outputGain": 0, "dithering": True, "bitDepth": 24,
+        },
+        "confidence": round(confidence, 3),
+        "reasoning": reasoning,
+    }
+
+
+@app.post("/api/audio/mixing-recommendation")
+async def audio_mixing_recommendation(
+    req: AudioMixingRecommendationRequest,
+    _key=Depends(require_scope("generate")),
+):
+    """Per-track corrective EQ + compression decision from measured PCM features.
+
+    Unlike mastering (which balances a finished stereo mix), this decides how
+    a single track should sit in a mix before summing: role sets the target
+    tonal/dynamics profile for what a bass, kick, vocal or generic part
+    should look like, and the actual measured spectral/dynamics/timbre
+    features of THIS track -- not just its name string -- determine how far
+    it sits from that target and how hard to correct it. Two tracks sharing
+    a role get different treatment if their measured content differs.
+    """
+    import math
+
+    def finite(value: float, fallback: float = 0.0) -> float:
+        return float(value) if math.isfinite(value) else fallback
+
+    def clip(value: float, low: float, high: float) -> float:
+        return max(low, min(high, value))
+
+    f = req.frequencyBalance
+    s = req.spectral
+    d = req.dynamics
+    t = req.timbre
+    balance = {name: clip(finite(getattr(f, name)), 0.0, 1.0)
+               for name in ("sub", "bass", "lowMid", "mid", "highMid", "presence", "brilliance")}
+    dynamic_range = clip(finite(req.dynamicRange, finite(d.dynamicRange)), 0, 40)
+    crest = clip(finite(d.crestFactor), 0, 30)
+    harmonic = clip(finite(t.harmonicRatio), 0, 1)
+    noise = clip((finite(t.noisiness) + finite(s.spectralFlatness)) / 2, 0, 1)
+    roughness = clip(finite(t.roughness), 0, 1)
+    peak = clip(finite(req.currentPeak, -6), -96, 3)
+
+    # Target balance + dynamics character per instrumental role. These are
+    # starting points the measured features then pull away from below --
+    # not fixed presets applied verbatim.
+    roles = {
+        "bass": {"sub": .62, "bass": .58, "lowMid": .16, "presence": .08,
+                 "hpf": 30, "thresh": -16, "ratio": 3.4, "attack": 8, "release": 90, "holdLowMid": True},
+        "kick": {"sub": .30, "bass": .40, "lowMid": .15, "presence": .18,
+                 "hpf": 35, "thresh": -14, "ratio": 4.0, "attack": 3, "release": 60, "holdLowMid": True},
+        "drums": {"sub": .26, "bass": .34, "lowMid": .17, "presence": .22,
+                  "hpf": 40, "thresh": -15, "ratio": 3.6, "attack": 4, "release": 70, "holdLowMid": True},
+        "vocal": {"sub": .02, "bass": .10, "lowMid": .12, "presence": .32,
+                  "hpf": 100, "thresh": -18, "ratio": 2.5, "attack": 6, "release": 85, "holdLowMid": False},
+        "generic": {"sub": .18, "bass": .26, "lowMid": .20, "presence": .18,
+                    "hpf": 55, "thresh": -20, "ratio": 2.2, "attack": 10, "release": 100, "holdLowMid": False},
+    }
+    role = (req.role or "generic").strip().lower()
+    if role not in roles:
+        role = "generic"
+    target = roles[role]
+
+    # Corrective gain moves the measured balance toward the role's target,
+    # but noisy/harsh source material is corrected more gently so the fix
+    # doesn't amplify grit that's already there.
+    gentleness = 1 - noise * .35
+    sub_gain = clip((target["sub"] - balance["sub"]) * 8 * gentleness, -6, 5)
+    bass_gain = clip((target["bass"] - balance["bass"]) * 7 * gentleness, -6, 5)
+    if target["holdLowMid"]:
+        # Bass/kick/drums: low-mids only ever get cut (to keep the 200-500Hz
+        # zone from turning to mud when several such tracks sum together).
+        low_mid_gain = clip(-(balance["lowMid"] - target["lowMid"]) * 9, -6, 0)
+    else:
+        low_mid_gain = clip((target["lowMid"] - balance["lowMid"]) * 7 * gentleness, -6, 4)
+    presence_gain = clip((target["presence"] - balance["presence"]) * 8 * gentleness + harmonic * 1.2, -5, 5)
+
+    # Compression responds to how dense/peaky the source already is, not a
+    # fixed per-role number: a track that already sits consistent (high
+    # dynamic range, low crest factor) needs less squeeze than a spiky one.
+    density = clip((10 - dynamic_range) / 10, 0, 1)
+    transient = clip((crest - 8) / 14, 0, 1)
+    threshold = clip(target["thresh"] + (peak + 6) * .3 - transient * 3, -34, -6)
+    ratio = clip(target["ratio"] - density * .6 + roughness * .4, 1.3, 6)
+    attack = clip(target["attack"] * (1 - transient * .4), 1, 40)
+    release = clip(target["release"] * (1 + density * .3), 30, 250)
+    makeup = clip(max(0, -threshold - 14) * .18, 0, 4)
+
+    confidence = clip(.5 + harmonic * .18 + (1 - noise) * .18 + (.14 if role != "generic" else 0), .4, .95)
+    reasoning = [
+        f"{role} target profile compared against measured sub {balance['sub']:.2f}, bass {balance['bass']:.2f}, low-mid {balance['lowMid']:.2f}, presence {balance['presence']:.2f}.",
+        f"Corrective EQ was {'gentled for measured noisiness ' + format(noise, '.2f') if noise > .5 else 'applied directly, source is clean'}.",
+        f"Compression set from measured dynamic range {dynamic_range:.1f} dB and crest factor {crest:.1f} -- not a fixed {role} preset.",
+    ]
+
+    return {
+        "role": role,
+        "config": {
+            "highpassFreq": target["hpf"],
+            "eq": [
+                {"frequency": 60, "gain": round(sub_gain, 3), "q": 0.8},
+                {"frequency": 120, "gain": round(bass_gain, 3), "q": 1.0},
+                {"frequency": 350, "gain": round(low_mid_gain, 3), "q": 1.2},
+                {"frequency": 3200, "gain": round(presence_gain, 3), "q": 1.1},
+            ],
+            "compressor": {
+                "threshold": round(threshold, 3),
+                "ratio": round(ratio, 3),
+                "attack": round(attack, 3),
+                "release": round(release, 3),
+                "makeupGain": round(makeup, 3),
+            },
         },
         "confidence": round(confidence, 3),
         "reasoning": reasoning,

@@ -1604,7 +1604,7 @@ router.post(
       const {
         title,
         genre,
-        
+        mood,
         tempo,
         key,
         price,
@@ -1672,6 +1672,7 @@ router.post(
         title,
         description,
         genre,
+        mood,
         bpm: parseInt(tempo) || undefined,
         key,
         price: parsedPrice,
@@ -1752,18 +1753,27 @@ router.post(
                 false,
               );
               if (analysis?.success && analysis?.data) {
-                const updateData: Record<string, unknown> = {};
+                const tagUpdates: Record<string, unknown> = {};
                 if (!tempo && (analysis?.data as any).bpm)
-                  updateData.bpm = Math.round((analysis?.data as any).bpm);
+                  tagUpdates.bpm = Math.round((analysis?.data as any).bpm);
                 if (!key && (analysis?.data as any).key)
-                  updateData.key = (analysis?.data as any).key;
-                if (Object.keys(updateData).length > 0) {
+                  tagUpdates.key = (analysis?.data as any).key;
+                if (Object.keys(tagUpdates).length > 0) {
+                  // bpm/key live inside the jsonb `metadata` column, not as
+                  // top-level listing columns — merge into current metadata
+                  // instead of setting nonexistent columns directly.
+                  const [currentRow] = await db
+                    .select({ metadata: listings.metadata })
+                    .from(listings)
+                    .where(eq(listings.id, listing?.id));
+                  const existingMetadata =
+                    (currentRow?.metadata as Record<string, unknown>) || {};
                   await db
                     .update(listings)
-                    .set(updateData)
+                    .set({ metadata: { ...existingMetadata, ...tagUpdates } })
                     .where(eq(listings.id, listing?.id));
                   logger.info(
-                    `[AutoTag] Beat ${listing.id} tagged: BPM=${updateData.bpm ?? "kept"} key=${updateData?.key ?? "kept"}`,
+                    `[AutoTag] Beat ${listing.id} tagged: BPM=${tagUpdates.bpm ?? "kept"} key=${tagUpdates?.key ?? "kept"}`,
                   );
                 }
               }

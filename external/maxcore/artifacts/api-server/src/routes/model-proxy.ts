@@ -1006,6 +1006,13 @@ router.post("/audio/mastering-recommendation", async (req, res) => {
   await proxyRequest(req, res, "/api/audio/mastering-recommendation");
 });
 
+// Per-track corrective EQ/compression decision ahead of mixdown (role +
+// analyzeForMastering output for that one track). See
+// server/services/maxcoreMixingService.ts for the caller.
+router.post("/audio/mixing-recommendation", async (req, res) => {
+  await proxyRequest(req, res, "/api/audio/mixing-recommendation");
+});
+
 // ─── RTA / Concurrency / Awareness / Digital GPU stats ──────────────────────
 
 router.get("/rta/status", async (req, res) => {

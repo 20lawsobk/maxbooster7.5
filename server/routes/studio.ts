@@ -2646,7 +2646,7 @@ router.post(
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, `AI mixing failed for project ${projectId}:`);
-      res.status(422).json({
+      res.status(error instanceof AIUnavailableError ? 503 : 422).json({
         success: false,
         projectId,
         message: (error as Error)?.message || "AI mixing failed",

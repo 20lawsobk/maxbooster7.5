@@ -35,3 +35,11 @@ DB the app never reads. This exact mismatch caused the Beat Loop "Data Load Erro
    self-managed Neon DB is a normal read/write connection. Still prefer additive, non-destructive
    DDL and match `shared/schema.ts` exactly. Avoid full `drizzle-kit push` here (interactive,
    can surface destructive diffs across 250+ tables).
+5. From the shell (ShellExec), use `psql "$NEON_DATABASE_URL" -c "..."` directly — the env var is
+   already present in the shell, no need to fetch/print it.
+6. **This also bites testing subagents, not just the main agent.** A subagent that registers a
+   user via the app's real HTTP API, then tries to verify/update that row via its own DB
+   connection, can find 0 rows even though the API call succeeded — because its DB tool defaults
+   to the same wrong managed DB. Treat "subagent DB check found nothing" as inconclusive, not
+   proof the write failed; re-check with a direct `psql "$NEON_DATABASE_URL"` query before
+   concluding a registration/write didn't persist.

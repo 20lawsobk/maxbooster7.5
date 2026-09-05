@@ -33,6 +33,7 @@ export interface BeatListing {
   title: string;
   description?: string;
   genre?: string;
+  mood?: string;
   bpm?: number;
   key?: string;
   price: number;
@@ -370,6 +371,7 @@ export class MarketplaceService {
     title: string;
     description?: string;
     genre?: string;
+    mood?: string;
     bpm?: number;
     key?: string;
     price: number;
@@ -407,6 +409,7 @@ export class MarketplaceService {
         isPublished: true,
         metadata: {
           genre: data.genre,
+          mood: data.mood,
           bpm: data.bpm,
           key: data.key,
           licenses: data.licenses,
@@ -427,6 +430,7 @@ export class MarketplaceService {
         title: createdListing.title,
         description: createdListing.description || undefined,
         genre: (metadata.genre || createdListing.category) ?? undefined,
+        mood: metadata.mood,
         bpm: metadata.bpm,
         key: metadata.key,
         price: createdListing.priceCents / 100,
