@@ -52,6 +52,23 @@ curl and the live service after fixing the base URL, circuit breaker, and axios
 adapter bugs (see axios-adapter-wrapping-gotcha.md and
 circuit-breaker-fallback-masks-errors.md — this integration is what surfaced both).
 
+**Root cause found (Sep 2026): a `wpp_` prefix means "wrong token type", not "wrong
+scope".** Both `LABELGRID_API_TOKEN` and `LABELGRID_TEST_API` were, at the time,
+tokens starting with `wpp_` — confirmed live by calling `/api/wpp/me` (see section
+below) with each: they authenticated successfully there (`{"status":"authenticated",
+"plan":{"wpp_enabled":true},...}`), while the SAME tokens 401 on `/api/public/me`.
+These are WordPress-plugin-connection tokens, minted by whatever LabelGrid dashboard
+flow issues credentials for connecting a WP site (`label_ids` came back `null` —
+not even tied to a specific label's content yet). They cannot ever authenticate
+against `/api/public/*` — this is a different credential type issued by a different
+dashboard flow, not a checkbox/scope toggle on the same token. Before spending more
+time on a LabelGrid 401, check the token's prefix first: `wpp_...` → wrong flow,
+go find the general Developer/API Tokens section instead of any "Connect WordPress
+Plugin" flow. A genuine `/api/public` personal access token in this account was
+previously confirmed to be a 3-segment RS256 JWT with no such prefix (see the JWT
+scope section below) — so the two token FORMATS are visibly distinguishable on
+sight (JWT-shaped vs `wpp_`-prefixed opaque string) even before making a network call.
+
 ## Authoritative spec + decisive 401 isolation test
 The real machine-readable OpenAPI 3.1 spec is public at `https://api.labelgrid.com/docs/api.json`
 (~1MB; the human-facing Stoplight page at `/docs/api` is generated from it) — parse
@@ -96,6 +113,13 @@ Bearer, confirmed 401/403="rejected"-vs-other="unreachable" is the right way to
 triage a validation call) but NOT a source of ground truth for the general partner
 catalog API's paths/shapes — don't extrapolate from `/api/wpp/*` behavior to
 `/api/public/*` behavior, they are different backends with different token scopes.
+Its source (`includes/class-labelgrid-tools.php`, `-http.php`) is a legitimate,
+narrow diagnostic reference for confirming which namespace a token belongs to —
+do not port its request-building logic into this project's own service code.
+
+This distinction stopped being theoretical once a live token was tested against
+both namespaces (see "Root cause found" above): it is the actual, confirmed
+explanation for this project's specific 401s, not just a documented risk to avoid.
 
 ## A well-formed, unexpired, correctly-transmitted token can still 401: check its scopes
 LabelGrid API tokens are RS256 JWTs (3 dot-separated base64url segments; decode the
