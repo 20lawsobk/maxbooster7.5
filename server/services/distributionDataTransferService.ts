@@ -3104,11 +3104,11 @@ class DistributionDataTransferService {
           if (!existingMeta.primaryGenre && release.genre)
             mergedMeta.primaryGenre = release.genre;
           if (
-            release.tracks!.length &&
+            release.tracks?.length &&
             (!existingMeta.tracks || (existingMeta.tracks as any).length === 0)
           ) {
             mergedMeta.tracks = release.tracks;
-            mergedMeta.trackCount = release.tracks!.length;
+            mergedMeta.trackCount = release.tracks.length;
           }
           await storage.updateDistroRelease(existing.id, {
             metadata: mergedMeta,

@@ -7,6 +7,7 @@ import { logger } from "../logger.js";
 import { labelGridService } from "./labelgrid-service.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import type { LabelGridArtistPlatformPresence } from "./labelgrid-service.js";
+import { distributionDataTransferService } from "./distributionDataTransferService.js";
 
 // ── Claim pipeline state constants ────────────────────────────────────────────
 export const CLAIM_STATES = [
@@ -1827,6 +1828,12 @@ class ArtistProfileService {
     saved: boolean;
     savedFields: string[];
     upcDiscovered?: boolean;
+    catalogImport: Array<{
+      platformId: string;
+      imported: number;
+      failed: number;
+      status: string;
+    }>;
   }> {
     const profile = await this.getProfile(profileId, userId);
     if (!profile) throw new Error("Artist profile not found");
@@ -2063,6 +2070,73 @@ class ArtistProfileService {
       );
     }
 
+    // Catalog import is a main process of auto-discovery, not a separate
+    // manual step: for every platform whose identity was newly confirmed
+    // this call AND that has a working automated catalog scanner, link the
+    // discovered profile and import its release catalog immediately. Only
+    // fires for platforms newly saved this round (guarded above by
+    // `!profile?.xArtistId`), so re-running discovery never re-imports an
+    // already-linked platform's catalog.
+    const catalogImportTargets: Array<{
+      platformId: string;
+      profileUrl: string;
+      imageUrl?: string | null;
+      genres?: string[];
+    }> = [];
+
+    if (savedFields?.includes("spotify") && finalSpotify?.result.externalUrl) {
+      catalogImportTargets.push({
+        platformId: "spotify",
+        profileUrl: finalSpotify.result.externalUrl,
+        imageUrl: finalSpotify.result.imageUrl,
+        genres: finalSpotify.result.genres,
+      });
+    }
+    if (savedFields?.includes("apple") && finalApple?.result.url) {
+      catalogImportTargets.push({
+        platformId: "apple_music",
+        profileUrl: finalApple.result.url,
+        genres: finalApple.result.genres,
+      });
+    }
+    if (savedFields?.includes("deezer") && finalDeezer?.result.link) {
+      catalogImportTargets.push({
+        platformId: "deezer",
+        profileUrl: finalDeezer.result.link,
+        imageUrl: finalDeezer.result.pictureUrl,
+      });
+    }
+    if (savedFields?.includes("audiomack") && finalAudiomack?.result.url) {
+      catalogImportTargets.push({
+        platformId: "audiomack",
+        profileUrl: finalAudiomack.result.url,
+        imageUrl: finalAudiomack.result.imageUrl,
+      });
+    }
+
+    const catalogImport = await Promise.all(
+      catalogImportTargets.map((t) =>
+        this._autoImportCatalogForPlatform(
+          userId,
+          t.platformId,
+          t.profileUrl,
+          query,
+          { imageUrl: t.imageUrl, genres: t.genres },
+        ),
+      ),
+    );
+
+    if (catalogImport.length > 0) {
+      const totalImported = catalogImport.reduce(
+        (sum, r) => sum + r.imported,
+        0,
+      );
+      logger.info(
+        `[ArtistProfile] Auto-discover catalog import complete: profile=${profileId} ` +
+          `totalImported=${totalImported} results=${JSON.stringify(catalogImport)}`,
+      );
+    }
+
     return {
       spotify: finalSpotify,
       apple: finalApple,
@@ -2076,7 +2150,77 @@ class ArtistProfileService {
       saved,
       savedFields,
       upcDiscovered: !!(upcApple || upcDeezer),
+      catalogImport,
     };
+  }
+
+  /**
+   * Links a newly-discovered streaming profile and imports its release
+   * catalog in one shot. Used exclusively by auto-discover to chain identity
+   * match → catalog import. Failures here are non-fatal to auto-discovery —
+   * identity fields are already saved regardless of catalog-import outcome.
+   */
+  private async _autoImportCatalogForPlatform(
+    userId: string,
+    platformId: string,
+    profileUrl: string,
+    artistName: string,
+    extra?: { imageUrl?: string | null; genres?: string[] },
+  ): Promise<{
+    platformId: string;
+    imported: number;
+    failed: number;
+    status: string;
+  }> {
+    try {
+      await distributionDataTransferService.linkStreamingProfile(
+        userId,
+        platformId,
+        profileUrl,
+        {
+          artistName,
+          imageUrl: extra?.imageUrl ?? undefined,
+          genres: extra?.genres,
+        },
+      );
+
+      const releases =
+        await distributionDataTransferService.scanReleasesFromProfile(
+          userId,
+          platformId,
+        );
+
+      if (releases.length === 0) {
+        logger.info(
+          `[ArtistProfile] Auto-discover catalog scan found 0 releases for ${platformId} artist "${artistName}"`,
+        );
+        return { platformId, imported: 0, failed: 0, status: "no_releases" };
+      }
+
+      const job = await distributionDataTransferService.importProfileCatalog(
+        userId,
+        platformId,
+        releases,
+      );
+
+      logger.info(
+        `[ArtistProfile] Auto-discover imported ${job.successItems}/${releases.length} releases ` +
+          `from ${platformId} for user=${userId}`,
+      );
+
+      return {
+        platformId,
+        imported: job.successItems,
+        failed: job.failedItems,
+        status: job.status,
+      };
+    } catch (err) {
+      logger.warn(
+        { err },
+        `[ArtistProfile] Auto-discover catalog import failed for ${platformId} user=${userId}:`,
+      );
+      return { platformId, imported: 0, failed: 0, status: "error" };
+    }
   }
 
   async autoSync(

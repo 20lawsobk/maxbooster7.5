@@ -722,16 +722,34 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       queryClient.invalidateQueries({
         queryKey: [`/api/artist-profiles/${profile.id}/health`],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/releases"],
+      });
       onUpdated();
       const fields =
         data.savedFields?.filter((f: string) => !f.endsWith("_confirmed")) ??
         [];
+      const catalogImport: Array<{ platformId: string; imported: number }> =
+        data.catalogImport ?? [];
+      const importedTotal = catalogImport.reduce(
+        (sum, r) => sum + (r.imported || 0),
+        0,
+      );
+      const importedPlatforms = catalogImport
+        .filter((r) => r.imported > 0)
+        .map((r) => r.platformId);
+      let description: string;
+      if (fields.length > 0 && importedTotal > 0) {
+        description = `Auto-linked: ${fields.join(", ")}. Imported ${importedTotal} release${importedTotal === 1 ? "" : "s"} from ${importedPlatforms.join(", ")}.`;
+      } else if (fields.length > 0) {
+        description = `Auto-linked: ${fields.join(", ")}`;
+      } else {
+        description =
+          "Review the results below and accept or override any matches.";
+      }
       toast({
         title: "Discovery complete",
-        description:
-          fields.length > 0
-            ? `Auto-linked: ${fields.join(", ")}`
-            : "Review the results below and accept or override any matches.",
+        description,
       });
     } catch {
       toast({ title: "Discovery failed", variant: "destructive" });

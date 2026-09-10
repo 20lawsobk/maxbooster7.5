@@ -120,6 +120,9 @@ export default function ArtistProfileManager({
       queryClient.invalidateQueries({
         queryKey: [`/api/artist-profiles/${profileId}/profile-hub`],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/releases"],
+      });
     } catch {
       // silently fail — user can retry from the hub
     } finally {
