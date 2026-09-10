@@ -97,6 +97,30 @@ triage a validation call) but NOT a source of ground truth for the general partn
 catalog API's paths/shapes — don't extrapolate from `/api/wpp/*` behavior to
 `/api/public/*` behavior, they are different backends with different token scopes.
 
+## A well-formed, unexpired, correctly-transmitted token can still 401: check its scopes
+LabelGrid API tokens are RS256 JWTs (3 dot-separated base64url segments; decode the
+middle segment as base64url JSON to inspect `exp`/`iat`/`scopes` — safe to do since
+JWT security lives in the signature, not payload secrecy, though avoid printing raw
+account/user identifiers unnecessarily). A real one seen from this account's own
+dashboard carried `scopes: ["user.view-catalog", "user.gate-use"]` — these are
+END-USER/fan-facing scopes (browsing a public catalog as a logged-in fan, using a
+presave/follow-to-download gate), NOT content-provider/label/distributor scopes. A
+token with only `user.*` scopes 401s on every content-provider endpoint (`/me`
+included — even the simplest possible authenticated call) despite being genuinely
+unexpired, unrevoked, and correctly sent. LabelGrid's token-creation page apparently
+offers more than one scope/token-type; confirm which one is selected when
+(re)generating — don't assume "the token I copied from my own account" is
+automatically the right scope for content-provider API access. This is a distinct
+failure mode from expiry/revocation/wrong-host/wrong-environment and should be
+checked by decoding the JWT locally BEFORE escalating further, since it's instant
+and free compared to more round-trips with the provider.
+
+A companion token can also fail a more basic check: not even matching the JWT shape
+(three dot-separated segments) that the account's other, genuine tokens have. A
+single opaque segment with no dots is not a JWT at all and cannot be a currently-valid
+LabelGrid API token if this account's real tokens are RS256 JWTs — likely a stale
+placeholder or an unrelated credential, not merely an expired/wrong-scope real token.
+
 ## Still broken (follow-up work, not fixed in this pass)
 ~25 other methods (releases, ISRC/UPC, smart links, presave, payouts, royalty
 statements, sync licensing, DSP catalog import) still use the old broken paths/shapes.
