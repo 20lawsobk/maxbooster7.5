@@ -1,4 +1,5 @@
 - [Express 5 req.params typing](express5-params-string-array.md) — ParamsDictionary values are string|string[]; named params are strings at runtime, wildcard routes get arrays
+- [DNS/TLS edge reality](dns-tls-edge-architecture.md) — Cloudflare's coded but NS never switched to it (still registrar defaults); a full custom DNS+TLS stack exists too, blocked by the same NS gap (ACME issuance 0%)
 - [Dev server has no hot-reload](dev-server-no-hot-reload.md) — tsx runs without --watch; edited server code is inert until an explicit workflow restart, so live-server tests can "confirm" stale behavior
 - [Route mount duplication/shadowing](route-mount-prefix-duplication.md) — mount path repeating router's own topic word 404s all; duplicate (method,path) across routers = first-mounted wins, rest is dead code
 - [Multi-member capsule restore merge](capsule-multi-member-merge-restore.md) — a scattered-file-list capsule restore must recursively MERGE into a pre-existing destination dir, never rmSync-then-replace it (destroyed a real tests/ dir once)
