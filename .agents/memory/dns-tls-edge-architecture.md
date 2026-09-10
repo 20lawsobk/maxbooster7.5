@@ -52,6 +52,13 @@ No Name.com registrar or GCP SSH credential is available to the agent in this wo
 `SESSION_SECRET` was listed as an available secret as of 2026-09-10) — an NS/glue-record change or
 GCP box verification requires the user's direct action or granting those credentials first.
 
+**Design intent, confirmed by the user directly (2026-09-10):** the in-house dns-os/dns-node/tls-proxy
+stack was built to fully replace the need for *any* third-party DNS provider — Name.com, GoDaddy,
+Cloudflare, all of it — not just to replace Cloudflare's proxy/edge layer while keeping a
+registrar's DNS underneath. Don't scope a future fix as "just swap the edge/CDN"; the end state is
+our own nameservers being the domain's sole authoritative DNS. User chose to hold off on the actual
+cutover for now (as of 2026-09-10) pending their own registrar/GCP access steps.
+
 ## Sandbox curl caveat
 
 Curling an arbitrary external HTTPS IP directly from this Replit sandbox produced the identical
