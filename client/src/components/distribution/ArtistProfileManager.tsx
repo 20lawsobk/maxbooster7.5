@@ -42,6 +42,7 @@ interface ArtistProfile {
   deezerArtistId: string | null;
   soundcloudArtistId: string | null;
   amazonMusicArtistId: string | null;
+  audiomackSlug: string | null;
   isVerified: boolean;
   verifiedAt: string | null;
   fixerPending: boolean;
@@ -81,6 +82,7 @@ function connectedPlatforms(p: ArtistProfile): string[] {
   if (p.tidalArtistId) out.push("Tidal");
   if (p.soundcloudArtistId) out.push("SoundCloud");
   if (p.amazonMusicArtistId) out.push("Amazon");
+  if (p.audiomackSlug) out.push("Audiomack");
   return out;
 }
 

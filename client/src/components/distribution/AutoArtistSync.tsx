@@ -134,6 +134,7 @@ const PORTAL_ICONS: Record<string, string> = {
   tidal: "🌊",
   pandora: "📻",
   soundcloud: "☁️",
+  audiomack: "🔊",
 };
 
 const PORTAL_COLORS: Record<string, string> = {
@@ -145,6 +146,7 @@ const PORTAL_COLORS: Record<string, string> = {
   tidal: "text-cyan-400",
   pandora: "text-indigo-400",
   soundcloud: "text-orange-400",
+  audiomack: "text-amber-500",
 };
 
 const CONFIDENCE_COLOR = (c: number) => {

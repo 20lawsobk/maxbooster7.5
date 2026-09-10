@@ -262,6 +262,99 @@ export interface LabelGridCatalogRelease {
   tracks?: LabelGridCatalogTrack[];
 }
 
+/**
+ * DSP profile-URL fields on a LabelGrid ArtistData object, with a conservative
+ * ID-extraction pattern for each. Only platforms whose URL shape we're
+ * confident about are listed — every other DSP URL field on the artist is
+ * still surfaced by buildLabelGridPlatformPresences() below, just with a
+ * null artistId rather than a guessed one.
+ */
+const LABELGRID_ARTIST_DSP_URL_FIELDS: Array<{
+  platform: string;
+  platformLabel: string;
+  field: string;
+  extractId: (url: string) => string | null;
+}> = [
+  {
+    platform: "deezer",
+    platformLabel: "Deezer",
+    field: "deezer_url",
+    extractId: (url) => url.match(/\/artist\/(\d+)/)?.[1] ?? null,
+  },
+  {
+    platform: "tidal",
+    platformLabel: "Tidal",
+    field: "tidal_url",
+    extractId: (url) => url.match(/\/artist\/(\d+)/)?.[1] ?? null,
+  },
+  {
+    platform: "amazon_music",
+    platformLabel: "Amazon Music",
+    field: "amazon_url",
+    extractId: (url) => url.match(/\/artists\/([A-Za-z0-9]+)/)?.[1] ?? null,
+  },
+  {
+    platform: "soundcloud",
+    platformLabel: "SoundCloud",
+    field: "soundcloud_url",
+    extractId: (url) => url.match(/soundcloud\.com\/([^/?#]+)/i)?.[1] ?? null,
+  },
+  {
+    platform: "bandcamp",
+    platformLabel: "Bandcamp",
+    field: "bandcamp_url",
+    extractId: (url) =>
+      url.match(/^https?:\/\/([^.]+)\.bandcamp\.com/i)?.[1] ?? null,
+  },
+];
+
+/**
+ * Build the platform-presence list for a LabelGrid Artist object. LabelGrid's
+ * Artist record has no per-platform "status" field — only URL/ID presence —
+ * so every presence derived here is "live" (URL or ID exists) or omitted
+ * entirely (field is null/absent). Native ID fields (Spotify, Apple Music)
+ * are used directly; every other DSP is a profile URL that may or may not
+ * yield an extractable ID.
+ */
+function buildLabelGridPlatformPresences(
+  artist: Record<string, any>,
+): LabelGridArtistPlatformPresence[] {
+  const presences: LabelGridArtistPlatformPresence[] = [];
+
+  if (artist?.spotify_artist_id) {
+    presences.push({
+      platform: "spotify",
+      platformLabel: "Spotify",
+      artistId: String(artist.spotify_artist_id),
+      artistUrl: artist.spotify_url ?? null,
+      status: "live",
+    });
+  }
+  if (artist?.apple_artist_id) {
+    presences.push({
+      platform: "apple_music",
+      platformLabel: "Apple Music",
+      artistId: String(artist.apple_artist_id),
+      artistUrl: artist.applemusic_url ?? null,
+      status: "live",
+    });
+  }
+
+  for (const dsp of LABELGRID_ARTIST_DSP_URL_FIELDS) {
+    const url = artist?.[dsp.field] as string | null | undefined;
+    if (!url) continue;
+    presences.push({
+      platform: dsp.platform,
+      platformLabel: dsp.platformLabel,
+      artistId: dsp.extractId(url),
+      artistUrl: url,
+      status: "live",
+    });
+  }
+
+  return presences;
+}
+
 class LabelGridService {
   private client: AxiosInstance;
   private apiToken: string | undefined;
@@ -276,8 +369,17 @@ class LabelGridService {
   private circuitBreaker: CircuitBreaker;
 
   constructor() {
-    this.apiToken = process.env.LABELGRID_API_TOKEN;
-    this.baseUrl = process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
+    // In non-production environments, prefer a dedicated test/dev LabelGrid
+    // token (LABELGRID_TEST_API) when one is set, so local development can
+    // exercise the real API against a sandboxed/test-scoped account without
+    // touching the production token.
+    this.apiToken =
+      process.env.NODE_ENV !== "production" && process.env.LABELGRID_TEST_API
+        ? process.env.LABELGRID_TEST_API
+        : process.env.LABELGRID_API_TOKEN;
+    this.baseUrl = this.normalizeBaseUrl(
+      process.env.LABELGRID_API_URL || "https://api.labelgrid.com",
+    );
     this.webhookSecret = process.env.LABELGRID_WEBHOOK_SECRET;
     this.endpoints = {};
 
@@ -319,23 +421,48 @@ class LabelGridService {
 
     // Wrap the axios adapter with circuit breaker so all API calls are
     // automatically protected — opens after 5 consecutive failures, resets after 60s.
-    const originalAdapter = this.client.defaults?.adapter;
+    const originalAdapterSpec = this.client.defaults?.adapter;
     const cb = this.circuitBreaker;
     // Cast to any so we can assign our custom async wrapper; the runtime contract is
     // fulfilled — we forward the InternalAxiosRequestConfig and return an AxiosPromise.
-    (this.client.defaults as any).adapter = async (config: unknown) => {
-      return cb?.execute(
-        () => (originalAdapter as unknown as (c: unknown) => Promise<unknown>)(config),
-        async () => {
-          throw new Error(
-            "LabelGrid API circuit breaker is open - service temporarily unavailable",
-          );
-        },
-      );
+    // Intentionally no fallback: CircuitBreaker.execute() invokes its fallback on
+    // ANY failure while CLOSED, not only when genuinely OPEN. A fallback here
+    // previously masked every real error (401s, bad paths, network failures)
+    // behind a generic "circuit breaker is open" message. Omitting it lets the
+    // real error — or the circuit breaker's own accurate OPEN-state error —
+    // reach callers.
+    //
+    // axios 1.x's defaults.adapter is a resolution HINT (the array
+    // ["xhr","http","fetch"] by default), not a callable function — invoking
+    // it directly throws "originalAdapter is not a function" on every single
+    // call, which was silently swallowed by the fallback above and miscounted
+    // as circuit-breaker failures. Resolve the real transport function via
+    // axios's own public getAdapter(adapters, config), the same call axios's
+    // internal request pipeline uses. Always resolve from the ORIGINAL
+    // pre-capture spec, never from config.adapter: axios merges
+    // defaults.adapter into config.adapter before invoking it, and by then
+    // defaults.adapter IS this wrapper function, so reading config.adapter
+    // here would resolve straight back to this same wrapper and recurse
+    // forever.
+    (this.client.defaults as any).adapter = async (config: any) => {
+      const realAdapter = (axios as any).getAdapter(originalAdapterSpec, config);
+      return cb?.execute(() => realAdapter(config));
     };
 
     // Load config from database on initialization
     this.loadConfig();
+  }
+
+  /**
+   * LabelGrid's real public API is served entirely under /api/public with no
+   * version segment (confirmed against LabelGrid's own OpenAPI spec) — older
+   * code here assumed a bare host and prefixed every endpoint with /v1/,
+   * which 404s on every call. This normalizes any configured base URL (env
+   * var or DB-stored) to always end in /api/public exactly once.
+   */
+  private normalizeBaseUrl(url: string): string {
+    const trimmed = (url || "").replace(/\/+$/, "");
+    return trimmed.endsWith("/api/public") ? trimmed : `${trimmed}/api/public`;
   }
 
   private async loadConfig() {
@@ -346,8 +473,11 @@ class LabelGridService {
 
       if (provider) {
         // Use actual fields from the schema
-        this.baseUrl =
-          (provider as any)?.apiBase || this.baseUrl || "https://api.labelgrid.com";
+        this.baseUrl = this.normalizeBaseUrl(
+          (provider as any)?.apiBase ||
+            this.baseUrl ||
+            "https://api.labelgrid.com",
+        );
         this.endpoints = (provider as any)?.requirements?.endpoints || {};
         this.webhookSecret =
           (provider as any)?.requirements?.webhookSecret || this.webhookSecret;
@@ -363,8 +493,9 @@ class LabelGridService {
         );
       } else {
         // Fallback to environment variables (expected until provider is configured)
-        this.baseUrl =
-          process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
+        this.baseUrl = this.normalizeBaseUrl(
+          process.env.LABELGRID_API_URL || "https://api.labelgrid.com",
+        );
         this.endpoints = {};
         this.configLoaded = true;
         // Silent fallback - provider will be added when distribution is configured
@@ -374,8 +505,9 @@ class LabelGridService {
         { err: error },
         "Failed to load LabelGrid config from database:",
       );
-      this.baseUrl =
-        process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
+      this.baseUrl = this.normalizeBaseUrl(
+        process.env.LABELGRID_API_URL || "https://api.labelgrid.com",
+      );
       this.endpoints = {};
     }
   }
@@ -1562,9 +1694,13 @@ class LabelGridService {
   }
 
   /**
-   * Search for an artist by name across all LabelGrid-connected platforms.
-   * Returns the artist's ID and live status on every DSP LabelGrid distributes to.
-   * Endpoint: GET /v1/artists/search?q={name}
+   * Search for an artist by name in the authenticated LabelGrid account's
+   * own roster and return their platform presence.
+   *
+   * IMPORTANT: LabelGrid's public API has no cross-industry artist search —
+   * this only finds artists already registered under this LabelGrid account
+   * (GET /artists?filter[artist_name]=...). It returns null for any artist
+   * not managed through this account, which is expected and non-fatal.
    */
   async searchArtistAcrossPlatforms(
     artistName: string,
@@ -1578,37 +1714,53 @@ class LabelGridService {
       return null;
     }
 
-    const endpoint = this.getEndpoint("searchArtist", "/v1/artists/search");
-    this.logApiCall("GET", `${endpoint}?q=${artistName}`);
+    const endpoint = this.getEndpoint("searchArtist", "/artists");
+    this.logApiCall("GET", endpoint, { "filter[artist_name]": artistName });
 
     try {
       const response = await this.retryWithBackoff(async () => {
-        return await this.client.get<{
-          artists: LabelGridArtistSearchResult[];
-        }>(endpoint, {
-          params: { q: artistName, limit: 5 },
-        });
+        return await this.client.get<{ data: Record<string, any>[] }>(
+          endpoint,
+          {
+            params: { "filter[artist_name]": artistName, per_page: 5 },
+          },
+        );
       });
 
-      const artists: LabelGridArtistSearchResult[] =
-        response.data.artists ??
-        (Array.isArray(response.data)
-          ? (response.data as LabelGridArtistSearchResult[])
-          : []);
+      const artists = response?.data?.data ?? [];
       if (!artists.length) return null;
 
       // Pick the best match by name similarity
       const query = artistName.toLowerCase().trim();
       const best = artists.reduce((prev, curr) => {
-        const prevSim = prev.name.toLowerCase().includes(query) ? 1 : 0;
-        const currSim = curr.name.toLowerCase().includes(query) ? 1 : 0;
+        const prevSim = String(prev?.artist_name ?? "")
+          .toLowerCase()
+          .includes(query)
+          ? 1
+          : 0;
+        const currSim = String(curr?.artist_name ?? "")
+          .toLowerCase()
+          .includes(query)
+          ? 1
+          : 0;
         return currSim > prevSim ? curr : prev;
       }, artists[0]);
 
+      const platforms = buildLabelGridPlatformPresences(best);
+      const result: LabelGridArtistSearchResult = {
+        id: String(best?.id),
+        name: best?.artist_name ?? artistName,
+        slug: best?.public_id ?? String(best?.id),
+        imageUrl: undefined,
+        genres: [],
+        verified: false,
+        platforms,
+      };
+
       logger.info(
-        `[LabelGrid] Artist search found: ${best.name} — ${best.platforms.length ?? 0} platform(s)`,
+        `[LabelGrid] Artist search found: ${result.name} — ${platforms.length} platform(s)`,
       );
-      return best;
+      return result;
     } catch (err) {
       logger.warn(
         `[LabelGrid] Artist search failed (non-fatal): ${(err as Error).message ?? err}`,
@@ -1618,8 +1770,10 @@ class LabelGridService {
   }
 
   /**
-   * Get all platform presences for a LabelGrid artist ID.
-   * Endpoint: GET /v1/artists/:id/platforms
+   * Get all platform presences for a LabelGrid artist ID. LabelGrid has no
+   * dedicated /platforms sub-resource — DSP URLs and native platform IDs
+   * live directly on the Artist object — so this fetches the artist record
+   * itself (GET /artists/{artist}) and derives presences from it.
    */
   async getArtistPlatformPresence(
     labelGridArtistId: string,
@@ -1628,19 +1782,17 @@ class LabelGridService {
 
     if (!this.isConfigured) return [];
 
-    const endpoint = this.getEndpoint(
-      "getArtistPlatforms",
-      "/v1/artists/:id/platforms",
-    ).replace(":id", labelGridArtistId);
+    const endpoint = this.getEndpoint("getArtist", "/artists/:id").replace(
+      ":id",
+      encodeURIComponent(labelGridArtistId),
+    );
     this.logApiCall("GET", endpoint);
 
     try {
       const response = await this.retryWithBackoff(async () => {
-        return await this.client.get<{
-          platforms: LabelGridArtistPlatformPresence[];
-        }>(endpoint);
+        return await this.client.get<Record<string, any>>(endpoint);
       });
-      return response.data.platforms ?? [];
+      return buildLabelGridPlatformPresences(response?.data ?? {});
     } catch (err) {
       logger.warn(
         `[LabelGrid] Artist platform presence fetch failed (non-fatal): ${(err as Error).message ?? err}`,
@@ -1650,51 +1802,24 @@ class LabelGridService {
   }
 
   /**
-   * Retrieve the distributed release catalog for an artist on a given platform.
-   * When LabelGrid API is configured this calls GET /v1/artists/:externalId/releases.
-   * Returns an empty array (non-fatal) when the API is not configured, so callers
-   * can fall back to direct platform API scanning.
+   * LabelGrid's public API has no artist-scoped release-listing endpoint
+   * (confirmed against LabelGrid's own OpenAPI spec: GET /releases only
+   * filters by is_live/label_id/barcode_number/cat — never by artist). There
+   * is no real request this method can make, so it is a permanent, honest
+   * no-op rather than calling a fictional path. Callers should rely on
+   * direct platform API scanning for per-artist catalog data. (Zero callers
+   * today; kept for API surface stability.)
    */
   async getArtistCatalog(
     artistExternalId: string,
     platform?: string,
   ): Promise<LabelGridCatalogRelease[]> {
-    await this.loadConfig();
-
-    if (!this.isConfigured) {
-      logger.warn(
-        "[LabelGrid] API not configured — artist catalog unavailable, caller should fall back to direct platform scan",
-      );
-      return [];
-    }
-
-    const endpoint = this.getEndpoint(
-      "getArtistCatalog",
-      "/v1/artists/:id/releases",
-    ).replace(":id", encodeURIComponent(artistExternalId));
-    this.logApiCall("GET", endpoint, { platform });
-
-    try {
-      const response = await this.retryWithBackoff(async () => {
-        return await this.client.get<
-          { releases: LabelGridCatalogRelease[] } | LabelGridCatalogRelease[]
-        >(endpoint, { params: platform ? { platform } : undefined });
-      });
-
-      const releases: LabelGridCatalogRelease[] = Array.isArray(response.data)
-        ? (response.data as LabelGridCatalogRelease[])
-        : (((response.data as Record<string, unknown>).releases as LabelGridCatalogRelease[] | undefined) ?? []);
-
-      logger.info(
-        `[LabelGrid] Artist catalog fetched: ${releases.length} release(s) for ${artistExternalId}`,
-      );
-      return releases;
-    } catch (err) {
-      logger.warn(
-        `[LabelGrid] Artist catalog fetch failed (non-fatal), caller may fall back to direct scan: ${(err as Error).message ?? err}`,
-      );
-      return [];
-    }
+    logger.info(
+      `[LabelGrid] getArtistCatalog(${artistExternalId}${platform ? `, ${platform}` : ""}) — ` +
+        "no-op: LabelGrid has no artist-scoped release-listing endpoint; " +
+        "callers should fall back to direct platform API scanning.",
+    );
+    return [];
   }
 
   private simulateCreateRelease(

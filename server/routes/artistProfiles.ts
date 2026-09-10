@@ -23,6 +23,7 @@ const createProfileSchema = z.object({
   deezerArtistId: z.string().max(255).optional(),
   soundcloudArtistId: z.string().max(255).optional(),
   amazonMusicArtistId: z.string().max(255).optional(),
+  audiomackSlug: z.string().max(255).optional(),
   profileImageUrl: z.string().url().max(500).optional(),
   genres: z.array(z.string()).max(10).optional(),
 });

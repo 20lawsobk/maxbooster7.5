@@ -6,7 +6,10 @@ description: Full shape contract required by baseModelTrainer.ts, ContentGenerat
 ## Rule
 All exports must match the EXACT nested access patterns in baseModelTrainer.ts. Wrong shapes produce silent `undefined` chain errors or runtime TypeErrors.
 
-**Why:** The stub was recreated after the file went missing. Three rounds of shape fixes were needed (sequencing, CALL_TO_ACTION_LIBRARY structure, then PAID_AD_BENCHMARKS platform metrics).
+**Why:** The stub was recreated after the file went missing (its absence silently killed 10+ routes at startup). Three rounds of shape fixes were needed (sequencing, CALL_TO_ACTION_LIBRARY structure, then PAID_AD_BENCHMARKS platform metrics).
+
+## Full export list
+`SOCIAL_MEDIA_MUSIC_PATTERNS`, `VIRAL_CONTENT_CORPUS_FLAT`, `ORGANIC_AS_ADS_PATTERNS`, `PAID_AD_BENCHMARKS`, `ENGAGEMENT_PREDICTION_FEATURES`, `GENRE_VIRAL_HOOKS`, `PLATFORM_CONTENT_SCRIPTS`, `CALL_TO_ACTION_LIBRARY`, `EMOTIONAL_TRIGGER_PATTERNS`, `VIDEO_CONTENT_TRAINING_PACK`, `getHashtagsForGenre`. If any go missing again, every one of these needs its shape re-verified against consumer access patterns before trusting the file — not just the ones documented below with a known-crash history.
 
 ## Critical shapes (that previously crashed)
 

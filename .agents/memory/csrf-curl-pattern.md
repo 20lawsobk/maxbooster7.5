@@ -10,6 +10,8 @@ The app uses the double-submit cookie pattern. There is no `/api/auth/csrf` endp
 
 **Why:** The middleware validates that the `X-CSRF-Token` header matches the `csrf-token` cookie. The cookie is set automatically on login. A GET to `/api/auth/csrf` doesn't exist and returns 404.
 
+**Which routes are exempt:** `demo`, `login`, and `register` are the only CSRF-exempt auth POSTs (including temp dev-only test-login routes mirroring the demo pattern). Every other non-exempt POST — including from a curl session that already has a cookie jar — needs a real token: `GET /api/csrf-token` first (a real, existing endpoint — distinct from the nonexistent `/api/auth/csrf` above), which reuses and returns the same token the CSRF middleware already issued (see csrf-token-endpoint-must-reuse-middleware-token.md), then pass that value as `X-CSRF-Token`.
+
 **How to apply in curl:**
 ```bash
 JAR=$(mktemp)

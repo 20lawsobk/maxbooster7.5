@@ -1840,17 +1840,20 @@ class ArtistProfileService {
 
     const query = profile.artistName;
 
-    // Run UPC lookup (if provided) + name search in parallel.
-    // LabelGrid is a distribution platform only — it has no public artist search API
-    // (token scopes: user.view-catalog, user.gate-use). LabelGrid platform status is
-    // populated separately via webhook callbacks from distribution submissions.
+    // Run UPC lookup (if provided) + name search + LabelGrid roster search in
+    // parallel. LabelGrid's public API has no cross-industry artist search —
+    // searchArtistAcrossPlatforms only finds artists already registered under
+    // this LabelGrid account (GET /artists?filter[artist_name]=), returning
+    // null (non-fatal) for anyone else. There is no separate webhook
+    // mechanism populating LabelGrid platform status — this call is the only
+    // source for it.
     // UPC results are exact and bypass confidence scoring — treated as 97 confidence.
-    const lgArtist = null; // LabelGrid does not expose an artist search endpoint
-    const [raw, upcHits] = await Promise.all([
+    const [raw, upcHits, lgArtist] = await Promise.all([
       this.searchAllPlatforms(query),
       upc
         ? this.searchByUPC(upc)
         : Promise.resolve({ apple: null, deezer: null }),
+      labelGridService.searchArtistAcrossPlatforms(query).catch(() => null),
     ]);
 
     // Score each platform's results independently
@@ -1978,9 +1981,9 @@ class ArtistProfileService {
     if (
       finalAudiomack &&
       finalAudiomack?.confidence >= CONFIDENCE_THRESHOLD &&
-      !profile?.soundcloudArtistId
+      !profile?.audiomackSlug
     ) {
-      updates.soundcloudArtistId =
+      updates.audiomackSlug =
         finalAudiomack?.result.slug || finalAudiomack?.result.id;
       savedFields?.push("audiomack");
     }
@@ -2018,6 +2021,45 @@ class ArtistProfileService {
     }
 
     const labelgridConfigured = labelGridService?.isApiConfigured();
+
+    // LabelGrid Artist records are first-party (the artist's own distributor
+    // submission), so — like the UPC-exact-match path — they're applied
+    // without confidence scoring. Tidal, SoundCloud, and Amazon Music have no
+    // other automated discovery path in this function at all; Spotify,
+    // Apple, and Deezer already have higher-confidence direct-platform-API
+    // matches above, so LabelGrid only fills those in when the direct search
+    // didn't confirm one this round.
+    const lgByPlatform = new Map(
+      labelgridPlatforms
+        .filter((p) => p.artistId)
+        .map((p) => [p.platform, p]),
+    );
+    const lgAppliedFields: string[] = [];
+    const applyFromLabelGrid = (
+      lgPlatform: string,
+      profileField: string,
+      savedFieldName: string,
+    ) => {
+      const match = lgByPlatform.get(lgPlatform);
+      const alreadySet =
+        (profile as any)?.[profileField] || (updates as any)[profileField];
+      if (match?.artistId && !alreadySet) {
+        (updates as any)[profileField] = match.artistId;
+        savedFields?.push(savedFieldName);
+        lgAppliedFields.push(savedFieldName);
+      }
+    };
+    applyFromLabelGrid("tidal", "tidalArtistId", "tidal");
+    applyFromLabelGrid("soundcloud", "soundcloudArtistId", "soundcloud");
+    applyFromLabelGrid("amazon_music", "amazonMusicArtistId", "amazon_music");
+    applyFromLabelGrid("spotify", "spotifyArtistId", "spotify");
+    applyFromLabelGrid("apple_music", "appleArtistId", "apple");
+    applyFromLabelGrid("deezer", "deezerArtistId", "deezer");
+    if (lgAppliedFields.length > 0) {
+      logger.info(
+        `[ArtistProfile] LabelGrid-sourced fields applied: profile=${profileId} fields=[${lgAppliedFields.join(",")}]`,
+      );
+    }
 
     // Generate URL-template discoveries for all 97 DSPs.
     // These are generated once using the verified artist name — NOT fetched per platform.
@@ -2470,6 +2512,22 @@ class ArtistProfileService {
         claimInstructions:
           "Visit soundcloud.com/for/artists to upgrade to SoundCloud Pro for expanded analytics. Your username/slug on SoundCloud is your identifier.",
         distributorHandles: false,
+        autoDiscoverKey: "soundcloud",
+      },
+      {
+        key: "audiomack",
+        label: "Audiomack for Artists",
+        portalUrl: "https://audiomack.com/world/post/account-claim",
+        artistPageUrl: profile.audiomackSlug
+          ? `https://audiomack.com/${profile.audiomackSlug}`
+          : null,
+        fieldKey: "audiomackSlug",
+        claimed: !!profile.audiomackSlug,
+        artistId: profile.audiomackSlug ?? null,
+        howVerified: "Artist name matching",
+        claimInstructions:
+          "Audiomack has no separate artist portal — sign in at audiomack.com, then follow Audiomack's official claim-your-profile process to verify you're the real artist. Your username/slug on Audiomack is your identifier.",
+        distributorHandles: false,
         autoDiscoverKey: "audiomack",
       },
     ];
@@ -2485,6 +2543,7 @@ class ArtistProfileService {
       storedIds["Amazon"] = profile.amazonMusicArtistId;
     if (profile.soundcloudArtistId)
       storedIds["SoundCloud"] = profile.soundcloudArtistId;
+    if (profile.audiomackSlug) storedIds["Audiomack"] = profile.audiomackSlug;
 
     const urlDiscoveries = this.generateUrlDiscoveries(profile.artistName);
     const labelgridConfigured = labelGridService.isApiConfigured();
