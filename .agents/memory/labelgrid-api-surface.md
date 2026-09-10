@@ -69,6 +69,31 @@ previously confirmed to be a 3-segment RS256 JWT with no such prefix (see the JW
 scope section below) — so the two token FORMATS are visibly distinguishable on
 sight (JWT-shaped vs `wpp_`-prefixed opaque string) even before making a network call.
 
+## Independent confirmation via LabelGrid's own official tooling (Sep 2026)
+LabelGrid publishes an official, MIT-licensed npm workspace at `github.com/labelgrid/labelgrid-mcp`
+(org account, not a random namesake) containing `@labelgrid/cli`, `@labelgrid/mcp`, and the shared
+`@labelgrid/core` HTTP client. This is a genuinely useful diagnostic instrument, distinct from
+reading the OpenAPI spec or the WP plugin: `npx -y @labelgrid/cli@latest auth whoami --json
+--api-url https://api.labelgrid.com/api/public` sends a real request through LabelGrid's own
+first-party client (not this project's code) and is the most authoritative possible check of
+whether a given `LABELGRID_API_TOKEN` value is valid — it reproduced the exact same
+`TOKEN_INVALID` / 401 this project's code gets, closing off any remaining doubt that the 401 was
+caused by something in our request construction. Reach for this CLI check before re-deriving the
+diagnosis from scratch next time. Note: without `--api-url`, the CLI picks up this project's own
+`LABELGRID_API_URL` env var, which is stored bare (`https://api.labelgrid.com`, no `/api/public`
+suffix) — that produces a misleading generic `NOT_FOUND` 404 instead of the real 401, so always
+pass `--api-url .../api/public` explicitly when using the CLI here.
+
+Their CLI docs also state plainly: "API access is part of LabelGrid's API plans" (a
+plan/tier-gated entitlement, not merely a token scope checkbox) and give an exact dashboard path
+for minting a real token: **Profile → API Tokens**. This corroborates the "API features enabled
+on your account" prerequisite noted below from the sandbox docs — a `wpp_`-prefixed token may be
+the only thing this account can currently generate precisely because its LabelGrid plan doesn't
+include full `/api/public` access, not because of a UI navigation mistake. LabelGrid's help
+article on this (`https://help.labelgrid.com/en/integrations/api-overview`) is behind a
+Cloudflare bot-challenge and can't be fetched programmatically from this sandbox — if this needs
+re-checking, ask the user to open it directly while logged in.
+
 ## Authoritative spec + decisive 401 isolation test
 The real machine-readable OpenAPI 3.1 spec is public at `https://api.labelgrid.com/docs/api.json`
 (~1MB; the human-facing Stoplight page at `/docs/api` is generated from it) — parse
