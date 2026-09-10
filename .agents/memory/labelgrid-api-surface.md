@@ -52,6 +52,51 @@ curl and the live service after fixing the base URL, circuit breaker, and axios
 adapter bugs (see axios-adapter-wrapping-gotcha.md and
 circuit-breaker-fallback-masks-errors.md — this integration is what surfaced both).
 
+## Authoritative spec + decisive 401 isolation test
+The real machine-readable OpenAPI 3.1 spec is public at `https://api.labelgrid.com/docs/api.json`
+(~1MB; the human-facing Stoplight page at `/docs/api` is generated from it) — parse
+it directly with fetch+JSON.parse for exact paths/schemas instead of guessing or
+trusting old notes. It mechanically confirms `servers: ["https://api.labelgrid.com/api/public"]`
+and `securitySchemes.http = {type: "http", scheme: "bearer"}`.
+
+The spec exposes `GET /me` (tag "User Info") — the minimal possible authenticated
+call, zero query params/business logic. A bare `fetch()` with no project code
+involved, using both `LABELGRID_API_TOKEN` and `LABELGRID_TEST_API`, returns a clean
+`{"message":"Unauthorized"}` 401 from this endpoint too. Use this pattern first
+whenever a LabelGrid integration bug is suspected: it isolates "is the token/account
+valid at all" from every other variable (our axios wrapper, request shape, endpoint
+logic) in one cheap call, and it decisively cleared our own code of suspicion here.
+
+## Sandbox vs. production are separate stacks with separate tokens
+Confirmed from the docs prose (not the prod OpenAPI spec, which only lists the prod
+server): production tokens are minted at `app.labelgrid.com/user/profile/api-tokens`
+and are for `api.labelgrid.com`; sandbox tokens are minted separately at
+`frontend-sandbox.stg.labelgrid.com/user/profile/api-tokens` and are for the
+DIFFERENT host `api-sandbox.stg.labelgrid.com` (own OpenAPI doc at
+`/docs/api` on that host, not fetched/parsed yet). A sandbox-minted token will not
+authenticate against the production host or vice versa. Sandbox additionally
+requires LabelGrid support to IP-allowlist the caller — from this project's outbound
+IP, a bare fetch to `api-sandbox.stg.labelgrid.com` fails at the transport level
+(`fetch failed`), not even reaching a 401, consistent with not being allowlisted.
+Docs also separately call out "API features enabled on your account" as its own
+prerequisite, independent of token validity — a real account could have a
+well-formed, unrevoked token and still 401 if that entitlement isn't on. Any future
+LabelGrid 401 triage should ask, in order: (1) is this token prod or sandbox, (2)
+does the host match, (3) is the sandbox caller IP allowlisted if relevant, (4) is
+the "API features" entitlement actually enabled — before assuming the token itself
+is simply wrong.
+
+## Official WordPress plugin is a separate namespace, not a source of catalog-API answers
+LabelGrid publishes an official open-source WP plugin ("LabelGrid Tools", GPL, on
+wordpress.org — safe to fetch/read as reference, same as reading API docs) that
+talks to a DIFFERENT namespace, `/api/wpp/*` (WordPress-Plugin-specific: install
+validation via `/api/wpp/me`, follow-to-download gate sessions, presave campaigns).
+It never touches `/api/public/*`. Useful as an auth-scheme cross-check (confirmed
+Bearer, confirmed 401/403="rejected"-vs-other="unreachable" is the right way to
+triage a validation call) but NOT a source of ground truth for the general partner
+catalog API's paths/shapes — don't extrapolate from `/api/wpp/*` behavior to
+`/api/public/*` behavior, they are different backends with different token scopes.
+
 ## Still broken (follow-up work, not fixed in this pass)
 ~25 other methods (releases, ISRC/UPC, smart links, presave, payouts, royalty
 statements, sync licensing, DSP catalog import) still use the old broken paths/shapes.
