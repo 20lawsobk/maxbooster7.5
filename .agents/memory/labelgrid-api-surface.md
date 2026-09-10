@@ -89,10 +89,18 @@ plan/tier-gated entitlement, not merely a token scope checkbox) and give an exac
 for minting a real token: **Profile → API Tokens**. This corroborates the "API features enabled
 on your account" prerequisite noted below from the sandbox docs — a `wpp_`-prefixed token may be
 the only thing this account can currently generate precisely because its LabelGrid plan doesn't
-include full `/api/public` access, not because of a UI navigation mistake. LabelGrid's help
-article on this (`https://help.labelgrid.com/en/integrations/api-overview`) is behind a
-Cloudflare bot-challenge and can't be fetched programmatically from this sandbox — if this needs
-re-checking, ask the user to open it directly while logged in.
+include full `/api/public` access, not because of a UI navigation mistake.
+
+**Correction (re-checked Sep 2026):** the help site is NOT universally Cloudflare-blocked —
+`https://help.labelgrid.com/en/developers/api-overview` fetched cleanly via plain webFetch with
+full content. The earlier `/en/integrations/api-overview` path now 404s (page moved/renamed);
+use the `/en/developers/...` path going forward. That page spells out the plan gate precisely:
+API + sandbox access require an **active, paid API plan billed annually** — the standard 7-day
+free trial does NOT include API/sandbox access, and API plans have no trial period of their own.
+It also gives exact token-minting URLs: production `https://app.labelgrid.com/user/profile/api-tokens`,
+sandbox `https://frontend-sandbox.stg.labelgrid.com/user/profile/api-tokens` (separate token per
+environment, consistent with the sandbox-vs-prod section below). If a future check needs this
+page again, just webFetch it directly — no login/bypass needed.
 
 ## Authoritative spec + decisive 401 isolation test
 The real machine-readable OpenAPI 3.1 spec is public at `https://api.labelgrid.com/docs/api.json`
@@ -176,3 +184,9 @@ statements, sync licensing, DSP catalog import) still use the old broken paths/s
 Only `searchArtistAcrossPlatforms`, `getArtistPlatformPresence`, and the now-honest-
 no-op `getArtistCatalog` were fixed and verified end-to-end this pass. See project
 tasks for the follow-on fix and the missing webhook-receiver gap.
+
+The live Stoplight docs (`api.labelgrid.com/docs/api`) list "Statements", "Royalties",
+and "Transactions" as three SEPARATE top-level endpoint groups, not one blended
+royalty concept — don't assume a single unified endpoint covers all of task #213's
+"royalty statements"; check which of the three (or which combination) each broken
+method actually needs against the spec before rewriting it.
