@@ -414,13 +414,14 @@ class LabelGridService {
   private circuitBreaker: CircuitBreaker;
 
   constructor() {
-    // In non-production environments, prefer a dedicated test/dev LabelGrid
-    // token (LABELGRID_TEST_API) when one is set, so local development can
-    // exercise the real API against a sandboxed/test-scoped account without
-    // touching the production token.
+    // LabelGrid issues API tokens scoped to the calling domain: the token
+    // generated for the dev workspace URL will not authenticate requests
+    // made from the production URL, and vice versa. LABELGRID_API_TOKEN is
+    // the dev-workspace-scoped token; LABELGRID_API_TOKEN1 is the
+    // production-scoped token issued for the deployed domain.
     this.apiToken =
-      process.env.NODE_ENV !== "production" && process.env.LABELGRID_TEST_API
-        ? process.env.LABELGRID_TEST_API
+      process.env.NODE_ENV === "production"
+        ? process.env.LABELGRID_API_TOKEN1
         : process.env.LABELGRID_API_TOKEN;
     this.baseUrl = this.normalizeBaseUrl(
       process.env.LABELGRID_API_URL || "https://api.labelgrid.com",
@@ -440,7 +441,9 @@ class LabelGridService {
         "⚠️  LabelGrid API token not configured. Distribution features will use simulated mode.",
       );
       logger.warn(
-        "   Set LABELGRID_API_TOKEN in your environment to enable real distribution.",
+        process.env.NODE_ENV === "production"
+          ? "   Set LABELGRID_API_TOKEN1 (production-scoped token) in your environment to enable real distribution."
+          : "   Set LABELGRID_API_TOKEN (dev-scoped token) in your environment to enable real distribution.",
       );
     } else {
       this.isConfigured = true;

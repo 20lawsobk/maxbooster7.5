@@ -735,7 +735,13 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     name: "LABELGRID_API_TOKEN",
     required: false,
     category: "distribution",
-    description: "LabelGrid API JWT token",
+    description: "LabelGrid API token scoped to the dev workspace URL",
+  },
+  {
+    name: "LABELGRID_API_TOKEN1",
+    required: false,
+    category: "distribution",
+    description: "LabelGrid API token scoped to the production URL",
   },
   {
     name: "LABELGRID_WEBHOOK_URL",

@@ -15,6 +15,7 @@ import { permanentFixRegistry } from "../services/permanentFixRegistry.js";
 import { env } from "../config/env.js";
 import { require2FA } from "../middleware/auth.js";
 import { systemIntelligence } from "../services/systemIntelligence.js";
+import { labelGridService } from "../services/labelgrid-service.js";
 
 const adminRouter = Router();
 
@@ -450,7 +451,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
       env?.STRIPE_SECRET_KEY
         ? pingApi("https://api.stripe.com/v1")
         : Promise.resolve({ status: "unknown" as const, latency: null }),
-      process.env.LABELGRID_API_TOKEN
+      labelGridService.isApiConfigured()
         ? pingApi("https://api.labelgrid.com")
         : Promise.resolve({ status: "unknown" as const, latency: null }),
       process.env.SPOTIFY_CLIENT_ID
