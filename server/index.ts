@@ -660,6 +660,24 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     }
   }
 
+  // LabelGrid royalty sync — reflects each LabelGrid-linked release's real
+  // rolling-30-day analytics into the royaltyTransactions ledger that
+  // /api/royalties/* reads from. Worker 0 only, so a multi-worker cluster
+  // never runs the same daily sync (and its splits distribution) more than
+  // once per day.
+  if (isBgWorker) {
+    try {
+      const { labelGridRoyaltySync } = await import(
+        "./services/labelGridRoyaltySync.js"
+      );
+      labelGridRoyaltySync.start();
+    } catch (e) {
+      logger.warn(
+        `[LabelGridRoyaltySync] Failed to start: ${(e as any)?.message}`,
+      );
+    }
+  }
+
   // Post-deploy self-test — activates DURING deployment boot, not after.
   // The first run starts immediately (non-blocking) so a bad deploy is caught
   // while it is rolling out; periodic re-runs continue afterwards. Worker 0

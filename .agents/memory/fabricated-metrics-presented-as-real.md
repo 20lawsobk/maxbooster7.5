@@ -33,11 +33,14 @@ audit that surfaced them, flagged to the user instead of auto-fixed):**
   `.sort((a, b) => b.popularity - a.popularity)` — so it's not just cosmetic, it decides which "trending"
   topics rank first for real users. Confirmed live (reachable from `autoPostGenerator.ts`, wired in
   `server/index.ts`).
+- `revenueForecaster.ts` — the "growth" trend/projection figure is derived from `Math.random()`, not any
+  real historical trend computation. Noticed in passing while auditing the LabelGrid royalty sync; exact
+  call sites and fix scope not yet individually confirmed.
 
 **Why this matters enough to record:** it directly conflicts with a "no mocks / no fabricated data"
 product standard, and it is easy to rediscover piecemeal (one file at a time) without ever realizing it is
-a systemic pattern across at least 4 unrelated subsystems (audio analysis, ad intelligence, ML ops
-self-monitoring, social analytics). A future audit of any one of these files should assume the others are
-likely still unfixed unless memory or the changelog says otherwise, and should scope a fix as "build the
-real measurement" (a real feature, potentially large) rather than a quick swap — this is not the same
-quick fix as the bandit class above.
+a systemic pattern across at least 5 unrelated subsystems (audio analysis, ad intelligence, ML ops
+self-monitoring, social analytics, revenue forecasting). A future audit of any one of these files should
+assume the others are likely still unfixed unless memory or the changelog says otherwise, and should scope
+a fix as "build the real measurement" (a real feature, potentially large) rather than a quick swap — this
+is not the same quick fix as the bandit class above.

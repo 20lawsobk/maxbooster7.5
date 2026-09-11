@@ -1336,6 +1336,12 @@ export default function Royalties() {
                             >
                               Amazon Music
                             </SelectItem>
+                            <SelectItem
+                              value="labelgrid"
+                              data-testid="option-platform-labelgrid"
+                            >
+                              LabelGrid Distribution
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

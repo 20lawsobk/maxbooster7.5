@@ -244,3 +244,31 @@ royalty concept. `getRoyaltySummary()` uses the account balance view (`GET
 /account`), `getRoyaltyStatements()` uses `GET /statements` (paginated, filterable
 by year via start_date/end_date) — confirm which of the three a given method
 actually needs against the spec/client source before touching this area again.
+
+## Release-level royalty sync now writes real data into royaltyTransactions (Sep 2026)
+`server/services/labelGridRoyaltySync.ts` runs daily (05:00 UTC) plus once at boot,
+gated on `isBgWorker`. For every release with `metadata.labelGridReleaseId` set, it
+calls `getReleaseAnalytics()` and UPSERTs one `royaltyTransactions` row per
+(releaseId, userId, platform="labelgrid", transactionType="streaming") — see
+rolling-window-sync-upsert.md for why UPSERT-by-identity (not append) is required
+here. Rows are `status: "pending"` (LabelGrid pays the label account, not each artist
+directly — no real payout has occurred) and revenue is split across real
+`royaltySplits` rows by percentage, falling back to 100% to the release owner.
+
+This is release-level only, by design — it does NOT touch the account-wide
+`getRoyaltySummary`/`getRoyaltyStatements` methods (structurally can't be split by
+artist — see the artist-scoping-gap section above), which remain task #216's
+territory. Any future work seeding/backfilling royalty rates (e.g. per-DSP streaming
+rate tables) should be aware this writer already owns the `platform="labelgrid"` rows
+in `royaltyTransactions` — don't create a second writer for the same identity tuple.
+
+Gated on the existing public `labelGridService.isApiConfigured(): boolean` (already
+used by `distribution.ts` in several places) so it never writes
+`simulateGetReleaseAnalytics()`'s placeholder zeros into the ledger as if real — check
+for an existing public accessor like this before assuming a private field (here,
+`isConfigured`) needs a new one added to expose it.
+
+As of this write-up, dev DB has zero releases with `labelGridReleaseId` set
+(consistent with the known `LABELGRID_API_TOKEN` 401 from task #213) — the writer is
+correct but has no real substrate to demonstrate against until that token/account
+issue resolves.
