@@ -77,3 +77,31 @@ mtime_ms = 1788562437820
 storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/ec6af829-d721-46c2-a9cb-735e90f77543/9d11381e-fdf5-4c83-8eaf-6f9e107071b9"
 storage_version_token = "1788562550512295"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "HmqdlxLuEbo9D7vOeAbgi"
+uri = "file://research/notes.md"
+type = "text"
+title = "Research Notes: Organic Social Platform Algorithms"
+description = "Research plan and running findings log, updated as research progresses."
+logical_id = "73c3acb8-0401-4ec1-a8da-4dcf8abaaab4"
+content_hash = "sha256:ec52e2f3ebb849b26bc5e4d2ec45cf244f7adbd63166169b5b652b93d8f2f54c"
+size = 2818
+mtime_ms = 1789127595189
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/73c3acb8-0401-4ec1-a8da-4dcf8abaaab4/fcd1211f-5887-4a70-89b5-3ebfba0aef9e"
+storage_version_token = "1789127625779591"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "SE1CxHJuHex8s0oxOQuRf"
+uri = "file://research/organic-social-algorithms-2026.md"
+type = "text"
+title = "Organic Social Platform Algorithm Signals (2025-2026)"
+description = "Cited research on how Instagram, TikTok, YouTube, Facebook, Threads, X, LinkedIn, and Google Business Profile rank organic content — now wired into Max Booster's content-generation awareness layer."
+logical_id = "6aadab37-bb66-4a93-a37f-d9dc82a9c673"
+content_hash = "sha256:684f5c74978c3e01d24c7b2bd36bb17164c4cdfe2a1be5f267db1b06fd779099"
+size = 28753
+mtime_ms = 1789128464946
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/6aadab37-bb66-4a93-a37f-d9dc82a9c673/544e22e6-656b-47ee-8700-afdb2e03a803"
+storage_version_token = "1789128483769945"
+content_type = "text/markdown"

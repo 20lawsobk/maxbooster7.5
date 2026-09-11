@@ -2005,7 +2005,17 @@ router.post(
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error submitting release:");
-      res.status(500).json({ error: "Failed to submit release" });
+      const message = error instanceof Error ? error.message : String(error);
+      // createRelease throws descriptive, user-actionable messages for each
+      // real failure mode — surface them instead of a generic 500 so sellers
+      // know whether to fix their submission or that LabelGrid itself failed.
+      if (message.startsWith("LabelGrid release blocked:")) {
+        return res.status(422).json({ error: message });
+      }
+      if (message.startsWith("LabelGrid API error:")) {
+        return res.status(502).json({ error: message });
+      }
+      res.status(500).json({ error: "Failed to submit release", message });
     }
   },
 );
@@ -2225,8 +2235,8 @@ router.get(
             userId,
             projectId: (release as any).projectId || undefined,
             date: new Date(),
-            totalStreams: (analytics as any).streams,
-            totalRevenue: (analytics as any).revenue.toString(),
+            totalStreams: analytics.totalStreams,
+            totalRevenue: analytics.totalRevenue.toString(),
             platformData: analytics.platforms,
             trackData: analytics.timeline,
           });
@@ -7450,6 +7460,14 @@ async function buildLabelGridPayload(
 ): Promise<LabelGridRelease> {
   const metadata = (release?.metadata as Record<string, unknown>) || {};
   const platformList = Array.isArray(platforms) ? platforms : [platforms];
+  // LabelGrid requires a real contact email on the label entity it creates —
+  // this is the label's point of contact, not a cosmetic default, so it must
+  // come from the release owner's actual account rather than be fabricated.
+  const artistIdRaw = release?.artistId;
+  const ownerEmail =
+    typeof artistIdRaw === "string" && artistIdRaw
+      ? (await storage.getUser(artistIdRaw))?.email
+      : undefined;
   return {
     title: String(release.title || ""),
     artist: String(
@@ -7465,6 +7483,9 @@ async function buildLabelGridPayload(
     artwork: String(metadata.artworkUrl || metadata?.artwork || ""),
     genre: String(release.genre || metadata?.primaryGenre || "Other"),
     label: metadata.label ? String(metadata.label) : undefined,
+    labelContactEmail: metadata.labelContactEmail
+      ? String(metadata.labelContactEmail)
+      : ownerEmail,
     copyrightYear: Number(metadata.copyrightYear) || new Date().getFullYear(),
     copyrightOwner: metadata.copyrightOwner ? String(metadata.copyrightOwner) : undefined,
     territoryMode:

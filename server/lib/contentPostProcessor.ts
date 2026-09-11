@@ -435,7 +435,7 @@ function repairBody(body: string, title?: string): string {
  * its structured follow-on lines) from user-facing text before it's used.
  */
 const DIRECTIVE_TAG_BLOCK_RE =
-  /\[[A-Z_]+(?:\s+[a-z_]+=\S+)*\]\n?(?:(?:Content shape|Length|Audience intent|Cadence|Hashtag\/keyword policy|Primary engagement signals|Quality dimensions):[^\n]*\n?)*/g;
+  /\[[A-Z_]+(?:\s+[a-z_]+=\S+)*\]\n?(?:(?:Content shape|Length|Audience intent|Cadence|Hashtag\/keyword policy|Primary engagement signals|Quality dimensions|Documented algorithm signals[^:]*):[^\n]*\n?)*/g;
 
 export function stripLeakedDirectives(text: string): string {
   if (!text) return text;

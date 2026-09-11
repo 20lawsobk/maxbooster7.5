@@ -1,5 +1,7 @@
 {
-  "revision": "2026-08-24.1",
+  "revision": "2026-09-11.1",
+  "registryLastResearched": "2026-09-11",
+  "researchMethodology": "algorithmSignals and sources are drawn from official platform engineering/policy documentation where available, corroborated by reputable independent reporting; claims that only appear in a single secondary source are phrased as reported/unconfirmed rather than as fact. This is organic/content-ranking research only — paid ad targeting and bidding are out of scope and live in a separate subsystem.",
   "platforms": {
     "facebook": {
       "label": "Facebook",
@@ -11,7 +13,19 @@
       "cta": "invite a reaction, share, tag, RSVP, or local action",
       "hashtagKeywordPolicy": "use 2-5 relevant hashtags and specific local/community keywords",
       "engagementSignals": ["meaningful_comments", "shares", "emotional_reactions", "event_responses"],
-      "qualityDimensions": ["story_value", "community_relevance", "native_media", "conversation"]
+      "qualityDimensions": ["story_value", "community_relevance", "native_media", "conversation"],
+      "researchedAt": "2026-09-11",
+      "algorithmSignals": [
+        "Ranking predicts the likelihood a viewer will comment, like, share, or spend time on a post, then blends those per-user predictions into one personalized score — there is no single fixed universal weight for any one reaction type.",
+        "Explicit actions (likes, comments, shares) and implicit signals (time spent viewing, scrolling past) are both modeled; scrolling past a post is itself a negative signal, not just a non-event.",
+        "New replies or comments on an older post can re-surface it into feed consideration ('unread/action bumping') — ranking is not purely a function of original post time.",
+        "Meta reported (October 2025) surfacing meaningfully more same-day creator Reels — recency can carry extra weight for video specifically, beyond baseline engagement scoring."
+      ],
+      "sources": [
+        {"title": "News Feed ranking, powered by machine learning", "publisher": "Engineering at Meta", "url": "https://engineering.fb.com/2021/01/26/core-infra/news-feed-ranking", "tier": 1, "publishedDate": "2021-01-26"},
+        {"title": "Our approach to Facebook Feed ranking", "publisher": "Meta Transparency Center", "url": "https://transparency.meta.com/rn-bi/features/ranking-and-content", "tier": 1, "publishedDate": "2025-06-11"},
+        {"title": "Inside the Facebook Algorithm in 2025", "publisher": "Buffer", "url": "https://buffer.com/resources/facebook-algorithm", "tier": 2, "publishedDate": "2025"}
+      ]
     },
     "instagram": {
       "label": "Instagram",
@@ -23,7 +37,18 @@
       "cta": "ask for a save, share to a DM, comment, or profile action",
       "hashtagKeywordPolicy": "use 3-5 precise topical hashtags; put important searchable terms in caption",
       "engagementSignals": ["saves", "shares", "meaningful_comments", "reel_completion"],
-      "qualityDimensions": ["visual_cohesion", "first_frame", "save_value", "shareability"]
+      "qualityDimensions": ["visual_cohesion", "first_frame", "save_value", "shareability"],
+      "researchedAt": "2026-09-11",
+      "algorithmSignals": [
+        "Feed, Stories, Explore, and Reels are ranked by separate systems tuned to different predicted actions — optimizing for one surface does not guarantee ranking on another.",
+        "Reels recommendation reach is explicitly reduced for low-resolution, watermarked, muted, or heavily text-covered videos, per Instagram's own ranking documentation.",
+        "Widely reported — though not fully spelled out in Instagram's own documentation — as especially strong Reels signals: watch time, likes-per-reach, and DM sends-per-reach; treat the exact ordering as industry-reported rather than officially confirmed.",
+        "Explore uses a multi-stage pipeline: a lightweight candidate-generation pass narrows a large pool before heavier models perform final ranking."
+      ],
+      "sources": [
+        {"title": "Instagram Ranking Explained | How Our Algorithm Works", "publisher": "About Instagram (Meta)", "url": "https://about.instagram.com/blog/announcements/instagram-ranking-explained", "tier": 1, "publishedDate": "2023-05-31"},
+        {"title": "Powered by AI: Instagram's Explore Recommender System", "publisher": "Instagram Engineering", "url": "https://instagram-engineering.com/powered-by-ai-instagrams-explore-recommender-system-7ca901d2a882", "tier": 1, "publishedDate": "2019"}
+      ]
     },
     "youtube": {
       "label": "YouTube",
@@ -35,7 +60,19 @@
       "cta": "extend the session with a related video, subscribe, or comment prompt",
       "hashtagKeywordPolicy": "prioritize searchable title, description, chapters, and a small set of hashtags",
       "engagementSignals": ["click_through_rate", "watch_time", "completion", "session_continuation"],
-      "qualityDimensions": ["title_thumbnail_fit", "opening_retention", "watch_value", "session_depth"]
+      "qualityDimensions": ["title_thumbnail_fit", "opening_retention", "watch_value", "session_depth"],
+      "researchedAt": "2026-09-11",
+      "algorithmSignals": [
+        "Clicks signal intent but are explicitly NOT equated with watching — YouTube's own material stresses that watch time, and especially 'valued watch time' (viewer-survey-informed satisfaction), are the higher-order signals beyond a click.",
+        "Likes, dislikes, and shares are satisfaction signals, but their weighting is adjusted per individual viewer habit rather than one fixed global weight, per YouTube's official explanation.",
+        "2025 YouTube leadership commentary describes recommendations increasingly incorporating viewing context (time of day, device) alongside historical watch behavior, not just CTR/watch time in isolation.",
+        "YouTube does not publicly disclose Shorts-specific ranking mechanics or numeric signal weights for any surface — treat specific claims like 'Shorts get deprioritized after N days' as unconfirmed analyst speculation, not documented policy."
+      ],
+      "sources": [
+        {"title": "On YouTube's recommendation system", "publisher": "YouTube Blog", "url": "https://blog.youtube/inside-youtube/on-youtubes-recommendation-system", "tier": 1, "publishedDate": "2021-09-15"},
+        {"title": "How YouTube's Recommendation System Works In 2025", "publisher": "Search Engine Journal", "url": "https://www.searchenginejournal.com/how-youtubes-recommendation-system-works-in-2025/538379/", "tier": 2, "publishedDate": "2025"},
+        {"title": "The relative importance of click-through rates (CTR) versus watch time for YouTube views", "publisher": "Emerald / Intl. Journal of Pervasive Computing and Communications", "url": "https://www.emerald.com/ijpcc/article/19/4/573/375567", "tier": 2, "publishedDate": "2023"}
+      ]
     },
     "tiktok": {
       "label": "TikTok",
@@ -47,7 +84,17 @@
       "cta": "invite a rewatch, duet, stitch, follow, or specific comment",
       "hashtagKeywordPolicy": "use 3-5 descriptive hashtags; pair niche terms with relevant trend terms",
       "engagementSignals": ["watch_completion", "rewatches", "shares", "duets", "comments"],
-      "qualityDimensions": ["first_seconds", "loopability", "native_energy", "trend_fit"]
+      "qualityDimensions": ["first_seconds", "loopability", "native_energy", "trend_fit"],
+      "researchedAt": "2026-09-11",
+      "algorithmSignals": [
+        "Full video completion is explicitly called out by TikTok as a strong ranking signal, outweighing weaker contextual signals such as viewer geography.",
+        "Follower count and an account's history of high-performing videos are NOT direct For You ranking inputs per TikTok's own documentation — each video is evaluated on its own.",
+        "Negative feedback signals (tapping 'Not Interested', hiding a creator or a sound) actively suppress future recommendations from that source for that viewer.",
+        "The feed deliberately diversifies away from consecutive videos by the same creator or using the same sound, to avoid repetition and filter bubbles."
+      ],
+      "sources": [
+        {"title": "How TikTok recommends videos #ForYou", "publisher": "TikTok Newsroom", "url": "https://newsroom.tiktok.com/how-tiktok-recommends-videos-for-you?lang=en", "tier": 1, "publishedDate": "2020-06-18"}
+      ]
     },
     "threads": {
       "label": "Threads",
@@ -59,7 +106,16 @@
       "cta": "ask an honest question that earns a reply rather than a promotion",
       "hashtagKeywordPolicy": "use only directly relevant keywords and at most one topical tag when useful",
       "engagementSignals": ["replies", "reposts", "quote_conversations", "meaningful_reads"],
-      "qualityDimensions": ["authentic_voice", "conversation_depth", "timeliness", "replyability"]
+      "qualityDimensions": ["authentic_voice", "conversation_depth", "timeliness", "replyability"],
+      "researchedAt": "2026-09-11",
+      "algorithmSignals": [
+        "Meta has confirmed reply count, post recency, and a user's existing interaction history with accounts/posts as real Threads recommendation inputs.",
+        "Independent reporting found Threads' feed rewarded comments/replies more heavily than likes or reposts — Meta itself acknowledged this created an exploitable 'engagement bait' incentive it has worked to correct, so a reply-baiting CTA is a known abuse pattern, not a clean growth hack."
+      ],
+      "sources": [
+        {"title": "Threads knows it has an engagement bait problem", "publisher": "The Verge", "url": "https://www.theverge.com/2024/10/7/24264382/threads-engagement-bait-problem-mosseri-meta", "tier": 2, "publishedDate": "2024-10-07"},
+        {"title": "Our approach to explaining ranking", "publisher": "Meta Transparency Center", "url": "https://transparency.meta.com/features/explaining-ranking", "tier": 1, "publishedDate": "2025"}
+      ]
     },
     "google_business": {
       "label": "Google Business",
@@ -71,7 +127,18 @@
       "cta": "use a precise local action such as book, learn more, call, or directions",
       "hashtagKeywordPolicy": "use natural location, venue, service, and event keywords; avoid hashtag stuffing",
       "engagementSignals": ["profile_actions", "website_clicks", "calls", "directions", "offer_views"],
-      "qualityDimensions": ["local_relevance", "freshness", "photo_quality", "action_clarity"]
+      "qualityDimensions": ["local_relevance", "freshness", "photo_quality", "action_clarity"],
+      "researchedAt": "2026-09-11",
+      "algorithmSignals": [
+        "Google's own documentation names exactly three organic local ranking factors: relevance (how well the profile matches the query), distance (proximity to the searcher or inferred location), and prominence (how well-known the business is).",
+        "Prominence draws on information from across the web, links and mentions, and review quantity AND quality — more and better reviews can genuinely help local ranking.",
+        "Google explicitly states there is no way to pay for better organic local placement — Business Profile ranking is separate from paid Local Services Ads.",
+        "There is no official Google documentation confirming that posting frequency or Business Profile 'Posts' directly affects ranking — treat that specific claim as unverified marketing advice, not documented mechanics."
+      ],
+      "sources": [
+        {"title": "Tips to improve your local ranking on Google", "publisher": "Google Business Profile Help", "url": "https://support.google.com/business/answer/7091?hl=en-en", "tier": 1, "publishedDate": null},
+        {"title": "The Local Algorithm: Relevance, Proximity, and Prominence", "publisher": "Moz", "url": "https://moz.com/blog/local-algorithm-relevance-proximity-and-prominence", "tier": 2, "publishedDate": null}
+      ]
     },
     "x": {
       "label": "X",
@@ -83,7 +150,17 @@
       "cta": "ask for a take, quote, reply, or poll response; place links with context",
       "hashtagKeywordPolicy": "use 0-2 precise hashtags and lead with natural searchable terms",
       "engagementSignals": ["replies", "reposts", "quotes", "bookmarks", "video_completion"],
-      "qualityDimensions": ["timeliness", "replyability", "clarity", "conversation_velocity"]
+      "qualityDimensions": ["timeliness", "replyability", "clarity", "conversation_velocity"],
+      "researchedAt": "2026-09-11",
+      "algorithmSignals": [
+        "X's own open-sourced recommendation pipeline blends in-network posts with out-of-network posts surfaced via embedding-based clustering, then scores every candidate across multiple predicted action families (engagement, clicks, dwell/attention, author actions, negative feedback) before combining them into one weighted score.",
+        "Posts older than 48 hours are filtered out of the ranking candidate pool entirely, alongside duplicates and blocked/muted authors or keywords.",
+        "A final re-ranking pass trades off raw score against similarity to neighboring already-selected posts, increasing timeline diversity rather than showing near-duplicate takes back to back.",
+        "Explicit boosts exist in the scoring for author diversity, out-of-network discovery, and newer authors."
+      ],
+      "sources": [
+        {"title": "x-algorithm (open-source recommendation pipeline)", "publisher": "X / xAI", "url": "https://github.com/xai-org/x-algorithm", "tier": 1, "publishedDate": "2026"}
+      ]
     },
     "linkedin": {
       "label": "LinkedIn",
@@ -95,7 +172,17 @@
       "cta": "end with a genuine professional question or invite a relevant perspective",
       "hashtagKeywordPolicy": "use 2-4 professional hashtags and plain-language industry keywords",
       "engagementSignals": ["dwell_time", "meaningful_comments", "shares", "profile_views"],
-      "qualityDimensions": ["insight_depth", "professional_relevance", "readability", "discussion"]
+      "qualityDimensions": ["insight_depth", "professional_relevance", "readability", "discussion"],
+      "researchedAt": "2026-09-11",
+      "algorithmSignals": [
+        "LinkedIn has publicly described ranking around relevance, demonstrated expertise, and engagement — specifically meaningful comments from people who already engage with that topic area, not raw comment volume.",
+        "Dwell time is an explicit, confirmed signal measured two ways: time an update is visible in-feed (once at least half of it is on-screen) and time spent on the destination content after a click — fast click-and-bounce behavior actively hurts distribution.",
+        "New content reaches existing connections/followers first; broader distribution beyond that network depends on engagement and inferred topical expertise rather than undifferentiated virality."
+      ],
+      "sources": [
+        {"title": "How LinkedIn's Algorithm Works, According to the LinkedIn Team", "publisher": "Buffer", "url": "https://buffer.com/resources/linkedin-algorithm", "tier": 2, "publishedDate": "2026"},
+        {"title": "LinkedIn Now Factors 'Dwell Time' Into Its Content Distribution Algorithm", "publisher": "Social Media Today", "url": "https://www.socialmediatoday.com/news/linkedin-now-factors-dwell-time-into-content-distribution-algorithm-whic/577839", "tier": 2, "publishedDate": "2020"}
+      ]
     }
   }
 }

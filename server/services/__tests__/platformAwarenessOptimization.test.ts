@@ -41,4 +41,23 @@ describe("social awareness platform optimization", () => {
     expect(conditioning).toContain("watch_completion");
     expect(conditioning).toContain("first_seconds");
   });
+
+  it("requires every platform to carry source-verified algorithm signals, not just content-strategy advice", () => {
+    for (const platform of SOCIAL_AWARENESS_PLATFORMS) {
+      const profile = getPlatformOptimization(platform);
+      expect(profile.algorithmSignals.length).toBeGreaterThan(0);
+      expect(profile.sources.length).toBeGreaterThan(0);
+      expect(profile.researchedAt).toBeTruthy();
+      for (const source of profile.sources) {
+        expect(source.url).toMatch(/^https?:\/\//);
+        expect([1, 2, 3]).toContain(source.tier);
+      }
+    }
+  });
+
+  it("surfaces the documented algorithm signals in the model conditioning string", () => {
+    const conditioning = platformAwarenessOptimization("LinkedIn");
+    expect(conditioning).toContain("Documented algorithm signals");
+    expect(conditioning).toContain("Dwell time");
+  });
 });

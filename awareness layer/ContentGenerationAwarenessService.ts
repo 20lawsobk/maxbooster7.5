@@ -359,17 +359,27 @@ const CONTENT_FORMAT_KW: Array<{ pattern: RegExp; format: string; platform: stri
   { pattern: /\bpress release\b/i, format: "Press Release", platform: "Media", weight: 1.5 },
 ];
 
+// Notes are grounded in documented organic ranking mechanics (see
+// shared/social-platform-optimization.json's algorithmSignals/sources) so a
+// live news mention resolves to a specific, source-checkable mechanic
+// instead of a generic "algorithm changed" alert. Paid ad targeting/bidding
+// is intentionally out of scope — that research lives in a separate
+// subsystem.
 const PLATFORM_ALGORITHM_KW: Array<{ pattern: RegExp; note: string; weight: number }> = [
-  { pattern: /\bfyp\b|\bfor you\b/i, note: "TikTok FYP algorithm shift detected", weight: 2.5 },
-  { pattern: /\binstagram algorithm\b/i, note: "Instagram algorithm change detected", weight: 2.5 },
-  { pattern: /\byoutube algorithm\b/i, note: "YouTube recommendation algorithm update", weight: 2.5 },
-  { pattern: /\bspotify algorithm\b|\bdiscovery\b/i, note: "Spotify discovery algorithm active", weight: 2.0 },
-  { pattern: /\borganic reach\b/i, note: "Organic reach fluctuation detected", weight: 2.0 },
-  { pattern: /\bshadowban\b/i, note: "Shadowban / reduced visibility risk noted", weight: 2.5 },
-  { pattern: /\bengagement rate\b/i, note: "Engagement rate weighting shift", weight: 1.5 },
-  { pattern: /\bwatch time\b/i, note: "Watch time signal boosted", weight: 2.0 },
-  { pattern: /\bsave rate\b|\bsaves\b/i, note: "Save rate being weighted by algorithm", weight: 2.0 },
-  { pattern: /\bshares?\b|\breposts?\b/i, note: "Share/repost signal rewarded", weight: 1.5 },
+  { pattern: /\bfyp\b|\bfor you\b/i, note: "TikTok/X 'For You' ranking referenced in the news — re-check completion rate and early engagement velocity, not just topical relevance", weight: 2.5 },
+  { pattern: /\binstagram algorithm\b|\breels? algorithm\b/i, note: "Instagram/Reels algorithm change reported — Instagram ranks Feed, Stories, Explore, and Reels with separate systems, so confirm which surface the change actually affects", weight: 2.5 },
+  { pattern: /\byoutube algorithm\b/i, note: "YouTube recommendation change reported — YouTube's stated higher-order signal is survey-informed 'valued watch time', not raw watch time or clicks alone", weight: 2.5 },
+  { pattern: /\bspotify algorithm\b|\bdiscovery\b/i, note: "Spotify discovery algorithm activity reported", weight: 2.0 },
+  { pattern: /\borganic reach\b/i, note: "Organic reach fluctuation reported", weight: 2.0 },
+  { pattern: /\bshadowban\b/i, note: "Shadowban / reduced visibility risk reported", weight: 2.5 },
+  { pattern: /\bengagement rate\b/i, note: "Engagement rate weighting shift reported", weight: 1.5 },
+  { pattern: /\bwatch time\b/i, note: "Watch time signal referenced — TikTok/Instagram treat full completion as a strong signal, while YouTube's stated higher-order signal is survey-informed 'valued' watch time", weight: 2.0 },
+  { pattern: /\bsave rate\b|\bsaves\b/i, note: "Save rate referenced — a documented Instagram ranking signal, not confirmed as a ranking factor on other platforms", weight: 2.0 },
+  { pattern: /\bshares?\b|\breposts?\b/i, note: "Share/repost signal referenced", weight: 1.5 },
+  { pattern: /\bdwell time\b/i, note: "Dwell time referenced — a confirmed LinkedIn ranking signal combining in-feed visible time with post-click time on the destination content", weight: 2.0 },
+  { pattern: /\bmeaningful (social )?interactions?\b/i, note: "Meaningful interactions referenced — Facebook's stated framing for weighting comments/shares/time-spent over passive views", weight: 2.0 },
+  { pattern: /\bengagement bait\b/i, note: "Engagement bait scrutiny reported — Threads/Facebook have flagged reply-baiting CTAs as an abuse pattern being actively suppressed, not a safe growth tactic", weight: 2.0 },
+  { pattern: /\blocal pack\b|\bprominence\b|\bgoogle business profile\b/i, note: "Google local ranking referenced — official factors are relevance, distance, and prominence (which includes review quantity/quality); posting frequency is not a confirmed ranking factor", weight: 2.0 },
 ];
 
 const HOOK_KW: Array<{ pattern: RegExp; hook: string }> = [

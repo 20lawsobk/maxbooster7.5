@@ -1,0 +1,171 @@
+{
+  "topic": "Organic social platform algorithm signals (2025-2026)",
+  "compiledAt": "2026-09-11",
+  "sources": {
+    "ig-ranking-explained": {
+      "title": "Instagram Ranking Explained | How Our Algorithm Works",
+      "publisher": "About Instagram (Meta)",
+      "url": "https://about.instagram.com/blog/announcements/instagram-ranking-explained",
+      "publishedDate": "2023-05-31",
+      "tier": 1,
+      "evidence": "research/sources/ig-tiktok-01-instagram-ranking-explained.md"
+    },
+    "ig-explore-engineering": {
+      "title": "Powered by AI: Instagram's Explore Recommender System",
+      "publisher": "Instagram Engineering",
+      "url": "https://instagram-engineering.com/powered-by-ai-instagrams-explore-recommender-system-7ca901d2a882",
+      "publishedDate": "2019",
+      "tier": 1,
+      "evidence": "research/sources/ig-tiktok-snippets.md"
+    },
+    "tiktok-newsroom-fyp": {
+      "title": "How TikTok recommends videos #ForYou",
+      "publisher": "TikTok Newsroom",
+      "url": "https://newsroom.tiktok.com/how-tiktok-recommends-videos-for-you?lang=en",
+      "publishedDate": "2020-06-18",
+      "tier": 1,
+      "evidence": "research/sources/ig-tiktok-02-tiktok-for-you.md"
+    },
+    "tiktok-transparency-recsys": {
+      "title": "Introduction to the TikTok recommendation system",
+      "publisher": "TikTok Transparency Center",
+      "url": "https://www.tiktok.com/transparency/en/recommendation-system?os=f",
+      "publishedDate": null,
+      "tier": 1,
+      "evidence": "research/sources/ig-tiktok-snippets.md",
+      "note": "Official source; fetch failed, snippet-only evidence"
+    },
+    "ig-reels-signals-industry": {
+      "title": "Instagram Reels ranking signal reporting (watch time / likes-per-reach / sends-per-reach)",
+      "publisher": "Vidico / Content Grip / BlitzcutAI (industry marketing sites)",
+      "url": "https://vidico.com/news/instagram-reels-statistics",
+      "publishedDate": "2026",
+      "tier": 3,
+      "evidence": "research/sources/ig-tiktok-snippets.md",
+      "note": "Widely repeated 2026 claim attributed to Instagram's Adam Mosseri; not independently confirmed against an official Instagram statement in this research pass"
+    },
+    "youtube-recommendation-system": {
+      "title": "On YouTube's recommendation system",
+      "publisher": "YouTube Blog",
+      "url": "https://blog.youtube/inside-youtube/on-youtubes-recommendation-system",
+      "publishedDate": "2021-09-15",
+      "tier": 1,
+      "evidence": "research/sources/youtube-01-recommendation-system.md"
+    },
+    "youtube-sej-2025": {
+      "title": "How YouTube's Recommendation System Works In 2025",
+      "publisher": "Search Engine Journal",
+      "url": "https://www.searchenginejournal.com/how-youtubes-recommendation-system-works-in-2025/538379/",
+      "publishedDate": "2025",
+      "tier": 2,
+      "evidence": "research/sources/youtube-02-sej-recommendation-2025.md"
+    },
+    "youtube-ctr-watchtime-study": {
+      "title": "The relative importance of click-through rates (CTR) versus watch time for YouTube views",
+      "publisher": "International Journal of Pervasive Computing and Communications (Emerald Publishing)",
+      "url": "https://www.emerald.com/ijpcc/article/19/4/573/375567/The-relative-importance-of-click-through-rates-CTR-versus-watch-time-for-YouTube-views",
+      "publishedDate": "2023",
+      "tier": 2,
+      "evidence": "research/sources/youtube-03-ctr-watchtime-study.md"
+    },
+    "youtube-shorts-freshness-sej": {
+      "title": "YouTube Shorts Algorithm May Now Favor Fresh Over Evergreen",
+      "publisher": "Search Engine Journal",
+      "url": "https://www.searchenginejournal.com/youtube-shorts-algorithm-may-now-favor-fresh-over-evergreen/562661/",
+      "publishedDate": "2026",
+      "tier": 2,
+      "evidence": "research/sources/youtube-snippets.md",
+      "note": "Reports an analyst observation, not an official YouTube disclosure"
+    },
+    "fb-newsfeed-ranking-engineering": {
+      "title": "News Feed ranking, powered by machine learning",
+      "publisher": "Engineering at Meta",
+      "url": "https://engineering.fb.com/2021/01/26/core-infra/news-feed-ranking",
+      "publishedDate": "2021-01-26",
+      "tier": 1,
+      "evidence": "research/sources/fb-threads-02-news-feed-ranking-engineering.md"
+    },
+    "fb-transparency-feed-ranking": {
+      "title": "Our approach to Facebook Feed ranking",
+      "publisher": "Meta Transparency Center",
+      "url": "https://transparency.meta.com/rn-bi/features/ranking-and-content",
+      "publishedDate": "2025-06-11",
+      "tier": 1,
+      "evidence": "research/sources/fb-threads-snippets.md",
+      "note": "Official source; snippet-only evidence in this pass"
+    },
+    "threads-verge-engagement-bait": {
+      "title": "Threads knows it has an engagement bait problem",
+      "publisher": "The Verge",
+      "url": "https://www.theverge.com/2024/10/7/24264382/threads-engagement-bait-problem-mosseri-meta",
+      "publishedDate": "2024-10-07",
+      "tier": 2,
+      "evidence": "research/sources/fb-threads-03-threads-ranking-verge.md"
+    },
+    "fb-buffer-2025-reels": {
+      "title": "Inside the Facebook Algorithm in 2025",
+      "publisher": "Buffer",
+      "url": "https://buffer.com/resources/facebook-algorithm",
+      "publishedDate": "2025",
+      "tier": 2,
+      "evidence": "research/sources/fb-threads-snippets.md",
+      "note": "Reports Meta's October 2025 same-day-Reels distribution statement; snippet-only evidence"
+    },
+    "x-algorithm-github": {
+      "title": "x-algorithm (open-source For You feed recommendation pipeline)",
+      "publisher": "X / xAI (GitHub)",
+      "url": "https://github.com/xai-org/x-algorithm",
+      "publishedDate": "2026",
+      "tier": 1,
+      "evidence": "research/sources/x-linkedin-01-x-algorithm-github.md"
+    },
+    "linkedin-buffer-algorithm-2026": {
+      "title": "How LinkedIn's Algorithm Works in 2026, According to the LinkedIn Team",
+      "publisher": "Buffer",
+      "url": "https://buffer.com/resources/linkedin-algorithm",
+      "publishedDate": "2026",
+      "tier": 2,
+      "evidence": "research/sources/x-linkedin-02-linkedin-algorithm-buffer.md"
+    },
+    "linkedin-dwell-time-smt": {
+      "title": "LinkedIn Now Factors 'Dwell Time' Into Content Distribution Algorithm",
+      "publisher": "Social Media Today",
+      "url": "https://www.socialmediatoday.com/news/linkedin-now-factors-dwell-time-into-content-distribution-algorithm-whic/577839",
+      "publishedDate": "2020",
+      "tier": 2,
+      "evidence": "research/sources/x-linkedin-03-linkedin-dwell-time.md"
+    },
+    "gbp-official-local-ranking": {
+      "title": "Tips to improve your local ranking on Google",
+      "publisher": "Google Business Profile Help",
+      "url": "https://support.google.com/business/answer/7091?hl=en-en",
+      "publishedDate": null,
+      "tier": 1,
+      "evidence": "research/sources/google-business-01-official-local-ranking.md"
+    },
+    "gbp-moz-local-algorithm": {
+      "title": "The Local Algorithm: Relevance, Proximity, and Prominence",
+      "publisher": "Moz",
+      "url": "https://moz.com/blog/local-algorithm-relevance-proximity-and-prominence",
+      "publishedDate": null,
+      "tier": 2,
+      "evidence": "research/sources/google-business-03-local-algorithm-analysis.md"
+    },
+    "gbp-sel-reviews-2020": {
+      "title": "Google My Business and reviews gain in 2020 local ranking factors survey",
+      "publisher": "Search Engine Land",
+      "url": "https://searchengineland.com/google-my-business-and-reviews-gain-in-2020-local-ranking-factors-survey-341456",
+      "publishedDate": "2020",
+      "tier": 2,
+      "evidence": "research/sources/google-business-snippets.md"
+    },
+    "gbp-sel-2025-updates": {
+      "title": "Google algorithm updates 2025 in review: 3 core updates and 1 spam update",
+      "publisher": "Search Engine Land",
+      "url": "https://searchengineland.com/google-algorithm-updates-2025-in-review-3-core-updates-and-1-spam-update-466450",
+      "publishedDate": "2025",
+      "tier": 2,
+      "evidence": "research/sources/google-business-02-2025-algorithm-updates.md"
+    }
+  }
+}

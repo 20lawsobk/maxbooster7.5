@@ -170,6 +170,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@icons-pack/react-simple-icons": "^9.7.0",
     "@jridgewell/trace-mapping": "^0.3.31",
+    "@labelgrid/core": "^0.2.2",
     "@neondatabase/serverless": "^1.0.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",

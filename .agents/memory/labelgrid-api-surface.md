@@ -178,15 +178,69 @@ single opaque segment with no dots is not a JWT at all and cannot be a currently
 LabelGrid API token if this account's real tokens are RS256 JWTs — likely a stale
 placeholder or an unrelated credential, not merely an expired/wrong-scope real token.
 
-## Still broken (follow-up work, not fixed in this pass)
-~25 other methods (releases, ISRC/UPC, smart links, presave, payouts, royalty
-statements, sync licensing, DSP catalog import) still use the old broken paths/shapes.
-Only `searchArtistAcrossPlatforms`, `getArtistPlatformPresence`, and the now-honest-
-no-op `getArtistCatalog` were fixed and verified end-to-end this pass. See project
-tasks for the follow-on fix and the missing webhook-receiver gap.
+## Full rewrite completed (Sep 2026) — every public method now honest
+Every method in `labelgrid-service.ts` was reconciled against a full 14-file read of
+LabelGrid's own official `@labelgrid/core` npm client source (account, catalog,
+distribution, finance, insights, lg-content-types, lg-entities, lg-http, lg-upload,
+reference, releases, resources, setup, webhooks) — the authoritative endpoint map,
+superseding the OpenAPI-spec-only picture above. Two outcomes only: a method either
+now calls a confirmed-real endpoint through `@labelgrid/core`'s `LabelGridClient`
+(via a `cbCall()`/`callWithRetry()`/`unwrap()` pattern — the client returns
+`{error}` ApiResults rather than throwing, so the circuit breaker needs an internal
+throw/catch shim to still see failures), or it throws an unconditional, explicit
+"not supported by LabelGrid's API" error. No method silently no-ops or fabricates
+data anymore. Lesson for next time: this exhaustive per-file read is what makes it
+safe to convert a guessed/broken endpoint to an honest throw instead of leaving a
+live-but-wrong call — a partial read risks throwing on something that was actually
+real, or worse, leaving a fictional path live because its real counterpart wasn't
+found yet.
+
+## No payout-request endpoint exists anywhere in the API
+Confirmed via the full client-source read (not just the OpenAPI spec): LabelGrid has
+no `/payouts` or withdrawal-request endpoint at all. Royalty payouts are dashboard-
+only. `requestPayout()` is a permanent, unconditional throw — this is not a
+follow-up item, there is no real endpoint to eventually wire up.
+
+## Smart links are real; vanity slugs are not
+`createSmartLink`/`getSmartLink` ARE backed by real endpoints — `POST
+/releases/short-url` (idempotent, body is just `{release_id}`) + `PUT`/`GET
+/releases/{id}/landing-config` — but the method is release-scoped, not scoped to an
+arbitrary opaque `linkId` like the old fictional version assumed. There is no
+custom/vanity-slug field anywhere in the real request shape; a caller passing
+`customSlug` gets an explicit throw rather than having the option silently ignored.
+`platforms` filtering is also not a real field — it's logged and ignored, since
+silently dropping it without any signal would be worse. Zero live callers of either
+method exist in the app today; this is forward-compatible plumbing, not something
+currently exercised by product code.
+
+## Analytics/royalty revenue figures have a structural artist-scoping gap
+`GET /analytics/summary` supports an `artist_names` filter (real, name-based), but
+`GET /royalties/breakdown` has NO artist filter at all — it's account-wide only.
+This means `getArtistAnalytics()`'s revenue figure can never be artist-scoped no
+matter how the method is written; only its stream count can be. This is a real API
+limitation, not a bug to keep chasing. Likewise, neither analytics endpoint returns
+a reliable per-outlet (Spotify/Apple/etc.) split, so `platforms: {}` is deliberately
+always empty rather than fabricated — any caller reading `analytics.platforms[x]`
+will always get `undefined` and must fall back to `analytics.totalStreams` /
+`analytics.totalRevenue` (the account/release-level totals), never invent a
+per-platform number.
+
+## Publishing, sync licensing, and content-ID/claims were never real
+`setPublishingMetadata`/`getPublishingMetadata`, `submitForSync`/
+`getSyncOpportunities`/`updateSyncSubmission`, `getSmartLinkAnalytics`,
+`createPreSaveCampaign`/`getPreSaveCampaign`/`getPreSaveSubscribers`, and
+`submitContentClaim`/`getContentClaims`/`getContentRevenue` all have zero backing
+anywhere in the 14-file client source or the toolset registry (`setup.ts`'s
+`LABELGRID_TOOLSETS` only ever names account/reference/catalog/releases/insights/
+finance/webhooks/distribution — publishing/sync/content-ID/presave toolsets never
+existed). All converted to unconditional honest throws. Don't re-attempt these
+without first confirming LabelGrid has actually shipped the feature (check
+`setup.ts`'s toolset list again, since it's the single place new toolsets would
+appear).
 
 The live Stoplight docs (`api.labelgrid.com/docs/api`) list "Statements", "Royalties",
 and "Transactions" as three SEPARATE top-level endpoint groups, not one blended
-royalty concept — don't assume a single unified endpoint covers all of task #213's
-"royalty statements"; check which of the three (or which combination) each broken
-method actually needs against the spec before rewriting it.
+royalty concept. `getRoyaltySummary()` uses the account balance view (`GET
+/account`), `getRoyaltyStatements()` uses `GET /statements` (paginated, filterable
+by year via start_date/end_date) — confirm which of the three a given method
+actually needs against the spec/client source before touching this area again.
