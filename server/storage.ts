@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { logger } from "./logger";
 import { randomBytes } from "crypto";
-import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, systemLogs, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot } from "@shared/schema";
+import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, systemLogs, toolostConnection, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot, type ToolostConnection, type InsertToolostConnection } from "@shared/schema";
 import { db, dbRead } from "./db";
 import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, isNotNull } from "drizzle-orm";
 
@@ -31,6 +31,15 @@ export interface IStorage {
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   getDistributionProvider(slug: string): Promise<DSPProvider | undefined>;
+  getToolostConnection(): Promise<ToolostConnection | undefined>;
+  upsertToolostConnection(
+    data: Partial<InsertToolostConnection> & {
+      accessToken: string;
+      refreshToken: string;
+      tokenExpiresAt: Date;
+    },
+  ): Promise<ToolostConnection>;
+  deleteToolostConnection(): Promise<boolean>;
   getProjectsByUserId(userId: string): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
   getReleasesByUserId(userId: string): Promise<Release[]>;
@@ -233,6 +242,50 @@ export class DatabaseStorage implements IStorage {
       .from(dspProviders)
       .where(eq(dspProviders.slug, slug));
     return provider || undefined;
+  }
+
+  /**
+   * There is exactly one Too Lost connection for the whole platform (Max
+   * Booster acts as the single distributor account for every seller), so
+   * this returns the most recently updated row rather than taking an id.
+   */
+  async getToolostConnection(): Promise<ToolostConnection | undefined> {
+    const [connection] = await dbRead
+      .select()
+      .from(toolostConnection)
+      .orderBy(desc(toolostConnection.updatedAt))
+      .limit(1);
+    return connection || undefined;
+  }
+
+  async upsertToolostConnection(
+    data: Partial<InsertToolostConnection> & {
+      accessToken: string;
+      refreshToken: string;
+      tokenExpiresAt: Date;
+    },
+  ): Promise<ToolostConnection> {
+    const existing = await this.getToolostConnection();
+    if (existing) {
+      const [updated] = await db
+        .update(toolostConnection)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(toolostConnection.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db
+      .insert(toolostConnection)
+      .values({ ...data, connectedAt: new Date(), updatedAt: new Date() })
+      .returning();
+    return created;
+  }
+
+  async deleteToolostConnection(): Promise<boolean> {
+    const result = await db.delete(toolostConnection).returning({
+      id: toolostConnection.id,
+    });
+    return result?.length > 0;
   }
 
   async getProjectsByUserId(userId: string): Promise<Project[]> {

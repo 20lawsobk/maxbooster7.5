@@ -3515,6 +3515,29 @@ export const dspSyncStatus = pgTable("dsp_sync_status", {
 });
 
 // ============================================================================
+// TOO LOST CONNECTION (single platform-level OAuth credential for the
+// Too Lost distribution API — one Max Booster account acts as distributor
+// for all sellers, mirroring how the former LabelGrid static token worked,
+// except Too Lost's tokens expire and must be refreshed).
+// ============================================================================
+export const toolostConnection = pgTable("toolost_connection", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  tokenExpiresAt: timestamp("token_expires_at").notNull(),
+  scope: text("scope"),
+  environment: text("environment").notNull().default("production"),
+  connectedByUserId: varchar("connected_by_user_id"),
+  connectedAt: timestamp("connected_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type ToolostConnection = typeof toolostConnection.$inferSelect;
+export type InsertToolostConnection = typeof toolostConnection.$inferInsert;
+
+// ============================================================================
 // EMAIL EVENTS (SendGrid Webhooks)
 // ============================================================================
 export const emailEvents = pgTable("email_events", {
