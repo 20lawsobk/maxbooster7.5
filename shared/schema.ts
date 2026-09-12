@@ -3538,6 +3538,62 @@ export type ToolostConnection = typeof toolostConnection.$inferSelect;
 export type InsertToolostConnection = typeof toolostConnection.$inferInsert;
 
 // ============================================================================
+// YOUTUBE CHANNEL CONNECTIONS (per-artist OAuth via YouTube Data API v3).
+//
+// Unlike Too Lost (one platform-level distributor credential covering every
+// seller), YouTube upload access is granted per Google account — each artist
+// authorizes Max Booster to upload to THEIR OWN channel. One row per user.
+//
+// Scope boundary (see server/services/youtubeUploadService.ts): this
+// connection only grants `youtube.upload`. It uploads video content directly
+// to the artist's channel. It does NOT place a track on YouTube Music or
+// create/merge an Official Artist Channel — those require Content ID
+// delivery through a distributor (handled separately via Too Lost).
+// ============================================================================
+export const youtubeConnections = pgTable("youtube_connections", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  channelId: text("channel_id").notNull(),
+  channelTitle: text("channel_title"),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  tokenExpiresAt: timestamp("token_expires_at").notNull(),
+  scope: text("scope"),
+  connectedAt: timestamp("connected_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type YoutubeConnection = typeof youtubeConnections.$inferSelect;
+export type InsertYoutubeConnection = typeof youtubeConnections.$inferInsert;
+
+// ============================================================================
+// YOUTUBE UPLOADS (one row per video uploaded via the Data API to an
+// artist's connected channel — tracks status of the real resumable upload).
+// ============================================================================
+export const youtubeUploads = pgTable("youtube_uploads", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  releaseId: varchar("release_id"),
+  listingId: varchar("listing_id"),
+  videoId: text("video_id"),
+  title: text("title").notNull(),
+  description: text("description"),
+  privacyStatus: text("privacy_status").notNull().default("private"),
+  status: text("status").notNull().default("pending"),
+  errorMessage: text("error_message"),
+  uploadedAt: timestamp("uploaded_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type YoutubeUpload = typeof youtubeUploads.$inferSelect;
+export type InsertYoutubeUpload = typeof youtubeUploads.$inferInsert;
+
+// ============================================================================
 // EMAIL EVENTS (SendGrid Webhooks)
 // ============================================================================
 export const emailEvents = pgTable("email_events", {
