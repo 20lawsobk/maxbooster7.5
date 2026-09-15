@@ -31,15 +31,16 @@ export interface IStorage {
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   getDistributionProvider(slug: string): Promise<DSPProvider | undefined>;
-  getToolostConnection(): Promise<ToolostConnection | undefined>;
+  getToolostConnection(userId: string): Promise<ToolostConnection | undefined>;
   upsertToolostConnection(
     data: Partial<InsertToolostConnection> & {
       accessToken: string;
       refreshToken: string;
       tokenExpiresAt: Date;
+      connectedByUserId: string;
     },
   ): Promise<ToolostConnection>;
-  deleteToolostConnection(): Promise<boolean>;
+  deleteToolostConnection(userId: string): Promise<boolean>;
   getProjectsByUserId(userId: string): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
   getReleasesByUserId(userId: string): Promise<Release[]>;
@@ -244,15 +245,13 @@ export class DatabaseStorage implements IStorage {
     return provider || undefined;
   }
 
-  /**
-   * There is exactly one Too Lost connection for the whole platform (Max
-   * Booster acts as the single distributor account for every seller), so
-   * this returns the most recently updated row rather than taking an id.
-   */
-  async getToolostConnection(): Promise<ToolostConnection | undefined> {
+  async getToolostConnection(
+    userId: string,
+  ): Promise<ToolostConnection | undefined> {
     const [connection] = await dbRead
       .select()
       .from(toolostConnection)
+      .where(eq(toolostConnection.connectedByUserId, userId))
       .orderBy(desc(toolostConnection.updatedAt))
       .limit(1);
     return connection || undefined;
@@ -263,9 +262,10 @@ export class DatabaseStorage implements IStorage {
       accessToken: string;
       refreshToken: string;
       tokenExpiresAt: Date;
+      connectedByUserId: string;
     },
   ): Promise<ToolostConnection> {
-    const existing = await this.getToolostConnection();
+    const existing = await this.getToolostConnection(data.connectedByUserId);
     if (existing) {
       const [updated] = await db
         .update(toolostConnection)
@@ -281,10 +281,11 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async deleteToolostConnection(): Promise<boolean> {
-    const result = await db.delete(toolostConnection).returning({
-      id: toolostConnection.id,
-    });
+  async deleteToolostConnection(userId: string): Promise<boolean> {
+    const result = await db
+      .delete(toolostConnection)
+      .where(eq(toolostConnection.connectedByUserId, userId))
+      .returning({ id: toolostConnection.id });
     return result?.length > 0;
   }
 

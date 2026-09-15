@@ -3515,10 +3515,9 @@ export const dspSyncStatus = pgTable("dsp_sync_status", {
 });
 
 // ============================================================================
-// TOO LOST CONNECTION (single platform-level OAuth credential for the
-// Too Lost distribution API — one Max Booster account acts as distributor
-// for all sellers, mirroring how the former LabelGrid static token worked,
-// except Too Lost's tokens expire and must be refreshed).
+// TOO LOST CONNECTION (one OAuth connection per artist account).
+// Too Lost access is granted to the account that authorized the distribution
+// flow, so connections must never be shared across Max Booster users.
 // ============================================================================
 export const toolostConnection = pgTable("toolost_connection", {
   id: varchar("id")
@@ -3529,7 +3528,7 @@ export const toolostConnection = pgTable("toolost_connection", {
   tokenExpiresAt: timestamp("token_expires_at").notNull(),
   scope: text("scope"),
   environment: text("environment").notNull().default("production"),
-  connectedByUserId: varchar("connected_by_user_id"),
+  connectedByUserId: varchar("connected_by_user_id").notNull(),
   connectedAt: timestamp("connected_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
