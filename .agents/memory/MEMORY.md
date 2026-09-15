@@ -2,6 +2,7 @@
 - [DNS/TLS edge reality](dns-tls-edge-architecture.md) — Cloudflare's coded but NS never switched to it (still registrar defaults); a full custom DNS+TLS stack exists too, blocked by the same NS gap (ACME issuance 0%)
 - [Dev server has no hot-reload](dev-server-no-hot-reload.md) — tsx runs without --watch; edited server code is inert until an explicit workflow restart, so live-server tests can "confirm" stale behavior
 - [Route mount duplication/shadowing](route-mount-prefix-duplication.md) — mount path repeating router's own topic word 404s all; duplicate (method,path) across routers = first-mounted wins, rest is dead code
+- [Static index route shadowing](static-index-route-shadowing.md) — early express.static must not serve index.html for `/`, or root-style OAuth callbacks silently become the SPA
 - [Multi-member capsule restore merge](capsule-multi-member-merge-restore.md) — a scattered-file-list capsule restore must recursively MERGE into a pre-existing destination dir, never rmSync-then-replace it (destroyed a real tests/ dir once)
 - [Software-GPU "rebuild it" categories](software-gpu-rebuild-categories.md) — which of ZLUDA/vGPU-MIG/from-scratch-silicon are honestly buildable on CPU-only, plus DRR-fairness and job-payload OOM test pitfalls
 - [Deploy boot-stub → primary port gap](deploy-boot-stub-port-gap.md) — anything sync/CPU-blocking before the real server's listen() call reopens the port-unbound window the boot-stub was meant to close
