@@ -1590,7 +1590,11 @@ export default function Distribution() {
     enabled: !!user,
   });
 
-  const { data: platformsResponse } = useQuery<{
+  const {
+    data: platformsResponse,
+    isLoading: platformsLoading,
+    isError: platformsError,
+  } = useQuery<{
     platforms: PlatformData[];
   }>({
     queryKey: ["/api/distribution/platforms"],
@@ -4825,11 +4829,18 @@ export default function Distribution() {
                           </Button>
                         </div>
                       </div>
-                      {DISTRO_PLATFORMS.length === 0 ? (
+                      {platformsLoading ? (
+                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
+                          Loading Too Lost's live platform catalog…
+                        </div>
+                      ) : platformsError ? (
+                        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">
+                          Too Lost's live platform catalog is unavailable.
+                          Try again before submitting this release.
+                        </div>
+                      ) : DISTRO_PLATFORMS.length === 0 ? (
                         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                          Connect Too Lost before selecting distribution
-                          platforms. The available destinations are loaded
-                          directly from your Too Lost account.
+                          Too Lost returned no active distribution platforms.
                         </div>
                       ) : (
                         <div className="grid grid-cols-3 gap-4">

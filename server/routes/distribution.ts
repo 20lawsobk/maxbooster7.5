@@ -861,7 +861,7 @@ router.post(
 // GET /api/distribution/platforms - Get Too Lost's live app-level DSP catalog.
 // This read-only catalog lookup must not force artists through Too Lost OAuth;
 // user authorization is still required later for release creation/submission.
-router.get("/platforms", requireAuth, async (req: Request, res: Response) => {
+router.get("/platforms", requireAuth, async (_req: Request, res: Response) => {
   try {
     const response = await toolostService.getAvailableDSPs();
 
