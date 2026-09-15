@@ -435,6 +435,120 @@ class ToolostService {
   }
 
   /**
+   * Builds the Too Lost authorization URL for the platform-level distributor
+   * connection. Client-credentials tokens authenticate the OAuth application
+   * only; catalog and distribution endpoints require this user-authorized
+   * grant.
+   */
+  getOAuthAuthorizationUrl(
+    redirectUri: string,
+    state: string,
+  ): string {
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error(
+        "Too Lost OAuth app credentials are not configured (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET).",
+      );
+    }
+    const url = new URL(`${this.authBaseUrl}/authorize`);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("client_id", this.clientId);
+    url.searchParams.set("redirect_uri", redirectUri);
+    url.searchParams.set("state", state);
+    url.searchParams.set(
+      "scope",
+      [
+        "read:profile",
+        "read:releases",
+        "write:releases",
+        "read:catalog",
+        "read:analytics",
+        "read:earnings",
+      ].join(" "),
+    );
+    return url.toString();
+  }
+
+  /**
+   * Exchanges a browser authorization code and persists the single
+   * platform-level Too Lost connection used by distribution and royalty
+   * operations.
+   */
+  async exchangeOAuthCode(
+    code: string,
+    redirectUri: string,
+  ): Promise<{ expiresAt: Date; scope?: string }> {
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error(
+        "Too Lost OAuth app credentials are not configured (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET).",
+      );
+    }
+    const body = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: redirectUri,
+      client_id: this.clientId,
+      client_secret: this.clientSecret,
+    });
+    const res = await fetch(`${this.authBaseUrl}/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body,
+    });
+    const text = await res.text();
+    let json: Record<string, unknown> = {};
+    try {
+      json = text ? (JSON.parse(text) as Record<string, unknown>) : {};
+    } catch {
+      // Preserve the provider status below with a bounded body excerpt.
+    }
+    if (!res.ok) {
+      const providerMessage =
+        typeof json.error_description === "string"
+          ? json.error_description
+          : typeof json.message === "string"
+            ? json.message
+            : text.slice(0, 300);
+      throw new Error(
+        `Too Lost OAuth code exchange failed (HTTP ${res.status}): ${providerMessage || "unknown provider error"}`,
+      );
+    }
+
+    const accessToken =
+      typeof json.access_token === "string" ? json.access_token : "";
+    const refreshToken =
+      typeof json.refresh_token === "string" ? json.refresh_token : "";
+    if (!accessToken || !refreshToken) {
+      throw new Error(
+        "Too Lost OAuth code exchange returned no access_token and refresh_token pair.",
+      );
+    }
+    const expiresIn =
+      typeof json.expires_in === "number" && json.expires_in > 0
+        ? json.expires_in
+        : 3600;
+    const expiresAt = new Date(Date.now() + expiresIn * 1000);
+    const scope = typeof json.scope === "string" ? json.scope : undefined;
+
+    this.connection = {
+      accessToken,
+      refreshToken,
+      expiresAt: expiresAt.getTime(),
+    };
+    await storage.upsertToolostConnection({
+      accessToken,
+      refreshToken,
+      tokenExpiresAt: expiresAt,
+      scope,
+      environment: this.environment,
+    });
+    logger.info("✅ Too Lost OAuth connection established");
+    return { expiresAt, scope };
+  }
+
+  /**
    * Ensures a valid, non-expired access token before a real API call.
    * Refreshes proactively when the token expires within 60s. Throws a
    * clear, distinguishable error when no platform-level connection exists

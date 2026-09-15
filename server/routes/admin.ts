@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Router, Request, Response, NextFunction } from "express";
 import fs from "fs";
+import { randomBytes } from "crypto";
 import { db, pool } from "../db.js";
 import { users, projects, releases, analytics, orders, posts, artistProfiles, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema.js";
 import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
@@ -16,6 +17,7 @@ import { env } from "../config/env.js";
 import { require2FA } from "../middleware/auth.js";
 import { systemIntelligence } from "../services/systemIntelligence.js";
 import { labelGridService } from "../services/labelgrid-service.js";
+import { toolostService } from "../services/toolost-service.js";
 
 const adminRouter = Router();
 
@@ -65,6 +67,79 @@ adminRouter?.get("/dashboard", (req, res) => {
   const { password, twoFactorSecret, passwordResetToken, ...safeUser } =
     req.user as Record<string, unknown>;
   res.json({ message: "Welcome to the admin dashboard!", user: safeUser });
+});
+
+function getToolostRedirectUri(req: Request): string {
+  const configured = process.env.TOOLOST_REDIRECT_URI?.trim();
+  if (configured) return configured;
+  const forwardedProto = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const forwardedHost = req.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const protocol = forwardedProto || req.protocol;
+  const host = forwardedHost || req.get("host");
+  if (!host) {
+    throw new Error(
+      "Too Lost OAuth callback URL is not configured. Set TOOLOST_REDIRECT_URI.",
+    );
+  }
+  return `${protocol}://${host}/api/admin/toolost/callback`;
+}
+
+/**
+ * Starts the one-account Too Lost distributor OAuth connection.
+ * The callback is intentionally admin-only because this credential is shared
+ * by the platform for all distribution operations.
+ */
+adminRouter?.get("/toolost/connect", (req, res) => {
+  try {
+    const redirectUri = getToolostRedirectUri(req);
+    const state = randomBytes(32).toString("hex");
+    req.session.toolostOAuthState = state;
+    req.session.toolostOAuthRedirectUri = redirectUri;
+    res.redirect(toolostService.getOAuthAuthorizationUrl(redirectUri, state));
+  } catch (error) {
+    logger.warn({ err: error }, "Unable to start Too Lost OAuth flow");
+    res.status(503).json({
+      error:
+        error instanceof Error
+          ? error.message
+          : "Too Lost OAuth is not configured",
+    });
+  }
+});
+
+adminRouter?.get("/toolost/callback", async (req, res) => {
+  const queryError = typeof req.query.error === "string" ? req.query.error : "";
+  if (queryError) {
+    return res.status(400).json({
+      error: "Too Lost OAuth authorization was denied",
+      providerError: queryError,
+    });
+  }
+
+  const code = typeof req.query.code === "string" ? req.query.code : "";
+  const state = typeof req.query.state === "string" ? req.query.state : "";
+  const expectedState = req.session.toolostOAuthState;
+  const redirectUri =
+    req.session.toolostOAuthRedirectUri || getToolostRedirectUri(req);
+  delete req.session.toolostOAuthState;
+  delete req.session.toolostOAuthRedirectUri;
+
+  if (!code || !state || !expectedState || state !== expectedState) {
+    return res.status(400).json({ error: "Invalid Too Lost OAuth state" });
+  }
+
+  try {
+    await toolostService.exchangeOAuthCode(code, redirectUri);
+    res.redirect("/admin?toolost=connected");
+  } catch (error) {
+    logger.warn({ err: error }, "Too Lost OAuth callback failed");
+    res.status(502).json({
+      error:
+        error instanceof Error
+          ? error.message
+          : "Too Lost OAuth connection failed",
+    });
+  }
 });
 
 adminRouter?.get("/users", async (req, res) => {
