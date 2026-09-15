@@ -96,7 +96,30 @@ type DiscoverPayload = {
   jiosaavn: DiscoverResult | null;
   saved: boolean;
   savedFields: string[];
+  wouldSaveFields?: string[];
+  preview?: boolean;
   upcDiscovered?: boolean;
+  catalogImport?: Array<{
+    platformId: string;
+    scanned: number;
+    imported: number;
+    newReleases?: number;
+    existingReleases?: number;
+    failed: number;
+    status: string;
+    releases?: Array<{
+      id: string;
+      title: string;
+      artistName: string;
+      releaseDate: string | null;
+      releaseType: "single" | "EP" | "album";
+      trackCount: number;
+      coverUrl?: string;
+      platformUrl?: string;
+      upc?: string;
+      match: "new" | "existing";
+    }>;
+  }>;
 };
 
 interface CatalogRelease {
@@ -704,7 +727,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     "Monitoring",
   ];
 
-  const handleDiscover = async () => {
+  const handleDiscover = async (preview = false) => {
     setDiscoverRunning(true);
     setDiscoverResults(null);
     try {
@@ -713,6 +736,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         `/api/artist-profiles/${profile.id}/auto-discover`,
         {
           upc: discoverUpc.replace(/[^0-9]/g, "") || undefined,
+          preview,
         },
       );
       const data = await res.json();
@@ -729,7 +753,9 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       });
       onUpdated();
       const fields =
-        data.savedFields?.filter((f: string) => !f.endsWith("_confirmed")) ??
+        (preview ? data.wouldSaveFields : data.savedFields)?.filter(
+          (f: string) => !f.endsWith("_confirmed"),
+        ) ??
         [];
       const catalogImport: Array<{ platformId: string; imported: number }> =
         data.catalogImport ?? [];
@@ -745,7 +771,19 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         .filter((r) => r.imported > 0)
         .map((r) => r.platformId);
       let description: string;
-      if (catalogImport.length > 0) {
+      if (preview) {
+        const newTotal = catalogImport.reduce(
+          (sum, r) => sum + (r.newReleases || 0),
+          0,
+        );
+        const existingTotal = catalogImport.reduce(
+          (sum, r) => sum + (r.existingReleases || 0),
+          0,
+        );
+        description =
+          `Preview ready: ${newTotal} new release${newTotal === 1 ? "" : "s"} ` +
+          `and ${existingTotal} already synchronized. No changes were made.`;
+      } else if (catalogImport.length > 0) {
         const platformSummary =
           importedPlatforms.length > 0
             ? ` from ${importedPlatforms.join(", ")}`
@@ -1389,9 +1427,9 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
           <div className="rounded-lg border p-3 space-y-3 mt-1">
             <p className="text-xs text-muted-foreground">
               MaxBooster searches Spotify, Apple Music, Deezer, MusicBrainz, and
-              Audiomack for profiles matching your artist name. High-confidence
-              matches are automatically linked. You can review and accept or
-              dismiss lower-confidence results.
+              Audiomack for profiles matching your artist name. Preview a sync
+              first to review new releases and existing matches before anything
+              is saved.
             </p>
 
             <div className="space-y-2">
@@ -1410,26 +1448,43 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
               </p>
             </div>
 
-            <Button
-              size="sm"
-              className="w-full h-8 text-xs gap-1.5"
-              onClick={handleDiscover}
-              disabled={discoverRunning}
-            >
-              {discoverRunning ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching
-                  across platforms…
-                </>
-              ) : (
-                <>
-                  <Zap className="h-3.5 w-3.5" />{" "}
-                  {discoverResults
-                    ? "Re-run Discovery"
-                    : "Discover My Profiles"}
-                </>
-              )}
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => handleDiscover(true)}
+                disabled={discoverRunning}
+              >
+                {discoverRunning ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ScanSearch className="h-3.5 w-3.5" />
+                )}
+                Preview Sync
+              </Button>
+              <Button
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => handleDiscover(false)}
+                disabled={discoverRunning}
+              >
+                {discoverRunning ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Syncing…
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-3.5 w-3.5" />{" "}
+                    {discoverResults?.preview
+                      ? "Apply & Sync"
+                      : discoverResults
+                        ? "Re-run Sync"
+                        : "Sync My Profiles"}
+                  </>
+                )}
+              </Button>
+            </div>
 
             {/* Discovery results summary */}
             {discoverResults && (
@@ -1467,9 +1522,15 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                         </span>
                       </div>
                     );
+                  const appliedFields = discoverResults.savedFields ?? [];
+                  const candidateFields =
+                    discoverResults.wouldSaveFields ?? [];
                   const alreadySaved =
-                    discoverResults.savedFields.includes(key) ||
-                    discoverResults.savedFields.includes(`${key}_confirmed`);
+                    appliedFields.includes(key) ||
+                    appliedFields.includes(`${key}_confirmed`);
+                  const wouldSave =
+                    candidateFields.includes(key) ||
+                    candidateFields.includes(`${key}_confirmed`);
                   return (
                     <div key={key} className="flex items-center gap-2 text-xs">
                       {alreadySaved ? (
@@ -1499,10 +1560,16 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                         <span className="font-mono w-8 text-right">
                           {r.confidence}%
                         </span>
-                        {alreadySaved && (
+                        {alreadySaved ? (
                           <span className="text-green-500 text-xs">
                             ✓ linked
                           </span>
+                        ) : (
+                          wouldSave && (
+                            <span className="text-blue-500 text-xs">
+                              ✓ would link
+                            </span>
+                          )
                         )}
                       </div>
                     </div>
@@ -1512,6 +1579,13 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                   <p className="text-xs text-blue-500 flex items-center gap-1">
                     <CheckCircle2 className="h-3 w-3" />
                     UPC-based exact match used for Apple/Deezer
+                  </p>
+                )}
+                {discoverResults.preview && (
+                  <p className="text-xs text-blue-500 flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Preview only — profiles, claims, links, and releases have
+                    not been changed.
                   </p>
                 )}
                 {discoverResults.catalogImport?.length > 0 && (
@@ -1524,28 +1598,83 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                         platformId: string;
                         scanned?: number;
                         imported?: number;
+                        newReleases?: number;
+                        existingReleases?: number;
                         failed?: number;
                         status?: string;
+                        releases?: Array<{
+                          id: string;
+                          title: string;
+                          releaseDate: string | null;
+                          trackCount: number;
+                          upc?: string;
+                          match: "new" | "existing";
+                        }>;
                       }) => (
-                        <div
-                          key={result.platformId}
-                          className="flex items-center gap-2 text-xs"
-                        >
-                          {result.status === "error" || result.failed > 0 ? (
-                            <AlertCircle className="h-3 w-3 text-destructive" />
-                          ) : (
-                            <CheckCircle2 className="h-3 w-3 text-green-500" />
-                          )}
-                          <span className="capitalize w-24">{result.platformId}</span>
-                          <span className="text-muted-foreground">
-                            {result.scanned ?? 0} found ·{" "}
-                            {result.imported ?? 0} synchronized
-                          </span>
-                          {result.failed > 0 && (
-                            <span className="text-destructive">
-                              {result.failed} failed
+                        <div key={result.platformId} className="space-y-1">
+                          <div className="flex items-center gap-2 text-xs">
+                            {result.status === "error" ||
+                            result.status === "preview_error" ||
+                            result.failed > 0 ? (
+                              <AlertCircle className="h-3 w-3 text-destructive" />
+                            ) : (
+                              <CheckCircle2 className="h-3 w-3 text-green-500" />
+                            )}
+                            <span className="capitalize w-24">
+                              {result.platformId}
                             </span>
-                          )}
+                            {discoverResults.preview ? (
+                              <span className="text-muted-foreground">
+                                {result.newReleases ?? 0} new ·{" "}
+                                {result.existingReleases ?? 0} existing
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                {result.scanned ?? 0} found ·{" "}
+                                {result.imported ?? 0} synchronized
+                              </span>
+                            )}
+                            {result.failed > 0 && (
+                              <span className="text-destructive">
+                                {result.failed} failed
+                              </span>
+                            )}
+                          </div>
+                          {discoverResults.preview &&
+                            result.releases?.length > 0 && (
+                              <div className="ml-5 space-y-0.5 border-l pl-2">
+                                {result.releases.slice(0, 8).map((release) => (
+                                  <div
+                                    key={`${result.platformId}-${release.id}`}
+                                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+                                  >
+                                    <Badge
+                                      variant={
+                                        release.match === "new"
+                                          ? "default"
+                                          : "secondary"
+                                      }
+                                      className="px-1 py-0 text-[10px]"
+                                    >
+                                      {release.match === "new"
+                                        ? "new"
+                                        : "existing"}
+                                    </Badge>
+                                    <span className="truncate">
+                                      {release.title}
+                                    </span>
+                                    <span className="shrink-0 text-muted-foreground/60">
+                                      {release.trackCount} tracks
+                                    </span>
+                                  </div>
+                                ))}
+                                {result.releases.length > 8 && (
+                                  <p className="text-[11px] text-muted-foreground/60">
+                                    + {result.releases.length - 8} more releases
+                                  </p>
+                                )}
+                              </div>
+                            )}
                         </div>
                       ),
                     )}

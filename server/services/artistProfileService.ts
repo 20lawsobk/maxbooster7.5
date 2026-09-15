@@ -1813,6 +1813,7 @@ class ArtistProfileService {
     profileId: string,
     userId: string,
     upc?: string,
+    options: { preview?: boolean } = {},
   ): Promise<{
     spotify: { result: SpotifyArtistResult; confidence: number } | null;
     apple: { result: AppleArtistResult; confidence: number } | null;
@@ -1831,6 +1832,8 @@ class ArtistProfileService {
     labelgridConfigured: boolean;
     saved: boolean;
     savedFields: string[];
+     wouldSaveFields: string[];
+     preview: boolean;
     upcDiscovered?: boolean;
     catalogImport: Array<{
       platformId: string;
@@ -1838,8 +1841,16 @@ class ArtistProfileService {
       imported: number;
       failed: number;
       status: string;
+       coverage?: {
+         status: string;
+         method: string;
+         complete: boolean;
+         reason: string;
+         limit?: number;
+       };
     }>;
   }> {
+    const preview = options?.preview === true;
     const profile = await this.getProfile(profileId, userId);
     if (!profile) throw new Error("Artist profile not found");
 
@@ -2016,8 +2027,10 @@ class ArtistProfileService {
     // These are generated once using the verified artist name — NOT fetched per platform.
     const urlDiscoveries = this.generateUrlDiscoveries(query);
 
-    const saved =
-      savedFields?.filter((f) => !f?.endsWith("_confirmed")).length > 0;
+    const wouldSaveFields = savedFields?.filter(
+      (f) => !f?.endsWith("_confirmed"),
+    );
+    const saved = !preview && wouldSaveFields.length > 0;
     if (saved) {
       await this.updateProfile(profileId, userId, updates);
       logger.info(
@@ -2026,9 +2039,7 @@ class ArtistProfileService {
 
       // Breakthrough: auto-init claim pipeline for every newly discovered platform
       // This creates the pipeline row at 'unstarted' state so claim tracking begins immediately
-      const claimablePlatforms = savedFields?.filter(
-        (f) => !f?.endsWith("_confirmed"),
-      );
+      const claimablePlatforms = wouldSaveFields;
       const platformMap: Record<string, string> = {
         spotify: "spotify",
         apple: "apple_music",
@@ -2214,16 +2225,18 @@ class ArtistProfileService {
     }
 
     // Link profile records serially because each link persists the shared
-    // streamingProfiles preference object. Scans remain parallel below after
-    // all profile records are durable.
-    for (const target of catalogImportTargets) {
-      await this._ensureCatalogProfileLinked(
-        userId,
-        target.platformId,
-        target.profileUrl,
-        query,
-        { imageUrl: target.imageUrl, genres: target.genres },
-      );
+    // streamingProfiles preference object. Preview mode must not create or
+    // update links, so it scans the target URLs directly instead.
+    if (!preview) {
+      for (const target of catalogImportTargets) {
+        await this._ensureCatalogProfileLinked(
+          userId,
+          target.platformId,
+          target.profileUrl,
+          query,
+          { imageUrl: target.imageUrl, genres: target.genres },
+        );
+      }
     }
 
     const catalogImport = await Promise.all(
@@ -2234,6 +2247,7 @@ class ArtistProfileService {
           t.profileUrl,
           query,
           { imageUrl: t.imageUrl, genres: t.genres },
+          { preview },
         ),
       ),
     );
@@ -2259,8 +2273,10 @@ class ArtistProfileService {
       urlDiscoveries,
       labelgridPlatforms,
       labelgridConfigured,
-      saved,
-      savedFields,
+       saved,
+       savedFields: preview ? [] : savedFields,
+       wouldSaveFields,
+       preview,
       upcDiscovered: !!(upcApple || upcDeezer),
       catalogImport,
     };
@@ -2277,27 +2293,59 @@ class ArtistProfileService {
     profileUrl: string,
     artistName: string,
     extra?: { imageUrl?: string | null; genres?: string[] },
+    options: { preview?: boolean } = {},
   ): Promise<{
     platformId: string;
     scanned: number;
     imported: number;
+    newReleases?: number;
+    existingReleases?: number;
     failed: number;
     status: string;
+    coverage?: {
+      status: string;
+      method: string;
+      complete: boolean;
+      reason: string;
+      limit?: number;
+    };
+    releases?: Array<{
+      id: string;
+      title: string;
+      artistName: string;
+      releaseDate: string | null;
+      releaseType: "single" | "EP" | "album";
+      trackCount: number;
+      coverUrl?: string;
+      platformUrl?: string;
+      upc?: string;
+      match: "new" | "existing";
+    }>;
   }> {
     try {
-      await this._ensureCatalogProfileLinked(
-        userId,
-        platformId,
-        profileUrl,
-        artistName,
-        extra,
-      );
-
-      const releases =
-        await distributionDataTransferService.scanReleasesFromProfile(
+      const preview = options.preview === true;
+      if (!preview) {
+        await this._ensureCatalogProfileLinked(
           userId,
           platformId,
+          profileUrl,
+          artistName,
+          extra,
         );
+      }
+
+      const scan =
+        preview
+          ? await distributionDataTransferService.scanReleasesFromProfileUrl(
+              platformId,
+              profileUrl,
+              artistName,
+            )
+          : await distributionDataTransferService.scanReleasesFromProfile(
+              userId,
+              platformId,
+            );
+      const releases = scan.releases;
 
       if (releases.length === 0) {
         logger.info(
@@ -2308,7 +2356,28 @@ class ArtistProfileService {
           scanned: 0,
           imported: 0,
           failed: 0,
-          status: "no_releases",
+          status: preview ? "preview" : "no_releases",
+          coverage: scan.coverage,
+          ...(preview ? { newReleases: 0, existingReleases: 0, releases: [] } : {}),
+        };
+      }
+
+      if (preview) {
+        const plan = await distributionDataTransferService.previewProfileCatalog(
+          userId,
+          platformId,
+          releases,
+        );
+        return {
+          platformId,
+          scanned: plan.scanned,
+          imported: 0,
+          newReleases: plan.newReleases,
+          existingReleases: plan.existingReleases,
+          failed: plan.failed,
+          status: plan.status,
+          coverage: scan.coverage,
+          releases: plan.releases,
         };
       }
 
@@ -2329,6 +2398,7 @@ class ArtistProfileService {
         imported: job.successItems,
         failed: job.failedItems,
         status: job.status,
+        coverage: scan.coverage,
       };
     } catch (err) {
       logger.warn(

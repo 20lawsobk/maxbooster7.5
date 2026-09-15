@@ -305,10 +305,12 @@ router.post(
         typeof req.body?.upc === "string"
           ? req.body.upc?.replace(/[^0-9]/g, "")
           : undefined;
+      const preview = req.body?.preview === true;
       const result = await artistProfileService?.autoDiscover(
         (req.params.id as string),
         req.user!.id,
         upc || undefined,
+        { preview },
       );
       res.json(result);
     } catch (err) {

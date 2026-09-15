@@ -845,15 +845,16 @@ async function buildFromLinkedProfiles(
         `[CatalogMigration] Scanning ${profile.platformId} — ` +
           `"${profile.artistName}" (id: ${profile.artistId})`,
       );
-      const scanned =
+      const scan =
         await distributionDataTransferService.scanReleasesFromProfile(
           userId,
           profile.platformId,
         );
       logger.info(
-        `[CatalogMigration]   ${scanned.length} release(s) from ${profile.platformId}`,
+        `[CatalogMigration]   ${scan.releases.length} release(s) from ${profile.platformId} ` +
+          `(coverage=${scan.coverage.status})`,
       );
-      allScanned.push(...scanned);
+      allScanned.push(...scan.releases);
     } catch (err) {
       logger.warn(
         `[CatalogMigration] Scan failed for ${profile.platformId}: ${(err as Error).message}`,

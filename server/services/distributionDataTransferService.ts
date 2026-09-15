@@ -351,6 +351,19 @@ export interface ScannedRelease {
   }>;
 }
 
+export interface CatalogScanCoverage {
+  status: "complete" | "partial" | "proxy" | "manual" | "failed";
+  method: "dedicated" | "proxy" | "manual";
+  complete: boolean;
+  reason: string;
+  limit?: number;
+}
+
+export interface CatalogScanResult {
+  releases: ScannedRelease[];
+  coverage: CatalogScanCoverage;
+}
+
 export interface DataTransferJob {
   id: string;
   userId: string;
@@ -2971,7 +2984,7 @@ class DistributionDataTransferService {
   async scanReleasesFromProfile(
     userId: string,
     platformId: string,
-  ): Promise<ScannedRelease[]> {
+  ): Promise<CatalogScanResult> {
     // Hydrate from DB first if the in-memory map is missing this user/platform
     // (common after a server restart when the map hasn't been populated yet).
     if (
@@ -2987,9 +3000,30 @@ class DistributionDataTransferService {
     }
 
     const profile = userProfiles.get(platformId)!;
-    const artistName = profile.artistName || "Unknown Artist";
-    const artistId = profile.artistId;
+    return this.scanReleasesForArtist(
+      platformId,
+      profile.artistId,
+      profile.artistName || "Unknown Artist",
+    );
+  }
 
+  async scanReleasesFromProfileUrl(
+    platformId: string,
+    profileUrl: string,
+    artistName: string,
+  ): Promise<CatalogScanResult> {
+    return this.scanReleasesForArtist(
+      platformId,
+      this.extractArtistIdFromUrl(platformId, profileUrl),
+      artistName || "Unknown Artist",
+    );
+  }
+
+  private async scanReleasesForArtist(
+    platformId: string,
+    artistId: string,
+    artistName: string,
+  ): Promise<CatalogScanResult> {
     logger.info(
       `[DataTransfer] Scanning catalog for ${platformId} / artist "${artistName}" (${artistId})`,
     );
@@ -3013,24 +3047,62 @@ class DistributionDataTransferService {
         `[DataTransfer] "${platformId}" is manual-entry only — no automated scanner. ` +
           `Category: ${platformMeta!.category}`,
       );
-      return [];
+      return {
+        releases: [],
+        coverage: {
+          status: "manual",
+          method: "manual",
+          complete: false,
+          reason: "This platform requires a manual catalog import.",
+        },
+      };
     }
 
     // ── Dedicated scanners ────────────────────────────────────────────────────
     // These platforms have a stable, free public API that we query directly.
     switch (scannerKey) {
-      case "spotify":
-        return this.fetchSpotifyAlbums(artistId, artistName);
-      case "apple_music":
-        return this.fetchAppleMusicAlbums(artistId, artistName);
-      case "deezer":
-        return this.fetchDeezerAlbums(artistId, artistName);
-      case "soundcloud":
-        return this.fetchSoundCloudAlbums(artistId, artistName);
-      case "bandcamp":
-        return this.fetchBandcampAlbums(artistId, artistName);
-      case "audiomack":
-        return this.fetchAudiomackAlbums(artistId, artistName);
+      case "spotify": {
+        const releases = await this.fetchSpotifyAlbums(artistId, artistName);
+        return {
+          releases,
+          coverage: this.coverageForScanner("spotify", releases.length),
+        };
+      }
+      case "apple_music": {
+        const releases = await this.fetchAppleMusicAlbums(artistId, artistName);
+        return {
+          releases,
+          coverage: this.coverageForScanner("apple_music", releases.length),
+        };
+      }
+      case "deezer": {
+        const releases = await this.fetchDeezerAlbums(artistId, artistName);
+        return {
+          releases,
+          coverage: this.coverageForScanner("deezer", releases.length),
+        };
+      }
+      case "soundcloud": {
+        const releases = await this.fetchSoundCloudAlbums(artistId, artistName);
+        return {
+          releases,
+          coverage: this.coverageForScanner("soundcloud", releases.length),
+        };
+      }
+      case "bandcamp": {
+        const releases = await this.fetchBandcampAlbums(artistId, artistName);
+        return {
+          releases,
+          coverage: this.coverageForScanner("bandcamp", releases.length),
+        };
+      }
+      case "audiomack": {
+        const releases = await this.fetchAudiomackAlbums(artistId, artistName);
+        return {
+          releases,
+          coverage: this.coverageForScanner("audiomack", releases.length),
+        };
+      }
     }
 
     // ── iTunes proxy fallback (covers all 97 DistroKid DSPs) ─────────────────
@@ -3053,7 +3125,17 @@ class DistributionDataTransferService {
         `[DataTransfer] iTunes proxy returned ${proxyReleases.length} releases ` +
           `for "${artistName}" (routed via ${platformId})`,
       );
-      return proxyReleases;
+      return {
+        releases: proxyReleases,
+        coverage: {
+          status: "proxy",
+          method: "proxy",
+          complete: false,
+          reason:
+            "The artist identity was matched by name through an iTunes proxy; this is not an independently verified platform catalog.",
+          limit: 200,
+        },
+      };
     }
 
     // Secondary proxy: Deezer artist-name search
@@ -3061,7 +3143,141 @@ class DistributionDataTransferService {
       `[DataTransfer] iTunes proxy returned 0 results — trying Deezer name search ` +
         `for "${artistName}" (routed via ${platformId})`,
     );
-    return this.fetchDeezerCatalogByArtistName(artistName, platformId);
+    const secondaryProxyReleases = await this.fetchDeezerCatalogByArtistName(
+      artistName,
+      platformId,
+    );
+    return {
+      releases: secondaryProxyReleases,
+      coverage: {
+        status: "proxy",
+        method: "proxy",
+        complete: false,
+        reason:
+          "The catalog was matched by artist name through a Deezer proxy; this is not an independently verified platform catalog.",
+        limit: 50,
+      },
+    };
+  }
+
+  private coverageForScanner(
+    scannerKey: string,
+    count: number,
+  ): CatalogScanCoverage {
+    const limits: Record<string, number> = {
+      spotify: 100,
+      apple_music: 50,
+      deezer: 50,
+      soundcloud: 20,
+      bandcamp: 30,
+      audiomack: 20,
+    };
+    const limit = limits[scannerKey];
+    const capped = typeof limit === "number" && count >= limit;
+
+    if (scannerKey === "soundcloud" || scannerKey === "bandcamp" || scannerKey === "audiomack") {
+      return {
+        status: "partial",
+        method: "dedicated",
+        complete: false,
+        reason:
+          "The provider endpoint is currently bounded and does not expose a complete pagination contract.",
+        limit,
+      };
+    }
+
+    return {
+      status: capped ? "partial" : "complete",
+      method: "dedicated",
+      complete: !capped,
+      reason: capped
+        ? `The provider returned the current scan limit of ${limit}; more releases may exist.`
+        : "The provider returned fewer releases than the current scan limit.",
+      limit,
+    };
+  }
+
+  async previewProfileCatalog(
+    userId: string,
+    platformId: string,
+    releases: ScannedRelease[],
+  ): Promise<{
+    platformId: string;
+    scanned: number;
+    newReleases: number;
+    existingReleases: number;
+    failed: number;
+    status: "preview" | "preview_error";
+    releases: Array<{
+      id: string;
+      title: string;
+      artistName: string;
+      releaseDate: string | null;
+      releaseType: ScannedRelease["releaseType"];
+      trackCount: number;
+      coverUrl?: string;
+      platformUrl?: string;
+      upc?: string;
+      match: "new" | "existing";
+    }>;
+  }> {
+    let newReleases = 0;
+    let existingReleases = 0;
+    let failed = 0;
+    const previewReleases: Array<{
+      id: string;
+      title: string;
+      artistName: string;
+      releaseDate: string | null;
+      releaseType: ScannedRelease["releaseType"];
+      trackCount: number;
+      coverUrl?: string;
+      platformUrl?: string;
+      upc?: string;
+      match: "new" | "existing";
+    }> = [];
+
+    for (const release of releases) {
+      try {
+        const existing = await this.findExistingRelease(
+          userId,
+          release.upc,
+          release.title,
+          release.artistName,
+        );
+        const match = existing ? "existing" : "new";
+        if (existing) existingReleases++;
+        else newReleases++;
+        previewReleases.push({
+          id: release.id,
+          title: release.title,
+          artistName: release.artistName,
+          releaseDate: release.releaseDate,
+          releaseType: release.releaseType,
+          trackCount: release.trackCount,
+          coverUrl: release.coverUrl,
+          platformUrl: release.platformUrl,
+          upc: release.upc,
+          match,
+        });
+      } catch (err) {
+        failed++;
+        logger.warn(
+          { err },
+          `[DataTransfer] Failed to preview release ${release.title}:`,
+        );
+      }
+    }
+
+    return {
+      platformId,
+      scanned: releases.length,
+      newReleases,
+      existingReleases,
+      failed,
+      status: failed > 0 ? "preview_error" : "preview",
+      releases: previewReleases,
+    };
   }
 
   async importProfileCatalog(

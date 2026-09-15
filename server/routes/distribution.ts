@@ -5819,7 +5819,7 @@ router.post(
       const userId = (req.user as AuthenticatedUser).id;
       const { platformId } = req.params as Record<string, string>;
 
-      const releases =
+      const scan =
         await distributionDataTransferService.scanReleasesFromProfile(
           userId,
           platformId,
@@ -5827,8 +5827,9 @@ router.post(
 
       res.json({
         success: true,
-        releases,
-        total: releases.length,
+        releases: scan.releases,
+        total: scan.releases.length,
+        coverage: scan.coverage,
       });
     } catch (error: unknown) {
       const msg =
