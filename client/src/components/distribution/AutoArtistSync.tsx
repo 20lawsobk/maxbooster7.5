@@ -107,6 +107,13 @@ type DiscoverPayload = {
     existingReleases?: number;
     failed: number;
     status: string;
+    coverage?: {
+      status: "complete" | "partial" | "proxy" | "manual" | "failed";
+      method: string;
+      complete: boolean;
+      reason: string;
+      limit?: number;
+    };
     releases?: Array<{
       id: string;
       title: string;
@@ -1602,6 +1609,18 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                         existingReleases?: number;
                         failed?: number;
                         status?: string;
+                        coverage?: {
+                          status:
+                            | "complete"
+                            | "partial"
+                            | "proxy"
+                            | "manual"
+                            | "failed";
+                          method: string;
+                          complete: boolean;
+                          reason: string;
+                          limit?: number;
+                        };
                         releases?: Array<{
                           id: string;
                           title: string;
@@ -1638,6 +1657,19 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                               <span className="text-destructive">
                                 {result.failed} failed
                               </span>
+                            )}
+                            {result.coverage && (
+                              <Badge
+                                variant={
+                                  result.coverage.status === "complete"
+                                    ? "secondary"
+                                    : "outline"
+                                }
+                                title={result.coverage.reason}
+                                className="px-1 py-0 text-[10px]"
+                              >
+                                {result.coverage.status}
+                              </Badge>
                             )}
                           </div>
                           {discoverResults.preview &&

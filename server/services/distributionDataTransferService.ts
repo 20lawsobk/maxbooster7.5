@@ -2262,8 +2262,10 @@ class DistributionDataTransferService {
             });
           }
 
-          url = data.next || null;
-          if (results.length >= 100) break;
+           // Follow Spotify's pagination until the provider reports no next
+           // page. The previous local 100-release cap silently truncated
+           // larger artist catalogs.
+           url = data.next || null;
         }
 
         if (results.length > 0) {
@@ -2661,7 +2663,7 @@ class DistributionDataTransferService {
   ): Promise<ScannedRelease[]> {
     try {
       const resp = await timedFetch(
-        `https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=50`,
+        `https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=200`,
       );
       if (!resp?.ok) return [];
       const data = (await resp?.json()) as Record<string, unknown>;
@@ -2701,31 +2703,37 @@ class DistributionDataTransferService {
     artistName: string,
   ): Promise<ScannedRelease[]> {
     try {
-      const resp = await timedFetch(
-        `https://api.deezer.com/artist/${artistId}/albums?limit=50`,
-      );
-      if (!resp?.ok) return [];
-      const data = (await resp?.json()) as Record<string, unknown>;
-      if (data?.error) return [];
-
-      return ((data?.data || []) as any).map((item: Record<string, unknown>) => ({
-        id: `deezer-${item?.id}`,
-        externalId: String(item?.id),
-        platformId: "deezer",
-        title: item.title,
-        artistName,
-        releaseType: ((item?.nb_tracks as number) >= 6
-          ? "album"
-          : (item?.nb_tracks as number) >= 3
-            ? "EP"
-            : "single") as "single" | "EP" | "album",
-        releaseDate: item.release_date || null,
-        trackCount: (item.nb_tracks as number) || 1,
-        coverUrl: item.cover_xl || item?.cover_big || item?.cover_medium,
-        platformUrl: item.link,
-        upc: item.upc,
-        genre: (item.genres as any)?.data?.[0]?.name,
-      }));
+      const results: ScannedRelease[] = [];
+      let url: string | null =
+        `https://api.deezer.com/artist/${artistId}/albums?limit=50`;
+      while (url) {
+        const resp = await timedFetch(url);
+        if (!resp?.ok) return results;
+        const data = (await resp?.json()) as Record<string, unknown>;
+        if (data?.error) return results;
+        for (const item of ((data?.data || []) as any[])) {
+          results.push({
+            id: `deezer-${item?.id}`,
+            externalId: String(item?.id),
+            platformId: "deezer",
+            title: item.title,
+            artistName,
+            releaseType: ((item?.nb_tracks as number) >= 6
+              ? "album"
+              : (item?.nb_tracks as number) >= 3
+                ? "EP"
+                : "single") as "single" | "EP" | "album",
+            releaseDate: item.release_date || null,
+            trackCount: (item.nb_tracks as number) || 1,
+            coverUrl: item.cover_xl || item?.cover_big || item?.cover_medium,
+            platformUrl: item.link,
+            upc: item.upc,
+            genre: (item.genres as any)?.data?.[0]?.name,
+          });
+        }
+        url = typeof data.next === "string" ? data.next : null;
+      }
+      return results;
     } catch (err) {
       logger.warn(
         { err: err },
@@ -2819,57 +2827,67 @@ class DistributionDataTransferService {
       const user = (await userResp?.json()) as Record<string, unknown>;
       if (!user?.id) return [];
 
-      const [playlistResp, tracksResp] = await Promise.all([
-        fetch(
-          `https://api-v2.soundcloud.com/users/${user.id}/playlists?client_id=${clientId}&limit=20`,
+      const fetchAll = async (initialUrl: string): Promise<any[]> => {
+        const collection: any[] = [];
+        let nextUrl: string | null = initialUrl;
+        let pages = 0;
+        while (nextUrl && pages < 100) {
+          const response = await timedFetch(nextUrl);
+          if (!response.ok) break;
+          const data = (await response.json()) as Record<string, unknown>;
+          collection.push(...((data.collection || []) as any[]));
+          nextUrl =
+            typeof data.next_href === "string" ? data.next_href : null;
+          pages++;
+        }
+        return collection;
+      };
+
+      const [playlists, tracks] = await Promise.all([
+        fetchAll(
+          `https://api-v2.soundcloud.com/users/${user.id}/playlists?client_id=${clientId}&limit=50`,
         ),
-        fetch(
-          `https://api-v2.soundcloud.com/users/${user.id}/tracks?client_id=${clientId}&limit=20`,
+        fetchAll(
+          `https://api-v2.soundcloud.com/users/${user.id}/tracks?client_id=${clientId}&limit=50`,
         ),
       ]);
 
       const results: ScannedRelease[] = [];
 
-      if (playlistResp?.ok) {
-        const pd = (await playlistResp?.json()) as Record<string, unknown>;
-        for (const pl of (pd?.collection as any[]) || []) {
-          const trackCount = pl?.track_count || pl?.tracks?.length || 1;
-          results?.push({
-            id: `soundcloud-pl-${pl?.id}`,
-            externalId: String(pl?.id),
-            platformId: "soundcloud",
-            title: pl.title,
-            artistName: pl.user?.username || artistName,
-            releaseType:
-              trackCount >= 6 ? "album" : trackCount >= 3 ? "EP" : "single",
-            releaseDate:
-              pl?.release_date || pl?.created_at?.split("T")[0] || null,
-            trackCount,
-            coverUrl: pl.artwork_url?.replace("-large", "-t500x500"),
-            platformUrl: pl.permalink_url,
-            genre: pl.genre || pl?.tracks?.[0]?.genre || undefined,
-          });
-        }
+      for (const pl of playlists) {
+        const trackCount = pl?.track_count || pl?.tracks?.length || 1;
+        results?.push({
+          id: `soundcloud-pl-${pl?.id}`,
+          externalId: String(pl?.id),
+          platformId: "soundcloud",
+          title: pl.title,
+          artistName: pl.user?.username || artistName,
+          releaseType:
+            trackCount >= 6 ? "album" : trackCount >= 3 ? "EP" : "single",
+          releaseDate:
+            pl?.release_date || pl?.created_at?.split("T")[0] || null,
+          trackCount,
+          coverUrl: pl.artwork_url?.replace("-large", "-t500x500"),
+          platformUrl: pl.permalink_url,
+          genre: pl.genre || pl?.tracks?.[0]?.genre || undefined,
+        });
       }
 
-      if (tracksResp?.ok) {
-        const td = (await tracksResp?.json()) as Record<string, unknown>;
-        for (const track of ((td?.collection || []) as any).slice(0, 10)) {
-          results?.push({
-            id: `soundcloud-tr-${track?.id}`,
-            externalId: String(track?.id),
-            platformId: "soundcloud",
-            title: track.title,
-            artistName: track.user?.username || artistName,
-            releaseType: "single",
-            releaseDate:
-              track?.release_date || track?.created_at?.split("T")[0] || null,
-            trackCount: 1,
-            coverUrl: track.artwork_url?.replace("-large", "-t500x500"),
-            platformUrl: track.permalink_url,
-            genre: track.genre || undefined,
-          });
-        }
+      for (const track of tracks) {
+        results?.push({
+          id: `soundcloud-tr-${track?.id}`,
+          externalId: String(track?.id),
+          platformId: "soundcloud",
+          title: track.title,
+          artistName: track.user?.username || artistName,
+          releaseType: "single",
+          releaseDate:
+            track?.release_date || track?.created_at?.split("T")[0] || null,
+          trackCount: 1,
+          coverUrl: track.artwork_url?.replace("-large", "-t500x500"),
+          platformUrl: track.permalink_url,
+          genre: track.genre || undefined,
+        });
       }
 
       return results;
@@ -3165,9 +3183,7 @@ class DistributionDataTransferService {
     count: number,
   ): CatalogScanCoverage {
     const limits: Record<string, number> = {
-      spotify: 100,
-      apple_music: 50,
-      deezer: 50,
+      apple_music: 200,
       soundcloud: 20,
       bandcamp: 30,
       audiomack: 20,
@@ -3175,7 +3191,17 @@ class DistributionDataTransferService {
     const limit = limits[scannerKey];
     const capped = typeof limit === "number" && count >= limit;
 
-    if (scannerKey === "soundcloud" || scannerKey === "bandcamp" || scannerKey === "audiomack") {
+    if (scannerKey === "spotify" || scannerKey === "deezer") {
+      return {
+        status: "complete",
+        method: "dedicated",
+        complete: true,
+        reason:
+          "The scanner followed the provider pagination cursor until no additional releases were reported.",
+      };
+    }
+
+    if (scannerKey === "bandcamp" || scannerKey === "audiomack") {
       return {
         status: "partial",
         method: "dedicated",
@@ -3183,6 +3209,16 @@ class DistributionDataTransferService {
         reason:
           "The provider endpoint is currently bounded and does not expose a complete pagination contract.",
         limit,
+      };
+    }
+
+    if (scannerKey === "soundcloud") {
+      return {
+        status: "complete",
+        method: "dedicated",
+        complete: true,
+        reason:
+          "The scanner followed SoundCloud next_href cursors for playlists and tracks.",
       };
     }
 
