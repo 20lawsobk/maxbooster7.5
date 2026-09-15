@@ -1107,10 +1107,6 @@ class ToolostService {
   }
 
   async getUserCatalog(platform?: string): Promise<ToolostCatalogRelease[]> {
-    if (!this.isApiConfigured()) {
-      logger.warn("[Too Lost] API not configured — getUserCatalog unavailable");
-      return [];
-    }
     // No confirmed platform filter on Too Lost's GET /releases — log and
     // ignore rather than silently mis-filtering, same honest pattern
     // LabelGrid used for the same gap.

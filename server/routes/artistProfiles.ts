@@ -846,8 +846,21 @@ router.get(
       // Too Lost returns account-level releases, so keep the explicit artist
       // name filter below instead of pretending the provider offers an
       // artist-scoped catalog endpoint.
+      const catalogConnection = await storage.getToolostConnection(req.user!.id);
+      const effectiveConnection =
+        catalogConnection ?? (await storage.getAdminToolostConnection());
+
+      if (!effectiveConnection) {
+        return res.status(409).json({
+          error: "Too Lost distributor connection required",
+          requiresConnection: true,
+        });
+      }
+
       const [toolostReleases, localReleases] = await Promise.all([
-        toolostService.forUser(req.user!.id).getUserCatalog(),
+        toolostService
+          .forUser(effectiveConnection.connectedByUserId)
+          .getUserCatalog(),
         storage.getDistroReleasesByArtist(req.user!.id),
       ]);
 

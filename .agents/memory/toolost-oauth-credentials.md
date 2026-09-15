@@ -12,3 +12,9 @@ The live sandbox catalog endpoint is `GET /v1/lookup/platforms` and its successf
 **Why:** A successful `/oauth/token` response alone can falsely suggest the integration is ready; the API distinguishes app authentication from a user-authorized account.
 
 **How to apply:** Keep the API and OAuth base URLs separate, complete and verify the browser OAuth connect flow before treating Too Lost as connected, and validate live response shape before mapping provider catalog entries.
+
+The per-user Too Lost service loads its OAuth row asynchronously. Real API methods must rely on `ensureValidToken()` to reload the row; a synchronous `isApiConfigured()` check at the start of a request can incorrectly return an empty catalog during that load window. Catalog callers must also select the user's connection first and the admin-owned connection second.
+
+**Why:** The artist catalog scanner created a fresh service instance for every request, so its immediate configuration check returned false even when a valid connection existed, causing the UI to show no live releases.
+
+**How to apply:** Resolve the effective connection before account-level catalog reads, instantiate the service for the connection owner, and let the real request path perform token loading/refresh.
