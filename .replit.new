@@ -1,0 +1,170 @@
+modules = ["nodejs-24", "python-base-3.13", "postgresql-16"]
+
+[[ports]]
+localPort = 53
+externalPort = 3001
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 5353
+externalPort = 5000
+
+[[ports]]
+localPort = 6379
+externalPort = 3000
+
+[[ports]]
+localPort = 8090
+externalPort = 3002
+
+[[ports]]
+localPort = 9878
+externalPort = 4200
+
+[[ports]]
+localPort = 9879
+externalPort = 3003
+
+[userenv]
+
+[userenv.shared]
+REDIS_URL = "redis://localhost:6379"
+ACME_CONTACT_EMAIL = "admin@max-booster.com"
+ACME_DIRECTORY_URL = "https://acme-v02.api.letsencrypt.org/directory"
+ACME_ENABLED = "true"
+ADMIN_EMAIL = "blawzmusic@gmail.com"
+ADMIN_USERNAME = "B-Lawz Music"
+AI_SERVER_URL = "https://maxbooster.replit.app"
+APP_URL = "https://maxbooster.replit.app"
+BASE_DOMAIN = "max-booster.com"
+CORS_ORIGIN = "https://max-booster.com,https://maxbooster.replit.app"
+DNSSEC_ENABLED = "true"
+DNS_PORT = "5353"
+DNS_SERVER_IP = "34.117.33.233"
+DOMAIN = "https://maxbooster.replit.app"
+ENABLE_SELF_EVOLUTION = "true"
+FACEBOOK_APP_ID = "1536827594045043"
+FCM_PROJECT_ID = "max-booster-6808c"
+GEODB_PATH = "/home/runner/workspace/data/GeoLite2-Country.mmdb"
+GEODNS_ENABLED = "true"
+GITHUB_REPO = "20lawsobk/maxbooster7.5"
+GOOGLE_BUSINESS_CLIENT_ID = "341029416447-ep943i6p2k4mnqef16viqgtcimhvkeu6.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID = "341029416447-ep943i6p2k4mnqef16viqgtcimhvkeu6.apps.googleusercontent.com"
+INSTAGRAM_APP_ID = "1443325494081370"
+LABELGRID_API_URL = "https://api.labelgrid.com"
+LABELGRID_WEBHOOK_URL = "https://maxbooster.replit.app/api/webhooks/labelgrid"
+LINKEDIN_CLIENT_ID = "860m86lp4up96f"
+MAXMIND_ACCOUNT_ID = "1334780"
+MAX_CONCURRENT_REQUESTS = "8000"
+MBS_AI_TRAINING_URL = "https://maxbooster.replit.app"
+NODE_OPTIONS = "--max-old-space-size=4096"
+PDIM_EXEC_URL = "https://maxbooster.replit.app/api/redis/instances/22c8e6d237afe8ae41541f87/exec"
+PDIM_HTTP_EXEC_URL = "https://maxbooster.replit.app/api/redis/instances/22c8e6d237afe8ae41541f87/exec"
+PEER_TRAINING_NODE = "https://maxbooster.replit.app"
+REDIS_CLUSTER_URLS = "https://maxbooster.replit.app/api/redis/instances/22c8e6d237afe8ae41541f87"
+REGION_MAP = "{\"NA\":\"34.117.33.233\",\"EU\":\"34.117.33.233\",\"AS\":\"34.117.33.233\",\"SA\":\"34.117.33.233\",\"OC\":\"34.117.33.233\",\"AF\":\"34.117.33.233\",\"AN\":\"34.117.33.233\",\"default\":\"34.117.33.233\"}"
+REPLIT_BUCKET_ID = "22c8e6d237afe8ae41541f87"
+SENDGRID_FROM_EMAIL = "blawzmusic@gmail.com"
+SENTRY_DSN = "https://a5b99c3e62a07c8bafd24cf7e685c4b1@o4510378512613376.ingest.us.sentry.io/4510400462454784"
+SPOTIFY_CLIENT_ID = "6c9b20193bea474db3dbc57925400a45"
+STORAGE_HTTP_URL = "https://maxbooster.replit.app/api/redis/instances/22c8e6d237afe8ae41541f87/exec"
+STORAGE_PROVIDER = "pocket-dimension"
+STOREFRONT_URL_FORMAT = "slug"
+STRIPE_PUBLISHABLE_KEY = "pk_live_51TNanZ7xFKVrnu9BvnlH2kDxVF5FsB0e9tYs9GvgKDrEW8AtwMU5nTaOQpHnxQqFLxEtunULXa2QgowKAXJOOhGh00ycyFFuh5"
+THREADS_APP_ID = "3763935833902297"
+TIKTOK_CLIENT_KEY = "awo2zz56gtdus6vn"
+TIKTOK_ENV = "sandbox"
+TIKTOK_SANDBOX_CLIENT_KEY = "sbawrgydrp7eiw8rgw"
+TIKTOK_SANDBOX_REDIRECT_URI = "https://maxbooster.replit.app/tiktok/sandbox/callback"
+TIKTOK_SANDBOX_SCOPES = "user.info.basic,video.publish,video.upload"
+TWILIO_ACCOUNT_SID = ""
+TWILIO_PHONE_NUMBER = "+12695796593"
+TWILIO_VERIFY_SERVICE_SID = ""
+TWITTER_API_KEY = ""
+TWITTER_CLIENT_ID = "RnBkMVRNT0pZV2c0YVBhazZlcDg6MTpjaQ"
+UV_THREADPOOL_SIZE = "32"
+VAPID_PUBLIC_KEY = "BElo3vB61F4v5p3N56DTJTiAO4pNqrhFCVj4GhrkqKgKFCATtAIsgBrDVHkKgs2SSGWZC-eeJTruYVehVyYAlik"
+VAPID_SUBJECT = "mailto:notifications@maxbooster.ai"
+VITE_SENTRY_DSN = "https://a5b99c3e62a07c8bafd24cf7e685c4b1@o4510378512613376.ingest.us.sentry.io/4510400462454784"
+VITE_STRIPE_PUBLIC_KEY = "pk_live_51RRVbLGIdnrORdO6jx5cmJO1JCrObvIqtOoXe9pE3FY2TVRPrAtvbabHYZxoMXVVKckJMaKQ2bhArzMYuBDCMTjz00vXwm6Ch9"
+YOUTUBE_CLIENT_ID = "341029416447-ep943i6p2k4mnqef16viqgtcimhvkeu6.apps.googleusercontent.com"
+ADMIN_PASSWORD = ""
+AI_SERVER_KEY = "mbs_283fb680fcfcfc1f83300442f4185712392c7c7c3d4868bbd925085ace25ec8e"
+AI_Training_Server = "mbs_c6fe3b6e7eb7f4c6957f256ef20ae072c2c6ae75b0c88d5448b35707249f3a0d"
+BOOSTERSTATE_SECRET = ""
+DATABASE_REPLICA_URLS = "postgresql://neondb_owner:npg_bZQGWg3ufzE4@ep-nameless-mouse-ai3efb2s-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+EXA_API_KEY = ""
+FACEBOOK_APP_SECRET = ""
+FCM_CLIENT_EMAIL = "firebase-adminsdk-fbsvc@max-booster-6808c.iam.gserviceaccount.com"
+FCM_SERVICE_ACCOUNT_KEY = '\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCcSXhl6z5WF21n\nEbVswIPMSXxHXx0mBGfLSGeDA0Hj2VnSvEpkpyOohL5q2MWQgga70t9oa/nvmXfT\n/u5gMjtggZnaEaYIPW6pjvhv2TqP6xwPEH4rHzz6aJpIK+oybxkl5wJ2C3lPTbVn\nCa+prbQ21gMqkLc9+zrwObbN1O/+oTtjIei0h4S6Kc2/WnoGdkCoFqAPO0LhVzjG\n17K+Eg/PeM6AW3W3U9/8wfpMYG2T0QuJ/RaWqnuJFqB8MlfSLFWbR4EyHiPBXoWw\n+spKgUlh/z8clIZabUmvceVgt5xPRhsJDGcAg+ohEWW0MaFjJ/sxn6rfwaeD5dCb\n23LRk55zAgMBAAECggEACvNa7Ek/ZOjfUYl8HNKgaX/8pUOU10UXwLaiChwAUea4\n1Hs8+zB63yPt866cqTNzJ'
+GITHUB_PAT = ""
+GITHUB_PERSONAL_ACCESS_TOKEN = ""
+GITHUB_TOKEN = ""
+GOOGLE_BUSINESS_CLIENT_SECRET = ""
+GOOGLE_CLIENT_SECRET = ""
+INSTAGRAM_APP_SECRET = ""
+LINKEDIN_CLIENT_SECRET = ""
+MAXCORE_ADMIN_KEY = "mbs_abb3a602785b79ad821fde3220a1c1003356b974ee5b2a08535d9e9189188c50"
+MAXMIND_LICENSE_KEY = ""
+MBS_AI_TRAINING_KEY = "mbs_f1d874a40599091855feba6e7ac451fc9bd2ffa464546cb38c1fe4ea43544914"
+NEON_DATABASE_URL = "postgresql://neondb_owner:npg_bZQGWg3ufzE4@ep-nameless-mouse-ai3efb2s-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+NEON_PRIMARY_URL = "postgresql://neondb_owner:npg_bZQGWg3ufzE4@ep-nameless-mouse-ai3efb2s-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+PDIM_BEARER_TOKEN = ""
+PDIM_EXEC_TOKEN = ""
+POCKET_DIMENSION_KEY = "18cf0648abdc75cd8b904ada4d1712b928156e6b489a36c6e6b6f9bfa2447713"
+RESEND_API_KEY = ""
+SENDGRID_API_KEY = ""
+STORAGE_BEARER_TOKEN = ""
+TAVILY_API_KEY = ""
+THREADS_APP_SECRET = ""
+TIKTOK_CLIENT_SECRET = ""
+TIKTOK_SANDBOX_CLIENT_SECRET = ""
+TOKEN_ENCRYPTION_KEY = ""
+TWILIO_AUTH_TOKEN = ""
+TWITTER_API_SECRET = ""
+TWITTER_CLIENT_SECRET = ""
+VAPID_PRIVATE_KEY = ""
+YOUTUBE_CLIENT_SECRET = ""
+STRIPE_SECRET_KEY = ""
+STRIPE_WEBHOOK_SECRET = ""
+LABELGRID_TEST_WEBHOOK = "https://fc1db3b3-f80f-4f80-acf9-220d6d6fe70a-00-6jaldfp74ms1.janeway.replit.dev/api/webhooks/labelgrid"
+
+[userenv.development]
+TOOLOST_CLIENT_ID = "a2bd93bb-91b1-4538-96fe-bd9af2ae04ff"
+TOOLOST_ENVIRONMENT = "sandbox"
+TOOLOST_SANDBOX_REDIRECT_URI = "https://fc1db3b3-f80f-4f80-acf9-220d6d6fe70a-00-6jaldfp74ms1.janeway.replit.dev/callback"
+
+[userenv.production]
+TOOLOST_CLIENT_ID = "a2bd93b8-c0f3-47b0-bfdb-6154c8f497de"
+TOOLOST_ENVIRONMENT = "production"
+TOOLOST_REDIRECT_URI = "https://maxbooster.replit.app/callback"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "redis-server --daemonize yes --port 6379 --loglevel warning --save '' --appendonly no && sleep 1 && npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[nix]
+channel = "stable-25_05"
