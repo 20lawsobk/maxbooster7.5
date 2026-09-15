@@ -347,6 +347,7 @@ class ToolostService {
   private environment: "production" | "sandbox";
   private baseUrl: string;
   private authBaseUrl: string;
+  private tokenUrl: string;
   private circuitBreaker: CircuitBreaker;
   private maxRetries: number = 3;
   private baseDelay: number = 1000;
@@ -383,6 +384,10 @@ class ToolostService {
       this.environment === "sandbox"
         ? "https://sandbox.toolost.com/oauth"
         : "https://toolost.com/oauth";
+    this.tokenUrl =
+      this.environment === "sandbox"
+        ? "https://sandbox.toolost.com/oauth/token"
+        : "https://toolost.com/oauth/token";
 
     this.circuitBreaker = new CircuitBreaker("toolost-api", {
       failureThreshold: 5,
@@ -510,7 +515,7 @@ class ToolostService {
       client_id: this.clientId,
       client_secret: this.clientSecret,
     });
-    const res = await fetch(`${this.authBaseUrl}/token`, {
+    const res = await fetch(this.tokenUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -612,7 +617,7 @@ class ToolostService {
       client_id: this.clientId,
       client_secret: this.clientSecret,
     });
-    const res = await fetch(`${this.authBaseUrl}/token`, {
+    const res = await fetch(this.tokenUrl, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body,
