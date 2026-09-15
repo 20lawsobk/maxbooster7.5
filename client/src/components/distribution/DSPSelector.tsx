@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -333,9 +333,25 @@ export function DSPSelector({ selectedPlatforms, onChange }: DSPSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const { data: platforms = [], isLoading } = useQuery<DSP[]>({
+  const {
+    data: platformResponse,
+    isLoading,
+    isError,
+  } = useQuery<{ platforms: DSP[] }>({
     queryKey: ["/api/distribution/platforms"],
   });
+  const platforms = platformResponse?.platforms ?? [];
+
+  useEffect(() => {
+    if (platforms.length === 0 || selectedPlatforms.length > 0) return;
+    const preferred = [
+      "spotify",
+      "apple-music",
+      "youtube-music",
+      "amazon-music",
+    ].filter((slug) => platforms.some((platform) => platform.slug === slug));
+    onChange(preferred);
+  }, [platforms, selectedPlatforms.length, onChange]);
 
   const enrichedPlatforms = platforms.map((p) => ({
     ...p,
@@ -409,6 +425,34 @@ export function DSPSelector({ selectedPlatforms, onChange }: DSPSelectorProps) {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">
             Fetching available platforms…
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="font-medium">Too Lost platforms are unavailable</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The live catalog could not be loaded. Try again before submitting
+            this release.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (platforms.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="font-medium">No active Too Lost platforms returned</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The selection list is populated directly from Too Lost's live
+            catalog.
           </p>
         </CardContent>
       </Card>
