@@ -1033,7 +1033,9 @@ class ToolostService {
       this.logApiError("[Too Lost] getAvailableDSPs failed", result.error);
       throw new Error(`Too Lost platform catalog unavailable: ${result.error.message}`);
     }
-    const list = ToolostService.extractList<Record<string, unknown>>(result.data);
+    const list = ToolostService.extractList<Record<string, unknown> | string>(
+      result.data,
+    );
     if (list.length === 0) {
       throw new Error("Too Lost platform catalog returned no platforms.");
     }
