@@ -2020,12 +2020,11 @@ export async function registerRoutes(
   );
   app.get(
     "/",
-    requireAuth,
     (req: Request, res: Response, next: NextFunction) => {
       if (!req.query.state || (!req.query.code && !req.query.error)) {
         return next();
       }
-      return forwardToolostCallback(req, res);
+      return requireAuth(req, res, () => forwardToolostCallback(req, res));
     },
   );
 

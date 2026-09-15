@@ -779,7 +779,14 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     name: "TOOLOST_REDIRECT_URI",
     required: false,
     category: "distribution",
-    description: "Too Lost OAuth callback URL",
+    description: "Too Lost production OAuth callback URL",
+    validator: (v) => v?.startsWith("http"),
+  },
+  {
+    name: "TOOLOST_SANDBOX_REDIRECT_URI",
+    required: false,
+    category: "distribution",
+    description: "Too Lost sandbox OAuth callback URL",
     validator: (v) => v?.startsWith("http"),
   },
 ];
