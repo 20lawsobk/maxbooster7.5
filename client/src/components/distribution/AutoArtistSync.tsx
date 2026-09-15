@@ -768,10 +768,16 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     if (portal.key === "spotify" && result.result.uri) {
       updates.spotifyArtistUri = result.result.uri;
     }
-    savePlatformMutation.mutate(updates);
-    setDiscoverResults((prev) =>
-      prev ? { ...prev, [portal.autoDiscoverKey!]: null } : prev,
-    );
+    // Keep the candidate visible until the PATCH succeeds. Clearing it before
+    // the request resolves made a failed Apply look successful and removed the
+    // only way to retry without running discovery again.
+    savePlatformMutation.mutate(updates, {
+      onSuccess: () => {
+        setDiscoverResults((prev) =>
+          prev ? { ...prev, [portal.autoDiscoverKey!]: null } : prev,
+        );
+      },
+    });
   };
 
   const handleSaveManualId = (portal: Portal) => {

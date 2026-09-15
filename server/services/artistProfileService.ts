@@ -4,9 +4,7 @@ import { eq, and, inArray } from "drizzle-orm";
 import { artistProfiles, artistProfileReleases, distroTracks, profileClaimPipeline, profileClaimEvents, artistIdentityLinks, artistDnaSnapshots, profileSplitEvents, distributorHistoryImports } from "@shared/schema";
 import type { ArtistProfile, InsertArtistProfile, ProfileClaimPipeline, ArtistIdentityLink, ArtistDnaSnapshot } from "@shared/schema";
 import { logger } from "../logger.js";
-import { labelGridService } from "./labelgrid-service.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
-import type { LabelGridArtistPlatformPresence } from "./labelgrid-service.js";
 import { distributionDataTransferService } from "./distributionDataTransferService.js";
 
 // ── Claim pipeline state constants ────────────────────────────────────────────
@@ -1528,7 +1526,7 @@ class ArtistProfileService {
       void MaxCoreAIClient.generate(`/api/storage/artist/${id}`, {
         genre: d.genre,
         tone: d.tone,
-        artist_name: (updated as Record<string, unknown>).name,
+        artist_name: (updated as Record<string, unknown>).artistName,
       });
     }
 
@@ -1823,7 +1821,13 @@ class ArtistProfileService {
     audiomack: { result: AudiomackArtistResult; confidence: number } | null;
     jiosaavn: { result: JioSaavnArtistResult; confidence: number } | null;
     urlDiscoveries: PlatformUrlDiscovery[];
-    labelgridPlatforms: LabelGridArtistPlatformPresence[];
+     /**
+      * Kept in the response for clients that still understand the legacy
+      * field. Too Lost does not expose an artist-roster or artist-presence
+      * endpoint, so this is intentionally empty; direct DSP discovery below
+      * is the source of artist identifiers.
+      */
+     labelgridPlatforms: unknown[];
     labelgridConfigured: boolean;
     saved: boolean;
     savedFields: string[];
@@ -1840,20 +1844,16 @@ class ArtistProfileService {
 
     const query = profile.artistName;
 
-    // Run UPC lookup (if provided) + name search + LabelGrid roster search in
-    // parallel. LabelGrid's public API has no cross-industry artist search —
-    // searchArtistAcrossPlatforms only finds artists already registered under
-    // this LabelGrid account (GET /artists?filter[artist_name]=), returning
-    // null (non-fatal) for anyone else. There is no separate webhook
-    // mechanism populating LabelGrid platform status — this call is the only
-    // source for it.
-    // UPC results are exact and bypass confidence scoring — treated as 97 confidence.
-    const [raw, upcHits, lgArtist] = await Promise.all([
+    // Too Lost is the active distribution provider, but its confirmed API
+    // surface has no artist-roster, artist-search, or artist-presence resource.
+    // Discovery must therefore remain provider-independent: query the public
+    // DSP APIs directly and use Too Lost only for authenticated distribution
+    // operations. UPC results are exact and bypass confidence scoring.
+    const [raw, upcHits] = await Promise.all([
       this.searchAllPlatforms(query),
       upc
         ? this.searchByUPC(upc)
         : Promise.resolve({ apple: null, deezer: null }),
-      labelGridService.searchArtistAcrossPlatforms(query).catch(() => null),
     ]);
 
     // Score each platform's results independently
@@ -2003,63 +2003,13 @@ class ArtistProfileService {
       savedFields.push("jiosaavn_confirmed");
     }
 
-    // Get LabelGrid platform presences — either from search result directly,
-    // or by making a second call using the artist ID from the search result.
-    let labelgridPlatforms: LabelGridArtistPlatformPresence[] = [];
-    if (lgArtist) {
-      if ((lgArtist as any).platforms && (lgArtist as any).platforms.length > 0) {
-        labelgridPlatforms = (lgArtist as any).platforms;
-      } else {
-        // Search result didn't embed platforms — fetch them separately
-        labelgridPlatforms = await labelGridService
-          .getArtistPlatformPresence((lgArtist as any)?.id)
-          .catch(() => []);
-      }
-      logger.info(
-        `[ArtistProfile] LabelGrid: artist=${(lgArtist as any).name} platforms=${labelgridPlatforms?.length}`,
-      );
-    }
-
-    const labelgridConfigured = labelGridService?.isApiConfigured();
-
-    // LabelGrid Artist records are first-party (the artist's own distributor
-    // submission), so — like the UPC-exact-match path — they're applied
-    // without confidence scoring. Tidal, SoundCloud, and Amazon Music have no
-    // other automated discovery path in this function at all; Spotify,
-    // Apple, and Deezer already have higher-confidence direct-platform-API
-    // matches above, so LabelGrid only fills those in when the direct search
-    // didn't confirm one this round.
-    const lgByPlatform = new Map(
-      labelgridPlatforms
-        .filter((p) => p.artistId)
-        .map((p) => [p.platform, p]),
-    );
-    const lgAppliedFields: string[] = [];
-    const applyFromLabelGrid = (
-      lgPlatform: string,
-      profileField: string,
-      savedFieldName: string,
-    ) => {
-      const match = lgByPlatform.get(lgPlatform);
-      const alreadySet =
-        (profile as any)?.[profileField] || (updates as any)[profileField];
-      if (match?.artistId && !alreadySet) {
-        (updates as any)[profileField] = match.artistId;
-        savedFields?.push(savedFieldName);
-        lgAppliedFields.push(savedFieldName);
-      }
-    };
-    applyFromLabelGrid("tidal", "tidalArtistId", "tidal");
-    applyFromLabelGrid("soundcloud", "soundcloudArtistId", "soundcloud");
-    applyFromLabelGrid("amazon_music", "amazonMusicArtistId", "amazon_music");
-    applyFromLabelGrid("spotify", "spotifyArtistId", "spotify");
-    applyFromLabelGrid("apple_music", "appleArtistId", "apple");
-    applyFromLabelGrid("deezer", "deezerArtistId", "deezer");
-    if (lgAppliedFields.length > 0) {
-      logger.info(
-        `[ArtistProfile] LabelGrid-sourced fields applied: profile=${profileId} fields=[${lgAppliedFields.join(",")}]`,
-      );
-    }
+    // Do not call the retired LabelGrid artist search here. Its API only
+    // searches that distributor account's own roster and cannot supply
+    // cross-platform identity data. Returning the legacy empty fields keeps
+    // older clients backward-compatible without allowing a failed provider
+    // call to make discovery appear broken.
+    const labelgridPlatforms: unknown[] = [];
+    const labelgridConfigured = false;
 
     // Generate URL-template discoveries for all 97 DSPs.
     // These are generated once using the verified artist name — NOT fetched per platform.
@@ -2546,7 +2496,10 @@ class ArtistProfileService {
     if (profile.audiomackSlug) storedIds["Audiomack"] = profile.audiomackSlug;
 
     const urlDiscoveries = this.generateUrlDiscoveries(profile.artistName);
-    const labelgridConfigured = labelGridService.isApiConfigured();
+     // Too Lost does not expose an artist-search configuration flag. The hub
+     // only needs the legacy field for old clients; actual distribution
+     // connection state is exposed by the Too Lost distribution routes.
+     const labelgridConfigured = false;
 
     return {
       artistName: profile.artistName,
