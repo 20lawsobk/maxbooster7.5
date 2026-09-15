@@ -1834,6 +1834,7 @@ class ArtistProfileService {
     upcDiscovered?: boolean;
     catalogImport: Array<{
       platformId: string;
+      scanned: number;
       imported: number;
       failed: number;
       status: string;
@@ -2062,13 +2063,11 @@ class ArtistProfileService {
       );
     }
 
-    // Catalog import is a main process of auto-discovery, not a separate
-    // manual step: for every platform whose identity was newly confirmed
-    // this call AND that has a working automated catalog scanner, link the
-    // discovered profile and import its release catalog immediately. Only
-    // fires for platforms newly saved this round (guarded above by
-    // `!profile?.xArtistId`), so re-running discovery never re-imports an
-    // already-linked platform's catalog.
+    // Catalog reconciliation is a main process of auto-discovery, not a
+    // separate manual step. Build the target set from every identity we know,
+    // not only fields saved during this request. This makes a second discovery
+    // run a real reconciliation: existing releases are merged, new releases
+    // are added, and platform links are refreshed without creating duplicates.
     const catalogImportTargets: Array<{
       platformId: string;
       profileUrl: string;
@@ -2076,33 +2075,135 @@ class ArtistProfileService {
       genres?: string[];
     }> = [];
 
-    if (savedFields?.includes("spotify") && finalSpotify?.result.externalUrl) {
+    const linkedProfiles =
+      await distributionDataTransferService.getLinkedProfiles(userId);
+    const linkedByPlatform = new Map(
+      linkedProfiles.map((linked) => [linked.platformId, linked]),
+    );
+    const addCatalogTarget = (target: {
+      platformId: string;
+      profileUrl?: string | null;
+      imageUrl?: string | null;
+      genres?: string[];
+    }) => {
+      if (!target.profileUrl) return;
+      const existing = catalogImportTargets.find(
+        (candidate) => candidate.platformId === target.platformId,
+      );
+      if (existing) {
+        // A user-linked profile is authoritative over a generated URL.
+        if (linkedByPlatform.has(target.platformId)) return;
+        if (!existing.imageUrl && target.imageUrl)
+          existing.imageUrl = target.imageUrl;
+        if (!existing.genres?.length && target.genres?.length)
+          existing.genres = target.genres;
+        return;
+      }
       catalogImportTargets.push({
+        platformId: target.platformId,
+        profileUrl: target.profileUrl,
+        imageUrl: target.imageUrl,
+        genres: target.genres,
+      });
+    };
+
+    // First preserve every explicitly linked distribution profile, including
+    // platforms that are not part of the identity-search response.
+    for (const linked of linkedProfiles) {
+      addCatalogTarget({
+        platformId: linked.platformId,
+        profileUrl: linked.profileUrl,
+        imageUrl: linked.imageUrl,
+        genres: linked.genres,
+      });
+    }
+
+    const refreshedProfile = (await this.getProfile(profileId, userId)) ?? profile;
+    const storedCatalogTargets: Array<{
+      platformId: string;
+      profileUrl?: string | null;
+    }> = [
+      {
+        platformId: "spotify",
+        profileUrl: refreshedProfile.spotifyArtistId
+          ? `https://open.spotify.com/artist/${refreshedProfile.spotifyArtistId}`
+          : null,
+      },
+      {
+        platformId: "apple_music",
+        profileUrl: refreshedProfile.appleArtistId
+          ? `https://music.apple.com/us/artist/${refreshedProfile.appleArtistId}`
+          : null,
+      },
+      {
+        platformId: "deezer",
+        profileUrl: refreshedProfile.deezerArtistId
+          ? `https://www.deezer.com/artist/${refreshedProfile.deezerArtistId}`
+          : null,
+      },
+      {
+        platformId: "soundcloud",
+        profileUrl: refreshedProfile.soundcloudArtistId
+          ? `https://soundcloud.com/${refreshedProfile.soundcloudArtistId}`
+          : null,
+      },
+      {
+        platformId: "audiomack",
+        profileUrl: refreshedProfile.audiomackSlug
+          ? `https://audiomack.com/${refreshedProfile.audiomackSlug}`
+          : null,
+      },
+      {
+        platformId: "youtube_music",
+        profileUrl: refreshedProfile.youtubeChannelId
+          ? `https://www.youtube.com/channel/${refreshedProfile.youtubeChannelId}`
+          : null,
+      },
+      {
+        platformId: "tidal",
+        profileUrl: refreshedProfile.tidalArtistId
+          ? `https://tidal.com/browse/artist/${refreshedProfile.tidalArtistId}`
+          : null,
+      },
+    ];
+    for (const target of storedCatalogTargets) addCatalogTarget(target);
+
+    // Current matches may carry richer canonical URLs and should participate
+    // even when the identity was already stored before this run.
+    if (finalSpotify?.confidence >= CONFIDENCE_THRESHOLD) {
+      addCatalogTarget({
         platformId: "spotify",
         profileUrl: finalSpotify.result.externalUrl,
         imageUrl: finalSpotify.result.imageUrl,
         genres: finalSpotify.result.genres,
       });
     }
-    if (savedFields?.includes("apple") && finalApple?.result.url) {
-      catalogImportTargets.push({
+    if (finalApple?.confidence >= CONFIDENCE_THRESHOLD) {
+      addCatalogTarget({
         platformId: "apple_music",
         profileUrl: finalApple.result.url,
         genres: finalApple.result.genres,
       });
     }
-    if (savedFields?.includes("deezer") && finalDeezer?.result.link) {
-      catalogImportTargets.push({
+    if (finalDeezer?.confidence >= CONFIDENCE_THRESHOLD) {
+      addCatalogTarget({
         platformId: "deezer",
         profileUrl: finalDeezer.result.link,
         imageUrl: finalDeezer.result.pictureUrl,
       });
     }
-    if (savedFields?.includes("audiomack") && finalAudiomack?.result.url) {
-      catalogImportTargets.push({
+    if (finalAudiomack?.confidence >= CONFIDENCE_THRESHOLD) {
+      addCatalogTarget({
         platformId: "audiomack",
         profileUrl: finalAudiomack.result.url,
         imageUrl: finalAudiomack.result.imageUrl,
+      });
+    }
+    if (finalJioSaavn?.confidence >= CONFIDENCE_THRESHOLD) {
+      addCatalogTarget({
+        platformId: "jiosaavn",
+        profileUrl: finalJioSaavn.result.url,
+        imageUrl: finalJioSaavn.result.imageUrl,
       });
     }
 
@@ -2147,10 +2248,9 @@ class ArtistProfileService {
   }
 
   /**
-   * Links a newly-discovered streaming profile and imports its release
-   * catalog in one shot. Used exclusively by auto-discover to chain identity
-   * match → catalog import. Failures here are non-fatal to auto-discovery —
-   * identity fields are already saved regardless of catalog-import outcome.
+   * Ensures a streaming profile is linked and imports its complete release
+   * catalog. Failures here are non-fatal to identity discovery — the identity
+   * fields are already saved regardless of catalog-import outcome.
    */
   private async _autoImportCatalogForPlatform(
     userId: string,
@@ -2165,16 +2265,23 @@ class ArtistProfileService {
     status: string;
   }> {
     try {
-      await distributionDataTransferService.linkStreamingProfile(
-        userId,
-        platformId,
-        profileUrl,
-        {
-          artistName,
-          imageUrl: extra?.imageUrl ?? undefined,
-          genres: extra?.genres,
-        },
+      const linkedProfiles =
+        await distributionDataTransferService.getLinkedProfiles(userId);
+      const linked = linkedProfiles.find(
+        (candidate) => candidate.platformId === platformId,
       );
+      if (!linked || linked.profileUrl !== profileUrl) {
+        await distributionDataTransferService.linkStreamingProfile(
+          userId,
+          platformId,
+          profileUrl,
+          {
+            artistName,
+            imageUrl: extra?.imageUrl ?? undefined,
+            genres: extra?.genres,
+          },
+        );
+      }
 
       const releases =
         await distributionDataTransferService.scanReleasesFromProfile(
@@ -2186,7 +2293,13 @@ class ArtistProfileService {
         logger.info(
           `[ArtistProfile] Auto-discover catalog scan found 0 releases for ${platformId} artist "${artistName}"`,
         );
-        return { platformId, imported: 0, failed: 0, status: "no_releases" };
+        return {
+          platformId,
+          scanned: 0,
+          imported: 0,
+          failed: 0,
+          status: "no_releases",
+        };
       }
 
       const job = await distributionDataTransferService.importProfileCatalog(
@@ -2202,6 +2315,7 @@ class ArtistProfileService {
 
       return {
         platformId,
+        scanned: releases.length,
         imported: job.successItems,
         failed: job.failedItems,
         status: job.status,
@@ -2211,7 +2325,13 @@ class ArtistProfileService {
         { err },
         `[ArtistProfile] Auto-discover catalog import failed for ${platformId} user=${userId}:`,
       );
-      return { platformId, imported: 0, failed: 0, status: "error" };
+      return {
+        platformId,
+        scanned: 0,
+        imported: 0,
+        failed: 1,
+        status: "error",
+      };
     }
   }
 

@@ -733,6 +733,10 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         [];
       const catalogImport: Array<{ platformId: string; imported: number }> =
         data.catalogImport ?? [];
+      const scannedTotal = catalogImport.reduce(
+        (sum, r) => sum + (r.scanned || 0),
+        0,
+      );
       const importedTotal = catalogImport.reduce(
         (sum, r) => sum + (r.imported || 0),
         0,
@@ -741,10 +745,17 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         .filter((r) => r.imported > 0)
         .map((r) => r.platformId);
       let description: string;
-      if (fields.length > 0 && importedTotal > 0) {
-        description = `Auto-linked: ${fields.join(", ")}. Imported ${importedTotal} release${importedTotal === 1 ? "" : "s"} from ${importedPlatforms.join(", ")}.`;
+      if (catalogImport.length > 0) {
+        const platformSummary =
+          importedPlatforms.length > 0
+            ? ` from ${importedPlatforms.join(", ")}`
+            : "";
+        description =
+          `${fields.length > 0 ? `Auto-linked: ${fields.join(", ")}. ` : ""}` +
+          `Scanned ${scannedTotal} release${scannedTotal === 1 ? "" : "s"}; ` +
+          `synchronized ${importedTotal} existing/new release${importedTotal === 1 ? "" : "s"}${platformSummary}.`;
       } else if (fields.length > 0) {
-        description = `Auto-linked: ${fields.join(", ")}`;
+        description = `Auto-linked: ${fields.join(", ")}. No automated catalog targets were available.`;
       } else {
         description =
           "Review the results below and accept or override any matches.";
@@ -1502,6 +1513,43 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                     <CheckCircle2 className="h-3 w-3" />
                     UPC-based exact match used for Apple/Deezer
                   </p>
+                )}
+                {discoverResults.catalogImport?.length > 0 && (
+                  <div className="rounded-md border bg-muted/30 p-2 space-y-1.5">
+                    <p className="text-xs font-medium">
+                      Catalog reconciliation
+                    </p>
+                    {discoverResults.catalogImport.map(
+                      (result: {
+                        platformId: string;
+                        scanned?: number;
+                        imported?: number;
+                        failed?: number;
+                        status?: string;
+                      }) => (
+                        <div
+                          key={result.platformId}
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          {result.status === "error" || result.failed > 0 ? (
+                            <AlertCircle className="h-3 w-3 text-destructive" />
+                          ) : (
+                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          )}
+                          <span className="capitalize w-24">{result.platformId}</span>
+                          <span className="text-muted-foreground">
+                            {result.scanned ?? 0} found ·{" "}
+                            {result.imported ?? 0} synchronized
+                          </span>
+                          {result.failed > 0 && (
+                            <span className="text-destructive">
+                              {result.failed} failed
+                            </span>
+                          )}
+                        </div>
+                      ),
+                    )}
+                  </div>
                 )}
               </div>
             )}
