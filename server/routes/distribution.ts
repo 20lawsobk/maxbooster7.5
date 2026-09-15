@@ -123,40 +123,12 @@ function getToolostRedirectUri(): string {
       ? process.env.TOOLOST_REDIRECT_URI
       : process.env.TOOLOST_SANDBOX_REDIRECT_URI
   )?.trim();
-  if (configured) {
-    try {
-      const parsed = new URL(configured);
-
-      // The sandbox value was previously saved as
-      // `https://host/?nativeBrowserPresentationStyle=fullScreen/callback`.
-      // That puts `/callback` inside a query value instead of making it the
-      // callback path, so Too Lost cannot validate or return to the app.
-      // OAuth redirect URIs should not carry presentation hints or query
-      // parameters; the app's callback alias is the stable `/callback` path.
-      const hasEmbeddedCallback =
-        parsed.pathname === "/" &&
-        [...parsed.searchParams.values()].some((value) =>
-          value.includes("/callback"),
-        );
-      if (hasEmbeddedCallback || parsed.search) {
-        parsed.pathname = "/callback";
-        parsed.search = "";
-        parsed.hash = "";
-        logger.warn(
-          {
-            configuredOrigin: parsed.origin,
-            configuredPath: new URL(configured).pathname,
-          },
-          "Normalized malformed Too Lost OAuth callback URL",
-        );
-        return parsed.toString();
-      }
-
-      return parsed.toString();
-    } catch {
-      throw new Error("Too Lost OAuth callback URL is not a valid URL.");
-    }
-  }
+  // OAuth providers require an exact redirect_uri match. Too Lost's sandbox
+  // app is registered with the configured root-style callback, including its
+  // presentation query value, so preserve it byte-for-byte here. The root
+  // callback alias in server/routes.ts forwards the returned code/state to
+  // the authenticated Distribution callback.
+  if (configured) return configured;
   throw new Error(
     "Too Lost OAuth callback URL is not configured for this environment.",
   );
