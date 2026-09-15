@@ -858,12 +858,22 @@ router.post(
 // PLATFORM ENDPOINTS
 // ===================
 
-// GET /api/distribution/platforms - Get Too Lost's live app-level DSP catalog.
-// This read-only catalog lookup must not force artists through Too Lost OAuth;
-// user authorization is still required later for release creation/submission.
+// GET /api/distribution/platforms - Get Too Lost's live shared DSP catalog.
+// Too Lost rejects client-credentials tokens for /lookup/platforms, so this
+// uses the one admin-owned OAuth connection configured for Max Booster. Artists
+// do not need to connect Too Lost merely to open the platform picker.
 router.get("/platforms", requireAuth, async (_req: Request, res: Response) => {
   try {
-    const response = await toolostService.getAvailableDSPs();
+    const sharedConnection = await storage.getSharedToolostConnection();
+    if (!sharedConnection) {
+      return res.status(503).json({
+        error: "Too Lost shared catalog connection required",
+        requiresSharedConnection: true,
+      });
+    }
+    const response = await toolostService
+      .forUser(sharedConnection.connectedByUserId)
+      .getAvailableDSPs();
 
     // Transform to expected format for frontend
     const platforms = response.dsps.map((dsp) => ({

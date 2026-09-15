@@ -361,10 +361,6 @@ class ToolostService {
     refreshToken: string;
     expiresAt: number;
   } | null = null;
-  private applicationAccessToken: {
-    accessToken: string;
-    expiresAt: number;
-  } | null = null;
   constructor(userId?: string) {
     this.userId = userId;
     this.clientId = process.env.TOOLOST_CLIENT_ID;
@@ -432,8 +428,8 @@ class ToolostService {
   /**
    * Returns a service instance whose access token and refresh-token writes are
    * scoped to one authenticated Max Booster user. The exported singleton is
-   * intentionally unscoped and is used only for app-level catalog reads and
-   * OAuth URL generation.
+   * intentionally unscoped and may only be used for app-level OAuth URL
+   * generation.
    */
   forUser(userId: string): ToolostService {
     if (!userId?.trim()) {
@@ -571,77 +567,6 @@ class ToolostService {
     });
     logger.info("✅ Too Lost OAuth connection established");
     return { expiresAt, scope };
-  }
-
-  /**
-   * The DSP catalog is app-owned reference data, not an artist-owned release
-   * operation. Fetch it with the Too Lost application's client-credentials
-   * grant so artists can choose destinations without being sent through a
-   * Too Lost login first. Release creation/submission continues to use the
-   * user-authorized connection via ensureValidToken().
-   */
-  private async ensureApplicationToken(): Promise<string> {
-    if (!this.clientId || !this.clientSecret) {
-      throw new Error(
-        "Too Lost OAuth app credentials are not configured (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET).",
-      );
-    }
-    if (
-      this.applicationAccessToken &&
-      this.applicationAccessToken.expiresAt - Date.now() > 60_000
-    ) {
-      return this.applicationAccessToken.accessToken;
-    }
-
-    const body = new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: this.clientId,
-      client_secret: this.clientSecret,
-      scope: "read:catalog",
-    });
-    const res = await fetch(`${this.authBaseUrl}/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-      },
-      body,
-    });
-    const text = await res.text();
-    let json: Record<string, unknown> = {};
-    try {
-      json = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-    } catch {
-      // Preserve the provider status below with a bounded body excerpt.
-    }
-    if (!res.ok) {
-      const providerMessage =
-        typeof json.error_description === "string"
-          ? json.error_description
-          : typeof json.message === "string"
-            ? json.message
-            : text.slice(0, 300);
-      throw new Error(
-        `Too Lost catalog authentication failed (HTTP ${res.status}): ${providerMessage || "unknown provider error"}`,
-      );
-    }
-
-    const accessToken =
-      typeof json.access_token === "string" ? json.access_token : "";
-    if (!accessToken) {
-      throw new Error(
-        "Too Lost catalog authentication returned no access token.",
-      );
-    }
-    const expiresIn =
-      typeof json.expires_in === "number" && json.expires_in > 0
-        ? json.expires_in
-        : 3600;
-    this.applicationAccessToken = {
-      accessToken,
-      expiresAt: Date.now() + expiresIn * 1000,
-    };
-    return accessToken;
   }
 
   /**
@@ -807,12 +732,23 @@ class ToolostService {
    * with code NOT_CONNECTED) so every caller has one contract regardless of
    * which layer produced the failure.
    */
-  private async rawWithAccessToken<T>(
-    accessToken: string,
+  private async raw<T>(
     method: string,
     path: string,
     opts?: { query?: Record<string, unknown>; body?: unknown },
   ): Promise<ToolostApiResult<T>> {
+    let accessToken: string;
+    try {
+      accessToken = await this.ensureValidToken();
+    } catch (error) {
+      return {
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          code: "NOT_CONNECTED",
+        },
+      };
+    }
+
     let url = `${this.baseUrl}${path}`;
     if (opts?.query) {
       const params = new URLSearchParams();
@@ -880,43 +816,6 @@ class ToolostService {
       };
     } finally {
       clearTimeout(timeout);
-    }
-  }
-
-  private async raw<T>(
-    method: string,
-    path: string,
-    opts?: { query?: Record<string, unknown>; body?: unknown },
-  ): Promise<ToolostApiResult<T>> {
-    let accessToken: string;
-    try {
-      accessToken = await this.ensureValidToken();
-    } catch (error) {
-      return {
-        error: {
-          message: error instanceof Error ? error.message : String(error),
-          code: "NOT_CONNECTED",
-        },
-      };
-    }
-    return this.rawWithAccessToken(accessToken, method, path, opts);
-  }
-
-  private async rawWithApplicationToken<T>(
-    method: string,
-    path: string,
-    opts?: { query?: Record<string, unknown>; body?: unknown },
-  ): Promise<ToolostApiResult<T>> {
-    try {
-      const accessToken = await this.ensureApplicationToken();
-      return this.rawWithAccessToken(accessToken, method, path, opts);
-    } catch (error) {
-      return {
-        error: {
-          message: error instanceof Error ? error.message : String(error),
-          code: "APP_AUTH_FAILED",
-        },
-      };
     }
   }
 
@@ -1107,9 +1006,7 @@ class ToolostService {
    */
   async getAvailableDSPs(): Promise<ToolostDSPListResponse> {
     const result = await this.callWithRetry(() =>
-      this.userId
-        ? this.raw<unknown>("GET", "/lookup/platforms")
-        : this.rawWithApplicationToken<unknown>("GET", "/lookup/platforms"),
+      this.raw<unknown>("GET", "/lookup/platforms"),
     );
     if ("error" in result) {
       this.logApiError("[Too Lost] getAvailableDSPs failed", result.error);

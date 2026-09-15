@@ -32,6 +32,7 @@ export interface IStorage {
   deleteUser(id: string): Promise<boolean>;
   getDistributionProvider(slug: string): Promise<DSPProvider | undefined>;
   getToolostConnection(userId: string): Promise<ToolostConnection | undefined>;
+  getSharedToolostConnection(): Promise<ToolostConnection | undefined>;
   upsertToolostConnection(
     data: Partial<InsertToolostConnection> & {
       accessToken: string;
@@ -255,6 +256,25 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(toolostConnection.updatedAt))
       .limit(1);
     return connection || undefined;
+  }
+
+  /**
+   * The platform catalog is shared app reference data. Only a connection
+   * created by an admin can serve that purpose; never borrow an artist's
+   * private Too Lost authorization for another user's picker.
+   */
+  async getSharedToolostConnection(): Promise<ToolostConnection | undefined> {
+    const rows = await dbRead
+      .select()
+      .from(toolostConnection)
+      .innerJoin(
+        users,
+        eq(toolostConnection.connectedByUserId, users.id),
+      )
+      .where(eq(users.role, "admin"))
+      .orderBy(desc(toolostConnection.updatedAt))
+      .limit(1);
+    return rows[0]?.toolost_connection;
   }
 
   async upsertToolostConnection(
