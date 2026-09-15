@@ -1602,6 +1602,46 @@ export default function Distribution() {
     enabled: !!user,
   });
 
+  const { data: toolostStatus } = useQuery<{
+    configured: boolean;
+    connected: boolean;
+    environment: string | null;
+    scope: string | null;
+    connectedAt: string | null;
+  }>({
+    queryKey: ["/api/distribution/toolost/status"],
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("toolost");
+    if (!result) return;
+    if (result === "connected") {
+      toast({
+        title: "Too Lost connected",
+        description: "Your distribution account is ready to use.",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/toolost/status"],
+      });
+    } else if (result === "denied") {
+      toast({
+        title: "Too Lost connection cancelled",
+        description: "No distribution account was connected.",
+        variant: "destructive",
+      });
+    } else if (result === "error") {
+      toast({
+        title: "Too Lost connection failed",
+        description:
+          params.get("message") || "Too Lost could not be connected.",
+        variant: "destructive",
+      });
+    }
+    window.history.replaceState({}, document.title, "/distribution");
+  }, [queryClient, toast]);
+
   const platformsData = platformsResponse?.platforms || [];
 
   const DISTRO_PLATFORMS: DistroPlatform[] = Array.from(
@@ -3914,6 +3954,41 @@ export default function Distribution() {
             </TabsContent>
 
             <TabsContent value="platforms">
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Link2 className="w-5 h-5" />
+                    Too Lost Distribution Account
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Connect the Too Lost account you want to use for your own
+                    releases and earnings.
+                  </p>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge variant={toolostStatus?.connected ? "default" : "outline"}>
+                      {toolostStatus?.connected ? "Connected" : "Not connected"}
+                    </Badge>
+                    {toolostStatus?.connected && toolostStatus.environment && (
+                      <span className="text-sm text-gray-500">
+                        {toolostStatus.environment}
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant={toolostStatus?.connected ? "outline" : "default"}
+                    disabled={toolostStatus?.configured === false}
+                    onClick={() =>
+                      window.location.assign("/api/distribution/toolost/connect")
+                    }
+                  >
+                    <Link2 className="w-4 h-4" />
+                    {toolostStatus?.connected ? "Reconnect Too Lost" : "Connect Too Lost"}
+                  </Button>
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader>
                   <CardTitle>Distribution Platforms</CardTitle>
