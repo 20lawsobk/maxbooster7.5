@@ -858,13 +858,18 @@ router.post(
 // PLATFORM ENDPOINTS
 // ===================
 
-// GET /api/distribution/platforms - Get all DSP providers
-// Uses LabelGrid API when configured, falls back to local database
-router.get("/platforms", requireAuth, async (_req: Request, res: Response) => {
+// GET /api/distribution/platforms - Get the signed-in user's Too Lost catalog
+router.get("/platforms", requireAuth, async (req: Request, res: Response) => {
   try {
-    // Use LabelGrid's dynamic DSP fetching (correct method)
-    // This fetches from LabelGrid API if configured, otherwise uses local catalog
-    const response = await labelGridService.getAvailableDSPs();
+    const userId = (req.user as AuthenticatedUser).id;
+    const connection = await storage.getToolostConnection(userId);
+    if (!connection) {
+      return res.status(409).json({
+        error: "Too Lost connection required",
+        requiresConnection: true,
+      });
+    }
+    const response = await toolostService.forUser(userId).getAvailableDSPs();
 
     // Transform to expected format for frontend
     const platforms = response.dsps.map((dsp) => ({
@@ -883,14 +888,15 @@ router.get("/platforms", requireAuth, async (_req: Request, res: Response) => {
     res.json({
       platforms,
       total: response.total,
-      source: labelGridService.isApiConfigured()
-        ? "labelgrid_api"
-        : "local_catalog",
+      source: "toolost_api",
       syncedAt: response.syncedAt,
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching platforms:");
-    res.status(500).json({ error: "Failed to fetch platforms" });
+    res.status(502).json({
+      error: "Too Lost platform catalog unavailable",
+      details: error instanceof Error ? error.message : "Provider request failed",
+    });
   }
 });
 
@@ -913,25 +919,31 @@ router.post(
   },
 );
 
-// GET /api/distribution/platforms/status - Check LabelGrid API and DSP catalog status
+// GET /api/distribution/platforms/status - Check Too Lost catalog status
 router.get(
   "/platforms/status",
   requireAuth,
-  async (_req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const catalogStatus = await labelGridService.verifyDSPCatalog();
-      const apiConfigured = labelGridService.isApiConfigured();
+      const userId = (req.user as AuthenticatedUser).id;
+      const connection = await storage.getToolostConnection(userId);
+      if (!connection) {
+        return res.status(409).json({
+          connected: false,
+          requiresConnection: true,
+          apiStatus: "not_connected",
+        });
+      }
+      const catalogStatus = await toolostService
+        .forUser(userId)
+        .verifyDSPCatalog();
       res.json({
-        labelGridConfigured: apiConfigured,
-        apiStatus: apiConfigured ? "online" : "not_configured",
-        catalogSource: apiConfigured ? "labelgrid_api" : "local_catalog",
+        toolostConnected: true,
+        apiStatus: "online",
+        catalogSource: "toolost_api",
         catalog: catalogStatus,
         allPlatformsActive: catalogStatus.active === catalogStatus.total,
-        message: apiConfigured
-          ? `LabelGrid API online. ${catalogStatus.active} of ${catalogStatus.total} platforms active and ready for distribution.`
-          : "LabelGrid API not configured. Add LABELGRID_API_TOKEN to enable distribution.",
-        architecture:
-          "LabelGrid API handles releases, distribution, and analytics. All DSP platforms are routed through LabelGrid.",
+        message: `Too Lost API online. ${catalogStatus.active} active platform(s) are available for distribution.`,
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error checking platform status:");

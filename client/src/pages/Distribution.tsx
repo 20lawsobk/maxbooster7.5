@@ -1499,12 +1499,7 @@ export default function Distribution() {
     audioFiles: [],
     albumArt: null,
     tracks: [],
-    selectedPlatforms: [
-      "spotify",
-      "apple-music",
-      "youtube-music",
-      "amazon-music",
-    ],
+    selectedPlatforms: [],
     isExplicit: false,
     iTunesPricing: "standard",
     collaborators: [],
@@ -1643,6 +1638,26 @@ export default function Distribution() {
   }, [queryClient, toast]);
 
   const platformsData = platformsResponse?.platforms || [];
+
+  useEffect(() => {
+    if (platformsData.length === 0) return;
+    const availableIds = new Set(platformsData.map((platform) => platform.slug));
+    setUploadForm((previous) => {
+      const selectedPlatforms = previous.selectedPlatforms.filter((id) =>
+        availableIds.has(id),
+      );
+      if (selectedPlatforms.length > 0) {
+        return { ...previous, selectedPlatforms };
+      }
+      const preferredIds = [
+        "spotify",
+        "apple-music",
+        "youtube-music",
+        "amazon-music",
+      ].filter((id) => availableIds.has(id));
+      return { ...previous, selectedPlatforms: preferredIds };
+    });
+  }, [platformsResponse]);
 
   const DISTRO_PLATFORMS: DistroPlatform[] = Array.from(
     new Map(

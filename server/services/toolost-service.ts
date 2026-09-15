@@ -1000,93 +1000,55 @@ class ToolostService {
   // ---------------------------------------------------------------------
 
   /**
-   * Genuine capability upgrade over LabelGrid, which never had a live DSP
-   * endpoint and always used the local catalog. Too Lost has a real
-   * `GET /lookup/platforms` — call it when connected; fall back to the
-   * local DB catalog (same one LabelGrid used) when unconnected or when the
-   * live call comes back empty/erroring, so the platform picker still works
-   * pre-connection.
+   * Returns Too Lost's live platform catalog for this authenticated user.
+   * Platform support is provider-owned data; using the local DSP catalog here
+   * would advertise destinations the connected Too Lost account may not offer.
    */
   async getAvailableDSPs(): Promise<ToolostDSPListResponse> {
-    if (this.isApiConfigured()) {
-      const result = await this.callWithRetry(() => this.raw<unknown>("GET", "/lookup/platforms"));
-      if (!("error" in result)) {
-        const list = ToolostService.extractList<Record<string, unknown>>(result.data);
-        if (list.length > 0) {
-          const dsps: ToolostDSP[] = list.map((p) => ({
-            id: String(p.id ?? p.slug ?? p.code ?? p.name ?? ""),
-            name: String(p.name ?? p.id ?? "Unknown"),
-            slug: String(p.slug ?? p.code ?? p.id ?? "").toLowerCase(),
-            category: ToolostService.normalizeDspCategory(p.category as string | undefined),
-            region: String(p.region ?? "global"),
-            isActive: (p.active as boolean | undefined) ?? (p.isActive as boolean | undefined) ?? true,
-            processingTime: String(p.processingTime ?? p.processing_time ?? "3-7 days"),
-            requirements: {
-              isrc: true,
-              upc: true,
-              metadata: ["title", "artist", "album"],
-              audioFormats: ["WAV", "FLAC"],
-            },
-            deliveryMethod: "api",
-            logoUrl: (p.logoUrl as string) ?? (p.logo_url as string) ?? undefined,
-            docsUrl: undefined,
-          }));
-          logger.info(`📦 Too Lost live platform catalog: ${dsps.length} platform(s)`);
-          return { dsps, total: dsps.length, syncedAt: new Date().toISOString() };
-        }
-      } else {
-        this.logApiError(
-          "[Too Lost] getAvailableDSPs live lookup failed, falling back to local catalog",
-          result.error,
-        );
-      }
+    const result = await this.callWithRetry(() =>
+      this.raw<unknown>("GET", "/lookup/platforms"),
+    );
+    if ("error" in result) {
+      this.logApiError("[Too Lost] getAvailableDSPs failed", result.error);
+      throw new Error(`Too Lost platform catalog unavailable: ${result.error.message}`);
     }
-    logger.info("📦 Using local DSP catalog (Too Lost not connected or live lookup returned nothing)");
-    return this.getLocalDSPCatalog();
-  }
-
-  /** Ported verbatim from LabelGridService — same DB-backed fallback catalog. */
-  private async getLocalDSPCatalog(): Promise<ToolostDSPListResponse> {
-    try {
-      const providers = await storage.getAllDSPProviders();
-      const dsps: ToolostDSP[] = providers.map((p: Record<string, unknown>) => ({
-        id: p.id as string,
-        name: p.name as string,
-        slug: p.slug as string,
-        category: (p.metadata as any).category || "streaming",
-        region: (p.metadata as any).region || "global",
-        isActive: (p.isActive as boolean | undefined) ?? true,
-        processingTime: (p.metadata as any).processingTime || "3-7 days",
-        requirements: (p.metadata as any).requirements || {
+    const list = ToolostService.extractList<Record<string, unknown>>(result.data);
+    if (list.length === 0) {
+      throw new Error("Too Lost platform catalog returned no platforms.");
+    }
+    const dsps: ToolostDSP[] = list
+      .map((p) => ({
+        id: String(p.id ?? p.slug ?? p.code ?? p.name ?? ""),
+        name: String(p.name ?? p.id ?? "Unknown"),
+        slug: String(p.slug ?? p.code ?? p.id ?? "").toLowerCase(),
+        category: ToolostService.normalizeDspCategory(p.category as string | undefined),
+        region: String(p.region ?? "global"),
+        isActive:
+          (p.active as boolean | undefined) ??
+          (p.isActive as boolean | undefined) ??
+          true,
+        processingTime: String(p.processingTime ?? p.processing_time ?? "3-7 days"),
+        requirements: {
           isrc: true,
           upc: true,
           metadata: ["title", "artist", "album"],
           audioFormats: ["WAV", "FLAC"],
         },
-        deliveryMethod: (p.metadata as any).deliveryMethod || "api",
-        logoUrl: p.logoUrl as string | undefined,
-        docsUrl: (p.metadata as any).docsUrl as string | undefined,
-      }));
-      return { dsps, total: dsps.length, syncedAt: new Date().toISOString() };
-    } catch (error) {
-      logger.warn({ err: error }, "Failed to get local DSP catalog:");
-      return { dsps: [], total: 0, syncedAt: new Date().toISOString() };
+        deliveryMethod: "api" as const,
+        logoUrl: (p.logoUrl as string) ?? (p.logo_url as string) ?? undefined,
+        docsUrl: undefined,
+      }))
+      .filter((dsp) => dsp.id && dsp.slug && dsp.isActive);
+    if (dsps.length === 0) {
+      throw new Error("Too Lost platform catalog contained no active platforms.");
     }
+    logger.info(`📦 Too Lost live platform catalog: ${dsps.length} platform(s)`);
+    return { dsps, total: dsps.length, syncedAt: new Date().toISOString() };
   }
 
   async verifyDSPCatalog(): Promise<{ total: number; active: number; inactive: number }> {
-    try {
-      const catalog = await this.getLocalDSPCatalog();
-      const active = catalog.dsps.filter((d) => d.isActive).length;
-      const inactive = catalog.dsps.filter((d) => !d.isActive).length;
-      logger.info(
-        `✅ DSP catalog verified: ${catalog.total} total, ${active} active, ${inactive} inactive`,
-      );
-      return { total: catalog.total, active, inactive };
-    } catch (error) {
-      logger.warn({ err: error }, "Failed to verify DSP catalog:");
-      return { total: 0, active: 0, inactive: 0 };
-    }
+    const catalog = await this.getAvailableDSPs();
+    return { total: catalog.total, active: catalog.dsps.length, inactive: 0 };
   }
 
   async getUserCatalog(platform?: string): Promise<ToolostCatalogRelease[]> {
