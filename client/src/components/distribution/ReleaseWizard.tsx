@@ -124,11 +124,7 @@ export function ReleaseWizard({
   const [territoryMode, setTerritoryMode] = useState<
     "worldwide" | "include" | "exclude"
   >("worldwide");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([
-    "spotify",
-    "apple-music",
-    "youtube-music",
-  ]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [releaseDate, setReleaseDate] = useState<Date | null>(null);
   const [royaltySplits, setRoyaltySplits] = useState<any[]>([]);
   const [createPreSave, setCreatePreSave] = useState(true);
