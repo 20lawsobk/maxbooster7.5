@@ -434,12 +434,21 @@ export function DSPSelector({ selectedPlatforms, onChange }: DSPSelectorProps) {
   if (isError) {
     return (
       <Card>
-        <CardContent className="p-8 text-center">
+        <CardContent className="p-8 text-center space-y-4">
           <p className="font-medium">Too Lost platforms are unavailable</p>
           <p className="mt-2 text-sm text-muted-foreground">
             Connect your Too Lost account from the Distribution page to load
             the live catalog, then try again before submitting this release.
           </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              window.location.assign("/api/distribution/toolost/connect")
+            }
+          >
+            Connect Too Lost
+          </Button>
         </CardContent>
       </Card>
     );

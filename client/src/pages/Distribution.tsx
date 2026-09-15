@@ -4842,11 +4842,28 @@ export default function Distribution() {
                         </div>
                       ) : platformsError ? (
                         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">
-                          {toolostStatus?.connectionSource === "admin"
-                            ? "Max Booster's Too Lost distributor catalog is unavailable. Try again before submitting this release."
-                            : toolostStatus?.connected
-                              ? "Too Lost's live platform catalog is unavailable. Try again before submitting this release."
-                              : "Connect your Too Lost account above to load the live platform catalog, then try again."}
+                          <div>
+                            {toolostStatus?.connectionSource === "admin"
+                              ? "Max Booster's Too Lost distributor catalog is unavailable. Try again before submitting this release."
+                              : toolostStatus?.connected
+                                ? "Too Lost's live platform catalog is unavailable. Try again before submitting this release."
+                                : "Connect your Too Lost account to load the live platform catalog, then try again."}
+                          </div>
+                          {!toolostStatus?.connected && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="mt-3 border-red-300 bg-transparent text-red-900 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-950/50"
+                              onClick={() =>
+                                window.location.assign(
+                                  "/api/distribution/toolost/connect",
+                                )
+                              }
+                            >
+                              <Link2 className="mr-2 h-4 w-4" />
+                              Connect Too Lost
+                            </Button>
+                          )}
                         </div>
                       ) : DISTRO_PLATFORMS.length === 0 ? (
                         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
