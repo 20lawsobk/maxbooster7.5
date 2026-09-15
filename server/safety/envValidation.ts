@@ -750,6 +750,38 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     description: "LabelGrid webhook callback URL",
     validator: (v) => v?.startsWith("http"),
   },
+  {
+    name: "TOOLOST_CLIENT_ID",
+    required: false,
+    category: "distribution",
+    description: "Too Lost production OAuth client ID",
+  },
+  {
+    name: "TOOLOST_CLIENT_SECRET",
+    required: false,
+    category: "distribution",
+    description: "Too Lost production OAuth client secret",
+  },
+  {
+    name: "TOOLOST_SANDBOX_CLIENT_SECRET",
+    required: false,
+    category: "distribution",
+    description: "Too Lost sandbox OAuth client secret",
+  },
+  {
+    name: "TOOLOST_ENVIRONMENT",
+    required: false,
+    category: "distribution",
+    description: "Too Lost API environment",
+    validator: (v) => v === "sandbox" || v === "production",
+  },
+  {
+    name: "TOOLOST_REDIRECT_URI",
+    required: false,
+    category: "distribution",
+    description: "Too Lost OAuth callback URL",
+    validator: (v) => v?.startsWith("http"),
+  },
 ];
 
 export interface ValidationResult {

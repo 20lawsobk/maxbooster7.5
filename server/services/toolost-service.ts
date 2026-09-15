@@ -360,8 +360,6 @@ class ToolostService {
     refreshToken: string;
     expiresAt: number;
   } | null = null;
-  private connectionLoadAttempted: boolean = false;
-
   constructor() {
     this.clientId = process.env.TOOLOST_CLIENT_ID;
     this.environment =
@@ -403,7 +401,6 @@ class ToolostService {
   }
 
   private async loadConnection(): Promise<void> {
-    this.connectionLoadAttempted = true;
     try {
       const row = await storage.getToolostConnection();
       if (row) {
