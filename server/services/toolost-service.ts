@@ -449,6 +449,10 @@ class ToolostService {
     return !!(this.clientId && this.clientSecret && this.connection);
   }
 
+  isOAuthConfigured(): boolean {
+    return !!(this.clientId && this.clientSecret);
+  }
+
   /**
    * Builds the Too Lost authorization URL for the platform-level distributor
    * connection. Client-credentials tokens authenticate the OAuth application

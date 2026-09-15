@@ -116,7 +116,7 @@ interface HyperFollowPage {
 
 const router = Router();
 
-function getToolostRedirectUri(req: Request): string {
+function getToolostRedirectUri(): string {
   const configured = (
     process.env.REPLIT_DEPLOYMENT === "1" ||
     process.env.NODE_ENV === "production"
@@ -129,23 +129,11 @@ function getToolostRedirectUri(req: Request): string {
   );
 }
 
-function copyOAuthQuery(req: Request): string {
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(req.query)) {
-    if (Array.isArray(value)) {
-      for (const item of value) query.append(key, String(item));
-    } else if (value !== undefined) {
-      query.set(key, String(value));
-    }
-  }
-  return query.toString();
-}
-
 // Too Lost grants distribution access to the user who authorizes this flow.
 // State and redirect URI remain in that user's session until the callback.
 router.get("/toolost/connect", requireAuth, (req: Request, res: Response) => {
   try {
-    const redirectUri = getToolostRedirectUri(req);
+    const redirectUri = getToolostRedirectUri();
     const state = randomBytes(32).toString("hex");
     const session = req.session as typeof req.session & {
       toolostOAuthState?: string;
@@ -205,6 +193,24 @@ async function handleToolostCallback(req: Request, res: Response) {
 }
 
 router.get("/toolost/callback", requireAuth, handleToolostCallback);
+
+router.get("/toolost/status", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const connection = await storage.getToolostConnection(userId);
+    res.json({
+      configured: toolostService.isOAuthConfigured(),
+      connected: !!connection,
+      environment: connection?.environment ?? null,
+      scope: connection?.scope ?? null,
+      connectedAt: connection?.connectedAt ?? null,
+      updatedAt: connection?.updatedAt ?? null,
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "Unable to read Too Lost connection status");
+    res.status(500).json({ error: "Failed to read Too Lost connection status" });
+  }
+});
 
 // Per-field uploader — supports BOTH audio/artwork (release/QC/fingerprint flows)
 // AND data-import payloads (CSV/JSON/XML/XLSX/PDF) used by transfer & earnings imports.
