@@ -2708,9 +2708,13 @@ class DistributionDataTransferService {
         `https://api.deezer.com/artist/${artistId}/albums?limit=50`;
       while (url) {
         const resp = await timedFetch(url);
-        if (!resp?.ok) return results;
+        if (!resp?.ok) {
+          throw new Error(`Deezer catalog page failed with status ${resp.status}`);
+        }
         const data = (await resp?.json()) as Record<string, unknown>;
-        if (data?.error) return results;
+        if (data?.error) {
+          throw new Error("Deezer returned a catalog error");
+        }
         for (const item of ((data?.data || []) as any[])) {
           results.push({
             id: `deezer-${item?.id}`,
@@ -2833,7 +2837,11 @@ class DistributionDataTransferService {
         let pages = 0;
         while (nextUrl && pages < 100) {
           const response = await timedFetch(nextUrl);
-          if (!response.ok) break;
+          if (!response.ok) {
+            throw new Error(
+              `SoundCloud catalog page failed with status ${response.status}`,
+            );
+          }
           const data = (await response.json()) as Record<string, unknown>;
           collection.push(...((data.collection || []) as any[]));
           nextUrl =
