@@ -32,7 +32,7 @@ import {
   invalidateCacheOnMutation,
 } from "./middleware/apiCache.js";
 import { blockDemoWrite } from "./auth.js";
-import { requireAuth, requireAdmin } from "./middleware/auth.js";
+import { requireAuth, requireAdmin, require2FA } from "./middleware/auth.js";
 
 const authenticator = {
   generateSecret: () => otpGenerateSecret(),
@@ -1995,6 +1995,43 @@ export async function registerRoutes(
 
   // REMOVED: Duplicate 2FA disable route without password verification
   // The secured version with password + 2FA code verification is registered above (line ~1139)
+
+  // Too Lost callback aliases. The provider registrations use different
+  // callback URLs by environment, so forward only OAuth-shaped requests to
+  // the canonical admin callback while preserving the authenticated session.
+  const forwardToolostCallback = (req: Request, res: Response) => {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(req.query)) {
+      if (Array.isArray(value)) {
+        for (const item of value) query.append(key, String(item));
+      } else if (value !== undefined) {
+        query.set(key, String(value));
+      }
+    }
+    return res.redirect(
+      307,
+      `/api/admin/toolost/callback${query.toString() ? `?${query.toString()}` : ""}`,
+    );
+  };
+  const requireToolostCallbackAuth = [
+    requireAdmin,
+    require2FA,
+  ] as const;
+  app.get(
+    "/callback",
+    ...requireToolostCallbackAuth,
+    forwardToolostCallback,
+  );
+  app.get(
+    "/",
+    ...requireToolostCallbackAuth,
+    (req: Request, res: Response, next: NextFunction) => {
+      if (!req.query.state || (!req.query.code && !req.query.error)) {
+        return next();
+      }
+      return forwardToolostCallback(req, res);
+    },
+  );
 
   // Auth: Demo login - Read-only showcase of all features
   app.post("/api/auth/demo", async (req: Request, res: Response) => {
