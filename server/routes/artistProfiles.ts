@@ -908,7 +908,7 @@ router.get(
 );
 
 // ── Distribute a collected catalog release ─────────────────────────────────────
-// Creates a local distribution draft from a LabelGrid catalog release so the
+// Creates a local distribution draft from a Too Lost catalog release so the
 // artist can complete and submit it without re-entering metadata manually.
 const distributeCatalogReleaseSchema = z.object({
   title: z.string().min(1),
