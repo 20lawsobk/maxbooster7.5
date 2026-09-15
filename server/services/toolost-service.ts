@@ -375,12 +375,13 @@ class ToolostService {
       this.environment === "sandbox"
         ? "https://api-sandbox.toolost.com/v1"
         : "https://api.toolost.com/v1";
-    // Too Lost exposes a separate OAuth host for sandbox credentials. Using
-    // the production host with a sandbox client returns invalid_client even
-    // when the ID and secret pair is valid.
+    // Too Lost exposes a separate browser OAuth host for sandbox credentials.
+    // This is intentionally different from the sandbox API host above:
+    // API requests use api-sandbox.toolost.com, while authorization and token
+    // exchange use sandbox.toolost.com/oauth.
     this.authBaseUrl =
       this.environment === "sandbox"
-        ? "https://api-sandbox.toolost.com/oauth"
+        ? "https://sandbox.toolost.com/oauth"
         : "https://toolost.com/oauth";
 
     this.circuitBreaker = new CircuitBreaker("toolost-api", {
