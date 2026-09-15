@@ -32,6 +32,7 @@ export interface IStorage {
   deleteUser(id: string): Promise<boolean>;
   getDistributionProvider(slug: string): Promise<DSPProvider | undefined>;
   getToolostConnection(userId: string): Promise<ToolostConnection | undefined>;
+  getAdminToolostConnection(): Promise<ToolostConnection | undefined>;
   upsertToolostConnection(
     data: Partial<InsertToolostConnection> & {
       accessToken: string;
@@ -255,6 +256,23 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(toolostConnection.updatedAt))
       .limit(1);
     return connection || undefined;
+  }
+
+  /**
+   * Max Booster can operate a shared distributor account for users who have
+   * not connected their own Too Lost account yet. Only an admin-owned
+   * connection may be used for this fallback; artist connections never cross
+   * user boundaries.
+   */
+  async getAdminToolostConnection(): Promise<ToolostConnection | undefined> {
+    const rows = await dbRead
+      .select()
+      .from(toolostConnection)
+      .innerJoin(users, eq(toolostConnection.connectedByUserId, users.id))
+      .where(eq(users.role, "admin"))
+      .orderBy(desc(toolostConnection.updatedAt))
+      .limit(1);
+    return rows[0]?.toolost_connection;
   }
 
   async upsertToolostConnection(

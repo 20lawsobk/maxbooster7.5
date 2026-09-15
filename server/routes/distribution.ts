@@ -129,6 +129,23 @@ function getToolostRedirectUri(): string {
   );
 }
 
+async function getCatalogToolostConnection(userId: string): Promise<{
+  connection: Awaited<ReturnType<typeof storage.getToolostConnection>>;
+  source: "user" | "admin";
+} | null> {
+  const userConnection = await storage.getToolostConnection(userId);
+  if (userConnection) {
+    return { connection: userConnection, source: "user" };
+  }
+
+  const adminConnection = await storage.getAdminToolostConnection();
+  if (adminConnection) {
+    return { connection: adminConnection, source: "admin" };
+  }
+
+  return null;
+}
+
 // Too Lost grants distribution access to the user who authorizes this flow.
 // State and redirect URI remain in that user's session until the callback.
 router.get("/toolost/connect", requireAuth, (req: Request, res: Response) => {
@@ -197,10 +214,12 @@ router.get("/toolost/callback", requireAuth, handleToolostCallback);
 router.get("/toolost/status", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const connection = await storage.getToolostConnection(userId);
+    const catalogConnection = await getCatalogToolostConnection(userId);
+    const connection = catalogConnection?.connection;
     res.json({
       configured: toolostService.isOAuthConfigured(),
       connected: !!connection,
+      connectionSource: catalogConnection?.source ?? null,
       environment: connection?.environment ?? null,
       scope: connection?.scope ?? null,
       connectedAt: connection?.connectedAt ?? null,
@@ -858,22 +877,22 @@ router.post(
 // PLATFORM ENDPOINTS
 // ===================
 
-// GET /api/distribution/platforms - Get Too Lost's live DSP catalog using
-// the current user's own OAuth authorization. Too Lost rejects
-// client-credentials tokens for /lookup/platforms, and connections must never
-// be borrowed across users.
+// GET /api/distribution/platforms - Get Too Lost's live DSP catalog through
+// the current user's connection, or the explicitly configured admin-owned
+// distributor connection for new users. Too Lost rejects client-credentials
+// tokens for /lookup/platforms; this route never calls Too Lost from a browser.
 router.get("/platforms", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const connection = await storage.getToolostConnection(userId);
-    if (!connection) {
+    const catalogConnection = await getCatalogToolostConnection(userId);
+    if (!catalogConnection?.connection) {
       return res.status(409).json({
-        error: "Too Lost connection required",
+        error: "Too Lost distributor connection required",
         requiresConnection: true,
       });
     }
     const response = await toolostService
-      .forUser(userId)
+      .forUser(catalogConnection.connection.connectedByUserId)
       .getAvailableDSPs();
 
     // Transform to expected format for frontend
@@ -931,8 +950,8 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = (req.user as AuthenticatedUser).id;
-      const connection = await storage.getToolostConnection(userId);
-      if (!connection) {
+      const catalogConnection = await getCatalogToolostConnection(userId);
+      if (!catalogConnection?.connection) {
         return res.status(409).json({
           connected: false,
           requiresConnection: true,
@@ -940,10 +959,11 @@ router.get(
         });
       }
       const catalogStatus = await toolostService
-        .forUser(userId)
+        .forUser(catalogConnection.connection.connectedByUserId)
         .verifyDSPCatalog();
       res.json({
         toolostConnected: true,
+        connectionSource: catalogConnection.source,
         apiStatus: "online",
         catalogSource: "toolost_api",
         catalog: catalogStatus,
