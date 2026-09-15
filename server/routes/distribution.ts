@@ -24,6 +24,7 @@ import { storageService } from "../services/storageService";
 import * as codeGenerationService from "../services/distributionCodeGenerationService";
 import { distributionService } from "../services/distributionService";
 import { labelGridService, type LabelGridRelease, type LabelGridTrack } from "../services/labelgrid-service";
+import { toolostService } from "../services/toolost-service";
 import { musicCodesService } from "../services/musicCodes";
 import {
   labelCopyLinter,
@@ -114,6 +115,96 @@ interface HyperFollowPage {
 
 
 const router = Router();
+
+function getToolostRedirectUri(req: Request): string {
+  const configured = (
+    process.env.REPLIT_DEPLOYMENT === "1" ||
+    process.env.NODE_ENV === "production"
+      ? process.env.TOOLOST_REDIRECT_URI
+      : process.env.TOOLOST_SANDBOX_REDIRECT_URI
+  )?.trim();
+  if (configured) return configured;
+  throw new Error(
+    "Too Lost OAuth callback URL is not configured for this environment.",
+  );
+}
+
+function copyOAuthQuery(req: Request): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(req.query)) {
+    if (Array.isArray(value)) {
+      for (const item of value) query.append(key, String(item));
+    } else if (value !== undefined) {
+      query.set(key, String(value));
+    }
+  }
+  return query.toString();
+}
+
+// Too Lost grants distribution access to the user who authorizes this flow.
+// State and redirect URI remain in that user's session until the callback.
+router.get("/toolost/connect", requireAuth, (req: Request, res: Response) => {
+  try {
+    const redirectUri = getToolostRedirectUri(req);
+    const state = randomBytes(32).toString("hex");
+    const session = req.session as typeof req.session & {
+      toolostOAuthState?: string;
+      toolostOAuthRedirectUri?: string;
+      toolostOAuthUserId?: string;
+    };
+    session.toolostOAuthState = state;
+    session.toolostOAuthRedirectUri = redirectUri;
+    session.toolostOAuthUserId = (req.user as AuthenticatedUser).id;
+    res.redirect(toolostService.getOAuthAuthorizationUrl(redirectUri, state));
+  } catch (error) {
+    logger.warn({ err: error }, "Unable to start Too Lost OAuth flow");
+    res.status(503).json({
+      error: error instanceof Error ? error.message : "Too Lost OAuth is not configured",
+    });
+  }
+});
+
+async function handleToolostCallback(req: Request, res: Response) {
+  const session = req.session as typeof req.session & {
+    toolostOAuthState?: string;
+    toolostOAuthRedirectUri?: string;
+    toolostOAuthUserId?: string;
+  };
+  const expectedState = session.toolostOAuthState;
+  const redirectUri = session.toolostOAuthRedirectUri;
+  const initiatingUserId = session.toolostOAuthUserId;
+  const currentUserId = (req.user as AuthenticatedUser).id;
+  delete session.toolostOAuthState;
+  delete session.toolostOAuthRedirectUri;
+  delete session.toolostOAuthUserId;
+
+  if (!initiatingUserId || initiatingUserId !== currentUserId) {
+    return res.status(403).json({ error: "Too Lost OAuth session user mismatch" });
+  }
+  const queryError = typeof req.query.error === "string" ? req.query.error : "";
+  if (queryError) {
+    return res.redirect(`/distribution?toolost=denied&error=${encodeURIComponent(queryError)}`);
+  }
+  const code = typeof req.query.code === "string" ? req.query.code : "";
+  const state = typeof req.query.state === "string" ? req.query.state : "";
+  if (!code || !state || !expectedState || state !== expectedState || !redirectUri) {
+    return res.status(400).json({ error: "Invalid Too Lost OAuth state" });
+  }
+
+  try {
+    await toolostService.forUser(currentUserId).exchangeOAuthCode(code, redirectUri);
+    return res.redirect("/distribution?toolost=connected");
+  } catch (error) {
+    logger.warn({ err: error }, "Too Lost OAuth callback failed");
+    return res.redirect(
+      `/distribution?toolost=error&message=${encodeURIComponent(
+        error instanceof Error ? error.message : "Too Lost OAuth connection failed",
+      )}`,
+    );
+  }
+}
+
+router.get("/toolost/callback", requireAuth, handleToolostCallback);
 
 // Per-field uploader — supports BOTH audio/artwork (release/QC/fingerprint flows)
 // AND data-import payloads (CSV/JSON/XML/XLSX/PDF) used by transfer & earnings imports.

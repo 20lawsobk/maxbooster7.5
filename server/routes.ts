@@ -1996,9 +1996,9 @@ export async function registerRoutes(
   // REMOVED: Duplicate 2FA disable route without password verification
   // The secured version with password + 2FA code verification is registered above (line ~1139)
 
-  // Too Lost callback aliases. The provider registrations use different
-  // callback URLs by environment, so forward only OAuth-shaped requests to
-  // the canonical admin callback while preserving the authenticated session.
+  // Too Lost callback aliases. Provider registrations use /callback in
+  // production and the sandbox root URL. Forward only OAuth-shaped requests
+  // to the authenticated Distribution callback.
   const forwardToolostCallback = (req: Request, res: Response) => {
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries(req.query)) {
@@ -2010,21 +2010,17 @@ export async function registerRoutes(
     }
     return res.redirect(
       307,
-      `/api/admin/toolost/callback${query.toString() ? `?${query.toString()}` : ""}`,
+      `/api/distribution/toolost/callback${query.toString() ? `?${query.toString()}` : ""}`,
     );
   };
-  const requireToolostCallbackAuth = [
-    requireAdmin,
-    require2FA,
-  ] as const;
   app.get(
     "/callback",
-    ...requireToolostCallbackAuth,
+    requireAuth,
     forwardToolostCallback,
   );
   app.get(
     "/",
-    ...requireToolostCallbackAuth,
+    requireAuth,
     (req: Request, res: Response, next: NextFunction) => {
       if (!req.query.state || (!req.query.code && !req.query.error)) {
         return next();

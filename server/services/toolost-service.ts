@@ -341,6 +341,7 @@ function buildToolostParticipant(
 }
 
 class ToolostService {
+  private readonly userId?: string;
   private clientId: string | undefined;
   private clientSecret: string | undefined;
   private environment: "production" | "sandbox";
@@ -350,7 +351,7 @@ class ToolostService {
   private maxRetries: number = 3;
   private baseDelay: number = 1000;
 
-  /** In-memory cache of the platform-level OAuth connection, used only for
+  /** In-memory cache of this user's OAuth connection, used only for
    * the synchronous isApiConfigured() advisory check. Every real API call
    * independently calls ensureValidToken(), which re-reads the database if
    * this is still empty — closing the boot-time race where a connection
@@ -360,7 +361,8 @@ class ToolostService {
     refreshToken: string;
     expiresAt: number;
   } | null = null;
-  constructor() {
+  constructor(userId?: string) {
+    this.userId = userId;
     this.clientId = process.env.TOOLOST_CLIENT_ID;
     this.environment =
       process.env.TOOLOST_ENVIRONMENT === "sandbox" ? "sandbox" : "production";
@@ -390,19 +392,22 @@ class ToolostService {
 
     if (!this.clientId || !this.clientSecret) {
       logger.warn(
-        "⚠️  Too Lost OAuth app credentials not configured (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET). " +
-          "Distribution features are unavailable until an admin completes the Too Lost OAuth connect flow.",
+          "⚠️  Too Lost OAuth app credentials not configured (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET). " +
+          "Distribution features are unavailable until the user completes the Too Lost OAuth connect flow.",
       );
     }
 
-    // Fire-and-forget, mirrors LabelGridService's constructor-time
-    // loadConfig() call.
-    this.loadConnection();
+    if (this.userId) {
+      // Fire-and-forget, while ensureValidToken() still re-reads the database
+      // when this load has not completed yet.
+      this.loadConnection();
+    }
   }
 
   private async loadConnection(): Promise<void> {
+    if (!this.userId) return;
     try {
-      const row = await storage.getToolostConnection();
+      const row = await storage.getToolostConnection(this.userId);
       if (row) {
         this.connection = {
           accessToken: row.accessToken,
@@ -418,6 +423,19 @@ class ToolostService {
         "Failed to load Too Lost connection from database",
       );
     }
+  }
+
+  /**
+   * Returns a service instance whose access token and refresh-token writes are
+   * scoped to one authenticated Max Booster user. The exported singleton is
+   * intentionally unscoped and may only be used for app-level OAuth URL
+   * generation.
+   */
+  forUser(userId: string): ToolostService {
+    if (!userId?.trim()) {
+      throw new Error("A user ID is required for Too Lost operations.");
+    }
+    return new ToolostService(userId);
   }
 
   /**
@@ -437,10 +455,7 @@ class ToolostService {
    * only; catalog and distribution endpoints require this user-authorized
    * grant.
    */
-  getOAuthAuthorizationUrl(
-    redirectUri: string,
-    state: string,
-  ): string {
+  getOAuthAuthorizationUrl(redirectUri: string, state: string): string {
     if (!this.clientId || !this.clientSecret) {
       throw new Error(
         "Too Lost OAuth app credentials are not configured (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET).",
@@ -466,14 +481,18 @@ class ToolostService {
   }
 
   /**
-   * Exchanges a browser authorization code and persists the single
-   * platform-level Too Lost connection used by distribution and royalty
-   * operations.
+   * Exchanges a browser authorization code and persists the connection for
+   * the authenticated user that initiated the flow.
    */
   async exchangeOAuthCode(
     code: string,
     redirectUri: string,
   ): Promise<{ expiresAt: Date; scope?: string }> {
+    if (!this.userId) {
+      throw new Error(
+        "Too Lost OAuth code exchange requires an authenticated user.",
+      );
+    }
     if (!this.clientId || !this.clientSecret) {
       throw new Error(
         "Too Lost OAuth app credentials are not configured (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET).",
@@ -540,6 +559,7 @@ class ToolostService {
       tokenExpiresAt: expiresAt,
       scope,
       environment: this.environment,
+      connectedByUserId: this.userId,
     });
     logger.info("✅ Too Lost OAuth connection established");
     return { expiresAt, scope };
@@ -548,11 +568,16 @@ class ToolostService {
   /**
    * Ensures a valid, non-expired access token before a real API call.
    * Refreshes proactively when the token expires within 60s. Throws a
-   * clear, distinguishable error when no platform-level connection exists
+   * clear, distinguishable error when no user connection exists
    * or the refresh token itself has been revoked — a genuine "an admin
    * must reconnect Too Lost" state, never silently defaulted.
    */
   private async ensureValidToken(): Promise<string> {
+    if (!this.userId) {
+      throw new Error(
+        "Too Lost operations require an authenticated user connection.",
+      );
+    }
     if (!this.connection) {
       // Covers both "constructor's fire-and-forget load hasn't resolved
       // yet" and "a connection was created after the constructor ran"
@@ -561,8 +586,8 @@ class ToolostService {
     }
     if (!this.connection) {
       throw new Error(
-        "Too Lost is not connected: no platform-level OAuth connection exists. " +
-          "An admin must complete the Too Lost OAuth connect flow before distribution features work.",
+        "Too Lost is not connected: this user has no OAuth connection. " +
+          "Connect Too Lost from the Distribution page before using distribution features.",
       );
     }
     if (!this.clientId || !this.clientSecret) {
@@ -590,8 +615,8 @@ class ToolostService {
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(
-        `Too Lost is not connected: token refresh failed (HTTP ${res.status}) — the platform-level ` +
-          `connection needs to be re-established via the OAuth connect flow. ${text.slice(0, 300)}`,
+        `Too Lost is not connected: token refresh failed (HTTP ${res.status}) — ` +
+          `this user's connection needs to be re-established via the OAuth connect flow. ${text.slice(0, 300)}`,
       );
     }
     const json = (await res.json()) as {
@@ -614,6 +639,7 @@ class ToolostService {
         tokenExpiresAt: new Date(expiresAt),
         scope: json.scope,
         environment: this.environment,
+        connectedByUserId: this.userId,
       })
       .catch((error) => {
         logger.warn(
