@@ -364,9 +364,13 @@ class ToolostService {
 
   constructor() {
     this.clientId = process.env.TOOLOST_CLIENT_ID;
-    this.clientSecret = process.env.TOOLOST_CLIENT_SECRET;
     this.environment =
       process.env.TOOLOST_ENVIRONMENT === "sandbox" ? "sandbox" : "production";
+    this.clientSecret =
+      this.environment === "sandbox"
+        ? process.env.TOOLOST_SANDBOX_CLIENT_SECRET ??
+          process.env.TOOLOST_CLIENT_SECRET
+        : process.env.TOOLOST_CLIENT_SECRET;
     this.baseUrl =
       this.environment === "sandbox"
         ? "https://api-sandbox.toolost.com/v1"
