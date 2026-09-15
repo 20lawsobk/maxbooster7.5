@@ -153,3 +153,4 @@
 - [LabelGrid real API surface](labelgrid-api-surface.md) — base path is /api/public not /v1; no cross-industry artist search, no artist-scoped release listing, native vs URL-only DSP id fields
 - [Awareness layer dual-mechanism research](awareness-research-dual-mechanism.md) — verify BOTH the static JSON registry and the live keyword-note generator for research backing; fixing one leaves the other unsourced
 - [Leak-guard label regex sync](leak-guard-label-regex-sync.md) — new AI-conditioning field labels must be added to contentPostProcessor's DIRECTIVE_TAG_BLOCK_RE or leaks bypass the guard silently
+- [Too Lost OAuth credentials](toolost-oauth-credentials.md) — client-credentials tokens issue successfully but cannot access catalog/distribution; real calls require user-authorized OAuth tokens
