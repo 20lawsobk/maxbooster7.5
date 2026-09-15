@@ -1624,6 +1624,9 @@ export default function Distribution() {
       queryClient.invalidateQueries({
         queryKey: ["/api/distribution/toolost/status"],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/platforms"],
+      });
     } else if (result === "denied") {
       toast({
         title: "Too Lost connection cancelled",
@@ -4835,8 +4838,9 @@ export default function Distribution() {
                         </div>
                       ) : platformsError ? (
                         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">
-                          Too Lost's live platform catalog is unavailable.
-                          Try again before submitting this release.
+                          {toolostStatus?.connected
+                            ? "Too Lost's live platform catalog is unavailable. Try again before submitting this release."
+                            : "Connect your Too Lost account above to load the live platform catalog, then try again."}
                         </div>
                       ) : DISTRO_PLATFORMS.length === 0 ? (
                         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">

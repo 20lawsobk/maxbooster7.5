@@ -437,8 +437,8 @@ export function DSPSelector({ selectedPlatforms, onChange }: DSPSelectorProps) {
         <CardContent className="p-8 text-center">
           <p className="font-medium">Too Lost platforms are unavailable</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            The live catalog could not be loaded. Try again before submitting
-            this release.
+            Connect your Too Lost account from the Distribution page to load
+            the live catalog, then try again before submitting this release.
           </p>
         </CardContent>
       </Card>

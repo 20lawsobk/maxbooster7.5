@@ -865,6 +865,13 @@ router.post(
 router.get("/platforms", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
+    const connection = await storage.getToolostConnection(userId);
+    if (!connection) {
+      return res.status(409).json({
+        error: "Too Lost connection required",
+        requiresConnection: true,
+      });
+    }
     const response = await toolostService
       .forUser(userId)
       .getAvailableDSPs();
