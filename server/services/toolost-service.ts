@@ -325,6 +325,17 @@ function describesAiInvolvement(value?: string): boolean {
   return !["none", "original", "no", "human", "n/a", "na"].includes(s);
 }
 
+function normalizePlatformSlug(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 /**
  * INFERRED sub-shape: Too Lost's real "participant" object fields were not
  * confirmed against a live token beyond the field's existence on release
@@ -876,7 +887,11 @@ class ToolostService {
       obj?.platforms ??
       obj?.channels ??
       obj?.rows;
-    return Array.isArray(candidate) ? (candidate as T[]) : [];
+    if (Array.isArray(candidate)) return candidate as T[];
+    if (candidate && typeof candidate === "object") {
+      return ToolostService.extractList<T>(candidate);
+    }
+    return [];
   }
 
   private static extractPrimaryArtistName(value: unknown): string {
@@ -1023,27 +1038,59 @@ class ToolostService {
       throw new Error("Too Lost platform catalog returned no platforms.");
     }
     const dsps: ToolostDSP[] = list
-      .map((p) => ({
-        id: String(p.id ?? p.slug ?? p.code ?? p.name ?? ""),
-        name: String(p.name ?? p.id ?? "Unknown"),
-        slug: String(p.slug ?? p.code ?? p.id ?? "").toLowerCase(),
-        category: ToolostService.normalizeDspCategory(p.category as string | undefined),
-        region: String(p.region ?? "global"),
-        isActive:
-          (p.active as boolean | undefined) ??
-          (p.isActive as boolean | undefined) ??
-          true,
-        processingTime: String(p.processingTime ?? p.processing_time ?? "3-7 days"),
-        requirements: {
-          isrc: true,
-          upc: true,
-          metadata: ["title", "artist", "album"],
-          audioFormats: ["WAV", "FLAC"],
-        },
-        deliveryMethod: "api" as const,
-        logoUrl: (p.logoUrl as string) ?? (p.logo_url as string) ?? undefined,
-        docsUrl: undefined,
-      }))
+      .map((p) => {
+        if (typeof p === "string") {
+          const name = p.trim();
+          const slug = normalizePlatformSlug(name);
+          return {
+            id: slug,
+            name,
+            slug,
+            category: "streaming" as const,
+            region: "global",
+            isActive: true,
+            processingTime: "3-7 days",
+            requirements: {
+              isrc: true,
+              upc: true,
+              metadata: ["title", "artist", "album"],
+              audioFormats: ["WAV", "FLAC"],
+            },
+            deliveryMethod: "api" as const,
+            logoUrl: undefined,
+            docsUrl: undefined,
+          };
+        }
+
+        const name = String(p.name ?? p.id ?? "Unknown");
+        return {
+          id: String(p.id ?? p.slug ?? p.code ?? p.name ?? ""),
+          name,
+          slug: normalizePlatformSlug(
+            String(p.slug ?? p.code ?? p.id ?? p.name ?? ""),
+          ),
+          category: ToolostService.normalizeDspCategory(
+            p.category as string | undefined,
+          ),
+          region: String(p.region ?? "global"),
+          isActive:
+            (p.active as boolean | undefined) ??
+            (p.isActive as boolean | undefined) ??
+            true,
+          processingTime: String(
+            p.processingTime ?? p.processing_time ?? "3-7 days",
+          ),
+          requirements: {
+            isrc: true,
+            upc: true,
+            metadata: ["title", "artist", "album"],
+            audioFormats: ["WAV", "FLAC"],
+          },
+          deliveryMethod: "api" as const,
+          logoUrl: (p.logoUrl as string) ?? (p.logo_url as string) ?? undefined,
+          docsUrl: undefined,
+        };
+      })
       .filter((dsp) => dsp.id && dsp.slug && dsp.isActive);
     if (dsps.length === 0) {
       throw new Error("Too Lost platform catalog contained no active platforms.");
