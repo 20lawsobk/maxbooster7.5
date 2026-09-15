@@ -2486,7 +2486,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         <CollapsibleContent>
           <div className="rounded-lg border p-3 space-y-3 mt-1">
             <p className="text-xs text-muted-foreground">
-              Scan your LabelGrid catalog to see releases already collected
+              Scan your Too Lost catalog to see releases already collected
               during distribution. Any release found here can be re-distributed
               or imported as a distribution draft with one click — all metadata
               including cover art, UPC, genre, and tracks is pre-filled
@@ -2516,7 +2516,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  No releases found in your LabelGrid catalog for{" "}
+                  No releases found in your Too Lost catalog for{" "}
                   <strong>{profile.artistName}</strong>. Distribute your first
                   release to see it here.
                 </AlertDescription>

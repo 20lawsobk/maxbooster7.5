@@ -7,7 +7,7 @@ import { CLAIM_STATES } from "../services/artistProfileService.js";
 import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import { requireUUIDParam } from "../middleware/requestValidation.js";
-import { labelGridService } from "../services/labelgrid-service.js";
+import { toolostService } from "../services/toolost-service.js";
 import { storage } from "../storage.js";
 
 const router = Router();
@@ -826,8 +826,8 @@ router.post(
   },
 );
 
-// ── Catalog Scanner: fetch collected releases from LabelGrid ───────────────────
-// Returns the artist's LabelGrid catalog, cross-referenced against locally
+// ── Catalog Scanner: fetch collected releases from Too Lost ────────────────────
+// Returns the user's Too Lost catalog, cross-referenced against locally
 // stored distro releases so the UI knows which ones are already distributed.
 router.get(
   "/:id/catalog",
@@ -842,9 +842,12 @@ router.get(
       if (!profile)
         return res.status(404).json({ error: "Artist profile not found" });
 
-      // Fetch LabelGrid catalog and local releases in parallel
-      const [lgReleases, localReleases] = await Promise.all([
-        labelGridService.getUserCatalog(),
+      // Fetch the authenticated Too Lost catalog and local releases in parallel.
+      // Too Lost returns account-level releases, so keep the explicit artist
+      // name filter below instead of pretending the provider offers an
+      // artist-scoped catalog endpoint.
+      const [toolostReleases, localReleases] = await Promise.all([
+        toolostService.forUser(req.user!.id).getUserCatalog(),
         storage.getDistroReleasesByArtist(req.user!.id),
       ]);
 
@@ -864,7 +867,7 @@ router.get(
       );
 
       // Annotate each catalog release with whether it's already distributed locally
-      const annotated = lgReleases
+      const annotated = toolostReleases
         .filter((r) => {
           // Only include releases that belong to this artist (by name match)
           const artistMatch =
