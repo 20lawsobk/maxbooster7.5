@@ -2207,6 +2207,19 @@ class ArtistProfileService {
       });
     }
 
+    // Link profile records serially because each link persists the shared
+    // streamingProfiles preference object. Scans remain parallel below after
+    // all profile records are durable.
+    for (const target of catalogImportTargets) {
+      await this._ensureCatalogProfileLinked(
+        userId,
+        target.platformId,
+        target.profileUrl,
+        query,
+        { imageUrl: target.imageUrl, genres: target.genres },
+      );
+    }
+
     const catalogImport = await Promise.all(
       catalogImportTargets.map((t) =>
         this._autoImportCatalogForPlatform(
@@ -2260,28 +2273,19 @@ class ArtistProfileService {
     extra?: { imageUrl?: string | null; genres?: string[] },
   ): Promise<{
     platformId: string;
+    scanned: number;
     imported: number;
     failed: number;
     status: string;
   }> {
     try {
-      const linkedProfiles =
-        await distributionDataTransferService.getLinkedProfiles(userId);
-      const linked = linkedProfiles.find(
-        (candidate) => candidate.platformId === platformId,
+      await this._ensureCatalogProfileLinked(
+        userId,
+        platformId,
+        profileUrl,
+        artistName,
+        extra,
       );
-      if (!linked || linked.profileUrl !== profileUrl) {
-        await distributionDataTransferService.linkStreamingProfile(
-          userId,
-          platformId,
-          profileUrl,
-          {
-            artistName,
-            imageUrl: extra?.imageUrl ?? undefined,
-            genres: extra?.genres,
-          },
-        );
-      }
 
       const releases =
         await distributionDataTransferService.scanReleasesFromProfile(
@@ -2332,6 +2336,35 @@ class ArtistProfileService {
         failed: 1,
         status: "error",
       };
+    }
+  }
+
+  private async _ensureCatalogProfileLinked(
+    userId: string,
+    platformId: string,
+    profileUrl: string,
+    artistName: string,
+    extra?: { imageUrl?: string | null; genres?: string[] },
+  ): Promise<void> {
+    const linkedProfiles =
+      await distributionDataTransferService.getLinkedProfiles(userId);
+    const linked = linkedProfiles.find(
+      (candidate) => candidate.platformId === platformId,
+    );
+    const normalizeUrl = (value: string) =>
+      value.trim().replace(/\/+$/, "").split("?")[0];
+
+    if (!linked || normalizeUrl(linked.profileUrl) !== normalizeUrl(profileUrl)) {
+      await distributionDataTransferService.linkStreamingProfile(
+        userId,
+        platformId,
+        profileUrl,
+        {
+          artistName,
+          imageUrl: extra?.imageUrl ?? undefined,
+          genres: extra?.genres,
+        },
+      );
     }
   }
 
