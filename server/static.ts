@@ -471,6 +471,12 @@ function precompressedMiddleware(distPath: string) {
 
 function staticFileMiddlewareOptions() {
   return {
+    // This middleware is intentionally asset-only and is registered before
+    // API/OAuth routes. If express.static serves index.html for "/", it
+    // shadows the root-style Too Lost sandbox callback before its query
+    // parameters can reach the OAuth forwarding route. The SPA root is
+    // served later by serveStatic()/Vite after routes are registered.
+    index: false,
     etag: true,
     lastModified: true,
     setHeaders: (res: Record<string, unknown>, filePath: string) => {
