@@ -1714,12 +1714,7 @@ export default function Distribution() {
         audioFiles: [],
         albumArt: null,
         tracks: [],
-        selectedPlatforms: [
-          "spotify",
-          "apple-music",
-          "youtube-music",
-          "amazon-music",
-        ],
+        selectedPlatforms: [],
         isExplicit: false,
         iTunesPricing: "standard",
         collaborators: [],
@@ -4830,8 +4825,15 @@ export default function Distribution() {
                           </Button>
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
-                        {DISTRO_PLATFORMS.map((platform) => (
+                      {DISTRO_PLATFORMS.length === 0 ? (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                          Connect Too Lost before selecting distribution
+                          platforms. The available destinations are loaded
+                          directly from your Too Lost account.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-4">
+                          {DISTRO_PLATFORMS.map((platform) => (
                           <div
                             key={platform.id}
                             className="flex items-center space-x-3 p-3 border rounded-lg"
@@ -5007,6 +5009,7 @@ export default function Distribution() {
                             </div>
                           ))}
                         </div>
+                      )}
                       </div>
 
                       <div>
