@@ -7,4 +7,4 @@ Artist auto-discovery must query the public DSP identity endpoints directly. Too
 
 **Why:** Treating a distributor roster lookup as cross-platform identity discovery made the feature depend on the retired LabelGrid path and fail when that account had no matching artist. Fabricating a Too Lost artist endpoint would misattribute identities.
 
-**How to apply:** Keep auto-discover and Apply provider-independent. Use Too Lost for user-authorized release, catalog, delivery, and status operations only; use direct DSP matches, UPC lookups, and explicit user-entered IDs for artist fields.
+**How to apply:** Keep auto-discover and Apply provider-independent. Use Too Lost for user-authorized release, catalog, delivery, and status operations only; use direct DSP matches, UPC lookups, and explicit user-entered IDs for artist fields. Every discovery run must reconcile catalogs for all known linked/stored identities, not just newly saved matches; merge by UPC/title/artist and report per-platform scan results.
