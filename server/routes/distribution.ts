@@ -858,18 +858,12 @@ router.post(
 // PLATFORM ENDPOINTS
 // ===================
 
-// GET /api/distribution/platforms - Get the signed-in user's Too Lost catalog
+// GET /api/distribution/platforms - Get Too Lost's live app-level DSP catalog.
+// This read-only catalog lookup must not force artists through Too Lost OAuth;
+// user authorization is still required later for release creation/submission.
 router.get("/platforms", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as AuthenticatedUser).id;
-    const connection = await storage.getToolostConnection(userId);
-    if (!connection) {
-      return res.status(409).json({
-        error: "Too Lost connection required",
-        requiresConnection: true,
-      });
-    }
-    const response = await toolostService.forUser(userId).getAvailableDSPs();
+    const response = await toolostService.getAvailableDSPs();
 
     // Transform to expected format for frontend
     const platforms = response.dsps.map((dsp) => ({
