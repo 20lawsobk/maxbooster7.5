@@ -2165,6 +2165,12 @@ class ArtistProfileService {
           ? `https://tidal.com/browse/artist/${refreshedProfile.tidalArtistId}`
           : null,
       },
+      {
+        platformId: "amazon_music",
+        profileUrl: refreshedProfile.amazonMusicArtistId
+          ? `https://music.amazon.com/artists/${refreshedProfile.amazonMusicArtistId}`
+          : null,
+      },
     ];
     for (const target of storedCatalogTargets) addCatalogTarget(target);
 
