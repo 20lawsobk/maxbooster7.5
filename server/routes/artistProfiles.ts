@@ -1069,12 +1069,6 @@ router.post(
             releaseDate: data.releaseDate ? new Date(data.releaseDate) : null,
             artworkUrl: coverUrl,
             metadata,
-            tracks: (data?.tracks ?? []).map((t, idx) => ({
-              title: t.title,
-              isrc: t.isrc ?? null,
-              trackNumber: t.trackNumber ?? idx + 1,
-              duration: t.duration ?? null,
-            })),
           });
       if (!release) {
         return res.status(409).json({ error: "Release could not be saved" });

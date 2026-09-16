@@ -959,7 +959,7 @@ class DistributionDataTransferService {
     const releases = await storage.getDistroReleasesByArtist(userId);
 
     for (const release of releases) {
-      const metadata = release.metadata as Record<string, unknown>;
+      const metadata = (release.metadata || {}) as Record<string, unknown>;
 
       if (
         upc &&
