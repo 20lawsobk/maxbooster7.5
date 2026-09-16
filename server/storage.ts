@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { logger } from "./logger";
 import { randomBytes } from "crypto";
-import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, systemLogs, toolostConnection, youtubeConnections, youtubeUploads, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot, type ToolostConnection, type InsertToolostConnection, type YoutubeConnection, type InsertYoutubeConnection, type YoutubeUpload, type InsertYoutubeUpload } from "@shared/schema";
+import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, artistProfiles, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, systemLogs, toolostConnection, youtubeConnections, youtubeUploads, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot, type ToolostConnection, type InsertToolostConnection, type YoutubeConnection, type InsertYoutubeConnection, type YoutubeUpload, type InsertYoutubeUpload } from "@shared/schema";
 import { db, dbRead } from "./db";
 import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, isNotNull } from "drizzle-orm";
 
@@ -2317,6 +2317,50 @@ export class DatabaseStorage implements IStorage {
       .where(eq(distroReleases.artistId, artistId))
       .orderBy(desc(distroReleases.createdAt))
       .limit(200);
+  }
+
+  /**
+   * Return only releases whose persisted artist name belongs to a registered
+   * artist profile owned by this user. Distro releases are user-owned for
+   * legacy distribution flows, so artistId alone is not an artist boundary.
+   *
+   * When artistName is supplied, this is the profile-specific variant used by
+   * artist catalog pages. If the user has no registered profiles, preserve the
+   * legacy behavior for the general releases list.
+   */
+  async getDistroReleasesForRegisteredArtists(
+    userId: string,
+    artistName?: string,
+  ): Promise<DistroRelease[]> {
+    const releases = await this.getDistroReleasesByArtist(userId);
+    const profiles = await db
+      .select({ artistName: artistProfiles.artistName })
+      .from(artistProfiles)
+      .where(eq(artistProfiles.userId, userId));
+
+    const normalizeArtistName = (value: unknown): string =>
+      String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+(?:feat\.?|ft\.?|featuring)\b.*/i, "")
+        .replace(/\s*\([^)]{0,45}\)\s*/g, " ")
+        .replace(/[^a-z0-9]/g, "");
+
+    const allowedNames = new Set(
+      (artistName ? [artistName] : profiles.map((p) => p.artistName))
+        .map(normalizeArtistName)
+        .filter(Boolean),
+    );
+
+    // Users who have not created an artist profile yet still need to see
+    // their manually-created distribution drafts.
+    if (allowedNames.size === 0) return artistName ? [] : releases;
+
+    return releases.filter((release) => {
+      const metadata = (release.metadata || {}) as Record<string, unknown>;
+      return allowedNames.has(normalizeArtistName(metadata.artistName));
+    });
   }
 
   async getDistroRelease(id: string): Promise<DistroRelease | undefined> {

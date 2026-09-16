@@ -349,7 +349,8 @@ z.object({
 router.get("/releases", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const distroRels = await storage.getDistroReleasesByArtist(userId);
+    const distroRels =
+      await storage.getDistroReleasesForRegisteredArtists(userId);
     res.json(distroRels);
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching releases:");

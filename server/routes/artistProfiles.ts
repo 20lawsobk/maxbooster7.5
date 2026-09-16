@@ -881,7 +881,10 @@ router.get(
         toolostService
           .forUser(effectiveConnection.connectedByUserId)
           .getUserCatalog(),
-        storage.getDistroReleasesByArtist(req.user!.id),
+        storage.getDistroReleasesForRegisteredArtists(
+          req.user!.id,
+          profile.artistName,
+        ),
       ]);
 
       // Build a set of UPCs and titles already in local distro releases
