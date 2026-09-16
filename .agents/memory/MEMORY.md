@@ -157,3 +157,4 @@
 - [Too Lost OAuth credentials](toolost-oauth-credentials.md) — client-credentials tokens issue successfully but cannot access catalog/distribution; real calls require user-authorized OAuth tokens
 - [Workflow duplicate process trees](workflow-esbuild-duplicate-processes.md) — repeated restarts can orphan app/MaxCore trees, exhaust threads, and kill Vite's esbuild worker; clean-stop before restarting
 - [Artist discovery provider boundary](artist-discovery-provider-boundary.md) — artist IDs come from direct DSP searches; Too Lost handles authenticated distribution, not artist-roster discovery
+- [Artist sync scope](artist-sync-scope.md) — auto-reconciliation must use the selected artist profile's identities, not the user's shared platform-link map; namesake fallbacks fail closed
