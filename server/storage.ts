@@ -2333,10 +2333,17 @@ export class DatabaseStorage implements IStorage {
     artistName?: string,
   ): Promise<DistroRelease[]> {
     const releases = await this.getDistroReleasesByArtist(userId);
-    const profiles = await db
-      .select({ artistName: artistProfiles.artistName })
-      .from(artistProfiles)
-      .where(eq(artistProfiles.userId, userId));
+    const [profiles, userRows] = await Promise.all([
+      db
+        .select({ artistName: artistProfiles.artistName })
+        .from(artistProfiles)
+        .where(eq(artistProfiles.userId, userId)),
+      db
+        .select({ artistName: users.artistName })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1),
+    ]);
 
     const normalizeArtistName = (value: unknown): string =>
       String(value ?? "")
@@ -2348,7 +2355,9 @@ export class DatabaseStorage implements IStorage {
         .replace(/[^a-z0-9]/g, "");
 
     const allowedNames = new Set(
-      (artistName ? [artistName] : profiles.map((p) => p.artistName))
+      (artistName
+        ? [artistName]
+        : [userRows[0]?.artistName, ...profiles.map((p) => p.artistName)])
         .map(normalizeArtistName)
         .filter(Boolean),
     );
