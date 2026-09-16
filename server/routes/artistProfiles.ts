@@ -947,6 +947,7 @@ router.get(
 // Creates a local distribution draft from a Too Lost catalog release so the
 // artist can complete and submit it without re-entering metadata manually.
 const distributeCatalogReleaseSchema = z.object({
+  sourceReleaseId: z.string().min(1).optional(),
   title: z.string().min(1),
   releaseType: z.enum(["single", "EP", "album"]).default("single"),
   releaseDate: z.string().optional(),
@@ -981,31 +982,103 @@ router.post(
 
       const data = distributeCatalogReleaseSchema?.parse(req.body);
 
-      const release = await storage.createDistroRelease({
-        artistId: req.user!.id,
-        title: data.title,
-        releaseDate: data.releaseDate ? new Date(data?.releaseDate) : null,
-        metadata: {
-          artistName: profile.artistName,
-          releaseType: data.releaseType,
-          primaryGenre: data.genre ?? "",
-          upc: data.upc ?? null,
-          coverUrl: data.coverUrl ?? null,
-          selectedPlatforms: data.platforms ?? [],
-          // Pre-fill artist platform IDs gathered by the sync system so the
-          // distributor routes the release to the correct existing profiles.
-          spotifyArtistId: profile.spotifyArtistId ?? null,
-          appleArtistId: profile.appleArtistId ?? null,
-          deezerArtistId: profile.deezerArtistId ?? null,
-          source: "catalog_import",
-        },
-        tracks: (data?.tracks ?? []).map((t, idx) => ({
+      const existingReleases = await storage.getDistroReleasesByArtist(
+        req.user!.id,
+      );
+      const normalize = (value: unknown) =>
+        String(value ?? "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+      const existing = existingReleases.find((candidate) => {
+        const metadata = (candidate.metadata || {}) as Record<string, unknown>;
+        if (
+          data.sourceReleaseId &&
+          metadata.sourceReleaseId === data.sourceReleaseId
+        ) {
+          return true;
+        }
+        if (data.upc && metadata.upc === data.upc) return true;
+        return (
+          normalize(candidate.title) === normalize(data.title) &&
+          normalize(metadata.artistName) === normalize(profile.artistName)
+        );
+      });
+
+      const existingMetadata = (existing?.metadata || {}) as Record<
+        string,
+        unknown
+      >;
+      const coverUrl =
+        data.coverUrl ||
+        (typeof existingMetadata.coverUrl === "string"
+          ? existingMetadata.coverUrl
+          : null);
+      const distributionPlatforms = Array.from(
+        new Set([
+          ...(Array.isArray(existingMetadata.distributionPlatforms)
+            ? (existingMetadata.distributionPlatforms as unknown[]).map(String)
+            : []),
+          ...(Array.isArray(existingMetadata.platforms)
+            ? (existingMetadata.platforms as unknown[]).map(String)
+            : []),
+          ...(data.platforms ?? []),
+        ]),
+      ).filter(Boolean);
+      const metadata = {
+        ...existingMetadata,
+        artistName: profile.artistName,
+        releaseType: data.releaseType,
+        primaryGenre: data.genre ?? existingMetadata.primaryGenre ?? "",
+        upc: data.upc ?? existingMetadata.upc ?? null,
+        coverUrl,
+        coverArtUrl: coverUrl,
+        distributionPlatforms,
+        platforms: distributionPlatforms,
+        selectedPlatforms: data.platforms ?? existingMetadata.selectedPlatforms ?? [],
+        tracks: (data.tracks ?? []).map((t, idx) => ({
           title: t.title,
           isrc: t.isrc ?? null,
           trackNumber: t.trackNumber ?? idx + 1,
           duration: t.duration ?? null,
         })),
-      });
+        source: "catalog_import",
+        ...(data.sourceReleaseId
+          ? { sourceReleaseId: data.sourceReleaseId }
+          : {}),
+        // Pre-fill artist platform IDs gathered by the sync system so the
+        // distributor routes the release to the correct existing profiles.
+        spotifyArtistId: profile.spotifyArtistId ?? null,
+        appleArtistId: profile.appleArtistId ?? null,
+        deezerArtistId: profile.deezerArtistId ?? null,
+      };
+
+      const release = existing
+        ? await storage.updateDistroRelease(existing.id, {
+            title: data.title,
+            releaseDate: data.releaseDate
+              ? new Date(data.releaseDate)
+              : existing.releaseDate,
+            artworkUrl: existing.artworkUrl || coverUrl,
+            metadata,
+          })
+        : await storage.createDistroRelease({
+            artistId: req.user!.id,
+            title: data.title,
+            releaseDate: data.releaseDate ? new Date(data.releaseDate) : null,
+            artworkUrl: coverUrl,
+            metadata,
+            tracks: (data?.tracks ?? []).map((t, idx) => ({
+              title: t.title,
+              isrc: t.isrc ?? null,
+              trackNumber: t.trackNumber ?? idx + 1,
+              duration: t.duration ?? null,
+            })),
+          });
+      if (!release) {
+        return res.status(409).json({ error: "Release could not be saved" });
+      }
 
       logger.info(
         `[ArtistProfiles] Catalog release imported: profile=${(req.params.id as string)} release=${release.id} title="${data.title}"`,

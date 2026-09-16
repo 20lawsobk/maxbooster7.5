@@ -355,6 +355,7 @@ export interface ScannedRelease {
   externalId: string;
   upc?: string;
   genre?: string;
+  platforms?: string[];
   tracks?: Array<{
     title: string;
     trackNumber: number;
@@ -960,7 +961,11 @@ class DistributionDataTransferService {
     for (const release of releases) {
       const metadata = release.metadata as Record<string, unknown>;
 
-      if (upc && metadata.upc === upc) {
+      if (
+        upc &&
+        typeof metadata.upc === "string" &&
+        metadata.upc.trim() === upc.trim()
+      ) {
         return release;
       }
 
@@ -3370,19 +3375,61 @@ class DistributionDataTransferService {
     platformId: string,
     releases: ScannedRelease[],
   ): Promise<DataTransferJob> {
+    // A provider can return the same release more than once (for example
+    // separate editions or a repeated page item). Collapse the request before
+    // writing so one import request cannot create duplicate local releases.
+    const uniqueReleases = new Map<string, ScannedRelease>();
+    for (const release of releases) {
+      const identity = release.upc
+        ? `upc:${release.upc.trim()}`
+        : `title:${normalizeArtistNameForIdentity(release.artistName)}:${String(
+            release.title,
+          )
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "")}`;
+      const existing = uniqueReleases.get(identity);
+      if (!existing) {
+        uniqueReleases.set(identity, { ...release });
+        continue;
+      }
+
+      const mergedPlatforms = Array.from(
+        new Set([
+          ...(existing.platforms ?? []),
+          ...(release.platforms ?? []),
+          platformId,
+        ]),
+      ).filter(Boolean);
+      uniqueReleases.set(identity, {
+        ...existing,
+        coverUrl: existing.coverUrl || release.coverUrl,
+        upc: existing.upc || release.upc,
+        genre: existing.genre || release.genre,
+        trackCount: Math.max(existing.trackCount || 0, release.trackCount || 0),
+        tracks:
+          (release.tracks?.length ?? 0) > (existing.tracks?.length ?? 0)
+            ? release.tracks
+            : existing.tracks,
+        platforms: mergedPlatforms,
+      });
+    }
+    const uniqueReleaseList = Array.from(uniqueReleases.values());
+
     const job = await this.createTransferJob(
       userId,
       "import",
       `${platformId}_profile_scan`,
     );
     job.status = "processing";
-    job.totalItems = releases.length;
+    job.totalItems = uniqueReleaseList.length;
     job.updatedAt = new Date();
 
     let imported = 0;
     let failed = 0;
 
-    for (const release of releases) {
+    for (const release of uniqueReleaseList) {
       try {
         const existing = await this.findExistingRelease(
           userId,
@@ -3392,15 +3439,45 @@ class DistributionDataTransferService {
         );
 
         if (existing) {
-          const existingMeta = existing.metadata as Record<string, unknown>;
-          const links = (existingMeta.originalPlatformLinks as Record<string, string>) || {} as Record<string, string>;
+          const existingMeta = (existing.metadata || {}) as Record<string, unknown>;
+          const links = {
+            ...(Array.isArray(existingMeta.originalPlatformLinks)
+              ? {}
+              : ((existingMeta.originalPlatformLinks as Record<string, string>) ||
+                {})),
+          };
           if (release.platformUrl) links[platformId] = release.platformUrl;
+          const distributionPlatforms = Array.from(
+            new Set([
+              ...(Array.isArray(existingMeta.distributionPlatforms)
+                ? (existingMeta.distributionPlatforms as unknown[]).map(String)
+                : []),
+              ...(Array.isArray(existingMeta.platforms)
+                ? (existingMeta.platforms as unknown[]).map(String)
+                : []),
+              ...(release.platforms ?? []),
+              platformId,
+            ]),
+          ).filter(Boolean);
+          const coverUrl =
+            (typeof existingMeta.coverUrl === "string"
+              ? existingMeta.coverUrl
+              : undefined) ||
+            (typeof existingMeta.coverArtUrl === "string"
+              ? existingMeta.coverArtUrl
+              : undefined) ||
+            release.coverUrl;
           const mergedMeta: Record<string, any> = {
             ...existingMeta,
             originalPlatformLinks: links,
+            distributionPlatforms,
+            distributionPlatformLinks: links,
+            platforms: distributionPlatforms,
           };
-          if (!existingMeta.coverUrl && release.coverUrl)
-            mergedMeta.coverUrl = release.coverUrl;
+          if (coverUrl) {
+            mergedMeta.coverUrl = coverUrl;
+            mergedMeta.coverArtUrl = coverUrl;
+          }
           if (!existingMeta.upc && release.upc) mergedMeta.upc = release.upc;
           if (!existingMeta.primaryGenre && release.genre)
             mergedMeta.primaryGenre = release.genre;
@@ -3413,11 +3490,21 @@ class DistributionDataTransferService {
           }
           await storage.updateDistroRelease(existing.id, {
             metadata: mergedMeta,
+            ...(existing.artworkUrl || !coverUrl
+              ? {}
+              : { artworkUrl: coverUrl }),
           });
           logger.info(
             `[DataTransfer] Merged existing release from ${platformId}: ${release.title}`,
           );
         } else {
+          const coverUrl = release.coverUrl || null;
+          const distributionPlatforms = Array.from(
+            new Set([
+              ...(release.platforms ?? []),
+              platformId,
+            ]),
+          ).filter(Boolean);
           await storage.createDistroRelease({
             artistId: userId,
             title: release.title,
@@ -3438,7 +3525,14 @@ class DistributionDataTransferService {
               originalPlatformLinks: release.platformUrl
                 ? { [platformId]: release.platformUrl }
                 : {},
-              coverUrl: release.coverUrl,
+              distributionPlatforms,
+              distributionPlatformLinks: release.platformUrl
+                ? { [platformId]: release.platformUrl }
+                : {},
+              platforms: distributionPlatforms,
+              coverUrl,
+              coverArtUrl: coverUrl,
+              artworkUrl: coverUrl,
               trackCount: release.trackCount,
               tracks: release.tracks,
               isImported: true,

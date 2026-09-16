@@ -658,6 +658,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         "POST",
         `/api/artist-profiles/${profile.id}/distribute-release`,
         {
+          sourceReleaseId: release.id,
           title: release.title,
           releaseType: release.releaseType,
           releaseDate: release.releaseDate ?? undefined,
