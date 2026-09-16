@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, XCircle, ExternalLink, ChevronDown, ChevronUp, Loader2, Globe, Info, Key, Wrench, Music2, AlertCircle, RefreshCw, Search, Edit2, Save, X, Zap, BarChart2, Shield, Download, Upload, Link2, Activity, Network, Dna, ScanSearch, GitBranch, Hash, Star, TriangleAlert, Fingerprint, BookOpen, Disc3, SendHorizonal } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -206,6 +206,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const [discoverResults, setDiscoverResults] =
     useState<DiscoverPayload | null>(null);
   const [discoverRunning, setDiscoverRunning] = useState(false);
+  const automaticDiscoveryStartedFor = useRef<string | null>(null);
   const [fixerUri, setFixerUri] = useState("");
   const [fixerNotes, setFixerNotes] = useState("");
   const [fixerUriError, setFixerUriError] = useState("");
@@ -815,6 +816,20 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       setDiscoverRunning(false);
     }
   };
+
+  // Normal synchronization is automatic. Preview remains available as an
+  // optional read-only inspection mode, but artists never need to run Apply
+  // after a preview for the standard catalog path.
+  useEffect(() => {
+    if (
+      !profile.id ||
+      automaticDiscoveryStartedFor.current === profile.id
+    ) {
+      return;
+    }
+    automaticDiscoveryStartedFor.current = profile.id;
+    void handleDiscover(false);
+  }, [profile.id]);
 
   const handleAcceptMatch = (portal: Portal, result: DiscoverResult) => {
     if (!portal.fieldKey) return;

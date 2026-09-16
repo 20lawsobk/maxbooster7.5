@@ -76,6 +76,24 @@ router.post("/", async (req: Request, res: Response) => {
       spotifyArtistUri: resolvedSpotifyUri,
     });
 
+    // Discovery and catalog reconciliation are automatic. The create request
+    // returns immediately, while the background run links verified identities
+    // and imports the catalog without requiring an approval click.
+    void artistProfileService
+      ?.autoDiscover(profile.id, req.user!.id)
+      .then((result) => {
+        logger.info(
+          `[ArtistProfiles] Automatic discovery complete for profile=${profile.id} ` +
+            `saved=${result.saved} catalogTargets=${result.catalogImport.length}`,
+        );
+      })
+      .catch((err: unknown) => {
+        logger.warn(
+          { err },
+          `[ArtistProfiles] Automatic discovery failed for profile=${profile.id}`,
+        );
+      });
+
     res.status(201).json({ profile });
   } catch (err) {
     const cause = (err as any)?.cause;
