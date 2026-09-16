@@ -16,6 +16,18 @@ const timedFetch = (
 ): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(15_000), ...init });
 
+// Catalog fallbacks are only safe when the provider returns the exact
+// registered artist name. A "best" fuzzy/name-popularity match can silently
+// import another artist with the same or a similar name.
+const normalizeArtistNameForIdentity = (value: unknown): string =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+(?:feat\.?|ft\.?|featuring)\b.*/i, "")
+    .replace(/\s*\([^)]{0,45}\)\s*/g, " ")
+    .replace(/[^a-z0-9]/g, "");
+
 export const SUPPORTED_DISTRIBUTORS = [
   {
     id: "distrokid",
@@ -2382,9 +2394,25 @@ class DistributionDataTransferService {
       const items: Record<string, unknown>[] = searchData.results || [];
       if (items.length === 0) return [];
 
-      // Pick the artist ID that appears most often — that's the best name match
+      const expectedArtistName = normalizeArtistNameForIdentity(artistName);
+      // Only accept an exact normalized artist-name match. Picking the most
+      // frequent result is not an identity check and can select a namesake.
+      const exactItems = items.filter(
+        (item) =>
+          expectedArtistName &&
+          normalizeArtistNameForIdentity(item.artistName) ===
+            expectedArtistName,
+      );
+      if (exactItems.length === 0) {
+        logger.warn(
+          `[DataTransfer] iTunes artist lookup rejected non-exact match for "${artistName}"`,
+        );
+        return [];
+      }
+
+      // Among exact-name results, choose the artist ID appearing most often.
       const idCounts: Record<number, number> = {};
-      for (const item of items) {
+      for (const item of exactItems) {
         const aid = item?.artistId as number | undefined;
         if (aid) idCounts[aid] = (idCounts[aid] || 0) + 1;
       }
@@ -2415,8 +2443,11 @@ class DistributionDataTransferService {
       }
       const releases = (lookupData?.results || []).filter(
         (r: Record<string, unknown>) =>
-          r?.wrapperType === "collection" || r?.collectionId,
+          (r?.wrapperType === "collection" || r?.collectionId) &&
+          normalizeArtistNameForIdentity(r.artistName) === expectedArtistName,
       ) as ItunesCollection[];
+
+      if (releases.length === 0) return [];
 
       const resolvedArtistName = releases[0]?.artistName || artistName;
 
@@ -2511,9 +2542,22 @@ class DistributionDataTransferService {
           );
           if (searchResp?.ok) {
             const searchData = (await searchResp?.json()) as {
-              artists?: Array<{ id?: string }>;
+              artists?: Array<{ id?: string; name?: string }>;
             };
-            mbid = searchData?.artists?.[0]?.id || null;
+            const expectedName = artistName
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, "");
+            const exactArtist = searchData?.artists?.find(
+              (artist) =>
+                String(artist.name ?? "")
+                  .normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "")
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]/g, "") === expectedName,
+            );
+            mbid = exactArtist?.id || null;
           }
         } catch {
           /* non-fatal */
@@ -2768,17 +2812,14 @@ class DistributionDataTransferService {
       const artists: Record<string, unknown>[] = (searchData?.data as Record<string, unknown>[]) || [];
       if (artists?.length === 0) return [];
 
-      // Pick the artist whose name most closely matches
-      const bestArtist = artists?.reduce(
-        (best: Record<string, unknown>, a: Record<string, unknown>) => {
-          const score =
-            ((a?.name || "") as any).toLowerCase() === artistName?.toLowerCase()
-              ? 100
-              : a?.nb_fan || 0;
-          return score > (best?.score ?? 0) ? { ...a, score: score } : best;
-        },
-        {},
+      const expectedArtistName = normalizeArtistNameForIdentity(artistName);
+      const exactArtists = artists.filter(
+        (artist) =>
+          normalizeArtistNameForIdentity(artist.name) === expectedArtistName,
       );
+      const bestArtist = exactArtists.sort(
+        (a, b) => Number(b.nb_fan || 0) - Number(a.nb_fan || 0),
+      )[0];
 
       if (!bestArtist?.id) return [];
 

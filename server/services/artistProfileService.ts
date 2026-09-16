@@ -2086,11 +2086,6 @@ class ArtistProfileService {
       genres?: string[];
     }> = [];
 
-    const linkedProfiles =
-      await distributionDataTransferService.getLinkedProfiles(userId);
-    const linkedByPlatform = new Map(
-      linkedProfiles.map((linked) => [linked.platformId, linked]),
-    );
     const addCatalogTarget = (target: {
       platformId: string;
       profileUrl?: string | null;
@@ -2102,8 +2097,6 @@ class ArtistProfileService {
         (candidate) => candidate.platformId === target.platformId,
       );
       if (existing) {
-        // A user-linked profile is authoritative over a generated URL.
-        if (linkedByPlatform.has(target.platformId)) return;
         if (!existing.imageUrl && target.imageUrl)
           existing.imageUrl = target.imageUrl;
         if (!existing.genres?.length && target.genres?.length)
@@ -2117,17 +2110,6 @@ class ArtistProfileService {
         genres: target.genres,
       });
     };
-
-    // First preserve every explicitly linked distribution profile, including
-    // platforms that are not part of the identity-search response.
-    for (const linked of linkedProfiles) {
-      addCatalogTarget({
-        platformId: linked.platformId,
-        profileUrl: linked.profileUrl,
-        imageUrl: linked.imageUrl,
-        genres: linked.genres,
-      });
-    }
 
     const refreshedProfile = (await this.getProfile(profileId, userId)) ?? profile;
     const storedCatalogTargets: Array<{
@@ -2216,14 +2198,6 @@ class ArtistProfileService {
         imageUrl: finalAudiomack.result.imageUrl,
       });
     }
-    if (finalJioSaavn?.confidence >= CONFIDENCE_THRESHOLD) {
-      addCatalogTarget({
-        platformId: "jiosaavn",
-        profileUrl: finalJioSaavn.result.url,
-        imageUrl: finalJioSaavn.result.imageUrl,
-      });
-    }
-
     // Link profile records serially because each link persists the shared
     // streamingProfiles preference object. Preview mode must not create or
     // update links, so it scans the target URLs directly instead.
@@ -2334,17 +2308,15 @@ class ArtistProfileService {
         );
       }
 
+      // Always scan the exact target URL passed by this artist profile. The
+      // persisted streaming profile map is keyed only by user + platform, so
+      // reading it here can return another registered artist's profile.
       const scan =
-        preview
-          ? await distributionDataTransferService.scanReleasesFromProfileUrl(
-              platformId,
-              profileUrl,
-              artistName,
-            )
-          : await distributionDataTransferService.scanReleasesFromProfile(
-              userId,
-              platformId,
-            );
+        await distributionDataTransferService.scanReleasesFromProfileUrl(
+          platformId,
+          profileUrl,
+          artistName,
+        );
       const releases = scan.releases;
 
       if (releases.length === 0) {
@@ -2430,7 +2402,7 @@ class ArtistProfileService {
     const normalizeUrl = (value: string) =>
       value.trim().replace(/\/+$/, "").split("?")[0];
 
-    if (!linked || normalizeUrl(linked.profileUrl) !== normalizeUrl(profileUrl)) {
+    if (!linked) {
       await distributionDataTransferService.linkStreamingProfile(
         userId,
         platformId,
@@ -2440,6 +2412,14 @@ class ArtistProfileService {
           imageUrl: extra?.imageUrl ?? undefined,
           genres: extra?.genres,
         },
+      );
+      return;
+    }
+
+    if (normalizeUrl(linked.profileUrl) !== normalizeUrl(profileUrl)) {
+      logger.info(
+        `[ArtistProfile] Keeping existing ${platformId} streaming link; ` +
+          `auto-discover target is scoped to artist "${artistName}"`,
       );
     }
   }
