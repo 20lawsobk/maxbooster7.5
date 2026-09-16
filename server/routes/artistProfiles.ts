@@ -8,6 +8,10 @@ import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import { requireUUIDParam } from "../middleware/requestValidation.js";
 import { toolostService } from "../services/toolost-service.js";
+import {
+  distributionDataTransferService,
+  DuplicateCatalogReleaseError,
+} from "../services/distributionDataTransferService.js";
 import { storage } from "../storage.js";
 
 const router = Router();
@@ -949,7 +953,10 @@ router.get(
 const distributeCatalogReleaseSchema = z.object({
   sourceReleaseId: z.string().min(1).optional(),
   title: z.string().min(1),
-  releaseType: z.enum(["single", "EP", "album"]).default("single"),
+  releaseType: z
+    .enum(["single", "EP", "ep", "album"])
+    .transform((value) => (value === "ep" ? "EP" : value))
+    .default("single"),
   releaseDate: z.string().optional(),
   upc: z.string().optional(),
   coverUrl: z.string().url().optional(),
@@ -982,114 +989,56 @@ router.post(
 
       const data = distributeCatalogReleaseSchema?.parse(req.body);
 
-      const existingReleases = await storage.getDistroReleasesByArtist(
-        req.user!.id,
-      );
-      const normalize = (value: unknown) =>
-        String(value ?? "")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "");
-      const existing = existingReleases.find((candidate) => {
-        const metadata = (candidate.metadata || {}) as Record<string, unknown>;
-        if (
-          data.sourceReleaseId &&
-          metadata.sourceReleaseId === data.sourceReleaseId
-        ) {
-          return true;
-        }
-        if (data.upc && metadata.upc === data.upc) return true;
-        return (
-          normalize(candidate.title) === normalize(data.title) &&
-          normalize(metadata.artistName) === normalize(profile.artistName)
+      const importResult =
+        await distributionDataTransferService.importCatalogRelease(
+          req.user!.id,
+          data.platforms?.[0] || "toolost_catalog",
+          profile.artistName,
+          {
+            sourceReleaseId: data.sourceReleaseId,
+            title: data.title,
+            releaseType: data.releaseType,
+            releaseDate: data.releaseDate,
+            upc: data.upc,
+            coverUrl: data.coverUrl,
+            genre: data.genre,
+            platforms: data.platforms,
+            tracks: data.tracks?.map((track, index) => ({
+              title: track.title,
+              isrc: track.isrc,
+              trackNumber: track.trackNumber ?? index + 1,
+              duration: track.duration,
+            })),
+            metadata: {
+              artistName: profile.artistName,
+              releaseType: data.releaseType,
+              primaryGenre: data.genre ?? "",
+              upc: data.upc ?? null,
+              source: "catalog_import",
+              sourceReleaseId: data.sourceReleaseId ?? null,
+              spotifyArtistId: profile.spotifyArtistId ?? null,
+              appleArtistId: profile.appleArtistId ?? null,
+              deezerArtistId: profile.deezerArtistId ?? null,
+              youtubeChannelId: profile.youtubeChannelId ?? null,
+            },
+          },
         );
-      });
-
-      const existingMetadata = (existing?.metadata || {}) as Record<
-        string,
-        unknown
-      >;
-      const coverUrl =
-        data.coverUrl ||
-        (typeof existingMetadata.coverUrl === "string"
-          ? existingMetadata.coverUrl
-          : null);
-      const distributionPlatforms = Array.from(
-        new Set([
-          ...(Array.isArray(existingMetadata.distributionPlatforms)
-            ? (existingMetadata.distributionPlatforms as unknown[]).map(String)
-            : []),
-          ...(Array.isArray(existingMetadata.platforms)
-            ? (existingMetadata.platforms as unknown[]).map(String)
-            : []),
-          ...(data.platforms ?? []),
-        ]),
-      ).filter(Boolean);
-      const metadata = {
-        ...existingMetadata,
-        artistName: profile.artistName,
-        releaseType: data.releaseType,
-        primaryGenre: data.genre ?? existingMetadata.primaryGenre ?? "",
-        upc: data.upc ?? existingMetadata.upc ?? null,
-        coverUrl,
-        coverArtUrl: coverUrl,
-        distributionPlatforms,
-        platforms: distributionPlatforms,
-        selectedPlatforms: data.platforms ?? existingMetadata.selectedPlatforms ?? [],
-        tracks:
-          data.tracks && data.tracks.length > 0
-            ? data.tracks.map((t, idx) => ({
-                title: t.title,
-                isrc: t.isrc ?? null,
-                trackNumber: t.trackNumber ?? idx + 1,
-                duration: t.duration ?? null,
-              }))
-            : existingMetadata.tracks ?? [],
-        source: "catalog_import",
-        ...(data.sourceReleaseId
-          ? { sourceReleaseId: data.sourceReleaseId }
-          : {}),
-        // Pre-fill artist platform IDs gathered by the sync system so the
-        // distributor routes the release to the correct existing profiles.
-        spotifyArtistId: profile.spotifyArtistId ?? null,
-        appleArtistId: profile.appleArtistId ?? null,
-        deezerArtistId: profile.deezerArtistId ?? null,
-      };
-
-      const release = existing
-        ? await storage.updateDistroRelease(existing.id, {
-            title: data.title,
-            releaseDate: data.releaseDate
-              ? new Date(data.releaseDate)
-              : existing.releaseDate,
-            artworkUrl: existing.artworkUrl || coverUrl,
-            metadata,
-          })
-        : await storage.createDistroRelease({
-            artistId: req.user!.id,
-            title: data.title,
-            releaseDate: data.releaseDate ? new Date(data.releaseDate) : null,
-            artworkUrl: coverUrl,
-            metadata,
-          });
-      if (!release) {
-        return res.status(409).json({ error: "Release could not be saved" });
-      }
 
       logger.info(
-        `[ArtistProfiles] Catalog release imported: profile=${(req.params.id as string)} release=${release.id} title="${data.title}"`,
+        `[ArtistProfiles] Catalog release imported: profile=${(req.params.id as string)} release=${importResult.releaseId} title="${data.title}"`,
       );
       res.json({
-        releaseId: release.id,
-        title: release.title,
-        status: "draft",
+        releaseId: importResult.releaseId,
+        title: importResult.title,
+        status: importResult.status,
       });
     } catch (err) {
       if (err instanceof z.ZodError)
         return res
           .status(400)
           .json({ error: "Invalid release data", details: err.issues });
+      if (err instanceof DuplicateCatalogReleaseError)
+        return res.status(409).json({ error: err.message });
       logger.warn(
         { err },
         "[ArtistProfiles] POST /:id/distribute-release error:",

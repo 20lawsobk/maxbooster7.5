@@ -2,11 +2,27 @@ import { storage } from "../storage";
 import { logger } from "../logger";
 import { z } from "zod";
 import { createHash } from "crypto";
+import { distroReleases, distroTracks } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import {
   CircuitBreaker,
   CircuitBreakerRegistry,
 } from "../services/circuitBreaker";
 import { DISTRIBUTION_PLATFORMS } from "../seed/distributionPlatforms.js";
+import { withCatalogImportLock } from "./catalogImportLock.js";
+import {
+  normalizeArtistNameForIdentity,
+  normalizeReleaseTitleForIdentity,
+  normalizeIdentityValue,
+  normalizedUpc,
+  releaseArtistTitleKey,
+  mergeTrackMetadata,
+  findExistingReleaseAcrossTables,
+  buildCrossTableBackfillPatch,
+  syncDistroTrackRows,
+  type CrossTableReleaseMatch,
+} from "./releaseIdentity.js";
+import { releases as legacyReleasesTable } from "@shared/schema";
 
 // ── Timeout-guarded fetch: adds a 15s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -19,22 +35,21 @@ const timedFetch = (
 // Catalog fallbacks are only safe when the provider returns the exact
 // registered artist name. A "best" fuzzy/name-popularity match can silently
 // import another artist with the same or a similar name.
-const normalizeArtistNameForIdentity = (value: unknown): string =>
-  String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s+(?:feat\.?|ft\.?|featuring)\b.*/i, "")
-    .replace(/\s*\([^)]{0,45}\)\s*/g, " ")
-    .replace(/[^a-z0-9]/g, "");
+// normalizeArtistNameForIdentity, normalizeReleaseTitleForIdentity,
+// normalizeIdentityValue, normalizedUpc, releaseArtistTitleKey, and
+// mergeTrackMetadata now live in ./releaseIdentity.js — shared with
+// catalogImporter.ts so both catalog-import entry points agree on identity
+// matching instead of carrying two divergent implementations.
 
-const normalizeReleaseTitleForIdentity = (value: unknown): string =>
-  String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s*-\s*(?:single|ep|album)\s*$/i, "")
-    .replace(/[^a-z0-9]/g, "");
+const uniqueStrings = (values: unknown[]): string[] =>
+  Array.from(
+    new Set(
+      values
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  );
 
 export const SUPPORTED_DISTRIBUTORS = [
   {
@@ -310,6 +325,8 @@ export interface ImportedRelease {
   label?: string;
   tracks: ImportedTrack[];
   platformLinks?: Record<string, string>;
+  platforms?: string[];
+  coverUrl?: string;
   originalDistributor: string;
   streamingStats?: {
     totalStreams?: number;
@@ -370,6 +387,7 @@ export interface ScannedRelease {
     isrc?: string;
     duration?: number;
   }>;
+  streamingStats?: ImportedRelease["streamingStats"];
 }
 
 export interface CatalogScanCoverage {
@@ -454,6 +472,19 @@ const importedReleaseSchema = z.object({
   originalDistributor: z.string(),
 });
 
+
+/**
+ * Thrown when a single-release import target already exists in the legacy
+ * `releases` table. There is no cross-table merge path, so the caller must
+ * surface a clear conflict rather than silently creating a second copy of
+ * the same real-world release in `distro_releases`.
+ */
+export class DuplicateCatalogReleaseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DuplicateCatalogReleaseError";
+  }
+}
 
 class DistributionDataTransferService {
   private jobs: Map<string, DataTransferJob> = new Map();
@@ -769,6 +800,15 @@ class DistributionDataTransferService {
     for (const [key, value] of Object.entries(mapping)) {
       columnIndices[key] = findColumnIndex(value);
     }
+    const optionalColumnIndices = {
+      coverUrl: ["cover_url", "cover art url", "artwork_url", "artwork"],
+      platforms: ["platforms", "platform", "dsp", "stores"],
+    };
+    for (const [key, candidates] of Object.entries(optionalColumnIndices)) {
+      columnIndices[key] = candidates
+        .map((candidate) => findColumnIndex(candidate))
+        .find((index) => index >= 0) ?? -1;
+    }
 
     const releaseMap = new Map<string, ImportedRelease>();
 
@@ -785,10 +825,16 @@ class DistributionDataTransferService {
       const title = getValue("title");
       const artistName = getValue("artist");
       const albumTitle = getValue("album") || title;
+      const coverUrl = getValue("coverUrl") || undefined;
+      const platforms = getValue("platforms")
+        .split(/[|;,]/)
+        .map((platform) => platform.trim())
+        .filter(Boolean);
 
       if (!title || !artistName) continue;
 
-      const releaseKey = `${artistName.toLowerCase()}_${albumTitle.toLowerCase()}`;
+       const upc = getValue("upc");
+       const releaseKey = `${normalizeIdentityValue(artistName)}_${normalizeIdentityValue(albumTitle)}_${upc || "no-upc"}`;
 
       if (!releaseMap.has(releaseKey)) {
         releaseMap.set(releaseKey, {
@@ -796,9 +842,11 @@ class DistributionDataTransferService {
           artistName,
           releaseType: "single",
           releaseDate: getValue("release_date") || null,
-          upc: getValue("upc") || undefined,
+           upc: upc || undefined,
           genre: undefined,
           tracks: [],
+           coverUrl,
+           platforms,
           originalDistributor: distributor,
           streamingStats: {
             totalStreams: 0,
@@ -808,16 +856,31 @@ class DistributionDataTransferService {
       }
 
       const release = releaseMap.get(releaseKey)!;
+      if (!release.coverUrl && coverUrl) release.coverUrl = coverUrl;
+      if (platforms.length) {
+        release.platforms = uniqueStrings([
+          ...(release.platforms ?? []),
+          ...platforms,
+        ]);
+      }
 
-      release.tracks.push({
+       const track = {
         title,
         trackNumber: release.tracks.length + 1,
         isrc: getValue("isrc") || undefined,
         explicit: false,
-      });
+       };
+       const duplicateTrack = release.tracks.some(
+         (existingTrack) =>
+           (track.isrc &&
+             existingTrack.isrc &&
+             track.isrc === existingTrack.isrc) ||
+           (!track.isrc && existingTrack.title === track.title),
+       );
+       if (!duplicateTrack) release.tracks.push(track);
 
       const streams = parseInt(getValue("streams")) || 0;
-      if (release.streamingStats) {
+       if (release.streamingStats && !duplicateTrack) {
         release.streamingStats.totalStreams =
           (release.streamingStats.totalStreams || 0) + streams;
       }
@@ -871,66 +934,122 @@ class DistributionDataTransferService {
       let imported = 0;
       let failed = 0;
 
-      for (const release of releases) {
-        try {
-          const validated = importedReleaseSchema.parse(release);
+      await withCatalogImportLock(userId, async (tx) => {
+        const knownReleases = await tx
+          .select()
+          .from(distroReleases)
+          .where(eq(distroReleases.artistId, userId));
 
-          const existingRelease = await this.findExistingRelease(
-            userId,
-            validated.upc,
-            validated.title,
-            validated.artistName,
-          );
-
-          if (existingRelease) {
-            await this.mergeReleaseData(existingRelease.id, release);
-            logger.info(`[DataTransfer] Merged release: ${release.title}`);
-          } else {
-            await storage.createDistroRelease({
-              artistId: userId,
+        for (const release of releases) {
+          try {
+            const validated = importedReleaseSchema.parse(release);
+            const scanned: ScannedRelease = {
+              id: `${distributor}:${validated.upc || validated.title}`,
+              externalId: `${distributor}:${validated.upc || validated.title}`,
               title: validated.title,
-              releaseDate: validated.releaseDate
-                ? new Date(validated.releaseDate)
-                : null,
-              metadata: {
-                artistName: validated.artistName,
-                releaseType: validated.releaseType,
-                primaryGenre: validated.genre || "Other",
-                language: "en",
-                copyrightYear: new Date().getFullYear(),
-                copyrightOwner: validated.artistName,
-                labelName: validated.label,
-                upc: validated.upc,
-                importedFrom: distributor,
-                originalPlatformLinks: validated.platformLinks,
-                streamingStats: release.streamingStats,
-                isImported: true,
-                importedAt: new Date().toISOString(),
-              },
+              artistName: validated.artistName,
+              releaseType: validated.releaseType,
+              releaseDate: validated.releaseDate ?? null,
+              trackCount: validated.tracks.length,
+              coverUrl: release.coverUrl,
+              platformUrl: release.platformLinks?.[distributor],
+              platformId: distributor,
+              upc: validated.upc,
+              genre: validated.genre,
+              platforms: release.platforms ?? [distributor],
+              tracks: validated.tracks.map((track) => ({
+                title: track.title,
+                trackNumber: track.trackNumber,
+                isrc: track.isrc,
+                duration: track.duration,
+              })),
+              streamingStats: release.streamingStats,
+            };
+            const existing = this.findExistingCatalogRelease(
+              knownReleases,
+              scanned,
+              validated.artistName,
+            );
+
+            // Each release's DB work runs in its own savepoint so one bad
+            // release (e.g. a constraint violation) can't poison the shared
+            // batch transaction — an aborted Postgres transaction fails
+            // every subsequent statement until rollback, which would both
+            // cascade-fail the rest of this loop and roll back releases
+            // already reported to the user as successful when the outer
+            // transaction tries to commit.
+            const outcome = await tx.transaction(async (spTx: any) => {
+              const crossTableMatch = existing
+                ? null
+                : await this.findCrossTableDuplicate(userId, spTx, {
+                    title: scanned.title,
+                    artistName: scanned.artistName,
+                    upc: scanned.upc,
+                  });
+
+              if (crossTableMatch) {
+                await this.backfillLegacyReleaseFromScan(
+                  spTx,
+                  crossTableMatch.id,
+                  {
+                    upc: scanned.upc,
+                    coverUrl: scanned.coverUrl,
+                    platforms: scanned.platforms,
+                    tracks: scanned.tracks,
+                  },
+                );
+                return { skipped: true as const, matchId: crossTableMatch.id };
+              }
+
+              const written = await this.upsertCatalogReleaseInTransaction(
+                spTx,
+                userId,
+                distributor,
+                scanned,
+                existing,
+              );
+              return { skipped: false as const, written };
             });
 
-            logger.info(`[DataTransfer] Imported release: ${release.title}`);
+            if (outcome.skipped) {
+              logger.info(
+                `[DataTransfer] "${release.title}" already exists in catalog (release ${outcome.matchId}) — backfilled any missing cover art/track/platform data`,
+              );
+            } else if (existing) {
+              const index = knownReleases.findIndex(
+                (item: any) => item.id === existing.id,
+              );
+              if (index >= 0) knownReleases[index] = outcome.written;
+              logger.info(`[DataTransfer] Merged release: ${release.title}`);
+            } else {
+              knownReleases.push(outcome.written);
+              logger.info(
+                `[DataTransfer] Imported release: ${release.title}`,
+              );
+            }
+
+            imported++;
+            job.successItems = imported;
+          } catch (err) {
+            failed++;
+            job.failedItems = failed;
+            job.errors.push({
+              item: release.title,
+              error: (err as Error).message || "Unknown error",
+            });
+            logger.warn(
+              { err: err },
+              `[DataTransfer] Failed to import release ${release.title}:`,
+            );
           }
 
-          imported++;
-          job.successItems = imported;
-        } catch (err) {
-          failed++;
-          job.failedItems = failed;
-          job.errors.push({
-            item: release.title,
-            error: (err as Error).message || "Unknown error",
-          });
-          logger.warn(
-            { err: err },
-            `[DataTransfer] Failed to import release ${release.title}:`,
-          );
+          job.processedItems = imported + failed;
+          job.progress = job.totalItems
+            ? Math.round((job.processedItems / job.totalItems) * 100)
+            : 100;
+          job.updatedAt = new Date();
         }
-
-        job.processedItems = imported + failed;
-        job.progress = Math.round((job.processedItems / job.totalItems) * 100);
-        job.updatedAt = new Date();
-      }
+      });
 
       job.status =
         failed === 0 ? "completed" : imported > 0 ? "partial" : "failed";
@@ -968,11 +1087,20 @@ class DistributionDataTransferService {
 
     for (const release of releases) {
       const metadata = (release.metadata || {}) as Record<string, unknown>;
+      const normalizedArtist = artistName
+        ? normalizeArtistNameForIdentity(artistName)
+        : "";
+      const normalizedReleaseArtist = normalizeArtistNameForIdentity(
+        metadata.artistName,
+      );
+      const sameArtist =
+        !normalizedArtist || normalizedArtist === normalizedReleaseArtist;
 
       if (
         upc &&
         typeof metadata.upc === "string" &&
-        metadata.upc.trim() === upc.trim()
+        metadata.upc.trim() === upc.trim() &&
+        sameArtist
       ) {
         return release;
       }
@@ -982,16 +1110,10 @@ class DistributionDataTransferService {
         const normalizedReleaseTitle = normalizeReleaseTitleForIdentity(
           release.title,
         );
-        const normalizedArtist = artistName
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "");
-        const normalizedReleaseArtist = (String(metadata.artistName || ""))
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "");
 
         if (
           normalizedTitle === normalizedReleaseTitle &&
-          normalizedArtist === normalizedReleaseArtist
+          sameArtist
         ) {
           return release;
         }
@@ -999,44 +1121,6 @@ class DistributionDataTransferService {
     }
 
     return null;
-  }
-
-  private async mergeReleaseData(
-    releaseId: string,
-    importedData: ImportedRelease,
-  ): Promise<void> {
-    const release = await storage.getDistroRelease(releaseId);
-    if (!release) return;
-
-    const existingMetadata = release.metadata as Record<string, unknown>;
-
-    const mergedMetadata = {
-      ...existingMetadata,
-      importedFrom: importedData.originalDistributor,
-      mergedAt: new Date().toISOString(),
-      originalPlatformLinks: {
-        ...(existingMetadata.originalPlatformLinks || {}),
-        ...(importedData.platformLinks || {}),
-      },
-      streamingStats: {
-        totalStreams: Math.max(
-          (existingMetadata.streamingStats as any).totalStreams || 0,
-          importedData.streamingStats!.totalStreams || 0,
-        ),
-        platforms: {
-          ...((existingMetadata.streamingStats as any).platforms || {}),
-          ...(importedData.streamingStats!.platforms || {}),
-        },
-      },
-    };
-
-    if (importedData.upc && !existingMetadata.upc) {
-      (mergedMetadata as any).upc = importedData.upc;
-    }
-
-    await storage.updateDistroRelease(releaseId, {
-      metadata: mergedMetadata,
-    });
   }
 
   async linkStreamingProfile(
@@ -3299,6 +3383,7 @@ class DistributionDataTransferService {
     userId: string,
     platformId: string,
     releases: ScannedRelease[],
+    canonicalArtistName?: string,
   ): Promise<{
     platformId: string;
     scanned: number;
@@ -3337,11 +3422,19 @@ class DistributionDataTransferService {
 
     for (const release of releases) {
       try {
+        if (
+          canonicalArtistName &&
+          normalizeArtistNameForIdentity(release.artistName) !==
+            normalizeArtistNameForIdentity(canonicalArtistName)
+        ) {
+          failed++;
+          continue;
+        }
         const existing = await this.findExistingRelease(
           userId,
           release.upc,
           release.title,
-          release.artistName,
+          canonicalArtistName || release.artistName,
         );
         const match = existing ? "existing" : "new";
         if (existing) existingReleases++;
@@ -3382,44 +3475,85 @@ class DistributionDataTransferService {
     userId: string,
     platformId: string,
     releases: ScannedRelease[],
+    canonicalArtistName?: string,
   ): Promise<DataTransferJob> {
     // A provider can return the same release more than once (for example
     // separate editions or a repeated page item). Collapse the request before
     // writing so one import request cannot create duplicate local releases.
-    const uniqueReleases = new Map<string, ScannedRelease>();
+    //
+    // Match by UPC when both sides have one, and by artist + title when either
+    // side is missing a UPC. This lets a second provider enrich an Apple
+    // release that was first seen without a UPC, while not collapsing two
+    // genuinely different releases that have conflicting UPCs.
+    const uniqueReleases: ScannedRelease[] = [];
     for (const release of releases) {
-      const identity = release.upc
-        ? `upc:${release.upc.trim()}`
-        : `title:${normalizeArtistNameForIdentity(release.artistName)}:${normalizeReleaseTitleForIdentity(
-            release.title,
-          )}`;
-      const existing = uniqueReleases.get(identity);
+      // A profile-scoped scan must never import a namesake returned by a
+      // provider fallback. Fail closed for a different normalized artist and
+      // persist the profile's canonical spelling for accepted records.
+      if (
+        canonicalArtistName &&
+        normalizeArtistNameForIdentity(release.artistName) !==
+          normalizeArtistNameForIdentity(canonicalArtistName)
+      ) {
+        logger.warn(
+          `[DataTransfer] Skipping release "${release.title}" from non-canonical artist "${release.artistName}"`,
+        );
+        continue;
+      }
+      const scopedRelease = canonicalArtistName
+        ? { ...release, artistName: canonicalArtistName }
+        : release;
+      const existingIndex = uniqueReleases.findIndex((existing) => {
+        if (
+          existing.id &&
+          scopedRelease.id &&
+          existing.id === scopedRelease.id &&
+          existing.platformId === scopedRelease.platformId
+        ) {
+          return true;
+        }
+        const incomingUpc = normalizedUpc(scopedRelease.upc);
+        const existingUpc = normalizedUpc(existing.upc);
+        if (incomingUpc && existingUpc) return incomingUpc === existingUpc;
+        return (
+          releaseArtistTitleKey(existing.artistName, existing.title) ===
+          releaseArtistTitleKey(scopedRelease.artistName, scopedRelease.title)
+        );
+      });
+      const existing =
+        existingIndex >= 0 ? uniqueReleases[existingIndex] : undefined;
       if (!existing) {
-        uniqueReleases.set(identity, { ...release });
+        uniqueReleases.push({
+          ...scopedRelease,
+          platforms: uniqueStrings([
+            ...(scopedRelease.platforms ?? []),
+            platformId,
+          ]),
+        });
         continue;
       }
 
-      const mergedPlatforms = Array.from(
-        new Set([
+      uniqueReleases[existingIndex] = {
+        ...existing,
+        coverUrl: existing.coverUrl || scopedRelease.coverUrl,
+        platformUrl: existing.platformUrl || scopedRelease.platformUrl,
+        upc: existing.upc || scopedRelease.upc,
+        genre: existing.genre || scopedRelease.genre,
+        trackCount: Math.max(
+          existing.trackCount || 0,
+          scopedRelease.trackCount || 0,
+        ),
+        tracks: mergeTrackMetadata(
+          existing.tracks,
+          scopedRelease.tracks,
+        ) as ScannedRelease["tracks"],
+        platforms: uniqueStrings([
           ...(existing.platforms ?? []),
-          ...(release.platforms ?? []),
+          ...(scopedRelease.platforms ?? []),
           platformId,
         ]),
-      ).filter(Boolean);
-      uniqueReleases.set(identity, {
-        ...existing,
-        coverUrl: existing.coverUrl || release.coverUrl,
-        upc: existing.upc || release.upc,
-        genre: existing.genre || release.genre,
-        trackCount: Math.max(existing.trackCount || 0, release.trackCount || 0),
-        tracks:
-          (release.tracks?.length ?? 0) > (existing.tracks?.length ?? 0)
-            ? release.tracks
-            : existing.tracks,
-        platforms: mergedPlatforms,
-      });
+      };
     }
-    const uniqueReleaseList = Array.from(uniqueReleases.values());
 
     const job = await this.createTransferJob(
       userId,
@@ -3427,148 +3561,106 @@ class DistributionDataTransferService {
       `${platformId}_profile_scan`,
     );
     job.status = "processing";
-    job.totalItems = uniqueReleaseList.length;
+    job.totalItems = uniqueReleases.length;
     job.updatedAt = new Date();
 
     let imported = 0;
     let failed = 0;
 
-    for (const release of uniqueReleaseList) {
-      try {
-        const existing = await this.findExistingRelease(
-          userId,
-          release.upc,
-          release.title,
-          release.artistName,
-        );
+    // The advisory lock and the release reads/writes must use the same
+    // transaction connection. Calling storage.* after acquiring a lock on a
+    // different pooled connection would leave the check-then-insert race
+    // unchanged.
+    await withCatalogImportLock(userId, async (tx) => {
+      const knownReleases = await tx
+        .select()
+        .from(distroReleases)
+        .where(eq(distroReleases.artistId, userId));
 
-        if (existing) {
-          const existingMeta = (existing.metadata || {}) as Record<string, unknown>;
-          const links = {
-            ...(Array.isArray(existingMeta.originalPlatformLinks)
-              ? {}
-              : ((existingMeta.originalPlatformLinks as Record<string, string>) ||
-                {})),
-          };
-          if (release.platformUrl) links[platformId] = release.platformUrl;
-          const distributionPlatforms = Array.from(
-            new Set([
-              ...(Array.isArray(existingMeta.distributionPlatforms)
-                ? (existingMeta.distributionPlatforms as unknown[]).map(String)
-                : []),
-              ...(Array.isArray(existingMeta.platforms)
-                ? (existingMeta.platforms as unknown[]).map(String)
-                : []),
-              ...(release.platforms ?? []),
-              platformId,
-            ]),
-          ).filter(Boolean);
-          const coverUrl =
-            (typeof existingMeta.coverUrl === "string"
-              ? existingMeta.coverUrl
-              : undefined) ||
-            (typeof existingMeta.coverArtUrl === "string"
-              ? existingMeta.coverArtUrl
-              : undefined) ||
-            release.coverUrl;
-          const mergedMeta: Record<string, any> = {
-            ...existingMeta,
-            originalPlatformLinks: links,
-            distributionPlatforms,
-            distributionPlatformLinks: links,
-            platforms: distributionPlatforms,
-          };
-          if (coverUrl) {
-            mergedMeta.coverUrl = coverUrl;
-            mergedMeta.coverArtUrl = coverUrl;
-          }
-          if (!existingMeta.upc && release.upc) mergedMeta.upc = release.upc;
-          if (!existingMeta.primaryGenre && release.genre)
-            mergedMeta.primaryGenre = release.genre;
-          if (
-            release.tracks?.length &&
-            (!existingMeta.tracks || (existingMeta.tracks as any).length === 0)
-          ) {
-            mergedMeta.tracks = release.tracks;
-            mergedMeta.trackCount = release.tracks.length;
-          }
-          await storage.updateDistroRelease(existing.id, {
-            metadata: mergedMeta,
-            ...(existing.artworkUrl || !coverUrl
-              ? {}
-              : { artworkUrl: coverUrl }),
-          });
-          logger.info(
-            `[DataTransfer] Merged existing release from ${platformId}: ${release.title}`,
+      for (const release of uniqueReleases) {
+        try {
+          const existing = this.findExistingCatalogRelease(
+            knownReleases,
+            release,
+            canonicalArtistName,
           );
-        } else {
-          const coverUrl = release.coverUrl || null;
-          const distributionPlatforms = Array.from(
-            new Set([
-              ...(release.platforms ?? []),
+          // Each release's DB work runs in its own savepoint so one bad
+          // release can't poison the shared batch transaction — see the
+          // matching comment in importFromDistributor for why that matters.
+          const outcome = await tx.transaction(async (spTx: any) => {
+            const crossTableMatch = existing
+              ? null
+              : await this.findCrossTableDuplicate(userId, spTx, {
+                  title: release.title,
+                  artistName: canonicalArtistName || release.artistName,
+                  upc: release.upc,
+                });
+
+            if (crossTableMatch) {
+              await this.backfillLegacyReleaseFromScan(
+                spTx,
+                crossTableMatch.id,
+                {
+                  upc: release.upc,
+                  coverUrl: release.coverUrl,
+                  platforms: release.platforms,
+                  tracks: release.tracks,
+                },
+              );
+              return { skipped: true as const, matchId: crossTableMatch.id };
+            }
+
+            const written = await this.upsertCatalogReleaseInTransaction(
+              spTx,
+              userId,
               platformId,
-            ]),
-          ).filter(Boolean);
-          await storage.createDistroRelease({
-            artistId: userId,
-            title: release.title,
-            releaseDate: release.releaseDate
-              ? new Date(release.releaseDate)
-              : null,
-            artworkUrl: coverUrl,
-            metadata: {
-              artistName: release.artistName,
-              releaseType: release.releaseType,
-              primaryGenre: release.genre || "Other",
-              language: "en",
-              copyrightYear: release.releaseDate
-                ? new Date(release.releaseDate).getFullYear()
-                : new Date().getFullYear(),
-              copyrightOwner: release.artistName,
-              upc: release.upc,
-              importedFrom: `${platformId}_profile_scan`,
-              originalPlatformLinks: release.platformUrl
-                ? { [platformId]: release.platformUrl }
-                : {},
-              distributionPlatforms,
-              distributionPlatformLinks: release.platformUrl
-                ? { [platformId]: release.platformUrl }
-                : {},
-              platforms: distributionPlatforms,
-              coverUrl,
-              coverArtUrl: coverUrl,
-              artworkUrl: coverUrl,
-              trackCount: release.trackCount,
-              tracks: release.tracks,
-              isImported: true,
-              importedAt: new Date().toISOString(),
-              scannedExternalId: release.externalId,
-            },
+              release,
+              existing,
+            );
+            return { skipped: false as const, written };
           });
-          logger.info(
-            `[DataTransfer] Imported release from ${platformId} profile: ${release.title}`,
+
+          if (outcome.skipped) {
+            logger.info(
+              `[DataTransfer] "${release.title}" from ${platformId} already exists in catalog (release ${outcome.matchId}) — backfilled any missing cover art/track/platform data`,
+            );
+          } else if (existing) {
+            const index = knownReleases.findIndex(
+              (item: any) => item.id === existing.id,
+            );
+            if (index >= 0) knownReleases[index] = outcome.written;
+            logger.info(
+              `[DataTransfer] Merged existing release from ${platformId}: ${release.title}`,
+            );
+          } else {
+            knownReleases.push(outcome.written);
+            logger.info(
+              `[DataTransfer] Imported release from ${platformId} profile: ${release.title}`,
+            );
+          }
+
+          imported++;
+          job.successItems = imported;
+        } catch (err) {
+          failed++;
+          job.failedItems = failed;
+          job.errors.push({
+            item: release.title,
+            error: (err as Error).message || "Unknown error",
+          });
+          logger.warn(
+            { err: err },
+            `[DataTransfer] Failed to import profile release ${release.title}:`,
           );
         }
 
-        imported++;
-        job.successItems = imported;
-      } catch (err) {
-        failed++;
-        job.failedItems = failed;
-        job.errors.push({
-          item: release.title,
-          error: (err as Error).message || "Unknown error",
-        });
-        logger.warn(
-          { err: err },
-          `[DataTransfer] Failed to import profile release ${release.title}:`,
-        );
+        job.processedItems = imported + failed;
+        job.progress = job.totalItems
+          ? Math.round((job.processedItems / job.totalItems) * 100)
+          : 100;
+        job.updatedAt = new Date();
       }
-
-      job.processedItems = imported + failed;
-      job.progress = Math.round((job.processedItems / job.totalItems) * 100);
-      job.updatedAt = new Date();
-    }
+    });
 
     job.status =
       failed === 0 ? "completed" : imported > 0 ? "partial" : "failed";
@@ -3579,6 +3671,373 @@ class DistributionDataTransferService {
       `[DataTransfer] Profile catalog import ${job.id}: ${imported} imported, ${failed} failed`,
     );
     return job;
+  }
+
+  /**
+   * Import one release from an artist-scoped catalog page. This is the shared
+   * path used by the Too Lost catalog route and the profile sync UI; keeping it
+   * here prevents that route from reintroducing an unlocked check-then-insert.
+   */
+  async importCatalogRelease(
+    userId: string,
+    platformId: string,
+    artistName: string,
+    release: {
+      sourceReleaseId?: string;
+      title: string;
+      releaseType?: ScannedRelease["releaseType"];
+      releaseDate?: string | null;
+      upc?: string | null;
+      coverUrl?: string | null;
+      genre?: string | null;
+      platforms?: string[];
+      tracks?: ScannedRelease["tracks"];
+      metadata?: Record<string, unknown>;
+    },
+  ): Promise<{ releaseId: string; title: string; status: string; release: any }> {
+    const scanned: ScannedRelease = {
+      id: release.sourceReleaseId || `${platformId}:${release.title}`,
+      externalId: release.sourceReleaseId || `${platformId}:${release.title}`,
+      platformId,
+      title: release.title,
+      artistName,
+      releaseType: release.releaseType || "single",
+      releaseDate: release.releaseDate ?? null,
+      trackCount: release.tracks?.length ?? 0,
+      coverUrl: release.coverUrl ?? undefined,
+      upc: release.upc ?? undefined,
+      genre: release.genre ?? undefined,
+      platforms: release.platforms ?? [],
+      tracks: release.tracks,
+    };
+
+    const written = await withCatalogImportLock(userId, async (tx) => {
+      const knownReleases = await tx
+        .select()
+        .from(distroReleases)
+        .where(eq(distroReleases.artistId, userId));
+      const existing = this.findExistingCatalogRelease(
+        knownReleases,
+        scanned,
+        artistName,
+      );
+      if (!existing) {
+        const crossTableMatch = await this.findCrossTableDuplicate(userId, tx, {
+          title: scanned.title,
+          artistName,
+          upc: scanned.upc,
+        });
+        if (crossTableMatch) {
+          // Capture any cover art/track/platform data this request has that
+          // the existing row doesn't, even though the request itself is
+          // rejected as a duplicate rather than creating a second release.
+          await this.backfillLegacyReleaseFromScan(tx, crossTableMatch.id, {
+            upc: scanned.upc,
+            coverUrl: scanned.coverUrl,
+            platforms: scanned.platforms,
+            tracks: scanned.tracks,
+          });
+          throw new DuplicateCatalogReleaseError(
+            `"${scanned.title}" already exists in your catalog.`,
+          );
+        }
+      }
+      return this.upsertCatalogReleaseInTransaction(
+        tx,
+        userId,
+        platformId,
+        scanned,
+        existing,
+        release.metadata,
+      );
+    });
+
+    return {
+      releaseId: written.id,
+      title: written.title,
+      status: written.status || "draft",
+      release: written,
+    };
+  }
+
+  private findExistingCatalogRelease(
+    releases: any[],
+    incoming: ScannedRelease,
+    canonicalArtistName?: string,
+  ): any | null {
+    const incomingArtist = canonicalArtistName || incoming.artistName;
+    const artistKey = normalizeArtistNameForIdentity(incomingArtist);
+    if (!artistKey) return null;
+    const incomingUpc = normalizedUpc(incoming.upc);
+
+    return (
+      releases.find((candidate) => {
+        const metadata = (candidate.metadata || {}) as Record<string, unknown>;
+        if (
+          normalizeArtistNameForIdentity(metadata.artistName) !== artistKey
+        ) {
+          return false;
+        }
+
+        const incomingSourceId = normalizeIdentityValue(incoming.id);
+        const existingSourceId = normalizeIdentityValue(
+          metadata.sourceReleaseId,
+        );
+        if (
+          incomingSourceId &&
+          existingSourceId &&
+          incomingSourceId === existingSourceId
+        ) {
+          return true;
+        }
+
+        const existingUpc = normalizedUpc(metadata.upc);
+        if (incomingUpc && existingUpc) return incomingUpc === existingUpc;
+
+        return (
+          releaseArtistTitleKey(metadata.artistName, candidate.title) ===
+          releaseArtistTitleKey(incomingArtist, incoming.title)
+        );
+      }) || null
+    );
+  }
+
+  /**
+   * `findExistingCatalogRelease` only ever sees `distro_releases` rows. A
+   * release imported earlier through the CSV catalog importer
+   * (catalogImporter.ts) lives in the separate legacy `releases` table and
+   * would otherwise never be found, so the same real-world release could end
+   * up once per table. A hit here means "do not create a second copy" — the
+   * caller backfills any new cover art/track/platform data onto the existing
+   * `releases` row via `backfillLegacyReleaseFromScan` instead of creating a
+   * duplicate `distro_releases` row.
+   */
+  private async findCrossTableDuplicate(
+    userId: string,
+    tx: any,
+    release: { title: string; artistName: string; upc?: string | null },
+  ): Promise<CrossTableReleaseMatch | null> {
+    const match = await findExistingReleaseAcrossTables(
+      userId,
+      {
+        title: release.title,
+        artistName: release.artistName,
+        upc: release.upc ?? undefined,
+      },
+      tx,
+    );
+    return match && match.table === "releases" ? match : null;
+  }
+
+  /**
+   * Backfill gaps on a legacy `releases` row this import matched by identity
+   * (never overwrites data the row already has). There is still no full
+   * cross-table merge — the row keeps living in `releases`, not
+   * `distro_releases` — this only prevents "already exists elsewhere" from
+   * meaning "the newly-scanned cover art/tracks/platform links are discarded".
+   */
+  private async backfillLegacyReleaseFromScan(
+    tx: any,
+    matchId: string,
+    incoming: {
+      upc?: string | null;
+      coverUrl?: string | null;
+      platforms?: string[];
+      tracks?: Array<Record<string, unknown>>;
+    },
+  ): Promise<void> {
+    const [existingRow] = await tx
+      .select()
+      .from(legacyReleasesTable)
+      .where(eq(legacyReleasesTable.id, matchId));
+    if (!existingRow) return;
+
+    const patch = buildCrossTableBackfillPatch(
+      { artworkUrl: existingRow.artworkUrl, metadata: existingRow.metadata },
+      incoming,
+    );
+    if (!patch) return;
+
+    await tx
+      .update(legacyReleasesTable)
+      .set(patch)
+      .where(eq(legacyReleasesTable.id, matchId));
+  }
+
+  private async upsertCatalogReleaseInTransaction(
+    tx: any,
+    userId: string,
+    platformId: string,
+    release: ScannedRelease,
+    existing: any | null,
+    metadataOverrides: Record<string, unknown> = {},
+  ): Promise<any> {
+    const existingMetadata = (existing?.metadata || {}) as Record<
+      string,
+      unknown
+    >;
+    const existingLinks =
+      existingMetadata.originalPlatformLinks &&
+      typeof existingMetadata.originalPlatformLinks === "object" &&
+      !Array.isArray(existingMetadata.originalPlatformLinks)
+        ? (existingMetadata.originalPlatformLinks as Record<string, string>)
+        : existingMetadata.distributionPlatformLinks &&
+            typeof existingMetadata.distributionPlatformLinks === "object" &&
+            !Array.isArray(existingMetadata.distributionPlatformLinks)
+          ? (existingMetadata.distributionPlatformLinks as Record<string, string>)
+          : {};
+    const platformLinks = {
+      ...existingLinks,
+      ...(release.platformUrl ? { [platformId]: release.platformUrl } : {}),
+    };
+    const distributionPlatforms = uniqueStrings([
+      ...(Array.isArray(existingMetadata.distributionPlatforms)
+        ? existingMetadata.distributionPlatforms
+        : []),
+      ...(Array.isArray(existingMetadata.platforms)
+        ? existingMetadata.platforms
+        : []),
+      ...(release.platforms ?? []),
+      platformId,
+    ]);
+    const existingTrackRows = existing
+      ? await tx
+          .select()
+          .from(distroTracks)
+          .where(eq(distroTracks.releaseId, existing.id))
+      : [];
+    const tracks = mergeTrackMetadata(
+      [
+        ...(Array.isArray(existingMetadata.tracks)
+          ? existingMetadata.tracks
+          : []),
+        ...existingTrackRows.map((track: Record<string, unknown>) => ({
+          title: track.title,
+          trackNumber: track.trackNumber,
+          isrc: track.isrc,
+          duration: track.duration,
+        })),
+      ],
+      release.tracks,
+    );
+    const coverUrl =
+      (typeof existing?.artworkUrl === "string" && existing.artworkUrl) ||
+      (typeof existingMetadata.coverUrl === "string" &&
+        existingMetadata.coverUrl) ||
+      (typeof existingMetadata.coverArtUrl === "string" &&
+        existingMetadata.coverArtUrl) ||
+      release.coverUrl ||
+      null;
+    const importedPlatforms = uniqueStrings([
+      ...(Array.isArray(existingMetadata.importedFromPlatforms)
+        ? existingMetadata.importedFromPlatforms
+        : []),
+      platformId,
+    ]);
+    const incomingStreamingStats = release.streamingStats;
+    const existingStreamingStats =
+      existingMetadata.streamingStats &&
+      typeof existingMetadata.streamingStats === "object"
+        ? (existingMetadata.streamingStats as Record<string, unknown>)
+        : {};
+    const mergedStreamingStats = incomingStreamingStats
+      ? {
+          ...existingStreamingStats,
+          ...incomingStreamingStats,
+          platforms: {
+            ...(typeof existingStreamingStats.platforms === "object" &&
+            existingStreamingStats.platforms
+              ? existingStreamingStats.platforms
+              : {}),
+            ...(incomingStreamingStats.platforms ?? {}),
+          },
+          totalStreams: Math.max(
+            Number(existingStreamingStats.totalStreams) || 0,
+            Number(incomingStreamingStats.totalStreams) || 0,
+          ),
+        }
+      : existingMetadata.streamingStats;
+    const artistName =
+      (typeof existingMetadata.artistName === "string" &&
+        existingMetadata.artistName) ||
+      release.artistName;
+    const mergedMetadata: Record<string, unknown> = {
+      ...existingMetadata,
+      ...metadataOverrides,
+      artistName,
+      releaseType:
+        existingMetadata.releaseType || release.releaseType || "single",
+      primaryGenre:
+        existingMetadata.primaryGenre || release.genre || "Other",
+      upc: existingMetadata.upc || release.upc || null,
+      originalPlatformLinks: platformLinks,
+      distributionPlatformLinks: platformLinks,
+      distributionPlatforms,
+      platforms: distributionPlatforms,
+      importedFromPlatforms: importedPlatforms,
+      importedFrom:
+        existingMetadata.importedFrom || `${platformId}_profile_scan`,
+      source: existingMetadata.source || "catalog_import",
+      selectedPlatforms:
+        Array.isArray(existingMetadata.selectedPlatforms) &&
+        existingMetadata.selectedPlatforms.length > 0
+          ? existingMetadata.selectedPlatforms
+          : distributionPlatforms,
+      ...(mergedStreamingStats
+        ? { streamingStats: mergedStreamingStats }
+        : {}),
+      coverUrl,
+      coverArtUrl: coverUrl,
+      artworkUrl: coverUrl,
+      trackCount: Math.max(
+        Number(existingMetadata.trackCount) || 0,
+        release.trackCount || 0,
+        tracks.length,
+      ),
+      tracks,
+      isImported: true,
+      importedAt:
+        (typeof existingMetadata.importedAt === "string" &&
+          existingMetadata.importedAt) ||
+        new Date().toISOString(),
+      ...(release.externalId
+        ? { scannedExternalId: release.externalId }
+        : {}),
+      ...(release.id ? { sourceReleaseId: release.id } : {}),
+    };
+
+    if (existing) {
+      const [updated] = await tx
+        .update(distroReleases)
+        .set({
+          metadata: mergedMetadata,
+          ...(existing.artworkUrl || !coverUrl
+            ? {}
+            : { artworkUrl: coverUrl }),
+          ...(existing.releaseDate || !release.releaseDate
+            ? {}
+            : { releaseDate: new Date(release.releaseDate) }),
+        })
+        .where(eq(distroReleases.id, existing.id))
+        .returning();
+      await syncDistroTrackRows(tx, updated.id, tracks);
+      return updated;
+    }
+
+    const [created] = await tx
+      .insert(distroReleases)
+      .values({
+        artistId: userId,
+        title: release.title,
+        releaseDate: release.releaseDate
+          ? new Date(release.releaseDate)
+          : null,
+        artworkUrl: coverUrl,
+        metadata: mergedMetadata,
+      })
+      .returning();
+    await syncDistroTrackRows(tx, created.id, tracks);
+    return created;
   }
 
   async generateMigrationReport(userId: string): Promise<{
@@ -3599,10 +4058,23 @@ class DistributionDataTransferService {
 
     for (const release of releases) {
       const metadata = release.metadata as Record<string, unknown>;
-      totalTracks += (metadata.tracks as any).length || 1;
-      totalStreams += (metadata.streamingStats as any).totalStreams || 0;
+      totalTracks += Array.isArray(metadata.tracks)
+        ? metadata.tracks.length
+        : 0;
+      totalStreams +=
+        Number(
+          (metadata.streamingStats as Record<string, unknown> | undefined)
+            ?.totalStreams,
+        ) || 0;
 
-      const platformStreams = (metadata.streamingStats as any).platforms || {};
+      const platformStreams =
+        (metadata.streamingStats as Record<string, unknown> | undefined)
+          ?.platforms &&
+        typeof (metadata.streamingStats as Record<string, unknown>).platforms ===
+          "object"
+          ? ((metadata.streamingStats as Record<string, unknown>)
+              .platforms as Record<string, unknown>)
+          : {};
       for (const [platform, stats] of Object.entries(platformStreams)) {
         if (!platformStats[platform]) {
           platformStats[platform] = { releases: 0, streams: 0 };

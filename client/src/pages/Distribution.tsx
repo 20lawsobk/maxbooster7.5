@@ -423,6 +423,19 @@ interface SampleClearancesStats {
   totalFees: number;
 }
 
+function getDistributionQueryErrorMessage(
+  error: unknown,
+  fallback: string,
+): string {
+  if (error && typeof error === "object" && "userMessage" in error) {
+    const userMessage = (error as { userMessage?: unknown }).userMessage;
+    if (typeof userMessage === "string" && userMessage) return userMessage;
+  }
+
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
 interface HyperFollowAnalytics {
   preSavesGrowth: number;
   viewsGrowth: number;
@@ -5560,10 +5573,22 @@ function ARSubmissionsContent() {
     priority: "medium",
   });
 
-  const { data: submissions = [], isLoading } = useQuery<any[]>({
+  const {
+    data: submissions = [],
+    isLoading,
+    isError: submissionsError,
+    error: submissionsQueryError,
+    refetch: refetchSubmissions,
+  } = useQuery<LabelSubmissionItem[]>({
     queryKey: ["/api/label-submissions"],
   });
-  const { data: stats } = useQuery<Partial<LabelSubmissionsStats>>({
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: statsError,
+    error: statsQueryError,
+    refetch: refetchStats,
+  } = useQuery<LabelSubmissionsStats>({
     queryKey: ["/api/label-submissions/stats"],
   });
 
@@ -5622,26 +5647,70 @@ function ARSubmissionsContent() {
 
   return (
     <div className="space-y-6">
+      {statsError && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>
+              Unable to load A&R submission stats:{" "}
+              {getDistributionQueryErrorMessage(
+                statsQueryError,
+                "Please try again.",
+              )}
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => refetchStats()}
+          >
+            Try again
+          </Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           {
             label: "Total Submitted",
-            value: stats.total || 0,
+            value: statsLoading
+              ? "—"
+              : statsError
+                ? "Error"
+                : (stats?.total ?? "—"),
             icon: <Briefcase className="w-5 h-5" />,
           },
           {
             label: "Pending Response",
-            value: stats.pending || 0,
+            value: statsLoading
+              ? "—"
+              : statsError
+                ? "Error"
+                : (stats?.pending ?? "—"),
             icon: <AlertCircle className="w-5 h-5 text-yellow-500" />,
           },
           {
             label: "Accepted",
-            value: stats.accepted || 0,
+            value: statsLoading
+              ? "—"
+              : statsError
+                ? "Error"
+                : (stats?.accepted ?? "—"),
             icon: <CheckCircle className="w-5 h-5 text-green-500" />,
           },
           {
             label: "Conversion Rate",
-            value: `${stats?.conversionRate || 0}%`,
+            value: statsLoading
+              ? "—"
+              : statsError
+                ? "Error"
+                : stats?.conversionRate === undefined
+                  ? "—"
+                  : `${stats.conversionRate}%`,
             icon: <TrendingUp className="w-5 h-5 text-blue-500" />,
           },
         ].map((stat, i) => (
@@ -5832,6 +5901,30 @@ function ARSubmissionsContent() {
                 </div>
               ))}
             </div>
+          ) : submissionsError ? (
+            <div
+              role="alert"
+              className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200"
+            >
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>
+                  Unable to load A&R submissions:{" "}
+                  {getDistributionQueryErrorMessage(
+                    submissionsQueryError,
+                    "Please try again.",
+                  )}
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => refetchSubmissions()}
+              >
+                Try again
+              </Button>
+            </div>
           ) : submissions.length === 0 ? (
             <div className="text-center py-12">
               <Briefcase className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -5928,10 +6021,22 @@ function SampleClearanceContent() {
     notes: "",
   });
 
-  const { data: clearances = [], isLoading } = useQuery<any[]>({
+  const {
+    data: clearances = [],
+    isLoading,
+    isError: clearancesError,
+    error: clearancesQueryError,
+    refetch: refetchClearances,
+  } = useQuery<SampleClearanceItem[]>({
     queryKey: ["/api/sample-clearances"],
   });
-  const { data: stats } = useQuery<Partial<SampleClearancesStats>>({
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: statsError,
+    error: statsQueryError,
+    refetch: refetchStats,
+  } = useQuery<SampleClearancesStats>({
     queryKey: ["/api/sample-clearances/stats"],
   });
 
@@ -5973,28 +6078,75 @@ function SampleClearanceContent() {
 
   return (
     <div className="space-y-6">
+      {statsError && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>
+              Unable to load sample clearance stats:{" "}
+              {getDistributionQueryErrorMessage(
+                statsQueryError,
+                "Please try again.",
+              )}
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => refetchStats()}
+          >
+            Try again
+          </Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Samples", value: stats.total || 0 },
+          {
+            label: "Total Samples",
+            value: statsLoading
+              ? "—"
+              : statsError
+                ? "Error"
+                : (stats?.total ?? "—"),
+          },
           {
             label: "Cleared",
-            value: stats.cleared || 0,
+            value: statsLoading
+              ? "—"
+              : statsError
+                ? "Error"
+                : (stats?.cleared ?? "—"),
             color: "text-green-600",
           },
           {
             label: "Pending",
-            value: stats.pending || 0,
+            value: statsLoading
+              ? "—"
+              : statsError
+                ? "Error"
+                : (stats?.pending ?? "—"),
             color: "text-yellow-600",
           },
           {
             label: "Fees Paid",
-            value: `$${(stats?.totalFees || 0).toLocaleString()}`,
+            value: statsLoading
+              ? "—"
+              : statsError
+                ? "Error"
+                : stats?.totalFees === undefined
+                  ? "—"
+                  : `$${stats.totalFees.toLocaleString()}`,
             color: "text-blue-600",
           },
         ].map((s, i) => (
           <Card key={i}>
             <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold mt-1 {s.color || ''}">
+              <p className={`text-2xl font-bold mt-1 ${s.color || ""}`}>
                 {s.value}
               </p>
               <p className="text-xs text-gray-500">{s.label}</p>
@@ -6192,6 +6344,30 @@ function SampleClearanceContent() {
                   <Skeleton className="h-8 w-28 ml-4" />
                 </div>
               ))}
+            </div>
+          ) : clearancesError ? (
+            <div
+              role="alert"
+              className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200"
+            >
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>
+                  Unable to load sample clearances:{" "}
+                  {getDistributionQueryErrorMessage(
+                    clearancesQueryError,
+                    "Please try again.",
+                  )}
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => refetchClearances()}
+              >
+                Try again
+              </Button>
             </div>
           ) : clearances.length === 0 ? (
             <div className="text-center py-12">

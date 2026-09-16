@@ -17,6 +17,10 @@ AI-Powered Music Career Management Platform (v3.0.0) by B-Lawz Music.
 
 ## How to Run
 
+### Testing account
+
+Use the admin account for all further testing in this project, not Demo Mode. Use authorized access; do not alter real account data or perform destructive or externally consequential actions merely to test a feature.
+
 The main workflow is **"Start application"** — starts Redis then the Express + Vite dev server on port 5000.
 
 ```bash

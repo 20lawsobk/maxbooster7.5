@@ -5855,11 +5855,15 @@ router.post(
         return res.status(400).json({ error: "releases array required" });
       }
 
-      const job = await distributionDataTransferService.importProfileCatalog(
-        userId,
-        platformId,
-        releases,
-      );
+       const linkedProfile = (
+         await distributionDataTransferService.getLinkedProfiles(userId)
+       ).find((profile) => profile.platformId === platformId);
+       const job = await distributionDataTransferService.importProfileCatalog(
+         userId,
+         platformId,
+         releases,
+         linkedProfile?.artistName,
+       );
 
       res.json({
         success: true,

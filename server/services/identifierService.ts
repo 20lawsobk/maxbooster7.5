@@ -179,23 +179,26 @@ class IdentifierService {
     };
   }
 
-  async generateUPC(options: IdentifierGenerationOptions): Promise<string> {
+  async generateUPC(
+    options: IdentifierGenerationOptions,
+    queryDb: any = db,
+  ): Promise<string> {
     try {
       const prefix = "619" + this.generateRandomDigits(8);
       const checkDigit = this.calculateUPCCheckDigit(prefix);
       const upcCode = prefix + checkDigit;
 
-      const existing = await db
+      const existing = await queryDb
         .select()
         .from(upcRegistry)
         .where(eq(upcRegistry.upc, upcCode))
         .limit(1);
 
       if (existing?.length > 0) {
-        return this.generateUPC(options);
+        return this.generateUPC(options, queryDb);
       }
 
-      await db.insert(upcRegistry).values({
+      await queryDb.insert(upcRegistry).values({
         upc: upcCode,
         releaseId: options.releaseId || "pending",
         artistId: options.userId,
@@ -276,6 +279,7 @@ class IdentifierService {
     registrantCode: string = this.defaultRegistrantCode,
     year?: number,
     options?: IdentifierGenerationOptions,
+    queryDb: any = db,
   ): Promise<string> {
     try {
       const cc = countryCode?.toUpperCase();
@@ -283,7 +287,7 @@ class IdentifierService {
       const yr = (year || new Date().getFullYear()).toString().slice(-2);
 
       const prefix = `${cc}${rc}${yr}`;
-      const lastIsrc = await db
+      const lastIsrc = await queryDb
         .select()
         .from(isrcRegistry)
         .where(like(isrcRegistry.isrc, `${prefix}%`))
@@ -305,7 +309,7 @@ class IdentifierService {
       const designation = nextDesignation?.toString().padStart(5, "0");
       const isrcCode = `${cc}${rc}${yr}${designation}`;
 
-      await db.insert(isrcRegistry).values({
+      await queryDb.insert(isrcRegistry).values({
         isrc: isrcCode,
         trackId: options!.trackId || "pending",
         artistId: options!.userId || "system",

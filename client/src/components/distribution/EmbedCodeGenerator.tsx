@@ -713,14 +713,14 @@ export function EmbedCodeGenerator() {
   const artist = selectedRelease?.artistName || "Your Artist";
 
   // Smart link URL — use the release's hyperFollowUrl if available, else build lnk.to
-  const slug = selectedRelease.title
+  const slug = selectedRelease?.title
     ? selectedRelease.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "")
     : "your-release";
   const smartLinkUrl =
-    selectedRelease.hyperFollowUrl || `https://lnk.to/${slug}`;
+    selectedRelease?.hyperFollowUrl || `https://lnk.to/${slug}`;
 
   const htmlSmartLinkButton = `<a
   href="${smartLinkUrl}"

@@ -1,16 +1,23 @@
-// @ts-nocheck
 import { db } from "../db";
 import {
   catalogImportJobs,
   catalogImportRows,
   releases,
-  distroTracks,
+  distroReleases,
 } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { identifierService } from "./identifierService.js";
-import { LabelCopyLinter } from "./labelCopyLinter.js";
 import ExcelJS from "exceljs";
+import { withCatalogImportLock } from "./catalogImportLock.js";
+import {
+  normalizeArtistNameForIdentity,
+  normalizeReleaseTitleForIdentity,
+  findExistingReleaseAcrossTables,
+  buildCrossTableBackfillPatch,
+  syncDistroTrackRows,
+  type CrossTableReleaseMatch,
+} from "./releaseIdentity.js";
 
 export interface ImportRow {
   title: string;
@@ -27,6 +34,8 @@ export interface ImportRow {
   trackNumber?: number;
   duration?: number;
   isExplicit?: boolean;
+  coverUrl?: string;
+  platforms?: string;
   language?: string;
   [key: string]: string | number | boolean | undefined;
 }
@@ -97,16 +106,21 @@ const CSV_COLUMN_MAPPINGS: Record<string, string> = {
   parental_advisory: "isExplicit",
   language_code: "language",
   primary_language: "language",
+  cover_url: "coverUrl",
+  coverurl: "coverUrl",
+  cover_art_url: "coverUrl",
+  coverarturl: "coverUrl",
+  artwork_url: "coverUrl",
+  artworkurl: "coverUrl",
+  artwork: "coverUrl",
+  platforms: "platforms",
+  platform: "platforms",
+  dsp: "platforms",
+  stores: "platforms",
 };
 
 
 class CatalogImporter {
-  private linter: LabelCopyLinter;
-
-  constructor() {
-    this.linter = new LabelCopyLinter();
-  }
-
   async createImportJob(
     userId: string,
     filename: string,
@@ -251,6 +265,15 @@ class CatalogImporter {
     );
     const upcMatch = xmlContent.match(/<ICPN[^>]*>(.*?)<\/ICPN>/s);
 
+    // Simplified single-block cover art lookup: DDEX ERN can reference
+    // several resource URIs (audio files, etc.), so this scopes the URI
+    // search to inside the first <Image>...</Image> block rather than
+    // matching any <URI> in the document.
+    const imageBlockMatch = xmlContent.match(/<Image[^>]*>([\s\S]*?)<\/Image>/);
+    const coverUriMatch = imageBlockMatch
+      ? imageBlockMatch[1].match(/<URI[^>]*>(.*?)<\/URI>/s)
+      : null;
+
     if (releaseMatch) {
       const row: ImportRow = {
         title: releaseMatch[1].trim(),
@@ -261,7 +284,13 @@ class CatalogImporter {
         row.upc = upcMatch[1].trim();
       }
 
-      xmlContent.matchAll(/<ISRC[^>]*>(.*?)<\/ISRC>/gs);
+      if (coverUriMatch) {
+        row.coverUrl = coverUriMatch[1].trim();
+      }
+
+      const isrcMatches = Array.from(
+        xmlContent.matchAll(/<ISRC[^>]*>(.*?)<\/ISRC>/gs),
+      ).map((match) => match[1].trim());
       const trackMatches = xmlContent.matchAll(/<Title[^>]*>(.*?)<\/Title>/gs);
 
       let trackNumber = 1;
@@ -269,8 +298,13 @@ class CatalogImporter {
         const trackRow: ImportRow = {
           ...row,
           trackTitle: trackMatch[1].trim(),
-          trackNumber: trackNumber++,
+          trackNumber: trackNumber,
         };
+        const isrc = isrcMatches[trackNumber - 1];
+        if (isrc) {
+          trackRow.isrc = isrc;
+        }
+        trackNumber++;
         rows.push(trackRow);
       }
 
@@ -407,7 +441,14 @@ class CatalogImporter {
         }
       }
 
-      const identifier = `${row.title || row.trackTitle}|${row.artist}|${row.upc || ""}`;
+      // A release commonly appears once per track in distributor exports.
+      // Include the track identity so valid multi-track rows are not dropped
+      // as duplicate releases; only repeated copies of the same track row are
+      // treated as duplicates.
+      const trackIdentity =
+        row.isrc ||
+        `${row.trackNumber || ""}|${row.trackTitle || ""}`;
+      const identifier = `${row.title || row.trackTitle}|${row.artist}|${row.upc || ""}|${trackIdentity}`;
       if (seenIdentifiers.has(identifier)) {
         duplicates.push(rowNumber);
         warnings.push({
@@ -488,70 +529,121 @@ class CatalogImporter {
 
     const releaseGroups = this.groupRowsByRelease(validation.validRows);
 
-    for (const [releaseKey, releaseRows] of Object.entries(releaseGroups)) {
-      try {
-        const firstRow = releaseRows[0];
+    await withCatalogImportLock(userId, async (tx) => {
+      for (const [releaseKey, releaseRows] of Object.entries(releaseGroups)) {
+        try {
+          const firstRow = releaseRows[0];
 
-        const existingRelease = await this.findExistingRelease(
-          firstRow.title,
-          firstRow.artist,
-          firstRow.upc,
-        );
+          const existingRelease = await this.findExistingRelease(
+            userId,
+            firstRow.title,
+            firstRow.artist,
+            firstRow.upc,
+            tx,
+          );
 
-        if (existingRelease) {
-          result.duplicateRows++;
-          validation.warnings.push({
-            rowNumber: rows.indexOf(firstRow) + 1,
-            field: "release",
-            message: "Release already exists in catalog",
-            suggestion: "Skip or update existing release",
+          if (existingRelease) {
+            result.duplicateRows++;
+            validation.warnings.push({
+              rowNumber: rows.indexOf(firstRow) + 1,
+              field: "release",
+              message:
+                existingRelease.table === "distro_releases"
+                  ? "Release already exists in your distribution catalog"
+                  : "Release already exists in catalog",
+              suggestion: "Skip or update existing release",
+            });
+            if (existingRelease.table === "distro_releases") {
+              // No cross-table merge — the row stays in distro_releases —
+              // but this row group's cover art/track/platform data must not
+              // be silently discarded just because the release already
+              // exists in the other table. Failure here is logged, not
+              // fatal: the row is still correctly reported as a duplicate
+              // either way.
+              try {
+                await tx.transaction((spTx: any) =>
+                  this.backfillDistroReleaseFromRows(
+                    spTx,
+                    existingRelease.id,
+                    releaseRows,
+                  ),
+                );
+              } catch (backfillErr) {
+                logger.warn(
+                  { err: backfillErr },
+                  `[CatalogImporter] Failed to backfill distro release ${existingRelease.id} from row group ${releaseKey}`,
+                );
+              }
+            }
+            result.processedRows += releaseRows.length;
+            if (onProgress) {
+              onProgress({
+                jobId,
+                totalRows: rows.length,
+                processedRows: result.processedRows,
+                percentComplete: Math.round(
+                  (result.processedRows / (rows.length || 1)) * 100,
+                ),
+                currentPhase: "importing",
+              });
+            }
+            continue;
+          }
+
+          // The release, its tracks, and the per-row audit trail must commit
+          // or roll back together. Without this savepoint, a failure partway
+          // through (e.g. the audit-row insert) would still leave the release
+          // committed by the outer transaction while this group is reported
+          // to the user as failed — silently creating a release nobody is
+          // told succeeded.
+          await tx.transaction(async (groupTx: any) => {
+            await this.createReleaseFromRows(userId, releaseRows, groupTx);
+
+            for (const row of releaseRows) {
+              await groupTx.insert(catalogImportRows).values({
+                jobId,
+                trackTitle: row.trackTitle || row.title || "Untitled Track",
+                artistName: row.artist || null,
+                releaseTitle: row.title || null,
+                isrc: row.isrc || null,
+                upc: row.upc || null,
+                status: "success",
+                rawData: row,
+              });
+            }
           });
-          continue;
+          result.successfulRows += releaseRows.length;
+        } catch (error) {
+          result.failedRows += releaseRows.length;
+          logger.warn(
+            { err: error },
+            `Error importing release group ${releaseKey}:`,
+          );
+
+          for (const row of releaseRows) {
+            result.errors.push({
+              rowNumber: rows.indexOf(row) + 1,
+              field: "import",
+              message: error instanceof Error ? error.message : "Import failed",
+            });
+          }
         }
 
-        const releaseId = await this.createReleaseFromRows(userId, releaseRows);
-        result.successfulRows += releaseRows.length;
+        result.processedRows += releaseRows.length;
 
-        for (const row of releaseRows) {
-          await db.insert(catalogImportRows).values({
+        if (onProgress) {
+          onProgress({
             jobId,
-            rowNumber: rows.indexOf(row) + 1,
-            rawData: row,
-            parsedData: row,
-            releaseId,
-            status: "success",
-          });
-        }
-      } catch (error) {
-        result.failedRows += releaseRows.length;
-        logger.warn(
-          { err: error },
-          `Error importing release group ${releaseKey}:`,
-        );
-
-        for (const row of releaseRows) {
-          result.errors.push({
-            rowNumber: rows.indexOf(row) + 1,
-            field: "import",
-            message: error instanceof Error ? error.message : "Import failed",
+            totalRows: rows.length,
+            processedRows: result.processedRows,
+            percentComplete: Math.round(
+              (result.processedRows / (rows.length || 1)) * 100,
+            ),
+            currentPhase: "importing",
           });
         }
       }
-
-      result.processedRows += releaseRows.length;
-
-      if (onProgress) {
-        onProgress({
-          jobId,
-          totalRows: rows.length,
-          processedRows: result.processedRows,
-          percentComplete: Math.round(
-            (result.processedRows / (rows.length || 1)) * 100,
-          ),
-          currentPhase: "importing",
-        });
-      }
-    }
+    });
 
     result.status = result.failedRows === rows.length ? "failed" : "completed";
 
@@ -577,7 +669,26 @@ class CatalogImporter {
     const groups: Record<string, ImportRow[]> = {};
 
     for (const row of rows) {
-      const key = `${row.title || "untitled"}|${row.artist}|${row.upc || "no-upc"}`;
+      const base = `${normalizeReleaseTitleForIdentity(row.title || "untitled")}|${normalizeArtistNameForIdentity(row.artist)}`;
+      const candidates = Object.keys(groups).filter((key) =>
+        key.startsWith(`${base}|`),
+      );
+      const matchingUpc = row.upc
+        ? candidates.find((key) =>
+            groups[key].some(
+              (candidate) => candidate.upc && candidate.upc === row.upc,
+            ),
+          )
+        : undefined;
+      const missingUpc = candidates.find((key) =>
+        groups[key].every((candidate) => !candidate.upc),
+      );
+      const key =
+        matchingUpc ||
+        missingUpc ||
+        (!row.upc && candidates.length === 1
+          ? candidates[0]
+          : `${base}|${row.upc || "no-upc"}`);
       if (!groups[key]) {
         groups[key] = [];
       }
@@ -587,87 +698,178 @@ class CatalogImporter {
     return groups;
   }
 
+  /**
+   * Checks BOTH the legacy `releases` table (this importer's own table) and
+   * `distro_releases` (written by profile auto-sync / Too Lost catalog
+   * import) so the same real-world release can't end up once per table.
+   * A match in either table is reported as existing; only a `releases` hit
+   * is something this importer can enrich in place, since there's no
+   * cross-table update path.
+   */
   private async findExistingRelease(
+    userId: string,
     title: string,
     artist: string,
-    upc?: string,
-  ): Promise<any | null> {
-    if (upc) {
-      const byUpc = await db
-        .select()
-        .from(releases)
-        .where(eq(releases.upc, upc))
-        .limit(1);
-
-      if (byUpc.length > 0) {
-        return byUpc[0];
-      }
-    }
-
-    const byTitleArtist = await db
-      .select()
-      .from(releases)
-      .where(and(eq(releases.title, title), eq(releases.artist, artist)))
-      .limit(1);
-
-    return byTitleArtist.length > 0 ? byTitleArtist[0] : null;
+    upc: string | undefined,
+    queryDb: any = db,
+  ): Promise<CrossTableReleaseMatch | null> {
+    return findExistingReleaseAcrossTables(
+      userId,
+      { title, artistName: artist, upc },
+      queryDb,
+    );
   }
 
   private async createReleaseFromRows(
     userId: string,
     rows: ImportRow[],
+    queryDb: any = db,
   ): Promise<string> {
     const firstRow = rows[0];
 
     let upc = firstRow.upc;
     if (!upc) {
-      upc = await identifierService.generateUPC({ userId });
+      upc = await identifierService.generateUPC({ userId }, queryDb);
     }
 
-    const [release] = await db
+    // Track rows live in `releases.metadata.tracks`, not the `distro_tracks`
+    // table. Every reader of `distro_tracks` looks rows up by a
+    // `distro_releases.id`; this legacy `releases` table never produces one,
+    // so rows previously written there under a `releases.id` were permanently
+    // orphaned (never read back by anything). Persisting full track data
+    // (including the explicit flag, which was previously dropped entirely)
+    // on the release's own metadata mirrors the pattern already used for
+    // `distro_releases` and is the only place any reader of this table can
+    // actually see it.
+    const trackRows = rows.filter(
+      (row) => row.trackTitle || rows.length === 1,
+    );
+    const tracks: Array<Record<string, unknown>> = [];
+    for (let i = 0; i < trackRows.length; i++) {
+      const row = trackRows[i];
+      let isrc = row.isrc;
+      if (!isrc) {
+        isrc = await identifierService.generateISRC(
+          "US",
+          "MXB",
+          undefined,
+          { userId },
+          queryDb,
+        );
+      }
+      tracks.push({
+        title: row.trackTitle || row.title || "Untitled Track",
+        trackNumber: row.trackNumber || i + 1,
+        isrc,
+        duration: row.duration,
+        explicit: Boolean(row.isExplicit),
+      });
+    }
+
+    const [release] = await queryDb
       .insert(releases)
       .values({
         userId,
         title: firstRow.title || "Untitled Release",
-        artist: firstRow.artist,
         upc,
         status: "draft",
         releaseDate: firstRow.releaseDate
           ? new Date(firstRow.releaseDate)
           : null,
+        artworkUrl: firstRow.coverUrl || null,
         metadata: {
+          artistName: firstRow.artist,
           genre: firstRow.genre,
           label: firstRow.label,
           copyrightHolder: firstRow.copyrightHolder,
           copyrightYear: firstRow.copyrightYear,
           language: firstRow.language,
+          coverUrl: firstRow.coverUrl || null,
+          coverArtUrl: firstRow.coverUrl || null,
+          distributionPlatforms: firstRow.platforms
+            ? firstRow.platforms
+                .split(/[|;,]/)
+                .map((platform) => platform.trim())
+                .filter(Boolean)
+            : [],
+          platforms: firstRow.platforms
+            ? firstRow.platforms
+                .split(/[|;,]/)
+                .map((platform) => platform.trim())
+                .filter(Boolean)
+            : [],
           isExplicit: firstRow.isExplicit,
+          tracks,
           importedAt: new Date(),
         },
       })
       .returning();
 
-    for (const row of rows) {
-      if (row.trackTitle || rows.length === 1) {
-        let isrc = row.isrc;
-        if (!isrc) {
-          isrc = await identifierService.generateISRC("US", "MXB", undefined, {
-            userId,
-          });
-        }
-
-        await db.insert(distroTracks).values({
-          releaseId: release.id,
-          title: row.trackTitle || row.title || "Untitled Track",
-          trackNumber: row.trackNumber || 1,
-          isrc,
-          duration: row.duration,
-          explicit: row.isExplicit || false,
-        });
-      }
-    }
-
     return release.id;
+  }
+
+  /**
+   * Backfill gaps on a `distro_releases` row this CSV/DDEX row group matched
+   * by identity (never overwrites data the row already has). Mirrors
+   * `createReleaseFromRows`'s platform/track parsing so the two paths agree
+   * on shape, minus ISRC minting — this is a supplementary enrichment of an
+   * already-existing release, not the primary creation path, so a track
+   * without a source ISRC just merges by track number instead of consuming
+   * a freshly-issued one.
+   */
+  private async backfillDistroReleaseFromRows(
+    tx: any,
+    matchId: string,
+    rows: ImportRow[],
+  ): Promise<void> {
+    const firstRow = rows[0];
+    const [existingRow] = await tx
+      .select()
+      .from(distroReleases)
+      .where(eq(distroReleases.id, matchId));
+    if (!existingRow) return;
+
+    const trackRows = rows.filter(
+      (row) => row.trackTitle || rows.length === 1,
+    );
+    const tracks = trackRows.map((row, i) => ({
+      title: row.trackTitle || row.title || "Untitled Track",
+      trackNumber: row.trackNumber || i + 1,
+      isrc: row.isrc || undefined,
+      duration: row.duration,
+      explicit: Boolean(row.isExplicit),
+    }));
+    const platforms = firstRow.platforms
+      ? firstRow.platforms
+          .split(/[|;,]/)
+          .map((platform) => platform.trim())
+          .filter(Boolean)
+      : [];
+
+    const patch = buildCrossTableBackfillPatch(
+      { artworkUrl: existingRow.artworkUrl, metadata: existingRow.metadata },
+      {
+        upc: firstRow.upc,
+        coverUrl: firstRow.coverUrl,
+        platforms,
+        tracks,
+      },
+    );
+    if (!patch) return;
+
+    const [updated] = await tx
+      .update(distroReleases)
+      .set(patch)
+      .where(eq(distroReleases.id, matchId))
+      .returning();
+
+    if (Array.isArray(patch.metadata.tracks)) {
+      await syncDistroTrackRows(
+        tx,
+        updated.id,
+        patch.metadata.tracks as Array<Record<string, unknown>>,
+      );
+    }
   }
 
   async getImportJob(jobId: string): Promise<any | null> {

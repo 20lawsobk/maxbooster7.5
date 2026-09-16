@@ -2,6 +2,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  displayDate,
+  displayValue,
+  extractDistributionRows,
+  type DmcaStrikeRow,
+  type RoyaltyDisputeRow,
+} from "./takedownData";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -31,124 +38,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Trash2, Plus, Search, CheckCircle, XCircle, AlertCircle, Clock, RefreshCw, FileText, Shield, AlertTriangle, Send, Flag, Scale, Upload, Eye, RotateCcw, Ban, Gavel } from "lucide-react";
 import {
-  SpotifyIcon,
-  AppleMusicIcon,
-  YouTubeIcon,
-  AmazonIcon,
-  TidalIcon,
-  SoundCloudIcon,
-  TikTokIcon,
-} from "@/components/ui/brand-icons";
-
-interface TakedownRequest {
-  id: string;
-  releaseId: string;
-  releaseTitle: string;
-  artistName: string;
-  reason:
-    | "artist_request"
-    | "copyright"
-    | "legal"
-    | "licensing"
-    | "duplicate"
-    | "quality"
-    | "other";
-  description: string;
-  platforms: string[];
-  status:
-    | "pending"
-    | "processing"
-    | "completed"
-    | "partial"
-    | "failed"
-    | "cancelled";
-  progress: number;
-  platformStatuses: {
-    platform: string;
-    status: "pending" | "completed" | "failed";
-    completedAt?: string;
-    error?: string;
-  }[];
-  requestedAt: string;
-  completedAt?: string;
-  estimatedCompletion?: string;
-}
-
-interface CopyrightClaim {
-  id: string;
-  releaseId: string;
-  releaseTitle: string;
-  trackTitle: string;
-  platform: string;
-  claimType: "audio" | "composition" | "both";
-  claimant: string;
-  claimantType: "label" | "publisher" | "artist" | "distributor" | "other";
-  status: "active" | "disputed" | "resolved" | "released";
-  impact: "monetized" | "blocked" | "tracked" | "none";
-  claimedAt: string;
-  disputeDeadline?: string;
-  revenue?: {
-    claimed: number;
-    released: number;
-  };
-}
-
-interface Dispute {
-  id: string;
-  claimId: string;
-  releaseTitle: string;
-  trackTitle: string;
-  platform: string;
-  reason:
-    | "fair_use"
-    | "license"
-    | "original"
-    | "public_domain"
-    | "permission"
-    | "other";
-  explanation: string;
-  supportingDocs: string[];
-  status: "submitted" | "under_review" | "escalated" | "approved" | "rejected";
-  submittedAt: string;
-  lastUpdateAt: string;
-  resolution?: string;
-}
-
-interface ReinstatementRequest {
-  id: string;
-  takedownId: string;
-  releaseTitle: string;
-  platforms: string[];
-  reason: string;
-  status: "pending" | "approved" | "rejected" | "processing" | "completed";
-  requestedAt: string;
-  processedAt?: string;
-}
-
-const PLATFORM_ICONS: Record<string, React.ElementType> = {
-  spotify: SpotifyIcon,
-  "apple-music": AppleMusicIcon,
-  "youtube-music": YouTubeIcon,
-  "amazon-music": AmazonIcon,
-  tidal: TidalIcon,
-  soundcloud: SoundCloudIcon,
-  tiktok: TikTokIcon,
-};
-
-const TAKEDOWN_REASONS = [
-  { value: "artist_request", label: "Artist Request" },
-  { value: "copyright", label: "Copyright Issue" },
-  { value: "legal", label: "Legal Requirement" },
-  { value: "licensing", label: "Licensing Expired" },
-  { value: "duplicate", label: "Duplicate Release" },
-  { value: "quality", label: "Quality Issues" },
-  { value: "other", label: "Other" },
-];
+  Trash2,
+  Search,
+  AlertCircle,
+  RefreshCw,
+  Shield,
+  AlertTriangle,
+  Send,
+  Flag,
+  Scale,
+  Upload,
+  RotateCcw,
+  Gavel,
+} from "lucide-react";
 
 const DISPUTE_REASONS = [
   { value: "fair_use", label: "Fair Use" },
@@ -162,23 +67,12 @@ const DISPUTE_REASONS = [
 export function TakedownManager() {
   const [activeTab, setActiveTab] = useState("takedowns");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isNewTakedownOpen, setIsNewTakedownOpen] = useState(false);
   const [isNewDisputeOpen, setIsNewDisputeOpen] = useState(false);
-  const [isReinstatementOpen, setIsReinstatementOpen] = useState(false);
-  const [selectedTakedown, setSelectedTakedown] =
-    useState<TakedownRequest | null>(null);
-  const [selectedClaim, setSelectedClaim] = useState<CopyrightClaim | null>(
+  const [selectedClaim, setSelectedClaim] = useState<DmcaStrikeRow | null>(
     null,
   );
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const [newTakedown, setNewTakedown] = useState({
-    releaseId: "",
-    reason: "artist_request",
-    description: "",
-    platforms: ["spotify", "apple-music", "youtube-music"],
-  });
 
   const [newDispute, setNewDispute] = useState({
     claimId: "",
@@ -187,62 +81,34 @@ export function TakedownManager() {
     supportingDocs: [] as string[],
   });
 
-  const { data: takedowns = [] } = useQuery<
-    TakedownRequest[]
-  >({
+  const takedownsQuery = useQuery({
     queryKey: ["/api/distribution/takedowns"],
+    select: (response: unknown) =>
+      extractDistributionRows<DmcaStrikeRow>(response, "takedowns"),
   });
 
-  const { data: claims = [] } = useQuery<
-    CopyrightClaim[]
-  >({
+  const claimsQuery = useQuery({
     queryKey: ["/api/distribution/claims"],
+    select: (response: unknown) =>
+      extractDistributionRows<DmcaStrikeRow>(response, "claims"),
   });
 
-  const { data: disputes = [] } = useQuery<
-    Dispute[]
-  >({
+  const disputesQuery = useQuery({
     queryKey: ["/api/distribution/disputes"],
+    select: (response: unknown) =>
+      extractDistributionRows<RoyaltyDisputeRow>(response, "disputes"),
   });
 
-  const { data: reinstatements = [] } =
-    useQuery<ReinstatementRequest[]>({
-      queryKey: ["/api/distribution/reinstatements"],
-    });
-
-  const submitTakedownMutation = useMutation({
-    mutationFn: async (data: typeof newTakedown) => {
-      const response = await apiRequest(
-        "POST",
-        "/api/distribution/takedowns",
-        data,
-      );
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/distribution/takedowns"],
-      });
-      setIsNewTakedownOpen(false);
-      setNewTakedown({
-        releaseId: "",
-        reason: "artist_request",
-        description: "",
-        platforms: ["spotify", "apple-music", "youtube-music"],
-      });
-      toast({
-        title: "Takedown Requested",
-        description: "Your takedown request has been submitted",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Request Failed",
-        description: "Unable to submit takedown request",
-        variant: "destructive",
-      });
-    },
+  const reinstatementsQuery = useQuery({
+    queryKey: ["/api/distribution/reinstatements"],
+    select: (response: unknown) =>
+      extractDistributionRows<DmcaStrikeRow>(response, "reinstatements"),
   });
+
+  const takedowns = takedownsQuery.data ?? [];
+  const claims = claimsQuery.data ?? [];
+  const disputes = disputesQuery.data ?? [];
+  const reinstatements = reinstatementsQuery.data ?? [];
 
   const submitDisputeMutation = useMutation({
     mutationFn: async (data: typeof newDispute) => {
@@ -273,153 +139,107 @@ export function TakedownManager() {
     },
   });
 
-  const requestReinstatementMutation = useMutation({
-    mutationFn: async ({
-      takedownId,
-      reason,
-    }: {
-      takedownId: string;
-      reason: string;
-    }) => {
-      const response = await apiRequest(
-        "POST",
-        "/api/distribution/reinstatements",
-        {
-          takedownId,
-          reason,
-        },
-      );
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/distribution/reinstatements"],
-      });
-      setIsReinstatementOpen(false);
-      toast({
-        title: "Reinstatement Requested",
-        description: "Your reinstatement request has been submitted",
-      });
-    },
-  });
-
-  const cancelTakedownMutation = useMutation({
-    mutationFn: async (takedownId: string) => {
-      const response = await apiRequest(
-        "POST",
-        `/api/distribution/takedowns/${takedownId}/cancel`,
-      );
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/distribution/takedowns"],
-      });
-      toast({
-        title: "Takedown Cancelled",
-        description: "The takedown request has been cancelled",
-      });
-    },
-  });
-
   const getStatusBadge = (status: string) => {
-    const styles: Record<
-      string,
-      { className: string; icon: React.ElementType }
-    > = {
-      pending: {
-        className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-        icon: Clock,
-      },
-      processing: {
-        className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-        icon: RefreshCw,
-      },
-      completed: {
-        className: "bg-green-500/10 text-green-500 border-green-500/20",
-        icon: CheckCircle,
-      },
-      partial: {
-        className: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-        icon: AlertCircle,
-      },
-      failed: {
-        className: "bg-red-500/10 text-red-500 border-red-500/20",
-        icon: XCircle,
-      },
-      cancelled: {
-        className: "bg-gray-500/10 text-gray-500 border-gray-500/20",
-        icon: Ban,
-      },
-      active: {
-        className: "bg-red-500/10 text-red-500 border-red-500/20",
-        icon: AlertTriangle,
-      },
-      disputed: {
-        className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-        icon: Scale,
-      },
-      resolved: {
-        className: "bg-green-500/10 text-green-500 border-green-500/20",
-        icon: CheckCircle,
-      },
-      released: {
-        className: "bg-green-500/10 text-green-500 border-green-500/20",
-        icon: CheckCircle,
-      },
-      submitted: {
-        className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-        icon: Send,
-      },
-      under_review: {
-        className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-        icon: Eye,
-      },
-      escalated: {
-        className: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-        icon: AlertTriangle,
-      },
-      approved: {
-        className: "bg-green-500/10 text-green-500 border-green-500/20",
-        icon: CheckCircle,
-      },
-      rejected: {
-        className: "bg-red-500/10 text-red-500 border-red-500/20",
-        icon: XCircle,
-      },
-    };
-    const config = styles[status] || styles.pending;
-    const Icon = config.icon;
     return (
-      <Badge className={`gap-1 ${config.className}`}>
-        <Icon className="h-3 w-3" />
-        {status.replace("_", " ")}
+      <Badge variant="outline">
+        {displayValue(status).replace(/_/g, " ")}
       </Badge>
     );
   };
 
-  const getPlatformIcon = (platform: string) => {
-    const Icon = PLATFORM_ICONS[platform];
-    return Icon ? <Icon className="h-4 w-4" /> : null;
+  const matchesSearch = (...values: unknown[]) => {
+    const query = searchQuery.trim().toLowerCase();
+    return (
+      !query ||
+      values.some(
+        (value) =>
+          value !== null &&
+          value !== undefined &&
+          String(value).toLowerCase().includes(query),
+      )
+    );
   };
 
-  const getImpactBadge = (impact: string) => {
-    const styles: Record<string, string> = {
-      monetized: "bg-red-500/10 text-red-500 border-red-500/20",
-      blocked: "bg-red-700/10 text-red-700 border-red-700/20",
-      tracked: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-      none: "bg-green-500/10 text-green-500 border-green-500/20",
-    };
-    return <Badge className={styles[impact] || styles.none}>{impact}</Badge>;
+  const renderQueryState = (query: any, label: string) => {
+    if (query.isPending) {
+      return (
+        <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+          <RefreshCw className="h-5 w-5 mx-auto mb-2 animate-spin" />
+          Loading {label}…
+        </div>
+      );
+    }
+
+    if (query.isError) {
+      const message =
+        query.error instanceof Error
+          ? query.error.message
+          : `Unable to load ${label.toLowerCase()}.`;
+      return (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between gap-4">
+            <span>{message}</span>
+            <Button variant="outline" size="sm" onClick={() => query.refetch()}>
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return null;
   };
 
-  const pendingTakedowns = takedowns.filter(
-    (t) => t.status === "pending" || t.status === "processing",
-  ).length;
-  const activeClaims = claims.filter((c) => c.status === "active").length;
-  const pendingDisputes = disputes.filter(
-    (d) => d.status !== "approved" && d.status !== "rejected",
-  ).length;
+  const activeTakedowns = takedowns.length;
+  const activeClaims = claims.length;
+  const openDisputes = disputes.filter((d) => d.status === "open").length;
+  const expiredStrikes = reinstatements.length;
+
+  const countFor = (query: any, count: number) =>
+    query.isPending ? "—" : query.isError ? "!" : count;
+
+  const filteredTakedowns = takedowns.filter((takedown) =>
+    matchesSearch(
+      takedown.contentType,
+      takedown.contentId,
+      takedown.reason,
+      takedown.createdAt,
+      takedown.expiresAt,
+    ),
+  );
+  const filteredClaims = claims.filter((claim) =>
+    matchesSearch(
+      claim.contentType,
+      claim.contentId,
+      claim.reason,
+      claim.createdAt,
+      claim.expiresAt,
+    ),
+  );
+  const filteredDisputes = disputes.filter((dispute) =>
+    matchesSearch(
+      dispute.type,
+      dispute.status,
+      dispute.subject,
+      dispute.description,
+      dispute.amount,
+      dispute.period,
+      dispute.resolution,
+      dispute.outcome,
+      dispute.createdAt,
+      dispute.updatedAt,
+    ),
+  );
+  const filteredReinstatements = reinstatements.filter((reinstatement) =>
+    matchesSearch(
+      reinstatement.contentType,
+      reinstatement.contentId,
+      reinstatement.reason,
+      reinstatement.createdAt,
+      reinstatement.expiresAt,
+    ),
+  );
 
   return (
     <Card>
@@ -431,13 +251,9 @@ export function TakedownManager() {
               Takedown & Rights Manager
             </CardTitle>
             <CardDescription>
-              Manage content takedowns, copyright claims, and reinstatements
+              Review DMCA strikes, disputes, and content reinstatement history
             </CardDescription>
           </div>
-          <Button onClick={() => setIsNewTakedownOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Takedown Request
-          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -445,23 +261,23 @@ export function TakedownManager() {
           <Card className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-500">
-                {pendingTakedowns}
+                {countFor(takedownsQuery, activeTakedowns)}
               </div>
-              <p className="text-xs text-muted-foreground">Pending Takedowns</p>
+              <p className="text-xs text-muted-foreground">Active Takedowns</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-red-500">
-                {activeClaims}
+                {countFor(claimsQuery, activeClaims)}
               </div>
-              <p className="text-xs text-muted-foreground">Active Claims</p>
+              <p className="text-xs text-muted-foreground">DMCA Claims / Strikes</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-500">
-                {pendingDisputes}
+                {countFor(disputesQuery, openDisputes)}
               </div>
               <p className="text-xs text-muted-foreground">Open Disputes</p>
             </div>
@@ -469,9 +285,11 @@ export function TakedownManager() {
           <Card className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-500">
-                {takedowns.filter((t) => t.status === "completed").length}
+                {countFor(reinstatementsQuery, expiredStrikes)}
               </div>
-              <p className="text-xs text-muted-foreground">Completed</p>
+              <p className="text-xs text-muted-foreground">
+                Expired DMCA Strikes
+              </p>
             </div>
           </Card>
         </div>
@@ -507,467 +325,270 @@ export function TakedownManager() {
           </TabsList>
 
           <TabsContent value="takedowns" className="space-y-4">
-            {takedowns.map((takedown) => (
-              <Card key={takedown.id} className="p-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">{takedown.releaseTitle}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {takedown.artistName} •{" "}
-                        {
-                          TAKEDOWN_REASONS.find(
-                            (r) => r.value === takedown.reason,
-                          )?.label
-                        }
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(takedown.status)}
-                      {takedown.status === "pending" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            cancelTakedownMutation.mutate(takedown.id)
-                          }
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {takedown.status === "processing" && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Progress</span>
-                        <span className="font-medium">
-                          {takedown.progress}%
-                        </span>
+            {renderQueryState(takedownsQuery, "active takedowns") ||
+              (filteredTakedowns.length > 0 ? (
+                filteredTakedowns.map((takedown) => (
+                  <Card key={takedown.id} className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <h3 className="font-medium">
+                            {displayValue(takedown.contentId)}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {displayValue(takedown.contentType)}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="gap-1 shrink-0">
+                          <AlertTriangle className="h-3 w-3" />
+                          Active DMCA strike
+                        </Badge>
                       </div>
-                      <Progress value={takedown.progress} className="h-2" />
-                    </div>
-                  )}
 
-                  <div className="flex flex-wrap gap-2">
-                    {takedown.platformStatuses.map((ps) => (
-                      <div
-                        key={ps.platform}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${
-                          ps.status === "completed"
-                            ? "bg-green-500/10 text-green-500"
-                            : ps.status === "failed"
-                              ? "bg-red-500/10 text-red-500"
-                              : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {getPlatformIcon(ps.platform)}
-                        <span className="capitalize">
-                          {ps.platform.replace("-", " ")}
-                        </span>
-                        {ps.status === "completed" && (
-                          <CheckCircle className="h-3 w-3" />
-                        )}
-                        {ps.status === "failed" && (
-                          <XCircle className="h-3 w-3" />
-                        )}
-                        {ps.status === "pending" && (
-                          <Clock className="h-3 w-3" />
-                        )}
+                      <div className="grid gap-2 text-sm sm:grid-cols-2">
+                        <p>
+                          <span className="text-muted-foreground">Reason: </span>
+                          {displayValue(takedown.reason)}
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">
+                            Recorded:{" "}
+                          </span>
+                          {displayDate(takedown.createdAt)}
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">
+                            Expires:{" "}
+                          </span>
+                          {displayDate(takedown.expiresAt, "No expiry recorded")}
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">Strike ID: </span>
+                          {displayValue(takedown.id)}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      Requested:{" "}
-                      {new Date(takedown.requestedAt).toLocaleString()}
-                    </span>
-                    {takedown.completedAt ? (
-                      <span>
-                        Completed:{" "}
-                        {new Date(takedown.completedAt).toLocaleString()}
-                      </span>
-                    ) : takedown.estimatedCompletion ? (
-                      <span>
-                        Est. completion:{" "}
-                        {new Date(
-                          takedown.estimatedCompletion,
-                        ).toLocaleDateString()}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  {takedown.status === "completed" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedTakedown(takedown);
-                        setIsReinstatementOpen(true);
-                      }}
-                    >
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Request Reinstatement
-                    </Button>
-                  )}
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Trash2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>
+                    {searchQuery
+                      ? "No active takedowns match your search"
+                      : "No active takedowns"}
+                  </p>
                 </div>
-              </Card>
-            ))}
-
-            {takedowns.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Trash2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No takedown requests</p>
-              </div>
-            )}
+              ))}
           </TabsContent>
 
           <TabsContent value="claims" className="space-y-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Release / Track</TableHead>
-                  <TableHead>Platform</TableHead>
-                  <TableHead>Claimant</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Impact</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Deadline</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {claims.map((claim) => (
-                  <TableRow key={claim.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{claim.trackTitle}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {claim.releaseTitle}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getPlatformIcon(claim.platform)}
-                        <span className="capitalize">
-                          {claim.platform.replace("-", " ")}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{claim.claimant}</p>
-                        <p className="text-xs text-muted-foreground capitalize">
-                          {claim.claimantType}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize">
-                        {claim.claimType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{getImpactBadge(claim.impact)}</TableCell>
-                    <TableCell>{getStatusBadge(claim.status)}</TableCell>
-                    <TableCell>
-                      {claim.disputeDeadline ? (
-                        <span className="text-sm">
-                          {new Date(claim.disputeDeadline).toLocaleDateString()}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {claim.status === "active" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedClaim(claim);
-                            setNewDispute({ ...newDispute, claimId: claim.id });
-                            setIsNewDisputeOpen(true);
-                          }}
-                        >
-                          <Scale className="h-4 w-4 mr-2" />
-                          Dispute
-                        </Button>
-                      )}
-                      {claim.status === "disputed" && (
-                        <Badge variant="outline">Under Review</Badge>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {claims.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Flag className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No copyright claims</p>
-              </div>
-            )}
+            {renderQueryState(claimsQuery, "DMCA claims") ||
+              (filteredClaims.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Content</TableHead>
+                      <TableHead>Content type</TableHead>
+                      <TableHead>Reason</TableHead>
+                      <TableHead>Recorded</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredClaims.map((claim) => (
+                      <TableRow key={claim.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">
+                              {displayValue(claim.contentId)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Strike ID: {displayValue(claim.id)}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{displayValue(claim.contentType)}</TableCell>
+                        <TableCell>{displayValue(claim.reason)}</TableCell>
+                        <TableCell>{displayDate(claim.createdAt)}</TableCell>
+                        <TableCell>
+                          {displayDate(claim.expiresAt, "No expiry recorded")}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClaim(claim);
+                              setNewDispute({ ...newDispute, claimId: claim.id });
+                              setIsNewDisputeOpen(true);
+                            }}
+                          >
+                            <Scale className="h-4 w-4 mr-2" />
+                            Dispute
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Flag className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>
+                    {searchQuery
+                      ? "No DMCA claims match your search"
+                      : "No DMCA claims"}
+                  </p>
+                </div>
+              ))}
           </TabsContent>
 
           <TabsContent value="disputes" className="space-y-4">
-            {disputes.map((dispute) => (
-              <Card key={dispute.id} className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">{dispute.trackTitle}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {dispute.releaseTitle} • {dispute.platform}
-                      </p>
+            {renderQueryState(disputesQuery, "disputes") ||
+              (filteredDisputes.length > 0 ? (
+                filteredDisputes.map((dispute) => (
+                  <Card key={dispute.id} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <h3 className="font-medium">
+                            {displayValue(dispute.subject)}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            Type: {displayValue(dispute.type)}
+                          </p>
+                        </div>
+                        {getStatusBadge(dispute.status)}
+                      </div>
+
+                      <div className="bg-muted/50 p-3 rounded-lg space-y-2">
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {displayValue(dispute.description)}
+                        </p>
+                        <div className="grid gap-1 text-sm sm:grid-cols-2">
+                          <p>
+                            <span className="text-muted-foreground">
+                              Evidence:{" "}
+                            </span>
+                            {displayValue(dispute.evidenceCount, "None recorded")}
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">
+                              Amount:{" "}
+                            </span>
+                            {displayValue(dispute.amount)}
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">
+                              Period:{" "}
+                            </span>
+                            {displayValue(dispute.period)}
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">
+                              Dispute ID:{" "}
+                            </span>
+                            {displayValue(dispute.id)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {(dispute.resolution || dispute.outcome) && (
+                        <Alert>
+                          <Gavel className="h-4 w-4" />
+                          <AlertDescription>
+                            {dispute.resolution || dispute.outcome}
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>
+                          Created: {displayDate(dispute.createdAt)}
+                        </span>
+                        <span>
+                          Updated: {displayDate(dispute.updatedAt)}
+                        </span>
+                      </div>
                     </div>
-                    {getStatusBadge(dispute.status)}
-                  </div>
-
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <p className="text-sm font-medium mb-1">
-                      Reason:{" "}
-                      {
-                        DISPUTE_REASONS.find((r) => r.value === dispute.reason)
-                          ?.label
-                      }
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {dispute.explanation}
-                    </p>
-                  </div>
-
-                  {dispute.supportingDocs.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {dispute.supportingDocs.map((doc, i) => (
-                        <Badge key={i} variant="outline" className="gap-1">
-                          <FileText className="h-3 w-3" />
-                          {doc}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-
-                  {dispute.resolution && (
-                    <Alert>
-                      <Gavel className="h-4 w-4" />
-                      <AlertDescription>{dispute.resolution}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      Submitted:{" "}
-                      {new Date(dispute.submittedAt).toLocaleString()}
-                    </span>
-                    <span>
-                      Last update:{" "}
-                      {new Date(dispute.lastUpdateAt).toLocaleString()}
-                    </span>
-                  </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Scale className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>
+                    {searchQuery
+                      ? "No disputes match your search"
+                      : "No disputes"}
+                  </p>
                 </div>
-              </Card>
-            ))}
-
-            {disputes.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Scale className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No active disputes</p>
-              </div>
-            )}
+              ))}
           </TabsContent>
 
           <TabsContent value="reinstatements" className="space-y-4">
-            {reinstatements.map((reinstatement) => (
-              <Card key={reinstatement.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">
-                      {reinstatement.releaseTitle}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {reinstatement.reason}
-                    </p>
-                    <div className="flex gap-2 mt-2">
-                      {reinstatement.platforms.map((p) => (
-                        <Badge key={p} variant="outline" className="gap-1">
-                          {getPlatformIcon(p)}
-                          {p}
+            {renderQueryState(reinstatementsQuery, "reinstatement history") ||
+              (filteredReinstatements.length > 0 ? (
+                filteredReinstatements.map((reinstatement) => (
+                  <Card key={reinstatement.id} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <h3 className="font-medium">
+                            {displayValue(reinstatement.contentId)}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {displayValue(reinstatement.contentType)}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="gap-1 shrink-0">
+                          <RotateCcw className="h-3 w-3" />
+                          Expired DMCA strike
                         </Badge>
-                      ))}
+                      </div>
+                      <div className="grid gap-2 text-sm sm:grid-cols-2">
+                        <p>
+                          <span className="text-muted-foreground">Reason: </span>
+                          {displayValue(reinstatement.reason)}
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">
+                            Recorded:{" "}
+                          </span>
+                          {displayDate(reinstatement.createdAt)}
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">
+                            Expired:{" "}
+                          </span>
+                          {displayDate(
+                            reinstatement.expiresAt,
+                            "No expiry recorded",
+                          )}
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">
+                            Strike ID:{" "}
+                          </span>
+                          {displayValue(reinstatement.id)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    {getStatusBadge(reinstatement.status)}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(reinstatement.requestedAt).toLocaleDateString()}
-                    </p>
-                  </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <RotateCcw className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>
+                    {searchQuery
+                      ? "No expired strikes match your search"
+                      : "No expired strikes"}
+                  </p>
                 </div>
-              </Card>
-            ))}
-
-            {reinstatements.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <RotateCcw className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No reinstatement requests</p>
-              </div>
-            )}
+              ))}
           </TabsContent>
         </Tabs>
-
-        <Dialog open={isNewTakedownOpen} onOpenChange={setIsNewTakedownOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Request Content Takedown</DialogTitle>
-              <DialogDescription>
-                Remove your content from streaming platforms. This action may
-                take 2-14 days.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Select Release</Label>
-                <Select
-                  value={newTakedown.releaseId}
-                  onValueChange={(v) =>
-                    setNewTakedown({ ...newTakedown, releaseId: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a release" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rel-1">
-                      Midnight Dreams - John Doe
-                    </SelectItem>
-                    <SelectItem value="rel-2">
-                      Summer Vibes - John Doe
-                    </SelectItem>
-                    <SelectItem value="rel-3">
-                      Urban Stories - Jane Smith
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Reason for Takedown</Label>
-                <Select
-                  value={newTakedown.reason}
-                  onValueChange={(v) =>
-                    setNewTakedown({ ...newTakedown, reason: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TAKEDOWN_REASONS.map((reason) => (
-                      <SelectItem key={reason.value} value={reason.value}>
-                        {reason.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
-                  placeholder="Provide additional details..."
-                  value={newTakedown.description}
-                  onChange={(e) =>
-                    setNewTakedown({
-                      ...newTakedown,
-                      description: e.target.value,
-                    })
-                  }
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Platforms</Label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "spotify",
-                    "apple-music",
-                    "youtube-music",
-                    "amazon-music",
-                    "tidal",
-                  ].map((platform) => (
-                    <div
-                      key={platform}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer border ${
-                        newTakedown.platforms.includes(platform)
-                          ? "border-primary bg-primary/10"
-                          : "border-muted hover:border-primary/50"
-                      }`}
-                      onClick={() => {
-                        if (newTakedown.platforms.includes(platform)) {
-                          setNewTakedown({
-                            ...newTakedown,
-                            platforms: newTakedown.platforms.filter(
-                              (p) => p !== platform,
-                            ),
-                          });
-                        } else {
-                          setNewTakedown({
-                            ...newTakedown,
-                            platforms: [...newTakedown.platforms, platform],
-                          });
-                        }
-                      }}
-                    >
-                      {getPlatformIcon(platform)}
-                      <span className="text-sm capitalize">
-                        {platform.replace("-", " ")}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Takedowns typically take 2-14 days to complete across all
-                  platforms. Some platforms may require additional verification.
-                </AlertDescription>
-              </Alert>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsNewTakedownOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => submitTakedownMutation.mutate(newTakedown)}
-                disabled={
-                  !newTakedown.releaseId || submitTakedownMutation.isPending
-                }
-              >
-                {submitTakedownMutation.isPending ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Submit Takedown Request
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         <Dialog open={isNewDisputeOpen} onOpenChange={setIsNewDisputeOpen}>
           <DialogContent className="max-w-lg">
@@ -975,8 +596,8 @@ export function TakedownManager() {
               <DialogTitle>Dispute Copyright Claim</DialogTitle>
               <DialogDescription>
                 {selectedClaim
-                  ? `Dispute claim on "${selectedClaim.trackTitle}" by ${selectedClaim.claimant}`
-                  : "Submit a dispute for a copyright claim"}
+                  ? `Dispute DMCA strike for "${selectedClaim.contentId}"`
+                  : "Submit a dispute for a DMCA claim"}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -1067,72 +688,6 @@ export function TakedownManager() {
           </DialogContent>
         </Dialog>
 
-        <Dialog
-          open={isReinstatementOpen}
-          onOpenChange={setIsReinstatementOpen}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Request Reinstatement</DialogTitle>
-              <DialogDescription>
-                {selectedTakedown
-                  ? `Request to restore "${selectedTakedown.releaseTitle}"`
-                  : "Request to restore removed content"}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Reason for Reinstatement</Label>
-                <Textarea
-                  placeholder="Explain why you want to restore this content..."
-                  rows={4}
-                />
-              </div>
-
-              {selectedTakedown && (
-                <div className="space-y-2">
-                  <Label>Platforms to Restore</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedTakedown.platforms.map((platform) => (
-                      <Badge key={platform} variant="outline" className="gap-1">
-                        {getPlatformIcon(platform)}
-                        {platform}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Reinstatement typically takes 2-7 days. You may need to
-                  provide additional documentation.
-                </AlertDescription>
-              </Alert>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsReinstatementOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() =>
-                  requestReinstatementMutation.mutate({
-                    takedownId: selectedTakedown.id || "",
-                    reason: "Reinstatement request",
-                  })
-                }
-                disabled={requestReinstatementMutation.isPending}
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Request Reinstatement
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </CardContent>
     </Card>
   );

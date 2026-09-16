@@ -2298,15 +2298,6 @@ class ArtistProfileService {
   }> {
     try {
       const preview = options.preview === true;
-      if (!preview) {
-        await this._ensureCatalogProfileLinked(
-          userId,
-          platformId,
-          profileUrl,
-          artistName,
-          extra,
-        );
-      }
 
       // Always scan the exact target URL passed by this artist profile. The
       // persisted streaming profile map is keyed only by user + platform, so
@@ -2339,6 +2330,7 @@ class ArtistProfileService {
           userId,
           platformId,
           releases,
+          artistName,
         );
         return {
           platformId,
@@ -2357,6 +2349,7 @@ class ArtistProfileService {
         userId,
         platformId,
         releases,
+        artistName,
       );
 
       logger.info(
