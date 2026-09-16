@@ -28,6 +28,14 @@ const normalizeArtistNameForIdentity = (value: unknown): string =>
     .replace(/\s*\([^)]{0,45}\)\s*/g, " ")
     .replace(/[^a-z0-9]/g, "");
 
+const normalizeReleaseTitleForIdentity = (value: unknown): string =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s*-\s*(?:single|ep|album)\s*$/i, "")
+    .replace(/[^a-z0-9]/g, "");
+
 export const SUPPORTED_DISTRIBUTORS = [
   {
     id: "distrokid",
@@ -970,10 +978,10 @@ class DistributionDataTransferService {
       }
 
       if (title && artistName) {
-        const normalizedTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const normalizedReleaseTitle = release.title
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "");
+        const normalizedTitle = normalizeReleaseTitleForIdentity(title);
+        const normalizedReleaseTitle = normalizeReleaseTitleForIdentity(
+          release.title,
+        );
         const normalizedArtist = artistName
           .toLowerCase()
           .replace(/[^a-z0-9]/g, "");
@@ -3382,13 +3390,9 @@ class DistributionDataTransferService {
     for (const release of releases) {
       const identity = release.upc
         ? `upc:${release.upc.trim()}`
-        : `title:${normalizeArtistNameForIdentity(release.artistName)}:${String(
+        : `title:${normalizeArtistNameForIdentity(release.artistName)}:${normalizeReleaseTitleForIdentity(
             release.title,
-          )
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, "")}`;
+          )}`;
       const existing = uniqueReleases.get(identity);
       if (!existing) {
         uniqueReleases.set(identity, { ...release });
@@ -3511,6 +3515,7 @@ class DistributionDataTransferService {
             releaseDate: release.releaseDate
               ? new Date(release.releaseDate)
               : null,
+            artworkUrl: coverUrl,
             metadata: {
               artistName: release.artistName,
               releaseType: release.releaseType,

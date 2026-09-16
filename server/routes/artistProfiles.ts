@@ -1037,12 +1037,15 @@ router.post(
         distributionPlatforms,
         platforms: distributionPlatforms,
         selectedPlatforms: data.platforms ?? existingMetadata.selectedPlatforms ?? [],
-        tracks: (data.tracks ?? []).map((t, idx) => ({
-          title: t.title,
-          isrc: t.isrc ?? null,
-          trackNumber: t.trackNumber ?? idx + 1,
-          duration: t.duration ?? null,
-        })),
+        tracks:
+          data.tracks && data.tracks.length > 0
+            ? data.tracks.map((t, idx) => ({
+                title: t.title,
+                isrc: t.isrc ?? null,
+                trackNumber: t.trackNumber ?? idx + 1,
+                duration: t.duration ?? null,
+              }))
+            : existingMetadata.tracks ?? [],
         source: "catalog_import",
         ...(data.sourceReleaseId
           ? { sourceReleaseId: data.sourceReleaseId }
