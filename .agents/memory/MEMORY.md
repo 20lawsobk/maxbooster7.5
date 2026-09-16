@@ -155,4 +155,5 @@
 - [Awareness layer dual-mechanism research](awareness-research-dual-mechanism.md) — verify BOTH the static JSON registry and the live keyword-note generator for research backing; fixing one leaves the other unsourced
 - [Leak-guard label regex sync](leak-guard-label-regex-sync.md) — new AI-conditioning field labels must be added to contentPostProcessor's DIRECTIVE_TAG_BLOCK_RE or leaks bypass the guard silently
 - [Too Lost OAuth credentials](toolost-oauth-credentials.md) — client-credentials tokens issue successfully but cannot access catalog/distribution; real calls require user-authorized OAuth tokens
+- [Workflow duplicate process trees](workflow-esbuild-duplicate-processes.md) — repeated restarts can orphan app/MaxCore trees, exhaust threads, and kill Vite's esbuild worker; clean-stop before restarting
 - [Artist discovery provider boundary](artist-discovery-provider-boundary.md) — artist IDs come from direct DSP searches; Too Lost handles authenticated distribution, not artist-roster discovery
