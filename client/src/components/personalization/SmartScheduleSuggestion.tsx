@@ -126,8 +126,7 @@ export function SmartScheduleSuggestion({
   } = useQuery<SmartScheduleData>({
     queryKey: [
       "/api/personalization/smart-schedule",
-      selectedPlatform,
-      contentType,
+      { platform: selectedPlatform, contentType },
     ],
     staleTime: 15 * 60 * 1000,
   });

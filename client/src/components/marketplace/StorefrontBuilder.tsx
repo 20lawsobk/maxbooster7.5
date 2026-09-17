@@ -129,7 +129,7 @@ interface MembershipTier {
   currentSubscribers: number;
 }
 
-const STOREFRONT_BASE = "https://max-booster.com";
+const STOREFRONT_BASE = "https://maxbooster.replit.app";
 const PLATFORM_DOMAIN = "max-booster.com";
 
 /**
@@ -668,7 +668,7 @@ export default function StorefrontBuilder() {
       if (data.ok) {
         toast({
           title: "Subdomain Reserved",
-          description: `Your store is now at https://${data.subdomain || subdomainForm.subdomain}.${PLATFORM_DOMAIN}`,
+          description: `Your store is now at ${data.publicUrl || `${STOREFRONT_BASE}/storefront/${selectedStorefront?.slug || ""}`}`,
         });
         queryClient.invalidateQueries({ queryKey: ["/api/storefront/my"] });
         queryClient.invalidateQueries({
@@ -1659,7 +1659,7 @@ export default function StorefrontBuilder() {
                             <Shuffle className="w-4 h-4" />
                           </Button>
                           <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            .{PLATFORM_DOMAIN}
+                            managed DNS label (legacy routing record)
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1721,16 +1721,14 @@ export default function StorefrontBuilder() {
                         </Button>
                         <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800 space-y-1">
                           <p className="font-semibold flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" /> Subdomain URL
-                            format
+                            <CheckCircle className="w-3 h-3" /> Storefront URL
                           </p>
                           <p>
-                            Once reserved and active, your store is accessible
-                            at{" "}
+                            Your store link uses the deployed app's existing
+                            slug route:{" "}
                             <span className="font-mono font-medium">
-                              {subdomainForm.subdomain
-                                ? `https://${subdomainForm.subdomain}.${PLATFORM_DOMAIN}`
-                                : `{your-name}.${PLATFORM_DOMAIN}`}
+                              {STOREFRONT_BASE}/storefront/
+                              {selectedStorefront?.slug || "{your-slug}"}
                             </span>
                             .
                           </p>

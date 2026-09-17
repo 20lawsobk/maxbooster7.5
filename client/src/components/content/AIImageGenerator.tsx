@@ -253,7 +253,9 @@ export function AIImageGenerator({
         });
         data = await response.json();
         if (!data.success)
-          throw new Error(data.message || "Image generation failed");
+          throw new Error(
+            data.message || data.error || "Image generation failed",
+          );
       }
 
       setResult(data);

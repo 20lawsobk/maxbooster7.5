@@ -11,13 +11,13 @@
  *        A  *              34.111.179.208   Proxied
  *   5. In Cloudflare Workers & Pages → Create Worker → paste this file → Deploy
  *   6. In the worker's Settings → Triggers → add route:  *.max-booster.com/*
- *   7. SSL/TLS mode → set to "Full" (origin has a cert for max-booster.com)
+ *   7. SSL/TLS mode → set to "Full" (origin has a cert for maxbooster.replit.app)
  *
  * HOW IT WORKS:
  *   Browser → https://b-lawzmusic.max-booster.com  (Cloudflare handles wildcard TLS)
- *          → Worker rewrites destination to https://max-booster.com
+ *          → Worker rewrites destination to https://maxbooster.replit.app
  *          → sets X-Forwarded-Host: b-lawzmusic.max-booster.com
- *          → Replit's proxy routes max-booster.com to the VM (cert exists)
+ *          → Replit's proxy routes maxbooster.replit.app to the VM
  *          → Express reads X-Forwarded-Host via trust proxy → routes storefront
  *
  * No changes to the Replit app are needed beyond what's already deployed.
@@ -25,7 +25,7 @@
  * trust Cloudflare IPs, so X-Forwarded-Host is honoured automatically.
  */
 
-const APEX = "max-booster.com";
+const APEX = "maxbooster.replit.app";
 // Hostname allow-list: apex or exactly one label of [a-z0-9-] + apex.
 // Rejecting everything else prevents SSRF-style host smuggling via the
 // X-Forwarded-Host header (the worker only ever forwards hosts it validated).

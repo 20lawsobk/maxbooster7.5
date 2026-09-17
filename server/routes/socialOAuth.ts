@@ -52,6 +52,14 @@ function scrubSecretsFromText(text: string): string {
   return out;
 }
 
+function safeOAuthError(error: unknown): { name?: string; message: string } {
+  const value = error instanceof Error ? error : undefined;
+  return {
+    name: value?.name,
+    message: scrubSecretsFromText(value?.message ?? "provider request failed"),
+  };
+}
+
 type AuthenticatedRequest = Request;
 
 // Shape of the optional per-platform OAuth config fields that are read
@@ -104,7 +112,7 @@ const PLATFORMS = {
     // in the Meta developer console under Threads → Valid OAuth Redirect URIs.
     redirectUri:
       process.env.THREADS_REDIRECT_URI ||
-      `${process.env.DOMAIN || process.env.APP_URL || "https://max-booster.com"}/auth/threads/callback`,
+      `${process.env.DOMAIN || process.env.APP_URL || "https://maxbooster.replit.app"}/auth/threads/callback`,
     usePKCE: false,
     responseType: "code",
     enabled: !!(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET),
@@ -125,8 +133,10 @@ const PLATFORMS = {
         "user.info.basic,video.list,video.upload,video.publish"
       : process.env.TIKTOK_PROD_SCOPES || "user.info.basic";
     const redirectUri = isSandbox
-      ? process.env.TIKTOK_SANDBOX_REDIRECT_URI
-      : process.env.TIKTOK_PROD_REDIRECT_URI;
+      ? process.env.TIKTOK_SANDBOX_REDIRECT_URI ||
+        `${process.env.DOMAIN || process.env.APP_URL || "https://maxbooster.replit.app"}/tiktok/sandbox/callback`
+      : process.env.TIKTOK_PROD_REDIRECT_URI ||
+        `${process.env.DOMAIN || process.env.APP_URL || "https://maxbooster.replit.app"}/auth/tiktok/callback`;
     return {
       name: isSandbox ? "TikTok (Sandbox)" : "TikTok",
       authUrl: "https://www.tiktok.com/v2/auth/authorize/",
@@ -174,7 +184,7 @@ const PLATFORMS = {
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
     scope:
-      "https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/plus.business.manage",
+      "https://www.googleapis.com/auth/business.manage",
     clientId: env.GOOGLE_BUSINESS_CLIENT_ID || env.GOOGLE_CLIENT_ID,
     clientSecret: env.GOOGLE_BUSINESS_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET,
     usePKCE: false,
@@ -285,7 +295,7 @@ function verifyOAuthState(
 }
 
 function getBaseUrl(): string {
-  return process.env.DOMAIN || process.env.APP_URL || "https://max-booster.com";
+  return process.env.DOMAIN || process.env.APP_URL || "https://maxbooster.replit.app";
 }
 
 function buildOAuthUrl(
@@ -423,7 +433,12 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
     const { code, state, error, error_description } = req.query;
 
     if (error) {
-      logger.warn({ error, error_description }, `OAuth error for ${platform}`);
+      // Provider descriptions are untrusted input; record only presence and
+      // the provider error code, never arbitrary callback text.
+      logger.warn(
+        { error: String(error), hasErrorDescription: Boolean(error_description) },
+        `OAuth error for ${platform}`,
+      );
       return res.redirect(
         `/social-media?error=oauth_denied&platform=${platform}`,
       );
@@ -451,6 +466,12 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
 
     if (stateData.platform !== platform) {
       return res.redirect(`/social-media?error=platform_mismatch`);
+    }
+
+    if (typeof code !== "string" || !code.trim()) {
+      return res.redirect(
+        `/social-media?error=token_exchange_failed&platform=${platform}&detail=missing_code`,
+      );
     }
 
     const config = PLATFORMS[platform as keyof typeof PLATFORMS];
@@ -749,7 +770,10 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
           facebookProfileUrl = `https://www.facebook.com/${userData.id}`;
           facebookMetadata = { picture: userData.picture.data.url };
         } catch (fbErr) {
-          logger.warn({ err: fbErr }, "Failed to fetch Facebook user info");
+          logger.warn(
+            { error: safeOAuthError(fbErr) },
+            "Failed to fetch Facebook user info",
+          );
         }
 
         try {
@@ -783,7 +807,10 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
             }
           }
         } catch (igErr) {
-          logger.warn({ err: igErr }, "Failed to fetch Instagram username");
+          logger.warn(
+            { error: safeOAuthError(igErr) },
+            "Failed to fetch Instagram username",
+          );
         }
       } else if (platform === "twitter") {
         try {
@@ -805,7 +832,10 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
             profileImageUrl: userData.data.profile_image_url,
           };
         } catch (twitterErr) {
-          logger.warn({ err: twitterErr }, "Failed to fetch Twitter user info");
+          logger.warn(
+            { error: safeOAuthError(twitterErr) },
+            "Failed to fetch Twitter user info",
+          );
         }
       } else if (platform === "youtube") {
         try {
@@ -828,7 +858,10 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
             thumbnailUrl: channel.snippet.thumbnails.default.url,
           };
         } catch (ytErr) {
-          logger.warn({ err: ytErr }, "Failed to fetch YouTube channel info");
+          logger.warn(
+            { error: safeOAuthError(ytErr) },
+            "Failed to fetch YouTube channel info",
+          );
         }
       } else if (platform === "tiktok") {
         try {
@@ -856,7 +889,10 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
             tiktokUsername: tiktokData.username || "",
           };
         } catch (tiktokErr) {
-          logger.warn({ err: tiktokErr }, "Failed to fetch TikTok user info");
+          logger.warn(
+            { error: safeOAuthError(tiktokErr) },
+            "Failed to fetch TikTok user info",
+          );
           username = "TikTok User";
         }
       } else if (platform === "linkedin") {
@@ -892,7 +928,10 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
             profilePictureUrl: userData.threads_profile_picture_url,
           };
         } catch (threadsErr) {
-          logger.warn({ err: threadsErr }, "Failed to fetch Threads user info");
+          logger.warn(
+            { error: safeOAuthError(threadsErr) },
+            "Failed to fetch Threads user info",
+          );
           username = "Threads User";
         }
       } else if (platform === "spotify") {
@@ -917,7 +956,10 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
             imageUrl: userData.images[0].url,
           };
         } catch (spotifyErr) {
-          logger.warn({ err: spotifyErr }, "Failed to fetch Spotify user info");
+          logger.warn(
+            { error: safeOAuthError(spotifyErr) },
+            "Failed to fetch Spotify user info",
+          );
           username = "Spotify User";
         }
       } else if (platform === "google" || platform === "googlebusiness") {
@@ -934,12 +976,18 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
           profileUrl = "";
           metadata = { email: userData.email, picture: userData.picture };
         } catch (googleErr) {
-          logger.warn({ err: googleErr }, "Failed to fetch Google user info");
+          logger.warn(
+            { error: safeOAuthError(googleErr) },
+            "Failed to fetch Google user info",
+          );
           username = "Google User";
         }
       }
     } catch (err) {
-      logger.warn({ err: err }, `Failed to fetch user info for ${platform}:`);
+      logger.warn(
+        { error: safeOAuthError(err) },
+        `Failed to fetch user info for ${platform}:`,
+      );
     }
 
     const savePlatformName = platform;
@@ -997,6 +1045,13 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
       // token. Non-Meta platforms won't have p.accessToken set.
       const effectiveToken = (p as any).accessToken ?? tokenData.access_token;
 
+      // Keep the callback's dedicated token columns in their current
+      // publisher-compatible representation. Several publishing/sync
+      // consumers read social_accounts.access_token directly as a Bearer
+      // token; encrypting these columns here would make newly connected
+      // accounts fail to publish. The existing OAuth service can read this
+      // legacy/plain shape for refresh. A coordinated encryption migration
+      // must update every consumer before changing this write path.
       if (existingConnection.length > 0) {
         await db
           .update(socialAccounts)
@@ -1052,7 +1107,7 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
     );
     res.redirect(successUrl);
   } catch (error) {
-    logger.warn({ err: error }, "OAuth callback error:");
+    logger.warn({ error: safeOAuthError(error) }, "OAuth callback error:");
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     const errorUrl = `/social-media?error=callback_failed&message=${encodeURIComponent(errorMessage)}`;
@@ -1201,7 +1256,6 @@ router.post(
       res.json({
         success: true,
         message: "Token refreshed successfully",
-        accessToken: result.accessToken,
         expiresIn: result.expiresIn,
         outcome: {
           status: "success",

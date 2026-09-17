@@ -75,6 +75,13 @@ import {
   type ImageTone,
 } from "@/components/content/AIImageGenerator";
 import { SocialOutcomeHandler, useOutcomeHandler } from "@/components/social";
+import {
+  canonicalSocialPlatformId,
+  formatSocialPlatformCallbackNames,
+  normalizeSocialPlatformStatuses,
+  socialPlatformConnectId,
+  socialPlatformDisplayName,
+} from "@/lib/socialPlatformStatus";
 
 // Social Media Platform Interfaces
 interface SocialPlatform {
@@ -523,10 +530,7 @@ export default function SocialMedia() {
       searchParams.get("message") || searchParams.get("detail");
 
     if (success === "connected" && platform) {
-      const platformNames = platform
-        .split(",")
-        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-        .join(" & ");
+      const platformNames = formatSocialPlatformCallbackNames(platform);
       handleOAuthSuccess(platformNames, username || undefined);
       trackSocialAccountConnected();
       queryClient.invalidateQueries({
@@ -537,9 +541,10 @@ export default function SocialMedia() {
     }
 
     if (error) {
-      const platformName = platform
-        ? platform.charAt(0).toUpperCase() + platform.slice(1)
-        : "Platform";
+      const platformName = socialPlatformDisplayName(platform);
+      const callbackPlatformId = platform
+        ? canonicalSocialPlatformId(platform) || platform
+        : undefined;
 
       switch (error) {
         case "oauth_denied":
@@ -553,7 +558,7 @@ export default function SocialMedia() {
             message: errorMessage
               ? `${platformName} connection failed: ${decodeURIComponent(errorMessage)}`
               : `Failed to connect to ${platformName}. Please try again.`,
-            platformId: platform || undefined,
+            platformId: callbackPlatformId,
             retryable: true,
             actionLabel: "Try Again",
           });
@@ -566,7 +571,7 @@ export default function SocialMedia() {
             message:
               errorMessage ||
               `Failed to connect to ${platformName}. Please try again.`,
-            platformId: platform || undefined,
+            platformId: callbackPlatformId,
             retryable: true,
             actionLabel: "Try Again",
           });
@@ -617,8 +622,13 @@ export default function SocialMedia() {
   const platformsApiArray = Array.isArray(platformsFromApi)
     ? platformsFromApi
     : [];
+  // The API reports OAuth providers (meta/twitter/googlebusiness), while
+  // these cards use account-facing ids (facebook/instagram/x/google_business).
+  // Expand Meta only when its response contains evidence for that account.
+  const normalizedPlatformStatuses =
+    normalizeSocialPlatformStatuses(platformsApiArray);
   const platforms = SOCIAL_PLATFORMS.map((defaultPlatform) => {
-    const apiPlatform = platformsApiArray.find(
+    const apiPlatform = normalizedPlatformStatuses.find(
       (p) => p.id === defaultPlatform.id,
     );
     return apiPlatform
@@ -1289,9 +1299,11 @@ export default function SocialMedia() {
   // Handler Functions
   const handleConnectPlatform = async (platformId: string) => {
     try {
+      // Cards use display ids; OAuth routes use provider ids.
+      const providerId = socialPlatformConnectId(platformId);
       const response = await apiRequest(
         "POST",
-        `/api/social/connect/${platformId}`,
+        `/api/social/connect/${providerId}`,
       );
       const data = await response.json();
       if (data.authUrl) {
@@ -1305,10 +1317,10 @@ export default function SocialMedia() {
         } else {
           window.location.href = data.authUrl;
         }
-      } else if (data.message) {
+      } else if (data.message || data.error) {
         toast({
           title: "Connection Issue",
-          description: data.message,
+          description: data.message || data.error,
           variant: "destructive",
         });
       }
@@ -1323,9 +1335,10 @@ export default function SocialMedia() {
 
   const handleDisconnectPlatform = async (platformId: string) => {
     try {
+      const providerId = socialPlatformConnectId(platformId);
       const response = await apiRequest(
         "POST",
-        `/api/social/disconnect/${platformId}`,
+        `/api/social/disconnect/${providerId}`,
       );
       const data = await response.json();
       if (data.success) {

@@ -5,7 +5,7 @@ import { logger } from "../logger.js";
 
 import { isProductionEnv } from "../lib/envHelpers.js";
 
-const APP_DOMAIN = process.env.APP_URL || "https://max-booster.com";
+const APP_DOMAIN = process.env.APP_URL || "https://maxbooster.replit.app";
 const isDev = !isProductionEnv();
 
 const helmetMiddleware = helmet({

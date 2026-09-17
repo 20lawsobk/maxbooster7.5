@@ -464,8 +464,16 @@ export class UnifiedAIController {
       if (options.mood) topicParts.push(options.mood);
       if (options.keywords?.length)
         topicParts.push(options.keywords.slice(0, 4).join(", "));
-      // 300-char limit is enough for full metadata context without polluting the topic signal
-      const enrichedTopic = topicParts.join(" — ").slice(0, 300);
+      // MaxCore's content endpoint resolves a URL only when `topic` is itself
+      // a URL/URI. Appending artist/track metadata turns a URL into freeform
+      // text ("https://... by Artist"), which bypasses MaxCore's URL parser and
+      // causes captions to be about the literal URL. Preserve URL topics
+      // verbatim; supporting metadata still travels in extra_context below.
+      const topicLooksLikeUrl =
+        /^(?:https?:\/\/|spotify:)/i.test(baseTopic.trim());
+      const enrichedTopic = topicLooksLikeUrl
+        ? baseTopic.trim()
+        : topicParts.join(" — ").slice(0, 300);
 
       // ── Build extra_context — user instruction FIRST, then supporting detail ──
       const extraParts: string[] = [];

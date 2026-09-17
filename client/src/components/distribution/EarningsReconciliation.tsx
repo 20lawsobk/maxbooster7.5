@@ -173,7 +173,7 @@ export function EarningsReconciliation() {
   const { data: statements = [] } = useQuery<
     RoyaltyStatement[]
   >({
-    queryKey: ["/api/distribution/earnings/statements", dateRange],
+    queryKey: ["/api/distribution/earnings/statements", { dateRange }],
     select: (response: { statements?: RoyaltyStatement[] }) =>
       response.statements ?? [],
   });
@@ -183,8 +183,7 @@ export function EarningsReconciliation() {
   >({
     queryKey: [
       "/api/distribution/earnings/entries",
-      dateRange,
-      selectedPlatform,
+      { dateRange, platform: selectedPlatform },
     ],
     select: (response: { entries?: EarningsEntry[] }) => response.entries ?? [],
   });
@@ -197,11 +196,11 @@ export function EarningsReconciliation() {
   });
 
   const { data: summary } = useQuery<ReconciliationSummary>({
-    queryKey: ["/api/distribution/earnings/summary", dateRange],
+    queryKey: ["/api/distribution/earnings/summary", { dateRange }],
   });
 
   const { data: territoryData = [] } = useQuery<TerritoryBreakdown[]>({
-    queryKey: ["/api/distribution/earnings/territories", dateRange],
+    queryKey: ["/api/distribution/earnings/territories", { dateRange }],
     select: (response: { territories?: TerritoryBreakdown[] }) =>
       response.territories ?? [],
   });

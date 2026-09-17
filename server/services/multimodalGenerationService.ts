@@ -9,6 +9,7 @@ import {
   getMaxcoreGenerationKey,
   getMaxcoreOriginOrDefault,
 } from "./maxcoreConnector.js";
+import { assertPublicHttpUrl, safeFetchText } from "./safeUrlFetch.js";
 import { generateAudio as generateLocalAudio } from "./audioGeneratorService.js";
 import { sharpImageService as _sharpImageService } from "./sharpImageService.js";
 import { storageService } from "./storageService.js";
@@ -36,69 +37,21 @@ import {
   normalizeSocialAwarenessPlatform,
   platformAwarenessOptimization,
 } from "./awarenessContext.js";
-import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
 // Resolved through the shared connector (single MaxCore contract boundary);
 // the connector normalizes root-vs-/api URL forms.
-const MAXCORE_URL = `${getMaxcoreOriginOrDefault()}/api`;
+const _MAXCORE_BASE = getMaxcoreOriginOrDefault();
+const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
 const MAXCORE_KEY = getMaxcoreGenerationKey();
-
-// ── Port 8008 gateway (MaxCore Diffusion + training time simulator) ──────────
-// This is the primary gateway for ALL content generation on the platform.
-// Proxies to MaxCore when local model is untrained; gradually switches to
-// local inference as the model accumulates simulated training years.
-const DIT24_GATEWAY = loopbackUrl(runtimePorts.diffusionGateway);
-const DIT24_PROXY_TIMEOUT_MS = 8_000; // fast timeout — fall through to direct MaxCore if 8008 is down
-
-async function dit24GatewayPost(
-  proxyPath: string,
-  body: unknown,
-): Promise<unknown> {
-  const res = await fetch(`${DIT24_GATEWAY}${proxyPath}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(DIT24_PROXY_TIMEOUT_MS),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(
-      `Port-8008 gateway ${proxyPath} → HTTP ${res.status}: ${text?.slice(0, 200)}`,
-    );
-  }
-  const ct = res.headers.get("content-type") ?? "";
-  if (!ct?.includes("application/json")) {
-    throw new Error(`Port-8008 gateway ${proxyPath} returned non-JSON`);
-  }
-  return res.json();
-}
-
-// Paths proxied through port 8008 → /proxy<path> on the gateway
-const DIT24_PROXY_PATHS = new Set([
-  "/generate/text",
-  "/generate/image",
-  "/generate/content",
-  "/audio/analyze",
-  "/analyze/sentiment",
-]);
+const MAX_URL_FETCH_BYTES = 1_500_000;
+const SPOTIFY_URI_RE =
+  /^spotify:(?:track|album|artist|playlist):[A-Za-z0-9]+$/i;
 
 async function maxcorePost(
   path: string,
   body: unknown,
   timeoutMs = 90_000,
 ): Promise<unknown> {
-  // Route through the port-8008 training gateway when the path is supported.
-  // The gateway server proxies to MaxCore internally (and will eventually
-  // serve locally once the local model is trained). This makes port 8008
-  // the single source of truth for all content generation.
-  if (DIT24_PROXY_PATHS?.has(path)) {
-    try {
-      return await dit24GatewayPost(`/proxy${path}`, body);
-    } catch {
-      // Port 8008 not ready — fall through to direct MaxCore call
-    }
-  }
-
   const res = await fetch(`${MAXCORE_URL}${path}`, {
     method: "POST",
     headers: {
@@ -407,9 +360,9 @@ function classifyUrl(url: string): UrlContext {
     // templates produce promotional content suited to feature/info pages
     // ("Worth reading", "check this out") rather than generic "link in bio".
     if (
+      host === "maxbooster.replit.app" ||
       host === "max-booster.com" ||
       host.endsWith(".max-booster.com") ||
-      host === "maxbooster.replit.app" ||
       host.endsWith(".maxbooster.replit.app") ||
       host === "maxbooster.app" ||
       host.endsWith(".maxbooster.app") ||
@@ -751,16 +704,18 @@ interface PageMeta {
 
 async function tryOEmbed(oembedUrl: string): Promise<PageMeta | null> {
   try {
-    const res = await fetch(oembedUrl, {
+    const res = await safeFetchText(oembedUrl, {
+      timeoutMs: 8_000,
+      maxBytes: MAX_URL_FETCH_BYTES,
       headers: { "User-Agent": BROWSER_UA },
-      signal: AbortSignal.timeout(8_000),
     });
-    if (!res.ok) return null;
-    const d = await res.json();
+    if (res.status < 200 || res.status >= 300) return null;
+    const d = JSON.parse(res.body) as Record<string, unknown>;
     return {
-      title: d.title,
-      author: d.author_name,
-      siteName: d.provider_name,
+      title: typeof d.title === "string" ? d.title : undefined,
+      author: typeof d.author_name === "string" ? d.author_name : undefined,
+      siteName:
+        typeof d.provider_name === "string" ? d.provider_name : undefined,
     };
   } catch {
     return null;
@@ -783,7 +738,9 @@ function inferSiteNameFromUrl(url: string): string | undefined {
 }
 
 async function scrapeHtml(url: string): Promise<PageMeta> {
-  const res = await fetch(url, {
+  const res = await safeFetchText(url, {
+    timeoutMs: 14_000,
+    maxBytes: MAX_URL_FETCH_BYTES,
     headers: {
       "User-Agent": BROWSER_UA,
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -791,12 +748,10 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
       "Accept-Encoding": "gzip, deflate, br",
       "Cache-Control": "no-cache",
     },
-    signal: AbortSignal.timeout(14_000),
-    redirect: "follow",
   });
-  if (!res.ok) return {};
+  if (res.status < 200 || res.status >= 300) return {};
 
-  const html = await res.text();
+  const html = res.body;
 
   // ── 1. Meta tag extractor (handles both attribute orderings) ──
   const getMeta = (...props: string[]): string | undefined => {
@@ -868,7 +823,10 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
         /<link[^>]+href=["']([^"']+)["'][^>]+type=["']application\/json\+oembed["']/i,
       );
     if (oembedLink?.[1]) {
-      oembedResult = await tryOEmbed(oembedLink[1]);
+      // The discovery URL is attacker-controlled page content. Resolve it
+      // against the fetched page, then let safeFetchText enforce scheme,
+      // DNS, redirect, credential and response-size bounds.
+      oembedResult = await tryOEmbed(new URL(oembedLink[1], url).href);
     }
   } catch {
     /* ignore */
@@ -1031,8 +989,8 @@ const MAXBOOSTER_ROUTE_META: Record<string, PageMeta> = {
 
 // Plain hostnames (no regex chars) — checked with Set.has() or endsWith()
 const MAXBOOSTER_HOSTS = new Set([
-  "max-booster.com",
-  "maxbooster.replit.app", // legacy
+  "maxbooster.replit.app",
+  "max-booster.com", // legacy custom-domain storefront host
   "maxbooster.app",
   "localhost",
   "127.0.0.1",
@@ -2077,6 +2035,46 @@ async function _localAnalyzeUrl(
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Apply the same URL contract when the service is called outside the
+ * authenticated Express route (for example, from a worker or a test). The
+ * route performs this validation at the request boundary, while
+ * safeFetchText() remains responsible for DNS and redirect checks at connect
+ * time.
+ */
+export function normalizeMultimodalUrl(raw: string): string {
+  const payload = raw.trim();
+  if (SPOTIFY_URI_RE.test(payload)) return payload;
+  return assertPublicHttpUrl(payload).href;
+}
+
+export function normalizeMaxcoreAnalyzeResponse(
+  raw: unknown,
+): Record<string, unknown> {
+  let value = raw;
+  // MaxCore deployments have returned both the flat representation and an
+  // envelope (`normalized`, `analysis`, `data`, or `result`). Keep the
+  // orchestrator's input shape stable across those contract versions.
+  for (let depth = 0; depth < 3; depth += 1) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) break;
+    const record = value as Record<string, unknown>;
+    const nested = ["normalized", "analysis", "data", "result"]
+      .map((key) => record[key])
+      .find(
+        (candidate) =>
+          candidate &&
+          typeof candidate === "object" &&
+          !Array.isArray(candidate),
+      );
+    if (!nested) break;
+    value = nested;
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("MaxCore /analyze returned an invalid response");
+  }
+  return value as Record<string, unknown>;
+}
+
 async function normalizeInput(req: GenerationRequest): Promise<unknown> {
   const platformRulesSubset = req.platforms.reduce<
     Record<string, PlatformRules>
@@ -2085,7 +2083,10 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
     return acc;
   }, {});
 
-  const payload = req.input.payload ?? "";
+  const payload =
+    req.input.modality === "url"
+      ? normalizeMultimodalUrl(req.input.payload ?? "")
+      : req.input.payload ?? "";
   let prefetchedMeta: PageMeta | null = null;
 
   // Pre-fetch URL metadata so MaxCore gets the full page content, not just a bare URL
@@ -2103,11 +2104,11 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
   }
 
   try {
-    return await maxcorePost(
+    const response = await maxcorePost(
       "/analyze",
       {
         modality: req.input.modality,
-        payload: req.input.payload,
+        payload,
         artistProfileId: req.artistProfileId,
         platforms: req.platforms,
         intent: req.intent,
@@ -2127,8 +2128,9 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
         },
         platformRules: platformRulesSubset,
       },
-      8_000,
-    ); // 8 s — fail fast to local fallback
+      20_000,
+    ); // MaxCore awareness/model inference can take 8–13 s under load.
+    return normalizeMaxcoreAnalyzeResponse(response);
   } catch (err) {
     // MaxCore is the sole AI source — no local fallback.
     logger.warn(
@@ -3169,7 +3171,7 @@ const imageWorker = {
     } catch (err) {
       logger.warn(
         { err },
-        `[MultimodalGen] MaxCore /generate/image unavailable, using local fallback: ${err instanceof Error ? err.message : String(err)}`,
+        `[MultimodalGen] MaxCore /generate/image unavailable; no local fallback: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
 
@@ -3186,12 +3188,34 @@ const audioWorker = {
   ): Promise<GeneratedAsset[]> {
     const platform = step.params!.platform as Platform | undefined;
     const audioRules = platform ? getRules(platform).audio : null;
+    const normalized = inputs.normalized ?? {};
+    const semantic =
+      normalized && typeof normalized === "object"
+        ? ((normalized as Record<string, unknown>).semantic as
+            | Record<string, unknown>
+            | undefined)
+        : undefined;
+    const genre =
+      (normalized as Record<string, unknown>)?.genre ??
+      semantic?.genre ??
+      (req.constraints as Record<string, unknown> | undefined)?.genre ??
+      undefined;
+    const duration =
+      audioRules?.maxDurationSec ??
+      (step.params as Record<string, unknown> | undefined)?.maxDurationSec ??
+      30;
 
     // 1. Try MaxCore remote audio generation first
     try {
       const result = await maxcorePost("/generate/audio", {
         step,
         inputs,
+        // These are the canonical fields on MaxCore's audio contract. The
+        // nested step/inputs fields are still sent for platform/style context,
+        // but without these top-level values MaxCore silently uses its generic
+        // "music"/30s defaults.
+        ...(genre ? { genre } : {}),
+        duration,
         constraints: req.constraints,
         artistProfileId: req.artistProfileId,
         intent: req.intent,
@@ -3284,9 +3308,8 @@ const audioWorker = {
 
     // 2. Local FFmpeg audio generator fallback — produces a real .mp3 file
     try {
-      const normalized = inputs.normalized ?? {};
       const genre = (normalized as any).genre ?? (req.constraints as any)?.genre ?? "default";
-      const maxSec = audioRules!.maxDurationSec ?? 30;
+      const maxSec = audioRules!.maxDurationSec ?? duration;
       const ttsText = [
         (normalized as any).hook,
         (normalized as any).body,

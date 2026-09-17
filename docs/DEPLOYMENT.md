@@ -145,7 +145,7 @@ Deploy `cf-subdomain-worker.js` to Cloudflare Workers for `*.max-booster.com`:
 
 The worker:
 - Validates hostname against `HOST_RE` allow-list (421 on unknown hosts).
-- Rewrites hostname to `max-booster.com`, passes `X-Forwarded-Host`.
+- Rewrites hostname to `maxbooster.replit.app`, passes `X-Forwarded-Host`.
 - Adds HSTS, `X-Content-Type-Options`, CSP fallback headers.
 - Caches static assets (JS/CSS/images) at edge for 24h.
 

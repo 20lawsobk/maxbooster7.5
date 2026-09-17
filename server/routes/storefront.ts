@@ -32,6 +32,10 @@ import { logger } from "../logger.js";
 import dns from "dns";
 import { validateDomain } from "../modules/domains/dnsValidators.js";
 import { env } from "../config/env.js";
+import {
+  getStorefrontPathUrl,
+  STOREFRONT_APP_ORIGIN,
+} from "../config/storefrontUrls.js";
 
 const dnsPromises = dns?.promises;
 const PLATFORM_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
@@ -129,10 +133,11 @@ router.get("/suggest-url", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
     const slug = await storefrontService.generateRandomSlug();
-    const baseDomain = process.env.BASE_DOMAIN || "max-booster.com";
-    // Platform subdomain: each artist's store lives at {slug}.max-booster?.com
-    const suggestedDomain = `${slug}.${baseDomain}`;
-    const publicUrl = `https://${suggestedDomain}`;
+    // Storefront links use the deployed app's existing slug route.  Do not
+    // suggest a platform subdomain: the legacy max-booster.com zone is not
+    // available to this deployment.
+    const suggestedDomain = STOREFRONT_APP_ORIGIN;
+    const publicUrl = getStorefrontPathUrl(slug);
 
     res.json({
       slug,
@@ -707,7 +712,7 @@ router.post("/subscribe/:tierId", async (req, res) => {
         .where(eq(membershipTiers.id, tierId));
     }
 
-    const appUrl = env?.APP_URL || "https://max-booster.com";
+    const appUrl = env?.APP_URL || "https://maxbooster.replit.app";
     const storefrontSlug = storefront?.slug || "";
     const returnBase = `${appUrl}/storefront/${storefrontSlug}`;
 

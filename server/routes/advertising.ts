@@ -2,12 +2,17 @@
 import { Router, Request, Response } from "express";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { logger } from "../logger.js";
-import { unifiedAIController } from "../services/unifiedAIController.js";
-import { AIUnavailableError } from "../lib/aiSource.js";
+import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
 import { storage } from "../storage.js";
 import { notificationService } from "../services/notificationService.js";
 import { pythonAIService } from "../services/pythonAIService.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import { storageService } from "../services/storageService.js";
+import {
+  getMaxcoreGenerationHeaders,
+  getMaxcoreOrigin,
+  isAllowedMaxcoreMediaPath,
+} from "../services/maxcoreConnector.js";
 import { renderVideo as renderAdvancedVideo } from "../services/advancedVideoRendererService.js";
 import {
   storeUploadedFile,
@@ -19,6 +24,11 @@ import { eq, desc, and, isNotNull, inArray } from "drizzle-orm";
 import { adCampaigns, adCreatives, systemSettings } from "@shared/schema";
 import { aiModelManager } from "../services/aiModelManager.js";
 import { advertisingDispatchService } from "../services/advertisingDispatchService.js";
+import {
+  PROMOTABLE_CONTENT_TYPES,
+  PromotableContentError,
+  resolvePromotableContent,
+} from "../services/promotableContentService.js";
 
 const imageUpload = createHardenedUpload({
   maxFileSize: 10 * 1024 * 1024,
@@ -33,6 +43,249 @@ interface AuthenticatedRequest extends Request {
 }
 
 const router = Router();
+
+/**
+ * Keep the payloads at this boundary identical to MaxCore's documented
+ * contracts.  In particular, /api/optimize/ad is not the ads-platform
+ * endpoint and expects the campaign under `campaign`, not an envelope.
+ */
+export function buildAdOptimizationRequest(campaign: unknown) {
+  return { action: "score", campaign };
+}
+
+export function buildAdGenerationRequest(
+  userId: string,
+  source: {
+    title: string;
+    artist: string;
+    description: string;
+    category: string;
+    artworkUrl: string;
+    sourceUrl: string;
+    sourcePlatform: string;
+    contentType: string;
+  },
+  options: {
+    platform?: string;
+    goal?: string;
+    adType?: string;
+    instruction?: string;
+    contentThemes?: string[];
+  } = {},
+) {
+  const sourceContext = [
+    `Selected ${source.contentType}: ${source.title}`,
+    source.description,
+    `Owned source: ${source.sourcePlatform} (${source.sourceUrl})`,
+    source.artworkUrl ? `Artwork: ${source.artworkUrl}` : "",
+    options.instruction?.trim() || "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    user_id: userId,
+    product: source.title,
+    artist_name: source.artist || undefined,
+    platform: options.platform || "instagram",
+    goal: options.goal || "streams",
+    ad_type: options.adType || "video",
+    genre: source.category || undefined,
+    instruction: sourceContext,
+    content_themes: options.contentThemes?.length
+      ? options.contentThemes
+      : [source.contentType, source.title].filter(Boolean),
+  };
+}
+
+export function buildImageGenerationRequest(input: {
+  prompt: string;
+  slots?: unknown;
+  intent?: string;
+  platform?: string;
+  style?: string;
+  aspect_ratio?: string;
+  tone?: string;
+  goal?: string;
+  artist_name?: string;
+}) {
+  const platformAliases: Record<string, string> = {
+    "google business": "google_business",
+    googlebusiness: "google_business",
+    "google-business": "google_business",
+    twitter: "x",
+    "twitter/x": "x",
+  };
+  const supportedPlatforms = new Set([
+    "facebook",
+    "instagram",
+    "youtube",
+    "tiktok",
+    "threads",
+    "google_business",
+    "x",
+    "linkedin",
+  ]);
+  const rawPlatform = String(input.platform || "").trim().toLowerCase();
+  const normalizedPlatform =
+    platformAliases[rawPlatform] ||
+    rawPlatform.replace(/\s+/g, "_") ||
+    "instagram";
+  const platform = supportedPlatforms.has(normalizedPlatform)
+    ? normalizedPlatform
+    : "instagram";
+  const purpose =
+    input.intent?.trim() || input.goal?.trim() || "promotional";
+  const slots =
+    input.slots ?? [{ id: "advertising-hero", platform, purpose }];
+  const context = [
+    input.tone?.trim() ? `Tone: ${input.tone.trim()}` : "",
+    input.goal?.trim() ? `Goal: ${input.goal.trim()}` : "",
+    input.artist_name?.trim() ? `Artist: ${input.artist_name.trim()}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    prompt: input.prompt,
+    slots,
+    intent: purpose,
+    ...(input.style ? { style: input.style } : {}),
+    ...(input.aspect_ratio ? { aspect_ratio: input.aspect_ratio } : {}),
+    ...(context ? { instruction: context } : {}),
+    ...(input.tone ? { mood: input.tone } : {}),
+    ...(context
+      ? {
+          content_themes: [input.tone, input.goal, input.artist_name].filter(
+            (value): value is string => !!value?.trim(),
+          ),
+        }
+      : {}),
+  };
+}
+
+function imageMagic(buffer: Buffer): boolean {
+  return (
+    (buffer.length > 8 &&
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47) ||
+    (buffer.length > 3 &&
+      buffer[0] === 0xff &&
+      buffer[1] === 0xd8 &&
+      buffer[2] === 0xff) ||
+    (buffer.length > 12 &&
+      buffer.slice(8, 12).toString("ascii") === "WEBP") ||
+    (buffer.length > 6 && buffer.slice(0, 4).toString("ascii") === "GIF8")
+  );
+}
+
+/**
+ * MaxCore image responses point at /uploads/images on the AI service. Resolve
+ * only that service's allowed media path, validate the bytes, and immediately
+ * put the result in PDIM. No local uploads directory is used or returned.
+ *
+ * The optional dependencies make this boundary directly behavior-testable
+ * without starting a server or contacting MaxCore.
+ */
+export async function mirrorGeneratedImageToPDIM(
+  rawUrl: string,
+  deps: {
+    fetchImpl?: typeof fetch;
+    storage?: typeof storageService;
+  } = {},
+): Promise<string> {
+  const origin = getMaxcoreOrigin();
+  const fetchImpl = deps.fetchImpl || fetch;
+  const pdim = deps.storage || storageService;
+  let remote: URL;
+  try {
+    remote = new URL(rawUrl, origin);
+  } catch {
+    throw new Error("MaxCore image URL is invalid");
+  }
+
+  if (
+    !origin ||
+    remote.origin !== new URL(origin).origin ||
+    !isAllowedMaxcoreMediaPath(remote.pathname) ||
+    !/^\/uploads\/images\//i.test(remote.pathname)
+  ) {
+    throw new Error("MaxCore image URL is not an allowed /uploads/images asset");
+  }
+
+  const response = await fetchImpl(remote.toString(), {
+    headers: getMaxcoreGenerationHeaders(),
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!response.ok) {
+    throw new Error(`MaxCore image download failed (${response.status})`);
+  }
+
+  const contentLength = Number(response.headers.get("content-length") || 0);
+  if (contentLength > 10 * 1024 * 1024) {
+    throw new Error("MaxCore image exceeds the 10 MB limit");
+  }
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length === 0 || bytes.length > 10 * 1024 * 1024 || !imageMagic(bytes)) {
+    throw new Error("MaxCore image response is not a valid image");
+  }
+
+  const basename =
+    remote.pathname.split("/").pop()?.replace(/[^A-Za-z0-9._-]/g, "_") ||
+    "generated.png";
+  const contentType =
+    response.headers.get("content-type")?.split(";")[0] || "image/png";
+  const key = await pdim.uploadFile(bytes, "images", basename, contentType);
+  return pdim.getDownloadUrl(key);
+}
+
+/**
+ * MaxCore's content composer has returned a few valid shapes over time
+ * (caption-only, hook/body/cta, or those fields nested under `data`).  Keep
+ * response normalization here, at the advertisement route boundary, so a
+ * valid caption is not rejected merely because MaxCore omitted optional
+ * fields.  A structurally empty response remains unavailable and is never
+ * presented as generated content.
+ */
+export function normalizeAdContent(result: unknown): unknown | null {
+  let candidate: unknown =
+    result && typeof result === "object" && "data" in result
+      ? (result as { data?: unknown }).data
+      : result;
+
+  // Accommodate the occasional { data: { content: { ... } } } envelope
+  // without accepting arbitrary metadata as generated copy.
+  for (let depth = 0; depth < 3; depth += 1) {
+    if (!candidate || typeof candidate !== "object") break;
+    const record = candidate as Record<string, unknown>;
+    if ("content" in record) {
+      candidate = record.content;
+      continue;
+    }
+    if (
+      "data" in record &&
+      !["caption", "hook", "body", "cta"].some(
+        (field) => typeof record[field] === "string" && record[field]?.trim(),
+      )
+    ) {
+      candidate = record.data;
+    }
+    break;
+  }
+
+  if (typeof candidate === "string") {
+    return candidate.trim() ? candidate : null;
+  }
+  if (!candidate || typeof candidate !== "object") return null;
+
+  const content = candidate as Record<string, unknown>;
+  const hasUsableCopy = ["caption", "hook", "body", "cta"].some(
+    (field) => typeof content[field] === "string" && content[field].trim(),
+  );
+  return hasUsableCopy ? content : null;
+}
 
 router.get(
   "/campaigns",
@@ -1588,27 +1841,44 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
       },
     };
 
-    const result = await unifiedAIController?.optimizeAd({
-      campaign,
-      action: "score",
-    });
-
-    if (!result?.success) {
-      return res.status(500).json({ error: result.error });
+    const maxCoreResult = requireMaxCore(
+      await MaxCoreAIClient.infer<Record<string, unknown>>(
+        "/api/optimize/ad",
+        buildAdOptimizationRequest(campaign),
+      ),
+      "advertising campaign optimization",
+    );
+    const optimization =
+      (maxCoreResult as Record<string, unknown>)?.data ?? maxCoreResult;
+    if (
+      !optimization ||
+      typeof optimization !== "object" ||
+      Object.keys(optimization as Record<string, unknown>).length === 0 ||
+      (optimization as Record<string, unknown>).success === false
+    ) {
+      throw new AIUnavailableError(
+        "advertising campaign optimization returned no result",
+      );
+    }
+    if (typeof (optimization as Record<string, unknown>).score !== "number") {
+      throw new AIUnavailableError(
+        "advertising campaign optimization returned no numeric score",
+      );
     }
 
     res.json({
       success: true,
       campaignId,
-      optimization: result.data,
-      recommendations: (result.data as any)?.recommendations || [],
+      optimization,
+      recommendations:
+        (optimization as Record<string, unknown>)?.recommendations || [],
     });
 
     setImmediate(async () => {
         try {
           const campaignName = storedCampaign.name;
           const topRec =
-            ((result?.data as any)?.recommendations as string[] | undefined)?.[0] ||
+            ((optimization as any)?.recommendations as string[] | undefined)?.[0] ||
             "Review your targeting and creatives for better performance.";
           await notificationService?.sendAdCampaignOptimizedNotification(
             userId,
@@ -1624,7 +1894,11 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof AIUnavailableError) {
-      return res.status(error.statusCode).json({ error: error.message });
+      return res.status(error.statusCode).json({
+        success: false,
+        code: error.code,
+        error: error.message,
+      });
     }
     logger.warn({ err: error }, "Failed to optimize campaign:");
     res.status(500).json({ error: "Failed to optimize campaign" });
@@ -1640,6 +1914,8 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
       platform = "instagram",
       topic = "new music release",
       tone = "energetic",
+      musicData,
+      targetAudience,
     } = req.body;
 
     const validPlatforms = [
@@ -1652,24 +1928,47 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
     ];
     const validTones = ["professional", "casual", "energetic", "promotional"];
 
-    const result = await unifiedAIController?.generateContent({
-      tone: validTones.includes(tone) ? tone : "energetic",
-      platform: validPlatforms.includes(platform) ? platform : "instagram",
-      topic: topic || "new music",
-      contentType: contentType === "ad_copy" ? "promotional" : contentType,
-      includeHashtags: true,
-      includeEmojis: true,
-      awarenessMode: "advertising",
-    });
-
-    if (!result?.success) {
-      return res.status(500).json({ error: result.error });
-    }
+    const resolvedPlatform = validPlatforms.includes(platform)
+      ? platform
+      : "instagram";
+    const resolvedTone = validTones.includes(tone) ? tone : "energetic";
+    const audienceContext =
+      typeof targetAudience === "string"
+        ? targetAudience.trim()
+        : targetAudience && typeof targetAudience === "object"
+          ? JSON.stringify(targetAudience)
+          : "";
+    const musicContext =
+      musicData && typeof musicData === "object"
+        ? JSON.stringify(musicData)
+        : "";
+    const generated = normalizeAdContent(
+      await MaxCoreAIClient.infer<Record<string, unknown>>(
+        "/api/generate/content",
+        {
+          topic: topic || "new music",
+          platform: resolvedPlatform,
+          tone: resolvedTone,
+          content_type: contentType === "ad_copy" ? "promotional" : contentType,
+          include_hashtags: true,
+          include_emojis: true,
+          extra_context: [
+            "Create advertising copy for the artist's music promotion.",
+            audienceContext && `Target audience: ${audienceContext}`,
+            musicContext && `Music context: ${musicContext}`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        },
+      ),
+    );
+    const content = requireMaxCore(generated, "advertising content generation");
 
     res.json({
       success: true,
       campaignId,
-      content: result.data,
+      content,
+      source: "MaxCoreAI",
     });
   } catch (error) {
     if (error instanceof AIUnavailableError) {
@@ -1679,6 +1978,128 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
     res.status(500).json({ error: "Failed to generate content" });
   }
 });
+
+/**
+ * Generate a campaign for content selected on the Advertisement page.
+ *
+ * This is deliberately separate from the legacy social VEO route: the page's
+ * Generate button must use the mounted advertising router and MaxCore's ads
+ * contract, never the retired local/Python VEO pipeline.
+ */
+router.post(
+  "/generate-campaign",
+  requireAuthOnly,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, error: "Authentication required" });
+      }
+
+      const {
+        contentType,
+        contentId,
+        platforms,
+        goal,
+        ad_type,
+        brand_notes,
+        campaign_notes,
+      } = (req.body ?? {}) as Record<string, unknown>;
+      if (
+        typeof contentType !== "string" ||
+        !PROMOTABLE_CONTENT_TYPES.includes(contentType as any)
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid contentType. Must be one of: ${PROMOTABLE_CONTENT_TYPES.join(", ")}`,
+        });
+      }
+
+      let source;
+      try {
+        source = await resolvePromotableContent(
+          userId,
+          contentType as any,
+          typeof contentId === "string" ? contentId : undefined,
+        );
+      } catch (error) {
+        if (error instanceof PromotableContentError) {
+          return res
+            .status(error.status)
+            .json({ success: false, error: error.message });
+        }
+        throw error;
+      }
+
+      const selectedPlatform =
+        Array.isArray(platforms) &&
+        typeof platforms.find(
+          (value) => typeof value === "string" && value.trim(),
+        ) === "string"
+          ? (platforms.find(
+              (value) => typeof value === "string" && value.trim(),
+            ) as string)
+          : "instagram";
+      const campaignRequest = buildAdGenerationRequest(userId, source, {
+        platform: selectedPlatform,
+        goal:
+          typeof goal === "string" &&
+          ["streams", "merch", "fanbase", "tickets", "downloads", "conversions"].includes(
+            goal,
+          )
+            ? goal
+            : "streams",
+        adType:
+          typeof ad_type === "string" && ad_type.trim() ? ad_type : "video",
+        instruction: [brand_notes, campaign_notes]
+          .filter((value): value is string => typeof value === "string")
+          .join("\n"),
+      });
+
+      const generated = requireMaxCore(
+        await MaxCoreAIClient.infer<Record<string, unknown>>(
+          "/api/platform/ads/generate",
+          campaignRequest,
+        ),
+        "advertising campaign generation",
+      );
+      const campaign =
+        (generated as Record<string, unknown>)?.data ?? generated;
+      if (
+        !campaign ||
+        typeof campaign !== "object" ||
+        Object.keys(campaign as Record<string, unknown>).length === 0 ||
+        (campaign as Record<string, unknown>).success === false
+      ) {
+        throw new AIUnavailableError(
+          "advertising campaign generation returned no campaign",
+        );
+      }
+
+      return res.json({
+        success: true,
+        campaign,
+        contentType: source.contentType,
+        source: source.summary,
+        sourceSystem: "MaxCoreAI",
+      });
+    } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          code: error.code,
+          error: error.message,
+        });
+      }
+      logger.warn({ err: error }, "Failed to generate ad campaign:");
+      return res
+        .status(500)
+        .json({ success: false, error: "Campaign generation failed" });
+    }
+  },
+);
 
 router.post(
   "/generate-video",
@@ -1694,10 +2115,14 @@ router.post(
         tone,
         goal,
         artist_name,
+        hook,
+        body,
+        cta,
+        voiceover,
         quality,
       } = req.body;
 
-      // Route through the Advanced Video Renderer (MaxCore → Python AI → FFmpeg)
+      // Route through the Advanced Video Renderer (MaxCore only).
       const result = await renderAdvancedVideo({
         topic: topic || "music promotion",
         platform: platform || "instagram",
@@ -1707,17 +2132,18 @@ router.post(
         tone: tone || "energetic",
         goal: goal || "growth",
         artist_name,
+          hook,
+          body,
+          cta,
+          voiceover: voiceover === true,
         quality: quality || "cinematic",
         userId: req.user!.id,
       });
 
       if (!result?.success) {
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: result.error || "Video generation failed",
-          });
+        throw new AIUnavailableError(
+          result?.error || "advertising video generation",
+        );
       }
 
       logger.info(
@@ -1725,6 +2151,13 @@ router.post(
       );
       res.json(result);
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          code: error.code,
+          error: error.message,
+        });
+      }
       logger.warn({ err: error }, "Failed to generate ad video:");
       res
         .status(500)
@@ -1738,62 +2171,89 @@ router.post(
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { topic, platform, tone, goal, artist_name, style } = req.body;
+      const {
+        prompt: requestedPrompt,
+        topic,
+        slots,
+        intent,
+        platform,
+        tone,
+        goal,
+        artist_name,
+        style,
+        aspect_ratio,
+      } = req.body;
+      // `prompt` is the MaxCore contract. Keep the legacy UI's `topic` alias
+      // at this HTTP boundary until all clients have migrated.
+      const prompt =
+        typeof requestedPrompt === "string" && requestedPrompt.trim()
+          ? requestedPrompt
+          : topic;
 
-      if (!topic) {
+      if (typeof prompt !== "string" || !prompt.trim()) {
         return res
           .status(400)
-          .json({ success: false, message: "Topic is required" });
+          .json({ success: false, message: "Prompt is required" });
       }
 
       // ── Tier 1: MaxCore (sole AI source) ─────────────────────────────────────
       type McImageResp = {
         url?: string;
         image_url?: string;
+        path?: string;
+        outputs?: Array<{ url?: string }>;
         width?: number;
         height?: number;
         format?: string;
         prompt_used?: string;
       };
-      let mcImageData: McImageResp | null = null;
-      try {
-        mcImageData = await MaxCoreAIClient?.infer<McImageResp>(
-          "/api/generate/image",
-          {
-            topic,
-            platform: platform || "instagram",
-            tone: tone || "energetic",
-            goal: goal || "growth",
+      const mcImageData = requireMaxCore(
+        await MaxCoreAIClient.infer<McImageResp>("/api/generate/image", {
+          ...buildImageGenerationRequest({
+            prompt: prompt.trim(),
+            slots,
+            intent,
+            platform,
+            tone,
+            goal,
             artist_name,
-            style: style || "modern",
-          },
-        );
-      } catch (err) {
-        // Propagate 503 so callers know MaxCore is down, not just "no image"
-        if (err instanceof AIUnavailableError) throw err;
-        mcImageData = null;
-      }
+            style,
+            aspect_ratio,
+          }),
+        }),
+        "advertising image generation",
+      );
 
-      const imageUrl = mcImageData?.url ?? mcImageData?.image_url;
-      if (imageUrl?.startsWith("/api/storage/file/")) {
-        return res.json({ success: true, ...mcImageData, url: imageUrl });
-      }
+      const imageUrl =
+        mcImageData?.url ??
+        mcImageData?.image_url ??
+        mcImageData?.path ??
+        mcImageData?.outputs?.find((output) => output?.url)?.url;
       if (imageUrl) {
-        logger.warn(
-          { userId: req.user!.id },
-          "MaxCore returned an image outside Pocket Dimension storage",
-        );
-        return res.status(502).json({
-          success: false,
-          error:
-            "Image generation returned content that was not persisted to Pocket Dimension",
-        });
+        try {
+          const pdimUrl = await mirrorGeneratedImageToPDIM(imageUrl);
+          return res.json({
+            success: true,
+            ...mcImageData,
+            url: pdimUrl,
+            image_url: pdimUrl,
+          });
+        } catch (mirrorError) {
+          logger.warn(
+            { err: mirrorError, userId: req.user!.id },
+            "MaxCore image could not be mirrored to Pocket Dimension",
+          );
+          return res.status(502).json({
+            success: false,
+            error:
+              "Image generation returned content that was not persisted to Pocket Dimension",
+          });
+        }
       }
 
-      return res.status(503).json({
-        success: false,
-        error: "MaxCore image generation returned no image",
-      });
+      throw new AIUnavailableError(
+        "advertising image generation returned no image",
+      );
     } catch (error) {
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({ success: false, code: error.code, error: error.message });

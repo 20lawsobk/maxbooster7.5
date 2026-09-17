@@ -172,7 +172,7 @@ export async function prefetchWildcardCert(): Promise<void> {
         `[certStore] No wildcard cert found — ACME provisioning may not have run yet`,
       );
       console.warn(
-        `[certStore] Run: curl -X POST https://max-booster.com/api/dns/provision-wildcard`,
+        `[certStore] Run: curl -X POST https://maxbooster.replit.app/api/dns/provision-wildcard`,
       );
     }
   } catch (err) {

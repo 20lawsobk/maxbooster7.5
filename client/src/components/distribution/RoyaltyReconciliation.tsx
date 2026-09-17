@@ -150,9 +150,13 @@ export function RoyaltyReconciliation() {
   const queryClient = useQueryClient();
 
   const { data: platformEarnings = [] } = useQuery<
+    { platforms?: PlatformEarnings[] },
+    Error,
     PlatformEarnings[]
   >({
-    queryKey: ["/api/distribution/royalties/platforms", dateRange],
+    queryKey: ["/api/distribution/royalties/platforms", { dateRange }],
+    select: (response: { platforms?: PlatformEarnings[] }) =>
+      response.platforms ?? [],
   });
 
   const { data: discrepancies = [] } =

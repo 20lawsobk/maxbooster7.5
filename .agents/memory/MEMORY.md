@@ -152,3 +152,5 @@
 - [Workflow duplicate process trees](workflow-esbuild-duplicate-processes.md) — repeated restarts can orphan app/MaxCore trees, exhaust threads, and kill Vite's esbuild worker; clean-stop before restarting
 - [Artist discovery provider boundary](artist-discovery-provider-boundary.md) — artist IDs come from direct DSP searches; Too Lost handles authenticated distribution, not artist-roster discovery
 - [Artist sync scope](artist-sync-scope.md) — auto-reconciliation must use the selected artist profile's identities, not the user's shared platform-link map; namesake fallbacks fail closed
+- [Nested deployment audits](nested-workspace-deployment-audits.md) — publishing scans bundled subsystem dependencies too; root-only dependency fixes can miss the blocker.
+- [Simulation copy exclusions](production-simulation-copy-exclusions.md) — anchor workspace-only tar exclusions; broad names can remove dependency internals and create false build failures.

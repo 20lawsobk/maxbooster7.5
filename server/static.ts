@@ -15,7 +15,7 @@ import { and, eq } from "drizzle-orm";
 const __filename = fileURLToPath(import.meta.url);
 path?.dirname(__filename);
 
-const SITE_URL = process.env.SITE_URL || "https://max-booster.com";
+const SITE_URL = process.env.SITE_URL || "https://maxbooster.replit.app";
 
 interface CacheEntry<T> {
   value: T;
@@ -49,8 +49,8 @@ const metaCache = makeCache<{
 } | null>(120_000);
 
 const BASE_DOMAINS = [
-  "max-booster.com",
-  "maxbooster.replit.app", // legacy — keep for backward-compat during migration
+  "maxbooster.replit.app",
+  "max-booster.com", // legacy custom-domain storefront host
 ];
 
 function extractSubdomain(hostname: string): string | null {

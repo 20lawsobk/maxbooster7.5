@@ -12,9 +12,55 @@ const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 minutes before expir
 const TOKEN_REFRESH_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 const ENCRYPTION_KEY_SETTING = "social_oauth_encryption_key";
 
+// These are the eight provider cards in the social connections inventory.
+// `google` is intentionally not included: it is the application's sign-in
+// provider, not a social connection. Meta is represented by the two account
+// rows it creates (Facebook and Instagram).
+export const SOCIAL_PROVIDER_IDS = [
+  "meta",
+  "twitter",
+  "youtube",
+  "tiktok",
+  "linkedin",
+  "threads",
+  "googlebusiness",
+  "spotify",
+] as const;
+
+// These are the account records returned by getConnectedPlatforms. Meta's
+// combined provider creates separate Facebook and Instagram rows.
+export const CONNECTED_PLATFORM_IDS = [
+  "facebook",
+  "instagram",
+  "twitter",
+  "youtube",
+  "linkedin",
+  "googlebusiness",
+  "threads",
+  "tiktok",
+  "spotify",
+] as const;
+
+/**
+ * Collect connected account IDs in a stable order.
+ *
+ * Keeping this small piece of policy separate makes the provider inventory
+ * testable without constructing the singleton (which starts its refresh
+ * monitor and loads the encryption key during module initialization).
+ */
+export async function collectConnectedPlatforms(
+  isConnected: (platform: string) => Promise<boolean>,
+): Promise<string[]> {
+  const connected: string[] = [];
+  for (const platform of CONNECTED_PLATFORM_IDS) {
+    if (await isConnected(platform)) connected.push(platform);
+  }
+  return connected;
+}
+
 // Get base domain for OAuth redirects - always use production URL for consistency
 const getOAuthDomain = () =>
-  process.env.DOMAIN || process.env.APP_URL || "https://max-booster.com";
+  process.env.DOMAIN || process.env.APP_URL || "https://maxbooster.replit.app";
 
 /**
  * Social OAuth Service
@@ -412,7 +458,9 @@ export class SocialOAuthService {
         "instagram_content_publish",
         "instagram_manage_comments",
       ],
-      redirectUri: `${getOAuthDomain()}/auth/meta/callback`,
+      // Match the live route's canonical Meta callback. The /auth/meta alias
+      // exists, but the connect flow registers the Facebook callback path.
+      redirectUri: `${getOAuthDomain()}/auth/facebook/callback`,
     });
 
     // Twitter/X OAuth
@@ -485,6 +533,9 @@ export class SocialOAuthService {
         "",
       authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
       tokenUrl: "https://oauth2.googleapis.com/token",
+      // `plus.business.manage` was retired by Google Business Profile and
+      // causes consent/token requests to fail when sent alongside the
+      // supported Business Profile scope.
       scopes: ["https://www.googleapis.com/auth/business.manage"],
       redirectUri: `${getOAuthDomain()}/auth/google-business/callback`,
     });
@@ -544,6 +595,27 @@ export class SocialOAuthService {
       scopes: tiktokScopesStr.split(","),
       redirectUri: tiktokRedirectUri,
     });
+
+    // Keep Spotify in the service registry as well as routes/socialOAuth.ts.
+    // This prevents callers of this service from treating a supported provider
+    // as unconfigured.
+    this.oauthConfigs.set("spotify", {
+      clientId: process.env.SPOTIFY_CLIENT_ID || "",
+      clientSecret: process.env.SPOTIFY_CLIENT_SECRET || "",
+      authUrl: "https://accounts.spotify.com/authorize",
+      tokenUrl: "https://accounts.spotify.com/api/token",
+      scopes: [
+        "user-read-private",
+        "user-read-email",
+        "user-top-read",
+        "user-read-recently-played",
+        "user-library-read",
+        "playlist-read-private",
+        "user-read-playback-state",
+        "user-read-currently-playing",
+      ],
+      redirectUri: `${getOAuthDomain()}/auth/spotify/callback`,
+    });
   }
 
   /**
@@ -586,7 +658,8 @@ export class SocialOAuthService {
     refreshToken?: string;
     expiresIn?: number;
   }> {
-    const config = this.oauthConfigs.get(platform);
+    const actualPlatform = platform === "tiktok_sandbox" ? "tiktok" : platform;
+    const config = this.oauthConfigs.get(actualPlatform);
     if (!config) {
       throw new Error(`OAuth not configured for platform: ${platform}`);
     }
@@ -637,9 +710,14 @@ export class SocialOAuthService {
         expiresIn: expires_in,
       };
     } catch (error: unknown) {
+      const responseData = (error as any)?.response?.data;
+      const providerError =
+        responseData?.error_description ||
+        responseData?.error ||
+        (error as any)?.message ||
+        "unknown error";
       logger.warn(
-        `OAuth token exchange failed for ${platform}:`,
-        (error as any)?.response?.data || (error as any)?.message,
+        `OAuth token exchange failed for ${platform}: ${String(providerError)}`,
       );
       throw new Error(`Failed to connect ${platform} account`);
     }
@@ -653,7 +731,8 @@ export class SocialOAuthService {
     platform: string,
     providedRefreshToken?: string,
   ): Promise<{ accessToken: string; expiresIn?: number }> {
-    const config = this.oauthConfigs.get(platform);
+    const actualPlatform = platform === "tiktok_sandbox" ? "tiktok" : platform;
+    const config = this.oauthConfigs.get(actualPlatform);
     if (!config) {
       throw new Error(`OAuth not configured for platform: ${platform}`);
     }
@@ -664,7 +743,7 @@ export class SocialOAuthService {
       if (!refreshToken) {
         // Get refresh token from database if not provided
         const tokens = await this.getStoredTokens(userId, platform);
-        if ((!tokens as any)?.refreshToken) {
+        if (!(tokens as any)?.refreshToken) {
           throw new Error("No refresh token available");
         }
         refreshToken = (tokens as any)?.refreshToken;
@@ -682,7 +761,7 @@ export class SocialOAuthService {
         "Content-Type": "application/x-www-form-urlencoded",
       };
 
-      if (platform === "twitter") {
+      if (platform === "twitter" || platform === "spotify") {
         const credentials = Buffer?.from(
           `${config?.clientId}:${config?.clientSecret}`,
         ).toString("base64");
@@ -762,26 +841,9 @@ export class SocialOAuthService {
    * Get connected platforms for a user
    */
   async getConnectedPlatforms(userId: string): Promise<string[]> {
-    const platforms = [
-      "facebook",
-      "instagram",
-      "twitter",
-      "youtube",
-      "linkedin",
-      "googlebusiness",
-      "google",
-      "threads",
-      "tiktok",
-    ];
-    const connected: string[] = [];
-
-    for (const platform of platforms) {
-      if (await this.isPlatformConnected(userId, platform)) {
-        connected?.push(platform);
-      }
-    }
-
-    return connected;
+    return collectConnectedPlatforms((platform) =>
+      this.isPlatformConnected(userId, platform),
+    );
   }
 
   /**
@@ -833,10 +895,45 @@ export class SocialOAuthService {
     userId: string,
     platform: string,
   ): Promise<unknown> {
-    const tokenString = await storage.getUserSocialToken(userId, platform);
-    if (!tokenString) return null;
+    // The live callback stores accessToken/refreshToken in their dedicated
+    // social_accounts columns, while older service callers stored an
+    // encrypted JSON bundle in accessToken. Read both shapes so refresh works
+    // for connections created by either path.
+    const rows = await db
+      .select({
+        accessToken: socialAccounts.accessToken,
+        refreshToken: socialAccounts.refreshToken,
+        tokenExpiresAt: socialAccounts.tokenExpiresAt,
+      })
+      .from(socialAccounts)
+      .where(
+        and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, platform),
+          eq(socialAccounts.isActive, true),
+        ),
+      )
+      .limit(1);
+    const row = rows[0];
+    if (!row?.accessToken) return null;
 
-    return this.parseStoredTokens(tokenString);
+    const parsed = this.parseStoredTokens(row.accessToken);
+    if (parsed && typeof parsed === "object" && (parsed as any).accessToken) {
+      return {
+        ...parsed,
+        refreshToken: (parsed as any).refreshToken ?? row.refreshToken,
+        expiresAt:
+          (parsed as any).expiresAt ??
+          row.tokenExpiresAt?.toISOString?.() ??
+          undefined,
+      };
+    }
+
+    return {
+      accessToken: row.accessToken,
+      refreshToken: row.refreshToken,
+      expiresAt: row.tokenExpiresAt?.toISOString?.(),
+    };
   }
 
   /**
@@ -854,21 +951,60 @@ export class SocialOAuthService {
     const existing = await this.getStoredTokens(userId, platform);
     if (!existing) return;
 
-    const updated = {
-      ...existing,
+    // Keep the live social_accounts representation usable by publishing
+    // services, which send accessToken directly as a Bearer token.
+    const account = await db
+      .select({
+        id: socialAccounts.id,
+        accessToken: socialAccounts.accessToken,
+      })
+      .from(socialAccounts)
+      .where(
+        and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, platform),
+        ),
+      )
+      .limit(1);
+    if (account.length === 0) return;
+
+    const parsedStored = account[0].accessToken
+      ? this.parseStoredTokens(account[0].accessToken)
+      : null;
+    if (parsedStored && typeof parsedStored === "object") {
+      const updated = {
+        ...parsedStored,
+        accessToken: update.accessToken,
+        ...(update.expiresAt
+          ? { expiresAt: update.expiresAt.toISOString() }
+          : {}),
+        ...(update.refreshToken
+          ? { refreshToken: update.refreshToken }
+          : {}),
+        updatedAt: new Date().toISOString(),
+      };
+      await db
+        .update(socialAccounts)
+        .set({
+          accessToken: this.encryptToken(JSON.stringify(updated)),
+        })
+        .where(eq(socialAccounts.id, account[0].id));
+      logger.info(`Updated access token for user ${userId} on ${platform}`);
+      return;
+    }
+
+    const updateValues: Record<string, unknown> = {
       accessToken: update.accessToken,
-      expiresAt: update.expiresAt?.toISOString(),
-      updatedAt: new Date().toISOString(),
-      ...(update?.refreshToken ? { refreshToken: update.refreshToken } : {}),
     };
+    if (update.refreshToken) updateValues.refreshToken = update.refreshToken;
+    if (update.expiresAt) updateValues.tokenExpiresAt = update.expiresAt;
 
-    // Encrypt updated token data before storing
-    const encryptedData = this.encryptToken(JSON.stringify(updated));
-    await storage.updateUserSocialToken(userId, platform, encryptedData);
+    await db
+      .update(socialAccounts)
+      .set(updateValues as any)
+      .where(eq(socialAccounts.id, account[0].id));
 
-    logger.info(
-      `🔐 Encrypted and updated access token for user ${userId} on ${platform}`,
-    );
+    logger.info(`Updated access token for user ${userId} on ${platform}`);
   }
 }
 

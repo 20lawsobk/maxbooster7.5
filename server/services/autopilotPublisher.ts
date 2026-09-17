@@ -11,6 +11,7 @@ import {
 import { storage } from "../storage.js";
 import { logger } from "../logger.js";
 import { storefrontService } from "./storefrontService.js";
+import { STOREFRONT_APP_ORIGIN } from "../config/storefrontUrls.js";
 import { aiModelManager } from "./aiModelManager.js";
 import { autoPostingServiceV2 } from "./autoPostingServiceV2.js";
 import type { PostContent } from "./autoPostingServiceV2.js";
@@ -293,8 +294,7 @@ class AutopilotPublisher {
     beatContext: string;
     promotionContext: string;
   }> {
-    const baseDomain = process.env.BASE_DOMAIN || "max-booster.com";
-    const defaultUrl = `https://${baseDomain}`;
+    const defaultUrl = STOREFRONT_APP_ORIGIN;
 
     try {
       // Fetch the user's primary storefront

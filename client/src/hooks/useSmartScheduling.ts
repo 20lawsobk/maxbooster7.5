@@ -62,7 +62,10 @@ export function useSmartScheduling(
     error,
     refetch,
   } = useQuery<SmartScheduleData>({
-    queryKey: ["/api/personalization/smart-schedule", platform, contentType],
+    queryKey: [
+      "/api/personalization/smart-schedule",
+      { platform, contentType },
+    ],
     staleTime: 15 * 60 * 1000,
   });
 

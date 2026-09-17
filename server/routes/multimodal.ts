@@ -4,6 +4,7 @@ import { requireAuthOnly } from "../middleware/auth.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
 import { logger } from "../logger.js";
 import { handleGeneration } from "../services/multimodalGenerationService.js";
+import { assertPublicHttpUrl } from "../services/safeUrlFetch.js";
 import {
   type GenerationRequest,
   type Platform,
@@ -27,6 +28,9 @@ const VALID_PLATFORMS = new Set<Platform>([
 
 const VALID_PACKS = new Set<PackId>(Object.keys(PACK_DEFINITIONS) as PackId[]);
 
+const SPOTIFY_URI_RE =
+  /^spotify:(?:track|album|artist|playlist):[A-Za-z0-9]+$/i;
+
 // POST /api/multimodal/generate
 // Full multimodal content generation: normalise → plan → workers → package
 router.post(
@@ -35,9 +39,19 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const body = req.body as Partial<GenerationRequest> & { userId?: string };
-      const userId: string = req.user?.id || body?.userId || "";
+      // Generation context is user-owned. Never trust a caller-supplied userId
+      // (the external MaxCore contract includes one, but this authenticated
+      // route must bind it to the session identity).
+      const userId: string = req.user?.id || "";
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
 
-      if (!body?.input?.payload) {
+      if (
+        !body?.input ||
+        typeof body.input.payload !== "string" ||
+        !body.input.payload.trim()
+      ) {
         return res.status(400).json({ error: "input.payload is required" });
       }
       if (!Array.isArray(body?.platforms) || body?.platforms.length === 0) {
@@ -46,13 +60,43 @@ router.post(
           .json({ error: "platforms array is required and must not be empty" });
       }
 
-      const platforms = body?.platforms.filter((p) =>
-        VALID_PLATFORMS?.has(p as Platform),
-      ) as Platform[];
-      if (platforms?.length === 0) {
+      const invalidPlatforms = body.platforms.filter(
+        (p) => !VALID_PLATFORMS.has(p as Platform),
+      );
+      if (invalidPlatforms.length > 0) {
         return res.status(400).json({
-          error: `No valid platforms. Accepted: ${[...VALID_PLATFORMS].join(", ")}`,
+          error: `Invalid platforms: ${invalidPlatforms.join(", ")}. Accepted: ${[...VALID_PLATFORMS].join(", ")}`,
         });
+      }
+      const platforms = body.platforms as Platform[];
+      let inputPayload = body.input.payload;
+
+      if (body.input.modality === "url") {
+        const payload = body.input.payload.trim();
+        if (payload.length > 2048) {
+          return res.status(400).json({
+            error: "input.payload URL is too long (max 2048 characters)",
+          });
+        }
+        inputPayload = payload;
+        if (!SPOTIFY_URI_RE.test(payload)) {
+          try {
+            // This is the shared URL contract used by the outbound fetcher.
+            // It rejects non-http(s), credentials and literal reserved hosts;
+            // safeFetchText() performs the authoritative DNS and redirect
+            // checks when metadata is fetched.
+            inputPayload = assertPublicHttpUrl(payload).href;
+          } catch {
+            return res.status(400).json({
+              error: "input.payload must target a public external URL",
+            });
+          }
+        }
+        if (inputPayload.length > 2048) {
+          return res.status(400).json({
+            error: "input.payload URL is too long (max 2048 characters)",
+          });
+        }
       }
 
       const packId =
@@ -66,7 +110,7 @@ router.post(
         artistProfileId: body.artistProfileId,
         input: {
           modality: body.input.modality || "text",
-          payload: body.input.payload,
+          payload: inputPayload,
           metadata: body.input.metadata,
         },
         platforms,

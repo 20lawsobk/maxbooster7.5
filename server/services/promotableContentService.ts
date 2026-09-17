@@ -68,7 +68,7 @@ export class PromotableContentError extends Error {
 }
 
 function appUrl(): string {
-  return (process.env.APP_URL || "https://max-booster.com").replace(
+  return (process.env.APP_URL || "https://maxbooster.replit.app").replace(
     /\/$/,
     "",
   );

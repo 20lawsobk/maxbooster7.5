@@ -132,7 +132,7 @@ Uses native `fetch` with hardcoded oEmbed URL — not the `safeFetchText` axios 
 Browser: https://b-lawzmusic.max-booster.com/
 → Cloudflare Worker (wildcard route *.max-booster.com/*)
   → Validates hostname against HOST_RE allow-list
-  → Rewrites hostname to max-booster.com
+  → Rewrites hostname to maxbooster.replit.app
   → Sets X-Forwarded-Host: b-lawzmusic.max-booster.com
   → Applies HSTS + CSP security headers
 → Replit origin (Express)

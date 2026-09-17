@@ -190,6 +190,21 @@ describe("Self-Evolution posting_optimization → unifiedAIController.generateCo
     });
     expect(lastPayload().content_type).toBeUndefined();
   });
+
+  it("keeps a URL topic parseable by MaxCore instead of appending metadata to it", async () => {
+    await controller.generateContent({
+      tone: "energetic",
+      platform: "instagram" as never,
+      topic: "https://open.spotify.com/track/example",
+      artistName: "Artist",
+      trackTitle: "Track",
+      keywords: ["release"],
+    });
+
+    expect(lastPayload().topic).toBe(
+      "https://open.spotify.com/track/example",
+    );
+  });
 });
 
 describe("applyPostingOptimization — content-type/objective bias (unified controller)", () => {

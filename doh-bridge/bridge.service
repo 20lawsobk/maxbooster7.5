@@ -1,6 +1,6 @@
 [Unit]
 Description=Max Booster DoH-to-UDP DNS Bridge
-Documentation=https://max-booster.com/docs/dns-bridge
+Documentation=https://maxbooster.replit.app/docs/dns-bridge
 After=network-online.target
 Wants=network-online.target
 

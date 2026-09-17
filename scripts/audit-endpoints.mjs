@@ -41,8 +41,14 @@
  *     surface) and informative (catches real 500s / stub JSON bodies).
  *
  * Run:    node scripts/audit-endpoints.mjs
+ * Static: node scripts/audit-endpoints.mjs --static
  * Output: reports/endpoint-audit.json  (full structured data)
  *         reports/endpoint-audit.md    (human-readable report)
+ *
+ * `--static` is the comprehensive inventory mode: it never contacts the
+ * running app, inventories apiRequest/useQuery/fetch/axios/upload templates,
+ * records cache/comment/SPA/external references separately, and reports exact
+ * static matches, confirmed unmatched calls, and unresolved dynamic URLs.
  */
 
 import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -56,6 +62,8 @@ const BASE_URL = process.env.AUDIT_BASE_URL || "http://127.0.0.1:5000";
 const CONCURRENCY = 12;
 const REQUEST_TIMEOUT_MS = 6000;
 const REPORT_DIR = join(ROOT, "reports");
+const STATIC_ONLY =
+  process.argv.includes("--static") || process.env.AUDIT_STATIC_ONLY === "1";
 
 const SENSITIVE_KEYWORDS =
   /logout|delete|remove|cancel|refund|charge|purchase|checkout|subscri|webhook|reset|revoke|purge|wipe|deactivate|ban|impersonate|send|notify|trigger|generate|upload|export|sync|connect|register|unsubscribe|invite|share|publish|submit|apply|redeem|transfer|withdraw|payout|activate|approve|reject|verify-email|2fa/i;
@@ -241,11 +249,12 @@ function extractLazyLoaderRegistrations(src) {
 // Phase 2: extract route registrations from a single file
 // ---------------------------------------------------------------------------
 
-const METHOD_RE = /\b(app|router)\.(get|post|put|patch|delete|all)\s*\(\s*/g;
 const STRING_LIT_RE = /^(['"`])((?:\\.|(?!\1)[^\\])*)\1/;
 const ARRAY_LIT_RE = /(?:const|let)\s+(\w+)\s*(?::\s*[^=\n]+)?=\s*\[([\s\S]*?)\]\s*;/g;
 const ARRAY_STRING_RE = /(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
 const FOR_OF_RE = /for\s*\(\s*(?:const|let)\s+(\w+)\s+of\s+(\w+)\s*\)\s*\{/g;
+const FOR_OF_OBJECT_RE =
+  /for\s*\(\s*(?:const|let)\s+\{\s*(\w+)[^}]*\}\s+of\s+(\w+)\s*\)\s*\{/g;
 const AUTH_MARKERS = ["requireAuth", "requireAuthOnly", "requireAdmin", "require2FA"];
 // "strong" markers are rarely used to describe deliberate, finished code --
 // finding one is good evidence of genuinely incomplete work.
@@ -263,10 +272,30 @@ function extractRoutesFromFile(file) {
   const routes = [];
   const unresolved = [];
 
+  // Most route modules use `router`, but the main app and a handful of
+  // modules use names such as `adminRouter`.  Restricting this to the two
+  // historical names silently dropped those registrations from the inventory.
+  // Only identifiers initialized from Router() (plus the top-level Express
+  // app) are accepted; this avoids treating arbitrary service methods as routes.
+  const routerIdentifiers = new Set(["app", "router"]);
+  const routerDeclarationRe =
+    /(?:const|let|var)\s+(\w+)\s*=\s*(?:express\.)?(?:Router|router)\s*\(/g;
+  for (const declaration of src.matchAll(routerDeclarationRe)) {
+    routerIdentifiers.add(declaration[1]);
+  }
+  const methodRe = new RegExp(
+    `\\b(${[...routerIdentifiers].map((name) => name.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")).join("|")})(?:\\?\\.|\\.)(get|post|put|patch|delete|all)\\s*\\(\\s*`,
+    "g",
+  );
+
   const arrays = new Map();
   for (const m of src.matchAll(ARRAY_LIT_RE)) {
     const strings = [...m[2].matchAll(ARRAY_STRING_RE)].map((s) => s[2]);
-    if (strings.length) arrays.set(m[1], strings);
+    const objectPaths = [
+      ...m[2].matchAll(/\bpath\s*:\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/g),
+    ].map((s) => s[2]);
+    if (objectPaths.length) arrays.set(m[1], objectPaths);
+    else if (strings.length) arrays.set(m[1], strings);
   }
 
   const loopRanges = [];
@@ -283,10 +312,23 @@ function extractRoutesFromFile(file) {
     }
     loopRanges.push({ loopVar, arrayName, start: braceStart, end: i });
   }
+  for (const m of src.matchAll(FOR_OF_OBJECT_RE)) {
+    const [loopVar, arrayName] = [m[1], m[2]];
+    if (!arrays.has(arrayName)) continue;
+    const braceStart = m.index + m[0].length - 1;
+    let depth = 1,
+      i = braceStart + 1;
+    while (i < src.length && depth > 0) {
+      if (src[i] === "{") depth++;
+      else if (src[i] === "}") depth--;
+      i++;
+    }
+    loopRanges.push({ loopVar, arrayName, start: braceStart, end: i });
+  }
   const findLoopRange = (offset) =>
     loopRanges.find((r) => offset >= r.start && offset < r.end) || null;
 
-  for (const m of src.matchAll(METHOD_RE)) {
+  for (const m of src.matchAll(methodRe)) {
     const registeredOn = m[1]; // "app" or "router" -- load-bearing for Phase 3's absolute-vs-relative-path decision
     const method = m[2].toUpperCase();
     const callOffset = m.index;
@@ -302,7 +344,13 @@ function extractRoutesFromFile(file) {
     const nextWindow = src.slice(callOffset, callOffset + 600);
     const callsNext = /\bnext\s*\(\s*\)/.test(nextWindow);
 
-    const strMatch = after.match(STRING_LIT_RE);
+    // Middleware and formatting are commonly placed on preceding lines, so
+    // allow whitespace/comments before the route path. The first argument is
+    // still required to be a literal; computed expressions remain explicit
+    // unresolved registrations below.
+    const strMatch = after.match(
+      /^\s*(?:(?:\/\/[^\n]*\n)|(?:\/\*[\s\S]*?\*\/\s*))*(['"`])((?:\\.|(?!\1)[^\\])*)\1/,
+    );
     if (strMatch) {
       routes.push({
         method,
@@ -421,69 +469,224 @@ function buildBackendInventory() {
 // Phase 4: frontend call extraction
 // ---------------------------------------------------------------------------
 
-const API_STRING_RE = /(['"`])(\/api\/[^'"`]*)\1/g;
-const METHOD_HINT_RE = /apiRequest\(\s*["'`](GET|POST|PUT|PATCH|DELETE)["'`]/;
+const STRING_RE = /(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
+const HTTP_METHODS = "GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS";
 // This codebase's TanStack Query default queryFn (getQueryFn in queryClient.ts)
 // does a plain unauthenticated-method fetch(url) -- i.e. GET -- for any
 // useQuery whose queryFn is the global default. A path literal sitting inside
 // a `queryKey: [...]` array is therefore confidently a GET, not a guess.
-const QUERYKEY_CONTEXT_RE = /queryKey\s*:\s*\[\s*$/;
-const VAR_ASSIGN_RE = /(?:const|let|var)\s+(\w+)\s*(?::[^=\n]+)?=[^;{}]*$/;
+function isInsideComment(src, offset) {
+  const lineStart = src.lastIndexOf("\n", offset - 1) + 1;
+  const linePrefix = src.slice(lineStart, offset);
+  if (/^\s*\/\//.test(linePrefix) || /^\s*\*/.test(linePrefix)) return true;
+  const before = src.slice(0, offset);
+  return before.lastIndexOf("/*") > before.lastIndexOf("*/");
+}
+
+function networkSourceForReference(src, offset) {
+  const before = src.slice(Math.max(0, offset - 700), offset);
+  const candidates = [
+    ["apiRequest", before.lastIndexOf("apiRequest(")],
+    ["uploadWithProgress", before.lastIndexOf("uploadWithProgress(")],
+    ["fetch", before.lastIndexOf("fetch(")],
+    ["axios", Math.max(
+      before.lastIndexOf("axios.get("), before.lastIndexOf("axios.post("),
+      before.lastIndexOf("axios.put("), before.lastIndexOf("axios.patch("),
+      before.lastIndexOf("axios.delete("), before.lastIndexOf("axios.request("),
+    )],
+  ].filter(([, index]) => index >= 0);
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => b[1] - a[1]);
+  return candidates[0][0];
+}
+
+function methodForReference(src, offset, source) {
+  const before = src.slice(Math.max(0, offset - 500), offset);
+  const after = src.slice(offset, offset + 700);
+  if (source === "apiRequest") {
+    const requestStart = before.lastIndexOf("apiRequest(");
+    const requestContext = requestStart >= 0 ? before.slice(requestStart) : before;
+    const nearestMatch = requestContext.match(
+      new RegExp(`apiRequest\\s*\\(\\s*["'\`](${HTTP_METHODS})["'\`]`, "i"),
+    );
+    if (nearestMatch) return { method: nearestMatch[1].toUpperCase(), methodConfidence: "detected" };
+  }
+  if (source === "uploadWithProgress") return { method: "POST", methodConfidence: "detected" };
+  if (source === "axios") {
+    const match = before.match(/axios\.(get|post|put|patch|delete)\s*\(/i);
+    return { method: match ? match[1].toUpperCase() : "GET", methodConfidence: match ? "detected" : "assumed" };
+  }
+  if (source === "fetch") {
+    // Restrict option scanning to the current fetch call. Looking hundreds of
+    // characters ahead can accidentally borrow a method from the next fetch
+    // in the same component and fabricate a mismatch.
+    const match = after.slice(0, 220).match(/method\s*:\s*["'`](GET|POST|PUT|PATCH|DELETE)["'`]/i);
+    return { method: match ? match[1].toUpperCase() : "GET", methodConfidence: match ? "detected" : "assumed" };
+  }
+  return { method: "GET", methodConfidence: "detected" };
+}
+
+function queryKeyHasCustomFn(src, offset) {
+  const before = src.slice(Math.max(0, offset - 1200), offset);
+  const after = src.slice(offset, offset + 2200);
+  const queryStart = before.lastIndexOf("useQuery");
+  return queryStart >= 0 && /\bqueryFn\s*:/.test(before.slice(queryStart) + after);
+}
+
+function queryKeyPath(src, offset, rawPath) {
+  const after = src.slice(offset + rawPath.length + 2, offset + rawPath.length + 160);
+  return /^\s*,\s*[A-Za-z_$][\w$]*\s*(?:,|\])/.test(after)
+    ? `${rawPath}/:param`
+    : rawPath;
+}
 
 function extractFrontendCalls() {
   const files = walk(CLIENT_DIR, [".ts", ".tsx"]).filter((f) => !isTestFile(f));
   const calls = [];
+  const references = [];
+  const dynamicUnresolved = [];
+  const externalReferences = [];
+  const spaReferences = [];
   for (const file of files) {
     const rel = relative(ROOT, file);
     const src = readFileSync(file, "utf8");
-    for (const m of src.matchAll(API_STRING_RE)) {
-      const path = m[2].replace(/\$\{[^}]*\}/g, ":param");
-      const before = src.slice(Math.max(0, m.index - 150), m.index);
-      const methodHint = before.match(METHOD_HINT_RE);
+    for (const m of src.matchAll(STRING_RE)) {
+      const raw = m[2];
+      const path = raw.replace(/\$\{[^}]*\}/g, ":param");
+      const line = lineAt(src, m.index);
+      const before = src.slice(Math.max(0, m.index - 700), m.index);
+      let source = networkSourceForReference(src, m.index);
+      const assignedVariable = src
+        .slice(Math.max(0, m.index - 80), m.index)
+        .match(/(?:const|let|var)\s+(\w+)\s*=\s*$/)?.[1];
+      const openedAsNavigation =
+        assignedVariable &&
+        new RegExp(`window\\.open\\(\\s*${assignedVariable}\\b`).test(
+          src.slice(m.index, m.index + 500),
+        );
+      const nearestNavigation = Math.max(
+        before.lastIndexOf("window.open("),
+        before.lastIndexOf("location.href"),
+        before.lastIndexOf("window.location"),
+      );
+      const nearestNetwork = Math.max(
+        before.lastIndexOf("apiRequest("),
+        before.lastIndexOf("uploadWithProgress("),
+        before.lastIndexOf("fetch("),
+        before.lastIndexOf("axios."),
+      );
+      if (nearestNavigation > nearestNetwork || openedAsNavigation) source = null;
+      const comment = isInsideComment(src, m.index);
+      const cacheIndex = Math.max(
+        before.lastIndexOf("invalidateQueries"),
+        before.lastIndexOf("setQueryData"),
+        before.lastIndexOf("getQueryData"),
+        before.lastIndexOf("removeQueries"),
+        before.lastIndexOf("resetQueries"),
+        before.lastIndexOf("cancelQueries"),
+      );
+      const networkIndex = Math.max(
+        before.lastIndexOf("apiRequest("),
+        before.lastIndexOf("uploadWithProgress("),
+        before.lastIndexOf("fetch("),
+        before.lastIndexOf("axios."),
+      );
+      const cacheOnly = cacheIndex >= 0 && cacheIndex > networkIndex;
+      const queryKey = /queryKey\s*:\s*\[[^\]]*$/.test(before.slice(-500));
+      const queryKeyVariable = before.match(
+        /(?:const|let|var)\s+(\w+)\s*=\s*\[\s*$/,
+      )?.[1];
+      const variableUseQuery =
+        queryKeyVariable &&
+        new RegExp(`queryKey\\s*:\\s*${queryKeyVariable}\\b`).test(
+          src.slice(m.index, m.index + 900),
+        );
+      const inUseQuery =
+        (queryKey || variableUseQuery) &&
+        /\buseQuery(?:<[^>]*>)?\s*\(/.test(before.slice(-1200) + src.slice(m.index, m.index + 900));
 
-      let method = null;
-      let methodConfidence = null;
-      if (methodHint) {
-        method = methodHint[1];
-        methodConfidence = "detected";
-      } else if (QUERYKEY_CONTEXT_RE.test(before)) {
-        // Inside a queryKey array -> default queryFn -> GET, by this codebase's
-        // own convention (verified by reading getQueryFn), not a blind guess.
-        method = "GET";
-        methodConfidence = "detected";
-      } else {
-        // The path may be assigned to a variable first, then handed to
-        // apiRequest(METHOD, varName, ...) later in the same function --
-        // common for computed/conditional endpoints. Look forward (bounded)
-        // for that specific call using the captured variable name.
-        const varAssign = before.match(VAR_ASSIGN_RE);
-        if (varAssign) {
-          const varName = varAssign[1];
-          const after = src.slice(m.index, m.index + 800);
-          const forwardHint = after.match(
-            new RegExp(`apiRequest\\(\\s*["'\`](GET|POST|PUT|PATCH|DELETE)["'\`]\\s*,\\s*${varName}\\b`),
-          );
-          if (forwardHint) {
-            method = forwardHint[1];
-            methodConfidence = "detected";
-          }
-        }
+      if (/^https?:\/\//i.test(raw)) {
+        externalReferences.push({
+          url: raw,
+          file: rel,
+          line,
+          source: source || "external-reference",
+        });
+        continue;
       }
-      if (!method) {
-        method = "GET";
-        methodConfidence = "assumed";
+      if (
+        /^\/(?!api\/)/.test(raw) &&
+        /(?:href|to|navigate|location|redirect|url)\s*[:=(]/.test(before.slice(-180))
+      ) {
+        spaReferences.push({ path: raw, file: rel, line });
+      }
+      if (!raw.startsWith("/api/")) continue;
+
+      let kind = "not-api-reference";
+      let actualSource = source;
+      if (comment) kind = "comment";
+      else if (nearestNavigation > nearestNetwork || openedAsNavigation) kind = "browser-navigation";
+      else if (cacheOnly) kind = "cache-key";
+      else if (inUseQuery) {
+        actualSource = "useQuery";
+        kind = queryKeyHasCustomFn(src, m.index) ? "query-key-custom-fn" : "useQuery";
+      } else if (source) {
+        kind = source;
+      } else if (
+        /^\s*(?:endpoint|url)\s*=/.test(
+          src.slice(m.index + m[0].length, m.index + m[0].length + 80),
+        )
+      ) {
+        kind = "api-endpoint-prop";
+        actualSource = "endpoint-prop";
       }
 
-      calls.push({
-        path,
+      const entry = {
+        path: queryKey && kind === "useQuery" ? queryKeyPath(src, m.index, path) : path,
+        rawPath: raw,
         file: rel,
-        line: lineAt(src, m.index),
-        method,
-        methodConfidence,
-      });
+        line,
+        source: actualSource,
+        kind,
+        method: null,
+        methodConfidence: null,
+      };
+      if (
+        ["useQuery", "apiRequest", "uploadWithProgress", "fetch", "axios", "api-endpoint-prop"].includes(kind)
+      ) {
+        Object.assign(
+          entry,
+          methodForReference(src, m.index, actualSource === "endpoint-prop" ? "fetch" : actualSource),
+        );
+        calls.push(entry);
+      } else {
+        references.push(entry);
+      }
+    }
+
+    // A computed URL cannot be matched safely unless its assignment is a
+    // literal we already saw above. Keep it explicit instead of guessing from
+    // a variable name.
+    const computedCallRe =
+      /\b(apiRequest|uploadWithProgress)\s*\(\s*(?:(["'`])?(GET|POST|PUT|PATCH|DELETE)\2?\s*,\s*)?([A-Za-z_$][\w$]*)\b/g;
+    for (const m of src.matchAll(computedCallRe)) {
+      const variable = m[4];
+      const assignment = new RegExp(
+        `(?:const|let|var)\\s+${variable}\\s*(?::[^=\\n]+)?=\\s*([^;\\n]+)`,
+      ).exec(src);
+      if (!assignment || !/\/api\//.test(assignment[1])) {
+        dynamicUnresolved.push({
+          path: null,
+          file: rel,
+          line: lineAt(src, m.index),
+          source: m[1],
+          method: m[3] ? m[3].toUpperCase() : null,
+          expression: variable,
+        });
+      }
     }
   }
-  return calls;
+  return { calls, references, dynamicUnresolved, externalReferences, spaReferences };
 }
 
 // ---------------------------------------------------------------------------
@@ -576,10 +779,18 @@ function normalizeSegments(path) {
 }
 
 function pathsMatch(a, b) {
-  const segA = normalizeSegments(a);
-  const segB = normalizeSegments(b);
-  if (segA.length !== segB.length) return false;
-  return segA.every((s, i) => s === "*" || segB[i] === "*" || s === segB[i]);
+  const variants = (path) => [
+    path,
+    // Express 5's `{/:param}` syntax denotes an optional path segment.
+    path.replace(/\{\/[^}]+\}/g, ""),
+    path.replace(/\{\/[^}]+\}/g, "/:param"),
+  ];
+  return variants(a).some((left) => variants(b).some((right) => {
+    const segA = normalizeSegments(left);
+    const segB = normalizeSegments(right);
+    if (segA.length !== segB.length) return false;
+    return segA.every((s, i) => s === "*" || segB[i] === "*" || s === segB[i]);
+  }));
 }
 
 function findBackendMatches(method, concretePath, backendInventory) {
@@ -700,6 +911,66 @@ async function runLiveProbes(backendInventory, frontendCalls) {
   );
 
   return { backendResults, frontendResults };
+}
+
+function buildStaticFrontendResults(backendInventory, frontendCalls) {
+  const unique = new Map();
+  for (const call of frontendCalls) {
+    const key = `${call.method}::${call.path}`;
+    if (!unique.has(key)) unique.set(key, { ...call, occurrences: [] });
+    unique.get(key).occurrences.push(`${call.file}:${call.line}`);
+  }
+  return [...unique.values()].map((call) => {
+    const matches = findBackendMatches(call.method, call.path, backendInventory);
+    const status =
+      matches.length > 0
+        ? "matched"
+        : call.methodConfidence === "detected"
+          ? "unmatched-confirmed"
+          : "unmatched-unconfirmed";
+    return {
+      ...call,
+      status,
+      backendMatches: matches.map((match) => ({
+        method: match.method,
+        path: match.fullPath,
+        file: match.file,
+        line: match.line,
+        confidence: match.confidence,
+      })),
+    };
+  });
+}
+
+function buildStaticFindings(frontendResults, dynamicUnresolved) {
+  const findings = [];
+  let id = 1;
+  for (const call of frontendResults) {
+    if (call.status !== "unmatched-confirmed") continue;
+    findings.push({
+      id: `unmatched-confirmed-${id++}`,
+      class: "unmatched-confirmed",
+      severity: "high",
+      method: call.method,
+      path: call.path,
+      locations: call.occurrences,
+      description: `The frontend makes a detected ${call.method} ${call.path} request via ${call.source}, but no statically mounted backend registration matches this method and path.`,
+      recommendation: "Confirm the intended API contract, then fix the frontend path or mount the existing router at the intended prefix. Do not add a placeholder route.",
+    });
+  }
+  for (const unresolved of dynamicUnresolved) {
+    findings.push({
+      id: `dynamic-unresolved-${id++}`,
+      class: "dynamic-unresolved",
+      severity: "low",
+      method: unresolved.method,
+      path: null,
+      locations: [`${unresolved.file}:${unresolved.line}`],
+      description: `The frontend calls ${unresolved.source} with computed URL variable ${unresolved.expression}; this audit could not resolve it to a concrete API path.`,
+      recommendation: "Trace the variable assignment and verify its resolved path against the mounted backend inventory.",
+    });
+  }
+  return findings;
 }
 
 // ---------------------------------------------------------------------------
@@ -907,6 +1178,90 @@ function buildFindings({ backendInventory, unresolvedDynamic, frontendCalls, bac
 // Phase 7: report rendering
 // ---------------------------------------------------------------------------
 
+function renderStaticMarkdown({
+  backendInventory,
+  frontendResults,
+  frontendCallCount,
+  references,
+  dynamicUnresolved,
+  externalReferences,
+  spaReferences,
+  prefixMap,
+  findings,
+}) {
+  const matched = frontendResults.filter((call) => call.status === "matched");
+  const unmatched = frontendResults.filter((call) => call.status === "unmatched-confirmed");
+  const uncertain = frontendResults.filter((call) => call.status === "unmatched-unconfirmed");
+  const lines = [
+    "# Static Frontend/Backend API Inventory",
+    "",
+    `Generated ${new Date().toISOString()} without live requests.`,
+    "",
+    `- Backend route registrations: **${backendInventory.length}** (${new Set(backendInventory.map((route) => `${route.method} ${route.fullPath}`)).size} unique method/path pairs).`,
+    `- Mounted router files: **${prefixMap.size}**.`,
+    `- Frontend API call sites: **${frontendCallCount}** (${frontendResults.length} unique method/path pairs).`,
+    `- Matched: **${matched.length}**; unmatched confirmed: **${unmatched.length}**; method-unconfirmed: **${uncertain.length}**.`,
+    `- Cache/comment/non-API references: **${references.length}**; external URL references: **${externalReferences.length}**; SPA URL references: **${spaReferences.length}**.`,
+    `- Dynamic frontend URLs unresolved: **${dynamicUnresolved.length}**.`,
+    "",
+    "## Confirmed matches",
+    "",
+    "Every entry below has a statically detected frontend transport and at least one mounted backend route with the same method and normalized path. The full occurrence and backend location inventory is in `endpoint-audit.json`.",
+    "",
+  ];
+  for (const call of matched) {
+    lines.push(`- \`${call.method} ${call.path}\` via ${call.source} — ${call.file}:${call.line} → ${call.backendMatches.map((match) => `${match.file}:${match.line}`).join(", ")}`);
+  }
+  lines.push("", "## Unmatched confirmed frontend calls", "");
+  if (!unmatched.length) lines.push("None.");
+  for (const call of unmatched) {
+    lines.push(`- **${call.method} ${call.path}** via ${call.source} — ${call.occurrences.join(", ")}`);
+  }
+  lines.push("", "## Method-unconfirmed frontend calls", "");
+  if (!uncertain.length) lines.push("None.");
+  for (const call of uncertain) {
+    lines.push(`- \`${call.method} ${call.path}\` (${call.source}) — ${call.occurrences.join(", ")}`);
+  }
+  lines.push("", "## Dynamic unresolved URLs and registrations", "");
+  if (!dynamicUnresolved.length) lines.push("None.");
+  for (const item of dynamicUnresolved) {
+    const label = item.source
+      ? `${item.source}(${item.expression})`
+      : `${item.method || "route"} ${item.rawExpr || "(expression unavailable)"}`;
+    lines.push(`- \`${label}\` — ${item.file}:${item.line}`);
+  }
+  lines.push("", "## Non-network and non-API references", "");
+  if (!references.length) lines.push("None.");
+  for (const item of references) {
+    lines.push(`- \`${item.kind}: ${item.rawPath}\` — ${item.file}:${item.line}`);
+  }
+  lines.push("", "## External URLs and SPA paths", "");
+  lines.push(`External URL references: ${externalReferences.length}; SPA path references: ${spaReferences.length}. These are intentionally not compared with Express API routes.`);
+  lines.push("", "## Mounted router prefixes", "");
+  for (const [file, info] of prefixMap.entries()) {
+    lines.push(`- \`${relative(ROOT, file)}\` → \`${info.prefix || "/"}\` (${(info.mountedFrom || []).join(", ") || "mount unresolved"})`);
+  }
+  lines.push("", "## Findings", "");
+  if (!findings.length) lines.push("No confirmed frontend/backend path mismatches.");
+  for (const finding of findings) {
+    lines.push(`- **${finding.id}**: ${finding.description}`);
+  }
+  lines.push("", "## Scope and honesty notes", "");
+  lines.push("- This is a static inventory only. It does not invoke routes, perform admin authentication, or make mutating requests.");
+  lines.push("- `queryClient.invalidateQueries`/`setQueryData` entries are cache keys, not network calls. Query keys with a custom `queryFn` are listed as references; the custom fetch is inventoried separately.");
+  lines.push("- Template placeholders are normalized to `:param`; computed URLs without a literal assignment remain dynamic unresolved rather than guessed.");
+  lines.push("- External URLs and SPA navigation paths are not API contracts. A component is not reported as needing an endpoint merely because it contains a cache key, link, or documentation example.");
+  return lines.join("\n");
+}
+
+function serializePrefixMap(prefixMap) {
+  return [...prefixMap.entries()].map(([file, info]) => ({
+    file: relative(ROOT, file),
+    prefix: info.prefix,
+    mountedFrom: info.mountedFrom || [],
+  }));
+}
+
 function renderMarkdown(findings, meta) {
   const bySeverity = { high: [], medium: [], low: [] };
   for (const f of findings) bySeverity[f.severity]?.push(f);
@@ -975,12 +1330,69 @@ function renderMarkdown(findings, meta) {
 
 async function main() {
   console.log(`[audit] scanning server/ ...`);
-  const { inventory: backendInventory, unresolvedDynamic } = buildBackendInventory();
+  const { inventory: backendInventory, unresolvedDynamic, prefixMap } = buildBackendInventory();
   console.log(`[audit] backend routes found: ${backendInventory.length}`);
 
   console.log(`[audit] scanning client/src/ ...`);
-  const frontendCalls = extractFrontendCalls();
+  const frontendInventory = extractFrontendCalls();
+  const frontendCalls = frontendInventory.calls;
   console.log(`[audit] frontend /api/* call sites found: ${frontendCalls.length}`);
+
+  if (STATIC_ONLY) {
+    const frontendResults = buildStaticFrontendResults(backendInventory, frontendCalls);
+    const allDynamic = [...unresolvedDynamic, ...frontendInventory.dynamicUnresolved];
+    const findings = buildStaticFindings(frontendResults, frontendInventory.dynamicUnresolved);
+    const matchedCount = frontendResults.filter((call) => call.status === "matched").length;
+    const unmatchedConfirmedCount = frontendResults.filter((call) => call.status === "unmatched-confirmed").length;
+    const meta = {
+      mode: "static",
+      backendCount: backendInventory.length,
+      uniqueBackendCount: new Set(backendInventory.map((route) => `${route.method}::${route.fullPath}`)).size,
+      frontendCallCount: frontendCalls.length,
+      uniqueFrontendCount: frontendResults.length,
+      matchedCount,
+      unmatchedConfirmedCount,
+      methodUnconfirmedCount: frontendResults.filter((call) => call.status === "unmatched-unconfirmed").length,
+      frontendReferenceCount: frontendInventory.references.length,
+      externalReferenceCount: frontendInventory.externalReferences.length,
+      spaReferenceCount: frontendInventory.spaReferences.length,
+      unresolvedDynamicCount: allDynamic.length,
+      mountedRouterCount: prefixMap.size,
+    };
+    mkdirSync(REPORT_DIR, { recursive: true });
+    writeFileSync(
+      join(REPORT_DIR, "endpoint-audit.json"),
+      JSON.stringify({
+        meta,
+        findings,
+        generatedAt: new Date().toISOString(),
+        baseUrl: null,
+        backendRoutes: backendInventory,
+        mountedRouters: serializePrefixMap(prefixMap),
+        frontendCalls: frontendResults,
+        frontendReferences: frontendInventory.references,
+        externalReferences: frontendInventory.externalReferences,
+        spaReferences: frontendInventory.spaReferences,
+        unresolvedDynamic: allDynamic,
+      }, null, 2),
+    );
+    writeFileSync(
+      join(REPORT_DIR, "endpoint-audit.md"),
+      renderStaticMarkdown({
+        backendInventory,
+        frontendResults,
+        frontendCallCount: frontendCalls.length,
+        references: frontendInventory.references,
+        dynamicUnresolved: allDynamic,
+        externalReferences: frontendInventory.externalReferences,
+        spaReferences: frontendInventory.spaReferences,
+        prefixMap,
+        findings,
+      }),
+    );
+    console.log(`[audit] static report written; ${matchedCount} matched, ${unmatchedConfirmedCount} unmatched confirmed, ${allDynamic.length} dynamic unresolved`);
+    return;
+  }
 
   console.log(`[audit] probing live server at ${BASE_URL} (this is read-only / OPTIONS-safe) ...`);
   const { backendResults, frontendResults } = await runLiveProbes(backendInventory, frontendCalls);

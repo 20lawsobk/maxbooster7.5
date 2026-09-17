@@ -105,10 +105,12 @@ export function ProjectSettingsDialog({
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!projectId) return null;
+      if (!projectId) {
+        throw new Error("Cannot save project settings without a project");
+      }
       const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/studio/projects/${projectId}`, {
-        method: "PUT",
+        method: "PATCH",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
@@ -117,24 +119,51 @@ export function ProjectSettingsDialog({
         body: JSON.stringify({
           title: form.name,
           description: form.description,
-          bpm: form.tempo,
+          tempo: form.tempo,
           timeSignature: form.timeSignature,
           sampleRate: form.sampleRate,
           bitDepth: form.bitDepth,
         }),
       });
-      if (!response.ok) return null;
+      if (!response.ok) {
+        throw new Error(`Failed to save project settings (${response.status})`);
+      }
       return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
+      onUpdate({
+        name: form.name,
+        description: form.description,
+        tempo: form.tempo,
+        timeSignatureNumerator: Number(form.timeSignature.split("/")[0]) || 4,
+        timeSignatureDenominator: Number(form.timeSignature.split("/")[1]) || 4,
+        sampleRate: form.sampleRate,
+        bitDepth: form.bitDepth,
+      });
+      toast({
+        title: "Settings Saved",
+        description: "Project settings have been updated.",
+      });
+      onOpenChange(false);
+    },
+    onError: () => {
+      toast({
+        title: "Save Failed",
+        description: "Unable to save project settings.",
+        variant: "destructive",
+      });
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const [numerator, denominator] = form.timeSignature.split("/").map(Number);
+    if (projectId) {
+      saveMutation.mutate();
+      return;
+    }
     onUpdate({
       name: form.name,
       description: form.description,
@@ -149,9 +178,6 @@ export function ProjectSettingsDialog({
       description: "Project settings have been updated.",
     });
     onOpenChange(false);
-    if (projectId) {
-      saveMutation.mutate();
-    }
   };
 
   const isSubmitting = saveMutation.isPending;

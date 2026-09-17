@@ -1269,7 +1269,7 @@ function rrdataFromDnsPacket(
  *   - ECS (EDNS Client Subnet) is parsed from the query for accuracy
  *
  * The VPS proxy (AdGuard dnsproxy or the Node.js fallback) calls:
- *   POST https://max-booster.com/api/dns/query
+ *   POST https://maxbooster.replit.app/api/dns/query
  *   Content-Type: application/dns-message
  */
 export async function processQuery(

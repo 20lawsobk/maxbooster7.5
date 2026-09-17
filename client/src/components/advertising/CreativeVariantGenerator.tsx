@@ -138,28 +138,33 @@ export function CreativeVariantGenerator() {
   const generateMutation = useMutation({
     mutationFn: async () => {
       const topic = bulkTopic.trim() || "music distribution and promotion";
-      const res = await apiRequest("POST", "/api/multimodal/generate", {
-        input: {
-          modality: "text",
-          payload: topic,
-        },
-        platforms: ["instagram", "facebook", "tiktok"],
-        intent: "promotional",
+      const res = await apiRequest("POST", "/api/advertising/generate-content", {
+        contentType: "promotional",
+        platform: "instagram",
+        topic,
+        tone: "energetic",
+        targetAudience: bulkAudience.trim() || undefined,
       });
       return res.json();
     },
     onSuccess: (data) => {
-      const textAssets = (data.assets || []).filter(
-        (a: Record<string, unknown>) => a.modality === "text",
-      );
-      if (textAssets.length > 0) {
-        const first = textAssets[0];
+      const content =
+        typeof data.content === "string"
+          ? { caption: data.content, body: data.content }
+          : data.content?.data || data.content;
+      if (
+        content &&
+        ["hook", "body", "cta", "caption"].some(
+          (field) =>
+            typeof content[field] === "string" && content[field].trim(),
+        )
+      ) {
         setGeneratedContent({
-          hook: first.metadata?.hook || first.payload?.split("\n")[0] || "",
-          body: first.metadata?.body || first.payload || "",
-          cta: first.metadata?.cta || "",
-          caption: first.payload || "",
-          hashtags: first.metadata?.hashtags || [],
+          hook: content.hook || "",
+          body: content.body || "",
+          cta: content.cta || "",
+          caption: content.caption || "",
+          hashtags: Array.isArray(content.hashtags) ? content.hashtags : [],
         });
         toast({
           title: "Variants Generated",
@@ -167,17 +172,13 @@ export function CreativeVariantGenerator() {
             "AI copy is ready to review. Attach the resulting creative to a campaign to test it.",
         });
       } else {
-        toast({
-          title: "Generation Complete",
-          description: "AI content generated successfully.",
-          variant: "default",
-        });
+        throw new Error("MaxCore returned no usable advertising copy");
       }
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Generation Failed",
-        description: "Could not generate variants. Please try again.",
+        description: error.message || "Could not generate variants. Please try again.",
         variant: "destructive",
       });
     },

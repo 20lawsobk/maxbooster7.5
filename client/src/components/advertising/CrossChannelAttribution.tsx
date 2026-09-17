@@ -91,11 +91,17 @@ export function CrossChannelAttribution() {
   const [_showAssisted, _setShowAssisted] = useState(true);
 
   const { data: attributionData } = useQuery({
-    queryKey: ["/api/advertising/attribution/channels", attributionWindow],
+    queryKey: [
+      "/api/advertising/attribution/channels",
+      { window: attributionWindow },
+    ],
   });
 
   const { data: pathsData } = useQuery({
-    queryKey: ["/api/advertising/attribution/paths", attributionWindow],
+    queryKey: [
+      "/api/advertising/attribution/paths",
+      { window: attributionWindow },
+    ],
   });
 
   const channelData: ChannelData[] = attributionData?.channels || [];

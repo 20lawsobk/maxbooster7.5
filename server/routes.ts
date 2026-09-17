@@ -2118,7 +2118,7 @@ export async function registerRoutes(
             passwordResetExpires: expires,
           });
 
-          const baseUrl = process.env.APP_URL || "https://max-booster.com";
+          const baseUrl = process.env.APP_URL || "https://maxbooster.replit.app";
           const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
 
           const emailSent = await emailService.sendPasswordResetEmail(
@@ -2307,7 +2307,7 @@ export async function registerRoutes(
     }
 
     // Always use production URL for OAuth callbacks (must match Google Console registration)
-    const baseUrl = process.env.APP_URL || "https://max-booster.com";
+    const baseUrl = process.env.APP_URL || "https://maxbooster.replit.app";
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     const params = new URLSearchParams({
@@ -2342,6 +2342,9 @@ export async function registerRoutes(
     if (!state || state !== savedState) {
       return res.redirect("/login?error=invalid_state");
     }
+    if (typeof code !== "string" || !code.trim()) {
+      return res.redirect("/login?error=token_exchange_failed");
+    }
     delete (
       req.session as import("express-session").Session & {
         googleOAuthState?: string;
@@ -2356,7 +2359,7 @@ export async function registerRoutes(
     }
 
     // Always use production URL for OAuth callbacks (must match Google Console registration)
-    const baseUrl = process.env.APP_URL || "https://max-booster.com";
+    const baseUrl = process.env.APP_URL || "https://maxbooster.replit.app";
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     try {
@@ -2377,7 +2380,15 @@ export async function registerRoutes(
       const tokens = await tokenResponse.json();
 
       if (!tokenResponse.ok || tokens.error) {
-        logger.warn({ tokens }, "[Google OAuth] Token exchange failed");
+        logger.warn(
+          {
+            status: tokenResponse.status,
+            error: tokens.error || "unknown",
+            hasErrorDescription: Boolean(tokens.error_description),
+            hasAccessToken: Boolean(tokens.access_token),
+          },
+          "[Google OAuth] Token exchange failed",
+        );
         return res.redirect("/login?error=token_exchange_failed");
       }
 

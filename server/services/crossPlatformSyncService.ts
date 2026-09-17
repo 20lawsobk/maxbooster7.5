@@ -100,7 +100,7 @@ latestVersions?.set("web", {
   version: WEB_VERSION,
   releaseDate: new Date().toISOString(),
   changelog: "Latest web release",
-  downloadUrl: "https://max-booster.com",
+  downloadUrl: "https://maxbooster.replit.app",
 });
 latestVersions?.set("android", {
   version: WEB_VERSION,

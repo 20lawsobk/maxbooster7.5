@@ -1,817 +1,1968 @@
-# Endpoint Audit Report
-
-Generated 2026-09-04T09:39:47.612Z against `http://127.0.0.1:5000`.
-
-Backend routes statically found: 2240 (unique method+path: 2232). Frontend `/api/*` call sites found: 2174 (unique method+path: 1087). Unresolved dynamic registrations: 1.
-
-**Findings: 159 total — 17 high, 1 medium, 141 low.**
-
-## HIGH severity (17)
-
-### missing-route-31: missing-route — GET /api/search/similar
-- **Location:** client/src/components/search/DiscoveryFeed.tsx:460
-- **Description:** The frontend calls GET /api/search/similar (methodConfidence: detected) from client/src/components/search/DiscoveryFeed.tsx:460. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for GET at this path was found either. This endpoint will 404 for every real user.
-- **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file (no similarly-named existing route was found, so this is likely an entirely unbuilt endpoint, not a typo).
-
-### missing-route-66: missing-route — GET /api/analytics-alerts/
-- **Location:** client/src/hooks/useAnalyticsInvalidation.ts:6
-- **Description:** The frontend calls GET /api/analytics-alerts/ (methodConfidence: assumed) from client/src/hooks/useAnalyticsInvalidation.ts:6. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for GET at this path was found either. This endpoint will 404 for every real user.
-- **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file, or fix the frontend call -- closest existing registered path(s): /api/analytics-alerts/alerts.
-
-### missing-route-67: missing-route — GET /api/dashboard/
-- **Location:** client/src/hooks/useAnalyticsInvalidation.ts:7, client/src/hooks/useAnalyticsInvalidation.ts:64
-- **Description:** The frontend calls GET /api/dashboard/ (methodConfidence: assumed) from client/src/hooks/useAnalyticsInvalidation.ts:7, client/src/hooks/useAnalyticsInvalidation.ts:64. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for GET at this path was found either. This endpoint will 404 for every real user.
-- **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file (no similarly-named existing route was found, so this is likely an entirely unbuilt endpoint, not a typo).
-
-### missing-route-68: missing-route — GET /api/artist-progress/
-- **Location:** client/src/hooks/useAnalyticsInvalidation.ts:8
-- **Description:** The frontend calls GET /api/artist-progress/ (methodConfidence: assumed) from client/src/hooks/useAnalyticsInvalidation.ts:8. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for GET at this path was found either. This endpoint will 404 for every real user.
-- **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file, or fix the frontend call -- closest existing registered path(s): /api/artist-profiles/.
-
-### missing-route-86: missing-route — GET /api/releases
-- **Location:** client/src/lib/prefetch.ts:251
-- **Description:** The frontend calls GET /api/releases (methodConfidence: assumed) from client/src/lib/prefetch.ts:251. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for GET at this path was found either. This endpoint will 404 for every real user.
-- **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file (no similarly-named existing route was found, so this is likely an entirely unbuilt endpoint, not a typo).
-
-### missing-route-116: missing-route — GET /api/press-kit/public
-- **Location:** client/src/pages/PublicPressKit.tsx:16
-- **Description:** The frontend calls GET /api/press-kit/public (methodConfidence: detected) from client/src/pages/PublicPressKit.tsx:16. Live evidence: a live GET probe to the same path also hit this server's generic "route does not exist" handler, and no static registration for GET at this path was found either. This endpoint will 404 for every real user.
-- **Recommendation:** Register a matching route in the appropriate server/routes/*.ts file, or fix the frontend call -- closest existing registered path(s): /api/press-kit/publish, /api/press-kit/photo, /api/press-kit/.
-
-### live-error-141: live-error — GET /s/:label
-- **Location:** server/index.ts:1354
-- **Description:** A live GET probe to /s/:label did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X GET http://127.0.0.1:5000/s/1 and check server logs for a hang or unhandled rejection in the handler at server/index.ts:1354.
-
-### live-error-142: live-error — GET /:id
-- **Location:** server/middleware/requestValidation.ts:31
-- **Description:** A live GET probe to /:id did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X GET http://127.0.0.1:5000/1 and check server logs for a hang or unhandled rejection in the handler at server/middleware/requestValidation.ts:31.
-
-### live-error-143: live-error — GET /:slug
-- **Location:** server/middleware/requestValidation.ts:50
-- **Description:** A live GET probe to /:slug did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X GET http://127.0.0.1:5000/1 and check server logs for a hang or unhandled rejection in the handler at server/middleware/requestValidation.ts:50.
-
-### live-error-144: live-error — GET /api/achievements/user
-- **Location:** server/routes/achievements.ts:19
-- **Description:** A live GET probe to /api/achievements/user did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X GET http://127.0.0.1:5000/api/achievements/user and check server logs for a hang or unhandled rejection in the handler at server/routes/achievements.ts:19.
-
-### live-error-145: live-error — GET /api/achievements/unnotified
-- **Location:** server/routes/achievements.ts:31
-- **Description:** A live GET probe to /api/achievements/unnotified did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X GET http://127.0.0.1:5000/api/achievements/unnotified and check server logs for a hang or unhandled rejection in the handler at server/routes/achievements.ts:31.
-
-### live-error-146: live-error — GET /api/achievements/leaderboard
-- **Location:** server/routes/achievements.ts:71
-- **Description:** A live GET probe to /api/achievements/leaderboard did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X GET http://127.0.0.1:5000/api/achievements/leaderboard and check server logs for a hang or unhandled rejection in the handler at server/routes/achievements.ts:71.
-
-### live-error-147: live-error — GET /api/achievements/streaks
-- **Location:** server/routes/achievements.ts:87
-- **Description:** A live GET probe to /api/achievements/streaks did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X GET http://127.0.0.1:5000/api/achievements/streaks and check server logs for a hang or unhandled rejection in the handler at server/routes/achievements.ts:87.
-
-### live-error-148: live-error — POST /api/achievements/streaks/:type
-- **Location:** server/routes/achievements.ts:97
-- **Description:** A live POST probe to /api/achievements/streaks/:type did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X POST http://127.0.0.1:5000/api/achievements/streaks/1 and check server logs for a hang or unhandled rejection in the handler at server/routes/achievements.ts:97.
-
-### live-error-149: live-error — GET /api/adaptive-pricing/history
-- **Location:** server/routes/adaptivePricing.ts:39
-- **Description:** A live GET probe to /api/adaptive-pricing/history did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X GET http://127.0.0.1:5000/api/adaptive-pricing/history and check server logs for a hang or unhandled rejection in the handler at server/routes/adaptivePricing.ts:39.
-
-### live-error-150: live-error — GET /api/admin/audit-log/
-- **Location:** server/routes/admin/auditLog.ts:30
-- **Description:** A live GET probe to /api/admin/audit-log/ did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X GET http://127.0.0.1:5000/api/admin/audit-log/ and check server logs for a hang or unhandled rejection in the handler at server/routes/admin/auditLog.ts:30.
-
-### live-error-151: live-error — GET /api/admin/audit-log/summary
-- **Location:** server/routes/admin/auditLog.ts:84
-- **Description:** A live GET probe to /api/admin/audit-log/summary did not complete: timeout.
-- **Recommendation:** Reproduce with curl -i -X GET http://127.0.0.1:5000/api/admin/audit-log/summary and check server logs for a hang or unhandled rejection in the handler at server/routes/admin/auditLog.ts:84.
-
-## MEDIUM severity (1)
-
-### duplicate-registration-153: duplicate-registration — GET /health
-- **Location:** server/diffusion-gateway/index.ts:540, server/startup-probes.ts:441
-- **Description:** GET /health is registered 2 times: server/diffusion-gateway/index.ts:540, server/startup-probes.ts:441. Express dispatches to the first matching registration only.
-- **Recommendation:** Keep the intended handler and delete, rename, or remount the others -- the later registration(s) are unreachable dead code today.
-
-## LOW severity (141)
-
-### method-unconfirmed-1: method-unconfirmed — GET /api/pocket/create
-- **Location:** client/src/components/PocketDimensionDashboard.tsx:103
-- **Description:** The frontend calls GET /api/pocket/create from client/src/components/PocketDimensionDashboard.tsx:103. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-2: method-unconfirmed — GET /api/pocket/:param/write
-- **Location:** client/src/components/PocketDimensionDashboard.tsx:145
-- **Description:** The frontend calls GET /api/pocket/:param/write from client/src/components/PocketDimensionDashboard.tsx:145. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-3: method-unconfirmed — POST /api/auth/me
-- **Location:** client/src/components/auth/AuthProvider.tsx:80, client/src/pages/Settings.tsx:2157
-- **Description:** The frontend calls POST /api/auth/me from client/src/components/auth/AuthProvider.tsx:80, client/src/pages/Settings.tsx:2157. this audit found no statically-registered POST route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-4: method-unconfirmed — GET /api/auth/heartbeat
-- **Location:** client/src/components/auth/InactivityManager.tsx:49
-- **Description:** The frontend calls GET /api/auth/heartbeat from client/src/components/auth/InactivityManager.tsx:49. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-5: method-unconfirmed — PUT /api/batch/templates
-- **Location:** client/src/components/batch/BatchTemplateManager.tsx:147
-- **Description:** The frontend calls PUT /api/batch/templates from client/src/components/batch/BatchTemplateManager.tsx:147. this audit found no statically-registered PUT route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-6: method-unconfirmed — DELETE /api/batch/templates
-- **Location:** client/src/components/batch/BatchTemplateManager.tsx:164
-- **Description:** The frontend calls DELETE /api/batch/templates from client/src/components/batch/BatchTemplateManager.tsx:164. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-7: method-unconfirmed — GET /api/social/generate-image
-- **Location:** client/src/components/content/AIImageGenerator.tsx:181, client/src/pages/SocialMedia.tsx:2217, client/src/pages/SocialMedia.tsx:3031
-- **Description:** The frontend calls GET /api/social/generate-image from client/src/components/content/AIImageGenerator.tsx:181, client/src/pages/SocialMedia.tsx:2217, client/src/pages/SocialMedia.tsx:3031. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-8: method-unconfirmed — GET /api/social/generate-video
-- **Location:** client/src/components/content/ServerVideoGenerator.tsx:55, client/src/components/content/ServerVideoGenerator.tsx:535
-- **Description:** The frontend calls GET /api/social/generate-video from client/src/components/content/ServerVideoGenerator.tsx:55, client/src/components/content/ServerVideoGenerator.tsx:535. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-9: method-unconfirmed — GET /api/social/analyze-audio
-- **Location:** client/src/components/content/ServerVideoGenerator.tsx:742
-- **Description:** The frontend calls GET /api/social/analyze-audio from client/src/components/content/ServerVideoGenerator.tsx:742. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-10: method-unconfirmed — GET /api/social/analyze-image
-- **Location:** client/src/components/content/ServerVideoGenerator.tsx:810
-- **Description:** The frontend calls GET /api/social/analyze-image from client/src/components/content/ServerVideoGenerator.tsx:810. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-11: method-unconfirmed — GET /api/social/beat-analyze
-- **Location:** client/src/components/content/ServerVideoGenerator.tsx:873
-- **Description:** The frontend calls GET /api/social/beat-analyze from client/src/components/content/ServerVideoGenerator.tsx:873. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-12: method-unconfirmed — GET /api/social/generate-music-video
-- **Location:** client/src/components/content/ServerVideoGenerator.tsx:910, client/src/pages/Distribution.tsx:6316
-- **Description:** The frontend calls GET /api/social/generate-music-video from client/src/components/content/ServerVideoGenerator.tsx:910, client/src/pages/Distribution.tsx:6316. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-13: method-unconfirmed — POST /api/career-coach/recommendations
-- **Location:** client/src/components/dashboard/AICareerCoach.tsx:272, client/src/components/dashboard/AICareerCoach.tsx:287
-- **Description:** The frontend calls POST /api/career-coach/recommendations from client/src/components/dashboard/AICareerCoach.tsx:272, client/src/components/dashboard/AICareerCoach.tsx:287. this audit found no statically-registered POST route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-14: method-unconfirmed — DELETE /api/artist-profiles
-- **Location:** client/src/components/distribution/ArtistProfileManager.tsx:167
-- **Description:** The frontend calls DELETE /api/artist-profiles from client/src/components/distribution/ArtistProfileManager.tsx:167. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-15: method-unconfirmed — GET /api/distribution/profiles/link
-- **Location:** client/src/components/distribution/DataTransferWizard.tsx:201
-- **Description:** The frontend calls GET /api/distribution/profiles/link from client/src/components/distribution/DataTransferWizard.tsx:201. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-16: method-unconfirmed — GET /api/distribution/profiles/:param/sync
-- **Location:** client/src/components/distribution/DataTransferWizard.tsx:232
-- **Description:** The frontend calls GET /api/distribution/profiles/:param/sync from client/src/components/distribution/DataTransferWizard.tsx:232. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-17: method-unconfirmed — GET /api/distribution/profiles/:param
-- **Location:** client/src/components/distribution/DataTransferWizard.tsx:249
-- **Description:** The frontend calls GET /api/distribution/profiles/:param from client/src/components/distribution/DataTransferWizard.tsx:249. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-18: method-unconfirmed — GET /api/distribution/profiles/:param/import-catalog
-- **Location:** client/src/components/distribution/DataTransferWizard.tsx:273
-- **Description:** The frontend calls GET /api/distribution/profiles/:param/import-catalog from client/src/components/distribution/DataTransferWizard.tsx:273. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-19: method-unconfirmed — GET /api/distribution/profiles/:param/scan-releases
-- **Location:** client/src/components/distribution/DataTransferWizard.tsx:316
-- **Description:** The frontend calls GET /api/distribution/profiles/:param/scan-releases from client/src/components/distribution/DataTransferWizard.tsx:316. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-20: method-unconfirmed — GET /api/custom-workflows/:param/enable
-- **Location:** client/src/components/distribution/EmbedCodeGenerator.tsx:519
-- **Description:** The frontend calls GET /api/custom-workflows/:param/enable from client/src/components/distribution/EmbedCodeGenerator.tsx:519. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-21: method-unconfirmed — GET /api/export/data
-- **Location:** client/src/components/export/ExportDialog.tsx:245
-- **Description:** The frontend calls GET /api/export/data from client/src/components/export/ExportDialog.tsx:245. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-22: method-unconfirmed — DELETE /api/export/history
-- **Location:** client/src/components/export/ExportHistory.tsx:367
-- **Description:** The frontend calls DELETE /api/export/history from client/src/components/export/ExportHistory.tsx:367. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-23: method-unconfirmed — GET /api/files/bulk-delete
-- **Location:** client/src/components/files/BulkFileManager.tsx:197
-- **Description:** The frontend calls GET /api/files/bulk-delete from client/src/components/files/BulkFileManager.tsx:197. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-24: method-unconfirmed — GET /api/files/:param/restore
-- **Location:** client/src/components/files/FileOperationsMenu.tsx:147
-- **Description:** The frontend calls GET /api/files/:param/restore from client/src/components/files/FileOperationsMenu.tsx:147. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-25: method-unconfirmed — GET /api/storage/upload
-- **Location:** client/src/components/files/FileUploader.tsx:118, client/src/lib/imageUpload.ts:8, client/src/pages/Advertisement.tsx:3046, client/src/pages/Marketplace.tsx:729, client/src/pages/Marketplace.tsx:3485, client/src/pages/Marketplace.tsx:6126, client/src/pages/Marketplace.tsx:6741, client/src/pages/Marketplace.tsx:7197, client/src/pages/Marketplace.tsx:7231, client/src/pages/MerchStore.tsx:221, client/src/pages/PressKit.tsx:172, client/src/pages/SocialMedia.tsx:1139, client/src/pages/SocialMedia.tsx:4859
-- **Description:** The frontend calls GET /api/storage/upload from client/src/components/files/FileUploader.tsx:118, client/src/lib/imageUpload.ts:8, client/src/pages/Advertisement.tsx:3046, client/src/pages/Marketplace.tsx:729, client/src/pages/Marketplace.tsx:3485, client/src/pages/Marketplace.tsx:6126, client/src/pages/Marketplace.tsx:6741, client/src/pages/Marketplace.tsx:7197, client/src/pages/Marketplace.tsx:7231, client/src/pages/MerchStore.tsx:221, client/src/pages/PressKit.tsx:172, client/src/pages/SocialMedia.tsx:1139, client/src/pages/SocialMedia.tsx:4859. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-26: method-unconfirmed — GET /api/files/validate
-- **Location:** client/src/components/files/FileValidationStatus.tsx:198
-- **Description:** The frontend calls GET /api/files/validate from client/src/components/files/FileValidationStatus.tsx:198. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-27: method-unconfirmed — PUT /api/notifications
-- **Location:** client/src/components/notifications/NotificationCenter.tsx:226, client/src/components/notifications/NotificationCenter.tsx:253, client/src/components/notifications/useNotifications.ts:68, client/src/components/notifications/useNotifications.ts:100, client/src/pages/NotificationDetail.tsx:52, client/src/pages/Notifications.tsx:123, client/src/pages/Notifications.tsx:150
-- **Description:** The frontend calls PUT /api/notifications from client/src/components/notifications/NotificationCenter.tsx:226, client/src/components/notifications/NotificationCenter.tsx:253, client/src/components/notifications/useNotifications.ts:68, client/src/components/notifications/useNotifications.ts:100, client/src/pages/NotificationDetail.tsx:52, client/src/pages/Notifications.tsx:123, client/src/pages/Notifications.tsx:150. this audit found no statically-registered PUT route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-28: method-unconfirmed — DELETE /api/notifications
-- **Location:** client/src/components/notifications/NotificationCenter.tsx:268, client/src/components/notifications/NotificationCenter.tsx:295, client/src/components/notifications/useNotifications.ts:134, client/src/components/notifications/useNotifications.ts:168, client/src/pages/NotificationDetail.tsx:60, client/src/pages/Notifications.tsx:165, client/src/pages/Notifications.tsx:192
-- **Description:** The frontend calls DELETE /api/notifications from client/src/components/notifications/NotificationCenter.tsx:268, client/src/components/notifications/NotificationCenter.tsx:295, client/src/components/notifications/useNotifications.ts:134, client/src/components/notifications/useNotifications.ts:168, client/src/pages/NotificationDetail.tsx:60, client/src/pages/Notifications.tsx:165, client/src/pages/Notifications.tsx:192. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-29: method-unconfirmed — GET /api/users/complete-onboarding
-- **Location:** client/src/components/onboarding/QuickStartWizard.tsx:95
-- **Description:** The frontend calls GET /api/users/complete-onboarding from client/src/components/onboarding/QuickStartWizard.tsx:95. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-30: method-unconfirmed — GET /api/auth/avatar
-- **Location:** client/src/components/onboarding/WelcomeFlow.tsx:256, client/src/components/onboarding/WelcomeWizard.tsx:220, client/src/lib/imageUpload.ts:8
-- **Description:** The frontend calls GET /api/auth/avatar from client/src/components/onboarding/WelcomeFlow.tsx:256, client/src/components/onboarding/WelcomeWizard.tsx:220, client/src/lib/imageUpload.ts:8. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-32: method-unconfirmed — GET /api/search/filter-presets/:param
-- **Location:** client/src/components/search/FilterPresetsManager.tsx:129
-- **Description:** The frontend calls GET /api/search/filter-presets/:param from client/src/components/search/FilterPresetsManager.tsx:129. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-33: method-unconfirmed — GET /api/search/filter-presets/:param/default
-- **Location:** client/src/components/search/FilterPresetsManager.tsx:160
-- **Description:** The frontend calls GET /api/search/filter-presets/:param/default from client/src/components/search/FilterPresetsManager.tsx:160. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-34: method-unconfirmed — GET /api/search/history/:param
-- **Location:** client/src/components/search/GlobalSearch.tsx:132, client/src/components/search/RecentSearches.tsx:107
-- **Description:** The frontend calls GET /api/search/history/:param from client/src/components/search/GlobalSearch.tsx:132, client/src/components/search/RecentSearches.tsx:107. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-35: method-unconfirmed — DELETE /api/auth/api-keys
-- **Location:** client/src/components/settings/ApiKeyManagement.tsx:152
-- **Description:** The frontend calls DELETE /api/auth/api-keys from client/src/components/settings/ApiKeyManagement.tsx:152. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-36: method-unconfirmed — GET /api/platform-sync/devices/register
-- **Location:** client/src/components/settings/CrossPlatformSync.tsx:145
-- **Description:** The frontend calls GET /api/platform-sync/devices/register from client/src/components/settings/CrossPlatformSync.tsx:145. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-37: method-unconfirmed — GET /api/platform-sync/devices/:param
-- **Location:** client/src/components/settings/CrossPlatformSync.tsx:177
-- **Description:** The frontend calls GET /api/platform-sync/devices/:param from client/src/components/settings/CrossPlatformSync.tsx:177. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-38: method-unconfirmed — GET /api/platform-sync/sync/push
-- **Location:** client/src/components/settings/CrossPlatformSync.tsx:216
-- **Description:** The frontend calls GET /api/platform-sync/sync/push from client/src/components/settings/CrossPlatformSync.tsx:216. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-39: method-unconfirmed — POST /api/auth/sessions
-- **Location:** client/src/components/settings/LoginHistory.tsx:125, client/src/components/settings/LoginHistory.tsx:147
-- **Description:** The frontend calls POST /api/auth/sessions from client/src/components/settings/LoginHistory.tsx:125, client/src/components/settings/LoginHistory.tsx:147. this audit found no statically-registered POST route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-40: method-unconfirmed — GET /api/social/approvals/:param/submit
-- **Location:** client/src/components/social/ApprovalDashboard.tsx:179
-- **Description:** The frontend calls GET /api/social/approvals/:param/submit from client/src/components/social/ApprovalDashboard.tsx:179. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-41: method-unconfirmed — GET /api/social/approvals/:param/approve
-- **Location:** client/src/components/social/ApprovalDashboard.tsx:215
-- **Description:** The frontend calls GET /api/social/approvals/:param/approve from client/src/components/social/ApprovalDashboard.tsx:215. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-42: method-unconfirmed — GET /api/social/approvals/:param/reject
-- **Location:** client/src/components/social/ApprovalDashboard.tsx:257
-- **Description:** The frontend calls GET /api/social/approvals/:param/reject from client/src/components/social/ApprovalDashboard.tsx:257. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-43: method-unconfirmed — GET /api/social/bulk/validate
-- **Location:** client/src/components/social/BulkScheduler.tsx:132
-- **Description:** The frontend calls GET /api/social/bulk/validate from client/src/components/social/BulkScheduler.tsx:132. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-44: method-unconfirmed — GET /api/social/bulk/schedule
-- **Location:** client/src/components/social/BulkScheduler.tsx:166
-- **Description:** The frontend calls GET /api/social/bulk/schedule from client/src/components/social/BulkScheduler.tsx:166. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-45: method-unconfirmed — GET /api/social/bulk/:param
-- **Location:** client/src/components/social/BulkScheduler.tsx:207
-- **Description:** The frontend calls GET /api/social/bulk/:param from client/src/components/social/BulkScheduler.tsx:207. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-46: method-unconfirmed — GET /api/social/inbox/bulk/archive
-- **Location:** client/src/components/social/UnifiedInbox.tsx:279
-- **Description:** The frontend calls GET /api/social/inbox/bulk/archive from client/src/components/social/UnifiedInbox.tsx:279. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-47: method-unconfirmed — GET /api/social/inbox/bulk/read
-- **Location:** client/src/components/social/UnifiedInbox.tsx:280
-- **Description:** The frontend calls GET /api/social/inbox/bulk/read from client/src/components/social/UnifiedInbox.tsx:280. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-48: method-unconfirmed — GET /api/social/inbox/bulk/unread
-- **Location:** client/src/components/social/UnifiedInbox.tsx:281
-- **Description:** The frontend calls GET /api/social/inbox/bulk/unread from client/src/components/social/UnifiedInbox.tsx:281. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-49: method-unconfirmed — GET /api/social/inbox/bulk/delete
-- **Location:** client/src/components/social/UnifiedInbox.tsx:282
-- **Description:** The frontend calls GET /api/social/inbox/bulk/delete from client/src/components/social/UnifiedInbox.tsx:282. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-50: method-unconfirmed — GET /api/storage/hybrid/auto-tier
-- **Location:** client/src/components/storage/HybridStorageStats.tsx:116
-- **Description:** The frontend calls GET /api/storage/hybrid/auto-tier from client/src/components/storage/HybridStorageStats.tsx:116. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-51: method-unconfirmed — GET /api/assets/upload
-- **Location:** client/src/components/studio/AssetUploadDialog.tsx:40
-- **Description:** The frontend calls GET /api/assets/upload from client/src/components/studio/AssetUploadDialog.tsx:40. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-52: method-unconfirmed — GET /api/studio/upload
-- **Location:** client/src/components/studio/FileUploadZone.tsx:132, client/src/components/studio/FlowStateImportAudio.tsx:39, client/src/components/studio/StudioProjectDialog.tsx:221
-- **Description:** The frontend calls GET /api/studio/upload from client/src/components/studio/FileUploadZone.tsx:132, client/src/components/studio/FlowStateImportAudio.tsx:39, client/src/components/studio/StudioProjectDialog.tsx:221. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-53: method-unconfirmed — GET /api/studio/tracks
-- **Location:** client/src/components/studio/FlowStateAddTrack.tsx:108, client/src/components/studio/RecordingPanel.tsx:229
-- **Description:** The frontend calls GET /api/studio/tracks from client/src/components/studio/FlowStateAddTrack.tsx:108, client/src/components/studio/RecordingPanel.tsx:229. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-54: method-unconfirmed — GET /api/studio/projects/:param/render
-- **Location:** client/src/components/studio/FlowStateExport.tsx:190, client/src/lib/daw/AudioRenderEngine.ts:536
-- **Description:** The frontend calls GET /api/studio/projects/:param/render from client/src/components/studio/FlowStateExport.tsx:190, client/src/lib/daw/AudioRenderEngine.ts:536. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-55: method-unconfirmed — GET /api/studio/generation/audio-to-melody
-- **Location:** client/src/components/studio/FlowStateLyricsToMelody.tsx:291
-- **Description:** The frontend calls GET /api/studio/generation/audio-to-melody from client/src/components/studio/FlowStateLyricsToMelody.tsx:291. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-56: method-unconfirmed — GET /api/studio/plugins/instantiate/:param?projectId=:param
-- **Location:** client/src/components/studio/FlowStatePluginBrowser.tsx:232
-- **Description:** The frontend calls GET /api/studio/plugins/instantiate/:param?projectId=:param from client/src/components/studio/FlowStatePluginBrowser.tsx:232. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-57: method-unconfirmed — DELETE /api/studio/projects
-- **Location:** client/src/components/studio/FlowStateProjectSelector.tsx:109, client/src/hooks/useFlowStateAdapter.ts:202, client/src/hooks/useStudioController.ts:304, client/src/hooks/useStudioController.ts:334
-- **Description:** The frontend calls DELETE /api/studio/projects from client/src/components/studio/FlowStateProjectSelector.tsx:109, client/src/hooks/useFlowStateAdapter.ts:202, client/src/hooks/useStudioController.ts:304, client/src/hooks/useStudioController.ts:334. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-58: method-unconfirmed — GET /api/studio/templates/:param/create-project
-- **Location:** client/src/components/studio/FlowStateTemplateDialog.tsx:80
-- **Description:** The frontend calls GET /api/studio/templates/:param/create-project from client/src/components/studio/FlowStateTemplateDialog.tsx:80. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-59: method-unconfirmed — GET /api/uploads/chunk
-- **Location:** client/src/components/studio/StudioProjectDialog.tsx:122
-- **Description:** The frontend calls GET /api/uploads/chunk from client/src/components/studio/StudioProjectDialog.tsx:122. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-60: method-unconfirmed — GET /api/uploads/assemble
-- **Location:** client/src/components/studio/StudioProjectDialog.tsx:163
-- **Description:** The frontend calls GET /api/uploads/assemble from client/src/components/studio/StudioProjectDialog.tsx:163. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-61: method-unconfirmed — GET /api/studio/upload-from-url
-- **Location:** client/src/components/studio/StudioProjectDialog.tsx:197
-- **Description:** The frontend calls GET /api/studio/upload-from-url from client/src/components/studio/StudioProjectDialog.tsx:197. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-62: method-unconfirmed — GET /api/studio/record/upload
-- **Location:** client/src/components/studio/UltimateDAW.tsx:474, client/src/hooks/useAudioRecorder.ts:303, client/src/hooks/useMultiTrackRecorder.ts:339
-- **Description:** The frontend calls GET /api/studio/record/upload from client/src/components/studio/UltimateDAW.tsx:474, client/src/hooks/useAudioRecorder.ts:303, client/src/hooks/useMultiTrackRecorder.ts:339. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-63: method-unconfirmed — GET /api/assistant/chat
-- **Location:** client/src/components/support/AIAssistantBubble.tsx:192, client/src/components/support/AIAssistantPublic.tsx:49, client/src/pages/Assistant.tsx:200
-- **Description:** The frontend calls GET /api/assistant/chat from client/src/components/support/AIAssistantBubble.tsx:192, client/src/components/support/AIAssistantPublic.tsx:49, client/src/pages/Assistant.tsx:200. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-64: method-unconfirmed — GET /api/personalization/track-batch
-- **Location:** client/src/contexts/PersonalizationContext.tsx:484
-- **Description:** The frontend calls GET /api/personalization/track-batch from client/src/contexts/PersonalizationContext.tsx:484. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-65: method-unconfirmed — GET /api/uploads/request-url
-- **Location:** client/src/hooks/use-upload.ts:65, client/src/hooks/use-upload.ts:165
-- **Description:** The frontend calls GET /api/uploads/request-url from client/src/hooks/use-upload.ts:65, client/src/hooks/use-upload.ts:165. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-69: method-unconfirmed — GET /api/batch/:param/:param
-- **Location:** client/src/hooks/useBatchAction.ts:168, client/src/hooks/useBatchActions.ts:226
-- **Description:** The frontend calls GET /api/batch/:param/:param from client/src/hooks/useBatchAction.ts:168, client/src/hooks/useBatchActions.ts:226. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-70: method-unconfirmed — GET /api/batch/:param/delete
-- **Location:** client/src/hooks/useBulkAction.ts:132
-- **Description:** The frontend calls GET /api/batch/:param/delete from client/src/hooks/useBulkAction.ts:132. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-71: method-unconfirmed — GET /api/batch/:param/update
-- **Location:** client/src/hooks/useBulkAction.ts:138
-- **Description:** The frontend calls GET /api/batch/:param/update from client/src/hooks/useBulkAction.ts:138. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-72: method-unconfirmed — GET /api/batch/:param/export
-- **Location:** client/src/hooks/useBulkAction.ts:143
-- **Description:** The frontend calls GET /api/batch/:param/export from client/src/hooks/useBulkAction.ts:143. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-73: method-unconfirmed — GET /api/batch/:param/submit
-- **Location:** client/src/hooks/useBulkAction.ts:148
-- **Description:** The frontend calls GET /api/batch/:param/submit from client/src/hooks/useBulkAction.ts:148. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-74: method-unconfirmed — GET /api/batch/:param/withdraw
-- **Location:** client/src/hooks/useBulkAction.ts:153
-- **Description:** The frontend calls GET /api/batch/:param/withdraw from client/src/hooks/useBulkAction.ts:153. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-75: method-unconfirmed — GET /api/batch/:param/schedule
-- **Location:** client/src/hooks/useBulkAction.ts:158
-- **Description:** The frontend calls GET /api/batch/:param/schedule from client/src/hooks/useBulkAction.ts:158. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-76: method-unconfirmed — GET /api/batch/:param/process
-- **Location:** client/src/hooks/useBulkAction.ts:163
-- **Description:** The frontend calls GET /api/batch/:param/process from client/src/hooks/useBulkAction.ts:163. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-77: method-unconfirmed — GET /api/:param
-- **Location:** client/src/hooks/useBulkAction.ts:286, client/src/hooks/useBulkAction.ts:310, client/src/hooks/useBulkAction.ts:357
-- **Description:** The frontend calls GET /api/:param from client/src/hooks/useBulkAction.ts:286, client/src/hooks/useBulkAction.ts:310, client/src/hooks/useBulkAction.ts:357. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-78: method-unconfirmed — GET /api/retention/feature-event
-- **Location:** client/src/hooks/useFeatureTracking.ts:34
-- **Description:** The frontend calls GET /api/retention/feature-event from client/src/hooks/useFeatureTracking.ts:34. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-79: method-unconfirmed — GET /api/personalization/track-feature
-- **Location:** client/src/hooks/useFeatureUsage.ts:280
-- **Description:** The frontend calls GET /api/personalization/track-feature from client/src/hooks/useFeatureUsage.ts:280. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-80: method-unconfirmed — GET /api/studio/projects/:param/save-daw-state
-- **Location:** client/src/hooks/useProjectSync.ts:430, client/src/lib/daw/ProjectManager.ts:507
-- **Description:** The frontend calls GET /api/studio/projects/:param/save-daw-state from client/src/hooks/useProjectSync.ts:430, client/src/lib/daw/ProjectManager.ts:507. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-81: method-unconfirmed — GET /api/
-- **Location:** client/src/hooks/useProjectSync.ts:647, client/src/lib/audioEngine.ts:765, client/src/lib/daw/AudioWorkletEngine.ts:760, client/src/pages/Marketplace.tsx:2146, client/src/pages/Projects.tsx:236, client/src/pages/Storefront.tsx:211
-- **Description:** The frontend calls GET /api/ from client/src/hooks/useProjectSync.ts:647, client/src/lib/audioEngine.ts:765, client/src/lib/daw/AudioWorkletEngine.ts:760, client/src/pages/Marketplace.tsx:2146, client/src/pages/Projects.tsx:236, client/src/pages/Storefront.tsx:211. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-82: method-unconfirmed — PATCH /api/studio/projects
-- **Location:** client/src/hooks/useStudioController.ts:322
-- **Description:** The frontend calls PATCH /api/studio/projects from client/src/hooks/useStudioController.ts:322. this audit found no statically-registered PATCH route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-83: method-unconfirmed — DELETE /api/studio/templates
-- **Location:** client/src/hooks/useTemplate.ts:209
-- **Description:** The frontend calls DELETE /api/studio/templates from client/src/hooks/useTemplate.ts:209. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-84: method-unconfirmed — GET /api/errors
-- **Location:** client/src/lib/errorService.ts:523
-- **Description:** The frontend calls GET /api/errors from client/src/lib/errorService.ts:523. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-85: method-unconfirmed — GET /api/notifications/unread
-- **Location:** client/src/lib/prefetch.ts:247
-- **Description:** The frontend calls GET /api/notifications/unread from client/src/lib/prefetch.ts:247. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-87: method-unconfirmed — GET /api/metrics/web-vitals
-- **Location:** client/src/lib/reportWebVitals.ts:3
-- **Description:** The frontend calls GET /api/metrics/web-vitals from client/src/lib/reportWebVitals.ts:3. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-88: method-unconfirmed — POST /api/admin/users/:param/suspend
-- **Location:** client/src/pages/Admin.tsx:367
-- **Description:** The frontend calls POST /api/admin/users/:param/suspend from client/src/pages/Admin.tsx:367. this audit found no statically-registered POST route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-89: method-unconfirmed — POST /api/admin/users/:param/reactivate
-- **Location:** client/src/pages/Admin.tsx:385
-- **Description:** The frontend calls POST /api/admin/users/:param/reactivate from client/src/pages/Admin.tsx:385. this audit found no statically-registered POST route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-90: method-unconfirmed — POST /api/admin/chain-fixer/force-check
-- **Location:** client/src/pages/AdminAutonomy.tsx:331
-- **Description:** The frontend calls POST /api/admin/chain-fixer/force-check from client/src/pages/AdminAutonomy.tsx:331. this audit found no statically-registered POST route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-91: method-unconfirmed — POST /api/admin/platform-fixer/scan
-- **Location:** client/src/pages/AdminAutonomy.tsx:345
-- **Description:** The frontend calls POST /api/admin/platform-fixer/scan from client/src/pages/AdminAutonomy.tsx:345. this audit found no statically-registered POST route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-92: method-unconfirmed — GET /api/auth/token
-- **Location:** client/src/pages/AdminDashboard.tsx:1564
-- **Description:** The frontend calls GET /api/auth/token from client/src/pages/AdminDashboard.tsx:1564. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-93: method-unconfirmed — GET /api/auth/token/revoke
-- **Location:** client/src/pages/AdminDashboard.tsx:1586
-- **Description:** The frontend calls GET /api/auth/token/revoke from client/src/pages/AdminDashboard.tsx:1586. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-94: method-unconfirmed — GET /api/advertising/upload-image
-- **Location:** client/src/pages/Advertisement.tsx:568
-- **Description:** The frontend calls GET /api/advertising/upload-image from client/src/pages/Advertisement.tsx:568. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-95: method-unconfirmed — GET /api/multimodal/generate
-- **Location:** client/src/pages/Advertisement.tsx:2112
-- **Description:** The frontend calls GET /api/multimodal/generate from client/src/pages/Advertisement.tsx:2112. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-96: method-unconfirmed — GET /api/collaborations/connect
-- **Location:** client/src/pages/Collaborations.tsx:247
-- **Description:** The frontend calls GET /api/collaborations/connect from client/src/pages/Collaborations.tsx:247. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-97: method-unconfirmed — GET /api/collaborations/accept/:param
-- **Location:** client/src/pages/Collaborations.tsx:284
-- **Description:** The frontend calls GET /api/collaborations/accept/:param from client/src/pages/Collaborations.tsx:284. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-98: method-unconfirmed — GET /api/collaborations/decline/:param
-- **Location:** client/src/pages/Collaborations.tsx:301
-- **Description:** The frontend calls GET /api/collaborations/decline/:param from client/src/pages/Collaborations.tsx:301. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-99: method-unconfirmed — GET /api/contracts/:param/send-for-signature
-- **Location:** client/src/pages/Contracts.tsx:342
-- **Description:** The frontend calls GET /api/contracts/:param/send-for-signature from client/src/pages/Contracts.tsx:342. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-100: method-unconfirmed — GET /api/contracts/:param/sign
-- **Location:** client/src/pages/Contracts.tsx:386
-- **Description:** The frontend calls GET /api/contracts/:param/sign from client/src/pages/Contracts.tsx:386. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-101: method-unconfirmed — GET /api/contracts/:param/decline
-- **Location:** client/src/pages/Contracts.tsx:438
-- **Description:** The frontend calls GET /api/contracts/:param/decline from client/src/pages/Contracts.tsx:438. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-102: method-unconfirmed — GET /api/contracts/:param/void
-- **Location:** client/src/pages/Contracts.tsx:478
-- **Description:** The frontend calls GET /api/contracts/:param/void from client/src/pages/Contracts.tsx:478. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-103: method-unconfirmed — GET /api/distribution/export-report
-- **Location:** client/src/pages/Distribution.tsx:2001
-- **Description:** The frontend calls GET /api/distribution/export-report from client/src/pages/Distribution.tsx:2001. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-104: method-unconfirmed — DELETE /api/fan-hub/subscribers
-- **Location:** client/src/pages/FanHub.tsx:169
-- **Description:** The frontend calls DELETE /api/fan-hub/subscribers from client/src/pages/FanHub.tsx:169. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-105: method-unconfirmed — GET /api/auth/forgot-password
-- **Location:** client/src/pages/ForgotPassword.tsx:71, client/src/pages/ForgotPassword.tsx:120
-- **Description:** The frontend calls GET /api/auth/forgot-password from client/src/pages/ForgotPassword.tsx:71, client/src/pages/ForgotPassword.tsx:120. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-106: method-unconfirmed — GET /api/invoices/:param/send
-- **Location:** client/src/pages/Invoices.tsx:156
-- **Description:** The frontend calls GET /api/invoices/:param/send from client/src/pages/Invoices.tsx:156. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-107: method-unconfirmed — GET /api/auth/demo
-- **Location:** client/src/pages/Landing.tsx:357, client/src/pages/Login.tsx:307
-- **Description:** The frontend calls GET /api/auth/demo from client/src/pages/Landing.tsx:357, client/src/pages/Login.tsx:307. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-108: method-unconfirmed — GET /api/auth/login
-- **Location:** client/src/pages/Login.tsx:222
-- **Description:** The frontend calls GET /api/auth/login from client/src/pages/Login.tsx:222. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-109: method-unconfirmed — DELETE /api/merch
-- **Location:** client/src/pages/Marketplace.tsx:887, client/src/pages/MerchStore.tsx:212
-- **Description:** The frontend calls DELETE /api/merch from client/src/pages/Marketplace.tsx:887, client/src/pages/MerchStore.tsx:212. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-110: method-unconfirmed — GET /api/marketplace/upload
-- **Location:** client/src/pages/Marketplace.tsx:1224, client/src/pages/Marketplace.tsx:2525
-- **Description:** The frontend calls GET /api/marketplace/upload from client/src/pages/Marketplace.tsx:1224, client/src/pages/Marketplace.tsx:2525. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-111: method-unconfirmed — GET /api/marketplace/interaction
-- **Location:** client/src/pages/Marketplace.tsx:2090
-- **Description:** The frontend calls GET /api/marketplace/interaction from client/src/pages/Marketplace.tsx:2090. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-112: method-unconfirmed — PUT /api/merch
-- **Location:** client/src/pages/MerchStore.tsx:167
-- **Description:** The frontend calls PUT /api/merch from client/src/pages/MerchStore.tsx:167. this audit found no statically-registered PUT route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-113: method-unconfirmed — GET /api/music-workflow-automations/:param/disable
-- **Location:** client/src/pages/MusicWorkflowAutomations.tsx:244
-- **Description:** The frontend calls GET /api/music-workflow-automations/:param/disable from client/src/pages/MusicWorkflowAutomations.tsx:244. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-114: method-unconfirmed — POST /api/music-workflow-automations
-- **Location:** client/src/pages/MusicWorkflowAutomations.tsx:250
-- **Description:** The frontend calls POST /api/music-workflow-automations from client/src/pages/MusicWorkflowAutomations.tsx:250. this audit found no statically-registered POST route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-115: method-unconfirmed — DELETE /api/songwriting
-- **Location:** client/src/pages/Projects.tsx:883
-- **Description:** The frontend calls DELETE /api/songwriting from client/src/pages/Projects.tsx:883. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-117: method-unconfirmed — DELETE /api/publishing
-- **Location:** client/src/pages/Publishing.tsx:130
-- **Description:** The frontend calls DELETE /api/publishing from client/src/pages/Publishing.tsx:130. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-118: method-unconfirmed — GET /api/auth/register
-- **Location:** client/src/pages/Register.tsx:242
-- **Description:** The frontend calls GET /api/auth/register from client/src/pages/Register.tsx:242. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-119: method-unconfirmed — GET /api/countdowns/:param/tasks/:param
-- **Location:** client/src/pages/ReleaseCountdown.tsx:171
-- **Description:** The frontend calls GET /api/countdowns/:param/tasks/:param from client/src/pages/ReleaseCountdown.tsx:171. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-120: method-unconfirmed — GET /api/auth/reset-password
-- **Location:** client/src/pages/ResetPassword.tsx:112
-- **Description:** The frontend calls GET /api/auth/reset-password from client/src/pages/ResetPassword.tsx:112. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-121: method-unconfirmed — DELETE /api/auth/me
-- **Location:** client/src/pages/Settings.tsx:523
-- **Description:** The frontend calls DELETE /api/auth/me from client/src/pages/Settings.tsx:523. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-122: method-unconfirmed — DELETE /api/shows
-- **Location:** client/src/pages/Shows.tsx:161
-- **Description:** The frontend calls DELETE /api/shows from client/src/pages/Shows.tsx:161. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-123: method-unconfirmed — DELETE /api/sync-licensing
-- **Location:** client/src/pages/SyncLicensing.tsx:135
-- **Description:** The frontend calls DELETE /api/sync-licensing from client/src/pages/SyncLicensing.tsx:135. this audit found no statically-registered DELETE route matching this path, but a live GET to the same concrete path IS routed somewhere (not the generic "does not exist" response) -- so either a different handler happens to share this path, or this audit's static path/prefix resolution missed the real registration. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-124: method-unconfirmed — GET /api/workspace/:param/presence/heartbeat
-- **Location:** client/src/pages/Workspaces.tsx:123
-- **Description:** The frontend calls GET /api/workspace/:param/presence/heartbeat from client/src/pages/Workspaces.tsx:123. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-125: method-unconfirmed — GET /api/workspace/:param/invite
-- **Location:** client/src/pages/Workspaces.tsx:177
-- **Description:** The frontend calls GET /api/workspace/:param/invite from client/src/pages/Workspaces.tsx:177. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-126: method-unconfirmed — GET /api/workspace/:param/members/:param/role
-- **Location:** client/src/pages/Workspaces.tsx:215
-- **Description:** The frontend calls GET /api/workspace/:param/members/:param/role from client/src/pages/Workspaces.tsx:215. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-127: method-unconfirmed — GET /api/workspace/:param/members/:param
-- **Location:** client/src/pages/Workspaces.tsx:249
-- **Description:** The frontend calls GET /api/workspace/:param/members/:param from client/src/pages/Workspaces.tsx:249. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-128: method-unconfirmed — GET /api/workspace/:param/roles/:param
-- **Location:** client/src/pages/Workspaces.tsx:316, client/src/pages/Workspaces.tsx:350
-- **Description:** The frontend calls GET /api/workspace/:param/roles/:param from client/src/pages/Workspaces.tsx:316, client/src/pages/Workspaces.tsx:350. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-129: method-unconfirmed — GET /api/support/tickets/:param/messages
-- **Location:** client/src/pages/admin/SupportTicketDetail.tsx:84
-- **Description:** The frontend calls GET /api/support/tickets/:param/messages from client/src/pages/admin/SupportTicketDetail.tsx:84. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-130: method-unconfirmed — GET /api/support/tickets/:param/tags
-- **Location:** client/src/pages/admin/SupportTicketDetail.tsx:115
-- **Description:** The frontend calls GET /api/support/tickets/:param/tags from client/src/pages/admin/SupportTicketDetail.tsx:115. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-131: method-unconfirmed — GET /api/support/tickets/:param/tags/:param
-- **Location:** client/src/pages/admin/SupportTicketDetail.tsx:144
-- **Description:** The frontend calls GET /api/support/tickets/:param/tags/:param from client/src/pages/admin/SupportTicketDetail.tsx:144. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-132: method-unconfirmed — GET /api/training/start
-- **Location:** client/src/pages/admin/TrainingDashboard.tsx:245
-- **Description:** The frontend calls GET /api/training/start from client/src/pages/admin/TrainingDashboard.tsx:245. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-133: method-unconfirmed — GET /api/training/stop
-- **Location:** client/src/pages/admin/TrainingDashboard.tsx:253
-- **Description:** The frontend calls GET /api/training/stop from client/src/pages/admin/TrainingDashboard.tsx:253. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### method-unconfirmed-134: method-unconfirmed — GET /api/ai/analytics/insights
-- **Location:** client/src/pages/analytics/AIDashboard.tsx:22, client/src/pages/analytics/AIDashboard.tsx:48
-- **Description:** The frontend calls GET /api/ai/analytics/insights from client/src/pages/analytics/AIDashboard.tsx:22, client/src/pages/analytics/AIDashboard.tsx:48. this audit could not detect which HTTP method the frontend actually uses at this call site (methodConfidence: assumed, so it defaulted to checking GET); that GET 404s, but a different method IS statically registered at this exact path -- the frontend is likely calling it correctly with a method this audit's static detection simply missed. Not safe to live-probe the exact method without a confirmed auth gate, so this is reported as unconfirmed rather than broken.
-- **Recommendation:** Manually confirm the real HTTP method used at this call site and that a matching handler exists for this exact path (grep server/ for the path's literal segments), or exercise it with an authenticated request.
-
-### stub-handler-135: stub-handler — GET /api/boot-status
-- **Location:** server/index.ts:365
-- **Description:** The handler registered at server/index.ts:365 for GET /api/boot-status contains the word(s) "stub" nearby. This codebase also uses these words to NAME deliberate, documented infrastructure (e.g. an early-boot handoff stub) as well as genuine placeholders, so this keyword match alone does not distinguish the two -- read the surrounding code before treating it as unfinished work.
-- **Recommendation:** Read server/index.ts around line 365 to confirm whether this is a deliberate, documented shim (leave it) or genuinely incomplete work (replace it or gate the calling UI feature).
-
-### stub-handler-136: stub-handler — POST /api/errors
-- **Location:** server/index.ts:375
-- **Description:** The handler registered at server/index.ts:375 for POST /api/errors contains the word(s) "stub" nearby. This codebase also uses these words to NAME deliberate, documented infrastructure (e.g. an early-boot handoff stub) as well as genuine placeholders, so this keyword match alone does not distinguish the two -- read the surrounding code before treating it as unfinished work.
-- **Recommendation:** Read server/index.ts around line 375 to confirm whether this is a deliberate, documented shim (leave it) or genuinely incomplete work (replace it or gate the calling UI feature).
-
-### stub-handler-137: stub-handler — GET /api/auth/me
-- **Location:** server/index.ts:390
-- **Description:** The handler registered at server/index.ts:390 for GET /api/auth/me contains the word(s) "stub" nearby. This codebase also uses these words to NAME deliberate, documented infrastructure (e.g. an early-boot handoff stub) as well as genuine placeholders, so this keyword match alone does not distinguish the two -- read the surrounding code before treating it as unfinished work.
-- **Recommendation:** Read server/index.ts around line 390 to confirm whether this is a deliberate, documented shim (leave it) or genuinely incomplete work (replace it or gate the calling UI feature).
-
-### stub-handler-138: stub-handler — POST /api/dev/trigger-beat
-- **Location:** server/index.ts:402
-- **Description:** The handler registered at server/index.ts:402 for POST /api/dev/trigger-beat contains the word(s) "stub" nearby. This codebase also uses these words to NAME deliberate, documented infrastructure (e.g. an early-boot handoff stub) as well as genuine placeholders, so this keyword match alone does not distinguish the two -- read the surrounding code before treating it as unfinished work.
-- **Recommendation:** Read server/index.ts around line 402 to confirm whether this is a deliberate, documented shim (leave it) or genuinely incomplete work (replace it or gate the calling UI feature).
-
-### stub-handler-139: stub-handler — GET /api/ready
-- **Location:** server/index.ts:441
-- **Description:** The handler registered at server/index.ts:441 for GET /api/ready contains the word(s) "stub" nearby. This codebase also uses these words to NAME deliberate, documented infrastructure (e.g. an early-boot handoff stub) as well as genuine placeholders, so this keyword match alone does not distinguish the two -- read the surrounding code before treating it as unfinished work.
-- **Recommendation:** Read server/index.ts around line 441 to confirm whether this is a deliberate, documented shim (leave it) or genuinely incomplete work (replace it or gate the calling UI feature).
-
-### stub-handler-140: stub-handler — GET /api/health/ready
-- **Location:** server/index.ts:442
-- **Description:** The handler registered at server/index.ts:442 for GET /api/health/ready contains the word(s) "stub" nearby. This codebase also uses these words to NAME deliberate, documented infrastructure (e.g. an early-boot handoff stub) as well as genuine placeholders, so this keyword match alone does not distinguish the two -- read the surrounding code before treating it as unfinished work.
-- **Recommendation:** Read server/index.ts around line 442 to confirm whether this is a deliberate, documented shim (leave it) or genuinely incomplete work (replace it or gate the calling UI feature).
-
-### service-unavailable-152: service-unavailable — GET /api/ai/diffusion/ready
-- **Location:** server/routes/ai.ts:1086
-- **Description:** A live GET probe to /api/ai/diffusion/ready returned HTTP 503. Response snippet: "{\"success\":false,\"data\":{\"ready\":false,\"reason\":\"gateway_offline\"}}". 503 is the conventional "not ready / dependency unavailable" status, so this may be this handler correctly reporting a degraded or still-starting dependency rather than a code bug -- but it also means that dependency is genuinely down or slow right now.
-- **Recommendation:** Confirm which dependency this handler checks and whether it is expected to be unavailable in this environment right now. If the dependency should be up, fix that dependency; if this is working as designed, no code change is needed here.
-
-### duplicate-registration-154: duplicate-registration — POST /api/errors
-- **Location:** server/index.ts:375, server/routes.ts:7518
-- **Description:** POST /api/errors is registered 2 times: server/index.ts:375, server/routes.ts:7518. At least one registration calls next() conditionally, which is this codebase's pattern for a deliberate early/fallback handler that hands off to a later one rather than a true conflicting duplicate -- likely intentional, but verify the handoff condition is actually correct.
-- **Recommendation:** Confirm the earlier handler's next()-handoff condition genuinely defers to the later handler in every case it should (e.g. it doesn't stay "active" forever due to a flag that's never flipped); if it does, no change is needed.
-
-### duplicate-registration-155: duplicate-registration — GET /api/auth/me
-- **Location:** server/index.ts:390, server/routes.ts:295
-- **Description:** GET /api/auth/me is registered 2 times: server/index.ts:390, server/routes.ts:295. At least one registration calls next() conditionally, which is this codebase's pattern for a deliberate early/fallback handler that hands off to a later one rather than a true conflicting duplicate -- likely intentional, but verify the handoff condition is actually correct.
-- **Recommendation:** Confirm the earlier handler's next()-handoff condition genuinely defers to the later handler in every case it should (e.g. it doesn't stay "active" forever due to a flag that's never flipped); if it does, no change is needed.
-
-### duplicate-registration-156: duplicate-registration — GET /api/ready
-- **Location:** server/index.ts:441, server/routes.ts:7644
-- **Description:** GET /api/ready is registered 2 times: server/index.ts:441, server/routes.ts:7644. At least one registration calls next() conditionally, which is this codebase's pattern for a deliberate early/fallback handler that hands off to a later one rather than a true conflicting duplicate -- likely intentional, but verify the handoff condition is actually correct.
-- **Recommendation:** Confirm the earlier handler's next()-handoff condition genuinely defers to the later handler in every case it should (e.g. it doesn't stay "active" forever due to a flag that's never flipped); if it does, no change is needed.
-
-### duplicate-registration-157: duplicate-registration — GET /api/health/ready
-- **Location:** server/index.ts:442, server/routes.ts:7645
-- **Description:** GET /api/health/ready is registered 2 times: server/index.ts:442, server/routes.ts:7645. At least one registration calls next() conditionally, which is this codebase's pattern for a deliberate early/fallback handler that hands off to a later one rather than a true conflicting duplicate -- likely intentional, but verify the handoff condition is actually correct.
-- **Recommendation:** Confirm the earlier handler's next()-handoff condition genuinely defers to the later handler in every case it should (e.g. it doesn't stay "active" forever due to a flag that's never flipped); if it does, no change is needed.
-
-### duplicate-registration-158: duplicate-registration — POST /api/metrics/web-vitals
-- **Location:** server/index.ts:444, server/index.ts:1052
-- **Description:** POST /api/metrics/web-vitals is registered 2 times: server/index.ts:444, server/index.ts:1052. At least one registration calls next() conditionally, which is this codebase's pattern for a deliberate early/fallback handler that hands off to a later one rather than a true conflicting duplicate -- likely intentional, but verify the handoff condition is actually correct.
-- **Recommendation:** Confirm the earlier handler's next()-handoff condition genuinely defers to the later handler in every case it should (e.g. it doesn't stay "active" forever due to a flag that's never flipped); if it does, no change is needed.
-
-### unresolved-dynamic-registration-159: unresolved-dynamic-registration — GET (path unresolved)
-- **Location:** server/routes.ts:7507
-- **Description:** server/routes.ts:7507 registers a GET route whose path is computed from an expression this audit could not statically resolve: `path, (req: Request, res: Response) => {`.
-- **Recommendation:** Trace the expression to its source and confirm it resolves to the intended path(s); re-run this audit's static extractor logic manually against it if it represents many routes.
-
-## Methodology and honesty notes
-
-- This server answers every `OPTIONS` request identically (204, empty body) via a global CORS middleware, confirmed empirically before this audit was built, so `OPTIONS` cannot distinguish a real route from a fake one here. Reachability is instead checked with real requests: GET routes are hit directly; non-GET routes are hit with their real method plus a self-consistent CSRF double-submit token (satisfying `server/middleware/csrf.ts`, which does not verify the token was server-issued), but ONLY when this audit statically detected `requireAuth`/`requireAuthOnly`/`requireAdmin`/`require2FA` on that exact registration -- the auth middleware then rejects with a clean 401/403 before the handler's own logic runs (confirmed by reading `server/middleware/auth.ts`), so no side effects occur. "Route exists" vs "route does not exist" is judged against this server's actual 404 body template (`API endpoint <path> does not exist`), not a fixed baseline, because that template echoes the requested path.
-- Non-GET routes with NO detected auth marker (e.g. login, register, webhooks, public contact/verify endpoints) are never invoked live, by design -- there is no safe way to test them without risking a real side effect. Their presence in this report comes from static source analysis only; treat any finding that touches one of these paths as needing manual confirmation, and note that the absence of a finding does NOT mean this audit confirmed them working.
-- Frontend calls with a detected non-GET method that this audit could not safely live-probe are reported as `method-unconfirmed` (low severity) rather than asserted as broken or working, when a live GET to the same path suggests something is registered there.
-- Only `/api/*`-style paths reachable through a statically-extractable string literal or a simple array+for-loop pattern are covered. Routes built from more dynamic expressions are listed under `unresolved-dynamic-registration`, not silently skipped.
-- Router mount prefixes are resolved by tracing imports and `.use(` calls; entries marked with medium/low confidence could not be resolved with full certainty and are flagged as such in their own description rather than asserted as confirmed bugs.
-- A route can pass every check in this audit and still contain a functional bug that only appears with real authenticated data (e.g. a wrong SQL join, an incorrect calculation) -- this audit verifies routing-layer reachability and obvious stub/crash signals, not business-logic correctness.
+# Static Frontend/Backend API Inventory
+
+Generated 2026-09-17T03:03:35.419Z without live requests.
+
+- Backend route registrations: **2308** (2293 unique method/path pairs).
+- Mounted router files: **151**.
+- Frontend API call sites: **1114** (857 unique method/path pairs).
+- Matched: **857**; unmatched confirmed: **0**; method-unconfirmed: **0**.
+- Cache/comment/non-API references: **884**; external URL references: **43**; SPA URL references: **246**.
+- Dynamic frontend URLs unresolved: **15**.
+
+## Confirmed matches
+
+Every entry below has a statically detected frontend transport and at least one mounted backend route with the same method and normalized path. The full occurrence and backend location inventory is in `endpoint-audit.json`.
+
+- `GET /api/storefront-domains/resolve/:param` via fetch — client/src/App.tsx:177 → server/routes/storefrontDomains.ts:88
+- `GET /api/pocket/list` via fetch — client/src/components/PocketDimensionDashboard.tsx:58 → server/routes.ts:5436
+- `GET /api/pocket/:param/stats` via fetch — client/src/components/PocketDimensionDashboard.tsx:72 → server/routes.ts:5492
+- `GET /api/pocket/:param/list` via fetch — client/src/components/PocketDimensionDashboard.tsx:73 → server/routes.ts:5521
+- `POST /api/pocket/create` via fetch — client/src/components/PocketDimensionDashboard.tsx:103 → server/routes.ts:5451
+- `POST /api/pocket/:param/write` via fetch — client/src/components/PocketDimensionDashboard.tsx:145 → server/routes.ts:5543
+- `GET /api/pocket/demo` via fetch — client/src/components/PocketDimensionDashboard.tsx:178 → server/routes.ts:5478
+- `POST /api/marketplace/listings/:param/stems` via uploadWithProgress — client/src/components/StemUploadDialog.tsx:58 → server/routes/marketplace.ts:2920
+- `GET /api/marketplace/listings/:param/stems` via fetch — client/src/components/StemsManager.tsx:88 → server/routes/marketplace.ts:2901
+- `DELETE /api/marketplace/stems/:param` via apiRequest — client/src/components/StemsManager.tsx:100 → server/routes/marketplace.ts:2985
+- `POST /api/marketplace/stems/:param/purchase` via apiRequest — client/src/components/StemsManager.tsx:129 → server/routes/marketplace.ts:2824
+- `GET /api/achievements/user` via useQuery — client/src/components/achievements/AchievementGrid.tsx:42 → server/routes/achievements.ts:19
+- `GET /api/achievements/unnotified` via useQuery — client/src/components/achievements/AchievementNotification.tsx:59 → server/routes/achievements.ts:31
+- `POST /api/achievements/mark-notified/:param` via apiRequest — client/src/components/achievements/AchievementNotification.tsx:67 → server/routes/achievements.ts:48
+- `GET /api/achievements/streaks` via useQuery — client/src/components/achievements/StreakCounter.tsx:64 → server/routes/achievements.ts:87
+- `POST /api/achievements/streaks/:param` via apiRequest — client/src/components/achievements/StreakCounter.tsx:69 → server/routes/achievements.ts:97
+- `GET /api/advertising/dashboard/attribution` via useQuery — client/src/components/advertising/AttributionDashboard.tsx:76 → server/routes/advertising.ts:1523
+- `GET /api/advertising/dashboard/paths` via useQuery — client/src/components/advertising/AttributionDashboard.tsx:83 → server/routes/advertising.ts:1570
+- `GET /api/advertising/ab-tests` via useQuery — client/src/components/advertising/CreativeAutomation.tsx:92 → server/routes/advertising.ts:577
+- `GET /api/advertising/variants` via useQuery — client/src/components/advertising/CreativeVariantGenerator.tsx:90 → server/routes/advertising.ts:1354
+- `POST /api/advertising/generate-content` via apiRequest — client/src/components/advertising/CreativeVariantGenerator.tsx:141 → server/routes/advertising.ts:1909
+- `GET /api/advertising/attribution/channels` via useQuery — client/src/components/advertising/CrossChannelAttribution.tsx:95 → server/routes/advertising.ts:1415
+- `GET /api/advertising/attribution/paths` via useQuery — client/src/components/advertising/CrossChannelAttribution.tsx:102 → server/routes/advertising.ts:1490
+- `GET /api/analytics/dashboard?range=:param` via fetch — client/src/components/analytics/DataDenseAnalytics.tsx:172 → server/routes.ts:4475
+- `GET /api/ai/insights?range=:param` via fetch — client/src/components/analytics/DataDenseAnalytics.tsx:238 → server/routes/ai.ts:796
+- `GET /api/auth/me` via fetch — client/src/components/auth/AuthProvider.tsx:24 → server/index.ts:390, server/routes.ts:297
+- `POST /api/auth/login` via apiRequest — client/src/components/auth/AuthProvider.tsx:63 → server/routes.ts:502
+- `POST /api/auth/register` via apiRequest — client/src/components/auth/AuthProvider.tsx:78 → server/routes.ts:337
+- `POST /api/auth/logout` via apiRequest — client/src/components/auth/AuthProvider.tsx:86 → server/routes.ts:645
+- `GET /api/auth/session-status` via useQuery — client/src/components/auth/ConcurrentSessionAlert.tsx:66 → server/routes/auth.ts:346
+- `DELETE /api/auth/sessions/other` via apiRequest — client/src/components/auth/ConcurrentSessionAlert.tsx:81 → server/routes/auth.ts:173, server/routes/auth.ts:232
+- `GET /api/auth/sessions` via useQuery — client/src/components/auth/DeviceManagement.tsx:79 → server/routes/auth.ts:98
+- `DELETE /api/auth/sessions/:param` via apiRequest — client/src/components/auth/DeviceManagement.tsx:86 → server/routes/auth.ts:173, server/routes/auth.ts:232
+- `POST /api/auth/devices/trust` via apiRequest — client/src/components/auth/DeviceManagement.tsx:140 → server/routes/auth.ts:289
+- `POST /api/auth/heartbeat` via fetch — client/src/components/auth/InactivityManager.tsx:49 → server/routes.ts:663
+- `POST /api/auth/social/:param/refresh` via apiRequest — client/src/components/auth/PlatformReconnectCard.tsx:112 → server/routes/auth.ts:488
+- `GET /api/auth/social-token-status` via useQuery — client/src/components/auth/PlatformReconnectCard.tsx:365 → server/routes/auth.ts:407
+- `GET /api/auth/security-alerts` via useQuery — client/src/components/auth/SecurityAlertBanner.tsx:137 → server/routes/auth.ts:544
+- `POST /api/auth/security-alerts/:param/dismiss` via apiRequest — client/src/components/auth/SecurityAlertBanner.tsx:146 → server/routes/auth.ts:703
+- `POST /api/auth/extend-session` via apiRequest — client/src/components/auth/SessionExpiryWarning.tsx:65 → server/routes/auth.ts:30
+- `POST /api/auth/refresh-token` via apiRequest — client/src/components/auth/TokenRefreshHandler.tsx:56 → server/routes.ts:673
+- `PUT /api/custom-workflows/:param` via apiRequest — client/src/components/automations/CustomWorkflowBuilder.tsx:261 → server/routes/customWorkflows.ts:364
+- `POST /api/custom-workflows` via apiRequest — client/src/components/automations/CustomWorkflowBuilder.tsx:266 → server/routes/customWorkflows.ts:334
+- `POST /api/custom-workflows/:param/:param` via apiRequest — client/src/components/automations/CustomWorkflowBuilder.tsx:506 → server/routes/customWorkflows.ts:426, server/routes/customWorkflows.ts:446, server/routes/customWorkflows.ts:466
+- `POST /api/custom-workflows/:param/test` via apiRequest — client/src/components/automations/CustomWorkflowBuilder.tsx:529 → server/routes/customWorkflows.ts:466
+- `DELETE /api/custom-workflows/:param` via apiRequest — client/src/components/automations/CustomWorkflowBuilder.tsx:552 → server/routes/customWorkflows.ts:407
+- `GET /api/custom-workflows` via useQuery — client/src/components/automations/CustomWorkflowBuilder.tsx:720 → server/routes/customWorkflows.ts:297
+- `GET /api/custom-workflows/catalog` via useQuery — client/src/components/automations/CustomWorkflowBuilder.tsx:727 → server/routes/customWorkflows.ts:293, server/routes/customWorkflows.ts:314
+- `GET /api/advertising/status` via useQuery — client/src/components/autonomous/autonomous-dashboard.tsx:227 → server/routes/advertising.ts:1178
+- `POST /api/advertising/configure` via apiRequest — client/src/components/autonomous/autonomous-dashboard.tsx:279 → server/routes/advertising.ts:1278
+- `GET /api/autopilot/preferences` via apiRequest — client/src/components/autopilot/AutopilotPreferences.tsx:177 → server/routes/autopilotPreferences.ts:61
+- `POST /api/autopilot/preferences` via apiRequest — client/src/components/autopilot/AutopilotPreferences.tsx:190 → server/routes/autopilotPreferences.ts:124
+- `GET /api/autopilot/status` via useQuery — client/src/components/autopilot/autopilot-dashboard.tsx:168 → server/routes/autopilot.ts:36
+- `POST /api/autopilot/configure` via apiRequest — client/src/components/autopilot/autopilot-dashboard.tsx:218 → server/routes/autopilot.ts:286
+- `GET /api/batch/templates?resource=:param` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:99 → server/routes/batch.ts:1268
+- `POST /api/batch/templates` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:111 → server/routes/batch.ts:1296
+- `PUT /api/batch/templates/:param` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:144 → server/routes/batch.ts:1330
+- `DELETE /api/batch/templates/:param` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:161 → server/routes/batch.ts:1376
+- `POST /api/batch/templates/:param/share` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:186 → server/routes/batch.ts:1401
+- `GET /api/billing/disputes` via useQuery — client/src/components/billing/DisputeTracker.tsx:112 → server/routes/billing.ts:2060
+- `POST /api/billing/dispute/evidence` via apiRequest — client/src/components/billing/DisputeTracker.tsx:136 → server/routes/billing.ts:1793
+- `GET /api/billing/invoices` via useQuery — client/src/components/billing/InvoiceStatus.tsx:101 → server/routes/billing.ts:2154
+- `POST /api/billing/retry-payment` via apiRequest — client/src/components/billing/PaymentRetryCard.tsx:74 → server/routes/billing.ts:1269
+- `POST /api/billing/refund/request` via apiRequest — client/src/components/billing/RefundRequestForm.tsx:155 → server/routes/billing.ts:1603
+- `GET /api/billing/grace-period-status` via useQuery — client/src/components/billing/SubscriptionGracePeriod.tsx:48 → server/routes/billing.ts:1919
+- `POST /api/billing/3ds/confirm` via apiRequest — client/src/components/billing/ThreeDSecureModal.tsx:85 → server/routes/billing.ts:1472
+- `GET /api/collaborations/connection-status/:param` via fetch — client/src/components/collaboration/CollaboratorCard.tsx:40 → server/routes/collaborations.ts:275
+- `POST /api/collaborations/connect` via apiRequest — client/src/components/collaboration/CollaboratorCard.tsx:55 → server/routes/collaborations.ts:67
+- `GET /api/collaborations/connections` via fetch — client/src/components/collaboration/ConnectionsList.tsx:20 → server/routes/collaborations.ts:39
+- `GET /api/collaborations/connections/pending` via fetch — client/src/components/collaboration/ConnectionsList.tsx:31 → server/routes/collaborations.ts:53
+- `POST /api/collaborations/accept/:param` via apiRequest — client/src/components/collaboration/ConnectionsList.tsx:43 → server/routes/collaborations.ts:90
+- `POST /api/collaborations/decline/:param` via apiRequest — client/src/components/collaboration/ConnectionsList.tsx:69 → server/routes/collaborations.ts:107
+- `DELETE /api/collaborations/connections/:param` via apiRequest — client/src/components/collaboration/ConnectionsList.tsx:92 → server/routes/collaborations.ts:124
+- `GET /api/collaborations/projects` via fetch — client/src/components/collaboration/ProjectBoard.tsx:95 → server/routes/collaborations.ts:156
+- `GET /api/collaborations/projects?ownOnly=true` via fetch — client/src/components/collaboration/ProjectBoard.tsx:106 → server/routes/collaborations.ts:156
+- `POST /api/collaborations/projects` via apiRequest — client/src/components/collaboration/ProjectBoard.tsx:118 → server/routes/collaborations.ts:189
+- `POST /api/collaborations/projects/:param/join` via apiRequest — client/src/components/collaboration/ProjectBoard.tsx:157 → server/routes/collaborations.ts:217
+- `POST /api/collaborations/projects/:param/leave` via apiRequest — client/src/components/collaboration/ProjectBoard.tsx:181 → server/routes/collaborations.ts:235
+- `GET /api/collaborations/suggestions?limit=:param` via fetch — client/src/components/collaboration/SuggestedCollaborators.tsx:25 → server/routes/collaborations.ts:138
+- `POST /api/autopilot/save-features` via apiRequest — client/src/components/content/ContentAnalyzer.tsx:281 → server/routes/autopilot.ts:406
+- `GET /api/social/video-job/:param` via fetch — client/src/components/content/ServerVideoGenerator.tsx:398 → server/routes/socialMedia.ts:3440
+- `POST /api/social/analyze-image` via fetch — client/src/components/content/ServerVideoGenerator.tsx:815 → server/routes/socialMedia.ts:5027
+- `POST /api/social/beat-analyze` via fetch — client/src/components/content/ServerVideoGenerator.tsx:878 → server/routes/socialMedia.ts:5364
+- `POST /api/social/generate-music-video` via fetch — client/src/components/content/ServerVideoGenerator.tsx:915 → server/routes/socialMedia.ts:5429
+- `GET /api/social/music-video-job/:param` via fetch — client/src/components/content/ServerVideoGenerator.tsx:931 → server/routes/socialMedia.ts:5701
+- `POST /api/contracts/validate` via fetch — client/src/components/contracts/ContractBuilder.tsx:73 → server/routes/contracts.ts:538
+- `POST /api/contracts/preview` via fetch — client/src/components/contracts/ContractBuilder.tsx:102 → server/routes/contracts.ts:579
+- `GET /api/career-coach/recommendations` via useQuery — client/src/components/dashboard/AICareerCoach.tsx:255 → server/routes/careerCoach.ts:29
+- `GET /api/career-coach/goals` via useQuery — client/src/components/dashboard/AICareerCoach.tsx:261 → server/routes/careerCoach.ts:140
+- `POST /api/career-coach/dismiss/:param` via apiRequest — client/src/components/dashboard/AICareerCoach.tsx:268 → server/routes/careerCoach.ts:68
+- `POST /api/career-coach/complete/:param` via apiRequest — client/src/components/dashboard/AICareerCoach.tsx:283 → server/routes/careerCoach.ts:104
+- `POST /api/career-coach/goals/smart` via apiRequest — client/src/components/dashboard/AICareerCoach.tsx:298 → server/routes/careerCoach.ts:273
+- `GET /api/artist-progress/dashboard` via useQuery — client/src/components/dashboard/ArtistProgressDashboard.tsx:487 → server/routes/artistProgress.ts:18
+- `GET /api/artist-progress/history` via useQuery — client/src/components/dashboard/ArtistProgressDashboard.tsx:494 → server/routes/artistProgress.ts:41
+- `GET /api/artist-progress/milestones` via useQuery — client/src/components/dashboard/ArtistProgressDashboard.tsx:501 → server/routes/artistProgress.ts:76
+- `POST /api/auth/change-password` via apiRequest — client/src/components/dialogs/ChangePasswordDialog.tsx:133 → server/routes.ts:1317
+- `DELETE /api/auth/account` via apiRequest — client/src/components/dialogs/DeleteAccountDialog.tsx:83 → server/routes.ts:1415
+- `POST /api/billing/update-payment` via apiRequest — client/src/components/dialogs/PaymentUpdateDialog.tsx:156 → server/routes/billing.ts:1080
+- `POST /api/auth/2fa/setup` via apiRequest — client/src/components/dialogs/TwoFactorSetupDialog.tsx:47 → server/routes.ts:1738
+- `POST /api/auth/2fa/verify` via apiRequest — client/src/components/dialogs/TwoFactorSetupDialog.tsx:92 → server/routes.ts:1780
+- `GET /api/artist-profiles/search?q=:param&platform=all` via apiRequest — client/src/components/distribution/ArtistLookerUpper.tsx:90 → server/routes/artistProfiles.ts:129, server/routes/artistProfiles.ts:192
+- `PATCH /api/artist-profiles/:param` via apiRequest — client/src/components/distribution/ArtistLookerUpper.tsx:107 → server/routes/artistProfiles.ts:211
+- `POST /api/artist-profiles/:param/fixer` via apiRequest — client/src/components/distribution/ArtistProfileFixer.tsx:56 → server/routes/artistProfiles.ts:260
+- `GET /api/artist-profiles` via apiRequest — client/src/components/distribution/ArtistProfileManager.tsx:107 → server/routes/artistProfiles.ts:44
+- `POST /api/artist-profiles/:param/auto-discover` via apiRequest — client/src/components/distribution/ArtistProfileManager.tsx:116 → server/routes/artistProfiles.ts:319
+- `POST /api/artist-profiles` via apiRequest — client/src/components/distribution/ArtistProfileManager.tsx:137 → server/routes/artistProfiles.ts:54
+- `DELETE /api/artist-profiles/:param` via apiRequest — client/src/components/distribution/ArtistProfileManager.tsx:170 → server/routes/artistProfiles.ts:241
+- `GET /api/artist-profiles/:param/profile-hub` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:268 → server/routes/artistProfiles.ts:181, server/routes/artistProfiles.ts:299
+- `POST /api/artist-profiles/:param/auto-sync` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:296 → server/routes/artistProfiles.ts:350
+- `POST /api/artist-profiles/:param/dna-snapshot` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:317 → server/routes/artistProfiles.ts:616
+- `GET /api/artist-profiles/:param/health` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:373 → server/routes/artistProfiles.ts:181, server/routes/artistProfiles.ts:571
+- `GET /api/artist-profiles/:param/claim-pipeline` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:387 → server/routes/artistProfiles.ts:181, server/routes/artistProfiles.ts:502
+- `PATCH /api/artist-profiles/:param/claim-state` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:396 → server/routes/artistProfiles.ts:533
+- `GET /api/artist-profiles/:param/dna-snapshots` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:423 → server/routes/artistProfiles.ts:181, server/routes/artistProfiles.ts:643
+- `GET /api/artist-profiles/:param/identity-graph` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:439 → server/routes/artistProfiles.ts:181, server/routes/artistProfiles.ts:592
+- `POST /api/artist-profiles/:param/fixer-multi` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:448 → server/routes/artistProfiles.ts:676
+- `POST /api/artist-profiles/:param/resolve-handle` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:473 → server/routes/artistProfiles.ts:797
+- `POST /api/artist-profiles/:param/import-history` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:493 → server/routes/artistProfiles.ts:725
+- `POST /api/artist-profiles/:param/isrc-discover` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:522 → server/routes/artistProfiles.ts:454
+- `POST /api/artist-profiles/:param/scan-splits` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:556 → server/routes/artistProfiles.ts:478
+- `GET /api/artist-profiles/:param/portability-report` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:608 → server/routes/artistProfiles.ts:181, server/routes/artistProfiles.ts:761
+- `GET /api/artist-profiles/:param/catalog` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:639 → server/routes/artistProfiles.ts:181, server/routes/artistProfiles.ts:856
+- `POST /api/artist-profiles/:param/distribute-release` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:659 → server/routes/artistProfiles.ts:977
+- `POST /api/artist-profiles/:param/watch` via apiRequest — client/src/components/distribution/AutoArtistSync.tsx:706 → server/routes/artistProfiles.ts:832
+- `GET /api/distribution/qc/:param` via useQuery — client/src/components/distribution/AutomatedQC.tsx:145 → server/routes/distribution.ts:2412
+- `POST /api/distribution/qc/analyze` via apiRequest — client/src/components/distribution/AutomatedQC.tsx:173 → server/routes/distribution.ts:6712
+- `POST /api/distribution/qc/fix` via apiRequest — client/src/components/distribution/AutomatedQC.tsx:214 → server/routes/distribution.ts:6954
+- `POST /api/distribution/catalog-export` via apiRequest — client/src/components/distribution/CatalogMigration.tsx:432 → server/routes/distribution.ts:7839
+- `GET /api/distribution/releases/:param/content-id` via useQuery — client/src/components/distribution/ContentIDManager.tsx:89 → server/routes/distribution.ts:6152
+- `POST /api/distribution/content-id/generate` via apiRequest — client/src/components/distribution/ContentIDManager.tsx:96 → server/routes/distribution.ts:6195
+- `POST /api/distribution/content-id/generate-all` via apiRequest — client/src/components/distribution/ContentIDManager.tsx:127 → server/routes/distribution.ts:6230
+- `POST /api/distribution/content-id/register` via apiRequest — client/src/components/distribution/ContentIDManager.tsx:156 → server/routes/distribution.ts:6267
+- `POST /api/distribution/content-id/resolve` via apiRequest — client/src/components/distribution/ContentIDManager.tsx:196 → server/routes/distribution.ts:6302
+- `GET /api/distribution/platforms` via useQuery — client/src/components/distribution/DSPSelector.tsx:341 → server/routes/distribution.ts:890
+- `GET /api/distribution/transfer/platforms` via useQuery — client/src/components/distribution/DataTransferWizard.tsx:165 → server/routes/distribution.ts:5583
+- `GET /api/distribution/profiles` via useQuery — client/src/components/distribution/DataTransferWizard.tsx:171 → server/routes/distribution.ts:5742
+- `GET /api/distribution/transfer/jobs` via useQuery — client/src/components/distribution/DataTransferWizard.tsx:177 → server/routes/distribution.ts:5669
+- `GET /api/distribution/migration/report` via useQuery — client/src/components/distribution/DataTransferWizard.tsx:181 → server/routes/distribution.ts:5978
+- `POST /api/distribution/profiles/link` via fetch — client/src/components/distribution/DataTransferWizard.tsx:201 → server/routes/distribution.ts:5707
+- `POST /api/distribution/profiles/:param/sync` via fetch — client/src/components/distribution/DataTransferWizard.tsx:232 → server/routes/distribution.ts:5755
+- `DELETE /api/distribution/profiles/:param` via fetch — client/src/components/distribution/DataTransferWizard.tsx:249 → server/routes/distribution.ts:5785
+- `POST /api/distribution/profiles/:param/import-catalog` via fetch — client/src/components/distribution/DataTransferWizard.tsx:273 → server/routes/distribution.ts:5845
+- `POST /api/distribution/profiles/:param/scan-releases` via fetch — client/src/components/distribution/DataTransferWizard.tsx:316 → server/routes/distribution.ts:5815
+- `GET /api/distribution/releases/:param/outcomes` via useQuery — client/src/components/distribution/DistributionOutcomeHandler.tsx:139 → server/routes/distribution.ts:6344
+- `POST /api/distribution/releases/:param/retry-outcome` via apiRequest — client/src/components/distribution/DistributionOutcomeHandler.tsx:153 → server/routes/distribution.ts:6565
+- `GET /api/distribution/earnings/statements` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:176 → server/routes/distribution.ts:5107
+- `GET /api/distribution/earnings/entries` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:185 → server/routes/distribution.ts:5026
+- `GET /api/distribution/earnings/payouts` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:194 → server/routes/distribution.ts:5086
+- `GET /api/distribution/earnings/summary` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:199 → server/routes/distribution.ts:5165
+- `GET /api/distribution/earnings/territories` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:203 → server/routes/distribution.ts:5260
+- `POST /api/distribution/earnings/import` via apiRequest — client/src/components/distribution/EarningsReconciliation.tsx:214 → server/routes/distribution.ts:7027
+- `POST /api/distribution/earnings/payout` via apiRequest — client/src/components/distribution/EarningsReconciliation.tsx:242 → server/routes/distribution.ts:7059
+- `POST /api/distribution/earnings/statements/:param/reconcile` via apiRequest — client/src/components/distribution/EarningsReconciliation.tsx:271 → server/routes/distribution.ts:5129
+- `GET /api/distribution/releases` via useQuery — client/src/components/distribution/EmbedCodeGenerator.tsx:706 → server/routes/distribution.ts:349
+- `GET /api/distribution/hyperfollow/:param` via useQuery — client/src/components/distribution/HyperFollowBuilder.tsx:179 → server/routes/distribution.ts:1226, server/routes/distribution.ts:1270, server/routes/distribution.ts:2412
+- `GET /api/distribution/codes/isrc` via useQuery — client/src/components/distribution/ISRCManager.tsx:103 → server/routes/distribution.ts:4884
+- `GET /api/distribution/codes/upc` via useQuery — client/src/components/distribution/ISRCManager.tsx:108 → server/routes/distribution.ts:4915
+- `GET /api/distribution/codes/stats` via useQuery — client/src/components/distribution/ISRCManager.tsx:119 → server/routes/distribution.ts:4852
+- `POST /api/distribution/codes/generate` via apiRequest — client/src/components/distribution/ISRCManager.tsx:126 → server/routes/distribution.ts:7102
+- `POST /api/distribution/codes/validate` via apiRequest — client/src/components/distribution/ISRCManager.tsx:169 → server/routes/distribution.ts:850
+- `POST /api/distribution/codes/:param/assign` via apiRequest — client/src/components/distribution/ISRCManager.tsx:194 → server/routes/distribution.ts:4945
+- `POST /api/distribution/codes/:param/revoke` via apiRequest — client/src/components/distribution/ISRCManager.tsx:220 → server/routes/distribution.ts:5014
+- `POST /api/distribution/releases/:param/takedown` via apiRequest — client/src/components/distribution/ReleaseActionsPanel.tsx:127 → server/routes/distribution.ts:2175
+- `DELETE /api/distribution/releases/:param` via apiRequest — client/src/components/distribution/ReleaseActionsPanel.tsx:164 → server/routes/distribution.ts:513
+- `GET /api/distribution/releases/:param/status` via useQuery — client/src/components/distribution/ReleaseStatusDashboard.tsx:183 → server/routes/distribution.ts:1453
+- `POST /api/distribution/releases/:param/check-status` via apiRequest — client/src/components/distribution/ReleaseStatusDashboard.tsx:191 → server/routes/distribution.ts:1545
+- `POST /api/distribution/releases` via apiRequest — client/src/components/distribution/ReleaseWizard.tsx:163 → server/routes/distribution.ts:362
+- `POST /api/distribution/releases/:param/tracks` via apiRequest — client/src/components/distribution/ReleaseWizard.tsx:227 → server/routes/distribution.ts:581
+- `POST /api/distribution/releases/:param/artwork` via apiRequest — client/src/components/distribution/ReleaseWizard.tsx:240 → server/routes/distribution.ts:476
+- `POST /api/distribution/releases/:param/submit` via apiRequest — client/src/components/distribution/ReleaseWizard.tsx:262 → server/routes/distribution.ts:1834
+- `POST /api/distribution/hyperfollow` via apiRequest — client/src/components/distribution/ReleaseWizard.tsx:330 → server/routes/distribution.ts:1079
+- `GET /api/distribution/royalties/platforms` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:155 → server/routes/distribution.ts:5447
+- `GET /api/distribution/royalties/discrepancies` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:160 → server/routes/distribution.ts:5336
+- `GET /api/distribution/royalties/splits` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:166 → server/routes/distribution.ts:5508
+- `GET /api/distribution/royalties/tax-documents` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:172 → server/routes/distribution.ts:5540
+- `GET /api/distribution/royalties/payouts` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:178 → server/routes/distribution.ts:5402
+- `GET /api/distribution/royalties/currency-rates` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:184 → server/routes/distribution.ts:5302
+- `POST /api/distribution/royalties/payout` via apiRequest — client/src/components/distribution/RoyaltyReconciliation.tsx:191 → server/routes/distribution.ts:7202
+- `POST /api/distribution/royalties/tax-document` via apiRequest — client/src/components/distribution/RoyaltyReconciliation.tsx:219 → server/routes/distribution.ts:7245
+- `POST /api/distribution/royalties/discrepancies/:param/dispute` via apiRequest — client/src/components/distribution/RoyaltyReconciliation.tsx:240 → server/routes/distribution.ts:5358
+- `GET /api/distribution/releases/:param/submission-status` via useQuery — client/src/components/distribution/SubmissionStatusTracker.tsx:201 → server/routes/distribution.ts:5999
+- `POST /api/distribution/releases/:param/retry` via apiRequest — client/src/components/distribution/SubmissionStatusTracker.tsx:235 → server/routes/distribution.ts:6082
+- `GET /api/distribution/takedowns` via useQuery — client/src/components/distribution/TakedownManager.tsx:85 → server/routes/distribution.ts:4404
+- `GET /api/distribution/claims` via useQuery — client/src/components/distribution/TakedownManager.tsx:91 → server/routes/distribution.ts:4337
+- `GET /api/distribution/disputes` via useQuery — client/src/components/distribution/TakedownManager.tsx:97 → server/routes/distribution.ts:4356
+- `GET /api/distribution/reinstatements` via useQuery — client/src/components/distribution/TakedownManager.tsx:103 → server/routes/distribution.ts:4524
+- `POST /api/distribution/disputes` via apiRequest — client/src/components/distribution/TakedownManager.tsx:117 → server/routes/distribution.ts:4441
+- `POST /api/export/bulk` via apiRequest — client/src/components/export/BulkExportManager.tsx:456 → server/routes/export.ts:1226
+- `GET /api/export/jobs/:param` via fetch — client/src/components/export/BulkExportManager.tsx:520 → server/routes/export.ts:297
+- `GET /api/export/history` via useQuery — client/src/components/export/ExportHistory.tsx:358 → server/routes/export.ts:483
+- `DELETE /api/export/history/:param` via apiRequest — client/src/components/export/ExportHistory.tsx:364 → server/routes/export.ts:517
+- `POST /api/export/share-links` via apiRequest — client/src/components/export/ShareLinkGenerator.tsx:162 → server/routes/export.ts:546
+- `POST /api/files/bulk-delete` via fetch — client/src/components/files/BulkFileManager.tsx:197 → server/routes/files.ts:746
+- `GET /api/files/:param/download` via fetch — client/src/components/files/DownloadManager.tsx:475 → server/routes/files.ts:835
+- `POST /api/files/:param/restore` via fetch — client/src/components/files/FileOperationsMenu.tsx:147 → server/routes/files.ts:1068
+- `POST /api/files/validate` via fetch — client/src/components/files/FileValidationStatus.tsx:198 → server/routes/files.ts:895
+- `GET /api/storage/quota` via useQuery — client/src/components/files/StorageQuotaBar.tsx:107 → server/routes/storage.ts:774
+- `GET /api/files/storage-usage` via useQuery — client/src/components/files/StorageUsageIndicator.tsx:132 → server/routes/files.ts:491
+- `GET /api/growth/dashboard` via fetch — client/src/components/growth/OrganicReachDashboard.tsx:102 → server/routes/growth.ts:723
+- `GET /api/storefront/:param/bogo-promotions/all` via useQuery — client/src/components/marketplace/BogoPromotionsManager.tsx:109 → server/routes/storefront.ts:2120
+- `GET /api/storefront/:param/listings` via useQuery — client/src/components/marketplace/BogoPromotionsManager.tsx:121 → server/routes/storefront.ts:100, server/routes/storefront.ts:194, server/routes/storefront.ts:833, server/routes/storefront.ts:882, server/routes/storefront.ts:921
+- `POST /api/storefront/:param/bogo-promotions` via apiRequest — client/src/components/marketplace/BogoPromotionsManager.tsx:133 → server/routes/storefront.ts:619, server/routes/storefront.ts:2146
+- `PUT /api/storefront/:param/bogo-promotions/:param` via apiRequest — client/src/components/marketplace/BogoPromotionsManager.tsx:156 → server/routes/storefront.ts:2231
+- `DELETE /api/storefront/:param/bogo-promotions/:param` via apiRequest — client/src/components/marketplace/BogoPromotionsManager.tsx:180 → server/routes/storefront.ts:2313
+- `GET /api/dns/:param/records?domain=:param` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:168 → server/routes/dns.ts:505, server/routes/dns.ts:1048
+- `GET /api/dns/:param/templates` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:180 → server/routes/dns.ts:895, server/routes/dns.ts:1048
+- `POST /api/dns/:param/records` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:190 → server/routes/dns.ts:611
+- `PUT /api/dns/:param/records` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:220 → server/routes/dns.ts:673
+- `DELETE /api/dns/:param/records` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:251 → server/routes/dns.ts:755
+- `POST /api/dns/:param/templates` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:288 → server/routes/dns.ts:914
+- `POST /api/dns/:param/templates/:param/apply` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:318 → server/routes/dns.ts:966
+- `DELETE /api/dns/:param/templates/:param` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:346 → server/routes/dns.ts:942
+- `GET /api/marketplace/for-you` via apiRequest — client/src/components/marketplace/ForYouFeed.tsx:99 → server/routes/marketplace.ts:846
+- `POST /api/marketplace/interaction` via apiRequest — client/src/components/marketplace/ForYouFeed.tsx:106 → server/routes/marketplace.ts:772
+- `POST /api/marketplace/beats/:param/like` via apiRequest — client/src/components/marketplace/ForYouFeed.tsx:126 → server/routes/marketplace.ts:2563
+- `GET /api/payouts/balance` via useQuery — client/src/components/marketplace/PayoutDashboard.tsx:71 → server/routes/payouts.ts:104
+- `GET /api/payouts/history` via useQuery — client/src/components/marketplace/PayoutDashboard.tsx:80 → server/routes/payouts.ts:181
+- `GET /api/payouts/verify` via useQuery — client/src/components/marketplace/PayoutDashboard.tsx:88 → server/routes/payouts.ts:292
+- `POST /api/payouts/setup` via apiRequest — client/src/components/marketplace/PayoutDashboard.tsx:96 → server/routes/payouts.ts:261
+- `POST /api/payouts/instant` via apiRequest — client/src/components/marketplace/PayoutDashboard.tsx:121 → server/routes/payouts.ts:126
+- `GET /api/marketplace/producer-analytics?timeRange=:param` via fetch — client/src/components/marketplace/ProducerAnalyticsDashboard.tsx:157 → server/routes/marketplace.ts:251
+- `GET /api/marketplace/producers/:param` via fetch — client/src/components/marketplace/ProducerProfile.tsx:65 → server/routes/marketplace.ts:2392
+- `GET /api/marketplace/producers/:param/follow-status` via fetch — client/src/components/marketplace/ProducerProfile.tsx:78 → server/routes/marketplace.ts:2501
+- `POST /api/marketplace/follow-producer` via apiRequest — client/src/components/marketplace/ProducerProfile.tsx:88 → server/routes/marketplace.ts:976
+- `POST /api/marketplace/unfollow-producer` via apiRequest — client/src/components/marketplace/ProducerProfile.tsx:106 → server/routes/marketplace.ts:998
+- `GET /api/storefront/suggest-url` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:892 → server/routes/storefront.ts:130, server/routes/storefront.ts:248
+- `GET /api/notifications` via useQuery — client/src/components/notifications/NotificationCenter.tsx:150 → server/routes.ts:3037
+- `GET /api/notifications/preferences` via useQuery — client/src/components/notifications/NotificationCenter.tsx:157 → server/routes.ts:3312
+- `PUT /api/notifications/:param/read` via apiRequest — client/src/components/notifications/NotificationCenter.tsx:224 → server/routes.ts:3057
+- `PUT /api/notifications/mark-all-read` via apiRequest — client/src/components/notifications/NotificationCenter.tsx:251 → server/routes.ts:3084
+- `DELETE /api/notifications/:param` via apiRequest — client/src/components/notifications/NotificationCenter.tsx:266 → server/routes.ts:3101, server/routes.ts:3120, server/routes.ts:3155, server/routes.ts:3589
+- `DELETE /api/notifications/clear-all` via apiRequest — client/src/components/notifications/NotificationCenter.tsx:293 → server/routes.ts:3101, server/routes.ts:3155
+- `PUT /api/notifications/preferences` via apiRequest — client/src/components/notifications/NotificationPreferences.tsx:152 → server/routes.ts:3443
+- `POST /api/notifications/push-subscriptions` via apiRequest — client/src/components/notifications/NotificationPreferences.tsx:181 → server/routes.ts:3512
+- `POST /api/notifications/sms/verify` via apiRequest — client/src/components/notifications/NotificationPreferences.tsx:206 → server/routes.ts:3684
+- `POST /api/notifications/sms/confirm` via apiRequest — client/src/components/notifications/NotificationPreferences.tsx:244 → server/routes.ts:3887
+- `GET /api/onboarding/achievements` via useQuery — client/src/components/onboarding/AchievementUnlockToast.tsx:371 → server/routes/onboarding.ts:565
+- `GET /api/onboarding/progress` via useQuery — client/src/components/onboarding/ContextualFeatureHint.tsx:87 → server/routes/onboarding.ts:11
+- `GET /api/users/seen-features` via useQuery — client/src/components/onboarding/ContextualFeatureHint.tsx:92 → server/routes.ts:5633
+- `POST /api/users/mark-feature-seen` via apiRequest — client/src/components/onboarding/ContextualFeatureHint.tsx:100 → server/routes.ts:5647
+- `POST /api/onboarding/track-tutorial` via apiRequest — client/src/components/onboarding/FeatureDiscoveryTooltip.tsx:65 → server/routes/onboarding.ts:154
+- `POST /api/onboarding/mark-celebrated` via apiRequest — client/src/components/onboarding/FirstActionCelebration.tsx:160 → server/routes/onboarding.ts:299
+- `POST /api/onboarding/complete-step` via apiRequest — client/src/components/onboarding/FirstWeekSuccessPath.tsx:131 → server/routes/onboarding.ts:26
+- `POST /api/onboarding/skip` via apiRequest — client/src/components/onboarding/FirstWeekSuccessPath.tsx:166 → server/routes/onboarding.ts:46
+- `POST /api/auth/update-onboarding` via apiRequest — client/src/components/onboarding/OnboardingFlow.tsx:122 → server/routes.ts:741
+- `GET /api/onboarding/profile/completion` via useQuery — client/src/components/onboarding/ProfileSetupProgress.tsx:119 → server/routes/onboarding.ts:702
+- `POST /api/users/complete-onboarding` via fetch — client/src/components/onboarding/QuickStartWizard.tsx:95 → server/routes.ts:5607
+- `POST /api/onboarding/complete-welcome` via apiRequest — client/src/components/onboarding/WelcomeFlow.tsx:166 → server/routes/onboarding.ts:116
+- `GET /api/onboarding/check-first-login` via useQuery — client/src/components/onboarding/WelcomeFlow.tsx:772 → server/routes/onboarding.ts:381
+- `GET /api/personalization/dashboard-layout` via useQuery — client/src/components/personalization/DashboardCustomizer.tsx:298 → server/routes/personalization.ts:73
+- `GET /api/personalization/layout-presets` via useQuery — client/src/components/personalization/DashboardCustomizer.tsx:303 → server/routes/personalization.ts:109
+- `PUT /api/personalization/dashboard-layout` via apiRequest — client/src/components/personalization/DashboardCustomizer.tsx:322 → server/routes/personalization.ts:89
+- `POST /api/personalization/layout-presets` via apiRequest — client/src/components/personalization/DashboardCustomizer.tsx:339 → server/routes/personalization.ts:125
+- `GET /api/personalization/feature-usage` via useQuery — client/src/components/personalization/FeaturePrioritizer.tsx:71 → server/routes/personalization.ts:362
+- `PUT /api/personalization/feature-priority` via apiRequest — client/src/components/personalization/FeaturePrioritizer.tsx:85 → server/routes/personalization.ts:378
+- `POST /api/personalization/reset-feature-priorities` via apiRequest — client/src/components/personalization/FeaturePrioritizer.tsx:104 → server/routes/personalization.ts:402
+- `POST /api/personalization/apply-suggested-priorities` via apiRequest — client/src/components/personalization/FeaturePrioritizer.tsx:119 → server/routes/personalization.ts:422
+- `GET /api/personalization/next-action` via useQuery — client/src/components/personalization/NextActionCard.tsx:107 → server/routes/personalization.ts:192
+- `POST /api/personalization/complete-action/:param` via apiRequest — client/src/components/personalization/NextActionCard.tsx:116 → server/routes/personalization.ts:592
+- `POST /api/personalization/dismiss-action/:param` via apiRequest — client/src/components/personalization/NextActionCard.tsx:135 → server/routes/personalization.ts:606
+- `GET /api/personalization/recommendations` via useQuery — client/src/components/personalization/NextActionCard.tsx:418 → server/routes/personalization.ts:346
+- `GET /api/analytics/dashboard` via useQuery — client/src/components/personalization/PersonalizedDashboard.tsx:133 → server/routes.ts:4475
+- `GET /api/ai/insights` via useQuery — client/src/components/personalization/PersonalizedDashboard.tsx:267 → server/routes/ai.ts:796
+- `GET /api/personalization/learning-state` via useQuery — client/src/components/personalization/PreferenceLearner.tsx:70 → server/routes/personalization.ts:440
+- `GET /api/personalization/learning-insights` via useQuery — client/src/components/personalization/PreferenceLearner.tsx:77 → server/routes/personalization.ts:454
+- `GET /api/personalization/interaction-patterns` via useQuery — client/src/components/personalization/PreferenceLearner.tsx:82 → server/routes/personalization.ts:472
+- `POST /api/personalization/track-batch` via apiRequest — client/src/components/personalization/PreferenceLearner.tsx:90 → server/routes/personalization.ts:297
+- `POST /api/personalization/apply-insight/:param` via apiRequest — client/src/components/personalization/PreferenceLearner.tsx:104 → server/routes/personalization.ts:490
+- `POST /api/personalization/dismiss-insight/:param` via apiRequest — client/src/components/personalization/PreferenceLearner.tsx:123 → server/routes/personalization.ts:505
+- `POST /api/personalization/reset-learning` via apiRequest — client/src/components/personalization/PreferenceLearner.tsx:138 → server/routes/personalization.ts:520
+- `GET /api/personalization/suggestions` via useQuery — client/src/components/personalization/SmartActionBar.tsx:78 → server/routes/personalization.ts:63
+- `PUT /api/personalization/defaults` via apiRequest — client/src/components/personalization/SmartDefaults.tsx:289 → server/routes/personalization.ts:20
+- `GET /api/personalization/preferences` via useQuery — client/src/components/personalization/SmartDefaultsProvider.tsx:141 → server/routes/personalization.ts:39
+- `GET /api/preferences/smart-defaults` via useQuery — client/src/components/personalization/SmartDefaultsProvider.tsx:148 → server/routes/preferences.ts:206
+- `PUT /api/personalization/preferences` via apiRequest — client/src/components/personalization/SmartDefaultsProvider.tsx:161 → server/routes/personalization.ts:51
+- `POST /api/personalization/track-interaction` via apiRequest — client/src/components/personalization/SmartDefaultsProvider.tsx:177 → server/routes/personalization.ts:274
+- `POST /api/personalization/apply-defaults` via apiRequest — client/src/components/personalization/SmartDefaultsProvider.tsx:203 → server/routes/personalization.ts:534
+- `POST /api/personalization/reset-defaults` via apiRequest — client/src/components/personalization/SmartDefaultsProvider.tsx:222 → server/routes/personalization.ts:562
+- `GET /api/personalization/smart-schedule` via useQuery — client/src/components/personalization/SmartScheduleSuggestion.tsx:128 → server/routes/personalization.ts:148
+- `POST /api/personalization/apply-schedule` via apiRequest — client/src/components/personalization/SmartScheduleSuggestion.tsx:138 → server/routes/personalization.ts:168
+- `POST /api/personalization/track-widget-view` via apiRequest — client/src/components/personalization/SmartWidget.tsx:89 → server/routes/personalization.ts:322
+- `PUT /api/personalization/widget/:param` via apiRequest — client/src/components/personalization/SmartWidget.tsx:103 → server/routes/personalization.ts:576
+- `GET /api/countdowns` via useQuery — client/src/components/releases/PreReleaseHub.tsx:85 → server/routes/releaseCountdown.ts:64
+- `GET /api/countdowns/:param` via useQuery — client/src/components/releases/PreReleaseHub.tsx:92 → server/routes/releaseCountdown.ts:148
+- `POST /api/countdowns` via apiRequest — client/src/components/releases/PreReleaseHub.tsx:98 → server/routes/releaseCountdown.ts:111
+- `PATCH /api/countdowns/:param/tasks/:param` via apiRequest — client/src/components/releases/ReleaseChecklist.tsx:74 → server/routes/releaseCountdown.ts:308
+- `POST /api/retention/cancellation-feedback` via apiRequest — client/src/components/retention/CancellationModal.tsx:84 → server/routes/retention.ts:86
+- `POST /api/retention/nps` via apiRequest — client/src/components/retention/NPSSurvey.tsx:36 → server/routes/retention.ts:52
+- `GET /api/search/discover` via fetch — client/src/components/search/DiscoveryFeed.tsx:42 → server/routes/search.ts:672
+- `GET /api/search/similar/:param?limit=6` via fetch — client/src/components/search/DiscoveryFeed.tsx:462 → server/routes/search.ts:776
+- `GET /api/search/filter-presets?context=:param` via fetch — client/src/components/search/FilterPresetsManager.tsx:78 → server/routes/search.ts:854
+- `GET /api/search/filter-presets` via fetch — client/src/components/search/FilterPresetsManager.tsx:93 → server/routes/search.ts:854
+- `DELETE /api/search/filter-presets/:param` via fetch — client/src/components/search/FilterPresetsManager.tsx:129 → server/routes/search.ts:1034
+- `POST /api/search/filter-presets/:param/default` via fetch — client/src/components/search/FilterPresetsManager.tsx:160 → server/routes/search.ts:1057
+- `GET /api/search/autocomplete?q=:param&limit=8` via fetch — client/src/components/search/GlobalSearch.tsx:73 → server/routes/search.ts:505
+- `GET /api/search/history` via fetch — client/src/components/search/GlobalSearch.tsx:89 → server/routes/search.ts:617
+- `GET /api/search/trending` via fetch — client/src/components/search/GlobalSearch.tsx:102 → server/routes/search.ts:570
+- `DELETE /api/search/history` via fetch — client/src/components/search/GlobalSearch.tsx:115 → server/routes/search.ts:637
+- `DELETE /api/search/history/:param` via fetch — client/src/components/search/GlobalSearch.tsx:132 → server/routes/search.ts:652
+- `GET /api/search/unified?:param` via fetch — client/src/components/search/GlobalSearchDialog.tsx:185 → server/routes/search.ts:332
+- `POST /api/search/filter-presets` via fetch — client/src/components/search/SearchFilters.tsx:189 → server/routes/search.ts:832
+- `GET /api/search/suggestions?:param` via fetch — client/src/components/search/SearchSuggestions.tsx:87 → server/routes/search.ts:1099
+- `GET /api/social/hashtags/trending` via fetch — client/src/components/search/SearchSuggestions.tsx:125 → server/routes/socialMedia.ts:1160
+- `GET /api/search/autocomplete?q=:param&limit=5` via fetch — client/src/components/search/SearchSuggestions.tsx:383 → server/routes/search.ts:505
+- `GET /api/auth/api-keys` via useQuery — client/src/components/settings/ApiKeyManagement.tsx:114 → server/routes/apiKeys.ts:60
+- `GET /api/auth/api-keys/scopes` via useQuery — client/src/components/settings/ApiKeyManagement.tsx:117 → server/routes/apiKeys.ts:46
+- `POST /api/auth/api-keys` via apiRequest — client/src/components/settings/ApiKeyManagement.tsx:122 → server/routes/apiKeys.ts:92
+- `DELETE /api/auth/api-keys/:param` via apiRequest — client/src/components/settings/ApiKeyManagement.tsx:149 → server/routes/apiKeys.ts:164
+- `POST /api/auth/api-keys/:param/regenerate` via apiRequest — client/src/components/settings/ApiKeyManagement.tsx:173 → server/routes/apiKeys.ts:186
+- `GET /api/auth/connected-accounts` via useQuery — client/src/components/settings/ConnectedAccountsManager.tsx:146 → server/routes/connectedAccounts.ts:94
+- `DELETE /api/auth/connected-accounts/:param` via apiRequest — client/src/components/settings/ConnectedAccountsManager.tsx:151 → server/routes/connectedAccounts.ts:156
+- `POST /api/auth/connected-accounts/:param/refresh` via apiRequest — client/src/components/settings/ConnectedAccountsManager.tsx:177 → server/routes/connectedAccounts.ts:183
+- `PUT /api/auth/connected-accounts/:param/permissions` via apiRequest — client/src/components/settings/ConnectedAccountsManager.tsx:210 → server/routes/connectedAccounts.ts:327
+- `POST /api/social/connect/:param` via apiRequest — client/src/components/settings/ConnectedAccountsManager.tsx:253 → server/routes/socialOAuth.ts:350
+- `GET /api/platform-sync/devices` via fetch — client/src/components/settings/CrossPlatformSync.tsx:95 → server/routes/platformSync.ts:28
+- `GET /api/platform-sync/version/latest` via fetch — client/src/components/settings/CrossPlatformSync.tsx:107 → server/routes/platformSync.ts:140
+- `GET /api/platform-sync/sync/status` via fetch — client/src/components/settings/CrossPlatformSync.tsx:119 → server/routes/platformSync.ts:224
+- `POST /api/platform-sync/devices/register` via fetch — client/src/components/settings/CrossPlatformSync.tsx:145 → server/routes/platformSync.ts:39
+- `DELETE /api/platform-sync/devices/:param` via fetch — client/src/components/settings/CrossPlatformSync.tsx:177 → server/routes/platformSync.ts:94
+- `POST /api/platform-sync/sync/push` via fetch — client/src/components/settings/CrossPlatformSync.tsx:216 → server/routes/platformSync.ts:205
+- `GET /api/email-preferences` via useQuery — client/src/components/settings/EmailPreferences.tsx:73 → server/routes/emailPreferences.ts:7
+- `GET /api/email-preferences/preview` via useQuery — client/src/components/settings/EmailPreferences.tsx:78 → server/routes/emailPreferences.ts:86
+- `PATCH /api/email-preferences` via fetch — client/src/components/settings/EmailPreferences.tsx:85 → server/routes/emailPreferences.ts:23
+- `GET /api/auth/login-history` via useQuery — client/src/components/settings/LoginHistory.tsx:111 → server/routes.ts:1089
+- `POST /api/auth/sessions/terminate` via apiRequest — client/src/components/settings/LoginHistory.tsx:122 → server/routes.ts:972
+- `POST /api/auth/sessions/terminate-all` via apiRequest — client/src/components/settings/LoginHistory.tsx:144 → server/routes.ts:1033
+- `GET /api/auth/privacy-settings` via useQuery — client/src/components/settings/PrivacySettings.tsx:56 → server/routes.ts:1168
+- `GET /api/auth/data-export-status` via useQuery — client/src/components/settings/PrivacySettings.tsx:60 → server/routes.ts:1286
+- `PUT /api/auth/privacy-settings` via apiRequest — client/src/components/settings/PrivacySettings.tsx:67 → server/routes.ts:1196
+- `POST /api/auth/request-data-export` via apiRequest — client/src/components/settings/PrivacySettings.tsx:92 → server/routes.ts:1250
+- `GET /api/auth/export-data` via fetch — client/src/components/settings/PrivacySettings.tsx:129 → server/routes.ts:1715
+- `GET /api/auth/recovery-codes/status` via useQuery — client/src/components/settings/RecoveryCodes.tsx:70 → server/routes/recoveryCodes.ts:73
+- `POST /api/auth/recovery-codes/generate` via apiRequest — client/src/components/settings/RecoveryCodes.tsx:75 → server/routes/recoveryCodes.ts:101
+- `GET /api/preferences/security-alerts` via useQuery — client/src/components/settings/SecurityAlertsSettings.tsx:41 → server/routes/preferences.ts:37
+- `PUT /api/preferences/security-alerts` via apiRequest — client/src/components/settings/SecurityAlertsSettings.tsx:48 → server/routes/preferences.ts:54
+- `GET /api/social/approvals/stats` via useQuery — client/src/components/social/ApprovalDashboard.tsx:143 → server/routes/socialApprovals.ts:371
+- `GET /api/social/approvals/pending` via useQuery — client/src/components/social/ApprovalDashboard.tsx:148 → server/routes/socialApprovals.ts:50
+- `GET /api/social/approvals/my-posts` via useQuery — client/src/components/social/ApprovalDashboard.tsx:153 → server/routes/socialApprovals.ts:348
+- `GET /api/social/approvals/history` via useQuery — client/src/components/social/ApprovalDashboard.tsx:157 → server/routes/socialApprovals.ts:411
+- `POST /api/social/approvals/:param/submit` via fetch — client/src/components/social/ApprovalDashboard.tsx:179 → server/routes/socialApprovals.ts:80
+- `POST /api/social/approvals/:param/approve` via fetch — client/src/components/social/ApprovalDashboard.tsx:215 → server/routes/socialApprovals.ts:130
+- `POST /api/social/approvals/:param/reject` via fetch — client/src/components/social/ApprovalDashboard.tsx:257 → server/routes/socialApprovals.ts:182
+- `GET /api/social/bulk/batches` via useQuery — client/src/components/social/BulkScheduler.tsx:118 → server/routes/socialBulk.ts:428
+- `GET /api/social/bulk/status/:param` via useQuery — client/src/components/social/BulkScheduler.tsx:124 → server/routes/socialBulk.ts:340
+- `POST /api/social/bulk/validate` via fetch — client/src/components/social/BulkScheduler.tsx:132 → server/routes/socialBulk.ts:19
+- `POST /api/social/bulk/schedule` via fetch — client/src/components/social/BulkScheduler.tsx:166 → server/routes/socialBulk.ts:157
+- `DELETE /api/social/bulk/:param` via fetch — client/src/components/social/BulkScheduler.tsx:207 → server/routes/socialBulk.ts:404
+- `GET /api/social/benchmark/competitors` via useQuery — client/src/components/social/CompetitorBenchmark.tsx:168 → server/routes/socialMedia.ts:1394
+- `GET /api/social/benchmark/insights` via useQuery — client/src/components/social/CompetitorBenchmark.tsx:172 → server/routes/socialMedia.ts:1418
+- `GET /api/social/competitors` via useQuery — client/src/components/social/CompetitorBenchmarking.tsx:107 → server/routes/socialMedia.ts:1306
+- `GET /api/social/your-stats` via useQuery — client/src/components/social/CompetitorBenchmarking.tsx:111 → server/routes/socialMedia.ts:1378
+- `GET /api/social/ai-content/trending-topics` via apiRequest — client/src/components/social/ContentGenerator.tsx:394 → server/routes/socialAI.ts:861
+- `GET /api/social/ai-content/posting-times` via apiRequest — client/src/components/social/ContentGenerator.tsx:413 → server/routes/socialAI.ts:846
+- `GET /api/social/generate/context` via apiRequest — client/src/components/social/ContentGenerator.tsx:428 → server/routes/socialAI.ts:992
+- `POST /api/social/ai-content/analyze-brand-voice` via apiRequest — client/src/components/social/ContentGenerator.tsx:442 → server/routes/socialAI.ts:746
+- `POST /api/social/ai-content/multilingual` via apiRequest — client/src/components/social/ContentGenerator.tsx:469 → server/routes/socialAI.ts:771
+- `POST /api/social/generate` via apiRequest — client/src/components/social/ContentGenerator.tsx:500 → server/routes/socialAI.ts:1041
+- `POST /api/social/ai-content/optimize-hashtags` via apiRequest — client/src/components/social/ContentGenerator.tsx:526 → server/routes/socialAI.ts:821
+- `POST /api/social/ai-content/ab-variants` via apiRequest — client/src/components/social/ContentGenerator.tsx:544 → server/routes/socialAI.ts:715
+- `POST /api/social/generate-image` via apiRequest — client/src/components/social/ContentGenerator.tsx:583 → server/routes/socialMedia.ts:4562
+- `POST /api/multimodal/generate` via apiRequest — client/src/components/social/ContentGenerator.tsx:608 → server/routes/multimodal.ts:36
+- `GET /api/social/listening/keywords` via useQuery — client/src/components/social/SocialListening.tsx:139 → server/routes/socialMedia.ts:1142
+- `GET /api/social/listening/trending` via useQuery — client/src/components/social/SocialListening.tsx:147 → server/routes/socialMedia.ts:1247
+- `GET /api/social/listening/influencers` via useQuery — client/src/components/social/SocialListening.tsx:155 → server/routes/socialMedia.ts:1265
+- `GET /api/social/listening/alerts` via useQuery — client/src/components/social/SocialListening.tsx:163 → server/routes/socialMedia.ts:1286
+- `GET /api/social/unified-calendar/posts` via useQuery — client/src/components/social/UnifiedCalendar.tsx:194 → server/routes/socialMedia.ts:2134
+- `GET /api/social/unified-calendar/campaigns` via useQuery — client/src/components/social/UnifiedCalendar.tsx:203 → server/routes/socialMedia.ts:2226
+- `GET /api/social/unified-calendar/holidays` via useQuery — client/src/components/social/UnifiedCalendar.tsx:207 → server/routes/socialMedia.ts:2329
+- `GET /api/social/unified-calendar/queue` via useQuery — client/src/components/social/UnifiedCalendar.tsx:216 → server/routes/socialMedia.ts:2345
+- `GET /api/social/inbox` via useQuery — client/src/components/social/UnifiedInbox.tsx:159 → server/routes/socialMedia.ts:1458
+- `GET /api/social/inbox/templates` via useQuery — client/src/components/social/UnifiedInbox.tsx:163 → server/routes/socialMedia.ts:1919
+- `GET /api/social/inbox/team` via useQuery — client/src/components/social/UnifiedInbox.tsx:168 → server/routes/socialMedia.ts:2056
+- `POST /api/social/inbox/:param/reply` via apiRequest — client/src/components/social/UnifiedInbox.tsx:181 → server/routes/socialMedia.ts:1743
+- `GET /api/social/connections` via useQuery — client/src/components/social/platform-connections.tsx:70 → server/routes/socialMedia.ts:2069
+- `POST /api/social/disconnect/:param` via apiRequest — client/src/components/social/platform-connections.tsx:118 → server/routes/socialOAuth.ts:1119
+- `POST /api/social/sync/:param` via apiRequest — client/src/components/social/platform-connections.tsx:140 → server/routes/socialOAuth.ts:1172
+- `GET /api/storage/hybrid/analytics` via fetch — client/src/components/storage/HybridStorageStats.tsx:100 → server/routes/storage.ts:1240
+- `POST /api/storage/hybrid/auto-tier` via fetch — client/src/components/storage/HybridStorageStats.tsx:116 → server/routes/storage.ts:1337
+- `GET /api/studio/ai-music/presets` via apiRequest — client/src/components/studio/AIAssistantPanel.tsx:86 → server/routes/studio.ts:2690
+- `GET /api/studio/ai-music/suggestions?projectId=:param&genre=:param` via apiRequest — client/src/components/studio/AIAssistantPanel.tsx:104 → server/routes/studio.ts:2659
+- `POST /api/studio/ai-music/analyze-loudness` via apiRequest — client/src/components/studio/AIAssistantPanel.tsx:132 → server/routes/studio.ts:2745
+- `POST /api/studio/ai-music/match-reference` via apiRequest — client/src/components/studio/AIAssistantPanel.tsx:163 → server/routes/studio.ts:2765
+- `POST /api/studio/ai-music/apply-genre-preset` via apiRequest — client/src/components/studio/AIAssistantPanel.tsx:195 → server/routes/studio.ts:2727
+- `POST /api/studio/generation/text` via apiRequest — client/src/components/studio/AIMusicGenerator.tsx:264 → server/routes/studioGeneration.ts:125
+- `POST /api/studio/generation/pattern/arrangement` via apiRequest — client/src/components/studio/AIMusicGenerator.tsx:384 → server/routes/studioGeneration.ts:656
+- `POST /api/assets/upload` via uploadWithProgress — client/src/components/studio/AssetUploadDialog.tsx:40 → server/routes.ts:5387
+- `GET /api/studio/tracks/:param/automation?parameter=:param` via fetch — client/src/components/studio/AutomationLane.tsx:213 → server/routes/studio.ts:2090
+- `PUT /api/studio/tracks/:param/automation` via fetch — client/src/components/studio/AutomationLane.tsx:247 → server/routes/studio.ts:2127
+- `GET /api/assets?assetType=sample` via fetch — client/src/components/studio/BrowserPanel.tsx:492 → server/routes.ts:5370
+- `GET /api/assets?assetType=plugin` via fetch — client/src/components/studio/BrowserPanel.tsx:505 → server/routes.ts:5370
+- `GET /api/studio/plugins` via fetch — client/src/components/studio/BrowserPanel.tsx:522 → server/routes/studioPlugins.ts:62
+- `GET /api/studio/conversions?projectId=:param` via fetch — client/src/components/studio/ConversionDialog.tsx:114 → server/routes/studio.ts:2405
+- `POST /api/studio/conversions` via apiRequest — client/src/components/studio/ConversionDialog.tsx:138 → server/routes/studio.ts:2414
+- `POST /api/studio/conversions/:param/cancel` via apiRequest — client/src/components/studio/ConversionDialog.tsx:164 → server/routes/studio.ts:2437
+- `POST /api/studio/clips/audio` via apiRequest — client/src/components/studio/ConversionDialog.tsx:241 → server/routes/studio.ts:3095
+- `GET /api/distribution/packages/:param` via useQuery — client/src/components/studio/DistributionDialog.tsx:121 → server/routes/distribution.ts:2412, server/routes/distribution.ts:7324
+- `GET /api/distribution/packages/:param/tracks` via useQuery — client/src/components/studio/DistributionDialog.tsx:128 → server/routes/distribution.ts:7478
+- `POST /api/distribution/artwork/upload` via apiRequest — client/src/components/studio/DistributionDialog.tsx:161 → server/routes/distribution.ts:7276
+- `PUT /api/distribution/packages/:param` via apiRequest — client/src/components/studio/DistributionDialog.tsx:194 → server/routes/distribution.ts:7415
+- `POST /api/distribution/packages` via apiRequest — client/src/components/studio/DistributionDialog.tsx:198 → server/routes/distribution.ts:7363
+- `POST /api/distribution/packages/:param/tracks` via apiRequest — client/src/components/studio/DistributionDialog.tsx:238 → server/routes/distribution.ts:7513
+- `GET /api/distribution/packages/:param/export` via fetch — client/src/components/studio/DistributionDialog.tsx:274 → server/routes/distribution.ts:7564
+- `POST /api/studio/upload` via uploadWithProgress — client/src/components/studio/FileUploadZone.tsx:132 → server/routes/studio.ts:2786
+- `POST /api/studio/tracks` via fetch — client/src/components/studio/FlowStateAddTrack.tsx:108 → server/routes/studio.ts:1471
+- `POST /api/studio/projects/:param/render` via fetch — client/src/components/studio/FlowStateExport.tsx:190 → server/routes/studio.ts:1297
+- `POST /api/studio/generation/pattern/melody` via apiRequest — client/src/components/studio/FlowStateLyricsToMelody.tsx:233 → server/routes/studioGeneration.ts:458
+- `POST /api/studio/generation/audio-to-melody` via fetch — client/src/components/studio/FlowStateLyricsToMelody.tsx:291 → server/routes/studioGeneration.ts:736
+- `POST /api/studio/plugins/instantiate/:param?projectId=:param` via fetch — client/src/components/studio/FlowStatePluginBrowser.tsx:232 → server/routes/studioPlugins.ts:90
+- `GET /api/studio/projects` via apiRequest — client/src/components/studio/FlowStateProjectSelector.tsx:96 → server/routes/studio.ts:153
+- `DELETE /api/studio/projects/:param` via apiRequest — client/src/components/studio/FlowStateProjectSelector.tsx:106 → server/routes/studio.ts:296
+- `POST /api/studio/projects/:param/duplicate` via apiRequest — client/src/components/studio/FlowStateProjectSelector.tsx:121 → server/routes/studio.ts:258
+- `GET /api/studio/samples` via apiRequest — client/src/components/studio/FlowStateSampleBrowser.tsx:292 → server/routes/studio.ts:660
+- `POST /api/studio/templates/:param/create-project` via fetch — client/src/components/studio/FlowStateTemplateDialog.tsx:80 → server/routes/studio.ts:4954
+- `PATCH /api/studio/projects/:param/tracks/:param/effects` via apiRequest — client/src/components/studio/MixerPanel.tsx:223 → server/routes/studio.ts:1699
+- `GET /api/projects` via useQuery — client/src/components/studio/ProjectSelector.tsx:42 → server/routes.ts:4148
+- `PATCH /api/studio/projects/:param` via fetch — client/src/components/studio/ProjectSettingsDialog.tsx:110 → server/routes/studio.ts:1092
+- `POST /api/studio/projects/:param/comping/groups` via apiRequest — client/src/components/studio/RecordingPanel.tsx:182 → server/routes/studioComping.ts:210
+- `POST /api/studio/projects/:param/comping/lanes` via apiRequest — client/src/components/studio/RecordingPanel.tsx:195 → server/routes/studioComping.ts:361
+- `POST /api/studio/projects/:param/comping/groups/:param/select` via apiRequest — client/src/components/studio/RecordingPanel.tsx:207 → server/routes/studioComping.ts:580
+- `POST /api/studio/projects` via fetch — client/src/components/studio/SaveAsDialog.tsx:48 → server/routes/studio.ts:178
+- `GET /api/studio/projects/:param` via useQuery — client/src/components/studio/StemExportDialog.tsx:90 → server/routes/studio.ts:1068
+- `GET /api/studio/projects/:param/stems/status/:param` via apiRequest — client/src/components/studio/StemExportDialog.tsx:110 → server/routes/studioStems.ts:138
+- `POST /api/studio/projects/:param/stems/export` via apiRequest — client/src/components/studio/StemExportDialog.tsx:201 → server/routes/studioStems.ts:72
+- `PATCH /api/studio/tracks/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1214 → server/routes/studio.ts:1741
+- `DELETE /api/studio/tracks/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1244 → server/routes/studio.ts:1869
+- `POST /api/studio/ai-mix/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1318 → server/routes/studio.ts:2607
+- `POST /api/studio/ai-master/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1338 → server/routes/studio.ts:2545
+- `GET /api/studio/projects/:param/mix-snapshots` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5306 → server/routes/studio.ts:3762
+- `POST /api/studio/projects/:param/mix-snapshots` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5319 → server/routes/studio.ts:3667
+- `POST /api/studio/projects/:param/mix-snapshots/:param/recall` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5335 → server/routes/studio.ts:3845
+- `DELETE /api/studio/projects/:param/mix-snapshots/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5349 → server/routes/studio.ts:4018
+- `POST /api/uploads/chunk` via fetch — client/src/components/studio/StudioProjectDialog.tsx:122 → server/routes.ts:6804
+- `POST /api/uploads/assemble` via fetch — client/src/components/studio/StudioProjectDialog.tsx:163 → server/routes.ts:6871
+- `POST /api/studio/upload-from-url` via fetch — client/src/components/studio/StudioProjectDialog.tsx:197 → server/routes/studio.ts:2897
+- `GET /api/studio/start-hub/summary` via useQuery — client/src/components/studio/StudioStartHub.tsx:180 → server/routes/studio.ts:4477
+- `PATCH /api/studio/projects/:param/favorite` via apiRequest — client/src/components/studio/StudioStartHub.tsx:193 → server/routes/studio.ts:4711
+- `PATCH /api/studio/projects/:param/opened` via apiRequest — client/src/components/studio/StudioStartHub.tsx:288 → server/routes/studio.ts:4743
+- `POST /api/user/preferences` via apiRequest — client/src/components/studio/StudioTutorial.tsx:91 → server/routes.ts:5274
+- `GET /api/user/preferences/studio` via useQuery — client/src/components/studio/UICustomizer.tsx:396 → server/routes.ts:5291
+- `PUT /api/user/preferences/studio` via apiRequest — client/src/components/studio/UICustomizer.tsx:402 → server/routes.ts:5309
+- `POST /api/studio/record/upload` via fetch — client/src/components/studio/UltimateDAW.tsx:474 → server/routes/studio.ts:878
+- `POST /api/assistant/chat` via fetch — client/src/components/support/AIAssistantPublic.tsx:49 → server/routes/assistant.ts:166
+- `POST /api/support/tickets` via fetch — client/src/components/support/CreateTicketDialog.tsx:61 → server/routes/support.ts:345
+- `GET /api/undo/restore-points` via apiRequest — client/src/components/undo/GlobalUndoProvider.tsx:202 → server/routes/undo.ts:622
+- `POST /api/undo/create-restore-point` via apiRequest — client/src/components/undo/GlobalUndoProvider.tsx:297 → server/routes/undo.ts:572
+- `POST /api/undo/restore/:param` via apiRequest — client/src/components/undo/GlobalUndoProvider.tsx:340 → server/routes/undo.ts:648
+- `DELETE /api/undo/restore-points/:param` via apiRequest — client/src/components/undo/GlobalUndoProvider.tsx:360 → server/routes/undo.ts:699
+- `POST /api/undo/track-action` via apiRequest — client/src/components/undo/GlobalUndoProvider.tsx:383 → server/routes/undo.ts:496
+- `POST /api/personalization/track-feature` via apiRequest — client/src/contexts/PersonalizationContext.tsx:409 → server/routes/personalization.ts:256
+- `GET /api/advertising/campaigns` via apiRequest — client/src/hooks/use-advertisement.ts:67 → server/routes/advertising.ts:290
+- `GET /api/advertising/ai-insights` via apiRequest — client/src/hooks/use-advertisement.ts:76 → server/routes/advertising.ts:305
+- `POST /api/advertising/campaigns` via apiRequest — client/src/hooks/use-advertisement.ts:86 → server/routes/advertising.ts:659
+- `PATCH /api/advertising/campaigns/:param` via apiRequest — client/src/hooks/use-advertisement.ts:121 → server/routes/advertising.ts:905
+- `DELETE /api/advertising/campaigns/:param` via apiRequest — client/src/hooks/use-advertisement.ts:149 → server/routes/advertising.ts:1043
+- `POST /api/advertising/optimize-campaign` via apiRequest — client/src/hooks/use-advertisement.ts:216 → server/routes/advertising.ts:1761
+- `POST /api/uploads/request-url` via fetch — client/src/hooks/use-upload.ts:65 → server/routes/uploads.ts:166
+- `GET /api/user/accessibility-preferences` via useQuery — client/src/hooks/useAccessibilityPreferences.ts:42 → server/routes/accessibility.ts:124
+- `PUT /api/user/accessibility-preferences` via apiRequest — client/src/hooks/useAccessibilityPreferences.ts:51 → server/routes/accessibility.ts:151
+- `DELETE /api/user/accessibility-preferences` via apiRequest — client/src/hooks/useAccessibilityPreferences.ts:148 → server/routes/accessibility.ts:199
+- `GET /api/version` via fetch — client/src/hooks/useAutoUpdate.ts:17 → server/routes.ts:7825
+- `GET /api/batch/progress/:param` via apiRequest — client/src/hooks/useBatchActions.ts:177 → server/routes/batch.ts:1238
+- `GET /api/personalization/behavior-analysis` via useQuery — client/src/hooks/useDashboardPersonalization.ts:54 → server/routes/personalization.ts:222
+- `POST /api/retention/feature-event` via fetch — client/src/hooks/useFeatureTracking.ts:34 → server/routes/retention.ts:121
+- `GET /api/health` via fetch — client/src/hooks/useOnlineStatus.ts:142 → server/routes.ts:7841
+- `GET /api/personalization/optimal-schedule` via useQuery — client/src/hooks/usePersonalizedLayout.ts:195 → server/routes/personalization.ts:238
+- `POST /api/studio/projects/:param/save-daw-state` via fetch — client/src/hooks/useProjectSync.ts:430 → server/routes/studio.ts:1129
+- `GET /api/studio/projects/:param/daw-state` via fetch — client/src/hooks/useProjectSync.ts:475 → server/routes/studio.ts:1190
+- `GET /api/studio/projects/:param/tracks` via fetch — client/src/hooks/useProjectSync.ts:612 → server/routes/studio.ts:1571
+- `GET /api/notifications/push-key` via useQuery — client/src/hooks/usePushNotifications.ts:36 → server/routes.ts:3498
+- `GET /api/notifications/push-subscriptions/status` via useQuery — client/src/hooks/usePushNotifications.ts:45 → server/routes.ts:3625
+- `DELETE /api/notifications/push-subscriptions` via apiRequest — client/src/hooks/usePushNotifications.ts:119 → server/routes.ts:3155, server/routes.ts:3589
+- `POST /api/notifications/push-test` via apiRequest — client/src/hooks/usePushNotifications.ts:137 → server/routes.ts:3655
+- `GET /api/preferences/recommendations` via useQuery — client/src/hooks/useRecommendations.ts:192 → server/routes/preferences.ts:168
+- `GET /api/shortcuts/user` via fetch — client/src/hooks/useShortcutCustomization.ts:25 → server/routes/shortcuts.ts:57
+- `PUT /api/shortcuts/user` via fetch — client/src/hooks/useShortcutCustomization.ts:39 → server/routes/shortcuts.ts:87
+- `GET /api/shortcuts/defaults` via fetch — client/src/hooks/useShortcutCustomization.ts:53 → server/routes/shortcuts.ts:160
+- `GET /api/preferences/scheduling-suggestions` via useQuery — client/src/hooks/useSmartDefaults.ts:87 → server/routes/preferences.ts:221
+- `GET /api/preferences/platform-recommendations` via useQuery — client/src/hooks/useSmartDefaults.ts:121 → server/routes/preferences.ts:239
+- `GET /api/preferences/genre-templates` via useQuery — client/src/hooks/useSmartDefaults.ts:153 → server/routes/preferences.ts:257
+- `GET /api/preferences/genre-templates/:param` via useQuery — client/src/hooks/useSmartDefaults.ts:163 → server/routes/preferences.ts:267
+- `PATCH /api/studio/clips/:param` via apiRequest — client/src/hooks/useStudioController.ts:318 → server/routes/studio.ts:2005
+- `DELETE /api/studio/clips/:param` via apiRequest — client/src/hooks/useStudioController.ts:330 → server/routes/studio.ts:2054
+- `GET /api/studio/tracks/:param/audio-clips` via fetch — client/src/hooks/useStudioController.ts:525 → server/routes/studio.ts:1900
+- `POST /api/studio/templates` via apiRequest — client/src/hooks/useTemplate.ts:150 → server/routes/studio.ts:4806
+- `PATCH /api/studio/templates/:param` via apiRequest — client/src/hooks/useTemplate.ts:183 → server/routes/studio.ts:5281
+- `DELETE /api/studio/templates/:param` via apiRequest — client/src/hooks/useTemplate.ts:206 → server/routes/studio.ts:5337
+- `GET /api/studio/templates` via apiRequest — client/src/hooks/useTemplate.ts:407 → server/routes/studio.ts:4775
+- `GET /api/preferences/user` via useQuery — client/src/hooks/useUserPreferences.ts:83 → server/routes/preferences.ts:102
+- `PUT /api/preferences/user` via apiRequest — client/src/hooks/useUserPreferences.ts:91 → server/routes/preferences.ts:120
+- `POST /api/preferences/learn` via apiRequest — client/src/hooks/useUserPreferences.ts:109 → server/routes/preferences.ts:184
+- `GET /api/preferences/dashboard-layout` via useQuery — client/src/hooks/useUserPreferences.ts:144 → server/routes/preferences.ts:278
+- `PUT /api/preferences/dashboard-layout` via apiRequest — client/src/hooks/useUserPreferences.ts:152 → server/routes/preferences.ts:295
+- `POST /api/sync/batch` via apiRequest — client/src/lib/offline/SyncManager.ts:258 → server/routes/sync.ts:316
+- `GET /api/bootstrap` via fetch — client/src/lib/prefetch.ts:207 → server/routes/bootstrap.ts:32
+- `GET /api/studio/projects/:param/comping/groups` via fetch — client/src/lib/studioApi.ts:172 → server/routes/studioComping.ts:245
+- `GET /api/studio/projects/:param/comping/groups/:param` via fetch — client/src/lib/studioApi.ts:185 → server/routes/studioComping.ts:266
+- `PUT /api/studio/projects/:param/comping/groups/:param` via apiRequest — client/src/lib/studioApi.ts:204 → server/routes/studioComping.ts:291
+- `DELETE /api/studio/projects/:param/comping/groups/:param` via apiRequest — client/src/lib/studioApi.ts:213 → server/routes/studioComping.ts:319
+- `POST /api/studio/projects/:param/comping/groups/:param/duplicate` via apiRequest — client/src/lib/studioApi.ts:223 → server/routes/studioComping.ts:340
+- `GET /api/studio/projects/:param/comping/groups/:param/lanes` via fetch — client/src/lib/studioApi.ts:252 → server/routes/studioComping.ts:408
+- `PUT /api/studio/projects/:param/comping/lanes/:param` via apiRequest — client/src/lib/studioApi.ts:281 → server/routes/studioComping.ts:429
+- `DELETE /api/studio/projects/:param/comping/lanes/:param` via apiRequest — client/src/lib/studioApi.ts:290 → server/routes/studioComping.ts:469
+- `PUT /api/studio/projects/:param/comping/groups/:param/lanes/reorder` via apiRequest — client/src/lib/studioApi.ts:301 → server/routes/studioComping.ts:490
+- `POST /api/studio/projects/:param/comping/segments` via apiRequest — client/src/lib/studioApi.ts:325 → server/routes/studioComping.ts:526
+- `GET /api/studio/projects/:param/comping/groups/:param/segments` via fetch — client/src/lib/studioApi.ts:336 → server/routes/studioComping.ts:644
+- `PUT /api/studio/projects/:param/comping/segments/:param` via apiRequest — client/src/lib/studioApi.ts:388 → server/routes/studioComping.ts:665
+- `DELETE /api/studio/projects/:param/comping/segments/:param` via apiRequest — client/src/lib/studioApi.ts:397 → server/routes/studioComping.ts:706
+- `POST /api/studio/projects/:param/comping/groups/:param/versions` via apiRequest — client/src/lib/studioApi.ts:408 → server/routes/studioComping.ts:727
+- `GET /api/studio/projects/:param/comping/groups/:param/versions` via fetch — client/src/lib/studioApi.ts:423 → server/routes/studioComping.ts:758
+- `PUT /api/studio/projects/:param/comping/groups/:param/versions/:param/activate` via apiRequest — client/src/lib/studioApi.ts:437 → server/routes/studioComping.ts:779
+- `DELETE /api/studio/projects/:param/comping/versions/:param` via apiRequest — client/src/lib/studioApi.ts:444 → server/routes/studioComping.ts:806
+- `POST /api/studio/projects/:param/comping/render` via apiRequest — client/src/lib/studioApi.ts:454 → server/routes/studioComping.ts:835
+- `GET /api/studio/projects/:param/markers` via fetch — client/src/lib/studioApi.ts:463 → server/routes/studioMarkers.ts:20
+- `POST /api/studio/projects/:param/markers` via apiRequest — client/src/lib/studioApi.ts:477 → server/routes/studioMarkers.ts:47
+- `PATCH /api/studio/markers/:param` via apiRequest — client/src/lib/studioApi.ts:486 → server/routes/studioMarkers.ts:85
+- `DELETE /api/studio/markers/:param` via apiRequest — client/src/lib/studioApi.ts:490 → server/routes/studioMarkers.ts:133
+- `GET /api/studio/projects/:param/stems/download/:param` via fetch — client/src/lib/studioApi.ts:520 → server/routes/studioStems.ts:166
+- `GET /api/studio/projects/:param/stems/list` via fetch — client/src/lib/studioApi.ts:528 → server/routes/studioStems.ts:213
+- `DELETE /api/studio/projects/:param/stems/:param` via apiRequest — client/src/lib/studioApi.ts:538 → server/routes/studioStems.ts:248
+- `POST /api/studio/projects/:param/stems/:param/cancel` via apiRequest — client/src/lib/studioApi.ts:545 → server/routes/studioStems.ts:276
+- `GET /api/studio/projects/:param/stems/formats` via fetch — client/src/lib/studioApi.ts:557 → server/routes/studioStems.ts:307
+- `GET /api/studio/projects/:param/midi/clips?trackId=:param` via fetch — client/src/lib/studioApi.ts:568 → server/routes/studioMidi.ts:62
+- `POST /api/studio/projects/:param/midi/clips` via apiRequest — client/src/lib/studioApi.ts:581 → server/routes/studioMidi.ts:83
+- `PUT /api/studio/projects/:param/midi/clips/:param` via apiRequest — client/src/lib/studioApi.ts:593 → server/routes/studioMidi.ts:103
+- `DELETE /api/studio/projects/:param/midi/clips/:param` via apiRequest — client/src/lib/studioApi.ts:601 → server/routes/studioMidi.ts:118
+- `POST /api/studio/projects/:param/midi/clips/:param/notes` via apiRequest — client/src/lib/studioApi.ts:612 → server/routes/studioMidi.ts:131
+- `PUT /api/studio/projects/:param/midi/clips/:param/notes/:param` via apiRequest — client/src/lib/studioApi.ts:625 → server/routes/studioMidi.ts:145
+- `DELETE /api/studio/projects/:param/midi/clips/:param/notes/:param` via apiRequest — client/src/lib/studioApi.ts:637 → server/routes/studioMidi.ts:160
+- `POST /api/studio/projects/:param/midi/clips/:param/quantize` via apiRequest — client/src/lib/studioApi.ts:648 → server/routes/studioMidi.ts:173
+- `GET /api/studio/warping/clips/:param/warp/markers` via fetch — client/src/lib/studioApi.ts:660 → server/routes/studioWarping.ts:250
+- `POST /api/studio/warping/clips/:param/warp/markers` via apiRequest — client/src/lib/studioApi.ts:675 → server/routes/studioWarping.ts:272
+- `PUT /api/studio/warping/clips/:param/warp/markers/:param` via apiRequest — client/src/lib/studioApi.ts:687 → server/routes/studioWarping.ts:351
+- `DELETE /api/studio/warping/clips/:param/warp/markers/:param` via apiRequest — client/src/lib/studioApi.ts:698 → server/routes/studioWarping.ts:400
+- `GET /api/studio/warping/clips/:param/warp/tempo` via apiRequest — client/src/lib/studioApi.ts:717 → server/routes/studioWarping.ts:826
+- `GET /api/ar-intelligence/trend-forecast` via apiRequest — client/src/pages/ARIntelligence.tsx:132 → server/routes/arIntelligence.ts:69
+- `GET /api/ar-intelligence/catalog-gap` via apiRequest — client/src/pages/ARIntelligence.tsx:141 → server/routes/arIntelligence.ts:88
+- `GET /api/ar-intelligence/release-timing` via apiRequest — client/src/pages/ARIntelligence.tsx:150 → server/routes/arIntelligence.ts:189
+- `GET /api/dns/resolver/status` via fetch — client/src/pages/Admin.tsx:275 → server/routes/dns.ts:181
+- `GET /api/admin/moderation/reports` via useQuery — client/src/pages/Admin.tsx:291 → server/routes/admin.ts:557
+- `GET /api/admin/settings` via useQuery — client/src/pages/Admin.tsx:296 → server/routes/admin.ts:974
+- `GET /api/admin/payment-bypass/status` via useQuery — client/src/pages/Admin.tsx:324 → server/routes/paymentBypass.ts:29
+- `PUT /api/admin/users/:param` via apiRequest — client/src/pages/Admin.tsx:341 → server/routes/admin.ts:218
+- `POST /api/admin/users/:param/suspend` via apiRequest — client/src/pages/Admin.tsx:376 → server/routes/admin.ts:297
+- `POST /api/admin/users/:param/reactivate` via apiRequest — client/src/pages/Admin.tsx:394 → server/routes/admin.ts:343
+- `DELETE /api/admin/users/:param` via apiRequest — client/src/pages/Admin.tsx:409 → server/routes/admin.ts:367
+- `POST /api/admin/moderation/reports/:param/review` via apiRequest — client/src/pages/Admin.tsx:435 → server/routes/admin.ts:636
+- `POST /api/kill-switch/kill-all` via apiRequest — client/src/pages/Admin.tsx:457 → server/routes/killSwitch.ts:67
+- `POST /api/kill-switch/resume-all` via apiRequest — client/src/pages/Admin.tsx:476 → server/routes/killSwitch.ts:101
+- `POST /api/admin/payment-bypass/activate` via apiRequest — client/src/pages/Admin.tsx:500 → server/routes/paymentBypass.ts:39
+- `POST /api/admin/payment-bypass/deactivate` via apiRequest — client/src/pages/Admin.tsx:529 → server/routes/paymentBypass.ts:74
+- `POST /api/admin/payment-bypass/extend` via apiRequest — client/src/pages/Admin.tsx:557 → server/routes/paymentBypass.ts:98
+- `GET /api/admin/users/export` via apiRequest — client/src/pages/Admin.tsx:583 → server/routes/admin.ts:141, server/routes/admin.ts:187
+- `PUT /api/admin/settings` via apiRequest — client/src/pages/Admin.tsx:607 → server/routes/admin/index.ts:67
+- `GET /api/admin/financial-config/royalty-rates` via useQuery — client/src/pages/Admin.tsx:2236 → server/routes/admin.ts:1186
+- `GET /api/admin/financial-config/tax-treaties` via useQuery — client/src/pages/Admin.tsx:2241 → server/routes/admin.ts:1239
+- `GET /api/admin/financial-config/label-settings` via useQuery — client/src/pages/Admin.tsx:2246 → server/routes/admin.ts:1298
+- `PATCH /api/admin/financial-config/royalty-rates/:param` via apiRequest — client/src/pages/Admin.tsx:2261 → server/routes/admin.ts:1201
+- `PATCH /api/admin/financial-config/tax-treaties/:param` via apiRequest — client/src/pages/Admin.tsx:2286 → server/routes/admin.ts:1254
+- `PATCH /api/admin/financial-config/label-settings/:param` via apiRequest — client/src/pages/Admin.tsx:2303 → server/routes/admin.ts:1313
+- `GET /api/auto-updates/status` via useQuery — client/src/pages/AdminAutonomy.tsx:205 → server/routes/autoUpdates.ts:73
+- `GET /api/auto-updates/changes` via useQuery — client/src/pages/AdminAutonomy.tsx:206 → server/routes/autoUpdates.ts:175
+- `GET /api/auto-updates/upgrades` via useQuery — client/src/pages/AdminAutonomy.tsx:207 → server/routes/autoUpdates.ts:186
+- `POST /api/auto-updates/start` via apiRequest — client/src/pages/AdminAutonomy.tsx:279 → server/routes/autoUpdates.ts:107
+- `POST /api/auto-updates/stop` via apiRequest — client/src/pages/AdminAutonomy.tsx:307 → server/routes/autoUpdates.ts:136
+- `POST /api/auto-updates/run-once` via apiRequest — client/src/pages/AdminAutonomy.tsx:322 → server/routes/autoUpdates.ts:155
+- `POST /api/autopilot/start` via apiRequest — client/src/pages/AdminAutonomy.tsx:340 → server/routes/autopilot.ts:181
+- `POST /api/autopilot/stop` via apiRequest — client/src/pages/AdminAutonomy.tsx:354 → server/routes/autopilot.ts:250
+- `POST /api/auto/social/start` via apiRequest — client/src/pages/AdminAutonomy.tsx:368 → server/routes/autonomousSocial.ts:83
+- `POST /api/auto/social/stop` via apiRequest — client/src/pages/AdminAutonomy.tsx:382 → server/routes/autonomousSocial.ts:104
+- `POST /api/admin/chain-fixer/force-check` via apiRequest — client/src/pages/AdminAutonomy.tsx:442 → server/routes/admin.ts:1472
+- `POST /api/admin/platform-fixer/scan` via apiRequest — client/src/pages/AdminAutonomy.tsx:460 → server/routes/admin.ts:1522
+- `GET /api/kill-switch/status` via useQuery — client/src/pages/AdminAutonomy.tsx:473 → server/routes/killSwitch.ts:39
+- `POST /api/kill-switch/kill/:param` via apiRequest — client/src/pages/AdminAutonomy.tsx:525 → server/routes/killSwitch.ts:132
+- `POST /api/kill-switch/resume/:param` via apiRequest — client/src/pages/AdminAutonomy.tsx:544 → server/routes/killSwitch.ts:171
+- `POST /api/auto-updates/simulation` via apiRequest — client/src/pages/AdminAutonomy.tsx:564 → server/routes/autoUpdates.ts:197
+- `GET /api/admin/users?:param` via fetch — client/src/pages/AdminDashboard.tsx:278 → server/routes/admin.ts:70
+- `POST /api/auth/token` via fetch — client/src/pages/AdminDashboard.tsx:1568 → server/routes.ts:2268
+- `POST /api/auth/token/revoke` via fetch — client/src/pages/AdminDashboard.tsx:1608 → server/routes.ts:2279
+- `GET /api/admin/webhooks/dead-letter` via useQuery — client/src/pages/AdminDashboard.tsx:1701 → server/routes/webhooks-admin.ts:20
+- `POST /api/admin/webhooks/:param/retry` via fetch — client/src/pages/AdminDashboard.tsx:1707 → server/routes/webhooks-admin.ts:41
+- `GET /api/logs/query` via useQuery — client/src/pages/AdminDashboard.tsx:1839 → server/routes/logs.ts:23
+- `POST /api/admin/beat-money-loop/:param` via fetch — client/src/pages/AdminDashboard.tsx:2002 → server/routes/admin/beatMoneyLoop.ts:31, server/routes/admin/beatMoneyLoop.ts:41, server/routes/admin/beatMoneyLoop.ts:51
+- `GET /api/social/promotable-content?type=:param` via useQuery — client/src/pages/Advertisement.tsx:239 → server/routes/socialMedia.ts:4167
+- `POST /api/advertising/generate-campaign` via apiRequest — client/src/pages/Advertisement.tsx:247 → server/routes/advertising.ts:1989
+- `GET /api/advertising/audience-segments` via useQuery — client/src/pages/Advertisement.tsx:402 → server/routes/advertising.ts:333
+- `GET /api/advertising/creative-fatigue` via useQuery — client/src/pages/Advertisement.tsx:408 → server/routes/advertising.ts:348
+- `GET /api/advertising/lookalike-audiences` via useQuery — client/src/pages/Advertisement.tsx:414 → server/routes/advertising.ts:449
+- `GET /api/advertising/forecasts` via useQuery — client/src/pages/Advertisement.tsx:418 → server/routes/advertising.ts:547
+- `GET /api/advertising/competitor-insights` via useQuery — client/src/pages/Advertisement.tsx:424 → server/routes/advertising.ts:562
+- `GET /api/organic/metrics` via useQuery — client/src/pages/Advertisement.tsx:436 → server/routes/organic.ts:528
+- `GET /api/organic/recommendations` via useQuery — client/src/pages/Advertisement.tsx:448 → server/routes/organic.ts:548
+- `GET /api/social/platform-status` via useQuery — client/src/pages/Advertisement.tsx:561 → server/routes/socialMedia.ts:853
+- `POST /api/advertising/upload-image` via uploadWithProgress — client/src/pages/Advertisement.tsx:569 → server/routes/advertising.ts:1141
+- `POST /api/advertising/lookalike-audiences` via apiRequest — client/src/pages/Advertisement.tsx:612 → server/routes/advertising.ts:464
+- `PATCH /api/advertising/lookalike-audiences/:param` via apiRequest — client/src/pages/Advertisement.tsx:650 → server/routes/advertising.ts:504
+- `PATCH /api/advertising/creatives/:param` via apiRequest — client/src/pages/Advertisement.tsx:684 → server/routes/advertising.ts:363
+- `POST /api/advertising/campaigns/:param/activate` via apiRequest — client/src/pages/Advertisement.tsx:758 → server/routes/advertising.ts:890
+- `POST /api/advertising/creatives` via apiRequest — client/src/pages/Advertisement.tsx:926 → server/routes/advertising.ts:1080
+- `GET /api/analytics/dashboard/:param` via useQuery — client/src/pages/Analytics.tsx:1583 → server/routes.ts:4475
+- `GET /api/analytics/anomalies?:param` via fetch — client/src/pages/Analytics.tsx:1678 → server/routes.ts:5066
+- `POST /api/analytics/anomalies/:param/acknowledge` via apiRequest — client/src/pages/Analytics.tsx:1694 → server/routes.ts:5140
+- `GET /api/analytics-alerts/trigger-cities` via useQuery — client/src/pages/Analytics.tsx:1728 → server/routes/api/analyticsAlerts.ts:132
+- `GET /api/analytics-alerts/alerts` via useQuery — client/src/pages/Analytics.tsx:1738 → server/routes/api/analyticsAlerts.ts:19
+- `GET /api/analytics-alerts/alerts/summary` via useQuery — client/src/pages/Analytics.tsx:1744 → server/routes/api/analyticsAlerts.ts:47
+- `POST /api/analytics-alerts/alerts/:param/dismiss` via apiRequest — client/src/pages/Analytics.tsx:1753 → server/routes/api/analyticsAlerts.ts:109
+- `POST /api/analytics-alerts/playlist-changes/track` via apiRequest — client/src/pages/Analytics.tsx:1771 → server/routes/api/analyticsAlerts.ts:178
+- `POST /api/analytics/export` via apiRequest — client/src/pages/Analytics.tsx:1796 → server/routes.ts:4926
+- `GET /api/career-coach/insights` via useQuery — client/src/pages/CareerCoach.tsx:153 → server/routes/careerCoach.ts:388
+- `GET /api/assistant/history` via useQuery — client/src/pages/CareerCoach.tsx:162 → server/routes/assistant.ts:60
+- `DELETE /api/assistant/history` via apiRequest — client/src/pages/CareerCoach.tsx:254 → server/routes/assistant.ts:256
+- `POST /api/career-coach/goals` via apiRequest — client/src/pages/CareerCoach.tsx:305 → server/routes/careerCoach.ts:172
+- `DELETE /api/career-coach/goals/:param` via apiRequest — client/src/pages/CareerCoach.tsx:337 → server/routes/careerCoach.ts:208
+- `GET /api/collaborations/suggestions` via useQuery — client/src/pages/Collaborations.tsx:205 → server/routes/collaborations.ts:138
+- `GET /api/contracts/templates` via useQuery — client/src/pages/Contracts.tsx:253 → server/routes/contracts.ts:116, server/routes/contracts.ts:453
+- `GET /api/contracts/my-contracts` via useQuery — client/src/pages/Contracts.tsx:260 → server/routes/contracts.ts:361, server/routes/contracts.ts:453
+- `GET /api/contracts/stats/summary` via useQuery — client/src/pages/Contracts.tsx:270 → server/routes/contracts.ts:767
+- `GET /api/contracts/:param/timeline` via useQuery — client/src/pages/Contracts.tsx:275 → server/routes/contracts.ts:141, server/routes/contracts.ts:745, server/routes/contracts.ts:868, server/routes/contracts.ts:1090, server/routes/contracts.ts:1367, server/routes/contracts.ts:1716
+- `GET /api/contracts/:param/signature-status` via useQuery — client/src/pages/Contracts.tsx:291 → server/routes/contracts.ts:141, server/routes/contracts.ts:656, server/routes/contracts.ts:868, server/routes/contracts.ts:1090, server/routes/contracts.ts:1367, server/routes/contracts.ts:1716
+- `POST /api/contracts/generate` via fetch — client/src/pages/Contracts.tsx:299 → server/routes/contracts.ts:315
+- `POST /api/contracts/:param/send-for-signature` via fetch — client/src/pages/Contracts.tsx:341 → server/routes/contracts.ts:631
+- `POST /api/contracts/:param/sign` via fetch — client/src/pages/Contracts.tsx:386 → server/routes/contracts.ts:473
+- `POST /api/contracts/:param/decline` via fetch — client/src/pages/Contracts.tsx:438 → server/routes/contracts.ts:685
+- `POST /api/contracts/:param/void` via fetch — client/src/pages/Contracts.tsx:478 → server/routes/contracts.ts:719
+- `GET /api/contracts/:param/pdf` via fetch — client/src/pages/Contracts.tsx:515 → server/routes/contracts.ts:141, server/routes/contracts.ts:514, server/routes/contracts.ts:868, server/routes/contracts.ts:1090, server/routes/contracts.ts:1367, server/routes/contracts.ts:1716
+- `GET /api/auth/onboarding-status` via useQuery — client/src/pages/Dashboard.tsx:261 → server/routes.ts:730
+- `GET /api/downloads/latest` via fetch — client/src/pages/DesktopApp.tsx:77 → server/routes/downloads.ts:181
+- `GET /api/developer/keys` via useQuery — client/src/pages/DeveloperApi.tsx:82 → server/routes/developerApi.ts:98
+- `GET /api/developer/usage` via useQuery — client/src/pages/DeveloperApi.tsx:93 → server/routes/developerApi.ts:194
+- `POST /api/developer/keys/create` via apiRequest — client/src/pages/DeveloperApi.tsx:105 → server/routes/developerApi.ts:26
+- `DELETE /api/developer/keys/:param` via apiRequest — client/src/pages/DeveloperApi.tsx:132 → server/routes/developerApi.ts:146
+- `GET /api/playlist-pitching` via useQuery — client/src/pages/Distribution.tsx:609 → server/routes/playlistPitching.ts:185
+- `GET /api/playlist-pitching/stats` via useQuery — client/src/pages/Distribution.tsx:615 → server/routes/playlistPitching.ts:353, server/routes/playlistPitching.ts:406
+- `POST /api/playlist-pitching` via apiRequest — client/src/pages/Distribution.tsx:630 → server/routes/playlistPitching.ts:202
+- `GET /api/shows` via useQuery — client/src/pages/Distribution.tsx:843 → server/routes/shows.ts:71
+- `GET /api/shows/stats` via useQuery — client/src/pages/Distribution.tsx:847 → server/routes/shows.ts:280, server/routes/shows.ts:327
+- `POST /api/shows` via apiRequest — client/src/pages/Distribution.tsx:852 → server/routes/shows.ts:108
+- `GET /api/venues` via useQuery — client/src/pages/Distribution.tsx:1034 → server/routes/venues.ts:15
+- `GET /api/venues/stats` via useQuery — client/src/pages/Distribution.tsx:1037 → server/routes/venues.ts:32, server/routes/venues.ts:73
+- `POST /api/venues` via apiRequest — client/src/pages/Distribution.tsx:1042 → server/routes/venues.ts:94
+- `GET /api/sync-licensing` via useQuery — client/src/pages/Distribution.tsx:1265 → server/routes/syncLicensing.ts:28
+- `GET /api/sync-licensing/stats` via useQuery — client/src/pages/Distribution.tsx:1269 → server/routes/syncLicensing.ts:45, server/routes/syncLicensing.ts:70
+- `POST /api/sync-licensing` via apiRequest — client/src/pages/Distribution.tsx:1274 → server/routes/syncLicensing.ts:90
+- `GET /api/distribution/hyperfollow` via useQuery — client/src/pages/Distribution.tsx:1568 → server/routes/distribution.ts:1214
+- `GET /api/distribution/analytics/growth` via useQuery — client/src/pages/Distribution.tsx:1572 → server/routes/distribution.ts:4030
+- `GET /api/distribution/streaming-trends` via useQuery — client/src/pages/Distribution.tsx:1577 → server/routes/distribution.ts:4101
+- `GET /api/distribution/geographic` via useQuery — client/src/pages/Distribution.tsx:1582 → server/routes/distribution.ts:4140
+- `GET /api/distribution/earnings/breakdown` via useQuery — client/src/pages/Distribution.tsx:1587 → server/routes/distribution.ts:4152
+- `GET /api/distribution/platform-earnings` via useQuery — client/src/pages/Distribution.tsx:1592 → server/routes/distribution.ts:4257
+- `GET /api/distribution/payout-history` via useQuery — client/src/pages/Distribution.tsx:1597 → server/routes/distribution.ts:4317
+- `GET /api/distribution/hyperfollow/analytics` via useQuery — client/src/pages/Distribution.tsx:1602 → server/routes/distribution.ts:1226, server/routes/distribution.ts:1270
+- `GET /api/distribution/toolost/status` via useQuery — client/src/pages/Distribution.tsx:1625 → server/routes/distribution.ts:219
+- `POST /api/distribution/upload` via apiRequest — client/src/pages/Distribution.tsx:1708 → server/routes/distribution.ts:4562
+- `PATCH /api/distribution/releases/:param` via apiRequest — client/src/pages/Distribution.tsx:1769 → server/routes/distribution.ts:424
+- `POST /api/distribution/codes/isrc` via apiRequest — client/src/pages/Distribution.tsx:1836 → server/routes/distribution.ts:717
+- `POST /api/distribution/codes/upc` via apiRequest — client/src/pages/Distribution.tsx:1862 → server/routes/distribution.ts:787
+- `POST /api/distribution/platform/spotify` via apiRequest — client/src/pages/Distribution.tsx:1887 → server/routes/distribution.ts:7664
+- `POST /api/distribution/platform/apple` via apiRequest — client/src/pages/Distribution.tsx:1917 → server/routes/distribution.ts:7717
+- `POST /api/distribution/platform/youtube` via apiRequest — client/src/pages/Distribution.tsx:1947 → server/routes/distribution.ts:7777
+- `POST /api/distribution/export-report` via fetch — client/src/pages/Distribution.tsx:2054 → server/routes/distribution.ts:4752
+- `GET /api/fan-hub/subscribers` via useQuery — client/src/pages/FanHub.tsx:140 → server/routes/fanHub.ts:55
+- `GET /api/fan-hub/stats` via useQuery — client/src/pages/FanHub.tsx:149 → server/routes/fanHub.ts:238
+- `GET /api/fan-hub/messages` via useQuery — client/src/pages/FanHub.tsx:159 → server/routes/fanHub.ts:410
+- `POST /api/fan-hub/subscribers` via apiRequest — client/src/pages/FanHub.tsx:168 → server/routes/fanHub.ts:98
+- `DELETE /api/fan-hub/subscribers/:param` via apiRequest — client/src/pages/FanHub.tsx:190 → server/routes/fanHub.ts:160
+- `POST /api/fan-hub/message` via apiRequest — client/src/pages/FanHub.tsx:208 → server/routes/fanHub.ts:292
+- `PUT /api/fan-hub/subscribers/:param/tag` via apiRequest — client/src/pages/FanHub.tsx:234 → server/routes/fanHub.ts:430
+- `PUT /api/fan-hub/subscribers/:param` via apiRequest — client/src/pages/FanHub.tsx:263 → server/routes/fanHub.ts:122
+- `GET /api/fan-memberships/tiers` via apiRequest — client/src/pages/FanMemberships.tsx:390 → server/routes/fanMemberships.ts:69
+- `GET /api/fan-memberships/revenue` via apiRequest — client/src/pages/FanMemberships.tsx:402 → server/routes/fanMemberships.ts:328
+- `GET /api/fan-memberships/members` via apiRequest — client/src/pages/FanMemberships.tsx:414 → server/routes/fanMemberships.ts:258
+- `GET /api/fan-memberships/wallet-config` via apiRequest — client/src/pages/FanMemberships.tsx:426 → server/routes/fanMemberships.ts:395
+- `GET /api/fan-memberships/wallet-leaderboard` via apiRequest — client/src/pages/FanMemberships.tsx:439 → server/routes/fanMemberships.ts:461
+- `POST /api/fan-memberships/tiers` via apiRequest — client/src/pages/FanMemberships.tsx:446 → server/routes/fanMemberships.ts:92
+- `PUT /api/fan-memberships/tiers/:param` via apiRequest — client/src/pages/FanMemberships.tsx:463 → server/routes/fanMemberships.ts:138
+- `DELETE /api/fan-memberships/tiers/:param` via apiRequest — client/src/pages/FanMemberships.tsx:483 → server/routes/fanMemberships.ts:210
+- `PUT /api/fan-memberships/wallet-config` via apiRequest — client/src/pages/FanMemberships.tsx:499 → server/routes/fanMemberships.ts:434
+- `POST /api/auth/forgot-password` via fetch — client/src/pages/ForgotPassword.tsx:88 → server/routes.ts:2090
+- `GET /api/invoices` via useQuery — client/src/pages/Invoices.tsx:107 → server/routes/invoices.ts:103
+- `POST /api/invoices` via fetch — client/src/pages/Invoices.tsx:114 → server/routes/invoices.ts:165
+- `POST /api/invoices/:param/send` via fetch — client/src/pages/Invoices.tsx:167 → server/routes/invoices.ts:328, server/routes/invoices.ts:479
+- `DELETE /api/invoices/:param` via fetch — client/src/pages/Invoices.tsx:197 → server/routes/invoices.ts:454
+- `GET /api/invoices/:param/pdf` via fetch — client/src/pages/Invoices.tsx:222 → server/routes/invoices.ts:389
+- `GET /api/csrf-token` via fetch — client/src/pages/Landing.tsx:144 → server/routes.ts:294
+- `POST /api/auth/demo` via fetch — client/src/pages/Landing.tsx:279 → server/routes.ts:2032
+- `GET /api/merch` via useQuery — client/src/pages/Marketplace.tsx:853 → server/routes/merch.ts:93
+- `GET /api/merch/orders` via useQuery — client/src/pages/Marketplace.tsx:860 → server/routes/merch.ts:246, server/routes/merch.ts:413
+- `GET /api/merch/stats` via useQuery — client/src/pages/Marketplace.tsx:865 → server/routes/merch.ts:351, server/routes/merch.ts:413
+- `POST /api/merch` via apiRequest — client/src/pages/Marketplace.tsx:871 → server/routes/merch.ts:112
+- `DELETE /api/merch/:param` via apiRequest — client/src/pages/Marketplace.tsx:883 → server/routes/merch.ts:216
+- `PUT /api/marketplace/listings/:param` via apiRequest — client/src/pages/Marketplace.tsx:990 → server/routes/marketplace.ts:2044
+- `PUT /api/storefront/_/listings/:param/discount` via apiRequest — client/src/pages/Marketplace.tsx:1002 → server/routes/storefront.ts:1633
+- `DELETE /api/storefront/_/listings/:param/discount` via apiRequest — client/src/pages/Marketplace.tsx:1015 → server/routes/storefront.ts:1675
+- `GET /api/marketplace/beats/:param` via fetch — client/src/pages/Marketplace.tsx:1046 → server/routes/marketplace.ts:2544
+- `PUT /api/merch/:param` via apiRequest — client/src/pages/MerchStore.tsx:163 → server/routes/merch.ts:150
+- `PUT /api/merch/orders/:param` via apiRequest — client/src/pages/MerchStore.tsx:195 → server/routes/merch.ts:265
+- `PUT /api/music-workflow-automations/:param/config` via apiRequest — client/src/pages/MusicWorkflowAutomations.tsx:273 → server/routes/musicWorkflowAutomations.ts:136
+- `POST /api/music-workflow-automations/trigger` via apiRequest — client/src/pages/MusicWorkflowAutomations.tsx:298 → server/routes/musicWorkflowAutomations.ts:170
+- `POST /api/music-workflow-automations/:param/enable` via apiRequest — client/src/pages/MusicWorkflowAutomations.tsx:532 → server/routes/musicWorkflowAutomations.ts:77
+- `GET /api/music-workflow-automations/logs` via useQuery — client/src/pages/MusicWorkflowAutomations.tsx:673 → server/routes/musicWorkflowAutomations.ts:220
+- `GET /api/music-workflow-automations` via useQuery — client/src/pages/MusicWorkflowAutomations.tsx:939 → server/routes/musicWorkflowAutomations.ts:51
+- `GET /api/music-workflow-automations/stats` via useQuery — client/src/pages/MusicWorkflowAutomations.tsx:948 → server/routes/musicWorkflowAutomations.ts:208
+- `GET /api/outreach/campaigns` via apiRequest — client/src/pages/OutreachCRM.tsx:188 → server/routes/outreach.ts:31
+- `GET /api/outreach/campaigns/:param/pitches` via apiRequest — client/src/pages/OutreachCRM.tsx:202 → server/routes/outreach.ts:119
+- `GET /api/outreach/follow-ups` via apiRequest — client/src/pages/OutreachCRM.tsx:215 → server/routes/outreach.ts:397
+- `POST /api/outreach/campaigns` via apiRequest — client/src/pages/OutreachCRM.tsx:230 → server/routes/outreach.ts:71
+- `POST /api/outreach/campaigns/:param/pitches` via apiRequest — client/src/pages/OutreachCRM.tsx:250 → server/routes/outreach.ts:160
+- `PATCH /api/outreach/pitches/:param` via apiRequest — client/src/pages/OutreachCRM.tsx:272 → server/routes/outreach.ts:228
+- `POST /api/outreach/generate-pitch` via apiRequest — client/src/pages/OutreachCRM.tsx:289 → server/routes/outreach.ts:335
+- `GET /api/playlist-pitching/curators` via useQuery — client/src/pages/PlaylistPitching.tsx:89 → server/routes/playlistPitching.ts:179, server/routes/playlistPitching.ts:406
+- `PATCH /api/playlist-pitching/:param/status` via apiRequest — client/src/pages/PlaylistPitching.tsx:142 → server/routes/playlistPitching.ts:269
+- `DELETE /api/playlist-pitching/:param` via apiRequest — client/src/pages/PlaylistPitching.tsx:165 → server/routes/playlistPitching.ts:326
+- `GET /api/press-kit` via useQuery — client/src/pages/PressKit.tsx:111 → server/routes/pressKit.ts:97
+- `PUT /api/press-kit` via apiRequest — client/src/pages/PressKit.tsx:116 → server/routes/pressKit.ts:111
+- `POST /api/storage/upload` via uploadWithProgress — client/src/pages/PressKit.tsx:172 → server/routes/storage.ts:198
+- `POST /api/marketplace/purchase` via apiRequest — client/src/pages/ProducerProfilePage.tsx:140 → server/routes/marketplace.ts:1066
+- `POST /api/marketplace/follow/:param` via apiRequest — client/src/pages/ProducerProfilePage.tsx:183 → server/routes/marketplace.ts:2189
+- `POST /api/marketplace/unfollow/:param` via apiRequest — client/src/pages/ProducerProfilePage.tsx:212 → server/routes/marketplace.ts:2523
+- `GET /api/marketplace/beats?producerId=:param` via apiRequest — client/src/pages/ProducerProfilePage.tsx:264 → server/routes/marketplace.ts:175
+- `GET /api/marketplace/producers` via apiRequest — client/src/pages/ProducerProfilePage.tsx:276 → server/routes/marketplace.ts:734
+- `GET /api/songwriting` via useQuery — client/src/pages/Projects.tsx:879 → server/routes/songwriting.ts:28
+- `POST /api/songwriting` via apiRequest — client/src/pages/Projects.tsx:884 → server/routes/songwriting.ts:147
+- `PUT /api/songwriting/:param` via apiRequest — client/src/pages/Projects.tsx:908 → server/routes/songwriting.ts:175
+- `DELETE /api/songwriting/:param` via apiRequest — client/src/pages/Projects.tsx:919 → server/routes/songwriting.ts:222
+- `POST /api/songwriting/ai-assist` via apiRequest — client/src/pages/Projects.tsx:930 → server/routes/songwriting.ts:277
+- `GET /api/press-kit/public/:param` via fetch — client/src/pages/PublicPressKit.tsx:18 → server/routes/pressKit.ts:316
+- `GET /api/publishing` via useQuery — client/src/pages/Publishing.tsx:92 → server/routes/publishing.ts:62
+- `GET /api/publishing/stats` via useQuery — client/src/pages/Publishing.tsx:96 → server/routes/publishing.ts:192, server/routes/publishing.ts:221
+- `POST /api/publishing` via apiRequest — client/src/pages/Publishing.tsx:101 → server/routes/publishing.ts:91
+- `PUT /api/publishing/:param` via apiRequest — client/src/pages/Publishing.tsx:119 → server/routes/publishing.ts:125
+- `DELETE /api/publishing/:param` via apiRequest — client/src/pages/Publishing.tsx:134 → server/routes/publishing.ts:170
+- `POST /api/verify-checkout-session` via apiRequest — client/src/pages/RegisterSuccess.tsx:58 → server/routes.ts:8098
+- `POST /api/register-after-payment` via apiRequest — client/src/pages/RegisterSuccess.tsx:105 → server/routes.ts:8147
+- `POST /api/auth/reset-password` via fetch — client/src/pages/ResetPassword.tsx:111 → server/routes.ts:2159
+- `GET /api/royalties` via useQuery — client/src/pages/Royalties.tsx:180 → server/routes.ts:5824
+- `GET /api/royalties/platform-breakdown` via useQuery — client/src/pages/Royalties.tsx:193 → server/routes.ts:5926
+- `GET /api/royalties/top-tracks` via useQuery — client/src/pages/Royalties.tsx:201 → server/routes.ts:5973
+- `GET /api/royalties/payment-methods` via useQuery — client/src/pages/Royalties.tsx:209 → server/routes.ts:6026
+- `GET /api/royalties/payout-settings` via useQuery — client/src/pages/Royalties.tsx:216 → server/routes.ts:6117
+- `GET /api/royalties/splits` via useQuery — client/src/pages/Royalties.tsx:224 → server/routes.ts:6271
+- `GET /api/payouts/statements` via useQuery — client/src/pages/Royalties.tsx:240 → server/routes/payouts.ts:881
+- `GET /api/payouts/disputes` via useQuery — client/src/pages/Royalties.tsx:249 → server/routes/payouts.ts:1037
+- `GET /api/payouts/tax-forms` via useQuery — client/src/pages/Royalties.tsx:262 → server/routes/payouts.ts:755
+- `POST /api/royalties/export` via apiRequest — client/src/pages/Royalties.tsx:313 → server/routes.ts:6420
+- `POST /api/royalties/request-payout` via apiRequest — client/src/pages/Royalties.tsx:339 → server/routes.ts:6482
+- `POST /api/royalties/payment-methods` via apiRequest — client/src/pages/Royalties.tsx:362 → server/routes.ts:6071
+- `PUT /api/royalties/payout-settings` via apiRequest — client/src/pages/Royalties.tsx:398 → server/routes.ts:6170
+- `PUT /api/royalties/tax-info` via apiRequest — client/src/pages/Royalties.tsx:419 → server/routes.ts:6215
+- `POST /api/royalties/connect-stripe` via apiRequest — client/src/pages/Royalties.tsx:440 → server/routes.ts:6639
+- `DELETE /api/royalties/splits/:param` via apiRequest — client/src/pages/Royalties.tsx:468 → server/routes.ts:6390
+- `POST /api/royalties/splits` via apiRequest — client/src/pages/Royalties.tsx:496 → server/routes.ts:6291
+- `PUT /api/royalties/splits/:param` via apiRequest — client/src/pages/Royalties.tsx:532 → server/routes.ts:6353
+- `POST /api/payouts/tax-form/submit` via apiRequest — client/src/pages/Royalties.tsx:560 → server/routes/payouts.ts:790
+- `POST /api/payouts/disputes` via apiRequest — client/src/pages/Royalties.tsx:588 → server/routes/payouts.ts:1106
+- `POST /api/payouts/disputes/:param/evidence` via apiRequest — client/src/pages/Royalties.tsx:617 → server/routes/payouts.ts:1157
+- `POST /api/payouts/disputes/:param/message` via apiRequest — client/src/pages/Royalties.tsx:645 → server/routes/payouts.ts:1238
+- `POST /api/payouts/statements/generate` via apiRequest — client/src/pages/Royalties.tsx:672 → server/routes/payouts.ts:921
+- `POST /api/payouts/retry/:param` via apiRequest — client/src/pages/Royalties.tsx:700 → server/routes/payouts.ts:1303
+- `GET /api/royalties/statements` via useQuery — client/src/pages/Royalties.tsx:2692 → server/routes.ts:6570
+- `GET /api/payouts` via useQuery — client/src/pages/Royalties.tsx:2695 → server/routes/payouts.ts:77
+- `GET /api/royalties/forecast` via useQuery — client/src/pages/Royalties.tsx:2701 → server/routes.ts:6588
+- `GET /api/auth/profile` via useQuery — client/src/pages/Settings.tsx:246 → server/routes.ts:779
+- `GET /api/auth/notifications` via useQuery — client/src/pages/Settings.tsx:254 → server/routes.ts:827
+- `GET /api/auth/preferences` via useQuery — client/src/pages/Settings.tsx:260 → server/routes.ts:893
+- `GET /api/billing/subscription` via useQuery — client/src/pages/Settings.tsx:266 → server/routes/billing.ts:429
+- `GET /api/billing/payment-method` via useQuery — client/src/pages/Settings.tsx:272 → server/routes/billing.ts:650
+- `GET /api/billing/history` via useQuery — client/src/pages/Settings.tsx:279 → server/routes/billing.ts:698
+- `GET /api/billing/refunds` via useQuery — client/src/pages/Settings.tsx:286 → server/routes/billing.ts:2261
+- `PUT /api/auth/profile` via apiRequest — client/src/pages/Settings.tsx:367 → server/routes.ts:794
+- `PUT /api/auth/notifications` via apiRequest — client/src/pages/Settings.tsx:410 → server/routes.ts:850
+- `PUT /api/auth/preferences` via apiRequest — client/src/pages/Settings.tsx:438 → server/routes.ts:913
+- `POST /api/auth/avatar` via apiRequest — client/src/pages/Settings.tsx:479 → server/routes.ts:1440
+- `DELETE /api/auth/avatar` via apiRequest — client/src/pages/Settings.tsx:520 → server/routes.ts:1537
+- `DELETE /api/auth/google-connection` via apiRequest — client/src/pages/Settings.tsx:551 → server/routes.ts:2455
+- `POST /api/billing/cancel-subscription` via apiRequest — client/src/pages/Settings.tsx:569 → server/routes/billing.ts:745
+- `POST /api/billing/reactivate-subscription` via apiRequest — client/src/pages/Settings.tsx:612 → server/routes/billing.ts:877
+- `GET /api/billing/invoices/:param/download` via fetch — client/src/pages/Settings.tsx:719 → server/routes/billing.ts:991
+- `POST /api/auth/2fa/disable` via apiRequest — client/src/pages/Settings.tsx:2165 → server/routes.ts:1828
+- `GET /api/shows/setlists` via apiRequest — client/src/pages/ShowPage.tsx:209 → server/routes/shows.ts:312, server/routes/shows.ts:327
+- `PUT /api/shows/setlists/:param` via apiRequest — client/src/pages/ShowPage.tsx:254 → server/routes/shows.ts:389
+- `POST /api/shows/setlists` via apiRequest — client/src/pages/ShowPage.tsx:259 → server/routes/shows.ts:369
+- `DELETE /api/shows/:param` via apiRequest — client/src/pages/Shows.tsx:165 → server/routes/shows.ts:173
+- `DELETE /api/shows/setlists/:param` via apiRequest — client/src/pages/Shows.tsx:214 → server/routes/shows.ts:416
+- `PATCH /api/shows/:param` via apiRequest — client/src/pages/Shows.tsx:1109 → server/routes/shows.ts:149
+- `GET /api/social/posts` via useQuery — client/src/pages/SocialMedia.tsx:645 → server/routes/socialMedia.ts:229
+- `GET /api/social/metrics` via useQuery — client/src/pages/SocialMedia.tsx:650 → server/routes/socialMedia.ts:404
+- `GET /api/social/ai-insights` via useQuery — client/src/pages/SocialMedia.tsx:656 → server/routes/socialMedia.ts:830
+- `GET /api/social/activity` via useQuery — client/src/pages/SocialMedia.tsx:664 → server/routes/socialMedia.ts:780
+- `GET /api/social/weekly-stats` via useQuery — client/src/pages/SocialMedia.tsx:670 → server/routes/socialMedia.ts:796
+- `GET /api/social/calendar` via useQuery — client/src/pages/SocialMedia.tsx:678 → server/routes/socialMedia.ts:442
+- `GET /api/social/calendar/stats` via useQuery — client/src/pages/SocialMedia.tsx:684 → server/routes/socialMedia.ts:461
+- `POST /api/social/schedule-post` via apiRequest — client/src/pages/SocialMedia.tsx:935 → server/routes/socialMedia.ts:301
+- `DELETE /api/social/posts/:param` via apiRequest — client/src/pages/SocialMedia.tsx:1032 → server/routes/socialMedia.ts:244
+- `POST /api/social/calendar` via apiRequest — client/src/pages/SocialMedia.tsx:1080 → server/routes/socialMedia.ts:488
+- `PUT /api/social/calendar/:param` via apiRequest — client/src/pages/SocialMedia.tsx:1115 → server/routes/socialMedia.ts:547
+- `DELETE /api/social/calendar/:param` via apiRequest — client/src/pages/SocialMedia.tsx:1146 → server/routes/socialMedia.ts:706, server/routes/socialMedia.ts:749
+- `POST /api/social/calendar/:param/publish` via apiRequest — client/src/pages/SocialMedia.tsx:1174 → server/routes/socialMedia.ts:371, server/routes/socialMedia.ts:668
+- `PATCH /api/social/calendar/batch` via apiRequest — client/src/pages/SocialMedia.tsx:1208 → server/routes/socialMedia.ts:599
+- `DELETE /api/social/calendar/batch` via apiRequest — client/src/pages/SocialMedia.tsx:1239 → server/routes/socialMedia.ts:706, server/routes/socialMedia.ts:749
+- `POST /api/social/calendar/batch/publish` via apiRequest — client/src/pages/SocialMedia.tsx:1269 → server/routes/socialMedia.ts:371, server/routes/socialMedia.ts:668
+- `GET /api/storefront/:param/membership-tiers/public` via fetch — client/src/pages/Storefront.tsx:302 → server/routes/storefront.ts:811
+- `POST /api/storefront/:param/checkout/preview` via apiRequest — client/src/pages/Storefront.tsx:370 → server/routes/storefront.ts:2342
+- `POST /api/storefront/:param/like` via apiRequest — client/src/pages/Storefront.tsx:379 → server/routes/storefront.ts:619, server/routes/storefront.ts:1267
+- `POST /api/storefront/:param/follow` via apiRequest — client/src/pages/Storefront.tsx:390 → server/routes/storefront.ts:619, server/routes/storefront.ts:1299
+- `POST /api/storefront/:param/rate` via apiRequest — client/src/pages/Storefront.tsx:407 → server/routes/storefront.ts:619, server/routes/storefront.ts:1331
+- `POST /api/storefront/subscribe/:param` via apiRequest — client/src/pages/Storefront.tsx:460 → server/routes/storefront.ts:486, server/routes/storefront.ts:619, server/routes/storefront.ts:1065, server/routes/storefront.ts:1267, server/routes/storefront.ts:1299, server/routes/storefront.ts:1331, server/routes/storefront.ts:1384, server/routes/storefront.ts:2146
+- `POST /api/storefront/:param/checkout` via apiRequest — client/src/pages/Storefront.tsx:497 → server/routes/storefront.ts:619, server/routes/storefront.ts:1384
+- `POST /api/create-subscription` via apiRequest — client/src/pages/Subscribe.tsx:386 → server/routes.ts:6683
+- `PUT /api/sync-licensing/:param` via apiRequest — client/src/pages/SyncLicensing.tsx:120 → server/routes/syncLicensing.ts:116
+- `DELETE /api/sync-licensing/:param` via apiRequest — client/src/pages/SyncLicensing.tsx:139 → server/routes/syncLicensing.ts:182
+- `GET /api/kyc/status` via useQuery — client/src/pages/Verification.tsx:169 → server/routes/kyc.ts:155
+- `GET /api/kyc/documents` via useQuery — client/src/pages/Verification.tsx:174 → server/routes/kyc.ts:416
+- `POST /api/kyc/start` via fetch — client/src/pages/Verification.tsx:208 → server/routes/kyc.ts:119
+- `POST /api/kyc/submit` via fetch — client/src/pages/Verification.tsx:294 → server/routes/kyc.ts:650
+- `GET /api/workspace/user/workspaces` via useQuery — client/src/pages/Workspaces.tsx:93 → server/routes/workspace.ts:158
+- `GET /api/workspace/:param/members` via useQuery — client/src/pages/Workspaces.tsx:98 → server/routes/workspace.ts:219
+- `GET /api/workspace/:param/roles` via useQuery — client/src/pages/Workspaces.tsx:103 → server/routes/workspace.ts:431
+- `GET /api/workspace/:param/activity` via useQuery — client/src/pages/Workspaces.tsx:110 → server/routes/workspace.ts:835
+- `GET /api/workspace/:param/presence` via useQuery — client/src/pages/Workspaces.tsx:115 → server/routes/workspace.ts:1125
+- `POST /api/workspace/:param/presence/heartbeat` via fetch — client/src/pages/Workspaces.tsx:126 → server/routes/workspace.ts:1142
+- `POST /api/workspace/create` via fetch — client/src/pages/Workspaces.tsx:164 → server/routes/workspace.ts:109
+- `POST /api/workspace/:param/invite` via fetch — client/src/pages/Workspaces.tsx:200 → server/routes/workspace.ts:241
+- `PUT /api/workspace/:param/members/:param/role` via fetch — client/src/pages/Workspaces.tsx:238 → server/routes/workspace.ts:374
+- `DELETE /api/workspace/:param/members/:param` via fetch — client/src/pages/Workspaces.tsx:272 → server/routes/workspace.ts:407
+- `POST /api/workspace/:param/roles` via fetch — client/src/pages/Workspaces.tsx:301 → server/routes/workspace.ts:478
+- `PUT /api/workspace/:param/roles/:param` via fetch — client/src/pages/Workspaces.tsx:339 → server/routes/workspace.ts:511
+- `DELETE /api/workspace/:param/roles/:param` via fetch — client/src/pages/Workspaces.tsx:373 → server/routes/workspace.ts:541
+- `GET /api/workspace/:param/audit/export?format=json` via fetch — client/src/pages/Workspaces.tsx:402 → server/routes/workspace.ts:873
+- `GET /api/admin/audit-log?:param` via apiRequest — client/src/pages/admin/AuditLog.tsx:134 → server/routes/admin/auditLog.ts:33
+- `GET /api/admin/audit-log/summary` via apiRequest — client/src/pages/admin/AuditLog.tsx:150 → server/routes/admin/auditLog.ts:104
+- `GET /api/admin/content-sampler/summary` via useQuery — client/src/pages/admin/ContentSampler.tsx:131 → server/routes/admin/contentSampler.ts:509
+- `GET /api/admin/content-sampler/beats` via useQuery — client/src/pages/admin/ContentSampler.tsx:228 → server/routes/admin/contentSampler.ts:369
+- `GET /api/admin/content-sampler/posts?genre=:param` via apiRequest — client/src/pages/admin/ContentSampler.tsx:357 → server/routes/admin/contentSampler.ts:408
+- `GET /api/kyc/admin/pending?status=:param` via fetch — client/src/pages/admin/KYCReview.tsx:112 → server/routes/kyc.ts:737
+- `POST /api/kyc/admin/review/:param` via fetch — client/src/pages/admin/KYCReview.tsx:136 → server/routes/kyc.ts:786
+- `POST /api/kyc/admin/documents/:param/review` via fetch — client/src/pages/admin/KYCReview.tsx:182 → server/routes/kyc.ts:828
+- `GET /api/security/metrics` via apiRequest — client/src/pages/admin/SecurityDashboard.tsx:103 → server/routes/security.ts:14
+- `GET /api/security/behavioral-alerts` via apiRequest — client/src/pages/admin/SecurityDashboard.tsx:117 → server/routes/security.ts:114
+- `GET /api/security/anomaly-detection` via apiRequest — client/src/pages/admin/SecurityDashboard.tsx:131 → server/routes/security.ts:228
+- `GET /api/security/pentest-results` via apiRequest — client/src/pages/admin/SecurityDashboard.tsx:145 → server/routes/security.ts:327
+- `PATCH /api/security/behavioral-alerts/:param/resolve` via apiRequest — client/src/pages/admin/SecurityDashboard.tsx:153 → server/routes/security.ts:197
+- `GET /api/support/tickets/all?:param` via fetch — client/src/pages/admin/SupportDashboard.tsx:80 → server/routes/support.ts:35, server/routes/support.ts:125
+- `GET /api/support/stats` via fetch — client/src/pages/admin/SupportDashboard.tsx:111 → server/routes/support.ts:88
+- `PATCH /api/support/tickets/:param` via fetch — client/src/pages/admin/SupportDashboard.tsx:133 → server/routes/support.ts:274
+- `GET /api/support/tickets/:param` via fetch — client/src/pages/admin/SupportTicketDetail.tsx:68 → server/routes/support.ts:35, server/routes/support.ts:125
+- `POST /api/support/tickets/:param/messages` via fetch — client/src/pages/admin/SupportTicketDetail.tsx:108 → server/routes/support.ts:154
+- `POST /api/support/tickets/:param/tags` via fetch — client/src/pages/admin/SupportTicketDetail.tsx:145 → server/routes/support.ts:195
+- `DELETE /api/support/tickets/:param/tags/:param` via fetch — client/src/pages/admin/SupportTicketDetail.tsx:214 → server/routes/support.ts:237
+- `POST /api/ai/analytics/insights` via fetch — client/src/pages/analytics/AIDashboard.tsx:22 → server/routes/ai.ts:775
+- `GET /api/analytics/ar-discovery` via useQuery — client/src/pages/analytics/ARDiscoveryPanel.tsx:289 → server/routes/analytics-internal.ts:2000
+- `GET /api/analytics-alerts/cross-platform-comparison` via fetch — client/src/pages/analytics/CrossPlatformComparison.tsx:243 → server/routes/api/analyticsAlerts.ts:227
+- `GET /api/analytics/global-ranking?days=:param` via fetch — client/src/pages/analytics/GlobalRankingDashboard.tsx:399 → server/routes/analytics-internal.ts:1250
+- `GET /api/analytics/historical/yearly` via useQuery — client/src/pages/analytics/HistoricalAnalyticsView.tsx:529 → server/routes/analytics-internal.ts:996
+- `GET /api/analytics/historical/milestones` via useQuery — client/src/pages/analytics/HistoricalAnalyticsView.tsx:540 → server/routes/analytics-internal.ts:1079
+- `GET /api/analytics/historical/trends` via useQuery — client/src/pages/analytics/HistoricalAnalyticsView.tsx:551 → server/routes/analytics-internal.ts:1172
+- `POST /api/analytics/natural-language-query` via fetch — client/src/pages/analytics/NaturalLanguageQuery.tsx:420 → server/routes/analytics-internal.ts:1428
+- `GET /api/analytics/playlist-journeys?range=:param` via fetch — client/src/pages/analytics/PlaylistJourneysVisualization.tsx:397 → server/routes/analytics-internal.ts:1895
+- `GET /api/analytics/dashboard?:param` via fetch — client/src/pages/analytics/RevenueAnalytics.tsx:188 → server/routes.ts:4475
+
+## Unmatched confirmed frontend calls
+
+None.
+
+## Method-unconfirmed frontend calls
+
+None.
+
+## Dynamic unresolved URLs and registrations
+
+- `apiRequest(endpoint)` — client/src/components/autonomous/autonomous-dashboard.tsx:252
+- `apiRequest(endpoint)` — client/src/components/autopilot/autopilot-dashboard.tsx:193
+- `apiRequest(endpoint)` — client/src/components/distribution/EmbedCodeGenerator.tsx:383
+- `apiRequest(method)` — client/src/components/distribution/HyperFollowBuilder.tsx:272
+- `apiRequest(endpoint)` — client/src/components/export/ExportDialog.tsx:248
+- `apiRequest(endpoints)` — client/src/components/social/UnifiedInbox.tsx:284
+- `apiRequest(method)` — client/src/hooks/useBatchAction.ts:197
+- `apiRequest(method)` — client/src/hooks/useBatchActions.ts:263
+- `apiRequest(method)` — client/src/hooks/useBulkAction.ts:171
+- `apiRequest(endpoint)` — client/src/hooks/useTemplate.ts:141
+- `apiRequest(endpoint)` — client/src/lib/imageUpload.ts:19
+- `apiRequest(method)` — client/src/lib/queryClient.ts:360
+- `uploadWithProgress(url)` — client/src/lib/queryClient.ts:457
+- `apiRequest(options)` — client/src/pages/Assistant.tsx:90
+- `apiRequest(url)` — client/src/pages/MusicWorkflowAutomations.tsx:247
+
+## Non-network and non-API references
+
+- `browser-navigation: /api/social/callback/${platform}${search}` — client/src/components/OAuthCallbackHandler.tsx:20
+- `cache-key: /api/marketplace/listings/${listingId}/stems` — client/src/components/StemUploadDialog.tsx:68
+- `cache-key: /api/marketplace/my-stems` — client/src/components/StemUploadDialog.tsx:71
+- `query-key-custom-fn: /api/marketplace/listings/${listingId}/stems` — client/src/components/StemsManager.tsx:86
+- `cache-key: /api/marketplace/listings/${listingId}/stems` — client/src/components/StemsManager.tsx:106
+- `cache-key: /api/marketplace/my-stems` — client/src/components/StemsManager.tsx:109
+- `browser-navigation: /api/marketplace/stems/${data.order.listingId}/download/${data.downloadToken}` — client/src/components/StemsManager.tsx:139
+- `cache-key: /api/achievements/unnotified` — client/src/components/achievements/AchievementNotification.tsx:73
+- `cache-key: /api/achievements/user` — client/src/components/achievements/AchievementNotification.tsx:75
+- `cache-key: /api/achievements/streaks` — client/src/components/achievements/StreakCounter.tsx:74
+- `query-key-custom-fn: /api/auth/me` — client/src/components/auth/AuthProvider.tsx:48
+- `cache-key: /api/auth/me` — client/src/components/auth/AuthProvider.tsx:69
+- `cache-key: /api/auth/me` — client/src/components/auth/AuthProvider.tsx:80
+- `cache-key: /api/auth/me` — client/src/components/auth/AuthProvider.tsx:90
+- `cache-key: /api/auth/sessions` — client/src/components/auth/DeviceManagement.tsx:96
+- `cache-key: /api/auth/sessions` — client/src/components/auth/DeviceManagement.tsx:119
+- `cache-key: /api/auth/sessions` — client/src/components/auth/DeviceManagement.tsx:154
+- `cache-key: /api/auth/social-token-status` — client/src/components/auth/PlatformReconnectCard.tsx:123
+- `cache-key: /api/auth/security-alerts` — client/src/components/auth/SecurityAlertBanner.tsx:152
+- `cache-key: /api/custom-workflows` — client/src/components/automations/CustomWorkflowBuilder.tsx:271
+- `cache-key: /api/custom-workflows` — client/src/components/automations/CustomWorkflowBuilder.tsx:511
+- `cache-key: /api/custom-workflows` — client/src/components/automations/CustomWorkflowBuilder.tsx:534
+- `cache-key: /api/custom-workflows` — client/src/components/automations/CustomWorkflowBuilder.tsx:557
+- `not-api-reference: /api/advertising/start` — client/src/components/autonomous/autonomous-dashboard.tsx:250
+- `not-api-reference: /api/advertising/stop` — client/src/components/autonomous/autonomous-dashboard.tsx:251
+- `cache-key: /api/advertising/status` — client/src/components/autonomous/autonomous-dashboard.tsx:256
+- `cache-key: /api/advertising/status` — client/src/components/autonomous/autonomous-dashboard.tsx:285
+- `not-api-reference: /api/autopilot/start` — client/src/components/autopilot/autopilot-dashboard.tsx:191
+- `not-api-reference: /api/autopilot/stop` — client/src/components/autopilot/autopilot-dashboard.tsx:192
+- `cache-key: /api/autopilot/status` — client/src/components/autopilot/autopilot-dashboard.tsx:197
+- `cache-key: /api/autopilot/status` — client/src/components/autopilot/autopilot-dashboard.tsx:224
+- `query-key-custom-fn: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:95
+- `cache-key: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:118
+- `cache-key: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:147
+- `cache-key: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:164
+- `cache-key: /api/billing/disputes` — client/src/components/billing/DisputeTracker.tsx:152
+- `cache-key: /api/billing/subscription` — client/src/components/billing/PaymentRetryCard.tsx:84
+- `cache-key: /api/billing/grace-period-status` — client/src/components/billing/PaymentRetryCard.tsx:87
+- `cache-key: /api/billing/refunds` — client/src/components/billing/RefundRequestForm.tsx:167
+- `cache-key: /api/billing/subscription` — client/src/components/billing/ThreeDSecureModal.tsx:94
+- `cache-key: /api/billing/grace-period-status` — client/src/components/billing/ThreeDSecureModal.tsx:97
+- `query-key-custom-fn: /api/collaborations/connection-status/${user.id}` — client/src/components/collaboration/CollaboratorCard.tsx:37
+- `cache-key: /api/collaborations/connection-status/${user.id}` — client/src/components/collaboration/CollaboratorCard.tsx:66
+- `cache-key: /api/collaborations/suggestions` — client/src/components/collaboration/CollaboratorCard.tsx:69
+- `query-key-custom-fn: /api/collaborations/search` — client/src/components/collaboration/CollaboratorSearch.tsx:93
+- `not-api-reference: /api/collaborations/search${queryString ? ` — client/src/components/collaboration/CollaboratorSearch.tsx:101
+- `query-key-custom-fn: /api/collaborations/connections` — client/src/components/collaboration/ConnectionsList.tsx:18
+- `query-key-custom-fn: /api/collaborations/connections/pending` — client/src/components/collaboration/ConnectionsList.tsx:29
+- `cache-key: /api/collaborations/connections` — client/src/components/collaboration/ConnectionsList.tsx:50
+- `cache-key: /api/collaborations/connections/pending` — client/src/components/collaboration/ConnectionsList.tsx:53
+- `cache-key: /api/collaborations/connections/pending` — client/src/components/collaboration/ConnectionsList.tsx:76
+- `cache-key: /api/collaborations/connections` — client/src/components/collaboration/ConnectionsList.tsx:99
+- `query-key-custom-fn: /api/collaborations/projects` — client/src/components/collaboration/ProjectBoard.tsx:93
+- `query-key-custom-fn: /api/collaborations/projects` — client/src/components/collaboration/ProjectBoard.tsx:104
+- `cache-key: /api/collaborations/projects` — client/src/components/collaboration/ProjectBoard.tsx:135
+- `cache-key: /api/collaborations/projects` — client/src/components/collaboration/ProjectBoard.tsx:165
+- `cache-key: /api/collaborations/projects` — client/src/components/collaboration/ProjectBoard.tsx:188
+- `query-key-custom-fn: /api/collaborations/suggestions` — client/src/components/collaboration/SuggestedCollaborators.tsx:22
+- `not-api-reference: /api/social/generate-image` — client/src/components/content/AIImageGenerator.tsx:181
+- `not-api-reference: /api/content-analysis/${type}` — client/src/components/content/ContentAnalyzer.tsx:223
+- `comment: /api/social/generate-video` — client/src/components/content/ServerVideoGenerator.tsx:59
+- `comment: /api/social/video-job/:id` — client/src/components/content/ServerVideoGenerator.tsx:60
+- `not-api-reference: /api/social/generate-video` — client/src/components/content/ServerVideoGenerator.tsx:295
+- `cache-key: /api/career-coach/recommendations` — client/src/components/dashboard/AICareerCoach.tsx:272
+- `cache-key: /api/career-coach/recommendations` — client/src/components/dashboard/AICareerCoach.tsx:287
+- `cache-key: /api/career-coach/goals` — client/src/components/dashboard/AICareerCoach.tsx:304
+- `cache-key: /api/billing/payment-method` — client/src/components/dialogs/PaymentUpdateDialog.tsx:169
+- `cache-key: /api/billing/subscription` — client/src/components/dialogs/PaymentUpdateDialog.tsx:172
+- `query-key-custom-fn: /api/artist-profiles` — client/src/components/distribution/ArtistProfileManager.tsx:105
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/ArtistProfileManager.tsx:121
+- `cache-key: /api/artist-profiles/${profileId}/profile-hub` — client/src/components/distribution/ArtistProfileManager.tsx:123
+- `cache-key: /api/distribution/releases` — client/src/components/distribution/ArtistProfileManager.tsx:126
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/ArtistProfileManager.tsx:139
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/ArtistProfileManager.tsx:149
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/ArtistProfileManager.tsx:172
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/ArtistProfileManager.tsx:470
+- `query-key-custom-fn: /api/artist-profiles/${profile.id}/profile-hub` — client/src/components/distribution/AutoArtistSync.tsx:266
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/AutoArtistSync.tsx:279
+- `cache-key: /api/artist-profiles/${profile.id}/profile-hub` — client/src/components/distribution/AutoArtistSync.tsx:281
+- `cache-key: /api/artist-profiles/${profile.id}/health` — client/src/components/distribution/AutoArtistSync.tsx:284
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/AutoArtistSync.tsx:300
+- `cache-key: /api/artist-profiles/${profile.id}/profile-hub` — client/src/components/distribution/AutoArtistSync.tsx:302
+- `cache-key: /api/artist-profiles/${profile.id}/health` — client/src/components/distribution/AutoArtistSync.tsx:305
+- `cache-key: /api/artist-profiles/${profile.id}/dna-snapshots` — client/src/components/distribution/AutoArtistSync.tsx:326
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/AutoArtistSync.tsx:341
+- `cache-key: /api/artist-profiles/${profile.id}/health` — client/src/components/distribution/AutoArtistSync.tsx:343
+- `query-key-custom-fn: /api/artist-profiles/${profile.id}/health` — client/src/components/distribution/AutoArtistSync.tsx:371
+- `query-key-custom-fn: /api/artist-profiles/${profile.id}/claim-pipeline` — client/src/components/distribution/AutoArtistSync.tsx:383
+- `cache-key: /api/artist-profiles/${profile.id}/health` — client/src/components/distribution/AutoArtistSync.tsx:402
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/AutoArtistSync.tsx:410
+- `cache-key: /api/artist-profiles/${profile.id}/dna-snapshots` — client/src/components/distribution/AutoArtistSync.tsx:419
+- `query-key-custom-fn: /api/artist-profiles/${profile.id}/identity-graph` — client/src/components/distribution/AutoArtistSync.tsx:435
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/AutoArtistSync.tsx:453
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/AutoArtistSync.tsx:478
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/AutoArtistSync.tsx:527
+- `cache-key: /api/artist-profiles/${profile.id}/profile-hub` — client/src/components/distribution/AutoArtistSync.tsx:529
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/AutoArtistSync.tsx:560
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/AutoArtistSync.tsx:709
+- `cache-key: /api/artist-profiles` — client/src/components/distribution/AutoArtistSync.tsx:753
+- `cache-key: /api/artist-profiles/${profile.id}/profile-hub` — client/src/components/distribution/AutoArtistSync.tsx:755
+- `cache-key: /api/artist-profiles/${profile.id}/health` — client/src/components/distribution/AutoArtistSync.tsx:758
+- `cache-key: /api/distribution/releases` — client/src/components/distribution/AutoArtistSync.tsx:761
+- `cache-key: /api/distribution/qc` — client/src/components/distribution/AutomatedQC.tsx:188
+- `cache-key: /api/distribution/qc` — client/src/components/distribution/AutomatedQC.tsx:223
+- `cache-key: /api/distribution/qc` — client/src/components/distribution/AutomatedQC.tsx:257
+- `cache-key: /api/distribution/releases/${releaseId}/content-id` — client/src/components/distribution/ContentIDManager.tsx:111
+- `cache-key: /api/distribution/releases/${releaseId}/content-id` — client/src/components/distribution/ContentIDManager.tsx:140
+- `cache-key: /api/distribution/releases/${releaseId}/content-id` — client/src/components/distribution/ContentIDManager.tsx:172
+- `cache-key: /api/distribution/releases/${releaseId}/content-id` — client/src/components/distribution/ContentIDManager.tsx:215
+- `browser-navigation: /api/distribution/toolost/connect` — client/src/components/distribution/DSPSelector.tsx:447
+- `not-api-reference: /api/distribution/releases` — client/src/components/distribution/DataTransferWizard.tsx:134
+- `not-api-reference: /api/distribution/migration/report` — client/src/components/distribution/DataTransferWizard.tsx:135
+- `not-api-reference: /api/distribution/profiles` — client/src/components/distribution/DataTransferWizard.tsx:136
+- `not-api-reference: /api/distribution/transfer/jobs` — client/src/components/distribution/DataTransferWizard.tsx:137
+- `not-api-reference: /api/analytics/dashboard` — client/src/components/distribution/DataTransferWizard.tsx:138
+- `not-api-reference: /api/distribution/analytics/growth` — client/src/components/distribution/DataTransferWizard.tsx:139
+- `not-api-reference: /api/distribution/streaming-trends` — client/src/components/distribution/DataTransferWizard.tsx:140
+- `not-api-reference: /api/distribution/geographic` — client/src/components/distribution/DataTransferWizard.tsx:141
+- `not-api-reference: /api/distribution/platform-earnings` — client/src/components/distribution/DataTransferWizard.tsx:142
+- `not-api-reference: /api/distribution/earnings/breakdown` — client/src/components/distribution/DataTransferWizard.tsx:143
+- `cache-key: /api/distribution/releases/${releaseId}/outcomes` — client/src/components/distribution/DistributionOutcomeHandler.tsx:164
+- `cache-key: /api/distribution/earnings/statements` — client/src/components/distribution/EarningsReconciliation.tsx:221
+- `cache-key: /api/distribution/earnings/payouts` — client/src/components/distribution/EarningsReconciliation.tsx:249
+- `cache-key: /api/distribution/earnings/statements` — client/src/components/distribution/EarningsReconciliation.tsx:277
+- `cache-key: /api/custom-workflows` — client/src/components/distribution/EmbedCodeGenerator.tsx:361
+- `cache-key: /api/custom-workflows/${wf.id}/disable` — client/src/components/distribution/EmbedCodeGenerator.tsx:380
+- `cache-key: /api/custom-workflows/${wf.id}/enable` — client/src/components/distribution/EmbedCodeGenerator.tsx:381
+- `cache-key: /api/custom-workflows` — client/src/components/distribution/EmbedCodeGenerator.tsx:385
+- `not-api-reference: /api/distribution/hyperfollow/${campaignId}` — client/src/components/distribution/HyperFollowBuilder.tsx:268
+- `not-api-reference: /api/distribution/hyperfollow` — client/src/components/distribution/HyperFollowBuilder.tsx:269
+- `cache-key: /api/distribution/hyperfollow` — client/src/components/distribution/HyperFollowBuilder.tsx:281
+- `cache-key: /api/distribution/codes/isrc` — client/src/components/distribution/ISRCManager.tsx:133
+- `cache-key: /api/distribution/codes/upc` — client/src/components/distribution/ISRCManager.tsx:136
+- `cache-key: /api/distribution/codes/stats` — client/src/components/distribution/ISRCManager.tsx:139
+- `cache-key: /api/distribution/codes/isrc` — client/src/components/distribution/ISRCManager.tsx:204
+- `cache-key: /api/distribution/codes/upc` — client/src/components/distribution/ISRCManager.tsx:207
+- `cache-key: /api/distribution/codes/isrc` — client/src/components/distribution/ISRCManager.tsx:226
+- `cache-key: /api/distribution/codes/upc` — client/src/components/distribution/ISRCManager.tsx:229
+- `cache-key: /api/distribution/releases` — client/src/components/distribution/ReleaseActionsPanel.tsx:144
+- `cache-key: /api/distribution/releases` — client/src/components/distribution/ReleaseActionsPanel.tsx:174
+- `cache-key: /api/distribution/releases/${releaseId}/status` — client/src/components/distribution/ReleaseStatusDashboard.tsx:201
+- `cache-key: /api/distribution/releases` — client/src/components/distribution/ReleaseWizard.tsx:174
+- `cache-key: /api/distribution/releases` — client/src/components/distribution/ReleaseWizard.tsx:362
+- `cache-key: /api/distribution/hyperfollow` — client/src/components/distribution/ReleaseWizard.tsx:365
+- `cache-key: /api/distribution/royalties/payouts` — client/src/components/distribution/RoyaltyReconciliation.tsx:198
+- `cache-key: /api/distribution/royalties/tax-documents` — client/src/components/distribution/RoyaltyReconciliation.tsx:226
+- `cache-key: /api/distribution/royalties/discrepancies` — client/src/components/distribution/RoyaltyReconciliation.tsx:246
+- `cache-key: /api/distribution/releases/${releaseId}/submission-status` — client/src/components/distribution/SubmissionStatusTracker.tsx:219
+- `cache-key: /api/distribution/releases/${releaseId}/submission-status` — client/src/components/distribution/SubmissionStatusTracker.tsx:246
+- `cache-key: /api/distribution/disputes` — client/src/components/distribution/TakedownManager.tsx:124
+- `cache-key: /api/distribution/claims` — client/src/components/distribution/TakedownManager.tsx:126
+- `not-api-reference: /api/export/download/${item.id}` — client/src/components/export/BulkExportManager.tsx:553
+- `not-api-reference: /api/export/download/zip/${jobId}` — client/src/components/export/BulkExportManager.tsx:594
+- `not-api-reference: /api/export/audio/${projectId}` — client/src/components/export/ExportDialog.tsx:244
+- `not-api-reference: /api/export/data` — client/src/components/export/ExportDialog.tsx:245
+- `cache-key: /api/export/history` — client/src/components/export/ExportHistory.tsx:367
+- `cache-key: /api/files/list` — client/src/components/files/BulkFileManager.tsx:263
+- `cache-key: /api/files/storage-usage` — client/src/components/files/BulkFileManager.tsx:264
+- `cache-key: /api/files/list` — client/src/components/files/FileOperationsMenu.tsx:163
+- `cache-key: /api/files/storage-usage` — client/src/components/files/FileOperationsMenu.tsx:165
+- `cache-key: /api/storage/quota` — client/src/components/files/FileOperationsMenu.tsx:167
+- `not-api-reference: /api/storage/upload` — client/src/components/files/FileUploader.tsx:118
+- `cache-key: /api/storefront/${storefrontId}/bogo-promotions/all` — client/src/components/marketplace/BogoPromotionsManager.tsx:138
+- `cache-key: /api/storefront/${storefrontId}/bogo-promotions/all` — client/src/components/marketplace/BogoPromotionsManager.tsx:161
+- `cache-key: /api/storefront/${storefrontId}/bogo-promotions/all` — client/src/components/marketplace/BogoPromotionsManager.tsx:184
+- `cache-key: /api/storefront/${storefrontId}/bogo-promotions/all` — client/src/components/marketplace/BogoPromotionsManager.tsx:205
+- `browser-navigation: /api/dns/${storefrontId}/export?domain=${encodeURIComponent(domain)}` — client/src/components/marketplace/DNSZoneEditor.tsx:396
+- `cache-key: /api/payouts/balance` — client/src/components/marketplace/PayoutDashboard.tsx:136
+- `cache-key: /api/payouts/history` — client/src/components/marketplace/PayoutDashboard.tsx:137
+- `cache-key: /api/payouts/history` — client/src/components/marketplace/PayoutDashboard.tsx:465
+- `query-key-custom-fn: /api/marketplace/producer-analytics` — client/src/components/marketplace/ProducerAnalyticsDashboard.tsx:154
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:115
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:226
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:228
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:231
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:238
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:246
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:253
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:268
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:270
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:273
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:280
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:288
+- `cache-key: /api/notifications` — client/src/components/notifications/NotificationCenter.tsx:295
+- `cache-key: /api/notifications/preferences` — client/src/components/notifications/NotificationPreferences.tsx:158
+- `cache-key: /api/notifications/push-key` — client/src/components/notifications/NotificationPreferences.tsx:175
+- `cache-key: /api/notifications/preferences` — client/src/components/notifications/NotificationPreferences.tsx:199
+- `cache-key: /api/notifications/preferences` — client/src/components/notifications/NotificationPreferences.tsx:256
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:20
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:68
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:70
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:73
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:81
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:91
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:100
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:102
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:105
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:115
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:125
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:134
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:136
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:139
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:149
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:159
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:168
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:170
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:172
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:180
+- `cache-key: /api/notifications` — client/src/components/notifications/useNotifications.ts:190
+- `cache-key: /api/notifications/preferences` — client/src/components/notifications/useNotifications.ts:204
+- `cache-key: /api/users/seen-features` — client/src/components/onboarding/ContextualFeatureHint.tsx:107
+- `cache-key: /api/users/seen-features` — client/src/components/onboarding/ContextualFeatureHint.tsx:110
+- `cache-key: /api/users/seen-features` — client/src/components/onboarding/ContextualFeatureHint.tsx:113
+- `cache-key: /api/users/seen-features` — client/src/components/onboarding/ContextualFeatureHint.tsx:123
+- `cache-key: /api/users/seen-features` — client/src/components/onboarding/ContextualFeatureHint.tsx:129
+- `cache-key: /api/onboarding/tutorials` — client/src/components/onboarding/FeatureDiscoveryTooltip.tsx:72
+- `cache-key: /api/onboarding/progress` — client/src/components/onboarding/FirstActionCelebration.tsx:168
+- `cache-key: /api/achievements/user` — client/src/components/onboarding/FirstActionCelebration.tsx:169
+- `cache-key: /api/onboarding/progress` — client/src/components/onboarding/FirstWeekSuccessPath.tsx:137
+- `cache-key: /api/onboarding/progress` — client/src/components/onboarding/FirstWeekSuccessPath.tsx:170
+- `cache-key: /api/onboarding/progress` — client/src/components/onboarding/OnboardingChecklist.tsx:116
+- `cache-key: /api/onboarding/progress` — client/src/components/onboarding/OnboardingChecklist.tsx:150
+- `cache-key: /api/users/seen-features` — client/src/components/onboarding/PowerFeatureSpotlight.tsx:113
+- `cache-key: /api/users/seen-features` — client/src/components/onboarding/PowerFeatureSpotlight.tsx:116
+- `cache-key: /api/users/seen-features` — client/src/components/onboarding/PowerFeatureSpotlight.tsx:119
+- `cache-key: /api/users/seen-features` — client/src/components/onboarding/PowerFeatureSpotlight.tsx:129
+- `cache-key: /api/users/seen-features` — client/src/components/onboarding/PowerFeatureSpotlight.tsx:135
+- `not-api-reference: /api/dashboard/comprehensive` — client/src/components/onboarding/SimplifiedDashboard.tsx:31
+- `cache-key: /api/auth/me` — client/src/components/onboarding/WelcomeFlow.tsx:179
+- `cache-key: /api/onboarding/progress` — client/src/components/onboarding/WelcomeFlow.tsx:180
+- `not-api-reference: /api/auth/avatar` — client/src/components/onboarding/WelcomeFlow.tsx:256
+- `not-api-reference: /api/auth/avatar` — client/src/components/onboarding/WelcomeWizard.tsx:220
+- `cache-key: /api/personalization/dashboard-layout` — client/src/components/personalization/DashboardCustomizer.tsx:329
+- `cache-key: /api/personalization/layout-presets` — client/src/components/personalization/DashboardCustomizer.tsx:346
+- `cache-key: /api/personalization/feature-usage` — client/src/components/personalization/FeaturePrioritizer.tsx:95
+- `cache-key: /api/personalization/feature-usage` — client/src/components/personalization/FeaturePrioritizer.tsx:110
+- `cache-key: /api/personalization/feature-usage` — client/src/components/personalization/FeaturePrioritizer.tsx:125
+- `cache-key: /api/personalization/next-action` — client/src/components/personalization/NextActionCard.tsx:122
+- `cache-key: /api/personalization/recommendations` — client/src/components/personalization/NextActionCard.tsx:125
+- `cache-key: /api/personalization/next-action` — client/src/components/personalization/NextActionCard.tsx:141
+- `cache-key: /api/personalization/recommendations` — client/src/components/personalization/NextActionCard.tsx:144
+- `not-api-reference: /api/distribution/releases` — client/src/components/personalization/PersonalizedDashboard.tsx:225
+- `cache-key: /api/personalization/learning-insights` — client/src/components/personalization/PreferenceLearner.tsx:110
+- `cache-key: /api/personalization/preferences` — client/src/components/personalization/PreferenceLearner.tsx:113
+- `cache-key: /api/personalization/learning-insights` — client/src/components/personalization/PreferenceLearner.tsx:129
+- `cache-key: /api/personalization/learning-state` — client/src/components/personalization/PreferenceLearner.tsx:144
+- `cache-key: /api/personalization/learning-insights` — client/src/components/personalization/PreferenceLearner.tsx:147
+- `cache-key: /api/personalization/interaction-patterns` — client/src/components/personalization/PreferenceLearner.tsx:150
+- `cache-key: /api/personalization/recommendations` — client/src/components/personalization/RecommendedActions.tsx:104
+- `cache-key: /api/personalization/recommendations` — client/src/components/personalization/RecommendedActions.tsx:120
+- `cache-key: /api/personalization/preferences` — client/src/components/personalization/SmartDefaults.tsx:296
+- `cache-key: /api/personalization/dashboard-layout` — client/src/components/personalization/SmartDefaults.tsx:299
+- `cache-key: /api/personalization/preferences` — client/src/components/personalization/SmartDefaultsProvider.tsx:168
+- `cache-key: /api/personalization/behavior-analysis` — client/src/components/personalization/SmartDefaultsProvider.tsx:187
+- `cache-key: /api/personalization/preferences` — client/src/components/personalization/SmartDefaultsProvider.tsx:210
+- `cache-key: /api/personalization/dashboard-layout` — client/src/components/personalization/SmartDefaultsProvider.tsx:213
+- `cache-key: /api/personalization/preferences` — client/src/components/personalization/SmartDefaultsProvider.tsx:228
+- `cache-key: /api/personalization/dashboard-layout` — client/src/components/personalization/SmartDefaultsProvider.tsx:231
+- `cache-key: /api/personalization/dashboard-layout` — client/src/components/personalization/SmartWidget.tsx:110
+- `cache-key: /api/countdowns` — client/src/components/releases/PreReleaseHub.tsx:102
+- `cache-key: /api/countdowns/${countdownId}` — client/src/components/releases/ReleaseChecklist.tsx:83
+- `query-key-custom-fn: /api/search/discover` — client/src/components/search/DiscoveryFeed.tsx:40
+- `query-key-custom-fn: /api/search/similar` — client/src/components/search/DiscoveryFeed.tsx:460
+- `query-key-custom-fn: /api/search/filter-presets` — client/src/components/search/FilterPresetsManager.tsx:76
+- `cache-key: /api/search/filter-presets` — client/src/components/search/FilterPresetsManager.tsx:107
+- `cache-key: /api/search/filter-presets` — client/src/components/search/FilterPresetsManager.tsx:139
+- `cache-key: /api/search/filter-presets` — client/src/components/search/FilterPresetsManager.tsx:172
+- `query-key-custom-fn: /api/search/autocomplete` — client/src/components/search/GlobalSearch.tsx:69
+- `query-key-custom-fn: /api/search/history` — client/src/components/search/GlobalSearch.tsx:87
+- `query-key-custom-fn: /api/search/trending` — client/src/components/search/GlobalSearch.tsx:100
+- `cache-key: /api/search/history` — client/src/components/search/GlobalSearch.tsx:124
+- `cache-key: /api/search/history` — client/src/components/search/GlobalSearch.tsx:143
+- `query-key-custom-fn: /api/search/unified` — client/src/components/search/GlobalSearchDialog.tsx:177
+- `query-key-custom-fn: /api/search/history` — client/src/components/search/GlobalSearchDialog.tsx:196
+- `query-key-custom-fn: /api/search/trending` — client/src/components/search/GlobalSearchDialog.tsx:208
+- `cache-key: /api/search/history` — client/src/components/search/GlobalSearchDialog.tsx:232
+- `query-key-custom-fn: /api/search/trending` — client/src/components/search/NoResultsState.tsx:90
+- `query-key-custom-fn: /api/search/history` — client/src/components/search/RecentSearches.tsx:63
+- `cache-key: /api/search/history` — client/src/components/search/RecentSearches.tsx:86
+- `cache-key: /api/search/history` — client/src/components/search/RecentSearches.tsx:118
+- `query-key-custom-fn: /api/search/history` — client/src/components/search/RecentSearches.tsx:371
+- `query-key-custom-fn: /api/search/trending` — client/src/components/search/SearchEmptyState.tsx:55
+- `query-key-custom-fn: /api/search/filter-presets` — client/src/components/search/SearchFilters.tsx:175
+- `cache-key: /api/search/filter-presets` — client/src/components/search/SearchFilters.tsx:203
+- `query-key-custom-fn: /api/search/unified` — client/src/components/search/SearchResults.tsx:56
+- `query-key-custom-fn: /api/search/suggestions` — client/src/components/search/SearchSuggestions.tsx:79
+- `query-key-custom-fn: /api/search/history` — client/src/components/search/SearchSuggestions.tsx:98
+- `query-key-custom-fn: /api/search/trending` — client/src/components/search/SearchSuggestions.tsx:110
+- `query-key-custom-fn: /api/social/hashtags/trending` — client/src/components/search/SearchSuggestions.tsx:123
+- `query-key-custom-fn: /api/search/autocomplete` — client/src/components/search/SearchSuggestions.tsx:379
+- `cache-key: /api/auth/api-keys` — client/src/components/settings/ApiKeyManagement.tsx:126
+- `cache-key: /api/auth/api-keys` — client/src/components/settings/ApiKeyManagement.tsx:152
+- `cache-key: /api/auth/api-keys` — client/src/components/settings/ApiKeyManagement.tsx:178
+- `cache-key: /api/auth/connected-accounts` — client/src/components/settings/ConnectedAccountsManager.tsx:155
+- `cache-key: /api/auth/connected-accounts` — client/src/components/settings/ConnectedAccountsManager.tsx:183
+- `cache-key: /api/auth/connected-accounts` — client/src/components/settings/ConnectedAccountsManager.tsx:217
+- `cache-key: /api/email-preferences` — client/src/components/settings/EmailPreferences.tsx:98
+- `cache-key: /api/auth/sessions` — client/src/components/settings/LoginHistory.tsx:125
+- `cache-key: /api/auth/sessions` — client/src/components/settings/LoginHistory.tsx:147
+- `cache-key: /api/auth/privacy-settings` — client/src/components/settings/PrivacySettings.tsx:74
+- `cache-key: /api/auth/data-export-status` — client/src/components/settings/PrivacySettings.tsx:97
+- `cache-key: /api/auth/recovery-codes/status` — client/src/components/settings/RecoveryCodes.tsx:80
+- `cache-key: /api/preferences/security-alerts` — client/src/components/settings/SecurityAlertsSettings.tsx:55
+- `cache-key: /api/social/approvals/stats` — client/src/components/social/ApprovalDashboard.tsx:163
+- `cache-key: /api/social/approvals/pending` — client/src/components/social/ApprovalDashboard.tsx:166
+- `cache-key: /api/social/approvals/my-posts` — client/src/components/social/ApprovalDashboard.tsx:169
+- `cache-key: /api/social/approvals/history` — client/src/components/social/ApprovalDashboard.tsx:172
+- `cache-key: /api/social/benchmark/competitors` — client/src/components/social/CompetitorBenchmark.tsx:644
+- `cache-key: /api/social/benchmark/insights` — client/src/components/social/CompetitorBenchmark.tsx:647
+- `query-key-custom-fn: /api/social/ai-content/trending-topics` — client/src/components/social/ContentGenerator.tsx:389
+- `query-key-custom-fn: /api/social/ai-content/posting-times` — client/src/components/social/ContentGenerator.tsx:408
+- `query-key-custom-fn: /api/social/generate/context` — client/src/components/social/ContentGenerator.tsx:425
+- `cache-key: /api/social/inbox` — client/src/components/social/UnifiedInbox.tsx:176
+- `browser-navigation: /api/social/connections` — client/src/components/social/platform-connections.tsx:96
+- `cache-key: /api/social/connections` — client/src/components/social/platform-connections.tsx:123
+- `cache-key: /api/social/connections` — client/src/components/social/platform-connections.tsx:144
+- `cache-key: /api/social/platform-status` — client/src/components/social/platform-connections.tsx:146
+- `query-key-custom-fn: /api/studio/ai-music/presets` — client/src/components/studio/AIAssistantPanel.tsx:83
+- `query-key-custom-fn: /api/studio/ai-music/suggestions` — client/src/components/studio/AIAssistantPanel.tsx:99
+- `cache-key: /api/assets` — client/src/components/studio/AssetUploadDialog.tsx:46
+- `query-key-custom-fn: /api/assets` — client/src/components/studio/BrowserPanel.tsx:490
+- `query-key-custom-fn: /api/assets` — client/src/components/studio/BrowserPanel.tsx:503
+- `query-key-custom-fn: /api/studio/plugins` — client/src/components/studio/BrowserPanel.tsx:520
+- `query-key-custom-fn: /api/studio/ai-music/presets` — client/src/components/studio/BrowserPanel.tsx:534
+- `not-api-reference: /api/studio/conversions` — client/src/components/studio/ConversionDialog.tsx:109
+- `not-api-reference: /api/studio/conversions` — client/src/components/studio/ConversionDialog.tsx:110
+- `cache-key: /api/studio/conversions` — client/src/components/studio/ConversionDialog.tsx:144
+- `cache-key: /api/studio/conversions` — client/src/components/studio/ConversionDialog.tsx:168
+- `not-api-reference: /api/studio/conversions/${conversionId}/download` — client/src/components/studio/ConversionDialog.tsx:228
+- `cache-key: /api/studio/projects` — client/src/components/studio/ConversionDialog.tsx:251
+- `cache-key: /api/distribution/packages/${projectId}` — client/src/components/studio/DistributionDialog.tsx:203
+- `cache-key: /api/distribution/packages/${existingPackage.id}/tracks` — client/src/components/studio/DistributionDialog.tsx:245
+- `cache-key: /api/distribution/packages/${projectId}` — client/src/components/studio/DistributionDialog.tsx:291
+- `cache-key: /api/studio/projects` — client/src/components/studio/FileUploadZone.tsx:218
+- `cache-key: /api/studio/projects` — client/src/components/studio/FileUploadZone.tsx:221
+- `cache-key: /api/studio/recent-files` — client/src/components/studio/FileUploadZone.tsx:223
+- `query-key-custom-fn: /api/studio/projects` — client/src/components/studio/FlowStateProjectSelector.tsx:94
+- `cache-key: /api/studio/projects` — client/src/components/studio/FlowStateProjectSelector.tsx:109
+- `cache-key: /api/studio/projects` — client/src/components/studio/FlowStateProjectSelector.tsx:126
+- `cache-key: /api/studio/projects` — client/src/components/studio/FlowStateProjectSelector.tsx:159
+- `not-api-reference: /api/studio/templates?category=${encodeURIComponent(category)}` — client/src/components/studio/FlowStateTemplateDialog.tsx:65
+- `not-api-reference: /api/studio/templates` — client/src/components/studio/FlowStateTemplateDialog.tsx:66
+- `cache-key: /api/studio/projects` — client/src/components/studio/MixerPanel.tsx:231
+- `cache-key: /api/projects` — client/src/components/studio/ProjectSettingsDialog.tsx:130
+- `cache-key: /api/studio/projects` — client/src/components/studio/ProjectSettingsDialog.tsx:131
+- `cache-key: /api/studio/projects` — client/src/components/studio/RecordingPanel.tsx:220
+- `cache-key: /api/studio/tracks` — client/src/components/studio/RecordingPanel.tsx:229
+- `cache-key: /api/studio/projects` — client/src/components/studio/RecordingPanel.tsx:234
+- `cache-key: /api/projects` — client/src/components/studio/SaveAsDialog.tsx:72
+- `cache-key: /api/studio/projects` — client/src/components/studio/SaveAsDialog.tsx:73
+- `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/SaveAsDialog.tsx:75
+- `cache-key: /api/studio/projects` — client/src/components/studio/StudioLoader.tsx:185
+- `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioLoader.tsx:188
+- `cache-key: /api/projects` — client/src/components/studio/StudioLoader.tsx:190
+- `cache-key: /api/projects` — client/src/components/studio/StudioOneDAW.tsx:1608
+- `cache-key: /api/studio/projects` — client/src/components/studio/StudioOneDAW.tsx:1610
+- `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioOneDAW.tsx:1613
+- `cache-key: /api/projects` — client/src/components/studio/StudioOneDAW.tsx:2578
+- `cache-key: /api/studio/projects` — client/src/components/studio/StudioOneDAW.tsx:2579
+- `not-api-reference: /api/studio/upload` — client/src/components/studio/StudioProjectDialog.tsx:221
+- `cache-key: /api/projects` — client/src/components/studio/StudioProjectDialog.tsx:490
+- `cache-key: /api/studio/projects` — client/src/components/studio/StudioProjectDialog.tsx:491
+- `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioProjectDialog.tsx:493
+- `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioStartHub.tsx:200
+- `cache-key: /api/studio/projects` — client/src/components/studio/StudioStartHub.tsx:202
+- `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioStartHub.tsx:227
+- `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioStartHub.tsx:260
+- `cache-key: /api/user/preferences` — client/src/components/studio/StudioTutorial.tsx:96
+- `cache-key: /api/user/preferences/studio` — client/src/components/studio/UICustomizer.tsx:406
+- `not-api-reference: /api/assistant/history` — client/src/components/support/AIAssistantBubble.tsx:112
+- `not-api-reference: /api/assistant/history?before=${encodeURIComponent(oldestId)}` — client/src/components/support/AIAssistantBubble.tsx:148
+- `not-api-reference: /api/assistant/chat` — client/src/components/support/AIAssistantBubble.tsx:192
+- `not-api-reference: /api/assistant/history` — client/src/components/support/AIAssistantBubble.tsx:243
+- `cache-key: /api/personalization/preferences` — client/src/contexts/PersonalizationContext.tsx:252
+- `cache-key: /api/personalization/preferences` — client/src/contexts/PersonalizationContext.tsx:274
+- `cache-key: /api/personalization/dashboard-layout` — client/src/contexts/PersonalizationContext.tsx:277
+- `cache-key: /api/personalization/recommendations` — client/src/contexts/PersonalizationContext.tsx:280
+- `cache-key: /api/personalization/preferences` — client/src/contexts/PersonalizationContext.tsx:295
+- `cache-key: /api/personalization/dashboard-layout` — client/src/contexts/PersonalizationContext.tsx:298
+- `cache-key: /api/personalization/recommendations` — client/src/contexts/PersonalizationContext.tsx:313
+- `cache-key: /api/personalization/recommendations` — client/src/contexts/PersonalizationContext.tsx:328
+- `cache-key: /api/personalization/smart-schedule` — client/src/contexts/PersonalizationContext.tsx:347
+- `cache-key: /api/personalization/dashboard-layout` — client/src/contexts/PersonalizationContext.tsx:366
+- `cache-key: /api/personalization/dashboard-layout` — client/src/contexts/PersonalizationContext.tsx:388
+- `cache-key: /api/personalization/feature-usage` — client/src/contexts/PersonalizationContext.tsx:416
+- `cache-key: /api/personalization/learning-insights` — client/src/contexts/PersonalizationContext.tsx:450
+- `cache-key: /api/personalization/preferences` — client/src/contexts/PersonalizationContext.tsx:453
+- `cache-key: /api/personalization/learning-insights` — client/src/contexts/PersonalizationContext.tsx:468
+- `cache-key: /api/personalization/track-batch` — client/src/contexts/PersonalizationContext.tsx:484
+- `query-key-custom-fn: /api/advertising/campaigns` — client/src/hooks/use-advertisement.ts:65
+- `query-key-custom-fn: /api/advertising/ai-insights` — client/src/hooks/use-advertisement.ts:74
+- `cache-key: /api/advertising/campaigns` — client/src/hooks/use-advertisement.ts:98
+- `cache-key: /api/advertising/campaigns` — client/src/hooks/use-advertisement.ts:132
+- `cache-key: /api/advertising/campaigns` — client/src/hooks/use-advertisement.ts:159
+- `cache-key: /api/user/accessibility-preferences` — client/src/hooks/useAccessibilityPreferences.ts:58
+- `cache-key: /api/user/accessibility-preferences` — client/src/hooks/useAccessibilityPreferences.ts:150
+- `not-api-reference: /api/analytics/` — client/src/hooks/useAnalyticsInvalidation.ts:5
+- `not-api-reference: /api/analytics-alerts/` — client/src/hooks/useAnalyticsInvalidation.ts:6
+- `not-api-reference: /api/dashboard/` — client/src/hooks/useAnalyticsInvalidation.ts:7
+- `not-api-reference: /api/artist-progress/` — client/src/hooks/useAnalyticsInvalidation.ts:8
+- `not-api-reference: /api/revenue-forecast/` — client/src/hooks/useAnalyticsInvalidation.ts:9
+- `not-api-reference: /api/admin/analytics` — client/src/hooks/useAnalyticsInvalidation.ts:10
+- `not-api-reference: /api/dashboard/comprehensive` — client/src/hooks/useAnalyticsInvalidation.ts:14
+- `not-api-reference: /api/analytics/dashboard` — client/src/hooks/useAnalyticsInvalidation.ts:15
+- `not-api-reference: /api/ai/insights` — client/src/hooks/useAnalyticsInvalidation.ts:16
+- `not-api-reference: /api/dashboard/next-action` — client/src/hooks/useAnalyticsInvalidation.ts:17
+- `not-api-reference: /api/artist-progress/dashboard` — client/src/hooks/useAnalyticsInvalidation.ts:18
+- `not-api-reference: /api/marketplace/sales-analytics` — client/src/hooks/useAnalyticsInvalidation.ts:21
+- `not-api-reference: /api/royalties` — client/src/hooks/useAnalyticsInvalidation.ts:21
+- `not-api-reference: /api/distribution/analytics/growth` — client/src/hooks/useAnalyticsInvalidation.ts:24
+- `not-api-reference: /api/distribution/hyperfollow/analytics` — client/src/hooks/useAnalyticsInvalidation.ts:25
+- `not-api-reference: /api/distribution/streaming-trends` — client/src/hooks/useAnalyticsInvalidation.ts:26
+- `not-api-reference: /api/advertising/audience-segments` — client/src/hooks/useAnalyticsInvalidation.ts:30
+- `not-api-reference: /api/advertising/lookalike-audiences` — client/src/hooks/useAnalyticsInvalidation.ts:31
+- `not-api-reference: /api/advertising/roas/audience-segments` — client/src/hooks/useAnalyticsInvalidation.ts:32
+- `not-api-reference: /api/advertising/dashboard/attribution` — client/src/hooks/useAnalyticsInvalidation.ts:33
+- `not-api-reference: /api/advertising/dashboard/paths` — client/src/hooks/useAnalyticsInvalidation.ts:34
+- `cache-key: /api/analytics/dashboard` — client/src/hooks/useAnalyticsInvalidation.ts:64
+- `cache-key: /api/dashboard/` — client/src/hooks/useAnalyticsInvalidation.ts:64
+- `not-api-reference: /api/batch/${resource}/${suffix}` — client/src/hooks/useBatchAction.ts:168
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:349
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:363
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:378
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:392
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchAction.ts:419
+- `cache-key: /api/social/calendar` — client/src/hooks/useBatchAction.ts:419
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchAction.ts:433
+- `cache-key: /api/social/calendar` — client/src/hooks/useBatchAction.ts:433
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchAction.ts:448
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:477
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:478
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:494
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:495
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:512
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:513
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:530
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:531
+- `cache-key: /api/files/list` — client/src/hooks/useBatchAction.ts:559
+- `cache-key: /api/files/storage-usage` — client/src/hooks/useBatchAction.ts:560
+- `cache-key: /api/storage/quota` — client/src/hooks/useBatchAction.ts:561
+- `cache-key: /api/files/list` — client/src/hooks/useBatchAction.ts:578
+- `cache-key: /api/files/storage-usage` — client/src/hooks/useBatchAction.ts:579
+- `cache-key: /api/storage/quota` — client/src/hooks/useBatchAction.ts:580
+- `cache-key: /api/files/list` — client/src/hooks/useBatchAction.ts:609
+- `not-api-reference: /api/batch/${resource}/${suffix}` — client/src/hooks/useBatchActions.ts:226
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchActions.ts:419
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchActions.ts:433
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchActions.ts:448
+- `cache-key: /api/studio/projects` — client/src/hooks/useBatchActions.ts:469
+- `cache-key: /api/studio/projects` — client/src/hooks/useBatchActions.ts:484
+- `cache-key: /api/studio/projects` — client/src/hooks/useBatchActions.ts:512
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchActions.ts:533
+- `cache-key: /api/social/calendar` — client/src/hooks/useBatchActions.ts:533
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchActions.ts:547
+- `cache-key: /api/social/calendar` — client/src/hooks/useBatchActions.ts:547
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchActions.ts:561
+- `cache-key: /api/social/approvals` — client/src/hooks/useBatchActions.ts:561
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchActions.ts:583
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchActions.ts:584
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchActions.ts:601
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchActions.ts:602
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchActions.ts:618
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchActions.ts:619
+- `cache-key: /api/batch/${resource}/delete` — client/src/hooks/useBulkAction.ts:132
+- `cache-key: /api/batch/${resource}/update` — client/src/hooks/useBulkAction.ts:138
+- `not-api-reference: /api/batch/${resource}/export` — client/src/hooks/useBulkAction.ts:143
+- `not-api-reference: /api/batch/${resource}/submit` — client/src/hooks/useBulkAction.ts:148
+- `not-api-reference: /api/batch/${resource}/withdraw` — client/src/hooks/useBulkAction.ts:153
+- `not-api-reference: /api/batch/${resource}/schedule` — client/src/hooks/useBulkAction.ts:158
+- `not-api-reference: /api/batch/${resource}/process` — client/src/hooks/useBulkAction.ts:163
+- `cache-key: /api/${resource}` — client/src/hooks/useBulkAction.ts:286
+- `cache-key: /api/${resource}` — client/src/hooks/useBulkAction.ts:310
+- `cache-key: /api/${resource}` — client/src/hooks/useBulkAction.ts:357
+- `cache-key: /api/personalization/dashboard-layout` — client/src/hooks/useDashboardPersonalization.ts:69
+- `cache-key: /api/personalization/behavior-analysis` — client/src/hooks/useDashboardPersonalization.ts:94
+- `cache-key: /api/personalization/dashboard-layout` — client/src/hooks/useDashboardPersonalization.ts:219
+- `cache-key: /api/personalization/feature-usage` — client/src/hooks/useFeatureUsage.ts:100
+- `cache-key: /api/personalization/behavior-analysis` — client/src/hooks/useFeatureUsage.ts:103
+- `cache-key: /api/personalization/preferences` — client/src/hooks/useFeatureUsage.ts:119
+- `cache-key: /api/personalization/preferences` — client/src/hooks/useFeatureUsage.ts:134
+- `cache-key: /api/personalization/preferences` — client/src/hooks/useFeatureUsage.ts:149
+- `not-api-reference: /api/personalization/track-feature` — client/src/hooks/useFeatureUsage.ts:280
+- `cache-key: /api/personalization/behavior-analysis` — client/src/hooks/useFeatureUsageTracking.ts:42
+- `cache-key: /api/personalization/behavior-analysis` — client/src/hooks/useFeatureUsageTracking.ts:48
+- `cache-key: /api/studio/projects` — client/src/hooks/useFlowStateAdapter.ts:187
+- `cache-key: /api/studio/projects` — client/src/hooks/useFlowStateAdapter.ts:202
+- `cache-key: /api/studio/projects` — client/src/hooks/useFlowStateAdapter.ts:227
+- `not-api-reference: /api/health` — client/src/hooks/useNetworkStatus.ts:51
+- `cache-key: /api/onboarding/progress` — client/src/hooks/useOnboardingProgress.ts:67
+- `cache-key: /api/personalization/dashboard-layout` — client/src/hooks/usePersonalizedLayout.ts:53
+- `cache-key: /api/personalization/dashboard-layout` — client/src/hooks/usePersonalizedLayout.ts:151
+- `cache-key: /api/personalization/recommended-settings` — client/src/hooks/usePersonalizedLayout.ts:173
+- `cache-key: /api/personalization/recommended-settings?artistType=${artistType}` — client/src/hooks/usePersonalizedLayout.ts:176
+- `not-api-reference: /api/personalization/recommended-settings` — client/src/hooks/usePersonalizedLayout.ts:177
+- `not-api-reference: /api/projects` — client/src/hooks/useProjectSync.ts:12
+- `not-api-reference: /api/studio/projects` — client/src/hooks/useProjectSync.ts:13
+- `not-api-reference: /api/studio/start-hub/summary` — client/src/hooks/useProjectSync.ts:14
+- `cache-key: /api/studio/projects/${projectId}` — client/src/hooks/useProjectSync.ts:143
+- `not-api-reference: /api/` — client/src/hooks/useProjectSync.ts:647
+- `not-api-reference: /api/marketplace/audio/${cleanPath}` — client/src/hooks/useProjectSync.ts:650
+- `cache-key: /api/notifications/push-subscriptions/status` — client/src/hooks/usePushNotifications.ts:78
+- `cache-key: /api/notifications/push-subscriptions/status` — client/src/hooks/usePushNotifications.ts:110
+- `cache-key: /api/notifications/push-subscriptions/status` — client/src/hooks/usePushNotifications.ts:128
+- `cache-key: /api/personalization/recommendations` — client/src/hooks/useRecommendedActions.ts:109
+- `cache-key: /api/personalization/next-action` — client/src/hooks/useRecommendedActions.ts:112
+- `cache-key: /api/personalization/recommendations` — client/src/hooks/useRecommendedActions.ts:127
+- `query-key-custom-fn: /api/shortcuts/user` — client/src/hooks/useShortcutCustomization.ts:74
+- `query-key-custom-fn: /api/shortcuts/defaults` — client/src/hooks/useShortcutCustomization.ts:81
+- `cache-key: /api/shortcuts/user` — client/src/hooks/useShortcutCustomization.ts:89
+- `cache-key: /api/shortcuts/user` — client/src/hooks/useShortcutCustomization.ts:185
+- `cache-key: /api/personalization/smart-schedule` — client/src/hooks/useSmartScheduling.ts:91
+- `cache-key: /api/studio/projects` — client/src/hooks/useStudioController.ts:270
+- `cache-key: /api/studio/projects` — client/src/hooks/useStudioController.ts:292
+- `cache-key: /api/studio/projects` — client/src/hooks/useStudioController.ts:304
+- `cache-key: /api/studio/projects` — client/src/hooks/useStudioController.ts:322
+- `cache-key: /api/studio/projects` — client/src/hooks/useStudioController.ts:334
+- `not-api-reference: /api/studio/templates` — client/src/hooks/useTemplate.ts:128
+- `not-api-reference: /api/studio/templates` — client/src/hooks/useTemplate.ts:129
+- `not-api-reference: /api/studio/templates?category=${encodeURIComponent(type)}` — client/src/hooks/useTemplate.ts:139
+- `not-api-reference: /api/studio/templates` — client/src/hooks/useTemplate.ts:140
+- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:156
+- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:189
+- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:209
+- `cache-key: /api/projects` — client/src/hooks/useTemplate.ts:296
+- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:298
+- `query-key-custom-fn: /api/studio/templates` — client/src/hooks/useTemplate.ts:405
+- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:459
+- `cache-key: /api/preferences/user` — client/src/hooks/useUserPreferences.ts:97
+- `cache-key: /api/preferences/dashboard-layout` — client/src/hooks/useUserPreferences.ts:159
+- `cache-key: /api/preferences/user` — client/src/hooks/useUserPreferences.ts:161
+- `not-api-reference: /api/` — client/src/lib/audioEngine.ts:765
+- `not-api-reference: /api/marketplace/audio/${cleanPath}` — client/src/lib/audioEngine.ts:768
+- `not-api-reference: /api/` — client/src/lib/daw/AudioWorkletEngine.ts:760
+- `not-api-reference: /api/marketplace/audio/${cleanPath}` — client/src/lib/daw/AudioWorkletEngine.ts:763
+- `comment: /api/auth/avatar` — client/src/lib/imageUpload.ts:8
+- `comment: /api/storage/upload` — client/src/lib/imageUpload.ts:8
+- `not-api-reference: /api/auth/me` — client/src/lib/prefetch.ts:70
+- `not-api-reference: /api/auth/me` — client/src/lib/prefetch.ts:73
+- `not-api-reference: /api/projects?limit=5` — client/src/lib/prefetch.ts:73
+- `not-api-reference: /api/projects` — client/src/lib/prefetch.ts:74
+- `not-api-reference: /api/studio/projects` — client/src/lib/prefetch.ts:75
+- `not-api-reference: /api/marketplace/beats?limit=12` — client/src/lib/prefetch.ts:76
+- `not-api-reference: /api/analytics/dashboard` — client/src/lib/prefetch.ts:77
+- `not-api-reference: /api/auth/me` — client/src/lib/prefetch.ts:78
+- `not-api-reference: /api/royalties/summary` — client/src/lib/prefetch.ts:79
+- `cache-key: /api/auth/me` — client/src/lib/prefetch.ts:222
+- `comment: /api/projects` — client/src/lib/prefetch.ts:225
+- `cache-key: /api/projects` — client/src/lib/prefetch.ts:228
+- `cache-key: /api/projects` — client/src/lib/prefetch.ts:230
+- `cache-key: /api/projects` — client/src/lib/prefetch.ts:235
+- `cache-key: /api/projects` — client/src/lib/prefetch.ts:240
+- `cache-key: /api/notifications` — client/src/lib/prefetch.ts:246
+- `cache-key: /api/notifications/unread` — client/src/lib/prefetch.ts:247
+- `comment: /api/releases` — client/src/lib/prefetch.ts:251
+- `cache-key: /api/distribution/releases` — client/src/lib/prefetch.ts:253
+- `not-api-reference: /api/metrics/web-vitals` — client/src/lib/reportWebVitals.ts:3
+- `query-key-custom-fn: /api/admin/users` — client/src/pages/Admin.tsx:236
+- `query-key-custom-fn: /api/admin/analytics` — client/src/pages/Admin.tsx:244
+- `query-key-custom-fn: /api/admin/system-health` — client/src/pages/Admin.tsx:253
+- `query-key-custom-fn: /api/dns/resolver/status` — client/src/pages/Admin.tsx:270
+- `cache-key: /api/admin/users` — client/src/pages/Admin.tsx:349
+- `cache-key: /api/admin/users` — client/src/pages/Admin.tsx:382
+- `cache-key: /api/admin/users` — client/src/pages/Admin.tsx:399
+- `cache-key: /api/admin/users` — client/src/pages/Admin.tsx:413
+- `cache-key: /api/admin/moderation/reports` — client/src/pages/Admin.tsx:442
+- `cache-key: /api/admin/payment-bypass/status` — client/src/pages/Admin.tsx:507
+- `cache-key: /api/admin/payment-bypass/status` — client/src/pages/Admin.tsx:536
+- `cache-key: /api/admin/payment-bypass/status` — client/src/pages/Admin.tsx:564
+- `cache-key: /api/admin/settings` — client/src/pages/Admin.tsx:611
+- `not-api-reference: /api/security/metrics` — client/src/pages/AdminAutonomy.tsx:208
+- `not-api-reference: /api/security/threats` — client/src/pages/AdminAutonomy.tsx:209
+- `not-api-reference: /api/autopilot/status` — client/src/pages/AdminAutonomy.tsx:210
+- `not-api-reference: /api/auto/social/status` — client/src/pages/AdminAutonomy.tsx:211
+- `cache-key: /api/admin/chain-fixer/status` — client/src/pages/AdminAutonomy.tsx:395
+- `cache-key: /api/admin/platform-fixer/status` — client/src/pages/AdminAutonomy.tsx:396
+- `cache-key: /api/security/self-healing/status` — client/src/pages/AdminAutonomy.tsx:397
+- `cache-key: /api/security/self-healing/metrics` — client/src/pages/AdminAutonomy.tsx:398
+- `query-key-custom-fn: /api/audit/results` — client/src/pages/AdminDashboard.tsx:204
+- `query-key-custom-fn: /api/testing/results` — client/src/pages/AdminDashboard.tsx:215
+- `query-key-custom-fn: /api/admin/metrics` — client/src/pages/AdminDashboard.tsx:226
+- `query-key-custom-fn: /api/admin/analytics` — client/src/pages/AdminDashboard.tsx:237
+- `query-key-custom-fn: /api/admin/activity` — client/src/pages/AdminDashboard.tsx:247
+- `query-key-custom-fn: /api/admin/system-health` — client/src/pages/AdminDashboard.tsx:256
+- `query-key-custom-fn: /api/admin/users` — client/src/pages/AdminDashboard.tsx:268
+- `not-api-reference: /api/admin/beat-money-loop/status` — client/src/pages/AdminDashboard.tsx:1961
+- `cache-key: /api/advertising/lookalike-audiences` — client/src/pages/Advertisement.tsx:628
+- `cache-key: /api/advertising/lookalike-audiences` — client/src/pages/Advertisement.tsx:662
+- `cache-key: /api/advertising/creative-fatigue` — client/src/pages/Advertisement.tsx:696
+- `cache-key: /api/advertising/campaigns` — client/src/pages/Advertisement.tsx:741
+- `cache-key: /api/advertising/campaigns` — client/src/pages/Advertisement.tsx:764
+- `cache-key: /api/advertising/campaigns` — client/src/pages/Advertisement.tsx:798
+- `cache-key: /api/advertising/campaigns` — client/src/pages/Advertisement.tsx:825
+- `comment: /api/advertising/generate-image` — client/src/pages/Advertisement.tsx:2115
+- `comment: /api/press-kit` — client/src/pages/Advertisement.tsx:2989
+- `comment: /api/press-kit` — client/src/pages/Advertisement.tsx:2994
+- `comment: /api/press-kit` — client/src/pages/Advertisement.tsx:2998
+- `comment: /api/storage/upload` — client/src/pages/Advertisement.tsx:3049
+- `query-key-custom-fn: /api/analytics/anomalies/summary` — client/src/pages/Analytics.tsx:1653
+- `query-key-custom-fn: /api/analytics/anomalies` — client/src/pages/Analytics.tsx:1667
+- `cache-key: /api/analytics/anomalies` — client/src/pages/Analytics.tsx:1698
+- `cache-key: /api/analytics/anomalies/summary` — client/src/pages/Analytics.tsx:1700
+- `cache-key: /api/analytics-alerts/cross-platform-comparison` — client/src/pages/Analytics.tsx:1718
+- `cache-key: /api/analytics-alerts/alerts` — client/src/pages/Analytics.tsx:1758
+- `cache-key: /api/analytics-alerts/alerts/summary` — client/src/pages/Analytics.tsx:1761
+- `cache-key: /api/analytics-alerts/alerts` — client/src/pages/Analytics.tsx:1776
+- `not-api-reference: /api/assistant/history` — client/src/pages/Assistant.tsx:147
+- `not-api-reference: /api/assistant/history?before=${encodeURIComponent(oldestId)}` — client/src/pages/Assistant.tsx:191
+- `not-api-reference: /api/assistant/chat` — client/src/pages/Assistant.tsx:236
+- `not-api-reference: /api/assistant/history` — client/src/pages/Assistant.tsx:291
+- `cache-key: /api/career-coach/goals` — client/src/pages/CareerCoach.tsx:309
+- `cache-key: /api/career-coach/goals` — client/src/pages/CareerCoach.tsx:342
+- `cache-key: /api/career-coach/recommendations` — client/src/pages/CareerCoach.tsx:504
+- `cache-key: /api/career-coach/insights` — client/src/pages/CareerCoach.tsx:773
+- `cache-key: /api/assistant/history` — client/src/pages/CareerCoach.tsx:949
+- `cache-key: /api/collaborations` — client/src/pages/Collaborations.tsx:263
+- `cache-key: /api/collaborations` — client/src/pages/Collaborations.tsx:293
+- `cache-key: /api/collaborations` — client/src/pages/Collaborations.tsx:317
+- `cache-key: /api/collaborations/projects` — client/src/pages/Collaborations.tsx:344
+- `cache-key: /api/contracts/my-contracts` — client/src/pages/Contracts.tsx:313
+- `cache-key: /api/contracts/stats/summary` — client/src/pages/Contracts.tsx:317
+- `cache-key: /api/contracts/my-contracts` — client/src/pages/Contracts.tsx:354
+- `cache-key: /api/contracts/stats/summary` — client/src/pages/Contracts.tsx:357
+- `cache-key: /api/contracts/my-contracts` — client/src/pages/Contracts.tsx:400
+- `cache-key: /api/contracts/stats/summary` — client/src/pages/Contracts.tsx:403
+- `cache-key: /api/contracts/my-contracts` — client/src/pages/Contracts.tsx:453
+- `cache-key: /api/contracts/stats/summary` — client/src/pages/Contracts.tsx:456
+- `cache-key: /api/contracts/my-contracts` — client/src/pages/Contracts.tsx:492
+- `cache-key: /api/contracts/stats/summary` — client/src/pages/Contracts.tsx:495
+- `cache-key: /api/auth/onboarding-status` — client/src/pages/Dashboard.tsx:442
+- `cache-key: /api/developer/keys` — client/src/pages/DeveloperApi.tsx:112
+- `cache-key: /api/developer/keys` — client/src/pages/DeveloperApi.tsx:137
+- `cache-key: /api/developer/usage` — client/src/pages/DeveloperApi.tsx:138
+- `cache-key: /api/playlist-pitching` — client/src/pages/Distribution.tsx:645
+- `cache-key: /api/playlist-pitching/stats` — client/src/pages/Distribution.tsx:647
+- `cache-key: /api/shows` — client/src/pages/Distribution.tsx:856
+- `cache-key: /api/shows/stats` — client/src/pages/Distribution.tsx:857
+- `cache-key: /api/venues` — client/src/pages/Distribution.tsx:1049
+- `cache-key: /api/venues/stats` — client/src/pages/Distribution.tsx:1050
+- `cache-key: /api/sync-licensing` — client/src/pages/Distribution.tsx:1278
+- `cache-key: /api/sync-licensing/stats` — client/src/pages/Distribution.tsx:1280
+- `browser-navigation: /api/distribution/toolost/status` — client/src/pages/Distribution.tsx:1639
+- `browser-navigation: /api/distribution/platforms` — client/src/pages/Distribution.tsx:1642
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1746
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1782
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1811
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1901
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1931
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1961
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:2856
+- `cache-key: /api/distribution/hyperfollow` — client/src/pages/Distribution.tsx:3635
+- `cache-key: /api/distribution/hyperfollow/analytics` — client/src/pages/Distribution.tsx:3638
+- `browser-navigation: /api/distribution/toolost/connect` — client/src/pages/Distribution.tsx:4017
+- `cache-key: /api/fan-hub/subscribers` — client/src/pages/FanHub.tsx:172
+- `cache-key: /api/fan-hub/stats` — client/src/pages/FanHub.tsx:173
+- `cache-key: /api/fan-hub/subscribers` — client/src/pages/FanHub.tsx:193
+- `cache-key: /api/fan-hub/stats` — client/src/pages/FanHub.tsx:194
+- `cache-key: /api/fan-hub/messages` — client/src/pages/FanHub.tsx:212
+- `cache-key: /api/fan-hub/subscribers` — client/src/pages/FanHub.tsx:240
+- `cache-key: /api/fan-hub/subscribers` — client/src/pages/FanHub.tsx:269
+- `cache-key: /api/fan-hub/stats` — client/src/pages/FanHub.tsx:270
+- `cache-key: /api/invoices` — client/src/pages/Invoices.tsx:140
+- `cache-key: /api/invoices` — client/src/pages/Invoices.tsx:179
+- `cache-key: /api/invoices` — client/src/pages/Invoices.tsx:208
+- `cache-key: /api/auth/me` — client/src/pages/Login.tsx:342
+- `browser-navigation: /api/auth/google` — client/src/pages/Login.tsx:366
+- `cache-key: /api/auth/me` — client/src/pages/Login.tsx:407
+- `query-key-custom-fn: /api/marketplace/producers` — client/src/pages/Marketplace.tsx:458
+- `not-api-reference: /api/storage/upload` — client/src/pages/Marketplace.tsx:728
+- `cache-key: /api/merch` — client/src/pages/Marketplace.tsx:875
+- `cache-key: /api/merch/stats` — client/src/pages/Marketplace.tsx:876
+- `cache-key: /api/merch` — client/src/pages/Marketplace.tsx:886
+- `cache-key: /api/marketplace/my-beats` — client/src/pages/Marketplace.tsx:1030
+- `cache-key: /api/marketplace/beats` — client/src/pages/Marketplace.tsx:1044
+- `query-key-custom-fn: /api/marketplace/beats` — client/src/pages/Marketplace.tsx:1061
+- `not-api-reference: /api/marketplace/beats${params.toString() ? ` — client/src/pages/Marketplace.tsx:1074
+- `cache-key: /api/merch` — client/src/pages/MerchStore.tsx:137
+- `cache-key: /api/merch/stats` — client/src/pages/MerchStore.tsx:138
+- `cache-key: /api/merch` — client/src/pages/MerchStore.tsx:167
+- `cache-key: /api/merch/stats` — client/src/pages/MerchStore.tsx:168
+- `cache-key: /api/merch/orders` — client/src/pages/MerchStore.tsx:202
+- `cache-key: /api/merch/stats` — client/src/pages/MerchStore.tsx:203
+- `cache-key: /api/merch` — client/src/pages/MerchStore.tsx:220
+- `cache-key: /api/merch/stats` — client/src/pages/MerchStore.tsx:221
+- `cache-key: /api/storage/upload` — client/src/pages/MerchStore.tsx:236
+- `not-api-reference: /api/music-workflow-automations/${automation.id}/enable` — client/src/pages/MusicWorkflowAutomations.tsx:244
+- `not-api-reference: /api/music-workflow-automations/${automation.id}/disable` — client/src/pages/MusicWorkflowAutomations.tsx:245
+- `cache-key: /api/music-workflow-automations` — client/src/pages/MusicWorkflowAutomations.tsx:251
+- `cache-key: /api/music-workflow-automations/stats` — client/src/pages/MusicWorkflowAutomations.tsx:253
+- `cache-key: /api/music-workflow-automations` — client/src/pages/MusicWorkflowAutomations.tsx:279
+- `cache-key: /api/music-workflow-automations/logs` — client/src/pages/MusicWorkflowAutomations.tsx:308
+- `cache-key: /api/music-workflow-automations/stats` — client/src/pages/MusicWorkflowAutomations.tsx:311
+- `cache-key: /api/music-workflow-automations` — client/src/pages/MusicWorkflowAutomations.tsx:539
+- `cache-key: /api/music-workflow-automations/stats` — client/src/pages/MusicWorkflowAutomations.tsx:541
+- `cache-key: /api/notifications` — client/src/pages/NotificationDetail.tsx:58
+- `cache-key: /api/notifications` — client/src/pages/NotificationDetail.tsx:71
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:129
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:131
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:134
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:141
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:149
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:156
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:171
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:173
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:176
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:183
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:191
+- `cache-key: /api/notifications` — client/src/pages/Notifications.tsx:198
+- `cache-key: /api/playlist-pitching` — client/src/pages/PlaylistPitching.tsx:126
+- `cache-key: /api/playlist-pitching/stats` — client/src/pages/PlaylistPitching.tsx:128
+- `cache-key: /api/playlist-pitching` — client/src/pages/PlaylistPitching.tsx:149
+- `cache-key: /api/playlist-pitching/stats` — client/src/pages/PlaylistPitching.tsx:151
+- `cache-key: /api/playlist-pitching` — client/src/pages/PlaylistPitching.tsx:169
+- `cache-key: /api/playlist-pitching/stats` — client/src/pages/PlaylistPitching.tsx:171
+- `cache-key: /api/press-kit` — client/src/pages/PressKit.tsx:120
+- `cache-key: /api/projects` — client/src/pages/Projects.tsx:123
+- `cache-key: /api/studio/projects` — client/src/pages/Projects.tsx:124
+- `cache-key: /api/studio/start-hub/summary` — client/src/pages/Projects.tsx:126
+- `cache-key: /api/projects` — client/src/pages/Projects.tsx:154
+- `cache-key: /api/studio/projects` — client/src/pages/Projects.tsx:155
+- `cache-key: /api/studio/start-hub/summary` — client/src/pages/Projects.tsx:157
+- `cache-key: /api/projects` — client/src/pages/Projects.tsx:192
+- `cache-key: /api/studio/projects` — client/src/pages/Projects.tsx:193
+- `cache-key: /api/studio/start-hub/summary` — client/src/pages/Projects.tsx:195
+- `not-api-reference: /api/` — client/src/pages/Projects.tsx:240
+- `not-api-reference: /api/marketplace/audio/${audioSrc.replace(/^\//, "")}` — client/src/pages/Projects.tsx:241
+- `cache-key: /api/songwriting` — client/src/pages/Projects.tsx:888
+- `cache-key: /api/songwriting` — client/src/pages/Projects.tsx:912
+- `cache-key: /api/songwriting` — client/src/pages/Projects.tsx:922
+- `query-key-custom-fn: /api/press-kit/public` — client/src/pages/PublicPressKit.tsx:16
+- `cache-key: /api/publishing` — client/src/pages/Publishing.tsx:105
+- `cache-key: /api/publishing/stats` — client/src/pages/Publishing.tsx:106
+- `cache-key: /api/publishing` — client/src/pages/Publishing.tsx:123
+- `cache-key: /api/publishing/stats` — client/src/pages/Publishing.tsx:124
+- `cache-key: /api/publishing` — client/src/pages/Publishing.tsx:137
+- `cache-key: /api/publishing/stats` — client/src/pages/Publishing.tsx:138
+- `cache-key: /api/auth/me` — client/src/pages/Register.tsx:277
+- `browser-navigation: /api/auth/google` — client/src/pages/Register.tsx:289
+- `cache-key: /api/countdowns` — client/src/pages/ReleaseCountdown.tsx:198
+- `cache-key: /api/countdowns` — client/src/pages/ReleaseCountdown.tsx:233
+- `cache-key: /api/countdowns/${selectedRelease?.id}` — client/src/pages/ReleaseCountdown.tsx:235
+- `browser-navigation: /api/auth/me` — client/src/pages/Royalties.tsx:135
+- `cache-key: /api/publishing` — client/src/pages/Royalties.tsx:298
+- `cache-key: /api/publishing/stats` — client/src/pages/Royalties.tsx:299
+- `cache-key: /api/royalties` — client/src/pages/Royalties.tsx:349
+- `cache-key: /api/royalties/payment-methods` — client/src/pages/Royalties.tsx:379
+- `cache-key: /api/royalties/payout-settings` — client/src/pages/Royalties.tsx:412
+- `cache-key: /api/royalties/payout-settings` — client/src/pages/Royalties.tsx:431
+- `cache-key: /api/royalties/splits` — client/src/pages/Royalties.tsx:477
+- `cache-key: /api/royalties/splits` — client/src/pages/Royalties.tsx:504
+- `cache-key: /api/royalties/splits` — client/src/pages/Royalties.tsx:542
+- `cache-key: /api/payouts/tax-forms` — client/src/pages/Royalties.tsx:569
+- `cache-key: /api/payouts/disputes` — client/src/pages/Royalties.tsx:596
+- `cache-key: /api/payouts/disputes` — client/src/pages/Royalties.tsx:624
+- `cache-key: /api/payouts/disputes` — client/src/pages/Royalties.tsx:651
+- `cache-key: /api/payouts/statements` — client/src/pages/Royalties.tsx:682
+- `cache-key: /api/payouts/history` — client/src/pages/Royalties.tsx:710
+- `browser-navigation: /api/royalties/download-statement/${statementId}` — client/src/pages/Royalties.tsx:723
+- `browser-navigation: /api/payouts/status/${payoutId}` — client/src/pages/Royalties.tsx:1231
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:371
+- `cache-key: /api/auth/notifications` — client/src/pages/Settings.tsx:413
+- `cache-key: /api/auth/preferences` — client/src/pages/Settings.tsx:441
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:488
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:491
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:498
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:523
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:526
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:532
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:573
+- `cache-key: /api/billing/subscription` — client/src/pages/Settings.tsx:575
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:616
+- `cache-key: /api/billing/subscription` — client/src/pages/Settings.tsx:618
+- `cache-key: /api/billing/subscription` — client/src/pages/Settings.tsx:676
+- `cache-key: /api/billing/history` — client/src/pages/Settings.tsx:678
+- `cache-key: /api/auth/sessions` — client/src/pages/Settings.tsx:764
+- `not-api-reference: /api/auth/google` — client/src/pages/Settings.tsx:1237
+- `cache-key: /api/billing/subscription` — client/src/pages/Settings.tsx:1444
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:2167
+- `query-key-custom-fn: /api/shows/setlists` — client/src/pages/ShowPage.tsx:207
+- `cache-key: /api/shows` — client/src/pages/Shows.tsx:136
+- `cache-key: /api/shows/stats` — client/src/pages/Shows.tsx:137
+- `cache-key: /api/shows` — client/src/pages/Shows.tsx:168
+- `cache-key: /api/shows/stats` — client/src/pages/Shows.tsx:169
+- `cache-key: /api/shows/setlists` — client/src/pages/Shows.tsx:185
+- `cache-key: /api/shows/setlists` — client/src/pages/Shows.tsx:194
+- `cache-key: /api/shows/setlists` — client/src/pages/Shows.tsx:217
+- `cache-key: /api/shows` — client/src/pages/Shows.tsx:1119
+- `cache-key: /api/auth/onboarding-status` — client/src/pages/SimplifiedDashboard.tsx:35
+- `browser-navigation: /api/social/platform-status` — client/src/pages/SocialMedia.tsx:537
+- `browser-navigation: /api/social/connections` — client/src/pages/SocialMedia.tsx:539
+- `cache-key: /api/social/posts` — client/src/pages/SocialMedia.tsx:948
+- `cache-key: /api/social/posts` — client/src/pages/SocialMedia.tsx:1041
+- `cache-key: /api/social/calendar` — client/src/pages/SocialMedia.tsx:1088
+- `cache-key: /api/social/calendar/stats` — client/src/pages/SocialMedia.tsx:1090
+- `cache-key: /api/social/calendar` — client/src/pages/SocialMedia.tsx:1125
+- `cache-key: /api/social/calendar/stats` — client/src/pages/SocialMedia.tsx:1127
+- `cache-key: /api/social/calendar` — client/src/pages/SocialMedia.tsx:1155
+- `cache-key: /api/social/calendar/stats` — client/src/pages/SocialMedia.tsx:1157
+- `cache-key: /api/social/calendar` — client/src/pages/SocialMedia.tsx:1184
+- `cache-key: /api/social/calendar/stats` — client/src/pages/SocialMedia.tsx:1186
+- `cache-key: /api/social/calendar` — client/src/pages/SocialMedia.tsx:1219
+- `cache-key: /api/social/calendar/stats` — client/src/pages/SocialMedia.tsx:1221
+- `cache-key: /api/social/calendar` — client/src/pages/SocialMedia.tsx:1249
+- `cache-key: /api/social/calendar/stats` — client/src/pages/SocialMedia.tsx:1251
+- `cache-key: /api/social/calendar` — client/src/pages/SocialMedia.tsx:1279
+- `cache-key: /api/social/calendar/stats` — client/src/pages/SocialMedia.tsx:1281
+- `comment: /api/social/connect/${providerId}` — client/src/pages/SocialMedia.tsx:1306
+- `comment: /api/social/disconnect/${providerId}` — client/src/pages/SocialMedia.tsx:1341
+- `comment: /api/social/platform-status` — client/src/pages/SocialMedia.tsx:1350
+- `comment: /api/social/connections` — client/src/pages/SocialMedia.tsx:1353
+- `not-api-reference: /api/social/generate-image` — client/src/pages/SocialMedia.tsx:2138
+- `cache-key: /api/press-kit` — client/src/pages/SocialMedia.tsx:4729
+- `comment: /api/radio-pitches` — client/src/pages/SocialMedia.tsx:5115
+- `comment: /api/radio-pitches/stats` — client/src/pages/SocialMedia.tsx:5118
+- `comment: /api/radio-pitches` — client/src/pages/SocialMedia.tsx:5123
+- `comment: /api/radio-pitches` — client/src/pages/SocialMedia.tsx:5127
+- `comment: /api/radio-pitches/${id}` — client/src/pages/SocialMedia.tsx:5148
+- `comment: /api/radio-pitches` — client/src/pages/SocialMedia.tsx:5156
+- `comment: /api/fan-campaigns` — client/src/pages/SocialMedia.tsx:5510
+- `comment: /api/fan-campaigns/stats` — client/src/pages/SocialMedia.tsx:5513
+- `comment: /api/fan-campaigns` — client/src/pages/SocialMedia.tsx:5518
+- `comment: /api/fan-campaigns` — client/src/pages/SocialMedia.tsx:5522
+- `comment: /api/fan-campaigns/${id}/send` — client/src/pages/SocialMedia.tsx:5539
+- `comment: /api/fan-campaigns` — client/src/pages/SocialMedia.tsx:5545
+- `comment: /api/fan-campaigns/${id}` — client/src/pages/SocialMedia.tsx:5561
+- `comment: /api/fan-campaigns` — client/src/pages/SocialMedia.tsx:5566
+- `not-api-reference: /api/marketplace/audio/${audioUrl}` — client/src/pages/Storefront.tsx:210
+- `not-api-reference: /api/` — client/src/pages/Storefront.tsx:211
+- `not-api-reference: /api/marketplace/audio/${audioUrl.replace(/^\/+/, "")}` — client/src/pages/Storefront.tsx:212
+- `browser-navigation: /api/storefront/public/${slug}` — client/src/pages/Storefront.tsx:275
+- `browser-navigation: /api/storefront/preview/${slug}` — client/src/pages/Storefront.tsx:284
+- `query-key-custom-fn: /api/storefront/${storefront?.id}/membership-tiers/public` — client/src/pages/Storefront.tsx:298
+- `query-key-custom-fn: /api/storefront/${storefront?.id}/listings` — client/src/pages/Storefront.tsx:312
+- `query-key-custom-fn: /api/storefront/${storefront?.id}/social` — client/src/pages/Storefront.tsx:332
+- `query-key-custom-fn: /api/storefront/${storefront?.id}/bogo-promotions` — client/src/pages/Storefront.tsx:346
+- `cache-key: /api/storefront/${storefront?.id}/social` — client/src/pages/Storefront.tsx:383
+- `cache-key: /api/storefront/${storefront?.id}/social` — client/src/pages/Storefront.tsx:394
+- `cache-key: /api/storefront/${storefront?.id}/social` — client/src/pages/Storefront.tsx:414
+- `browser-navigation: /api/storefront/${storefront?.id}/membership-tiers/public` — client/src/pages/Storefront.tsx:475
+- `cache-key: /api/sync-licensing` — client/src/pages/SyncLicensing.tsx:99
+- `cache-key: /api/sync-licensing/stats` — client/src/pages/SyncLicensing.tsx:101
+- `cache-key: /api/sync-licensing` — client/src/pages/SyncLicensing.tsx:124
+- `cache-key: /api/sync-licensing` — client/src/pages/SyncLicensing.tsx:142
+- `cache-key: /api/sync-licensing/stats` — client/src/pages/SyncLicensing.tsx:144
+- `cache-key: /api/kyc/status` — client/src/pages/Verification.tsx:225
+- `cache-key: /api/kyc/individual` — client/src/pages/Verification.tsx:248
+- `cache-key: /api/kyc/business` — client/src/pages/Verification.tsx:249
+- `cache-key: /api/kyc/status` — client/src/pages/Verification.tsx:272
+- `cache-key: /api/kyc/status` — client/src/pages/Verification.tsx:310
+- `cache-key: /api/kyc/documents` — client/src/pages/Verification.tsx:335
+- `cache-key: /api/kyc/status` — client/src/pages/Verification.tsx:336
+- `cache-key: /api/workspace/user/workspaces` — client/src/pages/Workspaces.tsx:178
+- `cache-key: /api/workspace/${selectedWorkspace?.id}/members` — client/src/pages/Workspaces.tsx:254
+- `cache-key: /api/workspace/${selectedWorkspace?.id}/members` — client/src/pages/Workspaces.tsx:284
+- `cache-key: /api/workspace/${selectedWorkspace?.id}/roles` — client/src/pages/Workspaces.tsx:315
+- `cache-key: /api/workspace/${selectedWorkspace?.id}/roles` — client/src/pages/Workspaces.tsx:355
+- `cache-key: /api/workspace/${selectedWorkspace?.id}/roles` — client/src/pages/Workspaces.tsx:385
+- `query-key-custom-fn: /api/admin/content-sampler/posts` — client/src/pages/admin/ContentSampler.tsx:356
+- `not-api-reference: /api/admin/content-sampler/matrix` — client/src/pages/admin/ContentSampler.tsx:498
+- `query-key-custom-fn: /api/kyc/admin/pending` — client/src/pages/admin/KYCReview.tsx:109
+- `cache-key: /api/kyc/admin/pending` — client/src/pages/admin/KYCReview.tsx:152
+- `cache-key: /api/kyc/admin/pending` — client/src/pages/admin/KYCReview.tsx:198
+- `browser-navigation: /api/kyc/admin/documents/${doc.id}/view` — client/src/pages/admin/KYCReview.tsx:567
+- `query-key-custom-fn: /api/security/metrics` — client/src/pages/admin/SecurityDashboard.tsx:101
+- `query-key-custom-fn: /api/security/behavioral-alerts` — client/src/pages/admin/SecurityDashboard.tsx:115
+- `query-key-custom-fn: /api/security/anomaly-detection` — client/src/pages/admin/SecurityDashboard.tsx:129
+- `query-key-custom-fn: /api/security/pentest-results` — client/src/pages/admin/SecurityDashboard.tsx:143
+- `cache-key: /api/security/behavioral-alerts` — client/src/pages/admin/SecurityDashboard.tsx:156
+- `cache-key: /api/security/metrics` — client/src/pages/admin/SecurityDashboard.tsx:158
+- `cache-key: /api/security/behavioral-alerts` — client/src/pages/admin/SecurityDashboard.tsx:173
+- `cache-key: /api/security/anomaly-detection` — client/src/pages/admin/SecurityDashboard.tsx:176
+- `cache-key: /api/security/pentest-results` — client/src/pages/admin/SecurityDashboard.tsx:179
+- `not-api-reference: /api/training/status` — client/src/pages/admin/TrainingDashboard.tsx:226
+- `not-api-reference: /api/training/datasets` — client/src/pages/admin/TrainingDashboard.tsx:243
+- `not-api-reference: /api/training/schedule` — client/src/pages/admin/TrainingDashboard.tsx:256
+- `not-api-reference: /api/training/start` — client/src/pages/admin/TrainingDashboard.tsx:263
+- `cache-key: /api/training/stop` — client/src/pages/admin/TrainingDashboard.tsx:271
+- `query-key-custom-fn: /api/ai/analytics/insights` — client/src/pages/analytics/AIDashboard.tsx:48
+- `query-key-custom-fn: /api/analytics/audience` — client/src/pages/analytics/AudienceInsights.tsx:167
+- `query-key-custom-fn: /api/analytics-alerts/cross-platform-comparison` — client/src/pages/analytics/CrossPlatformComparison.tsx:240
+- `query-key-custom-fn: /api/analytics/global-ranking` — client/src/pages/analytics/GlobalRankingDashboard.tsx:396
+- `query-key-custom-fn: /api/analytics/playlist-journeys` — client/src/pages/analytics/PlaylistJourneysVisualization.tsx:394
+- `query-key-custom-fn: /api/analytics/dashboard` — client/src/pages/analytics/PlaylistTracking.tsx:197
+- `query-key-custom-fn: /api/analytics/revenue` — client/src/pages/analytics/RevenueAnalytics.tsx:184
+- `query-key-custom-fn: /api/analytics/streaming` — client/src/pages/analytics/StreamingAnalytics.tsx:216
+
+## External URLs and SPA paths
+
+External URL references: 43; SPA path references: 246. These are intentionally not compared with Express API routes.
+
+## Mounted router prefixes
+
+- `server/monitoring.ts` → `/` (server/index.ts:124)
+- `server/middleware/cloudflare.ts` → `/` (server/index.ts:180)
+- `server/safety/index.ts` → `/` (server/index.ts:196)
+- `server/middleware/csrf.ts` → `/` (server/index.ts:774, server/index.ts:775)
+- `server/middleware/multiTenantRouter.ts` → `/` (server/index.ts:1065)
+- `server/routes/seo.ts` → `/` (server/index.ts:1268, server/routes.ts:7545)
+- `server/middleware/auth.ts` → `/` (server/routes/adaptivePricing.ts:18, server/routes/admin/auditLog.ts:20, server/routes/admin/beatMoneyLoop.ts:18, server/routes/admin/beatMoneyLoop.ts:19, server/routes/admin/contentSampler.ts:16, server/routes/admin/index.ts:21, server/routes/admin/metrics.ts:23, server/routes/analytics-internal.ts:14, server/routes/apiKeys.ts:16, server/routes/arIntelligence.ts:30, server/routes/artistProfiles.ts:42, server/routes/audit.ts:26, server/routes/autopilotPreferences.ts:12, server/routes/connectedAccounts.ts:12, server/routes/content-analysis.ts:148, server/routes/executiveDashboard.ts:12, server/routes/executiveDashboard.ts:17, server/routes/executiveDashboard.ts:144, server/routes/fanHub.ts:14, server/routes/fanMemberships.ts:32, server/routes/kyc.ts:21, server/routes/kyc.ts:25, server/routes/logs.ts:21, server/routes/monitoring.ts:12, server/routes/monitoring.ts:13, server/routes/notifications.ts:16, server/routes/outreach.ts:27, server/routes/payouts.ts:70, server/routes/playlistPitching.ts:14, server/routes/publishing.ts:59, server/routes/recoveryCodes.ts:11, server/routes/security.ts:10, server/routes/simulation.ts:24, server/routes/testing.ts:71, server/routes/webhooks-admin.ts:18)
+- `server/middleware/rateLimiter.ts` → `/` (server/routes/ai.ts:24, server/routes/billing.ts:44, server/routes/payouts.ts:71, server/routes/socialAI.ts:71)
+- `server/middleware/requestId.ts` → `/` (server/routes.ts:264)
+- `server/auth.ts` → `/api` (server/routes.ts:276)
+- `server/middleware/globalRateLimiter.ts` → `/api/ai` (server/routes.ts:287, server/routes.ts:288, server/routes.ts:289, server/routes.ts:290, server/routes.ts:291)
+- `server/routes/accessibility.ts` → `/api/user` (server/routes.ts:5253)
+- `server/routes/internalProxy.ts` → `/api/ai-service` (server/routes.ts:7031, server/routes.ts:7032)
+- `server/routes/admin.ts` → `/api/admin` (server/routes.ts:7034)
+- `server/routes/distribution.ts` → `/api/distribution` (server/routes.ts:7035)
+- `server/routes/training.ts` → `/api/training` (server/routes.ts:7037)
+- `server/routes/maxcore.ts` → `/api/maxcore` (server/routes.ts:7040)
+- `server/routes/paid.ts` → `/api/paid` (server/routes.ts:7041)
+- `server/routes/artistProgress.ts` → `/api/artist-progress` (server/routes.ts:7042)
+- `server/routes/artistProfiles.ts` → `/api/artist-profiles` (server/routes.ts:7043)
+- `server/routes/revenueForecast.ts` → `/api/revenue-forecast` (server/routes.ts:7044)
+- `server/routes/files.ts` → `/api/files` (server/routes.ts:7045)
+- `server/routes/preferences.ts` → `/api/preferences` (server/routes.ts:7046)
+- `server/routes/shortcuts.ts` → `/api/shortcuts` (server/routes.ts:7047)
+- `server/routes/undo.ts` → `/api/undo` (server/routes.ts:7048)
+- `server/routes/batch.ts` → `/api/batch` (server/routes.ts:7049)
+- `server/routes/socialMedia.ts` → `/api/social` (server/routes.ts:7118)
+- `server/infrastructure/index.ts` → `/api/infrastructure` (server/routes.ts:8359)
+- `server/routes/unifiedContent.ts` → `/api/content/generate-unified` (server/routes.ts:8387)
+- `server/routes/creativeModel.ts` → `/api/content/creative-model` (server/routes.ts:8399)
+- `server/routes/collaboration.ts` → `/api/collaboration` (server/routes.ts:8411)
+- `server/routes/musicWorkflowAutomations.ts` → `/api/music-workflow-automations` (server/routes.ts:8424)
+- `server/routes/fabric.ts` → `/api/fabric` (server/routes.ts:8434)
+- `server/routes/labelSubmissions.ts` → `/api/label-submissions` (server/routes.ts:8446)
+- `server/routes/radioPitches.ts` → `/api/radio-pitches` (server/routes.ts:8457)
+- `server/routes/venues.ts` → `/api/venues` (server/routes.ts:8467)
+- `server/routes/projectBudgets.ts` → `/api/project-budgets` (server/routes.ts:8478)
+- `server/routes/sampleClearances.ts` → `/api/sample-clearances` (server/routes.ts:8490)
+- `server/routes/musicVideos.ts` → `/api/music-videos` (server/routes.ts:8500)
+- `server/routes/songwriting.ts` → `/api/songwriting` (server/routes.ts:8510)
+- `server/routes/fanCampaigns.ts` → `/api/fan-campaigns` (server/routes.ts:8521)
+- `server/routes/customWorkflows.ts` → `/api/custom-workflows` (server/routes.ts:8532)
+- `server/routes/assistant.ts` → `/api/assistant` (server/routes.ts:8542)
+- `server/routes/maxcoreProxy.ts` → `/` (server/routes.ts:8557)
+- `server/routes/bootstrap.ts` → `/api/bootstrap` (server/routes.ts:7138)
+- `server/routes/achievements.ts` → `/api/achievements` (server/routes.ts:7144)
+- `server/routes/onboarding.ts` → `/api/onboarding` (server/routes.ts:7149)
+- `server/routes/personalization.ts` → `/api/personalization` (server/routes.ts:7154)
+- `server/routes/releaseCountdown.ts` → `/api/countdowns` (server/routes.ts:7159)
+- `server/routes/storefront.ts` → `/api/storefront` (server/routes.ts:7164)
+- `server/routes/storefrontDomains.ts` → `/api/storefront-domains` (server/routes.ts:7169)
+- `server/routes/dns.ts` → `/api/dns` (server/routes.ts:7173)
+- `server/routes/dnsManager.ts` → `/api/dns-manager` (server/routes.ts:7175)
+- `server/routes/domainRegistrar.ts` → `/api/domain-registrar` (server/routes.ts:7180)
+- `server/routes/hns.ts` → `/api/hns` (server/routes.ts:7184)
+- `server/routes/analytics-internal.ts` → `/api/analytics` (server/routes.ts:7186)
+- `server/routes/status.ts` → `/api/status` (server/routes.ts:7191)
+- `server/routes/monitoring.ts` → `/api/monitoring` (server/routes.ts:7196)
+- `server/routes/dmca.ts` → `/api/dmca` (server/routes.ts:7200)
+- `server/routes/growth.ts` → `/api/growth` (server/routes.ts:7202)
+- `server/routes/backup.ts` → `/api/backup` (server/routes.ts:7207)
+- `server/routes/retention.ts` → `/api/retention` (server/routes.ts:7212)
+- `server/routes/billing.ts` → `/api/billing` (server/routes.ts:7219)
+- `server/routes/payouts.ts` → `/api/payouts` (server/routes.ts:7224)
+- `server/routes/invoices.ts` → `/api/invoices` (server/routes.ts:7229)
+- `server/routes/kyc.ts` → `/api/kyc` (server/routes.ts:7233)
+- `server/routes/socialOAuth.ts` → `/api/social` (server/routes.ts:7237)
+- `server/routes/socialApprovals.ts` → `/api/social/approvals` (server/routes.ts:7243)
+- `server/routes/socialBulk.ts` → `/api/social/bulk` (server/routes.ts:7248)
+- `server/routes/socialAI.ts` → `/api/social` (server/routes.ts:7253)
+- `server/routes/multimodal.ts` → `/api/multimodal` (server/routes.ts:7258)
+- `server/routes/organic.ts` → `/api/organic` (server/routes.ts:7263)
+- `server/routes/advertising.ts` → `/api/advertising` (server/routes.ts:7268)
+- `server/routes/advertisingAutopilot.ts` → `/api/advertising/autopilot` (server/routes.ts:7273)
+- `server/routes/autopilot.ts` → `/api/autopilot` (server/routes.ts:7278)
+- `server/routes/dualAutopilot.ts` → `/api/autopilot` (server/routes.ts:7283)
+- `server/routes/autopilot-coordinator.ts` → `/api/autopilot/coordinator` (server/routes.ts:7288)
+- `server/routes/autopilot-learning.ts` → `/api/autopilot/learning` (server/routes.ts:7293)
+- `server/routes/autonomousSocial.ts` → `/api/auto/social` (server/routes.ts:7298)
+- `server/routes/autoUpdates.ts` → `/api/auto-updates` (server/routes.ts:7303)
+- `server/routes/downloads.ts` → `/api/downloads` (server/routes.ts:7308)
+- `server/routes/platformSync.ts` → `/api/platform-sync` (server/routes.ts:7313)
+- `server/routes/autopilotPreferences.ts` → `/api/autopilot/preferences` (server/routes.ts:7318)
+- `server/routes/studio.ts` → `/api/studio` (server/routes.ts:7325)
+- `server/routes/studioComping.ts` → `/api/studio` (server/routes.ts:7330)
+- `server/routes/studioMarkers.ts` → `/api/studio` (server/routes.ts:7335)
+- `server/routes/studioPlugins.ts` → `/api/studio/plugins` (server/routes.ts:7340)
+- `server/routes/studioStems.ts` → `/api/studio` (server/routes.ts:7345)
+- `server/routes/studioWarping.ts` → `/api/studio/warping` (server/routes.ts:7350)
+- `server/routes/studioGeneration.ts` → `/api/studio/generation` (server/routes.ts:7355)
+- `server/routes/studioMidi.ts` → `/api/studio` (server/routes.ts:7360)
+- `server/routes/vstBridge.ts` → `/api/studio/vst` (server/routes.ts:7365)
+- `server/routes/audioAnalysis.ts` → `/api/audio-analysis` (server/routes.ts:7370)
+- `server/routes/audio-processing.ts` → `/api/audio-processing` (server/routes.ts:7375)
+- `server/routes/promotionalTools.ts` → `/api/distribution/promo` (server/routes.ts:7380)
+- `server/routes/offline.ts` → `/api/offline` (server/routes.ts:7387)
+- `server/routes/sync.ts` → `/api/sync` (server/routes.ts:7391)
+- `server/routes/workspace.ts` → `/api/workspace` (server/routes.ts:7395)
+- `server/routes/developerApi.ts` → `/api/developer` (server/routes.ts:7400)
+- `server/routes/content-analysis.ts` → `/api/content-analysis` (server/routes.ts:7405)
+- `server/routes/collaborations.ts` → `/api/collaborations` (server/routes.ts:7412)
+- `server/routes/helpDesk.ts` → `/api/helpdesk` (server/routes.ts:7419)
+- `server/routes/support.ts` → `/api/support` (server/routes.ts:7424)
+- `server/routes/executiveDashboard.ts` → `/api/executive` (server/routes.ts:7431)
+- `server/routes/admin/index.ts` → `/api/admin` (server/routes.ts:7436)
+- `server/routes/admin/metrics.ts` → `/api/admin/metrics` (server/routes.ts:7441)
+- `server/routes/admin/beatMoneyLoop.ts` → `/api/admin/beat-money-loop` (server/routes.ts:7446)
+- `server/routes/admin/auditLog.ts` → `/api/admin/audit-log` (server/routes.ts:7451)
+- `server/routes/admin/contentSampler.ts` → `/api/admin/content-sampler` (server/routes.ts:7456)
+- `server/routes/audit.ts` → `/api/audit` (server/routes.ts:7461)
+- `server/routes/testing.ts` → `/api/testing` (server/routes.ts:7466)
+- `server/routes/webhooks-admin.ts` → `/api/admin/webhooks` (server/routes.ts:7471)
+- `server/routes/logs.ts` → `/api/logs` (server/routes.ts:7475)
+- `server/routes/api/v1/analytics.ts` → `/api/v1/analytics` (server/routes.ts:7479)
+- `server/routes/api/certifiedAnalytics.ts` → `/api/certified-analytics` (server/routes.ts:7484)
+- `server/routes/api/analyticsAlerts.ts` → `/api/analytics-alerts` (server/routes.ts:7489)
+- `server/routes/webhooks/sendgrid.ts` → `/webhooks/sendgrid` (server/routes.ts:7496)
+- `server/routes/webhooks/stripe.ts` → `/api/webhooks/stripe` (server/routes.ts:7501)
+- `server/routes/reliability-endpoints.ts` → `/api/reliability` (server/routes.ts:7508)
+- `server/routes/emailPreferences.ts` → `/` (server/routes.ts:7515)
+- `server/routes/simulation.ts` → `/api/simulation` (server/routes.ts:7522)
+- `server/routes/killSwitch.ts` → `/api/kill-switch` (server/routes.ts:7529)
+- `server/routes/paymentBypass.ts` → `/api/admin/payment-bypass` (server/routes.ts:7534)
+- `server/routes/dnsNodeLocalStatus.ts` → `/api/admin/dns-node-local` (server/routes.ts:7539)
+- `server/routes/selfHealingApi.ts` → `/api/security/self-healing` (server/routes.ts:7549)
+- `server/routes/security.ts` → `/api/security` (server/routes.ts:7556)
+- `server/routes/marketplace.ts` → `/api/marketplace` (server/routes.ts:7563)
+- `server/routes/adaptivePricing.ts` → `/api/adaptive-pricing` (server/routes.ts:7570)
+- `server/routes/search.ts` → `/api/search` (server/routes.ts:7577)
+- `server/routes/contracts.ts` → `/api/contracts` (server/routes.ts:7584)
+- `server/routes/ai.ts` → `/api/ai` (server/routes.ts:7590)
+- `server/routes/careerCoach.ts` → `/api/career-coach` (server/routes.ts:7594)
+- `server/routes/arIntelligence.ts` → `/api/ar-intelligence` (server/routes.ts:7601)
+- `server/routes/outreach.ts` → `/api/outreach` (server/routes.ts:7608)
+- `server/routes/apiKeys.ts` → `/api/auth/api-keys` (server/routes.ts:7615)
+- `server/routes/recoveryCodes.ts` → `/api/auth/recovery-codes` (server/routes.ts:7622)
+- `server/routes/connectedAccounts.ts` → `/api/auth/connected-accounts` (server/routes.ts:7629)
+- `server/routes/auth.ts` → `/api/auth` (server/routes.ts:7635)
+- `server/routes/fanHub.ts` → `/api/fan-hub` (server/routes.ts:7639)
+- `server/routes/fanMemberships.ts` → `/api/fan-memberships` (server/routes.ts:7646)
+- `server/routes/pressKit.ts` → `/api/press-kit` (server/routes.ts:7653)
+- `server/routes/playlistPitching.ts` → `/api/playlist-pitching` (server/routes.ts:7660)
+- `server/routes/shows.ts` → `/api/shows` (server/routes.ts:7667)
+- `server/routes/merch.ts` → `/api/merch` (server/routes.ts:7674)
+- `server/routes/syncLicensing.ts` → `/api/sync-licensing` (server/routes.ts:7681)
+- `server/routes/publishing.ts` → `/api/publishing` (server/routes.ts:7688)
+- `server/routes/uploads.ts` → `/api/uploads` (server/routes.ts:7695)
+- `server/routes/storage.ts` → `/api/storage` (server/routes.ts:7702)
+- `server/routes/hybridStorage.ts` → `/api/hybrid-storage` (server/routes.ts:7709)
+- `server/routes/export.ts` → `/api/export` (server/routes.ts:7716)
+- `server/middleware/selfHealingMiddleware.ts` → `/` (server/safety/mandatoryMiddleware.ts:503)
+
+## Findings
+
+- **dynamic-unresolved-1**: The frontend calls apiRequest with computed URL variable endpoint; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-2**: The frontend calls apiRequest with computed URL variable endpoint; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-3**: The frontend calls apiRequest with computed URL variable endpoint; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-4**: The frontend calls apiRequest with computed URL variable method; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-5**: The frontend calls apiRequest with computed URL variable endpoint; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-6**: The frontend calls apiRequest with computed URL variable endpoints; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-7**: The frontend calls apiRequest with computed URL variable method; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-8**: The frontend calls apiRequest with computed URL variable method; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-9**: The frontend calls apiRequest with computed URL variable method; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-10**: The frontend calls apiRequest with computed URL variable endpoint; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-11**: The frontend calls apiRequest with computed URL variable endpoint; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-12**: The frontend calls apiRequest with computed URL variable method; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-13**: The frontend calls uploadWithProgress with computed URL variable url; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-14**: The frontend calls apiRequest with computed URL variable options; this audit could not resolve it to a concrete API path.
+- **dynamic-unresolved-15**: The frontend calls apiRequest with computed URL variable url; this audit could not resolve it to a concrete API path.
+
+## Scope and honesty notes
+
+- This is a static inventory only. It does not invoke routes, perform admin authentication, or make mutating requests.
+- `queryClient.invalidateQueries`/`setQueryData` entries are cache keys, not network calls. Query keys with a custom `queryFn` are listed as references; the custom fetch is inventoried separately.
+- Template placeholders are normalized to `:param`; computed URLs without a literal assignment remain dynamic unresolved rather than guessed.
+- External URLs and SPA navigation paths are not API contracts. A component is not reported as needing an endpoint merely because it contains a cache key, link, or documentation example.

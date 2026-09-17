@@ -755,7 +755,7 @@ router.post(
         .where(eq(users.id, userId));
 
       const appUrl =
-        process.env.APP_URL || process.env.DOMAIN || "https://max-booster.com";
+        process.env.APP_URL || process.env.DOMAIN || "https://maxbooster.replit.app";
       const verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
       try {

@@ -244,7 +244,7 @@ function PromoteContentCard() {
     mutationFn: async () => {
       const response = await apiRequest(
         "POST",
-        "/api/social/veo-campaign/promote",
+        "/api/advertising/generate-campaign",
         { contentType, contentId: contentId || undefined },
       );
       return response.json();
@@ -253,7 +253,8 @@ function PromoteContentCard() {
       if (data?.success === false) {
         toast({
           title: "Promotion Failed",
-          description: data?.message || "Failed to generate campaign",
+          description:
+            data?.message || data?.error || "Failed to generate campaign",
           variant: "destructive",
         });
         return;
@@ -2055,6 +2056,8 @@ export default function Advertisement() {
                         }
                         tone="energetic"
                         goal={campaignForm.objective || "growth"}
+                        endpoint="/api/advertising/generate-video"
+                        requestTimeoutMs={10 * 60 * 1000}
                         artistName={
                           user?.displayName ||
                           user?.email?.split("@")[0] ||
@@ -2109,7 +2112,7 @@ export default function Advertisement() {
                           user?.email?.split("@")[0] ||
                           "Artist"
                         }
-                        endpoint="/api/multimodal/generate"
+                        endpoint="/api/advertising/generate-image"
                         onImageGenerated={(url) => {
                           setGeneratedAdImages((prev) => [
                             ...prev,

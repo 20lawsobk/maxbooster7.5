@@ -2600,7 +2600,7 @@ class DistributionDataTransferService {
     artistName: string,
   ): Promise<ScannedRelease[]> {
     const UA =
-      "MaxBooster/1.0 (max-booster.com; music career management platform)";
+      "MaxBooster/1.0 (maxbooster.replit.app; music career management platform)";
     const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     try {

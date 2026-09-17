@@ -10,7 +10,7 @@
  *   Name    : Max Booster, LLC
  *   Support : registrar@max-booster?.com
  *   Abuse   : abuse@max-booster?.com
- *   RDAP    : https://max-booster.com/api/whois/:domain
+ *   RDAP    : https://maxbooster.replit.app/api/whois/:domain
  *
  * Nameservers:
  *   ns1?.max-booster?.com  (primary — main application)

@@ -135,6 +135,7 @@ router.get(
 
 const EMAIL_CLICK_FALLBACK = "https://maxbooster.ai/dashboard";
 const ALLOWED_REDIRECT_HOSTS = new Set([
+  "maxbooster.replit.app",
   "maxbooster.ai",
   "www.maxbooster.ai",
   "max-booster.com",

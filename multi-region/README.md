@@ -18,7 +18,7 @@ For each new region node:
 3.  Run the script:
     ```bash
     chmod +x setup-region.sh
-    ./setup-region.sh US-EAST https://max-booster.com 34.111.179.208
+    ./setup-region.sh US-EAST https://maxbooster.replit.app 34.111.179.208
     ```
 
     - `REGION_NAME`: A unique identifier for the node (e.g., `US-EAST`).

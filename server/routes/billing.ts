@@ -365,7 +365,7 @@ router.post(
       const userId = req.user!.id;
       const customerId = await getOrCreateStripeCustomer(req.user);
       const appUrl =
-        process.env.APP_URL || process.env.DOMAIN || "https://max-booster.com";
+        process.env.APP_URL || process.env.DOMAIN || "https://maxbooster.replit.app";
 
       const priceMap: Record<
         string,
@@ -1095,8 +1095,8 @@ router.post(
         customer: customerId,
         mode: "setup",
         payment_method_types: ["card"],
-        success_url: `${process.env.APP_URL || "https://max-booster.com"}/settings?payment=updated`,
-        cancel_url: `${process.env.APP_URL || "https://max-booster.com"}/settings?payment=canceled`,
+        success_url: `${process.env.APP_URL || "https://maxbooster.replit.app"}/settings?payment=updated`,
+        cancel_url: `${process.env.APP_URL || "https://maxbooster.replit.app"}/settings?payment=canceled`,
         metadata: { userId },
       });
 
@@ -1133,7 +1133,7 @@ router.post(
 
       const portalSession = await stripe?.billingPortal?.sessions?.create({
         customer: user.stripeCustomerId,
-        return_url: `${process.env.APP_URL || "https://max-booster.com"}/settings`,
+        return_url: `${process.env.APP_URL || "https://maxbooster.replit.app"}/settings`,
       });
 
       res.json({ url: portalSession.url });

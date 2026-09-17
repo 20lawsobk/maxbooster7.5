@@ -72,11 +72,17 @@ export function AttributionDashboard() {
   const [showAssisted, setShowAssisted] = useState(true);
 
   const { data: attributionData } = useQuery({
-    queryKey: ["/api/advertising/dashboard/attribution", attributionWindow],
+    queryKey: [
+      "/api/advertising/dashboard/attribution",
+      { window: attributionWindow },
+    ],
   });
 
   const { data: pathsData } = useQuery({
-    queryKey: ["/api/advertising/dashboard/paths", attributionWindow],
+    queryKey: [
+      "/api/advertising/dashboard/paths",
+      { window: attributionWindow },
+    ],
   });
 
   const channelData: ChannelAttribution[] = attributionData?.channels || [];

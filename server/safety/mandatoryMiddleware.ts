@@ -334,6 +334,7 @@ export function applyMandatoryMiddleware(
           // Always allow the platform's own custom domain and all its subdomains
           // (artist storefronts live at *.max-booster?.com).
           const isPlatformDomain =
+            origin === "https://maxbooster.replit.app" ||
             origin === "https://max-booster.com" ||
             origin === "https://www.max-booster.com" ||
             origin?.endsWith(".max-booster.com");

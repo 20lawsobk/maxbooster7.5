@@ -4518,7 +4518,7 @@ router.post(
         audio_duration_sec: 180,
         // Must be absolute — a relative path isn't a valid landing link once
         // this campaign's content ships through a connected social account.
-        source_url: `${(process.env.APP_URL || "https://max-booster.com").replace(/\/$/, "")}/marketplace/beat/${listing.id}`,
+        source_url: `${(process.env.APP_URL || "https://maxbooster.replit.app").replace(/\/$/, "")}/marketplace/beat/${listing.id}`,
         source_platform: isMusic ? "maxbooster" : "website",
         content_type: isMusic ? "music" : "website",
       };

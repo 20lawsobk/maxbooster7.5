@@ -186,9 +186,7 @@ export function useArtistTypeDefaults(
   } = useQuery<Partial<UserPreferences>>({
     queryKey: [
       "/api/preferences/smart-defaults",
-      artistType,
-      genreParam,
-      careerStage,
+      { artistType, genre: genreParam, careerStage },
     ],
     staleTime: 60 * 60 * 1000,
     enabled: !!artistType,

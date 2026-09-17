@@ -12,6 +12,7 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import Stripe from "stripe";
 
 import { logger } from "../logger.js";
+import { getStorefrontPathUrl } from "../config/storefrontUrls.js";
 
 const stripe = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -1571,21 +1572,17 @@ export class StorefrontService {
     customDomain?: string | null;
     isCustomDomainActive?: boolean;
   }): string {
-    const baseDomain = process.env.BASE_DOMAIN || "max-booster.com";
-    const slugUrl = `https://${baseDomain}/storefront/${storefront.slug}`;
+    const slugUrl = getStorefrontPathUrl(storefront.slug);
 
-    if (process.env.STOREFRONT_URL_FORMAT === "slug") {
-      return slugUrl;
-    }
-
+    // A user-owned custom host remains canonical.  The managed subdomain
+    // fields are historical platform routing records; they must not turn a
+    // normal storefront link into an unreachable artist.max-booster.com URL.
     if (storefront?.customDomain && storefront?.isCustomDomainActive) {
       return `https://${storefront.customDomain}`;
     }
 
-    if (storefront?.subdomain && storefront?.isSubdomainActive) {
-      return `https://${storefront.subdomain}.${baseDomain}`;
-    }
-
+    // Slug is the safe default and the only format with a guaranteed route.
+    // An old "subdomain" setting must not resurrect an unusable legacy link.
     return slugUrl;
   }
 }

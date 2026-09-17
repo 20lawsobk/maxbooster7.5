@@ -237,7 +237,7 @@ app.get("/.well-known/security.txt", (_req, res) => {
       "Contact: mailto:security@max-booster.com\n" +
         "Expires: 2027-01-01T00:00:00.000Z\n" +
         "Preferred-Languages: en\n" +
-        "Policy: https://max-booster.com/security-policy\n",
+        "Policy: https://maxbooster.replit.app/security-policy\n",
     );
 });
 

@@ -10,6 +10,7 @@ import {
 } from "@shared/schema";
 import { validateDnsLabel, validateDomain } from "./dnsValidators.js";
 import { logger } from "../../logger.js";
+import { getStorefrontPathUrl } from "../../config/storefrontUrls.js";
 
 const BASE_DOMAIN = process.env.BASE_DOMAIN || "max-booster.com";
 const PLATFORM_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
@@ -166,7 +167,11 @@ export async function reserveManaged(req: Request, res: Response) {
     const fqdn = `${labelResult?.normalized}.${BASE_DOMAIN}`;
 
     const [sf] = await db
-      .select({ id: storefronts.id, userId: storefronts.userId })
+      .select({
+        id: storefronts.id,
+        userId: storefronts.userId,
+        slug: storefronts.slug,
+      })
       .from(storefronts)
       .where(eq(storefronts.id, storefrontId))
       .limit(1);
@@ -243,10 +248,10 @@ export async function reserveManaged(req: Request, res: Response) {
         set: { storefrontId, updatedAt: new Date() },
       });
 
-    // The canonical public URL for the store is the platform subdomain.
-    // Requests to {label}.max-booster?.com reach the Express server via the
-    // wildcard A/CNAME record and are routed by the Host-header middleware.
-    const publicShortUrl = `https://${label}.${BASE_DOMAIN}`;
+    // Keep the managed-domain record for DNS/routing compatibility, but never
+    // advertise it as the canonical storefront URL.  The old platform zone is
+    // unavailable, while the slug route is served by the Replit deployment.
+    const publicShortUrl = getStorefrontPathUrl(sf.slug);
 
     logger.info(
       `[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId} (public: ${publicShortUrl})`,

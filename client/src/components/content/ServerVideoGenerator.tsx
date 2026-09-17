@@ -34,6 +34,10 @@ interface ServerVideoGeneratorProps {
   onVideoGenerated: (url: string, posterUrl?: string) => void;
   onImportToStudio?: (url: string) => void;
   className?: string;
+  /** Generation route; callers can use a feature-specific MaxCore handler. */
+  endpoint?: string;
+  /** Synchronous MaxCore handlers may take longer than the async social route. */
+  requestTimeoutMs?: number;
   // Pre-population props (used when arriving from URL params / ContentGenerator redirect)
   initialHook?: string;
   initialBody?: string;
@@ -288,6 +292,8 @@ export function ServerVideoGenerator({
   onVideoGenerated,
   onImportToStudio,
   className = "",
+  endpoint = "/api/social/generate-video",
+  requestTimeoutMs = 45 * 1000,
   initialHook = "",
   initialBody = "",
   initialCta = "",
@@ -514,14 +520,13 @@ export function ServerVideoGenerator({
     setVideoUrl(null);
     setVideoInfo(null);
 
-    // 45-second timeout on the initial POST — the server responds immediately
-    // (job queued) so >45s means the server is unreachable or the session is
-    // stuck. Polling has its own 7-minute budget via maxAttempts (see
-    // pollJobUntilDone) that outlasts the server's render + caching budget.
+    // The async social route responds immediately, while feature-specific
+    // handlers may hold this request until MaxCore returns a persisted file.
+    // Keep the timeout configurable rather than aborting a valid MaxCore job.
     userCancelledRef.current = false;
     const controller = new AbortController();
     abortControllerRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 45 * 1000);
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
 
     // Elapsed-time counter (updates every second so the user sees progress)
     setGeneratingElapsed(0);
@@ -532,7 +537,7 @@ export function ServerVideoGenerator({
 
     try {
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch("/api/social/generate-video", {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
