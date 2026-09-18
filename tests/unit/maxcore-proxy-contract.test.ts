@@ -35,6 +35,7 @@ vi.mock("../../server/middleware/auth.js", () => ({
 
 const upstreamCalls: { url: string; init: RequestInit }[] = [];
 const realFetch = globalThis.fetch;
+let mediaResponseFactory: (() => Response) | null = null;
 
 describe("MaxCore proxy route contract", () => {
   let server: Server;
@@ -47,6 +48,9 @@ describe("MaxCore proxy route contract", () => {
       const u = String(url);
       if (u.startsWith("https://maxcore.test")) {
         upstreamCalls.push({ url: u, init: init ?? {} });
+        if (mediaResponseFactory && u.includes("/uploads/")) {
+          return mediaResponseFactory();
+        }
         return new Response(JSON.stringify({ ok: true }), {
           status: 200,
           headers: { "content-type": "application/json" },
@@ -127,5 +131,90 @@ describe("MaxCore proxy route contract", () => {
     expect(
       (upstreamCalls[0].init.headers as Record<string, string>).Authorization,
     ).toBeUndefined();
+  });
+
+  it("contains an upstream body abort without an uncaught exception or fake success", async () => {
+    const uncaught: unknown[] = [];
+    const onUncaught = (error: unknown) => uncaught.push(error);
+    process.on("uncaughtException", onUncaught);
+    mediaResponseFactory = () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new Uint8Array([1, 2, 3, 4]));
+            setTimeout(() => {
+              controller.error(
+                new DOMException(
+                  "The operation was aborted due to timeout",
+                  "TimeoutError",
+                ),
+              );
+            }, 20);
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "video/mp4",
+            "content-length": "100",
+          },
+        },
+      );
+
+    try {
+      const response = await fetch(
+        `${base}/api/maxcore-media/uploads/videos/aborted.mp4`,
+      );
+      await expect(response.arrayBuffer()).rejects.toBeDefined();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      expect(uncaught).toEqual([]);
+    } finally {
+      mediaResponseFactory = null;
+      process.off("uncaughtException", onUncaught);
+    }
+  });
+
+  it("cancels the upstream media body when the client disconnects", async () => {
+    let cancelUpstream!: () => void;
+    const upstreamCancelled = new Promise<void>((resolve) => {
+      cancelUpstream = resolve;
+    });
+    mediaResponseFactory = () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new Uint8Array([1, 2, 3, 4]));
+          },
+          cancel() {
+            cancelUpstream();
+          },
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "video/mp4" },
+        },
+      );
+
+    const clientController = new AbortController();
+    try {
+      const response = await fetch(
+        `${base}/api/maxcore-media/uploads/videos/disconnect.mp4`,
+        { signal: clientController.signal },
+      );
+      clientController.abort();
+      await expect(response.arrayBuffer()).rejects.toBeDefined();
+      await Promise.race([
+        upstreamCancelled,
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("upstream body was not cancelled")),
+            1_000,
+          ),
+        ),
+      ]);
+      expect(upstreamCalls.at(-1)?.init.signal?.aborted).toBe(true);
+    } finally {
+      mediaResponseFactory = null;
+    }
   });
 });

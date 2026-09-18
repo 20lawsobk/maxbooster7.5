@@ -10,3 +10,9 @@ Use the normal application login flow for authenticated verification. Do not add
 The persistent browser notebook does not necessarily inherit workspace secrets. A workspace-shell-driven Chromium process can consume credentials from its own environment without printing them or exposing them to model context.
 
 **How to apply:** Check presence only. Pass credentials directly from environment to the normal browser form inside the workspace process; never copy their values into tool messages, logs, or notebook inputs. On 401, avoid repeated attempts. A read-only check may establish whether the supplied identifier corresponds to an account, without emitting identifiers or hashes. Ask before provisioning an account or changing its access; configuring test secrets does not itself provision an application account.
+
+Browser harnesses must use real pointer or keyboard input for Radix tabs, not an evaluated DOM `.click()`.
+
+**Why:** The tab activates on pointer/key events that a synthetic click alone does not dispatch; this produced misleading UI-failure reports despite a working control.
+
+**How to apply:** Use the browser driver's element click or keyboard activation. Wait for the parent panel, activate the inner tab, and only then wait for its fields. Treat intercepted clicks and missing network requests as harness evidence, not proof of backend failure.

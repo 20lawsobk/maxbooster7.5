@@ -16,8 +16,13 @@
  * downloads and previews work.
  */
 
-import { Router, type Request, type Response } from "express";
+import {
+  Router,
+  type Request,
+  type Response as ExpressResponse,
+} from "express";
 import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { requireAdmin, requireAuthOnly } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import {
@@ -57,9 +62,69 @@ function isBinary(contentType: string | null): boolean {
 }
 
 /**
+ * Bound an upstream request to both its deadline and the downstream client.
+ * Fetch resolving its headers does not mean its body has finished: the signal
+ * must remain active while pipeline consumes the body, and a disconnected
+ * browser must cancel the upstream transfer.
+ */
+function createUpstreamAbort(
+  req: Request,
+  res: ExpressResponse,
+  timeoutMs: number,
+) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    controller.abort(
+      new DOMException("The upstream request timed out", "TimeoutError"),
+    );
+  }, timeoutMs);
+  timeout.unref?.();
+
+  const abortForClient = () => {
+    if (!controller.signal.aborted && !res.writableEnded) {
+      controller.abort(
+        new DOMException("The downstream client disconnected", "AbortError"),
+      );
+    }
+  };
+  req.once?.("aborted", abortForClient);
+  res.once?.("close", abortForClient);
+
+  return {
+    signal: controller.signal,
+    cleanup() {
+      clearTimeout(timeout);
+      req.off?.("aborted", abortForClient);
+      res.off?.("close", abortForClient);
+    },
+  };
+}
+
+async function pipeUpstreamBody(
+  upstream: Response,
+  res: ExpressResponse,
+): Promise<void> {
+  if (!upstream.body) {
+    res.end();
+    return;
+  }
+  // Readable.pipe() does not forward source errors to the destination. pipeline
+  // observes errors from the Web stream adapter and tears down both sides.
+  await pipeline(
+    Readable.fromWeb(
+      upstream.body as Parameters<typeof Readable.fromWeb>[0],
+    ),
+    res,
+  );
+}
+
+/**
  * Generic forwarder. Relays the incoming request to MaxCore at the same path.
  */
-async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
+async function proxyToMaxCore(
+  req: Request,
+  res: ExpressResponse,
+): Promise<void> {
   const origin = getMaxcoreOrigin();
   if (!origin) {
     res.status(503).json({
@@ -124,12 +189,13 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
     }
   }
 
+  const abort = createUpstreamAbort(req, res, GEN_TIMEOUT_MS);
   try {
     const upstream = await fetch(targetUrl, {
       method,
       headers,
       body,
-      signal: AbortSignal.timeout(GEN_TIMEOUT_MS),
+      signal: abort.signal,
     });
 
     const contentType = upstream.headers.get("content-type");
@@ -143,11 +209,7 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
       if (disp) res.setHeader("Content-Disposition", disp);
       const len = upstream.headers.get("content-length");
       if (len) res.setHeader("Content-Length", len);
-      if (upstream.body) {
-        Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]).pipe(res);
-      } else {
-        res.end();
-      }
+      await pipeUpstreamBody(upstream, res);
       return;
     }
 
@@ -166,19 +228,37 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
     res.send(text);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const aborted = message.includes("aborted") || message.includes("timeout");
+    const aborted =
+      (err instanceof Error &&
+        (err.name === "AbortError" || err.name === "TimeoutError")) ||
+      message.includes("aborted") ||
+      message.includes("timeout");
     logger.warn(
       `[MaxCoreProxy] ${method} ${req.originalUrl} → ${aborted ? "timeout" : "error"}: ${message}`,
     );
+    if (res.headersSent) {
+      // A partial binary response cannot be replaced with a JSON error without
+      // falsely completing a truncated download. pipeline has already torn down
+      // the source; terminate the downstream socket as failed.
+      if (!res.destroyed) {
+        res.destroy(err instanceof Error ? err : undefined);
+      }
+      return;
+    }
     res.status(aborted ? 504 : 502).json({
       error: aborted ? "MaxCore request timed out" : "MaxCore request failed",
       message,
       path: req.originalUrl,
     });
+  } finally {
+    abort.cleanup();
   }
 }
 
-async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
+async function proxyAudioUpload(
+  req: Request,
+  res: ExpressResponse,
+): Promise<void> {
   const origin = getMaxcoreOrigin();
   if (!origin) {
     res.status(503).json({ error: "MaxCore not configured" });
@@ -199,6 +279,7 @@ async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
     res.status(413).json({ error: "Audio upload exceeds size limit" });
     return;
   }
+  const abort = createUpstreamAbort(req, res, GEN_TIMEOUT_MS);
   try {
     const upstream = await fetch(`${origin}/api/audio/upload`, {
       method: "POST",
@@ -209,7 +290,7 @@ async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
       },
       body: req as unknown as BodyInit,
       duplex: "half",
-      signal: AbortSignal.timeout(GEN_TIMEOUT_MS),
+      signal: abort.signal,
     } as RequestInit & { duplex: "half" });
     const text = await upstream.text();
     res.status(upstream.status);
@@ -223,7 +304,15 @@ async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    if (res.headersSent) {
+      if (!res.destroyed) {
+        res.destroy(err instanceof Error ? err : undefined);
+      }
+      return;
+    }
     res.status(502).json({ error: "MaxCore audio upload failed", message });
+  } finally {
+    abort.cleanup();
   }
 }
 
@@ -237,7 +326,10 @@ async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
  * Publicly readable (no auth) since this only ever serves already-public
  * generated media (cover art, previews) — never a path outside `RELATIVE_MEDIA`.
  */
-async function proxyMaxcoreMedia(req: Request, res: Response): Promise<void> {
+async function proxyMaxcoreMedia(
+  req: Request,
+  res: ExpressResponse,
+): Promise<void> {
   const origin = getMaxcoreOrigin();
   if (!origin) {
     res.status(503).json({ error: "MaxCore not configured" });
@@ -257,12 +349,13 @@ async function proxyMaxcoreMedia(req: Request, res: Response): Promise<void> {
   }
 
   const targetUrl = `${origin}${subPath}${req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : ""}`;
+  const abort = createUpstreamAbort(req, res, GEN_TIMEOUT_MS);
   try {
     const upstream = await fetch(targetUrl, {
       method: "GET",
       headers: { Accept: "*/*" },
       redirect: "manual",
-      signal: AbortSignal.timeout(GEN_TIMEOUT_MS),
+      signal: abort.signal,
     });
     // Never follow a redirect blindly — that would let a compromised/misbehaving
     // MaxCore instance turn this public proxy into an open relay to arbitrary
@@ -278,15 +371,19 @@ async function proxyMaxcoreMedia(req: Request, res: Response): Promise<void> {
     if (len) res.setHeader("Content-Length", len);
     // Generated media is immutable-by-name (random ids), safe to cache.
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    if (upstream.body) {
-      Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]).pipe(res);
-    } else {
-      res.end();
-    }
+    await pipeUpstreamBody(upstream, res);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.warn(`[MaxCoreProxy] media fetch failed for ${targetUrl}: ${message}`);
+    if (res.headersSent) {
+      if (!res.destroyed) {
+        res.destroy(err instanceof Error ? err : undefined);
+      }
+      return;
+    }
     res.status(502).json({ error: "MaxCore media request failed" });
+  } finally {
+    abort.cleanup();
   }
 }
 

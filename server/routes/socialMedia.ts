@@ -10,6 +10,8 @@ import { storageService } from "../services/storageService.js";
 import { pocketManager } from "../pocket-dimension/index.js";
 import { generateAndStorePosterThumbnail } from "../services/advancedVideoRendererService.js";
 import path from "path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
@@ -3628,10 +3630,32 @@ router.get(
     // cap, a missing file walks all 20+ candidates × 30s = many minutes.
     const MAX_PROXY_ATTEMPTS = 9;
     for (const url of candidateUrls.slice(0, MAX_PROXY_ATTEMPTS)) {
+      let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+      const upstreamController = new AbortController();
+      const upstreamTimeout = setTimeout(
+        () =>
+          upstreamController.abort(
+            new DOMException("The video upstream timed out", "TimeoutError"),
+          ),
+        8_000,
+      );
+      upstreamTimeout.unref?.();
+      const abortUpstream = () => {
+        if (!upstreamController.signal.aborted && !res.writableEnded) {
+          upstreamController.abort(
+            new DOMException(
+              "The video proxy client disconnected",
+              "AbortError",
+            ),
+          );
+        }
+      };
+      req.once("aborted", abortUpstream);
+      res.once("close", abortUpstream);
       try {
         const upstream = await fetch(url, {
           headers: authHeaders,
-          signal: AbortSignal.timeout(8_000),
+          signal: upstreamController.signal,
         });
         if (!upstream?.ok) {
           logger.info(
@@ -3644,7 +3668,7 @@ router.get(
         // Content-type alone is unreliable — MaxCore's SPA returns text/html with
         // 200 OK for every unrecognised path.  We read a small peek chunk first;
         // if it doesn't look like a real video we cancel and try the next candidate.
-        const reader = upstream?.body?.getReader();
+        reader = upstream?.body?.getReader();
         if (!reader) continue;
 
         // Read up to 512 bytes to inspect magic bytes
@@ -3696,42 +3720,61 @@ router.get(
         res.setHeader("Accept-Ranges", "bytes");
         res.writeHead(200);
 
-        // Stream: write the peeked chunk first, then pipe the rest
-        const nodeStream = new (await import("stream")).PassThrough();
-        nodeStream?.pipe(res);
-        nodeStream?.write(peekChunk);
-
-        (async () => {
-          const chunks: Uint8Array[] = [peekChunk];
-          try {
+        // Stream the validated first chunk and remaining Web-stream data through
+        // pipeline. Plain .pipe(res) leaves source errors unhandled; a deadline
+        // firing after headers resolved could therefore crash the process.
+        const chunks: Uint8Array[] = [];
+        const body = Readable.from(
+          (async function* () {
+            chunks.push(peekChunk);
+            yield peekChunk;
             if (!peekDone) {
               while (true) {
                 const { done, value } = await (reader?.read() ?? {});
                 if (done) break;
-                nodeStream?.write(value);
-                chunks?.push(value);
+                chunks.push(value);
+                yield value;
               }
             }
-            nodeStream?.end();
-            // Cache to PDIM after full stream
-            const buf = Buffer?.concat(chunks);
-            if (buf?.length > 10_240) {
-              await videoCachePocket.write(filename, buf);
-              logger.info(
-                `[VideoProxy] Cached ${filename} to PDIM (${(buf?.length / 1024).toFixed(0)} KB)`,
-              );
-            }
-          } catch {
-            nodeStream?.destroy();
-          }
-        })();
+          })(),
+        );
+        await pipeline(body, res);
 
-        logger.info(`[VideoProxy] Streaming ${filename} from ${url}`);
+        // Cache only after the complete body was received and relayed. A timed
+        // out or client-aborted partial response must never become a cache hit.
+        const buf = Buffer.concat(chunks);
+        if (buf.length > 10_240) {
+          await videoCachePocket.write(filename, buf);
+          logger.info(
+            `[VideoProxy] Cached ${filename} to PDIM (${(buf.length / 1024).toFixed(0)} KB)`,
+          );
+        }
+
+        logger.info(`[VideoProxy] Streamed ${filename} from ${url}`);
         return;
       } catch (err) {
+        if (res.headersSent) {
+          // Do not report a truncated video as a successful 200 or attempt a
+          // second candidate after response bytes have already been committed.
+          if (!res.destroyed) {
+            res.destroy(err instanceof Error ? err : undefined);
+          }
+          return;
+        }
         logger.info(
           `[VideoProxy] Candidate ${url} fetch error: ${(err as any)?.message}`,
         );
+      } finally {
+        clearTimeout(upstreamTimeout);
+        req.off("aborted", abortUpstream);
+        res.off("close", abortUpstream);
+        if (!res.writableEnded) {
+          try {
+            await reader?.cancel();
+          } catch {
+            // The reader may already be errored/cancelled by pipeline.
+          }
+        }
       }
     }
 
