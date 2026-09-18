@@ -21,8 +21,6 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle,
-  TrendingUp,
-  Zap,
 } from "lucide-react";
 import { useLocation } from "wouter";
 

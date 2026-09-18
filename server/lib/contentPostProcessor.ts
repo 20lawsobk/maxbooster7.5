@@ -1,57 +1,13 @@
 /**
  * Content Post-Processor
  *
- * Cleans MaxCore content generation output before any caption is stored or
- * posted. Fixes six recurring quality defects observed across all platforms:
- *
- *  1. Audience-segment metadata leaking into body copy ("for Gen-Z (16-24)")
- *  2. Garbage filler lines ("Spotify. Spotify.", "Facebook. Facebook.")
- *  3. Broken hashtags (raw topic string jammed into a # slot with em-dashes,
- *     commas, parens, or spaces) replaced with genre-specific discovery tags
- *  4. Stale hook templates recycled across platforms rotated out and replaced
- *     with fresh beat-specific hooks from a mood-indexed pool
- *  5. Platform-mismatched CTAs overridden with platform-appropriate language
- *  6. Generic audience-metadata phrases stripped from body copy
+ * Sanitizes MaxCore content at the trust boundary. The master cleaner preserves
+ * MaxCore's generated semantics and removes only leaked control directives.
+ * Hashtag normalization and platform CTA adjustment remain explicit opt-in
+ * utilities for callers whose product flow requires them.
  *
  * All functions are pure and side-effect free — safe to call anywhere.
  */
-
-// ── Fix 1: Strip audience-segment metadata ──────────────────────────────────
-
-/**
- * Remove internal audience-targeting labels that MaxCore leaks into body copy.
- * Patterns matched: "for Gen-Z (16-24)", "for music-savvy early adopters (20-35)",
- * "for engaged music fans (18-34)", etc.
- */
-function stripAudienceMetadata(text: string): string {
-  // Use [^\S\n] to collapse only horizontal whitespace — preserving the \n
-  // line boundaries that killFillerLines relies on to split and filter.
-  return text
-    .replace(/ for [^(.\n]+\(\d{2}-\d{2}\)/g, "")
-    .replace(/[^\S\n]{2,}/g, " ")
-    .trim();
-}
-
-// ── Fix 2: Kill garbage filler lines ────────────────────────────────────────
-
-// Matches a line that is nothing but one or two bare platform names (optionally
-// followed by a period). The first platform's trailing period is outside the
-// optional second-platform group so "Spotify." matches as a single entry.
-const FILLER_LINE_RE =
-  /^(spotify|facebook|instagram|tiktok|twitter|threads|linkedin|youtube)\.?(\s*(spotify|facebook|instagram|tiktok|twitter|threads|linkedin|youtube)\.?)?$/i;
-
-/**
- * Drop lines that are nothing but a bare platform name repeated 1–2 times.
- * Collapses resulting triple-newlines to double.
- */
-function killFillerLines(text: string): string {
-  return text
-    .split("\n")
-    .filter((line) => !FILLER_LINE_RE.test(line.trim()))
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
 
 // ── Fix 3: Normalise hashtags ────────────────────────────────────────────────
 
@@ -143,129 +99,6 @@ export function normalizeHashtags(
     0,
     8,
   );
-}
-
-// ── Fix 4: Replace stale hook templates ─────────────────────────────────────
-
-/** Hook prefixes MaxCore recycles at high volume. Case-insensitive prefix match. */
-const STALE_HOOK_PREFIXES = [
-  // Awareness-layer templates observed in the wild (update as new ones appear)
-  "exclusive: playlist editors are watching",
-  "this is what the viral algorithm wants right now",
-  "don't scroll —",
-  "don't scroll—",
-  "what the artist was really making this whole time",
-  "the secret the artist kept for six months just dropped",
-  "what the producer was really making this whole time",
-  "this is what you've been waiting for",
-  "the algorithm is finally pushing",
-  "the beat that's been on repeat in my studio",
-  "drop everything and listen",
-  // Video-endpoint script bleeding into content gen
-  "in this video, i'm going to show you something incredible",
-  "in this video i'm going to",
-  // Generic listener-appreciation hooks with no beat-sale intent
-  "real listeners know",
-  // Autopilot/template hooks
-  "this is what you've been waiting for",
-  "new drop alert",
-];
-
-function isStaleHook(text: string): boolean {
-  const lower = text.toLowerCase().slice(0, 100);
-  return STALE_HOOK_PREFIXES.some((p) => lower.startsWith(p));
-}
-
-/**
- * Fresh, mood-indexed hooks to substitute when MaxCore returns a stale
- * template. Each entry is a ready-to-post first line — no placeholders.
- */
-const FRESH_BEAT_HOOKS: Record<string, string[]> = {
-  dark: [
-    "This one hits different at 2AM. 🌑 Turn it up.",
-    "Dark energy. No skips. 808s that shake the room. 🔥",
-    "The type of beat that turns a verse into a moment. 🎧",
-    "Built for artists who paint pictures with their words. 🖤",
-    "Some beats don't ask for attention — they demand it.",
-  ],
-  aggressive: [
-    "No filler. No fluff. Just bars and 808s. 🔥",
-    "This beat doesn't wait for permission — neither should you.",
-    "Built for artists who mean every single word. 🎧",
-    "Hard-hitting production made for records that leave marks.",
-    "The drop is doing work before the first bar. 💥",
-  ],
-  melancholy: [
-    "The type of beat that makes you write your best verse. 🎧",
-    "Some beats hit different when you've got something to say. 💙",
-    "Emotion-first production. Say what needs to be said.",
-    "This one was built for the records people keep for years.",
-    "Not every beat needs to be loud. Some just need to be true.",
-  ],
-  empowering: [
-    "An anthem-grade beat for artists who make records that move rooms. 🔥",
-    "Built for the come-up era. This one's for the ones on the rise. 💪",
-    "Production that feels like a win before you write the first word.",
-    "The type of instrumental that makes you close your eyes and just go.",
-    "This beat's been waiting for someone to say something real over it.",
-  ],
-  chill: [
-    "Late-night energy. Something smooth for the real ones. 🌙",
-    "Flow-ready production that gives artists room to breathe and say something.",
-    "Not everything needs to be loud. This one hits quiet and hard. 🎧",
-    "Laid-back but intentional — the kind of beat that holds a whole verse.",
-    "Perfect tempo for the introspective record you've been sitting on.",
-  ],
-  upbeat: [
-    "Feel-good and infectious — the kind of record listeners play twice. 🔥",
-    "High energy from the jump. This one was built for playlists and moments.",
-    "You'll have the hook before the first loop ends. Trust. 🎶",
-    "The production is doing the heavy lifting — just bring the words.",
-    "This beat has 'I heard it and had to write something' written all over it.",
-  ],
-  mysterious: [
-    "Dark, layered, and impossible to place. The perfect canvas. 🎧",
-    "The kind of beat that gives artists total creative freedom. 🌑",
-    "Atmosphere-first production with a hook that lingers.",
-    "This one creates space — and space is where the best bars come from.",
-    "Intrigue before the first word. That's the goal. 🔥",
-  ],
-  euphoric: [
-    "Euphoric energy that lifts the room — built for moments that matter. ✨",
-    "This one was made for the records people remember exactly where they were. 🔥",
-    "Production at this level makes the verse write itself.",
-    "Feel it in your chest from the first bar. That's the standard. 🎧",
-    "The type of instrumental that makes the room go quiet and then loud.",
-  ],
-  driven: [
-    "High-momentum production that demands a verse with something to prove. 🔥",
-    "Built for artists in their bag. The energy is already there — use it.",
-    "This beat has urgency built into every layer. No slowing down.",
-    "The type of instrumental that makes you want to run through a wall. 💪",
-    "Relentless tempo. Relentless production. No excuses for a weak verse.",
-  ],
-};
-
-/** Fallback hooks when mood doesn't match any pool. */
-const DEFAULT_FRESH_HOOKS = [
-  "The marketplace just got a new drop — and it goes. 🔥",
-  "License-ready production built for artists who take their craft seriously. 🎧",
-  "This one's been sitting in the vault long enough. Available now.",
-  "Built for artists who show up and deliver. The beat will match that energy.",
-  "New drop. Real production. Available for immediate licensing. 🎧",
-];
-
-/**
- * Pick a random fresh hook from the mood pool. Seeded by title length so
- * successive calls with different titles almost always return different lines.
- */
-function freshHook(mood: string, title: string): string {
-  const pool =
-    FRESH_BEAT_HOOKS[mood.toLowerCase()] ?? DEFAULT_FRESH_HOOKS;
-  const seed = (title?.length ?? 0) % pool.length;
-  // Shift by a random offset so repeated calls vary even with the same title
-  const idx = (seed + Math.floor(Math.random() * pool.length)) % pool.length;
-  return pool[idx];
 }
 
 /**
@@ -384,38 +217,6 @@ export interface CleanContentResult {
   hashtags: string[];
 }
 
-// ── Fix 7: Strip prompt bleed + restore title casing in body ────────────────
-
-/**
- * MaxCore sometimes leaks its own system-prompt instructions into body copy
- * when PDIM storage is offline (fallback mode). Patterns observed:
- *  - "Write about the actual beat — trap sound, 145 BPM. Reference these..."
- *  - "Reference these real production facts instead of generic hype."
- * Strip any sentence that reads as an instruction rather than copy.
- * Also restores the proper case of a lowercased beat title.
- */
-function repairBody(body: string, title?: string): string {
-  const PROMPT_BLEED_RE =
-    /^(write about|reference these|add (a |an )?(compelling|urgent)|use the following|replace this with|include the|note:|instruction:)/i;
-
-  const lines = body.split("\n").filter((line) => {
-    const t = line.trim();
-    return t.length === 0 || !PROMPT_BLEED_RE.test(t);
-  });
-  let cleaned = lines.join("\n").trim();
-
-  // Restore proper case of beat title if MaxCore lowercased it
-  if (title && title.length >= 3) {
-    const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    cleaned = cleaned.replace(
-      new RegExp(`\\b${escaped}\\b`, "gi"),
-      title,
-    );
-  }
-
-  return cleaned;
-}
-
 // ── Fix 7: Strip leaked internal directive blocks ───────────────────────────
 
 /**
@@ -445,8 +246,8 @@ export function stripLeakedDirectives(text: string): string {
 }
 
 /**
- * Apply all seven fixes to a MaxCore content response in one call.
- * Safe to call on already-clean content — functions are idempotent.
+ * Sanitize a MaxCore content response without locally rewriting its creative
+ * output. Safe to call on already-clean content.
  */
 export function cleanMaxCoreContent(
   args: CleanContentArgs,

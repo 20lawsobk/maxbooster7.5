@@ -5355,10 +5355,10 @@ router.get(
 
 // Disputing a discrepancy must leave a durable review record rather than merely
 // changing the item displayed in the client.
-router.post(
+router.post<{ discrepancyId: string }>(
   "/royalties/discrepancies/:discrepancyId/dispute",
   requireAuth,
-  async (req: Request, res: Response) => {
+  async (req: Request<{ discrepancyId: string }>, res: Response) => {
     try {
       const userId = (req.user as AuthenticatedUser).id;
       const { discrepancyId } = req.params;

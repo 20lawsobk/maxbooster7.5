@@ -225,32 +225,11 @@ export async function generatePlannerDirect(
   },
   transport: MaxCoreTransport = defaultTransport,
 ): Promise<MaxCorePlannerStep[]> {
+  void request;
+  void transport;
   throw new AIUnavailableError(
     "text planning: MaxCore planner is fixed workflow metadata, not inference",
   );
-  const raw = await transport<Record<string, unknown>>("/api/generate/text", {
-    mode: "planner",
-    system: requiredText(request.system, "planner system"),
-    inputs: request.inputs ?? {},
-    intent: request.intent,
-  });
-  if (!raw || !Array.isArray(raw.steps) || raw.steps.length === 0) {
-    throw new AIUnavailableError("text planning");
-  }
-  return raw.steps.map((item, index) => {
-    if (!item || typeof item !== "object") {
-      throw new AIUnavailableError("MaxCore returned invalid planner step");
-    }
-    const step = item as Record<string, unknown>;
-    return {
-      id:
-        typeof step.id === "number" || typeof step.id === "string"
-          ? step.id
-          : index + 1,
-      action: requiredText(step.action, "planner step action"),
-      description: requiredText(step.description, "planner step description"),
-    };
-  });
 }
 
 export async function predictEngagementDirect(
@@ -268,28 +247,11 @@ export async function predictEngagementDirect(
   },
   transport: MaxCoreTransport = defaultTransport,
 ): Promise<Record<string, unknown>> {
+  void request;
+  void transport;
   throw new AIUnavailableError(
     "engagement prediction: MaxCore endpoint is heuristic and not an AI prediction contract",
   );
-  const raw = await transport<Record<string, unknown>>(
-    "/api/predict/engagement",
-    {
-      platform: requiredText(request.platform, "engagement platform"),
-      action: request.action,
-      content: request.content,
-      postsPerWeek: request.postsPerWeek,
-      awareness: request.awareness,
-    },
-  );
-  if (!raw || raw.action !== request.action || raw.platform === undefined) {
-    throw new AIUnavailableError("engagement prediction");
-  }
-  if (raw.source === "heuristic") {
-    throw new AIUnavailableError(
-      `engagement ${request.action}: MaxCore model was unavailable`,
-    );
-  }
-  return raw;
 }
 
 export async function getAdsAutopilotDirect(

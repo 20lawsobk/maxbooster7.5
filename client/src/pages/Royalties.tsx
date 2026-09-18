@@ -108,7 +108,7 @@ interface PublishingWork {
   publishingSplit: number;
   copyrightYear: number;
   coWriters?: string;
-  status: "pending" | "registered" | "rejected";
+  status: "pending" | "confirmed" | "active" | "inactive";
 }
 
 interface PublishingStats {

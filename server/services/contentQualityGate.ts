@@ -162,6 +162,7 @@ class ContentQualityGate {
       targetAudience?: string;
     },
   ): Promise<GateResult | null> {
+    void params;
     const platformOpt = contentQualityPipeline.validatePlatformConstraints(
       rawText,
       [],

@@ -85,6 +85,71 @@ const defaultProgress: BatchProgress = {
   percentage: 0,
 };
 
+export async function parseBatchResultResponse(
+  response: Response,
+  expectedIds: string[],
+): Promise<BatchResult> {
+  const payload: unknown = await response.json();
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Batch operation returned an invalid response");
+  }
+
+  const value = payload as Record<string, unknown>;
+  const success = value.success;
+  const failed = value.failed;
+  if (
+    !Array.isArray(success) ||
+    !success.every((id) => typeof id === "string") ||
+    !Array.isArray(failed) ||
+    !failed.every(
+      (failure) =>
+        failure !== null &&
+        typeof failure === "object" &&
+        typeof (failure as Record<string, unknown>).id === "string" &&
+        typeof (failure as Record<string, unknown>).error === "string",
+    ) ||
+    value.totalRequested !== expectedIds.length ||
+    value.totalSucceeded !== success.length ||
+    value.totalFailed !== failed.length ||
+    success.length + failed.length !== expectedIds.length
+  ) {
+    throw new Error("Batch operation returned an invalid response");
+  }
+
+  const requested = new Set(expectedIds);
+  if (
+    !success.every((id) => requested.has(id)) ||
+    !failed.every((failure) =>
+      requested.has((failure as { id: string }).id),
+    )
+  ) {
+    throw new Error("Batch operation returned results for unexpected items");
+  }
+
+  if (
+    (value.downloadUrl !== undefined &&
+      value.downloadUrl !== null &&
+      typeof value.downloadUrl !== "string") ||
+    (value.exportId !== undefined && typeof value.exportId !== "string") ||
+    (value.comparisonData !== undefined &&
+      !Array.isArray(value.comparisonData))
+  ) {
+    throw new Error("Batch operation returned an invalid response");
+  }
+
+  return {
+    success,
+    failed: failed as Array<{ id: string; error: string }>,
+    totalRequested: value.totalRequested as number,
+    totalSucceeded: value.totalSucceeded as number,
+    totalFailed: value.totalFailed as number,
+    downloadUrl:
+      typeof value.downloadUrl === "string" ? value.downloadUrl : undefined,
+    exportId: typeof value.exportId === "string" ? value.exportId : undefined,
+    comparisonData: value.comparisonData as unknown[] | undefined,
+  };
+}
+
 export function useBatchAction(
   options: UseBatchActionOptions = {},
 ): UseBatchActionReturn {
@@ -195,18 +260,8 @@ export function useBatchAction(
         const body = { ids, data };
 
         const response = await apiRequest(method, url, body);
+        const actionResult = await parseBatchResultResponse(response, ids);
         stopProgressSimulation();
-
-        const actionResult: BatchResult = {
-          success: response.success || ids,
-          failed: response.failed || [],
-          totalRequested: ids.length,
-          totalSucceeded: response.success?.length ?? ids?.length,
-          totalFailed: response.failed?.length ?? 0,
-          downloadUrl: response.downloadUrl,
-          exportId: response.exportId,
-          comparisonData: response.comparisonData,
-        };
 
         updateProgress({ current: ids.length, total: ids.length });
         setResult(actionResult);

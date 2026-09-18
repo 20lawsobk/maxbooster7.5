@@ -8,21 +8,48 @@
 import { Router } from "express";
 import { promises as dns } from "dns";
 import { isIPv4 as netIsIPv4 } from "net";
-import { contentAnalysisService } from "../services/contentAnalysisService";
+import { Transform } from "stream";
+import {
+  ContentAnalysisUpstreamError,
+  contentAnalysisService,
+  normalizeOwnedAudioAsset,
+} from "../services/contentAnalysisService";
 import { requireAuth } from "../middleware/auth";
 import { logger } from "../logger";
 import rateLimit from "express-rate-limit";
 import { db } from "../db";
 import { users, posts, adCampaigns } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import {
+  getMaxcoreGenerationHeaders,
+  getMaxcoreOrigin,
+  maxcoreUrl,
+} from "../services/maxcoreConnector.js";
 
 const analysisErrorStatus = (error: unknown) =>
-  error instanceof AIUnavailableError ? 503 : 500;
+  error instanceof ContentAnalysisUpstreamError
+    ? error.status
+    : error instanceof AIUnavailableError
+      ? 503
+      : 500;
+
+const IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+const VIDEO_TYPES = new Set([
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+]);
+const MAXCORE_ANALYSIS_ASSET =
+  /^\/uploads\/analysis-inputs\/[a-f0-9]{64}\/[a-f0-9]{32}\.(?:jpg|png|webp|mp4|webm|mov)$/;
 
 // ─── Shared IP-safety helpers (pre-flight, defense-in-depth) ─────────────────
-// The primary SSRF barrier is the connect-time lookup in contentAnalysisService;
-// these checks are an early-rejection layer to block obvious private targets.
+// MaxCore's native fetcher performs the connect-time SSRF check; these checks
+// are an early-rejection layer to block obvious private targets.
 
 const PRIVATE_IPV4_RE =
   /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|0\.)/;
@@ -59,6 +86,12 @@ function isReservedIp(raw: string): boolean {
  */
 async function validateExternalUrl(raw: string): Promise<string> {
   let normalised = raw?.trim();
+  // Upload returns an owner-scoped opaque MaxCore path. It must remain relative:
+  // the native worker recognizes this shape and resolves it under the caller's
+  // hashed owner directory without making an HTTP request.
+  if (MAXCORE_ANALYSIS_ASSET.test(normalised)) {
+    return normalised;
+  }
   if (normalised && !/^https?:\/\//i?.test(normalised)) {
     normalised = "https://" + normalised;
   }
@@ -70,6 +103,13 @@ async function validateExternalUrl(raw: string): Promise<string> {
   }
   if (parsed?.protocol !== "https:" && parsed?.protocol !== "http:") {
     throw new Error("Invalid URL protocol");
+  }
+  // MaxCore-owned temporary assets may intentionally live on its private/local
+  // origin. They are safe because MaxCore enforces ownership using the actor
+  // header; no arbitrary private origin is granted this exception.
+  const maxcoreOrigin = getMaxcoreOrigin();
+  if (maxcoreOrigin && parsed.origin === new URL(maxcoreOrigin).origin) {
+    return parsed.href;
   }
   // parsed?.hostname strips brackets from IPv6 literals (e?.g. [::1] → ::1).
   const hostname = parsed?.hostname.toLowerCase();
@@ -89,6 +129,14 @@ async function validateExternalUrl(raw: string): Promise<string> {
     }
   }
   return parsed?.href;
+}
+
+function actorId(req: { user?: { id?: unknown } }): string {
+  const id = req.user?.id;
+  if (typeof id !== "string" || !id.trim()) {
+    throw new Error("Authenticated user is missing an id");
+  }
+  return id;
 }
 
 const router = Router();
@@ -153,6 +201,106 @@ router.use(requireAuth);
 router.use(requirePremium);
 
 /**
+ * Stream an authenticated raw image/video to MaxCore-owned temporary storage.
+ * The body is intentionally raw (not multipart), allowing it to be proxied
+ * without buffering it in application memory.
+ */
+router.post("/assets", async (req, res) => {
+  const kind = req.query.kind;
+  if (kind !== "image" && kind !== "video") {
+    return res.status(400).json({ error: 'kind must be "image" or "video"' });
+  }
+
+  const contentType = String(req.headers["content-type"] || "")
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
+  const allowed = kind === "image" ? IMAGE_TYPES : VIDEO_TYPES;
+  if (!allowed.has(contentType)) {
+    return res.status(415).json({ error: `Unsupported ${kind} content type` });
+  }
+
+  const limit = kind === "image" ? 16 * 1024 * 1024 : 100 * 1024 * 1024;
+  const declaredLength = Number(req.headers["content-length"]);
+  if (
+    Number.isFinite(declaredLength) &&
+    (declaredLength <= 0 || declaredLength > limit)
+  ) {
+    return res.status(declaredLength > limit ? 413 : 400).json({
+      error: declaredLength > limit ? "Upload is too large" : "Upload is empty",
+    });
+  }
+
+  let seen = 0;
+  let tooLarge = false;
+  const bounded = new Transform({
+    transform(chunk, _encoding, callback) {
+      seen += chunk.length;
+      if (seen > limit) {
+        tooLarge = true;
+        callback(new Error("UPLOAD_TOO_LARGE"));
+        return;
+      }
+      callback(null, chunk);
+    },
+  });
+  req.pipe(bounded);
+
+  try {
+    const upstream = await fetch(
+      `${maxcoreUrl("/api/analysis/upload")}?kind=${kind}`,
+      {
+        method: "POST",
+        headers: {
+          ...getMaxcoreGenerationHeaders(),
+          "X-MaxCore-User-Id": actorId(req),
+          "Content-Type": contentType,
+          ...(Number.isFinite(declaredLength)
+            ? { "Content-Length": String(declaredLength) }
+            : {}),
+        },
+        body: bounded,
+        duplex: "half",
+        signal: AbortSignal.timeout(600_000),
+        redirect: "manual",
+      } as RequestInit & { duplex: "half" },
+    );
+    if (!upstream.ok) {
+      const status = [400, 413, 415, 422, 429].includes(upstream.status)
+        ? upstream.status
+        : 503;
+      return res.status(status).json({
+        error:
+          status === 503
+            ? "Content analysis storage is unavailable"
+            : "Upload was rejected",
+      });
+    }
+    const value = await upstream.json().catch(() => null);
+    if (
+      !value ||
+      typeof value.url !== "string" ||
+      !value.url ||
+      typeof value.expires_at !== "string" ||
+      !value.expires_at
+    ) {
+      return res
+        .status(503)
+        .json({ error: "Content analysis storage returned an invalid response" });
+    }
+    return res.json({ url: value.url, expires_at: value.expires_at });
+  } catch (error) {
+    if (tooLarge || (error instanceof Error && error.message === "UPLOAD_TOO_LARGE")) {
+      return res.status(413).json({ error: "Upload is too large" });
+    }
+    logger.warn({ err: error }, "Content analysis asset upload failed");
+    return res
+      .status(503)
+      .json({ error: "Content analysis storage is unavailable" });
+  }
+});
+
+/**
  * Analyze image content
  * POST /api/content-analysis/image
  * Body: { imageUrl: string }
@@ -172,7 +320,10 @@ router.post("/image", async (req, res) => {
       return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
-    const analysis = await contentAnalysisService?.analyzeImage(safeImageUrl);
+    const analysis = await contentAnalysisService.analyzeImage(
+      safeImageUrl,
+      actorId(req),
+    );
 
     res.json({
       success: true,
@@ -196,7 +347,7 @@ router.post("/image", async (req, res) => {
  */
 router.post("/video", async (req, res) => {
   try {
-    const { videoUrl, duration } = req.body;
+    const { videoUrl } = req.body;
 
     if (!videoUrl) {
       return res.status(400).json({ error: "videoUrl is required" });
@@ -209,9 +360,9 @@ router.post("/video", async (req, res) => {
       return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
-    const analysis = await contentAnalysisService?.analyzeVideo(
+    const analysis = await contentAnalysisService.analyzeVideo(
       safeVideoUrl,
-      duration || 30,
+      actorId(req),
     );
 
     res.json({
@@ -242,17 +393,17 @@ router.post("/audio", async (req, res) => {
       return res.status(400).json({ error: "audioUrl is required" });
     }
 
-    let safeAudioUrl: string;
-    try {
-      safeAudioUrl = await validateExternalUrl(audioUrl);
-    } catch {
-      return res.status(400).json({ error: "Invalid or unsafe URL" });
+    const ownedAudioAsset = normalizeOwnedAudioAsset(audioUrl);
+    if (!ownedAudioAsset) {
+      return res.status(422).json({
+        error: "audioUrl must be an owned asset returned by /api/audio/upload",
+      });
     }
 
-    const analysis = await contentAnalysisService?.analyzeAudio(
-      safeAudioUrl,
+    const analysis = await contentAnalysisService.analyzeAudio(
+      ownedAudioAsset,
       metadata,
-      req.user!.id,
+      actorId(req),
     );
 
     res.json({
@@ -283,7 +434,10 @@ router.post("/text", async (req, res) => {
       return res.status(400).json({ error: "text is required" });
     }
 
-    const analysis = await contentAnalysisService?.analyzeText(text);
+    if (typeof text !== "string" || !text.trim()) {
+      return res.status(422).json({ error: "text must be a non-empty string" });
+    }
+    const analysis = await contentAnalysisService.analyzeText(text, actorId(req));
 
     res.json({
       success: true,
@@ -337,7 +491,10 @@ router.post("/website", async (req, res) => {
       return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
-    const analysis = await contentAnalysisService?.analyzeWebsite(safeUrl);
+    const analysis = await contentAnalysisService.analyzeWebsite(
+      safeUrl,
+      actorId(req),
+    );
 
     res.json({
       success: true,
@@ -379,7 +536,10 @@ router.post("/batch", async (req, res) => {
       } catch {
         return res.status(400).json({ error: "Invalid or unsafe mediaUrl" });
       }
-      results.image = await contentAnalysisService?.analyzeImage(safeMediaUrl);
+      results.image = await contentAnalysisService.analyzeImage(
+        safeMediaUrl,
+        actorId(req),
+      );
     }
 
     if (mediaType === "video" && mediaUrl) {
@@ -389,14 +549,17 @@ router.post("/batch", async (req, res) => {
       } catch {
         return res.status(400).json({ error: "Invalid or unsafe mediaUrl" });
       }
-      results.video = await contentAnalysisService?.analyzeVideo(
+      results.video = await contentAnalysisService.analyzeVideo(
         safeMediaUrl,
-        videoDuration || 30,
+        actorId(req),
       );
     }
 
     if (text) {
-      results.text = await contentAnalysisService?.analyzeText(text);
+      if (typeof text !== "string") {
+        return res.status(422).json({ error: "text must be a string" });
+      }
+      results.text = await contentAnalysisService.analyzeText(text, actorId(req));
     }
 
     if (landingPageUrl) {
@@ -408,8 +571,10 @@ router.post("/batch", async (req, res) => {
           .status(400)
           .json({ error: "Invalid or unsafe landingPageUrl" });
       }
-      results.website =
-        await contentAnalysisService?.analyzeWebsite(safeLandingPageUrl);
+      results.website = await contentAnalysisService.analyzeWebsite(
+        safeLandingPageUrl,
+        actorId(req),
+      );
     }
 
     res.json({
@@ -447,7 +612,7 @@ router.get("/:type/:id", requireAuth, async (req, res) => {
       const [post] = await db
         .select()
         .from(posts)
-        .where(eq(posts.id, id))
+        .where(and(eq(posts.id, id), eq(posts.userId, actorId(req))))
         .limit(1);
 
       if (!post) {
@@ -475,7 +640,12 @@ router.get("/:type/:id", requireAuth, async (req, res) => {
       const [campaign] = await db
         .select()
         .from(adCampaigns)
-        .where(eq(adCampaigns.id, id))
+        .where(
+          and(
+            eq(adCampaigns.id, id),
+            eq(adCampaigns.userId, actorId(req)),
+          ),
+        )
         .limit(1);
 
       if (!campaign) {

@@ -1094,8 +1094,7 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription>
-                        {testData?.message ||
-                          "No test result data is available yet."}
+                        No test result data is available yet.
                       </AlertDescription>
                     </Alert>
                   ) : (
@@ -1167,8 +1166,7 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription>
-                        {testData?.message ||
-                          "No test statistics are available yet."}
+                        No test statistics are available yet.
                       </AlertDescription>
                     </Alert>
                   ) : (

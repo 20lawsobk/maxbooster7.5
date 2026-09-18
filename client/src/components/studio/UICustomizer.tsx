@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { useStudioStore } from "@/lib/studioStore";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { Settings2, ChevronDown, ChevronUp, Layout, Palette, Keyboard, Save, RotateCcw, GripVertical, Eye, EyeOff, Layers, ZoomIn, Activity, Mic, Sliders, Headphones, Trash2, Plus, Check } from "lucide-react";
 import {
@@ -229,6 +230,174 @@ const DEFAULT_PREFERENCES: UIPreferences = {
   activePreset: null,
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function normalizeUIPreferences(value: unknown): UIPreferences {
+  const input = isRecord(value) ? value : {};
+  const validPanels = Array.isArray(input.panels)
+    ? input.panels.filter(
+        (panel): panel is PanelConfig =>
+          isRecord(panel) &&
+          typeof panel.id === "string" &&
+          typeof panel.name === "string" &&
+          typeof panel.visible === "boolean" &&
+          typeof panel.order === "number" &&
+          Number.isFinite(panel.order),
+      )
+    : [];
+  const validToolbarButtons = Array.isArray(input.toolbarButtons)
+    ? input.toolbarButtons.filter(
+        (button): button is ToolbarButton =>
+          isRecord(button) &&
+          typeof button.id === "string" &&
+          typeof button.name === "string" &&
+          typeof button.visible === "boolean",
+      )
+    : [];
+  const validShortcuts = Array.isArray(input.shortcuts)
+    ? input.shortcuts.filter(
+        (shortcut): shortcut is KeyboardShortcut =>
+          isRecord(shortcut) &&
+          typeof shortcut.id === "string" &&
+          typeof shortcut.name === "string" &&
+          typeof shortcut.key === "string" &&
+          (shortcut.ctrl === undefined ||
+            typeof shortcut.ctrl === "boolean") &&
+          (shortcut.shift === undefined ||
+            typeof shortcut.shift === "boolean") &&
+          (shortcut.alt === undefined || typeof shortcut.alt === "boolean"),
+      )
+    : [];
+  const theme = isRecord(input.theme) ? input.theme : {};
+  const meterSettings = isRecord(input.meterSettings)
+    ? input.meterSettings
+    : {};
+  const mergeById = <T extends { id: string }>(
+    defaults: T[],
+    persisted: T[],
+  ): T[] => [
+    ...defaults.map(
+      (item) => persisted.find((candidate) => candidate.id === item.id) ?? item,
+    ),
+    ...persisted.filter(
+      (item) => !defaults.some((defaultItem) => defaultItem.id === item.id),
+    ),
+  ];
+  const validLayoutPresets = Array.isArray(input.layoutPresets)
+    ? input.layoutPresets.filter(
+        (preset): preset is LayoutPreset =>
+          isRecord(preset) &&
+          typeof preset.id === "string" &&
+          typeof preset.name === "string" &&
+          Array.isArray(preset.panels) &&
+          preset.panels.every(
+            (panel) =>
+              isRecord(panel) &&
+              typeof panel.id === "string" &&
+              typeof panel.name === "string" &&
+              typeof panel.visible === "boolean" &&
+              typeof panel.order === "number",
+          ) &&
+          Array.isArray(preset.toolbarButtons) &&
+          preset.toolbarButtons.every(
+            (button) =>
+              isRecord(button) &&
+              typeof button.id === "string" &&
+              typeof button.name === "string" &&
+              typeof button.visible === "boolean",
+          ) &&
+          isRecord(preset.theme) &&
+          typeof preset.theme.accentColor === "string" &&
+          typeof preset.theme.backgroundColor === "string" &&
+          typeof preset.theme.textColor === "string" &&
+          typeof preset.theme.borderColor === "string" &&
+          typeof preset.zoomLevel === "number" &&
+          Number.isFinite(preset.zoomLevel),
+      )
+    : [];
+
+  return {
+    panels: mergeById(DEFAULT_PANELS, validPanels),
+    toolbarButtons: mergeById(DEFAULT_TOOLBAR_BUTTONS, validToolbarButtons),
+    shortcuts: mergeById(DEFAULT_SHORTCUTS, validShortcuts),
+    theme: {
+      accentColor:
+        typeof theme.accentColor === "string"
+          ? theme.accentColor
+          : DEFAULT_THEME.accentColor,
+      backgroundColor:
+        typeof theme.backgroundColor === "string"
+          ? theme.backgroundColor
+          : DEFAULT_THEME.backgroundColor,
+      textColor:
+        typeof theme.textColor === "string"
+          ? theme.textColor
+          : DEFAULT_THEME.textColor,
+      borderColor:
+        typeof theme.borderColor === "string"
+          ? theme.borderColor
+          : DEFAULT_THEME.borderColor,
+    },
+    zoomLevel:
+      typeof input.zoomLevel === "number" &&
+      Number.isFinite(input.zoomLevel) &&
+      input.zoomLevel >= 0.5 &&
+      input.zoomLevel <= 3
+        ? input.zoomLevel
+        : DEFAULT_PREFERENCES.zoomLevel,
+    meterSettings: {
+      ballistics:
+        meterSettings.ballistics === "fast" ||
+        meterSettings.ballistics === "medium" ||
+        meterSettings.ballistics === "slow"
+          ? meterSettings.ballistics
+          : DEFAULT_METER_SETTINGS.ballistics,
+      peakHold:
+        typeof meterSettings.peakHold === "number" &&
+        Number.isFinite(meterSettings.peakHold)
+          ? meterSettings.peakHold
+          : DEFAULT_METER_SETTINGS.peakHold,
+      falloff:
+        typeof meterSettings.falloff === "number" &&
+        Number.isFinite(meterSettings.falloff)
+          ? meterSettings.falloff
+          : DEFAULT_METER_SETTINGS.falloff,
+    },
+    layoutPresets: mergeById(WORKFLOW_PRESETS, validLayoutPresets),
+    activePreset:
+      typeof input.activePreset === "string" || input.activePreset === null
+        ? input.activePreset
+        : null,
+  };
+}
+
+export function getStudioPreferencesStorageKey(
+  userId: string | null,
+): string | null {
+  return userId ? `${STORAGE_KEY}:${userId}` : null;
+}
+
+export function shouldApplyServerHydration({
+  userId,
+  hydratedUserId,
+  hasUnsavedEdits,
+  hasServerData,
+}: {
+  userId: string | null;
+  hydratedUserId: string | null;
+  hasUnsavedEdits: boolean;
+  hasServerData: boolean;
+}): boolean {
+  return Boolean(
+    userId &&
+      hasServerData &&
+      hydratedUserId !== userId &&
+      !hasUnsavedEdits,
+  );
+}
+
 interface CollapsibleSectionProps {
   title: string;
   icon?: React.ReactNode;
@@ -354,17 +523,8 @@ export function UICustomizer({
   onApplyPreferences,
 }: UICustomizerProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const {
-    browserVisible,
-    inspectorVisible,
-    routingMatrixVisible,
-    toggleBrowser,
-    toggleInspector,
-    toggleRoutingMatrix,
-    zoom,
-    setZoom,
-  } = useStudioStore();
 
   const [preferences, setPreferences] =
     useState<UIPreferences>(DEFAULT_PREFERENCES);
@@ -372,6 +532,11 @@ export function UICustomizer({
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null);
   const [newPresetName, setNewPresetName] = useState("");
   const [showSavePresetDialog, setShowSavePresetDialog] = useState(false);
+  const hasUnsavedEditsRef = useRef(false);
+  const hydratedUserRef = useRef<string | null>(null);
+  const userId = user?.id ? String(user.id) : null;
+  const queryKey = ["/api/user/preferences/studio", { userId }];
+  const storageKey = getStudioPreferencesStorageKey(userId);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -380,31 +545,32 @@ export function UICustomizer({
     }),
   );
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setPreferences({ ...DEFAULT_PREFERENCES, ...parsed });
-      } catch {
-        setPreferences(DEFAULT_PREFERENCES);
-      }
-    }
-  }, []);
-
-  useQuery({
-    queryKey: ["/api/user/preferences/studio"],
-    enabled: open,
+  const { data: serverPreferences } = useQuery<unknown>({
+    queryKey,
+    queryFn: async () => {
+      const response = await apiRequest(
+        "GET",
+        "/api/user/preferences/studio",
+      );
+      return response.json();
+    },
+    enabled: open && Boolean(userId),
   });
 
   const savePreferencesMutation = useMutation({
     mutationFn: async (prefs: UIPreferences) => {
       return await apiRequest("PUT", "/api/user/preferences/studio", prefs);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/user/preferences/studio"],
-      });
+    onSuccess: (_response, savedPreferences) => {
+      hasUnsavedEditsRef.current = false;
+      queryClient.setQueryData(queryKey, savedPreferences);
+      if (storageKey) {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(savedPreferences));
+        } catch {
+          // Server persistence remains authoritative when browser storage is unavailable.
+        }
+      }
       toast({ title: "Preferences saved" });
     },
     onError: () => {
@@ -415,44 +581,103 @@ export function UICustomizer({
     },
   });
 
+  const applyPreferencesToStore = useCallback((next: UIPreferences) => {
+    const studio = useStudioStore.getState();
+    const browserPanel = next.panels.find((p) => p.id === "browser");
+    const inspectorPanel = next.panels.find((p) => p.id === "inspector");
+    const routingPanel = next.panels.find((p) => p.id === "routing");
+
+    if (browserPanel && browserPanel.visible !== studio.browserVisible) {
+      studio.toggleBrowser();
+    }
+    if (inspectorPanel && inspectorPanel.visible !== studio.inspectorVisible) {
+      studio.toggleInspector();
+    }
+    if (
+      routingPanel &&
+      routingPanel.visible !== studio.routingMatrixVisible
+    ) {
+      studio.toggleRoutingMatrix();
+    }
+    if (next.zoomLevel !== studio.zoom) {
+      studio.setZoom(next.zoomLevel);
+    }
+  }, []);
+
   const savePreferences = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
     savePreferencesMutation.mutate(preferences);
     onApplyPreferences?.(preferences);
-    applyPreferencesToStore();
-  }, [preferences, savePreferencesMutation, onApplyPreferences]);
-
-  const applyPreferencesToStore = useCallback(() => {
-    const browserPanel = preferences.panels.find((p) => p.id === "browser");
-    const inspectorPanel = preferences.panels.find((p) => p.id === "inspector");
-    const routingPanel = preferences.panels.find((p) => p.id === "routing");
-
-    if (browserPanel && browserPanel.visible !== browserVisible) {
-      toggleBrowser();
-    }
-    if (inspectorPanel && inspectorPanel.visible !== inspectorVisible) {
-      toggleInspector();
-    }
-    if (routingPanel && routingPanel.visible !== routingMatrixVisible) {
-      toggleRoutingMatrix();
-    }
-    if (preferences.zoomLevel !== zoom) {
-      setZoom(preferences.zoomLevel);
-    }
+    applyPreferencesToStore(preferences);
   }, [
     preferences,
-    browserVisible,
-    inspectorVisible,
-    routingMatrixVisible,
-    zoom,
-    toggleBrowser,
-    toggleInspector,
-    toggleRoutingMatrix,
-    setZoom,
+    savePreferencesMutation,
+    onApplyPreferences,
+    applyPreferencesToStore,
+  ]);
+
+  const updatePreferences = useCallback(
+    (update: React.SetStateAction<UIPreferences>) => {
+      hasUnsavedEditsRef.current = true;
+      setPreferences(update);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    hydratedUserRef.current = null;
+    hasUnsavedEditsRef.current = false;
+    setPreferences(DEFAULT_PREFERENCES);
+
+    if (!storageKey) {
+      onApplyPreferences?.(DEFAULT_PREFERENCES);
+      applyPreferencesToStore(DEFAULT_PREFERENCES);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const cached = normalizeUIPreferences(JSON.parse(stored));
+        setPreferences(cached);
+        onApplyPreferences?.(cached);
+        applyPreferencesToStore(cached);
+      }
+    } catch {
+      // Ignore unavailable or corrupt optional cache; the server query will hydrate.
+    }
+    // Hydrate the optional cache once per authenticated user.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
+
+  useEffect(() => {
+    const hasServerData = serverPreferences !== undefined;
+    if (!userId || !hasServerData || hydratedUserRef.current === userId) {
+      return;
+    }
+    hydratedUserRef.current = userId;
+    if (
+      !shouldApplyServerHydration({
+        userId,
+        hydratedUserId: null,
+        hasUnsavedEdits: hasUnsavedEditsRef.current,
+        hasServerData,
+      })
+    ) {
+      return;
+    }
+
+    const hydrated = normalizeUIPreferences(serverPreferences);
+    setPreferences(hydrated);
+    onApplyPreferences?.(hydrated);
+    applyPreferencesToStore(hydrated);
+  }, [
+    userId,
+    serverPreferences,
+    onApplyPreferences,
+    applyPreferencesToStore,
   ]);
 
   const handlePanelToggle = (panelId: string) => {
-    setPreferences((prev) => ({
+    updatePreferences((prev) => ({
       ...prev,
       panels: prev.panels.map((p) =>
         p.id === panelId ? { ...p, visible: !p.visible } : p,
@@ -463,7 +688,7 @@ export function UICustomizer({
   const handlePanelDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      setPreferences((prev) => {
+      updatePreferences((prev) => {
         const oldIndex = prev.panels.findIndex((p) => p.id === active.id);
         const newIndex = prev.panels.findIndex((p) => p.id === over.id);
         const reordered = arrayMove(prev.panels, oldIndex, newIndex);
@@ -476,7 +701,7 @@ export function UICustomizer({
   };
 
   const handleToolbarButtonToggle = (buttonId: string) => {
-    setPreferences((prev) => ({
+    updatePreferences((prev) => ({
       ...prev,
       toolbarButtons: prev.toolbarButtons.map((b) =>
         b.id === buttonId ? { ...b, visible: !b.visible } : b,
@@ -485,14 +710,14 @@ export function UICustomizer({
   };
 
   const handleThemeChange = (key: keyof ThemeConfig, value: string) => {
-    setPreferences((prev) => ({
+    updatePreferences((prev) => ({
       ...prev,
       theme: { ...prev.theme, [key]: value },
     }));
   };
 
   const handleShortcutEdit = (shortcutId: string, newKey: string) => {
-    setPreferences((prev) => ({
+    updatePreferences((prev) => ({
       ...prev,
       shortcuts: prev.shortcuts.map((s) =>
         s.id === shortcutId ? { ...s, key: newKey } : s,
@@ -505,20 +730,20 @@ export function UICustomizer({
     key: keyof MeterSettings,
     value: Record<string, unknown>,
   ) => {
-    setPreferences((prev) => ({
+    updatePreferences((prev) => ({
       ...prev,
       meterSettings: { ...prev.meterSettings, [key]: value },
     }));
   };
 
   const handleZoomChange = (value: number) => {
-    setPreferences((prev) => ({ ...prev, zoomLevel: value }));
+    updatePreferences((prev) => ({ ...prev, zoomLevel: value }));
   };
 
   const applyWorkflowPreset = (presetId: string) => {
     const preset = preferences.layoutPresets.find((p) => p.id === presetId);
     if (preset) {
-      setPreferences((prev) => ({
+      updatePreferences((prev) => ({
         ...prev,
         panels: preset.panels,
         toolbarButtons: preset.toolbarButtons,
@@ -542,7 +767,7 @@ export function UICustomizer({
       zoomLevel: preferences.zoomLevel,
     };
 
-    setPreferences((prev) => ({
+    updatePreferences((prev) => ({
       ...prev,
       layoutPresets: [...prev.layoutPresets, newPreset],
       activePreset: newPreset.id,
@@ -562,7 +787,7 @@ export function UICustomizer({
       return;
     }
 
-    setPreferences((prev) => ({
+    updatePreferences((prev) => ({
       ...prev,
       layoutPresets: prev.layoutPresets.filter((p) => p.id !== presetId),
       activePreset: prev.activePreset === presetId ? null : prev.activePreset,
@@ -571,8 +796,14 @@ export function UICustomizer({
   };
 
   const resetToDefaults = () => {
-    setPreferences(DEFAULT_PREFERENCES);
-    localStorage.removeItem(STORAGE_KEY);
+    updatePreferences(DEFAULT_PREFERENCES);
+    if (storageKey) {
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {
+        // Optional cache cleanup must not prevent resetting the UI.
+      }
+    }
     toast({ title: "Reset to defaults" });
   };
 

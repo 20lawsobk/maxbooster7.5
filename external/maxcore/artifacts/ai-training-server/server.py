@@ -600,10 +600,17 @@ def _get_async_coalescer() -> "_AsyncRequestCoalescer":
 
 # ─── Static file serving for generated assets ────────────────────────────────
 
+class _GeneratedAssetsOnlyStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        if path == "analysis-inputs" or path.startswith("analysis-inputs/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        return await super().get_response(path, scope)
+
+
 _UPLOADS_PATH = Path(__file__).parent / "uploads"
 _UPLOADS_PATH.mkdir(parents=True, exist_ok=True)
 (Path(__file__).parent / "uploads" / "images").mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=str(_UPLOADS_PATH)), name="uploads")
+app.mount("/uploads", _GeneratedAssetsOnlyStaticFiles(directory=str(_UPLOADS_PATH)), name="uploads")
 
 _AUDIO_UPLOAD_MAX_BYTES = int(os.environ.get("MAXCORE_AUDIO_UPLOAD_MB", "100")) * 1024 * 1024
 _AUDIO_UPLOAD_TYPES = {
@@ -1023,6 +1030,12 @@ def require_scope(scope: str):
             raise HTTPException(status_code=403, detail=f"Scope '{scope}' required")
         return key
     return checker
+
+
+# Native analysis is authenticated exactly like generation and additionally
+# requires the trusted gateway user header in its own router.
+from ai_model.native_analysis.api import create_analysis_router
+app.include_router(create_analysis_router(require_scope("generate"), _UPLOADS_PATH))
 
 def verify_admin(x_admin_key: str = Header(None), authorization: str = Header(None)):
     """Admin-only endpoint auth (X-Admin-Key or Authorization: Bearer)."""

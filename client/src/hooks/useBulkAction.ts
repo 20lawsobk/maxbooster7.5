@@ -73,6 +73,53 @@ const defaultProgress: BulkActionProgress = {
   percentage: 0,
 };
 
+export async function parseBulkActionResponse(
+  response: Response,
+  expectedIds: string[],
+): Promise<BulkActionResult> {
+  const payload: unknown = await response.json();
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Bulk operation returned an invalid response");
+  }
+  const value = payload as Record<string, unknown>;
+  const success = value.success;
+  const failed = value.failed;
+  if (
+    !Array.isArray(success) ||
+    !success.every((id) => typeof id === "string") ||
+    !Array.isArray(failed) ||
+    !failed.every(
+      (failure) =>
+        failure !== null &&
+        typeof failure === "object" &&
+        typeof (failure as Record<string, unknown>).id === "string" &&
+        typeof (failure as Record<string, unknown>).error === "string",
+    ) ||
+    value.totalRequested !== expectedIds.length ||
+    value.totalSucceeded !== success.length ||
+    value.totalFailed !== failed.length ||
+    success.length + failed.length !== expectedIds.length
+  ) {
+    throw new Error("Bulk operation returned an invalid response");
+  }
+  const requested = new Set(expectedIds);
+  if (
+    !success.every((id) => requested.has(id)) ||
+    !failed.every((failure) =>
+      requested.has((failure as { id: string }).id),
+    )
+  ) {
+    throw new Error("Bulk operation returned results for unexpected items");
+  }
+  return {
+    success,
+    failed: failed as Array<{ id: string; error: string }>,
+    totalRequested: value.totalRequested as number,
+    totalSucceeded: value.totalSucceeded as number,
+    totalFailed: value.totalFailed as number,
+  };
+}
+
 
 export function useBulkAction(
   options: UseBulkActionOptions = {},
@@ -142,12 +189,12 @@ export function useBulkAction(
           case "export":
             endpoint = `/api/batch/${resource}/export`;
             method = "POST";
-            body = { ids, ...data };
+            body = { ids, data };
             break;
           case "submit":
             endpoint = `/api/batch/${resource}/submit`;
             method = "POST";
-            body = { ids, ...data };
+            body = { ids, data };
             break;
           case "withdraw":
             endpoint = `/api/batch/${resource}/withdraw`;
@@ -157,26 +204,19 @@ export function useBulkAction(
           case "schedule":
             endpoint = `/api/batch/${resource}/schedule`;
             method = "POST";
-            body = { ids, ...data };
+            body = { ids, data };
             break;
           case "process":
             endpoint = `/api/batch/${resource}/process`;
             method = "POST";
-            body = { ids, ...data };
+            body = { ids, data };
             break;
           default:
             throw new Error(`Unknown action: ${action}`);
         }
 
         const response = await apiRequest(method, endpoint, body);
-
-        const actionResult: BulkActionResult = {
-          success: response.success || ids,
-          failed: response.failed || [],
-          totalRequested: ids.length,
-          totalSucceeded: response.success?.length ?? ids?.length,
-          totalFailed: response.failed?.length ?? 0,
-        };
+        const actionResult = await parseBulkActionResponse(response, ids);
 
         updateProgress({ current: ids.length, total: ids.length });
         setResult(actionResult);

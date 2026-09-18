@@ -24,3 +24,9 @@ Optional predictions must not become a required step after successful generation
 **Why:** Removing a local scorer can expose a downstream call that rejects all genuine generated output merely because the upstream predictor is unavailable.
 
 **How to apply:** Preserve upstream variant order and represent absent predictions explicitly. Keep separately requested prediction features unavailable rather than inventing scores.
+
+Distinguish measured analysis from trained semantic inference in both verification and user-facing claims.
+
+**Why:** A native analyzer can genuinely measure pixels, sampled frames, lexical evidence, and HTML structure without having a trained object/action-recognition model. Successful requests and real measurements do not establish semantic understanding or model quality.
+
+**How to apply:** Preserve method and limitation metadata. Require a valid trained checkpoint and relevant held-out evaluation before claiming learned recognition or calibrated predictions; never relabel deterministic measurements as proof of those capabilities.

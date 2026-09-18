@@ -32,7 +32,7 @@ import {
   invalidateCacheOnMutation,
 } from "./middleware/apiCache.js";
 import { blockDemoWrite } from "./auth.js";
-import { requireAuth, requireAdmin, require2FA } from "./middleware/auth.js";
+import { requireAuth, requireAdmin } from "./middleware/auth.js";
 
 const authenticator = {
   generateSecret: () => otpGenerateSecret(),
@@ -4623,9 +4623,6 @@ export async function registerRoutes(
 
         // Aggregate platform reports do not identify a release, so per-release
         // totals cannot be derived honestly from this data.
-        const totalStreams = Number(analyticsData[0].totalStreams) || 0;
-        const totalRevenue =
-          parseFloat(String(analyticsData[0].totalRevenue)) || 0;
         const byTrack: Array<Record<string, never>> = [];
 
         // Calculate performance score

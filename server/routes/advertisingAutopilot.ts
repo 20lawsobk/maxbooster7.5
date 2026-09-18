@@ -50,9 +50,9 @@ router.get("/status", requireAuth, async (req, res) => {
 
     let modelTrained = false,
       modelVersion = "1.0.0";
-    let audienceSegments = 0,
-      viralSuccessRate = 0,
-      organicReachMultiplier = 1;
+    let audienceSegments = 0;
+    let viralSuccessRate: number | null = null;
+    let organicReachMultiplier: number | null = null;
     try {
       const advertisingModel =
         await aiModelManager?.getAdvertisingAutopilot(userId);
@@ -97,8 +97,7 @@ router.get("/status", requireAuth, async (req, res) => {
     const totalCampaigns = Number(
       (totalRow as { value?: number }[])[0]?.value ?? 0,
     );
-    const nextScheduledCampaign =
-      (nextCampaignRow as { startDate?: string }[])[0]?.startDate ?? null;
+    const nextScheduledCampaign = nextCampaignRow[0]?.startDate ?? null;
 
     // Aggregate only metrics collected from published organic posts.
     let totalReach = 0;
@@ -116,7 +115,9 @@ router.get("/status", requireAuth, async (req, res) => {
       }
     }
     const avgEngagementRate =
-      engagementRateCount > 0 ? engagementRateSum / engagementRateCount : 0;
+      engagementRateCount > 0
+        ? engagementRateSum / engagementRateCount
+        : null;
 
     const recentActivity = (
       recentCampaignRows as Record<string, unknown>[]
@@ -181,7 +182,7 @@ router.get("/status", requireAuth, async (req, res) => {
 });
 
 // Start advertising autopilot
-router.post("/start", requireAuth, async (req, res) => {
+router.post("/start", requireAuth, async (_req, res) => {
   // This router has no worker to execute a user's configured automation.
   // Returning success here previously marked it enabled without creating,
   // publishing, or managing any campaign.

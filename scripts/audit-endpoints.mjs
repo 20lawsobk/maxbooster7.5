@@ -54,6 +54,7 @@
 import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, relative, extname, dirname, resolve as pathResolve } from "node:path";
 import { randomBytes } from "node:crypto";
+import { stripRouteTypeArguments } from "./lib/route-call-source.mjs";
 
 const ROOT = process.cwd();
 const SERVER_DIR = join(ROOT, "server");
@@ -268,7 +269,7 @@ const STUB_MARKERS = [...STRONG_STUB_MARKERS, ...WEAK_STUB_MARKERS];
 
 function extractRoutesFromFile(file) {
   const rel = relative(ROOT, file);
-  const src = readFileSync(file, "utf8");
+  const src = stripRouteTypeArguments(readFileSync(file, "utf8"), file);
   const routes = [];
   const unresolved = [];
 

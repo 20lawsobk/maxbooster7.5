@@ -13,6 +13,7 @@ import { assertPublicHttpUrl, safeFetchText } from "./safeUrlFetch.js";
 import { sharpImageService as _sharpImageService } from "./sharpImageService.js";
 import { storageService } from "./storageService.js";
 import { ensureMaxCoreAudioAsset } from "./maxcoreAssetTransport.js";
+import { contentAnalysisService } from "./contentAnalysisService.js";
 import { renderVideo } from "./advancedVideoRendererService.js";
 import { db } from "../db.js";
 import { eq } from "drizzle-orm";
@@ -2132,7 +2133,8 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
     }
   }
 
-  // Pre-fetch URL metadata so MaxCore gets the full page content, not just a bare URL
+  // Pre-fetch URL metadata for generation context and the Max assistant. Native
+  // analysis itself receives only the canonical endpoint payload.
   if (req.input.modality === "url" && /^https?:\/\//i.test(payload)) {
     try {
       const ctx = classifyUrl(payload);
@@ -2147,39 +2149,37 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
   }
 
   try {
-    const response = await maxcorePost(
-      "/analyze",
-      {
-        modality: req.input.modality,
-        payload,
-        artistProfileId: req.artistProfileId,
-        platforms: req.platforms,
-        intent: req.intent,
-        // Merge pre-fetched metadata so MaxCore has the actual page content
-        metadata: {
-          ...(req.input.metadata || {}),
-          ...(prefetchedMeta
-            ? {
-                title: prefetchedMeta.title,
-                description: prefetchedMeta.description,
-                siteName: prefetchedMeta.siteName,
-                author: prefetchedMeta.author,
-                image: prefetchedMeta.image,
-                publishDate: prefetchedMeta.publishDate,
-              }
-            : {}),
-        },
-        platformRules: platformRulesSubset,
+    const native =
+      req.input.modality === "image"
+        ? await contentAnalysisService.analyzeImage(payload, req.userId)
+        : req.input.modality === "video"
+          ? await contentAnalysisService.analyzeVideo(payload, req.userId)
+          : req.input.modality === "text"
+            ? await contentAnalysisService.analyzeText(payload, req.userId)
+            : await contentAnalysisService.analyzeWebsite(payload, req.userId);
+    return {
+      ...native,
+      modality: req.input.modality,
+      payload,
+      metadata: {
+        ...(req.input.metadata || {}),
+        ...(prefetchedMeta
+          ? {
+              title: prefetchedMeta.title,
+              description: prefetchedMeta.description,
+              siteName: prefetchedMeta.siteName,
+              author: prefetchedMeta.author,
+              image: prefetchedMeta.image,
+              publishDate: prefetchedMeta.publishDate,
+            }
+          : {}),
       },
-      20_000,
-      req.userId,
-    ); // MaxCore awareness/model inference can take 8–13 s under load.
-    return normalizeMaxcoreAnalyzeResponse(response);
+      platformRules: platformRulesSubset,
+    };
   } catch (err) {
-    // MaxCore is the sole AI source — no local fallback.
     logger.warn(
       { err },
-      `[MultimodalGen] MaxCore /analyze unavailable: ${err instanceof Error ? err.message : String(err)}`,
+      `[MultimodalGen] MaxCore native analysis unavailable: ${err instanceof Error ? err.message : String(err)}`,
     );
     throw new AIUnavailableError("multimodal content analysis");
   }

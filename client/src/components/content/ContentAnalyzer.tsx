@@ -1,253 +1,193 @@
-import { useState } from "react";
+import { useState, type ChangeEvent, type ReactNode } from "react";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { Sparkles, Image as ImageIcon, Video, Music, FileText, Globe, Loader2, CheckCircle, TrendingUp, Eye, Heart, Zap, Target } from "lucide-react";
+import {
+  apiRequest,
+  getAuthToken,
+  getCsrfTokenFromCookie,
+} from "@/lib/queryClient";
+import {
+  FileText,
+  Globe,
+  Image as ImageIcon,
+  Loader2,
+  Music,
+  Sparkles,
+  Upload,
+  Video,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type {
+  AnalysisEnvelope,
+  AnalysisKind,
+  AnalysisValue,
+  ContentAnalysisResponse,
+} from "@shared/types/contentAnalysis";
 
-type ContentType = "image" | "video" | "audio" | "text" | "website";
+type ContentType = AnalysisKind | "audio";
+type AudioFacts = Record<string, unknown> & { source?: string };
+type Result =
+  | { type: AnalysisKind; data: AnalysisEnvelope; timestamp: string }
+  | { type: "audio"; data: AudioFacts; timestamp: string };
 
-interface ImageAnalysisResult {
-  colors: {
-    dominant: string[];
-    palette: string[];
-    mood: "vibrant" | "muted" | "dark" | "light" | "neutral";
-  };
-  composition: {
-    layout: "centered" | "rule-of-thirds" | "symmetric" | "dynamic";
-    visualWeight: "balanced" | "heavy-top" | "heavy-bottom" | "left" | "right";
-    complexity: number;
-  };
-  content: {
-    hasFaces: boolean;
-    faceCount: number;
-    hasText: boolean;
-    textAmount: "none" | "minimal" | "moderate" | "heavy";
-    mainSubject: string;
-    objects: string[];
-    scene: string;
-  };
-  branding: {
-    hasLogo: boolean;
-    brandingStrength: number;
-    professionalQuality: number;
-  };
-  engagement: {
-    attentionGrabbing: number;
-    emotionalImpact: "high" | "medium" | "low";
-    shareability: number;
-  };
-  vibe: string[];
-  confidence: number;
+const AUDIO_UPLOAD_TYPES = new Set([
+  "audio/wav",
+  "audio/x-wav",
+  "audio/wave",
+  "audio/mpeg",
+  "audio/flac",
+  "audio/x-flac",
+  "audio/ogg",
+  "audio/opus",
+  "audio/webm",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/aac",
+  "audio/aiff",
+  "audio/x-aiff",
+]);
+const OWNED_AUDIO_ASSET =
+  /^\/uploads\/audio-inputs\/[a-f0-9]{64}\/[a-f0-9-]+\.(?:wav|mp3|flac|ogg|opus|webm|m4a|aac|aiff)$/i;
+
+function readableLabel(value: string): string {
+  return value
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-interface VideoAnalysisResult {
-  duration: number;
-  scenes: {
-    count: number;
-    avgDuration: number;
-    transitions: "fast" | "moderate" | "slow";
-  };
-  motion: {
-    intensity: "static" | "low" | "moderate" | "high" | "frenetic";
-    cameraMovement: boolean;
-    actionPaced: boolean;
-  };
-  audio: {
-    hasMusic: boolean;
-    hasSpeech: boolean;
-    musicEnergy: number;
-    audioQuality: number;
-  };
-  visual: {
-    colors: ImageAnalysisResult["colors"];
-    quality: number;
-    lighting: "bright" | "dark" | "natural" | "dramatic";
-  };
-  engagement: {
-    hookStrength: number;
-    retention: {
-      first5Seconds: number;
-      first30Seconds: number;
-      overall: number;
-    };
-    callToActionPresence: boolean;
-  };
-  content: {
-    category: string;
-    hasFaces: boolean;
-    peoplePresent: boolean;
-    brandingVisible: boolean;
-  };
-  viralPotential: number;
-  confidence: number;
+function scalar(value: string | number | boolean | null): ReactNode {
+  if (value === null) return <span className="text-muted-foreground">Not available</span>;
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  return String(value);
 }
 
-interface AudioAnalysisResult {
-  duration?: number;
-  tempo?: number;
-  bpm?: number;
-  key?: string;
-  mode?: string;
-  musical_key?: string;
-  source: "maxcore_audio_conductor";
+/** React escapes every string rendered here; upstream values are never HTML. */
+export function StructuredFacts({
+  value,
+  depth = 0,
+}: {
+  value: AnalysisValue | unknown;
+  depth?: number;
+}) {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <span className="text-muted-foreground">None measured</span>;
+    const objects = value.some((item) => item && typeof item === "object");
+    return objects ? (
+      <div className="space-y-2">
+        {value.map((item, index) => (
+          <div key={index} className="rounded-md border p-2">
+            <StructuredFacts value={item} depth={depth + 1} />
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="flex flex-wrap gap-2">
+        {value.map((item, index) => (
+          <Badge key={index} variant="outline">{scalar(item as never)}</Badge>
+        ))}
+      </div>
+    );
+  }
+  if (value && typeof value === "object") {
+    return (
+      <dl className={depth === 0 ? "grid gap-3 sm:grid-cols-2" : "space-y-2"}>
+        {Object.entries(value as Record<string, unknown>).map(([key, nested]) => (
+          <div key={key} className="min-w-0 rounded-md border bg-muted/20 p-3">
+            <dt className="text-xs font-medium text-muted-foreground">
+              {readableLabel(key)}
+            </dt>
+            <dd className="mt-1 break-words text-sm">
+              <StructuredFacts value={nested} depth={depth + 1} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+    );
+  }
+  return <>{scalar(value as string | number | boolean | null)}</>;
 }
 
-interface WebsiteAnalysisResult {
-  design: {
-    layout: "single-page" | "multi-section" | "complex";
-    colors: string[];
-    colorScheme: "monochrome" | "complementary" | "analogous" | "triadic";
-    visualHierarchy: number;
-  };
-  content: {
-    headline: string;
-    valueProposition: string;
-    ctaCount: number;
-    ctaClarity: number;
-    socialProof: boolean;
-    trustSignals: string[];
-  };
-  ux: {
-    loadSpeed: "fast" | "moderate" | "slow";
-    mobileOptimized: boolean;
-    navigationClarity: number;
-    frictionPoints: string[];
-  };
-  conversion: {
-    aboveTheFold: string[];
-    urgency: boolean;
-    scarcity: boolean;
-    guarantees: boolean;
-    conversionOptimization: number;
-  };
-  branding: {
-    consistent: boolean;
-    professional: boolean;
-    memorable: number;
-  };
-  confidence: number;
+async function ensureCsrfToken(): Promise<string> {
+  const existing = getCsrfTokenFromCookie();
+  if (existing) return existing;
+  const response = await fetch("/api/csrf-token", {
+    credentials: "include",
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok || typeof body.csrfToken !== "string" || !body.csrfToken) {
+    throw new Error("Unable to initialize secure upload");
+  }
+  return body.csrfToken;
 }
-
-interface TextAnalysisResult {
-  structure: {
-    length: number;
-    sentences: number;
-    paragraphs: number;
-    readability: number;
-  };
-  tone: {
-    sentiment: "positive" | "negative" | "neutral";
-    emotion: string[];
-    formality: "casual" | "professional" | "mixed";
-    energy: number;
-  };
-  content: {
-    mainTopics: string[];
-    keywords: string[];
-    hashtagsUsed: string[];
-    mentionsUsed: string[];
-    hasCallToAction: boolean;
-    callToActionStrength: number;
-  };
-  engagement: {
-    questionEngagement: boolean;
-    personalConnection: boolean;
-    storytelling: boolean;
-    viralPotential: number;
-  };
-  quality: {
-    clarity: number;
-    authenticity: number;
-    persuasiveness: number;
-  };
-  confidence: number;
-}
-
-type AnalysisResult =
-  | { type: "image"; data: ImageAnalysisResult; timestamp: string }
-  | { type: "video"; data: VideoAnalysisResult; timestamp: string }
-  | { type: "audio"; data: AudioAnalysisResult; timestamp: string }
-  | { type: "text"; data: TextAnalysisResult; timestamp: string }
-  | { type: "website"; data: WebsiteAnalysisResult; timestamp: string };
 
 export function ContentAnalyzer() {
   const [activeTab, setActiveTab] = useState<ContentType>("image");
-  const [imageUrl, setImageUrl] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
-  const [audioUrl, setAudioUrl] = useState("");
-  const [textContent, setTextContent] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [values, setValues] = useState<Record<ContentType, string>>({
+    image: "",
+    video: "",
+    audio: "",
+    text: "",
+    website: "",
+  });
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [uploading, setUploading] = useState<"image" | "video" | "audio" | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
   const { toast } = useToast();
 
-  const analyzeContent = async (
-    type: ContentType,
-    url: string,
-    content?: string,
-  ) => {
+  const update = (type: ContentType, value: string) =>
+    setValues((current) => ({ ...current, [type]: value }));
+
+  const analyze = async (type: ContentType, supplied?: string) => {
+    const value = (supplied ?? values[type]).trim();
+    if (!value) return;
     setAnalyzing(true);
     setResult(null);
-
     try {
-      const endpoint = `/api/content-analysis/${type}`;
-      const payload =
+      const body =
         type === "text"
-          ? { text: content }
-          : type === "video"
-            ? { videoUrl: url, duration: 30 }
-            : type === "audio"
-              ? { audioUrl: url }
-              : type === "website"
-                ? { url }
-                : { imageUrl: url };
-
-      const rawResponse = await apiRequest("POST", endpoint, payload);
-      const response = await rawResponse.json();
-
-      if (response.success) {
-        const data = response.analysis;
-        const timestamp = response.timestamp;
-        switch (type) {
-          case "image":
-            setResult({ type, data, timestamp });
-            break;
-          case "video":
-            setResult({ type, data, timestamp });
-            break;
-          case "audio":
-            setResult({ type, data, timestamp });
-            break;
-          case "text":
-            setResult({ type, data, timestamp });
-            break;
-          case "website":
-            setResult({ type, data, timestamp });
-            break;
-        }
-        toast({
-          title: "✨ Analysis Complete",
-          description: `Your ${type} has been analyzed with AI-powered insights.`,
-        });
+          ? { text: value }
+          : type === "website"
+            ? { url: /^https?:\/\//i.test(value) ? value : `https://${value}` }
+            : type === "image"
+              ? { imageUrl: value }
+              : type === "video"
+                ? { videoUrl: value }
+                : { audioUrl: value };
+      const response = await apiRequest(
+        "POST",
+        `/api/content-analysis/${type}`,
+        body,
+        { timeout: 600_000 },
+      );
+      const payload = await response.json();
+      if (type === "audio") {
+        setResult({ type, data: payload.analysis as AudioFacts, timestamp: payload.timestamp });
+      } else {
+        const typed = payload as ContentAnalysisResponse;
+        setResult({ type, data: typed.analysis, timestamp: typed.timestamp });
       }
+      toast({
+        title: "Analysis complete",
+        description:
+          type === "audio"
+            ? "MaxCore Audio Conductor measurements are ready."
+            : "Native algorithmic measurements are ready.",
+      });
     } catch (error) {
       toast({
-        title: "Analysis Failed",
-        description:
-          (error instanceof Error && error.message) ||
-          "Failed to analyze content. Please try again.",
+        title: "Analysis failed",
+        description: error instanceof Error ? error.message : "Unable to analyze this content.",
         variant: "destructive",
       });
     } finally {
@@ -255,398 +195,143 @@ export function ContentAnalyzer() {
     }
   };
 
-  const saveForAutopilotTraining = async () => {
-    if (!result) return;
-
-    try {
-      // Save analyzed features to database for autopilot training
-      await apiRequest("POST", "/api/autopilot/save-features", {
-        contentType: result.type,
-        features: result.data,
-        contentUrl:
-          result.type === "image"
-            ? imageUrl
-            : result.type === "video"
-              ? videoUrl
-              : result.type === "audio"
-                ? audioUrl
-                : result.type === "website"
-                  ? websiteUrl
-                  : undefined,
-        contentText: result.type === "text" ? textContent : undefined,
-      });
-
+  const upload = async (
+    kind: "image" | "video" | "audio",
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (kind === "audio" && !AUDIO_UPLOAD_TYPES.has(file.type.toLowerCase())) {
       toast({
-        title: "🎯 Saved for Training",
-        description:
-          "This content analysis will be used to improve your autopilot AI predictions.",
-        duration: 3000,
-      });
-    } catch (error) {
-      toast({
-        title: "Save Failed",
-        description:
-          (error instanceof Error && error.message) ||
-          "Failed to save for autopilot training.",
+        title: "Unsupported audio type",
+        description: "Select WAV, MP3, FLAC, OGG, Opus, WebM, M4A, AAC, or AIFF audio.",
         variant: "destructive",
       });
+      return;
+    }
+    const limit = kind === "image" ? 16 * 1024 * 1024 : 100 * 1024 * 1024;
+    if (file.size > limit) {
+      toast({ title: "File too large", description: `${kind === "image" ? "Images" : kind === "video" ? "Videos" : "Audio files"} must be no larger than ${kind === "image" ? "16" : "100"} MiB.`, variant: "destructive" });
+      return;
+    }
+    setUploading(kind);
+    try {
+      const token = await ensureCsrfToken();
+      const authToken = getAuthToken();
+      const endpoint =
+        kind === "audio"
+          ? "/api/audio/upload"
+          : `/api/content-analysis/assets?kind=${kind}`;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": file.type,
+          "x-csrf-token": token,
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        body: file,
+      });
+      const body = await response.json().catch(() => ({}));
+      if (
+        !response.ok ||
+        typeof body.url !== "string" ||
+        (kind === "audio" && !OWNED_AUDIO_ASSET.test(body.url))
+      ) {
+        throw new Error(body.error || "Upload failed");
+      }
+      update(kind, body.url);
+      await analyze(kind, body.url);
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+          description: error instanceof Error ? error.message : "Unable to upload this file.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(null);
     }
   };
 
-  const renderImageAnalysis = (data: ImageAnalysisResult) => (
-    <div className="space-y-4">
-      <div>
-        <h4 className="font-semibold mb-2 flex items-center gap-2">
-          <Eye className="h-4 w-4" />
-          Visual Composition
-        </h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Layout</p>
-            <Badge variant="secondary">{data.composition?.layout}</Badge>
+  const renderResult = (type: ContentType) => {
+    if (!result || result.type !== type) return null;
+    if (result.type === "audio") {
+      return (
+        <div className="space-y-3 rounded-lg border p-4">
+          <div>
+            <h4 className="font-semibold">Measured Audio Analysis</h4>
+            <p className="text-xs text-muted-foreground">
+              Provenance: {result.data.source ?? "MaxCore Audio Conductor"}
+            </p>
           </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Color Mood</p>
-            <Badge variant="secondary">{data.colors?.mood}</Badge>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Complexity</p>
-            <Progress
-              value={data.composition?.complexity * 100}
-              className="h-2"
-            />
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Attention Score</p>
-            <Progress
-              value={data.engagement?.attentionGrabbing * 100}
-              className="h-2"
-            />
-          </div>
+          <StructuredFacts value={result.data} />
         </div>
-      </div>
-
-      <div>
-        <h4 className="font-semibold mb-2 flex items-center gap-2">
-          <Heart className="h-4 w-4" />
-          Engagement Potential
-        </h4>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Shareability</span>
-            <span className="text-sm font-medium">
-              {Math.round(data.engagement?.shareability * 100)}%
-            </span>
-          </div>
-          <Progress value={data.engagement?.shareability * 100} />
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Emotional Impact</span>
-            <Badge>{data.engagement?.emotionalImpact}</Badge>
-          </div>
+      );
+    }
+    return (
+      <div className="space-y-4 rounded-lg border p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge>MaxCore native analysis</Badge>
+          <Badge variant="secondary">{readableLabel(result.data.kind)}</Badge>
         </div>
-      </div>
-
-      <div>
-        <h4 className="font-semibold mb-2">Content Details</h4>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Faces:{" "}
-            {data.content?.hasFaces ? `Yes (${data.content.faceCount})` : "No"}
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Text: {data.content?.hasText ? data.content.textAmount : "None"}
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Branding: {Math.round(data.branding?.brandingStrength * 100)}%
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Quality: {Math.round(data.branding?.professionalQuality * 100)}%
-          </div>
-        </div>
-      </div>
-
-      {data.vibe && data.vibe.length > 0 && (
         <div>
-          <h4 className="font-semibold mb-2">Visual Vibe</h4>
-          <div className="flex flex-wrap gap-2">
-            {data.vibe.map((v: string, i: number) => (
-              <Badge key={i} variant="outline">
-                {v}
-              </Badge>
-            ))}
-          </div>
+          <p className="text-xs font-medium text-muted-foreground">Method</p>
+          <p className="text-sm">{result.data.method}</p>
         </div>
-      )}
-    </div>
-  );
-
-  const renderVideoAnalysis = (data: VideoAnalysisResult) => (
-    <div className="space-y-4">
-      <div>
-        <h4 className="font-semibold mb-2 flex items-center gap-2">
-          <Video className="h-4 w-4" />
-          Video Metrics
-        </h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Duration</p>
-            <Badge variant="secondary">{data.duration}s</Badge>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Motion</p>
-            <Badge variant="secondary">{data.motion?.intensity}</Badge>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h4 className="font-semibold mb-2 flex items-center gap-2">
-          <TrendingUp className="h-4 w-4" />
-          Engagement Scores
-        </h4>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Hook Strength</span>
-            <span className="text-sm font-medium">
-              {Math.round(data.engagement?.hookStrength * 100)}%
-            </span>
-          </div>
-          <Progress value={data.engagement?.hookStrength * 100} />
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Viral Potential</span>
-            <span className="text-sm font-medium">
-              {Math.round(data.viralPotential * 100)}%
-            </span>
-          </div>
-          <Progress value={data.viralPotential * 100} />
-        </div>
-      </div>
-
-      <div>
-        <h4 className="font-semibold mb-2">Retention Estimates</h4>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">First 5 Seconds</span>
-            <span className="text-sm font-medium">
-              {Math.round(data.engagement?.retention?.first5Seconds * 100)}%
-            </span>
-          </div>
-          <Progress value={data.engagement?.retention?.first5Seconds * 100} />
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Overall Retention</span>
-            <span className="text-sm font-medium">
-              {Math.round(data.engagement?.retention?.overall * 100)}%
-            </span>
-          </div>
-          <Progress value={data.engagement?.retention?.overall * 100} />
-        </div>
-      </div>
-
-      <div>
-        <h4 className="font-semibold mb-2">Audio & Visual</h4>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Music: {data.audio?.hasMusic ? "Yes" : "No"}
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Speech: {data.audio?.hasSpeech ? "Yes" : "No"}
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            CTA: {data.engagement?.callToActionPresence ? "Present" : "None"}
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Quality: {Math.round(data.visual?.quality * 100)}%
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderTextAnalysis = (data: TextAnalysisResult) => (
-    <div className="space-y-4">
-      <div>
-        <h4 className="font-semibold mb-2 flex items-center gap-2">
-          <FileText className="h-4 w-4" />
-          Text Metrics
-        </h4>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Words</p>
-            <Badge variant="secondary">{data.structure?.length}</Badge>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Sentiment</p>
-            <Badge variant="secondary">{data.tone?.sentiment}</Badge>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Formality</p>
-            <Badge variant="secondary">{data.tone?.formality}</Badge>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h4 className="font-semibold mb-2 flex items-center gap-2">
-          <Zap className="h-4 w-4" />
-          Performance Scores
-        </h4>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Energy Level</span>
-            <span className="text-sm font-medium">
-              {Math.round(data.tone?.energy * 100)}%
-            </span>
-          </div>
-          <Progress value={data.tone?.energy * 100} />
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Viral Potential</span>
-            <span className="text-sm font-medium">
-              {Math.round(data.engagement?.viralPotential * 100)}%
-            </span>
-          </div>
-          <Progress value={data.engagement?.viralPotential * 100} />
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Persuasiveness</span>
-            <span className="text-sm font-medium">
-              {Math.round(data.quality?.persuasiveness * 100)}%
-            </span>
-          </div>
-          <Progress value={data.quality?.persuasiveness * 100} />
-        </div>
-      </div>
-
-      {data.content?.mainTopics && data.content.mainTopics.length > 0 && (
+        <StructuredFacts value={result.data.analysis} />
         <div>
-          <h4 className="font-semibold mb-2">Main Topics</h4>
-          <div className="flex flex-wrap gap-2">
-            {data.content.mainTopics.map((topic: string, i: number) => (
-              <Badge key={i} variant="outline">
-                {topic}
-              </Badge>
-            ))}
-          </div>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">Limitations</p>
+          {result.data.limitations.length ? (
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              {result.data.limitations.map((limitation, index) => (
+                <li key={index}>{limitation}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">No additional limitations reported.</p>
+          )}
         </div>
-      )}
+      </div>
+    );
+  };
 
-      {data.tone?.emotion && data.tone.emotion.length > 0 && (
+  const mediaTab = (kind: "image" | "video") => (
+    <TabsContent value={kind} className="space-y-4">
+      <div className="space-y-2">
+        <Label>{readableLabel(kind)} URL</Label>
+        <div className="flex gap-2">
+          <Input
+            aria-label={`${readableLabel(kind)} URL`}
+            placeholder={`https://example.com/${kind === "image" ? "image.jpg" : "video.mp4"}`}
+            value={values[kind]}
+            onChange={(event) => update(kind, event.target.value)}
+          />
+          <Button onClick={() => analyze(kind)} disabled={analyzing || !values[kind]}>
+            {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Analyze"}
+          </Button>
+        </div>
         <div>
-          <h4 className="font-semibold mb-2">Emotional Tone</h4>
-          <div className="flex flex-wrap gap-2">
-            {data.tone.emotion.map((emotion: string, i: number) => (
-              <Badge key={i}>{emotion}</Badge>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderWebsiteAnalysis = (data: WebsiteAnalysisResult) => (
-    <div className="space-y-4">
-      <div>
-        <h4 className="font-semibold mb-2 flex items-center gap-2">
-          <Globe className="h-4 w-4" />
-          Design & UX
-        </h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Layout</p>
-            <Badge variant="secondary">{data.design?.layout}</Badge>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Color Scheme</p>
-            <Badge variant="secondary">{data.design?.colorScheme}</Badge>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Visual Hierarchy</p>
-            <Progress
-              value={data.design?.visualHierarchy * 100}
-              className="h-2"
-            />
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Mobile Optimized</p>
-            <Badge
-              variant={data.ux?.mobileOptimized ? "default" : "destructive"}
-            >
-              {data.ux?.mobileOptimized ? "Yes" : "No"}
-            </Badge>
-          </div>
+          <Input
+            className="sr-only"
+            id={`${kind}-analysis-file`}
+            type="file"
+            accept={kind === "image" ? "image/jpeg,image/png,image/webp" : "video/mp4,video/webm,video/quicktime"}
+            onChange={(event) => upload(kind, event)}
+          />
+          <Button asChild variant="outline" size="sm">
+            <Label htmlFor={`${kind}-analysis-file`} className="cursor-pointer">
+              {uploading === kind ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+              Upload {readableLabel(kind)}
+            </Label>
+          </Button>
+          <span className="ml-2 text-xs text-muted-foreground">
+            {kind === "image" ? "16 MiB maximum" : "100 MiB maximum"}
+          </span>
         </div>
       </div>
-
-      <div>
-        <h4 className="font-semibold mb-2 flex items-center gap-2">
-          <Target className="h-4 w-4" />
-          Conversion Optimization
-        </h4>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">CTA Clarity</span>
-            <span className="text-sm font-medium">
-              {Math.round(data.content?.ctaClarity * 100)}%
-            </span>
-          </div>
-          <Progress value={data.content?.ctaClarity * 100} />
-
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Overall Conversion Score</span>
-            <span className="text-sm font-medium">
-              {Math.round(data.conversion?.conversionOptimization * 100)}%
-            </span>
-          </div>
-          <Progress value={data.conversion?.conversionOptimization * 100} />
-        </div>
-      </div>
-
-      <div>
-        <h4 className="font-semibold mb-2">Trust Signals</h4>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Social Proof: {data.content?.socialProof ? "Yes" : "No"}
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Urgency: {data.conversion?.urgency ? "Yes" : "No"}
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Scarcity: {data.conversion?.scarcity ? "Yes" : "No"}
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3" />
-            Guarantees: {data.conversion?.guarantees ? "Yes" : "No"}
-          </div>
-        </div>
-      </div>
-
-      {data.content?.trustSignals && data.content.trustSignals.length > 0 && (
-        <div>
-          <h4 className="font-semibold mb-2">Trust Elements</h4>
-          <div className="flex flex-wrap gap-2">
-            {data.content.trustSignals.map((signal: string, i: number) => (
-              <Badge key={i} variant="outline">
-                {signal}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+      {renderResult(kind)}
+    </TabsContent>
   );
 
   return (
@@ -657,246 +342,69 @@ export function ContentAnalyzer() {
           <CardTitle>Multimodal Content Analysis</CardTitle>
         </div>
         <CardDescription>
-          AI-powered analysis of images, videos, audio, text, and websites to
-          maximize engagement
+          Measured pixel, frame, text, HTML, and audio facts from MaxCore. This is
+          algorithmic analysis, not learned semantic vision or performance prediction.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as ContentType)}
-          className="space-y-4"
-        >
-          <TabsList className="grid grid-cols-5 w-full">
-            <TabsTrigger value="image">
-              <ImageIcon className="h-4 w-4 mr-2" />
-              Image
-            </TabsTrigger>
-            <TabsTrigger value="video">
-              <Video className="h-4 w-4 mr-2" />
-              Video
-            </TabsTrigger>
-            <TabsTrigger value="audio">
-              <Music className="h-4 w-4 mr-2" />
-              Audio
-            </TabsTrigger>
-            <TabsTrigger value="text">
-              <FileText className="h-4 w-4 mr-2" />
-              Text
-            </TabsTrigger>
-            <TabsTrigger value="website">
-              <Globe className="h-4 w-4 mr-2" />
-              Website
-            </TabsTrigger>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ContentType)} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="image"><ImageIcon className="mr-2 h-4 w-4" />Image</TabsTrigger>
+            <TabsTrigger value="video"><Video className="mr-2 h-4 w-4" />Video</TabsTrigger>
+            <TabsTrigger value="audio"><Music className="mr-2 h-4 w-4" />Audio</TabsTrigger>
+            <TabsTrigger value="text"><FileText className="mr-2 h-4 w-4" />Text</TabsTrigger>
+            <TabsTrigger value="website"><Globe className="mr-2 h-4 w-4" />Website</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="image" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Image URL</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="https://example.com/image.jpg"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                />
-                <Button
-                  onClick={() => analyzeContent("image", imageUrl)}
-                  disabled={analyzing || !imageUrl}
-                >
-                  {analyzing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Analyze"
-                  )}
-                </Button>
-              </div>
-            </div>
-            {result &&
-              result.type === "image" &&
-              renderImageAnalysis(result.data)}
-          </TabsContent>
-
-          <TabsContent value="video" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Video URL</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="https://example.com/video.mp4"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                />
-                <Button
-                  onClick={() => analyzeContent("video", videoUrl)}
-                  disabled={analyzing || !videoUrl}
-                >
-                  {analyzing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Analyze"
-                  )}
-                </Button>
-              </div>
-            </div>
-            {result &&
-              result.type === "video" &&
-              renderVideoAnalysis(result.data)}
-          </TabsContent>
-
+          {mediaTab("image")}
+          {mediaTab("video")}
           <TabsContent value="audio" className="space-y-4">
             <div className="space-y-2">
-              <Label>Audio URL</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="https://example.com/track.mp3"
-                  value={audioUrl}
-                  onChange={(e) => setAudioUrl(e.target.value)}
-                />
-                <Button
-                  onClick={() => analyzeContent("audio", audioUrl)}
-                  disabled={analyzing || !audioUrl}
-                >
-                  {analyzing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Analyze"
-                  )}
-                </Button>
-              </div>
+              <Label htmlFor="audio-analysis-file">Owned audio asset</Label>
+              <p className="text-sm text-muted-foreground">
+                Select an audio file to upload securely to your private MaxCore analysis storage.
+              </p>
+              <Input
+                className="sr-only"
+                id="audio-analysis-file"
+                type="file"
+                accept="audio/wav,audio/x-wav,audio/wave,audio/mpeg,audio/flac,audio/x-flac,audio/ogg,audio/opus,audio/webm,audio/mp4,audio/x-m4a,audio/aac,audio/aiff,audio/x-aiff"
+                onChange={(event) => upload("audio", event)}
+              />
+              <Button asChild variant="outline">
+                <Label htmlFor="audio-analysis-file" className="cursor-pointer">
+                  {uploading === "audio" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  Select and analyze audio
+                </Label>
+              </Button>
+              {values.audio && (
+                <p className="break-all text-xs text-muted-foreground">
+                  Owned asset ready: {values.audio}
+                </p>
+              )}
             </div>
-            {result && result.type === "audio" && (
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Measured Audio Analysis</h4>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Tempo</p>
-                      <Badge>
-                        {result.data.tempo ?? result.data.bpm ?? "Unavailable"} BPM
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Key</p>
-                      <Badge>
-                        {result.data.musical_key ?? result.data.key ?? "Unavailable"}
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Mode</p>
-                      <Badge>{result.data.mode ?? "Unavailable"}</Badge>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Analysis Details</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Duration:{" "}
-                    {typeof result.data.duration === "number"
-                      ? `${result.data.duration.toFixed(1)} seconds`
-                      : "Unavailable"}
-                  </p>
-                </div>
-              </div>
-            )}
+            {renderResult("audio")}
           </TabsContent>
-
           <TabsContent value="text" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Text Content</Label>
-              <div className="space-y-2">
-                <textarea
-                  className="w-full min-h-[120px] p-3 rounded-md border bg-background"
-                  placeholder="Enter your text content to analyze..."
-                  value={textContent}
-                  onChange={(e) => setTextContent(e.target.value)}
-                />
-                <Button
-                  onClick={() => analyzeContent("text", "", textContent)}
-                  disabled={analyzing || !textContent}
-                  className="w-full"
-                >
-                  {analyzing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Analyze Text"
-                  )}
-                </Button>
-              </div>
-            </div>
-            {result &&
-              result.type === "text" &&
-              renderTextAnalysis(result.data)}
+            <Label>Text Content</Label>
+            <textarea className="min-h-[120px] w-full rounded-md border bg-background p-3" value={values.text} onChange={(event) => update("text", event.target.value)} placeholder="Enter text to measure..." />
+            <Button className="w-full" onClick={() => analyze("text")} disabled={analyzing || !values.text}>Analyze Text</Button>
+            {renderResult("text")}
           </TabsContent>
-
           <TabsContent value="website" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Website URL</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="https://example.com"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                />
-                <Button
-                  onClick={() => {
-                    const url = websiteUrl.trim();
-                    const normalized =
-                      url && !/^https?:\/\//i.test(url)
-                        ? `https://${url}`
-                        : url;
-                    analyzeContent("website", normalized);
-                  }}
-                  disabled={analyzing || !websiteUrl}
-                >
-                  {analyzing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Analyze"
-                  )}
-                </Button>
-              </div>
+            <Label>Website URL</Label>
+            <div className="flex gap-2">
+              <Input value={values.website} onChange={(event) => update("website", event.target.value)} placeholder="https://example.com" />
+              <Button onClick={() => analyze("website")} disabled={analyzing || !values.website}>Analyze</Button>
             </div>
-            {result &&
-              result.type === "website" &&
-              renderWebsiteAnalysis(result.data)}
+            {renderResult("website")}
           </TabsContent>
         </Tabs>
-
-        {/* Save for Autopilot Training Button */}
-        {result && !analyzing && (
-          <div className="mt-4 p-4 border rounded-lg bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-950/20 dark:to-blue-950/20 border-cyan-200 dark:border-cyan-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-cyan-600" />
-                  Use for Autopilot Training
-                </h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Save this analysis to improve your AI autopilot predictions
-                  for future content
-                </p>
-              </div>
-              <Button
-                onClick={saveForAutopilotTraining}
-                variant="default"
-                className="bg-cyan-600 hover:bg-cyan-700"
-              >
-                <Target className="h-4 w-4 mr-2" />
-                Save for Training
-              </Button>
-            </div>
-          </div>
-        )}
-
         {analyzing && (
-          <div className="mt-4 p-4 border rounded-lg bg-muted/30">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <div>
-                <p className="font-medium">Analyzing your content...</p>
-                <p className="text-sm text-muted-foreground">
-                  Our AI is extracting features to optimize engagement
-                </p>
-              </div>
+          <div className="mt-4 flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <div>
+              <p className="font-medium">Analyzing your content...</p>
+              <p className="text-sm text-muted-foreground">MaxCore is measuring native content properties.</p>
             </div>
           </div>
         )}

@@ -59,7 +59,7 @@ function serializeClip(clip: typeof midiClips.$inferSelect, notes: (typeof midiN
   return { ...clip, notes };
 }
 
-router.get("/projects/:projectId/midi/clips", requireAuth, async (req, res) => {
+router.get<{ projectId: string }>("/projects/:projectId/midi/clips", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
     const trackId = z.string().min(1).safeParse(req.query.trackId);
@@ -80,7 +80,7 @@ router.get("/projects/:projectId/midi/clips", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/projects/:projectId/midi/clips", requireAuth, async (req, res) => {
+router.post<{ projectId: string }>("/projects/:projectId/midi/clips", requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
     if (!(await verifyProjectOwnership(projectId, req.user!.id))) {
@@ -100,7 +100,7 @@ router.post("/projects/:projectId/midi/clips", requireAuth, async (req, res) => 
   }
 });
 
-router.put("/projects/:projectId/midi/clips/:clipId", requireAuth, async (req, res) => {
+router.put<{ projectId: string; clipId: string }>("/projects/:projectId/midi/clips/:clipId", requireAuth, async (req, res) => {
   try {
     const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
     if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
@@ -115,7 +115,7 @@ router.put("/projects/:projectId/midi/clips/:clipId", requireAuth, async (req, r
   }
 });
 
-router.delete("/projects/:projectId/midi/clips/:clipId", requireAuth, async (req, res) => {
+router.delete<{ projectId: string; clipId: string }>("/projects/:projectId/midi/clips/:clipId", requireAuth, async (req, res) => {
   try {
     const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
     if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
@@ -128,7 +128,7 @@ router.delete("/projects/:projectId/midi/clips/:clipId", requireAuth, async (req
   }
 });
 
-router.post("/projects/:projectId/midi/clips/:clipId/notes", requireAuth, async (req, res) => {
+router.post<{ projectId: string; clipId: string }>("/projects/:projectId/midi/clips/:clipId/notes", requireAuth, async (req, res) => {
   try {
     const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
     if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
@@ -142,7 +142,7 @@ router.post("/projects/:projectId/midi/clips/:clipId/notes", requireAuth, async 
   }
 });
 
-router.put("/projects/:projectId/midi/clips/:clipId/notes/:noteId", requireAuth, async (req, res) => {
+router.put<{ projectId: string; clipId: string; noteId: string }>("/projects/:projectId/midi/clips/:clipId/notes/:noteId", requireAuth, async (req, res) => {
   try {
     const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
     if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
@@ -157,7 +157,7 @@ router.put("/projects/:projectId/midi/clips/:clipId/notes/:noteId", requireAuth,
   }
 });
 
-router.delete("/projects/:projectId/midi/clips/:clipId/notes/:noteId", requireAuth, async (req, res) => {
+router.delete<{ projectId: string; clipId: string; noteId: string }>("/projects/:projectId/midi/clips/:clipId/notes/:noteId", requireAuth, async (req, res) => {
   try {
     const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
     if (!clip) return res.status(404).json({ error: "MIDI clip not found" });
@@ -170,7 +170,7 @@ router.delete("/projects/:projectId/midi/clips/:clipId/notes/:noteId", requireAu
   }
 });
 
-router.post("/projects/:projectId/midi/clips/:clipId/quantize", requireAuth, async (req, res) => {
+router.post<{ projectId: string; clipId: string }>("/projects/:projectId/midi/clips/:clipId/quantize", requireAuth, async (req, res) => {
   try {
     const clip = await getOwnedClip(req.params.projectId, req.params.clipId, req.user!.id);
     if (!clip) return res.status(404).json({ error: "MIDI clip not found" });

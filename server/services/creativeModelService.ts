@@ -88,17 +88,6 @@ type AudioAnalysis = {
   genre?: string;
 };
 
-type PlannerResponse = {
-  steps?: Array<{
-    id?: number | string;
-    action?: string;
-    description?: string;
-    timecode_hint?: string;
-    emotional_goal?: string;
-    visual_description?: string;
-  }>;
-};
-
 async function analyze(audioPath: string, brief: CreativeBrief, userId: string): Promise<MusicMeta> {
   if (!audioPath) throw new AIUnavailableError("creative audio analysis (audio path required)");
   const raw = requireMaxCore(
@@ -131,14 +120,6 @@ async function analyze(audioPath: string, brief: CreativeBrief, userId: string):
     mood: Array.isArray(raw.mood) ? raw.mood : raw.mood ? [raw.mood] : [],
     genre: raw.genre,
   };
-}
-
-async function plan(brief: CreativeBrief, musicMeta: MusicMeta): Promise<CreativePlan> {
-  void brief;
-  void musicMeta;
-  throw new AIUnavailableError(
-    "creative planning (MaxCore has no standalone inferred planner contract)",
-  );
 }
 
 export interface GenerateOptions {
@@ -216,6 +197,7 @@ export async function planCreative(
   brief: CreativeBrief,
   audioPath: string,
 ): Promise<{ musicMeta: MusicMeta; plan: CreativePlan; script: string }> {
+  void brief;
   void audioPath;
   throw new AIUnavailableError(
     "creative planning (MaxCore has no standalone inferred planner contract)",

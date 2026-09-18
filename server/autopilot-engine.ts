@@ -13,38 +13,6 @@ import {
   recordOutcome,
 } from "./services/adaptiveGenerationEngine.js";
 
-// ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
-function seededIndex(seed: string, length: number): number {
-  if (length <= 0) return 0;
-  let h = 2166136261;
-  for (let i = 0; i < seed?.length; i++) {
-    h ^= seed?.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-    h >>>= 0;
-  }
-  return h % length;
-}
-// ────────────────────────────────────────────────────────────────────────────
-
-// Affinity between a self-evolution posting_optimization `contentFormatPriority`
-// (a prioritized list of media formats from a real detected industry change)
-// and the autopilot's configured content types. When a change prioritizes a
-// media format, the autopilot biases its content-type selection toward the
-// configured type that best expresses that format — staying within the artist's
-// configured content types rather than inventing new ones.
-const CONTENT_TYPE_FORMAT_AFFINITY: Record<string, string> = {
-  announcements: "image",
-  announcement: "image",
-  "behind-the-scenes": "video",
-  bts: "video",
-  questions: "text",
-  polls: "text",
-  tips: "carousel",
-  insights: "carousel",
-  promotional: "image",
-  promo: "image",
-};
-
 interface AutopilotJob {
   id: string;
   type: "content_generation" | "content_publishing" | "performance_analysis";
@@ -478,7 +446,7 @@ export class AutopilotEngine extends EventEmitter {
       // This would call your actual AI service
       // Optional advanced-URL-parser brief from configured source links.
       // Undefined when no sourceUrls configured ⇒ unchanged topic-only behavior.
-      const urlBrief = await this.resolveUrlBrief(topic, job.platform);
+      const urlBrief = await this.resolveUrlBrief(job.platform);
 
       const generatedContent = await this.generateContentForAutopilot({
         topic,
@@ -637,7 +605,6 @@ export class AutopilotEngine extends EventEmitter {
   // Returns undefined when no links are configured or on any parse/SSRF
   // failure, in which case generation falls back to topic-only.
   private async resolveUrlBrief(
-    topic: string,
     platform: string,
   ): Promise<UrlContentBrief | undefined> {
     const urls = this.config.sourceUrls;

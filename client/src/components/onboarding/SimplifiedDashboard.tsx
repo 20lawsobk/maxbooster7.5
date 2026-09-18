@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Music, Share2, Target, Play, Upload, Settings, Sparkles, Zap, Crown, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
+import { Music, Share2, Target, Play, Upload, Sparkles, Zap, Crown, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 
 interface SimplifiedDashboardProps {
   onUpgrade: () => void;
@@ -298,14 +298,7 @@ export default function SimplifiedDashboard({
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
-            ) : error ? (
-              <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground">Unable to load recent activity.</p>
-                <Button size="sm" variant="outline" className="mt-3" onClick={() => refetch()}>Retry</Button>
-              </div>
-            ) : dashboardData?.recentActivity.length ? (
+            {dashboardData.recentActivity.length ? (
               <div className="space-y-3">
                 {dashboardData.recentActivity.map((activity) => (
                   <div key={activity.id} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">

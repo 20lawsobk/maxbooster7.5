@@ -47,6 +47,10 @@ const INFER_TIMEOUT = 10_000;
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 async function fetchMaxCore<T = any>(
   endpoint: string,
   opts: {
@@ -103,7 +107,7 @@ async function pdimRpush(
   if (!isPdimConfigured()) return false;
   try {
     const client = getPdimClient();
-    await (client as unknown as Record<string, unknown>).rpush(
+    await client.rpush(
       key,
       JSON.stringify({ ...payload, ts: Date.now() }),
     );
@@ -232,13 +236,13 @@ async function syncStatesFromMaxCore(): Promise<number> {
   logger.info("[MaxCoreSync] Refreshing authoritative MaxCore model states…");
 
   for (const { name, endpoint } of MODEL_ENDPOINTS) {
-    const result = await fetchMaxCore<Record<string, unknown>>(endpoint, {
+    const result = await fetchMaxCore<unknown>(endpoint, {
       key: "admin",
       timeout: 15_000,
     });
-    if (!result.ok || !result.data) {
+    if (!result.ok || !isRecord(result.data)) {
       throw new Error(
-        `MaxCore state endpoint ${endpoint} unavailable (status ${
+        `MaxCore state endpoint ${endpoint} unavailable or invalid (status ${
           result.status ?? "no-response"
         })`,
       );

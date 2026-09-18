@@ -95,6 +95,130 @@ const defaultProgress: BatchProgress = {
   percentage: 0,
 };
 
+export interface BatchJobProgressResponse {
+  jobId: string;
+  status: "processing" | "completed" | "failed";
+  processed: number;
+  total: number;
+  success: number;
+  failed: number;
+  failures: Array<{ id: string; error: string }>;
+  currentItem?: string;
+  elapsedMs: number;
+}
+
+export async function parseBatchActionsResponse(
+  response: Response,
+  expectedIds: string[],
+): Promise<BatchResult> {
+  const payload: unknown = await response.json();
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Batch operation returned an invalid response");
+  }
+  const value = payload as Record<string, unknown>;
+  const success = value.success;
+  const failed = value.failed;
+  if (
+    !Array.isArray(success) ||
+    !success.every((id) => typeof id === "string") ||
+    !Array.isArray(failed) ||
+    !failed.every(
+      (entry) =>
+        entry !== null &&
+        typeof entry === "object" &&
+        typeof (entry as Record<string, unknown>).id === "string" &&
+        typeof (entry as Record<string, unknown>).error === "string",
+    ) ||
+    value.totalRequested !== expectedIds.length ||
+    value.totalSucceeded !== success.length ||
+    value.totalFailed !== failed.length ||
+    success.length + failed.length !== expectedIds.length
+  ) {
+    throw new Error("Batch operation returned an invalid response");
+  }
+  const requested = new Set(expectedIds);
+  if (
+    !success.every((id) => requested.has(id)) ||
+    !failed.every((entry) => requested.has((entry as { id: string }).id))
+  ) {
+    throw new Error("Batch operation returned results for unexpected items");
+  }
+  for (const field of ["downloadUrl", "exportId", "jobId"] as const) {
+    if (
+      value[field] !== undefined &&
+      value[field] !== null &&
+      typeof value[field] !== "string"
+    ) {
+      throw new Error("Batch operation returned an invalid response");
+    }
+  }
+  if (
+    value.comparisonData !== undefined &&
+    !Array.isArray(value.comparisonData)
+  ) {
+    throw new Error("Batch operation returned an invalid response");
+  }
+  return {
+    success,
+    failed: failed as Array<{ id: string; error: string }>,
+    totalRequested: value.totalRequested as number,
+    totalSucceeded: value.totalSucceeded as number,
+    totalFailed: value.totalFailed as number,
+    downloadUrl:
+      typeof value.downloadUrl === "string" ? value.downloadUrl : undefined,
+    exportId: typeof value.exportId === "string" ? value.exportId : undefined,
+    comparisonData: value.comparisonData as unknown[] | undefined,
+    jobId: typeof value.jobId === "string" ? value.jobId : undefined,
+  };
+}
+
+export async function parseBatchJobProgressResponse(
+  response: Response,
+  expectedJobId: string,
+): Promise<BatchJobProgressResponse> {
+  const payload: unknown = await response.json();
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Batch progress returned an invalid response");
+  }
+  const value = payload as Record<string, unknown>;
+  const numericFields = [
+    "processed",
+    "total",
+    "success",
+    "failed",
+    "elapsedMs",
+  ] as const;
+  if (
+    value.jobId !== expectedJobId ||
+    !["processing", "completed", "failed"].includes(String(value.status)) ||
+    numericFields.some(
+      (field) =>
+        typeof value[field] !== "number" ||
+        !Number.isFinite(value[field]) ||
+        (value[field] as number) < 0,
+    ) ||
+    !Array.isArray(value.failures) ||
+    !value.failures.every(
+      (entry) =>
+        entry !== null &&
+        typeof entry === "object" &&
+        typeof (entry as Record<string, unknown>).id === "string" &&
+        typeof (entry as Record<string, unknown>).error === "string",
+    ) ||
+    (value.currentItem !== undefined &&
+      typeof value.currentItem !== "string") ||
+    (value.processed as number) > (value.total as number) ||
+    (value.success as number) + (value.failed as number) >
+      (value.processed as number) ||
+    (value.status !== "processing" &&
+      (value.success as number) + (value.failed as number) !==
+        (value.processed as number))
+  ) {
+    throw new Error("Batch progress returned an invalid response");
+  }
+  return value as unknown as BatchJobProgressResponse;
+}
+
 export function useBatchActions(
   options: UseBatchActionsOptions = {},
 ): UseBatchActionsReturn {
@@ -176,19 +300,42 @@ export function useBatchActions(
             "GET",
             `/api/batch/progress/${jobId}`,
           );
+          const progressResponse = await parseBatchJobProgressResponse(
+            response,
+            jobId,
+          );
           updateProgress({
-            current: response.processed || 0,
+            current: progressResponse.processed,
             total,
-            currentItem: response.currentItem,
+            currentItem: progressResponse.currentItem,
           });
 
-          if (response?.status === "completed" || response?.status === "failed") {
+          if (
+            progressResponse.status === "completed" ||
+            progressResponse.status === "failed"
+          ) {
             stopProgressSimulation();
+            setStatus(
+              progressResponse.status === "failed"
+                ? "failed"
+                : progressResponse.failed > 0
+                  ? "partial"
+                  : "completed",
+            );
           }
-        } catch {}
+        } catch (error) {
+          stopProgressSimulation();
+          const progressError =
+            error instanceof Error
+              ? error
+              : new Error("Failed to read batch progress");
+          setError(progressError);
+          setStatus("failed");
+          onError?.(progressError);
+        }
       }, pollProgressInterval);
     },
-    [updateProgress, pollProgressInterval, stopProgressSimulation],
+    [updateProgress, pollProgressInterval, stopProgressSimulation, onError],
   );
 
   const getEndpoint = useCallback(
@@ -261,23 +408,18 @@ export function useBatchActions(
         const body = { ids, data };
 
         const response = await apiRequest(method, url, body);
+        const actionResult = await parseBatchActionsResponse(response, ids);
         stopProgressSimulation();
 
-        if (useJobProgress && response?.jobId) {
-          await pollJobProgress(response?.jobId, ids?.length);
+        if (useJobProgress) {
+          if (!actionResult.jobId) {
+            throw new Error("Batch operation did not return a progress job ID");
+          }
+          await pollJobProgress(actionResult.jobId, ids?.length);
+          setResult(actionResult);
+          setPendingConfig(null);
+          return actionResult;
         }
-
-        const actionResult: BatchResult = {
-          success: response.success || ids,
-          failed: response.failed || [],
-          totalRequested: ids.length,
-          totalSucceeded: response.success?.length ?? ids?.length,
-          totalFailed: response.failed?.length ?? 0,
-          downloadUrl: response.downloadUrl,
-          exportId: response.exportId,
-          comparisonData: response.comparisonData,
-          jobId: response.jobId,
-        };
 
         updateProgress({ current: ids.length, total: ids.length });
         setResult(actionResult);
@@ -463,7 +605,7 @@ export function useTrackBatchActions(options: UseBatchActionsOptions = {}) {
         resource: "tracks",
         action: "move",
         ids,
-        data: { targetFolder },
+        data: { targetProjectId: targetFolder },
         successMessage: "Tracks moved successfully",
         errorMessage: "Failed to move tracks",
         invalidateQueries: ["/api/studio/projects"],

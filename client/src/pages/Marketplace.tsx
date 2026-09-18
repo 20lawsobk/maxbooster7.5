@@ -66,6 +66,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest, uploadWithProgress } from "@/lib/queryClient";
+import {
+  MARKETPLACE_CART_LIMIT,
+  getMarketplaceLicensePrice,
+  loadMarketplaceCart,
+  reconcileMarketplaceCart,
+  saveMarketplaceCart,
+  type MarketplaceCartItem,
+} from "@/lib/marketplaceCart";
 import { PayoutDashboard } from "@/components/marketplace/PayoutDashboard";
 import StorefrontBuilder from "@/components/marketplace/StorefrontBuilder";
 import { BeatCard } from "@/components/marketplace/BeatCard";
@@ -193,11 +201,7 @@ interface Purchase {
   metadata?: Record<string, unknown>;
 }
 
-interface CartItem {
-  beatId: string;
-  licenseType: string;
-  price: number;
-}
+type CartItem = MarketplaceCartItem;
 
 interface MerchStats {
   totalRevenue: number;
@@ -454,7 +458,13 @@ function ProducerFollowButton({
   followMutation: ProducerFollowMutation;
   unfollowMutation: ProducerFollowMutation;
 }) {
-  const { data: followStatus, isLoading } = useQuery<FollowStatusResponse>({
+  const {
+    data: followStatus,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useQuery<FollowStatusResponse>({
     queryKey: ["/api/marketplace/producers", producerId, "follow-status"],
     queryFn: async () => {
       const response = await fetch(
@@ -463,30 +473,46 @@ function ProducerFollowButton({
           credentials: "include",
         },
       );
-      if (!response.ok) return { isFollowing: false };
+      if (!response.ok) {
+        throw new Error(`Unable to load follow status (${response.status})`);
+      }
       return response.json();
     },
   });
 
-  const isFollowing = followStatus?.isFollowing || false;
+  const isFollowing = followStatus?.isFollowing === true;
   const isPending = followMutation.isPending || unfollowMutation.isPending;
 
   return (
     <Button
       variant={isFollowing ? "default" : "outline"}
-      size="icon"
+      size={isError ? "sm" : "icon"}
       onClick={() => {
+        if (isError) {
+          void refetch();
+          return;
+        }
         if (isFollowing) {
           unfollowMutation.mutate(producerId);
         } else {
           followMutation.mutate(producerId);
         }
       }}
-      disabled={isLoading || isPending}
+      disabled={
+        isLoading || isFetching || isPending || (!followStatus && !isError)
+      }
       className={isFollowing ? "bg-purple-600 hover:bg-purple-700" : ""}
+      aria-label={
+        isError ? "Retry follow status" : isFollowing ? "Unfollow producer" : "Follow producer"
+      }
     >
-      {isPending ? (
+      {isPending || isFetching ? (
         <Loader2 className="w-4 h-4 animate-spin" />
+      ) : isError ? (
+        <>
+          <AlertCircle className="w-4 h-4 mr-1" />
+          Retry
+        </>
       ) : isFollowing ? (
         <UserCheck className="w-4 h-4" />
       ) : (
@@ -524,6 +550,8 @@ export default function Marketplace() {
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOwnerId, setCartOwnerId] = useState<string | null>(null);
+  const [cartCatalog, setCartCatalog] = useState<Beat[]>([]);
   const [isPlaying, setIsPlaying] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showCartModal, setShowCartModal] = useState(false);
@@ -1090,6 +1118,82 @@ export default function Marketplace() {
     deepLinkedBeat && !browsedBeats.some((b) => b.id === deepLinkedBeat.id)
       ? [deepLinkedBeat, ...browsedBeats]
       : browsedBeats;
+
+  const currentUserId = user?.id ? String(user.id) : null;
+  const visibleCart = cartOwnerId === currentUserId ? cart : [];
+  const authoritativeCartCatalog = [
+    ...beats,
+    ...cartCatalog.filter((saved) => !beats.some((beat) => beat.id === saved.id)),
+  ];
+  const reconciledCart = reconcileMarketplaceCart(
+    visibleCart,
+    authoritativeCartCatalog,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    setCart([]);
+    setCartCatalog([]);
+    setCartOwnerId(currentUserId);
+    if (!currentUserId) return () => { cancelled = true; };
+
+    const loaded = loadMarketplaceCart(window.localStorage, currentUserId);
+    if (loaded.error) {
+      toast({
+        title:
+          loaded.error === "corrupt"
+            ? "Saved cart was reset"
+            : "Cart storage unavailable",
+        description:
+          loaded.error === "corrupt"
+            ? "The saved cart data was invalid. You can add the items again."
+            : "Your cart cannot be restored or saved in this browser.",
+        variant: "destructive",
+      });
+    }
+    if (loaded.items.length === 0) return () => { cancelled = true; };
+
+    void (async () => {
+      try {
+        const beatIds = [...new Set(loaded.items.map((item) => item.beatId))];
+        const results = await Promise.all(
+          beatIds.map(async (beatId) => {
+            const response = await fetch(`/api/marketplace/beats/${beatId}`, {
+              credentials: "include",
+            });
+            if (response.status === 404) return null;
+            if (!response.ok) {
+              throw new Error(`Unable to validate saved cart (${response.status})`);
+            }
+            return (await response.json()) as Beat;
+          }),
+        );
+        if (cancelled) return;
+        const catalog = results.filter((beat): beat is Beat => beat !== null);
+        const valid = reconcileMarketplaceCart(loaded.items, catalog).map(
+          ({ beatId, licenseType }) => ({ beatId, licenseType }),
+        );
+        setCartCatalog(catalog);
+        setCart(valid);
+        if (!saveMarketplaceCart(window.localStorage, currentUserId, valid)) {
+          toast({
+            title: "Cart could not be saved",
+            description: "Browser storage is unavailable.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        if (cancelled) return;
+        toast({
+          title: "Cart could not be restored",
+          description:
+            error instanceof Error ? error.message : "Please try again later.",
+          variant: "destructive",
+        });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [currentUserId]);
 
   const { data: producersData } =
     useQuery<ProducersResponse>({
@@ -1739,6 +1843,13 @@ export default function Marketplace() {
         queryKey: ["/api/marketplace/producers"],
       });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Could not follow producer",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const unfollowProducerMutation = useMutation({
@@ -1756,6 +1867,13 @@ export default function Marketplace() {
       });
       queryClient.invalidateQueries({
         queryKey: ["/api/marketplace/producers"],
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Could not unfollow producer",
+        description: error.message || "Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -2257,7 +2375,7 @@ export default function Marketplace() {
       );
       return;
     }
-    const existingItem = cart.find(
+    const existingItem = visibleCart.find(
       (item) => item.beatId === beat.id && item.licenseType === licenseType,
     );
     if (existingItem) {
@@ -2270,8 +2388,32 @@ export default function Marketplace() {
       return;
     }
 
-    const price = getLicensePrice(beat, licenseType);
-    setCart([...cart, { beatId: beat.id, licenseType, price }]);
+    if (visibleCart.length >= MARKETPLACE_CART_LIMIT) {
+      toast({
+        title: "Cart is full",
+        description: `You can add up to ${MARKETPLACE_CART_LIMIT} items.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    const nextCart = [
+      ...visibleCart,
+      { beatId: beat.id, licenseType },
+    ];
+    setCart(nextCart);
+    setCartCatalog((catalog) =>
+      catalog.some((item) => item.id === beat.id)
+        ? catalog
+        : [...catalog, beat],
+    );
+    setCartOwnerId(String(user.id));
+    if (!saveMarketplaceCart(window.localStorage, String(user.id), nextCart)) {
+      toast({
+        title: "Cart could not be saved",
+        description: "Browser storage is unavailable.",
+        variant: "destructive",
+      });
+    }
     toast({
       title: "Added to Cart",
       description: `${beat.title} has been added to your cart.`,
@@ -2335,29 +2477,7 @@ export default function Marketplace() {
   };
 
   const getLicensePrice = (beat: Beat, licenseType: string): number => {
-    if (beat.hasLicenseTiers && beat.licenseTiers?.length) {
-      const tier = beat.licenseTiers.find(
-        (t) => t.licenseType === licenseType && t.isActive,
-      );
-      if (tier) {
-        if (tier.discountType === "percent" && tier.discountPrice != null)
-          return tier.discountPrice;
-        return tier.price;
-      }
-    }
-    const basePrice = beat.price;
-    switch (licenseType) {
-      case "basic":
-        return basePrice;
-      case "premium":
-        return basePrice * 2;
-      case "unlimited":
-        return basePrice * 5;
-      case "exclusive":
-        return basePrice * 20;
-      default:
-        return basePrice;
-    }
+    return getMarketplaceLicensePrice(beat, licenseType) ?? beat.price;
   };
 
   const getLicenseOriginalPrice = (
@@ -2663,7 +2783,7 @@ export default function Marketplace() {
                   data-testid="button-view-cart"
                 >
                   <ShoppingCart className="w-4 h-4 mr-2" />
-                  Cart ({cart.length})
+                  Cart ({reconciledCart.length})
                 </Button>
               </div>
             )}
@@ -8528,20 +8648,20 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <ShoppingCart className="w-5 h-5 mr-2" />
-              Your Cart ({cart.length})
+              Your Cart ({reconciledCart.length})
             </DialogTitle>
             <DialogDescription>
               Review your items before checkout
             </DialogDescription>
           </DialogHeader>
-          {cart.length === 0 ? (
+          {reconciledCart.length === 0 ? (
             <EmptyCartState onAction={() => setShowCartModal(false)} />
           ) : (
             <div className="space-y-4">
               <ScrollArea className="max-h-[300px]">
                 <div className="space-y-3 pr-4">
-                  {cart.map((item, index) => {
-                    const beat = beats.find((b: Beat) => b.id === item.beatId);
+                  {reconciledCart.map((item) => {
+                    const beat = item.beat;
                     return (
                       <div
                         key={`${item.beatId}-${item.licenseType}`}
@@ -8564,7 +8684,26 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                             size="sm"
                             className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                             onClick={() => {
-                              setCart(cart.filter((_, i) => i !== index));
+                              const nextCart = visibleCart.filter(
+                                (candidate) =>
+                                  candidate.beatId !== item.beatId ||
+                                  candidate.licenseType !== item.licenseType,
+                              );
+                              setCart(nextCart);
+                              if (
+                                currentUserId &&
+                                !saveMarketplaceCart(
+                                  window.localStorage,
+                                  currentUserId,
+                                  nextCart,
+                                )
+                              ) {
+                                toast({
+                                  title: "Cart could not be saved",
+                                  description: "Browser storage is unavailable.",
+                                  variant: "destructive",
+                                });
+                              }
                               toast({ title: "Removed from Cart" });
                             }}
                           >
@@ -8581,7 +8720,7 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                   <span>Estimated total</span>
                   <span className="text-lg">
                     $
-                    {cart.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
+                    {reconciledCart.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex gap-2">
@@ -8590,6 +8729,16 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                     className="flex-1"
                     onClick={() => {
                       setCart([]);
+                      if (
+                        currentUserId &&
+                        !saveMarketplaceCart(window.localStorage, currentUserId, [])
+                      ) {
+                        toast({
+                          title: "Cart could not be saved",
+                          description: "Browser storage is unavailable.",
+                          variant: "destructive",
+                        });
+                      }
                       toast({ title: "Cart Cleared" });
                     }}
                   >
@@ -8599,8 +8748,8 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                     className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                     disabled={purchaseBeatMutation.isPending}
                     onClick={() => {
-                      if (cart.length > 0) {
-                        if (cart.length > 1) {
+                      if (reconciledCart.length > 0) {
+                        if (reconciledCart.length > 1) {
                           toast({
                             title: "Checkout one item at a time",
                             description:
@@ -8609,10 +8758,8 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                           });
                           return;
                         }
-                        const item = cart[0];
-                        const beat = beats.find(
-                          (b: Beat) => b.id === item.beatId,
-                        );
+                        const item = reconciledCart[0];
+                        const beat = item.beat;
                         if (beat) {
                           handlePurchase(beat, item.licenseType);
                           setShowCartModal(false);
@@ -8634,10 +8781,10 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                     ) : (
                       <>
                         <CreditCard className="w-4 h-4 mr-2" />{" "}
-                        {cart.length === 1
+                        {reconciledCart.length === 1
                           ? "Checkout"
                           : "Checkout First Item"}{" "}
-                        ({cart.length} {cart.length === 1 ? "item" : "items"})
+                        ({reconciledCart.length} {reconciledCart.length === 1 ? "item" : "items"})
                       </>
                     )}
                   </Button>

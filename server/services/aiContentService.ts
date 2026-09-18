@@ -227,7 +227,11 @@ export class AIContentService {
     }
   }
 
-  private async logExplanation(inferenceId: string, explanation: unknown) {
+  private async logExplanation(
+    inferenceId: string | null,
+    explanation: unknown,
+  ): Promise<void> {
+    if (!inferenceId) return;
     try {
       await db.insert(explanationLogs).values({
         inferenceId,
@@ -545,7 +549,7 @@ export class AIContentService {
       executionTimeMs,
     );
 
-    if (inferenceId) {
+    if (typeof inferenceId === "string") {
       await this.logExplanation(inferenceId, {
         text: `Analyzed ${historicalPosts?.length} posts to extract brand voice with ${confidenceScore}% confidence`,
         features: { tone: 0.3, emoji: 0.2, hashtags: 0.2, vocabulary: 0.3 },
@@ -964,7 +968,7 @@ export class AIContentService {
       executionTimeMs,
     );
 
-    if (inferenceId) {
+    if (typeof inferenceId === "string") {
       await this.logExplanation(inferenceId, {
         text: `Suggested ${recommendations?.length} optimal posting times for ${platform}`,
         features: { platform: 0.3, historical: 0.4, algorithm: 0.3 },

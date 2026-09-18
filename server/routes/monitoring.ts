@@ -6,6 +6,7 @@ import { asyncHandler } from "../middleware/errorHandler.js";
 import { alertingService } from "../monitoring/alertingService.js";
 import { metricsCollector } from "../monitoring/metricsCollector.js";
 import { requireAdmin, require2FA } from "../middleware/auth.js";
+import { getMaxCoreModelStateSnapshot } from "../services/maxcoreSync.js";
 
 const router = Router();
 
@@ -109,17 +110,48 @@ router.get(
   "/system-health",
   asyncHandler(async (_req: any, res: any) => {
     try {
-      const [queueHealth, aiMetrics] = await Promise.all([
-        queueMonitor?.getHealthStatus(),
-        aiModelManager?.getMetrics(),
-      ]);
+      const queueHealth = await queueMonitor?.getHealthStatus();
+      const maxCoreSnapshot = getMaxCoreModelStateSnapshot();
+      const socialState = maxCoreSnapshot?.states.social_base;
+      const advertisingState = maxCoreSnapshot?.states.advertising_base;
 
-      const allQueuesHealthy = queueHealth?.healthy;
-      const aiModelsHealthy =
-        aiMetrics?.socialAutopilot.currentSize <=
-          aiMetrics?.socialAutopilot.maxSize &&
-        aiMetrics?.advertisingAutopilot.currentSize <=
-          aiMetrics?.advertisingAutopilot.maxSize;
+      const summarizeModelState = (
+        state: Record<string, unknown> | undefined,
+        expectedDomain: string,
+      ) => {
+        const weights =
+          state?.weights && typeof state.weights === "object"
+            ? (state.weights as Record<string, unknown>)
+            : undefined;
+        const contractValid =
+          state?.domain === expectedDomain &&
+          typeof state.version === "string" &&
+          typeof state.session_count === "number" &&
+          typeof weights?.ready === "boolean";
+        if (!contractValid) {
+          return {
+            available: false,
+            healthy: false,
+            status: "unavailable",
+          };
+        }
+        const ready = weights.ready === true;
+        return {
+          available: true,
+          healthy: ready,
+          status: ready ? "ready" : "not_ready",
+          version: state.version,
+          sessionCount: state.session_count,
+        };
+      };
+
+      const social = summarizeModelState(socialState, "social");
+      const advertising = summarizeModelState(
+        advertisingState,
+        "advertising",
+      );
+      const allQueuesHealthy = queueHealth?.healthy === true;
+      const aiModelsHealthy = social.healthy && advertising.healthy;
 
       const systemHealthy = allQueuesHealthy && aiModelsHealthy;
 
@@ -139,24 +171,10 @@ router.get(
           },
           aiModels: {
             healthy: aiModelsHealthy,
-            social: {
-              current: aiMetrics.socialAutopilot.currentSize,
-              max: aiMetrics.socialAutopilot.maxSize,
-              utilizationPercent: (
-                (aiMetrics?.socialAutopilot.currentSize /
-                  aiMetrics?.socialAutopilot.maxSize) *
-                100
-              ).toFixed(1),
-            },
-            advertising: {
-              current: aiMetrics.advertisingAutopilot.currentSize,
-              max: aiMetrics.advertisingAutopilot.maxSize,
-              utilizationPercent: (
-                (aiMetrics?.advertisingAutopilot.currentSize /
-                  aiMetrics?.advertisingAutopilot.maxSize) *
-                100
-              ).toFixed(1),
-            },
+            authority: "maxcore",
+            syncedAt: maxCoreSnapshot?.syncedAt ?? null,
+            social,
+            advertising,
           },
         },
         timestamp: new Date(),

@@ -79,6 +79,67 @@ function formatTime(ms: number): string {
   return `${seconds}s`;
 }
 
+export async function parseBatchProgressResponse(
+  response: Response,
+  expectedJobId: string,
+): Promise<{
+  jobId: string;
+  status: "processing" | "completed" | "failed";
+  processed: number;
+  total: number;
+  success: number;
+  failed: number;
+  failures: Array<{ id: string; error: string; index?: number }>;
+  currentItem?: string;
+  elapsedMs: number;
+}> {
+  const payload: unknown = await response.json();
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Batch progress returned an invalid response");
+  }
+  const value = payload as Record<string, unknown>;
+  const numericFields = [
+    "processed",
+    "total",
+    "success",
+    "failed",
+    "elapsedMs",
+  ] as const;
+  if (
+    value.jobId !== expectedJobId ||
+    !["processing", "completed", "failed"].includes(String(value.status)) ||
+    numericFields.some(
+      (field) =>
+        typeof value[field] !== "number" ||
+        !Number.isFinite(value[field]) ||
+        (value[field] as number) < 0,
+    ) ||
+    !Array.isArray(value.failures) ||
+    !value.failures.every(
+      (failure) =>
+        failure !== null &&
+        typeof failure === "object" &&
+        typeof (failure as Record<string, unknown>).id === "string" &&
+        typeof (failure as Record<string, unknown>).error === "string",
+    ) ||
+    (value.currentItem !== undefined &&
+      typeof value.currentItem !== "string") ||
+    (value.processed as number) > (value.total as number) ||
+    (value.success as number) + (value.failed as number) >
+      (value.processed as number) ||
+    (value.status !== "processing" &&
+      (value.success as number) + (value.failed as number) !==
+        (value.processed as number))
+  ) {
+    throw new Error("Batch progress returned an invalid response");
+  }
+  return value as ReturnType<typeof parseBatchProgressResponse> extends Promise<
+    infer Result
+  >
+    ? Result
+    : never;
+}
+
 export function useBatchProgress(
   options: UseBatchProgressOptions = {},
 ): UseBatchProgressReturn {
@@ -247,24 +308,55 @@ export function useBatchProgress(
           "GET",
           `/api/batch/progress/${jobId}`,
         );
+        const progressResponse = await parseBatchProgressResponse(
+          response,
+          jobId,
+        );
 
-        if (response?.status === "completed" || response?.status === "failed") {
+        if (
+          progressResponse.status === "completed" ||
+          progressResponse.status === "failed"
+        ) {
           stopTimers();
-          setState((prev) => ({
-            ...prev,
-            status: response.status,
-            current: response.processed || prev?.total,
-            percentage: 100,
-            successCount: response.success || 0,
-            failureCount: response.failed || 0,
-            failures: response.failures || [],
-            endTime: Date.now(),
-          }));
+          setState((prev) => {
+            const nextState: BatchProgressState = {
+              ...prev,
+              status:
+                progressResponse.status === "failed"
+                  ? "failed"
+                  : progressResponse.failed > 0
+                    ? "partial"
+                    : "completed",
+              current: progressResponse.processed,
+              total: progressResponse.total,
+              percentage:
+                progressResponse.total > 0
+                  ? Math.round(
+                      (progressResponse.processed / progressResponse.total) *
+                        100,
+                    )
+                  : 0,
+              successCount: progressResponse.success,
+              failureCount: progressResponse.failed,
+              failures: progressResponse.failures,
+              endTime: Date.now(),
+            };
+            onComplete?.(nextState);
+            return nextState;
+          });
         } else {
-          update(response?.processed || 0, response?.currentItem);
+          update(progressResponse.processed, progressResponse.currentItem);
         }
       } catch (err) {
-        onError?.(err instanceof Error ? err : new Error("Polling failed"));
+        stopTimers();
+        const pollingError =
+          err instanceof Error ? err : new Error("Polling failed");
+        setState((prev) => ({
+          ...prev,
+          status: "failed",
+          endTime: Date.now(),
+        }));
+        onError?.(pollingError);
       }
     }, pollingInterval);
 
@@ -274,7 +366,15 @@ export function useBatchProgress(
         pollingRef.current = null;
       }
     };
-  }, [jobId, state?.status, pollingInterval, stopTimers, update, onError]);
+  }, [
+    jobId,
+    state?.status,
+    pollingInterval,
+    stopTimers,
+    update,
+    onError,
+    onComplete,
+  ]);
 
   useEffect(() => {
     return () => {

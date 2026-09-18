@@ -461,6 +461,110 @@ async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
   }
 }
 
+function analysisHeaders(req: Request, contentType: string): Record<string, string> | null {
+  const owner = req.headers["x-maxcore-user-id"];
+  if (
+    !owner ||
+    Array.isArray(owner) ||
+    !owner.trim() ||
+    owner.length > 256 ||
+    [...owner].some((character) => character.charCodeAt(0) < 32)
+  ) {
+    return null;
+  }
+  const incoming = String(req.headers.authorization || "");
+  const incomingBearer = incoming.toLowerCase().startsWith("bearer ")
+    ? incoming.slice(7).trim()
+    : "";
+  // This localhost hop must use the model server's generation credential.
+  // Prefer the configured gateway key: a browser/session bearer is not an AI
+  // generation key and must not shadow it.
+  const bearer = _SERVER_FALLBACK_KEY || incomingBearer;
+  if (!bearer) return null;
+  return {
+    "Content-Type": contentType,
+    "Authorization": `Bearer ${bearer}`,
+    "X-MaxCore-User-Id": owner.trim(),
+  };
+}
+
+async function proxyAnalysisJson(
+  req: Request,
+  res: Response,
+  endpoint: "image" | "video" | "text" | "website",
+): Promise<void> {
+  const headers = analysisHeaders(req, "application/json");
+  if (!headers) {
+    res.status(401).json({ error: "Generation auth and authenticated MaxCore user identity are required" });
+    return;
+  }
+  try {
+    const upstream = await undiciRequest(`${MODEL_API_BASE}/api/analysis/${endpoint}`, {
+      method: "POST",
+      dispatcher: _keepAlivePool,
+      headers,
+      body: JSON.stringify(req.body ?? {}),
+      headersTimeout: 30_000,
+      bodyTimeout: 120_000,
+    });
+    const data = await parseBodyText(upstream.body);
+    res.status(upstream.statusCode).json(data);
+  } catch (error) {
+    handleProxyNetworkError(error, res, `/api/analysis/${endpoint}`);
+  }
+}
+
+async function proxyAnalysisUpload(req: Request, res: Response): Promise<void> {
+  const contentType = String(req.headers["content-type"] || "").split(";", 1)[0].toLowerCase();
+  const headers = analysisHeaders(req, contentType);
+  if (!headers) {
+    res.status(401).json({ error: "Generation auth and authenticated MaxCore user identity are required" });
+    return;
+  }
+  const kind = req.query.kind;
+  if (kind !== "image" && kind !== "video") {
+    res.status(400).json({ error: "kind must be image or video" });
+    return;
+  }
+  const supportedTypes = kind === "image"
+    ? new Set(["image/jpeg", "image/png", "image/webp"])
+    : new Set(["video/mp4", "video/webm", "video/quicktime"]);
+  if (!supportedTypes.has(contentType)) {
+    res.status(415).json({ error: "Upload Content-Type is unsupported" });
+    return;
+  }
+  const limit = kind === "image" ? 16 * 1024 * 1024 : 100 * 1024 * 1024;
+  if (req.headers["content-length"] !== undefined) {
+    const declared = Number(req.headers["content-length"]);
+    if (!Number.isSafeInteger(declared) || declared < 0) {
+      res.status(400).json({ error: "Invalid Content-Length" });
+      return;
+    }
+    if (declared > limit) {
+      res.status(413).json({ error: "Analysis upload exceeds size limit" });
+      return;
+    }
+  }
+  try {
+    // The incoming stream cannot be replayed: bypass _upstreamRequest retries.
+    const upstream = await undiciRequest(
+      `${MODEL_API_BASE}/api/analysis/upload?kind=${kind}`,
+      {
+        method: "POST",
+        dispatcher: _keepAlivePool,
+        headers,
+        body: req,
+        headersTimeout: 30_000,
+        bodyTimeout: 120_000,
+      },
+    );
+    const data = await parseBodyText(upstream.body);
+    res.status(upstream.statusCode).json(data);
+  } catch (error) {
+    handleProxyNetworkError(error, res, "/api/analysis/upload");
+  }
+}
+
 // ─── Binary proxy ─────────────────────────────────────────────────────────────
 // Used for endpoints that return non-JSON (e.g. image/jpeg frame previews).
 // Streams the raw upstream body through with the correct Content-Type header.
@@ -607,6 +711,16 @@ async function proxyBinaryStream(
 }
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
+
+// Internal native-analysis proxy. These explicit routes intentionally precede
+// all parameterized model routes and require both server generation auth and
+// the identity asserted by the trusted MaxCore gateway.
+router.post("/analysis/upload", _generationLimiter, proxyAnalysisUpload);
+for (const endpoint of ["image", "video", "text", "website"] as const) {
+  router.post(`/analysis/${endpoint}`, _generationLimiter, async (req, res) => {
+    await proxyAnalysisJson(req, res, endpoint);
+  });
+}
 
 router.get("/health", async (req, res) => {
   await proxyRequest(req, res, "/health");

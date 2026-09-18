@@ -96,7 +96,7 @@ router.post(
       await musicWorkflowAutomationService?.enableAutomation(
         userId,
         templateId,
-        validatedConfig,
+        validatedConfig ?? undefined,
       );
       res.json({ success: true, templateId, enabled: true });
     } catch (err) {

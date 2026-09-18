@@ -72,20 +72,93 @@ export interface UseTemplateResult {
   isApplying: boolean;
 }
 
-function normalizeTemplate(template: any): Template {
+export function normalizeTemplate(template: unknown): Template {
+  if (!template || typeof template !== "object" || Array.isArray(template)) {
+    throw new Error("Template API returned an invalid template");
+  }
+  const value = template as Record<string, unknown>;
+  if (
+    typeof value.id !== "string" ||
+    !value.id ||
+    typeof value.name !== "string" ||
+    !value.name ||
+    typeof value.category !== "string" ||
+    !value.category ||
+    !value.templateData ||
+    typeof value.templateData !== "object" ||
+    Array.isArray(value.templateData) ||
+    typeof value.isBuiltIn !== "boolean" ||
+    typeof value.createdAt !== "string" ||
+    typeof value.updatedAt !== "string" ||
+    typeof value.usageCount !== "number"
+  ) {
+    throw new Error("Template API returned an invalid template");
+  }
   return {
-    id: template.id,
-    name: template.name,
-    description: template.description || undefined,
-    type: template.category as TemplateType,
-    data: template.templateData || {},
-    isDefault: Boolean(template.isBuiltIn),
-    isShared: Boolean(template.isBuiltIn),
-    createdAt: template.createdAt,
-    updatedAt: template.updatedAt,
-    usageCount: template.usageCount || 0,
-    tags: template.tags || template.templateData?.tags || [],
+    id: value.id,
+    name: value.name,
+    description:
+      typeof value.description === "string" ? value.description : undefined,
+    type: value.category as TemplateType,
+    data: value.templateData as Record<string, any>,
+    isDefault: value.isBuiltIn,
+    isShared: value.isBuiltIn,
+    createdAt: value.createdAt,
+    updatedAt: value.updatedAt,
+    usageCount: value.usageCount,
+    tags: Array.isArray(value.tags)
+      ? (value.tags as string[])
+      : Array.isArray((value.templateData as Record<string, unknown>).tags)
+        ? ((value.templateData as Record<string, unknown>).tags as string[])
+        : [],
   };
+}
+
+export async function parseTemplateResponse(
+  response: Response,
+): Promise<Template> {
+  return normalizeTemplate(await response.json());
+}
+
+export async function parseTemplateListResponse(
+  response: Response,
+): Promise<Template[]> {
+  const payload: unknown = await response.json();
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Template API returned an invalid response");
+  }
+  const rawTemplates = (payload as Record<string, unknown>).templates;
+  if (!Array.isArray(rawTemplates)) {
+    throw new Error("Template API returned an invalid response");
+  }
+  return rawTemplates.map(normalizeTemplate);
+}
+
+async function requireSuccessResponse(
+  response: Response,
+  context: string,
+): Promise<void> {
+  const payload: unknown = await response.json();
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    (payload as Record<string, unknown>).success !== true
+  ) {
+    throw new Error(`${context} returned an invalid response`);
+  }
+}
+
+async function requireCreatedProjectResponse(response: Response): Promise<void> {
+  const payload: unknown = await response.json();
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    Array.isArray(payload) ||
+    typeof (payload as Record<string, unknown>).id !== "string" ||
+    !(payload as Record<string, unknown>).id
+  ) {
+    throw new Error("Create project from template returned an invalid response");
+  }
 }
 
 function toStudioTemplatePayload(input: CreateTemplateInput) {
@@ -138,19 +211,19 @@ export function useTemplate(
       const endpoint = type
         ? `/api/studio/templates?category=${encodeURIComponent(type)}`
         : "/api/studio/templates";
-      const result = await apiRequest("GET", endpoint);
-      return (result.templates || []).map(normalizeTemplate);
+       const response = await apiRequest("GET", endpoint);
+       return parseTemplateListResponse(response);
     },
   });
 
   const createMutation = useMutation({
     mutationFn: async (input: CreateTemplateInput) => {
-      const result = await apiRequest(
+       const response = await apiRequest(
         "POST",
         "/api/studio/templates",
         toStudioTemplatePayload(input),
       );
-      return normalizeTemplate(result);
+       return parseTemplateResponse(response);
     },
     onSuccess: (template) => {
       queryClient?.invalidateQueries({ queryKey: ["/api/studio/templates"] });
@@ -178,12 +251,12 @@ export function useTemplate(
       id: string;
       input: Partial<CreateTemplateInput>;
     }) => {
-      const result = await apiRequest(
+       const response = await apiRequest(
         "PATCH",
         `/api/studio/templates/${id}`,
         toStudioTemplateUpdatePayload(input),
       );
-      return normalizeTemplate(result);
+       return parseTemplateResponse(response);
     },
     onSuccess: (template) => {
       queryClient?.invalidateQueries({ queryKey: ["/api/studio/templates"] });
@@ -203,7 +276,8 @@ export function useTemplate(
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/studio/templates/${id}`);
+      const response = await apiRequest("DELETE", `/api/studio/templates/${id}`);
+      await requireSuccessResponse(response, "Delete template");
     },
     onSuccess: () => {
       queryClient?.invalidateQueries({ queryKey: ["/api/studio/templates"] });
@@ -258,7 +332,7 @@ export function useTemplate(
               "POST",
               `/api/studio/templates/${templateId}/create-project`,
               { title },
-            ),
+            ).then(requireCreatedProjectResponse),
           ),
         );
         const result: ApplyTemplateResult = {
@@ -404,8 +478,8 @@ export function useTemplateLibrary() {
   const { data: allTemplates = [], isLoading } = useQuery<Template[]>({
     queryKey: ["/api/studio/templates"],
     queryFn: async () => {
-      const result = await apiRequest("GET", "/api/studio/templates");
-      return (result.templates || []).map(normalizeTemplate);
+       const response = await apiRequest("GET", "/api/studio/templates");
+       return parseTemplateListResponse(response);
     },
   });
 
@@ -448,13 +522,12 @@ export function useTemplateLibrary() {
     ) {
       throw new Error("The template file is missing required fields");
     }
-    const result = normalizeTemplate(
-      await apiRequest(
-        "POST",
-        "/api/studio/templates",
-        toStudioTemplatePayload(imported),
-      ),
+    const response = await apiRequest(
+      "POST",
+      "/api/studio/templates",
+      toStudioTemplatePayload(imported),
     );
+    const result = await parseTemplateResponse(response);
 
     queryClient?.invalidateQueries({ queryKey: ["/api/studio/templates"] });
     toast({

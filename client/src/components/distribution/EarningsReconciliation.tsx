@@ -171,6 +171,8 @@ export function EarningsReconciliation() {
   const queryClient = useQueryClient();
 
   const { data: statements = [] } = useQuery<
+    { statements?: RoyaltyStatement[] },
+    Error,
     RoyaltyStatement[]
   >({
     queryKey: ["/api/distribution/earnings/statements", { dateRange }],
@@ -179,6 +181,8 @@ export function EarningsReconciliation() {
   });
 
   const { data: earnings = [] } = useQuery<
+    { entries?: EarningsEntry[] },
+    Error,
     EarningsEntry[]
   >({
     queryKey: [
@@ -189,6 +193,8 @@ export function EarningsReconciliation() {
   });
 
   const { data: payouts = [] } = useQuery<
+    { payouts?: PayoutRecord[] },
+    Error,
     PayoutRecord[]
   >({
     queryKey: ["/api/distribution/earnings/payouts"],
@@ -199,7 +205,11 @@ export function EarningsReconciliation() {
     queryKey: ["/api/distribution/earnings/summary", { dateRange }],
   });
 
-  const { data: territoryData = [] } = useQuery<TerritoryBreakdown[]>({
+  const { data: territoryData = [] } = useQuery<
+    { territories?: TerritoryBreakdown[] },
+    Error,
+    TerritoryBreakdown[]
+  >({
     queryKey: ["/api/distribution/earnings/territories", { dateRange }],
     select: (response: { territories?: TerritoryBreakdown[] }) =>
       response.territories ?? [],

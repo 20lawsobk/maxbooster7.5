@@ -72,6 +72,77 @@ export interface BatchTemplateManagerProps {
   className?: string;
 }
 
+export function validateBatchTemplate(value: unknown): BatchTemplate {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Batch template API returned an invalid template");
+  }
+  const template = value as Record<string, unknown>;
+  if (
+    typeof template.id !== "string" ||
+    !template.id ||
+    typeof template.name !== "string" ||
+    !template.name ||
+    typeof template.resource !== "string" ||
+    typeof template.action !== "string" ||
+    !template.configuration ||
+    typeof template.configuration !== "object" ||
+    Array.isArray(template.configuration) ||
+    typeof template.isFavorite !== "boolean" ||
+    typeof template.isShared !== "boolean" ||
+    typeof template.createdAt !== "string" ||
+    typeof template.updatedAt !== "string" ||
+    typeof template.usageCount !== "number"
+  ) {
+    throw new Error("Batch template API returned an invalid template");
+  }
+  return template as unknown as BatchTemplate;
+}
+
+export async function parseBatchTemplateResponse(
+  response: Response,
+): Promise<BatchTemplate> {
+  return validateBatchTemplate(await response.json());
+}
+
+export async function parseBatchTemplateListResponse(
+  response: Response,
+): Promise<BatchTemplate[]> {
+  const payload: unknown = await response.json();
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Batch template API returned an invalid response");
+  }
+  const templates = (payload as Record<string, unknown>).templates;
+  if (!Array.isArray(templates)) {
+    throw new Error("Batch template API returned an invalid response");
+  }
+  return templates.map(validateBatchTemplate);
+}
+
+async function parseDeleteTemplateResponse(response: Response): Promise<void> {
+  const payload: unknown = await response.json();
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    (payload as Record<string, unknown>).success !== true
+  ) {
+    throw new Error("Delete batch template returned an invalid response");
+  }
+}
+
+async function parseShareTemplateResponse(response: Response): Promise<void> {
+  const payload: unknown = await response.json();
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    (payload as Record<string, unknown>).success !== true
+  ) {
+    throw new Error("Share batch template returned an invalid response");
+  }
+  validateBatchTemplate(
+    (payload as Record<string, unknown>).sharedTemplate,
+  );
+}
+
 export function BatchTemplateManager({
   resource,
   currentConfiguration,
@@ -96,9 +167,9 @@ export function BatchTemplateManager({
     queryFn: async () => {
       const response = await apiRequest(
         "GET",
-        `/api/batch/templates?resource=${resource}`,
+        `/api/batch/templates?resource=${encodeURIComponent(resource)}`,
       );
-      return response.templates || [];
+      return parseBatchTemplateListResponse(response);
     },
   });
 
@@ -108,11 +179,12 @@ export function BatchTemplateManager({
       description?: string;
       configuration: Record<string, any>;
     }) => {
-      return apiRequest("POST", "/api/batch/templates", {
+      const response = await apiRequest("POST", "/api/batch/templates", {
         ...data,
         resource,
         action: "bulk_operation",
       });
+      return parseBatchTemplateResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/batch/templates"] });
@@ -141,7 +213,12 @@ export function BatchTemplateManager({
       id: string;
       data: Partial<BatchTemplate>;
     }) => {
-      return apiRequest("PUT", `/api/batch/templates/${id}`, data);
+      const response = await apiRequest(
+        "PUT",
+        `/api/batch/templates/${id}`,
+        data,
+      );
+      return parseBatchTemplateResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/batch/templates"] });
@@ -158,7 +235,11 @@ export function BatchTemplateManager({
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/batch/templates/${id}`);
+      const response = await apiRequest(
+        "DELETE",
+        `/api/batch/templates/${id}`,
+      );
+      await parseDeleteTemplateResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/batch/templates"] });
@@ -183,11 +264,17 @@ export function BatchTemplateManager({
       templateId: string;
       email: string;
     }) => {
-      return apiRequest("POST", `/api/batch/templates/${templateId}/share`, {
-        email,
-      });
+      const response = await apiRequest(
+        "POST",
+        `/api/batch/templates/${templateId}/share`,
+        {
+          email,
+        },
+      );
+      await parseShareTemplateResponse(response);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/batch/templates"] });
       toast({
         title: "Template shared",
         description: `Template shared successfully.`,
@@ -216,17 +303,13 @@ export function BatchTemplateManager({
   const handleApplyTemplate = useCallback(
     (template: BatchTemplate) => {
       onApplyTemplate(template.configuration);
-      updateMutation.mutate({
-        id: template.id,
-        data: { usageCount: template.usageCount + 1 },
-      });
       toast({
         title: "Template applied",
         description: `Applied "${template.name}" configuration.`,
       });
       setLoadDialogOpen(false);
     },
-    [onApplyTemplate, updateMutation, toast],
+    [onApplyTemplate, toast],
   );
 
   const handleToggleFavorite = useCallback(

@@ -194,9 +194,9 @@ router.get("/behavioral-alerts", async (_req: Request, res: Response) => {
   }
 });
 
-router.patch(
+router.patch<{ alertId: string }>(
   "/behavioral-alerts/:alertId/resolve",
-  async (req: Request, res: Response) => {
+  async (req: Request<{ alertId: string }>, res: Response) => {
     try {
       const { alertId } = req.params;
       if (

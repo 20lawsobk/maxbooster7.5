@@ -1,24 +1,6 @@
-import { logger } from "../logger.js";
-import { loopbackUrl, runtimePorts } from "../config/ports.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { ensureMaxCoreAudioAsset } from "./maxcoreAssetTransport.js";
 import { getMaxcoreOrigin } from "./maxcoreConnector.js";
-
-// Call the Python AI sidecar directly (loopback, no CSRF/auth layer needed).
-// Routing through the main Express server (/api/ai-service) would hit the CSRF
-// middleware and fail because server-to-server fetches carry no CSRF cookie.
-const AI_MODEL_URL =
-  process.env.AI_MODEL_SERVICE_URL || loopbackUrl(runtimePorts.legacyPythonAi);
-const TIMEOUT_MS = 120_000; // raised: audio analysis, transcription, and heavy ML inference can exceed 30s
-
-// Kept for any callers that still pass through Express; unused when calling the
-// sidecar directly since the sidecar binds to 127.0.0.1 only.
-const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || "";
-function internalAuthHeaders(): Record<string, string> {
-  return _INTERNAL_SECRET
-    ? { Authorization: `Bearer ${_INTERNAL_SECRET}` }
-    : {};
-}
 
 interface AIModelResponse<T> {
   success: boolean;
@@ -26,58 +8,14 @@ interface AIModelResponse<T> {
   error?: string;
 }
 
-async function fetchWithTimeout(
-  url: string,
-  options: RequestInit,
-  timeoutMs = TIMEOUT_MS,
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller?.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    return response;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 async function callAIModel<T>(
   endpoint: string,
-  body: Record<string, unknown>,
+  _body: Record<string, unknown>,
 ): Promise<AIModelResponse<T>> {
   return {
     success: false,
     error: `Legacy Python AI endpoint ${endpoint} is disabled; no verified MaxCore contract with authenticated ownership is available`,
   };
-
-  try {
-    const response = await fetchWithTimeout(`${AI_MODEL_URL}${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...internalAuthHeaders() },
-      body: JSON.stringify(body),
-    });
-
-    if (!response?.ok) {
-      const errorText = await response?.text();
-      logger.warn(
-        `[PythonAI] ${endpoint} returned ${response?.status}: ${errorText}`,
-      );
-      return { success: false, error: `AI Model returned ${response?.status}` };
-    }
-
-    const data = (await response?.json()) as T;
-    return { success: true, data };
-  } catch (err) {
-    if (err instanceof Error && err?.name === "AbortError") {
-      logger.warn(`[PythonAI] ${endpoint} timed out after ${TIMEOUT_MS}ms`);
-      return { success: false, error: "AI Model request timed out" };
-    }
-    logger.warn({ err: err }, `[PythonAI] ${endpoint} failed:`);
-    return { success: false, error: "AI Model service unavailable" };
-  }
 }
 
 export interface ScriptResult {
@@ -173,9 +111,6 @@ export interface HealthResult {
 
 export class PythonAIService {
   private static instance: PythonAIService;
-  private available: boolean | null = null;
-  private lastCheckMs = 0;
-  private readonly RECHECK_INTERVAL_MS = 30_000;
 
   static getInstance(): PythonAIService {
     if (!PythonAIService?.instance) {
@@ -189,8 +124,7 @@ export class PythonAIService {
   }
 
   resetAvailability(): void {
-    this.available = null;
-    this.lastCheckMs = 0;
+    // Availability is queried directly from MaxCore; no local state is cached.
   }
 
   async generateScript(
@@ -291,28 +225,12 @@ export class PythonAIService {
   }
 
   async getBoostSheet(
-    sheetId: string,
+    _sheetId: string,
   ): Promise<AIModelResponse<BoostSheetResult>> {
     return {
       success: false,
       error: "Legacy boost-sheet jobs have no verified MaxCore contract",
     };
-    try {
-      const response = await fetchWithTimeout(
-        `${AI_MODEL_URL}/boostsheet/${sheetId}`,
-        {
-          method: "GET",
-          headers: { ...internalAuthHeaders() },
-        },
-      );
-      if (!response?.ok) {
-        return { success: false, error: `Not found: ${response?.status}` };
-      }
-      const data = (await response?.json()) as BoostSheetResult;
-      return { success: true, data };
-    } catch (err) {
-      return { success: false, error: "AI Model service unavailable" };
-    }
   }
 
   async optimize(
@@ -465,31 +383,12 @@ export class PythonAIService {
   }
 
   async getVideoJobStatus(jobId: string): Promise<AIModelResponse<unknown>> {
+    void jobId;
     return {
       success: false,
       error:
         "Video job polling requires authenticated MaxCore job ownership transport",
     };
-    try {
-      const response = await fetchWithTimeout(
-        `${AI_MODEL_URL}/video-job/${jobId}`,
-        {
-          method: "GET",
-          headers: { ...internalAuthHeaders() },
-        },
-        10000,
-      );
-      if (!response?.ok) {
-        return {
-          success: false,
-          error: `Job status check failed: ${response?.status}`,
-        };
-      }
-      const data = await response?.json();
-      return { success: true, data };
-    } catch {
-      return { success: false, error: "AI Model service unavailable" };
-    }
   }
 
   async getCinematicTemplates(): Promise<AIModelResponse<unknown>> {
@@ -497,26 +396,6 @@ export class PythonAIService {
       success: false,
       error: "Legacy cinematic templates have no verified MaxCore contract",
     };
-    try {
-      const response = await fetchWithTimeout(
-        `${AI_MODEL_URL}/cinematic-templates`,
-        {
-          method: "GET",
-          headers: { ...internalAuthHeaders() },
-        },
-        10000,
-      );
-      if (!response?.ok) {
-        return {
-          success: false,
-          error: `Failed to fetch templates: ${response?.status}`,
-        };
-      }
-      const data = await response?.json();
-      return { success: true, data };
-    } catch {
-      return { success: false, error: "AI Model service unavailable" };
-    }
   }
 
   async checkHealth(): Promise<AIModelResponse<HealthResult>> {
@@ -607,55 +486,14 @@ export class PythonAIService {
         ],
       },
     };
-    try {
-      const response = await fetchWithTimeout(
-        `${AI_MODEL_URL}/analyze/audio-features`,
-        {
-          method: "GET",
-          headers: { ...internalAuthHeaders() },
-        },
-        5000,
-      );
-      if (!response?.ok) {
-        return { success: false, error: "Failed to get audio feature info" };
-      }
-      const data = await response?.json();
-      return { success: true, data };
-    } catch {
-      return { success: false, error: "AI Model service unavailable" };
-    }
   }
 
   async transcribeToMidi(filePath: string): Promise<AIModelResponse<unknown>> {
+    void filePath;
     return {
       success: false,
       error: "MaxCore has no verified audio-to-MIDI contract",
     };
-    try {
-      const response = await fetchWithTimeout(
-        `${AI_MODEL_URL}/analyze/transcribe`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...internalAuthHeaders(),
-          },
-          body: JSON.stringify({ file_path: filePath }),
-        },
-        120000,
-      );
-      if (!response?.ok) {
-        const err = await response?.text();
-        return { success: false, error: `MIDI transcription failed: ${err}` };
-      }
-      const data = await response?.json();
-      return { success: true, data };
-    } catch (e) {
-      return {
-        success: false,
-        error: `MIDI transcription error: ${(e as any)?.message}`,
-      };
-    }
   }
 }
 

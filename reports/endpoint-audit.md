@@ -1,12 +1,12 @@
 # Static Frontend/Backend API Inventory
 
-Generated 2026-09-17T03:03:35.419Z without live requests.
+Generated 2026-09-18T21:36:30.177Z without live requests.
 
-- Backend route registrations: **2308** (2293 unique method/path pairs).
+- Backend route registrations: **2344** (2324 unique method/path pairs).
 - Mounted router files: **151**.
-- Frontend API call sites: **1114** (857 unique method/path pairs).
+- Frontend API call sites: **1115** (857 unique method/path pairs).
 - Matched: **857**; unmatched confirmed: **0**; method-unconfirmed: **0**.
-- Cache/comment/non-API references: **884**; external URL references: **43**; SPA URL references: **246**.
+- Cache/comment/non-API references: **886**; external URL references: **41**; SPA URL references: **246**.
 - Dynamic frontend URLs unresolved: **15**.
 
 ## Confirmed matches
@@ -14,31 +14,31 @@ Generated 2026-09-17T03:03:35.419Z without live requests.
 Every entry below has a statically detected frontend transport and at least one mounted backend route with the same method and normalized path. The full occurrence and backend location inventory is in `endpoint-audit.json`.
 
 - `GET /api/storefront-domains/resolve/:param` via fetch — client/src/App.tsx:177 → server/routes/storefrontDomains.ts:88
-- `GET /api/pocket/list` via fetch — client/src/components/PocketDimensionDashboard.tsx:58 → server/routes.ts:5436
-- `GET /api/pocket/:param/stats` via fetch — client/src/components/PocketDimensionDashboard.tsx:72 → server/routes.ts:5492
-- `GET /api/pocket/:param/list` via fetch — client/src/components/PocketDimensionDashboard.tsx:73 → server/routes.ts:5521
-- `POST /api/pocket/create` via fetch — client/src/components/PocketDimensionDashboard.tsx:103 → server/routes.ts:5451
-- `POST /api/pocket/:param/write` via fetch — client/src/components/PocketDimensionDashboard.tsx:145 → server/routes.ts:5543
-- `GET /api/pocket/demo` via fetch — client/src/components/PocketDimensionDashboard.tsx:178 → server/routes.ts:5478
-- `POST /api/marketplace/listings/:param/stems` via uploadWithProgress — client/src/components/StemUploadDialog.tsx:58 → server/routes/marketplace.ts:2920
-- `GET /api/marketplace/listings/:param/stems` via fetch — client/src/components/StemsManager.tsx:88 → server/routes/marketplace.ts:2901
-- `DELETE /api/marketplace/stems/:param` via apiRequest — client/src/components/StemsManager.tsx:100 → server/routes/marketplace.ts:2985
-- `POST /api/marketplace/stems/:param/purchase` via apiRequest — client/src/components/StemsManager.tsx:129 → server/routes/marketplace.ts:2824
+- `GET /api/pocket/list` via fetch — client/src/components/PocketDimensionDashboard.tsx:58 → server/routes.ts:5433
+- `GET /api/pocket/:param/stats` via fetch — client/src/components/PocketDimensionDashboard.tsx:72 → server/routes.ts:5489
+- `GET /api/pocket/:param/list` via fetch — client/src/components/PocketDimensionDashboard.tsx:73 → server/routes.ts:5518
+- `POST /api/pocket/create` via fetch — client/src/components/PocketDimensionDashboard.tsx:103 → server/routes.ts:5448
+- `POST /api/pocket/:param/write` via fetch — client/src/components/PocketDimensionDashboard.tsx:145 → server/routes.ts:5540
+- `GET /api/pocket/demo` via fetch — client/src/components/PocketDimensionDashboard.tsx:178 → server/routes.ts:5475
+- `POST /api/marketplace/listings/:param/stems` via uploadWithProgress — client/src/components/StemUploadDialog.tsx:58 → server/routes/marketplace.ts:2923
+- `GET /api/marketplace/listings/:param/stems` via fetch — client/src/components/StemsManager.tsx:88 → server/routes/marketplace.ts:2904
+- `DELETE /api/marketplace/stems/:param` via apiRequest — client/src/components/StemsManager.tsx:100 → server/routes/marketplace.ts:2988
+- `POST /api/marketplace/stems/:param/purchase` via apiRequest — client/src/components/StemsManager.tsx:129 → server/routes/marketplace.ts:2827
 - `GET /api/achievements/user` via useQuery — client/src/components/achievements/AchievementGrid.tsx:42 → server/routes/achievements.ts:19
 - `GET /api/achievements/unnotified` via useQuery — client/src/components/achievements/AchievementNotification.tsx:59 → server/routes/achievements.ts:31
 - `POST /api/achievements/mark-notified/:param` via apiRequest — client/src/components/achievements/AchievementNotification.tsx:67 → server/routes/achievements.ts:48
 - `GET /api/achievements/streaks` via useQuery — client/src/components/achievements/StreakCounter.tsx:64 → server/routes/achievements.ts:87
 - `POST /api/achievements/streaks/:param` via apiRequest — client/src/components/achievements/StreakCounter.tsx:69 → server/routes/achievements.ts:97
-- `GET /api/advertising/dashboard/attribution` via useQuery — client/src/components/advertising/AttributionDashboard.tsx:76 → server/routes/advertising.ts:1523
-- `GET /api/advertising/dashboard/paths` via useQuery — client/src/components/advertising/AttributionDashboard.tsx:83 → server/routes/advertising.ts:1570
-- `GET /api/advertising/ab-tests` via useQuery — client/src/components/advertising/CreativeAutomation.tsx:92 → server/routes/advertising.ts:577
-- `GET /api/advertising/variants` via useQuery — client/src/components/advertising/CreativeVariantGenerator.tsx:90 → server/routes/advertising.ts:1354
-- `POST /api/advertising/generate-content` via apiRequest — client/src/components/advertising/CreativeVariantGenerator.tsx:141 → server/routes/advertising.ts:1909
-- `GET /api/advertising/attribution/channels` via useQuery — client/src/components/advertising/CrossChannelAttribution.tsx:95 → server/routes/advertising.ts:1415
-- `GET /api/advertising/attribution/paths` via useQuery — client/src/components/advertising/CrossChannelAttribution.tsx:102 → server/routes/advertising.ts:1490
+- `GET /api/advertising/dashboard/attribution` via useQuery — client/src/components/advertising/AttributionDashboard.tsx:76 → server/routes/advertising.ts:1549
+- `GET /api/advertising/dashboard/paths` via useQuery — client/src/components/advertising/AttributionDashboard.tsx:83 → server/routes/advertising.ts:1596
+- `GET /api/advertising/ab-tests` via useQuery — client/src/components/advertising/CreativeAutomation.tsx:92 → server/routes/advertising.ts:603
+- `GET /api/advertising/variants` via useQuery — client/src/components/advertising/CreativeVariantGenerator.tsx:90 → server/routes/advertising.ts:1380
+- `POST /api/advertising/generate-content` via apiRequest — client/src/components/advertising/CreativeVariantGenerator.tsx:141 → server/routes/advertising.ts:1935
+- `GET /api/advertising/attribution/channels` via useQuery — client/src/components/advertising/CrossChannelAttribution.tsx:95 → server/routes/advertising.ts:1441
+- `GET /api/advertising/attribution/paths` via useQuery — client/src/components/advertising/CrossChannelAttribution.tsx:102 → server/routes/advertising.ts:1516
 - `GET /api/analytics/dashboard?range=:param` via fetch — client/src/components/analytics/DataDenseAnalytics.tsx:172 → server/routes.ts:4475
 - `GET /api/ai/insights?range=:param` via fetch — client/src/components/analytics/DataDenseAnalytics.tsx:238 → server/routes/ai.ts:796
-- `GET /api/auth/me` via fetch — client/src/components/auth/AuthProvider.tsx:24 → server/index.ts:390, server/routes.ts:297
+- `GET /api/auth/me` via fetch — client/src/components/auth/AuthProvider.tsx:24 → server/index.ts:393, server/routes.ts:297
 - `POST /api/auth/login` via apiRequest — client/src/components/auth/AuthProvider.tsx:63 → server/routes.ts:502
 - `POST /api/auth/register` via apiRequest — client/src/components/auth/AuthProvider.tsx:78 → server/routes.ts:337
 - `POST /api/auth/logout` via apiRequest — client/src/components/auth/AuthProvider.tsx:86 → server/routes.ts:645
@@ -61,17 +61,17 @@ Every entry below has a statically detected frontend transport and at least one 
 - `DELETE /api/custom-workflows/:param` via apiRequest — client/src/components/automations/CustomWorkflowBuilder.tsx:552 → server/routes/customWorkflows.ts:407
 - `GET /api/custom-workflows` via useQuery — client/src/components/automations/CustomWorkflowBuilder.tsx:720 → server/routes/customWorkflows.ts:297
 - `GET /api/custom-workflows/catalog` via useQuery — client/src/components/automations/CustomWorkflowBuilder.tsx:727 → server/routes/customWorkflows.ts:293, server/routes/customWorkflows.ts:314
-- `GET /api/advertising/status` via useQuery — client/src/components/autonomous/autonomous-dashboard.tsx:227 → server/routes/advertising.ts:1178
-- `POST /api/advertising/configure` via apiRequest — client/src/components/autonomous/autonomous-dashboard.tsx:279 → server/routes/advertising.ts:1278
+- `GET /api/advertising/status` via useQuery — client/src/components/autonomous/autonomous-dashboard.tsx:227 → server/routes/advertising.ts:1204
+- `POST /api/advertising/configure` via apiRequest — client/src/components/autonomous/autonomous-dashboard.tsx:279 → server/routes/advertising.ts:1304
 - `GET /api/autopilot/preferences` via apiRequest — client/src/components/autopilot/AutopilotPreferences.tsx:177 → server/routes/autopilotPreferences.ts:61
 - `POST /api/autopilot/preferences` via apiRequest — client/src/components/autopilot/AutopilotPreferences.tsx:190 → server/routes/autopilotPreferences.ts:124
 - `GET /api/autopilot/status` via useQuery — client/src/components/autopilot/autopilot-dashboard.tsx:168 → server/routes/autopilot.ts:36
 - `POST /api/autopilot/configure` via apiRequest — client/src/components/autopilot/autopilot-dashboard.tsx:218 → server/routes/autopilot.ts:286
-- `GET /api/batch/templates?resource=:param` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:99 → server/routes/batch.ts:1268
-- `POST /api/batch/templates` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:111 → server/routes/batch.ts:1296
-- `PUT /api/batch/templates/:param` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:144 → server/routes/batch.ts:1330
-- `DELETE /api/batch/templates/:param` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:161 → server/routes/batch.ts:1376
-- `POST /api/batch/templates/:param/share` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:186 → server/routes/batch.ts:1401
+- `GET /api/batch/templates?resource=:param` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:170 → server/routes/batch.ts:1268
+- `POST /api/batch/templates` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:182 → server/routes/batch.ts:1296
+- `PUT /api/batch/templates/:param` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:218 → server/routes/batch.ts:1330
+- `DELETE /api/batch/templates/:param` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:240 → server/routes/batch.ts:1376
+- `POST /api/batch/templates/:param/share` via apiRequest — client/src/components/batch/BatchTemplateManager.tsx:269 → server/routes/batch.ts:1401
 - `GET /api/billing/disputes` via useQuery — client/src/components/billing/DisputeTracker.tsx:112 → server/routes/billing.ts:2060
 - `POST /api/billing/dispute/evidence` via apiRequest — client/src/components/billing/DisputeTracker.tsx:136 → server/routes/billing.ts:1793
 - `GET /api/billing/invoices` via useQuery — client/src/components/billing/InvoiceStatus.tsx:101 → server/routes/billing.ts:2154
@@ -92,12 +92,13 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/collaborations/projects/:param/join` via apiRequest — client/src/components/collaboration/ProjectBoard.tsx:157 → server/routes/collaborations.ts:217
 - `POST /api/collaborations/projects/:param/leave` via apiRequest — client/src/components/collaboration/ProjectBoard.tsx:181 → server/routes/collaborations.ts:235
 - `GET /api/collaborations/suggestions?limit=:param` via fetch — client/src/components/collaboration/SuggestedCollaborators.tsx:25 → server/routes/collaborations.ts:138
-- `POST /api/autopilot/save-features` via apiRequest — client/src/components/content/ContentAnalyzer.tsx:281 → server/routes/autopilot.ts:406
+- `GET /api/csrf-token` via fetch — client/src/components/content/ContentAnalyzer.tsx:124 → server/routes.ts:294
+- `POST /api/content-analysis/:param` via apiRequest — client/src/components/content/ContentAnalyzer.tsx:169 → server/routes/content-analysis.ts:208, server/routes/content-analysis.ts:308, server/routes/content-analysis.ts:348, server/routes/content-analysis.ts:388, server/routes/content-analysis.ts:429, server/routes/content-analysis.ts:462, server/routes/content-analysis.ts:525
 - `GET /api/social/video-job/:param` via fetch — client/src/components/content/ServerVideoGenerator.tsx:398 → server/routes/socialMedia.ts:3440
 - `POST /api/social/analyze-image` via fetch — client/src/components/content/ServerVideoGenerator.tsx:815 → server/routes/socialMedia.ts:5027
 - `POST /api/social/beat-analyze` via fetch — client/src/components/content/ServerVideoGenerator.tsx:878 → server/routes/socialMedia.ts:5364
 - `POST /api/social/generate-music-video` via fetch — client/src/components/content/ServerVideoGenerator.tsx:915 → server/routes/socialMedia.ts:5429
-- `GET /api/social/music-video-job/:param` via fetch — client/src/components/content/ServerVideoGenerator.tsx:931 → server/routes/socialMedia.ts:5701
+- `GET /api/social/music-video-job/:param` via fetch — client/src/components/content/ServerVideoGenerator.tsx:931 → server/routes/socialMedia.ts:5702
 - `POST /api/contracts/validate` via fetch — client/src/components/contracts/ContractBuilder.tsx:73 → server/routes/contracts.ts:538
 - `POST /api/contracts/preview` via fetch — client/src/components/contracts/ContractBuilder.tsx:102 → server/routes/contracts.ts:579
 - `GET /api/career-coach/recommendations` via useQuery — client/src/components/dashboard/AICareerCoach.tsx:255 → server/routes/careerCoach.ts:29
@@ -158,14 +159,14 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/distribution/profiles/:param/scan-releases` via fetch — client/src/components/distribution/DataTransferWizard.tsx:316 → server/routes/distribution.ts:5815
 - `GET /api/distribution/releases/:param/outcomes` via useQuery — client/src/components/distribution/DistributionOutcomeHandler.tsx:139 → server/routes/distribution.ts:6344
 - `POST /api/distribution/releases/:param/retry-outcome` via apiRequest — client/src/components/distribution/DistributionOutcomeHandler.tsx:153 → server/routes/distribution.ts:6565
-- `GET /api/distribution/earnings/statements` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:176 → server/routes/distribution.ts:5107
-- `GET /api/distribution/earnings/entries` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:185 → server/routes/distribution.ts:5026
-- `GET /api/distribution/earnings/payouts` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:194 → server/routes/distribution.ts:5086
-- `GET /api/distribution/earnings/summary` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:199 → server/routes/distribution.ts:5165
-- `GET /api/distribution/earnings/territories` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:203 → server/routes/distribution.ts:5260
-- `POST /api/distribution/earnings/import` via apiRequest — client/src/components/distribution/EarningsReconciliation.tsx:214 → server/routes/distribution.ts:7027
-- `POST /api/distribution/earnings/payout` via apiRequest — client/src/components/distribution/EarningsReconciliation.tsx:242 → server/routes/distribution.ts:7059
-- `POST /api/distribution/earnings/statements/:param/reconcile` via apiRequest — client/src/components/distribution/EarningsReconciliation.tsx:271 → server/routes/distribution.ts:5129
+- `GET /api/distribution/earnings/statements` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:178 → server/routes/distribution.ts:5107
+- `GET /api/distribution/earnings/entries` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:189 → server/routes/distribution.ts:5026
+- `GET /api/distribution/earnings/payouts` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:200 → server/routes/distribution.ts:5086
+- `GET /api/distribution/earnings/summary` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:205 → server/routes/distribution.ts:5165
+- `GET /api/distribution/earnings/territories` via useQuery — client/src/components/distribution/EarningsReconciliation.tsx:213 → server/routes/distribution.ts:5260
+- `POST /api/distribution/earnings/import` via apiRequest — client/src/components/distribution/EarningsReconciliation.tsx:224 → server/routes/distribution.ts:7027
+- `POST /api/distribution/earnings/payout` via apiRequest — client/src/components/distribution/EarningsReconciliation.tsx:252 → server/routes/distribution.ts:7059
+- `POST /api/distribution/earnings/statements/:param/reconcile` via apiRequest — client/src/components/distribution/EarningsReconciliation.tsx:281 → server/routes/distribution.ts:5129
 - `GET /api/distribution/releases` via useQuery — client/src/components/distribution/EmbedCodeGenerator.tsx:706 → server/routes/distribution.ts:349
 - `GET /api/distribution/hyperfollow/:param` via useQuery — client/src/components/distribution/HyperFollowBuilder.tsx:179 → server/routes/distribution.ts:1226, server/routes/distribution.ts:1270, server/routes/distribution.ts:2412
 - `GET /api/distribution/codes/isrc` via useQuery — client/src/components/distribution/ISRCManager.tsx:103 → server/routes/distribution.ts:4884
@@ -184,15 +185,15 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/distribution/releases/:param/artwork` via apiRequest — client/src/components/distribution/ReleaseWizard.tsx:240 → server/routes/distribution.ts:476
 - `POST /api/distribution/releases/:param/submit` via apiRequest — client/src/components/distribution/ReleaseWizard.tsx:262 → server/routes/distribution.ts:1834
 - `POST /api/distribution/hyperfollow` via apiRequest — client/src/components/distribution/ReleaseWizard.tsx:330 → server/routes/distribution.ts:1079
-- `GET /api/distribution/royalties/platforms` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:155 → server/routes/distribution.ts:5447
-- `GET /api/distribution/royalties/discrepancies` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:160 → server/routes/distribution.ts:5336
-- `GET /api/distribution/royalties/splits` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:166 → server/routes/distribution.ts:5508
-- `GET /api/distribution/royalties/tax-documents` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:172 → server/routes/distribution.ts:5540
-- `GET /api/distribution/royalties/payouts` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:178 → server/routes/distribution.ts:5402
-- `GET /api/distribution/royalties/currency-rates` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:184 → server/routes/distribution.ts:5302
-- `POST /api/distribution/royalties/payout` via apiRequest — client/src/components/distribution/RoyaltyReconciliation.tsx:191 → server/routes/distribution.ts:7202
-- `POST /api/distribution/royalties/tax-document` via apiRequest — client/src/components/distribution/RoyaltyReconciliation.tsx:219 → server/routes/distribution.ts:7245
-- `POST /api/distribution/royalties/discrepancies/:param/dispute` via apiRequest — client/src/components/distribution/RoyaltyReconciliation.tsx:240 → server/routes/distribution.ts:5358
+- `GET /api/distribution/royalties/platforms` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:157 → server/routes/distribution.ts:5447
+- `GET /api/distribution/royalties/discrepancies` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:164 → server/routes/distribution.ts:5336
+- `GET /api/distribution/royalties/splits` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:170 → server/routes/distribution.ts:5508
+- `GET /api/distribution/royalties/tax-documents` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:176 → server/routes/distribution.ts:5540
+- `GET /api/distribution/royalties/payouts` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:182 → server/routes/distribution.ts:5402
+- `GET /api/distribution/royalties/currency-rates` via useQuery — client/src/components/distribution/RoyaltyReconciliation.tsx:188 → server/routes/distribution.ts:5302
+- `POST /api/distribution/royalties/payout` via apiRequest — client/src/components/distribution/RoyaltyReconciliation.tsx:195 → server/routes/distribution.ts:7202
+- `POST /api/distribution/royalties/tax-document` via apiRequest — client/src/components/distribution/RoyaltyReconciliation.tsx:223 → server/routes/distribution.ts:7245
+- `POST /api/distribution/royalties/discrepancies/:param/dispute` via apiRequest — client/src/components/distribution/RoyaltyReconciliation.tsx:244 → server/routes/distribution.ts:5358
 - `GET /api/distribution/releases/:param/submission-status` via useQuery — client/src/components/distribution/SubmissionStatusTracker.tsx:201 → server/routes/distribution.ts:5999
 - `POST /api/distribution/releases/:param/retry` via apiRequest — client/src/components/distribution/SubmissionStatusTracker.tsx:235 → server/routes/distribution.ts:6082
 - `GET /api/distribution/takedowns` via useQuery — client/src/components/distribution/TakedownManager.tsx:85 → server/routes/distribution.ts:4404
@@ -211,7 +212,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/files/validate` via fetch — client/src/components/files/FileValidationStatus.tsx:198 → server/routes/files.ts:895
 - `GET /api/storage/quota` via useQuery — client/src/components/files/StorageQuotaBar.tsx:107 → server/routes/storage.ts:774
 - `GET /api/files/storage-usage` via useQuery — client/src/components/files/StorageUsageIndicator.tsx:132 → server/routes/files.ts:491
-- `GET /api/growth/dashboard` via fetch — client/src/components/growth/OrganicReachDashboard.tsx:102 → server/routes/growth.ts:723
+- `GET /api/growth/dashboard` via fetch — client/src/components/growth/OrganicReachDashboard.tsx:102 → server/routes/growth.ts:732
 - `GET /api/storefront/:param/bogo-promotions/all` via useQuery — client/src/components/marketplace/BogoPromotionsManager.tsx:109 → server/routes/storefront.ts:2120
 - `GET /api/storefront/:param/listings` via useQuery — client/src/components/marketplace/BogoPromotionsManager.tsx:121 → server/routes/storefront.ts:100, server/routes/storefront.ts:194, server/routes/storefront.ts:833, server/routes/storefront.ts:882, server/routes/storefront.ts:921
 - `POST /api/storefront/:param/bogo-promotions` via apiRequest — client/src/components/marketplace/BogoPromotionsManager.tsx:133 → server/routes/storefront.ts:619, server/routes/storefront.ts:2146
@@ -225,19 +226,19 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/dns/:param/templates` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:288 → server/routes/dns.ts:914
 - `POST /api/dns/:param/templates/:param/apply` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:318 → server/routes/dns.ts:966
 - `DELETE /api/dns/:param/templates/:param` via apiRequest — client/src/components/marketplace/DNSZoneEditor.tsx:346 → server/routes/dns.ts:942
-- `GET /api/marketplace/for-you` via apiRequest — client/src/components/marketplace/ForYouFeed.tsx:99 → server/routes/marketplace.ts:846
-- `POST /api/marketplace/interaction` via apiRequest — client/src/components/marketplace/ForYouFeed.tsx:106 → server/routes/marketplace.ts:772
-- `POST /api/marketplace/beats/:param/like` via apiRequest — client/src/components/marketplace/ForYouFeed.tsx:126 → server/routes/marketplace.ts:2563
+- `GET /api/marketplace/for-you` via apiRequest — client/src/components/marketplace/ForYouFeed.tsx:99 → server/routes/marketplace.ts:847
+- `POST /api/marketplace/interaction` via apiRequest — client/src/components/marketplace/ForYouFeed.tsx:106 → server/routes/marketplace.ts:773
+- `POST /api/marketplace/beats/:param/like` via apiRequest — client/src/components/marketplace/ForYouFeed.tsx:126 → server/routes/marketplace.ts:2566
 - `GET /api/payouts/balance` via useQuery — client/src/components/marketplace/PayoutDashboard.tsx:71 → server/routes/payouts.ts:104
 - `GET /api/payouts/history` via useQuery — client/src/components/marketplace/PayoutDashboard.tsx:80 → server/routes/payouts.ts:181
 - `GET /api/payouts/verify` via useQuery — client/src/components/marketplace/PayoutDashboard.tsx:88 → server/routes/payouts.ts:292
 - `POST /api/payouts/setup` via apiRequest — client/src/components/marketplace/PayoutDashboard.tsx:96 → server/routes/payouts.ts:261
 - `POST /api/payouts/instant` via apiRequest — client/src/components/marketplace/PayoutDashboard.tsx:121 → server/routes/payouts.ts:126
-- `GET /api/marketplace/producer-analytics?timeRange=:param` via fetch — client/src/components/marketplace/ProducerAnalyticsDashboard.tsx:157 → server/routes/marketplace.ts:251
-- `GET /api/marketplace/producers/:param` via fetch — client/src/components/marketplace/ProducerProfile.tsx:65 → server/routes/marketplace.ts:2392
-- `GET /api/marketplace/producers/:param/follow-status` via fetch — client/src/components/marketplace/ProducerProfile.tsx:78 → server/routes/marketplace.ts:2501
-- `POST /api/marketplace/follow-producer` via apiRequest — client/src/components/marketplace/ProducerProfile.tsx:88 → server/routes/marketplace.ts:976
-- `POST /api/marketplace/unfollow-producer` via apiRequest — client/src/components/marketplace/ProducerProfile.tsx:106 → server/routes/marketplace.ts:998
+- `GET /api/marketplace/producer-analytics?timeRange=:param` via fetch — client/src/components/marketplace/ProducerAnalyticsDashboard.tsx:157 → server/routes/marketplace.ts:252
+- `GET /api/marketplace/producers/:param` via fetch — client/src/components/marketplace/ProducerProfile.tsx:65 → server/routes/marketplace.ts:2395
+- `GET /api/marketplace/producers/:param/follow-status` via fetch — client/src/components/marketplace/ProducerProfile.tsx:78 → server/routes/marketplace.ts:2504
+- `POST /api/marketplace/follow-producer` via apiRequest — client/src/components/marketplace/ProducerProfile.tsx:88 → server/routes/marketplace.ts:979
+- `POST /api/marketplace/unfollow-producer` via apiRequest — client/src/components/marketplace/ProducerProfile.tsx:106 → server/routes/marketplace.ts:1001
 - `GET /api/storefront/suggest-url` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:892 → server/routes/storefront.ts:130, server/routes/storefront.ts:248
 - `GET /api/notifications` via useQuery — client/src/components/notifications/NotificationCenter.tsx:150 → server/routes.ts:3037
 - `GET /api/notifications/preferences` via useQuery — client/src/components/notifications/NotificationCenter.tsx:157 → server/routes.ts:3312
@@ -251,15 +252,15 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/notifications/sms/confirm` via apiRequest — client/src/components/notifications/NotificationPreferences.tsx:244 → server/routes.ts:3887
 - `GET /api/onboarding/achievements` via useQuery — client/src/components/onboarding/AchievementUnlockToast.tsx:371 → server/routes/onboarding.ts:565
 - `GET /api/onboarding/progress` via useQuery — client/src/components/onboarding/ContextualFeatureHint.tsx:87 → server/routes/onboarding.ts:11
-- `GET /api/users/seen-features` via useQuery — client/src/components/onboarding/ContextualFeatureHint.tsx:92 → server/routes.ts:5633
-- `POST /api/users/mark-feature-seen` via apiRequest — client/src/components/onboarding/ContextualFeatureHint.tsx:100 → server/routes.ts:5647
+- `GET /api/users/seen-features` via useQuery — client/src/components/onboarding/ContextualFeatureHint.tsx:92 → server/routes.ts:5630
+- `POST /api/users/mark-feature-seen` via apiRequest — client/src/components/onboarding/ContextualFeatureHint.tsx:100 → server/routes.ts:5644
 - `POST /api/onboarding/track-tutorial` via apiRequest — client/src/components/onboarding/FeatureDiscoveryTooltip.tsx:65 → server/routes/onboarding.ts:154
 - `POST /api/onboarding/mark-celebrated` via apiRequest — client/src/components/onboarding/FirstActionCelebration.tsx:160 → server/routes/onboarding.ts:299
 - `POST /api/onboarding/complete-step` via apiRequest — client/src/components/onboarding/FirstWeekSuccessPath.tsx:131 → server/routes/onboarding.ts:26
 - `POST /api/onboarding/skip` via apiRequest — client/src/components/onboarding/FirstWeekSuccessPath.tsx:166 → server/routes/onboarding.ts:46
 - `POST /api/auth/update-onboarding` via apiRequest — client/src/components/onboarding/OnboardingFlow.tsx:122 → server/routes.ts:741
 - `GET /api/onboarding/profile/completion` via useQuery — client/src/components/onboarding/ProfileSetupProgress.tsx:119 → server/routes/onboarding.ts:702
-- `POST /api/users/complete-onboarding` via fetch — client/src/components/onboarding/QuickStartWizard.tsx:95 → server/routes.ts:5607
+- `POST /api/users/complete-onboarding` via fetch — client/src/components/onboarding/QuickStartWizard.tsx:95 → server/routes.ts:5604
 - `POST /api/onboarding/complete-welcome` via apiRequest — client/src/components/onboarding/WelcomeFlow.tsx:166 → server/routes/onboarding.ts:116
 - `GET /api/onboarding/check-first-login` via useQuery — client/src/components/onboarding/WelcomeFlow.tsx:772 → server/routes/onboarding.ts:381
 - `GET /api/personalization/dashboard-layout` via useQuery — client/src/components/personalization/DashboardCustomizer.tsx:298 → server/routes/personalization.ts:73
@@ -336,9 +337,9 @@ Every entry below has a statically detected frontend transport and at least one 
 - `GET /api/email-preferences` via useQuery — client/src/components/settings/EmailPreferences.tsx:73 → server/routes/emailPreferences.ts:7
 - `GET /api/email-preferences/preview` via useQuery — client/src/components/settings/EmailPreferences.tsx:78 → server/routes/emailPreferences.ts:86
 - `PATCH /api/email-preferences` via fetch — client/src/components/settings/EmailPreferences.tsx:85 → server/routes/emailPreferences.ts:23
-- `GET /api/auth/login-history` via useQuery — client/src/components/settings/LoginHistory.tsx:111 → server/routes.ts:1089
-- `POST /api/auth/sessions/terminate` via apiRequest — client/src/components/settings/LoginHistory.tsx:122 → server/routes.ts:972
-- `POST /api/auth/sessions/terminate-all` via apiRequest — client/src/components/settings/LoginHistory.tsx:144 → server/routes.ts:1033
+- `GET /api/auth/login-history` via useQuery — client/src/components/settings/LoginHistory.tsx:73 → server/routes.ts:1089
+- `POST /api/auth/sessions/terminate` via apiRequest — client/src/components/settings/LoginHistory.tsx:86 → server/routes.ts:972
+- `POST /api/auth/sessions/terminate-all` via apiRequest — client/src/components/settings/LoginHistory.tsx:108 → server/routes.ts:1033
 - `GET /api/auth/privacy-settings` via useQuery — client/src/components/settings/PrivacySettings.tsx:56 → server/routes.ts:1168
 - `GET /api/auth/data-export-status` via useQuery — client/src/components/settings/PrivacySettings.tsx:60 → server/routes.ts:1286
 - `PUT /api/auth/privacy-settings` via apiRequest — client/src/components/settings/PrivacySettings.tsx:67 → server/routes.ts:1196
@@ -364,14 +365,14 @@ Every entry below has a statically detected frontend transport and at least one 
 - `GET /api/social/benchmark/insights` via useQuery — client/src/components/social/CompetitorBenchmark.tsx:172 → server/routes/socialMedia.ts:1418
 - `GET /api/social/competitors` via useQuery — client/src/components/social/CompetitorBenchmarking.tsx:107 → server/routes/socialMedia.ts:1306
 - `GET /api/social/your-stats` via useQuery — client/src/components/social/CompetitorBenchmarking.tsx:111 → server/routes/socialMedia.ts:1378
-- `GET /api/social/ai-content/trending-topics` via apiRequest — client/src/components/social/ContentGenerator.tsx:394 → server/routes/socialAI.ts:861
-- `GET /api/social/ai-content/posting-times` via apiRequest — client/src/components/social/ContentGenerator.tsx:413 → server/routes/socialAI.ts:846
-- `GET /api/social/generate/context` via apiRequest — client/src/components/social/ContentGenerator.tsx:428 → server/routes/socialAI.ts:992
-- `POST /api/social/ai-content/analyze-brand-voice` via apiRequest — client/src/components/social/ContentGenerator.tsx:442 → server/routes/socialAI.ts:746
-- `POST /api/social/ai-content/multilingual` via apiRequest — client/src/components/social/ContentGenerator.tsx:469 → server/routes/socialAI.ts:771
-- `POST /api/social/generate` via apiRequest — client/src/components/social/ContentGenerator.tsx:500 → server/routes/socialAI.ts:1041
-- `POST /api/social/ai-content/optimize-hashtags` via apiRequest — client/src/components/social/ContentGenerator.tsx:526 → server/routes/socialAI.ts:821
-- `POST /api/social/ai-content/ab-variants` via apiRequest — client/src/components/social/ContentGenerator.tsx:544 → server/routes/socialAI.ts:715
+- `GET /api/social/ai-content/trending-topics` via apiRequest — client/src/components/social/ContentGenerator.tsx:394 → server/routes/socialAI.ts:900
+- `GET /api/social/ai-content/posting-times` via apiRequest — client/src/components/social/ContentGenerator.tsx:413 → server/routes/socialAI.ts:877
+- `GET /api/social/generate/context` via apiRequest — client/src/components/social/ContentGenerator.tsx:428 → server/routes/socialAI.ts:1031
+- `POST /api/social/ai-content/analyze-brand-voice` via apiRequest — client/src/components/social/ContentGenerator.tsx:442 → server/routes/socialAI.ts:762
+- `POST /api/social/ai-content/multilingual` via apiRequest — client/src/components/social/ContentGenerator.tsx:469 → server/routes/socialAI.ts:793
+- `POST /api/social/generate` via apiRequest — client/src/components/social/ContentGenerator.tsx:500 → server/routes/socialAI.ts:1080
+- `POST /api/social/ai-content/optimize-hashtags` via apiRequest — client/src/components/social/ContentGenerator.tsx:526 → server/routes/socialAI.ts:843
+- `POST /api/social/ai-content/ab-variants` via apiRequest — client/src/components/social/ContentGenerator.tsx:544 → server/routes/socialAI.ts:725
 - `POST /api/social/generate-image` via apiRequest — client/src/components/social/ContentGenerator.tsx:583 → server/routes/socialMedia.ts:4562
 - `POST /api/multimodal/generate` via apiRequest — client/src/components/social/ContentGenerator.tsx:608 → server/routes/multimodal.ts:36
 - `GET /api/social/listening/keywords` via useQuery — client/src/components/social/SocialListening.tsx:139 → server/routes/socialMedia.ts:1142
@@ -396,13 +397,13 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/studio/ai-music/analyze-loudness` via apiRequest — client/src/components/studio/AIAssistantPanel.tsx:132 → server/routes/studio.ts:2745
 - `POST /api/studio/ai-music/match-reference` via apiRequest — client/src/components/studio/AIAssistantPanel.tsx:163 → server/routes/studio.ts:2765
 - `POST /api/studio/ai-music/apply-genre-preset` via apiRequest — client/src/components/studio/AIAssistantPanel.tsx:195 → server/routes/studio.ts:2727
-- `POST /api/studio/generation/text` via apiRequest — client/src/components/studio/AIMusicGenerator.tsx:264 → server/routes/studioGeneration.ts:125
-- `POST /api/studio/generation/pattern/arrangement` via apiRequest — client/src/components/studio/AIMusicGenerator.tsx:384 → server/routes/studioGeneration.ts:656
-- `POST /api/assets/upload` via uploadWithProgress — client/src/components/studio/AssetUploadDialog.tsx:40 → server/routes.ts:5387
+- `POST /api/studio/generation/text` via apiRequest — client/src/components/studio/AIMusicGenerator.tsx:264 → server/routes/studioGeneration.ts:374
+- `POST /api/studio/generation/pattern/arrangement` via apiRequest — client/src/components/studio/AIMusicGenerator.tsx:384 → server/routes/studioGeneration.ts:790
+- `POST /api/assets/upload` via uploadWithProgress — client/src/components/studio/AssetUploadDialog.tsx:40 → server/routes.ts:5384
 - `GET /api/studio/tracks/:param/automation?parameter=:param` via fetch — client/src/components/studio/AutomationLane.tsx:213 → server/routes/studio.ts:2090
 - `PUT /api/studio/tracks/:param/automation` via fetch — client/src/components/studio/AutomationLane.tsx:247 → server/routes/studio.ts:2127
-- `GET /api/assets?assetType=sample` via fetch — client/src/components/studio/BrowserPanel.tsx:492 → server/routes.ts:5370
-- `GET /api/assets?assetType=plugin` via fetch — client/src/components/studio/BrowserPanel.tsx:505 → server/routes.ts:5370
+- `GET /api/assets?assetType=sample` via fetch — client/src/components/studio/BrowserPanel.tsx:492 → server/routes.ts:5367
+- `GET /api/assets?assetType=plugin` via fetch — client/src/components/studio/BrowserPanel.tsx:505 → server/routes.ts:5367
 - `GET /api/studio/plugins` via fetch — client/src/components/studio/BrowserPanel.tsx:522 → server/routes/studioPlugins.ts:62
 - `GET /api/studio/conversions?projectId=:param` via fetch — client/src/components/studio/ConversionDialog.tsx:114 → server/routes/studio.ts:2405
 - `POST /api/studio/conversions` via apiRequest — client/src/components/studio/ConversionDialog.tsx:138 → server/routes/studio.ts:2414
@@ -418,8 +419,8 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/studio/upload` via uploadWithProgress — client/src/components/studio/FileUploadZone.tsx:132 → server/routes/studio.ts:2786
 - `POST /api/studio/tracks` via fetch — client/src/components/studio/FlowStateAddTrack.tsx:108 → server/routes/studio.ts:1471
 - `POST /api/studio/projects/:param/render` via fetch — client/src/components/studio/FlowStateExport.tsx:190 → server/routes/studio.ts:1297
-- `POST /api/studio/generation/pattern/melody` via apiRequest — client/src/components/studio/FlowStateLyricsToMelody.tsx:233 → server/routes/studioGeneration.ts:458
-- `POST /api/studio/generation/audio-to-melody` via fetch — client/src/components/studio/FlowStateLyricsToMelody.tsx:291 → server/routes/studioGeneration.ts:736
+- `POST /api/studio/generation/pattern/melody` via apiRequest — client/src/components/studio/FlowStateLyricsToMelody.tsx:184 → server/routes/studioGeneration.ts:703
+- `POST /api/studio/generation/audio-to-melody` via fetch — client/src/components/studio/FlowStateLyricsToMelody.tsx:256 → server/routes/studioGeneration.ts:827
 - `POST /api/studio/plugins/instantiate/:param?projectId=:param` via fetch — client/src/components/studio/FlowStatePluginBrowser.tsx:232 → server/routes/studioPlugins.ts:90
 - `GET /api/studio/projects` via apiRequest — client/src/components/studio/FlowStateProjectSelector.tsx:96 → server/routes/studio.ts:153
 - `DELETE /api/studio/projects/:param` via apiRequest — client/src/components/studio/FlowStateProjectSelector.tsx:106 → server/routes/studio.ts:296
@@ -428,7 +429,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/studio/templates/:param/create-project` via fetch — client/src/components/studio/FlowStateTemplateDialog.tsx:80 → server/routes/studio.ts:4954
 - `PATCH /api/studio/projects/:param/tracks/:param/effects` via apiRequest — client/src/components/studio/MixerPanel.tsx:223 → server/routes/studio.ts:1699
 - `GET /api/projects` via useQuery — client/src/components/studio/ProjectSelector.tsx:42 → server/routes.ts:4148
-- `PATCH /api/studio/projects/:param` via fetch — client/src/components/studio/ProjectSettingsDialog.tsx:110 → server/routes/studio.ts:1092
+- `PATCH /api/studio/projects/:param` via fetch — client/src/components/studio/ProjectSettingsDialog.tsx:112 → server/routes/studio.ts:1092
 - `POST /api/studio/projects/:param/comping/groups` via apiRequest — client/src/components/studio/RecordingPanel.tsx:182 → server/routes/studioComping.ts:210
 - `POST /api/studio/projects/:param/comping/lanes` via apiRequest — client/src/components/studio/RecordingPanel.tsx:195 → server/routes/studioComping.ts:361
 - `POST /api/studio/projects/:param/comping/groups/:param/select` via apiRequest — client/src/components/studio/RecordingPanel.tsx:207 → server/routes/studioComping.ts:580
@@ -444,15 +445,15 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/studio/projects/:param/mix-snapshots` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5319 → server/routes/studio.ts:3667
 - `POST /api/studio/projects/:param/mix-snapshots/:param/recall` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5335 → server/routes/studio.ts:3845
 - `DELETE /api/studio/projects/:param/mix-snapshots/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5349 → server/routes/studio.ts:4018
-- `POST /api/uploads/chunk` via fetch — client/src/components/studio/StudioProjectDialog.tsx:122 → server/routes.ts:6804
-- `POST /api/uploads/assemble` via fetch — client/src/components/studio/StudioProjectDialog.tsx:163 → server/routes.ts:6871
+- `POST /api/uploads/chunk` via fetch — client/src/components/studio/StudioProjectDialog.tsx:122 → server/routes.ts:6801
+- `POST /api/uploads/assemble` via fetch — client/src/components/studio/StudioProjectDialog.tsx:163 → server/routes.ts:6868
 - `POST /api/studio/upload-from-url` via fetch — client/src/components/studio/StudioProjectDialog.tsx:197 → server/routes/studio.ts:2897
 - `GET /api/studio/start-hub/summary` via useQuery — client/src/components/studio/StudioStartHub.tsx:180 → server/routes/studio.ts:4477
 - `PATCH /api/studio/projects/:param/favorite` via apiRequest — client/src/components/studio/StudioStartHub.tsx:193 → server/routes/studio.ts:4711
 - `PATCH /api/studio/projects/:param/opened` via apiRequest — client/src/components/studio/StudioStartHub.tsx:288 → server/routes/studio.ts:4743
-- `POST /api/user/preferences` via apiRequest — client/src/components/studio/StudioTutorial.tsx:91 → server/routes.ts:5274
-- `GET /api/user/preferences/studio` via useQuery — client/src/components/studio/UICustomizer.tsx:396 → server/routes.ts:5291
-- `PUT /api/user/preferences/studio` via apiRequest — client/src/components/studio/UICustomizer.tsx:402 → server/routes.ts:5309
+- `POST /api/user/preferences` via apiRequest — client/src/components/studio/StudioTutorial.tsx:91 → server/routes.ts:5271
+- `GET /api/user/preferences/studio` via apiRequest — client/src/components/studio/UICustomizer.tsx:553 → server/routes.ts:5288
+- `PUT /api/user/preferences/studio` via apiRequest — client/src/components/studio/UICustomizer.tsx:562 → server/routes.ts:5306
 - `POST /api/studio/record/upload` via fetch — client/src/components/studio/UltimateDAW.tsx:474 → server/routes/studio.ts:878
 - `POST /api/assistant/chat` via fetch — client/src/components/support/AIAssistantPublic.tsx:49 → server/routes/assistant.ts:166
 - `POST /api/support/tickets` via fetch — client/src/components/support/CreateTicketDialog.tsx:61 → server/routes/support.ts:345
@@ -462,21 +463,21 @@ Every entry below has a statically detected frontend transport and at least one 
 - `DELETE /api/undo/restore-points/:param` via apiRequest — client/src/components/undo/GlobalUndoProvider.tsx:360 → server/routes/undo.ts:699
 - `POST /api/undo/track-action` via apiRequest — client/src/components/undo/GlobalUndoProvider.tsx:383 → server/routes/undo.ts:496
 - `POST /api/personalization/track-feature` via apiRequest — client/src/contexts/PersonalizationContext.tsx:409 → server/routes/personalization.ts:256
-- `GET /api/advertising/campaigns` via apiRequest — client/src/hooks/use-advertisement.ts:67 → server/routes/advertising.ts:290
-- `GET /api/advertising/ai-insights` via apiRequest — client/src/hooks/use-advertisement.ts:76 → server/routes/advertising.ts:305
-- `POST /api/advertising/campaigns` via apiRequest — client/src/hooks/use-advertisement.ts:86 → server/routes/advertising.ts:659
-- `PATCH /api/advertising/campaigns/:param` via apiRequest — client/src/hooks/use-advertisement.ts:121 → server/routes/advertising.ts:905
-- `DELETE /api/advertising/campaigns/:param` via apiRequest — client/src/hooks/use-advertisement.ts:149 → server/routes/advertising.ts:1043
-- `POST /api/advertising/optimize-campaign` via apiRequest — client/src/hooks/use-advertisement.ts:216 → server/routes/advertising.ts:1761
+- `GET /api/advertising/campaigns` via apiRequest — client/src/hooks/use-advertisement.ts:67 → server/routes/advertising.ts:316
+- `GET /api/advertising/ai-insights` via apiRequest — client/src/hooks/use-advertisement.ts:76 → server/routes/advertising.ts:331
+- `POST /api/advertising/campaigns` via apiRequest — client/src/hooks/use-advertisement.ts:86 → server/routes/advertising.ts:685
+- `PATCH /api/advertising/campaigns/:param` via apiRequest — client/src/hooks/use-advertisement.ts:121 → server/routes/advertising.ts:931
+- `DELETE /api/advertising/campaigns/:param` via apiRequest — client/src/hooks/use-advertisement.ts:149 → server/routes/advertising.ts:1069
+- `POST /api/advertising/optimize-campaign` via apiRequest — client/src/hooks/use-advertisement.ts:216 → server/routes/advertising.ts:1787
 - `POST /api/uploads/request-url` via fetch — client/src/hooks/use-upload.ts:65 → server/routes/uploads.ts:166
 - `GET /api/user/accessibility-preferences` via useQuery — client/src/hooks/useAccessibilityPreferences.ts:42 → server/routes/accessibility.ts:124
 - `PUT /api/user/accessibility-preferences` via apiRequest — client/src/hooks/useAccessibilityPreferences.ts:51 → server/routes/accessibility.ts:151
 - `DELETE /api/user/accessibility-preferences` via apiRequest — client/src/hooks/useAccessibilityPreferences.ts:148 → server/routes/accessibility.ts:199
-- `GET /api/version` via fetch — client/src/hooks/useAutoUpdate.ts:17 → server/routes.ts:7825
-- `GET /api/batch/progress/:param` via apiRequest — client/src/hooks/useBatchActions.ts:177 → server/routes/batch.ts:1238
+- `GET /api/version` via fetch — client/src/hooks/useAutoUpdate.ts:17 → server/routes.ts:7828
+- `GET /api/batch/progress/:param` via apiRequest — client/src/hooks/useBatchActions.ts:301 → server/routes/batch.ts:1238
 - `GET /api/personalization/behavior-analysis` via useQuery — client/src/hooks/useDashboardPersonalization.ts:54 → server/routes/personalization.ts:222
 - `POST /api/retention/feature-event` via fetch — client/src/hooks/useFeatureTracking.ts:34 → server/routes/retention.ts:121
-- `GET /api/health` via fetch — client/src/hooks/useOnlineStatus.ts:142 → server/routes.ts:7841
+- `GET /api/health` via fetch — client/src/hooks/useOnlineStatus.ts:142 → server/routes.ts:7844
 - `GET /api/personalization/optimal-schedule` via useQuery — client/src/hooks/usePersonalizedLayout.ts:195 → server/routes/personalization.ts:238
 - `POST /api/studio/projects/:param/save-daw-state` via fetch — client/src/hooks/useProjectSync.ts:430 → server/routes/studio.ts:1129
 - `GET /api/studio/projects/:param/daw-state` via fetch — client/src/hooks/useProjectSync.ts:475 → server/routes/studio.ts:1190
@@ -496,10 +497,10 @@ Every entry below has a statically detected frontend transport and at least one 
 - `PATCH /api/studio/clips/:param` via apiRequest — client/src/hooks/useStudioController.ts:318 → server/routes/studio.ts:2005
 - `DELETE /api/studio/clips/:param` via apiRequest — client/src/hooks/useStudioController.ts:330 → server/routes/studio.ts:2054
 - `GET /api/studio/tracks/:param/audio-clips` via fetch — client/src/hooks/useStudioController.ts:525 → server/routes/studio.ts:1900
-- `POST /api/studio/templates` via apiRequest — client/src/hooks/useTemplate.ts:150 → server/routes/studio.ts:4806
-- `PATCH /api/studio/templates/:param` via apiRequest — client/src/hooks/useTemplate.ts:183 → server/routes/studio.ts:5281
-- `DELETE /api/studio/templates/:param` via apiRequest — client/src/hooks/useTemplate.ts:206 → server/routes/studio.ts:5337
-- `GET /api/studio/templates` via apiRequest — client/src/hooks/useTemplate.ts:407 → server/routes/studio.ts:4775
+- `POST /api/studio/templates` via apiRequest — client/src/hooks/useTemplate.ts:223 → server/routes/studio.ts:4806
+- `PATCH /api/studio/templates/:param` via apiRequest — client/src/hooks/useTemplate.ts:256 → server/routes/studio.ts:5281
+- `DELETE /api/studio/templates/:param` via apiRequest — client/src/hooks/useTemplate.ts:279 → server/routes/studio.ts:5337
+- `GET /api/studio/templates` via apiRequest — client/src/hooks/useTemplate.ts:481 → server/routes/studio.ts:4775
 - `GET /api/preferences/user` via useQuery — client/src/hooks/useUserPreferences.ts:83 → server/routes/preferences.ts:102
 - `PUT /api/preferences/user` via apiRequest — client/src/hooks/useUserPreferences.ts:91 → server/routes/preferences.ts:120
 - `POST /api/preferences/learn` via apiRequest — client/src/hooks/useUserPreferences.ts:109 → server/routes/preferences.ts:184
@@ -588,38 +589,38 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/kill-switch/kill/:param` via apiRequest — client/src/pages/AdminAutonomy.tsx:525 → server/routes/killSwitch.ts:132
 - `POST /api/kill-switch/resume/:param` via apiRequest — client/src/pages/AdminAutonomy.tsx:544 → server/routes/killSwitch.ts:171
 - `POST /api/auto-updates/simulation` via apiRequest — client/src/pages/AdminAutonomy.tsx:564 → server/routes/autoUpdates.ts:197
-- `GET /api/admin/users?:param` via fetch — client/src/pages/AdminDashboard.tsx:278 → server/routes/admin.ts:70
-- `POST /api/auth/token` via fetch — client/src/pages/AdminDashboard.tsx:1568 → server/routes.ts:2268
-- `POST /api/auth/token/revoke` via fetch — client/src/pages/AdminDashboard.tsx:1608 → server/routes.ts:2279
-- `GET /api/admin/webhooks/dead-letter` via useQuery — client/src/pages/AdminDashboard.tsx:1701 → server/routes/webhooks-admin.ts:20
-- `POST /api/admin/webhooks/:param/retry` via fetch — client/src/pages/AdminDashboard.tsx:1707 → server/routes/webhooks-admin.ts:41
-- `GET /api/logs/query` via useQuery — client/src/pages/AdminDashboard.tsx:1839 → server/routes/logs.ts:23
-- `POST /api/admin/beat-money-loop/:param` via fetch — client/src/pages/AdminDashboard.tsx:2002 → server/routes/admin/beatMoneyLoop.ts:31, server/routes/admin/beatMoneyLoop.ts:41, server/routes/admin/beatMoneyLoop.ts:51
+- `GET /api/admin/users?:param` via fetch — client/src/pages/AdminDashboard.tsx:255 → server/routes/admin.ts:70
+- `POST /api/auth/token` via fetch — client/src/pages/AdminDashboard.tsx:1664 → server/routes.ts:2268
+- `POST /api/auth/token/revoke` via fetch — client/src/pages/AdminDashboard.tsx:1704 → server/routes.ts:2279
+- `GET /api/admin/webhooks/dead-letter` via useQuery — client/src/pages/AdminDashboard.tsx:1797 → server/routes/webhooks-admin.ts:20
+- `POST /api/admin/webhooks/:param/retry` via fetch — client/src/pages/AdminDashboard.tsx:1803 → server/routes/webhooks-admin.ts:41
+- `GET /api/logs/query` via useQuery — client/src/pages/AdminDashboard.tsx:1939 → server/routes/logs.ts:23
+- `POST /api/admin/beat-money-loop/:param` via fetch — client/src/pages/AdminDashboard.tsx:2113 → server/routes/admin/beatMoneyLoop.ts:31, server/routes/admin/beatMoneyLoop.ts:41, server/routes/admin/beatMoneyLoop.ts:51
 - `GET /api/social/promotable-content?type=:param` via useQuery — client/src/pages/Advertisement.tsx:239 → server/routes/socialMedia.ts:4167
-- `POST /api/advertising/generate-campaign` via apiRequest — client/src/pages/Advertisement.tsx:247 → server/routes/advertising.ts:1989
-- `GET /api/advertising/audience-segments` via useQuery — client/src/pages/Advertisement.tsx:402 → server/routes/advertising.ts:333
-- `GET /api/advertising/creative-fatigue` via useQuery — client/src/pages/Advertisement.tsx:408 → server/routes/advertising.ts:348
-- `GET /api/advertising/lookalike-audiences` via useQuery — client/src/pages/Advertisement.tsx:414 → server/routes/advertising.ts:449
-- `GET /api/advertising/forecasts` via useQuery — client/src/pages/Advertisement.tsx:418 → server/routes/advertising.ts:547
-- `GET /api/advertising/competitor-insights` via useQuery — client/src/pages/Advertisement.tsx:424 → server/routes/advertising.ts:562
-- `GET /api/organic/metrics` via useQuery — client/src/pages/Advertisement.tsx:436 → server/routes/organic.ts:528
-- `GET /api/organic/recommendations` via useQuery — client/src/pages/Advertisement.tsx:448 → server/routes/organic.ts:548
+- `POST /api/advertising/generate-campaign` via apiRequest — client/src/pages/Advertisement.tsx:247 → server/routes/advertising.ts:2015
+- `GET /api/advertising/audience-segments` via useQuery — client/src/pages/Advertisement.tsx:402 → server/routes/advertising.ts:359
+- `GET /api/advertising/creative-fatigue` via useQuery — client/src/pages/Advertisement.tsx:408 → server/routes/advertising.ts:374
+- `GET /api/advertising/lookalike-audiences` via useQuery — client/src/pages/Advertisement.tsx:414 → server/routes/advertising.ts:475
+- `GET /api/advertising/forecasts` via useQuery — client/src/pages/Advertisement.tsx:418 → server/routes/advertising.ts:573
+- `GET /api/advertising/competitor-insights` via useQuery — client/src/pages/Advertisement.tsx:424 → server/routes/advertising.ts:588
+- `GET /api/organic/metrics` via useQuery — client/src/pages/Advertisement.tsx:436 → server/routes/organic.ts:519
+- `GET /api/organic/recommendations` via useQuery — client/src/pages/Advertisement.tsx:448 → server/routes/organic.ts:539
 - `GET /api/social/platform-status` via useQuery — client/src/pages/Advertisement.tsx:561 → server/routes/socialMedia.ts:853
-- `POST /api/advertising/upload-image` via uploadWithProgress — client/src/pages/Advertisement.tsx:569 → server/routes/advertising.ts:1141
-- `POST /api/advertising/lookalike-audiences` via apiRequest — client/src/pages/Advertisement.tsx:612 → server/routes/advertising.ts:464
-- `PATCH /api/advertising/lookalike-audiences/:param` via apiRequest — client/src/pages/Advertisement.tsx:650 → server/routes/advertising.ts:504
-- `PATCH /api/advertising/creatives/:param` via apiRequest — client/src/pages/Advertisement.tsx:684 → server/routes/advertising.ts:363
-- `POST /api/advertising/campaigns/:param/activate` via apiRequest — client/src/pages/Advertisement.tsx:758 → server/routes/advertising.ts:890
-- `POST /api/advertising/creatives` via apiRequest — client/src/pages/Advertisement.tsx:926 → server/routes/advertising.ts:1080
+- `POST /api/advertising/upload-image` via uploadWithProgress — client/src/pages/Advertisement.tsx:569 → server/routes/advertising.ts:1167
+- `POST /api/advertising/lookalike-audiences` via apiRequest — client/src/pages/Advertisement.tsx:612 → server/routes/advertising.ts:490
+- `PATCH /api/advertising/lookalike-audiences/:param` via apiRequest — client/src/pages/Advertisement.tsx:650 → server/routes/advertising.ts:530
+- `PATCH /api/advertising/creatives/:param` via apiRequest — client/src/pages/Advertisement.tsx:684 → server/routes/advertising.ts:389
+- `POST /api/advertising/campaigns/:param/activate` via apiRequest — client/src/pages/Advertisement.tsx:758 → server/routes/advertising.ts:916
+- `POST /api/advertising/creatives` via apiRequest — client/src/pages/Advertisement.tsx:926 → server/routes/advertising.ts:1106
 - `GET /api/analytics/dashboard/:param` via useQuery — client/src/pages/Analytics.tsx:1583 → server/routes.ts:4475
-- `GET /api/analytics/anomalies?:param` via fetch — client/src/pages/Analytics.tsx:1678 → server/routes.ts:5066
-- `POST /api/analytics/anomalies/:param/acknowledge` via apiRequest — client/src/pages/Analytics.tsx:1694 → server/routes.ts:5140
+- `GET /api/analytics/anomalies?:param` via fetch — client/src/pages/Analytics.tsx:1678 → server/routes.ts:5063
+- `POST /api/analytics/anomalies/:param/acknowledge` via apiRequest — client/src/pages/Analytics.tsx:1694 → server/routes.ts:5137
 - `GET /api/analytics-alerts/trigger-cities` via useQuery — client/src/pages/Analytics.tsx:1728 → server/routes/api/analyticsAlerts.ts:132
 - `GET /api/analytics-alerts/alerts` via useQuery — client/src/pages/Analytics.tsx:1738 → server/routes/api/analyticsAlerts.ts:19
 - `GET /api/analytics-alerts/alerts/summary` via useQuery — client/src/pages/Analytics.tsx:1744 → server/routes/api/analyticsAlerts.ts:47
 - `POST /api/analytics-alerts/alerts/:param/dismiss` via apiRequest — client/src/pages/Analytics.tsx:1753 → server/routes/api/analyticsAlerts.ts:109
 - `POST /api/analytics-alerts/playlist-changes/track` via apiRequest — client/src/pages/Analytics.tsx:1771 → server/routes/api/analyticsAlerts.ts:178
-- `POST /api/analytics/export` via apiRequest — client/src/pages/Analytics.tsx:1796 → server/routes.ts:4926
+- `POST /api/analytics/export` via apiRequest — client/src/pages/Analytics.tsx:1796 → server/routes.ts:4923
 - `GET /api/career-coach/insights` via useQuery — client/src/pages/CareerCoach.tsx:153 → server/routes/careerCoach.ts:388
 - `GET /api/assistant/history` via useQuery — client/src/pages/CareerCoach.tsx:162 → server/routes/assistant.ts:60
 - `DELETE /api/assistant/history` via apiRequest — client/src/pages/CareerCoach.tsx:254 → server/routes/assistant.ts:256
@@ -643,35 +644,35 @@ Every entry below has a statically detected frontend transport and at least one 
 - `GET /api/developer/usage` via useQuery — client/src/pages/DeveloperApi.tsx:93 → server/routes/developerApi.ts:194
 - `POST /api/developer/keys/create` via apiRequest — client/src/pages/DeveloperApi.tsx:105 → server/routes/developerApi.ts:26
 - `DELETE /api/developer/keys/:param` via apiRequest — client/src/pages/DeveloperApi.tsx:132 → server/routes/developerApi.ts:146
-- `GET /api/playlist-pitching` via useQuery — client/src/pages/Distribution.tsx:609 → server/routes/playlistPitching.ts:185
-- `GET /api/playlist-pitching/stats` via useQuery — client/src/pages/Distribution.tsx:615 → server/routes/playlistPitching.ts:353, server/routes/playlistPitching.ts:406
-- `POST /api/playlist-pitching` via apiRequest — client/src/pages/Distribution.tsx:630 → server/routes/playlistPitching.ts:202
-- `GET /api/shows` via useQuery — client/src/pages/Distribution.tsx:843 → server/routes/shows.ts:71
-- `GET /api/shows/stats` via useQuery — client/src/pages/Distribution.tsx:847 → server/routes/shows.ts:280, server/routes/shows.ts:327
-- `POST /api/shows` via apiRequest — client/src/pages/Distribution.tsx:852 → server/routes/shows.ts:108
-- `GET /api/venues` via useQuery — client/src/pages/Distribution.tsx:1034 → server/routes/venues.ts:15
-- `GET /api/venues/stats` via useQuery — client/src/pages/Distribution.tsx:1037 → server/routes/venues.ts:32, server/routes/venues.ts:73
-- `POST /api/venues` via apiRequest — client/src/pages/Distribution.tsx:1042 → server/routes/venues.ts:94
-- `GET /api/sync-licensing` via useQuery — client/src/pages/Distribution.tsx:1265 → server/routes/syncLicensing.ts:28
-- `GET /api/sync-licensing/stats` via useQuery — client/src/pages/Distribution.tsx:1269 → server/routes/syncLicensing.ts:45, server/routes/syncLicensing.ts:70
-- `POST /api/sync-licensing` via apiRequest — client/src/pages/Distribution.tsx:1274 → server/routes/syncLicensing.ts:90
-- `GET /api/distribution/hyperfollow` via useQuery — client/src/pages/Distribution.tsx:1568 → server/routes/distribution.ts:1214
-- `GET /api/distribution/analytics/growth` via useQuery — client/src/pages/Distribution.tsx:1572 → server/routes/distribution.ts:4030
-- `GET /api/distribution/streaming-trends` via useQuery — client/src/pages/Distribution.tsx:1577 → server/routes/distribution.ts:4101
-- `GET /api/distribution/geographic` via useQuery — client/src/pages/Distribution.tsx:1582 → server/routes/distribution.ts:4140
-- `GET /api/distribution/earnings/breakdown` via useQuery — client/src/pages/Distribution.tsx:1587 → server/routes/distribution.ts:4152
-- `GET /api/distribution/platform-earnings` via useQuery — client/src/pages/Distribution.tsx:1592 → server/routes/distribution.ts:4257
-- `GET /api/distribution/payout-history` via useQuery — client/src/pages/Distribution.tsx:1597 → server/routes/distribution.ts:4317
-- `GET /api/distribution/hyperfollow/analytics` via useQuery — client/src/pages/Distribution.tsx:1602 → server/routes/distribution.ts:1226, server/routes/distribution.ts:1270
-- `GET /api/distribution/toolost/status` via useQuery — client/src/pages/Distribution.tsx:1625 → server/routes/distribution.ts:219
-- `POST /api/distribution/upload` via apiRequest — client/src/pages/Distribution.tsx:1708 → server/routes/distribution.ts:4562
-- `PATCH /api/distribution/releases/:param` via apiRequest — client/src/pages/Distribution.tsx:1769 → server/routes/distribution.ts:424
-- `POST /api/distribution/codes/isrc` via apiRequest — client/src/pages/Distribution.tsx:1836 → server/routes/distribution.ts:717
-- `POST /api/distribution/codes/upc` via apiRequest — client/src/pages/Distribution.tsx:1862 → server/routes/distribution.ts:787
-- `POST /api/distribution/platform/spotify` via apiRequest — client/src/pages/Distribution.tsx:1887 → server/routes/distribution.ts:7664
-- `POST /api/distribution/platform/apple` via apiRequest — client/src/pages/Distribution.tsx:1917 → server/routes/distribution.ts:7717
-- `POST /api/distribution/platform/youtube` via apiRequest — client/src/pages/Distribution.tsx:1947 → server/routes/distribution.ts:7777
-- `POST /api/distribution/export-report` via fetch — client/src/pages/Distribution.tsx:2054 → server/routes/distribution.ts:4752
+- `GET /api/playlist-pitching` via useQuery — client/src/pages/Distribution.tsx:610 → server/routes/playlistPitching.ts:185
+- `GET /api/playlist-pitching/stats` via useQuery — client/src/pages/Distribution.tsx:616 → server/routes/playlistPitching.ts:353, server/routes/playlistPitching.ts:406
+- `POST /api/playlist-pitching` via apiRequest — client/src/pages/Distribution.tsx:631 → server/routes/playlistPitching.ts:202
+- `GET /api/shows` via useQuery — client/src/pages/Distribution.tsx:844 → server/routes/shows.ts:71
+- `GET /api/shows/stats` via useQuery — client/src/pages/Distribution.tsx:848 → server/routes/shows.ts:280, server/routes/shows.ts:327
+- `POST /api/shows` via apiRequest — client/src/pages/Distribution.tsx:853 → server/routes/shows.ts:108
+- `GET /api/venues` via useQuery — client/src/pages/Distribution.tsx:1035 → server/routes/venues.ts:15
+- `GET /api/venues/stats` via useQuery — client/src/pages/Distribution.tsx:1038 → server/routes/venues.ts:32, server/routes/venues.ts:73
+- `POST /api/venues` via apiRequest — client/src/pages/Distribution.tsx:1043 → server/routes/venues.ts:94
+- `GET /api/sync-licensing` via useQuery — client/src/pages/Distribution.tsx:1266 → server/routes/syncLicensing.ts:28
+- `GET /api/sync-licensing/stats` via useQuery — client/src/pages/Distribution.tsx:1270 → server/routes/syncLicensing.ts:45, server/routes/syncLicensing.ts:70
+- `POST /api/sync-licensing` via apiRequest — client/src/pages/Distribution.tsx:1275 → server/routes/syncLicensing.ts:90
+- `GET /api/distribution/hyperfollow` via useQuery — client/src/pages/Distribution.tsx:1569 → server/routes/distribution.ts:1214
+- `GET /api/distribution/analytics/growth` via useQuery — client/src/pages/Distribution.tsx:1573 → server/routes/distribution.ts:4030
+- `GET /api/distribution/streaming-trends` via useQuery — client/src/pages/Distribution.tsx:1578 → server/routes/distribution.ts:4101
+- `GET /api/distribution/geographic` via useQuery — client/src/pages/Distribution.tsx:1583 → server/routes/distribution.ts:4140
+- `GET /api/distribution/earnings/breakdown` via useQuery — client/src/pages/Distribution.tsx:1588 → server/routes/distribution.ts:4152
+- `GET /api/distribution/platform-earnings` via useQuery — client/src/pages/Distribution.tsx:1593 → server/routes/distribution.ts:4257
+- `GET /api/distribution/payout-history` via useQuery — client/src/pages/Distribution.tsx:1598 → server/routes/distribution.ts:4317
+- `GET /api/distribution/hyperfollow/analytics` via useQuery — client/src/pages/Distribution.tsx:1603 → server/routes/distribution.ts:1226, server/routes/distribution.ts:1270
+- `GET /api/distribution/toolost/status` via useQuery — client/src/pages/Distribution.tsx:1626 → server/routes/distribution.ts:219
+- `POST /api/distribution/upload` via apiRequest — client/src/pages/Distribution.tsx:1709 → server/routes/distribution.ts:4562
+- `PATCH /api/distribution/releases/:param` via apiRequest — client/src/pages/Distribution.tsx:1770 → server/routes/distribution.ts:424
+- `POST /api/distribution/codes/isrc` via apiRequest — client/src/pages/Distribution.tsx:1837 → server/routes/distribution.ts:717
+- `POST /api/distribution/codes/upc` via apiRequest — client/src/pages/Distribution.tsx:1863 → server/routes/distribution.ts:787
+- `POST /api/distribution/platform/spotify` via apiRequest — client/src/pages/Distribution.tsx:1888 → server/routes/distribution.ts:7664
+- `POST /api/distribution/platform/apple` via apiRequest — client/src/pages/Distribution.tsx:1918 → server/routes/distribution.ts:7717
+- `POST /api/distribution/platform/youtube` via apiRequest — client/src/pages/Distribution.tsx:1948 → server/routes/distribution.ts:7777
+- `POST /api/distribution/export-report` via fetch — client/src/pages/Distribution.tsx:2055 → server/routes/distribution.ts:4752
 - `GET /api/fan-hub/subscribers` via useQuery — client/src/pages/FanHub.tsx:140 → server/routes/fanHub.ts:55
 - `GET /api/fan-hub/stats` via useQuery — client/src/pages/FanHub.tsx:149 → server/routes/fanHub.ts:238
 - `GET /api/fan-hub/messages` via useQuery — client/src/pages/FanHub.tsx:159 → server/routes/fanHub.ts:410
@@ -695,17 +696,16 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/invoices/:param/send` via fetch — client/src/pages/Invoices.tsx:167 → server/routes/invoices.ts:328, server/routes/invoices.ts:479
 - `DELETE /api/invoices/:param` via fetch — client/src/pages/Invoices.tsx:197 → server/routes/invoices.ts:454
 - `GET /api/invoices/:param/pdf` via fetch — client/src/pages/Invoices.tsx:222 → server/routes/invoices.ts:389
-- `GET /api/csrf-token` via fetch — client/src/pages/Landing.tsx:144 → server/routes.ts:294
 - `POST /api/auth/demo` via fetch — client/src/pages/Landing.tsx:279 → server/routes.ts:2032
-- `GET /api/merch` via useQuery — client/src/pages/Marketplace.tsx:853 → server/routes/merch.ts:93
-- `GET /api/merch/orders` via useQuery — client/src/pages/Marketplace.tsx:860 → server/routes/merch.ts:246, server/routes/merch.ts:413
-- `GET /api/merch/stats` via useQuery — client/src/pages/Marketplace.tsx:865 → server/routes/merch.ts:351, server/routes/merch.ts:413
-- `POST /api/merch` via apiRequest — client/src/pages/Marketplace.tsx:871 → server/routes/merch.ts:112
-- `DELETE /api/merch/:param` via apiRequest — client/src/pages/Marketplace.tsx:883 → server/routes/merch.ts:216
-- `PUT /api/marketplace/listings/:param` via apiRequest — client/src/pages/Marketplace.tsx:990 → server/routes/marketplace.ts:2044
-- `PUT /api/storefront/_/listings/:param/discount` via apiRequest — client/src/pages/Marketplace.tsx:1002 → server/routes/storefront.ts:1633
-- `DELETE /api/storefront/_/listings/:param/discount` via apiRequest — client/src/pages/Marketplace.tsx:1015 → server/routes/storefront.ts:1675
-- `GET /api/marketplace/beats/:param` via fetch — client/src/pages/Marketplace.tsx:1046 → server/routes/marketplace.ts:2544
+- `GET /api/merch` via useQuery — client/src/pages/Marketplace.tsx:881 → server/routes/merch.ts:93
+- `GET /api/merch/orders` via useQuery — client/src/pages/Marketplace.tsx:888 → server/routes/merch.ts:246, server/routes/merch.ts:413
+- `GET /api/merch/stats` via useQuery — client/src/pages/Marketplace.tsx:893 → server/routes/merch.ts:351, server/routes/merch.ts:413
+- `POST /api/merch` via apiRequest — client/src/pages/Marketplace.tsx:899 → server/routes/merch.ts:112
+- `DELETE /api/merch/:param` via apiRequest — client/src/pages/Marketplace.tsx:911 → server/routes/merch.ts:216
+- `PUT /api/marketplace/listings/:param` via apiRequest — client/src/pages/Marketplace.tsx:1018 → server/routes/marketplace.ts:2047
+- `PUT /api/storefront/_/listings/:param/discount` via apiRequest — client/src/pages/Marketplace.tsx:1030 → server/routes/storefront.ts:1633
+- `DELETE /api/storefront/_/listings/:param/discount` via apiRequest — client/src/pages/Marketplace.tsx:1043 → server/routes/storefront.ts:1675
+- `GET /api/marketplace/beats/:param` via fetch — client/src/pages/Marketplace.tsx:1074 → server/routes/marketplace.ts:2547
 - `PUT /api/merch/:param` via apiRequest — client/src/pages/MerchStore.tsx:163 → server/routes/merch.ts:150
 - `PUT /api/merch/orders/:param` via apiRequest — client/src/pages/MerchStore.tsx:195 → server/routes/merch.ts:265
 - `PUT /api/music-workflow-automations/:param/config` via apiRequest — client/src/pages/MusicWorkflowAutomations.tsx:273 → server/routes/musicWorkflowAutomations.ts:136
@@ -727,11 +727,11 @@ Every entry below has a statically detected frontend transport and at least one 
 - `GET /api/press-kit` via useQuery — client/src/pages/PressKit.tsx:111 → server/routes/pressKit.ts:97
 - `PUT /api/press-kit` via apiRequest — client/src/pages/PressKit.tsx:116 → server/routes/pressKit.ts:111
 - `POST /api/storage/upload` via uploadWithProgress — client/src/pages/PressKit.tsx:172 → server/routes/storage.ts:198
-- `POST /api/marketplace/purchase` via apiRequest — client/src/pages/ProducerProfilePage.tsx:140 → server/routes/marketplace.ts:1066
-- `POST /api/marketplace/follow/:param` via apiRequest — client/src/pages/ProducerProfilePage.tsx:183 → server/routes/marketplace.ts:2189
-- `POST /api/marketplace/unfollow/:param` via apiRequest — client/src/pages/ProducerProfilePage.tsx:212 → server/routes/marketplace.ts:2523
-- `GET /api/marketplace/beats?producerId=:param` via apiRequest — client/src/pages/ProducerProfilePage.tsx:264 → server/routes/marketplace.ts:175
-- `GET /api/marketplace/producers` via apiRequest — client/src/pages/ProducerProfilePage.tsx:276 → server/routes/marketplace.ts:734
+- `POST /api/marketplace/purchase` via apiRequest — client/src/pages/ProducerProfilePage.tsx:140 → server/routes/marketplace.ts:1069
+- `POST /api/marketplace/follow/:param` via apiRequest — client/src/pages/ProducerProfilePage.tsx:183 → server/routes/marketplace.ts:2192
+- `POST /api/marketplace/unfollow/:param` via apiRequest — client/src/pages/ProducerProfilePage.tsx:212 → server/routes/marketplace.ts:2526
+- `GET /api/marketplace/beats?producerId=:param` via apiRequest — client/src/pages/ProducerProfilePage.tsx:264 → server/routes/marketplace.ts:176
+- `GET /api/marketplace/producers` via apiRequest — client/src/pages/ProducerProfilePage.tsx:276 → server/routes/marketplace.ts:735
 - `GET /api/songwriting` via useQuery — client/src/pages/Projects.tsx:879 → server/routes/songwriting.ts:28
 - `POST /api/songwriting` via apiRequest — client/src/pages/Projects.tsx:884 → server/routes/songwriting.ts:147
 - `PUT /api/songwriting/:param` via apiRequest — client/src/pages/Projects.tsx:908 → server/routes/songwriting.ts:175
@@ -743,36 +743,36 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/publishing` via apiRequest — client/src/pages/Publishing.tsx:101 → server/routes/publishing.ts:91
 - `PUT /api/publishing/:param` via apiRequest — client/src/pages/Publishing.tsx:119 → server/routes/publishing.ts:125
 - `DELETE /api/publishing/:param` via apiRequest — client/src/pages/Publishing.tsx:134 → server/routes/publishing.ts:170
-- `POST /api/verify-checkout-session` via apiRequest — client/src/pages/RegisterSuccess.tsx:58 → server/routes.ts:8098
-- `POST /api/register-after-payment` via apiRequest — client/src/pages/RegisterSuccess.tsx:105 → server/routes.ts:8147
+- `POST /api/verify-checkout-session` via apiRequest — client/src/pages/RegisterSuccess.tsx:58 → server/routes.ts:8101
+- `POST /api/register-after-payment` via apiRequest — client/src/pages/RegisterSuccess.tsx:105 → server/routes.ts:8150
 - `POST /api/auth/reset-password` via fetch — client/src/pages/ResetPassword.tsx:111 → server/routes.ts:2159
-- `GET /api/royalties` via useQuery — client/src/pages/Royalties.tsx:180 → server/routes.ts:5824
-- `GET /api/royalties/platform-breakdown` via useQuery — client/src/pages/Royalties.tsx:193 → server/routes.ts:5926
-- `GET /api/royalties/top-tracks` via useQuery — client/src/pages/Royalties.tsx:201 → server/routes.ts:5973
-- `GET /api/royalties/payment-methods` via useQuery — client/src/pages/Royalties.tsx:209 → server/routes.ts:6026
-- `GET /api/royalties/payout-settings` via useQuery — client/src/pages/Royalties.tsx:216 → server/routes.ts:6117
-- `GET /api/royalties/splits` via useQuery — client/src/pages/Royalties.tsx:224 → server/routes.ts:6271
+- `GET /api/royalties` via useQuery — client/src/pages/Royalties.tsx:180 → server/routes.ts:5821
+- `GET /api/royalties/platform-breakdown` via useQuery — client/src/pages/Royalties.tsx:193 → server/routes.ts:5923
+- `GET /api/royalties/top-tracks` via useQuery — client/src/pages/Royalties.tsx:201 → server/routes.ts:5970
+- `GET /api/royalties/payment-methods` via useQuery — client/src/pages/Royalties.tsx:209 → server/routes.ts:6023
+- `GET /api/royalties/payout-settings` via useQuery — client/src/pages/Royalties.tsx:216 → server/routes.ts:6114
+- `GET /api/royalties/splits` via useQuery — client/src/pages/Royalties.tsx:224 → server/routes.ts:6268
 - `GET /api/payouts/statements` via useQuery — client/src/pages/Royalties.tsx:240 → server/routes/payouts.ts:881
 - `GET /api/payouts/disputes` via useQuery — client/src/pages/Royalties.tsx:249 → server/routes/payouts.ts:1037
 - `GET /api/payouts/tax-forms` via useQuery — client/src/pages/Royalties.tsx:262 → server/routes/payouts.ts:755
-- `POST /api/royalties/export` via apiRequest — client/src/pages/Royalties.tsx:313 → server/routes.ts:6420
-- `POST /api/royalties/request-payout` via apiRequest — client/src/pages/Royalties.tsx:339 → server/routes.ts:6482
-- `POST /api/royalties/payment-methods` via apiRequest — client/src/pages/Royalties.tsx:362 → server/routes.ts:6071
-- `PUT /api/royalties/payout-settings` via apiRequest — client/src/pages/Royalties.tsx:398 → server/routes.ts:6170
-- `PUT /api/royalties/tax-info` via apiRequest — client/src/pages/Royalties.tsx:419 → server/routes.ts:6215
-- `POST /api/royalties/connect-stripe` via apiRequest — client/src/pages/Royalties.tsx:440 → server/routes.ts:6639
-- `DELETE /api/royalties/splits/:param` via apiRequest — client/src/pages/Royalties.tsx:468 → server/routes.ts:6390
-- `POST /api/royalties/splits` via apiRequest — client/src/pages/Royalties.tsx:496 → server/routes.ts:6291
-- `PUT /api/royalties/splits/:param` via apiRequest — client/src/pages/Royalties.tsx:532 → server/routes.ts:6353
+- `POST /api/royalties/export` via apiRequest — client/src/pages/Royalties.tsx:313 → server/routes.ts:6417
+- `POST /api/royalties/request-payout` via apiRequest — client/src/pages/Royalties.tsx:339 → server/routes.ts:6479
+- `POST /api/royalties/payment-methods` via apiRequest — client/src/pages/Royalties.tsx:362 → server/routes.ts:6068
+- `PUT /api/royalties/payout-settings` via apiRequest — client/src/pages/Royalties.tsx:398 → server/routes.ts:6167
+- `PUT /api/royalties/tax-info` via apiRequest — client/src/pages/Royalties.tsx:419 → server/routes.ts:6212
+- `POST /api/royalties/connect-stripe` via apiRequest — client/src/pages/Royalties.tsx:440 → server/routes.ts:6636
+- `DELETE /api/royalties/splits/:param` via apiRequest — client/src/pages/Royalties.tsx:468 → server/routes.ts:6387
+- `POST /api/royalties/splits` via apiRequest — client/src/pages/Royalties.tsx:496 → server/routes.ts:6288
+- `PUT /api/royalties/splits/:param` via apiRequest — client/src/pages/Royalties.tsx:532 → server/routes.ts:6350
 - `POST /api/payouts/tax-form/submit` via apiRequest — client/src/pages/Royalties.tsx:560 → server/routes/payouts.ts:790
 - `POST /api/payouts/disputes` via apiRequest — client/src/pages/Royalties.tsx:588 → server/routes/payouts.ts:1106
 - `POST /api/payouts/disputes/:param/evidence` via apiRequest — client/src/pages/Royalties.tsx:617 → server/routes/payouts.ts:1157
 - `POST /api/payouts/disputes/:param/message` via apiRequest — client/src/pages/Royalties.tsx:645 → server/routes/payouts.ts:1238
 - `POST /api/payouts/statements/generate` via apiRequest — client/src/pages/Royalties.tsx:672 → server/routes/payouts.ts:921
 - `POST /api/payouts/retry/:param` via apiRequest — client/src/pages/Royalties.tsx:700 → server/routes/payouts.ts:1303
-- `GET /api/royalties/statements` via useQuery — client/src/pages/Royalties.tsx:2692 → server/routes.ts:6570
+- `GET /api/royalties/statements` via useQuery — client/src/pages/Royalties.tsx:2692 → server/routes.ts:6567
 - `GET /api/payouts` via useQuery — client/src/pages/Royalties.tsx:2695 → server/routes/payouts.ts:77
-- `GET /api/royalties/forecast` via useQuery — client/src/pages/Royalties.tsx:2701 → server/routes.ts:6588
+- `GET /api/royalties/forecast` via useQuery — client/src/pages/Royalties.tsx:2701 → server/routes.ts:6585
 - `GET /api/auth/profile` via useQuery — client/src/pages/Settings.tsx:246 → server/routes.ts:779
 - `GET /api/auth/notifications` via useQuery — client/src/pages/Settings.tsx:254 → server/routes.ts:827
 - `GET /api/auth/preferences` via useQuery — client/src/pages/Settings.tsx:260 → server/routes.ts:893
@@ -789,7 +789,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/billing/cancel-subscription` via apiRequest — client/src/pages/Settings.tsx:569 → server/routes/billing.ts:745
 - `POST /api/billing/reactivate-subscription` via apiRequest — client/src/pages/Settings.tsx:612 → server/routes/billing.ts:877
 - `GET /api/billing/invoices/:param/download` via fetch — client/src/pages/Settings.tsx:719 → server/routes/billing.ts:991
-- `POST /api/auth/2fa/disable` via apiRequest — client/src/pages/Settings.tsx:2165 → server/routes.ts:1828
+- `POST /api/auth/2fa/disable` via apiRequest — client/src/pages/Settings.tsx:2172 → server/routes.ts:1828
 - `GET /api/shows/setlists` via apiRequest — client/src/pages/ShowPage.tsx:209 → server/routes/shows.ts:312, server/routes/shows.ts:327
 - `PUT /api/shows/setlists/:param` via apiRequest — client/src/pages/ShowPage.tsx:254 → server/routes/shows.ts:389
 - `POST /api/shows/setlists` via apiRequest — client/src/pages/ShowPage.tsx:259 → server/routes/shows.ts:369
@@ -819,7 +819,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/storefront/:param/rate` via apiRequest — client/src/pages/Storefront.tsx:407 → server/routes/storefront.ts:619, server/routes/storefront.ts:1331
 - `POST /api/storefront/subscribe/:param` via apiRequest — client/src/pages/Storefront.tsx:460 → server/routes/storefront.ts:486, server/routes/storefront.ts:619, server/routes/storefront.ts:1065, server/routes/storefront.ts:1267, server/routes/storefront.ts:1299, server/routes/storefront.ts:1331, server/routes/storefront.ts:1384, server/routes/storefront.ts:2146
 - `POST /api/storefront/:param/checkout` via apiRequest — client/src/pages/Storefront.tsx:497 → server/routes/storefront.ts:619, server/routes/storefront.ts:1384
-- `POST /api/create-subscription` via apiRequest — client/src/pages/Subscribe.tsx:386 → server/routes.ts:6683
+- `POST /api/create-subscription` via apiRequest — client/src/pages/Subscribe.tsx:386 → server/routes.ts:6680
 - `PUT /api/sync-licensing/:param` via apiRequest — client/src/pages/SyncLicensing.tsx:120 → server/routes/syncLicensing.ts:116
 - `DELETE /api/sync-licensing/:param` via apiRequest — client/src/pages/SyncLicensing.tsx:139 → server/routes/syncLicensing.ts:182
 - `GET /api/kyc/status` via useQuery — client/src/pages/Verification.tsx:169 → server/routes/kyc.ts:155
@@ -887,10 +887,10 @@ None.
 - `apiRequest(method)` — client/src/components/distribution/HyperFollowBuilder.tsx:272
 - `apiRequest(endpoint)` — client/src/components/export/ExportDialog.tsx:248
 - `apiRequest(endpoints)` — client/src/components/social/UnifiedInbox.tsx:284
-- `apiRequest(method)` — client/src/hooks/useBatchAction.ts:197
-- `apiRequest(method)` — client/src/hooks/useBatchActions.ts:263
-- `apiRequest(method)` — client/src/hooks/useBulkAction.ts:171
-- `apiRequest(endpoint)` — client/src/hooks/useTemplate.ts:141
+- `apiRequest(method)` — client/src/hooks/useBatchAction.ts:262
+- `apiRequest(method)` — client/src/hooks/useBatchActions.ts:410
+- `apiRequest(method)` — client/src/hooks/useBulkAction.ts:218
+- `apiRequest(endpoint)` — client/src/hooks/useTemplate.ts:214
 - `apiRequest(endpoint)` — client/src/lib/imageUpload.ts:19
 - `apiRequest(method)` — client/src/lib/queryClient.ts:360
 - `uploadWithProgress(url)` — client/src/lib/queryClient.ts:457
@@ -930,10 +930,11 @@ None.
 - `not-api-reference: /api/autopilot/stop` — client/src/components/autopilot/autopilot-dashboard.tsx:192
 - `cache-key: /api/autopilot/status` — client/src/components/autopilot/autopilot-dashboard.tsx:197
 - `cache-key: /api/autopilot/status` — client/src/components/autopilot/autopilot-dashboard.tsx:224
-- `query-key-custom-fn: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:95
-- `cache-key: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:118
-- `cache-key: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:147
-- `cache-key: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:164
+- `query-key-custom-fn: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:166
+- `cache-key: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:190
+- `cache-key: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:224
+- `cache-key: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:245
+- `cache-key: /api/batch/templates` — client/src/components/batch/BatchTemplateManager.tsx:277
 - `cache-key: /api/billing/disputes` — client/src/components/billing/DisputeTracker.tsx:152
 - `cache-key: /api/billing/subscription` — client/src/components/billing/PaymentRetryCard.tsx:84
 - `cache-key: /api/billing/grace-period-status` — client/src/components/billing/PaymentRetryCard.tsx:87
@@ -958,7 +959,8 @@ None.
 - `cache-key: /api/collaborations/projects` — client/src/components/collaboration/ProjectBoard.tsx:188
 - `query-key-custom-fn: /api/collaborations/suggestions` — client/src/components/collaboration/SuggestedCollaborators.tsx:22
 - `not-api-reference: /api/social/generate-image` — client/src/components/content/AIImageGenerator.tsx:181
-- `not-api-reference: /api/content-analysis/${type}` — client/src/components/content/ContentAnalyzer.tsx:223
+- `not-api-reference: /api/audio/upload` — client/src/components/content/ContentAnalyzer.tsx:224
+- `not-api-reference: /api/content-analysis/assets?kind=${kind}` — client/src/components/content/ContentAnalyzer.tsx:225
 - `comment: /api/social/generate-video` — client/src/components/content/ServerVideoGenerator.tsx:59
 - `comment: /api/social/video-job/:id` — client/src/components/content/ServerVideoGenerator.tsx:60
 - `not-api-reference: /api/social/generate-video` — client/src/components/content/ServerVideoGenerator.tsx:295
@@ -1020,9 +1022,9 @@ None.
 - `not-api-reference: /api/distribution/platform-earnings` — client/src/components/distribution/DataTransferWizard.tsx:142
 - `not-api-reference: /api/distribution/earnings/breakdown` — client/src/components/distribution/DataTransferWizard.tsx:143
 - `cache-key: /api/distribution/releases/${releaseId}/outcomes` — client/src/components/distribution/DistributionOutcomeHandler.tsx:164
-- `cache-key: /api/distribution/earnings/statements` — client/src/components/distribution/EarningsReconciliation.tsx:221
-- `cache-key: /api/distribution/earnings/payouts` — client/src/components/distribution/EarningsReconciliation.tsx:249
-- `cache-key: /api/distribution/earnings/statements` — client/src/components/distribution/EarningsReconciliation.tsx:277
+- `cache-key: /api/distribution/earnings/statements` — client/src/components/distribution/EarningsReconciliation.tsx:231
+- `cache-key: /api/distribution/earnings/payouts` — client/src/components/distribution/EarningsReconciliation.tsx:259
+- `cache-key: /api/distribution/earnings/statements` — client/src/components/distribution/EarningsReconciliation.tsx:287
 - `cache-key: /api/custom-workflows` — client/src/components/distribution/EmbedCodeGenerator.tsx:361
 - `cache-key: /api/custom-workflows/${wf.id}/disable` — client/src/components/distribution/EmbedCodeGenerator.tsx:380
 - `cache-key: /api/custom-workflows/${wf.id}/enable` — client/src/components/distribution/EmbedCodeGenerator.tsx:381
@@ -1043,9 +1045,9 @@ None.
 - `cache-key: /api/distribution/releases` — client/src/components/distribution/ReleaseWizard.tsx:174
 - `cache-key: /api/distribution/releases` — client/src/components/distribution/ReleaseWizard.tsx:362
 - `cache-key: /api/distribution/hyperfollow` — client/src/components/distribution/ReleaseWizard.tsx:365
-- `cache-key: /api/distribution/royalties/payouts` — client/src/components/distribution/RoyaltyReconciliation.tsx:198
-- `cache-key: /api/distribution/royalties/tax-documents` — client/src/components/distribution/RoyaltyReconciliation.tsx:226
-- `cache-key: /api/distribution/royalties/discrepancies` — client/src/components/distribution/RoyaltyReconciliation.tsx:246
+- `cache-key: /api/distribution/royalties/payouts` — client/src/components/distribution/RoyaltyReconciliation.tsx:202
+- `cache-key: /api/distribution/royalties/tax-documents` — client/src/components/distribution/RoyaltyReconciliation.tsx:230
+- `cache-key: /api/distribution/royalties/discrepancies` — client/src/components/distribution/RoyaltyReconciliation.tsx:250
 - `cache-key: /api/distribution/releases/${releaseId}/submission-status` — client/src/components/distribution/SubmissionStatusTracker.tsx:219
 - `cache-key: /api/distribution/releases/${releaseId}/submission-status` — client/src/components/distribution/SubmissionStatusTracker.tsx:246
 - `cache-key: /api/distribution/disputes` — client/src/components/distribution/TakedownManager.tsx:124
@@ -1196,8 +1198,8 @@ None.
 - `cache-key: /api/auth/connected-accounts` — client/src/components/settings/ConnectedAccountsManager.tsx:183
 - `cache-key: /api/auth/connected-accounts` — client/src/components/settings/ConnectedAccountsManager.tsx:217
 - `cache-key: /api/email-preferences` — client/src/components/settings/EmailPreferences.tsx:98
-- `cache-key: /api/auth/sessions` — client/src/components/settings/LoginHistory.tsx:125
-- `cache-key: /api/auth/sessions` — client/src/components/settings/LoginHistory.tsx:147
+- `cache-key: /api/auth/sessions` — client/src/components/settings/LoginHistory.tsx:89
+- `cache-key: /api/auth/sessions` — client/src/components/settings/LoginHistory.tsx:111
 - `cache-key: /api/auth/privacy-settings` — client/src/components/settings/PrivacySettings.tsx:74
 - `cache-key: /api/auth/data-export-status` — client/src/components/settings/PrivacySettings.tsx:97
 - `cache-key: /api/auth/recovery-codes/status` — client/src/components/settings/RecoveryCodes.tsx:80
@@ -1242,8 +1244,8 @@ None.
 - `not-api-reference: /api/studio/templates?category=${encodeURIComponent(category)}` — client/src/components/studio/FlowStateTemplateDialog.tsx:65
 - `not-api-reference: /api/studio/templates` — client/src/components/studio/FlowStateTemplateDialog.tsx:66
 - `cache-key: /api/studio/projects` — client/src/components/studio/MixerPanel.tsx:231
-- `cache-key: /api/projects` — client/src/components/studio/ProjectSettingsDialog.tsx:130
-- `cache-key: /api/studio/projects` — client/src/components/studio/ProjectSettingsDialog.tsx:131
+- `cache-key: /api/projects` — client/src/components/studio/ProjectSettingsDialog.tsx:134
+- `cache-key: /api/studio/projects` — client/src/components/studio/ProjectSettingsDialog.tsx:135
 - `cache-key: /api/studio/projects` — client/src/components/studio/RecordingPanel.tsx:220
 - `cache-key: /api/studio/tracks` — client/src/components/studio/RecordingPanel.tsx:229
 - `cache-key: /api/studio/projects` — client/src/components/studio/RecordingPanel.tsx:234
@@ -1267,7 +1269,7 @@ None.
 - `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioStartHub.tsx:227
 - `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioStartHub.tsx:260
 - `cache-key: /api/user/preferences` — client/src/components/studio/StudioTutorial.tsx:96
-- `cache-key: /api/user/preferences/studio` — client/src/components/studio/UICustomizer.tsx:406
+- `not-api-reference: /api/user/preferences/studio` — client/src/components/studio/UICustomizer.tsx:538
 - `not-api-reference: /api/assistant/history` — client/src/components/support/AIAssistantBubble.tsx:112
 - `not-api-reference: /api/assistant/history?before=${encodeURIComponent(oldestId)}` — client/src/components/support/AIAssistantBubble.tsx:148
 - `not-api-reference: /api/assistant/chat` — client/src/components/support/AIAssistantBubble.tsx:192
@@ -1318,60 +1320,60 @@ None.
 - `not-api-reference: /api/advertising/dashboard/paths` — client/src/hooks/useAnalyticsInvalidation.ts:34
 - `cache-key: /api/analytics/dashboard` — client/src/hooks/useAnalyticsInvalidation.ts:64
 - `cache-key: /api/dashboard/` — client/src/hooks/useAnalyticsInvalidation.ts:64
-- `not-api-reference: /api/batch/${resource}/${suffix}` — client/src/hooks/useBatchAction.ts:168
-- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:349
-- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:363
-- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:378
-- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:392
-- `cache-key: /api/social/posts` — client/src/hooks/useBatchAction.ts:419
-- `cache-key: /api/social/calendar` — client/src/hooks/useBatchAction.ts:419
-- `cache-key: /api/social/posts` — client/src/hooks/useBatchAction.ts:433
-- `cache-key: /api/social/calendar` — client/src/hooks/useBatchAction.ts:433
-- `cache-key: /api/social/posts` — client/src/hooks/useBatchAction.ts:448
-- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:477
-- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:478
-- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:494
-- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:495
-- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:512
-- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:513
-- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:530
-- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:531
-- `cache-key: /api/files/list` — client/src/hooks/useBatchAction.ts:559
-- `cache-key: /api/files/storage-usage` — client/src/hooks/useBatchAction.ts:560
-- `cache-key: /api/storage/quota` — client/src/hooks/useBatchAction.ts:561
-- `cache-key: /api/files/list` — client/src/hooks/useBatchAction.ts:578
-- `cache-key: /api/files/storage-usage` — client/src/hooks/useBatchAction.ts:579
-- `cache-key: /api/storage/quota` — client/src/hooks/useBatchAction.ts:580
-- `cache-key: /api/files/list` — client/src/hooks/useBatchAction.ts:609
-- `not-api-reference: /api/batch/${resource}/${suffix}` — client/src/hooks/useBatchActions.ts:226
-- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchActions.ts:419
-- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchActions.ts:433
-- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchActions.ts:448
-- `cache-key: /api/studio/projects` — client/src/hooks/useBatchActions.ts:469
-- `cache-key: /api/studio/projects` — client/src/hooks/useBatchActions.ts:484
-- `cache-key: /api/studio/projects` — client/src/hooks/useBatchActions.ts:512
-- `cache-key: /api/social/posts` — client/src/hooks/useBatchActions.ts:533
-- `cache-key: /api/social/calendar` — client/src/hooks/useBatchActions.ts:533
-- `cache-key: /api/social/posts` — client/src/hooks/useBatchActions.ts:547
-- `cache-key: /api/social/calendar` — client/src/hooks/useBatchActions.ts:547
-- `cache-key: /api/social/posts` — client/src/hooks/useBatchActions.ts:561
-- `cache-key: /api/social/approvals` — client/src/hooks/useBatchActions.ts:561
-- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchActions.ts:583
-- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchActions.ts:584
-- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchActions.ts:601
-- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchActions.ts:602
-- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchActions.ts:618
-- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchActions.ts:619
-- `cache-key: /api/batch/${resource}/delete` — client/src/hooks/useBulkAction.ts:132
-- `cache-key: /api/batch/${resource}/update` — client/src/hooks/useBulkAction.ts:138
-- `not-api-reference: /api/batch/${resource}/export` — client/src/hooks/useBulkAction.ts:143
-- `not-api-reference: /api/batch/${resource}/submit` — client/src/hooks/useBulkAction.ts:148
-- `not-api-reference: /api/batch/${resource}/withdraw` — client/src/hooks/useBulkAction.ts:153
-- `not-api-reference: /api/batch/${resource}/schedule` — client/src/hooks/useBulkAction.ts:158
-- `not-api-reference: /api/batch/${resource}/process` — client/src/hooks/useBulkAction.ts:163
-- `cache-key: /api/${resource}` — client/src/hooks/useBulkAction.ts:286
-- `cache-key: /api/${resource}` — client/src/hooks/useBulkAction.ts:310
-- `cache-key: /api/${resource}` — client/src/hooks/useBulkAction.ts:357
+- `not-api-reference: /api/batch/${resource}/${suffix}` — client/src/hooks/useBatchAction.ts:233
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:404
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:418
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:433
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchAction.ts:447
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchAction.ts:474
+- `cache-key: /api/social/calendar` — client/src/hooks/useBatchAction.ts:474
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchAction.ts:488
+- `cache-key: /api/social/calendar` — client/src/hooks/useBatchAction.ts:488
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchAction.ts:503
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:532
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:533
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:549
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:550
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:567
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:568
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchAction.ts:585
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchAction.ts:586
+- `cache-key: /api/files/list` — client/src/hooks/useBatchAction.ts:614
+- `cache-key: /api/files/storage-usage` — client/src/hooks/useBatchAction.ts:615
+- `cache-key: /api/storage/quota` — client/src/hooks/useBatchAction.ts:616
+- `cache-key: /api/files/list` — client/src/hooks/useBatchAction.ts:633
+- `cache-key: /api/files/storage-usage` — client/src/hooks/useBatchAction.ts:634
+- `cache-key: /api/storage/quota` — client/src/hooks/useBatchAction.ts:635
+- `cache-key: /api/files/list` — client/src/hooks/useBatchAction.ts:664
+- `not-api-reference: /api/batch/${resource}/${suffix}` — client/src/hooks/useBatchActions.ts:373
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchActions.ts:561
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchActions.ts:575
+- `cache-key: /api/distribution/releases` — client/src/hooks/useBatchActions.ts:590
+- `cache-key: /api/studio/projects` — client/src/hooks/useBatchActions.ts:611
+- `cache-key: /api/studio/projects` — client/src/hooks/useBatchActions.ts:626
+- `cache-key: /api/studio/projects` — client/src/hooks/useBatchActions.ts:654
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchActions.ts:675
+- `cache-key: /api/social/calendar` — client/src/hooks/useBatchActions.ts:675
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchActions.ts:689
+- `cache-key: /api/social/calendar` — client/src/hooks/useBatchActions.ts:689
+- `cache-key: /api/social/posts` — client/src/hooks/useBatchActions.ts:703
+- `cache-key: /api/social/approvals` — client/src/hooks/useBatchActions.ts:703
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchActions.ts:725
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchActions.ts:726
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchActions.ts:743
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchActions.ts:744
+- `cache-key: /api/marketplace/beats` — client/src/hooks/useBatchActions.ts:760
+- `cache-key: /api/marketplace/my-beats` — client/src/hooks/useBatchActions.ts:761
+- `cache-key: /api/batch/${resource}/delete` — client/src/hooks/useBulkAction.ts:179
+- `cache-key: /api/batch/${resource}/update` — client/src/hooks/useBulkAction.ts:185
+- `not-api-reference: /api/batch/${resource}/export` — client/src/hooks/useBulkAction.ts:190
+- `not-api-reference: /api/batch/${resource}/submit` — client/src/hooks/useBulkAction.ts:195
+- `not-api-reference: /api/batch/${resource}/withdraw` — client/src/hooks/useBulkAction.ts:200
+- `not-api-reference: /api/batch/${resource}/schedule` — client/src/hooks/useBulkAction.ts:205
+- `not-api-reference: /api/batch/${resource}/process` — client/src/hooks/useBulkAction.ts:210
+- `cache-key: /api/${resource}` — client/src/hooks/useBulkAction.ts:326
+- `cache-key: /api/${resource}` — client/src/hooks/useBulkAction.ts:350
+- `cache-key: /api/${resource}` — client/src/hooks/useBulkAction.ts:397
 - `cache-key: /api/personalization/dashboard-layout` — client/src/hooks/useDashboardPersonalization.ts:69
 - `cache-key: /api/personalization/behavior-analysis` — client/src/hooks/useDashboardPersonalization.ts:94
 - `cache-key: /api/personalization/dashboard-layout` — client/src/hooks/useDashboardPersonalization.ts:219
@@ -1415,17 +1417,17 @@ None.
 - `cache-key: /api/studio/projects` — client/src/hooks/useStudioController.ts:304
 - `cache-key: /api/studio/projects` — client/src/hooks/useStudioController.ts:322
 - `cache-key: /api/studio/projects` — client/src/hooks/useStudioController.ts:334
-- `not-api-reference: /api/studio/templates` — client/src/hooks/useTemplate.ts:128
-- `not-api-reference: /api/studio/templates` — client/src/hooks/useTemplate.ts:129
-- `not-api-reference: /api/studio/templates?category=${encodeURIComponent(type)}` — client/src/hooks/useTemplate.ts:139
-- `not-api-reference: /api/studio/templates` — client/src/hooks/useTemplate.ts:140
-- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:156
-- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:189
-- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:209
-- `cache-key: /api/projects` — client/src/hooks/useTemplate.ts:296
-- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:298
-- `query-key-custom-fn: /api/studio/templates` — client/src/hooks/useTemplate.ts:405
-- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:459
+- `not-api-reference: /api/studio/templates` — client/src/hooks/useTemplate.ts:201
+- `not-api-reference: /api/studio/templates` — client/src/hooks/useTemplate.ts:202
+- `not-api-reference: /api/studio/templates?category=${encodeURIComponent(type)}` — client/src/hooks/useTemplate.ts:212
+- `not-api-reference: /api/studio/templates` — client/src/hooks/useTemplate.ts:213
+- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:229
+- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:262
+- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:283
+- `cache-key: /api/projects` — client/src/hooks/useTemplate.ts:370
+- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:372
+- `query-key-custom-fn: /api/studio/templates` — client/src/hooks/useTemplate.ts:479
+- `cache-key: /api/studio/templates` — client/src/hooks/useTemplate.ts:532
 - `cache-key: /api/preferences/user` — client/src/hooks/useUserPreferences.ts:97
 - `cache-key: /api/preferences/dashboard-layout` — client/src/hooks/useUserPreferences.ts:159
 - `cache-key: /api/preferences/user` — client/src/hooks/useUserPreferences.ts:161
@@ -1476,14 +1478,14 @@ None.
 - `cache-key: /api/admin/platform-fixer/status` — client/src/pages/AdminAutonomy.tsx:396
 - `cache-key: /api/security/self-healing/status` — client/src/pages/AdminAutonomy.tsx:397
 - `cache-key: /api/security/self-healing/metrics` — client/src/pages/AdminAutonomy.tsx:398
-- `query-key-custom-fn: /api/audit/results` — client/src/pages/AdminDashboard.tsx:204
-- `query-key-custom-fn: /api/testing/results` — client/src/pages/AdminDashboard.tsx:215
-- `query-key-custom-fn: /api/admin/metrics` — client/src/pages/AdminDashboard.tsx:226
-- `query-key-custom-fn: /api/admin/analytics` — client/src/pages/AdminDashboard.tsx:237
-- `query-key-custom-fn: /api/admin/activity` — client/src/pages/AdminDashboard.tsx:247
-- `query-key-custom-fn: /api/admin/system-health` — client/src/pages/AdminDashboard.tsx:256
-- `query-key-custom-fn: /api/admin/users` — client/src/pages/AdminDashboard.tsx:268
-- `not-api-reference: /api/admin/beat-money-loop/status` — client/src/pages/AdminDashboard.tsx:1961
+- `query-key-custom-fn: /api/audit/results` — client/src/pages/AdminDashboard.tsx:178
+- `query-key-custom-fn: /api/testing/results` — client/src/pages/AdminDashboard.tsx:191
+- `query-key-custom-fn: /api/admin/metrics` — client/src/pages/AdminDashboard.tsx:202
+- `query-key-custom-fn: /api/admin/analytics` — client/src/pages/AdminDashboard.tsx:213
+- `query-key-custom-fn: /api/admin/activity` — client/src/pages/AdminDashboard.tsx:224
+- `query-key-custom-fn: /api/admin/system-health` — client/src/pages/AdminDashboard.tsx:233
+- `query-key-custom-fn: /api/admin/users` — client/src/pages/AdminDashboard.tsx:245
+- `not-api-reference: /api/admin/beat-money-loop/status` — client/src/pages/AdminDashboard.tsx:2072
 - `cache-key: /api/advertising/lookalike-audiences` — client/src/pages/Advertisement.tsx:628
 - `cache-key: /api/advertising/lookalike-audiences` — client/src/pages/Advertisement.tsx:662
 - `cache-key: /api/advertising/creative-fatigue` — client/src/pages/Advertisement.tsx:696
@@ -1531,26 +1533,26 @@ None.
 - `cache-key: /api/developer/keys` — client/src/pages/DeveloperApi.tsx:112
 - `cache-key: /api/developer/keys` — client/src/pages/DeveloperApi.tsx:137
 - `cache-key: /api/developer/usage` — client/src/pages/DeveloperApi.tsx:138
-- `cache-key: /api/playlist-pitching` — client/src/pages/Distribution.tsx:645
-- `cache-key: /api/playlist-pitching/stats` — client/src/pages/Distribution.tsx:647
-- `cache-key: /api/shows` — client/src/pages/Distribution.tsx:856
-- `cache-key: /api/shows/stats` — client/src/pages/Distribution.tsx:857
-- `cache-key: /api/venues` — client/src/pages/Distribution.tsx:1049
-- `cache-key: /api/venues/stats` — client/src/pages/Distribution.tsx:1050
-- `cache-key: /api/sync-licensing` — client/src/pages/Distribution.tsx:1278
-- `cache-key: /api/sync-licensing/stats` — client/src/pages/Distribution.tsx:1280
-- `browser-navigation: /api/distribution/toolost/status` — client/src/pages/Distribution.tsx:1639
-- `browser-navigation: /api/distribution/platforms` — client/src/pages/Distribution.tsx:1642
-- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1746
-- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1782
-- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1811
-- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1901
-- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1931
-- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1961
-- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:2856
-- `cache-key: /api/distribution/hyperfollow` — client/src/pages/Distribution.tsx:3635
-- `cache-key: /api/distribution/hyperfollow/analytics` — client/src/pages/Distribution.tsx:3638
-- `browser-navigation: /api/distribution/toolost/connect` — client/src/pages/Distribution.tsx:4017
+- `cache-key: /api/playlist-pitching` — client/src/pages/Distribution.tsx:646
+- `cache-key: /api/playlist-pitching/stats` — client/src/pages/Distribution.tsx:648
+- `cache-key: /api/shows` — client/src/pages/Distribution.tsx:857
+- `cache-key: /api/shows/stats` — client/src/pages/Distribution.tsx:858
+- `cache-key: /api/venues` — client/src/pages/Distribution.tsx:1050
+- `cache-key: /api/venues/stats` — client/src/pages/Distribution.tsx:1051
+- `cache-key: /api/sync-licensing` — client/src/pages/Distribution.tsx:1279
+- `cache-key: /api/sync-licensing/stats` — client/src/pages/Distribution.tsx:1281
+- `browser-navigation: /api/distribution/toolost/status` — client/src/pages/Distribution.tsx:1640
+- `browser-navigation: /api/distribution/platforms` — client/src/pages/Distribution.tsx:1643
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1747
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1783
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1812
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1902
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1932
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:1962
+- `cache-key: /api/distribution/releases` — client/src/pages/Distribution.tsx:2857
+- `cache-key: /api/distribution/hyperfollow` — client/src/pages/Distribution.tsx:3633
+- `cache-key: /api/distribution/hyperfollow/analytics` — client/src/pages/Distribution.tsx:3636
+- `browser-navigation: /api/distribution/toolost/connect` — client/src/pages/Distribution.tsx:4015
 - `cache-key: /api/fan-hub/subscribers` — client/src/pages/FanHub.tsx:172
 - `cache-key: /api/fan-hub/stats` — client/src/pages/FanHub.tsx:173
 - `cache-key: /api/fan-hub/subscribers` — client/src/pages/FanHub.tsx:193
@@ -1565,15 +1567,15 @@ None.
 - `cache-key: /api/auth/me` — client/src/pages/Login.tsx:342
 - `browser-navigation: /api/auth/google` — client/src/pages/Login.tsx:366
 - `cache-key: /api/auth/me` — client/src/pages/Login.tsx:407
-- `query-key-custom-fn: /api/marketplace/producers` — client/src/pages/Marketplace.tsx:458
-- `not-api-reference: /api/storage/upload` — client/src/pages/Marketplace.tsx:728
-- `cache-key: /api/merch` — client/src/pages/Marketplace.tsx:875
-- `cache-key: /api/merch/stats` — client/src/pages/Marketplace.tsx:876
-- `cache-key: /api/merch` — client/src/pages/Marketplace.tsx:886
-- `cache-key: /api/marketplace/my-beats` — client/src/pages/Marketplace.tsx:1030
-- `cache-key: /api/marketplace/beats` — client/src/pages/Marketplace.tsx:1044
-- `query-key-custom-fn: /api/marketplace/beats` — client/src/pages/Marketplace.tsx:1061
-- `not-api-reference: /api/marketplace/beats${params.toString() ? ` — client/src/pages/Marketplace.tsx:1074
+- `query-key-custom-fn: /api/marketplace/producers` — client/src/pages/Marketplace.tsx:468
+- `not-api-reference: /api/storage/upload` — client/src/pages/Marketplace.tsx:756
+- `cache-key: /api/merch` — client/src/pages/Marketplace.tsx:903
+- `cache-key: /api/merch/stats` — client/src/pages/Marketplace.tsx:904
+- `cache-key: /api/merch` — client/src/pages/Marketplace.tsx:914
+- `cache-key: /api/marketplace/my-beats` — client/src/pages/Marketplace.tsx:1058
+- `cache-key: /api/marketplace/beats` — client/src/pages/Marketplace.tsx:1072
+- `query-key-custom-fn: /api/marketplace/beats` — client/src/pages/Marketplace.tsx:1089
+- `not-api-reference: /api/marketplace/beats${params.toString() ? ` — client/src/pages/Marketplace.tsx:1102
 - `cache-key: /api/merch` — client/src/pages/MerchStore.tsx:137
 - `cache-key: /api/merch/stats` — client/src/pages/MerchStore.tsx:138
 - `cache-key: /api/merch` — client/src/pages/MerchStore.tsx:167
@@ -1673,9 +1675,9 @@ None.
 - `cache-key: /api/billing/subscription` — client/src/pages/Settings.tsx:676
 - `cache-key: /api/billing/history` — client/src/pages/Settings.tsx:678
 - `cache-key: /api/auth/sessions` — client/src/pages/Settings.tsx:764
-- `not-api-reference: /api/auth/google` — client/src/pages/Settings.tsx:1237
-- `cache-key: /api/billing/subscription` — client/src/pages/Settings.tsx:1444
-- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:2167
+- `not-api-reference: /api/auth/google` — client/src/pages/Settings.tsx:1244
+- `cache-key: /api/billing/subscription` — client/src/pages/Settings.tsx:1451
+- `cache-key: /api/auth/me` — client/src/pages/Settings.tsx:2174
 - `query-key-custom-fn: /api/shows/setlists` — client/src/pages/ShowPage.tsx:207
 - `cache-key: /api/shows` — client/src/pages/Shows.tsx:136
 - `cache-key: /api/shows/stats` — client/src/pages/Shows.tsx:137
@@ -1770,11 +1772,11 @@ None.
 - `cache-key: /api/security/behavioral-alerts` — client/src/pages/admin/SecurityDashboard.tsx:173
 - `cache-key: /api/security/anomaly-detection` — client/src/pages/admin/SecurityDashboard.tsx:176
 - `cache-key: /api/security/pentest-results` — client/src/pages/admin/SecurityDashboard.tsx:179
-- `not-api-reference: /api/training/status` — client/src/pages/admin/TrainingDashboard.tsx:226
-- `not-api-reference: /api/training/datasets` — client/src/pages/admin/TrainingDashboard.tsx:243
-- `not-api-reference: /api/training/schedule` — client/src/pages/admin/TrainingDashboard.tsx:256
-- `not-api-reference: /api/training/start` — client/src/pages/admin/TrainingDashboard.tsx:263
-- `cache-key: /api/training/stop` — client/src/pages/admin/TrainingDashboard.tsx:271
+- `not-api-reference: /api/training/status` — client/src/pages/admin/TrainingDashboard.tsx:224
+- `not-api-reference: /api/training/datasets` — client/src/pages/admin/TrainingDashboard.tsx:241
+- `not-api-reference: /api/training/schedule` — client/src/pages/admin/TrainingDashboard.tsx:254
+- `not-api-reference: /api/training/start` — client/src/pages/admin/TrainingDashboard.tsx:261
+- `cache-key: /api/training/stop` — client/src/pages/admin/TrainingDashboard.tsx:269
 - `query-key-custom-fn: /api/ai/analytics/insights` — client/src/pages/analytics/AIDashboard.tsx:48
 - `query-key-custom-fn: /api/analytics/audience` — client/src/pages/analytics/AudienceInsights.tsx:167
 - `query-key-custom-fn: /api/analytics-alerts/cross-platform-comparison` — client/src/pages/analytics/CrossPlatformComparison.tsx:240
@@ -1786,160 +1788,160 @@ None.
 
 ## External URLs and SPA paths
 
-External URL references: 43; SPA path references: 246. These are intentionally not compared with Express API routes.
+External URL references: 41; SPA path references: 246. These are intentionally not compared with Express API routes.
 
 ## Mounted router prefixes
 
-- `server/monitoring.ts` → `/` (server/index.ts:124)
-- `server/middleware/cloudflare.ts` → `/` (server/index.ts:180)
-- `server/safety/index.ts` → `/` (server/index.ts:196)
-- `server/middleware/csrf.ts` → `/` (server/index.ts:774, server/index.ts:775)
-- `server/middleware/multiTenantRouter.ts` → `/` (server/index.ts:1065)
-- `server/routes/seo.ts` → `/` (server/index.ts:1268, server/routes.ts:7545)
-- `server/middleware/auth.ts` → `/` (server/routes/adaptivePricing.ts:18, server/routes/admin/auditLog.ts:20, server/routes/admin/beatMoneyLoop.ts:18, server/routes/admin/beatMoneyLoop.ts:19, server/routes/admin/contentSampler.ts:16, server/routes/admin/index.ts:21, server/routes/admin/metrics.ts:23, server/routes/analytics-internal.ts:14, server/routes/apiKeys.ts:16, server/routes/arIntelligence.ts:30, server/routes/artistProfiles.ts:42, server/routes/audit.ts:26, server/routes/autopilotPreferences.ts:12, server/routes/connectedAccounts.ts:12, server/routes/content-analysis.ts:148, server/routes/executiveDashboard.ts:12, server/routes/executiveDashboard.ts:17, server/routes/executiveDashboard.ts:144, server/routes/fanHub.ts:14, server/routes/fanMemberships.ts:32, server/routes/kyc.ts:21, server/routes/kyc.ts:25, server/routes/logs.ts:21, server/routes/monitoring.ts:12, server/routes/monitoring.ts:13, server/routes/notifications.ts:16, server/routes/outreach.ts:27, server/routes/payouts.ts:70, server/routes/playlistPitching.ts:14, server/routes/publishing.ts:59, server/routes/recoveryCodes.ts:11, server/routes/security.ts:10, server/routes/simulation.ts:24, server/routes/testing.ts:71, server/routes/webhooks-admin.ts:18)
+- `server/monitoring.ts` → `/` (server/index.ts:125)
+- `server/middleware/cloudflare.ts` → `/` (server/index.ts:181)
+- `server/safety/index.ts` → `/` (server/index.ts:197)
+- `server/middleware/csrf.ts` → `/` (server/index.ts:777, server/index.ts:778)
+- `server/middleware/multiTenantRouter.ts` → `/` (server/index.ts:1053)
+- `server/routes/seo.ts` → `/` (server/index.ts:1256, server/routes.ts:7548)
+- `server/middleware/auth.ts` → `/` (server/routes/adaptivePricing.ts:18, server/routes/admin/auditLog.ts:20, server/routes/admin/beatMoneyLoop.ts:18, server/routes/admin/beatMoneyLoop.ts:19, server/routes/admin/contentSampler.ts:16, server/routes/admin/index.ts:21, server/routes/admin/metrics.ts:23, server/routes/analytics-internal.ts:14, server/routes/apiKeys.ts:16, server/routes/arIntelligence.ts:30, server/routes/artistProfiles.ts:42, server/routes/audit.ts:26, server/routes/autopilotPreferences.ts:12, server/routes/connectedAccounts.ts:12, server/routes/content-analysis.ts:200, server/routes/executiveDashboard.ts:12, server/routes/executiveDashboard.ts:17, server/routes/executiveDashboard.ts:144, server/routes/fanHub.ts:14, server/routes/fanMemberships.ts:32, server/routes/kyc.ts:21, server/routes/kyc.ts:25, server/routes/logs.ts:21, server/routes/monitoring.ts:13, server/routes/monitoring.ts:14, server/routes/notifications.ts:16, server/routes/outreach.ts:27, server/routes/payouts.ts:70, server/routes/playlistPitching.ts:14, server/routes/publishing.ts:59, server/routes/recoveryCodes.ts:11, server/routes/security.ts:10, server/routes/simulation.ts:24, server/routes/testing.ts:71, server/routes/webhooks-admin.ts:18)
 - `server/middleware/rateLimiter.ts` → `/` (server/routes/ai.ts:24, server/routes/billing.ts:44, server/routes/payouts.ts:71, server/routes/socialAI.ts:71)
 - `server/middleware/requestId.ts` → `/` (server/routes.ts:264)
 - `server/auth.ts` → `/api` (server/routes.ts:276)
 - `server/middleware/globalRateLimiter.ts` → `/api/ai` (server/routes.ts:287, server/routes.ts:288, server/routes.ts:289, server/routes.ts:290, server/routes.ts:291)
-- `server/routes/accessibility.ts` → `/api/user` (server/routes.ts:5253)
-- `server/routes/internalProxy.ts` → `/api/ai-service` (server/routes.ts:7031, server/routes.ts:7032)
-- `server/routes/admin.ts` → `/api/admin` (server/routes.ts:7034)
-- `server/routes/distribution.ts` → `/api/distribution` (server/routes.ts:7035)
-- `server/routes/training.ts` → `/api/training` (server/routes.ts:7037)
-- `server/routes/maxcore.ts` → `/api/maxcore` (server/routes.ts:7040)
-- `server/routes/paid.ts` → `/api/paid` (server/routes.ts:7041)
-- `server/routes/artistProgress.ts` → `/api/artist-progress` (server/routes.ts:7042)
-- `server/routes/artistProfiles.ts` → `/api/artist-profiles` (server/routes.ts:7043)
-- `server/routes/revenueForecast.ts` → `/api/revenue-forecast` (server/routes.ts:7044)
-- `server/routes/files.ts` → `/api/files` (server/routes.ts:7045)
-- `server/routes/preferences.ts` → `/api/preferences` (server/routes.ts:7046)
-- `server/routes/shortcuts.ts` → `/api/shortcuts` (server/routes.ts:7047)
-- `server/routes/undo.ts` → `/api/undo` (server/routes.ts:7048)
-- `server/routes/batch.ts` → `/api/batch` (server/routes.ts:7049)
-- `server/routes/socialMedia.ts` → `/api/social` (server/routes.ts:7118)
-- `server/infrastructure/index.ts` → `/api/infrastructure` (server/routes.ts:8359)
-- `server/routes/unifiedContent.ts` → `/api/content/generate-unified` (server/routes.ts:8387)
-- `server/routes/creativeModel.ts` → `/api/content/creative-model` (server/routes.ts:8399)
-- `server/routes/collaboration.ts` → `/api/collaboration` (server/routes.ts:8411)
-- `server/routes/musicWorkflowAutomations.ts` → `/api/music-workflow-automations` (server/routes.ts:8424)
-- `server/routes/fabric.ts` → `/api/fabric` (server/routes.ts:8434)
-- `server/routes/labelSubmissions.ts` → `/api/label-submissions` (server/routes.ts:8446)
-- `server/routes/radioPitches.ts` → `/api/radio-pitches` (server/routes.ts:8457)
-- `server/routes/venues.ts` → `/api/venues` (server/routes.ts:8467)
-- `server/routes/projectBudgets.ts` → `/api/project-budgets` (server/routes.ts:8478)
-- `server/routes/sampleClearances.ts` → `/api/sample-clearances` (server/routes.ts:8490)
-- `server/routes/musicVideos.ts` → `/api/music-videos` (server/routes.ts:8500)
-- `server/routes/songwriting.ts` → `/api/songwriting` (server/routes.ts:8510)
-- `server/routes/fanCampaigns.ts` → `/api/fan-campaigns` (server/routes.ts:8521)
-- `server/routes/customWorkflows.ts` → `/api/custom-workflows` (server/routes.ts:8532)
-- `server/routes/assistant.ts` → `/api/assistant` (server/routes.ts:8542)
-- `server/routes/maxcoreProxy.ts` → `/` (server/routes.ts:8557)
-- `server/routes/bootstrap.ts` → `/api/bootstrap` (server/routes.ts:7138)
-- `server/routes/achievements.ts` → `/api/achievements` (server/routes.ts:7144)
-- `server/routes/onboarding.ts` → `/api/onboarding` (server/routes.ts:7149)
-- `server/routes/personalization.ts` → `/api/personalization` (server/routes.ts:7154)
-- `server/routes/releaseCountdown.ts` → `/api/countdowns` (server/routes.ts:7159)
-- `server/routes/storefront.ts` → `/api/storefront` (server/routes.ts:7164)
-- `server/routes/storefrontDomains.ts` → `/api/storefront-domains` (server/routes.ts:7169)
-- `server/routes/dns.ts` → `/api/dns` (server/routes.ts:7173)
-- `server/routes/dnsManager.ts` → `/api/dns-manager` (server/routes.ts:7175)
-- `server/routes/domainRegistrar.ts` → `/api/domain-registrar` (server/routes.ts:7180)
-- `server/routes/hns.ts` → `/api/hns` (server/routes.ts:7184)
-- `server/routes/analytics-internal.ts` → `/api/analytics` (server/routes.ts:7186)
-- `server/routes/status.ts` → `/api/status` (server/routes.ts:7191)
-- `server/routes/monitoring.ts` → `/api/monitoring` (server/routes.ts:7196)
-- `server/routes/dmca.ts` → `/api/dmca` (server/routes.ts:7200)
-- `server/routes/growth.ts` → `/api/growth` (server/routes.ts:7202)
-- `server/routes/backup.ts` → `/api/backup` (server/routes.ts:7207)
-- `server/routes/retention.ts` → `/api/retention` (server/routes.ts:7212)
-- `server/routes/billing.ts` → `/api/billing` (server/routes.ts:7219)
-- `server/routes/payouts.ts` → `/api/payouts` (server/routes.ts:7224)
-- `server/routes/invoices.ts` → `/api/invoices` (server/routes.ts:7229)
-- `server/routes/kyc.ts` → `/api/kyc` (server/routes.ts:7233)
-- `server/routes/socialOAuth.ts` → `/api/social` (server/routes.ts:7237)
-- `server/routes/socialApprovals.ts` → `/api/social/approvals` (server/routes.ts:7243)
-- `server/routes/socialBulk.ts` → `/api/social/bulk` (server/routes.ts:7248)
-- `server/routes/socialAI.ts` → `/api/social` (server/routes.ts:7253)
-- `server/routes/multimodal.ts` → `/api/multimodal` (server/routes.ts:7258)
-- `server/routes/organic.ts` → `/api/organic` (server/routes.ts:7263)
-- `server/routes/advertising.ts` → `/api/advertising` (server/routes.ts:7268)
-- `server/routes/advertisingAutopilot.ts` → `/api/advertising/autopilot` (server/routes.ts:7273)
-- `server/routes/autopilot.ts` → `/api/autopilot` (server/routes.ts:7278)
-- `server/routes/dualAutopilot.ts` → `/api/autopilot` (server/routes.ts:7283)
-- `server/routes/autopilot-coordinator.ts` → `/api/autopilot/coordinator` (server/routes.ts:7288)
-- `server/routes/autopilot-learning.ts` → `/api/autopilot/learning` (server/routes.ts:7293)
-- `server/routes/autonomousSocial.ts` → `/api/auto/social` (server/routes.ts:7298)
-- `server/routes/autoUpdates.ts` → `/api/auto-updates` (server/routes.ts:7303)
-- `server/routes/downloads.ts` → `/api/downloads` (server/routes.ts:7308)
-- `server/routes/platformSync.ts` → `/api/platform-sync` (server/routes.ts:7313)
-- `server/routes/autopilotPreferences.ts` → `/api/autopilot/preferences` (server/routes.ts:7318)
-- `server/routes/studio.ts` → `/api/studio` (server/routes.ts:7325)
-- `server/routes/studioComping.ts` → `/api/studio` (server/routes.ts:7330)
-- `server/routes/studioMarkers.ts` → `/api/studio` (server/routes.ts:7335)
-- `server/routes/studioPlugins.ts` → `/api/studio/plugins` (server/routes.ts:7340)
-- `server/routes/studioStems.ts` → `/api/studio` (server/routes.ts:7345)
-- `server/routes/studioWarping.ts` → `/api/studio/warping` (server/routes.ts:7350)
-- `server/routes/studioGeneration.ts` → `/api/studio/generation` (server/routes.ts:7355)
-- `server/routes/studioMidi.ts` → `/api/studio` (server/routes.ts:7360)
-- `server/routes/vstBridge.ts` → `/api/studio/vst` (server/routes.ts:7365)
-- `server/routes/audioAnalysis.ts` → `/api/audio-analysis` (server/routes.ts:7370)
-- `server/routes/audio-processing.ts` → `/api/audio-processing` (server/routes.ts:7375)
-- `server/routes/promotionalTools.ts` → `/api/distribution/promo` (server/routes.ts:7380)
-- `server/routes/offline.ts` → `/api/offline` (server/routes.ts:7387)
-- `server/routes/sync.ts` → `/api/sync` (server/routes.ts:7391)
-- `server/routes/workspace.ts` → `/api/workspace` (server/routes.ts:7395)
-- `server/routes/developerApi.ts` → `/api/developer` (server/routes.ts:7400)
-- `server/routes/content-analysis.ts` → `/api/content-analysis` (server/routes.ts:7405)
-- `server/routes/collaborations.ts` → `/api/collaborations` (server/routes.ts:7412)
-- `server/routes/helpDesk.ts` → `/api/helpdesk` (server/routes.ts:7419)
-- `server/routes/support.ts` → `/api/support` (server/routes.ts:7424)
-- `server/routes/executiveDashboard.ts` → `/api/executive` (server/routes.ts:7431)
-- `server/routes/admin/index.ts` → `/api/admin` (server/routes.ts:7436)
-- `server/routes/admin/metrics.ts` → `/api/admin/metrics` (server/routes.ts:7441)
-- `server/routes/admin/beatMoneyLoop.ts` → `/api/admin/beat-money-loop` (server/routes.ts:7446)
-- `server/routes/admin/auditLog.ts` → `/api/admin/audit-log` (server/routes.ts:7451)
-- `server/routes/admin/contentSampler.ts` → `/api/admin/content-sampler` (server/routes.ts:7456)
-- `server/routes/audit.ts` → `/api/audit` (server/routes.ts:7461)
-- `server/routes/testing.ts` → `/api/testing` (server/routes.ts:7466)
-- `server/routes/webhooks-admin.ts` → `/api/admin/webhooks` (server/routes.ts:7471)
-- `server/routes/logs.ts` → `/api/logs` (server/routes.ts:7475)
-- `server/routes/api/v1/analytics.ts` → `/api/v1/analytics` (server/routes.ts:7479)
-- `server/routes/api/certifiedAnalytics.ts` → `/api/certified-analytics` (server/routes.ts:7484)
-- `server/routes/api/analyticsAlerts.ts` → `/api/analytics-alerts` (server/routes.ts:7489)
-- `server/routes/webhooks/sendgrid.ts` → `/webhooks/sendgrid` (server/routes.ts:7496)
-- `server/routes/webhooks/stripe.ts` → `/api/webhooks/stripe` (server/routes.ts:7501)
-- `server/routes/reliability-endpoints.ts` → `/api/reliability` (server/routes.ts:7508)
-- `server/routes/emailPreferences.ts` → `/` (server/routes.ts:7515)
-- `server/routes/simulation.ts` → `/api/simulation` (server/routes.ts:7522)
-- `server/routes/killSwitch.ts` → `/api/kill-switch` (server/routes.ts:7529)
-- `server/routes/paymentBypass.ts` → `/api/admin/payment-bypass` (server/routes.ts:7534)
-- `server/routes/dnsNodeLocalStatus.ts` → `/api/admin/dns-node-local` (server/routes.ts:7539)
-- `server/routes/selfHealingApi.ts` → `/api/security/self-healing` (server/routes.ts:7549)
-- `server/routes/security.ts` → `/api/security` (server/routes.ts:7556)
-- `server/routes/marketplace.ts` → `/api/marketplace` (server/routes.ts:7563)
-- `server/routes/adaptivePricing.ts` → `/api/adaptive-pricing` (server/routes.ts:7570)
-- `server/routes/search.ts` → `/api/search` (server/routes.ts:7577)
-- `server/routes/contracts.ts` → `/api/contracts` (server/routes.ts:7584)
-- `server/routes/ai.ts` → `/api/ai` (server/routes.ts:7590)
-- `server/routes/careerCoach.ts` → `/api/career-coach` (server/routes.ts:7594)
-- `server/routes/arIntelligence.ts` → `/api/ar-intelligence` (server/routes.ts:7601)
-- `server/routes/outreach.ts` → `/api/outreach` (server/routes.ts:7608)
-- `server/routes/apiKeys.ts` → `/api/auth/api-keys` (server/routes.ts:7615)
-- `server/routes/recoveryCodes.ts` → `/api/auth/recovery-codes` (server/routes.ts:7622)
-- `server/routes/connectedAccounts.ts` → `/api/auth/connected-accounts` (server/routes.ts:7629)
-- `server/routes/auth.ts` → `/api/auth` (server/routes.ts:7635)
-- `server/routes/fanHub.ts` → `/api/fan-hub` (server/routes.ts:7639)
-- `server/routes/fanMemberships.ts` → `/api/fan-memberships` (server/routes.ts:7646)
-- `server/routes/pressKit.ts` → `/api/press-kit` (server/routes.ts:7653)
-- `server/routes/playlistPitching.ts` → `/api/playlist-pitching` (server/routes.ts:7660)
-- `server/routes/shows.ts` → `/api/shows` (server/routes.ts:7667)
-- `server/routes/merch.ts` → `/api/merch` (server/routes.ts:7674)
-- `server/routes/syncLicensing.ts` → `/api/sync-licensing` (server/routes.ts:7681)
-- `server/routes/publishing.ts` → `/api/publishing` (server/routes.ts:7688)
-- `server/routes/uploads.ts` → `/api/uploads` (server/routes.ts:7695)
-- `server/routes/storage.ts` → `/api/storage` (server/routes.ts:7702)
-- `server/routes/hybridStorage.ts` → `/api/hybrid-storage` (server/routes.ts:7709)
-- `server/routes/export.ts` → `/api/export` (server/routes.ts:7716)
+- `server/routes/accessibility.ts` → `/api/user` (server/routes.ts:5250)
+- `server/routes/internalProxy.ts` → `/api/ai-service` (server/routes.ts:7034, server/routes.ts:7035)
+- `server/routes/admin.ts` → `/api/admin` (server/routes.ts:7037)
+- `server/routes/distribution.ts` → `/api/distribution` (server/routes.ts:7038)
+- `server/routes/training.ts` → `/api/training` (server/routes.ts:7040)
+- `server/routes/maxcore.ts` → `/api/maxcore` (server/routes.ts:7043)
+- `server/routes/paid.ts` → `/api/paid` (server/routes.ts:7044)
+- `server/routes/artistProgress.ts` → `/api/artist-progress` (server/routes.ts:7045)
+- `server/routes/artistProfiles.ts` → `/api/artist-profiles` (server/routes.ts:7046)
+- `server/routes/revenueForecast.ts` → `/api/revenue-forecast` (server/routes.ts:7047)
+- `server/routes/files.ts` → `/api/files` (server/routes.ts:7048)
+- `server/routes/preferences.ts` → `/api/preferences` (server/routes.ts:7049)
+- `server/routes/shortcuts.ts` → `/api/shortcuts` (server/routes.ts:7050)
+- `server/routes/undo.ts` → `/api/undo` (server/routes.ts:7051)
+- `server/routes/batch.ts` → `/api/batch` (server/routes.ts:7052)
+- `server/routes/socialMedia.ts` → `/api/social` (server/routes.ts:7121)
+- `server/infrastructure/index.ts` → `/api/infrastructure` (server/routes.ts:8362)
+- `server/routes/unifiedContent.ts` → `/api/content/generate-unified` (server/routes.ts:8390)
+- `server/routes/creativeModel.ts` → `/api/content/creative-model` (server/routes.ts:8402)
+- `server/routes/collaboration.ts` → `/api/collaboration` (server/routes.ts:8414)
+- `server/routes/musicWorkflowAutomations.ts` → `/api/music-workflow-automations` (server/routes.ts:8427)
+- `server/routes/fabric.ts` → `/api/fabric` (server/routes.ts:8437)
+- `server/routes/labelSubmissions.ts` → `/api/label-submissions` (server/routes.ts:8449)
+- `server/routes/radioPitches.ts` → `/api/radio-pitches` (server/routes.ts:8460)
+- `server/routes/venues.ts` → `/api/venues` (server/routes.ts:8470)
+- `server/routes/projectBudgets.ts` → `/api/project-budgets` (server/routes.ts:8481)
+- `server/routes/sampleClearances.ts` → `/api/sample-clearances` (server/routes.ts:8493)
+- `server/routes/musicVideos.ts` → `/api/music-videos` (server/routes.ts:8503)
+- `server/routes/songwriting.ts` → `/api/songwriting` (server/routes.ts:8513)
+- `server/routes/fanCampaigns.ts` → `/api/fan-campaigns` (server/routes.ts:8524)
+- `server/routes/customWorkflows.ts` → `/api/custom-workflows` (server/routes.ts:8535)
+- `server/routes/assistant.ts` → `/api/assistant` (server/routes.ts:8545)
+- `server/routes/maxcoreProxy.ts` → `/` (server/routes.ts:8560)
+- `server/routes/bootstrap.ts` → `/api/bootstrap` (server/routes.ts:7141)
+- `server/routes/achievements.ts` → `/api/achievements` (server/routes.ts:7147)
+- `server/routes/onboarding.ts` → `/api/onboarding` (server/routes.ts:7152)
+- `server/routes/personalization.ts` → `/api/personalization` (server/routes.ts:7157)
+- `server/routes/releaseCountdown.ts` → `/api/countdowns` (server/routes.ts:7162)
+- `server/routes/storefront.ts` → `/api/storefront` (server/routes.ts:7167)
+- `server/routes/storefrontDomains.ts` → `/api/storefront-domains` (server/routes.ts:7172)
+- `server/routes/dns.ts` → `/api/dns` (server/routes.ts:7176)
+- `server/routes/dnsManager.ts` → `/api/dns-manager` (server/routes.ts:7178)
+- `server/routes/domainRegistrar.ts` → `/api/domain-registrar` (server/routes.ts:7183)
+- `server/routes/hns.ts` → `/api/hns` (server/routes.ts:7187)
+- `server/routes/analytics-internal.ts` → `/api/analytics` (server/routes.ts:7189)
+- `server/routes/status.ts` → `/api/status` (server/routes.ts:7194)
+- `server/routes/monitoring.ts` → `/api/monitoring` (server/routes.ts:7199)
+- `server/routes/dmca.ts` → `/api/dmca` (server/routes.ts:7203)
+- `server/routes/growth.ts` → `/api/growth` (server/routes.ts:7205)
+- `server/routes/backup.ts` → `/api/backup` (server/routes.ts:7210)
+- `server/routes/retention.ts` → `/api/retention` (server/routes.ts:7215)
+- `server/routes/billing.ts` → `/api/billing` (server/routes.ts:7222)
+- `server/routes/payouts.ts` → `/api/payouts` (server/routes.ts:7227)
+- `server/routes/invoices.ts` → `/api/invoices` (server/routes.ts:7232)
+- `server/routes/kyc.ts` → `/api/kyc` (server/routes.ts:7236)
+- `server/routes/socialOAuth.ts` → `/api/social` (server/routes.ts:7240)
+- `server/routes/socialApprovals.ts` → `/api/social/approvals` (server/routes.ts:7246)
+- `server/routes/socialBulk.ts` → `/api/social/bulk` (server/routes.ts:7251)
+- `server/routes/socialAI.ts` → `/api/social` (server/routes.ts:7256)
+- `server/routes/multimodal.ts` → `/api/multimodal` (server/routes.ts:7261)
+- `server/routes/organic.ts` → `/api/organic` (server/routes.ts:7266)
+- `server/routes/advertising.ts` → `/api/advertising` (server/routes.ts:7271)
+- `server/routes/advertisingAutopilot.ts` → `/api/advertising/autopilot` (server/routes.ts:7276)
+- `server/routes/autopilot.ts` → `/api/autopilot` (server/routes.ts:7281)
+- `server/routes/dualAutopilot.ts` → `/api/autopilot` (server/routes.ts:7286)
+- `server/routes/autopilot-coordinator.ts` → `/api/autopilot/coordinator` (server/routes.ts:7291)
+- `server/routes/autopilot-learning.ts` → `/api/autopilot/learning` (server/routes.ts:7296)
+- `server/routes/autonomousSocial.ts` → `/api/auto/social` (server/routes.ts:7301)
+- `server/routes/autoUpdates.ts` → `/api/auto-updates` (server/routes.ts:7306)
+- `server/routes/downloads.ts` → `/api/downloads` (server/routes.ts:7311)
+- `server/routes/platformSync.ts` → `/api/platform-sync` (server/routes.ts:7316)
+- `server/routes/autopilotPreferences.ts` → `/api/autopilot/preferences` (server/routes.ts:7321)
+- `server/routes/studio.ts` → `/api/studio` (server/routes.ts:7328)
+- `server/routes/studioComping.ts` → `/api/studio` (server/routes.ts:7333)
+- `server/routes/studioMarkers.ts` → `/api/studio` (server/routes.ts:7338)
+- `server/routes/studioPlugins.ts` → `/api/studio/plugins` (server/routes.ts:7343)
+- `server/routes/studioStems.ts` → `/api/studio` (server/routes.ts:7348)
+- `server/routes/studioWarping.ts` → `/api/studio/warping` (server/routes.ts:7353)
+- `server/routes/studioGeneration.ts` → `/api/studio/generation` (server/routes.ts:7358)
+- `server/routes/studioMidi.ts` → `/api/studio` (server/routes.ts:7363)
+- `server/routes/vstBridge.ts` → `/api/studio/vst` (server/routes.ts:7368)
+- `server/routes/audioAnalysis.ts` → `/api/audio-analysis` (server/routes.ts:7373)
+- `server/routes/audio-processing.ts` → `/api/audio-processing` (server/routes.ts:7378)
+- `server/routes/promotionalTools.ts` → `/api/distribution/promo` (server/routes.ts:7383)
+- `server/routes/offline.ts` → `/api/offline` (server/routes.ts:7390)
+- `server/routes/sync.ts` → `/api/sync` (server/routes.ts:7394)
+- `server/routes/workspace.ts` → `/api/workspace` (server/routes.ts:7398)
+- `server/routes/developerApi.ts` → `/api/developer` (server/routes.ts:7403)
+- `server/routes/content-analysis.ts` → `/api/content-analysis` (server/routes.ts:7408)
+- `server/routes/collaborations.ts` → `/api/collaborations` (server/routes.ts:7415)
+- `server/routes/helpDesk.ts` → `/api/helpdesk` (server/routes.ts:7422)
+- `server/routes/support.ts` → `/api/support` (server/routes.ts:7427)
+- `server/routes/executiveDashboard.ts` → `/api/executive` (server/routes.ts:7434)
+- `server/routes/admin/index.ts` → `/api/admin` (server/routes.ts:7439)
+- `server/routes/admin/metrics.ts` → `/api/admin/metrics` (server/routes.ts:7444)
+- `server/routes/admin/beatMoneyLoop.ts` → `/api/admin/beat-money-loop` (server/routes.ts:7449)
+- `server/routes/admin/auditLog.ts` → `/api/admin/audit-log` (server/routes.ts:7454)
+- `server/routes/admin/contentSampler.ts` → `/api/admin/content-sampler` (server/routes.ts:7459)
+- `server/routes/audit.ts` → `/api/audit` (server/routes.ts:7464)
+- `server/routes/testing.ts` → `/api/testing` (server/routes.ts:7469)
+- `server/routes/webhooks-admin.ts` → `/api/admin/webhooks` (server/routes.ts:7474)
+- `server/routes/logs.ts` → `/api/logs` (server/routes.ts:7478)
+- `server/routes/api/v1/analytics.ts` → `/api/v1/analytics` (server/routes.ts:7482)
+- `server/routes/api/certifiedAnalytics.ts` → `/api/certified-analytics` (server/routes.ts:7487)
+- `server/routes/api/analyticsAlerts.ts` → `/api/analytics-alerts` (server/routes.ts:7492)
+- `server/routes/webhooks/sendgrid.ts` → `/webhooks/sendgrid` (server/routes.ts:7499)
+- `server/routes/webhooks/stripe.ts` → `/api/webhooks/stripe` (server/routes.ts:7504)
+- `server/routes/reliability-endpoints.ts` → `/api/reliability` (server/routes.ts:7511)
+- `server/routes/emailPreferences.ts` → `/` (server/routes.ts:7518)
+- `server/routes/simulation.ts` → `/api/simulation` (server/routes.ts:7525)
+- `server/routes/killSwitch.ts` → `/api/kill-switch` (server/routes.ts:7532)
+- `server/routes/paymentBypass.ts` → `/api/admin/payment-bypass` (server/routes.ts:7537)
+- `server/routes/dnsNodeLocalStatus.ts` → `/api/admin/dns-node-local` (server/routes.ts:7542)
+- `server/routes/selfHealingApi.ts` → `/api/security/self-healing` (server/routes.ts:7552)
+- `server/routes/security.ts` → `/api/security` (server/routes.ts:7559)
+- `server/routes/marketplace.ts` → `/api/marketplace` (server/routes.ts:7566)
+- `server/routes/adaptivePricing.ts` → `/api/adaptive-pricing` (server/routes.ts:7573)
+- `server/routes/search.ts` → `/api/search` (server/routes.ts:7580)
+- `server/routes/contracts.ts` → `/api/contracts` (server/routes.ts:7587)
+- `server/routes/ai.ts` → `/api/ai` (server/routes.ts:7593)
+- `server/routes/careerCoach.ts` → `/api/career-coach` (server/routes.ts:7597)
+- `server/routes/arIntelligence.ts` → `/api/ar-intelligence` (server/routes.ts:7604)
+- `server/routes/outreach.ts` → `/api/outreach` (server/routes.ts:7611)
+- `server/routes/apiKeys.ts` → `/api/auth/api-keys` (server/routes.ts:7618)
+- `server/routes/recoveryCodes.ts` → `/api/auth/recovery-codes` (server/routes.ts:7625)
+- `server/routes/connectedAccounts.ts` → `/api/auth/connected-accounts` (server/routes.ts:7632)
+- `server/routes/auth.ts` → `/api/auth` (server/routes.ts:7638)
+- `server/routes/fanHub.ts` → `/api/fan-hub` (server/routes.ts:7642)
+- `server/routes/fanMemberships.ts` → `/api/fan-memberships` (server/routes.ts:7649)
+- `server/routes/pressKit.ts` → `/api/press-kit` (server/routes.ts:7656)
+- `server/routes/playlistPitching.ts` → `/api/playlist-pitching` (server/routes.ts:7663)
+- `server/routes/shows.ts` → `/api/shows` (server/routes.ts:7670)
+- `server/routes/merch.ts` → `/api/merch` (server/routes.ts:7677)
+- `server/routes/syncLicensing.ts` → `/api/sync-licensing` (server/routes.ts:7684)
+- `server/routes/publishing.ts` → `/api/publishing` (server/routes.ts:7691)
+- `server/routes/uploads.ts` → `/api/uploads` (server/routes.ts:7698)
+- `server/routes/storage.ts` → `/api/storage` (server/routes.ts:7705)
+- `server/routes/hybridStorage.ts` → `/api/hybrid-storage` (server/routes.ts:7712)
+- `server/routes/export.ts` → `/api/export` (server/routes.ts:7719)
 - `server/middleware/selfHealingMiddleware.ts` → `/` (server/safety/mandatoryMiddleware.ts:503)
 
 ## Findings

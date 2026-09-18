@@ -17,19 +17,6 @@ import {
   type UrlContentBrief,
 } from "./services/advancedUrlParser.js";
 
-// ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
-function seededIndex(seed: string, length: number): number {
-  if (length <= 0) return 0;
-  let h = 2166136261;
-  for (let i = 0; i < seed?.length; i++) {
-    h ^= seed?.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-    h >>>= 0;
-  }
-  return h % length;
-}
-// ────────────────────────────────────────────────────────────────────────────
-
 interface AutonomousConfig {
   enabled: boolean;
   minPostsPerDay: number;
@@ -567,7 +554,6 @@ export class AutonomousAutopilot extends EventEmitter {
   // parse/SSRF failure (falls back to topic-only).
   private async resolveUrlBrief(
     platform: string,
-    topic: string,
   ): Promise<UrlContentBrief | undefined> {
     const urls = this.config.sourceUrls;
     if (!urls || urls.length === 0) return undefined;
@@ -670,7 +656,7 @@ export class AutonomousAutopilot extends EventEmitter {
     // Optional advanced-URL-parser brief from configured source links. The
     // UCB1-selected params.topic is preserved for learning; the URL brief only
     // feeds generation. Undefined ⇒ unchanged topic-only behavior.
-    const urlBrief = await this.resolveUrlBrief(params.platform, params.topic);
+    const urlBrief = await this.resolveUrlBrief(params.platform);
 
     const advancedResult =
       await advancedSocialAIService?.generateAdvancedContent({

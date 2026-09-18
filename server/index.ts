@@ -324,7 +324,9 @@ app.use((req, res, next) => {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse && !isProductionEnv()) {
         const responseStr = serializeResponseForLog(capturedJsonResponse);
-        logLine += ` :: ${responseStr?.length > 500 ? responseStr?.substring(0, 500) + "...[truncated]" : responseStr}`;
+        if (responseStr !== undefined) {
+          logLine += ` :: ${responseStr.length > 500 ? responseStr.substring(0, 500) + "...[truncated]" : responseStr}`;
+        }
       }
 
       log(logLine);
