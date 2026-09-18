@@ -29,7 +29,7 @@ The native MaxCore analysis implementation and confirmed integration defects wer
 
 - These analyzers measure pixels, sampled frames, lexical features, and HTML structure. They are **not trained semantic object/action/language-understanding models**. No trained recognition checkpoint or held-out recognition benchmark was established.
 - Static route matches do not establish payload correctness, authorization, database effects, provider delivery, or component behavior.
-- Authenticated browser verification was blocked: the browser test environment had no login credentials, and one normal configured-account login attempt from the workspace returned HTTP 401. No bypass or password reset was used.
+- Authenticated browser verification remains blocked after receiving dedicated test credentials. Both the normal browser login and the workspace request returned HTTP 401. A read-only check found no existing account matching the supplied identifier, even after case/whitespace normalization. No credentials or hashes were printed; no bypass, password reset, or account change was used.
 - Authenticated cart reload, Studio preference hydration, analysis UI interactions, every role, and every dynamic request have not all been verified end to end.
 - No real payments, payouts, publishing, or third-party distribution operations were executed. Their production outcomes remain unverified.
 - Missing genuine prediction/planning capabilities still fail explicitly; neither type-check success nor native analysis creates those models.
