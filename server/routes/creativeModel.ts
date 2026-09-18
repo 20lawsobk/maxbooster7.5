@@ -34,7 +34,7 @@ function aiErrorStatus(error: unknown): number {
 
 const router = Router();
 
-function requireAuth(req: Request, res: Response): number | null {
+function requireAuth(req: Request, res: Response): string | null {
   const userId =
     (req.session as unknown as Record<string, unknown>)?.userId ??
     (req.user as Record<string, unknown>)?.id;
@@ -42,7 +42,7 @@ function requireAuth(req: Request, res: Response): number | null {
     res.status(401).json({ error: "Authentication required" });
     return null;
   }
-  return Number(userId);
+  return String(userId);
 }
 
 function parseBrief(body: Record<string, unknown>): CreativeBrief | string {

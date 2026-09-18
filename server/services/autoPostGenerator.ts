@@ -164,7 +164,7 @@ class AutoPostGenerator {
         logger.info(
           `[AutoPost] Quality gate: passed on attempt ${gateResult.passedOnAttempt}/${10}, ` +
             `tried ${gateResult.totalVariantsTried} variants, ` +
-            `score=${selected.scores.overall.toFixed(1)}, threshold=${gateResult.thresholdUsed}, ` +
+            `score=${selected.scores?.overall?.toFixed(1) ?? "unknown"}, threshold=${gateResult.thresholdUsed ?? "unknown"}, ` +
             `archived=${gateResult.storedKey ?? "no"}`,
         );
       }
@@ -213,7 +213,7 @@ class AutoPostGenerator {
       );
 
       logger.info(
-        `Generated enhanced content for ${userId}: score=${selected.scores.overall.toFixed(1)}, variants=${variants.length}`,
+        `Generated enhanced content for ${userId}: score=${selected.scores?.overall?.toFixed(1) ?? "unknown"}, variants=${variants.length}`,
       );
 
       return {
@@ -223,14 +223,18 @@ class AutoPostGenerator {
         mentions: [],
         mediaType,
         callToAction: selected.callToAction,
-        viralScore: selected.scores.engagement / 100,
-        expectedReach: Math.round(selected.scores.overall * 100),
-        expectedEngagement: selected.scores.engagement,
+        ...(selected.scores
+          ? {
+              viralScore: selected.scores.engagement / 100,
+              expectedReach: Math.round(selected.scores.overall * 100),
+              expectedEngagement: selected.scores.engagement,
+              qualityScores: selected.scores,
+            }
+          : {}),
         generatedBy: "quality_pipeline",
         platforms,
         optimalPostingTime: optimalTime,
         mediaGuidance,
-        qualityScores: selected.scores,
         variants,
         translations,
       };

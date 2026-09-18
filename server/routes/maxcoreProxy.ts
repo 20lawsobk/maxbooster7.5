@@ -35,6 +35,14 @@ const router = Router();
 // required before Max Booster supplies that trusted credential upstream.
 const ADMIN_PATH_SUFFIXES = [
   "/platform/model/reload",
+  "/training/start",
+  "/training/stop",
+  "/training/schedule",
+  "/training/continuous/start",
+  "/training/continuous/stop",
+  "/training/puller/pull",
+  "/training/puller/start",
+  "/training/puller/stop",
   "/training/start-from-storage",
 ];
 
@@ -46,15 +54,6 @@ function isBinary(contentType: string | null): boolean {
   if (!contentType) return false;
   const ct = contentType.toLowerCase();
   return BINARY_PREFIXES.some((p) => ct.startsWith(p));
-}
-
-function awarenessModeForPath(path: string): string | null {
-  const p = path.toLowerCase();
-  if (p.includes("/generate/image") || p.includes("/generate/content") || p.includes("/platform/social")) return "content";
-  if (p.includes("/generate/audio") || p.includes("/platform/audio-job") || p.includes("/audio")) return "music";
-  if (p.includes("/platform/video") || p.includes("/generate-video") || p.includes("/generate/video") || p.includes("/video/")) return "video_script";
-  if (p.includes("/optimize/ad") || p.includes("/predict/engagement") || p.includes("/platform/advertising")) return "ad_copy";
-  return null;
 }
 
 /**
@@ -83,59 +82,6 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  // Best-effort awareness injection: try multiple candidate module paths so
-  // this file doesn't hard-depend on a single layout. This never blocks the
-  // request for more than a short timeout (2s).
-  try {
-    const mode = awarenessModeForPath(req.originalUrl || req.path || "");
-    if (mode) {
-      const candidates = [
-        "../services/contentAwarenessService.js",
-        "../../awareness layer/ContentGenerationAwarenessService.js",
-        "../awareness layer/ContentGenerationAwarenessService.js",
-        "../../services/contentAwarenessService.js",
-      ];
-      let mod: any = null;
-      for (const p of candidates) {
-        try {
-          // dynamic import — path may or may not exist depending on workspace
-          // layout; swallow errors and continue to next candidate
-           
-          // Use import() instead of require to respect ESM
-          // @ts-ignore dynamic import
-          mod = await import(p);
-          if (mod) break;
-        } catch (e) {
-          // ignore and try next
-        }
-      }
-
-      const contentAwarenessService = mod?.contentAwarenessService || mod?.default?.contentAwarenessService || mod?.default;
-      if (contentAwarenessService && typeof contentAwarenessService.getContextForMode === "function") {
-        const ctx = await Promise.race([
-          contentAwarenessService.getContextForMode(mode),
-          new Promise((r) => setTimeout(() => r(null), 2000)),
-        ]);
-        if (ctx && (ctx as any).confidence > 0 && (ctx as any).contextString) {
-          if (req.method !== "GET" && req.method !== "HEAD" && req.method !== "DELETE") {
-            try {
-              // preserve existing body but attach awareness
-              if (req.body && typeof req.body === "object" && !Array.isArray(req.body)) {
-                (req as any).body = { ...(req.body as Record<string, unknown>), awareness: (ctx as any).contextString };
-              } else {
-                (req as any).body = { awareness: (ctx as any).contextString };
-              }
-            } catch (e) {
-              // ignore
-            }
-          }
-        }
-      }
-    }
-  } catch (e) {
-    logger.debug({ err: e }, "[MaxCoreProxy] awareness injection failed:");
-  }
-
   const targetUrl = `${origin}${req.originalUrl}`;
   const method = req.method.toUpperCase();
   const hasBody = method !== "GET" && method !== "HEAD" && method !== "DELETE";
@@ -144,6 +90,11 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
     ...getMaxcoreGenerationHeaders(),
     Accept: "application/json, */*",
   };
+  if (authUser?.id) {
+    // Internal trust-boundary header. MaxCore persists this identity in its
+    // durable job record and enforces it for every subsequent job operation.
+    headers["X-MaxCore-User-Id"] = authUser.id;
+  }
 
   const isAdminPath = ADMIN_PATH_SUFFIXES.some((s) =>
     req.originalUrl.startsWith(`/api${s}`),
@@ -204,7 +155,8 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
     res.status(upstream.status);
     if (contentType?.includes("application/json")) {
       try {
-        res.json(absolutizeMaxcoreMediaUrls(JSON.parse(text)));
+        const parsed = absolutizeMaxcoreMediaUrls(JSON.parse(text));
+        res.json(parsed);
         return;
       } catch {
         // fall through to raw send if body wasn't valid JSON
@@ -223,6 +175,55 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
       message,
       path: req.originalUrl,
     });
+  }
+}
+
+async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
+  const origin = getMaxcoreOrigin();
+  if (!origin) {
+    res.status(503).json({ error: "MaxCore not configured" });
+    return;
+  }
+  const userId = (req.user as { id?: string } | undefined)?.id;
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const contentType = String(req.headers["content-type"] || "").split(";", 1)[0].toLowerCase();
+  if (!contentType.startsWith("audio/")) {
+    res.status(415).json({ error: "Content-Type must be a supported audio type" });
+    return;
+  }
+  const declared = Number(req.headers["content-length"] || 0);
+  if (Number.isFinite(declared) && declared > 100 * 1024 * 1024) {
+    res.status(413).json({ error: "Audio upload exceeds size limit" });
+    return;
+  }
+  try {
+    const upstream = await fetch(`${origin}/api/audio/upload`, {
+      method: "POST",
+      headers: {
+        ...getMaxcoreGenerationHeaders(),
+        "Content-Type": contentType,
+        "X-MaxCore-User-Id": userId,
+      },
+      body: req as unknown as BodyInit,
+      duplex: "half",
+      signal: AbortSignal.timeout(GEN_TIMEOUT_MS),
+    } as RequestInit & { duplex: "half" });
+    const text = await upstream.text();
+    res.status(upstream.status);
+    try {
+      // Preserve the MaxCore-local /uploads URL: callers pass it back to
+      // analysis/video APIs; rewriting it to the browser media proxy would
+      // destroy the owner-scoped input contract.
+      res.json(JSON.parse(text));
+    } catch {
+      res.send(text);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(502).json({ error: "MaxCore audio upload failed", message });
   }
 }
 
@@ -292,6 +293,7 @@ async function proxyMaxcoreMedia(req: Request, res: Response): Promise<void> {
 /* ── Route registration (full paths; router mounted at "/") ───────────────── */
 
 router.get("/api/maxcore-media/*mediaPath", proxyMaxcoreMedia);
+router.post("/api/audio/upload", requireAuthOnly, proxyAudioUpload);
 
 // Content & media generation
 const POST_PATHS = [
@@ -302,7 +304,10 @@ const POST_PATHS = [
   "/api/generate/audio",
   "/api/generate-video",
   "/api/generate/video",
+  "/api/generate/campaign",
+  "/api/campaigns",
   "/api/video/generate-ai",
+  "/api/video/extend",
   "/api/platform/video/generate",
   "/api/platform/social/generate",
   "/api/platform/social/autopilot",
@@ -321,11 +326,23 @@ const POST_PATHS = [
   "/api/audio/analyze",
   "/api/safety/screen",
   "/api/infer/viral-score",
+  "/api/optimize/ad",
   "/api/predict/engagement",
+  "/api/audio/mastering-recommendation",
+  "/api/audio/mixing-recommendation",
   // Artist / brand storage
   "/api/storage/artist/:profileId",
   "/api/storage/artist/:profileId/releases",
   // Training / model management
+  "/api/train/feedback",
+  "/api/training/start",
+  "/api/training/stop",
+  "/api/training/schedule",
+  "/api/training/continuous/start",
+  "/api/training/continuous/stop",
+  "/api/training/puller/pull",
+  "/api/training/puller/start",
+  "/api/training/puller/stop",
   "/api/training/start-from-storage",
   "/api/platform/model/reload",
 ];
@@ -357,13 +374,44 @@ router.get(
 router.get("/api/video-job/:jobId/file", requireAuthOnly, proxyToMaxCore);
 router.get("/api/video-job/:jobId/video", requireAuthOnly, proxyToMaxCore);
 router.get("/api/audio-job/:jobId", requireAuthOnly, proxyToMaxCore);
+router.get("/api/audio/:jobId/stems", requireAuthOnly, proxyToMaxCore);
+router.get("/api/audio/:jobId/midi", requireAuthOnly, proxyToMaxCore);
+router.get(
+  "/api/files/stems/:jobId/:filename",
+  requireAuthOnly,
+  proxyToMaxCore,
+);
 router.get(
   "/api/storage/artist/:profileId",
   requireAuthOnly,
   proxyToMaxCore,
 );
 router.get("/api/platform/model/info", requireAuthOnly, proxyToMaxCore);
+router.get("/api/models/social/state", requireAuthOnly, proxyToMaxCore);
+router.get("/api/models/advertising/state", requireAuthOnly, proxyToMaxCore);
+router.get("/api/models/content/state", requireAuthOnly, proxyToMaxCore);
+router.get("/api/models/engagement/state", requireAuthOnly, proxyToMaxCore);
+router.get("/api/training/status", requireAdmin, proxyToMaxCore);
+router.get("/api/training/logs", requireAdmin, proxyToMaxCore);
+router.get("/api/training/datasets", requireAdmin, proxyToMaxCore);
+router.get("/api/training/continuous/status", requireAdmin, proxyToMaxCore);
+router.get("/api/training/continuous/history", requireAdmin, proxyToMaxCore);
+router.get("/api/training/puller/status", requireAdmin, proxyToMaxCore);
+router.get("/api/training/puller/sources", requireAdmin, proxyToMaxCore);
+router.get("/api/campaigns", requireAuthOnly, proxyToMaxCore);
+router.get("/api/campaigns/:campaignId", requireAuthOnly, proxyToMaxCore);
 
 router.delete("/api/video-job/:jobId", requireAuthOnly, proxyToMaxCore);
+router.delete("/api/campaigns/:campaignId", requireAuthOnly, proxyToMaxCore);
+router.patch(
+  "/api/campaigns/:campaignId/posts/:postId",
+  requireAuthOnly,
+  proxyToMaxCore,
+);
+router.post(
+  "/api/campaigns/:campaignId/schedule",
+  requireAuthOnly,
+  proxyToMaxCore,
+);
 
 export default router;

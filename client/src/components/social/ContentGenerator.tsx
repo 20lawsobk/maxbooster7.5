@@ -218,14 +218,14 @@ interface HashtagCategory {
 interface ABVariant {
   id: string;
   content: string;
-  predictedEngagement: number;
+  predictedEngagement: number | null;
   strengths: string[];
 }
 
 interface PostingTime {
   day: string;
   time: string;
-  engagement_score: number;
+  engagement_score: number | null;
 }
 
 interface GenerationContext {
@@ -2161,7 +2161,7 @@ export function ContentGenerator() {
                   <Card
                     key={index}
                     className={`${
-                      time.engagement_score >= 90
+                      (time.engagement_score ?? 0) >= 90
                         ? "border-primary bg-primary/5"
                         : ""
                     }`}
@@ -2181,11 +2181,13 @@ export function ContentGenerator() {
                         </div>
                         <div className="text-right">
                           <div className="flex items-center gap-2">
-                            {time.engagement_score >= 90 && (
+                            {(time.engagement_score ?? 0) >= 90 && (
                               <Zap className="w-4 h-4 text-primary" />
                             )}
                             <span className="text-lg font-bold">
-                              {time.engagement_score}%
+                              {time.engagement_score === null
+                                ? "—"
+                                : `${time.engagement_score}%`}
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground">
@@ -2251,8 +2253,9 @@ export function ContentGenerator() {
                           <div className="flex items-center gap-2">
                             <Target className="w-4 h-4 text-primary" />
                             <span className="text-sm font-medium">
-                              {variant.predictedEngagement}% predicted
-                              engagement
+                              {variant.predictedEngagement === null
+                                ? "Prediction unavailable"
+                                : `${variant.predictedEngagement}% predicted engagement`}
                             </span>
                           </div>
                         </div>

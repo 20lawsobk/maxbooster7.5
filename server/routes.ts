@@ -6945,7 +6945,13 @@ export async function registerRoutes(
   // ── End chunked upload ─────────────────────────────────────────────────────
 
   // Audio file upload endpoint — stores to hybrid storage (Replit Object Storage + Pocket Dimension)
-  app.post("/api/audio/upload", async (req: Request, res: Response) => {
+  app.post("/api/audio/upload", async (req: Request, res: Response, next) => {
+    // Raw audio belongs to the authenticated MaxCore streaming transport.
+    // Keep the existing JSON/base64 storage contract for current clients.
+    if (req.is("audio/*")) {
+      next();
+      return;
+    }
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }

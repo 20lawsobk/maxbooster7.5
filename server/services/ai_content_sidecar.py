@@ -101,6 +101,10 @@ def _mc_post(path: str, body: dict):
         headers = {
             'Content-Type':  'application/json',
             'Authorization': f'Bearer {MC_KEY}',
+            **(
+                {'X-MaxCore-User-Id': str(body['user_id'])}
+                if body.get('user_id') else {}
+            ),
         },
         method = 'POST',
     )
@@ -248,30 +252,35 @@ def _handle_generate_content(body: dict) -> dict:
     track    = body.get('track', '')
     genre    = body.get('genre', '')
 
-    artist_ctx = f' by {artist}' if artist else ''
-    track_ctx  = f' — track: "{track}"' if track else ''
-    genre_ctx  = f' ({genre})' if genre else ''
+    user_id = str(body.get('user_id', '')).strip()
+    if not user_id:
+        raise MaxCoreUnavailable(
+            'social generation requires authenticated user_id'
+        )
 
     mc_body = {
         'topic':    topic,
         'platform': platform,
         'tone':     tone,
         'goal':     goal,
-        'prompt': (
-            f'Generate a {tone} {platform} social media post about '
-            f'{topic}{artist_ctx}{track_ctx}{genre_ctx}. Goal: {goal}. '
-            f'Respond with JSON containing exactly these fields: '
-            f'hook (string), body (string), cta (string), '
-            f'hashtags (array of strings), caption (full post string).'
-        ),
+        'user_id': user_id,
+        'num_variants': 1,
+        'include_hashtags': bool(body.get('include_hashtags', True)),
     }
     for k, v in [('artist', artist), ('track', track), ('genre', genre)]:
         if v:
             mc_body[k] = v
 
-    result = _mc_post('/generate/content', mc_body)
+    result = _mc_post('/platform/social/generate', mc_body)
     ms     = round((time.time() - t0) * 1000)
-    fields = _extract_fields(result, platform, topic, genre, 'content generation')
+    variants = result.get('variants') if isinstance(result, dict) else None
+    if not variants or not isinstance(variants[0], dict):
+        raise MaxCoreUnavailable('social generation')
+    fields = variants[0]
+    source = str(fields.get('source', ''))
+    if not source or any(word in source.lower() for word in
+                         ('template', 'fallback', 'heuristic')):
+        raise MaxCoreUnavailable('social generation model output')
 
     return {
         'success':            True,
@@ -282,6 +291,7 @@ def _handle_generate_content(body: dict) -> dict:
         'hook':               fields['hook'],
         'body':               fields['body'],
         'cta':                fields['cta'],
+        'source':             source,
         'processing_time_ms': ms,
     }
 
@@ -293,15 +303,11 @@ def _handle_generate_script(body: dict) -> dict:
     goal     = body.get('goal', 'growth')
     tone     = body.get('tone', 'energetic')
 
-    result = _mc_post('/generate/content', {
-        'topic': idea, 'platform': platform, 'tone': tone, 'goal': goal,
-        'prompt': (
-            f'Write a {tone} short-form video script for {platform} about "{idea}". '
-            f'Goal: {goal}. Respond with JSON: hook (string), body (string), cta (string).'
-        ),
+    generated = _handle_generate_content({
+        **body, 'topic': idea, 'platform': platform, 'tone': tone, 'goal': goal,
     })
     ms = round((time.time() - t0) * 1000)
-    f  = _extract_fields(result, platform, idea, '', 'script generation')
+    f = generated
     if not (f.get('hook') or f.get('body')):
         raise MaxCoreUnavailable('script generation (empty response)')
 
@@ -326,15 +332,10 @@ def _handle_generate_multi_platform(body: dict) -> dict:
 
     generated = []
     for platform in platforms:
-        result = _mc_post('/generate/content', {
-            'topic': topic, 'platform': platform, 'tone': tone, 'goal': goal,
-            'prompt': (
-                f'Generate a {tone} {platform} post about {topic}. '
-                f'Respond with JSON: hook, body, cta, hashtags, caption.'
-            ),
+        fields = _handle_generate_content({
+            **body, 'topic': topic, 'platform': platform,
+            'tone': tone, 'goal': goal,
         })
-        fields = _extract_fields(result, platform, topic, genre,
-                                 f'multi-platform generation ({platform})')
 
         generated.append({
             'platform':       platform,
@@ -405,23 +406,27 @@ class SidecarHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path.rstrip('/')
         try:
             if path in ('', '/health', '/ping', '/ready'):
-                self._send({
-                    'status': 'ok', 'model_loaded': True, 'vocab_size': 50257,
-                    'device': 'maxcore', 'version': '1.0.0',
-                    'maxcore_configured': bool(MC_URL),
-                })
+                result = _mc_get('/health')
+                if result is None:
+                    self._send({
+                        'status': 'degraded',
+                        'model_loaded': False,
+                        'maxcore_configured': bool(MC_URL),
+                    }, 503)
+                else:
+                    self._send(result)
             elif path == '/cinematic-templates':
-                result = _mc_get('/cinematic-templates') or {
-                    'templates': ['cinematic_promo', 'lyric_video', 'visualizer',
-                                  'interview', 'behind_scenes', 'announcement'],
-                }
-                self._send(result)
+                result = _mc_get('/cinematic-templates')
+                if result is None:
+                    self._send({'error': 'MaxCore cinematic templates unavailable'}, 503)
+                else:
+                    self._send(result)
             elif path.startswith('/analyze/audio-features'):
-                result = _mc_get('/audio/features') or {
-                    'features': ['bpm', 'key', 'energy', 'danceability', 'valence',
-                                 'loudness', 'instrumentalness', 'acousticness'],
-                }
-                self._send(result)
+                result = _mc_get('/audio/features')
+                if result is None:
+                    self._send({'error': 'MaxCore audio feature metadata unavailable'}, 503)
+                else:
+                    self._send(result)
             elif path.startswith('/boostsheet/'):
                 sheet_id = path.split('/')[-1]
                 result   = _mc_get(f'/boostsheet/{sheet_id}') or {
@@ -429,14 +434,10 @@ class SidecarHandler(BaseHTTPRequestHandler):
                 }
                 self._send(result, 200 if result.get('success') else 404)
             elif path.startswith('/video-job/'):
-                job_id = path.split('/')[-1]
-                result = _mc_get(f'/video-job/{job_id}')
-                if result is None:
-                    # Never fabricate job progress — surface the outage.
-                    self._send({'success': False, 'job_id': job_id,
-                                'error': 'MaxCore unavailable — video job status unknown'}, 503)
-                else:
-                    self._send(result)
+                self._send({
+                    'success': False,
+                    'error': 'Video job polling requires authenticated owner identity',
+                }, 503)
             else:
                 self._send({'error': 'Not found'}, 404)
         except (BrokenPipeError, ConnectionResetError):
@@ -450,6 +451,14 @@ class SidecarHandler(BaseHTTPRequestHandler):
         try:
             body = self._body()
 
+            if path in (
+                '/generate/video', '/generate-video', '/generate/video-job',
+                '/generate/visual-spec', '/generate/image',
+            ) and not str(body.get('user_id', '')).strip():
+                raise MaxCoreUnavailable(
+                    'media generation requires authenticated user_id'
+                )
+
             if path == '/generate/content':
                 self._send(_handle_generate_content(body))
 
@@ -462,15 +471,10 @@ class SidecarHandler(BaseHTTPRequestHandler):
             elif path == '/generate/distribution':
                 platform = body.get('platform', 'instagram')
                 script   = body.get('script', body.get('topic', 'new music'))
-                result   = _mc_post('/generate/content', {
-                    **body, 'topic': script,
-                    'prompt': (
-                        f'Create a distribution-ready {platform} caption for: "{script}". '
-                        f'Respond with JSON: hook, body, cta, hashtags, caption.'
-                    ),
+                fields = _handle_generate_content({
+                    **body, 'topic': script, 'platform': platform,
+                    'goal': body.get('goal', 'distribution'),
                 })
-                fields = _extract_fields(result, platform, script, '',
-                                         'distribution caption generation')
                 self._send({
                     'success':      True,
                     'caption':      fields['caption'],
@@ -517,24 +521,43 @@ class SidecarHandler(BaseHTTPRequestHandler):
                 self._send(result)
 
             elif path == '/analyze/audio':
-                result = _mc_post('/audio/analyze', body)
+                audio_url = str(
+                    body.get('audio_url') or body.get('audio_path') or ''
+                ).strip()
+                maxcore = urlparse(MC_URL)
+                parsed_audio = urlparse(audio_url)
+                if (
+                    not audio_url
+                    or parsed_audio.scheme not in ('http', 'https')
+                    or parsed_audio.netloc != maxcore.netloc
+                    or not parsed_audio.path.startswith('/uploads/')
+                ):
+                    raise MaxCoreUnavailable(
+                        'audio analysis requires a MaxCore /uploads/ URL'
+                    )
+                result = _mc_post('/audio/analyze', {
+                    **body,
+                    'audio_url': audio_url,
+                    'context': body.get('context', {
+                        'detailed': bool(body.get('detailed', False)),
+                    }),
+                })
                 if result is None:
                     raise MaxCoreUnavailable('audio analysis')
+                if result.get('source') != 'maxcore_audio_conductor':
+                    raise MaxCoreUnavailable('audio conductor model output')
                 self._send(result)
 
             elif path == '/analyze/transcribe':
-                result = _mc_post('/analyze/transcribe', body)
-                if result is None:
-                    raise MaxCoreUnavailable('audio transcription')
-                self._send(result)
+                raise MaxCoreUnavailable(
+                    'audio transcription has no verified MaxCore contract'
+                )
 
             else:
-                # Universal passthrough for any unlisted endpoint
-                result = _mc_post(path, body)
-                if result is not None:
-                    self._send(result)
-                else:
-                    self._send({'error': f'Endpoint {path} not available'}, 404)
+                self._send({
+                    'success': False,
+                    'error': f'Legacy endpoint {path} is not mapped to a verified MaxCore capability',
+                }, 404)
 
         except (BrokenPipeError, ConnectionResetError):
             # Client dropped the connection mid-request — nothing to respond to.

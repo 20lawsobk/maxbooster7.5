@@ -276,16 +276,9 @@ function freshHook(mood: string, title: string): string {
 export function selectBestVariant<
   T extends { hook?: string; caption?: string; score?: number },
 >(variants: T[]): T {
-  if (!variants || variants.length === 0) return variants[0];
-
-  const fresh = variants.find(
-    (v) => !isStaleHook(v.hook || v.caption || ""),
-  );
-  if (fresh) return fresh;
-
-  // All stale — at minimum vary which template fires
-  const top2 = variants.slice(0, Math.min(2, variants.length));
-  return top2[Math.floor(Math.random() * top2.length)];
+  // MaxCore owns variant ordering. Do not substitute or randomly select local
+  // template content after inference.
+  return variants[0];
 }
 
 // ── Fix 5: Platform-specific CTA overrides ──────────────────────────────────
@@ -458,23 +451,13 @@ export function stripLeakedDirectives(text: string): string {
 export function cleanMaxCoreContent(
   args: CleanContentArgs,
 ): CleanContentResult {
-  const body = repairBody(
-    killFillerLines(stripAudienceMetadata(stripLeakedDirectives(args.body || ""))),
-    args.title,
-  );
-
-  // Replace stale hooks with mood-matched originals so every beat caption
-  // has a unique, conversion-optimised opening line.
-  const rawHook = stripLeakedDirectives(args.hook || "");
-  const hook = isStaleHook(rawHook)
-    ? freshHook(args.mood || "dark", args.title || "")
-    : rawHook;
-
-  const cta = fixPlatformCta(stripLeakedDirectives(args.cta || ""), args.platform, args.isBeatPost ?? false);
-  const hashtags = normalizeHashtags(
-    args.hashtags || [],
-    args.genre || "hip-hop",
-    args.platform,
+  // Preserve MaxCore's generated semantics. Only remove leaked model/control
+  // directives at the trust boundary; creative rewriting belongs upstream.
+  const body = stripLeakedDirectives(args.body || "");
+  const hook = stripLeakedDirectives(args.hook || "");
+  const cta = stripLeakedDirectives(args.cta || "");
+  const hashtags = (args.hashtags || []).filter(
+    (tag): tag is string => typeof tag === "string",
   );
   return { body, hook, cta, hashtags };
 }

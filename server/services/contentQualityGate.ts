@@ -32,7 +32,8 @@ export interface GateResult {
   rejectedVariants: ContentVariant[];
   passedOnAttempt: number;
   totalVariantsTried: number;
-  thresholdUsed: number;
+  /** Absent when MaxCore did not provide an authoritative score. */
+  thresholdUsed?: number;
   storedKey?: string | null;
 }
 
@@ -89,15 +90,34 @@ class ContentQualityGate {
       );
       totalTried += variants.length;
 
-      const passing = variants.filter((v) => v.scores.overall >= threshold);
-      allRejected.push(...variants.filter((v) => v.scores.overall < threshold));
+      const hasUnscoredVariant = variants.some((variant) => !variant.scores);
+      if (hasUnscoredVariant) {
+        const winner = variants[0];
+        logger.info(
+          `[QualityGate] User ${userId}: MaxCore returned ${variants.length} ordered variant(s) without an authoritative score; preserving upstream order`,
+        );
+        return {
+          winner,
+          rejectedVariants: variants.slice(1),
+          passedOnAttempt: round,
+          totalVariantsTried: totalTried,
+          storedKey: makeArchiveKey(userId, params.platform),
+        };
+      }
+
+      const passing = variants.filter(
+        (variant) => variant.scores!.overall >= threshold,
+      );
+      allRejected.push(
+        ...variants.filter((variant) => variant.scores!.overall < threshold),
+      );
 
       if (passing.length > 0) {
         const winner = passing[0];
         const storedKey = makeArchiveKey(userId, params.platform);
         logger.info(
           `[QualityGate] User ${userId}: passed round ${round}/${MAX_ROUNDS} — ` +
-            `score=${winner.scores.overall.toFixed(1)}, threshold=${threshold}, ` +
+            `score=${winner.scores!.overall.toFixed(1)}, threshold=${threshold}, ` +
             `tried=${totalTried}, archived=${storedKey}`,
         );
         return {
@@ -110,10 +130,10 @@ class ContentQualityGate {
         };
       }
 
-      const bestScore = variants[0]?.scores.overall ?? 0;
+      const bestScore = variants[0]?.scores?.overall;
       logger.info(
         `[QualityGate] User ${userId}: round ${round}/${MAX_ROUNDS} — all ${variants.length} below ` +
-          `threshold ${threshold} (best=${bestScore.toFixed(1)})`,
+          `threshold ${threshold} (best=${bestScore?.toFixed(1) ?? "unknown"})`,
       );
     }
 
@@ -142,62 +162,25 @@ class ContentQualityGate {
       targetAudience?: string;
     },
   ): Promise<GateResult | null> {
-    const threshold = resolveThreshold();
-
-    const context = await contentQualityPipeline.buildContext(userId, {
-      topic: params.topic || "new music",
-      objective: (params.objective || "engagement") as ContentContext["objective"],
-      platform,
-      tone: params.tone,
-      genre: params.genre,
-      targetAudience: params.targetAudience,
-    });
-
     const platformOpt = contentQualityPipeline.validatePlatformConstraints(
       rawText,
       [],
       platform,
     );
-    const scores = contentQualityPipeline.scoreContent(
-      rawText,
-      "",
-      "",
-      context,
-      platformOpt,
-    );
-
-    if (scores.overall >= threshold) {
-      const winner: ContentVariant = {
+    return {
+      winner: {
         id: "existing",
         content: rawText,
         headline: "",
         hashtags: [],
         callToAction: "",
-        scores,
         platformOptimizations: platformOpt,
-      };
-      return {
-        winner,
-        rejectedVariants: [],
-        passedOnAttempt: 1,
-        totalVariantsTried: 1,
-        thresholdUsed: threshold,
-        storedKey: makeArchiveKey(userId, platform),
-      };
-    }
-
-    logger.info(
-      `[QualityGate] User ${userId}: existing content scored ${scores.overall.toFixed(1)} < ` +
-        `threshold ${threshold} — running full gate loop for platform "${platform}"`,
-    );
-    return this.run(userId, {
-      topic: params.topic || "new music",
-      objective: params.objective,
-      platform,
-      tone: params.tone,
-      genre: params.genre,
-      targetAudience: params.targetAudience,
-    });
+      },
+      rejectedVariants: [],
+      passedOnAttempt: 1,
+      totalVariantsTried: 1,
+      storedKey: makeArchiveKey(userId, platform),
+    };
   }
 
   /**

@@ -512,7 +512,7 @@ class AutopilotPublisher {
         logger.info(
           `✅ User ${userId}: Scheduled quality-gated post ${scheduledPost.id} for "${targetPlatform}" ` +
             `at ${nextOptimalTime.toISOString()} — ` +
-            `score=${gateResult.winner.scores.overall.toFixed(1)} (passed round ${gateResult.passedOnAttempt}/${10}, ` +
+            `score=${gateResult.winner.scores?.overall?.toFixed(1) ?? "unknown"} (passed round ${gateResult.passedOnAttempt}/${10}, ` +
             `${gateResult.totalVariantsTried} variants tried)`,
         );
         return { posts: 1 };
@@ -606,7 +606,18 @@ class AutopilotPublisher {
         });
 
       // Normalise score (0-100) to confidence fraction (0-1) for threshold check
-      const confidence = advancedContent.scoring.overall / 100;
+      const overallScore = advancedContent.scoring?.overall;
+      if (
+        typeof overallScore !== "number" ||
+        !Number.isFinite(overallScore)
+      ) {
+        return {
+          posts: 0,
+          error:
+            "MaxCore did not provide an authoritative content score; automatic publishing was skipped",
+        };
+      }
+      const confidence = overallScore / 100;
       const minThreshold = (config.minConfidenceThreshold as number) || 0.7;
 
       if (confidence < minThreshold) {
@@ -622,7 +633,7 @@ class AutopilotPublisher {
 
       logger.info(
         `[Autopilot] User ${userId}: MaxCore-sourced "${selectedContentType}" content ` +
-          `for "${targetPlatform}" — score=${advancedContent.scoring.overall.toFixed(1)} topic="${mcTopic}"`,
+          `for "${targetPlatform}" — score=${overallScore.toFixed(1)} topic="${mcTopic}"`,
       );
 
       // ── Veo Quality Gate — trained model path ────────────────────────────────
@@ -660,8 +671,8 @@ class AutopilotPublisher {
         : gateResult.winner.content || rawText;
 
       logger.info(
-        `[Autopilot] User ${userId}: MaxCore content cleared Veo gate — ` +
-          `score=${gateResult.winner.scores.overall.toFixed(1)} threshold=${gateResult.thresholdUsed} ` +
+        `[Autopilot] User ${userId}: accepted MaxCore content in upstream order — ` +
+          `score=${gateResult.winner.scores?.overall?.toFixed(1) ?? "unknown"} threshold=${gateResult.thresholdUsed ?? "unknown"} ` +
           `variants_tried=${gateResult.totalVariantsTried}`,
       );
 
@@ -724,7 +735,7 @@ class AutopilotPublisher {
       logger.info(
         `✅ User ${userId}: Scheduled MaxCore-sourced post ${scheduledPost.id} for "${targetPlatform}" ` +
           `at ${nextOptimalTime.toISOString()} (confidence: ${confidence.toFixed(2)}, ` +
-          `quality: ${gateResult.winner.scores.overall.toFixed(1)})`,
+          `quality: ${gateResult.winner.scores?.overall?.toFixed(1) ?? "unknown"})`,
       );
 
       return { posts: 1 };
@@ -788,19 +799,32 @@ class AutopilotPublisher {
       }
 
       // Pick the best recommendation
-      const bestCampaign: Record<string, any> = recommendations?.reduce(
-        (best: any, current: any) => {
-          return (current?.predictedROI || 0) > (best?.predictedROI || 0)
-            ? current
-            : best;
-        },
-      ) ?? {};
+      const recommendationsWithRoi = recommendations.filter(
+        (campaign) =>
+          typeof campaign?.predictedROI === "number" &&
+          Number.isFinite(campaign.predictedROI),
+      );
+      const bestCampaign: Record<string, any> =
+        recommendationsWithRoi.length > 0
+          ? recommendationsWithRoi.reduce((best, current) =>
+              current.predictedROI > best.predictedROI ? current : best,
+            )
+          : recommendations[0];
 
       // Check confidence threshold for auto-publish
       const confidence =
-        bestCampaign?.confidence || bestCampaign?.predictedROI || 0;
+        typeof bestCampaign?.confidence === "number"
+          ? bestCampaign.confidence
+          : null;
       const minThreshold = (config?.minConfidenceThreshold as number) || 0.7;
 
+      if (confidence === null) {
+        return {
+          campaigns: 0,
+          error:
+            "MaxCore did not provide campaign confidence; automatic publishing requires an authoritative confidence",
+        };
+      }
       if (confidence < minThreshold) {
         logger.info(
           `User ${userId}: Campaign confidence ${confidence?.toFixed(2)} below threshold ${minThreshold}, not creating`,
@@ -874,16 +898,20 @@ class AutopilotPublisher {
         landingPageUrl: sfContext.storefrontUrl,
         aiPredictions: {
           viralityScore: confidence,
-          expectedReach: bestCampaign.expectedReach || 1000,
-          expectedEngagement: bestCampaign.expectedEngagement || 50,
+          expectedReach: bestCampaign.expectedReach ?? null,
+          expectedEngagement: bestCampaign.expectedEngagement ?? null,
           confidence,
           beatContext: sfContext.beatContext || undefined,
           promotionContext: sfContext.promotionContext || undefined,
         },
       });
 
+      const roiSummary =
+        typeof bestCampaign.predictedROI === "number"
+          ? `, ROI: ${bestCampaign.predictedROI.toFixed(2)}x`
+          : "";
       logger.info(
-        `✅ User ${userId}: Created ${mediaUrl ? bestCampaign?.mediaType : "text"} ad campaign ${campaign?.id} for ${primaryPlatform} at ${nextOptimalTime?.toISOString()} (confidence: ${confidence?.toFixed(2)}, ROI: ${bestCampaign?.predictedROI.toFixed(2)}x)${mediaUrl ? ` with asset: ${mediaUrl}` : ""}`,
+        `✅ User ${userId}: Created ${mediaUrl ? bestCampaign?.mediaType : "text"} ad campaign ${campaign?.id} for ${primaryPlatform} at ${nextOptimalTime?.toISOString()} (confidence: ${confidence.toFixed(2)}${roiSummary})${mediaUrl ? ` with asset: ${mediaUrl}` : ""}`,
       );
 
       return { campaigns: 1 };

@@ -21,7 +21,6 @@
 import { logger } from "../logger.js";
 import { config } from "../config/index.js";
 import { getMaxcoreOrigin } from "./maxcoreConnector.js";
-import { buildMaxCoreAwarenessPayload, type AwarenessMode } from "./awarenessContext.js";
 
 // Resolved through the shared connector — the single MaxCore contract boundary.
 const MC_AI_URL = getMaxcoreOrigin();
@@ -69,7 +68,7 @@ export class MaxCoreAIClient {
     return ct?.includes("application/json") || ct?.includes("text/json");
   }
 
-  private static authHeaders(): Record<string, string> {
+  private static authHeaders(userId?: unknown): Record<string, string> {
     // MaxCore validates X-API-Key / X-Admin-Key BEFORE Authorization and rejects
     // the generation credential on those header schemes with 401 "Invalid or
     // inactive API key". Sending them alongside the (valid) Bearer token makes
@@ -77,78 +76,10 @@ export class MaxCoreAIClient {
     // scheme the generation key authenticates under, so send ONLY that.
     return {
       Authorization: `Bearer ${MC_AI_KEY}`,
+      ...(typeof userId === "string" && userId.trim()
+        ? { "X-MaxCore-User-Id": userId }
+        : {}),
     };
-  }
-
-  // ── Awareness cascade auto-injection ──────────────────────────────────────
-  // Best-effort guess at which awareness "mode" (see awarenessContext.ts) a
-  // generation call belongs to, purely from its endpoint path and body shape.
-  // Defaults to "content" — the same general-purpose mode every content-pipeline
-  // call site already uses regardless of specific content type.
-  private static inferAwarenessMode(
-    path: string,
-    body: Record<string, unknown>,
-  ): AwarenessMode {
-    const contentType = String(
-      (body as any)?.content_type ?? (body as any)?.contentType ?? "",
-    ).toLowerCase();
-    if (path.includes("/generate/audio") || path.includes("/generate-audio"))
-      return "music";
-    if (
-      path.includes("/generate-video") ||
-      path.includes("/generate/video") ||
-      path.includes("/platform/video") ||
-      contentType.includes("video")
-    )
-      return "video_script";
-    if (path.includes("advertis") || contentType.includes("ad"))
-      return "ad_copy";
-    return "content";
-  }
-
-  /**
-   * Fills in `awareness` / `extra_context` from the live awareness layer
-   * when the caller's body doesn't already carry its own `awareness` field —
-   * so every generate()/infer() call is awareness-conditioned even when the
-   * calling service never built its own (see awarenessContext.ts). Never
-   * overrides an already-provided `awareness` value. Best-effort: any
-   * failure here is swallowed and the original body is used unmodified —
-   * this must never block or break a real generation call.
-   */
-  private static async withInjectedAwareness(
-    path: string,
-    body: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    if (body && (body as any).awareness) return body; // caller already built its own
-    // /generate/image renders its input directly onto the artwork as literal
-    // typography (PIL card, not a diffusion model — see maxcore-image-pil-card
-    // memory). Unverified extra fields risk bleeding into the rendered image
-    // as garbled overlaid text, so this endpoint is deliberately excluded.
-    if (path.includes("/generate/image")) return body;
-    try {
-      const platform =
-        (body as any)?.platform ?? (body as any)?.targetPlatform ?? undefined;
-      const mode = MaxCoreAIClient.inferAwarenessMode(path, body);
-      const payload = await buildMaxCoreAwarenessPayload(mode, platform);
-      if (!payload) return body;
-
-      const patched: Record<string, unknown> = { ...body };
-      if (payload.awareness) patched.awareness = payload.awareness;
-      if (payload.extraContext) {
-        patched.extra_context = (patched as any).extra_context
-          ? `${(patched as any).extra_context}\n\n${payload.extraContext}`
-          : payload.extraContext;
-      }
-      logger.debug(
-        `[MaxCoreAI] ${path} — injected awareness cascade (mode=${mode}, caller had none)`,
-      );
-      return patched;
-    } catch (e) {
-      logger.debug(
-        `[MaxCoreAI] ${path} — awareness injection skipped: ${(e as Error).message}`,
-      );
-      return body;
-    }
   }
 
   /** Always returns true — MaxCore is always running.
@@ -407,10 +338,8 @@ export class MaxCoreAIClient {
       return null;
     }
 
-    // Awareness cascade: fill in awareness/extra_context from real signals
-    // when the caller didn't already supply them (never overrides an
-    // explicitly-provided value). Best-effort — see withInjectedAwareness.
-    body = await MaxCoreAIClient.withInjectedAwareness(path, body);
+    // Transport preserves caller input. MaxCore owns awareness and inference;
+    // this layer must not add a second application-side planning pass.
 
     // Bulkhead: cap concurrent long-held sockets.
     if (!(await MaxCoreAIClient.acquireSlot())) {
@@ -427,7 +356,7 @@ export class MaxCoreAIClient {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              ...MaxCoreAIClient.authHeaders(),
+              ...MaxCoreAIClient.authHeaders(body.user_id ?? body.userId),
             },
             body: JSON.stringify(body),
             signal: AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
@@ -532,10 +461,7 @@ export class MaxCoreAIClient {
       return null;
     }
 
-    // Awareness cascade: fill in awareness/extra_context from real signals
-    // when the caller didn't already supply them (never overrides an
-    // explicitly-provided value). Best-effort — see withInjectedAwareness.
-    body = await MaxCoreAIClient.withInjectedAwareness(path, body);
+    // Preserve caller-supplied context without injecting local AI decisions.
 
     // Bulkhead: cap concurrent long-held sockets.
     if (!(await MaxCoreAIClient.acquireSlot())) {
@@ -552,7 +478,7 @@ export class MaxCoreAIClient {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              ...MaxCoreAIClient.authHeaders(),
+              ...MaxCoreAIClient.authHeaders(body.user_id ?? body.userId),
             },
             body: JSON.stringify(body),
             signal: AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),

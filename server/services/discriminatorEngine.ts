@@ -42,13 +42,13 @@ export interface DiscriminatorVerdict {
   verdict: "pass" | "reject";
   overall: number; // 0-100
   realism: number | null; // null when MaxCore was unavailable for this call
-  coherence: number;
-  style: number;
-  correctness: number;
+  coherence: number | null;
+  style: number | null;
+  correctness: number | null;
   hardFails: string[]; // artifact-level defects — any entry forces "reject"
   critique: string[]; // human-readable issues, hard + soft
   feedback: string; // single actionable sentence to feed back into regeneration
-  source: "heuristic" | "heuristic+maxcore";
+  source: "maxcore";
 }
 
 const PLACEHOLDER_PATTERNS: RegExp[] = [
@@ -83,15 +83,10 @@ function allCapsSpamRatio(text: string): number {
  * Local heuristic critic — always runs, never fails, catches broken
  * generation artifacts a score blend alone could miss.
  */
-function heuristicJudge(input: DiscriminatorInput): {
-  coherence: number;
-  style: number;
-  correctness: number;
+function validateArtifacts(input: DiscriminatorInput): {
   hardFails: string[];
-  critique: string[];
 } {
   const hardFails: string[] = [];
-  const critique: string[] = [];
   const fullText = [input.headline, input.text, input.cta]
     .filter(Boolean)
     .join(" ");
@@ -110,11 +105,8 @@ function heuristicJudge(input: DiscriminatorInput): {
     hardFails.push("Repeated-word stutter detected (broken generation)");
   }
 
-  const capsRatio = allCapsSpamRatio(fullText);
-  let style = 90;
-  if (capsRatio > 0.4) {
-    style -= 30;
-    critique.push("Excessive ALL-CAPS reads as spam, not authentic voice");
+  if (allCapsSpamRatio(fullText) > 0.4) {
+    hardFails.push("Excessive ALL-CAPS spam detected");
   }
 
   const lowerFull = fullText.toLowerCase();
@@ -122,51 +114,20 @@ function heuristicJudge(input: DiscriminatorInput): {
     lowerFull.includes(p),
   );
   if (genericHits.length > 0) {
-    style -= 15 * genericHits.length;
-    critique.push(
+    hardFails.push(
       `Generic filler phrase(s) present: ${genericHits.join(", ")} — replace with specific, artist-voiced language`,
     );
   }
 
-  let correctness = 95;
   if (/\s{3,}/.test(fullText)) {
-    correctness -= 10;
-    critique.push("Irregular whitespace suggests a broken template merge");
+    hardFails.push("Irregular whitespace suggests a broken template merge");
   }
   const openQuotes = (fullText.match(/"/g) || []).length;
   if (openQuotes % 2 !== 0) {
-    correctness -= 10;
-    critique.push("Unmatched quotation mark");
+    hardFails.push("Unmatched quotation mark");
   }
 
-  let coherence = 90;
-  if (input.headline && input.text) {
-    const headlineWords = new Set(
-      input.headline.toLowerCase().split(/\W+/).filter((w) => w.length > 3),
-    );
-    const bodyWords = new Set(
-      input.text.toLowerCase().split(/\W+/).filter((w) => w.length > 3),
-    );
-    const overlap = [...headlineWords].filter((w) => bodyWords.has(w)).length;
-    if (headlineWords.size > 0 && overlap === 0) {
-      coherence -= 20;
-      critique.push(
-        "Headline and body share no thematic overlap — content may feel disjointed",
-      );
-    }
-  }
-  if (!input.cta || input.cta.trim().length === 0) {
-    coherence -= 10;
-    critique.push("No call-to-action present");
-  }
-
-  return {
-    coherence: Math.max(0, coherence),
-    style: Math.max(0, style),
-    correctness: Math.max(0, correctness),
-    hardFails,
-    critique: [...hardFails, ...critique],
-  };
+  return { hardFails };
 }
 
 const PASS_THRESHOLD = 65;
@@ -174,45 +135,26 @@ const PASS_THRESHOLD = 65;
 export async function judgeContent(
   input: DiscriminatorInput,
 ): Promise<DiscriminatorVerdict> {
-  const local = heuristicJudge(input);
-
-  let realism: number | null = null;
-  let mcFeedback: string | null = null;
-  let source: DiscriminatorVerdict["source"] = "heuristic";
-
-  try {
-    const result = await MaxCoreAIClient.infer<{
-      score?: number;
-      feedback?: string;
-    }>("/api/content/score", {
-      text: `${input.headline ?? ""}\n\n${input.text}`.trim(),
-      platform: input.platform ?? "instagram",
-      cta: input.cta ?? "",
-      hashtags: input.hashtags ?? [],
-    });
-    if (typeof result?.score === "number") {
-      realism = Math.min(100, Math.max(0, result.score));
-      mcFeedback = result.feedback ?? null;
-      source = "heuristic+maxcore";
-    }
-  } catch (e) {
-    logger.warn(
-      { err: e },
-      "[Discriminator] MaxCore content-score unavailable — realism axis omitted, heuristic critic still applies",
-    );
+  const validation = validateArtifacts(input);
+  const result = await MaxCoreAIClient.infer<{
+    score?: number;
+    feedback?: string;
+  }>("/api/content/score", {
+    text: `${input.headline ?? ""}\n\n${input.text}`.trim(),
+    platform: input.platform ?? "instagram",
+    cta: input.cta ?? "",
+    hashtags: input.hashtags ?? [],
+  });
+  if (typeof result?.score !== "number" || !Number.isFinite(result.score)) {
+    throw new Error("MaxCore content score returned an invalid response contract");
   }
-
-  const axes = [local.coherence, local.style, local.correctness];
-  if (realism !== null) axes.push(realism);
-  const overall = Math.round(
-    axes.reduce((a, b) => a + b, 0) / (axes.length || 1),
-  );
-
-  const critique = [...local.critique];
-  if (mcFeedback) critique.push(`MaxCore critic: ${mcFeedback}`);
+  const realism = Math.min(100, Math.max(0, result.score));
+  const overall = Math.round(realism);
+  const critique = [...validation.hardFails];
+  if (result.feedback) critique.push(`MaxCore critic: ${result.feedback}`);
 
   const verdict: "pass" | "reject" =
-    local.hardFails.length > 0 || overall < PASS_THRESHOLD ? "reject" : "pass";
+    validation.hardFails.length > 0 || overall < PASS_THRESHOLD ? "reject" : "pass";
 
   const feedback =
     verdict === "pass"
@@ -225,13 +167,13 @@ export async function judgeContent(
     verdict,
     overall,
     realism,
-    coherence: local.coherence,
-    style: local.style,
-    correctness: local.correctness,
-    hardFails: local.hardFails,
+    coherence: null,
+    style: null,
+    correctness: null,
+    hardFails: validation.hardFails,
     critique,
     feedback,
-    source,
+    source: "maxcore",
   };
 }
 

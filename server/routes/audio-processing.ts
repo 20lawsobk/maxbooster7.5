@@ -818,10 +818,11 @@ router.post(
       const result = await pythonAIService?.analyzeAudio(
         filePath,
         Boolean(detailed),
+        (req.user as { id: string }).id,
       );
       if (!result?.success) {
         return res
-          .status(500)
+          .status(503)
           .json({ error: result.error || "Analysis failed" });
       }
       return res.json({ success: true, ...result?.data });

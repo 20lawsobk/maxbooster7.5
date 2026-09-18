@@ -82,13 +82,11 @@ interface DatasetInfo {
 interface ScheduleInfo {
   success: boolean;
   schedule: Array<{
-    phase_id: number;
+    id: string;
     name: string;
-    T: number;
-    res: number;
-    lr: number;
-    days: string;
-    training_focus: string;
+    description: string;
+    loss_target: number;
+    epochs: number;
     datasets: string[];
   }>;
   current_status: {
@@ -887,12 +885,14 @@ export default function TrainingDashboard() {
                 {schedule?.schedule ? (
                   <div className="space-y-3">
                     {schedule.schedule.map((phase) => {
+                      const phaseNumber = Number(
+                        phase.id?.match(/\d+/)?.[0] ?? 0,
+                      );
                       const isCurrent =
-                        phase.phase_id ===
-                        schedule.current_status?.current_phase;
+                        phaseNumber === schedule.current_status?.current_phase;
                       return (
                         <div
-                          key={phase.phase_id}
+                          key={phase.id}
                           className={`rounded-lg p-3 border ${
                             isCurrent
                               ? "border-indigo-500/50 bg-indigo-500/10"
@@ -905,7 +905,7 @@ export default function TrainingDashboard() {
                                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
                               )}
                               <span className="text-sm font-medium text-white">
-                                Phase {phase.phase_id}: {phase.name}
+                                Phase {phaseNumber}: {phase.name}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
@@ -913,24 +913,18 @@ export default function TrainingDashboard() {
                                 variant="outline"
                                 className="text-xs border-gray-600 text-gray-400"
                               >
-                                T={phase.T}
+                                 {phase.epochs} epochs
                               </Badge>
                               <Badge
                                 variant="outline"
                                 className="text-xs border-gray-600 text-gray-400"
                               >
-                                {phase.res}×{phase.res}
-                              </Badge>
-                              <Badge
-                                variant="outline"
-                                className="text-xs border-gray-600 text-gray-400"
-                              >
-                                {phase.days}
+                                 loss ≤ {phase.loss_target}
                               </Badge>
                             </div>
                           </div>
                           <p className="text-xs text-gray-400">
-                            {phase.training_focus}
+                            {phase.description}
                           </p>
                           {phase.datasets?.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1.5">

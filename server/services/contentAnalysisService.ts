@@ -7,8 +7,7 @@
  * This service powers both autopilots' learning from actual content,
  * not just engagement metrics
  *
- * NO EXTERNAL AI APIS - All custom TensorFlow.js models and algorithms
- * All computer vision, NLP, and analysis done with custom implementations
+ * Learned analysis is delegated to verified MaxCore capabilities only.
  */
 
 import axios from "axios";
@@ -18,6 +17,8 @@ import { lookup as dnsLookup, LookupAddress } from "dns";
 import { isIPv4 as netIsIPv4 } from "net";
 import type { LookupFunction } from "net";
 import { logger } from "../logger";
+import { AIUnavailableError } from "../lib/aiSource.js";
+import { pythonAIService } from "./pythonAIService.js";
 
 // ─── Connect-time SSRF protection ────────────────────────────────────────────
 // Reject any hostname that resolves to a private / reserved address at the
@@ -125,40 +126,7 @@ async function getSharp() {
   }
 }
 
-// Initialize on module load
-getSharp().catch(() => {});
 
-let tf: typeof import("@tensorflow/tfjs") | null = null;
-let tfAvailable = false;
-let tfInitPromise: Promise<boolean> | null = null;
-
-async function initTensorFlow(): Promise<boolean> {
-  if (tfInitPromise) return tfInitPromise;
-
-  tfInitPromise = (async () => {
-    try {
-      tf = await import("@tensorflow/tfjs");
-      tfAvailable = true;
-      logger.info("[ContentAnalysis] TensorFlow.js loaded successfully");
-      return true;
-    } catch (error) {
-      logger.warn(
-        "[ContentAnalysis] TensorFlow.js not available - using fallback analysis",
-      );
-      tf = null;
-      tfAvailable = false;
-      return false;
-    }
-  })();
-
-  return tfInitPromise;
-}
-
-function isTensorFlowAvailable(): boolean {
-  return tfAvailable && tf !== null;
-}
-
-initTensorFlow();
 
 export interface ImageAnalysisResult {
   colors: {
@@ -237,31 +205,14 @@ export interface VideoAnalysisResult {
 }
 
 export interface AudioAnalysisResult {
-  music: {
-    tempo: number; // BPM
-    key: string;
-    mode: "major" | "minor" | "unknown";
-    genre: string[];
-    energy: number; // 0-1
-    danceability: number; // 0-1
-    valence: number; // 0-1 (positivity)
-    acousticness: number; // 0-1
-  };
-  production: {
-    quality: number; // 0-1
-    mastered: boolean;
-    dynamicRange: number;
-    clarity: number; // 0-1
-  };
-  vocals: {
-    present: boolean;
-    prominence: number; // 0-1
-    language: string;
-    deliveryStyle: string;
-  };
-  mood: string[];
-  marketability: number; // 0-1
-  confidence: number;
+  duration?: number;
+  tempo?: number;
+  bpm?: number;
+  key?: string;
+  mode?: string;
+  musical_key?: string;
+  source: "maxcore_audio_conductor";
+  [key: string]: unknown;
 }
 
 export interface WebsiteAnalysisResult {
@@ -336,174 +287,13 @@ export interface TextAnalysisResult {
 }
 
 export class ContentAnalysisService {
-  private _imageClassificationModel:
-    | import("@tensorflow/tfjs").LayersModel
-    | null = null;
-  private faceDetectionModel: import("@tensorflow/tfjs").LayersModel | null =
-    null;
-  private _textDetectionModel: import("@tensorflow/tfjs").LayersModel | null =
-    null;
-  private modelsInitialized = false;
-  private initializationPromise: Promise<void> | null = null;
-  private ready = false;
-
-  constructor() {
-    // Lazy init — TensorFlow is NOT loaded at startup. It initializes on the
-    // first actual analysis request so it doesn't block the cold-start path.
-  }
-
-  /**
-   * Ensure initialization is complete before performing any analysis.
-   * This provides a readiness gate that guarantees deterministic behavior.
-   */
-  private async ensureInitialized(): Promise<void> {
-    if (this.ready) return;
-    if (!this.initializationPromise) {
-      this.initializationPromise = this.initializeModels();
-    }
-    await this.initializationPromise;
-  }
-
-  /**
-   * Initialize custom TensorFlow?.js models
-   */
-  private async initializeModels(): Promise<void> {
-    if (this.modelsInitialized) {
-      this.ready = true;
-      return;
-    }
-
-    await initTensorFlow();
-
-    if (!isTensorFlowAvailable()) {
-      logger.info(
-        "[ContentAnalysis] Skipping model initialization - TensorFlow not available",
-      );
-      this.modelsInitialized = true;
-      this.ready = true;
-      return;
-    }
-
-    try {
-      this._imageClassificationModel = this.buildImageClassificationModel();
-      this.faceDetectionModel = this.buildFaceDetectionModel();
-      this._textDetectionModel = this.buildTextDetectionModel();
-      this.modelsInitialized = true;
-      this.ready = true;
-      logger.info("[ContentAnalysis] Custom models initialized successfully");
-    } catch (error) {
-      logger.warn(
-        { err: error },
-        "[ContentAnalysis] Model initialization error:",
-      );
-      this.modelsInitialized = true;
-      this.ready = true;
-    }
-  }
-
-  /**
-   * Build custom image classification model
-   */
-  private buildImageClassificationModel(): import("@tensorflow/tfjs").LayersModel | null {
-    if (!isTensorFlowAvailable() || !tf) {
-      return null;
-    }
-
-    const model = tf?.sequential({
-      layers: [
-        tf?.layers?.conv2d({
-          inputShape: [224, 224, 3],
-          filters: 32,
-          kernelSize: 3,
-          activation: "relu",
-        }),
-        tf?.layers?.maxPooling2d({ poolSize: 2 }),
-        tf?.layers?.conv2d({ filters: 64, kernelSize: 3, activation: "relu" }),
-        tf?.layers?.maxPooling2d({ poolSize: 2 }),
-        tf?.layers?.flatten(),
-        tf?.layers?.dense({ units: 128, activation: "relu" }),
-        tf?.layers?.dropout({ rate: 0.5 }),
-        tf?.layers?.dense({ units: 10, activation: "softmax" }),
-      ],
-    });
-
-    model?.compile({
-      optimizer: "adam",
-      loss: "categoricalCrossentropy",
-      metrics: ["accuracy"],
-    });
-
-    return model;
-  }
-
-  /**
-   * Build custom face detection model
-   */
-  private buildFaceDetectionModel(): import("@tensorflow/tfjs").LayersModel | null {
-    if (!isTensorFlowAvailable() || !tf) {
-      return null;
-    }
-
-    const model = tf?.sequential({
-      layers: [
-        tf?.layers?.conv2d({
-          inputShape: [224, 224, 3],
-          filters: 16,
-          kernelSize: 3,
-          activation: "relu",
-        }),
-        tf?.layers?.maxPooling2d({ poolSize: 2 }),
-        tf?.layers?.flatten(),
-        tf?.layers?.dense({ units: 64, activation: "relu" }),
-        tf?.layers?.dense({ units: 1, activation: "sigmoid" }),
-      ],
-    });
-
-    model?.compile({
-      optimizer: "adam",
-      loss: "binaryCrossentropy",
-      metrics: ["accuracy"],
-    });
-
-    return model;
-  }
-
-  /**
-   * Build custom text detection model
-   */
-  private buildTextDetectionModel(): import("@tensorflow/tfjs").LayersModel | null {
-    if (!isTensorFlowAvailable() || !tf) {
-      return null;
-    }
-
-    const model = tf?.sequential({
-      layers: [
-        tf?.layers?.conv2d({
-          inputShape: [224, 224, 1],
-          filters: 32,
-          kernelSize: 3,
-          activation: "relu",
-        }),
-        tf?.layers?.maxPooling2d({ poolSize: 2 }),
-        tf?.layers?.flatten(),
-        tf?.layers?.dense({ units: 64, activation: "relu" }),
-        tf?.layers?.dense({ units: 1, activation: "sigmoid" }),
-      ],
-    });
-
-    model?.compile({
-      optimizer: "adam",
-      loss: "binaryCrossentropy",
-      metrics: ["accuracy"],
-    });
-
-    return model;
-  }
-
   /**
    * Analyze image content (URL or base64) - 100% CUSTOM
    */
   async analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
+    throw new AIUnavailableError(
+      "image content analysis: MaxCore has no verified vision-analysis contract",
+    );
     await this.ensureInitialized();
 
     try {
@@ -850,95 +640,25 @@ export class ContentAnalysisService {
     }
   }
 
-  /**
-   * Detect faces using custom lightweight model
-   */
-  private async detectFaces(imageBuffer: Buffer): Promise<{
+  private async detectFaces(_imageBuffer: Buffer): Promise<{
     hasFaces: boolean;
     count: number;
   }> {
-    if (!isTensorFlowAvailable() || !tf || !this.faceDetectionModel) {
-      return { hasFaces: false, count: 0 };
-    }
-
-    const sharpInstance = await getSharp();
-    if (!sharpInstance) {
-      return { hasFaces: false, count: 0 };
-    }
-
-    try {
-      const processed = await sharpInstance(imageBuffer)
-        .resize(224, 224)
-        .raw()
-        .toBuffer();
-
-      const imageTensor = tf
-        .tensor3d(new Uint8Array(processed), [224, 224, 3])
-        .div(255.0)
-        .expandDims(0);
-
-      const prediction = this.faceDetectionModel.predict(imageTensor) as unknown as Record<
-        string,
-        unknown
-      >;
-      const hasFacesProbability = ((await (prediction?.data as () => Promise<number[]>)()) as number[])[0];
-
-      imageTensor?.dispose();
-      if (typeof (prediction as any)?.dispose === "function") (prediction as any).dispose();
-
-      const hasFaces = hasFacesProbability > 0.5;
-      const count = hasFaces ? Math.ceil(hasFacesProbability * 2) : 0;
-
-      return { hasFaces, count };
-    } catch (error) {
-      logger.warn({ err: error }, "[ContentAnalysis] Face detection error:");
-      return { hasFaces: false, count: 0 };
-    }
+    throw new AIUnavailableError(
+      "face detection: MaxCore has no verified vision-analysis contract",
+    );
   }
 
   /**
    * Detect text in image using edge patterns
    */
-  private async detectText(imageBuffer: Buffer): Promise<{
+  private async detectText(_imageBuffer: Buffer): Promise<{
     hasText: boolean;
     amount: "none" | "minimal" | "moderate" | "heavy";
   }> {
-    const sharpInstance = await getSharp();
-    if (!sharpInstance) {
-      return { hasText: false, amount: "none" };
-    }
-
-    try {
-      // Convert to grayscale and apply threshold
-      const processed = await sharpInstance(imageBuffer)
-        .resize(224, 224)
-        .grayscale()
-        .normalize()
-        .raw()
-        .toBuffer();
-
-      // Look for horizontal edge patterns characteristic of text
-      let textPixels = 0;
-      const threshold = 128;
-
-      for (let i = 0; i < processed?.length - 1; i++) {
-        const diff = Math.abs(processed[i] - processed[i + 1]);
-        if (diff > threshold) textPixels++;
-      }
-
-      const textDensity = textPixels / processed?.length;
-      const hasText = textDensity > 0.1;
-
-      let amount: "none" | "minimal" | "moderate" | "heavy" = "none";
-      if (textDensity > 0.3) amount = "heavy";
-      else if (textDensity > 0.2) amount = "moderate";
-      else if (textDensity > 0.1) amount = "minimal";
-
-      return { hasText, amount };
-    } catch (error) {
-      logger.warn({ err: error }, "Text detection error:");
-      return { hasText: false, amount: "none" };
-    }
+    throw new AIUnavailableError(
+      "image text detection: MaxCore has no verified vision-analysis contract",
+    );
   }
 
   /**
@@ -1067,6 +787,9 @@ export class ContentAnalysisService {
     _videoUrl: string,
     duration: number,
   ): Promise<VideoAnalysisResult> {
+    throw new AIUnavailableError(
+      "video content analysis: MaxCore has no verified video-analysis contract",
+    );
     await this.ensureInitialized();
 
     try {
@@ -1131,54 +854,30 @@ export class ContentAnalysisService {
    * Analyze audio/music content
    */
   async analyzeAudio(
-    _audioUrl: string,
+    audioUrl: string,
     metadata?: Record<string, unknown>,
+    userId?: string,
   ): Promise<AudioAnalysisResult> {
-    await this.ensureInitialized();
-
-    try {
-      // Use music-metadata library or AI analysis
-      // For now, use metadata + heuristics
-
-      const result: AudioAnalysisResult = {
-        music: {
-          tempo: (metadata?.tempo as number | undefined) ?? 120,
-          key: (metadata?.key as string | undefined) ?? "C",
-          mode: (metadata?.mode as "major" | "minor" | "unknown" | undefined) ?? "major",
-          genre: (metadata?.genre as string[] | undefined) ?? ["pop", "electronic"],
-          energy: (metadata?.energy as number | undefined) ?? 0.7,
-          danceability: (metadata?.danceability as number | undefined) ?? 0.8,
-          valence: (metadata?.valence as number | undefined) ?? 0.6,
-          acousticness: (metadata?.acousticness as number | undefined) ?? 0.3,
-        },
-        production: {
-          quality: 0.85,
-          mastered: true,
-          dynamicRange: 8,
-          clarity: 0.9,
-        },
-        vocals: {
-          present: true,
-          prominence: 0.7,
-          language: "en",
-          deliveryStyle: "melodic",
-        },
-        mood: ["energetic", "uplifting", "catchy"],
-        marketability: 0.75,
-        confidence: 0.8,
-      };
-
-      return result;
-    } catch (error) {
-      logger.warn({ err: error }, "Audio analysis error:");
-      throw error;
+    const result = await pythonAIService.analyzeAudio(
+      audioUrl,
+      Boolean(metadata?.detailed),
+      userId,
+    );
+    if (!result.success || !result.data) {
+      throw new AIUnavailableError(
+        result.error || "MaxCore audio conductor unavailable",
+      );
     }
+    return result.data as AudioAnalysisResult;
   }
 
   /**
    * Analyze website/landing page - 100% CUSTOM
    */
   async analyzeWebsite(url: string): Promise<WebsiteAnalysisResult> {
+    throw new AIUnavailableError(
+      "website content analysis: MaxCore has no verified web-analysis contract",
+    );
     await this.ensureInitialized();
 
     try {
@@ -1355,6 +1054,9 @@ export class ContentAnalysisService {
    * Analyze text content
    */
   async analyzeText(text: string): Promise<TextAnalysisResult> {
+    throw new AIUnavailableError(
+      "text content analysis: MaxCore has no verified text-analysis contract",
+    );
     await this.ensureInitialized();
 
     try {

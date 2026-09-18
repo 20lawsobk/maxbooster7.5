@@ -10,6 +10,9 @@ import { logger } from "../logger.js";
 import { cbIsOpen } from "../lib/pdimCircuitBreaker.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import { IntelligentMasteringEngine } from "../../shared/ml/audio/IntelligentMasteringEngine.js";
+import { getMaxCoreMixingRecommendation } from "./maxcoreMixingService.js";
+import { getMaxCoreMasteringRecommendation } from "./maxcoreMasteringService.js";
 
 
 interface AIAdvertisingConfig {
@@ -112,10 +115,6 @@ interface MasterSettings {
 export class AIService {
   private readonly GENRE_PROFILES_PREFIX = "ai:genreProfiles:";
   private readonly AUDIO_PATTERNS_PREFIX = "ai:audioPatterns:";
-
-  constructor() {
-    this.initializeAudioData();
-  }
 
   private async getRedis(): Promise<RedisClientType | null> {
     return await getRedisClient();
@@ -258,6 +257,9 @@ export class AIService {
       distributionPlan: Record<string, unknown>;
     };
   }> {
+    throw new AIUnavailableError(
+      "ad campaign generation requires an authenticated MaxCore user id",
+    );
     try {
       // ── MaxCore ad campaign generation (fail-explicit, no local fallback) ─
       const mcRaw = await MaxCoreAIClient.generate<{
@@ -334,6 +336,33 @@ export class AIService {
     _userId: string,
     audioData?: Buffer,
   ): Promise<{ success: boolean; mixSettings: MixSettings }> {
+    if (!_trackId || !_userId || !audioData) {
+      throw new AIUnavailableError(
+        "AI mixing requires an authenticated owned track and PCM audio",
+      );
+    }
+    const { storage } = await import("../storage.js");
+    const ownedProjects = await storage.getProjectsByUserId(_userId);
+    if (!ownedProjects.some((project) => String(project.id) === _trackId)) {
+      throw new AIUnavailableError("AI mixing track ownership could not be verified");
+    }
+    if (audioData.byteLength % Float32Array.BYTES_PER_ELEMENT !== 0) {
+      throw new AIUnavailableError("AI mixing requires Float32 PCM audio");
+    }
+    const sampleRate = 44_100;
+    const pcm = new Float32Array(Uint8Array.from(audioData).buffer);
+    const engine = new IntelligentMasteringEngine(sampleRate);
+    const analysis = engine.analyzeForMastering(pcm, sampleRate);
+    const recommendation = await getMaxCoreMixingRecommendation(
+      analysis,
+      "generic",
+      undefined,
+      sampleRate,
+    );
+    return {
+      success: true,
+      mixSettings: recommendation.config as unknown as MixSettings,
+    };
     try {
       const analysis = audioData
         ? await this.analyzeAudio(audioData)
@@ -362,6 +391,33 @@ export class AIService {
     _userId: string,
     audioData?: Buffer,
   ): Promise<{ success: boolean; masterSettings: MasterSettings }> {
+    if (!_trackId || !_userId || !audioData) {
+      throw new AIUnavailableError(
+        "AI mastering requires an authenticated owned track and PCM audio",
+      );
+    }
+    const { storage } = await import("../storage.js");
+    const ownedProjects = await storage.getProjectsByUserId(_userId);
+    if (!ownedProjects.some((project) => String(project.id) === _trackId)) {
+      throw new AIUnavailableError(
+        "AI mastering track ownership could not be verified",
+      );
+    }
+    if (audioData.byteLength % Float32Array.BYTES_PER_ELEMENT !== 0) {
+      throw new AIUnavailableError("AI mastering requires Float32 PCM audio");
+    }
+    const sampleRate = 44_100;
+    const pcm = new Float32Array(Uint8Array.from(audioData).buffer);
+    const engine = new IntelligentMasteringEngine(sampleRate);
+    const analysis = engine.analyzeForMastering(pcm, sampleRate);
+    const recommendation = await getMaxCoreMasteringRecommendation(
+      analysis,
+      sampleRate,
+    );
+    return {
+      success: true,
+      masterSettings: recommendation.config as unknown as MasterSettings,
+    };
     try {
       const analysis = audioData
         ? await this.analyzeAudio(audioData)
@@ -387,6 +443,9 @@ export class AIService {
    * Deterministic analysis based on audio characteristics
    */
   async analyzeTrack(audioData: Buffer): Promise<AudioAnalysisResult> {
+    throw new AIUnavailableError(
+      "audio analysis: a MaxCore-safe upload URL is required; raw buffer transport is unavailable",
+    );
     try {
       return await this.analyzeAudio(audioData);
     } catch (error: unknown) {

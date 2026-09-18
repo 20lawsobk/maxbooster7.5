@@ -1,7 +1,15 @@
 ---
-name: Awareness centralization via transport-layer injection
-description: When a rich live-signal awareness system already exists, extend it with one shared payload-builder and inject at the shared transport chokepoint instead of building a competing system or patching each call site.
+name: Awareness authority
+description: MaxCore owns conditioning; historical app-side automatic injection must not be reintroduced.
 ---
+
+The authority boundary in `replit.md` supersedes the older transport-injection design below. Preserve explicitly supplied context in transit; apply model conditioning inside MaxCore, not by running an additional application-side awareness/planning layer.
+
+**Why:** Centralizing an intermediate layer still leaves two AI decision authorities when MaxCore already performs conditioning itself.
+
+**How to apply:** Preserve caller payloads in HTTP adapters and verify the actual MaxCore model seam receives them. Do not automatically reintroduce application-side inference from this historical account.
+
+## Historical design (superseded)
 
 This codebase already had a rich, live-signal-backed awareness system (`awarenessContext.ts` fronting
 an RSS/Tavily/Exa-backed aggregator: trending genres/moods, content angles, CTA patterns, emotional

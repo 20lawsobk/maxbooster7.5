@@ -15,6 +15,7 @@ import {
 } from "../services/algorithmIntelligence.js";
 import { randomBytes } from "crypto";
 import { z } from "zod";
+import { AIUnavailableError } from "../lib/aiSource.js";
 
 const router = Router();
 
@@ -326,26 +327,13 @@ router.post(
         ? variantResult
         : variantResult?.variants || [];
 
-      const variantsWithScores = await Promise.all(
-        variants?.map(async (variant: Record<string, unknown>) => {
-          const score = await viralScoringService?.scoreContent({
-            ...contentData,
-            caption: variant.caption,
-            hashtags: variant.hashtags,
-          } as ContentData);
-          return {
-            ...variant,
-            viralScore: score.overall,
-            predictedReach: {
-              low: Math.round(score?.predictedEngagement?.likes * 0.5),
-              mid: Math.round(score?.predictedEngagement?.likes),
-              high: Math.round(score?.predictedEngagement?.likes * 2),
-            },
-          };
-        }),
-      );
-
-      variantsWithScores?.sort((a, b) => b?.viralScore - a?.viralScore);
+      // Generation must not depend on a separate, unavailable prediction model.
+      // Preserve MaxCore's order; do not invent scores or reach estimates.
+      const variantsWithScores = variants.map((variant: Record<string, unknown>) => ({
+        ...variant,
+        viralScore: null,
+        predictedReach: null,
+      }));
 
       logger.info(
         `🧪 Generated ${variants?.length} variants for user ${userId}`,
@@ -355,10 +343,13 @@ router.post(
         success: true,
         variants: variantsWithScores,
         winner: variantsWithScores[0],
-        statisticalConfidence: Math.min(95, 60 + variants?.length * 7),
+        statisticalConfidence: null,
       });
     } catch (error) {
       logger.warn("Error in generate-variants:", (error as any)?.message);
+      if (error instanceof AIUnavailableError) {
+        return res.status(503).json({ error: error.message });
+      }
       res.status(500).json({ error: "Failed to process request" });
     }
   }),

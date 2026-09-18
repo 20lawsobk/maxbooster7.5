@@ -1,9 +1,10 @@
 // @ts-nocheck
 import { type Project } from "@shared/schema";
 import { db } from "../db";
-import { analytics, users, studioProjects, aiMetricPredictions, aiCohortAnalysis, aiChurnPredictions, aiRevenueForecasts, aiAnomalyDetections, aiModels, inferenceRuns } from "@shared/schema";
+import { analytics, users, studioProjects, aiModels, inferenceRuns } from "@shared/schema";
 import { eq, and, gte, lte, desc, asc } from "drizzle-orm";
 import { logger } from "../logger.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 
 interface DashboardStats {
   totalStreams: number;
@@ -251,6 +252,9 @@ export class CustomAIEngine {
     horizon: "7d" | "30d" | "90d" | "365d" = "30d",
     confidenceLevel: number = 0.95,
   ): Promise<MetricPrediction[]> {
+    throw new AIUnavailableError(
+      "metric prediction: MaxCore has no measured time-series forecasting contract",
+    );
     const startTime = Date.now();
     const { modelId, versionId } = await this.getAIModel(
       "time_series_predictor_v1",
@@ -354,6 +358,9 @@ export class CustomAIEngine {
     cohortDefinition: CohortDefinition,
     metrics: string[] = ["retention", "ltv", "engagement"],
   ): Promise<CohortAnalysisResult> {
+    throw new AIUnavailableError(
+      "cohort analysis: MaxCore has no cohort-analysis contract",
+    );
     const startTime = Date.now();
     const { modelId, versionId } = await this.getAIModel("cohort_analyzer_v1");
 
@@ -423,6 +430,9 @@ export class CustomAIEngine {
   }
 
   async predictChurn(userId: string): Promise<ChurnPrediction> {
+    throw new AIUnavailableError(
+      "churn prediction: MaxCore has no churn-prediction contract",
+    );
     const startTime = Date.now();
     const { modelId, versionId } = await this.getAIModel("churn_predictor_v1");
 
@@ -486,6 +496,9 @@ export class CustomAIEngine {
     period: "daily" | "weekly" | "monthly" | "quarterly" | "yearly",
     breakdown?: boolean,
   ): Promise<RevenueForecast[]> {
+    throw new AIUnavailableError(
+      "revenue forecasting: MaxCore has no revenue-forecasting contract",
+    );
     const startTime = Date.now();
     const { modelId, versionId } = await this.getAIModel(
       "revenue_forecaster_v1",
@@ -566,6 +579,9 @@ export class CustomAIEngine {
     value: number,
     context?: unknown,
   ): Promise<AnomalyDetectionResult | null> {
+    throw new AIUnavailableError(
+      "metric anomaly detection: MaxCore has no anomaly-detection contract",
+    );
     const startTime = Date.now();
     const { modelId, versionId } = await this.getAIModel("anomaly_detector_v1");
 
@@ -658,6 +674,9 @@ export class CustomAIEngine {
     userId: string,
     timeframe: "7d" | "30d" | "90d" = "30d",
   ): Promise<InsightNarrative[]> {
+    throw new AIUnavailableError(
+      "analytics insight generation: MaxCore has no business-data reasoning contract",
+    );
     Date.now();
     const insights: InsightNarrative[] = [];
 

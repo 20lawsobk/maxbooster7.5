@@ -21,19 +21,13 @@ import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { userBrandVoices, autopilotPreferences } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { MaxCoreAIClient } from "./unifiedAIController.js";
-import { requireMaxCore } from "../lib/aiSource.js";
+import { generateSocialDirect } from "./maxcoreDomainAdapter.js";
 import { evolutionRegistry } from "./evolutionRegistry.js";
 import {
   getPlatformOptimization,
   normalizeSocialAwarenessPlatform,
   platformAwarenessOptimization,
 } from "./awarenessContext.js";
-import {
-  cleanMaxCoreContent,
-  selectBestVariant,
-  normalizeHashtags,
-} from "../lib/contentPostProcessor.js";
 
 // ============================================================================
 // SEEDED PRNG HELPER
@@ -494,12 +488,12 @@ export interface AdvancedGeneratedContent {
   };
   platformVersions: Map<string, PlatformOptimizedContent>;
   variants: ContentVariant[];
-  scoring: ContentScoring;
+  scoring: ContentScoring | null;
   insights: ContentInsight[];
-  optimalTiming: OptimalTiming;
-  mediaGuidance: MediaGuidance;
-  viralPotential: ViralAnalysis;
-  audienceResonance: AudienceResonance;
+  optimalTiming: OptimalTiming | null;
+  mediaGuidance: MediaGuidance | null;
+  viralPotential: ViralAnalysis | null;
+  audienceResonance: AudienceResonance | null;
 }
 
 export interface PlatformOptimizedContent {
@@ -519,7 +513,7 @@ export interface ContentVariant {
   hook: string;
   cta: string;
   hashtags: string[];
-  predictedScore: number;
+  predictedScore: number | null;
   differentiator: string;
   targetedAudience?: string;
 }
@@ -1472,10 +1466,7 @@ class AdvancedSocialAIService {
   async generateAdvancedContent(
     rawRequest: AdvancedContentRequest,
   ): Promise<AdvancedGeneratedContent> {
-    // Surface the Self-Evolution posting_optimization guidance into this request
-    // before anything else (cache key, MaxCore hints, post-processing) so the
-    // override is honored on manual / scheduled / direct paths, not just autopilot.
-    const request = this.applyPostingOptimization(rawRequest);
+    const request = rawRequest;
     const canonicalPlatform = normalizeSocialAwarenessPlatform(
       request.platforms?.[0] || "instagram",
     );
@@ -1504,167 +1495,65 @@ class AdvancedSocialAIService {
     await this.initialize();
 
     const userContext = await this.getUserContext(request.userId);
-    const primaryPlatform =
-      PLATFORM_PROFILES[canonicalPlatform] ||
-      PLATFORM_PROFILES.instagram;
-    const tone =
-      TONE_PROFILES[request.tone || "casual"] || TONE_PROFILES.casual;
-    const audience =
-      AUDIENCE_PROFILES[
-        request.targetAudience?.toLowerCase().replace(/\s+/g, "_") ||
-          "indie_artists"
-      ] || AUDIENCE_PROFILES.indie_artists;
-
-    // ── 8TB dataset via MaxCore is the ONLY text source ─────────────────────
-    // Dedicated social-generation endpoint (richer, platform-aware output than
-    // the generic /generate/content). It nests results under `variants[]`; we
-    // normalize the first variant to the flat {hook,body,cta,caption,hashtags}
-    // shape the rest of this method consumes.
-    const mcRaw = await MaxCoreAIClient.infer<{
-      hook?: string;
-      body?: string;
-      cta?: string;
-      caption?: string;
-      hashtags?: string[];
-      variants?: Array<{
-        hook?: string;
-        body?: string;
-        cta?: string;
-        caption?: string;
-        hashtags?: string[];
-      }>;
-    }>("/api/platform/social/generate", {
+    const response = await generateSocialDirect({
+      userId: request.userId,
       platform: canonicalPlatform,
       topic: request.topic || "new music",
-      tone: request.tone || "energetic",
-      genre: request.genre || (userContext as any).genre,
-      artist_name: request.artistName || (userContext as any).artistName,
-      brand_voice: (userContext as any).brandVoice,
-      target_audience: request.targetAudience,
-      storefront_url: request.storefrontUrl,
-      beat_context: request.beatContext,
+      tone: request.tone || "authentic",
+      goal: request.objective || (request.beatContext ? "drive_purchase" : "growth"),
+      styleTags: [request.genre, request.contentType].filter(Boolean),
+      includeHashtags: request.includeHashtags !== false,
+      numVariants: request.variantCount ?? 1,
+      instruction: request.promotionContext,
+      extraContext: [
+        effectiveAwareness,
+        request.targetAudience
+          ? `Target audience: ${request.targetAudience}`
+          : "",
+        request.storefrontUrl ? `Storefront: ${request.storefrontUrl}` : "",
+        request.beatContext || "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      contentThemes: request.trendContext,
       awareness: effectiveAwareness,
-      // Server-side: pass purchase intent + platform constraints so MaxCore
-      // optimises copy for conversion and avoids platform-inappropriate CTAs.
-      goal: request.beatContext ? "drive_purchase" : undefined,
-      platform_constraints: (() => {
-        const pl = (request.platforms?.[0] || "instagram").toLowerCase();
-        if (pl === "linkedin") return { professional_register: true };
-        if (pl === "tiktok" || pl === "threads") return { no_link_in_bio: true };
-        return undefined;
-      })(),
-      promotion_context: request.promotionContext,
-      // Self-Evolution content_optimization knobs forwarded so MaxCore can bias
-      // generation; we ALSO post-process below so the knob is guaranteed to take
-      // effect even if MaxCore ignores these hints.
-      hashtag_strategy: request.hashtagStrategy,
-      caption_length: request.captionLength,
-      cta_strength: request.callToActionStrength,
     });
-    // Fix 4: rotate stale hook templates instead of always taking variants[0]
-    const mcCandidate =
-      mcRaw && Array.isArray(mcRaw.variants) && mcRaw.variants.length > 0
-        ? selectBestVariant(mcRaw.variants)
-        : mcRaw;
-
-    // MaxCore is the ONLY source for social content. Throw explicitly (HTTP 503)
-    // when it returns nothing — no local pattern fallback may take over.
-    const mc = requireMaxCore(
-      mcCandidate && (mcCandidate.hook || mcCandidate.caption)
-        ? mcCandidate
-        : null,
-      "advanced social content",
-    );
-
-    // Fix 1 + 2: strip audience metadata and filler lines from body
-    const cleaned = cleanMaxCoreContent({
-      body: mc.body || "",
-      hook: mc.hook || "",
-      cta: mc.cta || "",
-      hashtags: Array.isArray(mc.hashtags) ? mc.hashtags : [],
-      genre: request.genre || "hip-hop",
-      platform: (request.platforms?.[0] || "instagram").toLowerCase(),
-    });
-
-    const hook = cleaned.hook;
-    const bodyText = cleaned.body;
-    // Apply the call-to-action strength knob BEFORE appending the storefront URL
-    // so the strengthened/softened CTA still carries the link.
-    // Fix 5: platform CTA already applied inside cleanMaxCoreContent
-    const baseCta = this.applyCtaStrength(
-      cleaned.cta,
-      request.callToActionStrength,
-    );
-
-    // Append storefront URL to the CTA so every autopilot post links back to the
-    // storefront — critical for driving traffic during the temp slug-URL period.
-    const cta =
-      request.storefrontUrl && !baseCta.includes(request.storefrontUrl)
-        ? `${baseCta}\n🔗 ${request.storefrontUrl}`.trim()
-        : baseCta;
-
-    // Fix 3: clean broken hashtags and inject genre-specific discovery tags,
-    // then run through the platform strategy knob as before
-    const cleanHashtags = normalizeHashtags(
-      cleaned.hashtags,
-      request.genre || "hip-hop",
-      (request.platforms?.[0] || "instagram").toLowerCase(),
-    );
-    const hashtags = this.applyHashtagStrategy(
-      cleanHashtags,
-      request.hashtagStrategy,
-      primaryPlatform,
-    );
-    const emojis = this.selectEmojis(request, primaryPlatform, tone);
-    const rawContent =
+    const mc = response.variants[0];
+    const hook = mc.hook;
+    const bodyText = mc.body;
+    const cta = mc.cta;
+    const hashtags = mc.hashtags;
+    const fullContent =
       mc.caption || [hook, bodyText, cta].filter(Boolean).join("\n\n");
-    const fullContent = this.applyCaptionLength(
-      rawContent,
-      request.captionLength,
-    );
-
-    const platformVersions = this.generatePlatformVersions(
-      request,
-      hook,
-      bodyText,
-      cta,
-      hashtags,
-    );
-    const variants = this.generateVariants(
-      request,
-      hook,
-      bodyText,
-      cta,
-      hashtags,
-      tone,
-    );
-    const scoring = this.scoreContent(
-      fullContent,
-      primaryPlatform,
-      tone,
-      audience,
-      request,
-    );
-    const insights = this.generateInsights(
-      fullContent,
-      scoring,
-      primaryPlatform,
-      request,
-    );
-    const optimalTiming = this.calculateOptimalTiming(
-      request.platforms,
-      audience,
-    );
-    const mediaGuidance = this.generateMediaGuidance(request, primaryPlatform);
-    const viralPotential = this.analyzeViralPotential(fullContent, request);
-    const audienceResonance = this.analyzeAudienceResonance(
-      fullContent,
-      audience,
-      request,
-    );
+    const platformVersions = new Map<string, PlatformOptimizedContent>([
+      [
+        response.platform,
+        {
+          platform: response.platform,
+          content: fullContent,
+          hashtags,
+          characterCount: fullContent.length,
+          isValid: true,
+          optimizations: [],
+        },
+      ],
+    ]);
+    const variants = response.variants.map((variant, index) => ({
+      id: String(variant.variant ?? index + 1),
+      type: "concise" as const,
+      content:
+        variant.caption ||
+        [variant.hook, variant.body, variant.cta].filter(Boolean).join("\n\n"),
+      headline: variant.hook,
+      hook: variant.hook,
+      cta: variant.cta,
+      hashtags: variant.hashtags,
+      predictedScore: null,
+      differentiator: variant.source || "maxcore",
+    }));
 
     logger.info(
-      `[AdvancedSocialAI] MaxCore-sourced content for user ${request.userId}: score=${scoring.overall.toFixed(1)}`,
+      `[AdvancedSocialAI] MaxCore generated ${variants.length} social variant(s) for user ${request.userId}`,
     );
 
     const result: AdvancedGeneratedContent = {
@@ -1674,16 +1563,16 @@ class AdvancedSocialAIService {
         hook,
         callToAction: cta,
         hashtags,
-        emojis,
+        emojis: [],
       },
       platformVersions,
       variants,
-      scoring,
-      insights,
-      optimalTiming,
-      mediaGuidance,
-      viralPotential,
-      audienceResonance,
+      scoring: null,
+      insights: [],
+      optimalTiming: null,
+      mediaGuidance: null,
+      viralPotential: null,
+      audienceResonance: null,
     };
 
     if (
@@ -1874,86 +1763,6 @@ class AdvancedSocialAIService {
     }
 
     return versions;
-  }
-
-  private generateVariants(
-    request: AdvancedContentRequest,
-    hook: string,
-    body: string,
-    cta: string,
-    hashtags: string[],
-    _tone: ToneProfile,
-  ): ContentVariant[] {
-    const variants: ContentVariant[] = [];
-    const count = request.variantCount || 3;
-
-    variants.push({
-      id: "variant_concise",
-      type: "concise",
-      content: `${hook}\n\n${cta}`,
-      headline: hook,
-      hook,
-      cta,
-      hashtags: hashtags.slice(0, 3),
-      predictedScore: 72,
-      differentiator:
-        "Shorter, more direct approach for higher scroll-stopping",
-    });
-
-    variants.push({
-      id: "variant_question",
-      type: "question",
-      content: `What do you think about this?\n\n${body}\n\n${cta}`,
-      headline: "What do you think?",
-      hook: "What do you think about this?",
-      cta,
-      hashtags,
-      predictedScore: 80,
-      differentiator: "Question-based hook drives 2x more comments",
-    });
-
-    variants.push({
-      id: "variant_urgent",
-      type: "urgent",
-      content: `🚨 ${hook.replace(/^[🔥💥⚡🚀✨🎵🎶🚨]\s*/, "")}\n\n${body}\n\nDon't miss out! ${cta}`,
-      headline: `🚨 ${hook}`,
-      hook: `🚨 ${hook}`,
-      cta: `Don't miss out! ${cta}`,
-      hashtags,
-      predictedScore: 75,
-      differentiator: "Urgency-focused for time-sensitive promotions",
-    });
-
-    if (count > 3) {
-      variants.push({
-        id: "variant_story",
-        type: "storytelling",
-        content: `Let me tell you something...\n\n${body}\n\nThis is just the beginning. ${cta}`,
-        headline: "Let me tell you something...",
-        hook: "Let me tell you something...",
-        cta: `This is just the beginning. ${cta}`,
-        hashtags,
-        predictedScore: 74,
-        differentiator: "Storytelling approach for deeper engagement",
-      });
-    }
-
-    if (count > 4) {
-      variants.push({
-        id: "variant_milestone",
-        type: "milestone",
-        content: `We made it. 🏆\n\n${body}\n\nThank you for being part of this journey. ${cta}`,
-        headline: "We made it. 🏆",
-        hook: "We made it. 🏆",
-        cta: `Thank you for being part of this journey. ${cta}`,
-        hashtags,
-        predictedScore: 77,
-        differentiator:
-          "Milestone/community celebration — highest brand loyalty response",
-      });
-    }
-
-    return variants.slice(0, count);
   }
 
   private scoreContent(

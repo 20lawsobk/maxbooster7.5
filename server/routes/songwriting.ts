@@ -1220,11 +1220,11 @@ async function getChordSuggestion(
     });
     return chosen;
   } catch (err) {
-    logger.warn(
-      { err },
-      "[Songwriting] Adaptive chord-progression selection failed, falling back to seeded pick",
+    throw new Error(
+      `MaxCore chord-progression decision unavailable: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
     );
-    return options[seededIndex(g + ":" + m, options?.length)];
   }
 }
 

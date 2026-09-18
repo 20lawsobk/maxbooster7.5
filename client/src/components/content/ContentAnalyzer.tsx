@@ -95,31 +95,13 @@ interface VideoAnalysisResult {
 }
 
 interface AudioAnalysisResult {
-  music: {
-    tempo: number;
-    key: string;
-    mode: "major" | "minor" | "unknown";
-    genre: string[];
-    energy: number;
-    danceability: number;
-    valence: number;
-    acousticness: number;
-  };
-  production: {
-    quality: number;
-    mastered: boolean;
-    dynamicRange: number;
-    clarity: number;
-  };
-  vocals: {
-    present: boolean;
-    prominence: number;
-    language: string;
-    deliveryStyle: string;
-  };
-  mood: string[];
-  marketability: number;
-  confidence: number;
+  duration?: number;
+  tempo?: number;
+  bpm?: number;
+  key?: string;
+  mode?: string;
+  musical_key?: string;
+  source: "maxcore_audio_conductor";
 }
 
 interface WebsiteAnalysisResult {
@@ -784,40 +766,34 @@ export function ContentAnalyzer() {
             {result && result.type === "audio" && (
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold mb-2">Music Analysis</h4>
+                  <h4 className="font-semibold mb-2">Measured Audio Analysis</h4>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <p className="text-sm text-muted-foreground">Tempo</p>
-                      <Badge>{result.data.music?.tempo} BPM</Badge>
+                      <Badge>
+                        {result.data.tempo ?? result.data.bpm ?? "Unavailable"} BPM
+                      </Badge>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Key</p>
-                      <Badge>{result.data.music?.key}</Badge>
+                      <Badge>
+                        {result.data.musical_key ?? result.data.key ?? "Unavailable"}
+                      </Badge>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Mode</p>
-                      <Badge>{result.data.music?.mode}</Badge>
+                      <Badge>{result.data.mode ?? "Unavailable"}</Badge>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-2">Audio Qualities</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Energy</span>
-                      <span className="text-sm font-medium">
-                        {Math.round(result.data.music?.energy * 100)}%
-                      </span>
-                    </div>
-                    <Progress value={result.data.music?.energy * 100} />
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Marketability</span>
-                      <span className="text-sm font-medium">
-                        {Math.round(result.data.marketability * 100)}%
-                      </span>
-                    </div>
-                    <Progress value={result.data.marketability * 100} />
-                  </div>
+                  <h4 className="font-semibold mb-2">Analysis Details</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Duration:{" "}
+                    {typeof result.data.duration === "number"
+                      ? `${result.data.duration.toFixed(1)} seconds`
+                      : "Unavailable"}
+                  </p>
                 </div>
               </div>
             )}

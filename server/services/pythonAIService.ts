@@ -1,5 +1,8 @@
 import { logger } from "../logger.js";
 import { loopbackUrl, runtimePorts } from "../config/ports.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { ensureMaxCoreAudioAsset } from "./maxcoreAssetTransport.js";
+import { getMaxcoreOrigin } from "./maxcoreConnector.js";
 
 // Call the Python AI sidecar directly (loopback, no CSRF/auth layer needed).
 // Routing through the main Express server (/api/ai-service) would hit the CSRF
@@ -45,6 +48,11 @@ async function callAIModel<T>(
   endpoint: string,
   body: Record<string, unknown>,
 ): Promise<AIModelResponse<T>> {
+  return {
+    success: false,
+    error: `Legacy Python AI endpoint ${endpoint} is disabled; no verified MaxCore contract with authenticated ownership is available`,
+  };
+
   try {
     const response = await fetchWithTimeout(`${AI_MODEL_URL}${endpoint}`, {
       method: "POST",
@@ -177,33 +185,7 @@ export class PythonAIService {
   }
 
   async isAvailable(): Promise<boolean> {
-    const now = Date?.now();
-    if (this.available === true) return true;
-    if (
-      this.available === false &&
-      now - this.lastCheckMs < this.RECHECK_INTERVAL_MS
-    )
-      return false;
-    try {
-      const response = await fetchWithTimeout(
-        `${AI_MODEL_URL}/health`,
-        {
-          method: "GET",
-          headers: { ...internalAuthHeaders() },
-        },
-        5000,
-      );
-      this.available = response?.ok;
-      this.lastCheckMs = now;
-      if (this.available) {
-        logger.info("[PythonAI] AI Content Model service is available");
-      }
-      return this.available;
-    } catch {
-      this.available = false;
-      this.lastCheckMs = now;
-      return false;
-    }
+    return MaxCoreAIClient.isAvailable();
   }
 
   resetAvailability(): void {
@@ -311,6 +293,10 @@ export class PythonAIService {
   async getBoostSheet(
     sheetId: string,
   ): Promise<AIModelResponse<BoostSheetResult>> {
+    return {
+      success: false,
+      error: "Legacy boost-sheet jobs have no verified MaxCore contract",
+    };
     try {
       const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/boostsheet/${sheetId}`,
@@ -479,6 +465,11 @@ export class PythonAIService {
   }
 
   async getVideoJobStatus(jobId: string): Promise<AIModelResponse<unknown>> {
+    return {
+      success: false,
+      error:
+        "Video job polling requires authenticated MaxCore job ownership transport",
+    };
     try {
       const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/video-job/${jobId}`,
@@ -502,6 +493,10 @@ export class PythonAIService {
   }
 
   async getCinematicTemplates(): Promise<AIModelResponse<unknown>> {
+    return {
+      success: false,
+      error: "Legacy cinematic templates have no verified MaxCore contract",
+    };
     try {
       const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/cinematic-templates`,
@@ -525,57 +520,93 @@ export class PythonAIService {
   }
 
   async checkHealth(): Promise<AIModelResponse<HealthResult>> {
-    try {
-      const response = await fetchWithTimeout(
-        `${AI_MODEL_URL}/health`,
-        {
-          method: "GET",
-          headers: { ...internalAuthHeaders() },
-        },
-        5000,
-      );
-      if (!response?.ok) {
-        return {
-          success: false,
-          error: `Health check failed: ${response?.status}`,
-        };
-      }
-      const data = (await response?.json()) as HealthResult;
-      return { success: true, data };
-    } catch {
-      return { success: false, error: "AI Model service unavailable" };
-    }
+    const available = await MaxCoreAIClient.isAvailable();
+    return available
+      ? {
+          success: true,
+          data: {
+            status: "available",
+            model_loaded: true,
+            vocab_size: 0,
+            device: "maxcore",
+            version: "maxcore",
+          },
+        }
+      : { success: false, error: "MaxCore unavailable" };
   }
 
   async analyzeAudio(
     filePath: string,
     detailed = false,
+    userId?: string,
   ): Promise<AIModelResponse<unknown>> {
     try {
-      const response = await fetchWithTimeout(
-        `${AI_MODEL_URL}/analyze/audio`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...internalAuthHeaders(),
-          },
-          body: JSON.stringify({ file_path: filePath, detailed }),
-        },
-        60000,
-      );
-      if (!response?.ok) {
-        const err = await response?.text();
-        return { success: false, error: `Audio analysis failed: ${err}` };
+      if (!userId) {
+        return {
+          success: false,
+          error: "Authenticated owner identity is required for audio analysis",
+        };
       }
-      const data = await response?.json();
+      if (/^https?:\/\//i.test(filePath)) {
+        const candidate = new URL(filePath);
+        const maxcore = new URL(getMaxcoreOrigin());
+        if (
+          candidate.origin !== maxcore.origin ||
+          !candidate.pathname.startsWith("/uploads/audio-inputs/")
+        ) {
+          return {
+            success: false,
+            error: "Remote audio URLs are not accepted for owned-asset analysis",
+          };
+        }
+      }
+      if (filePath.includes("..")) {
+        return {
+          success: false,
+          error: "Invalid owned audio asset path",
+        };
+      }
+      const audioUrl = await ensureMaxCoreAudioAsset(filePath, userId);
+      const data = await MaxCoreAIClient.generate<Record<string, unknown>>(
+        "/api/audio/analyze",
+        {
+          user_id: userId,
+          audio_url: audioUrl,
+          context: { detailed },
+        },
+      );
+      if (!data || data.source !== "maxcore_audio_conductor") {
+        return { success: false, error: "MaxCore audio conductor unavailable" };
+      }
       return { success: true, data };
-    } catch (e) {
-      return { success: false, error: `Audio analysis error: ${(e as any)?.message}` };
+    } catch (error) {
+      return {
+        success: false,
+        error: `MaxCore audio analysis failed: ${(error as Error).message}`,
+      };
     }
   }
 
   async getAudioFeatureInfo(): Promise<AIModelResponse<unknown>> {
+    return {
+      success: true,
+      data: {
+        available: true,
+        source: "maxcore_audio_conductor",
+        features: [
+          "bpm",
+          "beats",
+          "downbeats",
+          "onsets",
+          "energy_envelope",
+          "band_envelopes",
+          "sections",
+          "key",
+          "mode",
+          "key_confidence",
+        ],
+      },
+    };
     try {
       const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/analyze/audio-features`,
@@ -596,6 +627,10 @@ export class PythonAIService {
   }
 
   async transcribeToMidi(filePath: string): Promise<AIModelResponse<unknown>> {
+    return {
+      success: false,
+      error: "MaxCore has no verified audio-to-MIDI contract",
+    };
     try {
       const response = await fetchWithTimeout(
         `${AI_MODEL_URL}/analyze/transcribe`,

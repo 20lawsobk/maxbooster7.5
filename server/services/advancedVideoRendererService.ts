@@ -21,6 +21,7 @@ import {
   getMaxcoreGenerationKey,
   getMaxcoreOrigin,
 } from "./maxcoreConnector.js";
+import { ensureMaxCoreAudioAsset } from "./maxcoreAssetTransport.js";
 
 const POLL_INTERVAL_MS = 2_000;
 const POLL_MAX_ATTEMPTS = 150; // 5 min
@@ -28,6 +29,43 @@ const POLL_MAX_ATTEMPTS = 150; // 5 min
 const MAXCORE_ORIGIN = getMaxcoreOrigin();
 const MC_AI_KEY = getMaxcoreGenerationKey();
 const LOCAL_VIDEO_DIR = path?.join(process.cwd(), "uploads", "videos");
+
+async function maxCoreOwnedRequest<T>(
+  pathName: string,
+  userId: string,
+  init: RequestInit,
+): Promise<T> {
+  if (!MAXCORE_ORIGIN || !MC_AI_KEY) {
+    throw new AIUnavailableError("video generation");
+  }
+  let response: Response;
+  try {
+    response = await fetch(`${MAXCORE_ORIGIN}/api${pathName}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${MC_AI_KEY}`,
+        "X-MaxCore-User-Id": userId,
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...(init.headers ?? {}),
+      },
+      signal: AbortSignal.timeout(45_000),
+    });
+  } catch (error) {
+    throw new AIUnavailableError(
+      `video generation: ${(error as Error).message}`,
+    );
+  }
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new AIUnavailableError(
+      `video generation returned HTTP ${response.status}${detail ? `: ${detail.slice(0, 200)}` : ""}`,
+    );
+  }
+  if (!(response.headers.get("content-type") ?? "").includes("application/json")) {
+    throw new AIUnavailableError("video generation returned non-JSON");
+  }
+  return (await response.json()) as T;
+}
 
 // ── MaxCore video URL cache ───────────────────────────────────────────────────
 
@@ -190,7 +228,9 @@ async function cacheVideoLocally(
     for (const url of candidates) {
       try {
         const response = await fetch(url, {
-          headers: maxcoreAuthHeaders(),
+          headers: new URL(url).origin === new URL(MAXCORE_ORIGIN).origin
+            ? { ...maxcoreAuthHeaders(), "X-MaxCore-User-Id": userId }
+            : {},
           signal: AbortSignal.timeout(60_000),
         });
         const ct = response?.headers.get("content-type") ?? "unknown";
@@ -302,8 +342,10 @@ async function pollVideoJob(jobId: string, userId: string): Promise<VideoGenResu
   for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
 
-    const status = await MaxCoreAIClient.poll<MaxCoreVideoStatus>(
+    const status = await maxCoreOwnedRequest<MaxCoreVideoStatus>(
       "/video-job/" + jobId,
+      userId,
+      { method: "GET" },
     );
     if (!status) continue;
 
@@ -327,6 +369,7 @@ async function pollVideoJob(jobId: string, userId: string): Promise<VideoGenResu
         template: status.template,
         template_name: status.template_name,
         scenes_rendered: status.scenes_rendered,
+        scenes: status.scenes,
         source: "MaxCoreAI",
       };
     }
@@ -700,9 +743,21 @@ export async function renderVideo(
     `[AdvancedVideoRenderer] Submitting MaxCore video job — idea: "${idea.slice(0, 80)}"`,
   );
 
-  const jobResp = await MaxCoreAIClient.infer<MaxCoreVideoJobResponse>(
+  const ownerId = opts.userId || "anonymous";
+  if (opts.user_audio_path && !opts.userId) {
+    throw new AIUnavailableError(
+      "video generation with user audio (owner identity required)",
+    );
+  }
+  const maxCoreAudioPath = opts.user_audio_path
+    ? await ensureMaxCoreAudioAsset(opts.user_audio_path, ownerId)
+    : undefined;
+  const jobResp = await maxCoreOwnedRequest<MaxCoreVideoJobResponse>(
     "/generate-video",
+    ownerId,
     {
+      method: "POST",
+      body: JSON.stringify({
       idea,
       topic: opts.topic || undefined,
       hook: opts.hook || undefined,
@@ -718,8 +773,15 @@ export async function renderVideo(
       goal: opts.goal || "growth",
       quality: opts.quality || undefined,
       voiceover: !!opts.voiceover,
-      user_audio_path: opts.user_audio_path || undefined,
-      user_id: opts.userId || "anonymous",
+      user_audio_path: maxCoreAudioPath,
+      first_frame_b64: opts.first_frame_b64 || undefined,
+      last_frame_b64: opts.last_frame_b64 || undefined,
+      reference_images: opts.reference_images?.slice(0, 3),
+      scenes_override: opts.scenes_override,
+      camera_motion: opts.camera_motion,
+      motion_intensity: opts.motion_intensity,
+      user_id: ownerId,
+      }),
     },
   );
 
@@ -763,7 +825,7 @@ export async function renderVideo(
 
   // Async job — poll MaxCore until the video is rendered and served
   if (jobResp.job_id) {
-    const result = await pollVideoJob(jobResp.job_id, opts.userId || "anonymous");
+    const result = await pollVideoJob(jobResp.job_id, ownerId);
     if (result && !result.success) {
       // Explicit MaxCore job error — surface its own error text.
       return {

@@ -697,8 +697,18 @@ router.get(
       const type: ABVariationType = (validTypes as readonly string[]).includes(variationType)
         ? (variationType as ABVariationType)
         : "tone";
-      const variants = await aiContentService.generateABVariants(content, type);
-      res.json({ variants });
+      const variants = await aiContentService.generateABVariants(
+        content,
+        type,
+        req.user!.id,
+      );
+      res.json({
+        variants: variants.map((variant) => ({
+          ...variant,
+          predictedEngagement: variant.predictedPerformance,
+          strengths: variant.changes,
+        })),
+      });
     } catch (error) {
       logger.warn({ err: error }, "Get AB variants error:");
       res.status(aiErrorStatus(error)).json({ error: "Failed to get AB variants" });
@@ -729,10 +739,16 @@ router.post(
       const variants = await aiContentService.generateABVariants(
         content,
         variationType,
+        req.user!.id,
       );
       return res.json({
         variants:
-          variantCount === undefined ? variants : variants.slice(0, variantCount),
+          (variantCount === undefined ? variants : variants.slice(0, variantCount))
+            .map((variant) => ({
+              ...variant,
+              predictedEngagement: variant.predictedPerformance,
+              strengths: variant.changes,
+            })),
       });
     } catch (error) {
       logger.warn({ err: error }, "Generate AB variants error:");
@@ -760,7 +776,13 @@ router.post(
         userId,
         historicalPosts,
       );
-      res.json({ brandVoice, score: (brandVoice as any).consistency || 0.85 });
+      res.json({
+        brandVoice,
+        score:
+          typeof (brandVoice as any).consistency === "number"
+            ? (brandVoice as any).consistency
+            : null,
+      });
     } catch (error) {
       logger.warn({ err: error }, "Analyze brand voice error:");
       res.status(aiErrorStatus(error)).json({ error: "Failed to analyze brand voice" });
@@ -834,8 +856,17 @@ router.post(
         String(content),
         String(platform).toLowerCase(),
         validatedGoal as "reach" | "engagement" | "niche",
+        req.user!.id,
       );
-      res.json({ hashtags, optimized: true });
+      res.json({
+        hashtags,
+        categories: [{
+          category: "MaxCore recommendations",
+          hashtags: hashtags.map((item) => item.hashtag),
+          reach: validatedGoal === "niche" ? "niche" : "medium",
+        }],
+        optimized: true,
+      });
     } catch (error) {
       logger.warn({ err: error }, "Optimize hashtags error:");
       res.status(aiErrorStatus(error)).json({ error: "Failed to optimize hashtags" });
@@ -850,7 +881,15 @@ router.get(
     try {
       const userId = req.user!.id;
       const times = await aiContentService.getOptimalPostingTimes(userId);
-      res.json({ times, timezone: "UTC" });
+      res.json(
+        times.map((time) => ({
+          day: time.dayOfWeek === null ? "Recommended window" : String(time.dayOfWeek),
+          time: `${String(time.hour).padStart(2, "0")}:00`,
+          engagement_score: time.score,
+          reasoning: time.reasoning,
+          timezone: "UTC",
+        })),
+      );
     } catch (error) {
       logger.warn({ err: error }, "Get posting times error:");
       res.status(aiErrorStatus(error)).json({ error: "Failed to get posting times" });

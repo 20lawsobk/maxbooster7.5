@@ -469,6 +469,13 @@ router.post("/save-features", requireAuth, async (req, res) => {
 router.post("/train", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
+    return res.status(409).json({
+      success: false,
+      error:
+        "Per-user local autopilot training was removed. MaxCore training is centrally administered from stored measured outcomes.",
+      trainingAuthority: "maxcore",
+      userId,
+    });
 
     logger.info(
       `🤖 Starting autopilot AI training for user ${userId} with multimodal features...`,

@@ -23,6 +23,7 @@ import asyncio
 import threading
 import re
 import logging
+from contextvars import ContextVar
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Optional, List
@@ -270,6 +271,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Authenticated application identity forwarded only across the private
+# app-Node -> MaxCore-Node -> Python chain. It is never accepted from a request
+# body, so producer payloads cannot claim another user's jobs.
+_request_job_owner: ContextVar[Optional[str]] = ContextVar(
+    "maxcore_request_job_owner", default=None
+)
+
+
+@app.middleware("http")
+async def bind_job_owner_middleware(request: Request, call_next):
+    owner = (request.headers.get("x-maxcore-user-id") or "").strip() or None
+    token = _request_job_owner.set(owner)
+    try:
+        return await call_next(request)
+    finally:
+        _request_job_owner.reset(token)
 
 # ─── Progressive latency observability (NO aborts) ──────────────────────────
 # Guaranteed-completion policy: requests are NEVER aborted by the server.
@@ -586,6 +604,20 @@ _UPLOADS_PATH = Path(__file__).parent / "uploads"
 _UPLOADS_PATH.mkdir(parents=True, exist_ok=True)
 (Path(__file__).parent / "uploads" / "images").mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(_UPLOADS_PATH)), name="uploads")
+
+_AUDIO_UPLOAD_MAX_BYTES = int(os.environ.get("MAXCORE_AUDIO_UPLOAD_MB", "100")) * 1024 * 1024
+_AUDIO_UPLOAD_TYPES = {
+    "audio/wav": ".wav", "audio/x-wav": ".wav", "audio/wave": ".wav",
+    "audio/mpeg": ".mp3", "audio/flac": ".flac", "audio/x-flac": ".flac",
+    "audio/ogg": ".ogg", "audio/opus": ".opus", "audio/webm": ".webm",
+    "audio/mp4": ".m4a", "audio/x-m4a": ".m4a", "audio/aac": ".aac",
+    "audio/aiff": ".aiff", "audio/x-aiff": ".aiff",
+}
+
+
+def _audio_upload_owner_dir(owner_id: str) -> Path:
+    digest = hashlib.sha256(owner_id.encode("utf-8")).hexdigest()
+    return _UPLOADS_PATH / "audio-inputs" / digest
 
 
 # ─── Uploads janitor ─────────────────────────────────────────────────────────
@@ -6745,6 +6777,9 @@ def _job_path(job_id: str) -> str:
 
 def _job_write(job_id: str, data: dict) -> None:
     """Write job data atomically (create or overwrite)."""
+    owner = _request_job_owner.get()
+    if owner and not data.get("owner_ids"):
+        data = {**data, "owner_ids": [owner]}
     tmp = _job_path(job_id) + ".tmp"
     with open(tmp, "w") as f:
         json.dump(data, f)
@@ -6771,6 +6806,32 @@ def _job_update(job_id: str, updates: dict) -> None:
             return
         data.update(updates)
         _job_write(job_id, data)
+
+
+def _job_add_request_owner(job_id: str) -> None:
+    """Bind a coalesced job to every authenticated submitting owner."""
+    owner = _request_job_owner.get()
+    if not owner:
+        return
+    with _api_jobs_lock:
+        data = _job_read(job_id)
+        if data is None:
+            return
+        owners = list(data.get("owner_ids") or [])
+        if owner not in owners:
+            owners.append(owner)
+            data["owner_ids"] = owners
+            _job_write(job_id, data)
+
+
+def _require_job_owner(job: dict, request: Request) -> None:
+    """Enforce durable ownership while retaining access to legacy ownerless jobs."""
+    owners = list(job.get("owner_ids") or [])
+    if not owners:
+        return
+    requester = (request.headers.get("x-maxcore-user-id") or "").strip()
+    if not requester or requester not in owners:
+        raise HTTPException(status_code=403, detail="Cannot access another user's MaxCore job")
 
 # -- Request models ------------------------------------------------------------
 
@@ -7880,15 +7941,13 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
     start = time.time()
 
     if req.mode == "planner":
-        system = req.system or "content pipeline"
-        steps  = [
-            {"id": 1, "action": "analyze_input",  "description": f"Parse intent for: {system}"},
-            {"id": 2, "action": "generate_hook",  "description": "Craft platform-specific hook"},
-            {"id": 3, "action": "build_body",     "description": "Expand body copy from inputs"},
-            {"id": 4, "action": "add_cta",        "description": "Append call-to-action"},
-            {"id": 5, "action": "score_and_rank", "description": "Score output and return best variant"},
-        ]
-        return {"steps": steps, "processing_time_ms": round((time.time() - start) * 1000, 1)}
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "MaxCore creative planning inference unavailable",
+                "required_capability": "trained structured creative planner",
+            },
+        )
 
     # mode == "content"
     intent   = req.intent or "create content"
@@ -7897,6 +7956,14 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
     idea     = _resolve_topic_from_url(req.topic or req.prompt or (str(inputs) if inputs else intent))
     platform = normalize_platform(req.platform) if req.platform else "general"
     tone     = req.tone or "authentic"
+    if not _model_ready or not _script_agent:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "MaxCore text generation inference unavailable",
+                "required_capability": "loaded ScriptAgent model",
+            },
+        )
 
     def _build(_request=None):
         # ── Request intelligence: analyse intent, audience & strategy up front ──
@@ -7910,44 +7977,34 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
         )
         brief = _ctx.brief
 
-        fallback = f"Generated content for intent '{intent}'."
         candidates: List[str] = []
 
-        if _model_ready and _script_agent:
-            from ai_model.agents.script_agent import ScriptRequest
+        from ai_model.agents.script_agent import ScriptRequest
 
-            def _infer():
-                # Keep `idea` clean (templated raw into hook/body text); do
-                # NOT feed `brief.directives` in as awareness — those are
-                # internal prompt-engineering instructions, not real-world
-                # context, and the script agent's awareness parser treats
-                # any bulleted line as a quotable signal (see the matching
-                # comment in /api/generate/content above).
-                return _script_agent.run(ScriptRequest(
-                    idea=idea, platform=platform, goal=intent, tone=brief.tone,
-                    awareness=_ctx.awareness,
-                ))
-
-            try:
-                # No per-request GPU spawn — batcher owns GPU lifecycle.
-                sr = _infer()
-                candidates.append(f"{sr.hook}\n{sr.body}\n{sr.cta}")
-                # Add a hook-swapped variant so we can rank for the best opener.
-                alt_hook, _, _ = ri.best_hook(idea, "the artist", sr.hook, brief)
-                if alt_hook and alt_hook != sr.hook:
-                    candidates.append(f"{alt_hook}\n{sr.body}\n{sr.cta}")
-            except Exception:
-                pass
-
-        # Quality guardrail: rank a deterministic raw-topic candidate alongside the
-        # model output so a clean variant wins if steering degraded the model.
-        candidates.append(ri.deterministic_candidate(idea, "the artist", brief))
-        if not candidates:
-            candidates = [fallback]
+        # Keep `idea` clean: internal directives are not real-world awareness.
+        sr = _script_agent.run(ScriptRequest(
+            idea=idea, platform=platform, goal=intent, tone=brief.tone,
+            awareness=_ctx.awareness,
+        ))
+        source = str(getattr(sr, "source", "") or "").lower()
+        if source not in {"model", "ai_model"}:
+            raise RuntimeError(f"ScriptAgent did not produce model output (source={source or 'unknown'})")
+        model_text = "\n".join(
+            part for part in (sr.hook, sr.body, sr.cta) if isinstance(part, str) and part.strip()
+        ).strip()
+        if not model_text:
+            raise RuntimeError("ScriptAgent returned empty model output")
+        candidates.append(model_text)
+        # Hook ranking is only applied to an actual model result.
+        alt_hook, _, _ = ri.best_hook(idea, "the artist", sr.hook, brief)
+        if alt_hook and alt_hook != sr.hook:
+            candidates.append(f"{alt_hook}\n{sr.body}\n{sr.cta}")
 
         ranked  = ri.rank_candidates(candidates, brief)
-        content = ranked[0][0] if ranked else fallback
-        quality = ranked[0][1] if ranked else 0.0
+        if not ranked:
+            raise RuntimeError("Model output could not be ranked")
+        content = ranked[0][0]
+        quality = ranked[0][1]
 
         outputs = [{
             "type":    "text",
@@ -7964,6 +8021,7 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
             "script":             content,
             "caption":            content,
             "quality_score":      quality,
+            "source":             "ai_model",
             "intelligence": {
                 **brief.to_dict(),
                 "candidates_considered": len(ranked),
@@ -7972,7 +8030,7 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
 
     # ── Default content-gen path: dedup + single-flight via PDIM orchestrator ──
     # Async coalescer first (coroutine-level), then pdim orchestrator (thread-level).
-    if _model_ready:
+    try:
         _key = {
             "platform": getattr(req, "platform", ""),
             "topic":    getattr(req, "topic", "") or getattr(req, "idea", ""),
@@ -7991,10 +8049,20 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
                 )
         _out = await _get_async_coalescer().compute(_key, _coalesced_social)
         result = dict(_out["result"])
+        if result.get("source") != "ai_model":
+            raise RuntimeError("Cached text result lacks genuine model provenance")
         if _out.get("source") in ("cache", "coalesced"):
             result["cached"] = True
-    else:
-        result = _build()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "MaxCore text generation model failed",
+                "reason": f"{type(exc).__name__}: {exc}",
+            },
+        )
     _sm = _get_storage_mode()
     if _sm != "live":
         result["storage_warning"] = (
@@ -8165,37 +8233,141 @@ async def api_analyze_sentiment(req: ApiSentimentRequest, _key=Depends(require_s
     return result
 
 
+@app.post("/api/audio/upload")
+async def api_audio_upload(request: Request, _key=Depends(require_scope("generate"))):
+    """Store one authenticated raw audio body for owner-scoped MaxCore use."""
+    owner_id = (request.headers.get("x-maxcore-user-id") or "").strip()
+    if not owner_id:
+        raise HTTPException(status_code=401, detail="Authenticated MaxCore user identity is required")
+    content_type = (request.headers.get("content-type") or "").split(";", 1)[0].lower()
+    extension = _AUDIO_UPLOAD_TYPES.get(content_type)
+    if not extension:
+        raise HTTPException(status_code=415, detail="Content-Type must be a supported audio type")
+    declared = request.headers.get("content-length")
+    if declared:
+        try:
+            if int(declared) > _AUDIO_UPLOAD_MAX_BYTES:
+                raise HTTPException(status_code=413, detail="Audio upload exceeds size limit")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid Content-Length")
+
+    owner_dir = _audio_upload_owner_dir(owner_id)
+    owner_dir.mkdir(parents=True, exist_ok=True)
+    asset_id = uuid.uuid4().hex
+    final_path = owner_dir / f"{asset_id}{extension}"
+    temp_path = owner_dir / f".{asset_id}.part"
+    received = 0
+    try:
+        with temp_path.open("xb") as output:
+            async for chunk in request.stream():
+                received += len(chunk)
+                if received > _AUDIO_UPLOAD_MAX_BYTES:
+                    raise HTTPException(status_code=413, detail="Audio upload exceeds size limit")
+                output.write(chunk)
+        if received == 0:
+            raise HTTPException(status_code=422, detail="Audio upload is empty")
+        try:
+            import librosa
+            waveform, sample_rate = await _in_thread(
+                lambda: librosa.load(str(temp_path), sr=None, mono=True, duration=1.0)
+            )
+            if sample_rate <= 0 or getattr(waveform, "size", 0) == 0:
+                raise ValueError("decoder returned no audio samples")
+        except Exception as exc:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Uploaded body is not decodable audio: {type(exc).__name__}",
+            )
+        temp_path.replace(final_path)
+    except Exception:
+        temp_path.unlink(missing_ok=True)
+        final_path.unlink(missing_ok=True)
+        raise
+    relative = final_path.relative_to(_UPLOADS_PATH).as_posix()
+    return {"url": f"/uploads/{relative}"}
+
+
+async def _analyze_audio_reference(reference: Optional[str], request: Request) -> dict:
+    """Decode a contained MaxCore media file and run the real conductor."""
+    if not reference:
+        raise HTTPException(status_code=422, detail="audio_url or audio_path is required")
+    parsed = urlparse(str(reference))
+    if parsed.scheme or parsed.netloc:
+        raise HTTPException(status_code=422, detail="Remote and file URLs are not accepted; upload audio first")
+    raw_path = parsed.path if parsed.scheme else str(reference)
+    marker = "/uploads/"
+    if marker in raw_path:
+        relative = raw_path.split(marker, 1)[1]
+    elif raw_path.startswith("uploads/"):
+        relative = raw_path[len("uploads/"):]
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail="Audio reference must identify a MaxCore /uploads/ asset",
+        )
+    root = _UPLOADS_PATH.resolve()
+    path = (root / relative).resolve()
+    if not path.is_relative_to(root) or not path.is_file():
+        raise HTTPException(status_code=404, detail="Audio asset not found")
+    owner_id = (request.headers.get("x-maxcore-user-id") or "").strip()
+    expected_owner_dir = _audio_upload_owner_dir(owner_id).resolve() if owner_id else None
+    audio_inputs = (root / "audio-inputs").resolve()
+    if path.is_relative_to(audio_inputs):
+        if expected_owner_dir is None or not path.is_relative_to(expected_owner_dir):
+            raise HTTPException(status_code=403, detail="Cannot access another user's audio upload")
+    try:
+        import librosa
+        from ai_model.audio.audio_analysis import analyze_audio
+        waveform, sample_rate = await _in_thread(
+            lambda: librosa.load(str(path), sr=None, mono=False, duration=300.0)
+        )
+        timeline = await _in_thread(
+            lambda: analyze_audio(waveform, sample_rate, max_seconds=300.0)
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"MaxCore audio analysis failed: {type(exc).__name__}: {exc}",
+        )
+    if not timeline.analysis_ok:
+        raise HTTPException(
+            status_code=503,
+            detail=f"MaxCore audio analysis unavailable: {timeline.notes}",
+        )
+    result = timeline.to_dict()
+    result.update({
+        "duration": result["duration_sec"],
+        "tempo": result["bpm"],
+        "musical_key": f"{result['key']} {result['mode']}",
+        "energy_curve": result["energy_envelope"],
+        "source": "maxcore_audio_conductor",
+    })
+    return result
+
+
+def _resolve_owner_audio_upload(reference: str, request: Request) -> str:
+    """Resolve only this caller's opaque audio-input URL to a contained file."""
+    parsed = urlparse(str(reference))
+    if parsed.scheme or parsed.netloc:
+        raise HTTPException(status_code=422, detail="Remote and file URLs are not accepted; upload audio first")
+    raw_path = parsed.path if parsed.scheme else str(reference)
+    if not raw_path.startswith("/uploads/audio-inputs/"):
+        raise HTTPException(status_code=422, detail="user_audio_path must be returned by /api/audio/upload")
+    relative = raw_path[len("/uploads/"):]
+    root = _UPLOADS_PATH.resolve()
+    path = (root / relative).resolve()
+    owner_id = (request.headers.get("x-maxcore-user-id") or "").strip()
+    if not owner_id or not path.is_relative_to(_audio_upload_owner_dir(owner_id).resolve()):
+        raise HTTPException(status_code=403, detail="Cannot access another user's audio upload")
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Audio upload not found")
+    return str(path)
+
+
 @app.post("/api/analyze/audio")
-async def api_analyze_audio(req: ApiAnalyzeAudioRequest, _key=Depends(require_scope("generate"))):
-    """Style fingerprinting from an uploaded audio file."""
-    import hashlib
-    import numpy as _np
-    seed = int(hashlib.md5(req.audio_url.encode()).hexdigest(), 16) % (2 ** 31)
-    rng  = _np.random.default_rng(seed)
-
-    keys_list    = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-    modes_list   = ["major", "minor"]
-    moods_list   = ["energetic", "melancholic", "chill", "aggressive", "uplifting", "dark", "euphoric"]
-    genres_list  = ["hip-hop", "r&b", "pop", "trap", "afrobeats", "electronic", "soul"]
-    timbres_list = ["bright", "warm", "gritty", "smooth", "punchy"]
-    instr_list   = ["drums", "bass", "piano", "guitar", "synth", "vocals"]
-    bpm  = round(float(rng.uniform(70, 180)), 1)
-    key  = keys_list[int(rng.integers(0, len(keys_list)))] + " " + modes_list[int(rng.integers(0, 2))]
-
-    return {
-        "bpm":    bpm,
-        "key":    key,
-        "energy": round(float(rng.uniform(0.2, 1.0)), 3),
-        "mood":   moods_list[int(rng.integers(0, len(moods_list)))],
-        "genre":  genres_list[int(rng.integers(0, len(genres_list)))],
-        "timbre_profile": {
-            "descriptor": timbres_list[int(rng.integers(0, len(timbres_list)))],
-            "brightness": round(float(rng.uniform(0.2, 1.0)), 3),
-            "warmth":     round(float(rng.uniform(0.2, 1.0)), 3),
-        },
-        "instrumentation":  [instr_list[i] for i in rng.choice(len(instr_list), 3, replace=False).tolist()],
-        "style_fingerprint": rng.random(64).tolist(),
-    }
+async def api_analyze_audio(req: ApiAnalyzeAudioRequest, request: Request, _key=Depends(require_scope("generate"))):
+    """Run MaxCore's real waveform conductor over a MaxCore-hosted audio file."""
+    return await _analyze_audio_reference(req.audio_url, request)
 
 
 # -- Advertising & Engagement --------------------------------------------------
@@ -8312,6 +8484,18 @@ async def api_optimize_ad(req: ApiOptimizeAdRequest, _key=Depends(require_scope(
 @app.post("/api/predict/engagement")
 async def api_predict_engagement(req: ApiPredictEngagementRequest, _key=Depends(require_scope("generate"))):
     """Best post times, viral scoring, schedule optimisation — AI model powered."""
+    raise HTTPException(
+        status_code=503,
+        detail={
+            "error": "MaxCore engagement reasoning unavailable",
+            "required_capability": "trained engagement prediction model",
+            "action": req.action,
+        },
+    )
+
+    # Historical implementation retained below for compatibility archaeology;
+    # it is intentionally unreachable because it mixes templates, fixed times,
+    # text-length scoring, and random rates rather than engagement inference.
     import numpy as _np
     platform   = req.platform.lower()
     _request_awareness = _merged_awareness_for(req)
@@ -9439,6 +9623,7 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
     if _existing_id:
         _ejob = _job_read(_existing_id)
         if _ejob and _ejob.get("status") in ("pending", "running"):
+            _job_add_request_owner(_existing_id)
             return {
                 "job_id":   _existing_id,
                 "status":   "coalesced",
@@ -10217,7 +10402,7 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
 
 
 @app.post("/api/generate-video")
-async def api_generate_video(req: ApiGenerateVideoRequest, _key=Depends(require_scope("generate"))):
+async def api_generate_video(req: ApiGenerateVideoRequest, request: Request, _key=Depends(require_scope("generate"))):
     """
     Kick off a fully AI-driven async video render job.
 
@@ -10230,6 +10415,8 @@ async def api_generate_video(req: ApiGenerateVideoRequest, _key=Depends(require_
     returns all job_ids in a single response instead of requiring N calls.
     """
     await _wait_for_model_ready()
+    if req.user_audio_path:
+        req.user_audio_path = _resolve_owner_audio_upload(req.user_audio_path, request)
 
     if req.platforms:
         _plats = [normalize_platform(p) for p in req.platforms if p]
@@ -10304,7 +10491,7 @@ def _ffmpeg_media_duration(path: str) -> float:
 
 
 @app.post("/api/video/extend")
-async def api_video_extend(req: ApiVideoExtendRequest, _key=Depends(require_scope("generate"))):
+async def api_video_extend(req: ApiVideoExtendRequest, request: Request, _key=Depends(require_scope("generate"))):
     """Extend a previously generated video (Veo-parity scene extension).
 
     The source video's last frame is extracted and used as the first-frame
@@ -10323,6 +10510,7 @@ async def api_video_extend(req: ApiVideoExtendRequest, _key=Depends(require_scop
     src_name = req.source.strip()
     src_job = _job_read(src_name) if len(src_name) >= 8 and "/" not in src_name and "." not in src_name else None
     if src_job:
+        _require_job_owner(src_job, request)
         if src_job.get("status") != "done" or not src_job.get("filename"):
             raise HTTPException(status_code=409, detail=f"source job {src_name} has no finished video to extend")
         src_name = str(src_job["filename"])
@@ -10547,6 +10735,7 @@ async def api_video_generate_ai(request: Request, _key=Depends(require_scope("ge
     if _vexisting:
         _vj = _job_read(_vexisting)
         if _vj and _vj.get("status") in ("pending", "running"):
+            _job_add_request_owner(_vexisting)
             return {
                 "job_id":   _vexisting,
                 "status":   "coalesced",
@@ -10744,11 +10933,12 @@ async def api_video_generate_ai(request: Request, _key=Depends(require_scope("ge
 # -- Job polling ---------------------------------------------------------------
 
 @app.get("/api/video-job/{job_id}")
-async def api_poll_video_job(job_id: str, _key=Depends(require_scope("read"))):
+async def api_poll_video_job(job_id: str, request: Request, _key=Depends(require_scope("read"))):
     """Poll a video render job."""
     job = _job_read(job_id)
     if job is None:
         return {"status": "error", "error": "Job not found"}
+    _require_job_owner(job, request)
     if job["status"] == "done":
         return {
             "status":          "done",
@@ -10775,7 +10965,7 @@ async def api_poll_video_job(job_id: str, _key=Depends(require_scope("read"))):
 
 
 @app.delete("/api/video-job/{job_id}")
-async def api_cancel_video_job(job_id: str, _key=Depends(require_scope("generate"))):
+async def api_cancel_video_job(job_id: str, request: Request, _key=Depends(require_scope("generate"))):
     """
     Cancel a pending job (marks it so the render thread exits before encoding)
     or purge a finished/errored job and delete its output file.
@@ -10783,6 +10973,7 @@ async def api_cancel_video_job(job_id: str, _key=Depends(require_scope("generate
     job = _job_read(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    _require_job_owner(job, request)
 
     status = job.get("status")
 
@@ -10822,7 +11013,7 @@ async def api_concurrency_stats(_key=Depends(require_scope("read"))):
 
 
 @app.get("/api/video-jobs")
-async def api_list_video_jobs(_key=Depends(require_scope("read"))):
+async def api_list_video_jobs(request: Request, _key=Depends(require_scope("read"))):
     """
     Return a summary of all video jobs in this server session, newest first.
     Each entry includes enough metadata to render a history view — no scene
@@ -10840,6 +11031,10 @@ async def api_list_video_jobs(_key=Depends(require_scope("read"))):
             job_id = fname[:-5]
             data = _job_read(job_id)
             if data is None:
+                continue
+            try:
+                _require_job_owner(data, request)
+            except HTTPException:
                 continue
             rows.append({
                 "job_id":          job_id,
@@ -10861,7 +11056,7 @@ async def api_list_video_jobs(_key=Depends(require_scope("read"))):
 
 
 @app.get("/api/video-job/{job_id}/preview/{scene_idx}")
-async def api_video_job_preview(job_id: str, scene_idx: int, _key=Depends(require_scope("read"))):
+async def api_video_job_preview(job_id: str, scene_idx: int, request: Request, _key=Depends(require_scope("read"))):
     """
     Extract a single JPEG thumbnail frame from a completed video job at
     the temporal midpoint of the requested scene.  Returns image/jpeg.
@@ -10871,6 +11066,7 @@ async def api_video_job_preview(job_id: str, scene_idx: int, _key=Depends(requir
     job = _job_read(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    _require_job_owner(job, request)
     if job.get("status") != "done":
         raise HTTPException(status_code=409, detail=f"Job is {job.get('status')}, not done")
 
@@ -10916,11 +11112,12 @@ async def api_video_job_preview(job_id: str, scene_idx: int, _key=Depends(requir
 
 
 @app.get("/api/audio-job/{job_id}")
-async def api_poll_audio_job(job_id: str, _key=Depends(require_scope("read"))):
+async def api_poll_audio_job(job_id: str, request: Request, _key=Depends(require_scope("read"))):
     """Poll an audio generation job."""
     job = _job_read(job_id)
     if job is None:
         return {"status": "error", "error": "Job not found"}
+    _require_job_owner(job, request)
     if job["status"] == "done":
         return {
             "status":    "done",
@@ -10968,11 +11165,12 @@ async def api_poll_audio_job(job_id: str, _key=Depends(require_scope("read"))):
 # direct per-stem downloads.
 
 @app.get("/api/audio/{job_id}/stems")
-async def api_audio_stems(job_id: str, _key=Depends(require_scope("read"))):
+async def api_audio_stems(job_id: str, request: Request, _key=Depends(require_scope("read"))):
     """Return stem download URLs for a completed audio job."""
     job = _job_read(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    _require_job_owner(job, request)
     if job.get("status") != "done":
         raise HTTPException(status_code=409, detail=f"Job not complete (status={job.get('status')})")
 
@@ -11021,13 +11219,17 @@ async def api_audio_stems(job_id: str, _key=Depends(require_scope("read"))):
 # ─── Serve stem files (file-serving route for stems) ─────────────────────────
 
 @app.get("/api/files/stems/{job_id}/{filename}")
-async def api_serve_stem_file(job_id: str, filename: str, _key=Depends(require_scope("read"))):
+async def api_serve_stem_file(job_id: str, filename: str, request: Request, _key=Depends(require_scope("read"))):
     """Download an individual stem WAV file."""
     # Sanitise inputs to prevent path traversal: job_id and filename must be
     # simple names (no separators, no dot-segments), and the resolved path
     # must be strictly inside uploads/stems/<job_id>/ (relative_to, not a
     # string-prefix check, which sibling dirs like "uploads_bak" would pass).
     import re as _re_stem
+    job = _job_read(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    _require_job_owner(job, request)
     if not _re_stem.fullmatch(r"[A-Za-z0-9._-]+", job_id) or job_id in (".", ".."):
         raise HTTPException(status_code=400, detail="Invalid path")
     safe_name = Path(filename).name
@@ -11056,11 +11258,12 @@ async def api_serve_stem_file(job_id: str, filename: str, _key=Depends(require_s
 # Generates a MIDI file from the job parameters and returns it as a download.
 
 @app.get("/api/audio/{job_id}/midi")
-async def api_audio_midi(job_id: str, _key=Depends(require_scope("read"))):
+async def api_audio_midi(job_id: str, request: Request, _key=Depends(require_scope("read"))):
     """Generate and return a MIDI file for a completed audio job."""
     job = _job_read(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    _require_job_owner(job, request)
     if job.get("status") != "done":
         raise HTTPException(status_code=409, detail=f"Job not complete (status={job.get('status')})")
 
@@ -11620,66 +11823,13 @@ async def audio_mixing_recommendation(
 
 
 @app.post("/api/audio/analyze")
-async def api_audio_analyze(req: ApiAudioAnalyzeRequest, _key=Depends(require_scope("generate"))):
+async def api_audio_analyze(req: ApiAudioAnalyzeRequest, request: Request, _key=Depends(require_scope("generate"))):
     """
     Beat/structure analysis for beat-synced music video generation.
     Deterministic per audio reference so repeated calls on the same track agree.
     Returns bpm/tempo, key/musical_key, sections[], energy_curve[] and mood[].
     """
-    import hashlib
-    import numpy as _np
-
-    ref  = req.audio_path or req.audio_url or "track"
-    seed = int(hashlib.md5(ref.encode()).hexdigest(), 16) % (2 ** 31)
-    rng  = _np.random.default_rng(seed)
-
-    keys_list  = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-    modes_list = ["major", "minor"]
-    moods_pool = ["energetic", "melancholic", "chill", "aggressive",
-                  "uplifting", "dark", "euphoric", "dreamy"]
-
-    bpm         = round(float(rng.uniform(70, 175)), 1)
-    musical_key = f"{keys_list[int(rng.integers(0, len(keys_list)))]} {modes_list[int(rng.integers(0, 2))]}"
-
-    duration = 180.0
-    if isinstance(req.context, dict):
-        try:
-            duration = float(req.context.get("duration") or duration)
-        except (TypeError, ValueError):
-            pass
-
-    structure = ["intro", "verse", "chorus", "verse", "chorus", "bridge", "chorus", "outro"]
-    weights   = {"intro": 0.6, "verse": 1.0, "chorus": 1.1, "bridge": 0.8, "outro": 0.7}
-    total_w   = sum(weights[s] for s in structure)
-    sections  = []
-    cursor    = 0.0
-    for i, stype in enumerate(structure):
-        seg   = duration * (weights[stype] / total_w)
-        start = round(cursor, 2)
-        end   = round(min(duration, cursor + seg), 2)
-        sections.append({
-            "name":  f"{stype}_{i + 1}",
-            "label": stype.capitalize(),
-            "type":  stype,
-            "start": start,
-            "end":   end,
-        })
-        cursor = end
-
-    energy_curve = [round(float(x), 3) for x in rng.uniform(0.2, 1.0, 32).tolist()]
-    moods        = [moods_pool[i] for i in rng.choice(len(moods_pool), 2, replace=False).tolist()]
-
-    return {
-        "bpm":          bpm,
-        "tempo":        bpm,
-        "key":          musical_key,
-        "musical_key":  musical_key,
-        "sections":     sections,
-        "energy_curve": energy_curve,
-        "mood":         moods,
-        "duration":     round(duration, 2),
-        "source":       "heuristic",
-    }
+    return await _analyze_audio_reference(req.audio_path or req.audio_url, request)
 
 
 @app.post("/api/infer/viral-score")
@@ -11689,51 +11839,22 @@ async def api_infer_viral_score(req: ApiViralScoreRequest, _key=Depends(require_
     Returns score and viral_score in 0–1 (MaxBooster multiplies by 100) plus a
     human-readable recommendation.
     """
-    inputs        = req.inputs if isinstance(req.inputs, dict) else {}
-    genre         = str(inputs.get("genre", "")).lower()
-    platform      = str(inputs.get("platform", "")).lower()
-    bpm           = float(inputs.get("bpm") or 0)
-    section_count = int(inputs.get("section_count") or 0)
-    scene_count   = int(inputs.get("scene_count") or 0)
-    has_chorus    = bool(inputs.get("has_chorus"))
-
-    score = 0.45
-    if 90 <= bpm <= 150:
-        score += 0.12
-    elif bpm > 0:
-        score += 0.04
-    score += min(0.12, section_count * 0.02)
-    score += min(0.12, scene_count * 0.015)
-    if has_chorus:
-        score += 0.08
-    if platform in ("tiktok", "instagram", "instagram_reels", "youtube", "youtube_shorts", "reels"):
-        score += 0.08
-    if genre in ("hip-hop", "hiphop", "trap", "pop", "afrobeats", "drill", "r&b", "rnb", "electronic"):
-        score += 0.06
-
-    score = max(0.0, min(1.0, round(score, 3)))
-    pct   = round(score * 100)
-    if pct >= 80:
-        rec = "High viral potential — strong beat sync and genre-authentic scenes"
-    elif pct >= 60:
-        rec = "Good engagement likely — add a bold CTA overlay and a hook in the first 2s"
-    else:
-        rec = "Moderate — tighten the intro, lean into a chorus drop, and post during peak hours"
-
-    return {
-        "score":          score,
-        "viral_score":    score,
-        "recommendation": rec,
-        "model":          req.model or "viral-score-v2",
-        "source":         "heuristic",
-    }
+    raise HTTPException(
+        status_code=503,
+        detail={
+            "error": "MaxCore video scoring inference unavailable",
+            "required_capability": "trained video-plan scoring model",
+            "requested_model": req.model,
+        },
+    )
 
 
-def _resolve_video_job_file(job_id: str) -> Path:
+def _resolve_video_job_file(job_id: str, request: Request) -> Path:
     """Validate a completed video job and return its on-disk MP4 path."""
     job = _job_read(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    _require_job_owner(job, request)
     if job.get("status") != "done":
         raise HTTPException(status_code=409, detail=f"Job is {job.get('status')}, not done")
     filename = job.get("filename")
@@ -11752,9 +11873,9 @@ def _resolve_video_job_file(job_id: str) -> Path:
 @app.get("/api/video-job/{job_id}/download")
 @app.get("/api/video-job/{job_id}/file")
 @app.get("/api/video-job/{job_id}/video")
-async def api_video_job_download(job_id: str, _key=Depends(require_scope("read"))):
+async def api_video_job_download(job_id: str, request: Request, _key=Depends(require_scope("read"))):
     """Serve the rendered MP4 binary for a completed video job (validated by ftyp on the client)."""
-    path = _resolve_video_job_file(job_id)
+    path = _resolve_video_job_file(job_id, request)
     return FileResponse(str(path), media_type="video/mp4", filename=path.name)
 
 

@@ -101,7 +101,8 @@ export interface ContentVariant {
   headline: string;
   hashtags: string[];
   callToAction: string;
-  scores: ContentScores;
+  /** Present only when an authoritative scorer supplied these values. */
+  scores?: ContentScores;
   platformOptimizations: PlatformOptimization;
 }
 
@@ -438,61 +439,72 @@ class ContentQualityPipeline {
     count: number = 3,
   ): Promise<ContentVariant[]> {
     const variants: ContentVariant[] = [];
-    const strategies = this.getGenerationStrategies(context?.objective);
+    const requested = Math.max(1, count);
 
-    // Accumulate per-variant Advanced AI failures silently during the loop.
-    // A single summary warn is logged after all variants are generated — this
-    // prevents N identical (or near-identical) warn lines per cycle.
-    const _failAcc: { count: number; reason: string; localCount: number } = {
-      count: 0,
-      reason: "",
-      localCount: 0,
-    };
+    for (let offset = 0; offset < requested; offset += 5) {
+      const batchSize = Math.min(5, requested - offset);
+      const generated = await MaxCoreAIClient.infer<{
+        variants?: Array<{
+          hook?: string;
+          body?: string;
+          cta?: string;
+          caption?: string;
+          hashtags?: string[];
+        }>;
+      }>("/api/platform/social/generate", {
+        user_id: context.userId,
+        platform: context.platform,
+        topic: context.topic,
+        tone: context.tone ?? context.brandVoice?.tone ?? "authentic",
+        goal: context.objective,
+        include_hashtags: true,
+        num_variants: batchSize,
+        instruction: context.targetAudience
+          ? `Write for this target audience: ${context.targetAudience}`
+          : undefined,
+        content_themes: context.preferredHashtags,
+        extra_context: context.genre
+          ? `Artist: ${context.artistName}. Genre: ${context.genre}.`
+          : `Artist: ${context.artistName}.`,
+      });
+      if (
+        !generated ||
+        !Array.isArray(generated.variants) ||
+        generated.variants.length === 0
+      ) {
+        throw new AIUnavailableError("MaxCore social generation");
+      }
 
-    for (let i = 0; i < count; i++) {
-      const strategy = strategies[i % strategies?.length];
-      const variant = await this.generateSingleVariant(
-        context,
-        strategy,
-        i,
-        _failAcc,
-      );
-      variants?.push(variant);
+      for (const remote of generated.variants) {
+        const headline = remote.hook?.trim() ?? "";
+        const body = remote.body?.trim() ?? "";
+        const cta = remote.cta?.trim() ?? "";
+        const hashtags = Array.isArray(remote.hashtags)
+          ? remote.hashtags.filter((tag): tag is string => typeof tag === "string")
+          : [];
+        if (!headline && !body && !cta) {
+          throw new AIUnavailableError("MaxCore returned empty social content");
+        }
+        const fullContent = [headline, body, cta].filter(Boolean).join("\n\n");
+        const platformOpt = this.validatePlatformConstraints(
+          fullContent,
+          hashtags,
+          context.platform,
+        );
+        variants.push({
+          id: `maxcore_${offset + variants.length}_${Date.now()}`,
+          content: body,
+          headline,
+          hashtags,
+          callToAction: cta,
+          platformOptimizations: platformOpt,
+        });
+      }
     }
 
-    // Emit one summary log if any variants fell back to local.
-    // MaxCore is always running — a null return means it was temporarily busy
-    // (e?.g. 504 under diffusion training load); the Tier-3 local fallback is
-    // the designed response, not an error condition.  Log at INFO so it is
-    // visible without polluting the WARN channel.
-    if (_failAcc?.count > 0) {
-      let inRegistration = false;
-      try {
-        const { isLuaRegistrationMode } = await import("../lib/luaExecutor.js");
-        inRegistration = isLuaRegistrationMode();
-      } catch {
-        /* non-fatal */
-      }
-      if (inRegistration) {
-        logger.debug(
-          `[ContentQuality] Advanced AI deferred for ${_failAcc?.count}/${count} variants ` +
-            `(registration in progress) — using local fallback`,
-        );
-      } else {
-        logger.info(
-          `[ContentQuality] Advanced AI used local fallback for ${_failAcc?.count}/${count} variants` +
-            (_failAcc?.reason ? ` (${_failAcc?.reason})` : ""),
-        );
-      }
-      if (_failAcc?.localCount > 0) {
-        logger.info(
-          `[ContentQuality] ${_failAcc?.localCount}/${count} variants generated via ` +
-            `local pattern fallback (Tier 2)`,
-        );
-      }
-    }
-
-    return variants?.sort((a, b) => b?.scores.overall - a?.scores.overall);
+    // MaxCore owns variant ordering. No unavailable/non-model scoring stage is
+    // allowed to turn successful generation into a failed request.
+    return variants;
   }
 
   private getGenerationStrategies(objective: string): string[] {
@@ -1523,6 +1535,9 @@ class ContentQualityPipeline {
     variants: ContentVariant[],
     minScore: number = VEO_QUALITY_GATE,
   ): Promise<ContentVariant | null> {
+    if (variants.length > 0 && variants.every((variant) => !variant.scores)) {
+      return variants[0];
+    }
     // Veo gate + Caffeine Mode: floor lowers under deadline pressure, but urgency
     // content already scored higher in scoreContent — so only urgency-rich posts
     // benefit from the relief.  Absolute floor is VEO_PRESSURE_FLOOR (65).
@@ -1536,17 +1551,24 @@ class ContentQualityPipeline {
 
     const validVariants = variants?.filter(
       (v) =>
-        v?.scores.overall >= effectiveMin && v?.platformOptimizations.isValid,
+        (v?.scores?.overall ?? Number.NEGATIVE_INFINITY) >= effectiveMin &&
+        v?.platformOptimizations.isValid,
     );
 
     if (validVariants?.length === 0) {
       const best = variants?.sort(
-        (a, b) => b?.scores.overall - a?.scores.overall,
+        (a, b) =>
+          (b?.scores?.overall ?? Number.NEGATIVE_INFINITY) -
+          (a?.scores?.overall ?? Number.NEGATIVE_INFINITY),
       )[0];
       // Fallback floor: VEO_PRESSURE_FLOOR — never publish below 87% of Veo gate
-      if (best && best?.scores.overall >= VEO_PRESSURE_FLOOR) {
+      if (
+        best &&
+        (best?.scores?.overall ?? Number.NEGATIVE_INFINITY) >=
+          VEO_PRESSURE_FLOOR
+      ) {
         logger.info(
-          `[VeoGate] Fallback: best available ${best?.scores.overall?.toFixed(1)} passes ` +
+          `[VeoGate] Fallback: best available ${best?.scores?.overall?.toFixed(1)} passes ` +
             `VEO_PRESSURE_FLOOR (${VEO_PRESSURE_FLOOR}). Issues: ${best?.platformOptimizations.issues?.join(", ") || "none"}`,
         );
         return best;
@@ -1589,97 +1611,13 @@ class ContentQualityPipeline {
       variantCount + pressureExtra,
     );
 
-    // ── MaxCore re-scoring: enhance top candidates with inference server ───────
-    // Run top-3 local candidates through MaxCore for a calibrated score blend.
-    // MaxCore returns a 0-100 score; we blend it at 35% weight with the
-    // local score (65%) to preserve the Veo-calibrated rubric while benefiting
-    // from MaxCore's trained weights.  If MaxCore is offline the local score
-    // stands unchanged — no silent quality degradation.
-    const topCandidates = [...variants]
-      .sort((a, b) => b.scores.overall - a.scores.overall)
-      .slice(0, 3);
-
-    const maxcoreAvailable = await MaxCoreAIClient.isAvailable();
-    if (maxcoreAvailable) {
-      await Promise.all(
-        topCandidates.map(async (variant) => {
-          try {
-            const result = await MaxCoreAIClient.infer<{
-              score: number;
-              feedback?: string;
-            }>("/api/content/score", {
-              text: `${variant.headline}\n\n${variant.content}`,
-              platform: context.platform,
-              cta: variant.callToAction,
-              hashtags: variant.hashtags,
-              userId,
-            });
-            if (result!.score !== undefined) {
-              const mcScore = Math.min(100, Math.max(0, result!.score));
-              const blended = variant.scores.overall * 0.65 + mcScore * 0.35;
-              logger.debug(
-                `[MaxCore] Scored variant ${variant.id}: local=${variant.scores.overall.toFixed(1)} ` +
-                  `maxcore=${mcScore.toFixed(1)} blended=${blended.toFixed(1)}`,
-              );
-              variant.scores.overall = blended;
-            }
-          } catch {
-            /* MaxCore timeout — local score unchanged */
-          }
-        }),
-      );
-
-      // Re-sort after MaxCore blend
-      variants.sort((a, b) => b.scores.overall - a.scores.overall);
-    }
-
-    let selected = await this.selectBestVariant(variants, minScore);
-
-    // ── Discriminator pass ─────────────────────────────────────────────────
-    // selectBestVariant only compares candidates against each other; the
-    // discriminator judges the winner in isolation for artifact-level
-    // defects (placeholders, stutter, spam) a relative score blend can miss.
-    // On reject, fall through the ranked list rather than publishing content
-    // that fails the critic outright.
-    if (selected) {
-      const { judgeContent } = await import("./discriminatorEngine.js");
-      const ranked = [selected, ...variants.filter((v) => v.id !== selected!.id)]
-        .sort((a, b) => b.scores.overall - a.scores.overall);
-      let discriminatorPassed = false;
-      for (const candidate of ranked) {
-        const verdict = await judgeContent({
-          text: candidate.content,
-          headline: candidate.headline,
-          cta: candidate.callToAction,
-          hashtags: candidate.hashtags,
-          platform: context.platform,
-        });
-        if (verdict.verdict === "pass") {
-          if (candidate.id !== selected.id) {
-            logger.info(
-              `[Discriminator] Top-ranked variant rejected — falling back to ${candidate.id} (score ${verdict.overall})`,
-            );
-          }
-          selected = candidate;
-          discriminatorPassed = true;
-          break;
-        }
-        logger.info(
-          `[Discriminator] Variant ${candidate.id} rejected: ${verdict.feedback}`,
-        );
-      }
-      if (!discriminatorPassed) {
-        logger.warn(
-          "[Discriminator] All ranked variants rejected by the critic — no content selected",
-        );
-        selected = null;
-      }
-    }
+    // Preserve MaxCore's order when it did not provide authoritative scores.
+    const selected = await this.selectBestVariant(variants, minScore);
 
     logger.info(
       `[VeoGate] Generated ${variants.length} variant(s) (base: ${variantCount} + pressure extra: ${pressureExtra}` +
-        `${maxcoreAvailable ? " + MaxCore blend" : ""}), ` +
-        `selected: ${selected?.id || "none"} (score: ${selected?.scores.overall.toFixed(1) || "N/A"} / gate: ${VEO_QUALITY_GATE})`,
+        `; MaxCore generated), ` +
+        `selected: ${selected?.id || "none"} (score: ${selected?.scores?.overall?.toFixed(1) ?? "unknown"})`,
     );
 
     return { selected, variants, context };
@@ -1698,7 +1636,7 @@ class ContentQualityPipeline {
     selected: ContentVariant | null;
     variants: ContentVariant[];
     context: ContentContext;
-    advancedInsights: {
+    advancedInsights?: {
       viralPotential: number;
       audienceResonance: number;
       optimalTiming: { day: number; hour: number };
@@ -1706,122 +1644,12 @@ class ContentQualityPipeline {
       improvements: string[];
     };
   }> {
-    const context = await this.buildContext(userId, baseContext);
-
-    try {
-      const advancedRequest: AdvancedContentRequest = {
-        userId,
-        topic: context.topic,
-        platforms: [context.platform],
-        objective: context.objective,
-        tone: context.tone as unknown as Record<string, unknown>,
-        targetAudience: context.targetAudience,
-        genre: context.genre,
-        artistName: context.artistName,
-        contentType: this.mapObjectiveToContentType(context.objective),
-        includeHashtags: true,
-        includeEmojis: true,
-        variantCount,
-      };
-
-      const advancedResult =
-        await advancedSocialAIService.generateAdvancedContent(advancedRequest);
-
-      const variants: ContentVariant[] = advancedResult.variants.map((v, _i) => {
-        // Apply algorithm signal optimization and run full pipeline scoring
-        const body = v.content.split("\n\n")[1] || v.content;
-        const optimised = this.applyAlgorithmSignalOptimization(
-          v.headline,
-          body,
-          v.cta,
-          context.platform,
-        );
-        const platformOpt = this.validatePlatformConstraints(
-          `${optimised.headline}\n\n${optimised.body}`,
-          v.hashtags,
-          context.platform,
-        );
-        const scores = this.scoreContent(
-          `${optimised.headline}\n\n${optimised.body}`,
-          optimised.headline,
-          optimised.cta,
-          context,
-          platformOpt,
-        );
-        return {
-          id: v.id,
-          content: optimised.body,
-          headline: optimised.headline,
-          hashtags: v.hashtags,
-          callToAction: optimised.cta,
-          scores,
-          platformOptimizations: platformOpt,
-        };
-      });
-
-      // Primary variant — apply full scoring pipeline too
-      const primaryBody = advancedResult.primary.body;
-      const primaryOptimised = this.applyAlgorithmSignalOptimization(
-        advancedResult.primary.headline,
-        primaryBody,
-        advancedResult.primary.callToAction,
-        context.platform,
-      );
-      const primaryPlatformOpt = this.validatePlatformConstraints(
-        `${primaryOptimised.headline}\n\n${primaryOptimised.body}`,
-        advancedResult.primary.hashtags,
-        context.platform,
-      );
-      const primaryScores = this.scoreContent(
-        `${primaryOptimised.headline}\n\n${primaryOptimised.body}`,
-        primaryOptimised.headline,
-        primaryOptimised.cta,
-        context,
-        primaryPlatformOpt,
-      );
-      variants.push({
-        id: "advanced_primary",
-        content: primaryOptimised.body,
-        headline: primaryOptimised.headline,
-        hashtags: advancedResult.primary.hashtags,
-        callToAction: primaryOptimised.cta,
-        scores: primaryScores,
-        platformOptimizations: primaryPlatformOpt,
-      });
-
-      variants.sort((a, b) => b.scores.overall - a.scores.overall);
-      const selected = variants[0] || null;
-
-      logger.info(
-        `[AdvancedAI] Generated ${variants.length} variants with GPT-5.2 level AI, best score: ${selected.scores.overall.toFixed(1)}`,
-      );
-
-      return {
-        selected,
-        variants,
-        context,
-        advancedInsights: {
-          viralPotential: advancedResult.viralPotential.score,
-          audienceResonance: advancedResult.audienceResonance.resonanceScore,
-          optimalTiming: {
-            day: advancedResult.optimalTiming.bestDays[0] || 3,
-            hour: advancedResult.optimalTiming.bestHours[0] || 12,
-          },
-          mediaRecommendation: advancedResult.mediaGuidance.recommendedType,
-          improvements: advancedResult.insights
-            .filter((i) => i.type === "improvement")
-            .map((i) => i.message),
-        },
-      };
-    } catch (error) {
-      const errMsg = (error as Error).message ?? String(error);
-      // MaxCore is always running — a failure here means it was temporarily
-      // busy; the caller's local fallback handles it.  Log at INFO.
-      logger.info(
-        `[AdvancedAI] Content pipeline used local fallback: ${errMsg}`,
-      );
-      throw error;
-    }
+    return this.generateAndSelect(
+      userId,
+      baseContext,
+      variantCount,
+      VEO_QUALITY_GATE,
+    );
   }
 
   private mapObjectiveToContentType(

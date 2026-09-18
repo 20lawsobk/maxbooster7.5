@@ -155,52 +155,11 @@ export function FlowStateLyricsToMelody({
 
     setIsGenerating(true);
 
-    const keyIndex = NOTES.indexOf(selectedKey);
-    const scaleNotes = useScaleNotes
-      ? [0, 2, 4, 5, 7, 9, 11].map((i) => (keyIndex + i) % 12)
-      : Array.from({ length: 12 }, (_, i) => i);
-
     const buildClientSuggestion = (
       suggIdx: number,
       nameOverride?: string,
-      backendNotes?: MelodyNote[],
+      backendNotes: MelodyNote[] = [],
     ): MelodySuggestion => {
-      const notes: MelodyNote[] = backendNotes || [];
-      if (!backendNotes) {
-        let prevPitch =
-          melodyRange[0] + Math.floor((melodyRange[1] - melodyRange[0]) / 2);
-        analyzedLyrics.forEach((line) => {
-          line.syllables.forEach((syllable, sylIdx) => {
-            const isStressed = line.stressPattern[sylIdx];
-            const maxJump = Math.floor(melodicMovement[0] / 10) + 2;
-            let pitchChange = Math.floor(Math.random() * maxJump * 2) - maxJump;
-            if (isStressed) pitchChange = Math.abs(pitchChange);
-            let newPitch = prevPitch + pitchChange;
-            newPitch = Math.max(
-              melodyRange[0],
-              Math.min(melodyRange[1], newPitch),
-            );
-            if (useScaleNotes) {
-              const noteInOctave = newPitch % 12;
-              if (!scaleNotes.includes(noteInOctave)) {
-                newPitch = newPitch + (Math.random() > 0.5 ? 1 : -1);
-              }
-            }
-            const durationVariation =
-              rhythmComplexity[0] > 50
-                ? [0.25, 0.5, 0.75, 1][Math.floor(Math.random() * 4)]
-                : [0.5, 1][Math.floor(Math.random() * 2)];
-            notes.push({
-              pitch: newPitch,
-              noteName: NOTES[newPitch % 12] + Math.floor(newPitch / 12),
-              duration: durationVariation,
-              syllable,
-              stress: isStressed,
-            });
-            prevPitch = newPitch;
-          });
-        });
-      }
       const styleNames = [
         `${selectedStyle} ${selectedMood}`,
         `Classic ${selectedStyle}`,
@@ -211,20 +170,12 @@ export function FlowStateLyricsToMelody({
       return {
         id: `melody-${Date.now()}-${suggIdx}`,
         name: nameOverride || styleNames[suggIdx] || styleNames[0],
-        notes,
+        notes: backendNotes,
         style: selectedStyle,
-        confidence: backendNotes
-          ? 0.92 + Math.random() * 0.07
-          : 0.7 + Math.random() * 0.25,
+        confidence: 0.95,
         isFavorite: false,
       };
     };
-
-    const clientSuggestions: MelodySuggestion[] = [
-      buildClientSuggestion(0),
-      buildClientSuggestion(1),
-      buildClientSuggestion(2),
-    ];
 
     let backendSuggestion: MelodySuggestion | null = null;
     try {
@@ -252,20 +203,34 @@ export function FlowStateLyricsToMelody({
         );
         backendSuggestion = buildClientSuggestion(4, "AI Model", mappedNotes);
       }
-    } catch (_) {}
+    } catch (error) {
+      setIsGenerating(false);
+      toast({
+        title: "Melody generation unavailable",
+        description:
+          error instanceof Error ? error.message : "MaxCore generation failed",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const allSuggestions = backendSuggestion
-      ? [backendSuggestion, ...clientSuggestions]
-      : clientSuggestions;
+    if (!backendSuggestion) {
+      setIsGenerating(false);
+      toast({
+        title: "Melody generation unavailable",
+        description: "MaxCore returned no MIDI notes",
+        variant: "destructive",
+      });
+      return;
+    }
+    const allSuggestions = [backendSuggestion];
 
     setSuggestions(allSuggestions);
     setSelectedSuggestion(allSuggestions[0].id);
     setIsGenerating(false);
     toast({
       title: "Melodies generated",
-      description: backendSuggestion
-        ? `AI model + 3 variations for ${totalSyllables} syllables`
-        : `4 variations for ${totalSyllables} syllables`,
+      description: `MaxCore melody generated for ${totalSyllables} syllables`,
     });
   }, [
     lyrics,

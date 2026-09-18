@@ -1431,6 +1431,12 @@ export interface VideoGenOptions {
   accent_color?: string;
   userId?: string;
   awarenessMode?: import("./awarenessContext.js").AwarenessMode;
+  first_frame_b64?: string;
+  last_frame_b64?: string;
+  reference_images?: string[];
+  scenes_override?: Array<Record<string, unknown>>;
+  camera_motion?: string;
+  motion_intensity?: number;
 }
 
 export interface VideoGenResult {
@@ -1453,12 +1459,18 @@ export interface VideoGenResult {
   quality?: string;
   capabilities?: string[];
   error?: string;
+  scenes?: Array<{ type: string; text: string }>;
+  intelligence?: Record<string, unknown>;
 }
 
 export async function generateVideo(
   opts: VideoGenOptions,
 ): Promise<VideoGenResult> {
-  const startMs = Date.now();
+  // AI video generation is owned end-to-end by MaxCore. Keep the historical
+  // local compositor helpers below for explicitly non-AI DSP/render operations,
+  // but do not run their local planning, ranking, or template fallback here.
+  const { renderVideo } = await import("./advancedVideoRendererService.js");
+  return renderVideo(opts);
 
   mkdirSync(OUTPUT_DIR, { recursive: true });
   mkdirSync(TEMP_DIR, { recursive: true });
@@ -1537,13 +1549,9 @@ export async function generateVideo(
         hook = best.headline.slice(0, 80);
         body = best.content.split("\n")[0].slice(0, 120);
         cta = best.callToAction.slice(0, 60);
-        const score = best.scores.overall;
-        aiSource = `pipeline_${score.toFixed(0)}`;
-        logger.info(
-          `[VideoGen] Pipeline content — score=${score.toFixed(1)} ` +
-            `algoAlign=${(best.scores.algorithmAlignment ?? 0).toFixed(1)} ` +
-            `${score < 81 ? "⚠ below 81 threshold" : "✅ gate passed"}`,
-        );
+        const score = best.scores?.overall;
+        aiSource =
+          typeof score === "number" ? `pipeline_${score.toFixed(0)}` : "pipeline";
       }
     } catch (e) {
       // MaxCore-only fail-explicit contract: if the content pipeline failed

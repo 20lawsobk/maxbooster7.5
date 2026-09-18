@@ -9,7 +9,7 @@
  * DEPLOYMENT HARDENING FEATURES:
  * - Database connection with retry (5 attempts, jitter)
  * - Redis connection with fallback to memory store
- * - TensorFlow?.js initialization with timeout
+ * - MaxCore model-service readiness
  * - Circuit breaker pattern for external services
  */
 
@@ -31,7 +31,13 @@ dirname(__filename);
 
 interface ProbeStatus {
   name: string;
-  status: "pending" | "checking" | "ready" | "failed" | "degraded";
+  status:
+    | "pending"
+    | "checking"
+    | "ready"
+    | "failed"
+    | "degraded"
+    | "disabled";
   lastCheck: Date | null;
   error?: string;
   latencyMs?: number;
@@ -63,12 +69,16 @@ class StartupProbeManager {
         },
         redis: { name: "Redis Cache", status: "pending", lastCheck: null },
         tensorflow: {
-          name: "TensorFlow.js",
-          status: "pending",
+          // Retain this legacy DTO member for health consumers while making
+          // its state explicit: local TensorFlow is no longer an app-server
+          // dependency and is intentionally not loaded by readiness checks.
+          name: "Local TensorFlow (retired)",
+          status: "disabled",
           lastCheck: null,
+          error: "AI inference is owned by MaxCore",
         },
         maxcore: {
-          name: "MaxCore (local subsystem)",
+          name: "MaxCore AI subsystem",
           status: "pending",
           lastCheck: null,
         },
@@ -198,62 +208,8 @@ class StartupProbeManager {
     }
   }
 
-  // Check TensorFlow?.js initialization with timeout
-  async checkTensorFlow(timeoutMs = 30000): Promise<boolean> {
-    this.status.probes.tensorflow.status = "checking";
-    const startTime = Date?.now();
-
-    return new Promise(async (resolve) => {
-      const timeout = setTimeout(() => {
-        this.status.probes.tensorflow.status = "degraded";
-        this.status.probes.tensorflow.lastCheck = new Date();
-        this.status.probes.tensorflow.error = `Initialization timed out after ${timeoutMs}ms`;
-        logger.warn(
-          `⚠️ TensorFlow probe: ${this.status.probes?.tensorflow.error}`,
-        );
-        resolve(true); // Degraded but we continue
-      }, timeoutMs);
-
-      try {
-        // TensorFlow is initialized during content analysis module load
-        // Just check if it's available
-        const tf = await import("@tensorflow/tfjs").catch(() => null);
-
-        clearTimeout(timeout);
-
-        if (tf) {
-          this.status.probes.tensorflow.status = "ready";
-          this.status.probes.tensorflow.lastCheck = new Date();
-          this.status.probes.tensorflow.latencyMs = Date.now() - startTime;
-          this.status.probes.tensorflow.error = undefined;
-          logger.info(
-            `✅ TensorFlow probe ready (${this.status.probes.tensorflow.latencyMs}ms)`,
-          );
-        } else {
-          this.status.probes.tensorflow.status = "degraded";
-          this.status.probes.tensorflow.lastCheck = new Date();
-          this.status.probes.tensorflow.error = "TensorFlow.js not available";
-          logger.warn(
-            "⚠️ TensorFlow probe: Not available, AI features limited",
-          );
-        }
-        resolve(true);
-      } catch (error) {
-        clearTimeout(timeout);
-        this.status.probes.tensorflow.status = "degraded";
-        this.status.probes.tensorflow.lastCheck = new Date();
-        this.status.probes.tensorflow.error =
-          error instanceof Error ? error.message : String(error);
-        logger.warn(
-          `⚠️ TensorFlow probe failed: ${this.status.probes.tensorflow.error}`,
-        );
-        resolve(true); // Degraded but we continue
-      }
-    });
-  }
-
-  // Check the local MaxCore subsystem (supervised child). Non-fatal: the
-  // supervisor restarts it on crash; AI routes fail explicit (503) meanwhile.
+  // Check MaxCore without issuing inference or training work. Local mode uses
+  // the supervised model service's readiness; remote mode uses its liveness.
   async checkMaxcore(): Promise<boolean> {
     this.status.probes.maxcore.status = "checking";
     const startTime = Date?.now();
@@ -263,11 +219,17 @@ class StartupProbeManager {
       );
       const st = getMaxcoreLocalStatus();
       if (!st.enabled) {
-        // Remote mode — reachability is owned by the MaxCore client's
-        // circuit breaker, not startup probes.
-        this.status.probes.maxcore.status = "ready";
+        const { pingMaxcore } = await import("./services/maxcore.js");
+        const ready = await pingMaxcore();
+        this.status.probes.maxcore.status = ready ? "ready" : "degraded";
         this.status.probes.maxcore.lastCheck = new Date();
-        this.status.probes.maxcore.error = "remote mode (MAXCORE_LOCAL=0)";
+        this.status.probes.maxcore.latencyMs = Date.now() - startTime;
+        this.status.probes.maxcore.error = ready
+          ? undefined
+          : "remote MaxCore health check failed";
+        if (!ready) {
+          logger.warn("⚠️ Remote MaxCore probe failed");
+        }
         return true;
       }
       // The child supervises a Python model server that can take a while to
@@ -339,10 +301,9 @@ class StartupProbeManager {
     logger.info("🔍 Running startup probes...");
 
     // Run probes in parallel
-    const [_dbReady, _redisReady, _tfReady, _maxcoreReady] = await Promise.all([
+    const [_dbReady, _redisReady, _maxcoreReady] = await Promise.all([
       this.checkDatabase(),
       this.checkRedis(),
-      this.checkTensorFlow(),
       this.checkMaxcore(),
     ]);
 
@@ -395,8 +356,8 @@ class StartupProbeManager {
 
   // Check if system is ready
   isReady(): boolean {
-    // "degraded" means at least one probe (PDIM/Redis, TensorFlow, or local
-    // MaxCore) is not fully healthy. Each of those already has a real,
+    // "degraded" means at least one operational probe (PDIM/Redis or MaxCore)
+    // is not fully healthy. Each of those already has a real,
     // self-healing fallback path (circuit breaker, in-memory rate limiting,
     // supervisor restart) — but this gate must report that honestly rather
     // than calling a degraded system "ready".

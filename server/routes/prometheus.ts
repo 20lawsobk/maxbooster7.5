@@ -8,7 +8,6 @@ import {
   type RegistryContentType,
 } from "prom-client";
 
-import { tfWorkerPool } from "../lib/tensorflowWorkerPool";
 import { requireAdmin, require2FA } from "../middleware/auth.js";
 
 const registry = new Registry();
@@ -65,14 +64,6 @@ export const dbQueryDuration = new Histogram({
   registers: [registry],
 });
 
-export const tfInferenceDuration = new Histogram({
-  name: "maxbooster_tf_inference_duration_seconds",
-  help: "TensorFlow inference duration in seconds",
-  labelNames: ["model"],
-  buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1],
-  registers: [registry],
-});
-
 export const activeUsers = new Gauge({
   name: "maxbooster_active_users",
   help: "Number of currently authenticated users with active sessions",
@@ -96,15 +87,6 @@ export const slowRequestsTotal = new Counter({
   help: "HTTP requests that exceeded 5 s response time",
   labelNames: ["method", "route"],
   registers: [registry],
-});
-
-export const tfWorkerQueueDepth = new Gauge({
-  name: "maxbooster_tf_worker_queue_depth",
-  help: "Current depth of the TensorFlow worker inference queue",
-  registers: [registry],
-  collect() {
-    this.set(tfWorkerPool?.getQueueDepth());
-  },
 });
 
 const router = Router();

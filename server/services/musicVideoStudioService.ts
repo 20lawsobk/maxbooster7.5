@@ -79,6 +79,7 @@ const SECTION_SCENE_CONTEXT: Record<AudioSection["type"], string> = {
 
 export interface MusicVideoStudioOptions {
   audioPath: string;
+  userId: string;
   genre?: string;
   artistName?: string;
   artistStyle?: string;     // free-form style hint, e.g. "dark and moody"
@@ -359,6 +360,54 @@ export async function generateFullMusicVideo(
       capabilities: [],
     };
   }
+
+  // MaxCore owns the complete music-video plan and render. The measured beat
+  // analysis above is retained for the established UI/metering response only;
+  // it is not used to locally generate scenes or re-score MaxCore's output.
+  const { renderVideo } = await import("./advancedVideoRendererService.js");
+  const maxCoreRender = await renderVideo({
+    topic: opts.bodyText || hook || `${artistName} music video`,
+    hook,
+    body: opts.bodyText,
+    cta: opts.cta,
+    platform,
+    aspect_ratio: aspectRatio,
+    genre,
+    artist_name: artistName,
+    user_audio_path: opts.audioPath,
+    duration: Math.round(beatAnalysis.durationSeconds),
+    tone: artistStyle || "energetic",
+    userId: opts.userId,
+  });
+  if (!maxCoreRender.success || !maxCoreRender.url) {
+    return {
+      success: false,
+      error: maxCoreRender.error || "MaxCore video render failed",
+      beatAnalysis,
+      scenes: [],
+      viralScore: null,
+      viralRecommendation: null,
+      durationSeconds: beatAnalysis.durationSeconds,
+      bpm: beatAnalysis.bpm,
+      genre,
+      processingTimeMs: Date.now() - startMs,
+      capabilities: ["beat_analysis", "maxcore_video"],
+    };
+  }
+  return {
+    success: true,
+    url: maxCoreRender.url,
+    filename: maxCoreRender.filename,
+    beatAnalysis,
+    scenes: [],
+    viralScore: null,
+    viralRecommendation: null,
+    durationSeconds: maxCoreRender.duration ?? beatAnalysis.durationSeconds,
+    bpm: beatAnalysis.bpm,
+    genre,
+    processingTimeMs: Date.now() - startMs,
+    capabilities: ["beat_analysis", "maxcore_video", "user_audio"],
+  };
 
   // ── 3. Generate AI scenes for each section ─────────────────────────────────
   logger.info(

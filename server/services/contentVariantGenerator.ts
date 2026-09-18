@@ -5,9 +5,8 @@ import {
   RedisClientType,
 } from "../lib/redisConnectionFactory.js";
 
-import { MaxCoreAIClient } from "./maxcoreClient.js";
-import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 import { selectArm } from "./adaptiveGenerationEngine.js";
+import { maxCoreControlTransport } from "./maxcoreControlTransport.js";
 
 function seededIndex(seed: string, len: number): number {
   let h = 0x811c9dc5;
@@ -36,6 +35,7 @@ function seededShuffle<T>(array: T[], seed: string): T[] {
 
 export interface ContentData {
   id?: string;
+  userId?: string;
   caption: string;
   hashtags: string[];
   platform:
@@ -63,7 +63,7 @@ export interface Hook {
     | "story"
     | "controversy"
     | "mystery";
-  predictedStrength: number;
+  predictedStrength: number | null;
   targetEmotion: string;
 }
 
@@ -72,7 +72,7 @@ export interface Variant {
   caption: string;
   hashtags: string[];
   hookType: string;
-  predictedScore: number;
+  predictedScore: number | null;
   changes: string[];
 }
 
@@ -87,13 +87,62 @@ export interface PerformanceMetrics {
 
 export interface VariantResult {
   variants: Variant[];
-  originalScore: number;
+  originalScore: number | null;
   recommendations: string[];
 }
 
 class ContentVariantGeneratorService {
   private readonly REDIS_TTL = 3600;
-  private readonly CACHE_PREFIX = "variants:";
+  private readonly CACHE_PREFIX = "variants:maxcore:v2:";
+
+  private async generateSocialVariants(
+    content: ContentData,
+    count: number,
+  ): Promise<
+    Array<{
+      hook?: string;
+      caption?: string;
+      body?: string;
+      cta?: string;
+      hashtags?: string[];
+      source?: string;
+    }>
+  > {
+    if (!content.userId) {
+      throw new Error("A userId is required for MaxCore social generation");
+    }
+    const response = await maxCoreControlTransport.request<{
+      success?: boolean;
+      variants?: Array<{
+        hook?: string;
+        caption?: string;
+        body?: string;
+        cta?: string;
+        hashtags?: string[];
+        source?: string;
+      }>;
+    }>("/platform/social/generate", {
+      method: "POST",
+      authScope: "generation",
+      userId: content.userId,
+      timeoutMs: 600_000,
+      body: {
+        user_id: content.userId,
+        platform: content.platform,
+        topic: content.caption,
+        goal: "engagement",
+        tone: "authentic",
+        include_hashtags: true,
+        num_variants: Math.max(1, Math.min(5, count)),
+      },
+    });
+    if (!response.success || !Array.isArray(response.variants)) {
+      throw new Error(
+        "MaxCore social generation returned an invalid response contract",
+      );
+    }
+    return response.variants;
+  }
 
   private readonly hookTemplates: Record<string, string[]> = {
     question: [
@@ -207,248 +256,44 @@ class ContentVariantGeneratorService {
   }
 
   async generateCaptionVariants(
-    original: string,
+    content: ContentData,
     count: number = 30,
   ): Promise<string[]> {
-    const variants: string[] = [];
-    const topic = this.extractTopic(original);
-
-    // Hyper A/B: cycle all platforms × all tones for maximum variate coverage
-    const platforms = [
-      "tiktok",
-      "instagram",
-      "youtube",
-      "twitter",
-      "facebook",
-      "linkedin",
-    ];
-    const tones = [
-      "energetic",
-      "chill",
-      "inspirational",
-      "curious",
-      "bold",
-      "intimate",
-    ];
-    const goals = [
-      "growth",
-      "engagement",
-      "conversion",
-      "awareness",
-      "retention",
-    ];
-
-    // ── MaxCore (sole AI source) ──────────────────────────────────────────────
-    // Call MaxCore directly for every variant slot. MaxCore is the ONLY source —
-    // a null/empty result THROWS (HTTP 503) instead of substituting local
-    // string-template variants.
-    let aiVariantsGenerated = 0;
-    for (let i = 0; i < count && aiVariantsGenerated < count; i++) {
-      const platform = platforms[i % platforms?.length];
-      const tone = tones[i % tones?.length];
-      const goal = goals[i % goals?.length];
-      const mcRaw = await MaxCoreAIClient?.infer<{
-        hook?: string;
-        body?: string;
-        cta?: string;
-        caption?: string;
-      }>("/api/generate/content", { platform, topic, tone, goal });
-      const mc = requireMaxCore(mcRaw, "content variant");
-      // Accept any usable MaxCore shape (caption OR hook/body/cta); only a
-      // structurally empty response counts as unavailability.
-      const variantText = (
-        mc.caption || [mc.hook, mc.body, mc.cta].filter(Boolean).join("\n\n")
-      ).trim();
-      if (!variantText) {
-        throw new AIUnavailableError("content variant");
-      }
-      variants?.push(variantText);
-      aiVariantsGenerated++;
-    }
-
-    logger.info(
-      `📝 Generated ${variants?.length} caption variates (${aiVariantsGenerated} AI-powered) for hyper A/B`,
+    const variants = await this.generateSocialVariants(content, count);
+    return variants.map((variant) =>
+      String(
+        variant.caption ??
+          [variant.hook, variant.body, variant.cta]
+            .filter(Boolean)
+            .join("\n\n"),
+      ),
     );
-    return variants;
   }
 
   async generateHashtagSets(
     content: ContentData,
     count: number = 5,
   ): Promise<string[][]> {
-    const sets: string[][] = [];
-    new Set(
-      content?.hashtags?.map((h) => h?.toLowerCase()),
-    );
-
-    const platformOptimal: Record<
-      string,
-      { total: number; viral: number; niche: number }
-    > = {
-      tiktok: { total: 5, viral: 2, niche: 3 },
-      instagram: { total: 12, viral: 3, niche: 5 },
-      youtube: { total: 6, viral: 2, niche: 3 },
-      twitter: { total: 3, viral: 1, niche: 2 },
-      facebook: { total: 3, viral: 1, niche: 2 },
-      linkedin: { total: 5, viral: 1, niche: 3 },
-    };
-
-    const config =
-      platformOptimal[content?.platform] || platformOptimal?.instagram;
-    const scopeKey = `${content?.id || content?.caption}`;
-
-    for (let i = 0; i < count; i++) {
-      const set: string[] = [];
-
-      // Adaptive, anti-repeat pick across the viral tag pool. Falls back to
-      // the old (unseeded) shuffle if the bandit is unavailable. Replaces a
-      // shuffle call that always used the literal default seed - every
-      // user, every piece of content, got the exact same "shuffled" order
-      // forever, and every one of these `count` sets was therefore
-      // identical since the loop index never fed into the old seed either.
-      let viralTags: string[];
-      try {
-        viralTags = await this.pickDistinctArms(
-          "content_hashtag_viral",
-          scopeKey,
-          [...this.hashtagCategories.viral],
-          config?.viral,
-        );
-      } catch (err) {
-        logger.warn(
-          { err },
-          "[ContentVariantGenerator] Adaptive viral-hashtag selection failed, falling back to shuffle",
-        );
-        viralTags = this.shuffleArray([
-          ...this.hashtagCategories.viral,
-        ]).slice(0, config?.viral);
-      }
-      set?.push(...viralTags);
-
-      const topicHashtags = this.generateTopicHashtags(content?.caption);
-      set?.push(...(topicHashtags?.slice(0, config?.niche) ?? []));
-
-      if (
-        content?.caption?.toLowerCase().includes("music") ||
-        content?.caption?.toLowerCase().includes("beat") ||
-        content?.caption?.toLowerCase().includes("song")
-      ) {
-        let musicTags: string[];
-        try {
-          musicTags = await this.pickDistinctArms(
-            "content_hashtag_music",
-            scopeKey,
-            [...this.hashtagCategories.music],
-            2,
-          );
-        } catch (err) {
-          logger.warn(
-            { err },
-            "[ContentVariantGenerator] Adaptive music-hashtag selection failed, falling back to seeded shuffle",
-          );
-          musicTags = seededShuffle(
-            [...this.hashtagCategories.music],
-            `${scopeKey}:music-tags`,
-          ).slice(0, 2);
-        }
-        set?.push(...musicTags);
-      }
-
-      if (set?.length < config?.total) {
-        const allTags = Object.values(this.hashtagCategories).flat();
-        const need = config.total - set.length;
-        try {
-          const fillTags = await this.pickDistinctArms(
-            "content_hashtag_fill",
-            scopeKey,
-            allTags.filter((t) => !set.includes(t)),
-            need,
-          );
-          set?.push(...fillTags);
-        } catch (err) {
-          logger.warn(
-            { err },
-            "[ContentVariantGenerator] Adaptive hashtag-fill selection failed, falling back to seeded pick",
-          );
-          while (set?.length < config?.total) {
-            const randomTag =
-              allTags[
-                seededIndex(
-                  `${scopeKey}:hashtag-fill:${set?.length}`,
-                  allTags?.length,
-                )
-              ];
-            if (!set?.includes(randomTag)) {
-              set?.push(randomTag);
-            } else {
-              set?.push(
-                allTags[
-                  (seededIndex(
-                    `${scopeKey}:hashtag-fill:${set?.length}`,
-                    allTags?.length,
-                  ) +
-                    set?.length) %
-                    allTags?.length
-                ],
-              );
-            }
-          }
-        }
-      }
-
-      sets?.push([...new Set(set)].slice(0, config?.total));
-    }
-
-    logger.info(
-      `#️⃣ Generated ${sets?.length} hashtag sets for ${content?.platform}`,
-    );
-    return sets;
+    const maxCoreVariants = await this.generateSocialVariants(content, count);
+    return maxCoreVariants.map((variant) => variant.hashtags ?? []);
   }
 
   async generateHookVariants(content: ContentData): Promise<Hook[]> {
-    const hooks: Hook[] = [];
-    const topic = this.extractTopic(content?.caption);
-    const scopeKey = `${content?.id || content?.caption}`;
-
-    for (const [type, templates] of Object.entries(this.hookTemplates)) {
-      let template: string;
-      try {
-        const { chosen } = await selectArm({
-          domain: "content_hook_template",
-          scope: `${scopeKey}:${type}`,
-          candidates: templates,
-        });
-        template = chosen;
-      } catch (err) {
-        logger.warn(
-          { err },
-          "[ContentVariantGenerator] Adaptive hook-template selection failed, falling back to seeded pick",
-        );
-        template =
-          templates[
-            seededIndex(`${scopeKey}:hook:${type}`, templates?.length)
-          ];
-      }
-      const hookText = template
-        .replace("{topic}", topic)
-        .replace("{Topic}", topic?.charAt(0).toUpperCase() + topic?.slice(1))
-        .replace("{audience}", this.inferAudience(content?.caption));
-
-      hooks?.push({
+    const maxCoreVariants = await this.generateSocialVariants(content, 5);
+    return maxCoreVariants
+      .filter((variant) => Boolean(variant.hook))
+      .map((variant) => ({
         id: randomBytes(8).toString("hex"),
-        text: hookText,
-        type: type as Hook["type"],
-        predictedStrength: this.predictHookStrength(hookText, type),
-        targetEmotion: this.getTargetEmotion(type),
-      });
-    }
-
-    return hooks?.sort((a, b) => b?.predictedStrength - a?.predictedStrength);
+        text: String(variant.hook),
+        type: "statement" as const,
+        predictedStrength: null,
+        targetEmotion: "maxcore",
+      }));
   }
 
   selectWinner(variants: Variant[], metrics: PerformanceMetrics[]): Variant {
     if (metrics?.length === 0) {
-      return variants?.sort((a, b) => b?.predictedScore - a?.predictedScore)[0];
+      return variants[0];
     }
 
     const metricsMap = new Map(metrics?.map((m) => [m?.variantId, m]));
@@ -484,40 +329,26 @@ class ContentVariantGeneratorService {
       }
     }
 
-    const captionVariants = await this.generateCaptionVariants(
-      content?.caption,
-      count,
-    );
-    const hashtagSets = await this.generateHashtagSets(content, count);
-    const hooks = await this.generateHookVariants(content);
-
-    const variants: Variant[] = captionVariants?.map((caption, index) => ({
+    const maxCoreVariants = await this.generateSocialVariants(content, count);
+    const maxCoreOutput: Variant[] = maxCoreVariants.map((variant) => ({
       id: randomBytes(8).toString("hex"),
-      caption,
-      hashtags: hashtagSets[index] || content?.hashtags,
-      hookType: hooks[index]?.type || "statement",
-      predictedScore: Math.min(
-        100,
-        55 + (hooks[index]?.predictedStrength || 0) / 2,
-      ),
-      changes: this.identifyChanges(content?.caption, caption),
+      caption:
+        variant.caption ??
+        [variant.hook, variant.body, variant.cta].filter(Boolean).join("\n\n"),
+      hashtags: variant.hashtags ?? [],
+      hookType: "maxcore",
+      predictedScore: null,
+      changes: [],
     }));
-
-    const originalScore = this.estimateOriginalScore(content);
-    const recommendations = this.generateRecommendations(content, variants);
-
-    const result: VariantResult = {
-      variants: variants.sort((a, b) => b?.predictedScore - a?.predictedScore),
-      originalScore,
-      recommendations,
+    const maxCoreResult: VariantResult = {
+      variants: maxCoreOutput,
+      originalScore: null,
+      recommendations: [],
     };
-
     if (redis) {
-      await redis?.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(result));
+      await redis.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(maxCoreResult));
     }
-
-    logger.info(`🎯 Generated ${variants?.length} content variants`);
-    return result;
+    return maxCoreResult;
   }
 
   private extractTopic(caption: string): string {
@@ -718,13 +549,6 @@ class ContentVariantGeneratorService {
     variants: Variant[],
   ): string[] {
     const recommendations: string[] = [];
-
-    const topVariant = variants[0];
-    if (topVariant && topVariant?.predictedScore > 70) {
-      recommendations?.push(
-        `Top variant shows ${topVariant?.predictedScore - 60}% improvement potential`,
-      );
-    }
 
     if (content?.hashtags?.length < 5 && content?.platform === "instagram") {
       recommendations?.push(

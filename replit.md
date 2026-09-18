@@ -13,6 +13,12 @@ AI-Powered Music Career Management Platform (v3.0.0) by B-Lawz Music.
 - **Jobs:** BullMQ + Redis
 - **AI:** MaxCore (local supervised subsystem — `external/maxcore`, loopback :8090; `MAXCORE_LOCAL=0` for remote)
 
+### AI authority
+
+MaxCore owns AI inference, generation, planning, scoring, and model training for application features. The sole AI exception is **Max, the platform-knowledge-base assistant**, which remains unchanged and local.
+
+Frontend components reach MaxCore through authenticated server transport and contract adapters. Preserve permissions, entitlements, rate limits, persistence, job ownership/polling, media delivery, and ordinary non-AI DSP/business/security rules. Do not insert additional application-server AI models, local training, synthetic predictions, fallback generation, or AI rewriting/rescoring of MaxCore results. Use MaxCore's complete job capabilities where they replace an entire local helper pipeline; preserve frontend behavior and verify actual contracts.
+
 ---
 
 ## How to Run

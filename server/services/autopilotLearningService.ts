@@ -3,7 +3,7 @@ import { autopilotLearningData, autopilotInsights } from "@shared/schema";
 import { eq, and, desc, gte, sql, avg, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { pushTrainingFeedback } from "./maxcoreSync.js";
-import { contentQualityGate } from "./contentQualityGate.js";
+import { maxCoreControlTransport } from "./maxcoreControlTransport.js";
 
 const CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD = 3.0;
 
@@ -58,7 +58,68 @@ export interface PerformancePattern {
   confidence: number;
 }
 
+interface MaxCoreAutopilotResult {
+  success: boolean;
+  model_powered: boolean;
+  analysis: {
+    avg_engagement_rate: number;
+    top_style_tags: string[];
+    best_content_type: string;
+    data_points: number;
+  };
+  recommendations: {
+    next_topics: Array<Record<string, unknown>>;
+    best_posting_times: string[];
+    content_type: string;
+    style_focus: string[];
+  };
+}
+
 class AutopilotLearningService {
+  private async requestMaxCoreAutopilot(
+    userId: string,
+  ): Promise<MaxCoreAutopilotResult> {
+    const recent = await db
+      .select()
+      .from(autopilotLearningData)
+      .where(eq(autopilotLearningData.userId, userId))
+      .orderBy(desc(autopilotLearningData.createdAt))
+      .limit(50);
+    const platform = recent[0]?.platform || "instagram";
+    const result = await maxCoreControlTransport.request<MaxCoreAutopilotResult>(
+      "/platform/social/autopilot",
+      {
+        method: "POST",
+        authScope: "generation",
+        userId,
+        timeoutMs: 600_000,
+        body: {
+          user_id: userId,
+          platform,
+          target_metric: "engagement",
+          recent_posts: recent.map((row) => ({
+            content_type: row.contentType ?? "post",
+            style_tags: row.hookType ? [row.hookType] : [],
+            engagement_rate: row.engagementRate ?? 0,
+            posted_at: row.createdAt,
+          })),
+        },
+      },
+    );
+    if (
+      !result?.success ||
+      !result.analysis ||
+      !result.recommendations ||
+      !Array.isArray(result.recommendations.next_topics) ||
+      !Array.isArray(result.recommendations.best_posting_times)
+    ) {
+      throw new Error(
+        "MaxCore social autopilot returned an invalid response contract",
+      );
+    }
+    return result;
+  }
+
   async recordPerformance(
     userId: string,
     postData: PostData,
@@ -101,24 +162,6 @@ class AutopilotLearningService {
       );
 
       await this.updateInsightsIfNeeded(userId, postData?.platform);
-
-      // Feed real engagement back to the quality gate so its PDIM threshold
-      // and MaxCore training signal adapt to what actually resonated.
-      contentQualityGate
-        .recordEngagementOutcome(
-          userId,
-          postData?.platform,
-          postData?.contentType || "social_post",
-          postData?.hookType || "unknown",
-          engagementRate,
-          0, // qualityScore unknown at this point — gate recorded it at publish time
-        )
-        .catch((err) =>
-          logger.warn(
-            { err: err },
-            "[AutopilotLearning] Quality gate feedback skipped (non-fatal):",
-          ),
-        );
 
       if (engagementRate >= CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD) {
         this.dispatchCurriculumSessionAsync(engagementRate, postData).catch(
@@ -295,226 +338,50 @@ class AutopilotLearningService {
   }
 
   async getRecommendations(userId: string): Promise<Recommendation[]> {
-    try {
-      const recommendations: Recommendation[] = [];
-
-      const [optimalTimes, topContentTypes, patterns, insights] =
-        await Promise.all([
-          this.getOptimalPostingTimes(userId, "all"),
-          this.getTopPerformingContentTypes(userId),
-          this.detectPatterns(userId),
-          this.getActiveInsights(userId),
-        ]);
-
-      if (optimalTimes?.length > 0) {
-        const bestTime = optimalTimes[0];
-        const days = [
-          "Sunday",
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
-        ];
-        recommendations?.push({
-          id: `timing-${Date.now()}`,
-          type: "timing",
-          title: "Optimal Posting Time",
-          description: `Your content performs best on ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00 with ${bestTime?.avgEngagement?.toFixed(2)}% engagement rate.`,
-          confidence: Math.min(0.95, 0.5 + optimalTimes?.length * 0.05),
-          priority: 1,
-          actionable: true,
-          suggestedAction: `Schedule your next post for ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00`,
-          data: { bestTime, allTimes: optimalTimes.slice(0, 5) },
-        });
-      }
-
-      if (topContentTypes?.length > 0) {
-        const bestType = topContentTypes[0];
-        recommendations?.push({
-          id: `content-${Date.now()}`,
-          type: "content",
-          title: "Top Performing Content Type",
-          description: `${bestType?.contentType} content generates ${bestType?.avgEngagement?.toFixed(2)}% engagement on average.`,
-          confidence: Math.min(0.9, 0.4 + bestType?.count * 0.1),
-          priority: 2,
-          actionable: true,
-          suggestedAction: `Create more ${bestType?.contentType} content to maximize engagement`,
-          data: { bestType, allTypes: topContentTypes },
-        });
-      }
-
-      for (const pattern of patterns?.slice(0, 3) ?? []) {
-        recommendations?.push({
-          id: `pattern-${Date.now()}-${pattern?.pattern}`,
-          type: "general",
-          title: `Pattern Detected: ${pattern?.pattern}`,
-          description: pattern.description,
-          confidence: pattern.confidence,
-          priority: 3,
-          actionable: true,
-          data: { pattern },
-        });
-      }
-
-      for (const insight of insights) {
-        const insightData = insight?.data as Record<string, any>;
-        recommendations?.push({
-          id: `insight-${insight?.id}`,
-          type: insight.insightType as Recommendation["type"],
-          title: insightData.title || `${insight?.insightType} Insight`,
-          description: insightData.description || "AI-generated insight",
-          confidence: insight.confidence || 0.5,
-          priority: insight.priority || 5,
-          actionable: insightData.actionable || false,
-          suggestedAction: insightData.suggestedAction,
-          data: insightData,
-        });
-      }
-
-      return recommendations?.sort((a, b) => a?.priority - b?.priority);
-    } catch (error) {
-      logger.warn({ err: error }, "Failed to get recommendations:");
-      return [];
+    const result = await this.requestMaxCoreAutopilot(userId);
+    const recommendations: Recommendation[] = [];
+    const bestTimes = result.recommendations.best_posting_times ?? [];
+    if (bestTimes.length) {
+      recommendations.push({
+        id: `maxcore-timing-${Date.now()}`,
+        type: "timing",
+        title: "MaxCore Posting Time",
+        description: `MaxCore recommends: ${bestTimes.join(", ")}`,
+        confidence: result.model_powered ? 1 : 0,
+        priority: 1,
+        actionable: true,
+        suggestedAction: `Schedule content for ${bestTimes[0]}`,
+        data: { bestPostingTimes: bestTimes, source: "maxcore" },
+      });
     }
+    for (const [index, topic] of (
+      result.recommendations.next_topics ?? []
+    ).entries()) {
+      recommendations.push({
+        id: `maxcore-topic-${Date.now()}-${index}`,
+        type: "content",
+        title: String(topic.topic ?? "MaxCore content recommendation"),
+        description: String(topic.hook ?? topic.cta ?? ""),
+        confidence: result.model_powered ? 1 : 0,
+        priority: index + 2,
+        actionable: true,
+        suggestedAction: topic.cta ? String(topic.cta) : undefined,
+        data: { ...topic, source: "maxcore" },
+      });
+    }
+    return recommendations;
   }
 
   async detectPatterns(userId: string): Promise<PerformancePattern[]> {
-    try {
-      const patterns: PerformancePattern[] = [];
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
-
-      const recentData = await db
-        .select()
-        .from(autopilotLearningData)
-        .where(
-          and(
-            eq(autopilotLearningData.userId, userId),
-            gte(autopilotLearningData.createdAt, thirtyDaysAgo),
-          ),
-        )
-        .orderBy(desc(autopilotLearningData.engagementRate))
-        .limit(100);
-
-      if (recentData?.length < 5) {
-        return patterns;
-      }
-
-      const avgEngagement =
-        recentData?.reduce((sum, d) => sum + (d?.engagementRate || 0), 0) /
-        recentData?.length;
-      const highPerformers = recentData?.filter(
-        (d) => (d?.engagementRate || 0) > avgEngagement * 1.5,
-      );
-
-      if (highPerformers?.length >= 3) {
-        const hookTypes = highPerformers?.map((d) => d?.hookType).filter(Boolean);
-        const hookCounts = hookTypes?.reduce(
-          (acc, hook) => {
-            acc[hook!] = (acc[hook!] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>,
-        );
-
-        const topHook = Object.entries(hookCounts).sort(
-          (a, b) => b[1] - a[1],
-        )[0];
-        if (topHook && topHook[1] >= 2) {
-          patterns?.push({
-            pattern: "hook_success",
-            description: `Posts with "${topHook[0]}" hooks perform ${(((highPerformers[0].engagementRate || 0) / avgEngagement) * 100 - 100).toFixed(0)}% better than average`,
-            frequency: topHook[1],
-            avgEngagement:
-              highPerformers
-                .filter((d) => d?.hookType === topHook[0])
-                .reduce((sum, d) => sum + (d?.engagementRate || 0), 0) /
-              topHook[1],
-            confidence: Math.min(0.85, 0.5 + topHook[1] * 0.1),
-          });
-        }
-
-        const morningPosts = highPerformers?.filter(
-          (d) => (d?.postingHour || 0) >= 6 && (d?.postingHour || 0) < 12,
-        );
-        const afternoonPosts = highPerformers?.filter(
-          (d) => (d?.postingHour || 0) >= 12 && (d?.postingHour || 0) < 18,
-        );
-        const eveningPosts = highPerformers?.filter(
-          (d) => (d?.postingHour || 0) >= 18 && (d?.postingHour || 0) < 22,
-        );
-
-        if (
-          morningPosts?.length > afternoonPosts?.length &&
-          morningPosts?.length > eveningPosts?.length
-        ) {
-          patterns?.push({
-            pattern: "morning_performer",
-            description:
-              "Your best content performs well during morning hours (6 AM - 12 PM)",
-            frequency: morningPosts.length,
-            avgEngagement:
-              morningPosts?.reduce(
-                (sum, d) => sum + (d?.engagementRate || 0),
-                0,
-              ) / morningPosts?.length,
-            confidence: 0.7,
-          });
-        } else if (
-          eveningPosts?.length > morningPosts?.length &&
-          eveningPosts?.length > afternoonPosts?.length
-        ) {
-          patterns?.push({
-            pattern: "evening_performer",
-            description:
-              "Your audience is most active during evening hours (6 PM - 10 PM)",
-            frequency: eveningPosts.length,
-            avgEngagement:
-              eveningPosts?.reduce(
-                (sum, d) => sum + (d?.engagementRate || 0),
-                0,
-              ) / eveningPosts?.length,
-            confidence: 0.7,
-          });
-        }
-
-        const allHashtags: string[] = [];
-        highPerformers?.forEach((d) => {
-          if (Array.isArray(d?.hashtags)) {
-            allHashtags?.push(...(d?.hashtags ?? []));
-          }
-        });
-
-        const hashtagCounts = allHashtags?.reduce(
-          (acc, tag) => {
-            acc[tag] = (acc[tag] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>,
-        );
-
-        const topHashtags = Object.entries(hashtagCounts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5);
-
-        if (topHashtags?.length >= 3) {
-          patterns?.push({
-            pattern: "hashtag_success",
-            description: `Top performing hashtags: ${topHashtags?.map((h) => `#${h[0]}`).join(", ")}`,
-            frequency: topHashtags.reduce((sum, h) => sum + h[1], 0),
-            avgEngagement: avgEngagement * 1.5,
-            confidence: 0.65,
-          });
-        }
-      }
-
-      return patterns;
-    } catch (error) {
-      logger.warn({ err: error }, "Failed to detect patterns:");
-      return [];
-    }
+    const result = await this.requestMaxCoreAutopilot(userId);
+    const tags = result.analysis.top_style_tags ?? [];
+    return tags.map((tag) => ({
+      pattern: String(tag),
+      description: `MaxCore identified ${tag} as a top-performing style`,
+      frequency: result.analysis.data_points,
+      avgEngagement: result.analysis.avg_engagement_rate,
+      confidence: result.model_powered ? 1 : 0,
+    }));
   }
 
   async getPerformanceHistory(
@@ -696,151 +563,35 @@ class AutopilotLearningService {
         await this.generateInsights(userId);
       }
 
-      // Retrain the Social ML model on real user data every 25 new posts once past 50.
-      // This refines the model beyond the base training to the specific user's audience
-      // and content style — the more they use it, the more personalised it becomes.
-      if (total >= 50 && total % 25 === 0) {
-        this.retrainSocialModelAsync(userId, total).catch((err) =>
-          logger.warn(
-            { err: err },
-            `[AutopilotLearning] Social retrain skipped for ${userId}:`,
-          ),
-        );
-      }
     } catch (error) {
       logger.warn({ err: error }, "Failed to check insights update:");
     }
   }
 
-  /**
-   * Retrains the Social Media Autopilot on the user's accumulated performance data.
-   * Runs async (fire-and-forget from the request path) to avoid blocking API responses.
-   * Uses a dynamic import of aiModelManager to prevent circular dependency.
-   */
-  private async retrainSocialModelAsync(
-    userId: string,
-    dataPoints: number,
-  ): Promise<void> {
-    try {
-      // Fetch all learning records and convert to SocialPost format for the ML model
-      const records = await db
-        .select()
-        .from(autopilotLearningData)
-        .where(eq(autopilotLearningData.userId, userId))
-        .orderBy(desc(autopilotLearningData.createdAt))
-        .limit(500);
-
-      if (records?.length < 50) return;
-
-      const posts = records?.map((r, i) => ({
-        postId: r.postId || `learning_${r?.id}`,
-        platform: r.platform,
-        content: r.contentText || `${r?.contentType || "post"} on ${r?.platform}`,
-        mediaType:
-          (r?.mediaType as "text" | "image" | "video" | "carousel") || "text",
-        postedAt: new Date(r?.createdAt || Date.now() - i * 3600000),
-        likes: r.likes || 0,
-        comments: r.comments || 0,
-        shares: r.shares || 0,
-        reach: r.reach || r?.impressions || 0,
-        engagement:
-          (r?.likes || 0) + (r?.comments || 0) + (r?.shares || 0) + (r?.saves || 0),
-        hashtagCount: Array.isArray(r?.hashtags) ? r?.hashtags?.length : 0,
-        mentionCount: 0,
-        emojiCount: 0,
-        contentLength: (r?.contentText || "").length,
-        hasCallToAction: false,
-      }));
-
-      const { aiModelManager } = await import("./aiModelManager.js");
-      const socialModel = await aiModelManager?.getSocialAutopilot(userId);
-      await socialModel?.trainOnUserEngagementData(posts);
-      await aiModelManager?.saveSocialModel(userId);
-
-      logger.info(
-        `[AutopilotLearning] Social AI retrained for user ${userId} — ${posts?.length} real data points (total tracked: ${dataPoints})`,
-      );
-    } catch (err) {
-      logger.warn({ err: err instanceof Error ? err?.message : String(err) }, `[AutopilotLearning] Social retraining failed for ${userId}:`,
-      );
-    }
-  }
-
   async generateInsights(userId: string): Promise<void> {
     try {
-      logger.info(`Generating insights for user ${userId}`);
-
-      const [optimalTimes, topContentTypes, patterns] = await Promise.all([
-        this.getOptimalPostingTimes(userId, "all"),
-        this.getTopPerformingContentTypes(userId),
-        this.detectPatterns(userId),
-      ]);
+      logger.info(`Requesting MaxCore insights for user ${userId}`);
+      const result = await this.requestMaxCoreAutopilot(userId);
 
       await db
         .delete(autopilotInsights)
         .where(eq(autopilotInsights.userId, userId));
 
-      const insightsToInsert = [];
-
-      if (optimalTimes?.length > 0) {
-        const days = [
-          "Sunday",
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
-        ];
-        const bestTime = optimalTimes[0];
-        insightsToInsert?.push({
-          userId,
-          insightType: "timing",
-          data: {
-            title: "Best Posting Time",
-            description: `Post on ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00 for optimal engagement`,
-            times: optimalTimes.slice(0, 5),
-            actionable: true,
-            suggestedAction: `Schedule posts for ${days[bestTime?.dayOfWeek]} at ${bestTime?.hour}:00`,
-          },
-          confidence: Math.min(0.9, 0.5 + optimalTimes?.length * 0.05),
-          priority: 1,
-          isActive: true,
-        });
-      }
-
-      if (topContentTypes?.length > 0) {
-        insightsToInsert?.push({
-          userId,
-          insightType: "content",
-          data: {
-            title: "Top Content Types",
-            description: `${topContentTypes[0].contentType} content performs best with ${topContentTypes[0].avgEngagement?.toFixed(2)}% engagement`,
-            contentTypes: topContentTypes,
-            actionable: true,
-            suggestedAction: `Focus on creating more ${topContentTypes[0].contentType} content`,
-          },
-          confidence: Math.min(0.85, 0.4 + topContentTypes[0].count * 0.1),
-          priority: 2,
-          isActive: true,
-        });
-      }
-
-      for (const pattern of patterns) {
-        insightsToInsert?.push({
-          userId,
-          insightType: "general",
-          data: {
-            title: pattern.pattern,
-            description: pattern.description,
-            pattern,
-            actionable: true,
-          },
-          confidence: pattern.confidence,
-          priority: 3,
-          isActive: true,
-        });
-      }
+      const insightsToInsert = [{
+        userId,
+        insightType: "general",
+        data: {
+          title: "MaxCore Autopilot Strategy",
+          description: "Current strategy from MaxCore",
+          analysis: result.analysis,
+          recommendations: result.recommendations,
+          actionable: true,
+          source: "maxcore",
+        },
+        confidence: result.model_powered ? 1 : 0,
+        priority: 1,
+        isActive: true,
+      }];
 
       if (insightsToInsert?.length > 0) {
         await db.insert(autopilotInsights).values(insightsToInsert);
@@ -850,6 +601,7 @@ class AutopilotLearningService {
       }
     } catch (error) {
       logger.warn({ err: error }, "Failed to generate insights:");
+      throw error;
     }
   }
 

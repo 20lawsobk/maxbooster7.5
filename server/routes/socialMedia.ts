@@ -5480,6 +5480,7 @@ router.post(
           const videoAwareness = await getAwarenessContext("video_script");
           const studioResult = await studioSvc.generateFullMusicVideo({
             audioPath: audioFile.path,
+            userId,
             genre: body.genre || "hip-hop",
             artistName: body.artist_name || body.artistName,
             artistStyle: body.artist_style,
@@ -5506,34 +5507,18 @@ router.post(
             return;
           }
 
-          const videoFilePath = `${process.cwd()}/uploads/videos/${studioResult.filename}`;
-          // The local render is scratch space only. Do not complete a job until
-          // its authoritative PDIM copy exists.
-          try {
-            const { storeMusicVideo } = await import("../services/pdimMediaStorageService.js");
-            const pdimMeta = await storeMusicVideo(
-              userId,
-              videoFilePath,
-              studioResult as unknown as Record<string, unknown>,
-            );
-            if (!pdimMeta) throw new Error("PDIM did not return video metadata");
-            studioResult.pdim = { key: pdimMeta.pdimKey, tier: (pdimMeta as any).tier };
-            (studioResult as any).url = pdimMeta.publicUrl;
-            (studioResult as any).video_url = pdimMeta.publicUrl;
-            // Best-effort mobile poster — extracted from the scratch file
-            // below before it's deleted, then persisted to PDIM itself.
-            (studioResult as any).thumbnail_url =
-              await generateAndStorePosterThumbnail(videoFilePath, userId);
-          } catch (e) {
+          // The MaxCore renderer has already downloaded, validated, and stored
+          // the completed video in PDIM. Do not look for or re-upload a local
+          // scratch filename that no longer exists.
+          if (!studioResult.url) {
             musicVideoJobs.set(jobId, {
               status: "error",
-              error: `PDIM video storage failed: ${(e as Error).message}`,
+              error: "MaxCore completed without a durable video URL",
               createdAt: Date.now(),
             });
             return;
-          } finally {
-            await fsPromises.unlink(videoFilePath).catch(() => undefined);
           }
+          (studioResult as any).video_url = studioResult.url;
 
           musicVideoJobs.set(jobId, {
             status: "done",
@@ -5610,6 +5595,9 @@ router.post(
               ? body.color_grade
               : "cinematic",
           transitionType: body.transition,
+          userId:
+            (req.user as UserWithLegacyId | undefined)?.id?.toString() ||
+            (req.user as UserWithLegacyId | undefined)?.userId?.toString(),
         });
 
         if (!result.success) {
@@ -5620,6 +5608,19 @@ router.post(
           });
           return;
         }
+        if (!result.url) {
+          throw new Error("MaxCore completed without a durable video URL");
+        }
+        (result as any).video_url = result.url;
+        musicVideoJobs.set(jobId, {
+          status: "done",
+          result: result as unknown as Record<string, unknown>,
+          createdAt: Date.now(),
+        });
+        logger.info(
+          `[MusicVideo] Job ${jobId} complete — durable MaxCore/PDIM asset ${result.url}`,
+        );
+        return;
 
         // ── Persist rendered video to PDIM as primary storage ────────────────
         const legacyUser = req.user as UserWithLegacyId | undefined;

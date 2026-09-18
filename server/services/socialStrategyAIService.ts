@@ -5,6 +5,9 @@ import { logger } from "../logger";
 import { unifiedAIController } from "./unifiedAIController.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import {
+  getSocialAutopilotDirect,
+} from "./maxcoreDomainAdapter.js";
 
 export interface ContentRecommendation {
   id: string;
@@ -15,7 +18,7 @@ export interface ContentRecommendation {
   suggestedContent: string;
   hashtags: string[];
   bestTime: Date;
-  expectedEngagement: number;
+  expectedEngagement: number | null;
   priority: "high" | "medium" | "low";
   reasoning: string;
   trendAlignment?: string;
@@ -63,10 +66,10 @@ export interface CampaignRecommendation {
     platform: string;
   }>;
   expectedResults: {
-    reach: number;
-    engagement: number;
-    followers: number;
-    conversions?: number;
+    reach: number | null;
+    engagement: number | null;
+    followers: number | null;
+    conversions?: number | null;
   };
   reasoning: string;
 }
@@ -76,14 +79,14 @@ export interface ContentStrategy {
   period: "weekly" | "monthly" | "quarterly";
   pillars: Array<{
     name: string;
-    percentage: number;
+    percentage: number | null;
     description: string;
     examples: string[];
   }>;
   platformStrategies: Array<{
     platform: string;
     focus: string;
-    postFrequency: number;
+    postFrequency: number | null;
     contentTypes: string[];
     bestTimes: string[];
     tone: string;
@@ -97,7 +100,7 @@ export interface ContentStrategy {
   goals: Array<{
     metric: string;
     current: number;
-    target: number;
+    target: number | null;
     timeframe: string;
   }>;
 }
@@ -107,15 +110,15 @@ export interface PostingTimeRecommendation {
   dayOfWeek: string;
   times: Array<{
     hour: number;
-    score: number;
-    audienceActivity: number;
-    competitorActivity: number;
+    score: number | null;
+    audienceActivity: number | null;
+    competitorActivity: number | null;
     reasoning: string;
   }>;
   overallBest: {
     day: string;
     hour: number;
-    expectedEngagement: number;
+    expectedEngagement: number | null;
   };
 }
 
@@ -153,7 +156,7 @@ export interface EngagementTip {
   platforms: string[];
   actionItems: string[];
   examples?: string[];
-  expectedImprovement: number;
+  expectedImprovement: number | null;
 }
 
 export interface ContentPlan {
@@ -254,69 +257,40 @@ class SocialStrategyAIService {
   ): Promise<ContentRecommendation[]> {
     const { platforms = ["instagram", "twitter", "tiktok"], count = 10 } =
       options;
-    const recommendations: ContentRecommendation[] = [];
-
-    // Content recommendations are sourced authoritatively from MaxCore's
-    // social autopilot endpoint. There is no local fallback: if MaxCore
-    // returns nothing, this feature fails explicitly.
-    const mcAutopilot = await MaxCoreAIClient.infer<{
-      recommendations?: {
-        next_topics?: Array<{ topic?: string; hook?: string; cta?: string }>;
-      };
-    }>("/api/platform/social/autopilot", {
-      user_id: _userId,
-      platform: platforms[0] || "instagram",
-      topic: "new music",
-      tone: "energetic",
-    });
-    const autopilot = requireMaxCore(mcAutopilot, "content recommendations");
-    const mergedIdeas = (autopilot?.recommendations?.next_topics ?? [])
-      .filter((t) => t?.topic)
-      .map((t) => ({
-        title: t.topic as string,
-        type: "post",
-        pillar: "Promotional",
-        trend: "AI-recommended",
-      }));
-
-    // A non-null envelope with no usable topics is still unavailability — do
-    // not silently return an empty recommendation list.
-    if (mergedIdeas.length === 0) {
-      throw new AIUnavailableError("content recommendations");
-    }
-
-    for (let i = 0; i < Math.min(count, mergedIdeas?.length); i++) {
-      const idea = mergedIdeas[i];
-      const platform = platforms[i % platforms?.length];
-      const nextDate = new Date();
-      nextDate?.setDate(nextDate?.getDate() + Math.floor(i / platforms?.length));
-      const optimalHours = this.platformOptimalTimes[platform]?.[
-        this.getDayName(nextDate)
-      ] || [12];
-      nextDate?.setHours(optimalHours[0] || 12, 0, 0, 0);
-
-      const suggestedContent = await this.generateSuggestedContentAsync(
-        idea?.title,
-        platform,
-      );
-      recommendations?.push({
-        id: randomBytes(8).toString("hex"),
-        type: idea.type as unknown as Record<string, unknown>,
-        platform,
-        title: idea.title,
-        description: `Create a ${idea?.type} about ${idea?.title.toLowerCase()} to engage your audience.`,
-        suggestedContent,
-        hashtags: this.generateHashtags(idea?.pillar, platform),
-        bestTime: nextDate,
-        expectedEngagement: Math.floor(Math.random() * 5000) + 1000,
-        priority: i < 3 ? "high" : i < 6 ? "medium" : "low",
-        reasoning: `This content aligns with the "${idea.trend}" trend and your "${idea.pillar}" content pillar.`,
-        trendAlignment: idea.trend,
-        contentPillars: [idea?.pillar],
-      });
-    }
-
-    return recommendations;
+    const results = await Promise.all(
+      platforms.map((platform) =>
+        getSocialAutopilotDirect({
+          userId: _userId,
+          platform,
+          targetMetric: "engagement",
+        }),
+      ),
+    );
+    return results
+      .flatMap((autopilot) =>
+        autopilot.recommendations.next_topics.map((topic, index) => {
+          const bestTime = new Date();
+          const rawTime = autopilot.recommendations.best_posting_times?.[0];
+          const match = rawTime?.match(/(?:T)?(\d{2}):(\d{2})/);
+          if (match) bestTime.setHours(Number(match[1]), Number(match[2]), 0, 0);
+          return {
+            id: `${_userId}:${autopilot.platform}:${topic.topic}:${index}`,
+            type: (autopilot.recommendations.content_type || "post") as ContentRecommendation["type"],
+            platform: autopilot.platform,
+            title: topic.topic,
+            description: topic.hook,
+            suggestedContent: [topic.hook, topic.cta].filter(Boolean).join("\n\n"),
+            hashtags: [],
+            bestTime,
+            expectedEngagement: null,
+            priority: index === 0 ? "high" : "medium",
+            reasoning: topic.source || "MaxCore social autopilot",
+            trendAlignment: undefined,
+            contentPillars: autopilot.recommendations.style_focus || [],
+          };
+        }),
+      )
+      .slice(0, count);
   }
 
   private getDayName(date: Date): string {
@@ -397,6 +371,10 @@ class SocialStrategyAIService {
       duration?: number;
     } = {},
   ): Promise<CampaignRecommendation[]> {
+    throw new AIUnavailableError(
+      "campaign recommendations: MaxCore ads autopilot does not identify whether recommended copy came from its model or template fallback",
+    );
+
     const {  budget = 500, duration = 14 } = options;
 
     const startDate = new Date();
@@ -539,6 +517,35 @@ class SocialStrategyAIService {
     _userId: string,
     period: "weekly" | "monthly" | "quarterly" = "monthly",
   ): Promise<ContentStrategy> {
+    const autopilot = await getSocialAutopilotDirect({
+      userId: _userId,
+      platform: "instagram",
+      targetMetric: "engagement",
+    });
+    return {
+      id: `${_userId}:maxcore-strategy:${period}`,
+      period,
+      pillars: autopilot.recommendations.next_topics.map((topic) => ({
+        name: topic.topic,
+        percentage: null,
+        description: topic.hook,
+        examples: topic.cta ? [topic.cta] : [],
+      })),
+      platformStrategies: [{
+        platform: autopilot.platform,
+        focus: autopilot.recommendations.style_focus?.join(", ") || "",
+        postFrequency: null,
+        contentTypes: autopilot.recommendations.content_type
+          ? [autopilot.recommendations.content_type]
+          : [],
+        bestTimes: autopilot.recommendations.best_posting_times || [],
+        tone: "",
+        hashtags: [],
+      }],
+      themes: [],
+      goals: [],
+    };
+
     return {
       id: randomBytes(8).toString("hex"),
       period,
@@ -677,126 +684,44 @@ class SocialStrategyAIService {
     _userId: string,
     platforms: string[] = ["instagram", "twitter", "tiktok"],
   ): Promise<PostingTimeRecommendation[]> {
-    const recommendations: PostingTimeRecommendation[] = [];
-    const days = [
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-      "sunday",
-    ];
-
-    for (const platform of platforms) {
-      const platformTimes =
-        this.platformOptimalTimes[platform] ||
-        this.platformOptimalTimes.instagram;
-      let bestDay = "wednesday";
-      let bestHour = 12;
-      let maxScore = 0;
-
-
-      for (const day of days) {
-        const hours = platformTimes[day] || [];
-        hours?.map((hour) => {
-          const score = Math.random() * 30 + 70;
-          if (score > maxScore) {
-            maxScore = score;
-            bestDay = day;
-            bestHour = hour;
-          }
-          return {
-            hour,
-            score: Math.round(score),
-            audienceActivity: Math.round(Math.random() * 30 + 60),
-            competitorActivity: Math.round(Math.random() * 40 + 30),
-            reasoning: `${Math.round(score)}% of your audience is typically active at this time`,
-          };
+    return Promise.all(
+      platforms.map(async (platform) => {
+        const result = await getSocialAutopilotDirect({
+          userId: _userId,
+          platform,
+          targetMetric: "engagement",
         });
-      }
-
-      recommendations?.push({
-        platform,
-        dayOfWeek: "all",
-        times: Object.entries(platformTimes).flatMap(([day, hours]) =>
-          hours?.map((hour) => ({
+        const rawTime = result.recommendations.best_posting_times?.[0];
+        const match = String(rawTime || "").match(/(?:T)?(\d{2}):(\d{2})/);
+        if (!match) throw new AIUnavailableError("MaxCore returned no posting time");
+        const hour = Number(match[1]);
+        return {
+          platform,
+          dayOfWeek: "all",
+          times: [{
             hour,
-            score: Math.round(Math.random() * 30 + 70),
-            audienceActivity: Math.round(Math.random() * 30 + 60),
-            competitorActivity: Math.round(Math.random() * 40 + 30),
-            reasoning: `High engagement potential on ${day} at ${hour}:00`,
-          })),
-        ),
-        overallBest: {
-          day: bestDay,
-          hour: bestHour,
-          expectedEngagement: Math.floor(Math.random() * 2000) + 1000,
-        },
-      });
-    }
-
-    return recommendations;
+            score: null,
+            audienceActivity: null,
+            competitorActivity: null,
+            reasoning: "MaxCore social autopilot posting window",
+          }],
+          overallBest: {
+            day: "all",
+            hour,
+            expectedEngagement: null,
+          },
+        };
+      }),
+    );
   }
 
   async getGrowthPredictions(
     _userId: string,
     platforms: string[] = ["instagram", "twitter", "tiktok"],
   ): Promise<GrowthPrediction[]> {
-    const predictions: GrowthPrediction[] = [];
-
-    for (const platform of platforms) {
-      const currentFollowers = Math.floor(Math.random() * 50000) + 5000;
-      const monthlyGrowth = Math.random() * 0.15 + 0.02;
-
-      const futurePredictions: GrowthPrediction["predictions"] = [];
-      let followers = currentFollowers;
-
-      for (let month = 1; month <= 12; month++) {
-        const date = new Date();
-        date?.setMonth(date?.getMonth() + month);
-        followers = Math.floor(followers * (1 + monthlyGrowth));
-        futurePredictions?.push({
-          date,
-          followers,
-          confidence: Math.max(0.5, 0.95 - month * 0.03),
-        });
-      }
-
-      predictions?.push({
-        platform,
-        currentFollowers,
-        predictions: futurePredictions,
-        growthDrivers: [
-          "Consistent posting schedule",
-          "High-quality video content",
-          "Community engagement",
-          "Trend participation",
-        ],
-        risks: [
-          "Algorithm changes",
-          "Content saturation",
-          "Competitor activity",
-        ],
-        recommendations: [
-          "Increase video content by 30%",
-          "Post during optimal hours",
-          "Engage with comments within 1 hour",
-          "Collaborate with similar creators",
-        ],
-        scenarios: {
-          conservative: Math.floor(
-            currentFollowers * (1 + monthlyGrowth * 0.5) ** 12,
-          ),
-          moderate: Math.floor(currentFollowers * (1 + monthlyGrowth) ** 12),
-          optimistic: Math.floor(
-            currentFollowers * (1 + monthlyGrowth * 1.5) ** 12,
-          ),
-        },
-      });
-    }
-
-    return predictions;
+    throw new AIUnavailableError(
+      "social follower growth forecasting: MaxCore engagement prediction does not forecast follower counts",
+    );
   }
 
   async getEngagementTips(
@@ -807,6 +732,34 @@ class SocialStrategyAIService {
       limit?: number;
     } = {},
   ): Promise<EngagementTip[]> {
+    const platforms = options.platforms?.length
+      ? options.platforms
+      : ["instagram"];
+    const autopilots = await Promise.all(
+      platforms.map((platform) =>
+        getSocialAutopilotDirect({
+          userId: _userId,
+          platform,
+          targetMetric: options.category || "engagement",
+        }),
+      ),
+    );
+    return autopilots
+      .flatMap((autopilot) =>
+        autopilot.recommendations.next_topics.map((topic, index) => ({
+          id: `${_userId}:${autopilot.platform}:tip:${index}`,
+          category: "content" as const,
+          title: topic.topic,
+          description: topic.hook,
+          impact: "medium" as const,
+          effort: "medium" as const,
+          platforms: [autopilot.platform],
+          actionItems: topic.cta ? [topic.cta] : [],
+          expectedImprovement: null,
+        })),
+      )
+      .slice(0, options.limit ?? 10);
+
     const { limit = 10 } = options;
 
     const allTips: EngagementTip[] = [
@@ -934,6 +887,10 @@ class SocialStrategyAIService {
       postsPerWeek?: number;
     } = {},
   ): Promise<ContentPlan> {
+    throw new AIUnavailableError(
+      "content planning: MaxCore planner is fixed workflow metadata, not an inference capability",
+    );
+
     const {
       startDate = new Date(),
       endDate = new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000),
@@ -941,54 +898,27 @@ class SocialStrategyAIService {
       postsPerWeek = 7,
     } = options;
 
-    const posts: ContentPlan["posts"] = [];
-    const pillars = [
-      "Educational",
-      "Behind the Scenes",
-      "Promotional",
-      "Community",
-      "Entertainment",
-    ];
-    const types: Record<string, string[]> = {
-      instagram: ["reel", "carousel", "post", "story"],
-      twitter: ["tweet", "thread", "poll"],
-      tiktok: ["video", "duet", "trend"],
-    };
-
     const daysBetween = Math.ceil(
       (endDate?.getTime() - startDate?.getTime()) / (24 * 60 * 60 * 1000),
     );
     const totalPosts = Math.ceil((daysBetween / 7) * postsPerWeek);
-
-    for (let i = 0; i < totalPosts; i++) {
+    const steps: Array<{ id: string; action: string; description: string }> = [];
+    const posts: ContentPlan["posts"] = [];
+    for (let i = 0; i < Math.min(totalPosts, steps.length); i++) {
       const platform = platforms[i % platforms?.length];
       const postDate = new Date(startDate);
       postDate?.setDate(postDate?.getDate() + Math.floor(i / platforms?.length));
-      const dayName = this.getDayName(postDate);
-      const optimalHours = this.platformOptimalTimes[platform]?.[dayName] || [
-        12,
-      ];
-      const hour = optimalHours[i % optimalHours?.length] || 12;
-      postDate?.setHours(hour, 0, 0, 0);
-
-      const pillar = pillars[i % pillars?.length];
-      const platformTypes = types[platform] || types?.instagram;
-      const type = platformTypes[i % platformTypes?.length];
-
+      const step = steps[i];
       posts?.push({
-        id: randomBytes(8).toString("hex"),
+        id: `${_userId}:${step.id}`,
         date: postDate,
-        time: `${hour}:00`,
+        time: "",
         platform,
-        type,
-        content: this.generateSuggestedContent(pillar, platform),
-        hashtags: this.generateHashtags(pillar, platform),
-        mediaDescription:
-          type === "reel" || type === "video"
-            ? "Short-form video content"
-            : undefined,
+        type: step.action,
+        content: step.description,
+        hashtags: [],
         status: "draft",
-        pillar,
+        pillar: step.action,
       });
     }
 
@@ -1003,7 +933,7 @@ class SocialStrategyAIService {
     });
 
     return {
-      id: randomBytes(8).toString("hex"),
+      id: `${_userId}:${startDate.toISOString()}:${endDate.toISOString()}`,
       name: `Content Plan ${startDate?.toLocaleDateString()} - ${endDate?.toLocaleDateString()}`,
       period: { start: startDate, end: endDate },
       posts,
@@ -1017,6 +947,26 @@ class SocialStrategyAIService {
   }
 
   async getAIInsights(_userId: string): Promise<AIInsight[]> {
+    const autopilot = await getSocialAutopilotDirect({
+      userId: _userId,
+      platform: "instagram",
+      targetMetric: "engagement",
+    });
+    return autopilot.recommendations.next_topics.map((topic, index) => ({
+      id: `${_userId}:maxcore-insight:${index}`,
+      type: "recommendation",
+      title: topic.topic,
+      description: [topic.hook, topic.cta].filter(Boolean).join(" "),
+      data: {
+        platform: autopilot.platform,
+        source: topic.source,
+        analysis: autopilot.analysis,
+      },
+      actionRequired: true,
+      priority: index === 0 ? "high" : "medium",
+      createdAt: new Date(),
+    }));
+
     return [
       {
         id: randomBytes(8).toString("hex"),

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * MaxCore Sync Service
  *
@@ -6,25 +5,20 @@
  * triangle:
  *
  *   1. Boot-time health probe — logs PDIM + MaxCore reachability on startup.
- *   2. Periodic weight sync — pulls updated base model states from MaxCore
- *      every 6 h and stores them in modelWeightStorage so per-user models
- *      are seeded with the latest trained intelligence.
+ *   2. Periodic state sync — reads MaxCore's authoritative model states for
+ *      health/telemetry without copying weights into local models.
  *   3. Training feedback push — pushes anonymised engagement signals to both
  *      MaxCore (/train/feedback) and the PDIM queue (mbs:training:feedback)
  *      so MaxCore can consume them on its own schedule.
  */
 
 import { logger } from "../logger.js";
-import { modelWeightStorage } from "./modelWeightStorage.js";
 import { getPdimClient, isPdimConfigured } from "../lib/pdimClient.js";
 import {
+  getMaxcoreAdminHeaders,
   getMaxcoreGenerationKey,
   getMaxcoreOrigin,
 } from "./maxcoreConnector.js";
-import {
-  invalidateCalibrationCache,
-  runCalibration,
-} from "./maxcoreScoreCalibrator.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -37,6 +31,7 @@ const timedFetch = (
 // Resolved through the shared connector (single MaxCore contract boundary).
 const AI_SERVER_URL = getMaxcoreOrigin();
 const AI_SERVER_KEY = getMaxcoreGenerationKey();
+const AI_SERVER_ADMIN_HEADERS = getMaxcoreAdminHeaders();
 const PEER_NODE = process.env.PEER_TRAINING_NODE || "";
 const MBS_KEY = process.env.MBS_AI_TRAINING_KEY || "";
 
@@ -57,19 +52,25 @@ async function fetchMaxCore<T = any>(
   opts: {
     method?: string;
     body?: unknown;
-    key?: string;
+    key?: "peer" | "admin";
     timeout?: number;
   } = {},
 ): Promise<{ ok: boolean; data: T | null; status?: number }> {
   const url = opts?.key === "peer" ? PEER_NODE : AI_SERVER_URL;
-  const key = opts?.key === "peer" ? MBS_KEY : AI_SERVER_KEY;
-  if (!url || !key) return { ok: false, data: null };
+  const authHeaders =
+    opts?.key === "peer"
+      ? { Authorization: `Bearer ${MBS_KEY}` }
+      : opts?.key === "admin"
+        ? AI_SERVER_ADMIN_HEADERS
+        : { Authorization: `Bearer ${AI_SERVER_KEY}` };
+  if (!url || Object.values(authHeaders).every((value) => !value))
+    return { ok: false, data: null };
   try {
     const init: RequestInit = {
       method: opts.method || "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
+        ...authHeaders,
       },
       signal: AbortSignal.timeout(opts?.timeout ?? INFER_TIMEOUT),
     };
@@ -199,7 +200,7 @@ async function probeConnectivity(): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. Weight sync — pull trained base states from MaxCore
+// 2. State sync — MaxCore remains the sole owner of trained weights
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MODEL_ENDPOINTS: Array<{ name: string; endpoint: string }> = [
@@ -209,67 +210,62 @@ const MODEL_ENDPOINTS: Array<{ name: string; endpoint: string }> = [
   { name: "engagement_base", endpoint: "/api/models/engagement/state" },
 ];
 
-async function syncWeightsFromMaxCore(): Promise<void> {
-  if (!AI_SERVER_URL || !AI_SERVER_KEY) {
-    logger.debug("[MaxCoreSync] Weight sync skipped — MaxCore not configured");
-    return;
+export interface MaxCoreModelStateSnapshot {
+  syncedAt: string;
+  states: Record<string, Record<string, unknown>>;
+}
+
+let latestStateSnapshot: MaxCoreModelStateSnapshot | null = null;
+
+export function getMaxCoreModelStateSnapshot(): MaxCoreModelStateSnapshot | null {
+  return latestStateSnapshot;
+}
+
+async function syncStatesFromMaxCore(): Promise<number> {
+  if (!AI_SERVER_URL || Object.keys(AI_SERVER_ADMIN_HEADERS).length === 0) {
+    logger.debug("[MaxCoreSync] State sync skipped — MaxCore not configured");
+    latestStateSnapshot = null;
+    return 0;
   }
 
-  logger.info("[MaxCoreSync] Starting weight sync from MaxCore…");
-  let updated = 0;
-  let skipped = 0;
+  const states: Record<string, Record<string, unknown>> = {};
+  logger.info("[MaxCoreSync] Refreshing authoritative MaxCore model states…");
 
   for (const { name, endpoint } of MODEL_ENDPOINTS) {
-    // MaxCore is a local in-process subsystem — no remote wake-up retries.
-    // A single bounded attempt suffices; the next scheduled sync will pick up
-    // anything missed while the child was restarting.
     const result = await fetchMaxCore<Record<string, unknown>>(endpoint, {
+      key: "admin",
       timeout: 15_000,
     });
-
-    const { ok, data } = result;
-    if (!ok || !data) {
-      skipped++;
-      logger.debug(
-        `[MaxCoreSync] ${name}: no state (status: ${result?.status ?? "no-response"}) — endpoint unavailable`,
+    if (!result.ok || !result.data) {
+      throw new Error(
+        `MaxCore state endpoint ${endpoint} unavailable (status ${
+          result.status ?? "no-response"
+        })`,
       );
-      continue;
     }
-
-    try {
-      await modelWeightStorage?.save(name, {
-        ...(data as object),
-        syncedFromMaxCore: true,
-        syncedAt: new Date().toISOString(),
-      });
-      updated++;
-      logger.info(
-        `[MaxCoreSync] ${name} ✅ synced from MaxCore (${Object.keys(data).length} keys)`,
-      );
-    } catch (err) {
-      logger.warn({ err: err instanceof Error ? err?.message : String(err) }, `[MaxCoreSync] ${name} save failed:`,
-      );
-      skipped++;
-    }
+    states[name] = result.data;
   }
 
+  latestStateSnapshot = {
+    syncedAt: new Date().toISOString(),
+    states,
+  };
   logger.info(
-    `[MaxCoreSync] Weight sync complete — updated: ${updated}, skipped/unavailable: ${skipped}`,
+    `[MaxCoreSync] Refreshed ${Object.keys(states).length} authoritative model states`,
   );
+  return Object.keys(states).length;
+}
 
-  // Close the training loop: if any model weights changed, invalidate the
-  // 6-hour calibration TTL and immediately re-run calibration (non-blocking).
-  // This ensures quality gate thresholds reflect the latest MaxCore training
-  // within the same 10-minute cycle, not up to 6 hours later.
-  // With the A/B system (30+ variants × 10 rounds × rotating objectives) the
-  // gate will clear on round 1 as soon as calibrated thresholds are in effect.
-  if (updated > 0) {
-    invalidateCalibrationCache();
-    runCalibration().catch(() => {});
-    logger.info(
-      `[MaxCoreSync] ${updated} model(s) updated — calibration cache invalidated, ` +
-        `re-calibrating quality gate thresholds now (loop closes within this 10-min cycle)`,
+async function syncWeightsFromMaxCore(): Promise<void> {
+  try {
+    await syncStatesFromMaxCore();
+  } catch (error) {
+    latestStateSnapshot = null;
+    logger.warn(
+      { err: error },
+      "[MaxCoreSync] Authoritative model-state refresh failed",
     );
+    return;
   }
 }
 
@@ -298,6 +294,7 @@ export async function pushTrainingFeedback(
   payload: TrainingFeedbackPayload,
 ): Promise<void> {
   const enriched = { ...payload, source_node: "maxbooster", version: "1.0" };
+  let delivered = false;
 
   // HTTP push to training peer (with auth)
   const peerIsPdim = PEER_NODE?.startsWith("pdim://");
@@ -313,6 +310,7 @@ export async function pushTrainingFeedback(
         signal: AbortSignal.timeout(5_000),
       });
       if (r?.ok) {
+        delivered = true;
         logger.info(
           `[MaxCoreSync] Training feedback sent — ${payload?.platform} ` +
             `${payload?.content_type} at ${payload?.engagement_rate.toFixed(2)}% engagement`,
@@ -328,15 +326,22 @@ export async function pushTrainingFeedback(
   }
 
   // PDIM queue push (durable, MaxCore picks up on its schedule)
-  await pdimRpush("mbs:training:feedback", enriched);
+  delivered = (await pdimRpush("mbs:training:feedback", enriched)) || delivered;
 
   // Also notify inference server if different from training peer
   if (AI_SERVER_URL && AI_SERVER_KEY && AI_SERVER_URL !== PEER_NODE) {
-    fetchMaxCore("/api/train/feedback", {
+    const result = await fetchMaxCore("/api/train/feedback", {
       method: "POST",
       body: enriched,
       timeout: 3_000,
-    }).catch(() => {});
+    });
+    delivered = result.ok || delivered;
+  }
+
+  if (!delivered) {
+    throw new Error(
+      "MaxCore training feedback is unavailable and no durable PDIM queue accepted the event",
+    );
   }
 }
 
@@ -350,26 +355,7 @@ export async function pushTrainingFeedback(
  * Returns the number of models successfully synced.
  */
 export async function syncWeightsNow(): Promise<number> {
-  if (!AI_SERVER_URL || !AI_SERVER_KEY) return 0;
-  let updated = 0;
-  for (const { name, endpoint } of MODEL_ENDPOINTS) {
-    const result = await fetchMaxCore<Record<string, unknown>>(endpoint, {
-      timeout: 20_000,
-    });
-    if (!result?.ok || !result?.data) continue;
-    try {
-      await modelWeightStorage?.save(name, {
-        ...(result?.data as object),
-        syncedFromMaxCore: true,
-        syncedAt: new Date().toISOString(),
-      });
-      logger.info(`[MaxCoreSync] ${name} ✅ eagerly synced from MaxCore`);
-      updated++;
-    } catch {
-      /* non-critical */
-    }
-  }
-  return updated;
+  return syncStatesFromMaxCore();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -408,7 +394,7 @@ export async function initMaxCoreSync(): Promise<void> {
   _syncTimer.unref();
 
   logger.info(
-    "[MaxCoreSync] Initialized — health probe running, weight sync scheduled every 10 min (aligned with 10-min training sessions)",
+    "[MaxCoreSync] Initialized — health probe running, authoritative state refresh scheduled every 10 min",
   );
 }
 

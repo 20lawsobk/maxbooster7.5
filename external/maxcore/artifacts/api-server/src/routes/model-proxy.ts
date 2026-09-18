@@ -3,10 +3,7 @@ import fs from "fs";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Agent, request as undiciRequest } from "undici";
 import rateLimit from "express-rate-limit";
-import {
-  contentAwarenessService,
-  type ContentGenerationMode,
-} from "../services/contentAwarenessService.js";
+import { contentAwarenessService } from "../services/contentAwarenessService.js";
 import { isPythonRestarting } from "../server-state.js";
 import { runActivation, getKeepaliveStatus } from "../keepalive.js";
 import {
@@ -238,23 +235,6 @@ function normalizeBody(
   }
 }
 
-async function enrichWithAwareness(
-  req: Request,
-  mode: ContentGenerationMode,
-): Promise<void> {
-  try {
-    const ctx = await contentAwarenessService.getContextForMode(mode);
-    if (ctx && ctx.confidence > 0 && ctx.contextString) {
-      req.body = {
-        ...(req.body as Record<string, unknown>),
-        awareness: ctx.contextString,
-      };
-    }
-  } catch {
-    // Awareness enrichment is always additive — never block generation
-  }
-}
-
 // ─── Safe JSON parsing (handles non-JSON upstream error bodies) ─────────────
 
 async function parseBodyText(body: {
@@ -401,6 +381,9 @@ async function proxyRequest(
       // Inject the server-side key so generate endpoints don't 401.
       headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
     }
+    if (req.headers["x-maxcore-user-id"]) {
+      headers["X-MaxCore-User-Id"] = req.headers["x-maxcore-user-id"] as string;
+    }
 
     const upstreamRes = await _upstreamRequest(url, {
       method: req.method as any,
@@ -438,6 +421,46 @@ async function proxyRequest(
   }
 }
 
+async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
+  const contentType = String(req.headers["content-type"] || "").split(";", 1)[0].toLowerCase();
+  if (!contentType.startsWith("audio/")) {
+    res.status(415).json({ error: "Content-Type must be a supported audio type" });
+    return;
+  }
+  const declared = Number(req.headers["content-length"] || 0);
+  if (Number.isFinite(declared) && declared > 100 * 1024 * 1024) {
+    res.status(413).json({ error: "Audio upload exceeds size limit" });
+    return;
+  }
+  const userId = req.headers["x-maxcore-user-id"];
+  if (!userId || Array.isArray(userId)) {
+    res.status(401).json({ error: "Authenticated MaxCore user identity is required" });
+    return;
+  }
+  const headers: Record<string, string> = {
+    "Content-Type": contentType,
+    "X-MaxCore-User-Id": userId,
+  };
+  if (req.headers["x-api-key"]) headers["X-Api-Key"] = String(req.headers["x-api-key"]);
+  else if (_SERVER_FALLBACK_KEY) headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
+  try {
+    // Raw request streams are not replayable; never run this upload through the
+    // transient retry loop (which could otherwise create a truncated duplicate).
+    const upstream = await undiciRequest(`${MODEL_API_BASE}/api/audio/upload`, {
+      method: "POST",
+      dispatcher: _keepAlivePool,
+      headers,
+      body: req,
+      headersTimeout: 0,
+      bodyTimeout: 0,
+    });
+    const data = await parseBodyText(upstream.body);
+    res.status(upstream.statusCode).json(data);
+  } catch (error) {
+    handleProxyNetworkError(error, res, "/api/audio/upload");
+  }
+}
+
 // ─── Binary proxy ─────────────────────────────────────────────────────────────
 // Used for endpoints that return non-JSON (e.g. image/jpeg frame previews).
 // Streams the raw upstream body through with the correct Content-Type header.
@@ -463,6 +486,9 @@ async function proxyBinary(
       headers["X-Api-Key"] = req.headers["x-api-key"] as string;
     } else if (_SERVER_FALLBACK_KEY) {
       headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
+    }
+    if (req.headers["x-maxcore-user-id"]) {
+      headers["X-MaxCore-User-Id"] = req.headers["x-maxcore-user-id"] as string;
     }
 
     const upstreamRes = await _upstreamRequest(url, {
@@ -529,6 +555,9 @@ async function proxyBinaryStream(
       headers["X-Api-Key"] = req.headers["x-api-key"] as string;
     } else if (_SERVER_FALLBACK_KEY) {
       headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
+    }
+    if (req.headers["x-maxcore-user-id"]) {
+      headers["X-MaxCore-User-Id"] = req.headers["x-maxcore-user-id"] as string;
     }
 
     const upstreamRes = await _upstreamRequest(url, {
@@ -711,12 +740,10 @@ router.post("/platform/video/generate", async (req, res) => {
       ["topic",   (b["topic"] ?? b["idea"] ?? "") as string],
     ],
   );
-  await enrichWithAwareness(req, "video_script");
   await proxyRequest(req, res, "/platform/video/generate");
 });
 
 router.post("/content/generate", async (req, res) => {
-  await enrichWithAwareness(req, "content");
   await proxyRequest(req, res, "/content/generate");
 });
 
@@ -841,7 +868,6 @@ router.post("/platform/social/generate", async (req, res) => {
       ["topic",   (b["topic"] ?? b["idea"] ?? b["content"] ?? "") as string],
     ],
   );
-  await enrichWithAwareness(req, "social");
   await proxyRequest(req, res, "/platform/social/generate");
 });
 
@@ -853,7 +879,6 @@ router.post("/platform/social/autopilot", async (req, res) => {
     [["userId", "user_id"]],
     [["user_id", _resolveUserId(b)]],
   );
-  await enrichWithAwareness(req, "social");
   await proxyRequest(req, res, "/platform/social/autopilot");
 });
 
@@ -867,7 +892,6 @@ router.post("/platform/daw/generate", async (req, res) => {
       ["mode",    "lyrics"],
     ],
   );
-  await enrichWithAwareness(req, "songwriting");
   await proxyRequest(req, res, "/platform/daw/generate");
 });
 
@@ -887,7 +911,6 @@ router.post("/platform/distribution/plan", async (req, res) => {
       ["track_title", (b["track_title"] ?? b["trackTitle"] ?? b["title"] ?? b["track"] ?? b["song"] ?? "Untitled") as string],
     ],
   );
-  await enrichWithAwareness(req, "distribution");
   await proxyRequest(req, res, "/platform/distribution/plan");
 });
 
@@ -932,7 +955,6 @@ router.post("/platform/ads/generate", async (req, res) => {
       ["goal",     "streams"],
     ],
   );
-  await enrichWithAwareness(req, "ad_copy");
   await proxyRequest(req, res, "/platform/ads/generate");
 });
 
@@ -944,7 +966,6 @@ router.post("/platform/ads/autopilot", async (req, res) => {
     [["userId", "user_id"]],
     [["user_id", _resolveUserId(b)]],
   );
-  await enrichWithAwareness(req, "ad_copy");
   await proxyRequest(req, res, "/platform/ads/autopilot");
 });
 
@@ -965,7 +986,6 @@ router.post("/platform/ads/audience", async (req, res) => {
       ["goal",     "streams"],
     ],
   );
-  await enrichWithAwareness(req, "advertising");
   await proxyRequest(req, res, "/platform/ads/audience");
 });
 
@@ -979,7 +999,6 @@ router.get("/platform/ads/performance/:userId", async (req, res) => {
 });
 
 router.post("/platform/ads/optimize", async (req, res) => {
-  await enrichWithAwareness(req, "ad_copy");
   await proxyRequest(req, res, "/platform/ads/optimize");
 });
 
@@ -995,6 +1014,7 @@ router.post("/infer/viral-score", async (req, res) => {
 
 // Beat/structure analysis for beat-synced video generation — distinct from
 // the general "/analyze/audio" sentiment-style endpoint above.
+router.post("/audio/upload", proxyAudioUpload);
 router.post("/audio/analyze", async (req, res) => {
   await proxyRequest(req, res, "/api/audio/analyze");
 });
@@ -1261,7 +1281,6 @@ router.post("/watchdog/reset", async (req, res) => {
 // ─── Content Generation ────────────────────────────────────────────────────
 
 router.post("/generate/content", async (req, res) => {
-  await enrichWithAwareness(req, "content");
   await proxyRequest(req, res, "/api/generate/content");
 });
 
@@ -1272,7 +1291,6 @@ router.post("/generate/text", async (req, res) => {
     [],
     [["mode", "content"]],
   );
-  await enrichWithAwareness(req, "content");
   await proxyRequest(req, res, "/api/generate/text");
 });
 
@@ -1286,7 +1304,6 @@ router.post("/content/score", async (req, res) => {
 // distribution layer to queue on target dates).
 
 router.post("/generate/campaign", async (req, res) => {
-  await enrichWithAwareness(req, "content");
   await proxyRequest(req, res, "/api/generate/campaign");
 });
 
@@ -1356,7 +1373,6 @@ router.post("/analyze", async (req, res) => {
       ["payload",  (b["payload"] ?? b["text"] ?? b["content"] ?? b["input"] ?? "") as string],
     ],
   );
-  await enrichWithAwareness(req, "content");
   await proxyRequest(req, res, "/api/analyze");
 });
 
@@ -1377,40 +1393,33 @@ router.post("/analyze/audio", async (req, res) => {
 // ─── Advertising & Engagement ──────────────────────────────────────────────
 
 router.post("/optimize/ad", async (req, res) => {
-  await enrichWithAwareness(req, "ad_copy");
   await proxyRequest(req, res, "/api/optimize/ad");
 });
 
 router.post("/predict/engagement", async (req, res) => {
-  await enrichWithAwareness(req, "content");
   await proxyRequest(req, res, "/api/predict/engagement");
 });
 
 // ─── Media Generation ──────────────────────────────────────────────────────
 
 router.post("/generate/image", async (req, res) => {
-  await enrichWithAwareness(req, "content");
   await proxyRequest(req, res, "/api/generate/image");
 });
 
 router.post("/generate/audio", async (req, res) => {
-  await enrichWithAwareness(req, "music");
   await proxyRequest(req, res, "/api/generate/audio");
 });
 
 router.post("/generate-video", async (req, res) => {
-  await enrichWithAwareness(req, "video_script");
   await proxyRequest(req, res, "/api/generate-video");
 });
 
 // Canonical /generate/video alias — maps to the same AI video endpoint
 router.post("/generate/video", async (req, res) => {
-  await enrichWithAwareness(req, "video_script");
   await proxyRequest(req, res, "/api/video/generate-ai");
 });
 
 router.post("/video/generate-ai", async (req, res) => {
-  await enrichWithAwareness(req, "video_script");
   await proxyRequest(req, res, "/api/video/generate-ai");
 });
 
@@ -1554,6 +1563,9 @@ router.get("/jobs/:jobId/progress", async (req, res) => {
       } else if (_SERVER_FALLBACK_KEY) {
         headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
       }
+      if (req.headers["x-maxcore-user-id"]) {
+        headers["X-MaxCore-User-Id"] = req.headers["x-maxcore-user-id"] as string;
+      }
 
       // Try /api/audio-job/:jobId first (covers audio), then /api/video-job/:jobId
       let jobData: Record<string, unknown> | null = null;
@@ -1636,6 +1648,9 @@ router.post("/jobs/:jobId/cancel", async (req, res) => {
       headers["X-Api-Key"] = req.headers["x-api-key"] as string;
     } else if (_SERVER_FALLBACK_KEY) {
       headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
+    }
+    if (req.headers["x-maxcore-user-id"]) {
+      headers["X-MaxCore-User-Id"] = req.headers["x-maxcore-user-id"] as string;
     }
     // Try audio-job delete first, then video-job
     let responded = false;

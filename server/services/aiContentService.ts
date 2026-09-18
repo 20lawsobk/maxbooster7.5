@@ -1,6 +1,10 @@
 import { randomBytes } from "crypto";
 import { unifiedAIController } from "./unifiedAIController.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import {
+  generateSocialDirect,
+  getSocialAutopilotDirect,
+} from "./maxcoreDomainAdapter.js";
 import { renderVideo as renderAdvancedVideo } from "./advancedVideoRendererService.js";
 import { db } from "../db";
 
@@ -32,6 +36,7 @@ import type { Platform, ContentTone } from "../../shared/ml/nlp/ContentGenerator
 // Sharp image service is automatically initialized on import
 
 export interface ContentGenerationOptions {
+  userId?: string;
   prompt: string;
   platform:
     | "twitter"
@@ -82,16 +87,16 @@ export interface TrendingTopic {
 export interface HashtagSuggestion {
   hashtag: string;
   category: "high-reach" | "medium-reach" | "niche";
-  popularity: number;
-  competition: number;
-  avgEngagement: number;
-  trending: boolean;
+  popularity: number | null;
+  competition: number | null;
+  avgEngagement: number | null;
+  trending: boolean | null;
 }
 
 export interface PostingTimeRecommendation {
-  dayOfWeek: number;
+  dayOfWeek: number | null;
   hour: number;
-  score: number;
+  score: number | null;
   reasoning: string;
 }
 
@@ -99,7 +104,7 @@ export interface ABVariant {
   id: string;
   content: string;
   variationType: string;
-  predictedPerformance: number;
+  predictedPerformance: number | null;
   changes: string[];
 }
 
@@ -249,42 +254,37 @@ export class AIContentService {
         tone = "energetic",
         length = "medium",
       } = options;
-
-      // Route through the full advanced AI pipeline:
-      // MaxCore (trained) → Python AI → ContentGenerator (in-house JS)
-      const aiResult = await unifiedAIController?.generateContent({
-        platform: platform as Platform,
-        tone: tone as ContentTone,
-        topic: prompt || "new music",
-        contentType: "engagement",
-        includeHashtags: true,
-        includeEmojis: true,
-      });
-
-      const executionTimeMs = Date.now() - startTime;
-
-      if (!(aiResult?.success && aiResult?.data)) {
-        // MaxCore is the sole AI source — no local fallback.
-        throw new AIUnavailableError("multilingual content generation");
+      if (!options.userId) {
+        throw new AIUnavailableError("social generation requires an authenticated user id");
       }
-      const d = aiResult?.data as unknown as Record<string, unknown>;
-      const caption =
-        (d?.caption as string) || [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n");
-      const content: string[] = caption ? [caption] : (d?.content as string[]) || [];
+      const generated = await generateSocialDirect({
+        userId: options.userId,
+        platform,
+        topic: prompt || "new music",
+        tone,
+        goal: "engagement",
+        numVariants: 1,
+      });
+      const executionTimeMs = Date.now() - startTime;
+      const variant = generated.variants[0];
+      const content = [
+        variant.caption ||
+          [variant.hook, variant.body, variant.cta].filter(Boolean).join("\n\n"),
+      ];
 
       const inferenceId = await this.logInference(
         "multilingual",
         { prompt, platform, tone, length },
-        { content, confidence: aiResult.confidence || 0.9 },
+        { content, source: variant.source },
         undefined,
         executionTimeMs,
       );
 
       if (inferenceId) {
         await this.logExplanation(inferenceId, {
-          text: `Generated ${platform} content via ${aiResult?.source || "AI"} with ${tone} tone`,
+          text: `Generated ${platform} content via MaxCore with ${tone} tone`,
           features: { platform: 0.3, tone: 0.4, length: 0.3 },
-          confidence: aiResult.confidence || 0.9,
+          confidence: 1,
         });
       }
 
@@ -297,12 +297,13 @@ export class AIContentService {
           tone,
           length,
           executionTimeMs,
-          source: aiResult.source,
+          source: "MaxCoreAI",
         },
         createdAt: new Date(),
       };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error generating text:");
+      if (error instanceof AIUnavailableError) throw error;
       throw new Error("Failed to generate text content");
     }
   }
@@ -312,6 +313,9 @@ export class AIContentService {
     targetLanguages: string[],
     options?: { headline?: string; hashtags?: string[]; platform?: string },
   ): Promise<MultilingualContent[]> {
+    throw new AIUnavailableError(
+      "multilingual content: MaxCore has no translation inference contract",
+    );
     const startTime = Date.now();
 
     const LANGUAGE_NAMES: Record<string, string> = {
@@ -413,6 +417,9 @@ export class AIContentService {
     userId: string,
     historicalPosts: string[],
   ): Promise<BrandVoiceProfile> {
+    throw new AIUnavailableError(
+      "brand voice analysis: MaxCore has no brand-analysis inference contract",
+    );
     const startTime = Date.now();
 
     // Route through MaxCore — the sole AI source for brand voice analysis.
@@ -742,7 +749,28 @@ export class AIContentService {
     content: string,
     platform: string,
     goal: "reach" | "engagement" | "niche" = "engagement",
+    userId?: string,
   ): Promise<HashtagSuggestion[]> {
+    if (!userId) {
+      throw new AIUnavailableError("hashtag generation requires an authenticated user id");
+    }
+    const generated = await generateSocialDirect({
+      userId,
+      platform,
+      topic: content || "music promotion",
+      goal,
+      includeHashtags: true,
+      numVariants: 1,
+    });
+    return generated.variants[0].hashtags.map((hashtag) => ({
+      hashtag,
+      category: goal === "niche" ? "niche" : "medium-reach",
+      popularity: null,
+      competition: null,
+      avgEngagement: null,
+      trending: null,
+    }));
+
     const startTime = Date.now();
 
     const platformLimits: Record<string, number> = {
@@ -950,7 +978,28 @@ export class AIContentService {
   async generateABVariants(
     baseContent: string,
     variationType: "headline" | "CTA" | "emoji" | "length" | "tone" = "tone",
+    userId?: string,
   ): Promise<ABVariant[]> {
+    if (!userId) {
+      throw new AIUnavailableError("social variants require an authenticated user id");
+    }
+    const generated = await generateSocialDirect({
+      userId,
+      platform: "instagram",
+      topic: baseContent,
+      goal: variationType,
+      numVariants: 3,
+    });
+    return generated.variants.map((variant, index) => ({
+      id: `${userId}:variant:${variant.variant ?? index + 1}`,
+      content:
+        variant.caption ||
+        [variant.hook, variant.body, variant.cta].filter(Boolean).join("\n\n"),
+      variationType,
+      predictedPerformance: null,
+      changes: [variant.source || "MaxCoreAI"],
+    }));
+
     const startTime = Date.now();
 
     // For all variant types, call the full AI pipeline (MaxCore → Python AI → in-house)
@@ -1428,6 +1477,28 @@ export class AIContentService {
   async getOptimalPostingTimes(
     _userId: string,
   ): Promise<PostingTimeRecommendation[]> {
+    const result = await getSocialAutopilotDirect({
+      userId: _userId,
+      platform: "instagram",
+      targetMetric: "engagement",
+    });
+    const raw = result.recommendations.best_posting_times || [];
+    if (raw.length === 0) {
+      throw new AIUnavailableError("MaxCore returned no posting-time recommendation");
+    }
+    return raw.map((time) => {
+      const match = time.match(/(?:T)?(\d{2}):(\d{2})/);
+      if (!match) {
+        throw new AIUnavailableError("MaxCore returned an invalid posting time");
+      }
+      return {
+        dayOfWeek: null,
+        hour: Number(match[1]),
+        score: null,
+        reasoning: "MaxCore social autopilot posting window",
+      };
+    });
+
     const dayNames = [
       "Sunday",
       "Monday",

@@ -10,7 +10,6 @@ import {
   type UrlContentBrief,
 } from "./services/advancedUrlParser.js";
 import {
-  selectArm,
   recordOutcome,
 } from "./services/adaptiveGenerationEngine.js";
 
@@ -96,6 +95,9 @@ export class AutopilotEngine extends EventEmitter {
   // the real signal rather than synthetic now-2h / undefined fallbacks.
   private publishContext: Map<string, any> = new Map();
   private userId: string;
+  private sourceUrlCursor = 0;
+  private contentTypeCursor = 0;
+  private topicCursor = 0;
 
   constructor(userId: string) {
     super();
@@ -251,7 +253,7 @@ export class AutopilotEngine extends EventEmitter {
         scheduledAt: generationTime,
         platform,
         data: {
-          topic: this.selectNextTopic(),
+          topic: await this.selectNextTopic(platform),
           brandVoice: this.config.brandVoice,
           contentType: await this.selectContentType(platform),
         },
@@ -404,78 +406,22 @@ export class AutopilotEngine extends EventEmitter {
     return platformTimes[platform.toLowerCase()] || [14];
   }
 
-  private selectNextTopic(): string {
+  private async selectNextTopic(_platform: string): Promise<string> {
     if (this.config.topics.length === 0) {
-      return "business insights";
+      throw new Error("Autopilot topic constraints are empty");
     }
-
-    // Rotate through topics to ensure variety
-    const topicIndex = Date.now() % this.config.topics.length;
-    return this.config.topics[Math.floor(topicIndex)];
+    const chosen =
+      this.config.topics[this.topicCursor % this.config.topics.length];
+    this.topicCursor++;
+    return chosen;
   }
 
-  private async selectContentType(platform?: string): Promise<string> {
+  private async selectContentType(_platform?: string): Promise<string> {
     const types = this.config.contentTypes;
     if (types.length === 0) return "insights";
-
-    // A self-evolution posting_optimization override may prioritize certain
-    // media formats (from a real detected industry change). Bias the configured
-    // content type toward the highest-priority format the artist actually
-    // produces; if none of the configured types map to a prioritized format,
-    // fall through to adaptive selection below. Sits ABOVE adaptive selection
-    // and is fully reversible (deactivating the enhancement restores it).
-    try {
-      const posting = platform
-        ? evolutionRegistry.getPostingOptimization(platform)
-        : null;
-      const priority = posting?.contentFormatPriority;
-      if (priority && priority.length > 0) {
-        let best: string | undefined;
-        let bestRank = Infinity;
-        for (const t of types) {
-          const fmt = CONTENT_TYPE_FORMAT_AFFINITY[t.toLowerCase()];
-          if (!fmt) continue;
-          const rank = priority.indexOf(fmt);
-          if (rank >= 0 && rank < bestRank) {
-            bestRank = rank;
-            best = t;
-          }
-        }
-        if (best) {
-          logger.info(
-            `[Autopilot] Using self-evolution content-format priority for ${platform}: ` +
-              `picked "${best}" (formats=${priority.join(",")})`,
-          );
-          return best;
-        }
-      }
-    } catch (err) {
-      logger.warn(
-        { err },
-        `[Autopilot] Failed to apply evolution content-format priority for ${platform}`,
-      );
-    }
-
-    // Adaptive pick: favors content types that have actually engaged this
-    // artist's audience (fed by real analytics in learnFromPerformance below)
-    // while guaranteeing rotation across untried types instead of resolving
-    // to one fixed type forever. Replaces a static per-user hash pick that,
-    // having no time/history/outcome component, always returned the same
-    // content type for a given (userId, contentTypes) pair.
-    try {
-      const { chosen } = await selectArm({
-        domain: "autopilot_content_type",
-        scope: this.userId,
-        candidates: types,
-      });
-      return chosen;
-    } catch (err) {
-      logger.warn(
-        { err },
-        `[Autopilot] Adaptive content-type selection failed, falling back to seeded pick`,
-      );
-      return types[seededIndex(this.userId + ":" + types.join(","), types.length)];
-    }
+    const chosen = types[this.contentTypeCursor % types.length];
+    this.contentTypeCursor++;
+    return chosen;
   }
 
   // Job Processing
@@ -696,21 +642,8 @@ export class AutopilotEngine extends EventEmitter {
   ): Promise<UrlContentBrief | undefined> {
     const urls = this.config.sourceUrls;
     if (!urls || urls.length === 0) return undefined;
-    let chosen: string;
-    try {
-      const { chosen: picked } = await selectArm({
-        domain: "autopilot_source_url",
-        scope: this.userId,
-        candidates: urls,
-      });
-      chosen = picked;
-    } catch (err) {
-      logger.warn(
-        { err },
-        `[Autopilot] Adaptive source-URL selection failed, falling back to seeded pick`,
-      );
-      chosen = urls[seededIndex(`${topic}|${platform}`, urls.length)];
-    }
+    const chosen = urls[this.sourceUrlCursor % urls.length];
+    this.sourceUrlCursor++;
     try {
       const parsed = await advancedUrlParser.parseUrl(chosen);
       return advancedUrlParser.toContentBrief(parsed);
@@ -819,8 +752,16 @@ export class AutopilotEngine extends EventEmitter {
           callToActionStrength,
         });
 
+      const qualitySummary =
+        typeof advancedResult.scoring?.overall === "number"
+          ? advancedResult.scoring.overall.toFixed(1)
+          : "unavailable";
+      const viralSummary =
+        typeof advancedResult.viralPotential?.score === "number"
+          ? advancedResult.viralPotential.score.toFixed(1)
+          : "unavailable";
       logger.info(
-        `[Autopilot] Generated content with Advanced AI: score=${advancedResult.scoring.overall.toFixed(1)}, viral=${advancedResult?.viralPotential.score?.toFixed(1)}`,
+        `[Autopilot] Generated content with Advanced AI: score=${qualitySummary}, viral=${viralSummary}`,
       );
 
       return {
@@ -828,7 +769,9 @@ export class AutopilotEngine extends EventEmitter {
         hashtags: advancedResult.primary.hashtags,
         hook: advancedResult.primary.hook,
         cta: advancedResult.primary.callToAction,
-        viralScore: advancedResult.viralPotential.score,
+        ...(typeof advancedResult.viralPotential?.score === "number"
+          ? { viralScore: advancedResult.viralPotential.score }
+          : {}),
       };
     } catch (error) {
       // Advanced Social AI routes exclusively through MaxCore. If it fails,

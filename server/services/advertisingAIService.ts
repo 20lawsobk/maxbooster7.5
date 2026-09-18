@@ -5,11 +5,12 @@ import { db } from "../db";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 import {
+  generateAdsDirect,
+  getAdsAudienceDirect,
+  predictEngagementDirect,
+} from "./maxcoreDomainAdapter.js";
+import {
   adCampaigns,
-  adCompetitorIntelligence,
-  adAudienceSegments,
-  adCreativePredictions,
-  adConversions,
 } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 
@@ -149,96 +150,52 @@ export class AdvertisingAIService {
     // or fails generation on timeout/failure.
     const { getAwarenessContext } = await import("./awarenessContext.js");
     const adAwareness = await getAwarenessContext("advertising");
-    const mcAdRaw = await MaxCoreAIClient.generate<{
-      creatives?: Array<{
-        hook?: string;
-        headline?: string;
-        body?: string;
-        cta?: string;
-      }>;
-      targeting?: Record<string, unknown>;
-    }>("/api/platform/ads/generate", {
-      product: adTopic,
-      topic: adTopic,
-      platform: platforms[0] ?? "instagram",
-      tone: "promotional",
-      objective: campaign.objective ?? "engagement",
-      content_type:
-        (creative as Record<string, unknown>).contentType ?? "video",
-      campaign_context: {
-        budget: campaign.budget ?? 0,
-        platforms,
-        creative_id: creative.id,
-      },
-      ...(adAwareness?.contextString
-        ? { extra_context: adAwareness.contextString.slice(0, 400) }
-        : {}),
-    });
-    const mcAd = requireMaxCore(mcAdRaw, "ad creative");
-    const adCreative = mcAd.creatives?.[0] ?? null;
-    const targeting = (mcAd.targeting ?? {}) as Record<string, unknown>;
-    const mcCreative = adCreative
-      ? {
-          hook: adCreative.hook ?? null,
-          body: adCreative.body ?? null,
-          cta: adCreative.cta ?? null,
-          caption: adCreative.body ?? null,
-          headline: adCreative.headline ?? null,
-          platform_insights: targeting,
-          suggested_hashtags: [] as string[],
-          optimal_post_times: [] as number[],
-          audience_segments: Array.isArray(targeting.primary_interests)
-            ? (targeting.primary_interests as string[])
-            : [],
-        }
-      : null;
-
-    // A non-null response with no usable creative content is unavailability.
-    if (
-      !adCreative ||
-      !(
-        adCreative.hook ||
-        adCreative.headline ||
-        adCreative.body ||
-        adCreative.cta
-      )
-    ) {
-      throw new AIUnavailableError("ad creative");
+    const userId = String(
+      (creative as Record<string, unknown>).userId ??
+        (campaign as Record<string, unknown>).userId ??
+        "",
+    );
+    if (!userId) {
+      throw new AIUnavailableError(
+        "ad generation requires the authenticated user id",
+      );
     }
-
-    // Calculate organic amplification potential (100%+ boost vs paid ads)
-    const viralityScore = this.calculateViralityScore(creative);
-    const organicReachMultiplier =
-      this.calculateOrganicReachMultiplier(viralityScore);
-    const platformPerformance = this.predictPlatformPerformance(
-      creative,
-      platforms,
-    );
-    const engagementOptimizations = this.generateEngagementOptimizations(
-      creative,
-      platformPerformance,
-    );
+    const mcAd = await generateAdsDirect({
+      userId,
+      product: adTopic,
+      platform: platforms[0] ?? "meta",
+      adType:
+        String((creative as Record<string, unknown>).contentType ?? "video"),
+      goal: campaign.objective ?? "streams",
+      budgetDaily: campaign.budget,
+      numCreatives: Math.max(1, Math.min(10, platforms.length || 1)),
+      awareness: adAwareness?.contextString,
+    });
+    const adCreative = mcAd.creatives[0];
+    const targeting = mcAd.targeting;
 
     const outputs: Record<string, unknown> = {
-      viralityScore,
-      organicReachMultiplier, // 100%+ amplification vs paid ads
-      platformPredictions: platformPerformance,
-      engagementOptimizations,
-      costSavings: this.calculateAdSpendSavings(
-        platformPerformance,
-        campaign?.budget || 0,
-      ),
-      optimalPostSchedule: this.generatePostSchedule(platforms),
-      expectedOrganicReach:
-        this.calculateExpectedOrganicReach(platformPerformance),
+      viralityScore: null,
+      organicReachMultiplier: null,
+      platformPredictions: null,
+      engagementOptimizations: [],
+      costSavings: null,
+      optimalPostSchedule: null,
+      expectedOrganicReach: null,
       // MaxCore AI creative suggestions (required — authoritative source)
-      aiSuggestedHook: mcCreative?.hook ?? null,
-      aiSuggestedCaption: mcCreative?.caption ?? mcCreative?.body ?? null,
-      aiSuggestedCTA: mcCreative?.cta ?? null,
-      aiSuggestedHashtags: mcCreative?.suggested_hashtags ?? [],
-      aiOptimalPostTimes: mcCreative?.optimal_post_times ?? [],
-      aiAudienceSegments: mcCreative?.audience_segments ?? [],
-      aiPlatformInsights: mcCreative?.platform_insights ?? {},
+      aiSuggestedHook: adCreative.hook,
+      aiSuggestedCaption: adCreative.body,
+      aiSuggestedCTA: adCreative.cta,
+      aiSuggestedHashtags: [],
+      aiOptimalPostTimes: [],
+      aiAudienceSegments: Array.isArray(targeting.primary_interests)
+        ? targeting.primary_interests
+        : [],
+      aiPlatformInsights: targeting,
+      aiCreatives: mcAd.creatives,
+      aiBudgetSplit: mcAd.budget_split,
+      aiPlatformBenchmarks: mcAd.platform_benchmarks,
+      aiLaunchChecklist: mcAd.launch_checklist,
       aiSource: "maxcore",
     };
 
@@ -409,7 +366,83 @@ export class AdvertisingAIService {
     summary: Record<string, unknown>;
   }> {
     const startTime = Date?.now();
+    const [campaign] = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.id, campaignId))
+      .limit(1);
+    if (!campaign) {
+      throw new AIUnavailableError("audience clustering requires an existing campaign");
+    }
+    const maxcore = await getAdsAudienceDirect({
+      userId: String(campaign.userId),
+      platform: String(campaign.platform || "meta"),
+      product: String(campaign.name || "music artist promotion"),
+      goal: String(campaign.objective || "streams"),
+      budgetDaily:
+        campaign.budget === null || campaign.budget === undefined
+          ? undefined
+          : Number(campaign.budget),
+    });
+    const cold = maxcore.cold_audience as Record<string, unknown>;
+    const interests = (cold.interests as string[]) || [];
+    const realSegment = {
+      campaignId,
+      segmentName: "cold_audience",
+      segmentIndex: 0,
+      size: null,
+      predictedValue: null,
+      targetingRecommendations: {
+        platforms: [String(maxcore.platform)],
+        contentTypes: [],
+        messagingTone: "",
+        callToAction: "",
+      },
+      demographics: {
+        ageRange: cold.age_range,
+        gender: cold.gender,
+        source: cold.source,
+      },
+      interests,
+      behaviors: {
+        lookalikeAudiences: maxcore.lookalike_audiences,
+        retargetingAudiences: maxcore.retargeting_audiences,
+        campaignFunnel: maxcore.campaign_funnel,
+      },
+      engagementHistory: null,
+      characteristics: [],
+    };
+    const realOutputs = {
+      campaignId,
+      totalSegments: 1,
+      segments: [{
+        name: realSegment.segmentName,
+        size: null,
+        predictedValue: null,
+        platforms: realSegment.targetingRecommendations.platforms,
+      }],
+      totalAudienceSize: null,
+      maxcoreAudience: maxcore,
+      aiSource: "maxcore",
+    };
+    await (storage as any)?.createAdAIRun({
+      creativeId: `campaign_${campaignId}_clustering`,
+      modelVersion: this.AUDIENCE_CLUSTERER,
+      inferenceInputs: { campaignId },
+      inferenceOutputs: realOutputs,
+      executionTime: Date.now() - startTime,
+      deterministic: true,
+    });
+    return {
+      segments: [realSegment as AudienceSegment],
+      summary: realOutputs,
+    };
 
+    /*
+     * Retired deterministic implementation intentionally retained only as
+     * historical source context until the advertising schema migration is
+     * removed. It is excluded from emitted JavaScript and cannot execute.
+     *
     // Deterministic k-means style clustering with fixed seed
     const numClusters = 7; // Optimal cluster count
     const seed = campaignId * 12345; // Deterministic seed
@@ -698,6 +731,7 @@ export class AdvertisingAIService {
     });
 
     return { segments, summary: outputs };
+    */
   }
 
   /**
@@ -711,33 +745,16 @@ export class AdvertisingAIService {
     const startTime = Date?.now();
 
     // ── MaxCore performance prediction (required & authoritative source) ─────
-    const mcPredictionRaw = await MaxCoreAIClient.infer<{
-      predicted_ctr?: number;
-      predicted_engagement_rate?: number;
-      predicted_conversion_rate?: number;
-      confidence?: number;
-      percentile?: number;
-      recommendations?: string[];
-      viralScore?: number;
-    }>("/api/predict/engagement", {
+    const mcPrediction = await predictEngagementDirect({
       action: "viral_potential",
       content:
         (creative as Record<string, unknown>).headline ||
         (creative as Record<string, unknown>).description ||
         "",
-      hashtags: (creative as Record<string, unknown>).hashtags ?? [],
       platform:
         ((creative as Record<string, unknown>).platforms as string[])?.[0] ??
         "instagram",
-      content_type:
-        (creative as Record<string, unknown>).contentType ?? "video",
-      target_audience: targetAudience ?? null,
-      creative_id: creative.id,
     });
-    const mcPrediction = requireMaxCore(
-      mcPredictionRaw,
-      "creative performance prediction",
-    );
 
     // Feature extraction from creative
     const features = this.extractCreativeFeatures(creative);

@@ -3,7 +3,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
 import { autopilotLearningService } from "../services/autopilotLearningService.js";
-import { hyperLearningEngine } from "../services/hyperLearningEngine.js";
+import { maxCoreControlTransport } from "../services/maxcoreControlTransport.js";
 import { logger } from "../logger.js";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 
@@ -49,32 +49,36 @@ async function getPdimArtistLearningData(artistId: string) {
 
 const router = Router();
 
-// Delay first learning cycle by 90 seconds so it doesn't compete with
-// cold-start DB connections and slow down the initial page load.
-// Only start on the background worker (CLUSTER_WORKER_ID === '0', or undefined
-// in single-process mode). Running HyperLearning on every cluster worker
-// fires 5+ expensive aggregate DB queries per cycle per worker and piles up
-// PDIM calls N× at the same time — defeating the in-process cache entirely.
-const _isBgWorkerForHL =
-  process.env.CLUSTER_WORKER_ID === undefined ||
-  process.env.CLUSTER_WORKER_ID === "0";
-if (_isBgWorkerForHL) {
-  setTimeout(() => {
-    hyperLearningEngine?.start().catch((err) => {
-      logger.warn({ err: err }, "HyperLearning Engine failed to auto-start:");
-    });
-  }, 90_000);
-} else {
-  logger.info(
-    `[HyperLearning] Worker ${process.env.CLUSTER_WORKER_ID} — engine managed by worker 0`,
-  );
+async function getSocialModelState() {
+  const state = await maxCoreControlTransport.request<{
+    domain?: string;
+    version?: string;
+    session_count?: number;
+    weights?: { ready?: boolean };
+  }>("/api/models/social/state", {
+    method: "GET",
+    authScope: "admin",
+  });
+  if (
+    state.domain !== "social" ||
+    typeof state.version !== "string" ||
+    typeof state.session_count !== "number" ||
+    typeof state.weights?.ready !== "boolean"
+  ) {
+    throw new Error("MaxCore social model state returned an invalid response");
+  }
+  return {
+    domain: state.domain,
+    version: state.version,
+    sessionCount: state.session_count,
+    ready: state.weights.ready,
+  };
 }
 
 router.get("/status", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const hyperStatus = hyperLearningEngine?.getStatus();
-    const metrics = hyperLearningEngine?.getMetrics();
+    const modelState = await getSocialModelState();
 
     const [insights, recommendations, performance, platformStats, pdimData] =
       await Promise.all([
@@ -88,14 +92,16 @@ router.get("/status", requireAuth, async (req, res) => {
     res.json({
       success: true,
       learning: {
-        isActive: hyperStatus.isRunning,
-        totalDataPoints: metrics.totalDataPointsProcessed,
-        patternsDetected: metrics.patternsDetected,
-        microPatternsFound: metrics.microPatternsFound,
-        learningMultiplier: `${metrics?.learningMultiplier.toFixed(1)}x`,
-        lastLearningCycle: (hyperStatus.metrics as any).lastCycleAt || null,
-        processingTimeMs: metrics.actualProcessingTimeMs,
-        humanEquivalentHours: metrics.humanEquivalentHours,
+        isActive: modelState.ready,
+        totalDataPoints: performance.total,
+        patternsDetected: null,
+        microPatternsFound: null,
+        learningMultiplier: null,
+        lastLearningCycle: null,
+        processingTimeMs: null,
+        humanEquivalentHours: null,
+        modelVersion: modelState.version,
+        modelSessionCount: modelState.sessionCount,
       },
       insights: {
         total: insights.length,
@@ -137,13 +143,8 @@ router.get("/status", requireAuth, async (req, res) => {
         : null,
       capabilities: [
         "performance_tracking",
-        "pattern_detection",
-        "optimal_timing",
         "content_recommendations",
-        "hyper_learning",
-        "micro_pattern_analysis",
-        "cross_platform_synthesis",
-        "predictive_modeling",
+        "maxcore_social_model",
         "pdim_ad_pattern_learning",
       ],
     });
@@ -378,16 +379,16 @@ router.post("/generate-insights", requireAuth, async (req, res) => {
 
 router.get("/hyper/status", requireAuth, async (_req, res) => {
   try {
-    const status = hyperLearningEngine?.getStatus();
+    const status = await getSocialModelState();
 
     res.json({
       success: true,
       hyperLearning: {
-        enabled: true,
-        learningMultiplier: `${status?.metrics.learningMultiplier?.toFixed(1)}x`,
-        description:
-          "AI-powered learning system that analyzes patterns 3x faster than human capability",
-        ...status,
+        enabled: status.ready,
+        learningMultiplier: null,
+        modelVersion: status.version,
+        modelSessionCount: status.sessionCount,
+        description: "MaxCore social model state",
       },
     });
   } catch (error) {
@@ -399,28 +400,17 @@ router.get("/hyper/status", requireAuth, async (_req, res) => {
 router.get("/hyper/insights", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const hyperInsights = await hyperLearningEngine?.getHyperInsights(userId);
-    const metrics = hyperLearningEngine?.getMetrics();
+    const hyperInsights =
+      await autopilotLearningService.getLearningInsights(userId);
+    const modelState = await getSocialModelState();
 
     res.json({
       success: true,
       hyperInsights,
       count: hyperInsights.length,
-      metrics: {
-        learningMultiplier: metrics.learningMultiplier,
-        humanEquivalentHours: metrics.humanEquivalentHours,
-        actualProcessingMs: metrics.actualProcessingTimeMs,
-        efficiency: `${((metrics?.humanEquivalentHours * 3600000) / Math.max(1, metrics?.actualProcessingTimeMs)).toFixed(1)}x faster than human`,
-      },
-      capabilities: {
-        microPatternDetection:
-          "Detects 15+ subtle content patterns humans miss",
-        crossPlatformSynthesis:
-          "Combines learning across all platforms simultaneously",
-        predictiveModeling: "Predicts engagement before posting",
-        realTimeAdaptation: "Adjusts strategies 24/7 without breaks",
-        acceleratedABTesting: "Runs multiple experiments in parallel",
-      },
+      metrics: null,
+      modelState,
+      capabilities: ["measured_performance_insights", "maxcore_social_model"],
     });
   } catch (error) {
     logger.warn({ err: error }, "Failed to get hyper insights:");
@@ -433,27 +423,55 @@ router.get("/hyper/predict/:platform", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const { platform } = req.params as Record<string, string>;
 
-    const prediction = await hyperLearningEngine?.predictOptimalContent(
+    const history = await autopilotLearningService.getPerformanceHistory(
       userId,
-      platform,
+      { limit: 50, platform },
     );
+    const maxCoreResult = await maxCoreControlTransport.request<{
+      success?: boolean;
+      analysis?: {
+        avg_engagement_rate?: number;
+        top_style_tags?: string[];
+        best_content_type?: string;
+        data_points?: number;
+      };
+      recommendations?: {
+        next_topics?: Array<{ topic?: string; hook?: string; cta?: string }>;
+        best_posting_times?: string[];
+        content_type?: string;
+        style_focus?: string[];
+      };
+    }>("/platform/social/autopilot", {
+      method: "POST",
+      authScope: "generation",
+      userId,
+      timeoutMs: 600_000,
+      body: {
+        user_id: userId,
+        platform,
+        target_metric: "engagement",
+        recent_posts: history.data,
+      },
+    });
+    if (!maxCoreResult.success || !maxCoreResult.recommendations) {
+      throw new Error("MaxCore social autopilot returned an invalid response");
+    }
 
     res.json({
       success: true,
       platform,
-      prediction,
-      explanation: {
-        timing: `Post on day ${prediction?.optimalTiming.dayOfWeek} at ${prediction?.optimalTiming.hour}:00 for best results`,
-        hook: `Start with a ${prediction?.optimalHook} hook`,
-        length: `Keep content at ${prediction?.optimalLength}`,
-        emojis: `Use ${prediction?.optimalEmojiDensity}`,
-        hashtags:
-          prediction?.optimalHashtagCount !== null
-            ? `Include ${prediction?.optimalHashtagCount} hashtags`
-            : "Hashtag count will be available once posting history is established",
-        expectedEngagement: `Predicted engagement rate: ${prediction?.predictedEngagement.toFixed(2)}%`,
+      prediction: {
+        nextTopics: maxCoreResult.recommendations.next_topics ?? [],
+        bestPostingTimes:
+          maxCoreResult.recommendations.best_posting_times ?? [],
+        contentType: maxCoreResult.recommendations.content_type ?? null,
+        styleFocus: maxCoreResult.recommendations.style_focus ?? [],
+        predictedEngagement: null,
       },
-      microPatternRecommendations: prediction.microPatternRecommendations,
+      analysis: maxCoreResult.analysis ?? null,
+      explanation: null,
+      microPatternRecommendations:
+        maxCoreResult.recommendations.style_focus ?? [],
     });
   } catch (error) {
     logger.warn({ err: error }, "Failed to predict optimal content:");
@@ -462,74 +480,21 @@ router.get("/hyper/predict/:platform", requireAuth, async (req, res) => {
 });
 
 router.get("/hyper/metrics", requireAuth, async (_req, res) => {
-  try {
-    const metrics = hyperLearningEngine?.getMetrics();
-
-    res.json({
-      success: true,
-      metrics,
-      analysis: {
-        patternsPerHour:
-          metrics?.patternsDetected /
-          Math.max(1, metrics?.actualProcessingTimeMs / 3600000),
-        dataPointsPerSecond:
-          metrics?.totalDataPointsProcessed /
-          Math.max(1, metrics?.actualProcessingTimeMs / 1000),
-        microPatternDepth: metrics.microPatternsFound,
-        predictionAccuracy: "Improving with each learning cycle",
-      },
-      comparison: {
-        humanAnalyst: {
-          patternsPerHour: 3,
-          dimensionsAnalyzed: 5,
-          workHoursPerDay: 8,
-          breakRequired: true,
-        },
-        hyperLearning: {
-          patternsPerHour: Math.round(
-            metrics?.patternsDetected /
-              Math.max(1, metrics?.actualProcessingTimeMs / 3600000),
-          ),
-          dimensionsAnalyzed: 15,
-          workHoursPerDay: 24,
-          breakRequired: false,
-        },
-      },
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "Failed to get hyper metrics:");
-    res.status(500).json({ error: "Failed to get hyper metrics" });
-  }
+  res.status(503).json({
+    error: "HyperLearning metrics are unavailable; local model execution is disabled",
+  });
 });
 
 router.post("/hyper/start", requireAuth, async (_req, res) => {
-  try {
-    await hyperLearningEngine?.start();
-    const status = hyperLearningEngine?.getStatus();
-
-    res.json({
-      success: true,
-      message: "HyperLearning Engine started",
-      status,
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "Failed to start hyper learning:");
-    res.status(500).json({ error: "Failed to start hyper learning" });
-  }
+  res.status(409).json({
+    error: "Local HyperLearning cannot be started; MaxCore training is centrally managed",
+  });
 });
 
 router.post("/hyper/stop", requireAuth, async (_req, res) => {
-  try {
-    await hyperLearningEngine?.stop();
-
-    res.json({
-      success: true,
-      message: "HyperLearning Engine stopped",
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "Failed to stop hyper learning:");
-    res.status(500).json({ error: "Failed to stop hyper learning" });
-  }
+  res.status(409).json({
+    error: "Local HyperLearning is disabled; MaxCore training is centrally managed",
+  });
 });
 
 export default router;

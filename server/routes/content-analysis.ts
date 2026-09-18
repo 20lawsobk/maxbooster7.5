@@ -15,6 +15,10 @@ import rateLimit from "express-rate-limit";
 import { db } from "../db";
 import { users, posts, adCampaigns } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { AIUnavailableError } from "../lib/aiSource.js";
+
+const analysisErrorStatus = (error: unknown) =>
+  error instanceof AIUnavailableError ? 503 : 500;
 
 // ─── Shared IP-safety helpers (pre-flight, defense-in-depth) ─────────────────
 // The primary SSRF barrier is the connect-time lookup in contentAnalysisService;
@@ -177,7 +181,7 @@ router.post("/image", async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Image analysis error:");
-    res.status(500).json({
+    res.status(analysisErrorStatus(error)).json({
       success: false,
       error: "Failed to analyze image",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -217,7 +221,7 @@ router.post("/video", async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Video analysis error:");
-    res.status(500).json({
+    res.status(analysisErrorStatus(error)).json({
       success: false,
       error: "Failed to analyze video",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -248,6 +252,7 @@ router.post("/audio", async (req, res) => {
     const analysis = await contentAnalysisService?.analyzeAudio(
       safeAudioUrl,
       metadata,
+      req.user!.id,
     );
 
     res.json({
@@ -257,7 +262,7 @@ router.post("/audio", async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Audio analysis error:");
-    res.status(500).json({
+    res.status(analysisErrorStatus(error)).json({
       success: false,
       error: "Failed to analyze audio",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -287,7 +292,7 @@ router.post("/text", async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Text analysis error:");
-    res.status(500).json({
+    res.status(analysisErrorStatus(error)).json({
       success: false,
       error: "Failed to analyze text",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -341,7 +346,7 @@ router.post("/website", async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Website analysis error:");
-    res.status(500).json({
+    res.status(analysisErrorStatus(error)).json({
       success: false,
       error: "Failed to analyze website",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -414,7 +419,7 @@ router.post("/batch", async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Batch analysis error:");
-    res.status(500).json({
+    res.status(analysisErrorStatus(error)).json({
       success: false,
       error: "Failed to perform batch analysis",
       message: error instanceof Error ? error?.message : "Unknown error",

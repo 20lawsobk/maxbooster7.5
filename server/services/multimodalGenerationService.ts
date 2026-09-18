@@ -10,9 +10,10 @@ import {
   getMaxcoreOriginOrDefault,
 } from "./maxcoreConnector.js";
 import { assertPublicHttpUrl, safeFetchText } from "./safeUrlFetch.js";
-import { generateAudio as generateLocalAudio } from "./audioGeneratorService.js";
 import { sharpImageService as _sharpImageService } from "./sharpImageService.js";
 import { storageService } from "./storageService.js";
+import { ensureMaxCoreAudioAsset } from "./maxcoreAssetTransport.js";
+import { renderVideo } from "./advancedVideoRendererService.js";
 import { db } from "../db.js";
 import { eq } from "drizzle-orm";
 import { autopilotPreferences, userBrandVoices } from "@shared/schema";
@@ -51,6 +52,7 @@ async function maxcorePost(
   path: string,
   body: unknown,
   timeoutMs = 90_000,
+  trustedUserId?: string,
 ): Promise<unknown> {
   const res = await fetch(`${MAXCORE_URL}${path}`, {
     method: "POST",
@@ -59,6 +61,9 @@ async function maxcorePost(
       // MaxCore auth is Bearer-ONLY — sending X-API-Key/X-Admin-Key alongside
       // makes MaxCore validate those schemes first and 401 every call.
       ...(MAXCORE_KEY ? { Authorization: `Bearer ${MAXCORE_KEY}` } : {}),
+      ...(trustedUserId
+        ? { "X-MaxCore-User-Id": trustedUserId }
+        : {}),
     },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(timeoutMs),
@@ -142,6 +147,7 @@ function isMaxCoreOrigin(absoluteUrl: string): boolean {
 async function mirrorRemoteAssetLocally(
   rawUrl: string,
   kind: "images" | "audio",
+  userId: string,
 ): Promise<string> {
   const absolute = absolutizeMaxCoreUrl(rawUrl);
   if (!absolute) return "";
@@ -153,7 +159,10 @@ async function mirrorRemoteAssetLocally(
   try {
     const res = await fetch(absolute, {
       headers: MAXCORE_KEY
-        ? { Authorization: `Bearer ${MAXCORE_KEY}` }
+        ? {
+            Authorization: `Bearer ${MAXCORE_KEY}`,
+            "X-MaxCore-User-Id": userId,
+          }
         : undefined,
       signal: AbortSignal.timeout(30_000),
     });
@@ -2089,6 +2098,40 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
       : req.input.payload ?? "";
   let prefetchedMeta: PageMeta | null = null;
 
+  if (req.input.modality === "audio") {
+    try {
+      const maxCoreAudioUrl = await ensureMaxCoreAudioAsset(payload, req.userId);
+      const response = await maxcorePost(
+        "/audio/analyze",
+        {
+          audio_url: maxCoreAudioUrl,
+          context: {
+            artistProfileId: req.artistProfileId,
+            platforms: req.platforms,
+            intent: req.intent,
+            metadata: req.input.metadata,
+          },
+        },
+        90_000,
+        req.userId,
+      );
+      const analysis = normalizeMaxcoreAnalyzeResponse(response);
+      return {
+        ...analysis,
+        modality: "audio",
+        payload,
+        maxcoreAudioUrl: maxCoreAudioUrl,
+        source: "maxcore_audio_conductor",
+      };
+    } catch (err) {
+      logger.warn(
+        { err },
+        "[MultimodalGen] MaxCore audio conductor analysis unavailable",
+      );
+      throw new AIUnavailableError("multimodal audio analysis");
+    }
+  }
+
   // Pre-fetch URL metadata so MaxCore gets the full page content, not just a bare URL
   if (req.input.modality === "url" && /^https?:\/\//i.test(payload)) {
     try {
@@ -2129,6 +2172,7 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
         platformRules: platformRulesSubset,
       },
       20_000,
+      req.userId,
     ); // MaxCore awareness/model inference can take 8–13 s under load.
     return normalizeMaxcoreAnalyzeResponse(response);
   } catch (err) {
@@ -2186,9 +2230,9 @@ async function planTasks(
   _normalized: Record<string, unknown>,
   req: GenerationRequest,
 ): Promise<TaskPlan> {
-  // The remote planner (/generate/text with mode: 'planner') always produces
-  // garbled output that fails JSON parsing, causing a 30-second timeout on
-  // every request.  Use the deterministic local plan builder directly.
+  // Planning is deterministic orchestration, not AI inference. MaxCore's
+  // former planner was five fixed steps and now correctly reports unavailable;
+  // keep the existing request/pack contract without pretending it is a model.
   return buildDefaultPlan(req);
 }
 
@@ -2656,6 +2700,7 @@ const textWorker = {
                 : {}),
             },
             20_000,
+            req.userId,
           ); // 20 s per slot — MaxCore's awareness layer takes ~8-13 s under load
           // (an 8 s budget flaked to local fallback); slots run in parallel and
           // the local fallback is instant, so this still fits the 30 s client window.
@@ -3152,7 +3197,7 @@ const imageWorker = {
               },
             }
           : {}),
-      });
+      }, 90_000, req.userId);
       const allOutputs = Array.isArray((result as any).outputs) ? (result as any).outputs : [];
       // MaxCore returns relative /uploads/images/... URLs — absolute-ize them
       // against the MaxCore origin and mirror locally so they serve same-origin.
@@ -3161,7 +3206,11 @@ const imageWorker = {
           allOutputs.map(async (o: Record<string, unknown>) => {
             const rawUrl = String(o.url || o.src || "");
             if (!rawUrl) return null;
-            const servedUrl = await mirrorRemoteAssetLocally(rawUrl, "images");
+            const servedUrl = await mirrorRemoteAssetLocally(
+              rawUrl,
+              "images",
+              req.userId,
+            );
             if (!servedUrl) return null;
             return { ...o, url: servedUrl, src: servedUrl };
           }),
@@ -3220,7 +3269,7 @@ const audioWorker = {
         artistProfileId: req.artistProfileId,
         intent: req.intent,
         platformRules: audioRules,
-      });
+      }, 90_000, req.userId);
 
       // Inline outputs (legacy shape) — use them directly.
       let outputs = Array.isArray((result as any).outputs) ? (result as any).outputs : [];
@@ -3244,7 +3293,10 @@ const audioWorker = {
           try {
             const pollRes = await fetch(`${MAXCORE_URL}/audio-job/${jobId}`, {
               headers: MAXCORE_KEY
-                ? { Authorization: `Bearer ${MAXCORE_KEY}` }
+                ? {
+                    Authorization: `Bearer ${MAXCORE_KEY}`,
+                    "X-MaxCore-User-Id": req.userId,
+                  }
                 : undefined,
               signal: AbortSignal.timeout(15_000),
             });
@@ -3288,6 +3340,7 @@ const audioWorker = {
             payload: await mirrorRemoteAssetLocally(
               String(o.url || ""),
               "audio",
+              req.userId,
             ),
             platform: (o.platform as Platform | undefined) ?? platform,
             slotId: o.slotId,
@@ -3302,89 +3355,75 @@ const audioWorker = {
     } catch (err) {
       logger.warn(
         { err },
-        `[MultimodalGen] MaxCore /generate/audio unavailable — falling back to local audio generator: ${err instanceof Error ? err.message : String(err)}`,
+        `[MultimodalGen] MaxCore /generate/audio unavailable; no local AI/media fallback: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
 
-    // 2. Local FFmpeg audio generator fallback — produces a real .mp3 file
-    try {
-      const genre = (normalized as any).genre ?? (req.constraints as any)?.genre ?? "default";
-      const maxSec = audioRules!.maxDurationSec ?? duration;
-      const ttsText = [
-        (normalized as any).hook,
-        (normalized as any).body,
-        (normalized as any).cta,
-        (normalized as any).summary,
-      ]
-        .filter(Boolean)
-        .join(". ");
-
-      const audioResult = await generateLocalAudio({
-        genre,
-        duration: Math.min(maxSec, 60),
-        text: ttsText || req.intent || undefined,
-        topic: req.intent,
-        artistName: (normalized as any).artistName,
-      });
-
-      if (audioResult.success && audioResult.url) {
-        logger.info(
-          `[MultimodalGen] Local audio generated: ${audioResult.url}`,
-        );
-        return [
-          {
-            id: randomUUID(),
-            modality: "audio" as OutputModality,
-            payload: audioResult.url,
-            platform,
-            metadata: {
-              source: "local_ffmpeg",
-              durationSec: audioResult.durationSec,
-              maxDurationSec: audioRules!.maxDurationSec,
-              platformRules: audioRules,
-            },
-          },
-        ];
-      }
-
-      logger.warn(
-        { err: audioResult.error },
-        "[MultimodalGen] Local audio generator returned no file",
-      );
-    } catch (localErr) {
-      logger.warn(
-        { err: localErr },
-        `[MultimodalGen] Local audio generator threw: ${localErr instanceof Error ? localErr.message : String(localErr)}`,
-      );
-    }
-
-    return [];
+    throw new AIUnavailableError("multimodal audio generation");
   },
 };
 
 const videoWorker = {
   async run(
     step: TaskStep,
-    _inputs: Record<string, unknown>,
+    inputs: Record<string, unknown>,
     req: GenerationRequest,
   ): Promise<GeneratedAsset[]> {
-    // FFmpeg video generation takes 2–5 minutes and cannot be run inline inside
-    // a synchronous HTTP request (the client timeout fires first, leaving the
-    // caller with a network error rather than a usable result).
-    //
-    // The correct path for video generation is the dedicated async job endpoint:
-    //   POST /api/social/generate-video  →  GET /api/social/video-job/:jobId
-    //
-    // Returning an empty array here is intentional — the client detects zero
-    // video assets and renders the ServerVideoGenerator widget, which drives the
-    // async job flow described above.
-    logger.info(
-      `[MultimodalGen] videoWorker: skipping inline FFmpeg for step ${step.id} ` +
-        `(req ${req.id}) — client will use the async ServerVideoGenerator instead`,
-    );
-    // Return empty so the client's zero-asset guard fires and renders the
-    // ServerVideoGenerator widget (which drives the async job endpoint instead).
-    return [];
+    const normalized =
+      inputs.normalized && typeof inputs.normalized === "object"
+        ? (inputs.normalized as Record<string, unknown>)
+        : {};
+    const params = (step.params ?? {}) as Record<string, unknown>;
+    const audioSource =
+      typeof normalized.maxcoreAudioUrl === "string"
+        ? normalized.maxcoreAudioUrl
+        : req.input.modality === "audio"
+          ? req.input.payload
+          : undefined;
+    const result = await renderVideo({
+      topic:
+        String(
+          params.topic ??
+            normalized.summary ??
+            normalized.title ??
+            req.intent ??
+            "creative video",
+        ),
+      platform: String(params.platform ?? req.platforms[0] ?? "tiktok"),
+      aspect_ratio:
+        typeof params.aspectRatio === "string" ? params.aspectRatio : undefined,
+      duration:
+        typeof params.maxDurationSec === "number"
+          ? params.maxDurationSec
+          : undefined,
+      tone: typeof params.tone === "string" ? params.tone : undefined,
+      genre:
+        typeof normalized.genre === "string" ? normalized.genre : undefined,
+      user_audio_path: audioSource,
+      userId: req.userId,
+    });
+    if (!result.success || !result.url) {
+      throw new AIUnavailableError(
+        `multimodal video generation${result.error ? `: ${result.error}` : ""}`,
+      );
+    }
+    return [
+      {
+        id: randomUUID(),
+        modality: "video",
+        payload: result.url,
+        platform: (params.platform as Platform | undefined) ?? req.platforms[0],
+        slotId: step.slotId,
+        metadata: {
+          maxcoreJobCompleted: true,
+          duration: result.duration,
+          width: result.width,
+          height: result.height,
+          thumbnailUrl: result.thumbnail_url,
+          source: result.source ?? "MaxCoreAI",
+        },
+      },
+    ];
   },
 };
 

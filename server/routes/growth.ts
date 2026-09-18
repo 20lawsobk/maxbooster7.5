@@ -426,15 +426,24 @@ router.post(
   requireAuth,
   asyncHandler(async (req: any, res: any) => {
     try {
-      const { caption, count = 5 } = req.body;
+      const { caption, count = 5, platform } = req.body;
 
-      if (!caption) {
-        return res.status(400).json({ error: "Caption is required" });
+      if (!caption || !platform) {
+        return res
+          .status(400)
+          .json({ error: "Caption and platform are required" });
       }
 
+      const contentData: ContentData = {
+        userId: req.user!.id,
+        caption,
+        platform,
+        hashtags: [],
+        contentType: "text",
+      };
       const variants =
         await contentVariantGeneratorService?.generateCaptionVariants(
-          caption,
+          contentData,
           count,
         );
 

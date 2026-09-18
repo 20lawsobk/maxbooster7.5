@@ -15,9 +15,13 @@ description: The durable rule that AI features must be MaxCore-sourced and fail 
 - **Request paths:** the global error handler maps `AIUnavailableError.statusCode` → 503. A catch-all `res.status(500)` will SWALLOW the 503 — the catch MUST check `instanceof AIUnavailableError` first.
 - **Background callers:** the throw is caught by their existing try/catch (log-and-skip), never a crash.
 
-## Deliberate carve-outs — do NOT "fix" these into MaxCore-only
-- The **"Max" in-app assistant** stays fully local.
-- **Four render-helper models** (CreativePlannerModel, BeatSyncAlignmentModel, VideoCreativeScorer, KeyframeStyleSelector) have **no MaxCore counterpart** and stay local, including their local synthetic training-data seeding at startup. A MaxCore endpoint for them is a *new feature*, not a fallback.
+## Authority boundaries
+The current AI exception is defined in `replit.md`. Earlier exemptions for the four local render-helper models were revoked; their continued presence in old code is not authorization to keep them on live paths.
+
+**Why:** A complete MaxCore video/job capability may replace a whole helper pipeline without exposing four identically named helper endpoints. Earlier audits confused missing one-to-one endpoints with missing overall capability.
+
+**How to apply:** Inspect current MaxCore handlers and complete job outputs, not only the app proxy allowlist or historical notes. Verify payloads and output contracts before removing the old path; do not substitute generic caption generation for unrelated reasoning.
+
 - **Compliance screening** is fail-CLOSED on MaxCore's safety screen but deliberately KEEPS local deterministic regex checks as an *additive* guardrail — MaxCore's screen was observed to miss obvious abuse. This is added safety, not a leftover content fallback.
 - Supplementary metadata (e.g. hashtags) may fall back to a caller-supplied list when MaxCore omits it — that is metadata, not the generated body.
 

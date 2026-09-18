@@ -936,7 +936,9 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
 }
 
 export async function runPublicDatasetFineTuning(): Promise<boolean> {
-  return fineTuneWithPublicDatasets();
+  throw new Error(
+    "Local public-dataset fine-tuning is disabled; MaxCore owns model training",
+  );
 }
 
 export async function runBaseModelTraining(): Promise<void> {
@@ -1004,25 +1006,20 @@ export async function runBaseModelTraining(): Promise<void> {
     "[BaseTrainer] Ongoing learning continues via: user engagement + autopilot + MaxCore 10-min sync (10 yrs simulated per session)",
   );
 
-  // Train the creative model pipeline (deferred, non-blocking)
-  trainCreativeModelPipeline().catch((err) =>
-    logger.warn(
-      "[BaseTrainer] Creative pipeline training deferred error:",
-      err?.message,
-    ),
-  );
 }
 
 export function loadSocialBaseState(): Record<string, unknown> | null {
-  return modelWeightStorage?.load("social_base") as Record<string, unknown> | null;
+  throw new Error("Local social base state was removed; query MaxCore model state");
 }
 
 export function loadAdvertisingBaseState(): Record<string, unknown> | null {
-  return modelWeightStorage?.load("advertising_base") as Record<string, unknown> | null;
+  throw new Error(
+    "Local advertising base state was removed; query MaxCore model state",
+  );
 }
 
 export function loadFineTuneState(): Record<string, unknown> | null {
-  return modelWeightStorage?.load("fine_tune_public_datasets") as Record<string, unknown> | null;
+  throw new Error("Local fine-tune state was removed; query MaxCore model state");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1200,28 +1197,7 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
 }
 
 export async function trainCreativeModelPipeline(): Promise<void> {
-  logger.info(
-    "[BaseTrainer] ──────────────────────────────────────────────────",
-  );
-  logger.info("[BaseTrainer] Training Creative Model Pipeline (4 models)");
-  logger.info(
-    "[BaseTrainer] ──────────────────────────────────────────────────",
-  );
-
-  const results = await Promise.allSettled([
-    trainCreativePlannerBase(),
-    trainBeatSyncAlignmentBase(),
-    trainVideoCreativeScorerBase(),
-    trainKeyframeSelectorBase(),
-  ]);
-
-  const [planner, align, scorer, style] = results.map(
-    (r) => r?.status === "fulfilled" && r?.value,
-  );
-
-  logger.info(
-    `[BaseTrainer] Creative pipeline — planner: ${planner ? "OK" : "FAILED"}, ` +
-      `alignment: ${align ? "OK" : "FAILED"}, scorer: ${scorer ? "OK" : "FAILED"}, ` +
-      `style: ${style ? "OK" : "FAILED"}`,
+  throw new Error(
+    "Local creative model training is disabled; use MaxCore generation capabilities directly",
   );
 }

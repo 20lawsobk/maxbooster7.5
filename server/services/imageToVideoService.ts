@@ -35,20 +35,13 @@ import path from "path";
 import { randomBytes } from "crypto";
 import { logger } from "../logger.js";
 import {
-  analyzeAudio,
-  getBeatAlignedCuts,
-  cutsToSceneDurations,
-} from "./beatSyncService.js";
-import type { BeatAnalysis } from "./beatSyncService.js";
-import {
   AUDIO_PROFILES,
-  TEMPLATE_STYLES,
   type VideoGenResult,
 } from "./videoGeneratorService.js";
 import {
-  checkDiffusionAvailable,
-  renderDiffusionScene,
-} from "./maxcoreDiffusionSceneService.js";
+  renderVideo as renderMaxCoreVideo,
+} from "./advancedVideoRendererService.js";
+import { readFile as fsReadFile } from "fs/promises";
 
 const execFileAsync = promisify(execFile);
 
@@ -193,6 +186,7 @@ export interface ImageToVideoOptions {
   kenBurnsIntensity?: "subtle" | "moderate" | "dramatic"; // motion scale
   colorGrade?: "none" | "warm" | "cool" | "cinematic" | "neon";
   transitionType?: string; // FFmpeg xfade transition
+  userId?: string;
 }
 
 // ── KEN BURNS RENDERER ────────────────────────────────────────────────────────
@@ -599,22 +593,6 @@ function buildTextOverlays(
 }
 
 // ── PUBLIC API ─────────────────────────────────────────────────────────────────
-const ASPECT_RATIOS: Record<string, [number, number]> = {
-  "9:16": [1080, 1920],
-  "16:9": [1920, 1080],
-  "1:1": [1080, 1080],
-  "4:5": [1080, 1350],
-};
-const PLATFORM_RATIOS: Record<string, string> = {
-  tiktok: "9:16",
-  instagram: "1:1",
-  instagram_reels: "9:16",
-  youtube: "16:9",
-  facebook: "1:1",
-  twitter: "16:9",
-  linkedin: "16:9",
-};
-
 export async function imageToMusicVideo(
   opts: ImageToVideoOptions,
 ): Promise<VideoGenResult> {
@@ -627,259 +605,38 @@ export async function imageToMusicVideo(
     return { success: false, error: "No valid image files found" };
   }
 
-  const templateKey =
-    opts.template && TEMPLATE_STYLES[opts.template]
-      ? opts.template
-      : "cinematic_promo";
-  const style = TEMPLATE_STYLES[templateKey] as unknown as Record<string, unknown>;
-  const ratio =
-    opts.aspect_ratio || PLATFORM_RATIOS[opts.platform || "tiktok"] || "9:16";
-  const [width, height] = ASPECT_RATIOS[ratio] || [1080, 1920];
-  const totalDur = Math.max(
-    4,
-    Math.min(opts.duration || imagePaths.length * 4, 60),
+  // This is an AI image-to-video request. MaxCore owns scene planning,
+  // animation, beat conditioning, and the final render; do not run the former
+  // local diffusion model or locally re-plan/re-score its output.
+  const encodedImages = await Promise.all(
+    imagePaths.slice(0, 3).map(async (imagePath) =>
+      (await fsReadFile(imagePath)).toString("base64"),
+    ),
   );
-  const genre = (opts.genre || "default").toLowerCase();
-  const transition = opts.transitionType || style.transition || "fade";
-  const intensity = opts.kenBurnsIntensity || "moderate";
-  const colorGrade =
-    opts.colorGrade || (style.bgType === "solid" ? "cinematic" : "none");
-  const transitionDur = 0.4;
-
-  const hook = opts.hook || "New Music Drop";
-  const body = opts.body || "Stream now on all platforms";
-  const cta = opts.cta || "Follow for more";
-
-  const tempFiles: string[] = [];
-  const renderStart = Date.now();
-
-  try {
-    // ── Beat sync: analyze audio and compute scene durations ────────────────
-    let beatAnalysis: BeatAnalysis | null = null;
-    let sceneDurations: number[];
-
-    if (
-      opts.audioPath &&
-      existsSync(opts.audioPath) &&
-      opts.beatSync !== false
-    ) {
-      try {
-        beatAnalysis = await analyzeAudio(opts.audioPath);
-        const cuts = getBeatAlignedCuts(beatAnalysis, imagePaths.length, true);
-        sceneDurations = cutsToSceneDurations(
-          cuts,
-          Math.min(totalDur, beatAnalysis.durationSeconds),
-        );
-        logger.info(
-          `[ImageToVideo] Beat sync — BPM=${beatAnalysis.bpm.toFixed(1)} tier=${beatAnalysis.tier}`,
-        );
-      } catch (e) {
-        logger.warn(
-          "[ImageToVideo] Beat analysis failed, using equal durations:",
-          (e as Error).message,
-        );
-        const perScene = totalDur / (imagePaths.length || 1);
-        sceneDurations = imagePaths.map(() => perScene);
-      }
-    } else {
-      // Equal durations without beat sync
-      const perScene = totalDur / (imagePaths.length || 1);
-      sceneDurations = imagePaths.map(() => perScene);
-    }
-
-    // Ensure each scene is at least 1.5 seconds
-    const minDur = 1.5;
-    sceneDurations = sceneDurations.map((d) => Math.max(d, minDur));
-
-    // ── Render each image — Tier 1: PyTorch diffusion → Tier 2: Ken Burns ───
-    const scenePaths: string[] = [];
-    const sceneSources: string[] = [];
-
-    // Check diffusion availability once before the loop (2 s probe, 30 s cached).
-    const diffusionAvailable = await checkDiffusionAvailable();
-    if (diffusionAvailable) {
-      logger.info(
-        "[ImageToVideo] Tier 1 (PyTorch diffusion) active for this run",
-      );
-    }
-
-    for (let i = 0; i < imagePaths.length; i++) {
-      const sceneDur = sceneDurations[i];
-      const scenePath = tempPath(`scene${i}`);
-      tempFiles.push(scenePath);
-
-      // Assign text type to scene
-      let sceneType: "hook" | "body" | "cta" | "all";
-      if (imagePaths.length === 1) {
-        sceneType = "all";
-      } else if (i === 0) {
-        sceneType = "hook";
-      } else if (i === imagePaths.length - 1) {
-        sceneType = "cta";
-      } else {
-        sceneType = "body";
-      }
-
-      const textOverlays = buildTextOverlays(
-        hook,
-        body,
-        cta,
-        style,
-        width,
-        height,
-        sceneDur,
-        sceneType,
-        opts.artistName,
-      );
-
-      // ── Tier 1: PyTorch diffusion (per-scene AI video synthesis) ──────────
-      let sceneRendered = false;
-      if (diffusionAvailable) {
-        const diffOut = await renderDiffusionScene(
-          {
-            imagePath: imagePaths[i],
-            outputPath: scenePath,
-            width,
-            height,
-            durationSec: sceneDur,
-            genre,
-            colorGrade,
-            platform: opts.platform,
-            beatAnalysis,
-            sceneIndex: i,
-            totalScenes: imagePaths.length,
-            artistName: opts.artistName,
-            textOverlays,
-          },
-          FFMPEG,
-        );
-        if (diffOut) {
-          sceneRendered = true;
-          sceneSources.push("diffusion");
-        }
-      }
-
-      // ── Tier 2: Ken Burns FFmpeg (always-available fallback) ──────────────
-      if (!sceneRendered) {
-        await renderImageWithKenBurns(
-          imagePaths[i],
-          scenePath,
-          width,
-          height,
-          sceneDur,
-          i, // motionIndex cycles through KEN_BURNS_MOTIONS
-          intensity,
-          colorGrade,
-          textOverlays,
-        );
-        sceneSources.push("ken_burns");
-      }
-
-      scenePaths.push(scenePath);
-    }
-
-    const diffusionScenes = sceneSources.filter(
-      (s) => s === "diffusion",
-    ).length;
-    const kenBurnsScenes = sceneSources.filter((s) => s === "ken_burns").length;
-    if (diffusionScenes > 0) {
-      logger.info(
-        `[ImageToVideo] Scene render complete — ` +
-          `diffusion: ${diffusionScenes}/${imagePaths.length} scenes, ` +
-          `ken_burns: ${kenBurnsScenes}/${imagePaths.length} scenes`,
-      );
-    }
-
-    // ── Combine scenes ──────────────────────────────────────────────────────
-    let videoPath: string;
-    if (scenePaths.length === 1) {
-      videoPath = scenePaths[0];
-    } else {
-      videoPath = tempPath("combined");
-      tempFiles.push(videoPath);
-      await combineImageScenes(
-        scenePaths,
-        sceneDurations,
-        videoPath,
-        (transition as string),
-        transitionDur,
-      );
-    }
-
-    // ── Apply audio ─────────────────────────────────────────────────────────
-    const combinedDur =
-      sceneDurations.reduce((a, b) => a + b, 0) -
-      (scenePaths.length > 1 ? (scenePaths.length - 1) * transitionDur : 0);
-
-    const filename = `musicvideo_${randomBytes(6).toString("hex")}.mp4`;
-    const finalPath = path.join(OUTPUT_DIR, filename);
-
-    await applyAudioToVideo(
-      videoPath,
-      finalPath,
-      combinedDur,
-      genre,
-      opts.audioPath,
-      opts.voiceSynthPath,
-      opts.logoPath,
-    );
-
-    const renderMs = Date.now() - renderStart;
-    cleanup(...tempFiles);
-
-    logger.info(
-      `[ImageToVideo] ✅ ${filename} — ${width}x${height} ${combinedDur.toFixed(1)}s | ` +
-        `${imagePaths.length} images | ${beatAnalysis ? `beat-synced BPM=${beatAnalysis.bpm.toFixed(0)}` : "equal cuts"} | ${renderMs}ms`,
-    );
-
-    const diffusionUsed = diffusionScenes > 0;
-    const beatLabel = beatAnalysis
-      ? `beat_sync_${beatAnalysis.tier}`
-      : "equal_cuts";
-    const tierLabel = diffusionUsed
-      ? `pytorch_diffusion+${beatLabel}`
-      : beatLabel;
-
-    return {
-      success: true,
-      url: `/uploads/videos/${filename}`,
-      filename,
-      width,
-      height,
-      duration: Math.round(combinedDur),
-      hook,
-      body,
-      cta,
-      template: templateKey,
-      template_name: style.name,
-      scenes_rendered: imagePaths.length,
-      processing_time_ms: Date.now() - startMs,
-      render_time_ms: renderMs,
-      source: tierLabel,
-      quality: "cinematic",
-      capabilities: [
-        ...(diffusionUsed ? ["pytorch_diffusion"] : ["ken_burns"]),
-        "beat_sync",
-        "vignette",
-        "drop_shadow",
-        "text_outline",
-        "color_grade",
-        "audio_track",
-        "multi_font",
-        ...(opts.audioPath ? ["user_audio"] : []),
-        ...(opts.voiceSynthPath ? ["voice_narration"] : []),
-        ...(opts.logoPath ? ["logo_overlay"] : []),
-        ...(diffusionUsed && kenBurnsScenes > 0 ? ["ken_burns_fallback"] : []),
-      ],
-    };
-  } catch (err) {
-    cleanup(...tempFiles);
-    logger.warn("[ImageToVideo] Render failed:", (err as any).stderr || (err as Error).message);
-    return {
-      success: false,
-      error: `Music video render failed: ${(err as Error).message || "FFmpeg error"}`,
-    };
-  }
+  return renderMaxCoreVideo({
+    topic: opts.body || opts.hook || "music video",
+    hook: opts.hook,
+    body: opts.body,
+    cta: opts.cta,
+    platform: opts.platform,
+    template: opts.template,
+    aspect_ratio: opts.aspect_ratio,
+    duration: opts.duration,
+    genre: opts.genre,
+    artist_name: opts.artistName,
+    user_audio_path: opts.audioPath,
+    userId: opts.userId,
+    first_frame_b64: encodedImages[0],
+    last_frame_b64: encodedImages.at(-1),
+    reference_images: encodedImages,
+    camera_motion: opts.kenBurnsIntensity ? "auto" : undefined,
+    motion_intensity:
+      opts.kenBurnsIntensity === "dramatic"
+        ? 0.9
+        : opts.kenBurnsIntensity === "subtle"
+          ? 0.35
+          : 0.65,
+  });
 }
 
 /**

@@ -6,12 +6,11 @@ import {
   autopilotCoordinatorService,
   type AutopilotType,
 } from "./services/autopilotCoordinatorService.js";
-import { hyperLearningEngine } from "./services/hyperLearningEngine.js";
 import { updateSchedulePressure } from "./services/contentQualityPipeline.js";
 import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
 import { autopilotLearningService } from "./services/autopilotLearningService.js";
 import { evolutionRegistry } from "./services/evolutionRegistry.js";
-import { selectArm } from "./services/adaptiveGenerationEngine.js";
+import { maxCoreControlTransport } from "./services/maxcoreControlTransport.js";
 
 import {
   advancedUrlParser,
@@ -88,6 +87,8 @@ export class AutonomousAutopilot extends EventEmitter {
   private coordinatorEnabled: boolean = true;
   // Caffeine Mode — last broadcast pressure value; avoids redundant reschedules
   private _lastBroadcastPressure = 0;
+  private sourceUrlCursor = 0;
+  private topicCursor = 0;
 
   constructor(userId: string, autopilotType: AutopilotType = "social") {
     super();
@@ -444,7 +445,7 @@ export class AutonomousAutopilot extends EventEmitter {
       const scheduledTime = await this.getCoordinatedSlot(platform);
 
       // Autonomously select the best topic based on performance history
-      const topic = this.selectOptimalTopic();
+      const topic = await this.selectOptimalTopic(platform);
 
       // Generate content autonomously
       const content = await this.autonomousContentGeneration({
@@ -570,21 +571,8 @@ export class AutonomousAutopilot extends EventEmitter {
   ): Promise<UrlContentBrief | undefined> {
     const urls = this.config.sourceUrls;
     if (!urls || urls.length === 0) return undefined;
-    let chosen: string;
-    try {
-      const { chosen: picked } = await selectArm({
-        domain: "autonomous_source_url",
-        scope: this.userId,
-        candidates: urls,
-      });
-      chosen = picked;
-    } catch (err) {
-      logger.warn(
-        { err },
-        `[AutonomousAutopilot] Adaptive source-URL selection failed, falling back to seeded pick`,
-      );
-      chosen = urls[seededIndex(`${topic}|${platform}`, urls.length)];
-    }
+    const chosen = urls[this.sourceUrlCursor % urls.length];
+    this.sourceUrlCursor++;
     try {
       const parsed = await advancedUrlParser.parseUrl(chosen);
       return advancedUrlParser.toContentBrief(parsed);
@@ -1052,23 +1040,52 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   async getHyperLearningOptimizedContent(platform: string): Promise<{
-    optimalHook: string;
-    optimalLength: string;
-    optimalTiming: { hour: number; dayOfWeek: number };
+    optimalHook: string | null;
+    optimalLength: string | null;
+    optimalTiming: { hour: number; dayOfWeek: number } | null;
     microPatternRecommendations: string[];
-    predictedEngagement: number;
+    predictedEngagement: number | null;
   } | null> {
     try {
-      const prediction = await hyperLearningEngine.predictOptimalContent(
-        this.userId,
-        platform,
-      );
+      const prediction = await maxCoreControlTransport.request<{
+        success?: boolean;
+        recommendations?: {
+          next_topics?: Array<{ hook?: string }>;
+          best_posting_times?: string[];
+          style_focus?: string[];
+        };
+      }>("/platform/social/autopilot", {
+        method: "POST",
+        authScope: "generation",
+        userId: this.userId,
+        timeoutMs: 600_000,
+        body: {
+          user_id: this.userId,
+          platform,
+          target_metric: "engagement",
+          recent_posts: this.contentPerformanceHistory,
+        },
+      });
+      if (!prediction.success || !prediction.recommendations) {
+        throw new Error("Invalid MaxCore social autopilot response");
+      }
+      const rawTime = prediction.recommendations.best_posting_times?.[0];
+      const parsedTime = rawTime ? new Date(rawTime) : null;
+      const hasCompleteTime =
+        parsedTime !== null && Number.isFinite(parsedTime.getTime());
       return {
-        optimalHook: prediction.optimalHook,
-        optimalLength: prediction.optimalLength,
-        optimalTiming: prediction.optimalTiming,
-        microPatternRecommendations: prediction.microPatternRecommendations,
-        predictedEngagement: prediction.predictedEngagement,
+        optimalHook:
+          prediction.recommendations.next_topics?.[0]?.hook ?? null,
+        optimalLength: null,
+        optimalTiming: hasCompleteTime
+          ? {
+              hour: parsedTime!.getHours(),
+              dayOfWeek: parsedTime!.getDay(),
+            }
+          : null,
+        microPatternRecommendations:
+          prediction.recommendations.style_focus ?? [],
+        predictedEngagement: null,
       };
     } catch (error) {
       logger.warn(
@@ -1080,144 +1097,42 @@ export class AutonomousAutopilot extends EventEmitter {
 
   async applyHyperLearningToContent(
     content: string,
-    platform: string,
+    _platform: string,
   ): Promise<string> {
-    try {
-      const hyperOptimization =
-        await this.getHyperLearningOptimizedContent(platform);
-      if (!hyperOptimization) return content;
-
-      let optimizedContent = content;
-
-      for (const recommendation of hyperOptimization.microPatternRecommendations.slice(
-        0,
-        3,
-      )) {
-        if (
-          recommendation.includes("emoji") &&
-          !content.match(new RegExp("[\\u{1F600}-\\u{1F64F}]", "u"))
-        ) {
-          const emojis = [
-            "🎵",
-            "🎶",
-            "🔥",
-            "✨",
-            "💯",
-            "🙌",
-            "💪",
-            "🎤",
-            "🎹",
-            "🎸",
-          ];
-          optimizedContent =
-            emojis[
-              seededIndex(content.slice(0, 48) + platform, emojis.length)
-            ] +
-            " " +
-            optimizedContent;
-        }
-        if (recommendation.includes("question") && !content.includes("?")) {
-          optimizedContent += "\n\nWhat do you think?";
-        }
-      }
-
-      return optimizedContent;
-    } catch (error) {
-      logger.warn(
-        { err: error },
-        "Failed to apply HyperLearning optimizations:",
-      );
-      return content;
-    }
+    return content;
   }
 
-  getHyperLearningStatus(): {
+  async getHyperLearningStatus(): Promise<{
     enabled: boolean;
-    learningMultiplier: number;
-    microPatternsDetected: number;
-  } {
-    const status = hyperLearningEngine.getStatus();
+    learningMultiplier: number | null;
+    microPatternsDetected: number | null;
+  }> {
+    const status = await maxCoreControlTransport.request<{
+      domain?: string;
+      weights?: { ready?: boolean };
+    }>("/api/models/social/state", {
+      method: "GET",
+      authScope: "admin",
+    });
+    if (
+      status.domain !== "social" ||
+      typeof status.weights?.ready !== "boolean"
+    ) {
+      throw new Error("Invalid MaxCore social model-state response");
+    }
     return {
-      enabled: status.isRunning,
-      learningMultiplier: status.metrics.learningMultiplier,
-      microPatternsDetected: status.microPatternCount,
+      enabled: status.weights.ready,
+      learningMultiplier: null,
+      microPatternsDetected: null,
     };
   }
 
   // Topic Selection with Learning
-  private selectOptimalTopic(): string {
-    // Candidate arm set is the UNION of the canonical default topics and any
-    // topic ever seen in history. Seeding with the full default set is what
-    // lets UCB1 keep exploring beyond the single cold-start topic — without it
-    // the bandit would only ever have one arm (the first topic learned) and
-    // could never converge to the true best topic across the catalogue.
-    // Music-artist topics — the prior generic-business defaults
-    // ('industry trends', 'leadership', etc.) produced off-brand posts
-    // that hurt engagement, so these reflect what performs for working artists.
+  private async selectOptimalTopic(_platform: string): Promise<string> {
     const defaultTopics = AutonomousAutopilot.DEFAULT_TOPICS;
-
-    // Derive per-topic trial count + reward sum directly from history so the
-    // arm statistics are never stale relative to the periodic adaptation cycle,
-    // and posts that are published-but-not-yet-analysed still count as trials
-    // (prevents the cold-start loop from hammering one topic before the ~2h
-    // analytics delay records any feedback).
-    const statsByTopic = new Map<string, { n: number; sum: number }>();
-    for (const post of this.contentPerformanceHistory) {
-      const topic = typeof post?.topic === "string" ? post?.topic : undefined;
-      if (!topic) continue;
-      const er = Number(
-        (post?.analytics as Record<string, unknown> | undefined)
-          ?.engagementRate ?? 0,
-      );
-      const s = statsByTopic?.get(topic) || { n: 0, sum: 0 };
-      s.n += 1;
-      s.sum += er;
-      statsByTopic?.set(topic, s);
-    }
-
-    const candidates = new Set<string>([
-      ...defaultTopics,
-      ...(statsByTopic?.keys() ?? []),
-    ]);
-
-    // Forced exploration: any candidate arm never tried (n=0) must be sampled
-    // before exploitation begins. Pick deterministically (seeded by userId +
-    // remaining-untried count) so exploration order is stable yet spreads
-    // across distinct topics as each gets its first post.
-    const untried = Array.from(candidates).filter(
-      (t) => (statsByTopic?.get(t)?.n ?? 0) === 0,
-    );
-    if (untried?.length > 0) {
-      return untried[
-        seededIndex(`${this.userId}:explore:${untried?.length}`, untried?.length)
-      ];
-    }
-
-    // ── UCB1 Multi-Armed Bandit topic selection ──────────────────────────────
-    // Upper Confidence Bound (UCB1) is the mathematically optimal explore-exploit
-    // algorithm: score = avg_reward + C * sqrt(ln(N) / n_arm).
-    // High-performing topics score high on the first term; under-explored topics
-    // score high on the second term. Result: zero wasted impressions, provably
-    // maximum long-run engagement. Fully deterministic — no Math.random().
-    // C = 0.25 tuned for engagement-rate reward signals in the 0–1 range.
-    const UCB1_C = 0.25;
-    const totalTrials =
-      Array.from(statsByTopic?.values()).reduce((s, v) => s + v?.n, 0) || 1;
-
-    let bestTopic: string = defaultTopics[0];
-    let bestScore = -Infinity;
-    candidates?.forEach((topic) => {
-      const stat = statsByTopic?.get(topic);
-      const n = stat?.n || 1;
-      const avgRate = stat ? stat?.sum / stat?.n : 0;
-      const explorationBonus = UCB1_C * Math.sqrt(Math.log(totalTrials) / n);
-      const ucb1Score = avgRate + explorationBonus;
-      if (ucb1Score > bestScore) {
-        bestScore = ucb1Score;
-        bestTopic = topic;
-      }
-    });
-    return bestTopic;
+    const chosen = defaultTopics[this.topicCursor % defaultTopics.length];
+    this.topicCursor++;
+    return chosen;
   }
 
   // ── Caffeine Mode — Deadline Pressure Utilities ─────────────────────────────
@@ -1263,7 +1178,6 @@ export class AutonomousAutopilot extends EventEmitter {
     if (tier === pTier) return;
     this._lastBroadcastPressure = pressure;
     updateSchedulePressure(pressure);
-    hyperLearningEngine?.applyDeadlinePressure(pressure);
   }
   // ─────────────────────────────────────────────────────────────────────────────
 

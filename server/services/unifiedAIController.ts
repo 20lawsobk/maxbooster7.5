@@ -20,14 +20,10 @@
  */
 
 import { logger } from "../logger.js";
-import { MLModelRegistry } from "./mlModelRegistry.js";
-import { storage } from "../storage.js";
 import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
 import { getAwarenessContext, type AwarenessMode } from "./awarenessContext.js";
-import { AIService } from "./aiService.js";
 import * as aiAnalyticsService from "./aiAnalyticsService.js";
 import {
-  ContentGenerator,
   type GenerationOptions,
   type CaptionResult,
 } from "../../shared/ml/nlp/ContentGenerator.js";
@@ -35,12 +31,10 @@ import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 export { MaxCoreAIClient } from "./maxcoreClient.js";
 import {
-  SentimentAnalyzer,
   type FullAnalysisResult,
   type SentimentResult,
 } from "../../shared/ml/nlp/SentimentAnalyzer.js";
 import {
-  RecommendationEngine,
   type RecommendationResult,
   type SimilarityResult,
   type TrackData,
@@ -48,16 +42,14 @@ import {
   type UserInteraction,
 } from "../../shared/ml/models/RecommendationEngine.js";
 import {
-  AdOptimizationEngine,
   type Campaign,
   type CampaignScore,
   type BudgetOptimizationResult,
   type CreativePrediction,
   type ROIForecast,
 } from "../../shared/ml/models/AdOptimizationEngine.js";
-import { SocialAutopilotEngine, type Platform, type ContentType, type BestTimeResult, type ContentTypeRecommendation, type ViralPotentialScore, type ScheduleOptimization, type HistoricalPost, type AudienceInsights } from "../../shared/ml/models/SocialAutopilotEngine.js";
+import { type Platform, type ContentType, type BestTimeResult, type ContentTypeRecommendation, type ViralPotentialScore, type ScheduleOptimization, type HistoricalPost, type AudienceInsights } from "../../shared/ml/models/SocialAutopilotEngine.js";
 import {
-  AdvancedTimeSeriesModel,
   type MetricType,
   type PredictionHorizon,
   type ForecastResult,
@@ -219,28 +211,12 @@ export interface UnifiedAIResult<T> {
 export class UnifiedAIController {
   private static instance: UnifiedAIController;
 
-  private modelRegistry: MLModelRegistry;
-  private aiService: AIService;
-  private contentGenerator: ContentGenerator;
-  private sentimentAnalyzer: SentimentAnalyzer;
-  private recommendationEngine: RecommendationEngine;
-  private adOptimizationEngine: AdOptimizationEngine;
-  private socialAutopilotEngine: SocialAutopilotEngine;
-  private timeSeriesModels: Map<string, AdvancedTimeSeriesModel> = new Map();
-
   private initialized: boolean = false;
   private initializationPromise: Promise<void> | null = null;
   private lastHealthCheck: Date = new Date();
   private healthCache: AIHealthStatus | null = null;
 
   private constructor() {
-    this.modelRegistry = MLModelRegistry?.getInstance();
-    this.aiService = new AIService();
-    this.contentGenerator = new ContentGenerator();
-    this.sentimentAnalyzer = new SentimentAnalyzer();
-    this.recommendationEngine = new RecommendationEngine();
-    this.adOptimizationEngine = new AdOptimizationEngine();
-    this.socialAutopilotEngine = new SocialAutopilotEngine();
   }
 
   public static getInstance(): UnifiedAIController {
@@ -270,26 +246,6 @@ export class UnifiedAIController {
     logger.info("🤖 Initializing Unified AI Controller...");
 
     try {
-      await Promise.all([
-        this.modelRegistry.initialize().catch((err) => {
-          logger.warn({ err: err }, "Model Registry initialization warning:");
-        }),
-        this.adOptimizationEngine.initialize().catch((err) => {
-          logger.warn(
-            { err: err },
-            "Ad Optimization Engine initialization warning:",
-          );
-        }),
-        this.socialAutopilotEngine.initialize().catch((err) => {
-          logger.warn(
-            { err: err },
-            "Social Autopilot Engine initialization warning:",
-          );
-        }),
-      ]);
-
-      this.initializeTimeSeriesModels();
-
       this.initialized = true;
       const duration = Date.now() - startTime;
       logger.info(`✅ Unified AI Controller initialized in ${duration}ms`);
@@ -299,26 +255,6 @@ export class UnifiedAIController {
         "Failed to initialize Unified AI Controller:",
       );
       throw error;
-    }
-  }
-
-  private initializeTimeSeriesModels(): void {
-    const metrics: MetricType[] = [
-      "streams",
-      "revenue",
-      "followers",
-      "engagement",
-    ];
-    const horizons: PredictionHorizon[] = [7, 30, 90];
-
-    for (const metric of metrics) {
-      for (const horizon of horizons) {
-        const key = `${metric}_${horizon}`;
-        this.timeSeriesModels.set(
-          key,
-          new AdvancedTimeSeriesModel(metric, horizon),
-        );
-      }
     }
   }
 
@@ -691,6 +627,9 @@ export class UnifiedAIController {
       artist: string;
     };
   }): Promise<UnifiedAIResult<{ content: string[] }>> {
+    throw new AIUnavailableError(
+      "unowned social generation path is disabled; use authenticated MaxCore social generation",
+    );
     const startTime = Date.now();
     await this.ensureInitialized();
 
@@ -754,7 +693,9 @@ export class UnifiedAIController {
     tone?: "professional" | "casual" | "energetic" | "promotional";
     count?: number;
   }): string[] {
-    return this.contentGenerator.generateHashtags(options);
+    throw new AIUnavailableError(
+      "hashtag generation: MaxCore does not expose a dedicated hashtag contract",
+    );
   }
 
   // ============================================================================
@@ -828,75 +769,21 @@ export class UnifiedAIController {
   public async getRecommendations(
     options: RecommendationOptions,
   ): Promise<UnifiedAIResult<RecommendationResult | SimilarityResult[]>> {
-    const startTime = Date.now();
-    await this.ensureInitialized();
-
-    try {
-      let result: RecommendationResult | SimilarityResult[];
-
-      switch (options?.type) {
-        case "tracks":
-          result = await this.recommendationEngine.recommendTracks(
-            options?.userId,
-            options?.seedIds || [],
-            options?.limit || 20,
-            options?.hybridWeight || 0.5,
-          );
-          break;
-        case "artists":
-          result = await this.recommendationEngine.recommendArtists(
-            options?.userId,
-            options?.limit || 10,
-          );
-          break;
-        case "similar":
-          if (!options?.seedIds || options?.seedIds?.length === 0) {
-            throw new Error("seedIds required for similar recommendations");
-          }
-          result = this.recommendationEngine.findSimilar(
-            options?.seedIds[0],
-            "track",
-            options?.limit || 10,
-          );
-          break;
-        default:
-          throw new Error(`Unknown recommendation type: ${options?.type}`);
-      }
-
-      const confidence = Array.isArray(result)
-        ? result?.length > 0
-          ? result[0].score
-          : 0
-        : result?.confidence;
-
-      return {
-        success: true,
-        data: result,
-        processingTimeMs: Date.now() - startTime,
-        source: "RecommendationEngine",
-        confidence,
-      };
-    } catch (error) {
-      logger.warn({ err: error }, "Recommendation failed:");
-      return {
-        success: false,
-        error: error instanceof Error ? error?.message : "Recommendation failed",
-        processingTimeMs: Date.now() - startTime,
-        source: "RecommendationEngine",
-      };
-    }
+    throw new AIUnavailableError(
+      "recommendations: MaxCore does not expose a dedicated recommendation contract",
+    );
   }
 
   public addTrackData(tracks: TrackData[]): void {
-    this.recommendationEngine.addTracks(tracks);
+    throw new AIUnavailableError("local recommendation model is disabled");
   }
 
   public addArtistData(artists: ArtistData[]): void {
-    this.recommendationEngine.addArtists(artists);
+    throw new AIUnavailableError("local recommendation model is disabled");
   }
 
   public recordInteraction(interaction: UserInteraction): void {
-    this.recommendationEngine.recordInteraction(interaction);
+    throw new AIUnavailableError("local recommendation model is disabled");
   }
 
   // ============================================================================
@@ -972,8 +859,9 @@ export class UnifiedAIController {
     },
     musicData: unknown,
   ) {
-    await this.ensureInitialized();
-    return this.aiService.generateSuperiorAdCampaign(config, musicData);
+    throw new AIUnavailableError(
+      "ad campaign generation requires an authenticated user id for MaxCore ownership",
+    );
   }
 
   // ============================================================================
@@ -990,6 +878,9 @@ export class UnifiedAIController {
       | ScheduleOptimization
     >
   > {
+    throw new AIUnavailableError(
+      "engagement prediction: current MaxCore endpoint is heuristic, not a model prediction contract",
+    );
     const startTime = Date.now();
     await this.ensureInitialized();
 
@@ -1036,15 +927,17 @@ export class UnifiedAIController {
   }
 
   public loadHistoricalPosts(posts: HistoricalPost[]): void {
-    this.socialAutopilotEngine.loadHistoricalData(posts);
+    throw new AIUnavailableError("local social prediction model is disabled");
   }
 
   public loadAudienceInsights(insights: AudienceInsights[]): void {
-    this.socialAutopilotEngine.loadAudienceInsights(insights);
+    throw new AIUnavailableError("local social prediction model is disabled");
   }
 
   public detectTrends(platforms: Platform[]) {
-    return this.socialAutopilotEngine.detectTrends(platforms);
+    throw new AIUnavailableError(
+      "social trend detection: MaxCore does not expose a dedicated trend contract",
+    );
   }
 
   public adaptContent(
@@ -1052,10 +945,8 @@ export class UnifiedAIController {
     originalPlatform: Platform,
     targetPlatform: Platform,
   ) {
-    return this.socialAutopilotEngine.adaptContent(
-      content,
-      originalPlatform,
-      targetPlatform,
+    throw new AIUnavailableError(
+      "cross-platform content adaptation: use MaxCore social generation for the target platform",
     );
   }
 
@@ -1066,54 +957,9 @@ export class UnifiedAIController {
   public async forecastMetrics(
     options: ForecastOptions,
   ): Promise<UnifiedAIResult<ForecastResult>> {
-    const startTime = Date.now();
-    await this.ensureInitialized();
-
-    try {
-      const modelKey = `${options?.metric}_${options?.horizon}`;
-      let model = this.timeSeriesModels.get(modelKey);
-
-      if (!model) {
-        model = new AdvancedTimeSeriesModel(options?.metric, options?.horizon);
-        this.timeSeriesModels.set(modelKey, model);
-      }
-
-      if ((!model as any)?.isModelTrained()) {
-        const { inputs, labels } = model.prepareTrainingData(
-          options?.historicalData,
-          options?.timestamps,
-        );
-        await model?.train(inputs, labels, {
-          epochs: 50,
-          batchSize: 16,
-          validationSplit: 0.2,
-        });
-        inputs?.dispose();
-        labels?.dispose();
-      }
-
-      const result = await model?.forecast(
-        options?.historicalData,
-        options?.timestamps,
-      );
-
-      return {
-        success: true,
-        data: result,
-        processingTimeMs: Date.now() - startTime,
-        source: "AdvancedTimeSeriesModel",
-        confidence: 1 - result?.accuracy?.mape / 100,
-      };
-    } catch (error) {
-      logger.warn({ err: error }, "Metric forecasting failed:");
-      return {
-        success: false,
-        error:
-          error instanceof Error ? error?.message : "Metric forecasting failed",
-        processingTimeMs: Date.now() - startTime,
-        source: "AdvancedTimeSeriesModel",
-      };
-    }
+    throw new AIUnavailableError(
+      "metric forecasting: MaxCore does not expose a dedicated forecasting contract",
+    );
   }
 
   public async predictAnalyticsMetric(params: {
@@ -1152,8 +998,9 @@ export class UnifiedAIController {
     status?: string;
     type?: string;
   }) {
-    await this.ensureInitialized();
-    return this.modelRegistry.listModels(filter as Record<string, unknown>);
+    throw new AIUnavailableError(
+      "local model registry is disabled; MaxCore owns model lifecycle",
+    );
   }
 
   public async registerModel(options: {
@@ -1174,13 +1021,15 @@ export class UnifiedAIController {
     tags?: string[];
     description?: string;
   }) {
-    await this.ensureInitialized();
-    return this.modelRegistry.registerModel(options);
+    throw new AIUnavailableError(
+      "local model registration is disabled; MaxCore owns model lifecycle",
+    );
   }
 
   public async getModelPerformance(modelId: string) {
-    await this.ensureInitialized();
-    return this.modelRegistry.getModelPerformance(modelId);
+    throw new AIUnavailableError(
+      "local model performance registry is disabled",
+    );
   }
 
   // ============================================================================
@@ -1197,84 +1046,45 @@ export class UnifiedAIController {
       return this.healthCache;
     }
 
-    const services: AIHealthStatus["services"] = {
-      modelRegistry: await this.checkServiceHealth("modelRegistry", () =>
-        this.modelRegistry.listModels(),
-      ),
-      contentGenerator: this.checkSyncServiceHealth("contentGenerator", () => {
-        this.contentGenerator.generateCaption({
-          tone: "casual",
-          platform: "twitter",
-          maxLength: 50,
-        });
-      }),
-      sentimentAnalyzer: this.checkSyncServiceHealth(
-        "sentimentAnalyzer",
-        () => {
-          this.sentimentAnalyzer.analyzeSentiment("test");
-        },
-      ),
-      recommendationEngine: this.checkSyncServiceHealth(
-        "recommendationEngine",
-        () => {
-          this.recommendationEngine.findSimilar("test", "track", 1);
-        },
-      ),
-      adOptimizationEngine: await this.checkServiceHealth(
-        "adOptimizationEngine",
-        async () => {
-          return (
-            (this.adOptimizationEngine as unknown as Record<string, unknown>).isTrained ??
-            true
-          );
-        },
-      ),
-      socialAutopilotEngine: this.checkSyncServiceHealth(
-        "socialAutopilotEngine",
-        () => {
-          this.socialAutopilotEngine.predictBestTime("twitter", "text");
-        },
-      ),
-      timeSeriesModel: this.checkSyncServiceHealth("timeSeriesModel", () => {
-        return this.timeSeriesModels.size > 0;
-      }),
-      legacyAIService: await this.checkServiceHealth(
-        "legacyAIService",
-        async () => {
-          return true;
-        },
-      ),
-      analyticsService: await this.checkServiceHealth(
-        "analyticsService",
-        async () => {
-          return true;
-        },
-      ),
+    const maxcoreAvailable = await MaxCoreAIClient.isAvailable();
+    const unavailable: ServiceHealth = {
+      status: "unhealthy",
+      initialized: false,
+      lastError: "Local intermediary disabled",
     };
-
-    const registeredModels = await this.modelRegistry.listModels();
-    const activeModels = registeredModels?.filter((m) => m?.status === "active");
+    const maxcore: ServiceHealth = {
+      status: maxcoreAvailable ? "healthy" : "unhealthy",
+      initialized: maxcoreAvailable,
+      lastError: maxcoreAvailable ? undefined : "MaxCore unavailable",
+    };
+    const services: AIHealthStatus["services"] = {
+      modelRegistry: unavailable,
+      contentGenerator: maxcore,
+      sentimentAnalyzer: maxcore,
+      recommendationEngine: unavailable,
+      adOptimizationEngine: maxcore,
+      socialAutopilotEngine: maxcore,
+      timeSeriesModel: unavailable,
+      legacyAIService: unavailable,
+      analyticsService: unavailable,
+    };
 
     const healthyCount = Object.values(services).filter(
       (s) => s?.status === "healthy",
     ).length;
     const totalCount = Object.keys(services).length;
 
-    let overall: "healthy" | "degraded" | "unhealthy" = "healthy";
-    if (healthyCount < totalCount * 0.5) {
-      overall = "unhealthy";
-    } else if (healthyCount < totalCount) {
-      overall = "degraded";
-    }
+    const overall: "healthy" | "degraded" | "unhealthy" =
+      maxcoreAvailable ? "degraded" : "unhealthy";
 
     this.healthCache = {
       overall,
       lastChecked: now,
       services,
       modelStats: {
-        registeredModels: registeredModels.length,
-        activeModels: activeModels.length,
-        trainedModels: this.timeSeriesModels.size,
+        registeredModels: 0,
+        activeModels: 0,
+        trainedModels: 0,
       },
     };
 
@@ -1337,7 +1147,7 @@ export class UnifiedAIController {
   public getServiceStats() {
     return {
       initialized: this.initialized,
-      timeSeriesModelsLoaded: this.timeSeriesModels.size,
+      timeSeriesModelsLoaded: 0,
       lastHealthCheck: this.lastHealthCheck,
     };
   }
@@ -1351,6 +1161,9 @@ export class UnifiedAIController {
     content: Record<string, unknown>;
     goals: Record<string, unknown>;
   }): Promise<UnifiedAIResult<unknown>> {
+    throw new AIUnavailableError(
+      "organic growth optimization: MaxCore has no verified contract",
+    );
     const startTime = Date.now();
     try {
       const result = await (this as any).adEngine.optimizePersonalAdNetwork(
@@ -1381,6 +1194,9 @@ export class UnifiedAIController {
   public async calculateOrganicROI(
     results: Record<string, unknown>,
   ): Promise<UnifiedAIResult<unknown>> {
+    throw new AIUnavailableError(
+      "organic ROI prediction: MaxCore has no verified prediction contract",
+    );
     const startTime = Date.now();
     try {
       const analysis = (this as any).adEngine.calculateOrganicROI(results);
@@ -1409,6 +1225,9 @@ export class UnifiedAIController {
     contentQueue: unknown[];
     goals: Record<string, unknown>;
   }): Promise<UnifiedAIResult<unknown>> {
+    throw new AIUnavailableError(
+      "organic schedule prediction: MaxCore engagement endpoint is heuristic",
+    );
     const startTime = Date.now();
     try {
       const schedule = (this as any).adEngine.generateOrganicSchedule(
@@ -1437,6 +1256,9 @@ export class UnifiedAIController {
   public async analyzePersonalAdNetwork(
     userId?: string,
   ): Promise<UnifiedAIResult<unknown>> {
+    throw new AIUnavailableError(
+      "personal ad-network analysis: MaxCore has no verified analysis contract",
+    );
     const startTime = Date.now();
     try {
       let profiles: unknown[] = [];

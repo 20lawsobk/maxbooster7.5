@@ -23,6 +23,7 @@ import { createServer } from "http";
 import compression from "compression";
 import { brotliMiddleware } from "./middleware/brotliCompression.js";
 import { logger } from "./logger.js";
+import { serializeResponseForLog } from "./lib/responseLogSerialization.js";
 import { setupStartupEndpoints, startupProbes } from "./startup-probes.js";
 import { metricsMiddleware } from "./monitoring.js";
 import {
@@ -97,7 +98,7 @@ import("./services/dnsNodeLocalSupervisor.js")
   .catch((err) => logger.error({ err }, "[DnsNodeLocal] failed to start supervisor"));
 
 // Kick off readiness probes asynchronously — /ready transitions from
-// "not_ready" → "ready"/"degraded" once DB + Redis + TF have responded.
+// "not_ready" → "ready"/"degraded" once DB + Redis + MaxCore have responded.
 startupProbes?.runAllProbes().catch((err) => {
   logger.warn({ err }, "[startup-probes] runAllProbes failed");
 });
@@ -322,7 +323,7 @@ app.use((req, res, next) => {
     if (path?.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse && !isProductionEnv()) {
-        const responseStr = JSON.stringify(capturedJsonResponse);
+        const responseStr = serializeResponseForLog(capturedJsonResponse);
         logLine += ` :: ${responseStr?.length > 500 ? responseStr?.substring(0, 500) + "...[truncated]" : responseStr}`;
       }
 
@@ -914,21 +915,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     }
   } catch (e) {
     logger.warn(`[domainVerify] Backfill skipped: ${(e as any)?.message}`);
-  }
-
-  // Initialize TensorFlow worker pool — keeps inference off the HTTP event loop
-  try {
-    const { tfWorkerPool } = await import("./lib/tensorflowWorkerPool.js");
-    await tfWorkerPool?.initialize();
-    // Load all persisted models into worker threads so inference is immediately available
-    try {
-      const { mlModelRegistry } = await import("./services/mlModelRegistry.js");
-      await tfWorkerPool?.loadAllModels(mlModelRegistry);
-    } catch (modelErr) {
-      logger.warn(`[TFWorkerPool] Model preload skipped: ${(modelErr as any)?.message}`);
-    }
-  } catch (e) {
-    logger.warn(`[TFWorkerPool] Initialization skipped: ${(e as any)?.message}`);
   }
 
   // Autonomous systems initialization is deferred to after server starts
@@ -1829,22 +1815,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       })
       .catch(() => {});
 
-    // Base model trainer and MaxCore weight sync run on worker 0 only.
-    // Each worker running its own sync cycle multiplies MaxCore HTTP calls
-    // and PDIM writes by the cluster worker count (seen as N identical
-    // [MaxCoreSync] ✅ synced log lines in production at the same timestamp).
+    // MaxCore feedback/state transport runs on worker 0 only. MaxCore owns its
+    // model lifecycle; app startup must not launch model training.
     if (isBgWorker) {
-      import("./services/baseModelTrainer.js")
-        .then(({ runBaseModelTraining }) => {
-          runBaseModelTraining().catch((e) => {
-            logger.warn(
-              `[BaseTrainer] Background training error: ${e instanceof Error ? e?.message : String(e)}`,
-            );
-          });
-        })
-        .catch(() => {});
-
-      // MaxCore + PDIM connectivity probe, weight sync, and training feedback wiring
       import("./services/maxcoreSync.js")
         .then(({ initMaxCoreSync }) => {
           initMaxCoreSync().catch((e) =>
@@ -1854,59 +1827,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         .catch(() => {});
     } else {
       logger.info(
-        `[Sync] Worker ${clusterId} — base trainer + MaxCore sync handled by worker 0`,
-      );
-    }
-
-    // MaxCore Score Calibrator — calibrates VeoGate weights/thresholds against 8TB corpus.
-    // Runs on worker 0 only: each calibration fires 5 sequential MaxCore generate calls
-    // (~31 s total).  Both workers running it would double that to 10 calls with duplicate
-    // results and redundant log noise.
-    if (isBgWorker) {
-      import("./services/maxcoreScoreCalibrator.js")
-        .then(({ initScoreCalibrator }) => {
-          initScoreCalibrator();
-        })
-        .catch(() => {});
-    } else {
-      logger.info(
-        `[ScoreCalibrator] Worker ${clusterId} — calibration handled by worker 0`,
-      );
-    }
-
-    // Diffusion self-training: starts 60s after boot so server is stable first.
-    // Runs on worker 0 only: spawning Python synthesizer?.py from multiple workers
-    // causes file-lock contention on meta?.json / memory?.json and doubles CPU load.
-    // startBackgroundTraining() checks the MaxCore Diffusion Gateway on port 8008
-    // first — if the Gateway is running, the local synthesizer is skipped (MaxCore
-    // is the authoritative diffusion training source).
-    if (isBgWorker) {
-      setTimeout(() => {
-        import("./services/diffusionBackgroundTrainer.js")
-          .then(({ startBackgroundTraining }) => {
-            startBackgroundTraining()
-              .then((_result?: void) => {
-                logger.info(
-                  "🎬 [DiffBG] Diffusion trainer initialised (MaxCore Gateway or local fallback)",
-                );
-              })
-              .catch((e) =>
-                logger.warn(
-                  "[DiffBG] Background trainer init error:",
-                  e?.message,
-                ),
-              );
-          })
-          .catch((e) =>
-            logger.warn(
-              "[DiffBG] Could not import background trainer:",
-              e?.message,
-            ),
-          );
-      }, 60_000);
-    } else {
-      logger.info(
-        `[DiffBG] Worker ${clusterId} — diffusion training handled by worker 0`,
+        `[MaxCoreSync] Worker ${clusterId} — feedback/state transport handled by worker 0`,
       );
     }
 

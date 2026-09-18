@@ -20,8 +20,6 @@
 
 import type { GeneratorContext } from "./contentTypeGenerators.js";
 import type { SupportedPlatform } from "./platformFormatters.js";
-import { selectArm } from "../adaptiveGenerationEngine.js";
-import { logger } from "../../logger.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -334,6 +332,8 @@ export function getFeaturesForPlatform(
 
 // ─── Content Generator ────────────────────────────────────────────────────────
 
+const featureAngleCursors = new Map<string, number>();
+
 /**
  * Generates a complete content piece for a Max Booster feature on a given platform.
  * Uses the feature registry to pick the right angle and assembles platform-aware copy.
@@ -350,31 +350,12 @@ export async function generateMaxBoosterContent(
     professional: "professional artist",
   };
 
-  // Rotates across this feature's content angles via the shared adaptive
-  // bandit instead of freezing on one angle forever — the old hash keyed only
-  // on feature.id (a stable identifier), so every piece of content generated
-  // for a given feature, on any platform, at any time, always used the exact
-  // same angle. Falls back to the original hashed pick if the bandit errors.
-  let angle: string;
-  try {
-    const { chosen } = await selectArm({
-      domain: "maxbooster_content_angle",
-      scope: feature.id,
-      candidates: feature.contentAngles,
-    });
-    angle = chosen;
-  } catch (err) {
-    logger.warn(
-      { err },
-      `[MaxBoosterContentStrategy] Adaptive angle selection failed for ${feature?.id}, falling back to hashed pick`,
-    );
-    angle =
-      feature?.contentAngles[
-        Math.abs(
-          [...(feature?.id ?? [])].reduce((h, c) => (h * 31 + c?.charCodeAt(0)) | 0, 0),
-        ) % feature?.contentAngles.length
-      ];
+  if (feature.contentAngles.length === 0) {
+    throw new Error(`No promotional angles are configured for ${feature.id}`);
   }
+  const cursor = featureAngleCursors.get(feature.id) ?? 0;
+  const angle = feature.contentAngles[cursor % feature.contentAngles.length];
+  featureAngleCursors.set(feature.id, cursor + 1);
 
   const formatTemplates: Record<
     MaxBoosterContentContext["format"],

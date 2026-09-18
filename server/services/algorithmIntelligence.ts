@@ -919,17 +919,20 @@ class AlgorithmIntelligenceService {
       "algorithm health check",
     );
 
+    if (
+      typeof mcResult.overallScore !== "number" ||
+      !mcResult.metrics ||
+      !["healthy", "warning", "critical", "shadowbanned"].includes(mcResult.status)
+    ) {
+      throw new _AIUnavailableError(
+        "MaxCore algorithm health analysis returned an invalid result",
+      );
+    }
     const result: AlgorithmHealth = {
       platform,
-      overallScore: mcResult.overallScore ?? 50,
-      status: mcResult.status ?? "warning",
-      metrics: mcResult.metrics ?? {
-        reachTrend: "stable",
-        engagementRate: 0,
-        impressionRatio: 1,
-        followerGrowth: 0,
-        hashtagReach: 50,
-      },
+      overallScore: mcResult.overallScore,
+      status: mcResult.status,
+      metrics: mcResult.metrics,
       alerts: Array.isArray(mcResult.alerts) ? mcResult.alerts : [],
       recommendations: Array.isArray(mcResult.recommendations)
         ? mcResult.recommendations
@@ -962,13 +965,12 @@ class AlgorithmIntelligenceService {
       searchVisibility: number;
     },
   ): Promise<ShadowBanCheck> {
-    const metrics = recentMetrics || {
-      hashtagReach: 58,
-      exploreReach: 38,
-      nonFollowerReach: 48,
-      newEngagement: 32,
-      searchVisibility: 65,
-    };
+    if (!recentMetrics) {
+      throw new _AIUnavailableError(
+        "Shadowban analysis requires real recent platform metrics",
+      );
+    }
+    const metrics = recentMetrics;
 
     // Route through MaxCore — sole AI source for shadowban detection.
     const mcResult = requireMaxCore(
@@ -994,21 +996,24 @@ class AlgorithmIntelligenceService {
       "shadowban detection",
     );
 
-    const isShadowbanned = mcResult.isShadowbanned ?? false;
-    const confidence = mcResult.confidence ?? 0;
+    if (
+      typeof mcResult.isShadowbanned !== "boolean" ||
+      typeof mcResult.confidence !== "number" ||
+      !mcResult.indicators
+    ) {
+      throw new _AIUnavailableError(
+        "MaxCore shadowban analysis returned an invalid result",
+      );
+    }
+    const isShadowbanned = mcResult.isShadowbanned;
+    const confidence = mcResult.confidence;
     const possibleCauses: string[] = Array.isArray(mcResult.possibleCauses)
       ? mcResult.possibleCauses
       : [];
     const remediation: string[] = Array.isArray(mcResult.remediation)
       ? mcResult.remediation
       : [];
-    const indicators = mcResult.indicators ?? {
-      hashtagVisibility: metrics.hashtagReach,
-      explorePageReach: metrics.exploreReach,
-      nonFollowerReach: metrics.nonFollowerReach,
-      engagementFromNew: metrics.newEngagement,
-      searchVisibility: metrics.searchVisibility,
-    };
+    const indicators = mcResult.indicators;
 
     // possibleCauses, remediation, and isShadowbanned all come from MaxCore above.
     return {

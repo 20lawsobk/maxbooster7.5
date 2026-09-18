@@ -1,20 +1,11 @@
 /**
  * Adaptive Generation Engine
  * ---------------------------------------------------------------------------
- * Shared, domain-agnostic self-optimization + anti-repetition layer for every
- * content-generation service on the platform (social captions/hooks,
- * hashtags, ad creative, beat genre/price picks, video prompts, songwriting
- * suggestions, etc). Two independent capabilities, meant to be composed by
- * callers:
+ * Shared MaxCore decision transport plus measured-outcome/history storage.
  *
- * 1. Adaptive arm selection (`selectArm` / `recordOutcome`) - a persisted
- *    UCB1 multi-armed bandit (Auer, Cesa-Bianchi & Fischer, 2002 - the same
- *    public explore/exploit formula already proven out for topic selection
- *    in autonomous-autopilot.ts), generalized here and given durable DB
- *    storage so learning survives restarts instead of resetting to a blank
- *    slate every time the process restarts. Every domain gets its own
- *    (domain, scope) arm-stats bucket, so unrelated decisions never bleed
- *    into each other's statistics.
+ * 1. Adaptive arm selection (`selectArm` / `recordOutcome`) asks MaxCore's
+ *    social autopilot for the high-level decision while preserving the
+ *    existing candidate constraints and durable measured outcomes.
  *
  *    Trials are counted at SELECTION time, not outcome time - an arm that
  *    was picked but whose real-world result hasn't been measured yet still
@@ -45,8 +36,7 @@
  * MaxCore payload shape) directly, so there is one source of truth instead
  * of two divergent trend systems.
  *
- * Nothing here calls MaxCore or any external API - it is pure decision
- * logic + Postgres, safe to call from any request path or background job.
+ * MaxCore is the decision authority. Postgres remains telemetry/history only.
  */
 import { createHash } from "node:crypto";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
@@ -54,9 +44,10 @@ import { db } from "../db.js";
 import { generationArmStats, generationHistory } from "../../shared/schema.js";
 import { autopilotLearningService } from "./autopilotLearningService.js";
 import { logger } from "../logger.js";
+import { maxCoreControlTransport } from "./maxcoreControlTransport.js";
 
 // ─────────────────────────────────────────────────────────────────────────
-// 1. Adaptive arm selection (persisted UCB1 bandit)
+// 1. MaxCore adaptive selection with persisted measured outcomes
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface RankedArm {
@@ -73,6 +64,7 @@ export interface SelectArmResult {
     | "forced_explore"
     | "ucb1"
     | "ucb1_rotated"
+    | "maxcore"
     | "repeat_unavoidable";
   ranked: RankedArm[];
 }
@@ -91,10 +83,9 @@ export interface SelectArmOptions {
 }
 
 /**
- * Picks the next option for a repeated decision, favoring historically
- * better-performing arms (UCB1) while (a) forcing exploration of anything
- * never tried, and (b) refusing to repeat whichever arm(s) were just picked
- * when a good alternative exists. Persists the pick as a trial immediately.
+ * Asks MaxCore for the next option and persists the accepted choice as
+ * telemetry. Stored averages are sent as measured context, never rescored
+ * locally to choose the winner.
  */
 export async function selectArm(
   opts: SelectArmOptions,
@@ -109,6 +100,12 @@ export async function selectArm(
     await touchArm(opts.domain, opts.scope, candidates[0]);
     return { chosen: candidates[0], reason: "single_candidate", ranked: [] };
   }
+  const supportedDecision = opts.domain === "autopilot_content_type";
+  if (!supportedDecision) {
+    throw new Error(
+      `MaxCore has no structured ${opts.domain} candidate-selection capability`,
+    );
+  }
 
   const rows = await db
     .select()
@@ -120,56 +117,64 @@ export async function selectArm(
         inArray(generationArmStats.armKey, candidates),
       ),
     );
-  const statsByArm = new Map(rows.map((r) => [r.armKey, r]));
-
-  const untried = candidates.filter((c) => !statsByArm.has(c));
-  if (untried.length > 0) {
-    const chosen =
-      untried[
-        seededPick(`${opts.domain}:${opts.scope}:explore:${untried.length}`, untried.length)
-      ];
-    await touchArm(opts.domain, opts.scope, chosen);
-    return { chosen, reason: "forced_explore", ranked: [] };
+  const recentPosts = rows.map((row) => ({
+    content_type: row.armKey,
+    engagement_rate:
+      row.trials > 0 ? row.rewardSum / row.trials : 0,
+    style_tags: [row.armKey],
+  }));
+  const strategy = await maxCoreControlTransport.request<{
+    success?: boolean;
+    recommendations?: {
+      content_type?: string;
+      style_focus?: string[];
+      next_topics?: Array<{ topic?: string }>;
+    };
+  }>("/platform/social/autopilot", {
+    method: "POST",
+    authScope: "generation",
+    userId: opts.scope,
+    timeoutMs: 600_000,
+    body: {
+      user_id: opts.scope,
+      platform: "instagram",
+      target_metric: "engagement",
+      recent_posts: recentPosts,
+      instruction: `Choose the next ${opts.domain} from the supplied candidates.`,
+      content_themes: candidates,
+    },
+  });
+  if (!strategy.success || !strategy.recommendations) {
+    throw new Error(
+      `MaxCore strategy returned an invalid contract for ${opts.domain}`,
+    );
   }
-
-  const C = opts.explorationConstant ?? 0.5;
-  const totalTrials = rows.reduce((s, r) => s + r.trials, 0) || 1;
-  const ranked: RankedArm[] = candidates
-    .map((armKey) => {
-      const row = statsByArm.get(armKey)!;
-      const avgReward = row.trials > 0 ? row.rewardSum / row.trials : 0;
-      const explorationBonus =
-        C * Math.sqrt(Math.log(totalTrials) / Math.max(1, row.trials));
-      return { armKey, trials: row.trials, avgReward, score: avgReward + explorationBonus };
-    })
-    .sort((a, b) => b.score - a.score);
-
-  const avoidRepeatLast = opts.avoidRepeatLast ?? 1;
-  const recentlyUsed = new Set(
-    rows
-      .filter((r) => r.lastSelectedAt)
-      .sort(
-        (a, b) =>
-          (b.lastSelectedAt as Date).getTime() - (a.lastSelectedAt as Date).getTime(),
-      )
-      .slice(0, avoidRepeatLast)
-      .map((r) => r.armKey),
+  const proposed = [
+    strategy.recommendations.content_type,
+    ...(strategy.recommendations.style_focus ?? []),
+    ...(strategy.recommendations.next_topics ?? []).map((topic) => topic.topic),
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.toLowerCase());
+  const chosen = candidates.find((candidate) =>
+    proposed.includes(candidate.toLowerCase()),
   );
-
-  let chosen = ranked[0].armKey;
-  let reason: SelectArmResult["reason"] = "ucb1";
-  if (recentlyUsed.has(chosen)) {
-    const alternative = ranked.find((r) => !recentlyUsed.has(r.armKey));
-    if (alternative) {
-      chosen = alternative.armKey;
-      reason = "ucb1_rotated";
-    } else {
-      reason = "repeat_unavoidable"; // every candidate was just used - not enough variety in the pool to rotate
-    }
+  if (!chosen) {
+    throw new Error(
+      `MaxCore has no supported ${opts.domain} decision for candidates: ${candidates.join(", ")}`,
+    );
   }
-
   await touchArm(opts.domain, opts.scope, chosen);
-  return { chosen, reason, ranked };
+  return {
+    chosen,
+    reason: "maxcore",
+    ranked: rows.map((row) => ({
+      armKey: row.armKey,
+      trials: row.trials,
+      avgReward: row.trials > 0 ? row.rewardSum / row.trials : 0,
+      score: row.trials > 0 ? row.rewardSum / row.trials : 0,
+    })),
+  };
 }
 
 /** Records that an arm was tried (trials += 1) with no reward yet known. */
@@ -354,20 +359,4 @@ export async function getSituationalContext(opts: {
   }
 
   return context;
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// Utilities
-// ─────────────────────────────────────────────────────────────────────────
-
-/** Deterministic seeded pick, used only to break ties among forced-explore candidates (never a source of "randomness" for its own sake). */
-function seededPick(seed: string, length: number): number {
-  if (length <= 0) return 0;
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-    h >>>= 0;
-  }
-  return h % length;
 }

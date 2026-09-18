@@ -2,6 +2,13 @@
 import { db } from "../db";
 import { users, analytics, projects, posts, sessions, dspAnalytics } from "@shared/schema";
 import { sql, gte, lte, desc, and, count, eq, isNotNull } from "drizzle-orm";
+import { AIUnavailableError } from "../lib/aiSource.js";
+
+function missingMaxCoreAnalyticsContract(capability: string): never {
+  throw new AIUnavailableError(
+    `${capability}: MaxCore does not expose a dedicated analytics contract`,
+  );
+}
 
 interface PredictMetricRequest {
   metric: "streams" | "engagement" | "revenue";
@@ -91,6 +98,7 @@ function calculateStandardDeviation(values: number[]): number {
 export async function predictMetric(
   params: PredictMetricRequest,
 ): Promise<PredictMetricResponse> {
+  missingMaxCoreAnalyticsContract("metric prediction");
   const { metric, timeframe } = params;
 
   const days = timeframe === "7d" ? 7 : timeframe === "30d" ? 30 : 90;
@@ -223,6 +231,7 @@ const CHURN_CACHE_TTL_MS = 5 * 60 * 1000;
  * Now: 1 query, capped at 1000 users, cached for 5 minutes.
  */
 export async function predictChurn(): Promise<ChurnPredictionResponse> {
+  missingMaxCoreAnalyticsContract("churn prediction");
   if (_churnCache?.data && Date.now() < _churnCache?.expiresAt) {
     return _churnCache?.data;
   }
@@ -313,6 +322,7 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
 export async function forecastRevenue(
   _timeframe: string = "30d",
 ): Promise<RevenueForecastResponse> {
+  missingMaxCoreAnalyticsContract("revenue forecasting");
   const now = new Date();
   const thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
 
@@ -384,6 +394,7 @@ export async function forecastRevenue(
 }
 
 export async function detectAnomalies(): Promise<AnomaliesResponse> {
+  missingMaxCoreAnalyticsContract("analytics anomaly detection");
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
@@ -453,6 +464,7 @@ export async function detectAnomalies(): Promise<AnomaliesResponse> {
 }
 
 export async function generateInsights(): Promise<InsightsResponse> {
+  missingMaxCoreAnalyticsContract("analytics insight generation");
   const insights: Insight[] = [];
   const now = new Date();
   const sevenDaysAgo = new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -649,6 +661,7 @@ interface CareerGrowthResponse {
 export async function predictCareerGrowth(
   params: CareerGrowthRequest,
 ): Promise<CareerGrowthResponse> {
+  missingMaxCoreAnalyticsContract("career growth prediction");
   const { userId, metric, timeline } = params;
 
   const days = timeline === "30d" ? 30 : timeline === "90d" ? 90 : 180;
@@ -783,6 +796,7 @@ interface CareerMilestone {
 export async function getCareerMilestones(
   userId: string,
 ): Promise<CareerMilestone[]> {
+  missingMaxCoreAnalyticsContract("career milestone prediction");
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
@@ -857,6 +871,7 @@ interface FanbaseData {
 }
 
 export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
+  missingMaxCoreAnalyticsContract("fanbase insight generation");
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
@@ -1041,6 +1056,7 @@ interface ReleaseStrategy {
 export async function getReleaseStrategy(
   userId: string,
 ): Promise<ReleaseStrategy> {
+  missingMaxCoreAnalyticsContract("release strategy generation");
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo?.setDate(ninetyDaysAgo?.getDate() - 90);
 

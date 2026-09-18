@@ -9,11 +9,11 @@ import {
   generateFromText as _generateFromText,
   generateFromReference,
 } from "../services/aiAudioGeneratorService.js";
-import {
-  melodyPatternService,
-  GenerationParams,
-} from "../services/melodyPatternService";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import {
+  getMaxcoreGenerationKey,
+  getMaxcoreOriginOrDefault,
+} from "../services/maxcoreConnector.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 import { db } from "../db.js";
 import { studioSamples } from "../../shared/schema.js";
@@ -25,6 +25,255 @@ import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
+
+interface GenerationParams {
+  instrument: string;
+  genre: string;
+  style: string;
+  key: string;
+  scale: string;
+  tempo: number;
+  bars: number;
+  complexity: number;
+  swing: number;
+  humanize: number;
+}
+
+// Lightweight UI metadata only. Unlike the former pattern service, this does
+// not initialize or generate a local pattern library.
+const STUDIO_INSTRUMENTS = {
+  melodic: [
+    "piano",
+    "synth_lead",
+    "synth_pad",
+    "guitar_acoustic",
+    "guitar_electric",
+    "bass_electric",
+    "bass_synth",
+    "strings_ensemble",
+    "brass_trumpet",
+    "woodwind_flute",
+  ],
+  drums: [
+    "acoustic_kit",
+    "electronic_kit",
+    "808_kit",
+    "trap_kit",
+    "jazz_kit",
+    "rock_kit",
+    "lofi_kit",
+    "house_kit",
+  ],
+  percussion: ["congas", "bongos", "shaker", "tambourine", "claves"],
+};
+const STUDIO_GENRES = {
+  electronic: {
+    genres: ["house", "techno", "ambient", "drum_and_bass"],
+    tempoRange: [90, 180],
+    characteristics: ["synthesized", "rhythmic"],
+  },
+  urban: {
+    genres: ["hip_hop", "trap", "drill", "r_and_b"],
+    tempoRange: [60, 160],
+    characteristics: ["beat_driven", "bass_heavy"],
+  },
+  band: {
+    genres: ["pop", "rock", "indie", "jazz"],
+    tempoRange: [60, 180],
+    characteristics: ["melodic", "live_instruments"],
+  },
+};
+const STUDIO_STYLES = ["melodic", "rhythmic", "minimal", "complex"];
+const STUDIO_SCALES = [
+  "major",
+  "minor",
+  "dorian",
+  "phrygian",
+  "lydian",
+  "mixolydian",
+  "pentatonic_major",
+  "pentatonic_minor",
+  "blues",
+  "chromatic",
+];
+
+type GeneratedMidiNote = {
+  note: number;
+  octave: number;
+  duration: number;
+  velocity: number;
+};
+
+function readVarLen(bytes: Uint8Array, cursor: { value: number }): number {
+  let value = 0;
+  for (let i = 0; i < 4; i++) {
+    const byte = bytes[cursor.value++];
+    value = (value << 7) | (byte & 0x7f);
+    if ((byte & 0x80) === 0) break;
+  }
+  return value;
+}
+
+/** Parse MaxCore's standard MIDI output into the route's legacy note DTO. */
+export function parseMaxCoreMidiNotes(buffer: ArrayBuffer): GeneratedMidiNote[] {
+  const bytes = new Uint8Array(buffer);
+  const view = new DataView(buffer);
+  if (String.fromCharCode(...bytes.slice(0, 4)) !== "MThd") {
+    throw new AIUnavailableError("studio MIDI generation (invalid MIDI header)");
+  }
+  const division = view.getUint16(12) || 480;
+  const trackOffset = 14;
+  if (String.fromCharCode(...bytes.slice(trackOffset, trackOffset + 4)) !== "MTrk") {
+    throw new AIUnavailableError("studio MIDI generation (missing MIDI track)");
+  }
+  const cursor = { value: trackOffset + 8 };
+  const end = Math.min(bytes.length, cursor.value + view.getUint32(trackOffset + 4));
+  const active = new Map<number, Array<{ tick: number; velocity: number }>>();
+  const notes: GeneratedMidiNote[] = [];
+  let tick = 0;
+  let runningStatus = 0;
+  while (cursor.value < end) {
+    tick += readVarLen(bytes, cursor);
+    let status = bytes[cursor.value++];
+    if (status < 0x80) {
+      cursor.value--;
+      status = runningStatus;
+    } else {
+      runningStatus = status;
+    }
+    if (status === 0xff) {
+      cursor.value++;
+      cursor.value += readVarLen(bytes, cursor);
+      continue;
+    }
+    if (status === 0xf0 || status === 0xf7) {
+      cursor.value += readVarLen(bytes, cursor);
+      continue;
+    }
+    const command = status & 0xf0;
+    const midi = bytes[cursor.value++];
+    const value = bytes[cursor.value++];
+    if (command === 0x90 && value > 0) {
+      const stack = active.get(midi) ?? [];
+      stack.push({ tick, velocity: value });
+      active.set(midi, stack);
+    } else if (command === 0x80 || (command === 0x90 && value === 0)) {
+      const start = active.get(midi)?.shift();
+      if (start) {
+        notes.push({
+          note: midi % 12,
+          octave: Math.floor(midi / 12) - 1,
+          duration: Math.max(0.0625, (tick - start.tick) / division),
+          velocity: start.velocity,
+        });
+      }
+    }
+  }
+  if (!notes.length) {
+    throw new AIUnavailableError("studio MIDI generation (MaxCore returned no notes)");
+  }
+  return notes;
+}
+
+async function maxCoreOwnedJson<T>(
+  pathName: string,
+  method: "GET" | "POST",
+  userId: string,
+  body?: Record<string, unknown>,
+): Promise<T> {
+  const response = await fetch(`${getMaxcoreOriginOrDefault()}${pathName}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${getMaxcoreGenerationKey()}`,
+      "X-MaxCore-User-Id": userId,
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(method === "POST" ? 60_000 : 30_000),
+  }).catch((error) => {
+    throw new AIUnavailableError(
+      `studio generation: ${(error as Error).message}`,
+    );
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new AIUnavailableError(
+      `studio generation returned HTTP ${response.status}${detail ? `: ${detail.slice(0, 160)}` : ""}`,
+    );
+  }
+  if (!(response.headers.get("content-type") ?? "").includes("application/json")) {
+    throw new AIUnavailableError("studio generation returned non-JSON");
+  }
+  return (await response.json()) as T;
+}
+
+async function generateMaxCorePattern(
+  params: GenerationParams,
+  kind: "melody" | "drums" | "chords" | "arrangement",
+  userId: string,
+) {
+  const duration = Math.max(2, (params.bars * 4 * 60) / params.tempo);
+  const submitted = await maxCoreOwnedJson<{ job_id?: string }>(
+    "/api/generate/audio",
+    "POST",
+    userId,
+    {
+      prompt: `${kind}, ${params.instrument || ""}, ${params.genre}, ${params.key} ${params.scale}`,
+      intent: kind,
+      instrument: params.instrument,
+      genre: params.genre,
+      bpm: params.tempo,
+      key: `${params.key} ${params.scale}`,
+      duration,
+      format: "wav",
+    },
+  );
+  if (!submitted.job_id) {
+    throw new AIUnavailableError(`studio ${kind} generation (missing job id)`);
+  }
+  let audio: Record<string, unknown> | null = null;
+  for (let attempt = 0; attempt < 150; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+    const status = await maxCoreOwnedJson<Record<string, unknown>>(
+      `/api/audio-job/${submitted.job_id}`,
+      "GET",
+      userId,
+    );
+    if (status?.status === "error") {
+      throw new AIUnavailableError(
+        `studio ${kind} generation: ${String(status.error || "job failed")}`,
+      );
+    }
+    if (status?.status === "done") {
+      audio = status;
+      break;
+    }
+  }
+  if (!audio) throw new AIUnavailableError(`studio ${kind} generation timed out`);
+
+  const response = await fetch(
+    `${getMaxcoreOriginOrDefault()}/api/audio/${submitted.job_id}/midi`,
+    {
+      headers: {
+        Authorization: `Bearer ${getMaxcoreGenerationKey()}`,
+        "X-MaxCore-User-Id": userId,
+      },
+      signal: AbortSignal.timeout(30_000),
+    },
+  );
+  if (!response.ok) {
+    throw new AIUnavailableError(
+      `studio ${kind} MIDI generation returned HTTP ${response.status}`,
+    );
+  }
+  return {
+    notes: parseMaxCoreMidiNotes(await response.arrayBuffer()),
+    audioUrl: audio.audio_url ?? audio.url,
+    midiUrl: `/api/audio/${submitted.job_id}/midi`,
+    jobId: submitted.job_id,
+    sourceType: "MaxCoreAI",
+  };
+}
 
 async function persistGeneratedSample(opts: {
   name: string;
@@ -296,10 +545,10 @@ router.post(
 
 router.get("/presets", requireAuth, async (_req, res) => {
   try {
-    const instruments = melodyPatternService?.getAvailableInstruments();
-    const genres = melodyPatternService?.getAvailableGenres();
-    const styles = melodyPatternService?.getAvailableStyles();
-    const scales = melodyPatternService?.getAvailableScales();
+    const instruments = STUDIO_INSTRUMENTS;
+    const genres = STUDIO_GENRES;
+    const styles = STUDIO_STYLES;
+    const scales = STUDIO_SCALES;
 
     const presets = {
       genres: Object.entries(genres).flatMap(([category, data]) =>
@@ -379,8 +628,7 @@ const patternGenerationSchema = z.object({
 
 router.get("/pattern/instruments", requireAuth, async (_req, res) => {
   try {
-    const instruments = melodyPatternService?.getAvailableInstruments();
-    res.json(instruments);
+    res.json(STUDIO_INSTRUMENTS);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching instruments:");
     res.status(500).json({ error: "Failed to fetch instruments" });
@@ -389,8 +637,7 @@ router.get("/pattern/instruments", requireAuth, async (_req, res) => {
 
 router.get("/pattern/genres", requireAuth, async (_req, res) => {
   try {
-    const genres = melodyPatternService?.getAvailableGenres();
-    res.json(genres);
+    res.json(STUDIO_GENRES);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching genres:");
     res.status(500).json({ error: "Failed to fetch genres" });
@@ -399,8 +646,7 @@ router.get("/pattern/genres", requireAuth, async (_req, res) => {
 
 router.get("/pattern/styles", requireAuth, async (_req, res) => {
   try {
-    const styles = melodyPatternService?.getAvailableStyles();
-    res.json(styles);
+    res.json(STUDIO_STYLES);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching styles:");
     res.status(500).json({ error: "Failed to fetch styles" });
@@ -409,8 +655,7 @@ router.get("/pattern/styles", requireAuth, async (_req, res) => {
 
 router.get("/pattern/scales", requireAuth, async (_req, res) => {
   try {
-    const scales = melodyPatternService?.getAvailableScales();
-    res.json(scales);
+    res.json(STUDIO_SCALES);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching scales:");
     res.status(500).json({ error: "Failed to fetch scales" });
@@ -419,13 +664,13 @@ router.get("/pattern/scales", requireAuth, async (_req, res) => {
 
 router.get("/pattern/stats", requireAuth, async (_req, res) => {
   try {
-    const stats = melodyPatternService?.getPatternCount();
-    const instruments = melodyPatternService?.getAvailableInstruments();
-    const genres = melodyPatternService?.getAvailableGenres();
+    const instruments = STUDIO_INSTRUMENTS;
+    const genres = STUDIO_GENRES;
 
     res.json({
-      ...stats,
-      totalPatterns: stats.melody + stats?.drums,
+      source: "MaxCoreAI",
+      generatedPatternLibrary: false,
+      totalPatterns: null,
       instruments: {
         melodic: instruments.melodic.length,
         drums: instruments.drums.length,
@@ -446,8 +691,8 @@ router.get("/pattern/stats", requireAuth, async (_req, res) => {
         (sum, data) => sum + data?.genres?.length,
         0,
       ),
-      styles: melodyPatternService.getAvailableStyles().length,
-      scales: melodyPatternService.getAvailableScales().length,
+      styles: STUDIO_STYLES.length,
+      scales: STUDIO_SCALES.length,
     });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching stats:");
@@ -463,57 +708,17 @@ router.post("/pattern/melody", requireAuth, aiRateLimiter, async (req, res) => {
     }
 
     const params: GenerationParams = validation?.data;
-    const prompt = `${params.instrument} melody ${params.genre} style ${params.key} ${params.scale} ${params.tempo}bpm ${params.bars} bars`;
-
-    // ── MaxCore primary ─────────────────────────────────────────────────────
-    // Do NOT send mode:"music" — it causes MaxCore to return non-JSON / empty.
-    // Instead phrase the prompt as a content generation request so MaxCore's
-    // /api/generate/content endpoint always returns hook/caption/body text.
-    const mcResult = await MaxCoreAIClient.generate<{
-      notes?: number[];
-      durations?: number[];
-      velocities?: number[];
-      audioUrl?: string;
-      audio_url?: string;
-      hook?: string;
-      caption?: string;
-      body?: string;
-      pattern?: Record<string, unknown>;
-    }>("/api/generate/content", {
-      topic: prompt,
-      platform: "studio",
-      tone: "creative",
-      genre: params.genre,
-      key: params.key,
-      scale: params.scale,
-      instrument: params.instrument,
-      bars: params.bars,
-      type: "melody",
+    const generatedPattern = await generateMaxCorePattern(
+      params,
+      "melody",
+      String(req.user?.id ?? ""),
+    );
+    return res.json({
+      success: true,
+      pattern: generatedPattern,
+      melody: generatedPattern,
+      params,
     });
-
-    // mcResult is null when MaxCore is unreachable or circuit-breaker is open.
-    if (!mcResult) throw new AIUnavailableError("studio generation");
-
-    const mcAny = mcResult as Record<string, unknown>;
-    const textDesc: string = [mcAny.hook, mcAny.caption, mcAny.body]
-      .filter(Boolean).join(" ").slice(0, 300) || "";
-
-    if (!mcResult.notes?.length && !mcResult.audioUrl && !mcResult.audio_url && !textDesc) {
-      throw new AIUnavailableError("studio generation");
-    }
-
-    const pattern = {
-      ...(mcResult.notes ? { notes: mcResult.notes } : {}),
-      ...(mcResult.durations ? { durations: mcResult.durations } : {}),
-      ...(mcResult.velocities ? { velocities: mcResult.velocities } : {}),
-      ...(mcResult.audioUrl ?? mcResult.audio_url
-        ? { audioUrl: mcResult.audioUrl ?? mcResult.audio_url }
-        : {}),
-      ...(textDesc ? { description: textDesc } : {}),
-      sourceType: "MaxCoreAI",
-    };
-    logger.info(`[Generation] MaxCore melody: ${params.instrument} ${params.genre}`);
-    return res.json({ success: true, pattern, params });
   } catch (error) {
     if (error instanceof AIUnavailableError) {
       logger.warn(`[Generation] MaxCore unavailable (melody): ${error.message}`);
@@ -534,50 +739,12 @@ router.post("/pattern/drums", requireAuth, aiRateLimiter, async (req, res) => {
     }
 
     const params: GenerationParams = validation?.data;
-    const prompt = `${params.instrument} drum pattern ${params.genre} style ${params.tempo}bpm ${params.bars} bars`;
-
-    // ── MaxCore primary ─────────────────────────────────────────────────────
-    const mcResult = await MaxCoreAIClient.generate<{
-      hits?: Record<string, number[]>;
-      pattern?: Record<string, unknown>;
-      audioUrl?: string;
-      audio_url?: string;
-      hook?: string;
-      caption?: string;
-      body?: string;
-    }>("/api/generate/content", {
-      topic: prompt,
-      platform: "studio",
-      tone: "creative",
-      genre: params.genre,
-      instrument: params.instrument,
-      tempo: params.tempo,
-      bars: params.bars,
-      type: "drums",
-    });
-
-    if (!mcResult) throw new AIUnavailableError("studio generation");
-    const mcAny = mcResult as Record<string, unknown>;
-    const textDesc: string = [mcAny.hook, mcAny.caption, mcAny.body]
-      .filter(Boolean).join(" ").slice(0, 300) || "";
-
-    if (
-      !(mcResult.hits && Object.keys(mcResult.hits).length) &&
-      !mcResult.audioUrl && !mcResult.audio_url && !textDesc
-    ) {
-      throw new AIUnavailableError("studio generation");
-    }
-
-    const pattern = {
-      ...(mcResult.hits ? { hits: mcResult.hits } : {}),
-      ...(mcResult.audioUrl ?? mcResult.audio_url
-        ? { audioUrl: mcResult.audioUrl ?? mcResult.audio_url }
-        : {}),
-      ...(textDesc ? { description: textDesc } : {}),
-      sourceType: "MaxCoreAI",
-    };
-    logger.info(`[Generation] MaxCore drums: ${params.instrument} ${params.genre}`);
-    return res.json({ success: true, pattern, params });
+    const generatedPattern = await generateMaxCorePattern(
+      params,
+      "drums",
+      String(req.user?.id ?? ""),
+    );
+    return res.json({ success: true, pattern: generatedPattern, params });
   } catch (error) {
     if (error instanceof AIUnavailableError) {
       logger.warn(`[Generation] MaxCore unavailable (drums): ${error.message}`);
@@ -598,49 +765,16 @@ router.post("/pattern/chords", requireAuth, aiRateLimiter, async (req, res) => {
     }
 
     const params: GenerationParams = validation?.data;
-    const prompt = `chord progression ${params.key} ${params.scale} ${params.genre} style ${params.tempo}bpm ${params.bars} bars`;
-
-    // ── MaxCore primary ─────────────────────────────────────────────────────
-    const mcResult = await MaxCoreAIClient.generate<{
-      chords?: string[];
-      progression?: string[];
-      audioUrl?: string;
-      audio_url?: string;
-      hook?: string;
-      caption?: string;
-      body?: string;
-    }>("/api/generate/content", {
-      topic: prompt,
-      platform: "studio",
-      tone: "creative",
-      genre: params.genre,
-      key: params.key,
-      scale: params.scale,
-      tempo: params.tempo,
-      bars: params.bars,
-      type: "chords",
+    const generatedProgression = await generateMaxCorePattern(
+      params,
+      "chords",
+      String(req.user?.id ?? ""),
+    );
+    return res.json({
+      success: true,
+      progression: generatedProgression,
+      params,
     });
-
-    if (!mcResult) throw new AIUnavailableError("studio generation");
-    const mcAny = mcResult as Record<string, unknown>;
-    const textDesc: string = [mcAny.hook, mcAny.caption, mcAny.body]
-      .filter(Boolean).join(" ").slice(0, 300) || "";
-    const chordList = mcResult.chords ?? mcResult.progression;
-
-    if (!chordList?.length && !mcResult.audioUrl && !mcResult.audio_url && !textDesc) {
-      throw new AIUnavailableError("studio generation");
-    }
-
-    const progression = {
-      ...(chordList ? { chords: chordList } : {}),
-      ...(mcResult.audioUrl ?? mcResult.audio_url
-        ? { audioUrl: mcResult.audioUrl ?? mcResult.audio_url }
-        : {}),
-      ...(textDesc ? { description: textDesc } : {}),
-      sourceType: "MaxCoreAI",
-    };
-    logger.info(`[Generation] MaxCore chords: ${params.key} ${params.scale} ${params.genre}`);
-    return res.json({ success: true, progression, params });
   } catch (error) {
     if (error instanceof AIUnavailableError) {
       logger.warn(`[Generation] MaxCore unavailable (chords): ${error.message}`);
@@ -665,59 +799,16 @@ router.post(
       }
 
       const params: GenerationParams = validation?.data;
-      const prompt = `full arrangement ${params.genre} style ${params.key} ${params.scale} ${params.tempo}bpm ${params.bars} bars`;
-
-      // ── MaxCore primary ───────────────────────────────────────────────────
-      const mcResult = await MaxCoreAIClient.generate<{
-        melody?: Record<string, unknown>;
-        bass?: Record<string, unknown>;
-        pad?: Record<string, unknown>;
-        drums?: Record<string, unknown>;
-        chords?: Record<string, unknown>;
-        audioUrl?: string;
-        audio_url?: string;
-        hook?: string;
-        caption?: string;
-        body?: string;
-      }>("/api/generate/content", {
-        topic: prompt,
-        platform: "studio",
-        tone: "creative",
-        genre: params.genre,
-        key: params.key,
-        scale: params.scale,
-        tempo: params.tempo,
-        bars: params.bars,
-        type: "arrangement",
+      const generatedArrangement = await generateMaxCorePattern(
+        params,
+        "arrangement",
+        String(req.user?.id ?? ""),
+      );
+      return res.json({
+        success: true,
+        arrangement: generatedArrangement,
+        params,
       });
-
-      if (!mcResult) throw new AIUnavailableError("studio generation");
-      const mcAny = mcResult as Record<string, unknown>;
-      const textDesc: string = [mcAny.hook, mcAny.caption, mcAny.body]
-        .filter(Boolean).join(" ").slice(0, 400) || "";
-
-      if (
-        !mcResult.melody && !mcResult.bass && !mcResult.pad &&
-        !mcResult.drums && !mcResult.chords &&
-        !mcResult.audioUrl && !mcResult.audio_url && !textDesc
-      ) {
-        throw new AIUnavailableError("studio generation");
-      }
-
-      const arrangement = {
-        melody: mcResult.melody ? { ...mcResult.melody, sourceType: "MaxCoreAI" } : { sourceType: "MaxCoreAI" },
-        bass:   mcResult.bass   ? { ...mcResult.bass,   sourceType: "MaxCoreAI" } : { sourceType: "MaxCoreAI" },
-        pad:    mcResult.pad    ? { ...mcResult.pad,    sourceType: "MaxCoreAI" } : { sourceType: "MaxCoreAI" },
-        drums:  mcResult.drums  ? { ...mcResult.drums,  sourceType: "MaxCoreAI" } : { sourceType: "MaxCoreAI" },
-        chords: mcResult.chords ? { ...mcResult.chords, sourceType: "MaxCoreAI" } : { sourceType: "MaxCoreAI" },
-        ...(mcResult.audioUrl ?? mcResult.audio_url
-          ? { audioUrl: mcResult.audioUrl ?? mcResult.audio_url }
-          : {}),
-        ...(textDesc ? { description: textDesc } : {}),
-        sourceType: "MaxCoreAI",
-      };
-      logger.info(`[Generation] MaxCore arrangement: ${params.genre} style`);
-      return res.json({ success: true, arrangement, params });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
         logger.warn(

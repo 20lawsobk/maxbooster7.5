@@ -393,6 +393,32 @@ export function AIMusicGenerator({
       );
       const data = (await res.json()) as Record<string, unknown>;
       if (data?.arrangement) {
+        if (Array.isArray(data.arrangement.notes)) {
+          onTrackGenerated({
+            audioFilePath:
+              typeof data.arrangement.audioUrl === "string"
+                ? data.arrangement.audioUrl
+                : "",
+            name: "AI Arrangement",
+            type: "midi",
+            parameters: {
+              key,
+              scale: scale.toLowerCase(),
+              tempo,
+              genre: selectedGenre,
+              midiUrl: data.arrangement.midiUrl,
+              maxCoreJobId: data.arrangement.jobId,
+            },
+            duration: (bars * 4 * 60) / tempo,
+            generatedNotes: data.arrangement.notes,
+            generatedChords: [],
+          });
+          toast({
+            title: "Full Arrangement Added",
+            description: `${selectedGenre} MaxCore arrangement added to the timeline`,
+          });
+          return;
+        }
         const tracks = [
           { key: "melody", label: "AI Melody", category: "melodic" },
           { key: "bass", label: "AI Bass", category: "melodic" },

@@ -656,11 +656,8 @@ class CareerCoachService {
       const snapshot = await this.getUserAnalyticsSnapshot(userId);
       const recommendations: InsertCareerCoachRecommendation[] = [];
 
-      // Attempt MaxCore — it is the preferred AI source for career coaching.
-      // If MaxCore is unavailable or returns empty results, fall back to the
-      // built-in heuristic patterns so the endpoint always returns content.
-      try {
-        const mcResult = requireMaxCore(
+      // MaxCore is the sole source of generated career recommendations.
+      const mcResult = requireMaxCore(
           await MaxCoreAIClient.generate<{
             recommendations: Array<{
               type: string;
@@ -696,11 +693,23 @@ class CareerCoachService {
           "career coaching",
         );
 
-        const mcRecs = Array.isArray(mcResult?.recommendations)
-          ? mcResult.recommendations
-          : [];
+      if (!Array.isArray(mcResult?.recommendations)) {
+        throw new _AIUnavailableError(
+          "MaxCore career coaching returned an invalid recommendation list",
+        );
+      }
+      const mcRecs = mcResult.recommendations;
 
-        for (const rec of mcRecs.slice(0, 6)) {
+      for (const rec of mcRecs.slice(0, 6)) {
+          if (
+            !rec ||
+            typeof rec.title !== "string" ||
+            typeof rec.description !== "string"
+          ) {
+            throw new _AIUnavailableError(
+              "MaxCore career coaching returned an invalid recommendation",
+            );
+          }
           recommendations.push({
             userId,
             type: rec.type || this.recommendationTypes.GROWTH_OPPORTUNITY,
@@ -727,76 +736,12 @@ class CareerCoachService {
               },
             },
           });
-        }
-      } catch (mcErr) {
-        // MaxCore unavailable or returned nothing — log and continue to fallback
-        logger.info(
-          `MaxCore career coaching unavailable for ${userId} (${(mcErr as Error)?.message}) — using static patterns`,
-        );
       }
 
-      // Fallback: apply built-in heuristic patterns when MaxCore yielded nothing
       if (recommendations.length === 0) {
-        for (const pattern of CAREER_COACH_PATTERNS) {
-          if (recommendations.length >= 6) break;
-          try {
-            if (pattern.trigger(snapshot)) {
-              recommendations.push({
-                userId,
-                type: pattern.type,
-                title: pattern.title(snapshot),
-                description: pattern.description(snapshot),
-                priority: pattern.priority,
-                actionUrl: pattern.actionUrl,
-                metadata: {
-                  patternId: pattern.id,
-                  area: pattern.area,
-                  severity: pattern.severity(snapshot),
-                  steps: pattern.steps || [],
-                  expectedImpact: pattern.expectedImpact || "",
-                  timeframe: pattern.timeframe || "",
-                  snapshot: {
-                    totalStreams: snapshot.totalStreams,
-                    totalFollowers: snapshot.totalFollowers,
-                    totalRevenue: snapshot.totalRevenue,
-                    releaseCount: snapshot.releaseCount,
-                    daysSinceRelease: snapshot.daysSinceRelease,
-                    socialAccounts: snapshot.socialAccounts,
-                    topPlatform: snapshot.topPlatform,
-                    topCity: snapshot.topCity,
-                  },
-                },
-              });
-            }
-          } catch {
-            // skip patterns that error on evaluation
-          }
-        }
-        // Unconditional seed: first 3 patterns regardless of trigger
-        if (recommendations.length === 0) {
-          for (const pattern of CAREER_COACH_PATTERNS.slice(0, 3)) {
-            try {
-              recommendations.push({
-                userId,
-                type: pattern.type,
-                title: pattern.title(snapshot),
-                description: pattern.description(snapshot),
-                priority: pattern.priority,
-                actionUrl: pattern.actionUrl,
-                metadata: {
-                  patternId: pattern.id,
-                  area: pattern.area,
-                  severity: pattern.severity(snapshot),
-                  steps: pattern.steps || [],
-                  expectedImpact: pattern.expectedImpact || "",
-                  timeframe: pattern.timeframe || "",
-                },
-              });
-            } catch {
-              // skip
-            }
-          }
-        }
+        throw new _AIUnavailableError(
+          "MaxCore career coaching returned no recommendations",
+        );
       }
 
       const inserted: CareerCoachRecommendation[] = [];

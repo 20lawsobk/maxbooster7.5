@@ -1,4 +1,5 @@
 import { logger } from "../logger.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 
 export interface TranslatedContent {
   language: string;
@@ -350,6 +351,9 @@ class AITranslationService {
   async translateContent(
     request: TranslationRequest,
   ): Promise<TranslatedContent[]> {
+    throw new AIUnavailableError(
+      "translation: MaxCore does not expose a dedicated translation contract",
+    );
     const results: TranslatedContent[] = [];
 
     for (const targetLang of request?.targetLanguages ?? []) {
