@@ -23,6 +23,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
+  parseActiveSessions,
+  parseLoginHistory,
+  type ActiveSession,
+  type LoginEvent,
+} from "@/lib/securityHistoryContracts";
+import {
   Shield,
   Smartphone,
   Monitor,
@@ -36,28 +42,6 @@ import {
   LogOut,
   MapPin,
 } from "lucide-react";
-
-interface LoginEvent {
-  id: string;
-  timestamp: string;
-  ipAddress: string;
-  location?: string;
-  device: string;
-  browser?: string;
-  success: boolean;
-  suspicious: boolean;
-  reason?: string;
-}
-
-interface ActiveSession {
-  id: string;
-  device: string;
-  location: string;
-  time: string;
-  current: boolean;
-  ipAddress?: string;
-  browser?: string;
-}
 
 function getDeviceIcon(device: string) {
   const deviceLower = device.toLowerCase();
@@ -74,28 +58,6 @@ function getDeviceIcon(device: string) {
   return <Monitor className="h-4 w-4" />;
 }
 
-function parseUserAgent(userAgent: string): {
-  device: string;
-  browser: string;
-} {
-  let device = "Unknown Device";
-  let browser = "Unknown Browser";
-
-  if (userAgent.includes("iPhone")) device = "iPhone";
-  else if (userAgent.includes("iPad")) device = "iPad";
-  else if (userAgent.includes("Android")) device = "Android Device";
-  else if (userAgent.includes("Windows")) device = "Windows PC";
-  else if (userAgent.includes("Macintosh")) device = "Mac";
-  else if (userAgent.includes("Linux")) device = "Linux PC";
-
-  if (userAgent.includes("Chrome")) browser = "Chrome";
-  else if (userAgent.includes("Firefox")) browser = "Firefox";
-  else if (userAgent.includes("Safari")) browser = "Safari";
-  else if (userAgent.includes("Edge")) browser = "Edge";
-
-  return { device, browser };
-}
-
 export function LoginHistory() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -105,16 +67,18 @@ export function LoginHistory() {
     null,
   );
 
-  const { data: loginHistory = [], isLoading: historyLoading } = useQuery<
-    LoginEvent[]
+  const { data: loginHistory = [], isLoading: historyLoading, error: historyError } = useQuery<
+    unknown, Error, LoginEvent[]
   >({
     queryKey: ["/api/auth/login-history"],
+    select: parseLoginHistory,
   });
 
-  const { data: sessions = [], isLoading: sessionsLoading } = useQuery<
-    ActiveSession[]
+  const { data: sessions = [], isLoading: sessionsLoading, error: sessionsError } = useQuery<
+    unknown, Error, ActiveSession[]
   >({
     queryKey: ["/api/auth/sessions"],
+    select: parseActiveSessions,
   });
 
   const terminateSessionMutation = useMutation({
@@ -226,6 +190,11 @@ export function LoginHistory() {
                 </div>
               ))}
             </div>
+          ) : sessionsError ? (
+            <Alert variant="destructive">
+              <AlertTitle>Active sessions unavailable</AlertTitle>
+              <AlertDescription>{sessionsError.message}</AlertDescription>
+            </Alert>
           ) : sessions.length === 0 ? (
             <div className="text-center py-8">
               <Monitor className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
@@ -234,9 +203,10 @@ export function LoginHistory() {
           ) : (
             <div className="space-y-3">
               {sessions.map((session) => {
-                const parsed = session.device.includes("Unknown")
-                  ? { device: session.device, browser: "Unknown" }
-                  : parseUserAgent(session.device);
+                const parsed = {
+                  device: session.device,
+                  browser: session.browser || "Unknown Browser",
+                };
 
                 return (
                   <div
@@ -278,7 +248,9 @@ export function LoginHistory() {
                         </div>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                           <Clock className="h-3 w-3" />
-                          <span>Last active: {session.time}</span>
+                          <span>Last active: {session.lastActivity
+                            ? new Date(session.lastActivity).toLocaleString()
+                            : "Unavailable"}</span>
                         </div>
                       </div>
                     </div>
@@ -335,6 +307,11 @@ export function LoginHistory() {
                 </div>
               ))}
             </div>
+          ) : historyError ? (
+            <Alert variant="destructive">
+              <AlertTitle>Login history unavailable</AlertTitle>
+              <AlertDescription>{historyError.message}</AlertDescription>
+            </Alert>
           ) : loginHistory.length === 0 ? (
             <div className="text-center py-8">
               <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-3" />

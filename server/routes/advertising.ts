@@ -182,6 +182,32 @@ function imageMagic(buffer: Buffer): boolean {
 }
 
 /**
+ * MaxCore's image inference contract has used both `url` and `image_url`,
+ * while older local builds returned `path` or an `outputs` array. Keep this
+ * extraction separate from URL transport: the raw MaxCore-origin URL must
+ * reach mirrorGeneratedImageToPDIM so the server can fetch bytes and persist
+ * them in PDIM before any browser-facing response is serialized.
+ */
+export function extractGeneratedImageUrl(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  const response = value as {
+    url?: unknown;
+    image_url?: unknown;
+    path?: unknown;
+    outputs?: Array<{ url?: unknown }>;
+  };
+  const direct = [response.url, response.image_url, response.path].find(
+    (candidate): candidate is string =>
+      typeof candidate === "string" && candidate.trim().length > 0,
+  );
+  if (direct) return direct;
+  return response.outputs?.find(
+    (output): output is { url: string } =>
+      typeof output?.url === "string" && output.url.trim().length > 0,
+  )?.url ?? null;
+}
+
+/**
  * MaxCore image responses point at /uploads/images on the AI service. Resolve
  * only that service's allowed media path, validate the bytes, and immediately
  * put the result in PDIM. No local uploads directory is used or returned.
@@ -2224,11 +2250,7 @@ router.post(
         "advertising image generation",
       );
 
-      const imageUrl =
-        mcImageData?.url ??
-        mcImageData?.image_url ??
-        mcImageData?.path ??
-        mcImageData?.outputs?.find((output) => output?.url)?.url;
+      const imageUrl = extractGeneratedImageUrl(mcImageData);
       if (imageUrl) {
         try {
           const pdimUrl = await mirrorGeneratedImageToPDIM(imageUrl);

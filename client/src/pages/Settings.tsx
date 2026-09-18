@@ -294,10 +294,10 @@ export default function Settings() {
   });
 
   const [profileData, setProfileData] = useState({
-    firstName: user.firstName || "",
-    lastName: user.lastName || "",
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
     artistName: ((user as Record<string, unknown>)?.artistName as string) || "",
-    email: user.email || "",
+    email: user?.email || "",
     bio: "",
     website: "",
     location: "",
@@ -811,7 +811,14 @@ export default function Settings() {
     }
   };
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div role="status" className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
+        <span>Checking your session…</span>
+      </div>
+    );
+  }
 
   return (
     <AppLayout>

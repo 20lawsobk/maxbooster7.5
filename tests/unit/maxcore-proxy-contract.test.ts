@@ -112,4 +112,20 @@ describe("MaxCore proxy route contract", () => {
     expect(body.user_id).toBe("user-1");
     expect(body.prompt).toBe("hi");
   });
+
+  it("serves allowlisted media without requiring a logged-in session", async () => {
+    upstreamCalls.length = 0;
+    const res = await fetch(
+      `${base}/api/maxcore-media/uploads/images/public-cover.png`,
+    );
+
+    expect(res.status).toBe(200);
+    expect(upstreamCalls).toHaveLength(1);
+    expect(upstreamCalls[0].url).toBe(
+      "https://maxcore.test/uploads/images/public-cover.png",
+    );
+    expect(
+      (upstreamCalls[0].init.headers as Record<string, string>).Authorization,
+    ).toBeUndefined();
+  });
 });

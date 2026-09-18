@@ -35,6 +35,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { processUploadedBeat } from "../services/audioSeparatorService.js";
 import { distributedCache } from "../infrastructure/distributedCache.js";
 import { pythonAIService } from "../services/pythonAIService.js";
+import { absolutizeMaxcoreMediaUrls } from "../services/maxcoreConnector.js";
 
 const router = Router();
 
@@ -199,7 +200,7 @@ router.get("/beats", async (req: Request, res: Response) => {
         () => marketplaceService.getListingsByProducer(producerId as string),
         30,
       );
-      return res.json(producerBeats);
+      return res.json(absolutizeMaxcoreMediaUrls(producerBeats));
     }
 
     const filters = {
@@ -225,7 +226,7 @@ router.get("/beats", async (req: Request, res: Response) => {
         () => discoveryAlgorithmService?.getPersonalizedFeed(userId, filters),
         30,
       );
-      return res.json(personalizedBeats);
+      return res.json(absolutizeMaxcoreMediaUrls(personalizedBeats));
     }
 
     // Anonymous browse — longer TTL since it's not personalized
@@ -241,7 +242,7 @@ router.get("/beats", async (req: Request, res: Response) => {
       60,
     );
 
-    res.json(beats);
+    res.json(absolutizeMaxcoreMediaUrls(beats));
   } catch (error) {
     logger.warn({ err: error }, "Error fetching beats:");
     res.status(500).json({ error: "Failed to fetch beats" });
@@ -724,7 +725,7 @@ router.get("/my-beats", async (req: Request, res: Response) => {
     }
 
     const userListings = await marketplaceService.getUserListings(req.user!.id);
-    res.json(userListings);
+    res.json(absolutizeMaxcoreMediaUrls(userListings));
   } catch (error) {
     logger.warn({ err: error }, "Error fetching user beats:");
     res.status(500).json({ error: "Failed to fetch your beats" });
@@ -861,13 +862,15 @@ router.get("/for-you", async (req: Request, res: Response) => {
       });
 
     const insights = await discoveryAlgorithmService.getTasteInsights(userId);
+    const serializedPersonalizedBeats =
+      absolutizeMaxcoreMediaUrls(personalizedBeats) as typeof personalizedBeats;
 
     const sections = [
       {
         id: "for-you",
         title: "For You",
         description: "Beats curated based on your listening history",
-        beats: personalizedBeats
+        beats: serializedPersonalizedBeats
           .filter((b) => b.discoveryScore > 0.5)
           .slice(0, 8),
         type: "personalized",
@@ -876,14 +879,14 @@ router.get("/for-you", async (req: Request, res: Response) => {
         id: "trending",
         title: "Trending Now",
         description: "Popular beats this week",
-        beats: personalizedBeats.filter((b) => b.isHot).slice(0, 8),
+        beats: serializedPersonalizedBeats.filter((b) => b.isHot).slice(0, 8),
         type: "trending",
       },
       {
         id: "new-releases",
         title: "New Releases",
         description: "Fresh beats just uploaded",
-        beats: personalizedBeats.filter((b) => b.isNew).slice(0, 8),
+        beats: serializedPersonalizedBeats.filter((b) => b.isNew).slice(0, 8),
         type: "new",
       },
     ];
@@ -894,7 +897,7 @@ router.get("/for-you", async (req: Request, res: Response) => {
         id: `genre-${topGenre.genre.toLowerCase()}`,
         title: `Because You Like ${topGenre.genre}`,
         description: `More ${topGenre.genre} beats for you`,
-        beats: personalizedBeats
+        beats: serializedPersonalizedBeats
           .filter((b) => b.genre === topGenre.genre)
           .slice(0, 8),
         type: "genre_match",
@@ -907,22 +910,22 @@ router.get("/for-you", async (req: Request, res: Response) => {
         id: `mood-${topMood.mood.toLowerCase()}`,
         title: `${topMood.mood} Vibes`,
         description: `Beats matching your ${topMood.mood.toLowerCase()} mood`,
-        beats: personalizedBeats
+        beats: serializedPersonalizedBeats
           .filter((b) => b.mood === topMood.mood)
           .slice(0, 8),
         type: "mood_match",
       });
     }
 
-    res.json({
+    res.json(absolutizeMaxcoreMediaUrls({
       sections: sections.filter((s) => s.beats.length > 0),
       tasteProfile: {
         topGenres: insights.topGenres.slice(0, 3),
         topMoods: insights.topMoods.slice(0, 3),
         totalInteractions: insights.totalInteractions,
       },
-      allBeats: personalizedBeats,
-    });
+      allBeats: serializedPersonalizedBeats,
+    }));
   } catch (error) {
     logger.warn({ err: error }, "Error fetching For You feed:");
     res.status(500).json({ error: "Failed to fetch personalized feed" });
@@ -1859,7 +1862,7 @@ router.post(
         }
       })();
 
-      res.status(201).json(listing);
+      res.status(201).json(absolutizeMaxcoreMediaUrls(listing));
 
       // Async audio separation: generate MP3 (all tiers) + stems (unlimited/exclusive)
       if (uploadedAudioKey) {
@@ -2130,7 +2133,7 @@ router.put(
         return res.status(404).json({ error: "Listing not found" });
       }
 
-      res.json(updatedListing);
+      res.json(absolutizeMaxcoreMediaUrls(updatedListing));
     } catch (error) {
       logger.warn({ err: error }, "Error updating listing:");
       if ((error as any)?.message === "Not authorized to update this listing") {
@@ -2473,7 +2476,7 @@ router.get("/producers/:producerId", async (req: Request, res: Response) => {
       producer?.username ||
       "Producer";
 
-    res.json({
+    res.json(absolutizeMaxcoreMediaUrls({
       id: producer.id,
       username: producer.username,
       displayName,
@@ -2490,7 +2493,7 @@ router.get("/producers/:producerId", async (req: Request, res: Response) => {
       verified:
         producer?.role === "admin" || producer?.subscriptionTier === "lifetime",
       featuredBeats,
-    });
+    }));
   } catch (error) {
     logger.warn({ err: error }, "Error fetching producer:");
     res.status(500).json({ error: "Failed to fetch producer" });
@@ -2552,7 +2555,7 @@ router.get("/beats/:beatId", async (req: Request, res: Response) => {
     if (!beat.isPublished && beat.userId !== viewerId) {
       return res.status(404).json({ error: "Beat not found" });
     }
-    res.json(beat);
+    res.json(absolutizeMaxcoreMediaUrls(beat));
   } catch (error) {
     logger.warn({ err: error }, "Error fetching beat detail:");
     res.status(500).json({ error: "Failed to fetch beat" });

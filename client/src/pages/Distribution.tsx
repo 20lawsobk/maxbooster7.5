@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { formatEarningsRate } from "@/lib/earningsRate";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -2897,15 +2898,12 @@ export default function Distribution() {
                 />
                 <StatCard
                   title="Avg. Per Stream"
-                  value={Number(
-                    (
-                      (analytics?.totalEarnings ?? 0) /
-                      Math.max(analytics?.totalStreams ?? 1, 1)
-                    ).toFixed(4),
+                  value={formatEarningsRate(
+                    analytics?.totalEarnings,
+                    analytics?.totalStreams,
                   )}
                   change={0}
                   trend="neutral"
-                  prefix="$"
                   sparklineData={[]}
                   icon={<Target className="h-5 w-5" />}
                 />
@@ -3334,15 +3332,15 @@ export default function Distribution() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-orange-700 dark:text-orange-300">
-                          Avg. per Stream
+                          Earnings per 1,000 Streams
                         </p>
                         <p className="text-3xl font-bold text-orange-900 dark:text-orange-100">
-                          $
-                          {(
-                            ((analytics?.totalEarnings ?? 0) /
-                              (analytics?.totalStreams ?? 1)) *
-                            1000
-                          ).toFixed(3)}
+                          {formatEarningsRate(
+                            analytics?.totalEarnings,
+                            analytics?.totalStreams,
+                            1000,
+                            3,
+                          )}
                         </p>
                         <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
                           Per 1,000 streams

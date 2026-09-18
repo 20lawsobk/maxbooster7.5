@@ -641,6 +641,7 @@ export function ApiKeyManagement() {
         </DialogContent>
       </Dialog>
 
+      {selectedKey && <>
       <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -694,6 +695,7 @@ export function ApiKeyManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </>}
     </div>
   );
 }

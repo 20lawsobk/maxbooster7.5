@@ -154,3 +154,4 @@
 - [Artist sync scope](artist-sync-scope.md) — auto-reconciliation must use the selected artist profile's identities, not the user's shared platform-link map; namesake fallbacks fail closed
 - [Nested deployment audits](nested-workspace-deployment-audits.md) — publishing scans bundled subsystem dependencies too; root-only dependency fixes can miss the blocker.
 - [Simulation copy exclusions](production-simulation-copy-exclusions.md) — anchor workspace-only tar exclusions; broad names can remove dependency internals and create false build failures.
+- [Endpoint audit contract boundary](endpoint-audit-contract-boundary.md) — route matches prove topology, not payload/response compatibility or component behavior.

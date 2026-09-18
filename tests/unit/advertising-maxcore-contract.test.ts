@@ -4,6 +4,7 @@ import {
   buildAdGenerationRequest,
   buildAdOptimizationRequest,
   buildImageGenerationRequest,
+  extractGeneratedImageUrl,
   mirrorGeneratedImageToPDIM,
 } from "../../server/routes/advertising.js";
 
@@ -106,6 +107,23 @@ describe("advertising MaxCore contracts", () => {
       "image/png",
     );
     expect(url).toBe("/api/storage/file/images%2Fid%2Fgenerated.png");
+  });
+
+  it("passes the MaxCore image_url response shape to the server-side mirror", () => {
+    const maxcoreResponse = {
+      image_url: `${getMaxcoreOrigin()}/uploads/images/generated.png`,
+      width: 1024,
+      height: 1024,
+      format: "png",
+    };
+    expect(extractGeneratedImageUrl(maxcoreResponse)).toBe(
+      `${getMaxcoreOrigin()}/uploads/images/generated.png`,
+    );
+    expect(
+      extractGeneratedImageUrl({
+        outputs: [{ url: `${getMaxcoreOrigin()}/uploads/images/legacy.png` }],
+      }),
+    ).toBe(`${getMaxcoreOrigin()}/uploads/images/legacy.png`);
   });
 
   it("rejects an image URL outside the MaxCore uploads path", async () => {

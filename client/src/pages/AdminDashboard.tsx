@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import {
+  normalizeAuditResults,
+  normalizeTestingResults,
+  type AuditIssue,
+  type AuditResults,
+  type AuditRecommendation,
+  type TestingResults,
+} from "@/lib/adminDashboardContracts";
 import { useToast } from "@/hooks/use-toast";
 import { useRequireAdmin } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -28,48 +36,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Shield, CheckCircle, XCircle, AlertTriangle, Activity, Users, Database, Server, Cpu, HardDrive, Network, Zap, BarChart3, TrendingUp, RefreshCw, Eye, Bug, TestTube, FileText, Clock, Star, Award, Target, AlertCircle, Info, CheckSquare, XSquare, Key, Webhook, Search, Filter, Trash2, RotateCcw, Loader2 } from "lucide-react";
-
-interface AuditIssue {
-  severity: string;
-  title: string;
-  description: string;
-}
-
-interface AuditRecommendation {
-  title: string;
-  description: string;
-  priority: string;
-}
-
-interface AuditResults {
-  overallScore: number;
-  securityScore: number;
-  functionalityScore: number;
-  performanceScore: number;
-  codeQualityScore: number;
-  accessibilityScore: number;
-  seoScore: number;
-  issues: AuditIssue[];
-  recommendations: AuditRecommendation[];
-  compliance: Record<string, boolean>;
-  lastAudit: string;
-}
-
-interface TestingResults {
-  overallScore: number;
-  unitTestScore: number;
-  integrationTestScore: number;
-  e2eTestScore: number;
-  performanceTestScore: number;
-  securityTestScore: number;
-  accessibilityTestScore: number;
-  passedTests: number;
-  failedTests: number;
-  skippedTests: number;
-  totalTests: number;
-  coverage: Record<string, number>;
-  lastRun: string;
-}
 
 interface SystemMetrics {
   uptime: number;
@@ -144,7 +110,7 @@ interface AdminUsersResponse {
     page: number;
     limit: number;
     totalPages: number;
-    offset: number;
+    offset?: number;
   };
 }
 
@@ -157,7 +123,7 @@ interface WebhookDlqItem {
 }
 
 interface WebhookDlqResponse {
-  items?: WebhookDlqItem[];
+  items: WebhookDlqItem[];
 }
 
 interface LogEntry {
@@ -171,6 +137,12 @@ interface LogEntry {
 
 interface LogsResponse {
   logs: LogEntry[];
+}
+
+function isAdminUsersResponse(
+  data: AdminUsersResponse | undefined,
+): data is AdminUsersResponse {
+  return !!data && Array.isArray(data.users);
 }
 
 export default function AdminDashboard({ defaultTab }: { defaultTab?: string } = {}) {
@@ -199,6 +171,8 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
   const {
     data: auditResults,
     isLoading: auditLoading,
+    isError: auditError,
+    error: auditQueryError,
     refetch: refetchAudit,
   } = useQuery<AuditResults>({
     queryKey: ["/api/audit/results"],
@@ -210,6 +184,8 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
   const {
     data: testResults,
     isLoading: testLoading,
+    isError: testError,
+    error: testQueryError,
     refetch: refetchTests,
   } = useQuery<TestingResults>({
     queryKey: ["/api/testing/results"],
@@ -240,8 +216,9 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
 
   // Fetch recent activity
   const {
-    data: recentActivity = [],
+    data: recentActivity,
     isLoading: activityLoading,
+    isError: activityError,
     refetch: refetchActivity,
   } = useQuery<ActivityItem[]>({
     queryKey: ["/api/admin/activity"],
@@ -319,10 +296,13 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
   }
 
   // Direct data assignment - no fallbacks
-  const auditData = auditResults;
-  const testData = testResults;
+  const auditData = normalizeAuditResults(auditResults);
+  const testData = normalizeTestingResults(testResults);
   const metricsData = systemMetrics;
   const analyticsData = userAnalytics;
+  const usersPayloadValid = isAdminUsersResponse(usersData);
+  const activityPayloadValid =
+    recentActivity === undefined || Array.isArray(recentActivity);
 
   // Calculate health status
   const getHealthStatus = (score: number) => {
@@ -343,7 +323,9 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
     ? getHealthStatus(auditData.overallScore)
     : { status: "unknown", color: "text-gray-600", bg: "bg-gray-100" };
   const testHealth = testData
-    ? getHealthStatus(testData.overallScore)
+    ? testData.overallScore !== null
+      ? getHealthStatus(testData.overallScore)
+      : { status: "unknown", color: "text-gray-600", bg: "bg-gray-100" }
     : { status: "unknown", color: "text-gray-600", bg: "bg-gray-100" };
 
   return (
@@ -658,7 +640,7 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                         <h4 className="font-medium text-gray-900">
                           Top Countries
                         </h4>
-                        {analyticsData.topCountries &&
+                        {Array.isArray(analyticsData.topCountries) &&
                         analyticsData.topCountries.length > 0 ? (
                           analyticsData.topCountries
                             .slice(0, 3)
@@ -698,7 +680,16 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
               <CardContent>
                 {activityLoading ? (
                   <Skeleton className="h-48 w-full" />
-                ) : recentActivity.length > 0 ? (
+                ) : activityError || !activityPayloadValid ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {activityError
+                        ? "Failed to load recent activity."
+                        : "Recent activity response was invalid."}
+                    </AlertDescription>
+                  </Alert>
+                ) : recentActivity && recentActivity.length > 0 ? (
                   <div className="space-y-4">
                     {recentActivity.map((activity: ActivityItem, index: number) => (
                       <div
@@ -814,8 +805,20 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {auditLoading || !auditData ? (
+                  {auditLoading ? (
                     <Skeleton className="h-64 w-full" />
+                  ) : auditError ? (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>Failed to load audit scores.</AlertDescription>
+                    </Alert>
+                  ) : !auditData ? (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        The audit response did not include score data.
+                      </AlertDescription>
+                    </Alert>
                   ) : (
                     <div className="space-y-4">
                       {[
@@ -882,22 +885,40 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <AlertTriangle className="h-5 w-5 mr-2" />
-                      Issues {auditData && `(${auditData.issues?.length ?? 0})`}
+                      Audit Checks{" "}
+                      {auditData && `(${auditData.auditItems?.length ?? 0})`}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {auditLoading || !auditData ? (
+                    {auditLoading ? (
                       <Skeleton className="h-32 w-full" />
+                    ) : auditError ? (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          {auditQueryError instanceof Error
+                            ? auditQueryError.message
+                            : "Failed to load audit checks."}
+                        </AlertDescription>
+                      </Alert>
+                    ) : !auditData ? (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          The audit response was invalid. Expected auditItems,
+                          summary, and recommendations.
+                        </AlertDescription>
+                      </Alert>
                     ) : (
                       <div className="space-y-3">
-                        {auditData.issues.map(
+                        {auditData.auditItems.map(
                           (issue: AuditIssue, index: number) => (
                             <Alert
                               key={index}
                               className={`${
-                                issue.severity === "critical"
+                                issue.status === "fail"
                                   ? "border-red-200 bg-red-50"
-                                  : issue.severity === "high"
+                                  : issue.status === "warning"
                                     ? "border-orange-200 bg-orange-50"
                                     : "border-yellow-200 bg-yellow-50"
                               }`}
@@ -906,20 +927,20 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                               <AlertDescription>
                                 <div>
                                   <p className="font-medium text-gray-900">
-                                    {issue.title}
+                                    {issue.item}
                                   </p>
                                   <p className="text-sm text-gray-600 mt-1">
-                                    {issue.description}
+                                    {issue.details}
                                   </p>
                                   <Badge variant="outline" className="mt-2">
-                                    {issue.severity}
+                                    {issue.category}: {issue.status}
                                   </Badge>
                                 </div>
                               </AlertDescription>
                             </Alert>
                           ),
                         )}
-                        {(auditData.issues?.length ?? 0) === 0 && (
+                        {auditData.auditItems.length === 0 && (
                           <div className="text-center py-8">
                             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                             <p className="text-gray-600">No issues found!</p>
@@ -941,8 +962,20 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {auditLoading || !auditData ? (
+                    {auditLoading ? (
                       <Skeleton className="h-32 w-full" />
+                    ) : auditError ? (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>Failed to load recommendations.</AlertDescription>
+                      </Alert>
+                    ) : !auditData ? (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          The audit response did not include recommendations.
+                        </AlertDescription>
+                      </Alert>
                     ) : (
                       <div className="space-y-3">
                         {auditData.recommendations.map(
@@ -954,10 +987,10 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <p className="font-medium text-gray-900">
-                                    {rec.title}
+                                   {rec.category}
                                   </p>
                                   <p className="text-sm text-gray-600 mt-1">
-                                    {rec.description}
+                                    {rec.recommendation}
                                   </p>
                                 </div>
                                 <Badge variant="outline" className="ml-2">
@@ -991,26 +1024,40 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {auditLoading || !auditData ? (
+                {auditLoading ? (
                   <Skeleton className="h-32 w-full" />
+                ) : auditError ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>Failed to load audit checks.</AlertDescription>
+                  </Alert>
+                ) : !auditData ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      The audit response did not include compliance checks.
+                    </AlertDescription>
+                  </Alert>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    {Object.entries(auditData.compliance).map(
-                      ([key, value]: [string, boolean]) => (
+                    {auditData.auditItems.map((item) => (
                         <div
-                          key={key}
+                          key={`${item.category}-${item.item}`}
                           className={`p-4 rounded-lg text-center ${
-                            value
+                            item.status === "pass"
                               ? "bg-green-50 border border-green-200"
                               : "bg-gray-50 border border-gray-200"
                           }`}
                         >
-                          {value ? (
+                          {item.status === "pass" ? (
                             <CheckSquare className="h-6 w-6 text-green-600 mx-auto mb-2" />
                           ) : (
                             <XSquare className="h-6 w-6 text-gray-400 mx-auto mb-2" />
                           )}
-                          <p className="text-sm font-medium uppercase">{key}</p>
+                          <p className="text-sm font-medium">{item.item}</p>
+                          <p className="text-xs text-gray-500 capitalize">
+                            {item.status}
+                          </p>
                         </div>
                       ),
                     )}
@@ -1032,62 +1079,69 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {testLoading || !testData ? (
+                  {testLoading ? (
                     <Skeleton className="h-64 w-full" />
+                  ) : testError ? (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        {testQueryError instanceof Error
+                          ? testQueryError.message
+                          : "Failed to load test results."}
+                      </AlertDescription>
+                    </Alert>
+                  ) : !testData ? (
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription>
+                        {testData?.message ||
+                          "No test result data is available yet."}
+                      </AlertDescription>
+                    </Alert>
                   ) : (
                     <div className="space-y-4">
-                      {[
-                        {
-                          name: "Unit Tests",
-                          score: testData.unitTestScore,
-                          icon: CheckCircle,
-                        },
-                        {
-                          name: "Integration Tests",
-                          score: testData.integrationTestScore,
-                          icon: Zap,
-                        },
-                        {
-                          name: "E2E Tests",
-                          score: testData.e2eTestScore,
-                          icon: Eye,
-                        },
-                        {
-                          name: "Performance Tests",
-                          score: testData.performanceTestScore,
-                          icon: Activity,
-                        },
-                        {
-                          name: "Security Tests",
-                          score: testData.securityTestScore,
-                          icon: Shield,
-                        },
-                        {
-                          name: "Accessibility Tests",
-                          score: testData.accessibilityTestScore,
-                          icon: Users,
-                        },
-                      ].map((item, index) => {
-                        const health = getHealthStatus(item.score);
-                        return (
-                          <div key={index} className="space-y-2">
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <p className="text-3xl font-bold text-blue-600">
+                          {testData.overallScore ?? "—"}
+                        </p>
+                        <p className="text-sm text-blue-600">
+                          Overall score
+                        </p>
+                      </div>
+                      {testData.testSuites.length === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          No test suites were recorded.
+                        </p>
+                      ) : (
+                        testData.testSuites.map((suite) => (
+                          <div key={suite.name} className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <item.icon className="h-5 w-5 text-gray-600" />
-                                <span className="text-sm font-medium">
-                                  {item.name}
-                                </span>
-                              </div>
-                              <span
-                                className={`text-sm font-bold ${health.color}`}
-                              >
-                                {item.score}/100
+                              <span className="text-sm font-medium">
+                                {suite.name}
+                              </span>
+                              <span className="text-sm text-gray-600">
+                                {suite.passed} passed · {suite.failed} failed ·{" "}
+                                {suite.skipped} skipped
                               </span>
                             </div>
-                            <Progress value={item.score} className="h-2" />
+                            <Progress
+                              value={
+                                suite.passed +
+                                  suite.failed +
+                                  suite.skipped >
+                                0
+                                  ? (suite.passed /
+                                      (suite.passed +
+                                        suite.failed +
+                                        suite.skipped)) *
+                                    100
+                                  : 0
+                              }
+                              className="h-2"
+                            />
                           </div>
-                        );
-                      })}
+                        ))
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -1102,32 +1156,45 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {testLoading || !testData ? (
+                  {testLoading ? (
                     <Skeleton className="h-64 w-full" />
+                  ) : testError ? (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>Failed to load test statistics.</AlertDescription>
+                    </Alert>
+                  ) : !testData ? (
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription>
+                        {testData?.message ||
+                          "No test statistics are available yet."}
+                      </AlertDescription>
+                    </Alert>
                   ) : (
                     <div className="space-y-6">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="text-center p-4 bg-green-50 rounded-lg">
                           <p className="text-2xl font-bold text-green-600">
-                            {testData.passedTests}
+                            {testData.summary.passed}
                           </p>
                           <p className="text-sm text-green-600">Passed</p>
                         </div>
                         <div className="text-center p-4 bg-red-50 rounded-lg">
                           <p className="text-2xl font-bold text-red-600">
-                            {testData.failedTests}
+                            {testData.summary.failed}
                           </p>
                           <p className="text-sm text-red-600">Failed</p>
                         </div>
                         <div className="text-center p-4 bg-yellow-50 rounded-lg">
                           <p className="text-2xl font-bold text-yellow-600">
-                            {testData.skippedTests}
+                            {testData.summary.skipped}
                           </p>
                           <p className="text-sm text-yellow-600">Skipped</p>
                         </div>
                         <div className="text-center p-4 bg-blue-50 rounded-lg">
                           <p className="text-2xl font-bold text-blue-600">
-                            {testData.totalTests}
+                            {testData.summary.total}
                           </p>
                           <p className="text-sm text-blue-600">Total Tests</p>
                         </div>
@@ -1137,9 +1204,10 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                         <h4 className="font-medium text-gray-900 mb-3">
                           Code Coverage
                         </h4>
-                        <div className="space-y-3">
-                          {Object.entries(testData.coverage).map(
-                            ([key, value]: [string, number]) => (
+                        {testData.coverage ? (
+                          <div className="space-y-3">
+                            {Object.entries(testData.coverage).map(
+                              ([key, value]: [string, number]) => (
                               <div key={key} className="space-y-1">
                                 <div className="flex items-center justify-between">
                                   <span className="text-sm text-gray-600 capitalize">
@@ -1151,9 +1219,14 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                                 </div>
                                 <Progress value={value} className="h-2" />
                               </div>
-                            ),
-                          )}
-                        </div>
+                              ),
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            Coverage was not included in this test result.
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1236,7 +1309,15 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                   </Alert>
                 ) : usersLoading ? (
                   <Skeleton className="h-96 w-full" />
-                ) : usersData?.users && usersData.users.length > 0 ? (
+                ) : !usersPayloadValid ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      The users response was invalid. Expected an object with a
+                      users array.
+                    </AlertDescription>
+                  </Alert>
+                ) : usersPayloadValid && usersData.users.length > 0 ? (
                   <div className="space-y-4">
                     <div className="rounded-md border">
                       <Table>
@@ -1337,9 +1418,15 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                     {usersData?.pagination && (
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-600">
-                          Showing {usersData.pagination.offset + 1} to{" "}
+                          Showing{" "}
+                          {(usersData.pagination.offset ??
+                            (usersData.pagination.page - 1) *
+                              usersData.pagination.limit) + 1}{" "}
+                          to{" "}
                           {Math.min(
-                            usersData.pagination.offset +
+                            (usersData.pagination.offset ??
+                              (usersData.pagination.page - 1) *
+                                usersData.pagination.limit) +
                               usersData.pagination.limit,
                             usersData.pagination.total,
                           )}{" "}
@@ -1494,34 +1581,45 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {auditLoading || !auditData ? (
+                {auditLoading ? (
                   <Skeleton className="h-64 w-full" />
+                ) : auditError ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>Failed to load compliance checks.</AlertDescription>
+                  </Alert>
+                ) : !auditData ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      The audit response did not include compliance checks.
+                    </AlertDescription>
+                  </Alert>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Object.entries(auditData.compliance).map(
-                      ([key, value]: [string, boolean]) => (
+                    {auditData.auditItems.map((item) => (
                         <div
-                          key={key}
+                          key={`${item.category}-${item.item}`}
                           className={`p-6 rounded-lg ${
-                            value
+                            item.status === "pass"
                               ? "bg-green-50 border-2 border-green-200"
                               : "bg-gray-50 border-2 border-gray-200"
                           }`}
                         >
                           <div className="flex items-center justify-between mb-3">
                             <h3 className="text-lg font-semibold uppercase">
-                              {key}
+                              {item.item}
                             </h3>
-                            {value ? (
+                            {item.status === "pass" ? (
                               <CheckCircle className="h-6 w-6 text-green-600" />
                             ) : (
                               <XCircle className="h-6 w-6 text-gray-400" />
                             )}
                           </div>
                           <p
-                            className={`text-sm ${value ? "text-green-700" : "text-gray-600"}`}
+                            className={`text-sm ${item.status === "pass" ? "text-green-700" : "text-gray-600"}`}
                           >
-                            {value ? "Compliant" : "Not Configured"}
+                            {item.status === "pass" ? "Compliant" : item.status}
                           </p>
                         </div>
                       ),
@@ -1740,7 +1838,11 @@ function WebhookMonitorTab() {
                   className="text-2xl font-bold text-blue-900"
                   data-testid="text-dlq-count"
                 >
-                  {dlqLoading ? "..." : dlqData?.items?.length || 0}
+              {dlqLoading
+                ? "..."
+                : Array.isArray(dlqData?.items)
+                  ? dlqData.items.length
+                  : "—"}
                 </p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
@@ -1784,7 +1886,7 @@ function WebhookMonitorTab() {
         </CardContent>
       </Card>
 
-      {dlqData?.items && dlqData.items.length > 0 && (
+      {Array.isArray(dlqData?.items) && dlqData.items.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Dead Letter Queue</CardTitle>
@@ -1903,7 +2005,7 @@ function LogViewerTab() {
         </CardContent>
       </Card>
 
-      {logsData?.logs && (
+      {logsData && Array.isArray(logsData.logs) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -1946,8 +2048,19 @@ function LogViewerTab() {
                 </div>
               ))}
             </div>
+            {logsData.logs.length === 0 && (
+              <p className="text-sm text-gray-500">No logs matched these filters.</p>
+            )}
           </CardContent>
         </Card>
+      )}
+      {logsData && !Array.isArray(logsData.logs) && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            The log response was invalid. Expected a logs array.
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
@@ -2079,8 +2192,18 @@ function BeatMoneyLoopTab() {
       }),
   });
 
-  if (isLoading || !status) {
+  if (isLoading) {
     return <Skeleton className="h-64 w-full" />;
+  }
+  if (!status) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Beat Money Loop status is unavailable.
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   const fmtTime = (iso: string | null) =>
@@ -2203,7 +2326,14 @@ function BeatMoneyLoopTab() {
           <CardTitle>Recent cycles</CardTitle>
         </CardHeader>
         <CardContent>
-          {status.recentCycles.length === 0 ? (
+          {!Array.isArray(status.recentCycles) ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Beat Money Loop status contained an invalid recentCycles value.
+              </AlertDescription>
+            </Alert>
+          ) : status.recentCycles.length === 0 ? (
             <p className="text-sm text-gray-500">
               No cycles yet. Enable the loop or click "Run cycle now" to start.
             </p>
