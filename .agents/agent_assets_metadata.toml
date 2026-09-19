@@ -105,3 +105,17 @@ mtime_ms = 1789128464946
 storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/6aadab37-bb66-4a93-a37f-d9dc82a9c673/544e22e6-656b-47ee-8700-afdb2e03a803"
 storage_version_token = "1789128483769945"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "9I8Su6TBhNlPwUblLYnLx"
+uri = "file://reports/max-booster-production-readiness-audit-2026-09-19.html"
+type = "html"
+title = "Max Booster — Full Production-Readiness Audit"
+description = "80 scoped findings across 12 areas, followed by 320 repair alternatives with 1,600 numbered steps. Includes source citations, priorities, acceptance criteria, scanner inventories, and audit limits."
+logical_id = "581dfd5e-15ec-439c-b1ef-82c14cae26ff"
+content_hash = "sha256:7175da45a1cccb9b595a40f216b9a7f39306056eac8507e71724090e0a9c185d"
+size = 584476
+mtime_ms = 1789808162776
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/581dfd5e-15ec-439c-b1ef-82c14cae26ff/de92addf-9316-4a2b-8eeb-da1d8ab9dfa6"
+storage_version_token = "1789808212718795"
+content_type = "text/html"
