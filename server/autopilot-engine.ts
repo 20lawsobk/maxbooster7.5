@@ -41,6 +41,10 @@ interface AutopilotConfig {
   // deterministically picks one, parses it with the advanced URL parser, and
   // seeds generation from the link. Empty/absent ⇒ identical topic-only behavior.
   sourceUrls?: string[];
+  intent?: unknown;
+  direction?: unknown;
+  context?: unknown;
+  awareness?: unknown;
 }
 
 export class AutopilotEngine extends EventEmitter {
@@ -224,6 +228,10 @@ export class AutopilotEngine extends EventEmitter {
           topic: await this.selectNextTopic(platform),
           brandVoice: this.config.brandVoice,
           contentType: await this.selectContentType(platform),
+          intent: this.config.intent,
+          direction: this.config.direction,
+          context: this.config.context,
+          awareness: this.config.awareness,
         },
         status: "pending",
         retries: 0,
@@ -386,7 +394,12 @@ export class AutopilotEngine extends EventEmitter {
 
   private async selectContentType(_platform?: string): Promise<string> {
     const types = this.config.contentTypes;
-    if (types.length === 0) return "insights";
+    if (types.length === 0) {
+      throw new Error("Autopilot content type preferences are empty");
+    }
+    // These are explicit business preferences configured by the caller. Rotate
+    // through them fairly; app-side trend/evolution inference must not replace
+    // the caller's selection because MaxCore owns content-format conditioning.
     const chosen = types[this.contentTypeCursor % types.length];
     this.contentTypeCursor++;
     return chosen;
@@ -456,6 +469,10 @@ export class AutopilotEngine extends EventEmitter {
         targetAudience: this.config.targetAudience,
         businessGoals: this.config.businessGoals,
         urlBrief,
+        intent: job.data.intent,
+        direction: job.data.direction,
+        context: job.data.context,
+        awareness: job.data.awareness,
       });
 
       // Store generated content in-memory queue item.
@@ -471,6 +488,10 @@ export class AutopilotEngine extends EventEmitter {
         type: contentType,
         topic,
         ...(urlBrief?.sourceUrl ? { sourceUrl: urlBrief.sourceUrl } : {}),
+        intent: job.data.intent,
+        direction: job.data.direction,
+        context: job.data.context,
+        awareness: job.data.awareness,
         createdAt: new Date(),
       };
 
@@ -496,7 +517,10 @@ export class AutopilotEngine extends EventEmitter {
       throw new Error(`No content available for platform ${job.platform}`);
     }
 
-    const content = platformQueue.shift()!;
+    // Peek until the publish outcome is known. Removing before the awaited
+    // transport call made both thrown and explicit unsuccessful outcomes lose
+    // the exact queued content (including caller conditioning) before retry.
+    const content = platformQueue[0]!;
 
     if (this.config.autoPublish) {
       // Publish immediately
@@ -507,42 +531,50 @@ export class AutopilotEngine extends EventEmitter {
       );
       const successfulResults = results.filter((r: unknown) => (r as any).success);
 
-      if (successfulResults.length > 0) {
-        content.status = "published";
-        content.publishedAt = new Date();
-
-        // Persist publish context durably (content is no longer in the queue
-        // after shift()). Evict oldest first when at cap, matching performanceData.
-        if (this.publishContext.size >= AutopilotEngine.MAX_PERF_ENTRIES) {
-          const oldestKey = this.publishContext.keys().next().value;
-          if (oldestKey !== undefined) this.publishContext.delete(oldestKey);
-        }
-        this.publishContext.set(content.id, {
-          publishedAt: content.publishedAt,
-          type: content.type ?? "social_post",
-          hashtags: content.hashtags ?? [],
-          text: content.text,
-          topic: content.topic,
-        });
-
-        // Schedule performance analysis for later
-        const analysisJob: AutopilotJob = {
-          id: randomUUID(),
-          type: "performance_analysis",
-          scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours later
-          platform: job.platform,
-          data: { contentId: content.id, postId: successfulResults[0].postId },
-          status: "pending",
-          retries: 0,
-          maxRetries: 2,
-        };
-
-        this.jobs.set(analysisJob.id, analysisJob);
+      if (successfulResults.length === 0) {
+        throw new Error(`Publishing failed for platform ${job.platform}`);
       }
+
+      platformQueue.shift();
+      content.status = "published";
+      content.publishedAt = new Date();
+
+      // Persist publish context durably (content is no longer in the queue
+      // after shift()). Evict oldest first when at cap, matching performanceData.
+      if (this.publishContext.size >= AutopilotEngine.MAX_PERF_ENTRIES) {
+        const oldestKey = this.publishContext.keys().next().value;
+        if (oldestKey !== undefined) this.publishContext.delete(oldestKey);
+      }
+      this.publishContext.set(content.id, {
+        publishedAt: content.publishedAt,
+        type: content.type ?? "social_post",
+        hashtags: content.hashtags ?? [],
+        text: content.text,
+        topic: content.topic,
+        intent: content.intent,
+        direction: content.direction,
+        context: content.context,
+        awareness: content.awareness,
+      });
+
+      // Schedule performance analysis for later
+      const analysisJob: AutopilotJob = {
+        id: randomUUID(),
+        type: "performance_analysis",
+        scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours later
+        platform: job.platform,
+        data: { contentId: content.id, postId: successfulResults[0].postId },
+        status: "pending",
+        retries: 0,
+        maxRetries: 2,
+      };
+
+      this.jobs.set(analysisJob.id, analysisJob);
 
       this.emit("contentPublished", { job, content, results });
     } else {
       // Schedule for review
+      platformQueue.shift();
       content.status = "scheduled";
       this.emit("contentScheduled", { job, content });
     }
@@ -632,6 +664,10 @@ export class AutopilotEngine extends EventEmitter {
     targetAudience: string;
     businessGoals: string[];
     urlBrief?: UrlContentBrief;
+    intent?: unknown;
+    direction?: unknown;
+    context?: unknown;
+    awareness?: unknown;
   }): Promise<{
     text: string;
     hashtags: string[];
@@ -717,6 +753,10 @@ export class AutopilotEngine extends EventEmitter {
           hashtagStrategy,
           captionLength,
           callToActionStrength,
+          intent: params.intent,
+          direction: params.direction,
+          context: params.context,
+          awareness: params.awareness,
         });
 
       const qualitySummary =

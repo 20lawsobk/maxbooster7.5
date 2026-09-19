@@ -116,6 +116,9 @@ router.post(
         platforms,
         packId,
         intent: body.intent,
+        direction: body.direction,
+        context: body.context,
+        awareness: body.awareness,
         constraints: body.constraints,
       };
 

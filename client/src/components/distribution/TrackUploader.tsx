@@ -74,7 +74,7 @@ export function TrackUploader({
     maxFilesRef.current = maxFiles;
   }, [files, onChange, maxFiles]);
 
-  const ALLOWED_FORMATS = [".wav", ".mp3", ".flac", ".aac", ".ogg", ".m4a"];
+  const ALLOWED_FORMATS = [".flac"];
   const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
   const validateFile = useCallback((file: File): string | null => {
@@ -326,7 +326,7 @@ export function TrackUploader({
           Upload Tracks
         </CardTitle>
         <CardDescription>
-          Upload audio files in WAV, MP3, FLAC, or AAC format. Maximum 100MB per
+          Upload audio files in FLAC format. Maximum 100MB per
           file.
         </CardDescription>
       </CardHeader>

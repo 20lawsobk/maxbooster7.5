@@ -75,6 +75,19 @@ vi.mock("../../server/lib/redisClient", () => ({
       );
     },
     expire: async () => 1,
+    eval: async (
+      _script: string,
+      _keyCount: number,
+      key: string,
+      candidate: string,
+    ) => {
+      const current = sharedPdim.kv[key];
+      if (current === undefined || Number(candidate) > Number(current)) {
+        sharedPdim.kv[key] = Number(candidate);
+        return 1;
+      }
+      return 0;
+    },
   }),
 }));
 
@@ -254,5 +267,23 @@ describe("Cross-pod cache invalidation (PDIM polling simulation)", () => {
     const hash = sharedPdim.hashes["apicache:inv:users"] ?? {};
     expect(hash[userId]).toBeDefined();
     expect(Number(hash[userId])).toBeGreaterThan(0);
+  });
+
+  it("keeps the bust key monotonic when an older invalidation write completes later", async () => {
+    const userId = "user-cas-test";
+    const bustKey = `apicache:bust:u:${userId}`;
+    const now = vi.spyOn(Date, "now");
+
+    now.mockReturnValue(2_000);
+    podA.invalidateForUser(userId);
+    await flush();
+    expect(sharedPdim.kv[bustKey]).toBe(2_000);
+
+    now.mockReturnValue(1_000);
+    podB.invalidateForUser(userId);
+    await flush();
+
+    expect(sharedPdim.kv[bustKey]).toBe(2_000);
+    now.mockRestore();
   });
 });

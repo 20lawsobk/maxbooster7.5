@@ -1547,11 +1547,11 @@ adminRouter.post("/platform-fixer/probe/:name", async (req, res) => {
 
 adminRouter.post("/platform-fixer/patch/:id/revert", async (req, res) => {
   try {
-    const ok = platformAutoFixer.revertPatch((req.params.id as string), "admin request");
+    const ok = await platformAutoFixer.revertPatch((req.params.id as string), "admin request");
     if (!ok)
       return res
-        .status(404)
-        .json({ error: "Patch not found or already reverted" });
+        .status(409)
+        .json({ error: "Patch could not be reverted: it is missing, inactive, or its rollback action failed" });
     res.json({ success: true });
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");

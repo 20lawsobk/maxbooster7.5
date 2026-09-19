@@ -597,8 +597,6 @@ export class AutomationSystem extends EventEmitter {
     // Video creation actions — routed through videoGeneratorService
     // (Python NumPy frame engine + FFmpeg compositor), the same real render
     // pipeline behind the live video-generation endpoints. Awareness-layer
-    // trend context is fetched once per action and passed through so scene
-    // mood/copy reflects current trending genres/moods, not static defaults.
     this.registerAction("create-promo-video", {
       name: "Create Promotional Video",
       description:
@@ -628,7 +626,6 @@ export class AutomationSystem extends EventEmitter {
             bg_color: strParam(params?.colorPalette),
             user_audio_path: strParam(params?.audioUrl),
             userId: strParam(params?.userId),
-            awarenessMode: "advertising",
           });
           if (!r?.success) {
             return {
@@ -683,7 +680,6 @@ export class AutomationSystem extends EventEmitter {
               template: strParam(params?.visualStyle),
               user_audio_path: strParam(params?.audioUrl),
               userId: strParam(params?.userId),
-              awarenessMode: "social",
             });
             results.push({ platform, success: r?.success, url: r?.url, error: r?.error });
           }
@@ -744,7 +740,6 @@ export class AutomationSystem extends EventEmitter {
             aspect_ratio: strParam(params?.resolution),
             user_audio_path: strParam(params?.audioUrl),
             userId: strParam(params?.userId),
-            awarenessMode: "video_script",
           });
           if (!r?.success) {
             return {
@@ -797,7 +792,6 @@ export class AutomationSystem extends EventEmitter {
             duration: numParam(params?.duration),
             user_audio_path: strParam(params?.audioUrl),
             userId: strParam(params?.userId),
-            awarenessMode: "video_script",
           });
           if (!r?.success) {
             return {

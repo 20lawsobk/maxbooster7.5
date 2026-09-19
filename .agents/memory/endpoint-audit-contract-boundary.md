@@ -30,3 +30,9 @@ Distinguish measured analysis from trained semantic inference in both verificati
 **Why:** A native analyzer can genuinely measure pixels, sampled frames, lexical evidence, and HTML structure without having a trained object/action-recognition model. Successful requests and real measurements do not establish semantic understanding or model quality.
 
 **How to apply:** Preserve method and limitation metadata. Require a valid trained checkpoint and relevant held-out evaluation before claiming learned recognition or calibrated predictions; never relabel deterministic measurements as proof of those capabilities.
+
+Validate controls against the real downstream schema and consumer, not only mocked transport payloads.
+
+**Why:** Pydantic silently ignored extra generation controls while transport tests passed. A social-caption endpoint also cannot replace a multimodal endpoint merely by echoing the requested media format.
+
+**How to apply:** Exercise the actual schema and native consumer. For image/audio/video output, require an actual generated media URL of the selected type before reporting success.

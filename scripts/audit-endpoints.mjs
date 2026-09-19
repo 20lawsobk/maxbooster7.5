@@ -30,15 +30,11 @@
  *                                 working as designed, not necessarily a bug
  *
  * Non-destructive by design:
- *   - Every route is probed with OPTIONS only by default. Express answers
- *     OPTIONS for any path that matches a registered route WITHOUT invoking
- *     the route's own handler, so this proves routing-layer reachability
- *     with zero side effects, for every HTTP method.
- *   - A real GET is additionally sent ONLY when the route is GET, has no
- *     statically-detected auth middleware, and its path does not contain any
- *     word from a defensive blocklist (see SENSITIVE_KEYWORDS) -- this is the
- *     subset where a real request is both safe (read-only, unauthenticated
- *     surface) and informative (catches real 500s / stub JSON bodies).
+ *   - Live mode sends GET only, and only for intended GET routes whose path
+ *     clears a defensive blocklist. It never invokes a mutating method, even
+ *     when source analysis finds an auth guard.
+ *   - Non-GET contracts remain static topology evidence. No route match is
+ *     described as proof of payload, auth, response, persistence, or rendering.
  *
  * Run:    node scripts/audit-endpoints.mjs
  * Static: node scripts/audit-endpoints.mjs --static
@@ -53,7 +49,6 @@
 
 import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, relative, extname, dirname, resolve as pathResolve } from "node:path";
-import { randomBytes } from "node:crypto";
 import { stripRouteTypeArguments } from "./lib/route-call-source.mjs";
 
 const ROOT = process.cwd();
@@ -401,7 +396,17 @@ function extractRoutesFromFile(file) {
     const windowLines = srcLines.slice(r.line - 1, r.line - 1 + 35).join("\n");
     const lower = windowLines.toLowerCase();
     const strongMarkers = STRONG_STUB_MARKERS.filter((k) => lower.includes(k.toLowerCase()));
-    const weakMarkers = WEAK_STUB_MARKERS.filter((k) => lower.includes(k.toLowerCase()));
+    const handlerEndCandidates = [
+      windowLines.search(/\n\s*\}\);/),
+      windowLines.search(/\n\s*\);/),
+    ].filter((index) => index >= 0);
+    const handlerWindow = handlerEndCandidates.length
+      ? windowLines.slice(0, Math.min(...handlerEndCandidates) + 4)
+      : windowLines;
+    const handlerLower = handlerWindow.toLowerCase();
+    const weakMarkers = r.callsNext
+      ? []
+      : WEAK_STUB_MARKERS.filter((k) => handlerLower.includes(k.toLowerCase()));
     r.stubMarkers = [...strongMarkers, ...weakMarkers];
     r.stubStrength = strongMarkers.length ? "strong" : weakMarkers.length ? "weak" : "none";
   }
@@ -432,6 +437,16 @@ function buildBackendInventory() {
 
     const router = isRouterFile(src);
     const mountInfo = prefixMap.get(file);
+    // A standalone sidecar can legitimately expose the same path as the main
+    // application on a different port. Do not report those as Express dispatch
+    // collisions. server/index.ts is the main process entry point, so it stays
+    // in the shared main-app scope despite owning listen().
+    const processScope =
+      relative(ROOT, file) !== "server/index.ts" &&
+      /\b(?:const|let|var)\s+\w+\s*=\s*express\s*\(\s*\)/.test(src) &&
+      /\.\s*listen\s*\(/.test(src)
+        ? `standalone:${relative(ROOT, file)}`
+        : "main-app";
 
     for (const r of routes) {
       let fullPath;
@@ -460,7 +475,7 @@ function buildBackendInventory() {
         fullPath = r.rawPath;
         confidence = "high";
       }
-      inventory.push({ ...r, fullPath, confidence, mountedFrom: mountInfo?.mountedFrom });
+      inventory.push({ ...r, fullPath, confidence, mountedFrom: mountInfo?.mountedFrom, processScope });
     }
   }
   return { inventory, unresolvedDynamic, prefixMap };
@@ -690,6 +705,131 @@ function extractFrontendCalls() {
   return { calls, references, dynamicUnresolved, externalReferences, spaReferences };
 }
 
+// Computed transports are deliberately kept out of the literal extractor above:
+// guessing a variable's value from its name creates worse evidence than leaving
+// it unresolved. These entries were traced from each call site to its finite
+// in-repository callers. Keeping that trace as structured audit data means every
+// run re-validates the resulting method/path pairs against the current backend
+// inventory instead of relying on a prose review that can silently go stale.
+const DYNAMIC_FRONTEND_RESOLUTIONS = {
+  "client/src/components/autonomous/autonomous-dashboard.tsx": [
+    ["POST", "/api/advertising/start"],
+    ["POST", "/api/advertising/stop"],
+  ],
+  "client/src/components/autopilot/autopilot-dashboard.tsx": [
+    ["POST", "/api/autopilot/start"],
+    ["POST", "/api/autopilot/stop"],
+  ],
+  "client/src/components/distribution/EmbedCodeGenerator.tsx": [
+    ["POST", "/api/custom-workflows/:id/enable"],
+    ["POST", "/api/custom-workflows/:id/disable"],
+  ],
+  "client/src/components/distribution/HyperFollowBuilder.tsx": [
+    ["POST", "/api/distribution/hyperfollow"],
+    ["PATCH", "/api/distribution/hyperfollow/:id"],
+  ],
+  "client/src/components/export/ExportDialog.tsx": [
+    ["POST", "/api/export/audio/:projectId"],
+    ["POST", "/api/export/data"],
+  ],
+  "client/src/components/social/UnifiedInbox.tsx": [
+    ["POST", "/api/social/inbox/bulk/archive"],
+    ["POST", "/api/social/inbox/bulk/read"],
+    ["POST", "/api/social/inbox/bulk/unread"],
+    ["POST", "/api/social/inbox/bulk/delete"],
+  ],
+  "client/src/hooks/useBatchAction.ts": [
+    ["POST", "/api/batch/releases/submit"], ["POST", "/api/batch/releases/takedown"],
+    ["PUT", "/api/batch/releases/update"], ["POST", "/api/batch/releases/delete"],
+    ["POST", "/api/batch/posts/schedule"], ["POST", "/api/batch/posts/delete"],
+    ["PUT", "/api/batch/posts/update"], ["PUT", "/api/batch/marketplace/update"],
+    ["POST", "/api/batch/marketplace/delete"], ["POST", "/api/batch/files/delete"],
+    ["POST", "/api/batch/files/move"], ["POST", "/api/batch/files/download"],
+    ["PUT", "/api/batch/files/update"], ["POST", "/api/batch/analytics/export"],
+    ["POST", "/api/batch/analytics/compare"],
+  ],
+  "client/src/hooks/useBatchActions.ts": [
+    ["POST", "/api/batch/releases/submit"], ["POST", "/api/batch/releases/delete"],
+    ["PUT", "/api/batch/releases/update"], ["POST", "/api/batch/tracks/move"],
+    ["POST", "/api/batch/tracks/tag"], ["POST", "/api/batch/tracks/export"],
+    ["POST", "/api/batch/tracks/delete"], ["POST", "/api/batch/posts/schedule"],
+    ["POST", "/api/batch/posts/delete"], ["POST", "/api/batch/posts/approve"],
+    ["PUT", "/api/batch/beats/update"], ["POST", "/api/batch/beats/delete"],
+    ["POST", "/api/batch/analytics/export"], ["POST", "/api/batch/analytics/compare"],
+    ["GET", "/api/batch/progress/:jobId"],
+  ],
+  "client/src/hooks/useTemplate.ts": [
+    ["GET", "/api/studio/templates"],
+  ],
+  "client/src/lib/imageUpload.ts": [
+    ["POST", "/api/storage/upload"],
+    ["POST", "/api/auth/avatar"],
+  ],
+  "client/src/pages/Assistant.tsx": [
+    ["GET", "/api/assistant/history"],
+    ["POST", "/api/assistant/chat"],
+    ["DELETE", "/api/assistant/history"],
+  ],
+  "client/src/pages/MusicWorkflowAutomations.tsx": [
+    ["POST", "/api/music-workflow-automations/:templateId/enable"],
+    ["POST", "/api/music-workflow-automations/:templateId/disable"],
+  ],
+};
+
+const DYNAMIC_FRONTEND_UNVERIFIED = {
+  "client/src/hooks/useBulkAction.ts":
+    "Unused generic helper accepts an arbitrary resource string; no in-repository caller supplies a contract.",
+  "client/src/lib/queryClient.ts":
+    "Generic transport primitive; endpoint contracts belong to its callers, not this implementation.",
+};
+
+function reviewDynamicFrontendCalls(dynamicUnresolved, backendInventory) {
+  const reviews = [];
+  const resolvedCalls = [];
+  for (const item of dynamicUnresolved) {
+    const contracts = DYNAMIC_FRONTEND_RESOLUTIONS[item.file];
+    if (contracts) {
+      const resolvedContracts = contracts.map(([method, path]) => {
+        const matches = findBackendMatches(method, path, backendInventory);
+        const contract = {
+          method,
+          path,
+          status: matches.length ? "topology-matched" : "unmatched-confirmed",
+          evidence: "source-traced finite caller/builder values; static route comparison",
+          backendMatches: matches.map((match) => ({
+            method: match.method,
+            path: match.fullPath,
+            file: match.file,
+            line: match.line,
+            confidence: match.confidence,
+          })),
+        };
+        resolvedCalls.push({
+          path,
+          rawPath: path,
+          file: item.file,
+          line: item.line,
+          source: `${item.source}:dynamic-source-trace`,
+          kind: item.source,
+          method,
+          methodConfidence: "source-traced",
+        });
+        return contract;
+      });
+      reviews.push({ ...item, resolution: "resolved", contracts: resolvedContracts });
+      continue;
+    }
+    reviews.push({
+      ...item,
+      resolution: "unverified-generic",
+      reason: DYNAMIC_FRONTEND_UNVERIFIED[item.file] ||
+        "No finite in-repository value set could be established safely.",
+      contracts: [],
+    });
+  }
+  return { reviews, resolvedCalls };
+}
+
 // ---------------------------------------------------------------------------
 // Phase 5: live probing
 // ---------------------------------------------------------------------------
@@ -742,10 +882,7 @@ async function pool(items, worker, concurrency) {
 // path-echoing JSON body for genuinely unmatched routes, which IS a reliable
 // signature. And its CSRF middleware runs globally on non-GET requests
 // (before routing) but uses an unsigned double-submit cookie, so a
-// self-consistent random token satisfies it without needing a real session --
-// also confirmed empirically. Both facts are load-bearing for the probing
-// strategy below.
-const CSRF_TOKEN = randomBytes(32).toString("hex");
+// The audit does not attempt to pass CSRF or invoke any non-GET handler.
 
 function isGenericNotFound(resp, requestedPath) {
   if (!resp || resp.status !== 404 || !resp.body) return false;
@@ -760,14 +897,6 @@ function isGenericNotFound(resp, requestedPath) {
   } catch {
     return false;
   }
-}
-
-function mutatingHeaders() {
-  return {
-    "Content-Type": "application/json",
-    Cookie: `csrf-token=${CSRF_TOKEN}`,
-    "X-CSRF-Token": CSRF_TOKEN,
-  };
 }
 
 function normalizeSegments(path) {
@@ -802,16 +931,12 @@ async function runLiveProbes(backendInventory, frontendCalls) {
   // --- backend inventory: one real, safe request per unique (method, fullPath) ---
   // GET routes: invoked directly UNLESS their path matches the sensitive-keyword
   // blocklist (defensive net for a GET that isn't actually read-only).
-  // Non-GET routes: invoked directly ONLY when this audit statically detected
-  // a requireAuth/requireAuthOnly/requireAdmin/require2FA marker on that exact
-  // registration -- the auth middleware then rejects with a clean 401/403
-  // BEFORE the handler's own logic runs (confirmed by reading server/middleware/auth.ts),
-  // so the handler's side effects never execute. Non-GET routes with no
-  // detected auth marker (e.g. login, register, webhooks) are never invoked
-  // live at all; their existence is reported from static analysis only.
+  // Non-GET routes are never invoked. An auth guard is not a sufficient safety
+  // boundary for an inventory tool: middleware order can regress, and a route
+  // audit must never become the first caller of a mutation.
   const uniqueBackend = new Map();
   for (const r of backendInventory) {
-    const key = `${r.method}::${r.fullPath}`;
+    const key = `${r.processScope || "main-app"}::${r.method}::${r.fullPath}`;
     if (!uniqueBackend.has(key)) uniqueBackend.set(key, r);
   }
   const backendList = [...uniqueBackend.values()];
@@ -830,18 +955,14 @@ async function runLiveProbes(backendInventory, frontendCalls) {
         return { ...r, probe, unreachable: isGenericNotFound(probe, concretePath) };
       }
 
-      if (!r.hasAuthMarker) {
-        return { ...r, liveProbeSkipped: true, skipReason: "public mutating endpoint -- not safe to invoke live" };
-      }
-      const probe = await timedFetch(url, { method: r.method, headers: mutatingHeaders(), body: "{}" });
-      return { ...r, probe, unreachable: isGenericNotFound(probe, concretePath) };
+      return { ...r, liveProbeSkipped: true, skipReason: "non-GET contract -- static topology evidence only" };
     },
     CONCURRENCY,
   );
 
-  // --- frontend calls: a GET-based path-existence probe is always safe; a
-  // method-specific probe is added only when it is safe per the same
-  // auth-marker rule above (looked up against the backend inventory). ---
+  // --- frontend calls: invoke only intended, blocklist-cleared GET contracts.
+  // A GET to a non-GET contract is not useful method evidence and could collide
+  // with a separate GET handler at that path, so those remain static-only. ---
   const uniqueFrontend = new Map();
   for (const c of frontendCalls) {
     const key = `${c.method}::${c.path}`;
@@ -855,6 +976,21 @@ async function runLiveProbes(backendInventory, frontendCalls) {
     async (c) => {
       const concretePath = toConcretePath(c.path);
       const url = `${BASE_URL}${concretePath}`;
+      const matches = findBackendMatches(c.method, concretePath, backendInventory);
+
+      if (c.method !== "GET" || SENSITIVE_KEYWORDS.test(c.path)) {
+        return {
+          ...c,
+          missing: matches.length === 0 && c.methodConfidence !== "assumed",
+          methodUnconfirmed: matches.length === 0 && c.methodConfidence === "assumed",
+          evidence: matches.length ? "static-topology-match" : "static-no-match",
+          liveProbeSkipped: true,
+          skipReason: c.method !== "GET"
+            ? "non-GET contract -- no live request made"
+            : "path matches sensitive-keyword blocklist",
+          backendMatches: matches,
+        };
+      }
       const getProbe = await timedFetch(url, { method: "GET" });
       const pathExistsForGet = !isGenericNotFound(getProbe, concretePath);
 
@@ -882,31 +1018,7 @@ async function runLiveProbes(backendInventory, frontendCalls) {
         return { ...c, missing: true, methodUnconfirmed: false, evidence: "live-get", getProbe };
       }
 
-      const matches = findBackendMatches(c.method, concretePath, backendInventory);
-      const authGatedMatch = matches.find((m) => m.hasAuthMarker);
-      if (authGatedMatch) {
-        const probe = await timedFetch(url, { method: c.method, headers: mutatingHeaders(), body: "{}" });
-        return {
-          ...c,
-          missing: isGenericNotFound(probe, concretePath),
-          methodUnconfirmed: false,
-          evidence: "live-method-specific",
-          probe,
-        };
-      }
-      if (matches.length > 0) {
-        // Matched a statically-registered public (no-auth-marker) route -- not
-        // safe to invoke live, but the static match itself is strong evidence.
-        return { ...c, missing: false, methodUnconfirmed: false, evidence: "static-public-match" };
-      }
-      if (!pathExistsForGet) {
-        // Nothing registered for this method, and not even for GET at the same
-        // path -- combined static + live evidence of a genuinely missing route.
-        return { ...c, missing: true, methodUnconfirmed: false, evidence: "live-get+no-static-match" };
-      }
-      // Something is registered at this path (for GET or another method), but
-      // this audit could not safely confirm the specific method requested.
-      return { ...c, missing: false, methodUnconfirmed: true, evidence: "ambiguous", getProbe };
+      return { ...c, missing: !pathExistsForGet, methodUnconfirmed: false, evidence: "live-get", getProbe };
     },
     CONCURRENCY,
   );
@@ -926,7 +1038,7 @@ function buildStaticFrontendResults(backendInventory, frontendCalls) {
     const status =
       matches.length > 0
         ? "matched"
-        : call.methodConfidence === "detected"
+        : ["detected", "source-traced"].includes(call.methodConfidence)
           ? "unmatched-confirmed"
           : "unmatched-unconfirmed";
     return {
@@ -1031,14 +1143,14 @@ function buildFindings({ backendInventory, unresolvedDynamic, frontendCalls, bac
   // unreachable-route + duplicate-registration + stub-handler (backend perspective)
   const byMethodPath = new Map();
   for (const r of backendResults) {
-    const key = `${r.method}::${r.fullPath}`;
+    const key = `${r.processScope || "main-app"}::${r.method}::${r.fullPath}`;
     if (!byMethodPath.has(key)) byMethodPath.set(key, []);
     byMethodPath.get(key).push(r);
   }
   // duplicate registration needs ALL registrations, not just the deduped "first seen" used for probing
   const allByMethodPath = new Map();
   for (const r of backendInventory) {
-    const key = `${r.method}::${r.fullPath}`;
+    const key = `${r.processScope || "main-app"}::${r.method}::${r.fullPath}`;
     if (!allByMethodPath.has(key)) allByMethodPath.set(key, []);
     allByMethodPath.get(key).push(r);
   }
@@ -1132,7 +1244,7 @@ function buildFindings({ backendInventory, unresolvedDynamic, frontendCalls, bac
     if (group.length < 2) continue;
     const highConfidenceGroup = group.filter((g) => g.confidence === "high");
     if (highConfidenceGroup.length < 2) continue;
-    const [method, path] = key.split("::");
+    const [, method, path] = key.split("::");
     const hasHandoff = highConfidenceGroup.some((g) => g.callsNext);
     if (hasHandoff) {
       findings.push({
@@ -1185,6 +1297,7 @@ function renderStaticMarkdown({
   frontendCallCount,
   references,
   dynamicUnresolved,
+  dynamicFrontendReview,
   externalReferences,
   spaReferences,
   prefixMap,
@@ -1231,6 +1344,16 @@ function renderStaticMarkdown({
       : `${item.method || "route"} ${item.rawExpr || "(expression unavailable)"}`;
     lines.push(`- \`${label}\` — ${item.file}:${item.line}`);
   }
+  lines.push("", "## Dynamically resolved frontend contracts", "");
+  const resolvedDynamic = dynamicFrontendReview.filter((item) => item.resolution === "resolved");
+  const unverifiedDynamic = dynamicFrontendReview.filter((item) => item.resolution !== "resolved");
+  lines.push(`Resolved source traces: **${resolvedDynamic.length}**; generic/unverified call sites: **${unverifiedDynamic.length}**.`);
+  for (const item of resolvedDynamic) {
+    lines.push(`- \`${item.file}:${item.line}\` → ${item.contracts.map((contract) => `${contract.method} ${contract.path} [${contract.status}]`).join(", ")}`);
+  }
+  for (const item of unverifiedDynamic) {
+    lines.push(`- **Unverified:** \`${item.file}:${item.line}\` — ${item.reason}`);
+  }
   lines.push("", "## Non-network and non-API references", "");
   if (!references.length) lines.push("None.");
   for (const item of references) {
@@ -1252,6 +1375,10 @@ function renderStaticMarkdown({
   lines.push("- `queryClient.invalidateQueries`/`setQueryData` entries are cache keys, not network calls. Query keys with a custom `queryFn` are listed as references; the custom fetch is inventoried separately.");
   lines.push("- Template placeholders are normalized to `:param`; computed URLs without a literal assignment remain dynamic unresolved rather than guessed.");
   lines.push("- External URLs and SPA navigation paths are not API contracts. A component is not reported as needing an endpoint merely because it contains a cache key, link, or documentation example.");
+  lines.push("", "## Recommended isolated regression and live plan", "");
+  lines.push("- Widest safe isolated command: `npx vitest run --config vitest.config.ts tests/unit/audit-endpoints.test.ts tests/unit/typed-route-audit.test.ts tests/unit/frontend-batch-response-contracts.test.ts tests/unit/startup-probes.test.ts`.");
+  lines.push("- Read-only live inventory: `node scripts/audit-endpoints.mjs`. This sends only blocklist-cleared GET requests.");
+  lines.push("- Treat static matches and non-404 GET responses as routing evidence only. Validate request/response schemas in isolated tests; exercise non-GET contracts only against an isolated test database with payment, publishing, distribution, notification, and external-network adapters disabled.");
   return lines.join("\n");
 }
 
@@ -1263,7 +1390,7 @@ function serializePrefixMap(prefixMap) {
   }));
 }
 
-function renderMarkdown(findings, meta) {
+function renderMarkdown(findings, meta, frontendResults, dynamicFrontendReview) {
   const bySeverity = { high: [], medium: [], low: [] };
   for (const f of findings) bySeverity[f.severity]?.push(f);
 
@@ -1273,7 +1400,7 @@ function renderMarkdown(findings, meta) {
   lines.push(`Generated ${new Date().toISOString()} against \`${BASE_URL}\`.`);
   lines.push("");
   lines.push(
-    `Backend routes statically found: ${meta.backendCount} (unique method+path: ${meta.uniqueBackendCount}). Frontend \`/api/*\` call sites found: ${meta.frontendCallCount} (unique method+path: ${meta.uniqueFrontendCount}). Unresolved dynamic registrations: ${meta.unresolvedDynamicCount}.`,
+    `Backend routes statically found: ${meta.backendCount} (unique method+path: ${meta.uniqueBackendCount}). Frontend \`/api/*\` contracts found: ${meta.frontendCallCount} (unique method+path: ${meta.uniqueFrontendCount}). Live GET contracts probed: ${meta.liveGetProbeCount}; static-only contracts: ${meta.staticOnlyContractCount}. Unresolved/unverified dynamic contracts: ${meta.unresolvedDynamicCount}.`,
   );
   lines.push("");
   lines.push(
@@ -1301,13 +1428,39 @@ function renderMarkdown(findings, meta) {
     lines.push("");
   }
 
+  lines.push("## Frontend endpoint contract coverage matrix", "");
+  lines.push("| Contract | Evidence level | Probe result | Source |");
+  lines.push("|---|---|---|---|");
+  for (const contract of frontendResults) {
+    const evidenceLevel = contract.missing
+      ? "unmatched-confirmed"
+      : contract.methodUnconfirmed
+        ? "method-unconfirmed"
+        : contract.getProbe
+          ? "live GET route response (not functionality proof)"
+          : "static topology match (unverified)";
+    const probeResult = contract.getProbe
+      ? contract.getProbe.error || `HTTP ${contract.getProbe.status} in ${contract.getProbe.ms}ms`
+      : contract.skipReason || contract.evidence;
+    lines.push(`| \`${contract.method} ${contract.path}\` | ${evidenceLevel} | ${probeResult} | ${contract.occurrences.join(", ")} |`);
+  }
+  lines.push("", "## Dynamic frontend reference coverage", "");
+  for (const item of dynamicFrontendReview) {
+    if (item.resolution === "resolved") {
+      lines.push(`- \`${item.file}:${item.line}\` — resolved to ${item.contracts.map((contract) => `\`${contract.method} ${contract.path}\` (${contract.status})`).join(", ")}.`);
+    } else {
+      lines.push(`- \`${item.file}:${item.line}\` — **unverified generic transport**: ${item.reason}`);
+    }
+  }
+  lines.push("");
+
   lines.push(`## Methodology and honesty notes`);
   lines.push("");
   lines.push(
-    "- This server answers every `OPTIONS` request identically (204, empty body) via a global CORS middleware, confirmed empirically before this audit was built, so `OPTIONS` cannot distinguish a real route from a fake one here. Reachability is instead checked with real requests: GET routes are hit directly; non-GET routes are hit with their real method plus a self-consistent CSRF double-submit token (satisfying `server/middleware/csrf.ts`, which does not verify the token was server-issued), but ONLY when this audit statically detected `requireAuth`/`requireAuthOnly`/`requireAdmin`/`require2FA` on that exact registration -- the auth middleware then rejects with a clean 401/403 before the handler's own logic runs (confirmed by reading `server/middleware/auth.ts`), so no side effects occur. \"Route exists\" vs \"route does not exist\" is judged against this server's actual 404 body template (`API endpoint <path> does not exist`), not a fixed baseline, because that template echoes the requested path.",
+    "- This server answers every `OPTIONS` request identically (204, empty body) via global CORS middleware, so `OPTIONS` cannot distinguish a real route from a fake one. The live phase invokes only intended GET contracts whose paths pass the defensive sensitive-keyword blocklist. It never sends POST/PUT/PATCH/DELETE, never supplies CSRF credentials, and never attempts an auth bypass. \"Route exists\" vs \"route does not exist\" is judged against this server's path-echoing 404 body template.",
   );
   lines.push(
-    "- Non-GET routes with NO detected auth marker (e.g. login, register, webhooks, public contact/verify endpoints) are never invoked live, by design -- there is no safe way to test them without risking a real side effect. Their presence in this report comes from static source analysis only; treat any finding that touches one of these paths as needing manual confirmation, and note that the absence of a finding does NOT mean this audit confirmed them working.",
+    "- Every non-GET contract is static-only, including auth-gated routes. A static method/path match is topology evidence, not proof that the production path, payload, response envelope, authorization, upstream dependency, persistence, or rendering behavior functions.",
   );
   lines.push(
     "- Frontend calls with a detected non-GET method that this audit could not safely live-probe are reported as `method-unconfirmed` (low severity) rather than asserted as broken or working, when a live GET to the same path suggests something is registered there.",
@@ -1321,6 +1474,10 @@ function renderMarkdown(findings, meta) {
   lines.push(
     "- A route can pass every check in this audit and still contain a functional bug that only appears with real authenticated data (e.g. a wrong SQL join, an incorrect calculation) -- this audit verifies routing-layer reachability and obvious stub/crash signals, not business-logic correctness.",
   );
+  lines.push("", "## Recommended isolated regression and live plan", "");
+  lines.push("- Widest safe isolated command: `npx vitest run --config vitest.config.ts tests/unit/audit-endpoints.test.ts tests/unit/typed-route-audit.test.ts tests/unit/frontend-batch-response-contracts.test.ts tests/unit/startup-probes.test.ts`.");
+  lines.push("- Repeat this GET-only inventory with `node scripts/audit-endpoints.mjs`, then re-probe each 5xx/timeout individually to separate dependency blockers from burst-load artifacts.");
+  lines.push("- In a dedicated test process/database, validate successful, empty, unavailable, and malformed response envelopes for each frontend contract. Use a least-privilege fixture account for authenticated GETs. Exercise non-GET contracts only with payment, publishing, distribution, notification, and external-network adapters replaced by asserting test fakes; never use production credentials or data.");
   lines.push("");
   return lines.join("\n");
 }
@@ -1336,13 +1493,18 @@ async function main() {
 
   console.log(`[audit] scanning client/src/ ...`);
   const frontendInventory = extractFrontendCalls();
-  const frontendCalls = frontendInventory.calls;
+  const dynamicReview = reviewDynamicFrontendCalls(
+    frontendInventory.dynamicUnresolved,
+    backendInventory,
+  );
+  const frontendCalls = [...frontendInventory.calls, ...dynamicReview.resolvedCalls];
   console.log(`[audit] frontend /api/* call sites found: ${frontendCalls.length}`);
 
   if (STATIC_ONLY) {
     const frontendResults = buildStaticFrontendResults(backendInventory, frontendCalls);
-    const allDynamic = [...unresolvedDynamic, ...frontendInventory.dynamicUnresolved];
-    const findings = buildStaticFindings(frontendResults, frontendInventory.dynamicUnresolved);
+    const unverifiedDynamic = dynamicReview.reviews.filter((item) => item.resolution !== "resolved");
+    const allDynamic = [...unresolvedDynamic, ...unverifiedDynamic];
+    const findings = buildStaticFindings(frontendResults, unverifiedDynamic);
     const matchedCount = frontendResults.filter((call) => call.status === "matched").length;
     const unmatchedConfirmedCount = frontendResults.filter((call) => call.status === "unmatched-confirmed").length;
     const meta = {
@@ -1358,6 +1520,8 @@ async function main() {
       externalReferenceCount: frontendInventory.externalReferences.length,
       spaReferenceCount: frontendInventory.spaReferences.length,
       unresolvedDynamicCount: allDynamic.length,
+      dynamicFrontendResolvedCount: dynamicReview.reviews.length - unverifiedDynamic.length,
+      dynamicFrontendUnverifiedCount: unverifiedDynamic.length,
       mountedRouterCount: prefixMap.size,
     };
     mkdirSync(REPORT_DIR, { recursive: true });
@@ -1375,6 +1539,7 @@ async function main() {
         externalReferences: frontendInventory.externalReferences,
         spaReferences: frontendInventory.spaReferences,
         unresolvedDynamic: allDynamic,
+        dynamicFrontendReview: dynamicReview.reviews,
       }, null, 2),
     );
     writeFileSync(
@@ -1385,17 +1550,18 @@ async function main() {
         frontendCallCount: frontendCalls.length,
         references: frontendInventory.references,
         dynamicUnresolved: allDynamic,
+        dynamicFrontendReview: dynamicReview.reviews,
         externalReferences: frontendInventory.externalReferences,
         spaReferences: frontendInventory.spaReferences,
         prefixMap,
         findings,
       }),
     );
-    console.log(`[audit] static report written; ${matchedCount} matched, ${unmatchedConfirmedCount} unmatched confirmed, ${allDynamic.length} dynamic unresolved`);
+    console.log(`[audit] static report written; ${matchedCount} matched, ${unmatchedConfirmedCount} unmatched confirmed, ${dynamicReview.reviews.length - unverifiedDynamic.length} dynamic call sites resolved, ${allDynamic.length} unresolved/unverified`);
     return;
   }
 
-  console.log(`[audit] probing live server at ${BASE_URL} (this is read-only / OPTIONS-safe) ...`);
+  console.log(`[audit] probing live server at ${BASE_URL} (GET-only; no auth bypass or mutating methods) ...`);
   const { backendResults, frontendResults } = await runLiveProbes(backendInventory, frontendCalls);
   console.log(`[audit] probed ${backendResults.length} unique backend routes, ${frontendResults.length} unique frontend calls`);
 
@@ -1408,19 +1574,46 @@ async function main() {
   });
 
   const meta = {
+    mode: "live-read-only",
     backendCount: backendInventory.length,
     uniqueBackendCount: backendResults.length,
     frontendCallCount: frontendCalls.length,
     uniqueFrontendCount: frontendResults.length,
-    unresolvedDynamicCount: unresolvedDynamic.length,
+    unresolvedDynamicCount:
+      unresolvedDynamic.length +
+      dynamicReview.reviews.filter((item) => item.resolution !== "resolved").length,
+    dynamicFrontendResolvedCount:
+      dynamicReview.reviews.filter((item) => item.resolution === "resolved").length,
+    liveGetProbeCount: frontendResults.filter((item) => item.getProbe).length,
+    staticOnlyContractCount: frontendResults.filter((item) => item.liveProbeSkipped).length,
   };
 
   mkdirSync(REPORT_DIR, { recursive: true });
   writeFileSync(
     join(REPORT_DIR, "endpoint-audit.json"),
-    JSON.stringify({ meta, findings, generatedAt: new Date().toISOString(), baseUrl: BASE_URL }, null, 2),
+    JSON.stringify({
+      meta,
+      findings,
+      generatedAt: new Date().toISOString(),
+      baseUrl: BASE_URL,
+      backendRoutes: backendInventory,
+      backendProbeResults: backendResults,
+      mountedRouters: serializePrefixMap(prefixMap),
+      frontendCalls: frontendResults,
+      frontendReferences: frontendInventory.references,
+      externalReferences: frontendInventory.externalReferences,
+      spaReferences: frontendInventory.spaReferences,
+      unresolvedDynamic: [
+        ...unresolvedDynamic,
+        ...dynamicReview.reviews.filter((item) => item.resolution !== "resolved"),
+      ],
+      dynamicFrontendReview: dynamicReview.reviews,
+    }, null, 2),
   );
-  writeFileSync(join(REPORT_DIR, "endpoint-audit.md"), renderMarkdown(findings, meta));
+  writeFileSync(
+    join(REPORT_DIR, "endpoint-audit.md"),
+    renderMarkdown(findings, meta, frontendResults, dynamicReview.reviews),
+  );
 
   const bySeverity = { high: 0, medium: 0, low: 0 };
   for (const f of findings) bySeverity[f.severity]++;

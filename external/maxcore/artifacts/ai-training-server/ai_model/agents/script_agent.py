@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 import logging
 import re
 from dataclasses import dataclass
@@ -42,6 +43,10 @@ class ScriptRequest:
     awareness: str = ""
     variant_idx: int = 0
     genre: str = ""
+    target_audience: str = ""
+    output_format: str = "text"
+    caption_length: str = "optimal"
+    cta_strength: str = "medium"
 
 
 @dataclass
@@ -68,7 +73,8 @@ def _clean_text(text: str) -> str:
 
 _INSTRUCTION_PREFIX_RE = re.compile(
     r"^(always|never|make sure|ensure|emphasise|emphasize|include|avoid|"
-    r"start with|open with|close with|end with|do not|don'?t|be sure)",
+    r"start with|open with|begin(?: the hook)? with|lead(?: the hook)? with|"
+    r"close with|end with|do not|don'?t|be sure)",
     re.IGNORECASE,
 )
 
@@ -84,10 +90,170 @@ def _any_lines(awareness: str, min_len: int = 15) -> List[str]:
     ]
 
 
+_CONTROL_LINE_RE = re.compile(
+    r"^\[CONTROL_(INTENT|DIRECTION|CONTEXT)\]\s+(.+)$", re.IGNORECASE,
+)
+
+
+def _control_payloads(awareness: str) -> Dict[str, object]:
+    """Decode native metadata controls without exposing their wire format."""
+    controls: Dict[str, object] = {}
+    for line in (awareness or "").splitlines():
+        match = _CONTROL_LINE_RE.match(line.strip())
+        if not match:
+            continue
+        try:
+            controls[match.group(1).lower()] = json.loads(match.group(2))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            continue
+    return controls
+
+
+def _control_values(value: object) -> List[str]:
+    """Return semantic scalar values only; object keys are transport metadata."""
+    values: List[str] = []
+    if isinstance(value, str):
+        clean = " ".join(value.split()).strip()
+        if clean:
+            values.append(clean)
+    elif isinstance(value, dict):
+        for child in value.values():
+            values.extend(_control_values(child))
+    elif isinstance(value, list):
+        for child in value:
+            values.extend(_control_values(child))
+    elif isinstance(value, (int, float, bool)):
+        values.append(str(value))
+    return values
+
+
+def _control_keys(value: object) -> List[str]:
+    keys: List[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            keys.append(str(key))
+            keys.extend(_control_keys(child))
+    elif isinstance(value, list):
+        for child in value:
+            keys.extend(_control_keys(child))
+    return keys
+
+
+def _contains_metadata_leak(text: str, awareness: str) -> bool:
+    """Reject a model candidate that copied transport syntax into visible copy."""
+    if not text:
+        return False
+    if "CONTROL_" in text or re.search(
+        r"</?CREATIVE_(?:DIRECTION|INTENT)>|</?BACKGROUND_CONTEXT>",
+        text,
+    ):
+        return True
+    controls = _control_payloads(awareness)
+    for payload in controls.values():
+        for key in _control_keys(payload):
+            if re.search(
+                rf"""(?:\{{|,)\s*["']?{re.escape(key)}["']?\s*:""",
+                text,
+                re.IGNORECASE,
+            ):
+                return True
+    return False
+
+
+def _awareness_without_controls(awareness: str) -> str:
+    """Remove metadata records before content-signal parsing."""
+    return "\n".join(
+        line for line in (awareness or "").splitlines()
+        if not _CONTROL_LINE_RE.match(line.strip())
+    )
+
+
+def _direction_opening(awareness: str) -> str:
+    """Extract an explicitly requested opening phrase from direction semantics."""
+    direction = _control_payloads(awareness).get("direction")
+    candidates: List[tuple[str, str]] = []
+    if isinstance(direction, dict):
+        candidates.extend(
+            (str(key), value)
+            for key, raw in direction.items()
+            for value in _control_values(raw)
+        )
+    else:
+        candidates.extend(("", value) for value in _control_values(direction))
+
+    # Free-text instruction fields enter awareness as [HIGH] lines.
+    for line in (awareness or "").splitlines():
+        match = re.match(r"^\[HIGH\]\s+(.+)$", line.strip(), re.IGNORECASE)
+        if match and not _is_content_signal(match.group(1)):
+            candidates.append(("", match.group(1).strip()))
+
+    for key, value in candidates:
+        key_lower = re.sub(r"[^a-z]", "", key.lower())
+        match = re.search(
+            r"\b(?:open|start|lead|begin)(?:\s+(?:the\s+)?(?:hook|caption|copy))?"
+            r"\s+with\s+(?:(?:the\s+)?exact\s+phrase\s+|exactly\s+)?(.+)$",
+            value, re.IGNORECASE,
+        )
+        phrase = match.group(1) if match else (
+            value if any(token in key_lower for token in (
+                "openingphrase", "hookphrase", "leadphrase", "startphrase",
+            )) else ""
+        )
+        phrase = phrase.strip(" \"'“”‘’.,:;")
+        if phrase:
+            return phrase[:120]
+    return ""
+
+
+def _direction_required_phrases(awareness: str) -> List[str]:
+    """Read literal inclusion constraints from structured direction fields."""
+    direction = _control_payloads(awareness).get("direction")
+    required: List[str] = []
+
+    def visit(value: object) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                normalized = re.sub(r"[^a-z]", "", str(key).lower())
+                if normalized in {
+                    "mustinclude", "requiredphrase", "requiredphrases",
+                    "includephrase", "includephrases",
+                }:
+                    required.extend(_control_values(child))
+                elif isinstance(child, (dict, list)):
+                    visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                if isinstance(child, (dict, list)):
+                    visit(child)
+
+    visit(direction)
+    result: List[str] = []
+    for phrase in required:
+        clean = phrase.strip(" \"'“”‘’.,:;")
+        if clean and clean.casefold() not in {item.casefold() for item in result}:
+            result.append(clean[:120])
+    return result[:5]
+
+
+def _apply_direction(awareness: str, response: ScriptResponse) -> ScriptResponse:
+    """Apply explicit opening and literal-inclusion constraints in composition."""
+    opening = _direction_opening(awareness)
+    if opening and not response.hook.casefold().startswith(opening.casefold()):
+        response.hook = f"{opening} — {response.hook}"
+    visible = " ".join((response.hook, response.body, response.cta)).casefold()
+    for phrase in _direction_required_phrases(awareness):
+        if phrase.casefold() not in visible:
+            punctuation = "" if phrase.endswith((".", "!", "?")) else "."
+            response.body = f"{response.body.rstrip()}\n\n{phrase}{punctuation}".strip()
+            visible = f"{visible} {phrase.casefold()}"
+    return response
+
+
 def _parse_signals_for_platform(awareness: str, platform: str) -> List[str]:
     if not awareness:
         return []
 
+    awareness = _awareness_without_controls(awareness)
     signals: List[str] = []
     plat_lower = platform.lower()
     other_platforms = [
@@ -105,7 +271,13 @@ def _parse_signals_for_platform(awareness: str, platform: str) -> List[str]:
         m = re.match(r"\[(HIGH|MEDIUM|LOW)\]\s+(.+)", stripped)
         if m:
             headline = m.group(2).strip()
-            if plat_lower in headline.lower() or not any(p in headline.lower() for p in other_platforms):
+            if (
+                _is_content_signal(headline)
+                and (
+                    plat_lower in headline.lower()
+                    or not any(p in headline.lower() for p in other_platforms)
+                )
+            ):
                 signals.append(headline)
         if stripped.startswith("Action:") or "↳ Action:" in stripped:
             action = re.sub(r"^(Action:|↳ Action:)\s*", "", stripped).strip()
@@ -128,7 +300,7 @@ def _parse_signals_for_platform(awareness: str, platform: str) -> List[str]:
         for line in awareness.splitlines():
             stripped = line.strip()
             m = re.match(r"\[(HIGH|MEDIUM|LOW)\]\s+(.+)", stripped)
-            if m:
+            if m and _is_content_signal(m.group(2)):
                 signals.append(m.group(2).strip())
         if not signals:
             signals = _any_lines(awareness)
@@ -413,6 +585,11 @@ def _format_awareness_prefix(awareness: str) -> str:
     if not awareness:
         return ""
     try:
+        controls = _control_payloads(awareness)
+        direction_values = _control_values(controls.get("direction"))
+        intent_values = _control_values(controls.get("intent"))
+        context_values = _control_values(controls.get("context"))
+
         # Strip [INTENT] key=value lines — machine-readable, must not leak into prompts.
         intent_re = re.compile(r"^\[INTENT\]", re.IGNORECASE)
 
@@ -443,13 +620,30 @@ def _format_awareness_prefix(awareness: str) -> str:
                     tokens = words[:3]
                     break
 
-        if not tokens:
+        prefix_parts = []
+        if intent_values:
+            prefix_parts.append(
+                f"<CREATIVE_INTENT>{'; '.join(intent_values)[:80]}</CREATIVE_INTENT>"
+            )
+        if direction_values:
+            # Values provide natural-language conditioning. Object keys, JSON
+            # punctuation, and control labels never enter the model prompt.
+            guidance = "; ".join(direction_values)[:100]
+            prefix_parts.append(
+                f"<CREATIVE_DIRECTION>{guidance}</CREATIVE_DIRECTION>"
+            )
+        if context_values:
+            prefix_parts.append(
+                f"<BACKGROUND_CONTEXT>{'; '.join(context_values)[:80]}</BACKGROUND_CONTEXT>"
+            )
+        if tokens:
+            prefix_parts.append("Context: " + " | ".join(tokens))
+        if not prefix_parts:
             return ""
-
-        prefix = "Context: " + " | ".join(tokens)
-        # Truncate to 60 chars to avoid eating model token budget
-        if len(prefix) > 60:
-            prefix = prefix[:57].rstrip(" |") + "..."
+        prefix = "\n".join(prefix_parts)
+        # Keep direction intact while bounding prompt overhead.
+        if len(prefix) > 320:
+            prefix = prefix[:317].rstrip(" |") + "..."
         return prefix
     except Exception:
         return ""
@@ -597,6 +791,21 @@ def _parse_cta_from_awareness(awareness: str, platform: str,
     if not awareness:
         return ""
 
+    intent_text = " ".join(
+        _control_values(_control_payloads(awareness).get("intent"))
+    ).lower()
+    if "save" in intent_text:
+        return f"Save this post and come back to {idea}." if idea else "Save this post for later."
+    if "share" in intent_text:
+        return f"Share {idea} with someone who should hear it." if idea else "Share this with someone who needs it."
+    if "comment" in intent_text or "reply" in intent_text:
+        return "Comment with your first reaction."
+    if "follow" in intent_text:
+        return "Follow for the next part of the story."
+    if any(word in intent_text for word in ("stream", "listen", "play")):
+        return f"Listen to {idea} and tell me what hits first." if idea else "Listen now and tell me what hits first."
+
+    awareness = _awareness_without_controls(awareness)
     plat_lower = platform.lower()
 
     # 1. Platform-specific CTA line from awareness
@@ -657,8 +866,9 @@ def _build_awareness_body(
     if not awareness:
         return ""
 
-    signals = _parse_signals_for_platform(awareness, platform)
-    trending_tags = re.findall(r"#(\w+)", awareness)
+    visible_awareness = _awareness_without_controls(awareness)
+    signals = _parse_signals_for_platform(visible_awareness, platform)
+    trending_tags = re.findall(r"#(\w+)", visible_awareness)
     topic_words = [t for t in trending_tags if len(t) > 4][:3]
     context_phrase = f" ({', '.join('#' + t for t in topic_words)} trending)" if topic_words else ""
 
@@ -675,7 +885,7 @@ def _build_awareness_body(
         return truncated[:last_space] if last_space > 0 else truncated
 
     # Genre-conditioned body takes priority over tone-conditioned
-    genre_norm = _detect_genre_from_awareness(awareness, genre)
+    genre_norm = _detect_genre_from_awareness(visible_awareness, genre)
     genre_pool = _GENRE_BODIES.get(genre_norm, [])
     if genre_pool:
         return genre_pool[signal_offset % len(genre_pool)].format(
@@ -736,7 +946,18 @@ class ScriptAgent:
         platform_token = f"<PLATFORM_{req.platform.upper()}>"
         goal_token = f"<GOAL_{req.goal.upper()}>"
         tone_token = f"<TONE_{req.tone.upper()}>"
-        base_prompt = f"{platform_token} {goal_token} {tone_token} <STAGE_HOOK>"
+        format_token = f"<FORMAT_{req.output_format.upper()}>"
+        length_token = f"<LENGTH_{req.caption_length.upper()}>"
+        cta_token = f"<CTA_{req.cta_strength.upper()}>"
+        audience = (
+            f" Target audience: {req.target_audience.strip()}."
+            if req.target_audience.strip()
+            else ""
+        )
+        base_prompt = (
+            f"{platform_token} {goal_token} {tone_token} {format_token} "
+            f"{length_token} {cta_token}{audience} <STAGE_HOOK>"
+        )
 
         if req.awareness:
             # Prepend a short awareness prefix to steer the model, not replace it.
@@ -752,13 +973,33 @@ class ScriptAgent:
             _garble_detected = False
             try:
                 from ..request_intelligence import looks_garbled, garble_reason
-                _wl = f"{req.idea} {req.awareness or ''}"
+                # Whitelist semantic values, never metadata keys/control syntax.
+                # Otherwise a model echo such as ``{"audienceAction"`` appears
+                # "known" merely because that key exists in the wire envelope.
+                _controls = _control_payloads(req.awareness or "")
+                _control_semantics = " ".join(
+                    value
+                    for payload in _controls.values()
+                    for value in _control_values(payload)
+                )
+                _wl = (
+                    f"{req.idea} "
+                    f"{_awareness_without_controls(req.awareness or '')} "
+                    f"{_control_semantics}"
+                )
                 if looks_garbled(output or "", whitelist=_wl):
                     _garble_detected = True
                     _reason = garble_reason(output or "", whitelist=_wl)
                     logger.warning(
                         "[garble-guard] model output garbled, falling back to awareness "
                         "reason=%s platform=%s", _reason, req.platform,
+                    )
+                elif _contains_metadata_leak(output or "", req.awareness or ""):
+                    _garble_detected = True
+                    logger.warning(
+                        "[garble-guard] model output copied awareness metadata; "
+                        "using native awareness composition platform=%s",
+                        req.platform,
                     )
             except Exception:
                 pass  # garble check is never allowed to break generation
@@ -799,7 +1040,10 @@ class ScriptAgent:
             if self._is_meaningful(hook) and self._is_meaningful(body):
                 if not cta or not self._is_meaningful(cta):
                     cta = PLATFORM_CTAS.get(req.platform.lower(), "Let me know what you think!")
-                return ScriptResponse(hook=hook, body=body, cta=cta, source="ai_model")
+                return _apply_direction(
+                    req.awareness,
+                    ScriptResponse(hook=hook, body=body, cta=cta, source="ai_model"),
+                )
         except Exception:
             pass
 
@@ -845,7 +1089,10 @@ class ScriptAgent:
         cta = _parse_cta_from_awareness(awareness, platform, idea=req.idea)
         if not cta:
             cta = PLATFORM_CTAS.get(platform, "Let me know what you think!")
-        return ScriptResponse(hook=hook, body=body, cta=cta, source="awareness")
+        return _apply_direction(
+            awareness,
+            ScriptResponse(hook=hook, body=body, cta=cta, source="awareness"),
+        )
 
     def _template_fallback(self, req: ScriptRequest) -> ScriptResponse:
         """True last resort — used only when both awareness and model.generate()

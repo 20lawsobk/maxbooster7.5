@@ -94,6 +94,10 @@ interface ActivePatch {
   status: PatchStatus;
   revertedAt?: number;
   runtimeEffect: string;
+  durablePromotion?: {
+    status: "not-applicable" | "recorded" | "promoted" | "failed";
+    error?: string;
+  };
   revert?: () => void | Promise<void>;
 }
 
@@ -146,9 +150,10 @@ interface TrendSnapshot {
   degradedCount: number;
 }
 
-class PlatformAutoFixer extends EventEmitter {
+export class PlatformAutoFixer extends EventEmitter {
   private probeResults = new Map<SubsystemName, ProbeResult>();
   private patches = new Map<string, ActivePatch>();
+  private revertInFlight = new Map<string, Promise<boolean>>();
   private patchHistory: ActivePatch[] = [];
   private incidents: Incident[] = [];
   private probeTimer: NodeJS.Timeout | null = null;
@@ -435,14 +440,14 @@ class PlatformAutoFixer extends EventEmitter {
 
     for (const r of results) {
       if (r.status === "fulfilled") {
-        this.handleProbeResult(r.value);
+        await this.handleProbeResult(r.value);
       }
     }
 
     this._recordTrend();
     this._adjustProbeInterval();
     this.correlateIncidents();
-    this.expireOldPatches();
+    await this.expireOldPatches();
 
     // ── Offensive layer: run every N scans (more frequently when worsening) ──
     const offensiveEvery = this._analyzeTrend(10).worsening
@@ -1075,14 +1080,14 @@ class PlatformAutoFixer extends EventEmitter {
 
   // ─── Patch application ──────────────────────────────────────────────────────
 
-  private handleProbeResult(result: ProbeResult): void {
+  private async handleProbeResult(result: ProbeResult): Promise<void> {
     const { subsystem, status } = result;
 
     if (status === "healthy" || status === "unknown") {
       // Auto-revert patches for subsystems that recovered
       for (const patch of this.patches.values()) {
         if (patch?.subsystem === subsystem && patch?.status === "active") {
-          this.revertPatch(patch?.id, "auto — subsystem recovered");
+          await this.revertPatch(patch?.id, "auto — subsystem recovered");
         }
       }
       return;
@@ -1116,7 +1121,7 @@ class PlatformAutoFixer extends EventEmitter {
 
       if (status === "degraded" && heapRatio >= warnPct) {
         // Tier 1: warn + GC only
-        this.applyPatch({
+        await this.applyPatch({
           subsystem: "memory",
           name: "Memory pressure — GC",
           description: `Heap at ${heapRatio}% — running garbage collection`,
@@ -1129,14 +1134,16 @@ class PlatformAutoFixer extends EventEmitter {
               logger.info(
                 `[PlatformAutoFixer] GC triggered (heap ${heapRatio}%) — heap now ${after}MB`,
               );
+              return true;
             }
+            return false;
           },
         });
       }
 
       if (status === "critical" && heapRatio >= patchPct) {
         // Tier 2: GC + cache eviction
-        this.applyPatch({
+        await this.applyPatch({
           subsystem: "memory",
           name: "Memory critical — GC + cache eviction",
           description: `Heap at ${heapRatio}% — GC + evicting expired cache entries`,
@@ -1160,7 +1167,7 @@ class PlatformAutoFixer extends EventEmitter {
 
         // Tier 3: if truly extreme (>= 96%), also flush the full cache
         if (heapRatio >= 96) {
-          this.applyPatch({
+          await this.applyPatch({
             subsystem: "memory",
             name: "Memory extreme — cache flush",
             description: `Heap at ${heapRatio}% — flushing entire distributed cache to recover memory`,
@@ -1185,7 +1192,7 @@ class PlatformAutoFixer extends EventEmitter {
     }
 
     if (subsystem === "lua_executor" && status === "critical") {
-      this.applyPatch({
+      await this.applyPatch({
         subsystem: "lua_executor",
         name: "Reset LuaExecutor semaphore",
         description:
@@ -1213,7 +1220,7 @@ class PlatformAutoFixer extends EventEmitter {
     // correctly; no manual gap raise is needed for high-queue-depth situations.
 
     if (subsystem === "database" && status === "critical") {
-      this.applyPatch({
+      await this.applyPatch({
         subsystem: "database",
         name: "DB pool pressure alert",
         description:
@@ -1249,25 +1256,18 @@ class PlatformAutoFixer extends EventEmitter {
     }
 
     if (subsystem === "sessions" && status === "critical") {
-      this.applyPatch({
+      await this.applyPatch({
         subsystem: "sessions",
         name: "Session store reconnect",
         description: "Session store failing — attempting DB pool reconnect",
         triggeredBy: result.message,
         runtimeEffect: "DB pool connection tested and refreshed",
         action: async () => {
-          try {
-            const { pool } = await import("../db.js");
-            await pool?.query("SELECT 1");
-            logger.info(
-              "[PlatformAutoFixer] Session store ping recovered after critical failure",
-            );
-          } catch (err) {
-            logger.warn(
-              "[PlatformAutoFixer] Session store reconnect failed:",
-              (err as any)?.message,
-            );
-          }
+          const { pool } = await import("../db.js");
+          await pool?.query("SELECT 1");
+          logger.info(
+            "[PlatformAutoFixer] Session store ping recovered after critical failure",
+          );
         },
       });
     }
@@ -1290,15 +1290,15 @@ class PlatformAutoFixer extends EventEmitter {
 
   // ─── Patch helpers ──────────────────────────────────────────────────────────
 
-  private applyPatch(opts: {
+  private async applyPatch(opts: {
     subsystem: SubsystemName;
     name: string;
     description: string;
     triggeredBy: string;
     runtimeEffect: string;
-    action?: () => Promise<void>;
+    action?: () => Promise<void | boolean>;
     revert?: () => void | Promise<void>;
-  }): string {
+  }): Promise<string> {
     // Deduplicate: don't apply the same named patch twice if already active
     for (const p of this.patches.values()) {
       if (
@@ -1307,6 +1307,31 @@ class PlatformAutoFixer extends EventEmitter {
         p.status === "active"
       ) {
         return p.id;
+      }
+    }
+
+    // A patch is only "applied" after its postcondition-producing action
+    // completes.  Previously the active record, event and permanent-fix credit
+    // were created first, so a rejected (or explicit no-op) action was reported
+    // as a successful remediation.
+    if (opts.action) {
+      try {
+        const changed = await opts.action();
+        if (changed === false) {
+          logger.info(`[PlatformAutoFixer] Patch no-op: ${opts.name}`);
+          this.emit("patch:noop", { name: opts.name, subsystem: opts.subsystem });
+          return "";
+        }
+      } catch (err) {
+        logger.warn(
+          `[PlatformAutoFixer] Patch action failed (${opts.name}): ${(err as Error).message}`,
+        );
+        this.emit("patch:failed", {
+          name: opts.name,
+          subsystem: opts.subsystem,
+          error: (err as Error).message,
+        });
+        return "";
       }
     }
 
@@ -1325,8 +1350,6 @@ class PlatformAutoFixer extends EventEmitter {
     };
 
     this.patches.set(id, patch);
-    logger.info(`[PlatformAutoFixer] Patch applied: ${opts.name} (${id})`);
-    this.emit("patch:applied", patch);
 
     // ── PERMANENT FIX REGISTRY: map subsystem → pattern ID and record ──
     // After N patches on the same subsystem, PermanentFixRegistry permanently
@@ -1336,55 +1359,82 @@ class PlatformAutoFixer extends EventEmitter {
       const _subsystemToPattern: Record<string, string> = {
         pdim: "pdim_rate_limit_429",
         memory: "memory_pressure",
-        queue: "lua_executor_timeout",
+        lua_executor: "lua_executor_timeout",
       };
       const _pfrPatternId = _subsystemToPattern[opts.subsystem];
       if (_pfrPatternId) {
-        import("./permanentFixRegistry.js")
-          .then((m) => m.permanentFixRegistry.recordFix(_pfrPatternId))
-          .catch(() => {});
+        try {
+          const outcome = await permanentFixRegistry.recordFix(_pfrPatternId);
+          patch.durablePromotion = {
+            status: outcome.status === "promoted" ? "promoted" : "recorded",
+          };
+        } catch (err) {
+          patch.durablePromotion = {
+            status: "failed",
+            error: (err as Error).message,
+          };
+          logger.warn(
+            `[PlatformAutoFixer] Runtime patch applied but durable promotion failed (${opts.name}): ${(err as Error).message}`,
+          );
+          this.emit("patch:durability-failed", patch);
+        }
+      } else {
+        patch.durablePromotion = { status: "not-applicable" };
       }
     }
 
-    // Run the action asynchronously
-    if (opts.action) {
-      opts.action().catch((err) => {
-        logger.warn(
-          `[PlatformAutoFixer] Patch action failed (${opts.name}): ${err.message}`,
-        );
-      });
-    }
-
+    logger.info(`[PlatformAutoFixer] Patch applied: ${opts.name} (${id})`);
+    this.emit("patch:applied", patch);
     return id;
   }
 
-  revertPatch(id: string, reason = "admin request"): boolean {
+  revertPatch(
+    id: string,
+    reason = "admin request",
+  ): boolean | Promise<boolean> {
     const patch = this.patches.get(id);
     if (!patch || patch.status !== "active") return false;
+    const inFlight = this.revertInFlight.get(id);
+    if (inFlight) return inFlight;
 
-    patch.status = "reverted";
-    patch.revertedAt = Date.now();
-    this.patches.delete(id);
-    this.patchHistory.unshift(patch);
-    if (this.patchHistory.length > MAX_HISTORY) this.patchHistory.pop();
+    const commitRevert = (): true => {
+      patch.status = "reverted";
+      patch.revertedAt = Date.now();
+      this.patches.delete(id);
+      this.patchHistory.unshift(patch);
+      if (this.patchHistory.length > MAX_HISTORY) this.patchHistory.pop();
 
-    logger.info(
-      `[PlatformAutoFixer] Patch reverted: ${patch.name} — reason: ${reason}`,
-    );
-    this.emit("patch:reverted", patch);
+      logger.info(
+        `[PlatformAutoFixer] Patch reverted: ${patch.name} — reason: ${reason}`,
+      );
+      this.emit("patch:reverted", patch);
+      return true;
+    };
 
+    // Transactional ordering: retain the active record until the compensating
+    // action has completed. A failed rollback must not be presented as reverted.
     if (patch.revert) {
-      Promise.resolve(patch.revert()).catch((err) => {
-        logger.warn(
-          `[PlatformAutoFixer] Revert action failed (${patch.name}): ${err.message}`,
-        );
-      });
+      const transaction = Promise.resolve()
+        .then(() => patch.revert!())
+        .then(() => commitRevert())
+        .catch((err) => {
+          logger.warn(
+            `[PlatformAutoFixer] Revert action failed (${patch.name}): ${(err as Error).message}`,
+          );
+          this.emit("patch:revert-failed", {
+            patch,
+            error: (err as Error).message,
+          });
+          return false;
+        })
+        .finally(() => this.revertInFlight.delete(id));
+      this.revertInFlight.set(id, transaction);
+      return transaction;
     }
-
-    return true;
+    return commitRevert();
   }
 
-  private expireOldPatches(): void {
+  private async expireOldPatches(): Promise<void> {
     const MAX_PATCH_AGE_MS = 30 * 60_000; // 30 min
     const now = Date.now();
     for (const [id, patch] of this.patches.entries()) {
@@ -1392,7 +1442,7 @@ class PlatformAutoFixer extends EventEmitter {
         patch.status === "active" &&
         now - patch.appliedAt > MAX_PATCH_AGE_MS
       ) {
-        this.revertPatch(id, "auto-expired after 30 min");
+        await this.revertPatch(id, "auto-expired after 30 min");
       }
     }
   }
@@ -2070,7 +2120,7 @@ class PlatformAutoFixer extends EventEmitter {
     const fn = probers[name];
     if (!fn) return null;
     const result = await fn();
-    this.handleProbeResult(result);
+    await this.handleProbeResult(result);
     return result;
   }
 

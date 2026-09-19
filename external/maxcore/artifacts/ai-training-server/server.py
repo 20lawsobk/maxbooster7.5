@@ -1275,14 +1275,22 @@ class _AwarenessMixin(BaseModel):
     ``enrichWithAwareness`` injects.  Extracts ``contextString`` from the dict so
     the Python parsers always receive the pre-formatted multi-line text.
 
-    Also accepts ``description`` (free-text intent description) and
-    ``prompt_url`` (URL to analyse for intent) that feed the intent
-    sub-awareness layer — see :func:`_merged_awareness_for`.
+    Also accepts ``description`` / ``prompt_url`` for native intent detection,
+    plus the structured ``intent`` / ``direction`` / ``context`` envelope
+    forwarded by MaxBooster.  The latter stays structured until the canonical
+    generation merge serialises it safely; it is never interpolated with
+    Python's object repr.
     """
 
     awareness:    str = ""
     description:  str = ""   # free-text description of what to generate
     prompt_url:   str = ""   # URL to analyse for intent (Spotify, TikTok, etc.)
+    instruction: Optional[str] = None
+    extra_context: Optional[str] = None
+    content_themes: Optional[List[str]] = None
+    intent: Any = None
+    direction: Any = None
+    context: Any = None
 
     @model_validator(mode="before")
     @classmethod
@@ -4490,7 +4498,14 @@ async def list_checkpoints(_admin = Depends(verify_admin)):
 # (DAW, beat marketplace, social media management, music distribution).
 # They run on top of the model trained from the 7TB storage dataset.
 
-class PlatformSocialRequest(_AwarenessMixin):
+from ai_model.generation.social_controls import (
+    SocialGenerationControls,
+    apply_social_controls,
+    control_awareness,
+)
+
+
+class PlatformSocialRequest(_AwarenessMixin, SocialGenerationControls):
     user_id: str
     platform: str = "instagram"
     topic: str
@@ -4595,12 +4610,49 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
     """
     start = time.time()
     platform = normalize_platform(req.platform)
-    # Universal URL Parser: resolve topic from any URL/platform link
-    _social_topic = _resolve_topic_from_url(req.topic)
+    # Universal URL Parser: URL requests must be safely fetched and resolved
+    # inside MaxCore. Never generate plausible copy about an unresolved URL.
+    _url_awareness = ""
+    try:
+        from ai_model.url_parser.core import is_url as _is_url, parse_url as _parse_url
+        if _is_url(req.topic):
+            _parsed_url = _parse_url(req.topic)
+            if not _parsed_url.fetch_ok:
+                raise HTTPException(
+                    status_code=422,
+                    detail="URL could not be safely fetched and resolved",
+                )
+            _social_topic = _clean_idea_from_parsed(_parsed_url)
+            if not _social_topic or _social_topic == req.topic.strip():
+                raise HTTPException(
+                    status_code=422,
+                    detail="URL did not contain analyzable social content",
+                )
+            _url_awareness = _parsed_url.awareness_text or ""
+        else:
+            _social_topic = req.topic.strip()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"URL resolution failed: {str(exc)[:160]}",
+        )
 
     # Personalize tone based on user's past engagement data in storage
     personalized_tone = _build_personalized_tone(req.user_id, platform, req.tone)
-    effective_awareness = _effective_awareness(platform, _merged_awareness_for(req))
+    _request_controls = control_awareness(req)
+    effective_awareness = _effective_awareness(
+        platform,
+        "\n".join(
+            part for part in (
+                _merged_awareness_for(req),
+                _url_awareness,
+                _request_controls,
+            )
+            if part
+        ),
+    )
 
     variants = []
     await _wait_for_model_ready()
@@ -4617,6 +4669,11 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
                     goal=req.goal, tone=personalized_tone,
                     awareness=effective_awareness,
                     variant_idx=vidx,
+                     target_audience=req.target_audience or "",
+                     output_format=req.output_format,
+                     caption_length=req.caption_length or "optimal",
+                     cta_strength=req.call_to_action_strength or "medium",
+                     genre=req.genre or "",
                 )))
                 d = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
                     script=f"{s.hook}\n{s.body}\n{s.cta}",
@@ -4631,13 +4688,24 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
                     status_code=503,
                     detail="empty generatedContent — model warming up, please retry",
                 )
+            controlled = apply_social_controls(
+                hook=script.hook,
+                body=script.body,
+                cta=script.cta,
+                hashtags=dist.hashtags if req.include_hashtags else [],
+                topic=_social_topic,
+                controls=req,
+                awareness=effective_awareness,
+            )
+            if not controlled["caption"]:
+                raise HTTPException(
+                    status_code=503,
+                    detail="native social generation produced no usable content",
+                )
             variant: dict[str, Any] = {
-                "hook": script.hook,
-                "body": script.body,
-                "cta": script.cta,
-                "caption": dist.caption,
-                "hashtags": dist.hashtags if req.include_hashtags else [],
+                **controlled,
                 "source": getattr(script, "source", "model"),
+                "output_format": req.output_format,
             }
         except HTTPException:
             raise
@@ -4703,7 +4771,7 @@ async def platform_social_autopilot(req: PlatformAutopilotRequest, _key = Depend
     try:
         from ai_model.agents.script_agent import ScriptRequest
         from ai_model.agents.distribution_agent import DistributionRequest
-        _auto_aw = _merged_awareness_for(req)
+        _auto_aw = _effective_awareness(platform, _merged_awareness_for(req))
         for tag in (dominant_tags or ["music", "artist", "studio"])[:2]:
             s = await _in_thread(lambda t=tag: _script_agent.run(ScriptRequest(
                 idea=t, platform=platform, goal=req.target_metric, tone="authentic",
@@ -4791,7 +4859,7 @@ async def platform_daw_generate(req: PlatformDAWRequest, _key = Depends(require_
         from ai_model.agents.script_agent import ScriptRequest
         from ai_model.agents.visual_spec_agent import VisualSpecRequest
 
-        _daw_aw = _merged_awareness_for(req)
+        _daw_aw = _effective_awareness("youtube", _merged_awareness_for(req))
         script = await _in_thread(lambda: _script_agent.run(ScriptRequest(
             idea=topic, platform="youtube", goal=goal, tone=tone,
             awareness=_daw_aw,
@@ -4843,10 +4911,11 @@ async def platform_distribution_plan(req: PlatformDistributionRequest, _key = De
     try:
         from ai_model.agents.distribution_agent import DistributionRequest
         bio_context = req.bio or f"{req.genre} artist"
+        _dist_awareness = _effective_awareness("spotify", _merged_awareness_for(req))
         dist = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
             script=f"New {req.genre} track: '{req.track_title}'. Artist: {bio_context}.",
             platform="spotify", goal="streams",
-            awareness=_merged_awareness_for(req),
+            awareness=_dist_awareness,
         )))
         _result = {
             "success": True,
@@ -4941,12 +5010,14 @@ async def platform_video_generate(req: PlatformVideoRequest, _key = Depends(requ
 
     await _wait_for_model_ready()
 
+    _vid_awareness = _effective_awareness(platform, _merged_awareness_for(req))
+
     async def _run_model_inference():
         from ai_model.agents.script_agent import ScriptRequest
         from ai_model.agents.visual_spec_agent import VisualSpecRequest
         from ai_model.agents.distribution_agent import DistributionRequest
 
-        _vid_aw = _merged_awareness_for(req)
+        _vid_aw = _vid_awareness
         script_result = await _in_thread(lambda: _script_agent.run(ScriptRequest(
             idea=_vid_topic, platform=platform, goal=req.goal, tone=personalized_tone,
             awareness=_vid_aw,
@@ -4971,7 +5042,7 @@ async def platform_video_generate(req: PlatformVideoRequest, _key = Depends(requ
         "style":    req.style or "",
         "goal":     req.goal  or "",
         "tone":     personalized_tone or "",
-        "awareness": str(req.awareness or ""),
+        "awareness": _vid_awareness,
         "duration": req.duration_seconds,
     }
     _coalesced_inference: list = []
@@ -5129,7 +5200,7 @@ def _load_platform_rules() -> dict:
 _platform_rules = _load_platform_rules()
 
 
-class MaxcoreAnalyzeRequest(BaseModel):
+class MaxcoreAnalyzeRequest(_AwarenessMixin):
     modality: str = "text"
     payload: str
     artistProfileId: Optional[str] = None
@@ -5138,25 +5209,17 @@ class MaxcoreAnalyzeRequest(BaseModel):
     awareness: str = ""
 
 
-class MaxcoreTextRequest(BaseModel):
+class MaxcoreTextRequest(_AwarenessMixin):
     mode: str = "content"
     system: Optional[str] = None
     input: dict = {}        # used by mode='planner'
     step: dict = {}         # used by mode='content'
     inputs: dict = {}       # used by mode='content'
-    awareness: str = ""     # enrichment + live signals; conditions the script agent
-    instruction:    Optional[str]       = None
-    extra_context:  Optional[str]       = None
-    content_themes: Optional[List[str]] = None
 
 
-class MaxcoreMediaRequest(BaseModel):
+class MaxcoreMediaRequest(_AwarenessMixin):
     step: dict = {}
     inputs: dict = {}
-    awareness: str = ""     # enrichment + live signals; conditions the media agents
-    instruction:    Optional[str]       = None
-    extra_context:  Optional[str]       = None
-    content_themes: Optional[List[str]] = None
 
 
 @app.post("/analyze")
@@ -5201,7 +5264,8 @@ async def maxcore_analyze(req: MaxcoreAnalyzeRequest, _key = Depends(require_sco
                 platform=normalize_platform(first_platform),
                 goal=intent_hint,
                 tone="authentic",
-                awareness=_merged_awareness_for(req),
+                awareness=_effective_awareness(
+                    normalize_platform(first_platform), _merged_awareness_for(req)),
             )))
             normalized["semantic"]["hook"] = result.hook
             normalized["semantic"]["core_message"] = result.body
@@ -5272,6 +5336,8 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
     outputs = []
     for slot in slots:
         platform = normalize_platform(slot.get("platform", "general"))
+        effective_awareness = _effective_awareness(
+            platform, _merged_awareness_for(req))
         slot_id = slot.get("id", "")
         purpose = slot.get("purpose", "")
         rules = _platform_rules.get(platform, {}).get("text", {})
@@ -5296,7 +5362,7 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
                 from ai_model.agents.distribution_agent import DistributionRequest
                 script = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                     idea=topic, platform=platform, goal=intent, tone=tone,
-                    awareness=_merged_awareness_for(req),
+                    awareness=effective_awareness,
                 )))
                 hook_line = getattr(script, "hook", "") or ""
                 body_line = getattr(script, "body", "") or ""
@@ -5305,7 +5371,7 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
                 full_script = f"{hook_line}\n{body_line}\n{cta_line}".strip()
                 dist = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
                     script=full_script, platform=platform, goal=intent,
-                    awareness=_merged_awareness_for(req),
+                    awareness=effective_awareness,
                 )))
                 text = dist.caption
                 posting_time = getattr(dist, "posting_time", "") or ""
@@ -5360,6 +5426,8 @@ async def maxcore_generate_image(req: MaxcoreMediaRequest, _key = Depends(requir
     outputs = []
     for slot in slots:
         platform = slot.get("platform", "instagram")
+        effective_awareness = _effective_awareness(
+            normalize_platform(platform), _merged_awareness_for(req))
         slot_id = slot.get("id", "")
         rules = _platform_rules.get(platform, {}).get("image", {})
         aspect_ratio = rules.get("recommended") or (rules.get("aspectRatios") or ["1:1"])[0]
@@ -5376,7 +5444,7 @@ async def maxcore_generate_image(req: MaxcoreMediaRequest, _key = Depends(requir
                     idea=topic,
                     platform=normalize_platform(platform),
                     tone=style_tags[0] if style_tags else "cinematic",
-                    awareness=_merged_awareness_for(req),
+                    awareness=effective_awareness,
                 )))
                 concept = getattr(vis, "thumbnail_concept", concept) or concept
             except Exception:
@@ -5417,6 +5485,8 @@ async def maxcore_generate_audio(req: MaxcoreMediaRequest, _key = Depends(requir
     outputs = []
     for slot in slots:
         platform = slot.get("platform", "general")
+        effective_awareness = _effective_awareness(
+            normalize_platform(platform), _merged_awareness_for(req))
         slot_id = slot.get("id", "")
         rules = _platform_rules.get(platform, {}).get("audio", {})
 
@@ -5436,7 +5506,7 @@ async def maxcore_generate_audio(req: MaxcoreMediaRequest, _key = Depends(requir
                     platform=normalize_platform(platform),
                     goal="engagement",
                     tone=style,
-                    awareness=_merged_awareness_for(req),
+                    awareness=effective_awareness,
                 )))
                 script_text = res.hook
             except Exception:
@@ -5480,6 +5550,8 @@ async def maxcore_generate_video(req: MaxcoreMediaRequest, _key = Depends(requir
     outputs = []
     for slot in slots:
         platform = slot.get("platform", "youtube")
+        effective_awareness = _effective_awareness(
+            normalize_platform(platform), _merged_awareness_for(req))
         slot_id = slot.get("id", "")
         params = step.get("params", {})
         rules = _platform_rules.get(platform, {}).get("video", {})
@@ -5506,7 +5578,7 @@ async def maxcore_generate_video(req: MaxcoreMediaRequest, _key = Depends(requir
                     platform=normalize_platform(platform),
                     goal="engagement",
                     tone=tone,
-                    awareness=_merged_awareness_for(req),
+                    awareness=effective_awareness,
                 )))
                 hook_line = res.hook or hook_line
                 body_line = getattr(res, "body", "") or ""
@@ -5697,7 +5769,7 @@ class AdRecordRequest(BaseModel):
     run_id: Optional[str] = None
 
 
-class AdGenerateRequest(BaseModel):
+class AdGenerateRequest(_AwarenessMixin):
     user_id: str
     platform: str = "meta"
     ad_type: str = "video"
@@ -5726,12 +5798,11 @@ class AdGenerateRequest(BaseModel):
     target_subtypes: Optional[List[str]] = None
     # Awareness-bridge fields — wired into ScriptRequest so the awareness
     # conditioning layer can push creative quality toward the 100/100 standard.
-    awareness: Optional[Any] = None
     instruction: Optional[str] = None
     content_themes: Optional[List[str]] = None
 
 
-class AdAutopilotRequest(BaseModel):
+class AdAutopilotRequest(_AwarenessMixin):
     user_id: str
     platform: Optional[str] = None
     budget_total: Optional[float] = None
@@ -5739,7 +5810,7 @@ class AdAutopilotRequest(BaseModel):
     current_campaigns: List[dict] = []
 
 
-class AdAudienceRequest(BaseModel):
+class AdAudienceRequest(_AwarenessMixin):
     user_id: str
     platform: str = "meta"
     product: str
@@ -7180,7 +7251,7 @@ class ApiGenerateVideoRequest(_AwarenessMixin):
                                             # user audio is supplied (native-audio parity)
 
 
-class ApiVideoExtendRequest(BaseModel):
+class ApiVideoExtendRequest(_AwarenessMixin):
     """Veo-parity video extension: continue a previously generated video.
 
     The last frame of the source video is extracted and used as the
@@ -7448,7 +7519,7 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
         #      so this path never actually fed the bridge.
         # `brief.directives` are deliberately excluded: they are internal
         # prompt-engineering instructions the parser would quote verbatim.
-        _merged_awareness = _ctx.awareness
+        _merged_awareness = _effective_awareness(_plat, _ctx.awareness)
 
         if _model_ready and _script_agent:
             from ai_model.agents.script_agent import ScriptRequest
@@ -7610,8 +7681,7 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
         # a coarser key (platform/topic/tone/goal/awareness only) collapsed
         # concurrent calls that differed by instruction/max_chars/variants
         # into one leader's result (identical hooks, untrimmed captions).
-        from ai_model.generation import merge_awareness as _merge_awareness
-        _awareness_key = _merge_awareness(req)
+        _awareness_key = _effective_awareness(platform, _merged_awareness_for(req))
         _key = {
             "platform": platform,
             "topic":    topic,
@@ -7793,7 +7863,8 @@ async def api_generate_campaign(req: ApiGenerateCampaignRequest, _key=Depends(re
             image_fn=image_fn,
             teaser_fn=teaser_fn,
             seed=abs(hash(f"{artist}|{req.title}")) % 100000,
-            awareness=_campaign_awareness,
+            awareness=_effective_awareness(
+                normalize_platform(platform), _campaign_awareness),
         )
 
     # Asset generation renders images inline (blocking PIL work), so run the
@@ -7997,7 +8068,7 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
         # Keep `idea` clean: internal directives are not real-world awareness.
         sr = _script_agent.run(ScriptRequest(
             idea=idea, platform=platform, goal=intent, tone=brief.tone,
-            awareness=_ctx.awareness,
+            awareness=_effective_awareness(platform, _ctx.awareness),
         ))
         source = str(getattr(sr, "source", "") or "").lower()
         if source not in {"model", "ai_model"}:
@@ -8049,7 +8120,8 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
             "topic":    getattr(req, "topic", "") or getattr(req, "idea", ""),
             "tone":     getattr(req, "tone", "") or "",
             "goal":     getattr(req, "goal", "") or "",
-            "awareness": str(getattr(req, "awareness", "") or ""),
+            "awareness": _effective_awareness(
+                platform, _merged_awareness_for(req)),
             "platform_optimization": _platform_optimization_awareness(req),
         }
         async def _coalesced_social():
@@ -8701,6 +8773,8 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
         if isinstance(slot, str):
             slot = {"id": slot, "platform": slot}
         platform  = slot.get("platform", "instagram")
+        _slot_awareness = _effective_awareness(
+            normalize_platform(platform), _img_awareness)
         slot_id   = slot.get("id", "default")
         purpose   = slot.get("purpose", intent)
 
@@ -8779,7 +8853,7 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
                     idea=str(topic),
                     platform=normalize_platform(platform),
                     tone=slot_style_tags[0] if slot_style_tags else brief.tone,
-                    awareness=_img_awareness,
+                    awareness=_slot_awareness,
                 )))
                 layout       = vis.layout or layout
                 color_scheme = vis.color_scheme or color_scheme
@@ -9623,6 +9697,8 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
     """Async audio generation — style-conditioned via AI model for concept, BPM/key, creative direction."""
     # Coalesce: identical concurrent submissions (same genre/intent/bpm/key/duration)
     # share one job rather than spawning 90M separate audio renders.
+    _effective_audio_awareness = _effective_awareness(
+        "general", _merged_awareness_for(req))
     _adigest = _job_digest({
         "type":       "audio",
         "genre":      req.genre or "",
@@ -9630,6 +9706,7 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
         "target_bpm": req.target_bpm,
         "target_key": req.target_key or "",
         "duration":   req.duration,
+        "awareness":  _effective_audio_awareness,
     })
     with _active_jobs_lock:
         _existing_id = _active_jobs.get(_adigest)
@@ -9697,7 +9774,7 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
     # intent layer) and reuse it everywhere below.  This ensures genre/mood/BPM
     # conditioning draws from the live Deezer chart signals and quality-awareness
     # buffer, not just from the raw caller-supplied field (which is often empty).
-    _merged_aw_handler = _merged_awareness_for(req)
+    _merged_aw_handler = _effective_audio_awareness
     brief = ri.build_brief(
         modality="audio", platform="general",
         topic=f"{genre_hint} {req.intent or req.instrument or 'music clip'}",
@@ -10185,6 +10262,8 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
     """
     # ── Request intelligence: analyse intent & cinematic strategy up front ─
     from ai_model import request_intelligence as ri
+    effective_awareness = _effective_awareness(
+        normalize_platform(platform), _merged_awareness_for(req))
     brief = ri.build_brief(
         modality="video", platform=normalize_platform(platform),
         topic=_resolve_topic_from_url(req.topic or req.idea), goal=req.goal, tone=req.tone, genre=req.genre,
@@ -10192,7 +10271,7 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
         extra=" ".join(filter(None, [req.hook, req.body, req.cta])),
         mood=req.mood, bpm=req.bpm, key=req.key,
         artist_profile_id=req.artistProfileId,
-        awareness=_merged_awareness_for(req),
+        awareness=effective_awareness,
         # ── Veo-parity controls into the intelligence brief ──────────────
         negative_prompt=req.negative_prompt or "",
         enhance_prompt=req.enhance_prompt if req.enhance_prompt is not None else True,
@@ -10245,7 +10324,7 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
                 artist_name=req.artist_name or "",
                 duration=float(req.duration or 0),
                 artist_context={"audio_path": req.user_audio_path} if req.user_audio_path else {},
-                awareness=_merged_awareness_for(req),
+                awareness=effective_awareness,
                 # ── Veo-parity controls forwarded into the render pipeline ─
                 camera_motion=req.camera_motion or "",
                 negative_prompt=req.negative_prompt or "",
@@ -10533,6 +10612,8 @@ async def api_video_extend(req: ApiVideoExtendRequest, request: Request, _key=De
         raise HTTPException(status_code=404, detail=f"source video not found: {req.source}")
 
     add_dur = max(2.0, min(60.0, float(req.extend_duration or 8.0)))
+    effective_awareness = _effective_awareness(
+        normalize_platform(req.platform), _merged_awareness_for(req))
     job_id = str(uuid.uuid4())
     _job_write(job_id, {
         "status":        "pending",
@@ -10598,7 +10679,7 @@ async def api_video_extend(req: ApiVideoExtendRequest, request: Request, _key=De
                 color_temperature=req.color_temperature or "",
                 composition=req.composition or "",
                 first_frame_b64=first_frame_b64,
-                awareness=_merged_awareness_for(req),
+                awareness=effective_awareness,
             )
             production = agent.plan(agent_req)
             production.total_duration = add_dur
@@ -10763,6 +10844,7 @@ async def api_video_generate_ai(request: Request, _key=Depends(require_scope("ge
         mood=str(body.get("mood") or "") or None,
         bpm=body.get("bpm"), key=str(body.get("key") or "") or None,
         artist_profile_id=str(body.get("artistProfileId") or "") or None,
+        awareness=_effective_video_awareness,
     )
 
     from ai_model.video.video_agent import VideoAgent as _VA, VideoAgentRequest

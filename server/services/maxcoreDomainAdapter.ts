@@ -19,6 +19,9 @@ export interface SocialGenerationRequest {
   extraContext?: string;
   contentThemes?: string[];
   awareness?: unknown;
+  intent?: unknown;
+  direction?: unknown;
+  context?: unknown;
 }
 
 export interface MaxCoreSocialVariant {
@@ -55,6 +58,9 @@ export interface AdsGenerationRequest {
   varySubtypes?: boolean;
   targetSubtypes?: string[];
   awareness?: unknown;
+  intent?: unknown;
+  direction?: unknown;
+  context?: unknown;
   instruction?: string;
   contentThemes?: string[];
 }
@@ -129,6 +135,9 @@ export async function getSocialAutopilotDirect(
     extraContext?: string;
     contentThemes?: string[];
     awareness?: unknown;
+    intent?: unknown;
+    direction?: unknown;
+    context?: unknown;
   },
   transport: MaxCoreTransport = defaultTransport,
 ): Promise<MaxCoreSocialAutopilot> {
@@ -143,6 +152,9 @@ export async function getSocialAutopilotDirect(
       extra_context: request.extraContext,
       content_themes: request.contentThemes,
       awareness: request.awareness,
+      intent: request.intent,
+      direction: request.direction,
+      context: request.context,
     },
   );
   const recommendations =
@@ -261,6 +273,10 @@ export async function getAdsAutopilotDirect(
     budgetTotal?: number;
     goal?: string;
     currentCampaigns?: Array<Record<string, unknown>>;
+    intent?: unknown;
+    direction?: unknown;
+    context?: unknown;
+    awareness?: unknown;
   },
   transport: MaxCoreTransport = defaultTransport,
 ): Promise<Record<string, unknown>> {
@@ -272,6 +288,10 @@ export async function getAdsAutopilotDirect(
       budget_total: request.budgetTotal,
       goal: request.goal ?? "streams",
       current_campaigns: request.currentCampaigns ?? [],
+      intent: request.intent,
+      direction: request.direction,
+      context: request.context,
+      awareness: request.awareness,
     },
   );
   if (!raw || raw.success !== true || !Array.isArray(raw.next_campaigns)) {
@@ -288,6 +308,10 @@ export async function getAdsAudienceDirect(
     goal?: string;
     genre?: string;
     budgetDaily?: number;
+    intent?: unknown;
+    direction?: unknown;
+    context?: unknown;
+    awareness?: unknown;
   },
   transport: MaxCoreTransport = defaultTransport,
 ): Promise<Record<string, unknown>> {
@@ -300,6 +324,10 @@ export async function getAdsAudienceDirect(
       goal: request.goal ?? "streams",
       genre: request.genre,
       budget_daily: request.budgetDaily,
+      intent: request.intent,
+      direction: request.direction,
+      context: request.context,
+      awareness: request.awareness,
     },
   );
   const cold =
@@ -352,6 +380,9 @@ export async function generateSocialDirect(
       extra_context: request.extraContext,
       content_themes: request.contentThemes,
       awareness: request.awareness,
+      intent: request.intent,
+      direction: request.direction,
+      context: request.context,
     },
   );
   if (!raw || raw.success !== true || !Array.isArray(raw.variants)) {
@@ -425,6 +456,9 @@ export async function generateAdsDirect(
       vary_subtypes: request.varySubtypes ?? true,
       target_subtypes: request.targetSubtypes,
       awareness: request.awareness,
+      intent: request.intent,
+      direction: request.direction,
+      context: request.context,
       instruction: request.instruction,
       content_themes: request.contentThemes,
     },

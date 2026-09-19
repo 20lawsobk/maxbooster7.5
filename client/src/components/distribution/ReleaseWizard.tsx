@@ -75,6 +75,13 @@ const metadataSchema = z.object({
   publishingRights: z.string().optional(),
   isExplicit: z.boolean(),
   moodTags: z.array(z.string()).optional(),
+  artworkAiUsage: z.enum(["none", "ai-generated"]).or(z.literal("")),
+  audioAiUsage: z.enum(["none", "ai-assisted"]).or(z.literal("")),
+  compositionAiUsage: z.enum(["none", "ai-assisted"]).or(z.literal("")),
+  composerName: z.string(),
+  acceptTerms: z.boolean(),
+  confirmRights: z.boolean(),
+  confirmYoutubeRights: z.boolean(),
 });
 
 const tracksSchema = z.object({
@@ -115,6 +122,13 @@ export function ReleaseWizard({
     publishingRights: "",
     isExplicit: false,
     moodTags: [] as string[],
+    artworkAiUsage: "" as "" | "none" | "ai-generated",
+    audioAiUsage: "" as "" | "none" | "ai-assisted",
+    compositionAiUsage: "" as "" | "none" | "ai-assisted",
+    composerName: "",
+    acceptTerms: false,
+    confirmRights: false,
+    confirmYoutubeRights: false,
   });
 
   const [audioFiles, setAudioFiles] = useState<any[]>([]);
@@ -189,6 +203,16 @@ export function ReleaseWizard({
       if (audioFiles.length === 0) {
         throw new Error("Please upload at least one track");
       }
+      if (
+        audioFiles.some(
+          (audioFile) =>
+            !String(audioFile.file?.name || "").toLowerCase().endsWith(".flac"),
+        )
+      ) {
+        throw new Error(
+          "Too Lost accepts FLAC audio only. Replace every non-FLAC track before submitting.",
+        );
+      }
 
       // Step 1: Create the release with JSON metadata (no files)
       const releasePayload = {
@@ -250,7 +274,9 @@ export function ReleaseWizard({
         });
       }
 
-      // Step 4: Submit to LabelGrid for actual distribution.
+      // Step 4: Submit through the server's distribution endpoint.
+      // Keep provider naming out of this client message because provider
+      // dispatch is owned by the server endpoint, not this component.
       // The server endpoint validates UPC/ISRC/platform selection and creates dispatch records.
       // ISRCs are auto-generated during track upload; UPC during release create.
       let submissionStatus: "submitted" | "saved-as-draft" = "saved-as-draft";
@@ -265,7 +291,7 @@ export function ReleaseWizard({
           const submissionResult = await submissionResponse.json();
           if (!submissionResult.success) {
             throw new Error(
-              "LabelGrid did not accept this release for any selected platform. Review the per-platform delivery status.",
+              "The distributor did not accept this release for any selected platform. Review the per-platform delivery status.",
             );
           }
           submissionStatus = "submitted";
@@ -436,6 +462,70 @@ export function ReleaseWizard({
           return false;
         }
         return true;
+      case 6: {
+        const missing = [
+          metadataData.artworkAiUsage,
+          metadataData.audioAiUsage,
+          metadataData.compositionAiUsage,
+        ].some((value) => !value);
+        if (missing) {
+          toast({
+            title: "AI declarations required",
+            description:
+              "Complete the artwork, recording, and composition declarations before submitting to Too Lost.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        if (
+          [
+            metadataData.artworkAiUsage,
+            metadataData.audioAiUsage,
+            metadataData.compositionAiUsage,
+          ].some((value) => value !== "none")
+        ) {
+          toast({
+            title: "AI documentation required",
+            description:
+              "Too Lost requires AI documentation for AI-assisted content. This wizard cannot collect those provider files yet, so submission is blocked without changing your declaration.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        if (!metadataData.composerName.trim()) {
+          toast({
+            title: "Composer required",
+            description:
+              "Enter the truthful composer name required for each track's Too Lost writer credit.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        if (!metadataData.acceptTerms || !metadataData.confirmRights) {
+          toast({
+            title: "Confirmations required",
+            description:
+              "Accept Too Lost's terms and confirm that you hold the rights before submitting.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        if (
+          selectedPlatforms.some((platform) =>
+            platform.toLowerCase().includes("youtube"),
+          ) &&
+          !metadataData.confirmYoutubeRights
+        ) {
+          toast({
+            title: "YouTube rights confirmation required",
+            description:
+              "Confirm YouTube rights for this release or remove YouTube from the selected stores.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+      }
       default:
         return true;
     }
@@ -696,6 +786,96 @@ export function ReleaseWizard({
                   <p className="text-sm">
                     {releaseDate ? releaseDate.toLocaleDateString() : "Not set"}
                   </p>
+                </div>
+
+                <div className="space-y-4 rounded-lg border p-4">
+                  <div>
+                    <h4 className="font-medium">Required Too Lost AI declarations</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Select the truthful answer for this release. These declarations
+                      are sent to Too Lost and are never inferred.
+                    </p>
+                  </div>
+                  {[
+                    ["artworkAiUsage", "Cover artwork"],
+                    ["audioAiUsage", "Audio recordings"],
+                    ["compositionAiUsage", "Musical compositions"],
+                  ].map(([field, label]) => (
+                    <div key={field} className="grid gap-2 sm:grid-cols-2 sm:items-center">
+                      <Label htmlFor={field}>{label}</Label>
+                      <select
+                        id={field}
+                        className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        value={metadataData[field]}
+                        onChange={(event) =>
+                          setMetadataData({
+                            ...metadataData,
+                            [field]: event.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select a declaration</option>
+                        <option value="none">No AI involvement</option>
+                        <option
+                          value={
+                            field === "artworkAiUsage"
+                              ? "ai-generated"
+                              : "ai-assisted"
+                          }
+                        >
+                          {field === "artworkAiUsage"
+                            ? "Artwork is AI-generated"
+                            : "AI-assisted"}
+                        </option>
+                      </select>
+                    </div>
+                  ))}
+                  <div className="grid gap-2 sm:grid-cols-2 sm:items-center">
+                    <Label htmlFor="composerName">Composer name</Label>
+                    <Input
+                      id="composerName"
+                      value={metadataData.composerName}
+                      onChange={(event) =>
+                        setMetadataData({
+                          ...metadataData,
+                          composerName: event.target.value,
+                        })
+                      }
+                      placeholder="Legal or credited composer name"
+                    />
+                  </div>
+                  {[
+                    [
+                      "acceptTerms",
+                      "I accept Too Lost's submission terms",
+                    ],
+                    [
+                      "confirmRights",
+                      "I confirm I hold the rights to distribute this release",
+                    ],
+                    ...(selectedPlatforms.some((platform) =>
+                      platform.toLowerCase().includes("youtube"),
+                    )
+                      ? [[
+                          "confirmYoutubeRights",
+                          "I confirm I hold the required YouTube rights",
+                        ]]
+                      : []),
+                  ].map(([field, label]) => (
+                    <div key={field} className="flex items-center justify-between gap-4">
+                      <Label htmlFor={field}>{label}</Label>
+                      <Switch
+                        id={field}
+                        checked={Boolean(metadataData[field])}
+                        onCheckedChange={(checked) =>
+                          setMetadataData({
+                            ...metadataData,
+                            [field]: checked,
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
                 </div>
 
                 {createPreSave && (

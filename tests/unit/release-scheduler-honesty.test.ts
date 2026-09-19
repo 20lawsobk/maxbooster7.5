@@ -15,8 +15,17 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const limitMock = vi.fn();
-const returningMock = vi.fn();
+const {
+  limitMock,
+  returningMock,
+  findReleaseMock,
+  submitToProviderMock,
+} = vi.hoisted(() => ({
+  limitMock: vi.fn(),
+  returningMock: vi.fn(),
+  findReleaseMock: vi.fn(),
+  submitToProviderMock: vi.fn(),
+}));
 
 const chain: any = {
   from: vi.fn(() => chain),
@@ -33,6 +42,11 @@ vi.mock("../../server/db", () => ({
     select: vi.fn(() => chain),
     insert: vi.fn(() => chain),
     update: vi.fn(() => chain),
+    query: {
+      releases: {
+        findFirst: findReleaseMock,
+      },
+    },
   },
 }));
 
@@ -43,6 +57,12 @@ vi.mock("../../server/logger.js", () => ({
 vi.mock("../../server/services/releaseWorkflowService.js", () => ({
   releaseWorkflowService: {
     publish: vi.fn(),
+  },
+}));
+
+vi.mock("../../server/services/distributionService.js", () => ({
+  distributionService: {
+    submitToProvider: submitToProviderMock,
   },
 }));
 
@@ -67,6 +87,8 @@ describe("releaseScheduler.processScheduledActions honesty", () => {
   beforeEach(() => {
     limitMock.mockReset();
     chain.set.mockClear();
+    findReleaseMock.mockReset();
+    submitToProviderMock.mockReset();
     (releaseWorkflowService.publish as any).mockReset();
   });
 
@@ -130,17 +152,71 @@ describe("releaseScheduler.processScheduledActions honesty", () => {
     );
   });
 
-  it("marks a platform_publish action unsupported instead of completed", async () => {
+  it("marks a platform_publish action completed only after provider submission succeeds", async () => {
     limitMock.mockResolvedValueOnce([
-      makeAction({ id: "action-2", actionType: "platform_publish" }),
+      makeAction({
+        id: "action-2",
+        actionType: "platform_publish",
+        metadata: { platform: "spotify" },
+      }),
     ]);
+    findReleaseMock.mockResolvedValueOnce({
+      id: "release-1",
+      userId: "artist-1",
+    });
+    submitToProviderMock.mockResolvedValueOnce({
+      success: true,
+      dispatchId: "dispatch-1",
+      estimatedLiveDate: "2026-10-01",
+    });
+
+    const result = await releaseScheduler.processScheduledActions();
+
+    expect(result).toEqual({ processed: 1, errors: 0, unsupported: 0 });
+    expect(releaseWorkflowService.publish).not.toHaveBeenCalled();
+    expect(submitToProviderMock).toHaveBeenCalledWith(
+      "release-1",
+      "spotify",
+      "artist-1",
+    );
+    expect(chain.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          dispatchId: "dispatch-1",
+          estimatedLiveDate: "2026-10-01",
+        }),
+      }),
+    );
+    expect(chain.set).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "completed" }),
+    );
+  });
+
+  it("marks platform_publish unsupported when provider submission fails", async () => {
+    limitMock.mockResolvedValueOnce([
+      makeAction({
+        id: "action-provider-fail",
+        actionType: "platform_publish",
+        metadata: { platform: "spotify" },
+      }),
+    ]);
+    findReleaseMock.mockResolvedValueOnce({
+      id: "release-1",
+      userId: "artist-1",
+    });
+    submitToProviderMock.mockResolvedValueOnce({
+      success: false,
+      reason: "provider unavailable",
+    });
 
     const result = await releaseScheduler.processScheduledActions();
 
     expect(result).toEqual({ processed: 0, errors: 0, unsupported: 1 });
-    expect(releaseWorkflowService.publish).not.toHaveBeenCalled();
     expect(chain.set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "unsupported" }),
+      expect.objectContaining({
+        status: "unsupported",
+        metadata: expect.objectContaining({ error: "provider unavailable" }),
+      }),
     );
     expect(chain.set).not.toHaveBeenCalledWith(
       expect.objectContaining({ status: "completed" }),

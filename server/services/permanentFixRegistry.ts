@@ -131,6 +131,12 @@ interface Overrides {
   heapPatchRatio: number;
 }
 
+export interface RecordFixOutcome {
+  status: "unsupported" | "recorded" | "promoted" | "at-bound";
+  patternId: string;
+  sessionCount: number;
+}
+
 const DEFAULTS: Overrides = {
   pdimGapFloorMs: 1, // PDIM rated for 120M req/s — no artificial floor
   luaWaitMs: 55_000,
@@ -140,7 +146,7 @@ const DEFAULTS: Overrides = {
 
 // ── Registry ─────────────────────────────────────────────────────────────────
 
-class PermanentFixRegistry {
+export class PermanentFixRegistry {
   private _sessionCounts = new Map<string, number>();
   private _sessionStartMs = Date.now();
 
@@ -175,15 +181,13 @@ class PermanentFixRegistry {
       this._pdimGet = (k) =>
         (client as unknown as Record<string, unknown>).get(k).catch(() => null);
       this._pdimSet = async (k, v) => {
-        await (client as unknown as Record<string, unknown>).set(k, v).catch(() => {});
+        await (client as unknown as Record<string, unknown>).set(k, v);
       };
       this._pdimLpush = async (k, v) => {
-        await (client as unknown as Record<string, unknown>).lpush(k, v).catch(() => {});
+        await (client as unknown as Record<string, unknown>).lpush(k, v);
       };
       this._pdimLtrim = async (k, s, e) => {
-        await (client as unknown as Record<string, unknown>)
-          .ltrim(k, s, e)
-          .catch(() => {});
+        await (client as unknown as Record<string, unknown>).ltrim(k, s, e);
       };
     } catch {
       // PDIM not available — run in-memory only
@@ -467,9 +471,11 @@ class PermanentFixRegistry {
 
   // ── Core: record a fix and escalate if threshold crossed ───────────────────
 
-  recordFix(patternId: string): void {
+  async recordFix(patternId: string): Promise<RecordFixOutcome> {
     const target = ESCALATION_MAP[patternId];
-    if (!target) return;
+    if (!target) {
+      return { status: "unsupported", patternId, sessionCount: 0 };
+    }
 
     const prev = this._sessionCounts.get(patternId) ?? 0;
     const next = prev + 1;
@@ -477,15 +483,16 @@ class PermanentFixRegistry {
 
     const threshold = target.threshold ?? 5;
     if (next >= threshold && next % threshold === 0) {
-      this._escalate(patternId, target, next).catch(() => {});
+      return this._escalate(patternId, target, next);
     }
+    return { status: "recorded", patternId, sessionCount: next };
   }
 
   private async _escalate(
     patternId: string,
     target: EscalationTarget,
     sessionCount: number,
-  ): Promise<void> {
+  ): Promise<RecordFixOutcome> {
     const oldValue = this._overrides[target.key] as number;
     const rawNew = oldValue + target.delta;
     const newValue =
@@ -497,14 +504,15 @@ class PermanentFixRegistry {
       logger.info(
         `[PermanentFixer] ${patternId} → ${target.label} already at bound (${oldValue}), no further escalation`,
       );
-      return;
+      return {
+        status: "at-bound",
+        patternId,
+        sessionCount,
+      };
     }
 
-    (this._overrides as unknown as Record<string, unknown>)[target.key] = newValue;
-    this._escalationsThisSession++;
-    this._escalationsAllTime++;
-
     const threshold = target.threshold ?? 5;
+    const nextAllTime = this._escalationsAllTime + 1;
     const entry: AuditEntry = {
       ts: Date.now(),
       patternId,
@@ -517,29 +525,43 @@ class PermanentFixRegistry {
       reason: `Pattern '${patternId}' fired ${sessionCount}× this session (threshold=${threshold})`,
     };
 
-    this._audit.unshift(entry);
-    if (this._audit.length > this._MAX_AUDIT)
-      this._audit.length = this._MAX_AUDIT;
-
-    logger.warn(
-      `[PermanentFixer] 🔧 PERMANENT FIX: '${patternId}' triggered ${sessionCount}× → ` +
-        `${target?.label} ${oldValue} → ${newValue} (saved to PDIM, applied immediately)`,
-    );
-
-    await this._applyOverridesToModules();
-
     const set = this._pdimSet;
     const lpush = this._pdimLpush;
     const ltrim = this._pdimLtrim;
     if (set) {
       const pdimKey = this._overrideKeyToPdim(target?.key);
+      // Write metadata first and the effective override last. If the effective
+      // write rejects, no in-memory/live promotion is claimed.
+      await set(`${PFR}escalations_all_time`, String(nextAllTime));
       await set(`${PFR}override:${pdimKey}`, String(newValue));
-      await set(`${PFR}escalations_all_time`, String(this._escalationsAllTime));
+    } else {
+      throw new Error("PDIM unavailable; durable promotion was not persisted");
     }
+
+    (this._overrides as unknown as Record<string, unknown>)[target.key] = newValue;
+    this._escalationsThisSession++;
+    this._escalationsAllTime = nextAllTime;
+    this._audit.unshift(entry);
+    if (this._audit.length > this._MAX_AUDIT)
+      this._audit.length = this._MAX_AUDIT;
+
+    await this._applyOverridesToModules();
+    logger.warn(
+      `[PermanentFixer] 🔧 PERMANENT FIX: '${patternId}' triggered ${sessionCount}× → ` +
+        `${target?.label} ${oldValue} → ${newValue} (saved to PDIM, applied immediately)`,
+    );
+
     if (lpush && ltrim) {
-      await lpush(`${PFR}audit`, JSON.stringify(entry));
-      await ltrim(`${PFR}audit`, 0, this._MAX_AUDIT - 1);
+      try {
+        await lpush(`${PFR}audit`, JSON.stringify(entry));
+        await ltrim(`${PFR}audit`, 0, this._MAX_AUDIT - 1);
+      } catch (err) {
+        logger.warn(
+          `[PermanentFixer] Override persisted but audit persistence failed: ${(err as Error).message}`,
+        );
+      }
     }
+    return { status: "promoted", patternId, sessionCount };
   }
 
   private _overrideKeyToPdim(key: string): string {

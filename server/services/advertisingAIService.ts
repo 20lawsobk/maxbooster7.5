@@ -146,10 +146,6 @@ export class AdvertisingAIService {
       ((creative as Record<string, unknown>).headline as string) ||
       ((creative as Record<string, unknown>).description as string) ||
       "music artist promotion";
-    // Best-effort live trend/industry signal — additive only, never blocks
-    // or fails generation on timeout/failure.
-    const { getAwarenessContext } = await import("./awarenessContext.js");
-    const adAwareness = await getAwarenessContext("advertising");
     const userId = String(
       (creative as Record<string, unknown>).userId ??
         (campaign as Record<string, unknown>).userId ??
@@ -169,7 +165,18 @@ export class AdvertisingAIService {
       goal: campaign.objective ?? "streams",
       budgetDaily: campaign.budget,
       numCreatives: Math.max(1, Math.min(10, platforms.length || 1)),
-      awareness: adAwareness?.contextString,
+      intent:
+        (creative as Record<string, unknown>).intent ??
+        (campaign as Record<string, unknown>).intent,
+      direction:
+        (creative as Record<string, unknown>).direction ??
+        (campaign as Record<string, unknown>).direction,
+      context:
+        (creative as Record<string, unknown>).context ??
+        (campaign as Record<string, unknown>).context,
+      awareness:
+        (creative as Record<string, unknown>).awareness ??
+        (campaign as Record<string, unknown>).awareness,
     });
     const adCreative = mcAd.creatives[0];
     const targeting = mcAd.targeting;

@@ -157,12 +157,20 @@ def _compose_body_cta(
     """
     try:
         from ai_model import request_intelligence as ri
+        # Campaign requests carry a platform list rather than one ``platform``
+        # field, so the server-level merge cannot append a slot-local quality
+        # profile.  Add that real MaxCore layer at the actual per-post consumer.
+        from ai_model.quality_awareness import platform_awareness_string
+        platform_awareness = platform_awareness_string(platform)
+        effective_awareness = "\n".join(
+            part for part in (awareness, platform_awareness) if part
+        )
         brief = ri.build_brief(
             modality="content", platform=platform, topic=title, goal=goal,
             tone=tone, genre=genre, artist=artist,
             extra=" ".join(filter(None, [brand_voice, target_audience])),
             themes=[theme] if theme else None, track=title,
-            awareness=awareness,
+            awareness=effective_awareness,
         )
         composed = ri.compose_caption(
             title, artist, brief, genre=genre, brand_voice=brand_voice, variants=4,

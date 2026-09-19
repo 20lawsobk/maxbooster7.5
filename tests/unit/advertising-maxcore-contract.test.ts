@@ -30,6 +30,10 @@ describe("advertising MaxCore contracts", () => {
         contentType: "release",
       }, {
         platform: "tiktok",
+        intent: "launch",
+        direction: { energy: "restrained" },
+        context: { releaseId: "r1" },
+        awareness: { audience: "warm" },
       }),
     ).toMatchObject({
       user_id: "user-1",
@@ -41,6 +45,10 @@ describe("advertising MaxCore contracts", () => {
       genre: "electronic",
       instruction: expect.stringContaining("The selected release description"),
       content_themes: ["release", "Night Drive"],
+      intent: "launch",
+      direction: { energy: "restrained" },
+      context: { releaseId: "r1" },
+      awareness: { audience: "warm" },
     });
   });
 
@@ -60,6 +68,9 @@ describe("advertising MaxCore contracts", () => {
         goal: uiBody.goal,
         artist_name: uiBody.artist_name,
         style: "cinematic",
+        direction: { palette: "blue" },
+        context: { campaignId: "c1" },
+        awareness: { avoid: ["text overlay"] },
       }),
     ).toEqual({
       prompt: "new music release",
@@ -75,6 +86,9 @@ describe("advertising MaxCore contracts", () => {
       instruction: "Tone: energetic\nGoal: growth\nArtist: A. Artist",
       mood: "energetic",
       content_themes: ["energetic", "growth", "A. Artist"],
+      direction: { palette: "blue" },
+      context: { campaignId: "c1" },
+      awareness: { avoid: ["text overlay"] },
     });
   });
 

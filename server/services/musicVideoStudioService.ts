@@ -94,6 +94,10 @@ export interface MusicVideoStudioOptions {
   maxScenes?: number;       // cap scenes (default: use all detected sections)
   voiceSynthPath?: string;
   trendContext?: string;    // live awareness-layer trend hint, additive to scene prompts
+  intent?: unknown;
+  direction?: unknown;
+  context?: unknown;
+  awareness?: unknown;
 }
 
 export interface SceneResult {
@@ -378,6 +382,10 @@ export async function generateFullMusicVideo(
     duration: Math.round(beatAnalysis.durationSeconds),
     tone: artistStyle || "energetic",
     userId: opts.userId,
+    intent: opts.intent,
+    direction: opts.direction,
+    context: opts.context,
+    awareness: opts.awareness,
   });
   if (!maxCoreRender.success || !maxCoreRender.url) {
     return {

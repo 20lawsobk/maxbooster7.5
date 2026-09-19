@@ -1739,11 +1739,16 @@ export class SelfEvolutionEngine extends EventEmitter {
       );
 
       // Phase 5: Deploy upgrades with canary pattern
-      const deployedCount = await this.deployUpgrades(validatedUpgrades);
+      let deployedCount = await this.deployUpgrades(validatedUpgrades);
       logger.info(`   🚀 Deployed ${deployedCount} upgrades`);
 
       // Phase 6: Monitor post-deployment metrics
-      await this.monitorDeploymentHealth();
+      const appliedUpgradeIds = validatedUpgrades
+        .filter((upgrade) => upgrade.applied === true)
+        .map((upgrade) => upgrade.id);
+      const deploymentHealthy =
+        await this.monitorDeploymentHealth(appliedUpgradeIds);
+      if (!deploymentHealthy) deployedCount = 0;
 
       // Phase 7: Learn from results and improve
       await this.learnFromCycle(cycleId);
@@ -1761,6 +1766,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       this.lastCycleError = (error as Error).message || String(error);
       logger.warn({ err: error }, `❌ Evolution cycle ${cycleId} failed:`);
       this.emit("cycleFailed", { cycleId, error });
+      throw error;
     } finally {
       this.lastCycleAt = new Date();
       this.totalCyclesRun++;
@@ -2280,6 +2286,17 @@ export class SelfEvolutionEngine extends EventEmitter {
           payload: upgrade.enhancementPayload,
         });
 
+        if (!result?.enhancement) {
+          upgrade.status = "failed";
+          upgrade.applied = false;
+          upgrade.notAppliedReason =
+            result?.reason || "registry rejected payload";
+          logger.warn(
+            `   ❌ Apply rejected for ${upgrade?.id}: ${upgrade?.notAppliedReason}`,
+          );
+          continue;
+        }
+
         if (!result?.consumed) {
           // Stored in the registry, but no live subsystem reads this category
           // yet — be honest: this is NOT an applied behavior change.
@@ -2364,7 +2381,14 @@ export class SelfEvolutionEngine extends EventEmitter {
   // PHASE 6: MONITORING
   // ============================================
 
-  private async monitorDeploymentHealth(): Promise<void> {
+  private async monitorDeploymentHealth(
+    appliedUpgradeIds: string[],
+  ): Promise<boolean> {
+    // A health probe cannot validate an advisory-only/no-op cycle. More
+    // importantly, a failed probe in such a cycle must not roll back unrelated
+    // enhancements deployed by an earlier healthy cycle.
+    if (appliedUpgradeIds.length === 0) return true;
+
     try {
       const port = process.env.PORT || "5000";
       const start = Date.now();
@@ -2372,7 +2396,16 @@ export class SelfEvolutionEngine extends EventEmitter {
       const responseTime = await new Promise<number>((resolve, reject) => {
         const req = http?.get(`http://127.0.0.1:${port}/api/health`, (res) => {
           res.resume();
-          res.on("end", () => resolve(Date.now() - start));
+          res.on("end", () => {
+            const statusCode = res.statusCode ?? 0;
+            if (statusCode < 200 || statusCode >= 300) {
+              reject(
+                new Error(`Health check returned HTTP ${statusCode || "unknown"}`),
+              );
+              return;
+            }
+            resolve(Date.now() - start);
+          });
         });
         req.setTimeout(5000, () => {
           req.destroy();
@@ -2387,21 +2420,32 @@ export class SelfEvolutionEngine extends EventEmitter {
         logger.warn(
           `⚠️ Post-deployment health check slow: ${responseTime}ms — analyzing rollback need`,
         );
-        await this.analyzeRollbackNeed({ ...metrics, errorRate: 0.02 });
+        return !(
+          await this.analyzeRollbackNeed(
+            { ...metrics, errorRate: 0.02 },
+            appliedUpgradeIds,
+          )
+        );
       } else {
         logger.info(`   💚 Health check passed: ${responseTime}ms`);
+        return true;
       }
     } catch (e) {
       logger.warn(
         `⚠️ Health check failed (${(e as Error).message}) — analyzing rollback need`,
       );
-      await this.analyzeRollbackNeed({ errorRate: 0.1, responseTime: 9999 });
+      await this.analyzeRollbackNeed(
+        { errorRate: 0.1, responseTime: 9999 },
+        appliedUpgradeIds,
+      );
+      return false;
     }
   }
 
   private async analyzeRollbackNeed(
     metrics: Record<string, number>,
-  ): Promise<void> {
+    appliedUpgradeIds: string[],
+  ): Promise<boolean> {
     const needsRollback =
       metrics?.errorRate > 0.05 || metrics?.responseTime > 3000;
 
@@ -2409,28 +2453,50 @@ export class SelfEvolutionEngine extends EventEmitter {
       logger.warn(
         `🔙 CRITICAL: Initiating automatic rollback (errorRate=${metrics.errorRate.toFixed(3)}, responseTime=${metrics?.responseTime}ms)`,
       );
-      await this.performRollback();
+      await this.performRollback(appliedUpgradeIds);
+      return true;
     }
+    return false;
   }
 
-  private async performRollback(): Promise<void> {
+  private async performRollback(upgradeIds?: string[]): Promise<void> {
     logger.info(
       "🔙 Performing automatic rollback — deactivating all active registry enhancements...",
     );
 
-    // The REAL revert: deactivate every active registry enhancement so live
-    // subsystems fall back to real learned data / static defaults immediately.
+    // The REAL revert: a canary failure deactivates only enhancements from that
+    // deployment. A manual rollback with no IDs intentionally deactivates all.
     let revertedCount = 0;
     try {
-      revertedCount = await evolutionRegistry?.deactivateAll();
+      if (upgradeIds) {
+        for (const upgradeId of upgradeIds) {
+          revertedCount +=
+            await evolutionRegistry.deactivateByUpgrade(upgradeId);
+        }
+      } else {
+        revertedCount = await evolutionRegistry.deactivateAll();
+      }
     } catch (e) {
       logger.warn(
         { err: e },
         "   ❌ Failed to deactivate registry enhancements:",
       );
+      throw e;
     }
 
     if (revertedCount > 0) {
+      const rolledBackIds = upgradeIds ? new Set(upgradeIds) : null;
+      for (const upgrade of this.upgradeQueue) {
+        if (
+          upgrade.applied === true &&
+          (!rolledBackIds || rolledBackIds.has(upgrade.id))
+        ) {
+          upgrade.status = "rolled_back";
+          upgrade.applied = false;
+          upgrade.rollbackReason = "post-deployment health validation failed";
+          upgrade.notAppliedReason = upgrade.rollbackReason;
+        }
+      }
       logger.info(
         `🔙 Rollback complete — deactivated ${revertedCount} enhancement(s)`,
       );

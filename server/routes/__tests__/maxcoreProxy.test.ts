@@ -100,7 +100,14 @@ describe("MaxCore public proxy contract", () => {
       originalUrl: "/api/optimize/ad",
       path: "/api/optimize/ad",
       params: {},
-      body: { platform: "meta", campaign: { ctr: 0.02 } },
+      body: {
+        platform: "meta",
+        campaign: { ctr: 0.02 },
+        intent: "improve-retention",
+        direction: { preserve: "headline" },
+        context: { campaignId: "campaign-4" },
+        awareness: { fatigue: "high" },
+      },
       user: { id: "user-7", role: "artist" },
     };
     const res = responseDouble();
@@ -117,6 +124,10 @@ describe("MaxCore public proxy contract", () => {
         body: JSON.stringify({
           platform: "meta",
           campaign: { ctr: 0.02 },
+          intent: "improve-retention",
+          direction: { preserve: "headline" },
+          context: { campaignId: "campaign-4" },
+          awareness: { fatigue: "high" },
           user_id: "user-7",
           userId: "user-7",
         }),

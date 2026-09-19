@@ -24,7 +24,11 @@ import { storageService } from "../services/storageService";
 import * as codeGenerationService from "../services/distributionCodeGenerationService";
 import { distributionService } from "../services/distributionService";
 import { labelGridService, type LabelGridRelease, type LabelGridTrack } from "../services/labelgrid-service";
-import { toolostService } from "../services/toolost-service";
+import {
+  toolostService,
+  type ToolostRelease,
+  type ToolostTrack,
+} from "../services/toolost-service";
 import { musicCodesService } from "../services/musicCodes";
 import {
   labelCopyLinter,
@@ -149,6 +153,18 @@ async function getCatalogToolostConnection(userId: string): Promise<{
   }
 
   return null;
+}
+
+async function getDistributionToolostService(userId: string) {
+  const catalogConnection = await getCatalogToolostConnection(userId);
+  if (!catalogConnection?.connection) {
+    throw new Error(
+      "Too Lost is not connected. Connect a Too Lost distribution account before submitting releases.",
+    );
+  }
+  return toolostService.forUser(
+    catalogConnection.connection.connectedByUserId,
+  );
 }
 
 // Too Lost grants distribution access to the user who authorizes this flow.
@@ -308,6 +324,13 @@ const createReleaseSchema = z.object({
     .default("worldwide"),
   territories: z.array(z.string()).optional(),
   selectedPlatforms: z.array(z.string()).optional(),
+  artworkAiUsage: z.enum(["none", "ai-generated"]).optional(),
+  audioAiUsage: z.enum(["none", "ai-assisted"]).optional(),
+  compositionAiUsage: z.enum(["none", "ai-assisted"]).optional(),
+  composerName: z.string().max(120).optional(),
+  acceptTerms: z.boolean().optional(),
+  confirmRights: z.boolean().optional(),
+  confirmYoutubeRights: z.boolean().optional(),
 });
 
 const updateReleaseSchema = createReleaseSchema.partial();
@@ -383,6 +406,13 @@ router.post("/releases", requireAuth, async (req: Request, res: Response) => {
         territoryMode: data.territoryMode,
         territories: data.territories,
         selectedPlatforms: data.selectedPlatforms,
+        artworkAiUsage: data.artworkAiUsage,
+        audioAiUsage: data.audioAiUsage,
+        compositionAiUsage: data.compositionAiUsage,
+        composerName: data.composerName,
+        acceptTerms: data.acceptTerms,
+        confirmRights: data.confirmRights,
+        confirmYoutubeRights: data.confirmYoutubeRights,
       },
     });
 
@@ -531,6 +561,17 @@ router.delete(
       const releaseStatus = String(
         metadata?.status || release?.status || "draft",
       );
+      if (metadata?.toolostReleaseId && releaseStatus !== "draft") {
+        return res.status(501).json({
+          error: "Too Lost takedown is not available",
+          message:
+            "This release was not deleted locally because Too Lost's documented API does not expose a confirmed takedown operation. Contact support to request removal.",
+        });
+      }
+      if (metadata?.toolostReleaseId && releaseStatus === "draft") {
+        const toolost = await getDistributionToolostService(userId);
+        await toolost.deleteDraftRelease(metadata.toolostReleaseId as string);
+      }
       if (metadata?.labelGridReleaseId && releaseStatus !== "draft") {
         try {
           if (!labelGridService.isApiConfigured()) {
@@ -1463,19 +1504,42 @@ router.get(
         return res.status(404).json({ error: "Release not found" });
       }
 
-      // Get real-time status from LabelGrid if we have an external release ID
+      // New submissions use Too Lost; legacy LabelGrid IDs remain readable.
       const metadata = release.metadata as Record<string, unknown>;
-      let labelGridStatus = null;
+      let providerStatus: {
+        releaseId: string;
+        status: string;
+        estimatedLiveDate?: string;
+        platforms?: Array<{
+          platform: string;
+          status: string;
+          liveDate?: string;
+          errorMessage?: string;
+        }>;
+      } | null = null;
 
-      if (metadata.labelGridReleaseId) {
+      if (metadata.toolostReleaseId) {
         try {
-          labelGridStatus = await labelGridService.getReleaseStatus(
-            (metadata.labelGridReleaseId as string),
+          const toolost = await getDistributionToolostService(userId);
+          providerStatus = await toolost.getReleaseStatus(
+            metadata.toolostReleaseId as string,
           );
+        } catch (error: unknown) {
+          logger.warn({ err: error }, "Error fetching Too Lost status:");
+        }
+      } else if (metadata.labelGridReleaseId) {
+        try {
+          providerStatus = await labelGridService.getReleaseStatus(
+            metadata.labelGridReleaseId as string,
+          );
+        } catch (error: unknown) {
+          logger.warn({ err: error }, "Error fetching legacy LabelGrid status:");
+        }
+      }
 
-          // Update local database with latest status
-          if (labelGridStatus.platforms) {
-            for (const platformStatus of labelGridStatus.platforms) {
+      if (providerStatus?.platforms) {
+        try {
+            for (const platformStatus of providerStatus.platforms) {
               const gatewayStatus = platformStatus.status.toLowerCase();
               const localStatus = [
                 "unsupported",
@@ -1495,10 +1559,8 @@ router.get(
                 error: platformStatus.errorMessage,
               });
             }
-          }
         } catch (error: unknown) {
-          logger.warn({ err: error }, "Error fetching LabelGrid status:");
-          // Fall back to database status
+          logger.warn({ err: error }, "Error saving distributor status:");
         }
       }
 
@@ -1526,11 +1588,11 @@ router.get(
           lastChecked: (status as any).updatedAt,
         })),
         overallProgress: Math.round(overallProgress),
-        labelGridStatus: labelGridStatus
+        labelGridStatus: providerStatus
           ? {
-              releaseId: labelGridStatus.releaseId,
-              status: labelGridStatus.status,
-              estimatedLiveDate: labelGridStatus.estimatedLiveDate,
+              releaseId: providerStatus.releaseId,
+              status: providerStatus.status,
+              estimatedLiveDate: providerStatus.estimatedLiveDate,
             }
           : null,
       });
@@ -1962,10 +2024,8 @@ router.post(
         });
       }
 
-      // Platform choices come from the advertised local DSP catalog. Do not
-      // pre-filter them based on this LabelGrid account's configuration:
-      // LabelGrid is the gateway and is authoritative about whether it can
-      // accept each requested DSP.
+      // Platform choices originate from Too Lost's live catalog. Too Lost is
+      // authoritative about whether it accepts each requested destination.
       const selectedPlatforms = Array.from(
         new Set(
           (Array.isArray(metadata.selectedPlatforms)
@@ -1984,17 +2044,32 @@ router.post(
         });
       }
 
-      // Submit to LabelGrid — the authoritative distribution API
-      const lgPayload = await buildLabelGridPayload(
+      const toolost = await getDistributionToolostService(userId);
+      const liveCatalog = await toolost.getAvailableDSPs();
+      const selectedStores = selectedPlatforms.map((selected) => {
+        const match = liveCatalog.dsps.find(
+          (dsp) =>
+            dsp.slug === selected ||
+            dsp.id === selected ||
+            dsp.name.toLowerCase() === selected.toLowerCase(),
+        );
+        if (!match) {
+          throw new Error(
+            `Too Lost release blocked: selected store "${selected}" is not present in the connected account's live platform catalog.`,
+          );
+        }
+        return match.name;
+      });
+      const toolostPayload = buildToolostPayload(
         release,
         tracks,
-        selectedPlatforms,
+        selectedStores,
       );
       logger.info(
         { userId, platforms: selectedPlatforms },
-        `[Distribution] Submitting release ${id} to LabelGrid for ${selectedPlatforms.length} platform(s)`,
+        `[Distribution] Submitting release ${id} to Too Lost for ${selectedPlatforms.length} platform(s)`,
       );
-      const lgResult = await labelGridService.createRelease(lgPayload);
+      const toolostResult = await toolost.createRelease(toolostPayload);
 
       // Create dispatch records FIRST (in parallel), then mark the release as submitted.
       // This ordering prevents a window where the release is "submitted" but has no dispatch
@@ -2002,13 +2077,15 @@ router.post(
       const dispatchResults = await Promise.allSettled(
         selectedPlatforms.map(async (platformSlug) => {
           const provider = await storage.getDSPProviderBySlug(platformSlug);
-          const lgPlatformStatus = lgResult.platforms.find(
-            (p) =>
-              p.platform === platformSlug ||
-              p.platform.replace(/_/g, "-") === platformSlug ||
-              p.platform.replace(/-/g, "_") === platformSlug.replace(/-/g, "_"),
+          const requestedStore = selectedStores[selectedPlatforms.indexOf(platformSlug)];
+          const normalizeStore = (value: string) =>
+            value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+          const providerPlatformStatus = toolostResult.platforms.find(
+            (platform) =>
+              normalizeStore(platform.platform) ===
+              normalizeStore(requestedStore || platformSlug),
           );
-          const gatewayStatus = lgPlatformStatus?.status?.toLowerCase();
+          const gatewayStatus = providerPlatformStatus?.status?.toLowerCase();
           const accepted = [
             "queued",
             "pending",
@@ -2034,14 +2111,14 @@ router.post(
                     ? "rejected"
                     : "failed";
           const errorMessage =
-            lgPlatformStatus?.errorMessage ||
-            (!lgPlatformStatus
-              ? "LabelGrid did not report acceptance for this platform."
+            providerPlatformStatus?.errorMessage ||
+            (!providerPlatformStatus
+              ? "Too Lost did not report acceptance for this platform."
               : status === "not_supported"
                 ? "Not supported by distributor."
                 : status === "rejected"
                   ? "Rejected by distributor."
-                  : "LabelGrid did not accept this platform submission.");
+                   : "Too Lost did not accept this platform submission.");
           await storage.createDistroDispatch({
             releaseId: id,
             // Keep the gateway's platform slug alongside the local provider
@@ -2052,13 +2129,13 @@ router.post(
             platform: platformSlug,
             status,
             logs: JSON.stringify({
-              gatewayStatus: lgPlatformStatus?.status || "not_reported",
+              gatewayStatus: providerPlatformStatus?.status || "not_reported",
               errorMessage: accepted ? undefined : errorMessage,
               deliveredAt:
                 ["live", "delivered"].includes(gatewayStatus || "")
-                  ? (lgPlatformStatus?.liveDate || new Date().toISOString())
+                  ? (providerPlatformStatus?.liveDate || new Date().toISOString())
                   : undefined,
-              externalId: lgResult.releaseId,
+              externalId: toolostResult.releaseId,
             }),
           });
           return { platform: platformSlug, status, accepted, errorMessage };
@@ -2073,7 +2150,7 @@ router.post(
         );
       }
 
-      // Persist LabelGrid release ID and update status only after dispatch records exist.
+      // Persist the Too Lost release ID only after dispatch records exist.
       const submissionAccepted = dispatchResults.some(
         (result) => result.status === "fulfilled" && result.value?.accepted,
       );
@@ -2082,9 +2159,9 @@ router.post(
         metadata: {
           ...metadata,
           status: submissionAccepted ? "submitted" : "rejected",
-          labelGridReleaseId: lgResult.releaseId,
-          labelGridSubmittedAt: new Date().toISOString(),
-          labelGridEstimatedLiveDate: lgResult.estimatedLiveDate,
+          toolostReleaseId: toolostResult.releaseId,
+          toolostSubmittedAt: new Date().toISOString(),
+          toolostEstimatedLiveDate: toolostResult.estimatedLiveDate,
           dispatchedPlatformCount: dispatchResults.filter(
             (result) =>
               result.status === "fulfilled" && result.value?.accepted,
@@ -2096,19 +2173,19 @@ router.post(
       logger.info(
         {
           releaseId: id,
-          labelGridReleaseId: lgResult.releaseId,
+          toolostReleaseId: toolostResult.releaseId,
           userId,
           platforms: selectedPlatforms,
           trackCount: tracks.length,
         },
-        `Release ${id} submitted to LabelGrid (${lgResult.releaseId}) for ${(selectedPlatforms as any).length} platforms`,
+        `Release ${id} submitted to Too Lost (${toolostResult.releaseId}) for ${(selectedPlatforms as any).length} platforms`,
       );
 
       res.json({
         success: submissionAccepted,
-        message: "Release submitted to LabelGrid; review each platform's delivery status.",
-        labelGridReleaseId: lgResult.releaseId,
-        estimatedLiveDate: lgResult.estimatedLiveDate,
+        message: "Release submitted to Too Lost; review each platform's delivery status.",
+        toolostReleaseId: toolostResult.releaseId,
+        estimatedLiveDate: toolostResult.estimatedLiveDate,
         acceptedPlatformCount: dispatchResults.filter(
           (result) =>
             result.status === "fulfilled" && result.value?.accepted,
@@ -2134,7 +2211,7 @@ router.post(
               (result) =>
                 result.status === "fulfilled" && result.value?.accepted,
             ).length,
-            lgResult.estimatedLiveDate,
+            toolostResult.estimatedLiveDate,
           );
         } catch (err) {
           logger.warn(
@@ -2147,12 +2224,23 @@ router.post(
       logger.warn({ err: error }, "Error submitting release:");
       const message = error instanceof Error ? error.message : String(error);
       // createRelease throws descriptive, user-actionable messages for each
-      // real failure mode — surface them instead of a generic 500 so sellers
-      // know whether to fix their submission or that LabelGrid itself failed.
+      // real failure mode — surface them instead of a generic 500.
+      if (
+        message.startsWith("Too Lost release blocked:") ||
+        message.startsWith("Too Lost requires explicit AI-involvement")
+      ) {
+        return res.status(422).json({ error: message });
+      }
+      if (message.startsWith("Too Lost is not connected")) {
+        return res.status(409).json({ error: message });
+      }
       if (message.startsWith("LabelGrid release blocked:")) {
         return res.status(422).json({ error: message });
       }
       if (message.startsWith("LabelGrid API error:")) {
+        return res.status(502).json({ error: message });
+      }
+      if (message.startsWith("Too Lost API error:")) {
         return res.status(502).json({ error: message });
       }
       res.status(500).json({ error: "Failed to submit release", message });
@@ -2203,6 +2291,13 @@ router.post(
       );
 
       const metadata = (release.metadata || {}) as Record<string, unknown>;
+      if (metadata.toolostReleaseId) {
+        return res.status(501).json({
+          error: "Too Lost takedown is not available",
+          message:
+            "Too Lost's documented API does not expose a confirmed release takedown operation. No platform status was changed; contact support to request a takedown.",
+        });
+      }
       if (!metadata.labelGridReleaseId) {
         return res.status(409).json({
           error: "Release has not been submitted to a distributor",
@@ -4399,6 +4494,51 @@ router.get("/qc", requireAuth, async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Failed to fetch QC status" });
   }
 });
+
+// GET /api/distribution/qc/:releaseId — Read the latest persisted QC report.
+// Deliberately use the same 404 for missing and unowned releases so this route
+// cannot be used to enumerate another artist's catalog.
+router.get(
+  "/qc/:releaseId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = req.params as Record<string, string>;
+      const [release] = await db
+        .select({
+          id: distroReleases.id,
+          metadata: distroReleases.metadata,
+        })
+        .from(distroReleases)
+        .where(
+          and(
+            eq(distroReleases.id, releaseId),
+            eq(distroReleases.artistId, userId),
+          ),
+        )
+        .limit(1);
+
+      if (!release) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const metadata =
+        release.metadata && typeof release.metadata === "object"
+          ? (release.metadata as Record<string, unknown>)
+          : {};
+      const report = metadata.qcReport;
+      if (!report || typeof report !== "object") {
+        return res.json({ status: "not_run", report: null });
+      }
+
+      return res.json({ status: "complete", report });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching release QC report:");
+      return res.status(500).json({ error: "Failed to fetch QC report" });
+    }
+  },
+);
 
 // GET /api/distribution/takedowns — DMCA strikes that have not yet expired (active takedowns)
 router.get("/takedowns", requireAuth, async (req: Request, res: Response) => {
@@ -6715,10 +6855,34 @@ router.post(
   upload?.single("audio"),
   async (req: Request, res: Response) => {
     try {
-      const { releaseId, title, artist, isrc, artworkUrl } = req.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = req.body;
       if (!releaseId)
         return res.status(400).json({ error: "releaseId is required" });
 
+      const [release] = await db
+        .select()
+        .from(distroReleases)
+        .where(
+          and(
+            eq(distroReleases.id, releaseId),
+            eq(distroReleases.artistId, userId),
+          ),
+        )
+        .limit(1);
+      if (!release) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const tracks = await db
+        .select()
+        .from(distroTracks)
+        .where(eq(distroTracks.releaseId, releaseId))
+        .orderBy(distroTracks.trackNumber);
+      const releaseMetadata =
+        release.metadata && typeof release.metadata === "object"
+          ? (release.metadata as Record<string, unknown>)
+          : {};
       const audioFile = req.file;
 
       // Try to extract real format metadata from the uploaded audio file.
@@ -6741,18 +6905,26 @@ router.post(
 
       const REQUIRES_ANALYSIS = "not_analyzed";
 
+      const artist =
+        releaseMetadata.artistName ||
+        releaseMetadata.primaryArtist ||
+        releaseMetadata.artist;
+      const hasAllTrackIsrcs =
+        tracks.length > 0 && tracks.every((track) => Boolean(track.isrc));
       const metadataStatus =
-        title && artist && isrc
+        release.title && artist && hasAllTrackIsrcs
           ? "passed"
-          : title && artist
+          : release.title && artist
             ? "warning"
             : "failed";
       const metadataDetail =
         metadataStatus === "passed"
-          ? "Title, artist, and ISRC are all present"
+          ? "Release title, artist, and track ISRCs are present"
           : metadataStatus === "warning"
-            ? "ISRC is missing — required for digital distribution"
-            : "Title and artist are required";
+            ? tracks.length === 0
+              ? "No tracks are saved on this release"
+              : "One or more tracks are missing an ISRC"
+            : "Release artist metadata is missing";
 
       // Sample rate check
       const ACCEPTED_SAMPLE_RATES = [
@@ -6838,8 +7010,8 @@ router.post(
       }
 
       // Duration check (distributors typically require at least 30 seconds)
-      let durationStatus: string | undefined;
-      let durationDetail: string | undefined;
+      let durationStatus: string;
+      let durationDetail: string;
       if (audioMeta) {
         const durationSecs = audioMeta.duration;
         if (durationSecs < 30) {
@@ -6849,18 +7021,38 @@ router.post(
           durationStatus = "passed";
           durationDetail = `Track duration is ${(durationSecs / 60).toFixed(1)} min — accepted`;
         }
+      } else if (
+        tracks.length > 0 &&
+        tracks.every(
+          (track) => typeof track.duration === "number" && track.duration > 0,
+        )
+      ) {
+        const shortTracks = tracks.filter((track) => track.duration! < 30);
+        durationStatus = shortTracks.length > 0 ? "failed" : "passed";
+        durationDetail =
+          shortTracks.length > 0
+            ? `${shortTracks.length} saved track${shortTracks.length === 1 ? " is" : "s are"} shorter than the 30 second distribution minimum`
+            : "All saved track durations meet the 30 second distribution minimum";
+      } else {
+        durationStatus = REQUIRES_ANALYSIS;
+        durationDetail =
+          "Track duration is not available from the saved release or an uploaded audio file";
       }
 
-      const checks: Array<{
+      const rawChecks: Array<{
         id: string;
         name: string;
         status: string;
         detail: string;
+        category: "audio" | "metadata" | "artwork" | "codes" | "content";
+        severity: "critical" | "major" | "minor" | "info";
       }> = [
         {
           id: "loudness",
           name: "Loudness (LUFS)",
           status: REQUIRES_ANALYSIS,
+          category: "audio",
+          severity: "major",
           detail: audioFile
             ? "LUFS measurement requires PCM decoding (ffmpeg). Upload your master and use the dedicated audio analysis tool for a loudness report."
             : "No audio file uploaded — upload the master WAV/AIFF to analyze loudness",
@@ -6869,54 +7061,76 @@ router.post(
           id: "truepeak",
           name: "True Peak",
           status: REQUIRES_ANALYSIS,
+          category: "audio",
+          severity: "major",
           detail: audioFile
             ? "True peak measurement requires PCM decoding (ffmpeg). Use the dedicated audio analysis tool for a full loudness + true peak report."
             : "No audio file uploaded",
         },
         {
-          id: "samplerate",
+          id: "sample_rate",
           name: "Sample Rate",
           status: sampleRateStatus,
+          category: "audio",
+          severity: "critical",
           detail: sampleRateDetail,
         },
         {
-          id: "bitdepth",
+          id: "bit_depth",
           name: "Bit Depth / Codec",
           status: bitDepthStatus,
+          category: "audio",
+          severity: "major",
           detail: bitDepthDetail,
         },
         {
           id: "codec",
           name: "Audio Format",
           status: codecStatus,
+          category: "audio",
+          severity: "major",
           detail: codecDetail,
         },
         {
           id: "metadata",
           name: "Metadata Completeness",
           status: metadataStatus,
+          category: "metadata",
+          severity: "critical",
           detail: metadataDetail,
         },
         {
           id: "artwork",
           name: "Artwork",
-          status: artworkUrl ? REQUIRES_ANALYSIS : "warning",
-          detail: artworkUrl
+          status: release.artworkUrl ? REQUIRES_ANALYSIS : "failed",
+          category: "artwork",
+          severity: "critical",
+          detail: release.artworkUrl
             ? "Artwork URL provided — resolution check (3000×3000 px minimum) requires server-side image analysis"
             : "No artwork URL provided — artwork is required for distribution",
         },
-        ...(durationStatus
-          ? [
-              {
-                id: "duration",
-                name: "Track Duration",
-                status: durationStatus,
-                detail: durationDetail!,
-              },
-            ]
-          : []),
+        {
+          id: "duration",
+          name: "Track Duration",
+          status: durationStatus,
+          category: "audio",
+          severity: "critical",
+          detail: durationDetail,
+        },
       ];
 
+      const checks = rawChecks.map((check) => ({
+        id: check.id,
+        name: check.name,
+        category: check.category,
+        status: check.status,
+        severity: check.severity,
+        message: check.detail,
+        details: check.detail,
+        // No current QC finding is changed safely by this endpoint. Guidance is
+        // not represented as an automatic fix.
+        fixable: false,
+      }));
       const passed = checks.filter((c) => c.status === "passed").length;
       const failed = checks.filter((c) => c.status === "failed").length;
       const warnings = checks.filter((c) => c.status === "warning").length;
@@ -6924,8 +7138,22 @@ router.post(
         (c) => c.status === REQUIRES_ANALYSIS,
       ).length;
 
-      res.json({
+      const report = {
+        id: `qc-${releaseId}-${Date.now()}`,
         releaseId,
+        createdAt: new Date().toISOString(),
+        status:
+          failed > 0
+            ? ("failed" as const)
+            : notAnalyzed > 0
+              ? ("incomplete" as const)
+              : warnings > 0
+                ? ("warning" as const)
+                : ("passed" as const),
+        overallScore:
+          notAnalyzed > 0
+            ? null
+            : Math.round((passed / (checks.length || 1)) * 100),
         checks,
         summary: {
           passed,
@@ -6934,15 +7162,27 @@ router.post(
           notAnalyzed,
           total: checks.length,
         },
-        qcScore:
-          checks.length > notAnalyzed
-            ? Math.round((passed / ((checks.length - notAnalyzed || 1))) * 100)
-            : null,
         note:
           notAnalyzed > 0
             ? "Some checks require audio/image processing tools. Upload your audio file and configure server-side analysis for a complete QC report."
             : undefined,
-      });
+      };
+
+      const [persisted] = await db
+        .update(distroReleases)
+        .set({ metadata: { ...releaseMetadata, qcReport: report } })
+        .where(
+          and(
+            eq(distroReleases.id, releaseId),
+            eq(distroReleases.artistId, userId),
+          ),
+        )
+        .returning({ id: distroReleases.id });
+      if (!persisted) {
+        return res.status(409).json({ error: "QC report could not be saved" });
+      }
+
+      return res.json({ status: "complete", report });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error running QC analysis:");
       res.status(500).json({ error: "Failed to run QC analysis" });
@@ -6953,16 +7193,31 @@ router.post(
 // POST /api/distribution/qc/fix — Apply an automatic QC fix
 router.post("/qc/fix", requireAuth, async (req: Request, res: Response) => {
   try {
+    const userId = (req.user as AuthenticatedUser).id;
     const { releaseId, checkId, fixType } = req.body;
     if (!releaseId || !checkId)
       return res
         .status(400)
         .json({ error: "releaseId and checkId are required" });
 
+    const [release] = await db
+      .select({ id: distroReleases.id })
+      .from(distroReleases)
+      .where(
+        and(
+          eq(distroReleases.id, releaseId),
+          eq(distroReleases.artistId, userId),
+        ),
+      )
+      .limit(1);
+    if (!release) {
+      return res.status(404).json({ error: "Release not found" });
+    }
+
     // Server-side fixes for metadata issues (missing fields, formatting, etc.)
     if (checkId === "metadata") {
       return res.json({
-        success: true,
+        success: false,
         releaseId,
         checkId,
         fixType,
@@ -7656,6 +7911,112 @@ async function buildLabelGridPayload(
         explicit: Boolean(tr.explicit),
         lyrics: tr.lyrics ? String(tr.lyrics) : undefined,
       } satisfies LabelGridTrack;
+    }),
+  };
+}
+
+function buildToolostPayload(
+  release: Record<string, unknown>,
+  tracks: unknown[],
+  platforms: string[],
+): ToolostRelease {
+  const metadata = (release.metadata as Record<string, unknown>) || {};
+  const artworkAiUsage =
+    typeof metadata.artworkAiUsage === "string"
+      ? metadata.artworkAiUsage
+      : undefined;
+  const audioAiUsage =
+    typeof metadata.audioAiUsage === "string"
+      ? metadata.audioAiUsage
+      : undefined;
+  const compositionAiUsage =
+    typeof metadata.compositionAiUsage === "string"
+      ? metadata.compositionAiUsage
+      : undefined;
+
+  if (
+    !["none", "ai-generated"].includes(artworkAiUsage || "") ||
+    !["none", "ai-assisted"].includes(audioAiUsage || "") ||
+    !["none", "ai-assisted"].includes(compositionAiUsage || "")
+  ) {
+    throw new Error(
+      "Too Lost requires valid explicit AI-involvement declarations for the artwork, recording, and composition. Review and save all three declarations before submitting.",
+    );
+  }
+  const validArtworkAiUsage = artworkAiUsage as "none" | "ai-generated";
+
+  const releaseType =
+    metadata.releaseType === "EP"
+      ? "EP"
+      : metadata.releaseType === "album"
+        ? "Album"
+        : "Single";
+  const languageCodes: Record<string, string> = {
+    English: "en",
+    Spanish: "es",
+    French: "fr",
+    German: "de",
+    Italian: "it",
+    Portuguese: "pt",
+    Japanese: "ja",
+    Korean: "ko",
+    Mandarin: "zh",
+  };
+  const language = String(metadata.language || "").trim();
+
+  return {
+    title: String(release.title || ""),
+    artist: String(
+      release.artistName ||
+        release.artist ||
+        metadata.artistName ||
+        "Unknown Artist",
+    ),
+    releaseType,
+    language: languageCodes[language] || language,
+    composerName: String(metadata.composerName || ""),
+    acceptTerms: metadata.acceptTerms === true,
+    confirmRights: metadata.confirmRights === true,
+    confirmYoutubeRights: metadata.confirmYoutubeRights === true,
+    releaseDate: release.releaseDate
+      ? new Date(release.releaseDate as string | Date).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
+    upc: (release as { upc?: string }).upc,
+    artwork: String(release.artworkUrl || metadata.artworkUrl || metadata.artwork || ""),
+    genre: String(release.genre || metadata.primaryGenre || "Other"),
+    platforms,
+    label: metadata.labelName ? String(metadata.labelName) : undefined,
+    copyrightYear: Number(metadata.copyrightYear) || undefined,
+    copyrightOwner: metadata.copyrightOwner
+      ? String(metadata.copyrightOwner)
+      : undefined,
+    territoryMode:
+      (metadata.territoryMode as "worldwide" | "include" | "exclude") ||
+      "worldwide",
+    territories: Array.isArray(metadata.territories)
+      ? (metadata.territories as string[])
+      : [],
+    artworkAiUsage: validArtworkAiUsage,
+    tracks: tracks.map((track, index) => {
+      const value = track as Record<string, unknown>;
+      return {
+        title: String(value.title || ""),
+        artist: String(
+          value.artistName ||
+            release.artistName ||
+            release.artist ||
+            metadata.artistName ||
+            "Unknown Artist",
+        ),
+        isrc: value.isrc ? String(value.isrc) : undefined,
+        audioFile: String(value.audioUrl || value.fileUrl || ""),
+        duration: Number(value.duration) || 0,
+        trackNumber: Number(value.trackNumber) || index + 1,
+        explicit: Boolean(value.explicit),
+        lyrics: value.lyrics ? String(value.lyrics) : undefined,
+        audioAiUsage,
+        compositionAiUsage,
+      } satisfies ToolostTrack;
     }),
   };
 }

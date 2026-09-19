@@ -18,15 +18,14 @@
  */
 
 import { logger } from "../logger.js";
+import { createHash } from "crypto";
 import { db } from "../db.js";
 import { userBrandVoices, autopilotPreferences } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { generateSocialDirect } from "./maxcoreDomainAdapter.js";
-import { evolutionRegistry } from "./evolutionRegistry.js";
 import {
   getPlatformOptimization,
   normalizeSocialAwarenessPlatform,
-  platformAwarenessOptimization,
 } from "./awarenessContext.js";
 
 // ============================================================================
@@ -454,28 +453,11 @@ export interface AdvancedContentRequest {
   storefrontUrl?: string;
   beatContext?: string;
   promotionContext?: string;
-  awareness?: string;
+  intent?: unknown;
+  awareness?: unknown;
+  direction?: unknown;
+  context?: unknown;
 }
-
-/**
- * Affinity between a self-evolution posting_optimization `contentFormatPriority`
- * media format and this service's contentType enum. When a real detected change
- * prioritizes a media format, a direct/manual/scheduled generation request that
- * did NOT pin a contentType is biased toward the matching content type — the
- * same "bias toward the prioritized format" idea the autopilot engine applies
- * over its configured content types.
- */
-const CONTENT_FORMAT_TO_TYPE: Record<
-  string,
-  NonNullable<AdvancedContentRequest["contentType"]>
-> = {
-  video: "behind_scenes",
-  reel: "behind_scenes",
-  story: "behind_scenes",
-  carousel: "storytelling",
-  image: "announcement",
-  text: "engagement",
-};
 
 export interface AdvancedGeneratedContent {
   primary: {
@@ -1378,107 +1360,92 @@ class AdvancedSocialAIService {
   private static readonly _CACHE_TTL_MS = 90_000;
   private static readonly _CACHE_MAX = 200;
 
-  private static cacheKey(r: AdvancedContentRequest): string {
-    const platform = normalizeSocialAwarenessPlatform(r.platforms?.[0] || "instagram");
-    return [
-      r.userId || "anon",
-      platform,
-      getPlatformOptimization(platform).revision,
-      r.topic || "",
-      r.tone || "",
-      r.genre || "",
-      r.contentType || "",
-      r.objective || "",
-      r.artistName || "",
-      r.storefrontUrl || "",
-      r.beatContext || "",
-      r.promotionContext || "",
-      r.awareness || "",
-      (r.trendContext || []).join(","),
-    ].join("|");
+  /**
+   * Canonical JSON for cache identity. Object keys are sorted recursively while
+   * array order is retained, so equivalent caller context shares a cache entry
+   * without collapsing distinct structured values to "[object Object]".
+   */
+  private static canonicalJson(value: unknown): string {
+    const seen = new WeakSet<object>();
+    const normalize = (current: unknown, inArray = false): unknown => {
+      if (
+        current === undefined ||
+        typeof current === "function" ||
+        typeof current === "symbol"
+      ) {
+        return inArray ? null : undefined;
+      }
+      if (
+        current === null ||
+        typeof current === "string" ||
+        typeof current === "boolean"
+      ) {
+        return current;
+      }
+      if (typeof current === "number") {
+        return Number.isFinite(current) ? current : null;
+      }
+      if (typeof current === "bigint") {
+        throw new TypeError("BigInt is not valid JSON caller context");
+      }
+      if (typeof current !== "object") return current;
+      if (seen.has(current)) {
+        throw new TypeError("Circular caller context cannot be cached");
+      }
+      seen.add(current);
+      try {
+        if (typeof (current as { toJSON?: unknown }).toJSON === "function") {
+          return normalize(
+            (current as { toJSON: () => unknown }).toJSON(),
+            inArray,
+          );
+        }
+        if (Array.isArray(current)) {
+          return current.map((item) => normalize(item, true));
+        }
+        const normalized: Record<string, unknown> = {};
+        for (const key of Object.keys(current).sort()) {
+          const item = normalize(
+            (current as Record<string, unknown>)[key],
+            false,
+          );
+          if (item !== undefined) normalized[key] = item;
+        }
+        return normalized;
+      } finally {
+        seen.delete(current);
+      }
+    };
+    return JSON.stringify(normalize(value)) ?? "null";
   }
 
-  /**
-   * Surface the Self-Evolution posting_optimization knobs (derived from a real
-   * detected industry change) into ANY generation request — manual, scheduled,
-   * or the service called directly — the same way the autopilot engine does, so
-   * the AI's format/engagement guidance is consistent everywhere. Sits ABOVE the
-   * caller's defaults and is fully reversible (deactivateAll() reverts it).
-   * Per-artist learned data is never touched here.
-   *
-   *  - engagementTargeting==='high' steers the objective toward 'engagement'
-   *    (mirrors autopilot-engine.generateContentForAutopilot, which overrides the
-   *    goal-derived objective unconditionally).
-   *  - contentFormatPriority biases contentType toward the prioritized media
-   *    format, but ONLY when the caller did not pin a contentType — an explicit
-   *    caller choice always wins.
-   */
-  private applyPostingOptimization(
-    request: AdvancedContentRequest,
-  ): AdvancedContentRequest {
-    try {
-      const platform = request.platforms[0].toLowerCase();
-      const posting = platform
-        ? evolutionRegistry.getPostingOptimization(platform)
-        : null;
-      if (!posting) return request;
-
-      const patch: Partial<AdvancedContentRequest> = {};
-
-      if (
-        posting.engagementTargeting === "high" &&
-        request.objective !== "engagement"
-      ) {
-        patch.objective = "engagement";
-      }
-
-      if (
-        !request.contentType &&
-        Array.isArray(posting.contentFormatPriority)
-      ) {
-        for (const fmt of posting.contentFormatPriority) {
-          const mapped =
-            typeof fmt === "string"
-              ? CONTENT_FORMAT_TO_TYPE[fmt.toLowerCase()]
-              : undefined;
-          if (mapped) {
-            patch.contentType = mapped;
-            break;
-          }
-        }
-      }
-
-      if (Object.keys(patch).length === 0) return request;
-      logger.info(
-        `[AdvancedSocialAI] Applied self-evolution posting_optimization for ${platform}: ` +
-          `${Object.keys(patch).join(", ")}`,
-      );
-      return { ...request, ...patch };
-    } catch (err) {
-      logger.warn(
-        { err },
-        "[AdvancedSocialAI] Failed to apply evolution posting_optimization",
-      );
-      return request;
-    }
+  private static cacheKey(r: AdvancedContentRequest): string {
+    const platform = normalizeSocialAwarenessPlatform(r.platforms?.[0] || "instagram");
+    const digest = createHash("sha256")
+      .update(
+        AdvancedSocialAIService.canonicalJson({
+          request: r,
+          platformOptimizationRevision:
+            getPlatformOptimization(platform).revision,
+        }),
+      )
+      .digest("hex");
+    return `${r.userId || "anon"}|${platform}|${digest}`;
   }
 
   async generateAdvancedContent(
     rawRequest: AdvancedContentRequest,
   ): Promise<AdvancedGeneratedContent> {
+    // Intentionally do not derive posting optimization here. This service is a
+    // transport boundary: explicit caller preferences are preserved below,
+    // while MaxCore owns awareness and format-conditioning decisions.
     const request = rawRequest;
     const canonicalPlatform = normalizeSocialAwarenessPlatform(
       request.platforms?.[0] || "instagram",
     );
-    const effectiveAwareness = [
-      request.awareness || "",
-      platformAwarenessOptimization(canonicalPlatform),
-      ...(request.trendContext || []),
-    ].filter(Boolean).join("\n");
     const conditionedRequest = {
       ...request,
       platforms: [canonicalPlatform, ...request.platforms.slice(1)],
-      awareness: effectiveAwareness,
     };
     const cacheKey = AdvancedSocialAIService.cacheKey(conditionedRequest);
     const cached = AdvancedSocialAIService._contentCache.get(cacheKey);
@@ -1506,7 +1473,6 @@ class AdvancedSocialAIService {
       numVariants: request.variantCount ?? 1,
       instruction: request.promotionContext,
       extraContext: [
-        effectiveAwareness,
         request.targetAudience
           ? `Target audience: ${request.targetAudience}`
           : "",
@@ -1516,7 +1482,10 @@ class AdvancedSocialAIService {
         .filter(Boolean)
         .join("\n"),
       contentThemes: request.trendContext,
-      awareness: effectiveAwareness,
+      intent: request.intent,
+      awareness: request.awareness,
+      direction: request.direction,
+      context: request.context,
     });
     const mc = response.variants[0];
     const hook = mc.hook;

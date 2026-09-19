@@ -15,6 +15,7 @@ the duplication and gives every modality the *same* real-asset conditioning.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from typing import Any, Dict, List, Optional
 
 from .technique import TechniqueProfile, extract_technique
@@ -22,6 +23,23 @@ from .technique import TechniqueProfile, extract_technique
 
 def _as_text(v: Any) -> str:
     return v.strip() if isinstance(v, str) else ""
+
+
+def _safe_envelope_text(value: Any) -> str:
+    """Serialize a JSON request-envelope value without Python repr leakage."""
+    if isinstance(value, str):
+        return value.strip()
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list, bool, int, float)):
+        try:
+            return json.dumps(
+                value, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+                allow_nan=False,
+            )
+        except (TypeError, ValueError):
+            return ""
+    return ""
 
 
 def merge_awareness(req: Any) -> str:
@@ -65,8 +83,16 @@ def merge_awareness(req: Any) -> str:
             return (v or "").strip() if v is not None else ""
 
         direction_parts = []
+        envelope_intent = _safe_envelope_text(getattr(req, "intent", None))
+        envelope_direction = _safe_envelope_text(getattr(req, "direction", None))
+        envelope_context = _safe_envelope_text(getattr(req, "context", None))
         instruction = _as_text(getattr(req, "instruction", None))
         extra_context = _as_text(getattr(req, "extra_context", None))
+        if envelope_direction:
+            # Keep transport metadata machine-readable and on one control line.
+            # Native consumers extract its values as guidance; generic
+            # awareness signal parsers must never mistake keys/labels for copy.
+            direction_parts.append(f"[CONTROL_DIRECTION] {envelope_direction}")
         if instruction:
             direction_parts.append(ri.awareness_from_direction(
                 instruction, getattr(req, "content_themes", None),
@@ -75,7 +101,9 @@ def merge_awareness(req: Any) -> str:
             direction_parts.append(ri.awareness_from_direction(extra_context))
 
         return "\n".join(p for p in (
+            f"[CONTROL_INTENT] {envelope_intent}" if envelope_intent else "",
             *direction_parts,
+            f"[CONTROL_CONTEXT] {envelope_context}" if envelope_context else "",
             _coerce_aw(getattr(req, "awareness", "")),
             platform_awareness,
         ) if p)

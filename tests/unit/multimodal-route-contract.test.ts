@@ -82,6 +82,27 @@ describe("multimodal route request contract", () => {
     expect(handleGeneration.mock.calls[0][0].userId).toBe("session-user");
   });
 
+  it("preserves explicit caller conditioning without inferring replacements", async () => {
+    const awareness = { campaign: "midnight release", avoid: ["humor"] };
+    const context = { releaseId: "release-9", audience: "existing fans" };
+    const direction = ["minimal", "cinematic"];
+    await post({
+      input: { modality: "text", payload: "announce the single" },
+      platforms: ["instagram"],
+      intent: "announce",
+      direction,
+      context,
+      awareness,
+    });
+
+    expect(handleGeneration.mock.calls[0][0]).toMatchObject({
+      intent: "announce",
+      direction,
+      context,
+      awareness,
+    });
+  });
+
   it("rejects private URL targets before metadata fetching or MaxCore", async () => {
     const response = await post({
       input: { modality: "url", payload: "http://127.0.0.1:9878/api/health" },

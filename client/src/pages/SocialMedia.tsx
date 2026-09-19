@@ -879,6 +879,9 @@ export default function SocialMedia() {
         },
         platforms: mappedPlatforms.length > 0 ? mappedPlatforms : ["instagram"],
         intent: data.tone,
+        direction: data.direction,
+        context: data.context,
+        awareness: data.awareness,
         constraints: {
           outputModality,
           styleTags: [outputModality],
@@ -965,18 +968,52 @@ export default function SocialMedia() {
       targetAudience: string;
       format: string;
       tone: string;
+      intent?: unknown;
+      direction?: unknown;
+      context?: unknown;
+      awareness?: unknown;
     }) => {
-      const mappedPlatforms = [
+      const socialPlatforms = [
         ...new Set(data.platforms.flatMap(expandPlatform)),
-      ].filter((p) => MULTIMODAL_PLATFORMS.has(p));
+      ].map((platform) =>
+        platform === "google_business" ? "googlebusiness" : platform,
+      );
+      const response = await apiRequest("POST", "/api/social/generate-from-url", {
+        url: data.url,
+        platforms: socialPlatforms,
+        targetAudience: data.targetAudience || undefined,
+        format: data.format || "text",
+        tone: data.tone,
+        hashtagStrategy,
+        captionLength,
+        callToActionStrength: ctaStrength,
+        intent: data.intent,
+        direction: data.direction,
+        context: data.context,
+        awareness: data.awareness,
+      });
+      const socialResult = await response.json();
       const outputModality = data.format || "text";
-      const response = await apiRequest("POST", "/api/multimodal/generate", {
+      if (outputModality === "text") {
+        return socialResult;
+      }
+
+      // The social endpoint generates source-grounded platform copy. Rendered
+      // image/audio/video assets come from the existing MaxCore multimodal
+      // workers; never label a caption as media unless a real asset URL exists.
+      const multimodalPlatforms = socialPlatforms.map((platform) =>
+        platform === "googlebusiness" ? "google_business" : platform,
+      );
+      const mediaResponse = await apiRequest("POST", "/api/multimodal/generate", {
         input: {
           modality: "url",
           payload: data.url,
         },
-        platforms: mappedPlatforms.length > 0 ? mappedPlatforms : ["instagram"],
+        platforms: multimodalPlatforms,
         intent: data.targetAudience || undefined,
+        direction: data.direction,
+        context: data.context,
+        awareness: data.awareness,
         constraints: {
           outputModality,
           styleTags: [outputModality],
@@ -986,14 +1023,67 @@ export default function SocialMedia() {
           callToActionStrength: ctaStrength || undefined,
         },
       });
-      return response.json();
+      const mediaResult = await mediaResponse.json();
+      const mediaItems = mapAssetsToGeneratedContent(
+        Array.isArray(mediaResult.assets) ? mediaResult.assets : [],
+        outputModality,
+      );
+      const mediaByPlatform = new Map(
+        mediaItems
+          .filter((item) => Boolean(item.mediaUrl))
+          .map((item) => [
+            item.platform === "google_business"
+              ? "googlebusiness"
+              : item.platform,
+            item,
+          ]),
+      );
+      const socialItems: GeneratedContent[] = Array.isArray(
+        socialResult.generatedContent,
+      )
+        ? socialResult.generatedContent
+        : [];
+      const generatedContent = socialItems.flatMap((item) => {
+        const media = mediaByPlatform.get(item.platform);
+        if (!media?.mediaUrl) return [];
+        return [{
+          ...item,
+          format: outputModality,
+          mediaUrl: media.mediaUrl,
+          posterUrl: media.posterUrl,
+          imagePrompt: media.imagePrompt,
+          aspectRatio: media.aspectRatio,
+          audioBpm: media.audioBpm,
+          audioKey: media.audioKey,
+          audioDurationSec: media.audioDurationSec,
+          videoDurationSec: media.videoDurationSec,
+        }];
+      });
+      const renderedPlatforms = new Set(
+        generatedContent.map((item) => item.platform),
+      );
+      const failedPlatforms = [
+        ...new Set([
+          ...(Array.isArray(socialResult.failedPlatforms)
+            ? socialResult.failedPlatforms
+            : []),
+          ...socialPlatforms.filter(
+            (platform) => !renderedPlatforms.has(platform),
+          ),
+        ]),
+      ];
+      if (generatedContent.length === 0) {
+        throw new Error(`MaxCore did not render any ${outputModality} assets`);
+      }
+      return { ...socialResult, generatedContent, failedPlatforms };
     },
     onSuccess: (data) => {
       const outputModality = contentFormat || "text";
-      let generatedContent = mapAssetsToGeneratedContent(
-        data.assets,
-        outputModality,
-      );
+      const generatedContent: GeneratedContent[] = Array.isArray(
+        data.generatedContent,
+      )
+        ? data.generatedContent
+        : [];
 
       if (generatedContent.length === 0) {
         setUrlGeneratedContent([]);
@@ -1008,16 +1098,27 @@ export default function SocialMedia() {
       }
 
       setUrlGeneratedContent(generatedContent);
+      const failedPlatforms = Array.isArray(data.failedPlatforms)
+        ? data.failedPlatforms
+        : [];
       toast({
-        title: "Content Generated from URL!",
-        description: `AI has created ${outputModality} content for your selected platforms.`,
+        title:
+          failedPlatforms.length > 0
+            ? "Some platform content was unavailable"
+            : "Content Generated from URL!",
+        description:
+          failedPlatforms.length > 0
+            ? `MaxCore created ${outputModality} content for ${generatedContent.length} platform(s), but not: ${failedPlatforms.join(", ")}.`
+            : `MaxCore created ${outputModality} content for your selected platforms.`,
+        variant: failedPlatforms.length > 0 ? "destructive" : "default",
       });
       setIsGeneratingFromUrl(false);
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Generation Failed",
         description:
+          error.message ||
           "Failed to generate content from URL. Please check the URL and try again.",
         variant: "destructive",
       });

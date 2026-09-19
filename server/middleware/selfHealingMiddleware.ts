@@ -7,60 +7,85 @@
 
 import { Request, Response, NextFunction } from "express";
 import { selfHealingEngine } from "../services/selfHealingSecurityEngine.js";
-import { isProductionEnv } from "../lib/envHelpers.js";
 
-const WHITELISTED_IPS = new Set([
-  "127.0.0.1",
-  "::1",
-  "::ffff:127.0.0.1",
-  "localhost",
+const OPERATIONAL_BOOT_PATHS = new Set([
+  "/health",
+  "/api/health",
+  "/api/health/live",
+  "/api/ready",
+  "/api/health/ready",
 ]);
 
-const isDev = !isProductionEnv();
-
-function isInternalIp(ip: string): boolean {
+function isLoopbackIp(ip: string): boolean {
   if (!ip || ip === "unknown") return false;
-  const stripped = ip?.replace(/^::ffff:/, "");
+  const stripped = ip.replace(/^::ffff:/, "");
   return (
     stripped === "127.0.0.1" ||
     stripped === "::1" ||
-    stripped === "localhost" ||
-    stripped?.startsWith("10.") ||
-    stripped?.startsWith("172.16.") ||
-    stripped?.startsWith("192.168.") ||
-    WHITELISTED_IPS?.has(ip)
+    stripped === "localhost"
   );
 }
 
-export function selfHealingSecurityMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
-  const startTime = Date?.now();
+type MiddlewareSecurityEngine = Pick<
+  typeof selfHealingEngine,
+  | "getIpBlockStatus"
+  | "isIpRateLimited"
+  | "processSecurityEvent"
+  | "getStatus"
+  | "getMetrics"
+>;
 
-  const ip =
-    req.ip ||
-    req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ||
-    req.socket.remoteAddress ||
-    "unknown";
+export function createSelfHealingSecurityMiddleware(
+  engine: MiddlewareSecurityEngine,
+) {
+  return function selfHealingSecurityMiddleware(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): void {
+    const startTime = Date?.now();
 
-  const isWhitelisted =
-    isInternalIp(ip) ||
-    ip?.startsWith("::ffff:127.") ||
-    (isDev && ip !== "unknown");
+    // req.ip is Express's trust-proxy-aware client address. Never independently
+    // trust X-Forwarded-For here: doing so lets a direct client spoof localhost
+    // when the app has not explicitly trusted its proxy.
+    const ip = (req.ip || req.socket.remoteAddress || "unknown").replace(
+      /^::ffff:/,
+      "",
+    );
 
-  if (!isWhitelisted && selfHealingEngine?.isIpBlocked(ip)) {
-    res.status(403).json({
-      error: "Access denied",
-      code: "IP_BLOCKED",
-      message:
-        "Your IP has been temporarily blocked due to suspicious activity",
-    });
-    return;
-  }
+    // Only loopback and the small set of startup/liveness routes bypass an
+    // unavailable blacklist. RFC1918 is client address space too (VPNs, NAT,
+    // private load balancers) and must receive the same enforcement as public
+    // users rather than becoming a blanket security bypass.
+    const isLoopback = isLoopbackIp(ip);
+    const isOperationalBootPath = OPERATIONAL_BOOT_PATHS.has(req.path);
+    const blockStatus = isLoopback ? "allowed" : engine.getIpBlockStatus(ip);
+    if (blockStatus === "unknown" && !isOperationalBootPath) {
+      res.status(503).json({
+        error: "Service unavailable",
+        code: "SECURITY_STATE_UNAVAILABLE",
+        message: "Security policy state is temporarily unavailable",
+      });
+      return;
+    }
+    if (blockStatus === "blocked") {
+      res.status(403).json({
+        error: "Access denied",
+        code: "IP_BLOCKED",
+        message:
+          "Your IP has been temporarily blocked due to suspicious activity",
+      });
+      return;
+    }
+    if (!isLoopback && engine.isIpRateLimited(ip)) {
+      res.status(429).json({
+        error: "Too many requests",
+        code: "SECURITY_RATE_LIMITED",
+      });
+      return;
+    }
 
-  selfHealingEngine?.processSecurityEvent({
+    engine.processSecurityEvent({
     type: "request",
     category: getRequestCategory(req.path),
     severity: "low",
@@ -81,13 +106,13 @@ export function selfHealingSecurityMiddleware(
     },
   });
 
-  res.on("finish", () => {
+    res.on("finish", () => {
     const latency = Date?.now() - startTime;
 
     const isNormalAuthResponse =
       res.statusCode === 401 || res.statusCode === 403;
     if (res.statusCode >= 400 && !isNormalAuthResponse) {
-      selfHealingEngine?.processSecurityEvent({
+      engine.processSecurityEvent({
         type: "request",
         category: "error_response",
         severity: res.statusCode >= 500 ? "high" : "medium",
@@ -109,8 +134,12 @@ export function selfHealingSecurityMiddleware(
     }
   });
 
-  next();
+    next();
+  };
 }
+
+export const selfHealingSecurityMiddleware =
+  createSelfHealingSecurityMiddleware(selfHealingEngine);
 
 function getRequestCategory(path: string): string {
   if (path?.startsWith("/api/auth")) return "authentication";

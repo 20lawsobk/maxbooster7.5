@@ -20,8 +20,6 @@
  */
 
 import { logger } from "../logger.js";
-import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
-import { getAwarenessContext, type AwarenessMode } from "./awarenessContext.js";
 import * as aiAnalyticsService from "./aiAnalyticsService.js";
 import {
   type GenerationOptions,
@@ -109,9 +107,10 @@ export interface ContentGenerationOptions extends GenerationOptions {
   tracklist?: string[];
   viewCount?: number | null;
   likeCount?: number | null;
-  /** Which awareness-layer mode to fetch live trend context for. Defaults to
-   * "social" for backward compatibility with existing callers. */
-  awarenessMode?: AwarenessMode;
+  intent?: unknown;
+  direction?: unknown;
+  context?: unknown;
+  awareness?: unknown;
 }
 
 export interface SentimentAnalysisOptions {
@@ -451,29 +450,6 @@ export class UnifiedAIController {
           .slice(0, 180);
         if (clean) extraParts?.push(clean);
       }
-      // Append live music industry context as the final supporting layer.
-      // User instruction (extraParts[0]) remains the primary directive — industry
-      // context is always last so MaxCore treats it as background signal, not a command.
-      // getContextForMode() uses a 30-min cache, so latency after first fetch is negligible.
-      const resolvedAwarenessMode: AwarenessMode =
-        options.awarenessMode ||
-        (effectiveContentType === "promotional" || effectiveObjective === "conversion"
-          ? "advertising"
-          : "social");
-      const _awarenessCtx = await getAwarenessContext(resolvedAwarenessMode);
-      if (_awarenessCtx?.contextString) {
-        extraParts?.push(_awarenessCtx?.contextString);
-      } else {
-        // Fall back to the lighter-weight industry filter if the richer
-        // awareness layer is unavailable — keeps behavior identical to
-        // before this wiring for environments where it can't load.
-        const _industryCtx = await musicIndustryContextFilter
-          .getContextForMode("social")
-          .catch(() => null);
-        if (_industryCtx?.contextString)
-          extraParts?.push(_industryCtx?.contextString);
-      }
-
       const combinedExtra = extraParts?.length
         ? extraParts?.join(" | ")
         : undefined;
@@ -491,6 +467,10 @@ export class UnifiedAIController {
         brand_voice: ctx?.brandVoice,
         target_audience: ctx?.targetAudience,
         preferred_hashtags: ctx?.preferredHashtags,
+        intent: options.intent,
+        direction: options.direction,
+        context: options.context,
+        awareness: options.awareness,
       };
       // If the caller supplied a verbatim user instruction, pass it as a
       // dedicated `instruction` field AND prepend it in extra_context so MaxCore

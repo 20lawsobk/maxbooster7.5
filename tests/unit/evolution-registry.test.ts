@@ -138,15 +138,16 @@ describe("evolutionRegistry.apply() — effective-field honesty rule", () => {
     expect(result.reason).toBeUndefined();
   });
 
-  it("reports applied=true for posting_optimization with contentFormatPriority/engagementTargeting (now effective fields a live consumer reads)", async () => {
+  it("reports applied=true for recognized format metadata with effective engagement targeting", async () => {
     const result = await evolutionRegistry.apply({
       upgradeId: "up-3",
       changeId: "chg-3",
       category: "posting_optimization",
       title: "Short-form video priority",
       source: "exa",
-      // These knobs are now read by live consumers (autopilot content-type
-      // selection + generation objective), so they ARE applied behavior changes.
+      // engagementTargeting is consumed by generation objective selection.
+      // contentFormatPriority remains visible registry metadata for MaxCore-facing
+      // context, but does not select a content type inside the application.
       payload: {
         contentFormatPriority: ["video", "reel"],
         engagementTargeting: "high",
@@ -276,9 +277,8 @@ describe("Self-Evolution → autopilot posting-window selection (integration-sty
       source: "exa",
       payload: { platform: "tiktok", contentFormatPriority: ["video", "reel"] },
     });
-    // contentFormatPriority IS now an effective field (it changes content-type
-    // selection), so this is applied — but it does NOT touch posting-HOUR
-    // selection, which is driven solely by optimalHours.
+    // The registry accepts and exposes the format metadata, but posting-hour
+    // selection remains driven solely by optimalHours.
     expect(applyResult.applied).toBe(true);
 
     const after = await engine.getOptimalTimesForPlatform("tiktok");
@@ -286,7 +286,7 @@ describe("Self-Evolution → autopilot posting-window selection (integration-sty
   });
 });
 
-describe("Self-Evolution → autopilot content-format & engagement targeting (integration-style)", () => {
+describe("Self-Evolution metadata, explicit content preferences, and engagement targeting", () => {
   beforeEach(() => {
     resetRegistry();
     vi.clearAllMocks();
@@ -314,52 +314,54 @@ describe("Self-Evolution → autopilot content-format & engagement targeting (in
     }): Promise<unknown>;
   };
 
-  it("a contentFormatPriority override biases the real selectContentType pick toward the prioritized format, and reverts on rollback", async () => {
+  it("rotates explicit business preferences without applying local contentFormatPriority inference", async () => {
     const { AutopilotEngine } =
       await import("../../server/autopilot-engine.js");
-    // Default config contentTypes: ['tips','insights','questions','announcements'].
-    // Affinities: tips/insights→carousel, questions→text, announcements→image.
     const engine = new AutopilotEngine(
       "format-user-1",
-    ) as unknown as FormatEngine;
+    ) as unknown as FormatEngine & {
+      configure(config: { contentTypes: string[] }): Promise<void>;
+    };
+    await engine.configure({
+      contentTypes: ["questions", "announcements"],
+    });
 
-    // Baseline (no override): the adaptive pick, a configured type.
-    const baseline = await engine.selectContentType("tiktok");
-    expect(["tips", "insights", "questions", "announcements"]).toContain(
-      baseline,
-    );
+    expect(await engine.selectContentType("tiktok")).toBe("questions");
 
-    // Prioritize the 'text' format → picks the configured type whose affinity is
-    // 'text' (questions). 'image' would pick 'announcements'. Two distinct
-    // overrides yielding two distinct deterministic picks proves the knob drives
-    // selection (independent of the seeded baseline).
+    // This registry signal is not an explicit caller content-type preference.
+    // MaxCore owns format conditioning, so it must not reorder/replace the
+    // configured rotation.
     await evolutionRegistry.apply({
       upgradeId: "up-fmt-1",
       changeId: "chg-fmt-1",
       category: "posting_optimization",
-      title: "Text-first format priority",
+      title: "Image-first format priority",
       source: "rss",
       payload: {
         platform: "tiktok",
-        contentFormatPriority: ["text", "carousel"],
+        contentFormatPriority: ["image"],
       },
-    });
-    expect(await engine.selectContentType("tiktok")).toBe("questions");
-
-    await evolutionRegistry.deactivateAll();
-    await evolutionRegistry.apply({
-      upgradeId: "up-fmt-2",
-      changeId: "chg-fmt-2",
-      category: "posting_optimization",
-      title: "Image-first format priority",
-      source: "rss",
-      payload: { platform: "tiktok", contentFormatPriority: ["image"] },
     });
     expect(await engine.selectContentType("tiktok")).toBe("announcements");
 
-    // Deactivating reverts to the adaptive baseline.
+    // Rotation remains stable across registry rollback as well.
     await evolutionRegistry.deactivateAll();
-    expect(await engine.selectContentType("tiktok")).toBe(baseline);
+    expect(await engine.selectContentType("tiktok")).toBe("questions");
+  });
+
+  it("fails explicitly when no business content-type preference is configured", async () => {
+    const { AutopilotEngine } =
+      await import("../../server/autopilot-engine.js");
+    const engine = new AutopilotEngine(
+      "format-user-empty",
+    ) as unknown as FormatEngine & {
+      configure(config: { contentTypes: string[] }): Promise<void>;
+    };
+    await engine.configure({ contentTypes: [] });
+
+    await expect(engine.selectContentType("tiktok")).rejects.toThrow(
+      "Autopilot content type preferences are empty",
+    );
   });
 
   it('an engagementTargeting=high override steers the real generation objective to "engagement", and reverts on rollback', async () => {

@@ -1,61 +1,21 @@
-/**
- * Comprehensive unit tests for the SELF-HEALING SECURITY SYSTEM.
- *
- * Covers the two production surfaces:
- *   1. server/services/selfHealingSecurityEngine.ts  (the autonomous engine)
- *   2. server/middleware/selfHealingMiddleware.ts     (the Express integration)
- *
- * These are pure unit tests — no running server is required. The engine wraps
- * every DB side-effect (ipBlacklist / securityThreats / notifications) in
- * try/catch and maintains authoritative state IN MEMORY, so we mock `db` with a
- * chainable recorder. That lets us assert BOTH the in-memory healing
- * (isIpBlocked / metrics) AND that the durable persistence was actually
- * attempted (the recorded inserts), proving the full detect → respond → recover
- * pipeline rather than just "a function ran".
- *
- * `envHelpers.isProductionEnv` is forced true so the middleware's dev-mode
- * whitelist (which whitelists every non-internal IP in dev) does not mask the
- * 403 block path.
- */
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  beforeAll,
-} from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
-// ── Hoisted mocks ─────────────────────────────────────────────────────────────
-
-const mocks = vi.hoisted(() => {
-  /** Every db.insert(...).values(x) lands here so tests can assert persistence. */
-  const inserts: { values: Record<string, any> }[] = [];
-
-  const insertValues = vi.fn(async (values: Record<string, any>) => {
-    inserts.push({ values });
-  });
-
-  // db.select().from().where().limit()  → resolves to [] (loadBlockedIps)
-  const makeSelectChain = () => {
-    const chain: Record<string, any> = {};
-    chain.from = vi.fn(() => chain);
-    chain.where = vi.fn(() => chain);
-    chain.limit = vi.fn(async () => [] as unknown[]);
-    return chain;
-  };
-
-  const db = {
-    select: vi.fn(() => makeSelectChain()),
-    insert: vi.fn(() => ({ values: insertValues })),
+const moduleMocks = vi.hoisted(() => {
+  const emptyDb = {
+    select: vi.fn(() => {
+      const chain: any = {};
+      chain.from = vi.fn(() => chain);
+      chain.where = vi.fn(() => chain);
+      chain.limit = vi.fn(async () => []);
+      return chain;
+    }),
+    insert: vi.fn(() => ({ values: vi.fn(async () => undefined) })),
     delete: vi.fn(() => ({ where: vi.fn(async () => undefined) })),
   };
-
-  return { db, inserts, insertValues };
+  return { emptyDb };
 });
 
-vi.mock("../../server/db.js", () => ({ db: mocks.db }));
-
+vi.mock("../../server/db.js", () => ({ db: moduleMocks.emptyDb }));
 vi.mock("../../server/logger.js", () => ({
   logger: {
     info: vi.fn(),
@@ -65,227 +25,134 @@ vi.mock("../../server/logger.js", () => ({
   },
 }));
 
-vi.mock("../../server/lib/envHelpers.js", () => ({
-  isProductionEnv: () => true,
-  isDevEnv: () => false,
-}));
+import { SelfHealingSecurityEngine } from "../../server/services/selfHealingSecurityEngine.js";
+import { createSelfHealingSecurityMiddleware } from "../../server/middleware/selfHealingMiddleware.js";
 
-// ── Modules under test (imported after mocks) ─────────────────────────────────
+const BASE_TIME = new Date("2026-01-15T12:00:00.000Z");
+const SQL_IP = "192.0.2.10";
+const XSS_IP = "198.51.100.20";
+const BRUTE_IP = "203.0.113.30";
 
-import { selfHealingEngine } from "../../server/services/selfHealingSecurityEngine.js";
-import {
-  selfHealingSecurityMiddleware,
-  getSelfHealingStatus,
-  getSelfHealingMetrics,
-} from "../../server/middleware/selfHealingMiddleware.js";
+type FakeDbOptions = {
+  loaded?: Array<{ ip: string; expiresAt: Date }>;
+  selectError?: Error;
+  insertError?: Error;
+  deleteError?: Error;
+};
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-let ipCounter = 0;
-/** Unique, non-internal (TEST-NET-3, RFC 5737) IP per call so tests never collide. */
-function freshIp(): string {
-  ipCounter += 1;
-  const a = Math.floor(ipCounter / 250);
-  const b = ipCounter % 250;
-  return `203.0.113.${a === 0 ? b : `${a}.${b}`.replace(".", "")}`;
+function fakeDb(options: FakeDbOptions = {}) {
+  const writes: Record<string, any>[] = [];
+  const selectChain: any = {};
+  selectChain.from = vi.fn(() => selectChain);
+  selectChain.where = vi.fn(() => selectChain);
+  selectChain.limit = vi.fn(async () => {
+    if (options.selectError) throw options.selectError;
+    return options.loaded ?? [];
+  });
+  const database = {
+    select: vi.fn(() => selectChain),
+    insert: vi.fn(() => ({
+      values: vi.fn(async (value: Record<string, any>) => {
+        writes.push(value);
+        if (options.insertError) throw options.insertError;
+      }),
+    })),
+    delete: vi.fn(() => ({
+      where: vi.fn(async () => {
+        if (options.deleteError) throw options.deleteError;
+      }),
+    })),
+  };
+  return { database: database as any, writes };
 }
 
-async function waitUntil(
-  cond: () => boolean,
-  timeoutMs = 2000,
-  stepMs = 10,
-): Promise<boolean> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    if (cond()) return true;
-    await new Promise((r) => setTimeout(r, stepMs));
-  }
-  return cond();
+async function newEngine(options: FakeDbOptions = {}) {
+  const fake = fakeDb(options);
+  const engine = new SelfHealingSecurityEngine({
+    database: fake.database,
+    autoStart: false,
+    initialLoadAttempts: 1,
+    retryDelayMs: 1,
+  });
+  await engine.start();
+  return { engine, ...fake };
 }
 
-function attack(ip: string, payloadValue: string) {
-  selfHealingEngine.processSecurityEvent({
+function send(
+  engine: SelfHealingSecurityEngine,
+  ip: string,
+  value: string,
+  category = "api",
+  method = "POST",
+) {
+  engine.processSecurityEvent({
     type: "request",
-    category: "api",
-    severity: "low",
-    source: { ip, userAgent: "curl/8.0" },
-    payload: { path: "/api/test", method: "POST", body: { q: payloadValue } },
-    metrics: {},
+    category,
+    source: { ip, userAgent: "SecurityFixture/1.0" },
+    payload: {
+      path: category === "authentication" ? "/api/auth/login" : "/api/search",
+      method,
+      body: { q: value },
+    },
   });
 }
 
-function findInsert(predicate: (v: Record<string, any>) => boolean) {
-  return mocks.inserts.find((i) => predicate(i.values));
+async function settle() {
+  // The real pipeline has nested await/Promise.allSettled stages
+  // (detect -> concurrent actions -> recover); drain those microtasks without
+  // advancing any security windows.
+  for (let turn = 0; turn < 20; turn++) await Promise.resolve();
 }
 
-// Minimal Express req/res doubles for middleware tests.
-function mockReq(ip: string, overrides: Record<string, any> = {}) {
+function responseDouble() {
+  const response: any = { statusCode: 200 };
+  response.status = vi.fn((status: number) => {
+    response.statusCode = status;
+    return response;
+  });
+  response.json = vi.fn(() => response);
+  response.on = vi.fn();
+  return response;
+}
+
+function requestDouble(ip: string | undefined, socketIp: string, headers = {}) {
   return {
     ip,
-    headers: {},
-    socket: { remoteAddress: ip },
-    path: "/api/test",
+    socket: { remoteAddress: socketIp },
+    headers,
+    path: "/api/search",
     method: "GET",
     body: {},
-    sessionID: "sess-1",
-    ...overrides,
   } as any;
 }
 
-function mockRes() {
-  const res: Record<string, any> = { statusCode: 200 };
-  res.status = vi.fn((code: number) => {
-    res.statusCode = code;
-    return res;
-  });
-  res.json = vi.fn(() => res);
-  res.on = vi.fn();
-  return res as any;
-}
-
-beforeEach(async () => {
-  await selfHealingEngine.clearAllBlocks(); // resets blockedIps + ipThreatScores
-  mocks.inserts.length = 0;
-  mocks.insertValues.mockClear();
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(BASE_TIME);
 });
 
-// ── 1. Lifecycle & status ─────────────────────────────────────────────────────
-
-describe("Self-Healing Security Engine — lifecycle", () => {
-  it("is running after module load", () => {
-    expect(selfHealingEngine.getStatus().isRunning).toBe(true);
-  });
-
-  it("getStatus() exposes operational counters", () => {
-    const s = selfHealingEngine.getStatus();
-    expect(s).toHaveProperty("blockedIpsCount");
-    expect(s).toHaveProperty("activeThreats");
-    expect(s).toHaveProperty("queueSize");
-    expect(s).toHaveProperty("healingSpeedRatio");
-    expect(typeof s.blockedIpsCount).toBe("number");
-  });
+afterEach(() => {
+  vi.useRealTimers();
 });
 
-// ── 2. Threat detection + heal pipeline (per attack class) ────────────────────
+describe("real self-healing engine detect/respond/recover", () => {
+  it("exposes running lifecycle, counters, latency, and SLO status", async () => {
+    const { engine } = await newEngine();
+    const status = engine.getStatus();
+    expect(status).toEqual(
+      expect.objectContaining({
+        isRunning: true,
+        blockedIpsCount: 0,
+        activeThreats: 0,
+        queueSize: 0,
+      }),
+    );
 
-describe("Self-Healing Security Engine — detection & remediation", () => {
-  interface Case {
-    name: string;
-    payload: string;
-    type: string;
-    blocked: boolean;
-  }
-
-  const cases: Case[] = [
-    { name: "SQL injection", payload: "' OR 1=1 --", type: "sql_injection", blocked: true },
-    // NOTE: avoid a closing "</...>" tag — the engine's command-injection
-    // "read-from-root" pattern (`<\s*\/[a-z]`) matches "</s" and would escalate
-    // the score to a hard block. An onerror payload exercises the XSS path cleanly.
-    { name: "XSS", payload: "<img src=x onerror=alert(1)>", type: "xss", blocked: false },
-    { name: "Path traversal", payload: "../../etc/passwd", type: "path_traversal", blocked: false },
-    { name: "Command injection", payload: "; rm -rf /", type: "command_injection", blocked: true },
-    { name: "LDAP injection", payload: "*)(uid=*)", type: "ldap_injection", blocked: false },
-    {
-      name: "XXE injection",
-      payload: '<!DOCTYPE foo [<!ENTITY x SYSTEM "http://evil/x">]>',
-      type: "xxe_injection",
-      blocked: true,
-    },
-    { name: "NoSQL injection", payload: '{"$gt":""}', type: "nosql_injection", blocked: false },
-  ];
-
-  it.each(cases)(
-    "detects $name and logs a resolved threat of type $type",
-    async ({ payload, type }) => {
-      const ip = freshIp();
-      attack(ip, payload);
-
-      const ok = await waitUntil(() =>
-        Boolean(
-          findInsert(
-            (v) => v.threatType === type && v.status === "resolved",
-          ),
-        ),
-      );
-      expect(ok).toBe(true);
-    },
-  );
-
-  it.each(cases)(
-    "raises a security alert for $name",
-    async ({ payload, type }) => {
-      const ip = freshIp();
-      attack(ip, payload);
-
-      const ok = await waitUntil(() =>
-        Boolean(
-          findInsert(
-            (v) =>
-              v.type === "security_alert" &&
-              typeof v.title === "string" &&
-              v.title.includes(type),
-          ),
-        ),
-      );
-      expect(ok).toBe(true);
-    },
-  );
-
-  it.each(cases.filter((c) => c.blocked))(
-    "auto-blocks the source IP for $name (high-confidence injection)",
-    async ({ payload }) => {
-      const ip = freshIp();
-      attack(ip, payload);
-
-      const ok = await waitUntil(() => selfHealingEngine.isIpBlocked(ip));
-      expect(ok).toBe(true);
-      // Block was persisted to the blacklist (durable side-effect).
-      expect(findInsert((v) => v.ip === ip)).toBeTruthy();
-    },
-  );
-
-  it.each(cases.filter((c) => !c.blocked))(
-    "rate-limits (does not hard-block) the source IP for $name",
-    async ({ payload, type }) => {
-      const ip = freshIp();
-      attack(ip, payload);
-
-      // The threat MUST be detected & recovered (asserted, not just awaited) —
-      // otherwise "not blocked" could silently pass on a detection regression.
-      const detected = await waitUntil(() =>
-        Boolean(findInsert((v) => v.threatType === type)),
-      );
-      expect(detected).toBe(true);
-      // …but it must be rate-limited, not hard-blocked.
-      expect(selfHealingEngine.isIpBlocked(ip)).toBe(false);
-      expect(findInsert((v) => v.ip === ip)).toBeFalsy();
-    },
-  );
-});
-
-// ── 3. Metrics move as threats are healed ─────────────────────────────────────
-
-describe("Self-Healing Security Engine — metrics", () => {
-  it("increments threatsHealed and records healing latency on a real attack", async () => {
-    // getMetrics() spreads the metrics object, but the latency arrays are shared
-    // references — so snapshot the counts as primitives BEFORE the attack.
-    const m0 = selfHealingEngine.getMetrics();
-    const beforeHealed = m0.threatsHealed;
-    const beforeLen = m0.totalHealingTime.length;
-
-    const ip = freshIp();
-    attack(ip, "' UNION SELECT password FROM users --");
-
-    await waitUntil(() => selfHealingEngine.isIpBlocked(ip));
-    const m1 = selfHealingEngine.getMetrics();
-
-    expect(m1.threatsHealed).toBeGreaterThan(beforeHealed);
-    expect(m1.totalHealingTime.length).toBeGreaterThan(beforeLen);
-  });
-
-  it("getMetrics() reports SLO compliance flags", () => {
-    const m = selfHealingEngine.getMetrics();
-    expect(m.sloCompliance).toBeDefined();
+    send(engine, SQL_IP, "' UNION SELECT password FROM users --");
+    await settle();
+    const metrics = engine.getMetrics();
+    expect(metrics.totalHealingTime).toHaveLength(1);
+    expect(metrics.detectionLatency).toHaveLength(1);
     for (const key of [
       "mttdMet",
       "mttrMet",
@@ -293,154 +160,402 @@ describe("Self-Healing Security Engine — metrics", () => {
       "healingRatioMet",
       "overallCompliant",
     ]) {
-      expect(typeof m.sloCompliance[key]).toBe("boolean");
+      expect(typeof metrics.sloCompliance[key]).toBe("boolean");
     }
+    engine.stop();
+  });
+
+  it("keeps benign content below the false-positive boundary", async () => {
+    const { engine, writes } = await newEngine();
+    for (const value of [
+      "How do I order by popularity?",
+      "Use CONCAT(first_name, last_name) in my tutorial",
+      "Copyright &#169; 2026",
+      "A normal artist biography",
+    ]) {
+      send(engine, SQL_IP, value);
+    }
+    await vi.advanceTimersByTimeAsync(20);
+    expect(engine.getMetrics().threatsDetected).toBe(0);
+    expect(writes).toHaveLength(0);
+    expect(engine.isIpBlocked(SQL_IP)).toBe(false);
+    engine.stop();
+  });
+
+  it("blocks SQLi once and deduplicates persistence and recovery", async () => {
+    const { engine, writes } = await newEngine();
+    send(engine, SQL_IP, "' UNION SELECT password FROM users --");
+    await settle();
+
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+    expect(writes.filter((row) => row.ip === SQL_IP)).toHaveLength(1);
+    const recoveryRows = writes.filter(
+      (row) => row.threatType === "sql_injection",
+    );
+    expect(recoveryRows).toHaveLength(1);
+    expect(recoveryRows[0]).toEqual(
+      expect.objectContaining({
+        status: "resolved",
+        metadata: expect.objectContaining({
+          healed: true,
+          actionOutcomes: expect.arrayContaining([
+            expect.objectContaining({
+              type: "block_ip",
+              status: "completed",
+              supported: true,
+            }),
+            expect.objectContaining({
+              type: "session_kill",
+              status: "failed",
+              supported: false,
+            }),
+          ]),
+        }),
+      }),
+    );
+    expect(writes.filter((row) => row.type === "security_alert")).toHaveLength(1);
+    expect(engine.getMetrics().threatsDetected).toBe(1);
+    expect(engine.getMetrics().threatsHealed).toBe(1);
+    engine.stop();
+  });
+
+  it("marks unwired control actions unsupported instead of executed", async () => {
+    const { engine } = await newEngine();
+    const assessment = {
+      id: "assessment-fixture",
+      eventId: "event-fixture",
+      detectionTime: 0,
+      threatLevel: 0.95,
+      threatType: "fixture",
+      confidence: 1,
+      indicators: [],
+      recommendedActions: [],
+    };
+
+    for (const type of [
+      "session_kill",
+      "circuit_break",
+      "feature_disable",
+    ]) {
+      const action = {
+        id: `action-${type}`,
+        threatId: assessment.id,
+        type,
+        status: "executing",
+        startTime: BASE_TIME.getTime(),
+        details: {},
+      };
+      await expect(
+        (engine as any).executeAction(action, assessment),
+      ).rejects.toThrow("Unsupported healing action");
+      expect(action.details).toEqual({ supported: false });
+      expect(action.details).not.toHaveProperty("sessionKilled");
+      expect(action.details).not.toHaveProperty("circuitBroken");
+      expect(action.details).not.toHaveProperty("featureDisabled");
+    }
+    engine.stop();
+  });
+
+  it("detects XSS but bounds response to a finite rate window", async () => {
+    const { engine, writes } = await newEngine();
+    send(engine, XSS_IP, "<img src=x onerror=alert(1)>");
+    await settle();
+
+    expect(writes.some((row) => row.threatType === "xss")).toBe(true);
+    expect(engine.isIpBlocked(XSS_IP)).toBe(false);
+    expect(engine.isIpRateLimited(XSS_IP)).toBe(true);
+    await vi.advanceTimersByTimeAsync(10_001);
+    expect(engine.isIpRateLimited(XSS_IP)).toBe(false);
+    engine.stop();
+  });
+
+  it.each([
+    {
+      name: "path traversal",
+      payload: "../../etc/passwd",
+      type: "path_traversal",
+      hardBlock: false,
+    },
+    {
+      name: "command injection",
+      payload: "; rm -rf /",
+      type: "command_injection",
+      hardBlock: true,
+    },
+    {
+      name: "LDAP injection",
+      payload: "*)(uid=*)",
+      type: "ldap_injection",
+      hardBlock: false,
+    },
+    {
+      name: "XXE injection",
+      payload: '<!DOCTYPE foo [<!ENTITY x SYSTEM "http://example.invalid/x">]>',
+      type: "xxe_injection",
+      hardBlock: true,
+    },
+    {
+      name: "NoSQL injection",
+      payload: '{"$gt":""}',
+      type: "nosql_injection",
+      hardBlock: false,
+    },
+  ])(
+    "preserves detection, alert, recovery, and bounded response for $name",
+    async ({ payload, type, hardBlock }) => {
+      const ip =
+        type === "path_traversal"
+          ? "192.0.2.41"
+          : type === "command_injection"
+            ? "192.0.2.42"
+            : type === "ldap_injection"
+              ? "198.51.100.43"
+              : type === "xxe_injection"
+                ? "198.51.100.44"
+                : "203.0.113.45";
+      const { engine, writes } = await newEngine();
+      send(engine, ip, payload);
+      await settle();
+
+      expect(
+        writes.some((row) => row.threatType === type && row.status === "resolved"),
+      ).toBe(true);
+      expect(
+        writes.some(
+          (row) =>
+            row.type === "security_alert" &&
+            String(row.title).includes(type),
+        ),
+      ).toBe(true);
+      expect(engine.isIpBlocked(ip)).toBe(hardBlock);
+      expect(engine.isIpRateLimited(ip)).toBe(!hardBlock);
+      engine.stop();
+    },
+  );
+
+  it("detects brute force only after the auth threshold and expires the window", async () => {
+    const { engine, writes } = await newEngine();
+    for (let attempt = 0; attempt < 20; attempt++) {
+      send(engine, BRUTE_IP, "wrong-password", "authentication");
+    }
+    await vi.advanceTimersByTimeAsync(20);
+    expect(writes.some((row) => row.threatType === "rate_abuse")).toBe(false);
+
+    send(engine, BRUTE_IP, "wrong-password", "authentication");
+    await vi.advanceTimersByTimeAsync(20);
+    expect(writes.some((row) => row.threatType === "rate_abuse")).toBe(true);
+    expect(engine.isIpRateLimited(BRUTE_IP)).toBe(true);
+    await vi.advanceTimersByTimeAsync(300_001);
+    expect(engine.isIpRateLimited(BRUTE_IP)).toBe(false);
+    engine.stop();
+  });
+
+  it("detects request flooding only after the DDoS window threshold", async () => {
+    const { engine, writes } = await newEngine();
+    for (let request = 0; request < 500; request++) {
+      send(engine, "203.0.113.60", "normal request", "api", "GET");
+    }
+    await vi.advanceTimersByTimeAsync(110);
+    expect(writes.some((row) => row.threatType === "rate_abuse")).toBe(false);
+
+    send(engine, "203.0.113.60", "normal request", "api", "GET");
+    await vi.advanceTimersByTimeAsync(20);
+    expect(writes.some((row) => row.threatType === "rate_abuse")).toBe(true);
+    expect(engine.isIpRateLimited("203.0.113.60")).toBe(true);
+    engine.stop();
   });
 });
 
-// ── 4. Blocked-IP short-circuit & whitelisting ────────────────────────────────
-
-describe("Self-Healing Security Engine — short-circuit & whitelist", () => {
-  it("short-circuits subsequent events from an already-blocked IP", async () => {
-    const ip = freshIp();
-    attack(ip, "'; DROP TABLE users; --");
-    await waitUntil(() => selfHealingEngine.isIpBlocked(ip));
-
-    const before = selfHealingEngine.getMetrics().threatsBlocked;
-    // A second event from the now-blocked IP must be dropped fast.
-    selfHealingEngine.processSecurityEvent({
-      source: { ip },
-      payload: { path: "/api/anything", method: "GET" },
+describe("persistence, recovery, and database failure policy", () => {
+  it("loads a persisted block, expires it, and supports durable unblock", async () => {
+    const { engine, database } = await newEngine({
+      loaded: [{ ip: SQL_IP, expiresAt: new Date(BASE_TIME.getTime() + 1_000) }],
     });
-    const after = selfHealingEngine.getMetrics().threatsBlocked;
-    expect(after).toBeGreaterThan(before);
+    expect(engine.getIpBlockStatus(SQL_IP)).toBe("blocked");
+    await vi.advanceTimersByTimeAsync(1_001);
+    expect(engine.getIpBlockStatus(SQL_IP)).toBe("allowed");
+
+    send(engine, SQL_IP, "' OR 1=1 --");
+    await settle();
+    await engine.unblockIp(SQL_IP);
+    expect(database.delete).toHaveBeenCalled();
+    expect(engine.isIpBlocked(SQL_IP)).toBe(false);
+    engine.stop();
   });
 
-  it("never blocks internal / localhost IPs even with a malicious payload", async () => {
-    for (const ip of ["127.0.0.1", "::1", "10.0.0.5"]) {
-      selfHealingEngine.processSecurityEvent({
-        source: { ip },
-        payload: { path: "/api/x", method: "POST", body: { q: "' OR 1=1 --" } },
-      });
-    }
-    // Give any (incorrect) async healing a chance to run, then assert none blocked.
-    await new Promise((r) => setTimeout(r, 120));
-    expect(selfHealingEngine.isIpBlocked("127.0.0.1")).toBe(false);
-    expect(selfHealingEngine.isIpBlocked("::1")).toBe(false);
-    expect(selfHealingEngine.isIpBlocked("10.0.0.5")).toBe(false);
-  });
-});
+  it("fails closed for an unknown initial blocklist", async () => {
+    const { engine } = await newEngine({ selectError: new Error("database offline") });
+    expect(engine.getIpBlockStatus(SQL_IP)).toBe("unknown");
 
-// ── 5. Rate-abuse / DDoS detection ────────────────────────────────────────────
-
-describe("Self-Healing Security Engine — rate-abuse detection", () => {
-  it("flags a single IP that floods past the request-rate threshold", async () => {
-    // Drain any queued events from prior tests so the baseline is clean and the
-    // measured delta is attributable to THIS flood, not stray in-flight events.
-    await waitUntil(() => selfHealingEngine.getStatus().queueSize === 0, 2000);
-    const before = selfHealingEngine.getMetrics().threatsDetected;
-
-    const ip = freshIp();
-    // ddos threshold is 500/10s; rate score crosses the 0.5 detection bar past
-    // ~313 requests (0.5 / 0.8 * 500). Fire 700 from ONE IP → ~387 of them are
-    // over-threshold and each increments threatsDetected.
-    const FLOOD = 700;
-    for (let i = 0; i < FLOOD; i++) {
-      selfHealingEngine.processSecurityEvent({
-        source: { ip },
-        payload: { path: "/api/feed", method: "GET" },
-      });
-    }
-    // Background detection loop drains the queue (50/10ms) → ~140ms to process.
-    await waitUntil(() => selfHealingEngine.getStatus().queueSize === 0, 4000);
-    await new Promise((r) => setTimeout(r, 50)); // let the final batch settle
-
-    const delta = selfHealingEngine.getMetrics().threatsDetected - before;
-    // A large, flood-proportional delta — far beyond any stray single detection,
-    // so this can only come from the rate-abuse flood crossing the threshold.
-    expect(delta).toBeGreaterThanOrEqual(100);
-  });
-});
-
-// ── 6. Admin controls ─────────────────────────────────────────────────────────
-
-describe("Self-Healing Security Engine — admin controls", () => {
-  it("unblockIp removes a blocked IP", async () => {
-    const ip = freshIp();
-    attack(ip, "' OR 1=1 --");
-    await waitUntil(() => selfHealingEngine.isIpBlocked(ip));
-
-    await selfHealingEngine.unblockIp(ip);
-    expect(selfHealingEngine.isIpBlocked(ip)).toBe(false);
-  });
-
-  it("getBlockedIps lists currently blocked IPs", async () => {
-    const ip = freshIp();
-    attack(ip, "; cat /etc/shadow && rm -rf /");
-    await waitUntil(() => selfHealingEngine.isIpBlocked(ip));
-
-    expect(selfHealingEngine.getBlockedIps()).toContain(ip);
-  });
-
-  it("clearAllBlocks empties the blocklist", async () => {
-    const ip = freshIp();
-    attack(ip, "' OR 1=1 --");
-    await waitUntil(() => selfHealingEngine.isIpBlocked(ip));
-
-    await selfHealingEngine.clearAllBlocks();
-    expect(selfHealingEngine.getBlockedIps()).toHaveLength(0);
-    expect(selfHealingEngine.isIpBlocked(ip)).toBe(false);
-  });
-});
-
-// ── 7. Express middleware integration ─────────────────────────────────────────
-
-describe("Self-Healing Security Middleware", () => {
-  beforeAll(() => {
-    // Sanity: status/metrics accessors are wired to the engine.
-    expect(getSelfHealingStatus().isRunning).toBe(true);
-    expect(getSelfHealingMetrics().sloCompliance).toBeDefined();
-  });
-
-  it("passes through a clean request from an unblocked IP", () => {
+    const middleware = createSelfHealingSecurityMiddleware(engine);
+    const response = responseDouble();
     const next = vi.fn();
-    const res = mockRes();
-    selfHealingSecurityMiddleware(mockReq(freshIp()), res, next);
-
-    expect(next).toHaveBeenCalledTimes(1);
-    expect(res.status).not.toHaveBeenCalledWith(403);
-  });
-
-  it("returns 403 IP_BLOCKED for a request from a blocked IP", async () => {
-    const ip = freshIp();
-    attack(ip, "' OR 1=1 --");
-    await waitUntil(() => selfHealingEngine.isIpBlocked(ip));
-
-    const next = vi.fn();
-    const res = mockRes();
-    selfHealingSecurityMiddleware(mockReq(ip), res, next);
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ code: "IP_BLOCKED" }),
+    middleware(requestDouble(SQL_IP, SQL_IP), response, next);
+    expect(response.status).toHaveBeenCalledWith(503);
+    expect(response.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "SECURITY_STATE_UNAVAILABLE" }),
     );
     expect(next).not.toHaveBeenCalled();
+    engine.stop();
   });
 
-  it("never 403s an internal/whitelisted IP", () => {
-    const next = vi.fn();
-    const res = mockRes();
-    selfHealingSecurityMiddleware(mockReq("127.0.0.1"), res, next);
-
-    expect(next).toHaveBeenCalledTimes(1);
-    expect(res.status).not.toHaveBeenCalledWith(403);
+  it("enforces a detected block in memory when DB writes fail", async () => {
+    const { engine } = await newEngine({ insertError: new Error("write failed") });
+    send(engine, SQL_IP, "'; DROP TABLE users; --");
+    await settle();
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+    engine.stop();
   });
 
-  it("registers a response 'finish' listener for error-rate monitoring", () => {
-    const next = vi.fn();
-    const res = mockRes();
-    selfHealingSecurityMiddleware(mockReq(freshIp()), res, next);
+  it("does not claim unblock when durable deletion fails", async () => {
+    const { engine } = await newEngine({ deleteError: new Error("delete failed") });
+    send(engine, SQL_IP, "' OR 1=1 --");
+    await settle();
+    await expect(engine.unblockIp(SQL_IP)).rejects.toThrow("delete failed");
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+    engine.stop();
+  });
 
-    expect(res.on).toHaveBeenCalledWith("finish", expect.any(Function));
+  it("removes a DB-backed block after another instance revokes it", async () => {
+    const sharedRows = [
+      { ip: SQL_IP, expiresAt: new Date(BASE_TIME.getTime() + 60_000) },
+    ];
+    const { engine } = await newEngine({ loaded: sharedRows });
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+
+    // Simulates a durable unblock committed by another process.
+    sharedRows.splice(0);
+    await engine.refreshBlocklist();
+    expect(engine.isIpBlocked(SQL_IP)).toBe(false);
+    engine.stop();
+  });
+
+  it("retains a failed-write local block across a successful refresh", async () => {
+    const { engine } = await newEngine({ insertError: new Error("write failed") });
+    send(engine, SQL_IP, "'; DROP TABLE users; --");
+    await settle();
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+
+    await engine.refreshBlocklist();
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+    engine.stop();
+  });
+
+  it("lists blocks, short-circuits blocked events, and clears durably", async () => {
+    const { engine, database } = await newEngine();
+    send(engine, SQL_IP, "' OR 1=1 --");
+    await settle();
+    expect(engine.getBlockedIps()).toContain(SQL_IP);
+
+    const blockedBefore = engine.getMetrics().threatsBlocked;
+    send(engine, SQL_IP, "another request");
+    expect(engine.getMetrics().threatsBlocked).toBe(blockedBefore + 1);
+
+    await engine.clearAllBlocks();
+    expect(database.delete).toHaveBeenCalled();
+    expect(engine.getBlockedIps()).toEqual([]);
+    engine.stop();
+  });
+
+  it("retains the explicit loopback safety exception", async () => {
+    const { engine, writes } = await newEngine();
+    for (const ip of ["127.0.0.1", "::1"]) {
+      send(engine, ip, "'; DROP TABLE users; --");
+    }
+    await settle();
+    expect(writes).toEqual([]);
+    expect(engine.getStatus().queueSize).toBe(0);
+    engine.stop();
+  });
+});
+
+describe("actual middleware address and enforcement boundaries", () => {
+  it("does not trust a spoofed forwarded localhost address", async () => {
+    const { engine } = await newEngine({
+      loaded: [{ ip: SQL_IP, expiresAt: new Date(BASE_TIME.getTime() + 60_000) }],
+    });
+    const middleware = createSelfHealingSecurityMiddleware(engine);
+    const response = responseDouble();
+    const next = vi.fn();
+    middleware(
+      requestDouble(undefined, SQL_IP, { "x-forwarded-for": "127.0.0.1" }),
+      response,
+      next,
+    );
+    expect(response.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+    engine.stop();
+  });
+
+  it("does not blanket-whitelist RFC1918 client sources", async () => {
+    const { engine } = await newEngine();
+    const middleware = createSelfHealingSecurityMiddleware(engine);
+
+    const privateNext = vi.fn();
+    middleware(
+      requestDouble("10.23.45.67", "10.23.45.67"),
+      responseDouble(),
+      privateNext,
+    );
+    expect(privateNext).toHaveBeenCalledOnce();
+    expect(engine.getStatus().queueSize).toBe(1);
+
+    send(engine, "10.23.45.68", "'; DROP TABLE users; --");
+    await settle();
+    expect(engine.isIpBlocked("10.23.45.68")).toBe(true);
+    engine.stop();
+  });
+
+  it("fails closed for private clients when initial policy is unknown", async () => {
+    const { engine } = await newEngine({ selectError: new Error("database offline") });
+    const middleware = createSelfHealingSecurityMiddleware(engine);
+    const response = responseDouble();
+    const next = vi.fn();
+    middleware(
+      requestDouble("192.168.50.12", "192.168.50.12"),
+      response,
+      next,
+    );
+    expect(response.status).toHaveBeenCalledWith(503);
+    expect(next).not.toHaveBeenCalled();
+    engine.stop();
+  });
+
+  it("preserves only the narrow operational boot path during unknown state", async () => {
+    const { engine } = await newEngine({ selectError: new Error("database offline") });
+    const middleware = createSelfHealingSecurityMiddleware(engine);
+    const request = requestDouble("192.168.50.12", "192.168.50.12");
+    request.path = "/api/ready";
+    const next = vi.fn();
+    middleware(request, responseDouble(), next);
+    expect(next).toHaveBeenCalledOnce();
+    engine.stop();
+  });
+
+  it("passes clean traffic, registers error monitoring, and enforces known blocks", async () => {
+    const { engine } = await newEngine({
+      loaded: [{ ip: SQL_IP, expiresAt: new Date(BASE_TIME.getTime() + 60_000) }],
+    });
+    const middleware = createSelfHealingSecurityMiddleware(engine);
+
+    const cleanResponse = responseDouble();
+    const cleanNext = vi.fn();
+    middleware(
+      requestDouble("198.51.100.70", "198.51.100.70"),
+      cleanResponse,
+      cleanNext,
+    );
+    expect(cleanNext).toHaveBeenCalledOnce();
+    expect(cleanResponse.on).toHaveBeenCalledWith("finish", expect.any(Function));
+
+    const blockedResponse = responseDouble();
+    const blockedNext = vi.fn();
+    middleware(requestDouble(SQL_IP, SQL_IP), blockedResponse, blockedNext);
+    expect(blockedResponse.status).toHaveBeenCalledWith(403);
+    expect(blockedResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "IP_BLOCKED" }),
+    );
+    expect(blockedNext).not.toHaveBeenCalled();
+    engine.stop();
   });
 });

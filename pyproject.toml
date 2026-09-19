@@ -11,6 +11,8 @@ requires-python = ">=3.12"
 # to write to the read-only Nix store during the deployment build phase.
 dependencies = [
     "fastapi>=0.100.0",
+    # Test-only transport required by Starlette TestClient.
+    "httpx2>=2.0.0,<3",
     "numpy>=1.24.0",
     "pillow>=12.3.0",
     "pydantic>=2.0.0",

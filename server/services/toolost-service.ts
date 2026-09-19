@@ -44,6 +44,12 @@ class ToolostApiRejection extends Error {
 export interface ToolostRelease {
   title: string;
   artist: string;
+  releaseType: "Single" | "EP" | "Album";
+  language: string;
+  composerName: string;
+  acceptTerms: boolean;
+  confirmRights: boolean;
+  confirmYoutubeRights?: boolean;
   releaseDate: string;
   upc?: string;
   tracks: ToolostTrack[];
@@ -61,7 +67,7 @@ export interface ToolostRelease {
    * the cover art). No current app data source — see
    * assertComplianceDataAvailable.
    */
-  artworkAiUsage?: string;
+  artworkAiUsage?: "none" | "ai-generated";
 }
 
 export interface ToolostTrack {
@@ -336,19 +342,12 @@ function normalizePlatformSlug(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-/**
- * INFERRED sub-shape: Too Lost's real "participant" object fields were not
- * confirmed against a live token beyond the field's existence on release
- * and track payloads. `{name, role}` is the most standard shape across
- * DDEX-adjacent distribution APIs. A wrong guess here fails loudly (a 422
- * with validation detail Too Lost returns), not silently — verify against
- * a real sandbox call once TOOLOST_CLIENT_ID/SECRET are live.
- */
+/** Too Lost's documented participant/writer shape uses an array of roles. */
 function buildToolostParticipant(
   name: string,
   role: string,
-): { name: string; role: string } {
-  return { name, role };
+): { name: string; role: string[] } {
+  return { name, role: [role] };
 }
 
 class ToolostService {
@@ -1178,6 +1177,28 @@ class ToolostService {
           "release/tracks before distribution can go through Too Lost.",
       );
     }
+    if (
+      describesAiInvolvement(releaseData.artworkAiUsage) ||
+      releaseData.tracks.some(
+        (track) =>
+          describesAiInvolvement(track.audioAiUsage) ||
+          describesAiInvolvement(track.compositionAiUsage),
+      )
+    ) {
+      throw new Error(
+        "Too Lost release blocked: AI-assisted content requires provider AI documentation fields/files that this app does not yet collect. The declaration cannot be downgraded or guessed.",
+      );
+    }
+    if (!releaseData.composerName.trim()) {
+      throw new Error(
+        "Too Lost release blocked: every track requires a writer with the documented instrumentalist role (Composer for DSP delivery).",
+      );
+    }
+    if (!releaseData.acceptTerms || !releaseData.confirmRights) {
+      throw new Error(
+        "Too Lost release blocked: the user must explicitly accept Too Lost's terms and confirm distribution rights.",
+      );
+    }
   }
 
   /**
@@ -1198,7 +1219,7 @@ class ToolostService {
         `Too Lost release blocked: could not download audio for track "${track.title}" (HTTP ${sourceRes.status}).`,
       );
     }
-    const contentType = sourceRes.headers.get("content-type") || "audio/wav";
+    const contentType = "audio/flac";
     const urlExt = (() => {
       try {
         const pathname = new URL(track.audioFile).pathname;
@@ -1208,11 +1229,9 @@ class ToolostService {
         return "";
       }
     })();
-    const allowedExt = [".wav", ".flac", ".aif", ".aiff"];
-    if (urlExt && !allowedExt.includes(urlExt)) {
+    if (urlExt !== ".flac") {
       throw new Error(
-        `Too Lost release blocked: audio for track "${track.title}" has an unsupported extension "${urlExt}" ` +
-          `(allowed: ${allowedExt.join(", ")}).`,
+        `Too Lost release blocked: audio for track "${track.title}" must be FLAC; Too Lost's upload-url contract accepts only .flac with audio/flac.`,
       );
     }
     const buffer = Buffer.from(await sourceRes.arrayBuffer());
@@ -1222,7 +1241,7 @@ class ToolostService {
       this.raw<{ uploadUrl: string; fileKey: string; method?: string; headers?: Record<string, string> }>(
         "POST",
         urlEndpoint,
-        { body: { kind: "audio", fileName: `track_${Date.now()}${urlExt || ".wav"}`, contentType } },
+        { body: { kind: "audio", fileName: `track_${Date.now()}.flac`, contentType } },
       ),
     );
     const uploadInfo = this.unwrap(
@@ -1259,8 +1278,8 @@ class ToolostService {
       this.raw<Record<string, unknown>>("POST", "/releases", {
         body: {
           title: releaseData.title,
-          type: "Single",
-          participants: [buildToolostParticipant(releaseData.artist, "primary_artist")],
+          type: releaseData.releaseType,
+          participants: [buildToolostParticipant(releaseData.artist, "primary")],
           ...(releaseData.label ? { label: releaseData.label } : {}),
         },
       }),
@@ -1277,10 +1296,22 @@ class ToolostService {
       trackPayloads.push({
         title: track.title,
         ...(track.isrc ? { isrc: track.isrc } : {}),
-        ...(track.lyrics ? { lyrics: track.lyrics } : {}),
         audioFileKey,
         aiAssisted: describesAiInvolvement(track.audioAiUsage) || describesAiInvolvement(track.compositionAiUsage),
-        artists: [buildToolostParticipant(track.artist, "primary_artist")],
+        language: releaseData.language,
+        artists: [buildToolostParticipant(track.artist, "primary")],
+        writers: [
+          buildToolostParticipant(releaseData.composerName, "instrumentalist"),
+        ],
+        ...(track.lyrics
+          ? {
+              lyrics: {
+                content: track.lyrics,
+                explicit: Boolean(track.explicit),
+                cleanVersion: !track.explicit,
+              },
+            }
+          : {}),
       });
     }
     this.logApiCall("PUT", `/releases/${releaseId}/tracks`, { count: trackPayloads.length });
@@ -1289,15 +1320,13 @@ class ToolostService {
     );
     this.unwrap(`[Too Lost] createRelease: track replace-all failed for release ${releaseId}`, tracksResult);
 
-    // INFERRED: cover art is sent as a direct hosted URL rather than
-    // through a presigned upload, since no dedicated cover-art upload
-    // endpoint is confirmed (only the track-scoped upload-url endpoint
-    // above). Verify against a real sandbox call once credentials exist,
-    // and switch to an upload flow if Too Lost rejects external URLs.
     const metadataBody: Record<string, unknown> = {
-      genres: [releaseData.genre],
+      type: releaseData.releaseType,
+      title: releaseData.title,
+      primaryGenre: releaseData.genre,
+      language: releaseData.language,
       releaseDate: releaseData.releaseDate,
-      isAiGeneratedArtwork: describesAiInvolvement(releaseData.artworkAiUsage),
+      isAiGenerated: describesAiInvolvement(releaseData.artworkAiUsage),
       coverUrl: releaseData.artwork,
     };
     if (releaseData.upc) metadataBody.upc = releaseData.upc;
@@ -1313,20 +1342,42 @@ class ToolostService {
     const metadataResult = await this.callWithRetry(() =>
       this.raw<unknown>("PATCH", `/releases/${releaseId}/metadata`, { body: metadataBody }),
     );
-    if ("error" in metadataResult) {
-      // Non-fatal, mirrors LabelGrid's own non-fatal validate step: the
-      // release+tracks already exist, so surface the problem but continue
-      // toward submit rather than abandoning a partially-built release.
-      this.logApiError(
-        `[Too Lost] createRelease: metadata update failed for release ${releaseId} (non-fatal)`,
-        metadataResult.error,
-      );
-    }
+    this.unwrap(
+      `[Too Lost] createRelease: metadata update failed for release ${releaseId}; release was not submitted`,
+      metadataResult,
+    );
+
+    const deliveryBody = {
+      delivery: {
+        platforms: releaseData.platforms,
+        territories:
+          releaseData.territoryMode === "worldwide"
+            ? []
+            : releaseData.territories || [],
+        additional: {},
+      },
+    };
+    this.logApiCall("PATCH", `/releases/${releaseId}/delivery`, deliveryBody);
+    const deliveryResult = await this.callWithRetry(() =>
+      this.raw<unknown>("PATCH", `/releases/${releaseId}/delivery`, {
+        body: deliveryBody,
+      }),
+    );
+    this.unwrap(
+      `[Too Lost] createRelease: delivery update failed for release ${releaseId}; release was not submitted`,
+      deliveryResult,
+    );
 
     this.logApiCall("POST", `/releases/${releaseId}/submit`);
     const submitResult = await this.callWithRetry(() =>
       this.raw<unknown>("POST", `/releases/${releaseId}/submit`, {
-        body: { acceptTerms: true, confirmRights: true },
+        body: {
+          acceptTerms: releaseData.acceptTerms,
+          confirmRights: releaseData.confirmRights,
+          ...(releaseData.confirmYoutubeRights
+            ? { confirmYoutubeRights: true }
+            : {}),
+        },
       }),
     );
     this.unwrap(`[Too Lost] createRelease: submit failed for release ${releaseId}`, submitResult);
@@ -1473,22 +1524,23 @@ class ToolostService {
   }
 
   /**
-   * INFERRED: Too Lost has no dedicated takedown endpoint confirmed in its
-   * documented surface. PATCH /releases/{id}/delivery with an empty
-   * platforms array is the best-fit inference from the confirmed
-   * takedown_pending/takedown_complete status values (which imply some
-   * real mechanism exists) combined with the confirmed
-   * PATCH /releases/{id}/delivery shape. Verify against a live sandbox
-   * call before relying on this in production — mirrors LabelGrid's own
-   * already-inferred takedown pattern.
+   * Too Lost's documented API surface has no confirmed takedown operation.
+   * Do not reinterpret delivery updates as destructive release removal.
    */
-  async takedownRelease(releaseId: string): Promise<{ success: boolean }> {
-    const endpoint = `/releases/${encodeURIComponent(releaseId)}/delivery`;
-    this.logApiCall("PATCH", endpoint);
-    const result = await this.callWithRetry(() => this.raw<unknown>("PATCH", endpoint, { body: { platforms: [] } }));
-    this.unwrap(`[Too Lost] takedownRelease failed for ${releaseId}`, result);
-    logger.info({ releaseId }, "Too Lost release takedown initiated");
-    return { success: true };
+  async takedownRelease(_releaseId: string): Promise<{ success: boolean }> {
+    throw new Error(
+      "Too Lost takedown is unavailable: no confirmed provider API contract exists.",
+    );
+  }
+
+  /** Documented DELETE /releases/{id}; Too Lost restricts it to drafts. */
+  async deleteDraftRelease(releaseId: string): Promise<void> {
+    const endpoint = `/releases/${encodeURIComponent(releaseId)}`;
+    this.logApiCall("DELETE", endpoint);
+    const result = await this.callWithRetry(() =>
+      this.raw<unknown>("DELETE", endpoint),
+    );
+    this.unwrap(`[Too Lost] deleteDraftRelease failed for ${releaseId}`, result);
   }
 
   /**

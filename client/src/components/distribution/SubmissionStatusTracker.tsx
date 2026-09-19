@@ -172,7 +172,7 @@ const STATUS_CONFIG: Record<
     color: "bg-orange-500/10 text-orange-500 border-orange-500/20",
     icon: AlertTriangle,
     description:
-      "LabelGrid did not accept delivery to this platform for this release.",
+      "The distributor did not accept delivery to this platform for this release.",
   },
 };
 

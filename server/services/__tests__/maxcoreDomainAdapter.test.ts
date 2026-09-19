@@ -30,11 +30,26 @@ describe("MaxCore domain adapter contracts", () => {
       } as never;
     };
     const result = await generateSocialDirect(
-      { userId: "u1", platform: "instagram", topic: "release", numVariants: 1 },
+      {
+        userId: "u1",
+        platform: "instagram",
+        topic: "release",
+        numVariants: 1,
+        intent: "announce",
+        direction: { pacing: "slow" },
+        context: { releaseId: "r1" },
+        awareness: { avoid: ["hype"] },
+      },
       transport,
     );
     expect(sentPath).toBe("/api/platform/social/generate");
     expect(sentBody).toMatchObject({ user_id: "u1", num_variants: 1 });
+    expect(sentBody).toMatchObject({
+      intent: "announce",
+      direction: { pacing: "slow" },
+      context: { releaseId: "r1" },
+      awareness: { avoid: ["hype"] },
+    });
     expect(result.variants[0].caption).toBe("Listen\nNew release\nStream now");
   });
 
@@ -56,10 +71,25 @@ describe("MaxCore domain adapter contracts", () => {
       } as never;
     };
     const result = await generateAdsDirect(
-      { userId: "u2", platform: "meta", product: "Single", budgetDaily: 25 },
+      {
+        userId: "u2",
+        platform: "meta",
+        product: "Single",
+        budgetDaily: 25,
+        intent: "pre-save",
+        direction: "understated",
+        context: { campaignId: "c1" },
+        awareness: { audienceState: "warm" },
+      },
       transport,
     );
     expect(sentBody).toMatchObject({ user_id: "u2", budget_daily: 25 });
+    expect(sentBody).toMatchObject({
+      intent: "pre-save",
+      direction: "understated",
+      context: { campaignId: "c1" },
+      awareness: { audienceState: "warm" },
+    });
     expect(result.creatives[0].headline).toBe("Out now");
     await expect(
       generateAdsDirect(

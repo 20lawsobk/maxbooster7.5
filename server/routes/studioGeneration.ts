@@ -37,6 +37,10 @@ interface GenerationParams {
   complexity: number;
   swing: number;
   humanize: number;
+  intent?: unknown;
+  direction?: unknown;
+  context?: unknown;
+  awareness?: unknown;
 }
 
 // Lightweight UI metadata only. Unlike the former pattern service, this does
@@ -219,13 +223,16 @@ async function generateMaxCorePattern(
     userId,
     {
       prompt: `${kind}, ${params.instrument || ""}, ${params.genre}, ${params.key} ${params.scale}`,
-      intent: kind,
       instrument: params.instrument,
       genre: params.genre,
       bpm: params.tempo,
       key: `${params.key} ${params.scale}`,
       duration,
       format: "wav",
+      intent: params.intent ?? kind,
+      direction: params.direction,
+      context: params.context,
+      awareness: params.awareness,
     },
   );
   if (!submitted.job_id) {
@@ -357,6 +364,10 @@ const textGenerationSchema = z.object({
   complexity: z.number().min(0).max(1).optional(),
   swing: z.number().min(0).max(1).optional(),
   humanize: z.number().min(0).max(1).optional(),
+  intent: z.unknown().optional(),
+  direction: z.unknown().optional(),
+  context: z.unknown().optional(),
+  awareness: z.unknown().optional(),
 });
 
 const audioGenerationSchema = z.object({
@@ -364,6 +375,10 @@ const audioGenerationSchema = z.object({
   text: z.string().max(500).optional(), // fed to AI — cap to prevent prompt injection / cost abuse
   projectId: z.string().max(64).optional(),
   bars: z.number().int().positive().optional(),
+  intent: z.unknown().optional(),
+  direction: z.unknown().optional(),
+  context: z.unknown().optional(),
+  awareness: z.unknown().optional(),
 });
 
 // POST /text — async audio job submit
@@ -418,6 +433,10 @@ router.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
           tempo: validatedData.tempo ?? null,
           genre: validatedData.genre ?? null,
           key: validatedData.key ?? null,
+          intent: validatedData.intent,
+          direction: validatedData.direction,
+          context: validatedData.context,
+          awareness: validatedData.awareness,
         },
       ),
       "studio audio generation",
@@ -475,6 +494,10 @@ router.post(
         text: req.body.text,
         projectId: req.body.projectId,
         bars: req.body.bars ? parseInt(req.body.bars, 10) : undefined,
+        intent: req.body.intent,
+        direction: req.body.direction,
+        context: req.body.context,
+        awareness: req.body.awareness,
       };
 
       const validatedData = audioGenerationSchema?.parse(bodyData);
@@ -489,6 +512,10 @@ router.post(
         text: validatedData.text,
         bars: validatedData.bars,
         projectId: validatedData.projectId,
+         intent: validatedData.intent,
+         direction: validatedData.direction,
+         context: validatedData.context,
+         awareness: validatedData.awareness,
       });
 
       const userId2 = req.user?.id || "unknown";
@@ -624,6 +651,10 @@ const patternGenerationSchema = z.object({
   complexity: z.number().min(0).max(1).default(0.5),
   swing: z.number().min(0).max(1).default(0),
   humanize: z.number().min(0).max(1).default(0.2),
+  intent: z.unknown().optional(),
+  direction: z.unknown().optional(),
+  context: z.unknown().optional(),
+  awareness: z.unknown().optional(),
 });
 
 router.get("/pattern/instruments", requireAuth, async (_req, res) => {

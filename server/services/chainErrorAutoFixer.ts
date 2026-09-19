@@ -39,7 +39,8 @@ interface ErrorPattern {
   category: string;
   cooldownMs: number;
   maxAttempts: number;
-  autoFix: (triggeredBy: string) => Promise<void>;
+  /** Return false when detection is valid but no state was changed. */
+  autoFix: (triggeredBy: string) => Promise<void | boolean>;
   escalate?: (attempts: number) => Promise<void>;
 }
 
@@ -50,7 +51,20 @@ interface PatternState {
   successCount: number;
   failCount: number;
   lastMessage: string;
-  lastFixResult: "success" | "failed" | "pending" | "suppressed" | "none";
+  lastFixResult:
+    | "success"
+    | "noop"
+    | "failed"
+    | "pending"
+    | "suppressed"
+    | "none";
+  durableResult:
+    | "none"
+    | "not-applicable"
+    | "recorded"
+    | "promoted"
+    | "failed";
+  durableError?: string;
 }
 
 interface FixHistoryEntry {
@@ -58,8 +72,10 @@ interface FixHistoryEntry {
   patternName: string;
   triggeredAt: number;
   triggeredBy: string;
-  result: "success" | "failed" | "suppressed" | "escalated";
+  result: "success" | "noop" | "failed" | "suppressed" | "escalated";
   attemptNumber: number;
+  durableResult?: "not-applicable" | "recorded" | "promoted" | "failed";
+  durableError?: string;
 }
 
 // ─── Chain Error Auto-Fixer ──────────────────────────────────────────────────
@@ -69,7 +85,7 @@ interface AdaptiveCooldownState {
   recentFires: number[]; // Unix ms timestamps of last N fires
 }
 
-class ChainErrorAutoFixer extends EventEmitter {
+export class ChainErrorAutoFixer extends EventEmitter {
   private patterns: ErrorPattern[] = [];
   private state = new Map<string, PatternState>();
   private adaptiveCooldown = new Map<string, AdaptiveCooldownState>();
@@ -1093,6 +1109,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       failCount: 0,
       lastMessage: "",
       lastFixResult: "none",
+      durableResult: "none",
     });
     this.adaptiveCooldown.set(p.id, { recentFires: [] });
   }
@@ -1426,17 +1443,49 @@ class ChainErrorAutoFixer extends EventEmitter {
     }
 
     try {
-      await pattern?.autoFix(triggeredBy);
+      const changed = await pattern?.autoFix(triggeredBy);
+      if (changed === false) {
+        st.lastFixResult = "noop";
+        entry.result = "noop";
+        this.emit("noop", { patternId: pattern.id, attempt: st.attempts });
+        this.pushHistory(entry);
+        return;
+      }
       st.successCount++;
       st.lastFixResult = "success";
       entry.result = "success";
       this.emit("fixed", { patternId: pattern.id, attempt: st.attempts });
 
-      // ── PERMANENT FIX REGISTRY: record success so escalation can accumulate ──
-      // Fire-and-forget — non-fatal; escalates to persistent constant change after N fires
-      import("../services/permanentFixRegistry.js")
-        .then((m) => m?.permanentFixRegistry.recordFix(pattern?.id))
-        .catch(() => {});
+      // Runtime recovery and durable promotion are separate outcomes. A durable
+      // failure must be visible, but must not reclassify the already-completed
+      // runtime action as failed or cause it to be repeated.
+      try {
+        const { permanentFixRegistry } = await import(
+          "../services/permanentFixRegistry.js"
+        );
+        const durable = await permanentFixRegistry.recordFix(pattern?.id);
+        const durableResult =
+          durable.status === "unsupported"
+            ? "not-applicable"
+            : durable.status === "promoted"
+              ? "promoted"
+              : "recorded";
+        st.durableResult = durableResult;
+        st.durableError = undefined;
+        entry.durableResult = durableResult;
+      } catch (err) {
+        st.durableResult = "failed";
+        st.durableError = (err as Error).message;
+        entry.durableResult = "failed";
+        entry.durableError = (err as Error).message;
+        logger.warn(
+          `[ChainFixer] Runtime fix succeeded but durable promotion failed (${pattern.id}): ${(err as Error).message}`,
+        );
+        this.emit("durabilityFailed", {
+          patternId: pattern.id,
+          error: (err as Error).message,
+        });
+      }
 
       // ── OFFENSIVE: chain prediction — pattern fired, pre-empt known downstream ──
       this._predictAndPreemptChain(pattern?.id);
@@ -1880,6 +1929,8 @@ class ChainErrorAutoFixer extends EventEmitter {
       failCount: number;
       suppressed: boolean;
       lastFixResult: string;
+      durableResult: string;
+      durableError?: string;
       cooldownRemaining: number;
       lastMessage: string;
     }>;
@@ -1909,7 +1960,12 @@ class ChainErrorAutoFixer extends EventEmitter {
           failCount: st.failCount,
           suppressed: st.suppressed,
           lastFixResult: st.lastFixResult,
-          cooldownRemaining: Math.max(0, p.cooldownMs - (now - st.lastFix)),
+          durableResult: st.durableResult,
+          durableError: st.durableError,
+          cooldownRemaining: Math.max(
+            0,
+            this._adaptiveCooldownMs(p) - (now - st.lastFix),
+          ),
           lastMessage: st.lastMessage,
         };
       }),
@@ -1950,6 +2006,8 @@ class ChainErrorAutoFixer extends EventEmitter {
     st.suppressed = false;
     st.lastFix = 0;
     st.lastFixResult = "none";
+    st.durableResult = "none";
+    st.durableError = undefined;
     logger.info(`[ChainFixer] Pattern '${id}' manually reset`);
     return true;
   }

@@ -31,6 +31,7 @@ import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import { generateSocialUrlWithMaxCore } from "../services/socialUrlMaxCoreTransport.js";
 import {
   getAwarenessContext,
   normalizeSocialAwarenessPlatform,
@@ -2636,6 +2637,32 @@ function assertSafeExternalUrl(raw: string): void {
   }
 }
 
+const socialUrlGenerationSchema = z.object({
+  url: z.string().trim().min(1, "URL is required").max(2048),
+  platforms: z.array(z.string().min(1).max(50)).min(1).max(8),
+  tone: z
+    .enum([
+      "professional",
+      "casual",
+      "energetic",
+      "promotional",
+      "funny",
+      "inspirational",
+    ])
+    .default("energetic"),
+  format: z.enum(["text", "image", "audio", "video"]).default("text"),
+  targetAudience: z.string().trim().max(500).optional().default(""),
+  hashtagStrategy: z
+    .enum(["balanced", "niche", "trending", "branded"])
+    .optional(),
+  captionLength: z.enum(["short", "optimal", "long"]).optional(),
+  callToActionStrength: z.enum(["low", "medium", "high"]).optional(),
+  intent: z.unknown().optional(),
+  direction: z.unknown().optional(),
+  context: z.unknown().optional(),
+  awareness: z.unknown().optional(),
+});
+
 // Helper function to fetch and extract metadata from any URL
 
 // Generate content from any URL (websites, music, videos, articles, products, etc.)
@@ -2644,25 +2671,27 @@ router.post(
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const parsedRequest = socialUrlGenerationSchema.safeParse(req.body);
+      if (!parsedRequest.success) {
+        return res.status(400).json({
+          error: "Invalid social URL generation request",
+          details: parsedRequest.error.issues,
+        });
+      }
       const {
         url,
-        platforms = ["instagram"],
-        tone = "energetic",
-        format = "text",
-        targetAudience = "",
-      } = req.body;
-
-      if (typeof url !== "string" || !url.trim()) {
-        return res.status(400).json({ error: "URL is required" });
-      }
-      if (!Array.isArray(platforms)) {
-        return res.status(400).json({ error: "platforms must be an array" });
-      }
-
-      // Reject obviously oversized URLs before any parsing or network fetch
-      if (url.length > 2048) {
-        return res.status(400).json({ error: "URL too long (max 2048 characters)" });
-      }
+        platforms,
+        tone,
+        format,
+        targetAudience,
+        hashtagStrategy,
+        captionLength,
+        callToActionStrength,
+        intent,
+        direction,
+        context,
+        awareness,
+      } = parsedRequest.data;
 
       // SSRF guard — block private/internal targets before fetching the URL
       try {
@@ -2691,25 +2720,6 @@ router.post(
 
       const seed = urlToContentSeed(analysis);
 
-      // Build a clean, structured topic for the AI model — no pollution from targetAudience or format
-      let topic: string;
-      if (seed?.track && seed?.artist) {
-        topic = `"${seed.track}" by ${seed?.artist}`;
-        if (seed?.genre && seed?.genre !== "default") topic += ` — ${seed?.genre}`;
-      } else if (seed?.track) {
-        topic = `"${seed.track}"`;
-      } else if (seed?.artist) {
-        topic = `New music by ${seed?.artist}`;
-      } else if (analysis?.title) {
-        // Use the page title, cleaned up
-        topic = analysis?.title
-          .replace(/\s*[-|–]\s*\S+$/, "")
-          .trim()
-          .slice(0, 80);
-      } else {
-        topic = seed?.topic?.slice(0, 80);
-      }
-
       // Derive the content_type for better CTA selection
       const contentType =
         seed?.content_type || seed?.platform_category || "general";
@@ -2724,7 +2734,6 @@ router.post(
         "threads",
         "googlebusiness",
       ];
-      const validTones = ["professional", "casual", "energetic", "promotional"];
       const requestedPlatforms = [
         ...new Set(
           platforms
@@ -2739,62 +2748,28 @@ router.post(
       }
       const generatedContent: Record<string, unknown>[] = [];
 
-      // Combine keywords + tags from URL analysis into a deduplicated keyword list
-      const allKeywords = [
-        ...new Set([...(seed?.keywords || []), ...(seed?.tags || [])]),
-      ].slice(0, 20);
-
-      // Build rich extra_context from headings, event/product data, and content signals
-      const extraParts: string[] = [];
-      if (seed?.headings?.length)
-        extraParts?.push(seed?.headings?.slice(0, 3).join(" • "));
-      if (seed?.event_date)
-        extraParts?.push(
-          `Event: ${seed?.event_date}${seed?.event_location ? " @ " + seed?.event_location : ""}`,
-        );
-      if (seed?.performers?.length)
-        extraParts?.push(
-          `Performers: ${seed?.performers?.slice(0, 3).join(", ")}`,
-        );
-      if (seed?.price)
-        extraParts?.push(`Price: ${seed?.currency || ""}${seed?.price}`);
-      if (seed?.view_count)
-        extraParts?.push(`${seed?.view_count?.toLocaleString()} views`);
-      if (seed?.like_count)
-        extraParts?.push(`${seed?.like_count?.toLocaleString()} likes`);
-      if (seed?.play_count)
-        extraParts?.push(`${seed?.play_count?.toLocaleString()} plays`);
-      if (seed?.subscriber_count)
-        extraParts?.push(
-          `${seed?.subscriber_count?.toLocaleString()} subscribers`,
-        );
-      if (targetAudience) extraParts?.push(`Target: ${targetAudience}`);
-
-      // MaxCore AI is the only source — generate for all platforms in parallel
+      // Use MaxCore's dedicated social URL pipeline. The exact URL remains the
+      // topic so MaxCore's internal URL resolver is invoked; local analysis
+      // above verifies the source is retrievable and supplies response metadata.
       const platformResults = await Promise.allSettled(
         requestedPlatforms
           .map(async (platform: string) => {
-            const ai = await getUnifiedAI();
-            const result = await ai?.generateContent({
-              tone: (validTones.includes(tone) ? tone : "energetic") as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
-              platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
-              topic: topic.substring(0, 120),
-              genre: seed.genre || "hip-hop",
-              artistName: seed.artist || "",
-              trackTitle: seed.track || "",
-              album: seed.album || undefined,
-              releaseDate: seed.release_date || undefined,
-              label: seed.label || undefined,
-              keywords: allKeywords.length ? allKeywords : undefined,
-              mood: seed.tone !== "default" ? seed?.tone : undefined,
-              description: analysis.description?.slice(0, 200) || undefined,
-              bodyPreview: seed.body_preview?.slice(0, 300) || undefined,
-              extraContext: extraParts.length
-                ? extraParts?.join(" | ")
-                : undefined,
-              userId: req.user?.id,
-              includeHashtags: true,
-              includeEmojis: true,
+            const result = await generateSocialUrlWithMaxCore({
+              url: url.trim(),
+              platform,
+              userId: req.user!.id,
+              tone,
+              format,
+              targetAudience: targetAudience || undefined,
+              hashtagStrategy,
+              captionLength,
+              callToActionStrength,
+              genre: seed.genre || undefined,
+              contentType,
+              intent,
+              direction,
+              context,
+              awareness,
             });
             return { platform, result };
           }),
@@ -2803,21 +2778,14 @@ router.post(
       for (const settled of platformResults) {
         if (settled?.status !== "fulfilled") continue;
         const { platform, result } = settled?.value ?? {};
-        if (!result?.success || !result?.data) continue;
+        if (!result) continue;
 
-        const captionText = result?.data?.caption + `\n\n🔗 ${url}`;
-        const rawCaption = result?.data?.caption || "";
-        const captionParts = rawCaption
-          .split(/\n\n+/)
-          .map((s: string) => s?.trim())
-          .filter(Boolean);
-        const derivedHook =
-          result?.data?.hook ||
-          captionParts[0] ||
-          rawCaption?.split("\n")[0] ||
-          "";
-        const derivedBody = result?.data?.body || captionParts[1] || "";
-        const derivedCta = result?.data?.cta || captionParts[2] || "";
+        const captionText = result.caption.includes(url)
+          ? result.caption
+          : `${result.caption}\n\n🔗 ${url}`;
+        const derivedHook = result.hook;
+        const derivedBody = result.body;
+        const derivedCta = result.cta;
         // Video overlays need short, punchy text (no hashtags, no URLs)
         const stripMeta = (s: string) =>
           s
@@ -2827,13 +2795,12 @@ router.post(
             .trim();
         const videoHook = stripMeta(derivedHook).slice(0, 80);
         const videoBody = stripMeta(derivedBody).slice(0, 100);
-        const videoCta =
-          stripMeta(derivedCta).slice(0, 50) || "Join Max Booster";
+        const videoCta = stripMeta(derivedCta).slice(0, 50);
         generatedContent?.push({
           platform,
           caption: captionText,
           content: captionText,
-          hashtags: result.data.hashtags,
+          hashtags: result.hashtags,
           hook: derivedHook,
           body: derivedBody,
           cta: derivedCta,
@@ -2841,7 +2808,8 @@ router.post(
           video_body: videoBody,
           video_cta: videoCta,
           artist_name: seed.artist || "",
-          genre: seed.genre || "hip-hop",
+          genre:
+            seed.genre && seed.genre !== "default" ? seed.genre : "",
           thumbnail_url: seed.og_image || seed?.thumbnail_url || "",
           sourceUrl: url,
           extractedTitle: analysis.title,
@@ -2853,82 +2821,29 @@ router.post(
       }
 
       if (generatedContent?.length === 0) {
-        // All parallel calls failed (MaxCore transient or cold-start).
-        // Log the failure details and retry serially with a minimal payload.
         logger.warn(
-          `[generate-from-url] All ${platforms.length} parallel generateContent calls ` +
-            `returned no data — retrying serially (topic="${topic.slice(0, 60)}")`,
+          `[generate-from-url] MaxCore returned no usable social variants for ${requestedPlatforms.length} platform(s)`,
         );
-        for (const platform of requestedPlatforms) {
-
-          const result = await (
-            await getUnifiedAI()
-          ).generateContent({
-            tone: validTones.includes(tone) ? tone : "energetic",
-            platform,
-            topic: topic.substring(0, 120),
-            genre: seed.genre || "hip-hop",
-            artistName: seed.artist || "",
-            trackTitle: seed.track || "",
-            userId: req.user?.id,
-            includeHashtags: true,
-            includeEmojis: true,
-          });
-
-          if (result?.success && result?.data) {
-            const captionText = result?.data?.caption + `\n\n🔗 ${url}`;
-            const rawCaption = result?.data?.caption || "";
-            const captionParts = rawCaption
-              .split(/\n\n+/)
-              .map((s: string) => s?.trim())
-              .filter(Boolean);
-            const derivedHook =
-              result?.data?.hook ||
-              captionParts[0] ||
-              rawCaption?.split("\n")[0] ||
-              "";
-            const derivedBody = result?.data?.body || captionParts[1] || "";
-            const derivedCta = result?.data?.cta || captionParts[2] || "";
-            const stripMeta = (s: string) =>
-              s
-                .replace(/#\w+/g, "")
-                .replace(/https?:\/\/\S+/g, "")
-                .replace(/🔗.*$/g, "")
-                .trim();
-            const videoHook = stripMeta(derivedHook).slice(0, 80);
-            const videoBody = stripMeta(derivedBody).slice(0, 100);
-            const videoCta =
-              stripMeta(derivedCta).slice(0, 50) || "Join Max Booster";
-            generatedContent?.push({
-              platform,
-              caption: captionText,
-              content: captionText,
-              hashtags: result.data.hashtags,
-              hook: derivedHook,
-              body: derivedBody,
-              cta: derivedCta,
-              video_hook: videoHook,
-              video_body: videoBody,
-              video_cta: videoCta,
-              artist_name: seed.artist || "",
-              genre: seed.genre || "hip-hop",
-              thumbnail_url: seed.og_image || seed?.thumbnail_url || "",
-              sourceUrl: url,
-              extractedTitle: analysis.title,
-              contentType,
-              format,
-              targetAudience: targetAudience || undefined,
-              source: "MaxCoreAI",
-            });
-          }
-        }
+        return res.status(503).json({
+          success: false,
+          code: "AI_UNAVAILABLE",
+          error: "MaxCore did not return usable social content",
+        });
       }
+
+      const generatedPlatforms = new Set(
+        generatedContent.map((item) => String(item.platform)),
+      );
+      const failedPlatforms = requestedPlatforms.filter(
+        (platform) => !generatedPlatforms.has(platform),
+      );
 
       res.json({
         success: true,
         generatedContent,
+        failedPlatforms,
         url,
-        platforms,
+        platforms: requestedPlatforms,
         metadata: {
           title: analysis.title,
           description: analysis.description?.substring(0, 200),
@@ -4624,6 +4539,10 @@ router.post(
         urlDescription,
         artistName,
         trackTitle,
+        intent,
+        direction,
+        context,
+        awareness,
       } = req.body;
 
       if (!topic) {
@@ -4656,31 +4575,15 @@ router.post(
       // Uses MaxCoreAIClient so the bulkhead, circuit breaker, and auth
       // centralization all apply (avoids the manual-fetch bypass pattern).
       type McImgResp = { url?: string; image_url?: string; outputs?: { url?: string }[] };
-      let platformOptimization: string | null = null;
-      try {
-        platformOptimization = platformAwarenessOptimization(
-          normalizeSocialAwarenessPlatform(resolvedPlatform),
-        );
-      } catch {
-        // outside the closed platform optimization set — skip
-      }
-      const awareness = await getAwarenessContext("content");
       const imgData = await MaxCoreAIClient.infer<McImgResp>("/api/generate/image", {
         prompt: enrichedTopic || topic,
         style: resolvedTone,
         platform: resolvedPlatform,
         genre: genre || "",
-        ...(awareness || platformOptimization
-          ? {
-              awareness: {
-                contextString: awareness?.contextString,
-                trendingGenres: awareness?.trendingGenres,
-                trendingMoods: awareness?.trendingMoods,
-                platformAlgorithmNotes: awareness?.platformAlgorithmNotes,
-                platformOptimization,
-              },
-            }
-          : {}),
+        intent,
+        direction,
+        context,
+        awareness,
       });
       const raw = imgData?.url ?? imgData?.image_url ?? imgData?.outputs?.[0]?.url ?? null;
       // MaxCore may return relative paths like /uploads/images/img_xxx.png —
@@ -5519,8 +5422,6 @@ router.post(
           const legacyUser = req.user as UserWithLegacyId | undefined;
           const userId = legacyUser?.id?.toString() || legacyUser?.userId?.toString() || "anon";
           const studioSvc = await getMusicVideoStudioService();
-          const { getAwarenessContext } = await import("../services/awarenessContext.js");
-          const videoAwareness = await getAwarenessContext("video_script");
           const studioResult = await studioSvc.generateFullMusicVideo({
             audioPath: audioFile.path,
             userId,
@@ -5530,7 +5431,10 @@ router.post(
             hook: body.hook,
             bodyText: body.body,
             cta: body.cta,
-            trendContext: videoAwareness?.contextString,
+            intent: body.intent,
+            direction: body.direction,
+            context: body.context,
+            awareness: body.awareness,
             platform: body.platform || "instagram",
             aspectRatio: body.aspect_ratio || "9:16",
             colorGrade: (body.color_grade as "cinematic") || "cinematic",

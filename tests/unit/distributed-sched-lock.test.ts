@@ -2,7 +2,7 @@
  * Unit tests for the BullMQ-based autonomous job scheduler.
  *
  * Tests verify that:
- *   1. setupRepeatableJobs() registers all 7 recurring tasks via BullMQ queue.add()
+ *   1. setupRepeatableJobs() registers every recurring task via BullMQ queue.add()
  *      with the correct repeat.every option — making them visible in the BullMQ dashboard.
  *   2. A BullMQ Worker is created and started for exactly-once processing per interval.
  *   3. teardownRepeatableJobs() / closeScheduler() drain the worker gracefully.
@@ -139,7 +139,7 @@ describe("BullMQ autonomous scheduler — setupRepeatableJobs()", () => {
   beforeEach(resetMocks);
   afterEach(() => closeScheduler().catch(() => {}));
 
-  it("registers all 8 recurring tasks via queue.upsertJobScheduler()", async () => {
+  it("registers all 10 recurring tasks via queue.upsertJobScheduler()", async () => {
     await setupRepeatableJobs();
     const names = mocks.mockUpsertJobScheduler.mock.calls.map(
       ([n]: [string]) => n,
@@ -152,7 +152,10 @@ describe("BullMQ autonomous scheduler — setupRepeatableJobs()", () => {
     expect(names).toContain("prune-notifications");
     expect(names).toContain("prune-upload-dirs");
     expect(names).toContain("beat-money-loop-tick");
-    expect(mocks.mockUpsertJobScheduler).toHaveBeenCalledTimes(8);
+    expect(names).toContain("payout-drain");
+    expect(names).toContain("advertising-autopilot-tick");
+    expect(new Set(names).size).toBe(10);
+    expect(mocks.mockUpsertJobScheduler).toHaveBeenCalledTimes(10);
   });
 
   it("passes repeat.every to every registered job (BullMQ dashboard visibility)", async () => {
@@ -505,14 +508,14 @@ describe("withSchedLock utility (distributedLock — aggregation use)", () => {
     expect(fn).not.toHaveBeenCalled();
   });
 
-  it("PDIM mode: graceful degradation — executes fn when PDIM throws", async () => {
+  it("PDIM mode: fails closed and skips fn when lock acquisition throws", async () => {
     mocks.pdimState.configured = true;
     mocks.mockRedisSet.mockRejectedValue(new Error("PDIM HTTP 503"));
     const { withSchedLock } =
       await import("../../server/lib/distributedLock.js");
     const fn = vi.fn().mockResolvedValue(undefined);
     await withSchedLock("task-d", 54, fn);
-    expect(fn).toHaveBeenCalledOnce();
+    expect(fn).not.toHaveBeenCalled();
   });
 
   it("PDIM mode: swallows fn() errors without propagating", async () => {

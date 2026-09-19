@@ -62,3 +62,11 @@ honest advisory with a `notAppliedReason`, never as applied.
 (e.g. posting → `optimalHours`) so the action is genuinely real, not just honestly-advisory.
 Heuristic values are fine as long as they're read and sit below learned data / above
 static defaults and are reversible — heuristic ≠ fake; unread ≠ applied.
+
+## Separate runtime remediation from durable promotion
+
+An action that succeeds in memory but fails to persist must expose both outcomes. Do not rerun its side effect merely because durable promotion failed, and do not claim it will survive restart.
+
+**Why:** Auto-fix simulations exposed successful remediations with silently rejected persistence, and rollbacks marked complete before their compensation finished.
+
+**How to apply:** Await compensation before changing rollback state. Preserve active state on compensation failure; report persistence failure separately from runtime success and test both failure orders.

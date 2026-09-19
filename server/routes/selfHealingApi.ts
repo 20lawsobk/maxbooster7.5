@@ -178,12 +178,14 @@ router.get("/proof", (req: Request, res: Response) => {
           "Real-time threat detection (< 50ms)",
           "Automatic IP blocking for critical threats",
           "Adaptive rate limiting",
-          "Session invalidation for compromised accounts",
-          "Circuit breaker integration",
           "Persistent threat database",
           "IP reputation scoring",
           "Pattern-based attack detection (SQL injection, XSS, path traversal)",
           "Behavioral anomaly detection",
+        ],
+        limitations: [
+          "Session invalidation is unavailable: no session-store adapter is configured",
+          "Circuit-break and feature-disable actions are unavailable: no control adapter is configured",
         ],
       },
     });

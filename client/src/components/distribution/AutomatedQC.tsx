@@ -30,7 +30,13 @@ interface QCCheck {
   id: string;
   name: string;
   category: "audio" | "metadata" | "artwork" | "codes" | "content";
-  status: "passed" | "failed" | "warning" | "pending" | "skipped";
+  status:
+    | "passed"
+    | "failed"
+    | "warning"
+    | "pending"
+    | "skipped"
+    | "not_analyzed";
   severity: "critical" | "major" | "minor" | "info";
   message: string;
   details?: string;
@@ -83,12 +89,17 @@ interface QCReport {
   id: string;
   releaseId: string;
   createdAt: string;
-  status: "passed" | "failed" | "warning";
-  overallScore: number;
+  status: "passed" | "failed" | "warning" | "incomplete";
+  overallScore: number | null;
   checks: QCCheck[];
   audioAnalysis?: AudioAnalysis;
   metadataValidation?: MetadataValidation;
   artworkAnalysis?: ArtworkAnalysis;
+}
+
+interface QCResponse {
+  status: "not_run" | "complete";
+  report: QCReport | null;
 }
 
 interface AutomatedQCProps {
@@ -117,6 +128,11 @@ const STATUS_CONFIG: Record<
   warning: { color: "text-yellow-500", icon: AlertTriangle, label: "Warning" },
   pending: { color: "text-blue-500", icon: RefreshCw, label: "Checking..." },
   skipped: { color: "text-gray-400", icon: Pause, label: "Skipped" },
+  not_analyzed: {
+    color: "text-gray-400",
+    icon: Pause,
+    label: "Not analyzed",
+  },
 };
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -129,7 +145,6 @@ const SEVERITY_STYLES: Record<string, string> = {
 export function AutomatedQC({
   releaseId,
   audioFiles = [],
-  artwork,
   metadata = {},
   onCheckComplete,
   onApplyFix,
@@ -141,7 +156,11 @@ export function AutomatedQC({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: qcReport } = useQuery<QCReport>({
+  const {
+    data: qcResponse,
+    isLoading: isReportLoading,
+    isError: isReportError,
+  } = useQuery<QCResponse>({
     queryKey: ["/api/distribution/qc", releaseId],
     enabled: !!releaseId,
   });
@@ -155,12 +174,7 @@ export function AutomatedQC({
       if (releaseId) {
         formData.append("releaseId", releaseId);
       }
-      audioFiles.forEach((file, index) => {
-        formData.append(`audio_${index}`, file);
-      });
-      if (artwork) {
-        formData.append("artwork", artwork);
-      }
+      if (audioFiles[0]) formData.append("audio", audioFiles[0]);
       formData.append("metadata", JSON.stringify(metadata));
 
       const progressInterval = setInterval(() => {
@@ -176,17 +190,19 @@ export function AutomatedQC({
         const result = await response.json();
         clearInterval(progressInterval);
         setProgress(100);
-        return result;
+        return result as QCResponse;
       } catch (error) {
         clearInterval(progressInterval);
         throw error;
       }
     },
-    onSuccess: (report) => {
+    onSuccess: (response) => {
       setIsRunning(false);
       queryClient.invalidateQueries({
         queryKey: ["/api/distribution/qc", releaseId],
       });
+      const report = response.report;
+      if (!report) return;
       onCheckComplete?.(report);
       toast({
         title: "QC Check Complete",
@@ -218,14 +234,20 @@ export function AutomatedQC({
       });
       return response.json();
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result: { success?: boolean; message?: string }, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["/api/distribution/qc", releaseId],
       });
-      onApplyFix?.(variables.checkId, variables.fixAction);
+      if (result.success) {
+        onApplyFix?.(variables.checkId, variables.fixAction);
+      }
       toast({
-        title: "Fix Applied",
-        description: "The issue has been automatically fixed",
+        title: result.success ? "Fix Applied" : "Manual Action Required",
+        description:
+          result.message ||
+          (result.success
+            ? "The issue has been automatically fixed"
+            : "This issue cannot be fixed automatically."),
       });
     },
     onError: () => {
@@ -240,8 +262,9 @@ export function AutomatedQC({
   const applyAllFixesMutation = useMutation({
     mutationFn: async () => {
       const fixableChecks =
-        qcReport?.checks.filter((c) => c.fixable && c.status === "failed") ||
-        [];
+        qcResponse?.report?.checks.filter(
+          (c) => c.fixable && c.status === "failed",
+        ) || [];
       for (const check of fixableChecks) {
         if (check.fixAction) {
           await apiRequest("POST", "/api/distribution/qc/fix", {
@@ -263,7 +286,7 @@ export function AutomatedQC({
     },
   });
 
-  const report = qcReport;
+  const report = qcResponse?.report;
 
   const passedCount =
     report?.checks.filter((c) => c.status === "passed").length ?? 0;
@@ -340,16 +363,49 @@ export function AutomatedQC({
           </div>
         )}
 
+        {!isRunning && isReportLoading && releaseId && (
+          <Alert>
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            <AlertDescription>Loading the latest saved QC report…</AlertDescription>
+          </Alert>
+        )}
+
+        {!isRunning && isReportError && (
+          <Alert variant="destructive">
+            <XCircle className="h-4 w-4" />
+            <AlertDescription>
+              The saved QC report could not be loaded. No QC result is being assumed.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isRunning &&
+          !isReportLoading &&
+          !isReportError &&
+          releaseId &&
+          qcResponse?.status === "not_run" && (
+            <Alert>
+              <Shield className="h-4 w-4" />
+              <AlertDescription>
+                QC has not been run for this release.
+              </AlertDescription>
+            </Alert>
+          )}
+
         {!isRunning && report && (
           <>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Card className="p-4">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-primary">
-                    {report.overallScore}%
+                    {report.overallScore === null
+                      ? "—"
+                      : `${report.overallScore}%`}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Overall Score
+                    {report.overallScore === null
+                      ? "Analysis incomplete"
+                      : "Overall Score"}
                   </p>
                 </div>
               </Card>

@@ -90,17 +90,49 @@ interface SecuritySLO {
   attackDwellTimeMinimum: number;
 }
 
+type SecurityDatabase = Pick<typeof db, "select" | "insert" | "delete">;
+
+export interface SelfHealingSecurityEngineOptions {
+  database?: SecurityDatabase;
+  autoStart?: boolean;
+  now?: () => number;
+  initialLoadAttempts?: number;
+  retryDelayMs?: number;
+}
+
+function isLoopbackAddress(ip: string): boolean {
+  const normalized = ip.replace(/^::ffff:/, "");
+  return (
+    normalized === "127.0.0.1" ||
+    normalized === "::1" ||
+    normalized === "localhost"
+  );
+}
+
+type BlockRecord = {
+  expiresAt: number;
+  origin: "database" | "local-unpersisted";
+};
+
 export class SelfHealingSecurityEngine extends EventEmitter {
   private static instance: SelfHealingSecurityEngine;
   private isRunning: boolean = false;
   private eventQueue: SecurityEvent[] = [];
+  private eventsById: Map<string, SecurityEvent> = new Map();
   private threatAssessments: Map<string, ThreatAssessment> = new Map();
   private healingActions: Map<string, HealingAction> = new Map();
   private ipThreatScores: Map<
     string,
     { score: number; lastUpdate: number; events: number }
   > = new Map();
-  private blockedIps: Set<string> = new Set();
+  private blockedIps: Map<string, BlockRecord> = new Map();
+  private blocklistReady = false;
+  private initialization: Promise<void> | null = null;
+  private readonly database: SecurityDatabase;
+  private readonly now: () => number;
+  private readonly initialLoadAttempts: number;
+  private readonly retryDelayMs: number;
+  private intervals: ReturnType<typeof setInterval>[] = [];
 
   private metrics: HealingMetrics = {
     detectionLatency: [],
@@ -146,10 +178,8 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         "'\\s*(--|#|\\/\\*)", // Comment injection after quote
         "\\bHAVING\\s+\\d+\\s*=\\s*\\d+", // HAVING injection
         "\\bGROUP\\s+BY\\s+.+\\bHAVING\\b", // GROUP BY HAVING
-        "\\bORDER\\s+BY\\s+\\d+", // ORDER BY injection
         "';\\s*--", // Quote-semicolon-comment
         "\\bCHAR\\s*\\(\\d+\\)", // CHAR() encoding bypass
-        "\\bCONCAT\\s*\\(", // CONCAT for obfuscation
         "0x[0-9a-fA-F]{6,}", // Hex-encoded strings
       ].join("|"),
       "gi",
@@ -172,7 +202,6 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         "expression\\s*\\(", // CSS expression
         "url\\s*\\(\\s*[\"']?javascript:", // CSS url() with JS
         "<meta[^>]*http-equiv\\s*=\\s*[\"']?refresh", // Meta refresh
-        "&#x?\\d+;", // HTML entities (suspicious)
         "%3C%73%63%72%69%70%74", // URL-encoded <script
       ].join("|"),
       "gi",
@@ -230,9 +259,15 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     { count: number; resetTime: number; blocked: boolean }
   > = new Map();
 
-  private constructor() {
+  public constructor(options: SelfHealingSecurityEngineOptions = {}) {
     super();
-    this.initializeEngine();
+    this.database = options.database ?? db;
+    this.now = options.now ?? Date.now;
+    this.initialLoadAttempts = options.initialLoadAttempts ?? 3;
+    this.retryDelayMs = options.retryDelayMs ?? 1000;
+    if (options.autoStart !== false) {
+      this.initialization = this.initializeEngine();
+    }
   }
 
   public static getInstance(): SelfHealingSecurityEngine {
@@ -240,6 +275,17 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       SelfHealingSecurityEngine.instance = new SelfHealingSecurityEngine();
     }
     return SelfHealingSecurityEngine?.instance;
+  }
+
+  public async ready(): Promise<void> {
+    await this.initialization;
+  }
+
+  public async start(): Promise<void> {
+    if (!this.initialization) {
+      this.initialization = this.initializeEngine();
+    }
+    await this.initialization;
   }
 
   private async initializeEngine(): Promise<void> {
@@ -271,27 +317,44 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   // is logged loudly (error, not warn), and a periodic re-sync (below) gives
   // the engine a real chance to self-heal without requiring a restart.
   private async loadBlockedIps(attempt = 1): Promise<void> {
-    const MAX_ATTEMPTS = 3;
     try {
-      const now = new Date();
-      const blocked = await db
+      const now = new Date(this.now());
+      const blocked = await this.database
         .select()
         .from(ipBlacklist)
         .where(gte(ipBlacklist.expiresAt, now))
         .limit(10000);
 
-      for (const entry of blocked) {
-        if (entry?.ip) {
-          this.blockedIps.add(entry?.ip);
+      // A successful query is authoritative for DB-backed entries, including
+      // revocations performed by another process. Preserve only local blocks
+      // whose persistence failed; otherwise a transient write outage could
+      // silently remove active process-local protection on the next refresh.
+      const refreshed = new Map<string, BlockRecord>();
+      for (const [ip, record] of this.blockedIps) {
+        if (
+          record.origin === "local-unpersisted" &&
+          record.expiresAt > this.now()
+        ) {
+          refreshed.set(ip, record);
         }
       }
+      for (const entry of blocked) {
+        if (entry?.ip && entry.expiresAt) {
+          const expiresAt = new Date(entry.expiresAt).getTime();
+          if (expiresAt > this.now()) {
+            refreshed.set(entry.ip, { expiresAt, origin: "database" });
+          }
+        }
+      }
+      this.blockedIps = refreshed;
+      this.blocklistReady = true;
 
       logger.info(`   └─ Loaded ${blocked?.length} blocked IPs from database`);
     } catch (error) {
-      if (attempt < MAX_ATTEMPTS) {
-        const backoffMs = attempt * 1000;
+      if (attempt < this.initialLoadAttempts) {
+        const backoffMs = attempt * this.retryDelayMs;
         logger.warn(
-          { err: error, attempt, maxAttempts: MAX_ATTEMPTS },
+          { err: error, attempt, maxAttempts: this.initialLoadAttempts },
           `Failed to load blocked IPs — retrying in ${backoffMs}ms`,
         );
         await new Promise((resolve) => setTimeout(resolve, backoffMs));
@@ -301,26 +364,31 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       // treated as unblocked until the periodic re-sync below succeeds.
       logger.error(
         { err: error, attempts: attempt },
-        "Failed to load blocked IPs after all retries — the IP blocklist is EMPTY until the next periodic re-sync succeeds; previously-blocked IPs will NOT be blocked in the meantime",
+        "Failed to load blocked IPs after all retries — initial policy is UNKNOWN (or the last known finite cache remains active) until periodic re-sync succeeds",
       );
+      // A previously loaded, finite-expiry cache remains known-good enough to
+      // enforce. Only initial-load failure leaves policy state unknown.
     }
   }
 
-  // Self-heals a failed/partial initial load and picks up IPs blocked by other
-  // instances in a multi-instance deployment. Additive only (never removes an
-  // in-memory entry) so a transient re-sync failure can't undo a block that
-  // was already correctly applied.
+  public async refreshBlocklist(): Promise<void> {
+    await this.loadBlockedIps();
+  }
+
+  // Self-heals a failed initial load and synchronizes cross-instance additions
+  // and revocations. Failed refreshes leave the last known state untouched.
   private startBlockedIpResyncLoop(): void {
     const RESYNC_INTERVAL_MS = 5 * 60 * 1000;
-    setInterval(() => {
-      this.loadBlockedIps().catch((err) =>
+    const interval = setInterval(() => {
+      this.refreshBlocklist().catch((err) =>
         logger.error({ err }, "Blocked-IP re-sync loop failed unexpectedly:"),
       );
     }, RESYNC_INTERVAL_MS).unref?.();
+    this.intervals.push(interval);
   }
 
   public processSecurityEvent(event: Partial<SecurityEvent>): void {
-    const now = Date?.now();
+    const now = this.now();
     const fullEvent: SecurityEvent = {
       id: randomBytes(8).toString("hex"),
       timestamp: now,
@@ -333,16 +401,11 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     };
 
     const sourceIp = fullEvent?.source.ip;
-    if (
-      sourceIp === "127.0.0.1" ||
-      sourceIp === "::1" ||
-      sourceIp === "localhost" ||
-      (typeof sourceIp === "string" && sourceIp?.startsWith("10."))
-    ) {
+    if (isLoopbackAddress(sourceIp)) {
       return;
     }
 
-    if (this.blockedIps.has(sourceIp)) {
+    if (this.isIpBlocked(sourceIp)) {
       this.metrics.threatsBlocked++;
       return;
     }
@@ -361,10 +424,16 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       return;
     }
 
-    this.eventQueue.push(fullEvent);
-
+    this.eventsById.set(fullEvent.id, fullEvent);
     if (this.isCriticalThreat(fullEvent)) {
-      this.processImmediately(fullEvent);
+      // Critical events are handled synchronously by the async pipeline and must
+      // not also enter the background queue (which used to duplicate alerts,
+      // recovery rows, and blacklist writes).
+      void this.processImmediately(fullEvent).finally(() => {
+        this.eventsById.delete(fullEvent.id);
+      });
+    } else {
+      this.eventQueue.push(fullEvent);
     }
   }
 
@@ -396,24 +465,24 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   }
 
   private async processImmediately(event: SecurityEvent): Promise<void> {
-    const startTime = Date?.now();
+    const startTime = this.now();
 
     const assessment = await this.detectThreat(event);
-    const detectionTime = Date?.now() - startTime;
+    const detectionTime = this.now() - startTime;
     this.metrics.detectionLatency?.push(detectionTime);
 
     if (assessment?.threatLevel > 0.5) {
-      const responseStartTime = Date?.now();
-      await this.respondToThreat(assessment);
-      const responseTime = Date?.now() - responseStartTime;
+      const responseStartTime = this.now();
+      const actions = await this.respondToThreat(assessment);
+      const responseTime = this.now() - responseStartTime;
       this.metrics.responseLatency?.push(responseTime);
 
-      const recoveryStartTime = Date?.now();
-      await this.recoverFromThreat(assessment);
-      const recoveryTime = Date?.now() - recoveryStartTime;
+      const recoveryStartTime = this.now();
+      await this.recoverFromThreat(assessment, actions);
+      const recoveryTime = this.now() - recoveryStartTime;
       this.metrics.recoveryLatency?.push(recoveryTime);
 
-      const totalTime = Date?.now() - startTime;
+      const totalTime = this.now() - startTime;
       this.metrics.totalHealingTime?.push(totalTime);
 
       this.updateHealingSpeedRatio();
@@ -481,7 +550,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       threatType = threatType === "unknown" ? "nosql_injection" : threatType;
     }
 
-    const rateScore = this.checkRateLimit(event?.source.ip);
+    const rateScore = this.checkRateLimit(event);
     if (rateScore > 0.5) {
       indicators?.push(`High request rate (score: ${rateScore?.toFixed(2)})`);
       threatLevel = Math.max(threatLevel, rateScore * 0.8);
@@ -497,7 +566,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     const assessment: ThreatAssessment = {
       id: randomBytes(8).toString("hex"),
       eventId: event.id,
-      detectionTime: Date.now() - event?.timestamp,
+      detectionTime: this.now() - event?.timestamp,
       threatLevel,
       threatType,
       confidence: Math.min(1, threatLevel + 0.1),
@@ -514,10 +583,18 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     return assessment;
   }
 
-  private checkRateLimit(ip: string): number {
-    const now = Date?.now();
-    const windowMs = this.threatPatterns.ddos?.window;
-    const state = this.rateLimitState.get(ip) || {
+  private checkRateLimit(event: SecurityEvent): number {
+    const ip = event.source.ip;
+    const isAuthAttempt =
+      event.category === "authentication" &&
+      event.payload.method !== "GET";
+    const policy = isAuthAttempt
+      ? this.threatPatterns.bruteForce
+      : this.threatPatterns.ddos;
+    const key = `${isAuthAttempt ? "auth" : "request"}:${ip}`;
+    const now = this.now();
+    const windowMs = policy.window;
+    const state = this.rateLimitState.get(key) || {
       count: 0,
       resetTime: now + windowMs,
       blocked: false,
@@ -531,14 +608,16 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       state.count++;
     }
 
-    this.rateLimitState.set(ip, state);
+    this.rateLimitState.set(key, state);
 
-    const threshold = this.threatPatterns.ddos?.threshold;
-    return Math.min(1, state?.count / threshold);
+    const threshold = policy.threshold;
+    return state.count > threshold
+      ? Math.min(1, 0.9 + (state.count - threshold) / threshold)
+      : 0;
   }
 
   private updateIpThreatScore(ip: string, currentThreat: number): number {
-    const now = Date?.now();
+    const now = this.now();
     const existing = this.ipThreatScores.get(ip) || {
       score: 0,
       lastUpdate: now,
@@ -594,7 +673,9 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     return actions;
   }
 
-  private async respondToThreat(assessment: ThreatAssessment): Promise<void> {
+  private async respondToThreat(
+    assessment: ThreatAssessment,
+  ): Promise<HealingAction[]> {
     // All recommended actions are independent (block_ip, rate_limit, alert, etc.)
     // so run them concurrently instead of sequentially. Each action registers
     // itself into healingActions before awaiting so the dashboard sees all of
@@ -606,7 +687,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
           threatId: assessment.id,
           type: actionType as HealingAction["type"],
           status: "executing",
-          startTime: Date.now(),
+          startTime: this.now(),
           details: {},
         };
         this.healingActions.set(action?.id, action);
@@ -619,15 +700,16 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         try {
           await this.executeAction(action, assessment);
           action.status = "completed";
-          action.endTime = Date?.now();
+          action.endTime = this.now();
         } catch (error) {
           action.status = "failed";
-          action.endTime = Date?.now();
+          action.endTime = this.now();
           action.details.error = String(error);
           logger.warn({ err: error }, `Healing action ${action?.type} failed:`);
         }
       }),
     );
+    return actions;
   }
 
   private async executeAction(
@@ -650,18 +732,25 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       case "rate_limit":
         const evt = this.findEventById(assessment?.eventId);
         if (evt) {
-          const state = this.rateLimitState.get(evt?.source.ip);
+          const prefix =
+            evt.category === "authentication" && evt.payload.method !== "GET"
+              ? "auth"
+              : "request";
+          const key = `${prefix}:${evt.source.ip}`;
+          const state = this.rateLimitState.get(key);
           if (state) {
             state.blocked = true;
-            this.rateLimitState.set(evt?.source.ip, state);
+            this.rateLimitState.set(key, state);
             action.details.rateLimitedIp = evt?.source.ip;
           }
         }
         break;
 
       case "session_kill":
-        action.details.sessionKilled = true;
-        break;
+        action.details.supported = false;
+        throw new Error(
+          "Unsupported healing action: no session invalidation adapter is configured",
+        );
 
       case "alert":
         await this.sendSecurityAlert(assessment);
@@ -669,17 +758,21 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         break;
 
       case "circuit_break":
-        action.details.circuitBroken = true;
-        break;
+        action.details.supported = false;
+        throw new Error(
+          "Unsupported healing action: no circuit-breaker adapter is configured",
+        );
 
       case "feature_disable":
-        action.details.featureDisabled = true;
-        break;
+        action.details.supported = false;
+        throw new Error(
+          "Unsupported healing action: no feature-disable adapter is configured",
+        );
     }
   }
 
   private findEventById(eventId: string): SecurityEvent | undefined {
-    return this.eventQueue.find((e) => e?.id === eventId);
+    return this.eventsById.get(eventId);
   }
 
   private async blockIp(
@@ -692,16 +785,9 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       return;
     }
 
-    if (
-      ipAddress === "127.0.0.1" ||
-      ipAddress === "::1" ||
-      ipAddress === "localhost" ||
-      ipAddress?.startsWith("10.")
-    ) {
+    if (isLoopbackAddress(ipAddress)) {
       return;
     }
-
-    this.blockedIps.add(ipAddress);
 
     const durationMs =
       severity >= 0.9
@@ -712,14 +798,26 @@ export class SelfHealingSecurityEngine extends EventEmitter {
             ? 30 * 60 * 1000
             : 5 * 60 * 1000;
 
+    const expiresAt = this.now() + durationMs;
+    // In-memory enforcement is deliberately fail-closed if persistence is
+    // unavailable. The finite expiry prevents a transient DB outage creating a
+    // permanent process-local ban.
+    this.blockedIps.set(ipAddress, {
+      expiresAt,
+      origin: "local-unpersisted",
+    });
+
     try {
-      await db.insert(ipBlacklist).values({
+      await this.database.insert(ipBlacklist).values({
         ip: ipAddress,
         reason,
         severity:
           severity >= 0.9 ? "critical" : severity >= 0.7 ? "high" : "medium",
-        expiresAt: new Date(Date?.now() + durationMs),
+        expiresAt: new Date(expiresAt),
       });
+      // The next successful refresh may now authoritatively add or remove this
+      // row. Mark it DB-backed only after persistence actually succeeds.
+      this.blockedIps.set(ipAddress, { expiresAt, origin: "database" });
 
       logger.info(
         `🚫 Blocked IP ${ipAddress} for ${reason} (${(durationMs / 60000).toFixed(0)} minutes)`,
@@ -734,7 +832,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
   private async sendSecurityAlert(assessment: ThreatAssessment): Promise<void> {
     try {
-      await db.insert(notifications).values({
+      await this.database.insert(notifications).values({
         userId: "system",
         type: "security_alert",
         title: `Security Alert: ${assessment?.threatType}`,
@@ -745,11 +843,24 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     }
   }
 
-  private async recoverFromThreat(assessment: ThreatAssessment): Promise<void> {
-    this.metrics.threatsHealed++;
+  private async recoverFromThreat(
+    assessment: ThreatAssessment,
+    actions: HealingAction[],
+  ): Promise<void> {
+    const mitigationApplied = actions.some(
+      (action) =>
+        action.status === "completed" &&
+        (action.type === "block_ip" || action.type === "rate_limit"),
+    );
+    if (mitigationApplied) this.metrics.threatsHealed++;
+    const actionOutcomes = actions.map((action) => ({
+      type: action.type,
+      status: action.status,
+      supported: action.details.supported !== false,
+    }));
 
     try {
-      await db.insert(securityThreats).values({
+      await this.database.insert(securityThreats).values({
         threatType: assessment.threatType,
         severity:
           assessment?.threatLevel >= 0.9
@@ -759,41 +870,46 @@ export class SelfHealingSecurityEngine extends EventEmitter {
               : assessment?.threatLevel >= 0.5
                 ? "medium"
                 : "low",
-        status: "resolved",
+        status: mitigationApplied ? "resolved" : "detected",
         confidence: assessment.confidence,
         indicators: assessment.indicators,
-        healingActions: assessment.recommendedActions,
-        resolvedAt: new Date(),
+        healingActions: actionOutcomes,
+        resolvedAt: mitigationApplied ? new Date(this.now()) : undefined,
         metadata: {
           detectionTime: assessment.detectionTime,
-          healed: true,
+          healed: mitigationApplied,
+          actionOutcomes,
         },
       });
     } catch (error) {
       logger.warn({ err: error }, "Failed to log threat recovery:");
     }
 
-    this.emit("threat_healed", assessment);
+    this.emit(mitigationApplied ? "threat_healed" : "threat_unresolved", {
+      assessment,
+      actionOutcomes,
+    });
   }
 
   private startDetectionLoop(): void {
-    setInterval(() => {
+    const interval = setInterval(() => {
       // Process any queued events, not just when >100 are present.
       // Drain up to 50 per tick; each detectThreat fires concurrently
       // (non-blocking — no await) so the full batch starts simultaneously.
       if (this.eventQueue.length === 0) return;
       const events = this.eventQueue.splice(0, 50);
       for (const event of events) {
-        this.detectThreat(event).catch((err) =>
-          logger.warn({ err }, "Detection error:"),
-        );
+        this.processImmediately(event)
+          .catch((err) => logger.warn({ err }, "Detection error:"))
+          .finally(() => this.eventsById.delete(event.id));
       }
     }, 10);
+    this.intervals.push(interval);
   }
 
   private startHealingLoop(): void {
-    setInterval(() => {
-      const now = Date?.now();
+    const interval = setInterval(() => {
+      const now = this.now();
 
       for (const [ip, state] of this.rateLimitState.entries()) {
         if (now > state?.resetTime + 300000) {
@@ -811,10 +927,11 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         this.eventQueue.splice(0, this.eventQueue.length - 500);
       }
     }, 5000);
+    this.intervals.push(interval);
   }
 
   private startMetricsCollection(): void {
-    setInterval(() => {
+    const interval = setInterval(() => {
       const maxSamples = 1000;
       if (this.metrics.detectionLatency?.length > maxSamples) {
         this.metrics.detectionLatency =
@@ -833,6 +950,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
           this.metrics.totalHealingTime?.slice(-maxSamples);
       }
     }, 60000);
+    this.intervals.push(interval);
   }
 
   private updateHealingSpeedRatio(): void {
@@ -890,7 +1008,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   } {
     return {
       isRunning: this.isRunning,
-      blockedIpsCount: this.blockedIps.size,
+      blockedIpsCount: this.getBlockedIps().length,
       activeThreats: this.threatAssessments.size,
       queueSize: this.eventQueue.length,
       healingSpeedRatio: this.metrics.healingSpeedRatio,
@@ -898,36 +1016,60 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   }
 
   public isIpBlocked(ip: string): boolean {
-    return this.blockedIps.has(ip);
+    const record = this.blockedIps.get(ip);
+    if (record === undefined) return false;
+    if (record.expiresAt <= this.now()) {
+      this.blockedIps.delete(ip);
+      return false;
+    }
+    return true;
+  }
+
+  public getIpBlockStatus(ip: string): "blocked" | "allowed" | "unknown" {
+    if (!this.blocklistReady) return "unknown";
+    return this.isIpBlocked(ip) ? "blocked" : "allowed";
+  }
+
+  public isIpRateLimited(ip: string): boolean {
+    const now = this.now();
+    for (const prefix of ["auth", "request"]) {
+      const state = this.rateLimitState.get(`${prefix}:${ip}`);
+      if (state?.blocked && state.resetTime > now) return true;
+    }
+    return false;
   }
 
   public async unblockIp(ip: string): Promise<void> {
-    this.blockedIps.delete(ip);
     try {
-      await db.delete(ipBlacklist).where(eq(ipBlacklist.ip, ip));
+      await this.database.delete(ipBlacklist).where(eq(ipBlacklist.ip, ip));
+      this.blockedIps.delete(ip);
       logger.info(`✅ Unblocked IP ${ip}`);
     } catch (error) {
       logger.warn({ err: error }, `Failed to unblock IP ${ip}:`);
+      throw error;
     }
   }
 
   public async clearAllBlocks(): Promise<void> {
-    this.blockedIps.clear();
-    this.ipThreatScores.clear();
     try {
-      await db.delete(ipBlacklist).where(eq(ipBlacklist.isActive, true));
+      await this.database.delete(ipBlacklist).where(eq(ipBlacklist.isActive, true));
+      this.blockedIps.clear();
+      this.ipThreatScores.clear();
       logger.warn("⚠️ All blocked IPs cleared by admin");
     } catch (error) {
       logger.warn({ err: error }, "Failed to clear all blocked IPs:");
+      throw error;
     }
   }
 
   public getBlockedIps(): string[] {
-    return Array.from(this.blockedIps);
+    return Array.from(this.blockedIps.keys()).filter((ip) => this.isIpBlocked(ip));
   }
 
   public stop(): void {
     this.isRunning = false;
+    for (const interval of this.intervals) clearInterval(interval);
+    this.intervals = [];
     logger.info("🛡️  Self-Healing Security Engine stopped");
   }
 }

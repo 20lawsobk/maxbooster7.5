@@ -38,6 +38,27 @@ const transaction = vi.hoisted(() => {
   ) => row[condition.field] === condition.value;
 
   const tx = {
+    async transaction<T>(callback: (savepointTx: typeof tx) => Promise<T>) {
+      // Model Drizzle's nested transaction/savepoint behavior closely enough
+      // that a failed release cannot leave partial rows in the batch.
+      const releaseSnapshot = releaseRows.map((row) => structuredClone(row));
+      const trackSnapshot = trackRows.map((row) => structuredClone(row));
+      const legacySnapshot = legacyReleaseRows.map((row) =>
+        structuredClone(row),
+      );
+      try {
+        return await callback(tx);
+      } catch (error) {
+        releaseRows.splice(0, releaseRows.length, ...releaseSnapshot);
+        trackRows.splice(0, trackRows.length, ...trackSnapshot);
+        legacyReleaseRows.splice(
+          0,
+          legacyReleaseRows.length,
+          ...legacySnapshot,
+        );
+        throw error;
+      }
+    },
     select() {
       let table: unknown;
       const builder = {

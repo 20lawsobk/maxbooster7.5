@@ -94,6 +94,15 @@ interface RegistryState {
   updatedAt: string;
 }
 
+export interface EvolutionRegistryStorage {
+  downloadFile(key: string): Promise<Buffer>;
+  uploadFile(
+    data: Buffer,
+    key: string,
+    contentType?: string,
+  ): Promise<unknown>;
+}
+
 export interface ApplyResult {
   applied: boolean;
   consumed: boolean;
@@ -157,7 +166,7 @@ function sanitizeFormats(v: unknown): string[] | undefined {
   return formats?.length > 0 ? formats : undefined;
 }
 
-class EvolutionRegistry {
+export class EvolutionRegistry {
   private readonly STORAGE_KEY = "evolution-state/registry.json";
   private readonly REFRESH_TTL_MS = 30_000;
   private readonly MAX_ENTRIES = 200;
@@ -165,6 +174,10 @@ class EvolutionRegistry {
   private enhancements: EvolutionEnhancement[] = [];
   private lastLoadedAt = 0;
   private loadInFlight: Promise<void> | null = null;
+
+  constructor(
+    private readonly storageAdapter: EvolutionRegistryStorage = storageService,
+  ) {}
 
   isCategoryConsumed(category: EnhancementCategory): boolean {
     return CONSUMED_CATEGORIES?.has(category);
@@ -298,7 +311,7 @@ class EvolutionRegistry {
     if (this.loadInFlight) return this.loadInFlight;
     this.loadInFlight = (async () => {
       try {
-        const buf = await storageService?.downloadFile(this.STORAGE_KEY);
+        const buf = await this.storageAdapter.downloadFile(this.STORAGE_KEY);
         const state = JSON.parse(buf?.toString("utf-8")) as RegistryState;
         if (Array.isArray(state?.enhancements)) {
           this.enhancements = state?.enhancements;
@@ -318,22 +331,15 @@ class EvolutionRegistry {
   }
 
   private async persist(): Promise<void> {
-    try {
-      const state: RegistryState = {
-        enhancements: this.enhancements,
-        updatedAt: new Date().toISOString(),
-      };
-      await storageService?.uploadFile(
-        Buffer?.from(JSON.stringify(state, null, 2), "utf-8"),
-        this.STORAGE_KEY,
-        "application/json",
-      );
-    } catch (e) {
-      logger.warn(
-        { err: e },
-        "[EvolutionRegistry] Failed to persist registry:",
-      );
-    }
+    const state: RegistryState = {
+      enhancements: this.enhancements,
+      updatedAt: new Date().toISOString(),
+    };
+    await this.storageAdapter.uploadFile(
+      Buffer.from(JSON.stringify(state, null, 2), "utf-8"),
+      this.STORAGE_KEY,
+      "application/json",
+    );
   }
 
   /** Fire-and-forget TTL refresh so other cluster workers converge over time. */
@@ -381,16 +387,33 @@ class EvolutionRegistry {
       appliedAt: new Date().toISOString(),
     };
 
-    const existingIdx = this.enhancements.findIndex((e) => e?.id === id);
-    if (existingIdx >= 0) {
-      this.enhancements[existingIdx] = enhancement;
-    } else {
-      this.enhancements.push(enhancement);
+    const before = this.enhancements.map((entry) => ({
+      ...entry,
+      payload: { ...entry.payload },
+    }));
+    try {
+      const existingIdx = this.enhancements.findIndex((e) => e?.id === id);
+      if (existingIdx >= 0) {
+        this.enhancements[existingIdx] = enhancement;
+      } else {
+        this.enhancements.push(enhancement);
+      }
+      if (this.enhancements.length > this.MAX_ENTRIES) {
+        this.enhancements = this.enhancements.slice(-this.MAX_ENTRIES);
+      }
+      await this.persist();
+    } catch (error) {
+      this.enhancements = before;
+      const reason = `registry persistence failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+      logger.warn({ err: error }, `[EvolutionRegistry] ${reason}`);
+      return {
+        applied: false,
+        consumed: this.isCategoryConsumed(input.category),
+        reason,
+      };
     }
-    if (this.enhancements.length > this.MAX_ENTRIES) {
-      this.enhancements = this.enhancements.slice(-this.MAX_ENTRIES);
-    }
-    await this.persist();
 
     const consumed = this.isCategoryConsumed(input?.category);
     const effective =
@@ -409,6 +432,7 @@ class EvolutionRegistry {
   /** Deactivate every active entry (used by rollback). Returns count reverted. */
   async deactivateAll(): Promise<number> {
     await this.load();
+    const before = this.enhancements.map((entry) => ({ ...entry }));
     let count = 0;
     const now = new Date().toISOString();
     for (const e of this.enhancements) {
@@ -418,13 +442,21 @@ class EvolutionRegistry {
         count++;
       }
     }
-    if (count > 0) await this.persist();
+    if (count > 0) {
+      try {
+        await this.persist();
+      } catch (error) {
+        this.enhancements = before;
+        throw error;
+      }
+    }
     return count;
   }
 
   /** Deactivate all entries produced by a specific upgrade. */
   async deactivateByUpgrade(upgradeId: string): Promise<number> {
     await this.load();
+    const before = this.enhancements.map((entry) => ({ ...entry }));
     let count = 0;
     const now = new Date().toISOString();
     for (const e of this.enhancements) {
@@ -434,7 +466,14 @@ class EvolutionRegistry {
         count++;
       }
     }
-    if (count > 0) await this.persist();
+    if (count > 0) {
+      try {
+        await this.persist();
+      } catch (error) {
+        this.enhancements = before;
+        throw error;
+      }
+    }
     return count;
   }
 

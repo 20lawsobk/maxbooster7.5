@@ -1430,7 +1430,10 @@ export interface VideoGenOptions {
   bg_color?: string;
   accent_color?: string;
   userId?: string;
-  awarenessMode?: import("./awarenessContext.js").AwarenessMode;
+  intent?: unknown;
+  direction?: unknown;
+  context?: unknown;
+  awareness?: unknown;
   first_frame_b64?: string;
   last_frame_b64?: string;
   reference_images?: string[];

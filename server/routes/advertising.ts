@@ -71,6 +71,10 @@ export function buildAdGenerationRequest(
     adType?: string;
     instruction?: string;
     contentThemes?: string[];
+    intent?: unknown;
+    direction?: unknown;
+    context?: unknown;
+    awareness?: unknown;
   } = {},
 ) {
   const sourceContext = [
@@ -95,6 +99,10 @@ export function buildAdGenerationRequest(
     content_themes: options.contentThemes?.length
       ? options.contentThemes
       : [source.contentType, source.title].filter(Boolean),
+    intent: options.intent,
+    direction: options.direction,
+    context: options.context,
+    awareness: options.awareness,
   };
 }
 
@@ -108,6 +116,9 @@ export function buildImageGenerationRequest(input: {
   tone?: string;
   goal?: string;
   artist_name?: string;
+  direction?: unknown;
+  context?: unknown;
+  awareness?: unknown;
 }) {
   const platformAliases: Record<string, string> = {
     "google business": "google_business",
@@ -154,6 +165,9 @@ export function buildImageGenerationRequest(input: {
     ...(input.aspect_ratio ? { aspect_ratio: input.aspect_ratio } : {}),
     ...(context ? { instruction: context } : {}),
     ...(input.tone ? { mood: input.tone } : {}),
+    direction: input.direction,
+    context: input.context,
+    awareness: input.awareness,
     ...(context
       ? {
           content_themes: [input.tone, input.goal, input.artist_name].filter(
@@ -1942,6 +1956,10 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
       tone = "energetic",
       musicData,
       targetAudience,
+      intent,
+      direction,
+      context,
+      awareness,
     } = req.body;
 
     const validPlatforms = [
@@ -1985,6 +2003,10 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
           ]
             .filter(Boolean)
             .join("\n"),
+          intent,
+          direction,
+          context,
+          awareness,
         },
       ),
     );
@@ -2032,6 +2054,10 @@ router.post(
         ad_type,
         brand_notes,
         campaign_notes,
+        intent,
+        direction,
+        context,
+        awareness,
       } = (req.body ?? {}) as Record<string, unknown>;
       if (
         typeof contentType !== "string" ||
@@ -2082,6 +2108,10 @@ router.post(
         instruction: [brand_notes, campaign_notes]
           .filter((value): value is string => typeof value === "string")
           .join("\n"),
+        intent,
+        direction,
+        context,
+        awareness,
       });
 
       const generated = requireMaxCore(
@@ -2146,6 +2176,10 @@ router.post(
         cta,
         voiceover,
         quality,
+        intent,
+        direction,
+        context,
+        awareness,
       } = req.body;
 
       // Route through the Advanced Video Renderer (MaxCore only).
@@ -2164,6 +2198,10 @@ router.post(
           voiceover: voiceover === true,
         quality: quality || "cinematic",
         userId: req.user!.id,
+        intent,
+        direction,
+        context,
+        awareness,
       });
 
       if (!result?.success) {
@@ -2208,6 +2246,9 @@ router.post(
         artist_name,
         style,
         aspect_ratio,
+        direction,
+        context,
+        awareness,
       } = req.body;
       // `prompt` is the MaxCore contract. Keep the legacy UI's `topic` alias
       // at this HTTP boundary until all clients have migrated.
@@ -2245,6 +2286,9 @@ router.post(
             artist_name,
             style,
             aspect_ratio,
+            direction,
+            context,
+            awareness,
           }),
         }),
         "advertising image generation",

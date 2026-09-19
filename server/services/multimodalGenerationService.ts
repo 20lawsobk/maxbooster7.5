@@ -34,11 +34,6 @@ import {
   applyCaptionLengthPure,
   applyCtaStrengthPure,
 } from "./advancedSocialAIService.js";
-import {
-  getAwarenessContext,
-  normalizeSocialAwarenessPlatform,
-  platformAwarenessOptimization,
-} from "./awarenessContext.js";
 
 // Resolved through the shared connector (single MaxCore contract boundary);
 // the connector normalizes root-vs-/api URL forms.
@@ -2032,6 +2027,9 @@ async function _localAnalyzeUrl(
     modality: "url",
     platforms: req.platforms,
     intent: req.intent,
+    direction: req.direction,
+    context: req.context,
+    awareness: req.awareness,
     metadata: {
       ...(req.input.metadata || {}),
       sourceUrl: url,
@@ -2111,7 +2109,10 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
             platforms: req.platforms,
             intent: req.intent,
             metadata: req.input.metadata,
+            caller_context: req.context,
           },
+          direction: req.direction,
+          awareness: req.awareness,
         },
         90_000,
         req.userId,
@@ -2646,25 +2647,6 @@ const textWorker = {
           const platform: string =
             (slot.platform as string) ?? req.platforms[0] ?? "instagram";
 
-          // This is the primary composer's generation path — it must route
-          // through the same shared awareness layer as unifiedAIController /
-          // advancedSocialAIService instead of relying only on MaxCore's
-          // server-side merge of instruction/extra_context. Without this,
-          // live trend/platform signals never reached the main app's
-          // generation flow.
-          let platformOptimization: string | null = null;
-          try {
-            platformOptimization = platformAwarenessOptimization(
-              normalizeSocialAwarenessPlatform(platform),
-            );
-          } catch {
-            // outside the closed platform optimization set — skip
-          }
-          const awareness = await getAwarenessContext("social");
-          const extraContextParts = [awareness?.contextString, platformOptimization].filter(
-            (v): v is string => Boolean(v),
-          );
-
           const mc = await maxcorePost(
             "/generate/content",
             {
@@ -2683,21 +2665,10 @@ const textWorker = {
               ...(userCtx.avoidTopics?.length
                 ? { avoid_topics: userCtx.avoidTopics }
                 : {}),
-              ...(extraContextParts.length
-                ? { extra_context: extraContextParts.join("\n\n") }
-                : {}),
-              ...(awareness
-                ? {
-                    awareness: {
-                      trendingGenres: awareness.trendingGenres,
-                      trendingMoods: awareness.trendingMoods,
-                      contentAngles: awareness.contentAngles,
-                      ctaPatterns: awareness.ctaPatterns,
-                      emotionalTriggers: awareness.emotionalTriggers,
-                      platformAlgorithmNotes: awareness.platformAlgorithmNotes,
-                    },
-                  }
-                : {}),
+              intent: req.intent,
+              direction: req.direction,
+              context: req.context,
+              awareness: req.awareness,
             },
             20_000,
             req.userId,
@@ -3165,17 +3136,6 @@ const imageWorker = {
       }));
 
     try {
-      const primaryPlatform = req.platforms[0];
-      let platformOptimization: string | null = null;
-      try {
-        platformOptimization = primaryPlatform
-          ? platformAwarenessOptimization(normalizeSocialAwarenessPlatform(primaryPlatform))
-          : null;
-      } catch {
-        // outside the closed platform optimization set — skip
-      }
-      const awareness = await getAwarenessContext("content");
-
       const result = await maxcorePost("/generate/image", {
         step,
         inputs,
@@ -3183,20 +3143,12 @@ const imageWorker = {
         constraints: req.constraints,
         artistProfileId: req.artistProfileId,
         intent: req.intent,
+        direction: req.direction,
+        context: req.context,
+        awareness: req.awareness,
         platformRules: Object.fromEntries(
           req.platforms.map((p) => [p, getRules(p).image]),
         ),
-        ...(awareness || platformOptimization
-          ? {
-              awareness: {
-                contextString: awareness?.contextString,
-                trendingGenres: awareness?.trendingGenres,
-                trendingMoods: awareness?.trendingMoods,
-                platformAlgorithmNotes: awareness?.platformAlgorithmNotes,
-                platformOptimization,
-              },
-            }
-          : {}),
       }, 90_000, req.userId);
       const allOutputs = Array.isArray((result as any).outputs) ? (result as any).outputs : [];
       // MaxCore returns relative /uploads/images/... URLs — absolute-ize them
@@ -3268,6 +3220,9 @@ const audioWorker = {
         constraints: req.constraints,
         artistProfileId: req.artistProfileId,
         intent: req.intent,
+        direction: req.direction,
+        context: req.context,
+        awareness: req.awareness,
         platformRules: audioRules,
       }, 90_000, req.userId);
 
@@ -3401,6 +3356,10 @@ const videoWorker = {
         typeof normalized.genre === "string" ? normalized.genre : undefined,
       user_audio_path: audioSource,
       userId: req.userId,
+      intent: req.intent,
+      direction: req.direction,
+      context: req.context,
+      awareness: req.awareness,
     });
     if (!result.success || !result.url) {
       throw new AIUnavailableError(

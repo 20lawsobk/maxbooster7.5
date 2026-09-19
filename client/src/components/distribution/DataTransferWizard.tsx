@@ -661,7 +661,7 @@ export function DataTransferWizard() {
           </TabsTrigger>
           <TabsTrigger value="migrate" className="flex items-center gap-2">
             <ArrowRightLeft className="h-4 w-4" />
-            Migrate Catalog
+            Legacy LabelGrid Export
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -689,8 +689,8 @@ export function DataTransferWizard() {
                   <h3 className="font-medium mb-1">No profiles linked yet</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     Link any streaming platform profile to sync analytics and
-                    scan your full release catalog. All 97 registered DSPs
-                    support catalog scanning via LabelGrid.
+                    scan your full release catalog from the linked public
+                    platform profile.
                   </p>
                   <Button onClick={() => setShowLinkDialog(true)}>
                     <Link2 className="h-4 w-4 mr-2" />
@@ -1155,7 +1155,7 @@ export function DataTransferWizard() {
           </Card>
         </TabsContent>
 
-        {/* ── Migrate Catalog tab ── */}
+        {/* This remains a genuine LabelGrid export for legacy catalogs. */}
         <TabsContent value="migrate" className="space-y-4">
           <CatalogMigration />
         </TabsContent>

@@ -34,6 +34,10 @@ export interface TextToAudioRequest {
   bars?: number;
   tempo?: number;
   projectId?: string;
+  intent?: unknown;
+  direction?: unknown;
+  context?: unknown;
+  awareness?: unknown;
 }
 
 export interface AudioToAudioRequest {
@@ -42,6 +46,10 @@ export interface AudioToAudioRequest {
   text?: string;
   bars?: number;
   projectId?: string;
+  intent?: unknown;
+  direction?: unknown;
+  context?: unknown;
+  awareness?: unknown;
 }
 
 export interface GenerationResult {
@@ -119,6 +127,10 @@ export async function generateFromText(
       bars: request.bars ?? null,
       tempo: request.tempo ?? null,
       project_id: request.projectId ?? null,
+      intent: request.intent,
+      direction: request.direction,
+      context: request.context,
+      awareness: request.awareness,
     }),
     "audio generation",
   );
@@ -240,6 +252,10 @@ export async function generateFromReference(
       text: request.text ?? null,
       bars: request.bars ?? null,
       project_id: request.projectId ?? null,
+      intent: request.intent,
+      direction: request.direction,
+      context: request.context,
+      awareness: request.awareness,
       // Style transfer needs the reference audio itself — send it to MaxCore.
       reference_audio: request.audioBuffer.toString("base64"),
       reference_format: "wav",

@@ -23,6 +23,7 @@ import type Stripe from "stripe";
 const limitMock = vi.fn();
 const valuesMock = vi.fn();
 const returningMock = vi.fn();
+const marketplaceProcessPayment = vi.hoisted(() => vi.fn());
 
 const chain: any = {
   from: vi.fn(() => chain),
@@ -62,6 +63,12 @@ vi.mock("../../server/services/instantPayoutService.js", () => ({
     handleAccountWebhook: vi.fn(),
     handleTransferWebhook: vi.fn(),
     handlePayoutWebhook: vi.fn(),
+  },
+}));
+
+vi.mock("../../server/services/marketplaceService.js", () => ({
+  marketplaceService: {
+    processPayment: marketplaceProcessPayment,
   },
 }));
 
@@ -115,6 +122,7 @@ describe("Stripe webhook handler honesty (Task #109)", () => {
     limitMock.mockReset();
     valuesMock.mockReset();
     returningMock.mockReset();
+    marketplaceProcessPayment.mockReset().mockResolvedValue(undefined);
     (dunningService.startSequence as any).mockReset();
     (dunningService.resolveSequence as any).mockReset();
     (instantPayoutService.handleAccountWebhook as any)
@@ -185,11 +193,17 @@ describe("Stripe webhook handler honesty (Task #109)", () => {
 
       expect(result.success).toBe(true);
       expect(valuesMock).not.toHaveBeenCalled();
+      expect(marketplaceProcessPayment).toHaveBeenCalledWith(
+        "order-existing",
+        "pi_test_2",
+      );
+      expect(marketplaceProcessPayment).toHaveBeenCalledTimes(1);
     });
 
-    it("reports success once the order is actually created", async () => {
+    it("reports success only after a pending order is created and earnings booking runs", async () => {
       limitMock.mockResolvedValueOnce([]);
-      valuesMock.mockResolvedValueOnce(undefined);
+      valuesMock.mockReturnValueOnce(chain);
+      returningMock.mockResolvedValueOnce([{ id: "order-created" }]);
 
       const result = await handleWebhookEvent(
         makeEvent("checkout.session.completed", {
@@ -207,6 +221,46 @@ describe("Stripe webhook handler honesty (Task #109)", () => {
       );
 
       expect(result.success).toBe(true);
+      expect(valuesMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "pending",
+          stripePaymentIntentId: "pi_test_3",
+        }),
+      );
+      expect(marketplaceProcessPayment).toHaveBeenCalledWith(
+        "order-created",
+        "pi_test_3",
+      );
+      expect(marketplaceProcessPayment).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports failure when seller earnings booking fails so Stripe can retry", async () => {
+      limitMock.mockResolvedValueOnce([{ id: "order-retry" }]);
+      marketplaceProcessPayment.mockRejectedValueOnce(
+        new Error("revenue event insert failed"),
+      );
+
+      const result = await handleWebhookEvent(
+        makeEvent("checkout.session.completed", {
+          id: "cs_test_booking_retry",
+          amount_total: 2500,
+          currency: "usd",
+          payment_intent: "pi_test_booking_retry",
+          metadata: {
+            beatId: "beat-1",
+            buyerId: "buyer-1",
+            sellerId: "seller-1",
+            licenseType: "basic",
+          },
+        }),
+      );
+
+      expect(result.success).toBe(false);
+      expect(valuesMock).not.toHaveBeenCalled();
+      expect(marketplaceProcessPayment).toHaveBeenCalledWith(
+        "order-retry",
+        "pi_test_booking_retry",
+      );
     });
 
     it("reports failure when the storefront order update matches no rows", async () => {

@@ -1,21 +1,14 @@
 /**
- * Integration-style tests proving the Self-Evolution posting_optimization knobs
- * (contentFormatPriority / engagementTargeting) now reach NON-autopilot content
- * generation — i.e. the advancedSocialAIService called directly (the chokepoint
- * for manual "generate a post" flows, the content-quality pipeline, and the
- * scheduled autopilot publisher).
+ * Integration-style tests for direct advancedSocialAIService generation (the
+ * chokepoint for manual "generate a post" flows and scheduled publishing).
  *
- * Before this wiring only the autopilot ENGINE consulted
- * evolutionRegistry.getPostingOptimization(); direct callers ignored it. These
- * tests drive the REAL advancedSocialAIService + REAL evolutionRegistry (only
+ * These tests drive the REAL advancedSocialAIService + REAL evolutionRegistry (only
  * MaxCore, the DB, PDIM storage and the logger are stubbed) and assert:
  *
- *  1. a contentFormatPriority override biases the generated output's media
- *     guidance toward the prioritized format (video → behind_scenes), and
- *     reverts after deactivateAll().
- *  2. engagementTargeting='high' steers the request objective to 'engagement'
- *     the same way autopilot does, while an explicit caller objective/contentType
- *     still wins, and everything reverts on rollback.
+ *  1. MaxCore-backed generation honestly leaves unavailable media enrichment
+ *     null.
+ *  2. Registry-derived posting metadata does not mutate direct caller intent;
+ *     explicit objective/contentType values remain the MaxCore transport input.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -37,7 +30,10 @@ vi.mock("../../server/services/storageService.js", () => ({
 // vi.mock factory (which is hoisted to the top of the file) can reference it.
 const { mockInfer } = vi.hoisted(() => ({ mockInfer: vi.fn() }));
 vi.mock("../../server/services/unifiedAIController.js", () => ({
-  MaxCoreAIClient: { infer: mockInfer },
+  MaxCoreAIClient: { infer: mockInfer, generate: mockInfer },
+}));
+vi.mock("../../server/services/maxcoreClient.js", () => ({
+  MaxCoreAIClient: { generate: mockInfer },
 }));
 
 // getUserContext() issues two select().from().where().limit() chains; return [].
@@ -53,7 +49,6 @@ vi.mock("../../server/db.js", () => {
 import { evolutionRegistry } from "../../server/services/evolutionRegistry.js";
 import {
   advancedSocialAIService,
-  type AdvancedContentRequest,
 } from "../../server/services/advancedSocialAIService.js";
 
 function resetRegistry(): void {
@@ -66,35 +61,37 @@ function resetRegistry(): void {
 // The service caches by a key that includes contentType + objective, so distinct
 // effective requests never collide; we also vary topic per assertion where a
 // baseline and an override would otherwise share a key.
-const BEHIND_SCENES_NOTE =
-  "Raw, authentic footage performs better than polished";
-
 describe("Self-Evolution posting_optimization → direct advancedSocialAIService (non-autopilot)", () => {
   beforeEach(() => {
     resetRegistry();
     vi.clearAllMocks();
     mockInfer.mockResolvedValue({
-      hook: "Big news",
-      body: "Listen now",
-      cta: "Check it out",
-      caption: "Big news\n\nListen now\n\nCheck it out",
-      hashtags: ["#music"],
+      success: true,
+      user_id: "direct-test-user",
+      platform: "instagram",
+      topic: "test topic",
+      variants: [
+        {
+          hook: "Big news",
+          body: "Listen now",
+          cta: "Check it out",
+          caption: "Big news\n\nListen now\n\nCheck it out",
+          hashtags: ["#music"],
+          source: "maxcore-model",
+        },
+      ],
     });
   });
 
-  it("a contentFormatPriority override biases the generated media guidance, and reverts on rollback", async () => {
-    // Baseline: no override, caller pins no contentType → no behind_scenes note.
+  it("returns null media guidance on the MaxCore path instead of fabricating enrichment", async () => {
     const baseline = await advancedSocialAIService.generateAdvancedContent({
       userId: "direct-user-1",
       topic: "fmt-baseline",
       platforms: ["instagram"],
       objective: "awareness",
     });
-    expect(baseline.mediaGuidance.styleNotes).not.toContain(BEHIND_SCENES_NOTE);
+    expect(baseline.mediaGuidance).toBeNull();
 
-    // A real detected change prioritizes the 'video' media format. video maps to
-    // the behind_scenes content type, whose media guidance carries a distinctive
-    // style note — observable proof the knob reshaped the output.
     const applyResult = await evolutionRegistry.apply({
       upgradeId: "up-direct-fmt",
       changeId: "chg-direct-fmt",
@@ -114,9 +111,9 @@ describe("Self-Evolution posting_optimization → direct advancedSocialAIService
       platforms: ["instagram"],
       objective: "awareness",
     });
-    expect(overridden.mediaGuidance.styleNotes).toContain(BEHIND_SCENES_NOTE);
+    expect(overridden.mediaGuidance).toBeNull();
+    expect(overridden.primary.body).toContain("Listen now");
 
-    // Rollback reverts the consumer to its prior (no-override) behavior.
     await evolutionRegistry.deactivateAll();
     const reverted = await advancedSocialAIService.generateAdvancedContent({
       userId: "direct-user-1",
@@ -124,10 +121,10 @@ describe("Self-Evolution posting_optimization → direct advancedSocialAIService
       platforms: ["instagram"],
       objective: "awareness",
     });
-    expect(reverted.mediaGuidance.styleNotes).not.toContain(BEHIND_SCENES_NOTE);
+    expect(reverted.mediaGuidance).toBeNull();
   });
 
-  it("an explicit caller contentType always wins over the format-priority bias", async () => {
+  it("keeps media guidance null when the caller explicitly selects a content type", async () => {
     await evolutionRegistry.apply({
       upgradeId: "up-direct-fmt2",
       changeId: "chg-direct-fmt2",
@@ -145,64 +142,48 @@ describe("Self-Evolution posting_optimization → direct advancedSocialAIService
       objective: "awareness",
       contentType: "announcement",
     });
-    expect(result.mediaGuidance.styleNotes).not.toContain(BEHIND_SCENES_NOTE);
-    // The announcement-specific guidance note IS present instead.
-    expect(result.mediaGuidance.styleNotes).toContain(
-      "Bold text overlay with release info",
-    );
+    expect(result.mediaGuidance).toBeNull();
+    expect(result.primary.headline).toBe("Big news");
   });
 });
 
-describe("applyPostingOptimization — objective/contentType bias on the direct path", () => {
-  type WithApply = {
-    applyPostingOptimization(r: AdvancedContentRequest): AdvancedContentRequest;
-  };
-  const svc = advancedSocialAIService as unknown as WithApply;
-
+describe("direct generation preserves caller authority over posting metadata", () => {
   beforeEach(() => {
     resetRegistry();
     vi.clearAllMocks();
   });
 
-  it('engagementTargeting=high steers the objective to "engagement", and reverts on rollback', async () => {
-    const base: AdvancedContentRequest = {
-      userId: "eng-user",
-      topic: "new single",
-      platforms: ["instagram"],
-      objective: "conversions",
-    };
-
-    // No override → objective untouched.
-    expect(svc.applyPostingOptimization(base).objective).toBe("conversions");
-
+  it("does not derive objective or content type from active registry metadata", async () => {
     await evolutionRegistry.apply({
       upgradeId: "up-eng",
       changeId: "chg-eng",
       category: "posting_optimization",
       title: "Prioritize engagement",
       source: "tavily",
-      payload: { platform: "instagram", engagementTargeting: "high" },
+      payload: {
+        platform: "instagram",
+        engagementTargeting: "high",
+        contentFormatPriority: ["video"],
+      },
     });
-    expect(svc.applyPostingOptimization(base).objective).toBe("engagement");
 
-    // 'standard' does NOT override the caller's objective.
-    await evolutionRegistry.deactivateAll();
-    await evolutionRegistry.apply({
-      upgradeId: "up-eng2",
-      changeId: "chg-eng2",
-      category: "posting_optimization",
-      title: "Standard engagement",
-      source: "tavily",
-      payload: { platform: "instagram", engagementTargeting: "standard" },
+    await advancedSocialAIService.generateAdvancedContent({
+      userId: "eng-user-authority",
+      topic: "new single authority",
+      platforms: ["instagram"],
+      objective: "conversions",
     });
-    expect(svc.applyPostingOptimization(base).objective).toBe("conversions");
 
-    // Rollback fully reverts.
-    await evolutionRegistry.deactivateAll();
-    expect(svc.applyPostingOptimization(base).objective).toBe("conversions");
+    expect(mockInfer).toHaveBeenLastCalledWith(
+      "/api/platform/social/generate",
+      expect.objectContaining({
+        goal: "conversions",
+        style_tags: [],
+      }),
+    );
   });
 
-  it("contentFormatPriority biases contentType only when the caller did not pin one", async () => {
+  it("forwards an explicit caller content type despite conflicting registry metadata", async () => {
     await evolutionRegistry.apply({
       upgradeId: "up-fmt3",
       changeId: "chg-fmt3",
@@ -215,23 +196,20 @@ describe("applyPostingOptimization — objective/contentType bias on the direct 
       },
     });
 
-    // Caller left contentType undefined → biased toward carousel → storytelling.
-    const biased = svc.applyPostingOptimization({
-      userId: "fmt-user",
-      topic: "t",
-      platforms: ["tiktok"],
-      objective: "awareness",
-    });
-    expect(biased.contentType).toBe("storytelling");
-
-    // Caller pinned a contentType → respected.
-    const pinned = svc.applyPostingOptimization({
-      userId: "fmt-user",
-      topic: "t",
+    await advancedSocialAIService.generateAdvancedContent({
+      userId: "fmt-user-authority",
+      topic: "explicit format authority",
       platforms: ["tiktok"],
       objective: "awareness",
       contentType: "promotional",
     });
-    expect(pinned.contentType).toBe("promotional");
+
+    expect(mockInfer).toHaveBeenLastCalledWith(
+      "/api/platform/social/generate",
+      expect.objectContaining({
+        goal: "awareness",
+        style_tags: ["promotional"],
+      }),
+    );
   });
 });
