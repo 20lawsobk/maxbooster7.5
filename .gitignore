@@ -189,3 +189,4 @@ server/services/diffusion/memory.json
 server/services/diffusion/training_state.json
 public/generated-content/
 .replit.new
+.replit.new
