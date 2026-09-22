@@ -3,16 +3,18 @@ import { spawn } from "child_process";
 import { logger } from "../../logger.js";
 import cron, { type ScheduledTask } from "../../lib/cronScheduler.js";
 import fsPromises from "fs/promises";
-import fs from "fs";
 import { storageService } from "../storageService.js";
 import { createHash, randomUUID } from "node:crypto";
 import { backupCatalog } from "./backupCatalog.js";
 import {
   dumpedServerMajor,
   safePostgresDiagnostic,
-  selectPgDumpForServer,
   selectPsqlForRestore,
 } from "./postgresTools.js";
+import {
+  databaseDumpChecksum,
+  generateUncommittedDatabaseDump,
+} from "./databaseDump.js";
 
 function databaseUrl(): string {
   const url = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
@@ -20,7 +22,7 @@ function databaseUrl(): string {
   return url;
 }
 function checksum(buffer: Buffer): string {
-  return createHash("sha256").update(buffer).digest("hex");
+  return databaseDumpChecksum(buffer);
 }
 function targetIdentity(): string {
   const target = new URL(databaseUrl());
@@ -144,94 +146,13 @@ export class DatabaseBackupService {
     lease: { day: string; owner: string };
   }): Promise<string> {
     const sourceUrl = databaseUrl();
-    const dumpSelection = await selectPgDumpForServer(sourceUrl);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const name = `backup-${timestamp}-${randomUUID()}.sql`;
     const key = `${BACKUP_PREFIX}/${name}`;
-
-    const tmpPath = `/tmp/${name}`;
-
-    await new Promise<void>((resolve, reject) => {
-      const pgDump = spawn(dumpSelection.tool.path, ["--no-owner", "--no-acl"], {
-        env: { ...process.env, PGDATABASE: sourceUrl },
-        timeout: 45 * 60 * 1000,
-      });
-      const writeStream = fs?.createWriteStream(tmpPath, { mode: 0o600, flags: "wx" });
-      let errorOutput = "";
-      let pipelineDone = false;
-      let exited = false;
-      let exitCode: number | null = null;
-      let settled = false;
-
-      // Ensure the write stream is always closed when we reject — otherwise the
-      // file descriptor leaks until the next GC cycle.
-      function fail(err: Error) {
-        if (settled) return;
-        settled = true;
-        writeStream?.destroy();
-        pgDump.kill();
-        reject(err);
-      }
-
-      pgDump?.stderr.on("data", (d) => {
-        errorOutput += d?.toString();
-      });
-
-      writeStream?.on("finish", () => {
-        pipelineDone = true;
-        check();
-      });
-      writeStream?.on("error", (err) => fail(err));
-
-      // Absorb EPIPE on pgDump stdout in case writeStream closes early
-      pgDump?.stdout.on("error", (e: NodeJS.ErrnoException) => {
-        if (e?.code !== "EPIPE" && e?.code !== "ECONNRESET") fail(e);
-      });
-
-      pgDump?.stdout.pipe(writeStream);
-
-      pgDump?.on("close", (code) => {
-        exited = true;
-        exitCode = code;
-        check();
-      });
-
-      pgDump?.on("error", (err) => fail(err));
-
-      function check() {
-        if (!pipelineDone || !exited) return;
-        if (settled) return;
-        settled = true;
-        if (exitCode === 0) resolve();
-        else
-          reject(
-            new Error(`pg_dump failed (code ${exitCode}): ${safePostgresDiagnostic(errorOutput)}`),
-          );
-      }
-    }).catch(async err => {
-      await fsPromises.unlink(tmpPath).catch(() => undefined);
-      throw err;
-    });
-
-    // Production-grade: stat the file first, refuse if it would OOM the box,
-    // and use async readFile so we don't block the event loop. The hard cap
-    // protects the process — once dumps approach this size, the upload path
-    // must be migrated to multipart/streaming via storageService?.uploadStream.
-    const stats = await fs?.promises.stat(tmpPath);
-    const sizeBytes = stats?.size;
+    const dump = await generateUncommittedDatabaseDump(sourceUrl);
+    const sizeBytes = dump.size;
     const sizeMB = (sizeBytes / 1024 / 1024).toFixed(2);
-
-    // Hard guard: anything bigger than 1 GiB will likely OOM Replit
-    // containers. Better to fail loudly than silently kill the process.
-    const HARD_CAP_BYTES = 1024 * 1024 * 1024;
-    if (sizeBytes > HARD_CAP_BYTES) {
-      await fs?.promises.unlink(tmpPath).catch(() => undefined);
-      throw new Error(
-        `Backup ${name} is ${sizeMB} MB which exceeds the 1 GiB single-shot cap. ` +
-          `Implement multipart streaming in storageService before retrying.`,
-      );
-    }
 
     // Heap headroom warning at 256 MB so ops have lead time.
     if (sizeBytes > 256 * 1024 * 1024) {
@@ -241,10 +162,8 @@ export class DatabaseBackupService {
       );
     }
 
-    const sqlBuffer = await fs?.promises.readFile(tmpPath);
-    await fs?.promises.unlink(tmpPath).catch(() => undefined);
-
-    const digest = checksum(sqlBuffer);
+    const sqlBuffer = dump.bytes;
+    const digest = dump.checksum;
     await options?.assertOwnership();
     await backupCatalog.pending({
       name, key, date: new Date().toISOString(), size: sizeBytes,

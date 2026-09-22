@@ -39,8 +39,11 @@ test("shared scheduled-post updates merge metadata and protect ambiguous/confirm
   assert.ok(saved.publishedAt instanceof Date);
   assert.equal(Array.isArray(saved.engagement), false);
   assert.match(saved.engagement.text, /THEN \?::jsonb ELSE '\{\}'::jsonb END/);
-  assert.match(saved.engagement.text, /IN \('started','unknown','confirmed'\)/);
-  assert.match(saved.engagement.text, /jsonb_build_object\('postingResults'/);
+  assert.match(saved.engagement.text, /incoming\.outcome_rank > existing\.outcome_rank/);
+  assert.match(saved.engagement.text, /jsonb_build_object\(\s*'postingResults'/);
+  assert.match(saved.engagement.text, /->'results'\) = 'array'/);
+  assert.match(saved.engagement.text, /SELECT \(value - 'results'\)/);
+  assert.match(saved.engagement.text, /existing\.operation_key = incoming\.operation_key/);
   assert.match(saved.engagement.text, /UNION ALL/);
   const metadata = saved.engagement.values.filter(v => typeof v === "string")
     .find(v => v.includes('"platforms"'));

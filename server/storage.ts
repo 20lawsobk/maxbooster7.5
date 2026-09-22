@@ -663,8 +663,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(posts.id, id))
       .limit(1);
     if (!post) return null;
-    const eng = (post?.engagement as Record<string, unknown>) || {};
-    const meta = eng?._autopilotMeta ? eng : {};
+    const rawEngagement = post?.engagement;
+    const eng = rawEngagement && typeof rawEngagement === "object" &&
+      !Array.isArray(rawEngagement)
+      ? rawEngagement as Record<string, unknown>
+      : {};
+    // Both names have existed in production. A partially-normalized object can
+    // contain both, so expose every durable receipt until the next write
+    // canonicalizes the value under postingResults.
+    const postingResults = Array.isArray(eng.postingResults) ? eng.postingResults : [];
+    const legacyResults = Array.isArray(eng.results) ? eng.results : [];
+    const results = Array.isArray(rawEngagement)
+      ? rawEngagement
+      : [...postingResults, ...legacyResults];
     return {
       ...post,
       // Prefer explicit engagement.platforms (set by beat-loop and autopilot),
@@ -672,12 +683,12 @@ export class DatabaseStorage implements IStorage {
       // always has a non-empty array to iterate.
       platforms: (eng.platforms as string[] | undefined)?.length
         ? eng.platforms
-        : (meta.platforms as string[] | undefined) || [post?.platform].filter(Boolean),
-      content: meta.content || post?.content,
+        : [post?.platform].filter(Boolean),
+      content: eng.content !== undefined ? eng.content : post?.content,
       scheduledTime: post.scheduledAt,
-      viralPrediction: meta.viralPrediction || null,
-      createdBy: meta.createdBy || "manual",
-      results: Array.isArray(eng.postingResults) ? eng.postingResults : meta._autopilotMeta ? [] : post?.engagement || [],
+      viralPrediction: eng.viralPrediction ?? null,
+      createdBy: eng.createdBy ?? "manual",
+      results,
     };
   }
 
@@ -755,34 +766,93 @@ export class DatabaseStorage implements IStorage {
     if (Object.keys(metadata).length || results !== undefined) {
       const incoming = JSON.stringify(results ?? []);
       updateValues.engagement = sql`
-        (CASE WHEN jsonb_typeof(${posts.engagement}::jsonb) = 'object'
-          THEN ${posts.engagement}::jsonb ELSE '{}'::jsonb END)
-        || ${JSON.stringify(metadata)}::jsonb
-        || jsonb_build_object('postingResults', (
-          SELECT COALESCE(jsonb_agg(receipt), '[]'::jsonb) FROM (
-            SELECT receipt FROM jsonb_array_elements(
-              CASE WHEN jsonb_typeof(${posts.engagement}->'postingResults') = 'array'
-                THEN ${posts.engagement}->'postingResults'
-                WHEN jsonb_typeof(${posts.engagement}::jsonb) = 'array'
-                THEN ${posts.engagement}::jsonb ELSE '[]'::jsonb END
-            ) receipt
-            WHERE receipt->>'outcome' IN ('started','unknown','confirmed')
-              OR receipt->>'success' = 'true'
-              OR NOT EXISTS (SELECT 1 FROM jsonb_array_elements(${incoming}::jsonb) replacement
-                WHERE replacement->>'platform' = receipt->>'platform')
-            UNION ALL
-            SELECT replacement FROM jsonb_array_elements(${incoming}::jsonb) replacement
-            WHERE NOT EXISTS (
-              SELECT 1 FROM jsonb_array_elements(
+        (
+          WITH engagement_object AS (
+            SELECT CASE WHEN jsonb_typeof(${posts.engagement}::jsonb) = 'object'
+              THEN ${posts.engagement}::jsonb ELSE '{}'::jsonb END AS value
+          ), existing_receipts_raw AS (
+            SELECT DISTINCT receipt
+            FROM (
+              SELECT receipt FROM jsonb_array_elements(
                 CASE WHEN jsonb_typeof(${posts.engagement}->'postingResults') = 'array'
-                  THEN ${posts.engagement}->'postingResults'
-                  WHEN jsonb_typeof(${posts.engagement}::jsonb) = 'array'
+                  THEN ${posts.engagement}->'postingResults' ELSE '[]'::jsonb END
+              ) receipt
+              UNION ALL
+              SELECT receipt FROM jsonb_array_elements(
+                CASE WHEN jsonb_typeof(${posts.engagement}->'results') = 'array'
+                  THEN ${posts.engagement}->'results' ELSE '[]'::jsonb END
+              ) receipt
+              UNION ALL
+              SELECT receipt FROM jsonb_array_elements(
+                CASE WHEN jsonb_typeof(${posts.engagement}::jsonb) = 'array'
                   THEN ${posts.engagement}::jsonb ELSE '[]'::jsonb END
-              ) receipt WHERE receipt->>'platform' = replacement->>'platform'
-                AND (receipt->>'outcome' IN ('started','unknown','confirmed') OR receipt->>'success' = 'true')
+              ) receipt
+            ) accepted_shapes
+          ), existing_receipts AS (
+            SELECT receipt,
+              receipt->>'platform' AS platform,
+              receipt->>'postedAt' AS operation_key,
+              CASE
+                WHEN receipt->>'outcome' = 'confirmed' OR receipt->>'success' = 'true' THEN 3
+                WHEN receipt->>'outcome' = 'unknown' THEN 2
+                WHEN receipt->>'outcome' = 'started' THEN 1
+                ELSE 0
+              END AS outcome_rank
+            FROM existing_receipts_raw
+          ), incoming_receipts AS (
+            SELECT replacement,
+              replacement->>'platform' AS platform,
+              replacement->>'postedAt' AS operation_key,
+              CASE
+                WHEN replacement->>'outcome' = 'confirmed' OR replacement->>'success' = 'true' THEN 3
+                WHEN replacement->>'outcome' = 'unknown' THEN 2
+                WHEN replacement->>'outcome' = 'started' THEN 1
+                ELSE 0
+              END AS outcome_rank
+            FROM jsonb_array_elements(${incoming}::jsonb) replacement
+          ), replaced_receipts AS (
+            SELECT receipt
+            FROM existing_receipts existing
+            WHERE EXISTS (
+              SELECT 1
+              FROM incoming_receipts incoming
+              WHERE incoming.platform IS NOT NULL
+                AND incoming.platform = existing.platform
+                AND (
+                  (existing.operation_key IS NOT NULL
+                    AND existing.operation_key = incoming.operation_key
+                    AND incoming.outcome_rank > existing.outcome_rank)
+                  OR (existing.outcome_rank = 0
+                    AND (existing.operation_key IS NULL
+                      OR incoming.operation_key IS NULL
+                      OR existing.operation_key = incoming.operation_key))
+                )
             )
-          ) durable_receipts
-        ))`;
+          ), merged_receipts AS (
+            SELECT receipt FROM existing_receipts
+            WHERE receipt NOT IN (SELECT receipt FROM replaced_receipts)
+            UNION ALL
+            SELECT replacement FROM incoming_receipts
+            WHERE NOT EXISTS (
+              SELECT 1
+              FROM existing_receipts existing
+              WHERE existing.platform IS NOT NULL
+                AND existing.platform = incoming_receipts.platform
+                AND existing.outcome_rank > 0
+                AND NOT EXISTS (
+                  SELECT 1 FROM replaced_receipts
+                  WHERE replaced_receipts.receipt = existing.receipt
+                )
+            )
+          )
+          SELECT (value - 'results')
+            || ${JSON.stringify(metadata)}::jsonb
+            || jsonb_build_object(
+              'postingResults',
+              (SELECT COALESCE(jsonb_agg(receipt), '[]'::jsonb) FROM merged_receipts)
+            )
+          FROM engagement_object
+        )`;
     }
     if (
       updateValues?.status === "completed" ||

@@ -241,8 +241,12 @@ export async function selectPsqlForRestore(
 }
 
 export function dumpedServerMajor(sql: Buffer | string): number {
+  return Number(dumpedServerVersion(sql).split(".")[0]);
+}
+
+export function dumpedServerVersion(sql: Buffer | string): string {
   const header = (Buffer.isBuffer(sql) ? sql.subarray(0, 8192).toString("utf8") : sql.slice(0, 8192));
-  const match = header.match(/^-- Dumped from database version\s+(\d+)(?:\.\d+)?/m);
+  const match = header.match(/^-- Dumped from database version\s+(\d+(?:\.\d+)?)/m);
   if (!match) throw new Error("Backup is missing PostgreSQL source-version metadata");
-  return Number(match[1]);
+  return match[1];
 }

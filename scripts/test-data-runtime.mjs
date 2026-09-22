@@ -253,6 +253,11 @@ try {
         if(!match)throw new Error("Backup is missing PostgreSQL source-version metadata");
         return Number(match[1]);
       }
+      export function dumpedServerVersion(sql){
+        const match=sql.subarray(0,8192).toString("utf8").match(/^-- Dumped from database version\\s+(\\d+(?:\\.\\d+)?)/m);
+        if(!match)throw new Error("Backup is missing PostgreSQL source-version metadata");
+        return match[1];
+      }
       export async function selectPsqlForRestore(url,dumpedMajor){
         if(dumpedMajor!==17)throw new Error("unexpected synthetic dump major");
         (globalThis.backupTest.toolSelections??=[]).push({operation:"restore",url,dumpedMajor,targetMajor:17});
@@ -260,7 +265,7 @@ try {
       }
       export function safePostgresDiagnostic(value){return String(value);}
     `],
-    [/^child_process$/, `import {EventEmitter} from "node:events";import {PassThrough} from "node:stream";
+    [/^(?:node:)?child_process$/, `import {EventEmitter} from "node:events";import {PassThrough} from "node:stream";
       export function spawn(cmd,args,options){
         globalThis.backupTest.spawnArgs.push({cmd,args,options});
         const p=new EventEmitter();p.stdout=new PassThrough();p.stderr=new PassThrough();

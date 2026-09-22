@@ -8,6 +8,15 @@ AI-Powered Music Career Management Platform (v3.0.0) by B-Lawz Music.
 
 ## Stack
 
+### Distribution provider
+
+Too Lost is the current distribution provider. Do not build or restore LabelGrid
+integrations as part of readiness work. Treat remaining LabelGrid references as
+legacy code or historical evidence, not current requirements. Verify release,
+catalog, delivery, royalty and payout capabilities against Too Lost's actual
+authorized API contracts; do not rename an incompatible LabelGrid contract and
+assume it works. Preserve historical data and migration records during cleanup.
+
 - **Frontend:** React 19, Vite, Tailwind CSS 4, Radix UI, Framer Motion, TanStack Query, Zustand
 - **Backend:** Node.js (Express 5), TypeScript (tsx), Drizzle ORM (PostgreSQL/Neon)
 - **Jobs:** BullMQ + Redis

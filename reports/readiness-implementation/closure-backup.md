@@ -50,12 +50,38 @@ readout, or workflow operation was performed as part of this verification.
 
 ## Remaining blockers
 
-The source-bootstrap/catalog blocker remains pending. The existing
-`createBackup` interface is not a safe catalog-free off-source export path: it
-commits pending/verified durability state through the source catalog and
-uploads through the configured storage service. There is therefore no existing
-interface that permits a truthful durable standalone export while bypassing
-the catalog.
+The source-bootstrap/catalog preparation gap is now narrowed, but backup
+acceptance remains pending. `generateUncommittedDatabaseDump` in
+`server/services/backup/databaseDump.ts` is a catalog-free generation primitive:
+it performs the same compatible-tool selection and bounded dump/read path used
+by `createBackup`, returns bytes, SHA-256 checksum, and PostgreSQL source
+version, and labels the result `durability: "uncommitted"`. It has no catalog,
+storage, or verification side effects.
+
+The existing durable `createBackup` path now consumes that primitive and only
+then performs its unchanged pending-catalog, destination upload, checksum
+read-back, and verified-catalog transition. This keeps dump generation
+available for a future independent recovery handler without weakening the
+meaning of the existing verified state.
+
+Source-only evidence:
+
+- Focused helper and PostgreSQL-tool suites passed **11/11** tests.
+- Tests cover selected absolute tool/arguments/environment, source-version
+  evidence, checksum, the one-GiB production ceiling (with a reduced injected
+  test limit), source-major drift refusal, dump failure, and temporary-file
+  cleanup on success and failure.
+- The environment-cleared `scripts/test-data-runtime.mjs` boundary passed and
+  exercises the real primitive through the existing durable backup path while
+  mocking all external I/O.
+- No live database query, dump, upload, migration, endpoint, network call, or
+  secret readout was performed.
+
+The exact future integration gap is an operator-controlled, independently
+recoverable destination adapter that accepts these uncommitted bytes, persists
+them off-source, reads them back, verifies the checksum, and completes an
+isolated restore plus recovery invariants. Only that outer operation may record
+or report durability; the generation primitive must never do so.
 
 The configured remote recovery target also remains blocked: prior authenticated
 PING checks of configured STORAGE and both PDIM URLs returned HTTP 403. Until a

@@ -51,7 +51,9 @@ implicitly authorized by a code-verification request.
 - Privacy worker: account-erasure and retention-policy execution boundaries,
   isolated tests; no live deletion or invented retention policy.
 - Provider worker: original integration/reconciliation gaps, authenticated
-  sandbox-safe contracts; no provider sends or changes to concurrent LabelGrid work.
+  Too Lost sandbox-safe contracts; no provider sends. LabelGrid is retired and is
+  not a readiness target. Preserve historical evidence/data, but evaluate current
+  distribution, royalty and payout requirements against Too Lost's actual API.
 - Runtime worker: packed-runtime/dependency verification and repair; no workflow
   startup, environment changes or live services.
 - Product worker: original export/offline correctness gaps and focused tests;
