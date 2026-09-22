@@ -727,6 +727,7 @@ export class DatabaseStorage implements IStorage {
       viralPrediction,
       createdBy,
       results,
+      engagement,
       ...rest
     } = updates;
     const updateValues: Record<string, unknown> = {
@@ -740,7 +741,49 @@ export class DatabaseStorage implements IStorage {
       updateValues.content =
         typeof content === "string" ? content : JSON.stringify(content);
     if (scheduledTime) updateValues.scheduledAt = new Date(scheduledTime as any);
-    if (results !== undefined) updateValues.engagement = results;
+    if (engagement !== undefined) {
+      throw new Error("Scheduled-post engagement must be updated through named metadata fields");
+    }
+    if (results !== undefined && !Array.isArray(results)) {
+      throw new Error("Scheduled-post results must be an array");
+    }
+    const metadata: Record<string, unknown> = {};
+    if (platforms !== undefined) metadata.platforms = platforms;
+    if (viralPrediction !== undefined) metadata.viralPrediction = viralPrediction;
+    if (createdBy !== undefined) metadata.createdBy = createdBy;
+    if (content !== undefined) metadata.content = content;
+    if (Object.keys(metadata).length || results !== undefined) {
+      const incoming = JSON.stringify(results ?? []);
+      updateValues.engagement = sql`
+        (CASE WHEN jsonb_typeof(${posts.engagement}::jsonb) = 'object'
+          THEN ${posts.engagement}::jsonb ELSE '{}'::jsonb END)
+        || ${JSON.stringify(metadata)}::jsonb
+        || jsonb_build_object('postingResults', (
+          SELECT COALESCE(jsonb_agg(receipt), '[]'::jsonb) FROM (
+            SELECT receipt FROM jsonb_array_elements(
+              CASE WHEN jsonb_typeof(${posts.engagement}->'postingResults') = 'array'
+                THEN ${posts.engagement}->'postingResults'
+                WHEN jsonb_typeof(${posts.engagement}::jsonb) = 'array'
+                THEN ${posts.engagement}::jsonb ELSE '[]'::jsonb END
+            ) receipt
+            WHERE receipt->>'outcome' IN ('started','unknown','confirmed')
+              OR receipt->>'success' = 'true'
+              OR NOT EXISTS (SELECT 1 FROM jsonb_array_elements(${incoming}::jsonb) replacement
+                WHERE replacement->>'platform' = receipt->>'platform')
+            UNION ALL
+            SELECT replacement FROM jsonb_array_elements(${incoming}::jsonb) replacement
+            WHERE NOT EXISTS (
+              SELECT 1 FROM jsonb_array_elements(
+                CASE WHEN jsonb_typeof(${posts.engagement}->'postingResults') = 'array'
+                  THEN ${posts.engagement}->'postingResults'
+                  WHEN jsonb_typeof(${posts.engagement}::jsonb) = 'array'
+                  THEN ${posts.engagement}::jsonb ELSE '[]'::jsonb END
+              ) receipt WHERE receipt->>'platform' = replacement->>'platform'
+                AND (receipt->>'outcome' IN ('started','unknown','confirmed') OR receipt->>'success' = 'true')
+            )
+          ) durable_receipts
+        ))`;
+    }
     if (
       updateValues?.status === "completed" ||
       updateValues?.status === "published"
@@ -760,11 +803,7 @@ export class DatabaseStorage implements IStorage {
     status: string,
     results?: unknown[],
   ): Promise<void> {
-    const updateValues: Record<string, unknown> = { status };
-    if (results !== undefined) updateValues.engagement = results;
-    if (status === "completed" || status === "published")
-      updateValues.publishedAt = new Date();
-    await db.update(posts).set(updateValues).where(eq(posts.id, id));
+    await this.updateScheduledPost(id, { status, ...(results !== undefined ? { results } : {}) });
   }
 
   async getSocialMetrics(userId: string): Promise<unknown> {

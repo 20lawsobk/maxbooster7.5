@@ -10,11 +10,15 @@ if (Object.keys(process.env).some(k => /DATABASE|PGHOST|PGPORT|PGUSER|PGPASSWORD
   throw new Error("Refusing inherited database/runtime configuration; invoke under env -i.");
 }
 const root = resolve(".");
+// Preserve prior rehearsal artifacts. Each execution records its own immutable snapshot.
+const snapshot = new Date().toISOString().replace(/[:.]/g, "-");
+const reportPath = `reports/readiness-implementation/migration-rehearsal-${snapshot}.md`;
 const temp = mkdtempSync("/tmp/readiness-pg-");
 const env = { PATH: process.env.PATH, HOME: temp, LANG: "C", TZ: "UTC" };
 const report = [
   "# Isolated PostgreSQL migration rehearsal", "",
   `Run: ${new Date().toISOString()}`,
+  `Snapshot artifact: ${reportPath}; earlier migration-rehearsal.md and resume-schema.md are preserved.`,
   "Safety: every subprocess receives an allowlisted environment (PATH, temporary HOME, LANG, TZ). No workspace database environment or credentials are read. PostgreSQL listens ONLY on a private temporary Unix socket; port 55439; trust auth for synthetic local role rehearsal. No TCP listener.",
   "Baseline: fresh SQL generated from a TEMP copy of shared/schema.ts excluding only the readiness re-export. Full schema independently generated/applied in a second isolated database for structural catalog parity. Historical migrations were NOT replayed: their provenance is incomplete. This is not proof of upgrade compatibility with the shared database.",
   "Scope: real PostgreSQL SQL/invariant checks plus real injected session/factor repositories. No provider calls, app startup, full build, installation, or shared database access.",
@@ -128,6 +132,10 @@ try {
     const output = run(process.execPath, ["--import", "tsx", "scripts/readiness-isolated-security.ts", temp]);
     report.push(output.trim());
   });
+  await check("Erasure request cycles, concurrent claims/cancellation, lease retries/receipts, digest constraints (real repositories / real PostgreSQL)", async () => {
+    const output = run(process.execPath, ["--import", "tsx", "scripts/readiness-isolated-erasure.ts", temp]);
+    report.push(output.trim());
+  });
   await check("Webhook receipts survive reconnect and deduplicate", async () => {
     await client.query("INSERT INTO commerce_webhook_receipts(event_id,event_type) VALUES ('evt-local','test')");
     await client.end();
@@ -209,8 +217,7 @@ try {
   }
   report.push(`\nFailures: ${failures}`);
   report.push(`Isolated beta gate: ${failures ? "FAIL" : "PASS"}. Production/live-DB gate: NOT AUTHORIZED by this rehearsal.`);
-  writeFileSync("reports/readiness-implementation/migration-rehearsal.md", report.join("\n") + "\n");
-  writeFileSync("reports/readiness-implementation/resume-schema.md", report.join("\n") + "\n");
+  writeFileSync(reportPath, report.join("\n") + "\n", { flag: "wx" });
   console.log(report.join("\n"));
   process.exitCode = failures ? 1 : 0;
 }

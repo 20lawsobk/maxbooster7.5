@@ -8,6 +8,8 @@ import * as fs from "fs";
 import fsPromises from "fs/promises";
 import * as path from "path";
 import { PocketDimensionManager } from "../pocket-dimension/index.js";
+import { hybridStorageService } from "./hybridStorageService";
+import { createHash } from "node:crypto";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -113,6 +115,7 @@ class OfflineModeService extends EventEmitter {
   private settings: OfflineSettings = DEFAULT_SETTINGS;
   private userSettings = new Map<string, OfflineSettings>();
   private userIndexLoads = new Map<string, Promise<void>>();
+  private indexWrites = new Map<string, Promise<void>>();
   private isOnline: boolean = true;
   private syncQueue: string[] = [];
   private syncingUsers = new Set<string>();
@@ -240,6 +243,13 @@ class OfflineModeService extends EventEmitter {
   }
 
   private async saveCacheIndex(userId: string): Promise<void> {
+    const previous = this.indexWrites.get(userId) ?? Promise.resolve();
+    const next = previous.catch(() => {}).then(() => this.writeCacheIndex(userId));
+    this.indexWrites.set(userId, next);
+    try { await next; } finally { if (this.indexWrites.get(userId) === next) this.indexWrites.delete(userId); }
+  }
+
+  private async writeCacheIndex(userId: string): Promise<void> {
     await this.pocketReady;
     if (!this.pocket) throw new Error("Offline cache storage unavailable");
     const index = {
@@ -260,45 +270,17 @@ class OfflineModeService extends EventEmitter {
     audioUrl: string,
     projectId: string,
     clipId: string,
-  ): Promise<{ localPath: string; size: number }> {
-    const projectAudioDir = path?.join(OFFLINE_AUDIO_DIR, projectId);
-    await fsPromises?.mkdir(projectAudioDir, { recursive: true });
-
-    const ext = path?.extname(audioUrl) || ".wav";
-    const localFilename = `${clipId}${ext}`;
-    const localPath = path?.join(projectAudioDir, localFilename);
-
-    if (audioUrl?.startsWith("http://") || audioUrl?.startsWith("https://")) {
-      try {
-        const response = await timedFetch(audioUrl);
-        if (!response?.ok) {
-          throw new Error(`HTTP error: ${response?.status}`);
-        }
-        const buffer = Buffer?.from(await response?.arrayBuffer());
-        await fsPromises?.writeFile(localPath, buffer);
-        return { localPath, size: buffer.length };
-      } catch (error) {
-        logger.warn(
-          { err: error },
-          `Failed to download audio from URL ${audioUrl}:`,
-        );
-        return { localPath: audioUrl, size: 0 };
-      }
-    } else if (fs?.existsSync(audioUrl)) {
-      try {
-        fs?.copyFileSync(audioUrl, localPath);
-        const stats = fs?.statSync(localPath);
-        return { localPath, size: stats.size };
-      } catch (error) {
-        logger.warn(
-          { err: error },
-          `Failed to copy local audio file ${audioUrl}:`,
-        );
-        return { localPath: audioUrl, size: 0 };
-      }
-    }
-
-    return { localPath: audioUrl, size: 0 };
+    userId: string,
+  ): Promise<{ localPath: string; size: number; checksum: string }> {
+    if (!this.pocket) throw new Error("Offline cache storage unavailable");
+    if (/^https?:|^file:|^[/\\](?!api\/storage\/file\/)/i.test(audioUrl)) throw new Error("Offline audio requires an owned storage key");
+    const key = decodeURIComponent(audioUrl.replace(/^\/api\/storage\/file\//, ""));
+    const buffer = await hybridStorageService.read(userId, key);
+    if (!buffer.length || buffer.length > 64 * 1024 * 1024) throw new Error("Offline audio source must be between 1 byte and 64 MiB");
+    const checksum = createHash("sha256").update(buffer).digest("hex");
+    const localPath = `audio/${encodeURIComponent(userId)}/${encodeURIComponent(projectId)}/${encodeURIComponent(clipId)}/${checksum}`;
+    await (this as any).pocket.write(localPath, buffer);
+    return { localPath, size: buffer.length, checksum };
   }
 
   private startConnectivityMonitor(): void {
@@ -348,6 +330,7 @@ class OfflineModeService extends EventEmitter {
     try {
       await this.pocketReady;
       await this.loadUserIndex(userId);
+      if (this.cachedProjects.get(projectId)?.localChanges > 0) throw new Error("Unresolved local changes; cache refresh would discard edits");
       if (!this.pocket) throw new Error("Offline cache storage unavailable");
       logger.info({ projectId, userId }, "Caching project for offline use:");
 
@@ -369,15 +352,18 @@ class OfflineModeService extends EventEmitter {
 
       const audioFiles: OfflineAudioFile[] = [];
       let totalAudioSize = 0;
+      if (audioClipsData.length > 128) throw new Error("Offline cache exceeds the 128-clip limit");
 
       for (const clip of audioClipsData) {
         if (clip?.audioUrl) {
-          const { localPath, size } = await this.downloadAudioFile(
+          const { localPath, size, checksum } = await this.downloadAudioFile(
             clip?.audioUrl,
             projectId,
             clip?.id,
+            userId,
           );
           totalAudioSize += size;
+          if (totalAudioSize > Math.min(this.getSettings(userId).maxCacheSize, 128 * 1024 * 1024)) throw new Error("Offline project exceeds cache size limit");
 
           audioFiles?.push({
             id: `audio-${clip?.id}`,
@@ -389,7 +375,7 @@ class OfflineModeService extends EventEmitter {
             sampleRate: (clip as any).sampleRate || 44100,
             channels: (clip as any).channels || 2,
             cachedAt: new Date(),
-            checksum: this.generateChecksum(localPath + size),
+            checksum,
           });
         }
       }
@@ -404,6 +390,7 @@ class OfflineModeService extends EventEmitter {
       const serializedData = JSON.stringify(projectData);
       const metadataSize = Buffer?.byteLength(serializedData, "utf8");
       const totalSize = metadataSize + totalAudioSize;
+      if (totalSize > Math.min(this.getSettings(userId).maxCacheSize, 128 * 1024 * 1024)) throw new Error("Offline project exceeds cache size limit");
 
       if (this.pocket) {
         await (this as any).pocket.write(
@@ -416,7 +403,7 @@ class OfflineModeService extends EventEmitter {
         id: `offline-${projectId}`,
         projectId,
         userId,
-        name: (project as any).name,
+        name: project.title,
         cachedAt: new Date(),
         lastSyncAt: new Date(),
         size: totalSize,
@@ -463,17 +450,13 @@ class OfflineModeService extends EventEmitter {
       throw new Error("Project not cached");
     }
 
-    try {
-      if (this.pocket) {
-        await (this as any).pocket.delete(`projects/${projectId}.json`).catch(() => {});
-      }
-      const projectAudioDir = path?.join(OFFLINE_AUDIO_DIR, projectId);
-      if (fs?.existsSync(projectAudioDir)) {
-        fs?.rmSync(projectAudioDir, { recursive: true, force: true });
-      }
-    } catch (error) {
-      logger.warn({ err: error }, "Failed to clean up cached files:");
+    if (!this.pocket) throw new Error("Offline cache storage unavailable");
+    const prefix = `audio/${encodeURIComponent(userId)}/${encodeURIComponent(projectId)}/`;
+    for (const file of cached.audioFiles) {
+      // Legacy arbitrary disk paths are not safe deletion authority.
+      if (file.path.startsWith(prefix)) await (this as any).pocket.delete(file.path);
     }
+    await (this as any).pocket.delete(`projects/${projectId}.json`);
 
     this.cachedProjects.delete(projectId);
     await this.saveCacheIndex(userId);
@@ -546,24 +529,14 @@ class OfflineModeService extends EventEmitter {
       let filesUploaded = 0;
       let filesDownloaded = 0;
 
-      if (cached?.localChanges > 0 && cached?.serverChanges > 0) {
-        const resolution = this.getSettings(userId).conflictResolution;
-        if (resolution === "local") {
-          filesUploaded = cached?.localChanges;
-        } else if (resolution === "server") {
-          filesDownloaded = cached?.serverChanges;
-        }
-        conflictsResolved = 1;
-      } else if (cached?.localChanges > 0) {
-        filesUploaded = cached?.localChanges;
-      } else if (cached?.serverChanges > 0) {
-        filesDownloaded = cached?.serverChanges;
+      if (cached.localChanges > 0) {
+        cached.status = "conflict";
+        await this.saveCacheIndex(userId);
+        throw new Error("Local edits require versioned editing commands; no edits were uploaded or discarded");
       }
-
-      cached.lastSyncAt = new Date();
-      cached.status = "cached";
-      cached.localChanges = 0;
-      cached.serverChanges = 0;
+      // Refresh actual project/track/clip state and owned audio, not change counters.
+      const refreshed = await this.cacheProject(projectId, userId);
+      filesDownloaded = refreshed.audioFiles.length;
 
       const syncTime = Date.now() - startTime;
       this.emit("syncComplete", { projectId, syncTime });
@@ -586,7 +559,7 @@ class OfflineModeService extends EventEmitter {
         syncTime,
       };
     } catch (error) {
-      cached.status = "outdated";
+      cached.status = cached.localChanges > 0 ? "conflict" : "outdated";
       this.emit("syncError", { projectId, error: (error as Error).message });
 
       return {
@@ -636,6 +609,7 @@ class OfflineModeService extends EventEmitter {
     if (cached) {
       cached.localChanges++;
       cached.status = "outdated";
+      await this.saveCacheIndex(userId);
       this.emit("localChange", { projectId, changes: cached.localChanges });
     }
   }
@@ -645,6 +619,7 @@ class OfflineModeService extends EventEmitter {
     if (cached) {
       cached.serverChanges++;
       cached.status = "outdated";
+      await this.saveCacheIndex(userId);
       this.emit("serverChange", { projectId, changes: cached.serverChanges });
     }
   }
@@ -748,14 +723,35 @@ class OfflineModeService extends EventEmitter {
     downloadUrl: string;
   }> {
     const cached = await this.cacheProject(projectId, userId);
+    const bundle = await this.downloadOfflineProject(projectId, userId);
 
     const filename = `${cached?.name?.replace(/[^a-z0-9]/gi, "_")}_offline.mbproj`;
     const downloadUrl = `/api/offline/download/${projectId}`;
 
     return {
       filename,
-      size: cached.size,
+      size: bundle.bytes.length,
       downloadUrl,
+    };
+  }
+
+  async downloadOfflineProject(projectId: string, userId: string): Promise<{ filename: string; bytes: Buffer }> {
+    const cached = await this.getCachedProject(projectId, userId);
+    if (!cached || !this.pocket) throw new Error("Project not cached");
+    const audio = [];
+    let size = 0;
+    for (const file of cached.audioFiles) {
+      const prefix = `audio/${encodeURIComponent(userId)}/${encodeURIComponent(projectId)}/`;
+      if (!file.path.startsWith(prefix)) throw new Error("Legacy offline audio must be recached");
+      const bytes = await (this as any).pocket.read(file.path);
+      size += bytes.length;
+      if (size > 128 * 1024 * 1024) throw new Error("Offline bundle exceeds size limit");
+      if (bytes.length !== file.size || createHash("sha256").update(bytes).digest("hex") !== file.checksum) throw new Error("Offline audio integrity check failed");
+      audio.push({ id: file.id, trackId: file.trackId, checksum: file.checksum, encoding: "base64", data: bytes.toString("base64") });
+    }
+    return {
+      filename: `${cached.name.replace(/[^a-z0-9_-]/gi, "_").slice(0, 100)}_offline.mbproj`,
+      bytes: Buffer.from(JSON.stringify({ version: 1, projectData: cached.projectData, audio })),
     };
   }
 
@@ -771,7 +767,7 @@ class OfflineModeService extends EventEmitter {
     }
 
     await this.authorizeProject(projectId, userId);
-    return projectId;
+    throw new Error("Offline import requires versioned editing commands and is not supported; no data was changed");
   }
 }
 

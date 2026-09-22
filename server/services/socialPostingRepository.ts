@@ -7,7 +7,15 @@ export async function claimSocialPost(id: string) {
   const [row] = await db.update(posts).set({ status: "posting",
     engagement: sql`COALESCE(${posts.engagement}::jsonb, '{}'::jsonb) || ${JSON.stringify({ postingCheckpointAt: new Date().toISOString() })}::jsonb`,
   })
-    .where(and(eq(posts.id, id), eq(posts.status, "pending"))).returning();
+    .where(and(eq(posts.id, id), eq(posts.status, "pending"),
+      sql`COALESCE(${posts.engagement}->>'postingRecoveryRequired', 'false') <> 'true'`,
+      sql`NOT EXISTS (
+        SELECT 1 FROM jsonb_array_elements(
+          CASE WHEN jsonb_typeof(${posts.engagement}->'postingResults') = 'array'
+          THEN ${posts.engagement}->'postingResults' ELSE '[]'::jsonb END
+        ) receipt WHERE receipt->>'outcome' IN ('started','unknown')
+      )`,
+    )).returning();
   return row;
 }
 

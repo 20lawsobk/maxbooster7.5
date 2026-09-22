@@ -21,12 +21,18 @@ export function createErasureRequests(database: AuthorityDatabase) {
            requested_at = CASE WHEN account_erasure_requests.status = 'cancelled'
                          THEN now() ELSE account_erasure_requests.requested_at END,
            not_before = CASE WHEN account_erasure_requests.status = 'cancelled'
-                         THEN now() + interval '30 days' ELSE account_erasure_requests.not_before END
+                         THEN now() + interval '30 days' ELSE account_erasure_requests.not_before END,
+           request_id = CASE WHEN account_erasure_requests.status = 'cancelled'
+                         THEN gen_random_uuid() ELSE account_erasure_requests.request_id END,
+           policy_version = CASE WHEN account_erasure_requests.status = 'cancelled'
+                         THEN NULL ELSE account_erasure_requests.policy_version END,
+           completed_at = CASE WHEN account_erasure_requests.status = 'cancelled'
+                         THEN NULL ELSE account_erasure_requests.completed_at END
          RETURNING user_id, requested_at, not_before, status`, [userId]);
       if (!result.rows[0]) throw new Error("Account not found");
       return result.rows[0];
     },
-    async status(userId: string) {
+    async status(userId: string): Promise<Record<string, unknown> | null> {
       const result = await database.query(
         "SELECT requested_at, not_before, status, completed_at FROM account_erasure_requests WHERE user_id = $1",
         [userId]);

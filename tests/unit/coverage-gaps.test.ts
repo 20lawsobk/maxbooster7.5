@@ -22,6 +22,29 @@ import { modulationRouting } from "../../server/services/modulationRoutingReposi
 import { runGenericExport, csvCell, clipFilter } from "../../server/services/genericExportRenderer";
 import durableRouter from "../../server/routes/durableExports";
 import { createHash } from "node:crypto";
+import { audioContract, timelineDuration } from "../../server/services/exportAudioContract";
+import { artifactExpired } from "../../server/services/exportArtifactExpiry";
+
+describe("closure audio admission", () => {
+  it("fails closed on invalid expiry and expires at the exact boundary", () => {
+    expect(artifactExpired({ expiresAt: "invalid" }, 100)).toBe(true);
+    expect(artifactExpired({ expiresAt: new Date(100).toISOString() }, 100)).toBe(true);
+    expect(artifactExpired({ expiresAt: new Date(101).toISOString() }, 100)).toBe(false);
+    expect(artifactExpired({}, 100)).toBe(false);
+  });
+  it("rejects unsupported quality and ignored effects, preserves float AIFF", () => {
+    expect(() => audioContract({ format: "flac", bitDepth: 32 })).toThrow("32-bit FLAC");
+    expect(() => audioContract({ format: "mp3", sampleRate: 96000 })).toThrow("MP3 sample rate");
+    expect(() => audioContract({ format: "wav", addEffectTail: true })).toThrow("unsupported");
+    expect(audioContract({ format: "aiff", bitDepth: 32 }).codec).toBe("pcm_f32be");
+  });
+  it("uses one bounded end for all stems and rejects nonfinite timing/gain", () => {
+    expect(timelineDuration([{ startTime: 0, duration: 0.1 }, { startTime: 0.2, duration: 0.1 }])).toBeCloseTo(0.3);
+    expect(() => timelineDuration([{ startTime: Infinity, duration: 1 }])).toThrow();
+    expect(() => timelineDuration([{ startTime: 0, duration: 3601 }])).toThrow();
+    expect(() => clipFilter({ startTime: 0, duration: 1, gain: NaN, fadeIn: null, fadeOut: null }, 0)).toThrow();
+  });
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -141,6 +164,11 @@ describe("CG2 real report bytes and commit protocol", () => {
     expect(mocks.get).toHaveBeenCalledWith("job", "u");
     expect(res.send).toHaveBeenCalledWith(bytes);
     expect(res.set.mock.calls[0][0]["Content-Disposition"]).toContain("attachment");
+    mocks.get.mockResolvedValue({ status: "complete", artifact: { expiresAt: new Date(0).toISOString() } });
+    mocks.read.mockClear(); res.send.mockClear();
+    await handler({ params: { jobId: "job" }, user: { id: "u" } }, res);
+    expect(res.status).toHaveBeenCalledWith(410);
+    expect(mocks.read).not.toHaveBeenCalled();
     mocks.get.mockResolvedValue(undefined); res.send.mockClear();
     await handler({ params: { jobId: "job" }, user: { id: "stranger" } }, res);
     expect(res.status).toHaveBeenCalledWith(404);
@@ -149,6 +177,35 @@ describe("CG2 real report bytes and commit protocol", () => {
 });
 
 describe("CG3 actor-aware offline server boundaries", () => {
+  it("preserves unresolved local edits and never reports fabricated uploads", async () => {
+    vi.useFakeTimers();
+    const { offlineModeService: service } = await import("../../server/services/offlineModeService");
+    mocks.query.projects.findFirst.mockResolvedValue({ id: "local", userId: "editor", title: "Owned" });
+    const cached = { projectId: "local", userId: "editor", localChanges: 2, serverChanges: 3, audioFiles: [], status: "outdated" };
+    (service as any).cachedProjects.set("local", cached);
+    const result = await service.syncProject("local", "editor");
+    expect(result.success).toBe(false);
+    expect(result.filesUploaded).toBe(0);
+    expect(cached.localChanges).toBe(2);
+    expect(cached.status).toBe("conflict");
+    await expect(service.importOfflineProject("editor", { projectData: { project: { id: "local" } } })).rejects.toThrow("not supported");
+    vi.clearAllTimers(); vi.useRealTimers();
+  });
+  it("refreshes real server snapshots and emits a checksum-verified offline artifact", async () => {
+    const { offlineModeService: service } = await import("../../server/services/offlineModeService");
+    mocks.query.projects.findFirst.mockResolvedValue({ id: "fresh", userId: "fresh-owner", title: "Real title" });
+    const bytes = Buffer.from("test-only owned audio bytes");
+    mocks.query.audioClips.findMany.mockResolvedValue([{ id: "clip", trackId: "track", audioUrl: "owned/source", duration: 1 }]);
+    mocks.read.mockResolvedValue(bytes);
+    await service.cacheProject("fresh", "fresh-owner");
+    mocks.pocket.read.mockResolvedValue(bytes);
+    const bundle = await service.downloadOfflineProject("fresh", "fresh-owner");
+    expect(JSON.parse(bundle.bytes.toString()).audio[0].data).toBe(bytes.toString("base64"));
+    expect(JSON.parse(bundle.bytes.toString()).projectData.project.title).toBe("Real title");
+    mocks.pocket.read.mockResolvedValue(Buffer.from("corrupt"));
+    await expect(service.downloadOfflineProject("fresh", "fresh-owner")).rejects.toThrow("integrity");
+    mocks.pocket.read.mockRejectedValue(new Error("File not found"));
+  });
   it("rejects another owner's known project for every targeted read/mutation", async () => {
     vi.useFakeTimers();
     const { offlineModeService: service } = await import("../../server/services/offlineModeService");

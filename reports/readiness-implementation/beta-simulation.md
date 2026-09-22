@@ -1,11 +1,14 @@
 # Isolated platform beta simulation
 
-Started: 2026-09-22T00:43:50.167Z
-Finished: 2026-09-22T00:44:05.306Z
+Started: 2026-09-22T02:11:23.430Z
+Finished: 2026-09-22T02:12:02.433Z
 
 **BLOCKED: passing isolated contracts do not establish full-platform or production acceptance**
 
 Sequential allowlisted commands; fresh temporary HOME; cleared environment; no secrets/DB URLs inherited; bounded process-group timeout; Node TCP guard permits only same-process loopback fixtures. Not an OS sandbox.
+
+beta-simulation.json/.md describe the latest started cycle, including partial progress, not necessarily the latest completed or passing cycle. Previous evidence is snapshotted before replacement.
+Previous latest report: reports/readiness-implementation/beta-simulation-history/2026-09-22T02-11-23.449Z-7bef87c6-246a-4d1f-b4b0-d11e85c1f34e. Snapshot file checksums are recorded in the JSON report.
 
 PASS means the selected contract commands exited zero, not domain acceptance. Fixtures are test-only assertions against production logic, not simulated production success.
 
@@ -13,15 +16,15 @@ PASS means the selected contract commands exited zero, not domain acceptance. Fi
 |---|---|---:|---|
 | security | PASS | 3/3 | BLOCKED |
 | commerce | PASS | 1/1 | BLOCKED |
-| integrations | PASS | 3/3 | BLOCKED |
+| integrations | PASS | 4/4 | BLOCKED |
 | growth | PASS | 1/1 | BLOCKED |
 | client | PASS | 2/2 | BLOCKED |
 | admin | PASS | 1/1 | BLOCKED |
-| data | PASS | 1/1 | BLOCKED |
+| data | PASS | 2/2 | BLOCKED |
 | media | PASS | 3/3 | BLOCKED |
 | autonomous | PASS | 1/1 | BLOCKED |
-| deploy | PASS | 2/2 | BLOCKED |
-| privacy | PASS | 1/1 | BLOCKED |
+| deploy | PASS | 4/4 | BLOCKED |
+| privacy | PASS | 2/2 | BLOCKED |
 | exports/sync | PASS | 1/1 | BLOCKED |
 
 ## Per-domain coverage limits
@@ -35,7 +38,7 @@ PASS means the selected contract commands exited zero, not domain acceptance. Fi
 - **media:** Tiny test-only subprocesses, mocked rendering and resource contracts; no models, production render, quality or workload acceptance.
 - **autonomous:** Mocked storage/security plus ephemeral HTTP fixture; no assembled app, restart durability, real build/autofix or operational feedback acceptance.
 - **deploy:** Resource sizing/source contracts and tiny temporary capsules only; no deployment, real capsule recovery, migration or load acceptance.
-- **privacy:** Mocked fabric deletion receipts only; erasure-request SQL boundary also covered by security authority suite. No complete user erasure, retention-policy/legal decision, remote deletion or cross-system verification.
+- **privacy:** Mocked fabric deletion receipts, erasure workflow approval/lease/receipt boundaries and erasure-request SQL contracts. No complete user erasure, retention-policy/legal decision, remote deletion or cross-system verification.
 - **exports/sync:** Mocked database/PDIM and tiny local FFmpeg WAV fixture; no remote artifact delivery, full codecs, expiry, workload, browser sync or real concurrent sessions.
 
 ## Excluded operations
@@ -46,82 +49,102 @@ Captured stdout/stderr and input-file SHA-256 snapshots are in beta-simulation.j
 
 ### authority: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --import tsx --test --test-concurrency=1 server/services/securityAuthority.test.ts`
-Exit: 0; signal: none; timeout: false; duration: 381 ms.
+Exit: 0; signal: none; timeout: false; duration: 3023 ms.
 
 ### jwt-chain: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 server/services/securityJwtChain.test.mjs`
-Exit: 0; signal: none; timeout: false; duration: 203 ms.
+Exit: 0; signal: none; timeout: false; duration: 919 ms.
 
 ### security-consumers: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --import tsx --test --test-concurrency=1 server/logSanitizer.test.ts script/security-readiness.test.mjs script/security-consumers.test.cjs`
-Exit: 0; signal: none; timeout: false; duration: 1628 ms.
+Exit: 0; signal: none; timeout: false; duration: 4433 ms.
 
 ### commerce: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 server/services/commerce.isolated.test.mjs server/services/commerce/orchestrator.isolated.test.mjs`
-Exit: 0; signal: none; timeout: false; duration: 427 ms.
+Exit: 0; signal: none; timeout: false; duration: 565 ms.
 
 ### integrations-readiness: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node tests/integrations-readiness.cjs`
-Exit: 0; signal: none; timeout: false; duration: 436 ms.
+Exit: 0; signal: none; timeout: false; duration: 526 ms.
 
 ### integration-webhooks: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node tests/integration-webhooks.cjs`
-Exit: 0; signal: none; timeout: false; duration: 403 ms.
+Exit: 0; signal: none; timeout: false; duration: 339 ms.
+
+### closure-integrations: PASS
+Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/closure-integrations.cjs tests/closure-integrations-shared.cjs`
+Exit: 0; signal: none; timeout: false; duration: 834 ms.
 
 ### growth-rights: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config tests/growth-rights.vitest.config.ts --maxWorkers=1 --no-file-parallelism`
-Exit: 0; signal: none; timeout: false; duration: 1224 ms.
+Exit: 0; signal: none; timeout: false; duration: 3806 ms.
 
 ### client-contracts: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/unit/client-offline-readiness.test.mjs tests/unit/client-account-boundary.test.mjs tests/unit/client-sync-receipts.test.mjs tests/unit/client-worker-handoff.test.mjs`
-Exit: 0; signal: none; timeout: false; duration: 587 ms.
+Exit: 0; signal: none; timeout: false; duration: 1136 ms.
 
 ### admin-governance: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/admin-governance-isolated.cjs`
-Exit: 0; signal: none; timeout: false; duration: 791 ms.
+Exit: 0; signal: none; timeout: false; duration: 1650 ms.
 
 ### resumed-webhook-topology: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/resume-integration-contracts.cjs`
-Exit: 0; signal: none; timeout: false; duration: 538 ms.
+Exit: 0; signal: none; timeout: false; duration: 1697 ms.
 
 ### client-auth-contracts: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/unit/client-auth-beta-contracts.test.mjs`
-Exit: 0; signal: none; timeout: false; duration: 197 ms.
+Exit: 0; signal: none; timeout: false; duration: 339 ms.
 
 ### data-runtime: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node scripts/test-data-runtime.mjs`
-Exit: 0; signal: none; timeout: false; duration: 165 ms.
+Exit: 0; signal: none; timeout: false; duration: 243 ms.
 
 ### fabric-deletion: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node scripts/test-fabric-deletion.mjs`
-Exit: 0; signal: none; timeout: false; duration: 75 ms.
+Exit: 0; signal: none; timeout: false; duration: 121 ms.
+
+### closure-erasure-workflow: PASS
+Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --import tsx --test --test-concurrency=1 server/services/accountErasureWorkflow.test.ts`
+Exit: 0; signal: none; timeout: false; duration: 298 ms.
+
+### closure-backup-postgres-tools: PASS
+Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/backup.config.mjs --maxWorkers=1 --no-file-parallelism`
+Exit: 0; signal: none; timeout: false; duration: 703 ms.
 
 ### test_media_delivery_contract: PASS
 Command: `/home/runner/workspace/.pythonlibs/bin/python3 -B external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py`
-Exit: 0; signal: none; timeout: false; duration: 615 ms.
+Exit: 0; signal: none; timeout: false; duration: 5954 ms.
 
 ### test_isolated_audio: PASS
 Command: `/home/runner/workspace/.pythonlibs/bin/python3 -B external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py`
-Exit: 0; signal: none; timeout: false; duration: 1837 ms.
+Exit: 0; signal: none; timeout: false; duration: 1757 ms.
 
 ### media-resources: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/unit/aiMediaResourceContracts.test.mjs`
-Exit: 0; signal: none; timeout: false; duration: 230 ms.
+Exit: 0; signal: none; timeout: false; duration: 571 ms.
 
 ### autonomous-contracts: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/autonomous.config.mjs --maxWorkers=1 --no-file-parallelism`
-Exit: 0; signal: none; timeout: false; duration: 2724 ms.
+Exit: 0; signal: none; timeout: false; duration: 3606 ms.
 
 ### deployment-contracts: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/deployment-contracts.cjs`
-Exit: 0; signal: none; timeout: false; duration: 385 ms.
+Exit: 0; signal: none; timeout: false; duration: 749 ms.
 
 ### worker-composition: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/readiness-worker-composition.cjs`
-Exit: 0; signal: none; timeout: false; duration: 204 ms.
+Exit: 0; signal: none; timeout: false; duration: 182 ms.
+
+### beta-evidence-history: PASS
+Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/readiness-beta-history.test.mjs`
+Exit: 0; signal: none; timeout: false; duration: 108 ms.
+
+### closure-runtime-artifacts: PASS
+Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/runtime-artifact-gates.test.mjs tests/nested-reconciliation.test.mjs`
+Exit: 0; signal: none; timeout: false; duration: 408 ms.
 
 ### exports-sync: PASS
 Command: `/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config tests/coverage-gaps.config.ts --maxWorkers=1 --no-file-parallelism`
-Exit: 0; signal: none; timeout: false; duration: 2073 ms.
+Exit: 0; signal: none; timeout: false; duration: 4978 ms.
 
-Rerun after each major change: `node scripts/readiness-beta-simulation.mjs`. Only the latest cycle is retained. No full-platform acceptance claim is made.
+Run a completed integration cycle with `node scripts/readiness-beta-simulation.mjs`. The stable filenames track the latest started cycle; previous report pairs are preserved under beta-simulation-history/. An absent finishedAt means incomplete execution, not a passing cycle. No full-platform acceptance claim is made.

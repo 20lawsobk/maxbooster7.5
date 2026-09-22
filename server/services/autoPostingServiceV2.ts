@@ -334,7 +334,10 @@ class AutoPostingServiceV2 {
     await storage.createScheduledPost(tempPost);
     await this.processSinglePost(tempPost);
     const saved = await storage.getScheduledPostById(tempPost.id);
-    return saved?.engagement?.postingResults || [];
+    if (!saved) throw new Error("Immediate post receipt could not be loaded");
+    if (Array.isArray(saved.results)) return saved.results;
+    if (Array.isArray(saved.engagement?.postingResults)) return saved.engagement.postingResults;
+    throw new Error("Immediate post has no readable durable receipts; reconcile before retrying");
   }
 
   private async executePost(post: ScheduledPost): Promise<PostResult[]> {
@@ -347,6 +350,14 @@ class AutoPostingServiceV2 {
 
     // Serialize checkpoints: a receipt is durable before another platform is attempted.
     for (const platform of [...new Set(post.platforms)]) {
+      const prior = Array.isArray(post.results)
+        ? post.results.find((result) => result.platform === platform) : undefined;
+      if (prior) {
+        // A legacy/manual reset to pending is not authority to repeat an
+        // externally accepted or ambiguous create.
+        results.push(prior);
+        continue;
+      }
       const pending: PostResult = { platform, success: false, outcome: "started",
         error: "External action started; reconcile provider receipt before retrying", postedAt: new Date() };
       results.push(pending);

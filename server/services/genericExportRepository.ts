@@ -3,7 +3,7 @@ import { and, eq, desc, lt, inArray } from "drizzle-orm";
 import { db } from "../db";
 import { randomUUID } from "node:crypto";
 
-export interface ExportArtifact { key: string; size: number; checksum: string; mime: string; filename: string }
+export interface ExportArtifact { key: string; size: number; checksum: string; mime: string; filename: string; expiresAt?: string }
 // Dedicated definition avoids changing the shared schema while the additive migration is pending.
 export const genericExportJobs = pgTable("generic_export_jobs", {
   id: varchar("id").primaryKey(), userId: varchar("user_id").notNull(),
@@ -34,9 +34,9 @@ export const exportRepository = {
     return db.select().from(genericExportJobs).where(eq(genericExportJobs.userId, userId))
       .orderBy(desc(genericExportJobs.createdAt)).limit(1000);
   },
-  async transition(id: string, from: string[], patch: Partial<DurableExportJob>) {
+  async transition(id: string, from: string[], patch: Partial<DurableExportJob>, userId: string) {
     const [job] = await db.update(genericExportJobs).set({ ...patch, updatedAt: new Date() })
-      .where(and(eq(genericExportJobs.id, id), inArray(genericExportJobs.status, from))).returning();
+      .where(and(eq(genericExportJobs.id, id), eq(genericExportJobs.userId, userId), inArray(genericExportJobs.status, from))).returning();
     return job;
   },
   async recover(userId: string) {

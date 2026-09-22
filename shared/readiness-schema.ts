@@ -17,11 +17,44 @@ export const authSessionEpochs = pgTable("auth_session_epochs", {
 
 export const accountErasureRequests = pgTable("account_erasure_requests", {
   userId: varchar("user_id").primaryKey(),
+  requestId: uuid("request_id").notNull().defaultRandom(),
   requestedAt: tz("requested_at").notNull().defaultNow(),
   notBefore: tz("not_before").notNull().default(sql`now() + interval '30 days'`),
   status: text("status").notNull().default("pending_policy"),
   policyVersion: text("policy_version"), completedAt: tz("completed_at"),
-}, t => [check("account_erasure_requests_status_check", sql`${t.status} IN ('pending_policy','cancelled','processing','completed')`)]);
+}, t => [check("account_erasure_requests_status_check", sql`${t.status} IN ('pending_policy','cancelled','processing','completed')`),
+  uniqueIndex("account_erasure_request_id_idx").on(t.requestId)]);
+
+// Evidence survives cancellation/reopening and eventual users-row removal.
+export const accountErasureSteps = pgTable("account_erasure_steps", {
+  requestId: uuid("request_id").notNull(), systemId: text("system_id").notNull(),
+  inventoryVersion: text("inventory_version").notNull(), policyVersion: text("policy_version").notNull(),
+  approvalRef: text("approval_ref").notNull(), approvedBy: text("approved_by").notNull(),
+  createdAt: tz("created_at").notNull().defaultNow(),
+  status: text("status").notNull().default("pending"), attempts: integer("attempts").notNull().default(0),
+  leaseId: uuid("lease_id"), leaseUntil: tz("lease_until"), retryAt: tz("retry_at"),
+  receiptRef: text("receipt_ref"), acknowledgedAt: tz("acknowledged_at"),
+}, t => [
+  primaryKey({ columns: [t.requestId, t.systemId], name: "account_erasure_steps_pkey" }),
+  check("account_erasure_steps_status_check", sql`${t.status} IN ('pending','running','retry','acknowledged')`),
+  check("account_erasure_steps_check", sql`${t.status} <> 'acknowledged' OR (${t.receiptRef} IS NOT NULL AND ${t.acknowledgedAt} IS NOT NULL)`),
+  index("account_erasure_steps_retry_idx").on(t.status, t.retryAt, t.leaseUntil),
+]);
+
+export const integrationNotificationDigest = pgTable("integration_notification_digest", {
+  id: uuid("id").primaryKey(), userId: varchar("user_id").notNull(),
+  type: text("type").notNull(), title: text("title").notNull(), message: text("message").notNull(),
+  link: text("link"), frequency: text("frequency").notNull(), dueAt: tz("due_at").notNull(),
+  state: text("state").notNull(), owner: uuid("owner"), providerId: text("provider_id"), error: text("error"),
+  createdAt: tz("created_at").notNull().defaultNow(), updatedAt: tz("updated_at").notNull().defaultNow(),
+}, t => [
+  foreignKey({ columns: [t.userId], foreignColumns: [users.id], name: "integration_notification_digest_user_id_fkey" }).onDelete("cascade"),
+  check("integration_notification_digest_frequency_check", sql`${t.frequency} IN ('daily','weekly')`),
+  check("integration_notification_digest_state_check", sql`${t.state} IN ('pending','started','accepted','rejected','unknown','suppressed')`),
+  index("integration_notification_digest_due").on(t.dueAt, t.id).where(sql`${t.state} = 'pending'`),
+  index("integration_notification_digest_owner").on(t.owner).where(sql`${t.owner} IS NOT NULL`),
+  index("integration_notification_digest_user_due").on(t.userId, t.dueAt).where(sql`${t.state} = 'pending'`),
+]);
 
 export const integrationCatalogJobs = pgTable("integration_catalog_jobs", {
   id: uuid("id").primaryKey().defaultRandom(),

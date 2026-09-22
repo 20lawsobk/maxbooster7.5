@@ -2,7 +2,9 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth";
 import { exportRepository, type DurableExportJob } from "../services/genericExportRepository";
-import { dispatchGenericExport } from "../services/genericExportRenderer";
+import { dispatchGenericExport, cancelGenericExport } from "../services/genericExportRenderer";
+import { audioContract } from "../services/exportAudioContract";
+import { artifactExpired } from "../services/exportArtifactExpiry";
 import { hybridStorageService } from "../services/hybridStorageService";
 import { createHash } from "node:crypto";
 import { db } from "../db";
@@ -40,7 +42,8 @@ function view(job: DurableExportJob, history = false) {
     type: history && job.type === "data" ? "analytics" : job.type,
     startTime: job.createdAt, createdAt: job.createdAt, completedTime: job.completedAt,
     fileSize: job.artifact?.size, stage: job.status,
-    downloadUrl: job.status === "complete" ? `/api/export/download/${job.id}` : undefined,
+    downloadUrl: job.status === "complete" && !artifactExpired(job.artifact) ? `/api/export/download/${job.id}` : undefined,
+    expired: artifactExpired(job.artifact),
     canRetry: job.status === "failed", artifact: undefined, userId: undefined,
   };
 }
@@ -53,6 +56,7 @@ const handler = (fn: (req: any, res: any) => Promise<any>) => async (req: any, r
 };
 router.post(["/audio/:projectId", "/audio/:projectId/stems"], requireAuth, handler(async (req, res) => {
   const settings = audio.parse(req.body);
+  try { audioContract(settings); } catch (error) { return res.status(422).json({ error: (error as Error).message }); }
   const project = await db.query.projects.findFirst({ where: and(eq(projects.id, req.params.projectId), eq(projects.userId, req.user.id)) });
   if (!project) return res.status(404).json({ error: "Project not found" });
   if (settings.dither || settings.bundleAsZip === false || settings.namingConvention === "custom") return res.status(422).json({ error: "Dither, custom naming and unbundled stem delivery are not supported by this renderer" });
@@ -95,7 +99,8 @@ router.post("/jobs/:jobId/:action", requireAuth, handler(async (req, res) => {
   const job = await exportRepository.get(req.params.jobId, req.user.id);
   if (!job) return res.status(404).json({ error: "Export not found" });
   if (req.params.action === "cancel") {
-    const cancelled = await exportRepository.transition(job.id, ["queued", "processing"], { status: "cancelled" });
+    const cancelled = await exportRepository.transition(job.id, ["queued", "processing"], { status: "cancelled" }, req.user.id);
+    if (cancelled) cancelGenericExport(job.id, req.user.id);
     return res.status(cancelled ? 200 : 409).json({ success: !!cancelled });
   }
   if (req.params.action === "retry" && job.status === "failed") {
@@ -110,6 +115,7 @@ router.get(["/download/:jobId", "/download/zip/:jobId"], requireAuth, handler(as
   const job = await exportRepository.get(req.params.jobId, req.user.id);
   if (!job) return res.status(404).json({ error: "Export not found" });
   if (job.status !== "complete" || !job.artifact) return res.status(409).json({ error: "Export is not ready" });
+  if (artifactExpired(job.artifact)) return res.status(410).json({ error: "Export artifact expired" });
   const bytes = await hybridStorageService.read(req.user.id, job.artifact.key);
   if (bytes.length !== job.artifact.size || createHash("sha256").update(bytes).digest("hex") !== job.artifact.checksum) throw new Error("Export artifact integrity check failed");
   res.set({ "Content-Type": job.artifact.mime, "Content-Length": String(bytes.length),
@@ -120,7 +126,7 @@ router.delete("/history/:id", requireAuth, handler(async (req, res) => {
   if (!job) return res.status(404).json({ error: "Export not found" });
   if (["queued", "processing"].includes(job.status)) return res.status(409).json({ error: "Cancel the active export first" });
   if (job.artifact) await hybridStorageService.delete(req.user.id, job.artifact.key);
-  await exportRepository.transition(job.id, [job.status], { status: "deleted", artifact: null });
+  await exportRepository.transition(job.id, [job.status], { status: "deleted", artifact: null }, req.user.id);
   res.json({ success: true });
 }));
 export default router;

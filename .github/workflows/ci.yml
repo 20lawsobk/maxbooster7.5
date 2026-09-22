@@ -153,6 +153,12 @@ jobs:
       - name: Install capsule codec
         run: sudo apt-get update && sudo apt-get install -y zstd
 
+      - name: Reconcile independent runtime dependencies
+        run: |
+          npm exec --yes --package=pnpm@10.26.1 -- node scripts/reconcile-nested-dependencies.mjs --apply --online
+          npm ci --prefix dns-os --ignore-scripts --no-audit --no-fund
+          npm ci --prefix tls-proxy --ignore-scripts --no-audit --no-fund
+
       - name: Test isolated deployment contracts
         run: env -i PATH="$PATH" node --test tests/deployment-contracts.cjs
 
@@ -168,6 +174,9 @@ jobs:
       - name: Verify build output
         run: |
           set -euo pipefail
+          .node_bin/node scripts/verify-runtime-artifacts.mjs capsules
+          .node_bin/node scripts/verify-runtime-artifacts.mjs restored
+          .node_bin/node scripts/verify-runtime-artifacts.mjs dependencies
           test -x .node_bin/node
           test -x bin/boosterstate
           test -f dist/gateway.mjs

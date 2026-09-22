@@ -156,3 +156,4 @@
 - [Nested deployment audits](nested-workspace-deployment-audits.md) — publishing scans bundled subsystem dependencies too; root-only dependency fixes can miss the blocker.
 - [Simulation copy exclusions](production-simulation-copy-exclusions.md) — anchor workspace-only tar exclusions; broad names can remove dependency internals and create false build failures.
 - [Endpoint audit contract boundary](endpoint-audit-contract-boundary.md) — route matches prove topology, not payload/response compatibility or component behavior.
+- [Git auth vs local reference health](git-auth-vs-local-reference-health.md) — successful GitHub auth can coexist with broken tracking refs; classify fetch failures before requesting OAuth reconnection.

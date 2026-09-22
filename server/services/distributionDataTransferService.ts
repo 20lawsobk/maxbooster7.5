@@ -2304,10 +2304,17 @@ class DistributionDataTransferService {
         let url: string | null =
           `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album,single,ep&limit=50&market=US`;
         let spotifyApiBlocked = false;
+        const seenPages = new Set<string>();
 
         while (url) {
+          const pageUrl = new URL(url);
+          if (pageUrl.origin !== "https://api.spotify.com" || !pageUrl.pathname.startsWith("/v1/") ||
+              pageUrl.username || pageUrl.password || pageUrl.hash) throw new Error("Invalid Spotify album cursor");
+          if (seenPages.has(pageUrl.href) || seenPages.size >= 1000) throw new Error("Spotify album pagination did not exhaust");
+          seenPages.add(pageUrl.href);
           const resp = await timedFetch(url, {
             headers: { Authorization: `Bearer ${token}` },
+            redirect: "error",
           });
 
           if (!resp.ok) {
@@ -2316,15 +2323,13 @@ class DistributionDataTransferService {
             // app owner's account doesn't have an active Spotify premium
             // subscription.  In that case we fall through to the iTunes catalog.
             const body = await resp.text().catch(() => "");
-            if (body.toLowerCase().includes("premium") || resp.status === 403) {
+            if (results.length === 0 && (body.toLowerCase().includes("premium") || resp.status === 403)) {
               logger.warn(
                 `[DataTransfer] Spotify API blocked (status ${resp.status}): ${body.slice(0, 120)} — falling back to iTunes catalog`,
               );
               spotifyApiBlocked = true;
             } else {
-              logger.warn(
-                `[DataTransfer] Spotify albums request failed: ${resp.status}`,
-              );
+              throw new Error(`Spotify albums request failed: ${resp.status}`);
             }
             break;
           }
@@ -2370,63 +2375,46 @@ class DistributionDataTransferService {
            // Follow Spotify's pagination until the provider reports no next
            // page. The previous local 100-release cap silently truncated
            // larger artist catalogs.
+           if (!Array.isArray(data.items) || (data.next !== null && typeof data.next !== "string")) {
+             throw new Error("Malformed Spotify album pagination");
+           }
+           if (data.next === "") throw new Error("Malformed Spotify album cursor");
            url = data.next || null;
         }
 
         if (results.length > 0) {
-          // Fetch full track lists (with ISRC + duration) for first 10 releases of any type
-          const trackTargets = results.slice(0, 10);
-          await Promise.allSettled(
-            trackTargets.map(async (release) => {
-              try {
-                const tr = await timedFetch(
-                  `https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=50`,
-                  {
-                    headers: { Authorization: `Bearer ${token}` },
-                  },
-                );
-                if (tr.ok) {
-                  const td = (await tr.json()) as {
-                    items?: Array<{
-                      name?: string;
-                      track_number?: number;
-                      external_ids?: { isrc?: string };
-                      duration_ms?: number;
-                    }>;
-                  };
-                  release.tracks = (td.items || []).map((t, idx) => ({
-                    title: t.name ?? "",
-                    trackNumber: t.track_number || idx + 1,
-                    isrc: t.external_ids?.isrc,
-                    duration: t.duration_ms
-                      ? Math.round(t.duration_ms / 1000)
-                      : undefined,
-                  }));
-                  release.trackCount =
-                    release.tracks.length || release.trackCount;
-                }
-              } catch {
-                /* non-fatal */
-              }
-            }),
-          );
+          // Sequential albums bound concurrency; every track page is required.
+          const { collectSpotifyPages } = await import("./catalogPagination.js");
+          for (const release of results) {
+            const tracks = await collectSpotifyPages<{
+              name?: string; track_number?: number; duration_ms?: number;
+              external_ids?: { isrc?: string };
+            }>(
+              `https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=50`,
+              token, timedFetch,
+            );
+            release.tracks = tracks.map((track, index) => ({
+              title: track.name ?? "",
+              trackNumber: track.track_number || index + 1,
+              isrc: track.external_ids?.isrc,
+              duration: track.duration_ms === undefined ? undefined : Math.round(track.duration_ms / 1000),
+            }));
+            release.trackCount = tracks.length;
+          }
           logger.info(
             `[DataTransfer] Spotify API returned ${results.length} releases for artist ${artistId}`,
           );
           return results;
         }
 
-        // Spotify returned nothing (API blocked or empty) — fall through to iTunes
-        if (!spotifyApiBlocked) {
-          logger.info(
-            `[DataTransfer] Spotify API returned 0 releases for ${artistId} — trying iTunes catalog`,
-          );
-        }
+        // An authoritative empty catalog is not a reason to import namesakes.
+        if (!spotifyApiBlocked) return [];
       } catch (err) {
         logger.warn(
           { err: err instanceof Error ? err.message : String(err) },
           `[DataTransfer] Spotify album scan error for ${artistId}:`,
         );
+        throw err;
       }
     } else {
       logger.info(
@@ -2435,10 +2423,8 @@ class DistributionDataTransferService {
     }
 
     // ── iTunes/Apple Music catalog (credential-free) ──────────────────────────
-    // LabelGrid distributes to Apple Music and Spotify simultaneously, so the
-    // iTunes catalog is the authoritative mirror of what's on Spotify.  We search
-    // by artist name (extracted from the Spotify profile) and page through all
-    // their releases.  No API key required.
+    // Cross-provider discovery is only a partial candidate catalog, never
+    // evidence of the contents or exhaustion of the Spotify artist catalog.
     const itunesReleases = await this.fetchItunesCatalogByArtistName(
       artistName,
       "spotify",
@@ -2458,11 +2444,8 @@ class DistributionDataTransferService {
   }
 
   /**
-   * Fetch an artist's full catalog from the iTunes / Apple Music search API.
-   *
-   * LabelGrid distributes to Apple Music and Spotify in tandem, so the iTunes
-   * catalog carries the same released titles as Spotify.  This is a reliable,
-   * credential-free alternative when the Spotify API is unavailable.
+   * Fetch a bounded candidate catalog from the iTunes / Apple Music search API.
+   * Cross-provider availability and namesake identity are not authoritative.
    *
    * The iTunes search API is public and free — no authentication required.
    * We search by artist name, pick the best-matching artist ID, then pull all
@@ -2843,8 +2826,15 @@ class DistributionDataTransferService {
       const results: ScannedRelease[] = [];
       let url: string | null =
         `https://api.deezer.com/artist/${artistId}/albums?limit=50`;
+      const seenPages = new Set<string>();
       while (url) {
-        const resp = await timedFetch(url);
+        const pageUrl = new URL(url);
+        if (pageUrl.origin !== "https://api.deezer.com" || pageUrl.username || pageUrl.password ||
+            pageUrl.hash || seenPages.has(pageUrl.href) || seenPages.size >= 1000) {
+          throw new Error("Deezer pagination is invalid or did not exhaust");
+        }
+        seenPages.add(pageUrl.href);
+        const resp = await timedFetch(url, { redirect: "error" });
         if (!resp?.ok) {
           throw new Error(`Deezer catalog page failed with status ${resp.status}`);
         }
@@ -2873,6 +2863,8 @@ class DistributionDataTransferService {
             genre: (item.genres as any)?.data?.[0]?.name,
           });
         }
+        if (data.next !== undefined && data.next !== null &&
+            (typeof data.next !== "string" || !data.next)) throw new Error("Invalid Deezer next cursor");
         url = typeof data.next === "string" ? data.next : null;
       }
       return results;
@@ -3349,7 +3341,7 @@ class DistributionDataTransferService {
         status: "partial",
         method: "dedicated",
         complete: false,
-        reason: "Release discovery may use cross-provider search; track enrichment is bounded. Full Spotify catalog and metadata coverage is not certified.",
+        reason: "Release discovery may use cross-provider search and a market-specific catalog. Full Spotify catalog and metadata coverage is not certified.",
       };
     }
 

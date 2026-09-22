@@ -7,6 +7,12 @@ import fs from "fs";
 import { storageService } from "../storageService.js";
 import { createHash, randomUUID } from "node:crypto";
 import { backupCatalog } from "./backupCatalog.js";
+import {
+  dumpedServerMajor,
+  safePostgresDiagnostic,
+  selectPgDumpForServer,
+  selectPsqlForRestore,
+} from "./postgresTools.js";
 
 function databaseUrl(): string {
   const url = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
@@ -138,6 +144,7 @@ export class DatabaseBackupService {
     lease: { day: string; owner: string };
   }): Promise<string> {
     const sourceUrl = databaseUrl();
+    const dumpSelection = await selectPgDumpForServer(sourceUrl);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const name = `backup-${timestamp}-${randomUUID()}.sql`;
@@ -146,7 +153,7 @@ export class DatabaseBackupService {
     const tmpPath = `/tmp/${name}`;
 
     await new Promise<void>((resolve, reject) => {
-      const pgDump = spawn("pg_dump", ["--no-owner", "--no-acl"], {
+      const pgDump = spawn(dumpSelection.tool.path, ["--no-owner", "--no-acl"], {
         env: { ...process.env, PGDATABASE: sourceUrl },
         timeout: 45 * 60 * 1000,
       });
@@ -199,7 +206,7 @@ export class DatabaseBackupService {
         if (exitCode === 0) resolve();
         else
           reject(
-            new Error(`pg_dump failed (code ${exitCode}): ${errorOutput}`),
+            new Error(`pg_dump failed (code ${exitCode}): ${safePostgresDiagnostic(errorOutput)}`),
           );
       }
     }).catch(async err => {
@@ -278,11 +285,12 @@ export class DatabaseBackupService {
     try {
       const buf = await storageService?.downloadFile(key);
       if (checksum(buf) !== record.checksum) throw new Error("Backup checksum mismatch");
+      const restoreSelection = await selectPsqlForRestore(targetUrl, dumpedServerMajor(buf));
       await fsPromises?.writeFile(tmpPath, buf, { mode: 0o600, flag: "wx" });
       await fsPromises.writeFile(validationPath, validationSql, { mode: 0o600, flag: "wx" });
 
       await new Promise<void>((resolve, reject) => {
-        const psql = spawn("psql", ["-X", "-v", "ON_ERROR_STOP=1", "--single-transaction",
+        const psql = spawn(restoreSelection.tool.path, ["-X", "-v", "ON_ERROR_STOP=1", "--single-transaction",
           "-c", "DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%' AND c.relkind IN ('r','p','v','m','S','f')) THEN RAISE EXCEPTION 'Restore target is not empty'; END IF; END $$;",
           "-f", tmpPath, "-f", validationPath], {
           env: { ...process.env, PGDATABASE: targetUrl },
@@ -296,7 +304,7 @@ export class DatabaseBackupService {
             logger.info("✅ Database restored successfully");
             resolve();
           } else {
-            reject(new Error(`Restore failed (code ${code}): ${errorOutput}`));
+            reject(new Error(`Restore failed (code ${code}): ${safePostgresDiagnostic(errorOutput)}`));
           }
         });
         psql?.on("error", reject);

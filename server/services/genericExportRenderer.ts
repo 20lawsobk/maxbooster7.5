@@ -11,6 +11,13 @@ import ffmpeg from "fluent-ffmpeg";
 import { hybridStorageService } from "./hybridStorageService";
 import { exportRepository, type DurableExportJob } from "./genericExportRepository";
 import { logger } from "../logger";
+import { audioContract, timelineDuration } from "./exportAudioContract";
+
+const activeExports = new Map<string, { userId: string; controller: AbortController }>();
+export function cancelGenericExport(id: string, userId: string): void {
+  const active = activeExports.get(id);
+  if (active?.userId === userId) active.controller.abort();
+}
 
 export function csvCell(value: unknown): string {
   let text = value == null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value);
@@ -20,7 +27,9 @@ export function csvCell(value: unknown): string {
 
 export function clipFilter(clip: { startTime: number | null; duration: number | null; gain: number | null; fadeIn: number | null; fadeOut: number | null }, index: number): string {
   const duration = clip.duration;
-  if (!duration || !Number.isFinite(duration) || duration <= 0 || (clip.startTime ?? 0) < 0) throw new Error("Invalid audio clip timing");
+  if (duration == null) throw new Error("Invalid audio clip timing");
+  timelineDuration([clip]);
+  if ([clip.gain, clip.fadeIn, clip.fadeOut].some((value) => value != null && (!Number.isFinite(value) || value < 0))) throw new Error("Invalid audio clip gain or fade");
   const filters = [`atrim=duration=${duration}`, "asetpts=PTS-STARTPTS", `volume=${clip.gain ?? 1}`];
   if (clip.fadeIn) filters.push(`afade=t=in:st=0:d=${Math.min(clip.fadeIn, duration)}`);
   if (clip.fadeOut) filters.push(`afade=t=out:st=${Math.max(0, duration - clip.fadeOut)}:d=${Math.min(clip.fadeOut, duration)}`);
@@ -28,7 +37,7 @@ export function clipFilter(clip: { startTime: number | null; duration: number | 
   return `[${index}:a]${filters.join(",")}[clip${index}]`;
 }
 
-async function renderAudio(job: DurableExportJob, dir: string): Promise<{ bytes: Buffer; mime: string; extension: string }> {
+async function renderAudio(job: DurableExportJob, dir: string, signal: AbortSignal): Promise<{ bytes: Buffer; mime: string; extension: string }> {
   const project = await db.query.projects.findFirst({
     where: and(eq(projects.id, job.projectId!), eq(projects.userId, job.userId)),
   });
@@ -47,21 +56,23 @@ async function renderAudio(job: DurableExportJob, dir: string): Promise<{ bytes:
     throw new Error("Active plugin chains require the studio DSP renderer; disable effects for a dry export");
   }
   const files: string[] = [];
-  const sampleRate = job.settings.sampleRate ?? job.settings.quality?.sampleRate ?? 48000;
-  const bitDepth = job.settings.bitDepth ?? job.settings.quality?.bitDepth ?? 24;
-  const format = job.settings.format ?? job.format;
-  const codecs: Record<string, string> = { wav: bitDepth === 32 ? "pcm_f32le" : `pcm_s${bitDepth}le`, flac: "flac", mp3: "libmp3lame", aac: "aac", ogg: "libvorbis", aiff: `pcm_s${bitDepth}be` };
-  if (!codecs[format]) throw new Error("Unsupported audio codec");
+  const { sampleRate, bitDepth, format, codec } = audioContract(job.settings);
+  const end = timelineDuration(allClips.filter((clip) => tracks.some((track) => track.id === clip.trackId) && !clip.hiddenInTimeline));
   async function encode(output: string, sources: string[], filters: string[], out: string, intermediate = false) {
     await new Promise<void>((resolve, reject) => {
+      signal.throwIfAborted();
       let command = ffmpeg();
       for (const source of sources) command = command.input(source);
       const timer = setTimeout(() => { command.kill("SIGKILL"); reject(new Error("Audio rendering exceeded execution limit")); }, 10 * 60_000);
-      command.complexFilter(filters, out).audioCodec(intermediate ? "pcm_f32le" : codecs[format]).audioFrequency(sampleRate).audioChannels(2);
+      const cancel = () => command.kill("SIGKILL");
+      signal.addEventListener("abort", cancel, { once: true });
+      command.on("start", () => { if (signal.aborted) cancel(); });
+      const cleanup = () => { clearTimeout(timer); signal.removeEventListener("abort", cancel); };
+      command.complexFilter(filters, out).audioCodec(intermediate ? "pcm_f32le" : codec).audioFrequency(sampleRate).audioChannels(2).outputOptions("-threads", "1");
       if (!intermediate && format === "flac") command.outputOptions("-sample_fmt", bitDepth === 16 ? "s16" : "s32", "-bits_per_raw_sample", String(bitDepth));
       if (!intermediate && ["mp3", "aac", "ogg"].includes(format)) command.audioBitrate(job.settings.bitrate ?? 320);
-      command.on("error", (err) => { clearTimeout(timer); reject(err); })
-        .on("end", () => { clearTimeout(timer); resolve(); }).save(output);
+      command.on("error", (err) => { cleanup(); reject(err); })
+        .on("end", () => { cleanup(); signal.aborted ? reject(new Error("Export cancelled")) : resolve(); }).save(output);
     });
   }
   for (const track of tracks) {
@@ -87,9 +98,11 @@ async function renderAudio(job: DurableExportJob, dir: string): Promise<{ bytes:
       const filters = clips.map(clipFilter);
       const pan = job.settings.preserveVolumePan === false ? 0 : track.pan ?? 0;
       const volume = job.settings.preserveVolumePan === false ? 1 : track.volume ?? 1;
+      if (!Number.isFinite(pan) || pan < -1 || pan > 1 || !Number.isFinite(volume) || volume < 0) throw new Error("Invalid track volume or pan");
       filters.push(`${clips.map((_, i) => `[clip${i}]`).join("")}amix=inputs=${clips.length}:normalize=0:duration=longest,volume=${volume},aformat=channel_layouts=stereo,pan=stereo|c0=${Math.min(1, 1 - pan)}*c0|c1=${Math.min(1, 1 + pan)}*c1[out]`);
       const stem = job.type === "stems";
       if (stem && job.settings.normalize) filters[filters.length - 1] = filters[filters.length - 1].replace("[out]", ",loudnorm=I=-14:TP=-1:LRA=11[out]");
+      filters[filters.length - 1] = filters[filters.length - 1].replace("[out]", `,apad,atrim=duration=${end}[out]`);
       const safeName = track.name.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80);
       const output = path.join(dir, `${safeName}_${files.length + 1}.${stem ? (format === "aac" ? "m4a" : format) : "wav"}`);
       await encode(output, sources.map((source) => source.localPath), filters, "out", !stem);
@@ -114,12 +127,25 @@ async function renderAudio(job: DurableExportJob, dir: string): Promise<{ bytes:
 }
 
 export async function runGenericExport(id: string, userId: string): Promise<void> {
-  const job = await exportRepository.transition(id, ["queued"], { status: "processing", progress: 10 });
+  const job = await exportRepository.transition(id, ["queued"], { status: "processing", progress: 10 }, userId);
   if (!job || job.userId !== userId) return;
+  const controller = new AbortController();
+  activeExports.set(id, { userId, controller });
+  let checking = false;
+  const monitor = setInterval(async () => {
+    if (checking) return;
+    checking = true;
+    try { if ((await exportRepository.get(id, userId))?.status !== "processing") controller.abort(); }
+    catch { controller.abort(); }
+    finally { checking = false; }
+  }, 1000);
+  monitor.unref();
   let dir: string | undefined;
+  let uploadedKey: string | undefined;
   try {
     let result: { bytes: Buffer; mime: string; extension: string };
     if (job.type === "data") {
+      if (!["csv", "json"].includes(job.format)) throw new Error("Unsupported data export format");
       const range = job.settings.dateRange;
       const rows = await db.select().from(analytics).where(and(eq(analytics.userId, userId),
         range?.start ? gte(analytics.date, new Date(range.start)) : undefined,
@@ -131,22 +157,29 @@ export async function runGenericExport(id: string, userId: string): Promise<void
       result = { bytes: Buffer.from(content), mime: job.format === "json" ? "application/json" : "text/csv; charset=utf-8", extension: job.format };
     } else {
       dir = await mkdtemp(path.join(tmpdir(), "generic-export-"));
-      result = await renderAudio(job, dir);
+      if (!["audio", "stems"].includes(job.type)) throw new Error("Unsupported export type");
+      result = await renderAudio(job, dir, controller.signal);
     }
     if ((await exportRepository.get(id, userId))?.status !== "processing") return;
     const filename = `${job.name.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 120)}.${result.extension}`;
     const stored = await hybridStorageService.upload(userId, filename, result.bytes, result.mime, { folder: "exports", isPublic: false });
+    uploadedKey = stored.key;
     const verified = await hybridStorageService.read(userId, stored.key);
     const checksum = createHash("sha256").update(result.bytes).digest("hex");
     if (createHash("sha256").update(verified).digest("hex") !== checksum) throw new Error("Stored artifact verification failed");
     const committed = await exportRepository.transition(id, ["processing"], {
       status: "complete", progress: 100, completedAt: new Date(),
       artifact: { key: stored.key, size: verified.length, checksum, mime: result.mime, filename },
-    });
-    if (!committed) await hybridStorageService.delete(userId, stored.key);
+    }, userId);
+    if (committed) uploadedKey = undefined;
   } catch (error) {
-    await exportRepository.transition(id, ["processing"], { status: "failed", error: error instanceof Error ? error.message : "Export failed" });
-  } finally { if (dir) await rm(dir, { recursive: true, force: true }); }
+    await exportRepository.transition(id, ["processing"], { status: "failed", error: error instanceof Error ? error.message : "Export failed" }, userId);
+  } finally {
+    clearInterval(monitor);
+    activeExports.delete(id);
+    if (dir) await rm(dir, { recursive: true, force: true });
+    if (uploadedKey) await hybridStorageService.delete(userId, uploadedKey);
+  }
 }
 
 export function dispatchGenericExport(id: string, userId: string): void {

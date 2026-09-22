@@ -6,7 +6,7 @@ function compile(source, scope = {}) {
   const exports = {};
   vm.runInNewContext(ts.transpileModule(source, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
-  }).outputText, { exports, Date, Intl, ...scope });
+  }).outputText, { exports, Date, Intl, URL, ...scope });
   return exports;
 }
 const source = p => readFileSync(p, "utf8");
@@ -87,7 +87,7 @@ async function transportTests() {
     if (sql.includes("SELECT")) return { rows: [row] };
     if (sql.includes("state='completed'")) { row.state = "completed"; row.result = JSON.parse(params[1]); }
     if (sql.includes("state='unknown'")) row.state = "unknown";
-    return { rows: [] };
+    return { rows: sql.includes("RETURNING owner") ? [{ owner: row.owner }] : [] };
   } };
   const repository = compile(source("server/services/distributionSubmissionRepository.ts"), {
     require: id => id === "node:crypto" ? crypto : id === "../db.js" ? { pool } : assert.fail(`Unexpected import ${id}`),
@@ -126,6 +126,13 @@ async function postingTests() {
   assert.equal(checkpoints[1][0].postId, "receipt");
   assert.equal(checkpoints[2][0].outcome, "confirmed");
   assert.equal(checkpoints[2][1].outcome, "started");
+  checkpoints.length = 0;
+  const recovered = await new worker.Worker().executePost({
+    id: "post", userId: "user", platforms: ["good", "bad"],
+    results: result, content: { text: "test" },
+  });
+  assert.equal(checkpoints.length, 0, "existing receipts must not repeat external actions");
+  assert.equal(recovered[1].outcome, "unknown");
 }
 async function smsTests() {
   let sent = 0;

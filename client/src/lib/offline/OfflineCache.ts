@@ -186,7 +186,7 @@ class OfflineCache {
     assertOfflineIdentity(identity);
     if (this.memoryCache.has(key)) {
       const entry = this.memoryCache.get(key)!;
-      if (entry?.expiresAt > Date?.now()) {
+      if (Number.isFinite(entry?.expiresAt) && entry.expiresAt > Date.now()) {
         entry.lastAccessed = Date?.now();
         entry.accessCount++;
         this.emit({ type: "cache-hit", key, category: entry.category, entry });
@@ -204,7 +204,7 @@ class OfflineCache {
       return null;
     }
 
-    if (entry?.expiresAt < Date?.now()) {
+    if (!Number.isFinite(entry?.expiresAt) || entry.expiresAt <= Date.now()) {
       await this.delete(key);
       this.emit({ type: "cache-miss", key });
       return null;
@@ -360,7 +360,7 @@ class OfflineCache {
 
     for (const entry of allEntries) {
       assertOfflineIdentity(identity);
-      if (entry?.expiresAt < now) {
+      if (!Number.isFinite(entry?.expiresAt) || entry.expiresAt <= now) {
         await this.delete(entry?.key);
         removedCount++;
       }

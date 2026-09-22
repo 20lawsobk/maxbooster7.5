@@ -13,6 +13,18 @@ This verifies the original 80 findings; it is not a replacement plan or a new im
 - Latest read-only live preflight: 28 of 29 readiness tables absent, only pg_sessions present; migration receipt table empty; backup/restore not verified. See live-migration-preflight.md.
 - App preview/browser acceptance remains unavailable; workflow is reported failed. Restart is not safe evidence of readiness while migration and storage-cutover prerequisites remain unmet.
 
+## Latest execution addendum
+
+`execution-handoff.md` and `status.json.latestExecution` supersede the older
+test, dependency and rehearsal counts above. The completed isolated beta is now
+25/25 commands; both full TypeScript checks pass; the final dependency scan has
+zero findings; the installed runtime gate passes 27 physical occurrences.
+PostgreSQL 17.5 rehearsal passed 14 migrations and parity for 31 readiness tables.
+SAST is still incomplete, and no live migrations or assembled acceptance occurred.
+The durable erasure workflow now has real isolated PostgreSQL concurrency evidence;
+policy, full inventory/write fencing, destructive adapters and finalization remain
+open. These improvements do not certify all 80 findings closed.
+
 ## Concrete outstanding areas
 
 1. Reviewed live migration application, historical provenance, verified backup and rollback drill.

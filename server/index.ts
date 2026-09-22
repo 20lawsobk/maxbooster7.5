@@ -1097,6 +1097,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
   const { pool: readinessPool } = await import("./db.js");
   await assertWorkerSchema(sql => readinessPool.query(sql), backupsEnabled, fanMailEnabled);
+  // Check every durable consumer before starting any readiness background work.
+  await readinessPool.query(
+    "SELECT id,user_id,type,title,message,link,frequency,due_at,state,owner,provider_id,error,updated_at FROM integration_notification_digest LIMIT 0",
+  );
   await registerRoutes(httpServer, app);
   if (backupsEnabled) {
     const { databaseBackupService } = await import("./services/backup/databaseBackupService.js");
@@ -1106,6 +1110,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const { runCatalogDiscoveryJobs } = await import("./services/catalogDiscoveryJobs.js");
   readinessWorkerStops.push(scheduleDrainingWork(runCatalogDiscoveryJobs, 30_000,
     error => logger.error({ err: error }, "Catalog discovery worker failed")));
+  const { runNotificationDigestBatch } = await import("./services/notificationDigestService.js");
+  // One bounded batch at a time; stop hook prevents new work and drains in-flight work.
+  readinessWorkerStops.push(scheduleDrainingWork(runNotificationDigestBatch, 60_000,
+    error => logger.error({ err: error }, "Notification digest worker failed")));
   if (fanMailEnabled) {
     const { drainPendingFanDeliveries } = await import("./services/fanDeliveryService.js");
     readinessWorkerStops.push(scheduleDrainingWork(() => drainPendingFanDeliveries(10), 60_000,

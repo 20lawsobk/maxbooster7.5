@@ -297,6 +297,21 @@ router.post("/export/:projectId", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/download/:projectId", requireAuth, async (req, res) => {
+  const projectId = req.params.projectId;
+  if (typeof projectId !== "string" || !projectId) {
+    return res.status(400).json({ error: "A single project ID is required" });
+  }
+  try {
+    const bundle = await offlineModeService.downloadOfflineProject(projectId, req.user!.id);
+    res.set({ "Content-Type": "application/json", "Content-Length": String(bundle.bytes.length),
+      "Content-Disposition": `attachment; filename="${bundle.filename}"`, "Cache-Control": "private, no-store" }).send(bundle.bytes);
+  } catch (error) {
+    logger.warn({ err: error }, "Offline bundle download failed");
+    res.status(409).json({ error: "Offline bundle unavailable; recache an owned project without unresolved edits" });
+  }
+});
+
 router.post("/import", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
@@ -313,7 +328,7 @@ router.post("/import", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error importing offline project:");
-    res.status(500).json({ error: "Failed to import offline project" });
+    res.status(422).json({ error: "Offline import is unsupported; no data was changed" });
   }
 });
 

@@ -15,6 +15,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
+  if (process.env.DEPLOY_PACK === "1" || process.env.REPLIT_DEPLOYMENT_ID) {
+    // Reject stale nested/hoisted installs before expensive work or destructive packing.
+    execFileSync(process.execPath, ["scripts/verify-runtime-artifacts.mjs", "dependencies", root],
+      { cwd: root, stdio: "inherit" });
+  }
   console.log("==> Building frontend with Vite...");
   execSync("npx vite build", { cwd: root, stdio: "inherit" });
   console.log("   ✅ Vite build complete → dist/public/");

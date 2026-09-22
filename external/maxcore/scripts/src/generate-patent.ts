@@ -1,16 +1,11 @@
 import puppeteer from "puppeteer-core";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const CHROMIUM_PATH = process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE ?? "";
-
-if (!CHROMIUM_PATH) {
-  console.error("REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE is not set.");
-  process.exit(1);
-}
 
 const HTML_PATH = path.resolve(__dirname, "patent.html");
 const OUT_PATH = path.resolve(
@@ -18,10 +13,15 @@ const OUT_PATH = path.resolve(
   "../../BLawzMusicLLC_MaxBooster_Patent_Application.pdf",
 );
 
-async function main() {
+export async function generatePatentPdf(
+  htmlPath = HTML_PATH,
+  outputPath = OUT_PATH,
+  executablePath = CHROMIUM_PATH,
+) {
+  if (!executablePath) throw new Error("REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE is not set.");
   console.log("Launching browser...");
   const browser = await puppeteer.launch({
-    executablePath: CHROMIUM_PATH,
+    executablePath,
     headless: true,
     args: [
       "--no-sandbox",
@@ -32,34 +32,39 @@ async function main() {
     ],
   });
 
-  const page = await browser.newPage();
-  await page.setViewport({ width: 816, height: 1056 });
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 816, height: 1056 });
 
-  const fileUrl = `file://${HTML_PATH}`;
-  console.log(`Loading: ${fileUrl}`);
-  await page.goto(fileUrl, { waitUntil: "networkidle0", timeout: 30000 });
+    const fileUrl = pathToFileURL(path.resolve(htmlPath)).href;
+    console.log(`Loading: ${fileUrl}`);
+    await page.goto(fileUrl, { waitUntil: "networkidle0", timeout: 30000 });
 
-  await page.evaluate(() => {
-    document.title =
-      "MaxBooster Patent Application — B-Lawz Music LLC";
-  });
+    await page.evaluate(() => {
+      document.title =
+        "MaxBooster Patent Application — B-Lawz Music LLC";
+    });
 
-  console.log("Generating PDF...");
-  await page.pdf({
-    path: OUT_PATH,
-    format: "Letter",
-    printBackground: true,
-    margin: { top: "0", bottom: "0", left: "0", right: "0" },
-    displayHeaderFooter: false,
-  });
+    console.log("Generating PDF...");
+    await page.pdf({
+      path: outputPath,
+      format: "Letter",
+      printBackground: true,
+      margin: { top: "0", bottom: "0", left: "0", right: "0" },
+      displayHeaderFooter: false,
+    });
 
-  await browser.close();
-
-  const size = fs.statSync(OUT_PATH).size;
-  console.log(`PDF generated: ${OUT_PATH} (${(size / 1024).toFixed(1)} KB)`);
+    const size = fs.statSync(outputPath).size;
+    console.log(`PDF generated: ${outputPath} (${(size / 1024).toFixed(1)} KB)`);
+    return size;
+  } finally {
+    await browser.close();
+  }
 }
 
-main().catch((err) => {
-  console.error("Error generating PDF:", err);
-  process.exit(1);
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  generatePatentPdf().catch((err) => {
+    console.error("Error generating PDF:", err);
+    process.exit(1);
+  });
+}

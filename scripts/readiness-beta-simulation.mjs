@@ -1,16 +1,30 @@
 #!/usr/bin/env node
 // Isolated contract evidence only. Never start the application or run migrations here.
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, constants, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 process.chdir(root);
 const scratch = mkdtempSync(join(tmpdir(), "readiness-beta-"));
 const reportBase = "reports/readiness-implementation/beta-simulation";
+// Preserve the previous latest pair before the first progress write. Exclusive
+// copies and a unique directory prevent a later run from overwriting evidence.
+function preservePreviousReport() {
+  const sources = ["json", "md"].map(ext => `${reportBase}.${ext}`).filter(existsSync);
+  if (!sources.length) return null;
+  const directory = `${reportBase}-history/${new Date().toISOString().replaceAll(":", "-")}-${randomUUID()}`;
+  mkdirSync(directory, { recursive: true });
+  const files = sources.map(source => {
+    const target = join(directory, source.split("/").at(-1));
+    copyFileSync(source, target, constants.COPYFILE_EXCL);
+    return { path: target, sha256: createHash("sha256").update(readFileSync(target)).digest("hex") };
+  });
+  return { directory, files };
+}
 const node = process.execPath;
 const timeoutMs = 90000;
 const outputLimit = 512 * 1024;
@@ -73,6 +87,9 @@ add("security-consumers", "security", ["--import", "tsx", "--test", "--test-conc
 nodeTests("commerce", "commerce", ["server/services/commerce.isolated.test.mjs", "server/services/commerce/orchestrator.isolated.test.mjs"]);
 for (const name of ["integrations-readiness", "integration-webhooks"])
   add(name, "integrations", [`tests/${name}.cjs`], [`tests/${name}.cjs`]);
+nodeTests("closure-integrations", "integrations", [
+  "tests/closure-integrations.cjs", "tests/closure-integrations-shared.cjs",
+]);
 vitest("growth-rights", "growth", "tests/growth-rights.vitest.config.ts", []);
 nodeTests("client-contracts", "client", [
   "tests/unit/client-offline-readiness.test.mjs", "tests/unit/client-account-boundary.test.mjs",
@@ -83,6 +100,15 @@ nodeTests("resumed-webhook-topology", "integrations", ["tests/resume-integration
 nodeTests("client-auth-contracts", "client", ["tests/unit/client-auth-beta-contracts.test.mjs"]);
 add("data-runtime", "data", ["scripts/test-data-runtime.mjs"], ["scripts/test-data-runtime.mjs"]);
 add("fabric-deletion", "privacy", ["scripts/test-fabric-deletion.mjs"], ["scripts/test-fabric-deletion.mjs"]);
+nodeTests("closure-erasure-workflow", "privacy", ["server/services/accountErasureWorkflow.test.ts"], ["--import", "tsx"]);
+// Discovered by source inventory; mocks subprocesses and never connects to PG.
+const backupFiles = ["server/services/backup/__tests__/postgresTools.test.ts"];
+const backupConfig = join(scratch, "backup.config.mjs");
+writeFileSync(backupConfig, `export default ${JSON.stringify({
+  root, test: { include: backupFiles, environment: "node", setupFiles: [],
+    fileParallelism: false, maxWorkers: 1, testTimeout: 15000, hookTimeout: 15000 },
+})};`);
+vitest("closure-backup-postgres-tools", "data", backupConfig, backupFiles);
 const python = join(root, ".pythonlibs/bin/python3");
 for (const name of ["test_media_delivery_contract", "test_isolated_audio"]) {
   const file = `external/maxcore/artifacts/ai-training-server/tests/${name}.py`;
@@ -92,6 +118,10 @@ nodeTests("media-resources", "media", ["tests/unit/aiMediaResourceContracts.test
 vitest("autonomous-contracts", "autonomous", autonomousConfig, autonomousFiles);
 nodeTests("deployment-contracts", "deploy", ["tests/deployment-contracts.cjs"]);
 nodeTests("worker-composition", "deploy", ["tests/readiness-worker-composition.cjs"]);
+nodeTests("beta-evidence-history", "deploy", ["tests/readiness-beta-history.test.mjs"]);
+nodeTests("closure-runtime-artifacts", "deploy", [
+  "tests/runtime-artifact-gates.test.mjs", "tests/nested-reconciliation.test.mjs",
+]);
 vitest("exports-sync", "exports/sync", "tests/coverage-gaps.config.ts", ["tests/unit/coverage-gaps.test.ts"]);
 
 const gaps = {
@@ -105,7 +135,7 @@ const gaps = {
   media: "Tiny test-only subprocesses, mocked rendering and resource contracts; no models, production render, quality or workload acceptance.",
   autonomous: "Mocked storage/security plus ephemeral HTTP fixture; no assembled app, restart durability, real build/autofix or operational feedback acceptance.",
   deploy: "Resource sizing/source contracts and tiny temporary capsules only; no deployment, real capsule recovery, migration or load acceptance.",
-  privacy: "Mocked fabric deletion receipts only; erasure-request SQL boundary also covered by security authority suite. No complete user erasure, retention-policy/legal decision, remote deletion or cross-system verification.",
+  privacy: "Mocked fabric deletion receipts, erasure workflow approval/lease/receipt boundaries and erasure-request SQL contracts. No complete user erasure, retention-policy/legal decision, remote deletion or cross-system verification.",
   "exports/sync": "Mocked database/PDIM and tiny local FFmpeg WAV fixture; no remote artifact delivery, full codecs, expiry, workload, browser sync or real concurrent sessions.",
 };
 const report = {
@@ -114,6 +144,8 @@ const report = {
   isolation: "Sequential allowlisted commands; fresh temporary HOME; cleared environment; no secrets/DB URLs inherited; bounded process-group timeout; Node TCP guard permits only same-process loopback fixtures. Not an OS sandbox.",
   excluded: ["app startup", "shared/live databases", "providers", "payments", "messages", "models", "generic test:all", "fabricated-success lifecycle simulations", "migration rehearsal (owned by schema worker)", "full TypeScript/browser/install"],
   results: [], domains: [],
+  latestSemantics: "beta-simulation.json/.md describe the latest started cycle, including partial progress, not necessarily the latest completed or passing cycle. Previous evidence is snapshotted before replacement.",
+  previousReport: null,
 };
 function save() {
   report.domains = Object.entries(gaps).map(([domain, limitations]) => {
@@ -127,6 +159,8 @@ function save() {
   writeFileSync(`${reportBase}.json`, JSON.stringify(report, null, 2) + "\n");
   const lines = ["# Isolated platform beta simulation", "", `Started: ${report.startedAt}`,
     `Finished: ${report.finishedAt ?? "in progress"}`, "", `**${report.acceptance}**`, "", report.isolation, "",
+    report.latestSemantics,
+    `Previous latest report: ${report.previousReport?.directory ?? "none existed"}. Snapshot file checksums are recorded in the JSON report.`, "",
     "PASS means the selected contract commands exited zero, not domain acceptance. Fixtures are test-only assertions against production logic, not simulated production success.",
     "", "| Domain | Contract cycle | Commands | Acceptance |", "|---|---|---:|---|",
     ...report.domains.map(d => `| ${d.domain} | ${d.status} | ${d.commands}/${d.planned} | BLOCKED |`),
@@ -137,14 +171,14 @@ function save() {
       `Exit: ${r.exitCode ?? "none"}; signal: ${r.signal ?? "none"}; timeout: ${r.timedOut}; duration: ${r.durationMs} ms.`,
       ...(r.reason ? [`Reason: ${r.reason}`] : []),
       ...(r.status !== "PASS" ? ["```text", (r.stderr || r.stdout || "").slice(-6000).replaceAll("```", "'''"), "```"] : [])]),
-    "", "Rerun after each major change: `node scripts/readiness-beta-simulation.mjs`. Only the latest cycle is retained. No full-platform acceptance claim is made.",
+    "", "Run a completed integration cycle with `node scripts/readiness-beta-simulation.mjs`. The stable filenames track the latest started cycle; previous report pairs are preserved under beta-simulation-history/. An absent finishedAt means incomplete execution, not a passing cycle. No full-platform acceptance claim is made.",
   ];
   writeFileSync(`${reportBase}.md`, lines.join("\n") + "\n");
 }
 async function run(c) {
   const started = Date.now();
   const hashes = Object.fromEntries(c.files.filter(existsSync).map(f => [
-    f.startsWith(scratch) ? "<temporary-autonomous-config>" : f,
+    f.startsWith(scratch) ? `<temporary-${f.split("/").at(-1)}>` : f,
     createHash("sha256").update(readFileSync(f)).digest("hex"),
   ]));
   const result = { id: c.id, domain: c.domain, command: [c.executable, ...c.args].join(" ").replaceAll(scratch, "<temporary>"),
@@ -181,6 +215,7 @@ async function run(c) {
   return result;
 }
 try {
+  report.previousReport = preservePreviousReport();
   save();
   for (const command of commands) {
     console.log(`RUN ${command.id}`);

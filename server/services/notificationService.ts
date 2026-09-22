@@ -10,6 +10,7 @@ import { env } from "../config/env.js";
 import { notificationAllowed } from "./notificationPreferences.js";
 import { sendSmsNotification } from "./smsNotificationService.js";
 import { randomUUID } from "node:crypto";
+import { enqueueNotificationDigest } from "./notificationDigestService.js";
 
 interface NotificationOptions {
   userId: string;
@@ -55,6 +56,7 @@ class NotificationService {
     browserSent: boolean;
     smsAccepted?: boolean;
     smsState?: string;
+    digestQueued?: boolean;
     reason?: string;
   }> {
     const { userId, type, title, message, link, metadata } = options;
@@ -72,6 +74,9 @@ class NotificationService {
       const shouldSendEmail = notificationAllowed(user.notificationSettings, type, "email");
       const shouldSendBrowser = notificationAllowed(user.notificationSettings, type, "push");
       const shouldPersist = notificationAllowed(user.notificationSettings, type, "inApp");
+      const digestQueued = await enqueueNotificationDigest(
+        { userId, type, title, message, link }, user.notificationSettings,
+      );
 
       const [notification] = shouldPersist ? await db
         .insert(notifications)
@@ -124,7 +129,7 @@ class NotificationService {
       // one channel that is always attempted. Email/browser pushes are
       // reported separately since they depend on preferences/provider config.
       return { delivered: !!notification || emailSent || browserSent || sms.accepted,
-        emailSent, browserSent, smsAccepted: sms.accepted, smsState: sms.state };
+        emailSent, browserSent, smsAccepted: sms.accepted, smsState: sms.state, digestQueued };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error sending notification:");
       throw error;

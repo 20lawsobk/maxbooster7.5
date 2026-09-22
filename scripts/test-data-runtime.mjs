@@ -241,11 +241,35 @@ try {
       async downloadFile(key){const b=globalThis.backupTest.files.get(key);return globalThis.backupTest.corrupt?Buffer.from("bad"):b;},
       async deleteFile(key){if(globalThis.backupTest.failDelete)throw new Error("delete offline");globalThis.backupTest.files.delete(key);}
     };`],
+    [/postgresTools/, `
+      const dumpTool={path:"/fixture/postgresql-17/bin/pg_dump",major:17,version:"17.5"};
+      const restoreTool={path:"/fixture/postgresql-17/bin/psql",major:17,version:"17.5"};
+      export async function selectPgDumpForServer(url){
+        (globalThis.backupTest.toolSelections??=[]).push({operation:"dump",url,serverMajor:17});
+        return {tool:dumpTool,serverMajor:17,probes:[dumpTool]};
+      }
+      export function dumpedServerMajor(sql){
+        const match=sql.subarray(0,8192).toString("utf8").match(/^-- Dumped from database version\\s+(\\d+)(?:\\.\\d+)?/m);
+        if(!match)throw new Error("Backup is missing PostgreSQL source-version metadata");
+        return Number(match[1]);
+      }
+      export async function selectPsqlForRestore(url,dumpedMajor){
+        if(dumpedMajor!==17)throw new Error("unexpected synthetic dump major");
+        (globalThis.backupTest.toolSelections??=[]).push({operation:"restore",url,dumpedMajor,targetMajor:17});
+        return {tool:restoreTool,serverMajor:17,probes:[restoreTool]};
+      }
+      export function safePostgresDiagnostic(value){return String(value);}
+    `],
     [/^child_process$/, `import {EventEmitter} from "node:events";import {PassThrough} from "node:stream";
       export function spawn(cmd,args,options){
         globalThis.backupTest.spawnArgs.push({cmd,args,options});
         const p=new EventEmitter();p.stdout=new PassThrough();p.stderr=new PassThrough();
-        setImmediate(()=>{p.stdout.end("SELECT 1;");p.emit("close",globalThis.backupTest.exitCode??0);});
+        p.kill=()=>{};
+        setImmediate(()=>{
+          if(cmd.endsWith("/pg_dump"))p.stdout.end("-- PostgreSQL database dump\\n-- Dumped from database version 17.11\\nSELECT 1;\\n");
+          else p.stdout.end("");
+          p.emit("close",globalThis.backupTest.exitCode??0);
+        });
         return p;
       }`],
   ]);
@@ -253,7 +277,10 @@ try {
   const keys = await Promise.all([backups.createBackup(), backups.createBackup()]);
   assert.notEqual(keys[0], keys[1]);
   assert.equal(backupTest.catalog.every(r => r.state === "verified"), true);
+  assert.equal(backupTest.spawnArgs[0].cmd, "/fixture/postgresql-17/bin/pg_dump");
+  assert.deepEqual(backupTest.spawnArgs[0].args, ["--no-owner", "--no-acl"]);
   assert.equal(backupTest.spawnArgs[0].options.env.PGDATABASE, process.env.NEON_DATABASE_URL);
+  assert.equal(backupTest.toolSelections[0].serverMajor, 17);
   for (const key of keys) assert.equal(backupTest.files.has(key), true);
   backupTest.corrupt = true;
   await assert.rejects(backups.createBackup(), /checksum mismatch/);
@@ -265,7 +292,15 @@ try {
   await assert.rejects(backups.restoreBackup(keys[0], process.env.NEON_DATABASE_URL), /isolated target/);
   backupTest.exitCode = 1;
   await assert.rejects(backups.restoreBackup(keys[0], "postgres://isolated/recovery", "SELECT 1;"), /Restore failed/);
+  assert.equal(backupTest.spawnArgs.at(-1).cmd, "/fixture/postgresql-17/bin/psql");
   assert.equal(backupTest.spawnArgs.at(-1).args.includes("ON_ERROR_STOP=1"), true);
+  assert.equal(backupTest.spawnArgs.at(-1).options.env.PGDATABASE, "postgres://isolated/recovery");
+  assert.deepEqual(backupTest.toolSelections.at(-1), {
+    operation: "restore",
+    url: "postgres://isolated/recovery",
+    dumpedMajor: 17,
+    targetMajor: 17,
+  });
   console.log("PASS D1-D3: concurrent unique verified keys, checksum mismatch pending, catalog errors explicit, preferred target, isolated fail-stop restore");
   // Exercise the actual scheduler, createBackup pipeline, stop barrier and
   // heartbeat lifecycle, with only external I/O and the wall-clock hour mocked.

@@ -36,22 +36,24 @@ export async function submitDistributionOnce<T>(
     throw new Error("Distribution submission already started or has an unknown outcome; reconcile the recorded provider checkpoint before retrying");
   }
   const checkpoint: DistributionCheckpoint = async data => {
-    await pool.query(
+    const saved = await pool.query(
       `UPDATE integration_distribution_submissions SET checkpoint=checkpoint || $2::jsonb,updated_at=now()
-       WHERE owner=$1`, [owner, JSON.stringify(data)],
+       WHERE owner=$1 AND state='started' RETURNING owner`, [owner, JSON.stringify(data)],
     );
+    if (saved.rows.length !== 1) throw new Error("Distribution checkpoint ownership lost; reconcile before continuing");
   };
   try {
     const result = await submit(checkpoint);
-    await pool.query(
+    const saved = await pool.query(
       `UPDATE integration_distribution_submissions SET state='completed',result=$2::jsonb,updated_at=now()
-       WHERE owner=$1`, [owner, JSON.stringify(result)],
+       WHERE owner=$1 AND state='started' RETURNING owner`, [owner, JSON.stringify(result)],
     );
+    if (saved.rows.length !== 1) throw new Error("Distribution completion was not persisted; reconcile provider receipt");
     return result;
   } catch (error) {
     await pool.query(
       `UPDATE integration_distribution_submissions SET state='unknown',error=$2,updated_at=now()
-       WHERE owner=$1`, [owner, error instanceof Error ? error.message : "Submission failed"],
+       WHERE owner=$1 AND state='started'`, [owner, error instanceof Error ? error.message : "Submission failed"],
     );
     throw error;
   }
