@@ -125,6 +125,7 @@ const SupportDashboard = lazy(() => import("@/pages/admin/SupportDashboard"));
 const SupportTicketDetail = lazy(
   () => import("@/pages/admin/SupportTicketDetail"),
 );
+const CustomerSupportTicket = lazy(() => import("@/pages/SupportTicket"));
 const Projects = lazy(() => import("@/pages/Projects"));
 const Pricing = lazy(() => import("@/pages/Pricing"));
 const Subscribe = lazy(() => import("@/pages/Subscribe"));
@@ -224,6 +225,7 @@ function Router() {
         component={SupportTicketDetail}
       />
       <Route path="/admin/support" component={SupportDashboard} />
+      <Route path="/support/tickets/:ticketId" component={CustomerSupportTicket} />
       <Route path="/admin/kyc" component={KYCReview} />
       <Route path="/admin/training" component={TrainingDashboard} />
       <Route path="/admin/content-sampler" component={ContentSampler} />

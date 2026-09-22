@@ -17,6 +17,7 @@ import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { securityThreats, ipBlacklist, notifications } from "@shared/schema";
 import { eq, gte } from "drizzle-orm";
+import type { ContainmentAdapters, ContainmentEffect } from "./securityContainment.js";
 
 interface SecurityEvent {
   id: string;
@@ -27,7 +28,7 @@ interface SecurityEvent {
   source: {
     ip: string;
     userAgent?: string;
-    userId?: number;
+    userId?: number | string;
     sessionId?: string;
   };
   payload: {
@@ -93,6 +94,7 @@ interface SecuritySLO {
 type SecurityDatabase = Pick<typeof db, "select" | "insert" | "delete">;
 
 export interface SelfHealingSecurityEngineOptions {
+  containment?: ContainmentAdapters;
   database?: SecurityDatabase;
   autoStart?: boolean;
   now?: () => number;
@@ -129,6 +131,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   private blocklistReady = false;
   private initialization: Promise<void> | null = null;
   private readonly database: SecurityDatabase;
+  private containment?: ContainmentAdapters;
   private readonly now: () => number;
   private readonly initialLoadAttempts: number;
   private readonly retryDelayMs: number;
@@ -261,6 +264,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
   public constructor(options: SelfHealingSecurityEngineOptions = {}) {
     super();
+    this.containment = options.containment;
     this.database = options.database ?? db;
     this.now = options.now ?? Date.now;
     this.initialLoadAttempts = options.initialLoadAttempts ?? 3;
@@ -571,7 +575,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       threatType,
       confidence: Math.min(1, threatLevel + 0.1),
       indicators,
-      recommendedActions: this.determineActions(threatLevel, threatType),
+      recommendedActions: this.determineActions(threatLevel, threatType, event.payload.path),
     };
 
     if (threatLevel > 0.5) {
@@ -645,11 +649,12 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     return newScore;
   }
 
-  private determineActions(threatLevel: number, threatType: string): string[] {
+  private determineActions(threatLevel: number, threatType: string, path?: string): string[] {
     const actions: string[] = [];
 
     // Higher thresholds reduce false positives for legitimate heavy users
     if (threatLevel >= 0.95) {
+      if (path) actions.push(...(this.containment?.actionsForPath?.(path) ?? []));
       actions?.push("block_ip");
       actions?.push("session_kill");
       actions?.push("alert");
@@ -747,32 +752,50 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         break;
 
       case "session_kill":
-        action.details.supported = false;
-        throw new Error(
-          "Unsupported healing action: no session invalidation adapter is configured",
-        );
+      case "circuit_break":
+      case "feature_disable": {
+        const sourceEvent = this.findEventById(assessment.eventId);
+        if (!sourceEvent || !this.containment) {
+          action.details.supported = false;
+          throw new Error("Unsupported healing action: security containment requires an event and configured enforcement adapters");
+        }
+        let effect: ContainmentEffect;
+        if (action.type === "session_kill") {
+          const userId = sourceEvent.source.userId;
+          if (userId === undefined || !String(userId).trim()) {
+            throw new Error("Session containment requires an authenticated user ID");
+          }
+          effect = await this.containment.revokeSessions(String(userId));
+        } else {
+          const path = sourceEvent.payload.path;
+          if (!path) throw new Error("Route-scoped containment requires a path");
+          effect = action.type === "circuit_break"
+            ? await this.containment.isolateDependency(path)
+            : await this.containment.isolateFeature(path);
+        }
+        if (effect?.confirmed !== true || !effect.target) {
+          throw new Error("Containment adapter did not acknowledge enforcement");
+        }
+        action.details.effect = effect;
+        break;
+      }
 
       case "alert":
         await this.sendSecurityAlert(assessment);
         action.details.alertSent = true;
         break;
 
-      case "circuit_break":
-        action.details.supported = false;
-        throw new Error(
-          "Unsupported healing action: no circuit-breaker adapter is configured",
-        );
-
-      case "feature_disable":
-        action.details.supported = false;
-        throw new Error(
-          "Unsupported healing action: no feature-disable adapter is configured",
-        );
     }
   }
 
   private findEventById(eventId: string): SecurityEvent | undefined {
     return this.eventsById.get(eventId);
+  }
+
+  /** Install only from trusted application composition, never a request payload. */
+  public configureContainment(adapters: ContainmentAdapters): void {
+    if (this.containment) throw new Error("Containment adapters are already configured");
+    this.containment = adapters;
   }
 
   private async blockIp(
@@ -850,13 +873,16 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     const mitigationApplied = actions.some(
       (action) =>
         action.status === "completed" &&
-        (action.type === "block_ip" || action.type === "rate_limit"),
+        (action.type === "block_ip" || action.type === "rate_limit" ||
+          action.details.effect?.confirmed === true),
     );
     if (mitigationApplied) this.metrics.threatsHealed++;
     const actionOutcomes = actions.map((action) => ({
       type: action.type,
       status: action.status,
       supported: action.details.supported !== false,
+      effect: action.details.effect,
+      error: action.details.error,
     }));
 
     try {

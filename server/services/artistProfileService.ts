@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { db } from "../db.js";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { artistProfiles, artistProfileReleases, distroTracks, profileClaimPipeline, profileClaimEvents, artistIdentityLinks, artistDnaSnapshots, profileSplitEvents, distributorHistoryImports } from "@shared/schema";
 import type { ArtistProfile, InsertArtistProfile, ProfileClaimPipeline, ArtistIdentityLink, ArtistDnaSnapshot } from "@shared/schema";
 import { logger } from "../logger.js";
@@ -1467,13 +1467,18 @@ class ArtistProfileService {
     let lastErr: unknown;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const [profile] = await db
-          .insert(artistProfiles)
-          .values({
-            ...data,
-            updatedAt: new Date(),
-          })
-          .returning();
+        const profile = await db.transaction(async tx => {
+          const [created] = await tx
+            .insert(artistProfiles)
+            .values({
+              ...data,
+              updatedAt: new Date(),
+            })
+            .returning();
+          await tx.execute(sql`INSERT INTO integration_catalog_jobs (profile_id, user_id)
+            VALUES (${created.id}, ${created.userId})`);
+          return created;
+        });
         return profile;
       } catch (err) {
         lastErr = err;

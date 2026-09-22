@@ -9,9 +9,10 @@
 import { Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
 import { logger } from "../logger.js";
-import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { pool } from "../db";
 import { env } from "../config/env.js";
 import { audit } from "./auditLogger";
+import { processCommerceEvent } from "../services/commerceWebhookRepository";
 
 // Audit log for webhook events
 interface WebhookAuditEntry {
@@ -149,78 +150,16 @@ function addWebhookAudit(entry: WebhookAuditEntry): void {
 
 /**
  * Idempotency check - prevent duplicate webhook processing
- * Uses Redis for persistence across restarts and multi-instance deployments.
- * Falls back to in-memory Set if Redis is unavailable.
+ * Permanent receipt lookup for diagnostics and legacy callers.
+ * Actual dispatch also takes a database transaction lock.
  */
-
-const STRIPE_IDEMPOTENCY_PREFIX = "stripe:webhook:processed:";
-const PROCESSED_EVENTS_TTL_SECONDS = 24 * 60 * 60; // 24 hours
-
-// In-memory fallback for when Redis is unavailable
-const processedEventsFallback = new Set<string>();
-
-const REDIS_TIMEOUT_MS = 500;
-
-function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
-  return Promise?.race([
-    p,
-    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
-  ]);
-}
 
 // Check if event has already been successfully processed
 export async function isEventProcessed(eventId: string): Promise<boolean> {
-  try {
-    const redis = await getRedisClient();
-    if (redis) {
-      const val = await withTimeout(
-        (redis as { get(k: string): Promise<string | null> }).get(
-          `${STRIPE_IDEMPOTENCY_PREFIX}${eventId}`,
-        ),
-        REDIS_TIMEOUT_MS,
-        null,
-      );
-      if (val !== null) return val === "1";
-      // timeout → fall through to memory fallback
-    }
-  } catch (e) {
-    logger.warn(
-      `[Stripe Webhook] Redis check failed, using memory fallback: ${e}`,
-    );
-  }
-  return processedEventsFallback?.has(eventId);
-}
-
-// Mark event as successfully processed
-export async function markEventProcessed(eventId: string): Promise<void> {
-  // Always update in-memory fallback immediately so later checks within the same
-  // process are consistent even if the PDIM write times out.
-  processedEventsFallback?.add(eventId);
-  setTimeout(
-    () => processedEventsFallback?.delete(eventId),
-    PROCESSED_EVENTS_TTL_SECONDS * 1000,
+  const result = await pool.query(
+    "SELECT event_id FROM commerce_webhook_receipts WHERE event_id = $1", [eventId],
   );
-
-  try {
-    const redis = await getRedisClient();
-    if (redis) {
-      await withTimeout(
-        (
-          redis as {
-            set(k: string, v: string, opts: { EX: number }): Promise<unknown>;
-          }
-        ).set(`${STRIPE_IDEMPOTENCY_PREFIX}${eventId}`, "1", {
-          EX: PROCESSED_EVENTS_TTL_SECONDS,
-        }),
-        REDIS_TIMEOUT_MS,
-        null,
-      );
-    }
-  } catch (e) {
-    logger.warn(
-      `[Stripe Webhook] Redis mark failed, memory fallback already applied: ${e}`,
-    );
-  }
+  return result.rows.length > 0;
 }
 
 // Legacy function for backward compatibility
@@ -241,6 +180,14 @@ export interface WebhookHandler {
 }
 
 const webhookHandlers = new Map<string, WebhookHandler>();
+export async function retryCommerceWebhookInbox(limit=50) {
+  const result=await pool.query(`SELECT payload FROM commerce_webhook_inbox
+    WHERE state<>'completed' AND (lease_until IS NULL OR lease_until<now())
+    ORDER BY received_at LIMIT $1`,[limit]);
+  let failed=0;
+  for(const row of result.rows) if(!(await handleWebhookEvent(row.payload)).success) failed++;
+  return {processed:result.rows.length-failed,failed};
+}
 
 export function registerWebhookHandler(
   eventType: string,
@@ -253,30 +200,22 @@ export function registerWebhookHandler(
 export async function handleWebhookEvent(
   event: Stripe.Event,
 ): Promise<{ success: boolean; message: string }> {
-  // SECURITY FIX: Check idempotency BEFORE processing, but only mark as processed AFTER success
-  // This ensures failed events can be retried
-  if (await isEventProcessed(event?.id)) {
-    logger.info(`[Stripe Webhook] Duplicate event ignored: ${event?.id}`);
-    return { success: true, message: "Event already processed" };
-  }
-
-  const handler = webhookHandlers?.get(event?.type);
+  const handler = webhookHandlers?.get(
+    event.type === "checkout.session.async_payment_succeeded"
+      ? "checkout.session.completed" : event.type,
+  );
 
   if (!handler) {
     logger.warn(`[Stripe Webhook] No handler for event type: ${event?.type}`);
-    // Mark unhandled events as processed to prevent repeated logs
-    await markEventProcessed(event?.id);
     return { success: true, message: "Event type not handled" };
   }
 
   try {
-    const result = await handler(event);
+    const result = await processCommerceEvent(event, () => handler(event));
 
     // SECURITY FIX: Only mark as processed AFTER successful handling
     // This allows failed events to be retried by Stripe
-    if (result?.success) {
-      await markEventProcessed(event?.id);
-    } else {
+    if (!result?.success) {
       // Log failed processing for retry tracking
       logger.warn(
         `[Stripe Webhook] Handler failed for ${event?.type} (${event?.id}): ${result?.message}`,

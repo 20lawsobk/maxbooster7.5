@@ -55,6 +55,9 @@ class StartupProbeManager {
   private status: StartupStatus;
   private readyResolvers: Array<() => void> = [];
   private checkInterval: NodeJS.Timeout | null = null;
+  private refresh: Promise<boolean> | null = null;
+  private published: StartupStatus | null = null;
+  private publishedAt = 0;
 
   constructor() {
     this.status = {
@@ -296,6 +299,29 @@ class StartupProbeManager {
   }
 
   private async runAllProbesInner(): Promise<boolean> {
+    if (this.refresh) return this.refresh;
+    this.refresh = this.refreshSnapshot();
+    try {
+      return await this.refresh;
+    } finally {
+      this.refresh = null;
+    }
+  }
+
+  private async refreshSnapshot(): Promise<boolean> {
+    try {
+      return await this.collectProbes();
+    } catch (err) {
+      this.status.phase = "failed";
+      throw err;
+    } finally {
+      // Readers see only a completed generation, never partially mutated probes.
+      this.published = structuredClone(this.status);
+      this.publishedAt = Date.now();
+    }
+  }
+
+  private async collectProbes(): Promise<boolean> {
     this.status.phase = "connecting";
 
     logger.info("🔍 Running startup probes...");
@@ -361,12 +387,14 @@ class StartupProbeManager {
     // self-healing fallback path (circuit breaker, in-memory rate limiting,
     // supervisor restart) — but this gate must report that honestly rather
     // than calling a degraded system "ready".
-    return this.status.phase === "ready";
+    return this.published?.phase === "ready" && Date.now() - this.publishedAt <= 120_000;
   }
 
   // Get full status for /startup endpoint
   getStatus(): StartupStatus {
-    return { ...this.status };
+    const snapshot = structuredClone(this.published ?? this.status);
+    if (this.published && Date.now() - this.publishedAt > 120_000) snapshot.phase = "failed";
+    return snapshot;
   }
 
   // Get uptime in seconds

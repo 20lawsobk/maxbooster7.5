@@ -11,7 +11,7 @@
 _try_node() {
   local _bin="$1"
   [ -z "$_bin" ] && return 1
-  if "$_bin" --version >/dev/null 2>&1; then
+  if [ "$("$_bin" -p 'process.versions.node.split(".")[0]' 2>/dev/null)" = "22" ]; then
     _NODE_BIN="$_bin"
     return 0
   fi
@@ -23,6 +23,7 @@ _NODE_BIN=""
 # Resolve the directory containing start.sh so we can find .node_bin/
 # even if start.sh is called from a different working directory.
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$_SCRIPT_DIR" || exit 1
 
 # a) Bundled portable node downloaded during build.sh — FIRST choice.
 #    This is the official nodejs.org binary (glibc-linked) that was fetched
@@ -133,23 +134,18 @@ fi
 # subsequent restarts (directories already present, sentinel files found).
 # Reads compression format from *.manifest.json — handles xz and gzip capsules.
 #
-# Only node_modules blocks boot — Node cannot import anything without it.
-# python_runtime / external/maxcore / external/pdim restore in the
-# BACKGROUND, in parallel with the app itself starting: those subsystems
-# already start async and degrade gracefully (Python sidecar warns and
-# falls back, MaxCore's supervisor reports degraded/unreachable, pdim isn't
-# imported by the running app at all). Blocking on all four here delays port
-# binding past the deployment's startup-probe timeout on a cold boot when
-# their combined extraction time is large.
+# Node modules, application code and Python block boot. Python consumers
+# resolve the validated interpreter only after this barrier. The boot stub
+# serves liveness while extraction is in progress; readiness remains false.
 if [ -f "dist/pdim-restore.mjs" ]; then
-  echo "[start.sh] Running PDIM capsule restore (critical: node_modules)..."
+  echo "[start.sh] Running PDIM capsule restore (critical: node_modules, application, Python)..."
   "$_NODE_BIN" dist/pdim-restore.mjs critical
   _RESTORE_RC=$?
   if [ $_RESTORE_RC -ne 0 ]; then
     echo "[start.sh] FATAL: critical PDIM restore (node_modules) failed" >&2
     exit 1
   fi
-  echo "[start.sh] Restoring python_runtime / external/maxcore / external/pdim in background..."
+  echo "[start.sh] Restoring external/maxcore / external/pdim in background..."
   "$_NODE_BIN" dist/pdim-restore.mjs background >> /tmp/pdim-background-restore.log 2>&1 &
   echo "[start.sh] background PDIM restore pid $!"
 else
@@ -162,7 +158,7 @@ fi
 # NEVER use bare 'python3' — the Replit python-wrapper (a Go binary) panics
 # when Python is not configured in the minimal run container.
 _PYENV_ACTIVATED=0
-for _pydir in "$(pwd)/python_runtime" "$(pwd)/.venv"; do
+for _pydir in "$(pwd)/python_runtime"; do
   for _pysuffix in "bin/python3" "bin/python"; do
     _VENV_PY="${_pydir}/${_pysuffix}"
     if [ -f "$_VENV_PY" ] && "$_VENV_PY" --version >/dev/null 2>&1; then
@@ -175,8 +171,20 @@ for _pydir in "$(pwd)/python_runtime" "$(pwd)/.venv"; do
   done
 done
 if [ "$_PYENV_ACTIVATED" = "0" ]; then
-  echo "[start.sh] WARNING: .venv Python not functional — Python features disabled (video/audio analysis unavailable)"
+  echo "[start.sh] FATAL: required Python runtime is not functional" >&2
+  exit 1
 fi
+export MAXBOOSTER_PYTHON="$_VENV_PY"
+"$_VENV_PY" -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic" || exit 1
+
+# Reject aggregate oversubscription before spawning sidecars or app workers.
+_PRIMARY_HEAP_MB="$("$_NODE_BIN" --input-type=module -e '
+  import { computeWorkerSizing } from "./dist/compute-sizing.mjs";
+  const app = computeWorkerSizing({ envOverrideVar: "CLUSTER_WORKERS" });
+  if (process.env.MAXCORE_LOCAL !== "0")
+    computeWorkerSizing({ reserveCore: false, envOverrideVar: "MAXCORE_LOCAL_CLUSTER_WORKERS" });
+  console.log(app.primaryHeapMB);
+')" || exit 1
 
 # ── 3. Start boosterstate sidecar ────────────────────────────────────────────
 # Check ./bin/boosterstate first (compiled by build.sh, not in .dockerignore),
@@ -192,7 +200,8 @@ if ! pgrep -x boosterstate >/dev/null 2>&1; then
     BOOSTERSTATE_PORT="$_SIDECAR_PORT" "$_BOOSTER_BIN" &
     echo "[start.sh] boosterstate started (pid $!) on internal port $_SIDECAR_PORT via $_BOOSTER_BIN"
   else
-    echo "[start.sh] WARNING: boosterstate binary not found — skipping sidecar"
+    echo "[start.sh] FATAL: required Boosterstate executable missing" >&2
+    exit 1
   fi
 else
   echo "[start.sh] boosterstate already running"
@@ -262,7 +271,8 @@ if ! pgrep -f "dist/gateway.mjs" >/dev/null 2>&1; then
     # Brief pause so the gateway is listening before the cluster boots and checks it
     sleep 2
   else
-    echo "[start.sh] WARNING: dist/gateway.mjs not found — Diffusion Gateway not started"
+    echo "[start.sh] FATAL: required dist/gateway.mjs missing" >&2
+    exit 1
   fi
 else
   echo "[start.sh] MaxCore Diffusion Gateway already running"
@@ -294,11 +304,8 @@ export NODE_ENV="production"
 # Prefer cluster entry (multi-worker); fall back to single-process server
 if [ -f "dist/cluster.mjs" ]; then
   echo "[start.sh] starting node dist/cluster.mjs"
-  exec "$_NODE_BIN" --max-old-space-size="${NODE_MAX_OLD_SPACE_SIZE:-4096}" dist/cluster.mjs
-elif [ -f "dist/index.mjs" ]; then
-  echo "[start.sh] starting node dist/index.mjs (cluster not found)"
-  exec "$_NODE_BIN" --max-old-space-size="${NODE_MAX_OLD_SPACE_SIZE:-4096}" dist/index.mjs
+  exec "$_NODE_BIN" --max-old-space-size="$_PRIMARY_HEAP_MB" dist/cluster.mjs
 else
-  echo "[start.sh] FATAL: neither dist/cluster.mjs nor dist/index.mjs found — run npm run build first" >&2
+  echo "[start.sh] FATAL: required dist/cluster.mjs missing — run npm run build first" >&2
   exit 1
 fi

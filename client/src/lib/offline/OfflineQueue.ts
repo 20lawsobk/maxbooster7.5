@@ -1,4 +1,5 @@
 import { logger } from "../logger";
+import { accountDatabase, guardDatabase, offlineIdentity, assertOfflineIdentity } from "./identity";
 import { openDB, IDBPDatabase, DBSchema } from "idb";
 
 export type ActionPriority = "critical" | "high" | "normal" | "low";
@@ -30,6 +31,10 @@ export interface QueuedAction<T = unknown> {
   dependencies?: string[];
   serverVersion?: number;
   localVersion?: number;
+  nextAttemptAt?: number;
+  leaseExpiresAt?: number;
+  handoffId?: string;
+  terminalReceipt?: boolean;
 }
 
 interface OfflineQueueDB extends DBSchema {
@@ -88,10 +93,16 @@ class OfflineQueue {
   private isInitialized = false;
 
   async init(): Promise<void> {
+    const name = accountDatabase(DB_NAME);
+    if (this.db && this.db.name !== name) {
+      this.db.close();
+      this.db = null;
+      this.isInitialized = false;
+    }
     if (this.isInitialized) return;
 
     try {
-      this.db = await openDB<OfflineQueueDB>(DB_NAME, DB_VERSION, {
+      this.db = await openDB<OfflineQueueDB>(name, DB_VERSION, {
         upgrade(db) {
           if (!db?.objectStoreNames.contains("actions")) {
             const actionsStore = db?.createObjectStore("actions", {
@@ -119,10 +130,11 @@ class OfflineQueue {
   }
 
   private async ensureDb(): Promise<IDBPDatabase<OfflineQueueDB>> {
-    if (!this.db) {
-      await this.init();
-    }
-    return this.db!;
+    const identity = offlineIdentity();
+    await this.init();
+    assertOfflineIdentity(identity);
+    if (this.db?.name !== accountDatabase(DB_NAME)) throw new Error("Offline queue account changed during initialization");
+    return guardDatabase(this.db!, identity);
   }
 
   private emit(event: QueueEvent): void {
@@ -199,6 +211,9 @@ class OfflineQueue {
     id: string,
     updates: Partial<QueuedAction<T>>,
   ): Promise<QueuedAction<T> | null> {
+    if (["id", "type", "payload", "metadata"].some(key => Object.prototype.hasOwnProperty.call(updates, key))) {
+      throw new Error("Operation identity and payload are immutable. Enqueue a new operation for a corrected change.");
+    }
     const db = await this.ensureDb();
     const existing = await db?.get("actions", id);
 
@@ -275,6 +290,7 @@ class OfflineQueue {
     await this.updateAction(id, {
       status: shouldRetry ? "pending" : "failed",
       retryCount: newRetryCount,
+      nextAttemptAt: Date.now() + Math.min(60000, 1000 * 2 ** newRetryCount),
       error,
     });
   }
@@ -322,25 +338,38 @@ class OfflineQueue {
     mergedData?: unknown,
   ): Promise<void> {
     const db = await this.ensureDb();
-    const conflict = await db?.get("conflicts", actionId);
-
-    if (!conflict) return;
-
-    await db?.put("conflicts", { ...conflict, resolved: true });
-
-    if (resolution === "local" || resolution === "merged") {
-      const action = await this.getAction(actionId);
-      if (action) {
-        const payload = resolution === "merged" ? mergedData : action?.payload;
-        await this.updateAction(actionId, {
-          status: "pending",
-          payload,
-          retryCount: 0,
+    const tx = db.transaction(["actions", "conflicts"], "readwrite");
+    const conflicts = tx.objectStore("conflicts");
+    const actions = tx.objectStore("actions");
+    const conflict = await conflicts.get(actionId);
+    const action = await actions.get(actionId);
+    if (!conflict || conflict.resolved || !action) { await tx.done; return; }
+    let replacement: QueuedAction | undefined;
+    if (resolution !== "server") {
+      const server = conflict.serverData as { updatedAt?: string | null };
+      const original = action.payload as Record<string, unknown>;
+      replacement = {
+        ...action, id: crypto.randomUUID(), status: "pending", retryCount: 0,
+        error: undefined, terminalReceipt: false, handoffId: undefined,
+        leaseExpiresAt: undefined, nextAttemptAt: Date.now(), createdAt: Date.now(), updatedAt: Date.now(),
+        payload: { ...original, ...(resolution === "merged" ? { changes: mergedData } : {}),
+          expectedUpdatedAt: server.updatedAt ?? null },
+        metadata: { ...action.metadata, resolvesOperationId: actionId },
+      };
+      await actions.put(replacement);
+      // Downstream work must wait for the reviewed replacement, not mistake
+      // the original conflicted operation for an applied prerequisite.
+      for (const dependent of await actions.getAll()) {
+        if (dependent.dependencies?.includes(actionId)) await actions.put({
+          ...dependent, dependencies: dependent.dependencies.map(id => id === actionId ? replacement!.id : id),
         });
       }
-    } else {
-      await this.dequeue(actionId);
     }
+    await conflicts.put({ ...conflict, resolved: true });
+    await actions.delete(actionId);
+    await tx.done;
+    this.emit({ type: "action-removed", actionId });
+    if (replacement) this.emit({ type: "action-added", action: replacement });
   }
 
   async clearCompleted(): Promise<number> {
@@ -352,10 +381,18 @@ class OfflineQueue {
     );
 
     for (const action of completed) {
-      await db?.delete("actions", action?.id);
+      // Keep prerequisite receipts until the dependent actions are removed.
+      const dependents = (await db.getAll("actions")).some(a => a.dependencies?.includes(action.id));
+      if (!dependents) await db?.delete("actions", action?.id);
     }
 
     return completed?.length;
+  }
+
+  close(): void {
+    this.db?.close();
+    this.db = null;
+    this.isInitialized = false;
   }
 
   async clearAll(): Promise<void> {
@@ -364,26 +401,45 @@ class OfflineQueue {
     await db?.clear("conflicts");
   }
 
-  async getNextBatch(batchSize = 10): Promise<QueuedAction[]> {
-    const pending = await this.getAllPending();
+  async getNextBatch(batchSize = 10, actionId?: string): Promise<QueuedAction[]> {
+    const db = await this.ensureDb();
+    const tx = db.transaction("actions", "readwrite");
+    const all = await tx.store.getAll();
+    const now = Date.now();
+    for (const action of all) {
+      if (action.status === "syncing" && (!action.leaseExpiresAt || action.leaseExpiresAt <= now)) {
+        // No server operation receipt API exists yet. Never blindly resend an
+        // uncertain commit, including legacy records left in syncing.
+        action.status = "failed";
+        action.error = "Reconciliation required: the previous request may have committed.";
+        await tx.store.put(action);
+      }
+    }
+    const pending = all.filter(a => a.status === "pending" && (a.nextAttemptAt || 0) <= now)
+      .sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority] || a.createdAt - b.createdAt);
     const batch: QueuedAction[] = [];
     const processing = new Set<string>();
 
     for (const action of pending) {
+      if (actionId && action.id !== actionId) continue;
       if (batch?.length >= batchSize) break;
 
       const dependenciesMet =
         !action?.dependencies?.length ||
         action?.dependencies.every(
-          (depId) => !pending?.find((p) => p?.id === depId),
+          (depId) => all.find(p => p.id === depId)?.status === "completed",
         );
 
       if (dependenciesMet && !processing?.has(action?.id)) {
+        action.status = "syncing";
+        action.leaseExpiresAt = now + 60000;
+        await tx.store.put(action);
         batch?.push(action);
         processing?.add(action?.id);
       }
     }
 
+    await tx.done;
     return batch;
   }
 

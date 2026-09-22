@@ -26,6 +26,7 @@ import type {
 import { ReedSolomon } from "./erasure/ReedSolomon.js";
 import { zstdEngine } from "./compression/ZstdEngine.js";
 import { logger } from "../../logger.js";
+import { DeletionOutbox } from "./infra/DeletionOutbox.js";
 
 const DEFAULT_CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB
 
@@ -89,6 +90,7 @@ export class PocketStorageService {
    * point at physically deleted bytes.
    */
   private readonly chunkLocks = new Map<ChunkId, Promise<void>>();
+  private readonly deletionOutbox = new DeletionOutbox();
 
   private async withChunkLock<T>(
     chunkId: ChunkId,
@@ -103,7 +105,13 @@ export class PocketStorageService {
     this.chunkLocks.set(chunkId, mine);
     await prev;
     try {
-      return await fn();
+      return await this.deletionOutbox.withLock(chunkId, async () => {
+        // Finish old physical deletion before any writer can recreate this ID.
+        await this.deletionOutbox.drainChunk(chunkId, async (nodeId, id) => {
+          await this.chunkStoreFactory(nodeId).deleteChunk(id);
+        });
+        return fn();
+      });
     } finally {
       release();
       if (this.chunkLocks.get(chunkId) === mine) {
@@ -288,6 +296,13 @@ export class PocketStorageService {
     if (!object) return null;
     const { data } = await this.retrieveObject(object.id);
     return data;
+  }
+
+  async deleteNamedObject(ownerId: string, pocketName: string, name: string): Promise<void> {
+    const container = await this.getOrCreateContainer(ownerId, pocketName, false);
+    if (!container) return;
+    const object = await this.objectIndex.getObjectByName(container.volumeId, name);
+    if (object) await this.deleteObject(object.id);
   }
 
   // ── Object store / retrieve ───────────────────────────────────────────────
@@ -1026,7 +1041,7 @@ export class PocketStorageService {
           // Replicated chunk with other live copies → drop just this replica.
           if (loc.nodeIds.length > 1) {
             const store = this.chunkStoreFactory(nodeId);
-            await store.deleteChunk(chunk.id).catch(() => {});
+            await store.deleteChunk(chunk.id);
             await this.nodeRegistry.addUsedBytes(nodeId, -loc.sizeBytes);
             await this.chunkIndex.updateChunkLocation({
               ...loc,
@@ -1063,7 +1078,7 @@ export class PocketStorageService {
             ...loc,
             nodeIds: [target],
           });
-          await fromStore.deleteChunk(chunk.id).catch(() => {});
+          await fromStore.deleteChunk(chunk.id);
           await this.nodeRegistry.addUsedBytes(nodeId, -loc.sizeBytes);
           await this.nodeRegistry.addUsedBytes(target, loc.sizeBytes);
 
@@ -1107,35 +1122,17 @@ export class PocketStorageService {
    * another volume still depends on.
    */
   async deleteObject(objectId: ObjectId): Promise<void> {
-    // Atomically claim (delete) the object row FIRST. Under concurrent deletes
-    // of the same object only one caller gets the row back; everyone else gets
-    // null and no-ops, so a chunk reference is released exactly once and shared
-    // (deduped) chunks can never be double-released / lost.
-    const object = await this.objectIndex.deleteObject(objectId);
-    if (!object) return;
-
-    // Release chunk references (and free physical bytes for any chunk whose last
-    // reference this object held) FIRST. The parent object aggregates every
-    // segment's chunk ids, so this is the authoritative cleanup; it must run
-    // before segment-row deletion so a DB error dropping segment metadata can
-    // never strand storage or leak refcounts.
-    for (const chunkId of object.chunkIds) {
-      await this.withChunkLock(chunkId, async () => {
-        const { deleted, loc } = await this.chunkIndex.releaseChunk(chunkId);
-        if (deleted && loc) {
-          for (const nodeId of loc.nodeIds) {
-            const store = this.chunkStoreFactory(nodeId);
-            await store.deleteChunk(chunkId).catch(() => {});
-            await this.nodeRegistry.addUsedBytes(nodeId, -loc.sizeBytes);
-          }
-        }
-      });
+    await this.deletionOutbox.claim(objectId);
+    for (const chunkId of await this.deletionOutbox.chunks(objectId)) {
+      await this.withChunkLock(chunkId, async () => {});
     }
+    await this.deletionOutbox.finish(objectId);
+  }
 
-    // Drop segment metadata rows last (if any). Physical bytes are already freed
-    // above; these rows only carry per-segment manifests.
-    if (object.manifest?.storageMode === "segmented") {
-      await this.segmentIndex.deleteSegmentsByObject(object.id);
+  async retryPendingDeletions(): Promise<void> {
+    for (const objectId of await this.deletionOutbox.pendingObjects()) {
+      try { await this.deleteObject(objectId); }
+      catch (err) { logger.error({ err, objectId }, "Fabric deletion remains pending"); }
     }
   }
 

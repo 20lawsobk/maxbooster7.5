@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { requestPersistedPayout, confirmNewPayout } from "@/lib/offline/payoutCommand";
 import {
   DollarSign,
   TrendingUp,
@@ -34,6 +35,13 @@ interface PayoutBalance {
   pendingBalance: number;
   totalEarnings: number;
   currency: string;
+  reconciliation?: {
+    status: string;
+    notice: string;
+    orders: unknown[];
+    royalties: unknown[];
+    payouts: {id:string;amount_cents:number;currency:string;status:string;created_at:string}[];
+  };
 }
 
 interface Payout {
@@ -117,12 +125,15 @@ export function PayoutDashboard() {
 
   // Request instant payout mutation
   const requestPayoutMutation = useMutation({
-    mutationFn: async (amount: number) => {
+    mutationFn: async (amountCents: number) => {
+      if(!user) throw new Error("Sign in before withdrawing");
+      return requestPersistedPayout(user.id,amountCents,async(intent)=>{
       const response = await apiRequest("POST", "/api/payouts/instant", {
-        amount,
+        amountCents: intent.amountCents,
         currency: "usd",
-      });
+      }, { headers: { "Idempotency-Key": intent.key } });
       return response.json();
+      });
     },
     onSuccess: (data) => {
       const responseData = data as { message?: string };
@@ -150,9 +161,10 @@ export function PayoutDashboard() {
   });
 
   const handleRequestPayout = () => {
-    const amount = parseFloat(payoutAmount);
+    const amount = Number(payoutAmount);
+    const amountCents = Math.round(amount * 100);
 
-    if (isNaN(amount) || amount <= 0) {
+    if (!/^\d+(\.\d{1,2})?$/.test(payoutAmount) || !Number.isSafeInteger(amountCents) || amountCents <= 0) {
       toast({
         title: "Invalid Amount",
         description: "Please enter a valid payout amount",
@@ -161,16 +173,9 @@ export function PayoutDashboard() {
       return;
     }
 
-    if (balance && amount > balance.availableBalance) {
-      toast({
-        title: "Insufficient Balance",
-        description: `Available balance: $${balance.availableBalance.toFixed(2)}`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    requestPayoutMutation.mutate(amount);
+    if (!user || requestPayoutMutation.isPending) return;
+    // A replay may exceed the now-reserved balance; the server recognizes its key.
+    requestPayoutMutation.mutate(amountCents);
   };
 
   const getStatusBadge = (status: string) => {
@@ -220,10 +225,10 @@ export function PayoutDashboard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
-            Setup Instant Payouts
+            Setup Bank Payouts
           </CardTitle>
           <CardDescription>
-            Connect your bank account to receive instant payouts from
+            Connect your bank account to receive standard payouts from
             marketplace sales
           </CardDescription>
         </CardHeader>
@@ -233,14 +238,14 @@ export function PayoutDashboard() {
               <Info className="w-5 h-5 text-blue-600 mt-0.5" />
               <div className="space-y-2">
                 <h4 className="font-semibold text-blue-900">
-                  Instant Payouts with Stripe Express
+                  Bank Payouts with Stripe Express
                 </h4>
                 <p className="text-sm text-blue-700">
-                  Get paid instantly (T+0) from your marketplace sales. Funds
-                  typically arrive in your bank account within minutes.
+                  Withdraw settled marketplace earnings by standard bank payout.
+                  Arrival depends on provider processing and your bank.
                 </p>
                 <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
-                  <li>Instant access to your earnings</li>
+                  <li>Withdraw your available settled earnings</li>
                   <li>Secure bank account connection via Stripe</li>
                   <li>Track all payouts in one place</li>
                   <li>Automatic balance calculations</li>
@@ -369,14 +374,39 @@ export function PayoutDashboard() {
       </div>
 
       {/* Instant Payout Request */}
+      {balance?.reconciliation && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Historical balances — reconciliation required</CardTitle>
+            <CardDescription>{balance.reconciliation.notice}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {balance.reconciliation.orders.length} historical sales,{" "}
+            {balance.reconciliation.royalties.length} royalty records and{" "}
+            {balance.reconciliation.payouts.length} prior payouts are preserved separately.
+            These records are not withdrawable credit.
+            <details className="mt-3">
+              <summary>Prior payout records (unreconciled)</summary>
+              <ul className="mt-2 space-y-2">
+                {balance.reconciliation.payouts.map((payout) => (
+                  <li key={payout.id} className="text-sm">
+                    {payout.id}: {payout.amount_cents} minor units {payout.currency?.toUpperCase()} —{" "}
+                    stored status: {payout.status}. These historical statuses are not newly verified.
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5" />
-            Request Instant Payout
+            Request Bank Payout
           </CardTitle>
           <CardDescription>
-            Withdraw your available balance instantly (T+0 settlement)
+            Withdraw your available balance by standard bank payout
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -439,14 +469,24 @@ export function PayoutDashboard() {
           </div>
 
           <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
-            <p className="font-medium">Instant Payout Details:</p>
+            <p className="font-medium">Standard Bank Payout Details:</p>
             <ul className="text-muted-foreground space-y-0.5 ml-4 list-disc">
-              <li>Funds arrive in minutes (T+0 settlement)</li>
-              <li>No fees for instant payouts</li>
-              <li>Available 24/7</li>
+              <li>Arrival depends on provider processing and your bank</li>
+              <li>Provider fees and account eligibility may apply</li>
+              <li>Requests remain pending until the provider confirms payment</li>
               <li>Minimum: $1.00</li>
             </ul>
           </div>
+          <Button variant="outline" disabled={requestPayoutMutation.isPending} onClick={async()=>{
+            try {
+              await confirmNewPayout(user.id);
+              toast({title:"New withdrawal enabled",description:"The prior acknowledged command is closed. Enter the new withdrawal amount."});
+            } catch(error) {
+              toast({title:"Prior withdrawal needs review",description:error instanceof Error?error.message:String(error),variant:"destructive"});
+            }
+          }}>
+            I reviewed payout history — start another withdrawal
+          </Button>
         </CardContent>
       </Card>
 

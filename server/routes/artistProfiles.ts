@@ -13,8 +13,20 @@ import {
   DuplicateCatalogReleaseError,
 } from "../services/distributionDataTransferService.js";
 import { storage } from "../storage.js";
+import { getCatalogDiscoveryJob, startCatalogDiscoveryWorker } from "../services/catalogDiscoveryJobs.js";
 
 const router = Router();
+
+router.get("/:id/discovery-job", requireAuth, requireUUIDParam("id"), async (req: Request, res: Response) => {
+  try {
+    const job = await getCatalogDiscoveryJob(req.params.id as string, req.user!.id);
+    if (!job) return res.status(404).json({ error: "Discovery job not found" });
+    return res.json({ job });
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to read catalog discovery job");
+    return res.status(500).json({ error: "Failed to read catalog discovery job" });
+  }
+});
 
 const createProfileSchema = z.object({
   artistName: z.string().min(1).max(255),
@@ -80,23 +92,8 @@ router.post("/", async (req: Request, res: Response) => {
       spotifyArtistUri: resolvedSpotifyUri,
     });
 
-    // Discovery and catalog reconciliation are automatic. The create request
-    // returns immediately, while the background run links verified identities
-    // and imports the catalog without requiring an approval click.
-    void artistProfileService
-      ?.autoDiscover(profile.id, req.user!.id)
-      .then((result) => {
-        logger.info(
-          `[ArtistProfiles] Automatic discovery complete for profile=${profile.id} ` +
-            `saved=${result.saved} catalogTargets=${result.catalogImport.length}`,
-        );
-      })
-      .catch((err: unknown) => {
-        logger.warn(
-          { err },
-          `[ArtistProfiles] Automatic discovery failed for profile=${profile.id}`,
-        );
-      });
+    // Profile and pending discovery are committed in one transaction.
+    startCatalogDiscoveryWorker();
 
     res.status(201).json({ profile });
   } catch (err) {

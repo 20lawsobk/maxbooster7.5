@@ -1,4 +1,5 @@
 import http from "node:http";
+import { evolutionConsumers } from "../../server/services/evolutionConsumers.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fakeStorage = vi.hoisted(() => {
@@ -146,6 +147,89 @@ afterEach(() => {
 });
 
 describe("isolated real self-evolution simulation", () => {
+  it("rejects a broken scheduler before issuing a health probe", async () => {
+    const engine = selfEvolution as unknown as InternalEngine;
+    const candidate = upgrade("broken-schedule", "posting_optimization", {
+      platform: "twitter", optimalHours: [0, 12],
+    });
+    engine.upgradeQueue.push(candidate);
+    expect(await engine.deployUpgrades([candidate])).toBe(1);
+    vi.spyOn(evolutionConsumers, "nextPostTime").mockImplementation((now) => now);
+    const health = vi.spyOn(http, "get");
+    await expect(engine.monitorDeploymentHealth([candidate.id])).resolves.toBe(false);
+    expect(health).not.toHaveBeenCalled();
+    expect(evolutionRegistry.getOptimalHoursOverride("twitter")).toBeNull();
+    expect(candidate.applied).toBe(false);
+  });
+
+  it("preserves midnight and orders twice-daily windows in the production scheduler", () => {
+    const now = new Date(2026, 0, 15, 23, 30);
+    const next = evolutionConsumers.nextPostTime(now, "daily", [0]);
+    expect(next.getHours()).toBe(0);
+    expect(next.getDate()).toBe(16);
+    expect(evolutionConsumers.nextPostTime(new Date(2026, 0, 15, 8), "twice-daily", [20, 9]).getHours()).toBe(9);
+  });
+
+  it("rolls back broken consumer requests despite healthy HTTP and retains unrelated upgrades", async () => {
+    const engine = selfEvolution as unknown as InternalEngine;
+    const good = upgrade("good-posting", "posting_optimization", {
+      platform: "twitter", optimalHours: [0, 12],
+    });
+    const broken = upgrade("broken-content", "content_optimization", {
+      platform: "tiktok", variantCount: 5,
+    });
+    engine.upgradeQueue.push(good, broken);
+    expect(await engine.deployUpgrades([good, broken])).toBe(2);
+    const actual = evolutionConsumers.contentRequest;
+    vi.spyOn(evolutionConsumers, "contentRequest").mockImplementation((registry, platform, objective) => {
+      const request = actual(registry, platform, objective);
+      return platform === "tiktok" ? { ...request, variantCount: 0 } : request;
+    });
+    const probe = vi.spyOn(http, "get").mockImplementation(((_url: unknown, callback: any) => {
+      queueMicrotask(() => callback({
+        statusCode: 200, resume() {},
+        on(_event: string, done: () => void) { queueMicrotask(done); },
+      }));
+      return { setTimeout() {}, on() {} };
+    }) as any);
+    await expect(engine.monitorDeploymentHealth([good.id, broken.id])).resolves.toBe(false);
+    expect(probe).toHaveBeenCalledTimes(1);
+    expect(evolutionRegistry.getContentOptimization("tiktok")).toBeNull();
+    expect(evolutionRegistry.getOptimalHoursOverride("twitter")).toEqual([0, 12]);
+    expect(broken).toMatchObject({ applied: false, status: "rolled_back" });
+    expect(good).toMatchObject({ applied: true, status: "deployed" });
+    const stored = JSON.parse(fakeStorage.files.get("evolution-state/registry.json")!.toString());
+    expect(stored.enhancements.find((entry: any) => entry.upgradeId === broken.id))
+      .toMatchObject({ active: false, consumerValidation: { passed: false, contract: "consumer-request-v1" } });
+  });
+
+  it("certifies actual request fields and posting windows across reload and rollback", async () => {
+    const engine = selfEvolution as unknown as InternalEngine;
+    const candidate = upgrade("all-knobs", "content_optimization", {
+      platform: "instagram", variantCount: 4, visualPriority: false,
+      hashtagStrategy: "niche", captionLength: "short", callToActionStrength: "high",
+    });
+    engine.upgradeQueue.push(candidate);
+    expect(await engine.deployUpgrades([candidate])).toBe(1);
+    vi.spyOn(http, "get").mockImplementation(((_url: unknown, callback: any) => {
+      queueMicrotask(() => callback({
+        statusCode: 200, resume() {},
+        on(_event: string, done: () => void) { queueMicrotask(done); },
+      }));
+      return { setTimeout() {}, on() {} };
+    }) as any);
+    await expect(engine.monitorDeploymentHealth([candidate.id])).resolves.toBe(true);
+    const reloaded = new EvolutionRegistry(fakeStorage);
+    await reloaded.load();
+    expect(reloaded.getActiveUpgradeEnhancements(candidate.id)[0].consumerValidation?.passed).toBe(true);
+    expect(evolutionConsumers.contentRequest(reloaded, "instagram", "awareness")).toMatchObject({
+      variantCount: 4, includeEmojis: false, hashtagStrategy: "niche", captionLength: "short",
+      callToActionStrength: "high", objective: "awareness",
+    });
+    await reloaded.deactivateByUpgrade(candidate.id);
+    expect(evolutionConsumers.contentRequest(reloaded, "instagram", "awareness").variantCount).toBe(3);
+  });
+
   it("orchestrates detected change -> proposal -> validation -> apply -> real consumer effect", async () => {
     const engine = selfEvolution as unknown as InternalEngine;
     const change = {

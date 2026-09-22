@@ -7,6 +7,7 @@ import { eq, and, gte, lte, desc } from "drizzle-orm";
 
 import type { InsertAdCampaign, AdCampaign } from "@shared/schema";
 import { logger } from "../logger.js";
+import { decryptSocialCredential } from "./socialCredentialCodec.js";
 
 // Timeout-guarded fetch (10 s default)
 const timedFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
@@ -30,6 +31,9 @@ async function getStoredToken(
       )
       .limit(1);
     if (!account?.accessToken) return null;
+    if (account.accessToken.startsWith("social:")) {
+      return decryptSocialCredential(account.accessToken, `${userId}:${platform}:access`);
+    }
     // Tokens may be stored as plain text or AES-256-GCM (iv:tag:cipher).
     // If it contains two colons it is encrypted — fall through to the OAuth
     // service for a full decrypt; otherwise return as-is.
@@ -54,8 +58,9 @@ async function getStoredToken(
       return plain || null;
     }
     return account?.accessToken;
-  } catch {
-    return null;
+  } catch (error) {
+    logger.warn({ err: error }, "Social credential retrieval failed");
+    throw new Error("Social credential retrieval failed; reconnect or contact support");
   }
 }
 

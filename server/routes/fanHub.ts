@@ -8,11 +8,45 @@ import { requireAuth } from "../middleware/auth.js";
 import { requirePremium } from "../middleware/requirePremium.js";
 import { z } from "zod";
 import { emailService } from "../services/emailService.js";
+import { requestFanConsent, confirmFanConsent, unsubscribeFan, enqueueFanDelivery,
+  processFanDelivery, getFanDelivery } from "../services/fanDeliveryService";
 
 const router = Router();
 
+// Public capability links: GET is safe for email scanners; POST changes consent.
+for (const action of ["consent", "unsubscribe"] as const) {
+  router.get(`/${action}/:token`, (req, res) => {
+    if (!/^[a-f0-9]{64}$/.test(req.params.token)) return res.sendStatus(400);
+    const csrf = String((req as any).csrfToken ?? req.cookies?.["csrf-token"] ?? "");
+    if (!/^[a-zA-Z0-9_-]+$/.test(csrf)) return res.status(503).send("Security token unavailable. Refresh this page.");
+    res.set("Referrer-Policy", "no-referrer").set("Cache-Control", "no-store")
+      .type("html").send(`<form method="post"><input type="hidden" name="_csrf" value="${csrf}"><p>${action === "consent" ? "Confirm artist email subscription" : "Unsubscribe from artist emails"}</p><button type="submit">Confirm</button></form>`);
+  });
+  router.post(`/${action}/:token`, async (req, res) => {
+    if (!/^[a-f0-9]{64}$/.test(req.params.token)) return res.sendStatus(400);
+    try {
+      const changed = action === "consent" ? await confirmFanConsent(req.params.token) : await unsubscribeFan(req.params.token);
+      return res.status(changed ? 200 : 410).send(changed ? "Preference saved." : "This link is invalid or expired.");
+    } catch (error) {
+      logger.warn({ err: error }, "Fan preference update failed");
+      return res.status(503).send("Unable to save preference. Please retry.");
+    }
+  });
+}
 router.use(requireAuth, requirePremium);
 
+router.post("/subscribers/:id/consent-request", async (req, res) => {
+  try { res.json(await requestFanConsent(req.user!.id, req.params.id)); }
+  catch (error) { res.status(400).json({ error: (error as Error).message }); }
+});
+router.get("/deliveries/:id", async (req, res) => {
+  try { res.json(await getFanDelivery(req.params.id, req.user!.id)); }
+  catch { res.status(503).json({ error: "Could not load recipient outcomes" }); }
+});
+router.post("/deliveries/:id/resume", async (req, res) => {
+  try { res.json(await processFanDelivery(req.params.id, req.user!.id)); }
+  catch { res.status(503).json({ error: "Could not resume pending recipients" }); }
+});
 const createSubscriberSchema = z.object({
   email: z.string().email().max(320),
   name: z.string().max(200).optional(),
@@ -34,6 +68,7 @@ const updateSubscriberSchema = z.object({
 });
 
 const sendMessageSchema = z.object({
+  commandKey: z.string().regex(/^[a-zA-Z0-9_-]{16,100}$/),
   subject: z.string().min(1).max(500),
   body: z.string().min(1).max(100_000),
   // Segmented delivery is not implemented; accepting a segment here would
@@ -302,105 +337,11 @@ router.post("/message", async (req: Request, res: Response) => {
 
     const { subject, body, segmentFilter } = parsed?.data ?? {};
 
-    // Get artist info for the from-name
-    const [artist] = await db
-      .select({ username: users.username, displayName: users.displayName })
-      .from(users)
-      .where(eq(users.id, userId));
-    const artistName = artist?.displayName || artist?.username || "Your Artist";
-
-    // Get all subscribers to send to
-    const subscribers = await db
-      .select({
-        id: fanSubscribers.id,
-        email: fanSubscribers.email,
-        name: fanSubscribers.name,
-      })
-      .from(fanSubscribers)
-      .where(eq(fanSubscribers.userId, userId));
-
-    if (subscribers.length === 0) {
-      return res.status(400).json({
-        error: "Add at least one fan before sending a broadcast",
-      });
-    }
-
-    const escapeHtml = (value: string) =>
-      value
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    const htmlBody = escapeHtml(body).replace(/\n/g, "<br>");
-    const emailHtml = `
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
-          <div style="background:#1a1a2e;color:#fff;padding:20px;border-radius:8px 8px 0 0">
-            <h2 style="margin:0;color:#a78bfa">${escapeHtml(artistName)}</h2>
-          </div>
-          <div style="background:#fff;padding:24px;border:1px solid #e5e7eb;border-radius:0 0 8px 8px">
-            <p style="color:#374151;font-size:16px;line-height:1.6">${htmlBody}</p>
-            <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">
-            <p style="color:#9ca3af;font-size:12px">You're receiving this because you subscribed to updates from ${escapeHtml(artistName)} via Max Booster.</p>
-          </div>
-        </div>
-      `;
-
-    const BATCH_SIZE = 50;
-    let deliveredCount = 0;
-    let failedCount = 0;
-    for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
-      const batch = subscribers.slice(i, i + BATCH_SIZE);
-      const results = await Promise.all(
-        batch.map(async (subscriber) => {
-          try {
-            return await emailService.send({
-              to: subscriber.email,
-              subject: `${artistName}: ${subject}`,
-              html: emailHtml,
-            });
-          } catch (error) {
-            logger.warn(
-              { err: error, subscriberId: subscriber.id },
-              "Fan broadcast email delivery failed",
-            );
-            return false;
-          }
-        }),
-      );
-      deliveredCount += results.filter(Boolean).length;
-      failedCount += results.filter((result) => !result).length;
-    }
-
-    if (deliveredCount === 0) {
-      return res.status(503).json({
-        error: "No broadcast emails could be delivered. Please try again later.",
-      });
-    }
-
-    const [message] = await db
-      .insert(fanMessages)
-      .values({
-        userId,
-        subject,
-        body,
-        recipientCount: deliveredCount,
-        sentAt: new Date(),
-        segmentFilter: segmentFilter || "all",
-      })
-      .returning();
-
-    logger.info(
-      {
-        messageId: message.id,
-        deliveredCount,
-        failedCount,
-        requestedRecipientCount: subscribers.length,
-      },
-      "Fan broadcast delivery completed",
-    );
-
-    return res.json({ ...message, recipientCount: deliveredCount, failedCount });
+    const key = parsed.data.commandKey;
+    if (!key || !/^[a-zA-Z0-9_-]{16,100}$/.test(key))
+      return res.status(400).json({ error: "A stable Idempotency-Key is required" });
+    const id = await enqueueFanDelivery(userId, `broadcast:${key}`, subject, body);
+    return res.json(await processFanDelivery(id, userId));
   } catch (error) {
     logger.warn({ err: error }, "Error sending bulk message:");
     return res.status(500).json({ error: "Failed to send message" });
@@ -420,7 +361,15 @@ router.get("/messages", async (req: Request, res: Response) => {
       .limit(limit)
       .offset(offset);
 
-    return res.json(messages);
+    const commandsResult = await db.execute(sql`SELECT id, subject, body, created_at AS "sentAt"
+      FROM growth_fan_commands WHERE artist_id=${req.user!.id}
+      ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`);
+    const commands = commandsResult.rows ?? commandsResult;
+    const current = await Promise.all(commands.map(async command => ({
+      ...command, ...await getFanDelivery(command.id, req.user!.id),
+      recipientCount: null, openCount: null, provenance: "recipient-ledger",
+    })));
+    return res.json([...current, ...messages.map(message => ({ ...message, provenance: "historical-unverified" }))]);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching fan messages:");
     return res.status(500).json({ error: "Failed to fetch messages" });

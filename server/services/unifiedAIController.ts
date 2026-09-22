@@ -53,6 +53,7 @@ import {
   type ForecastResult,
 } from "../../shared/ml/models/AdvancedTimeSeriesModel.js";
 import { evolutionRegistry } from "./evolutionRegistry.js";
+import { evolutionConsumers } from "./evolutionConsumers.js";
 
 // ============================================================================
 // SELF-EVOLUTION POSTING-OPTIMIZATION → MANUAL GENERATION
@@ -62,17 +63,6 @@ import { evolutionRegistry } from "./evolutionRegistry.js";
 // advancedSocialAIService do. Storytelling has no equivalent here, so carousel
 // maps to the closest interaction-driving type ('engagement').
 // ============================================================================
-const CONTENT_FORMAT_TO_TYPE: Record<
-  string,
-  NonNullable<ContentGenerationOptions["contentType"]>
-> = {
-  video: "behind-the-scenes",
-  reel: "behind-the-scenes",
-  story: "behind-the-scenes",
-  carousel: "engagement",
-  image: "announcement",
-  text: "engagement",
-};
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -307,16 +297,7 @@ export class UnifiedAIController {
       }
 
       if (!callerContentType && Array.isArray(posting?.contentFormatPriority)) {
-        for (const fmt of posting?.contentFormatPriority ?? []) {
-          const mapped =
-            typeof fmt === "string"
-              ? CONTENT_FORMAT_TO_TYPE[fmt?.toLowerCase()]
-              : undefined;
-          if (mapped) {
-            result.contentType = mapped;
-            break;
-          }
-        }
+        result.contentType = evolutionConsumers.preferredFormat(posting.contentFormatPriority);
       }
 
       const applied: string[] = [];

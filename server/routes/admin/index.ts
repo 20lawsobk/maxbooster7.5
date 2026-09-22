@@ -1,9 +1,10 @@
 import { Router, type RequestHandler } from "express";
 import { db } from "../../db.js";
-import { posts, systemSettings } from "../../../shared/schema.js";
+import { systemSettings } from "../../../shared/schema.js";
 import { eq } from "drizzle-orm";
 import { logger } from "../../logger.js";
 import { require2FA } from "../../middleware/auth.js";
+import { moderate } from "../../services/moderationDecisionService.js";
 
 const router = Router();
 
@@ -74,6 +75,12 @@ router.put("/settings", async (req, res) => {
     if (unknown.length) {
       return res.status(400).json({ error: "Unknown setting keys", keys: unknown });
     }
+    for (const key of ["maintenanceMode", "userRegistrationEnabled"]) {
+      if (key in body && typeof body[key] !== "boolean") return res.status(400).json({ error: `${key} must be boolean` });
+    }
+    if ("apiRateLimit" in body && (!Number.isInteger(body.apiRateLimit) || Number(body.apiRateLimit) < 1 || Number(body.apiRateLimit) > 1_000_000)) {
+      return res.status(400).json({ error: "apiRateLimit must be an integer between 1 and 1000000" });
+    }
     await Promise.all(Object.entries(body).map(([key, value]) => updateSetting(key, value)));
     return res.json({ success: true, message: "Settings updated" });
   } catch (error) {
@@ -134,16 +141,16 @@ router.post("/moderation/:id/action", async (req, res) => {
     return res.status(400).json({ error: "action must be approve, remove, or warn" });
   }
   try {
-    const [updated] = await db
-      .update(posts)
-      .set({ status: newStatus })
-      .where(eq(posts.id, req.params.id))
-      .returning({ id: posts.id });
-    if (!updated) return res.status(404).json({ error: "Content not found" });
-    return res.json({ success: true, id: updated.id, action, newStatus });
+    const result = await moderate({
+      actorId: req.user!.id, ip: req.ip || "unknown",
+      contentId: req.params.id, action: action === "remove" ? "remove_content" : action === "warn" ? "warn_user" : "approve",
+      reason: typeof req.body.notes === "string" ? req.body.notes.slice(0, 4000) : action,
+      idempotencyKey: req.get("Idempotency-Key") || req.body.idempotencyKey,
+    });
+    return res.json({ success: true, id: req.params.id, action, newStatus: result.status });
   } catch (error) {
     logger.warn({ err: error }, "Error executing moderation action:");
-    return res.status(500).json({ error: "Failed to execute moderation action" });
+    return res.status((error as any).statusCode || 500).json({ error: (error as any).statusCode ? (error as Error).message : "Failed to execute moderation action" });
   }
 });
 

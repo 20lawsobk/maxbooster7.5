@@ -267,18 +267,11 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   //   timeouts and false-positive replica evictions under load.
   //
   // MEMORY GUARD:
-  //   Each worker carries a 4 GiB V8 heap + ~0.5 GiB native overhead
-  //   (libuv thread pool, TensorFlow.js, ioredis, BullMQ).  The memory
-  //   limit floor ensures we never fork more workers than RAM can safely
-  //   hold, preventing the OOM killer from wiping mid-request workers.
-  //   Math.min(cpuLimit, memLimit) is the safe ceiling — whichever resource
-  //   runs out first is the real constraint on that particular VM.
-  //
-  // EXPECTED WORKER COUNTS (auto-detected, no override needed):
-  //   Autoscale replica  (8 vCPU  / 32 GiB): ~6 workers  → 6× throughput
-  //   Reserved VM        (16 vCPU / 64 GiB): ~12 workers → 12× throughput
-  //   Dev container      (8 vCPU  / 16 GiB): single-process (ENABLE_CLUSTER
-  //                                           not set in dev, cluster skipped)
+  //   computeSizing reserves coordinator, Python, sidecar and OS budgets
+  //   before allocating worker pools. V8 uses only part of a worker's RSS
+  //   allocation; native allocations still require load/soak measurement.
+  //   Compiler/typechecker heap settings are not worker RSS requirements.
+  //   A 4-effective-CPU / 8-GiB deployment keeps one worker per Node role.
   //
   // PDIM AWARENESS:
   //   PDIM_CLUSTER_WORKERS is passed to every forked worker at fork time.
@@ -294,20 +287,16 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
   const isDeployment = !!process.env.REPLIT_DEPLOYMENT;
 
-  // Deployed workers get up to a 4 GiB heap; dev gets up to 3 GiB to avoid
-  // OOM on smaller dev containers that share RAM with the IDE and sidecars.
-  // These are CEILINGS, not guarantees — the actual cap applied below is
-  // clamped to what the VM really has (see workerHeapMB).
-  const memPerWorkerGB = isDeployment ? 4.5 : 6.0;
-  const workerHeapCeilingMB = isDeployment ? 4096 : 3072;
+  // Runtime RSS minima and all heap ceilings come from the shared role
+  // allocation. Build/typechecker heap needs are not runtime worker minima.
 
   // Sizing derivation lives in server/computeSizing.ts — the single shared
   // source of truth also consumed by maxcoreLocalSupervisor.ts (its own Node
   // cluster) and (via env vars) MaxCore's Python HyperGPU engine, so every
   // process on this host reasons about CPU/RAM capacity the same way.
   //
-  // cpuLimit: reserve 1 core for the primary process + OS scheduler.
-  // memLimit: never fork more workers than RAM can hold at memPerWorkerGB each.
+  // cpuLimit: role concurrency within the shared effective CPU quota.
+  // memLimit: never fork more workers than the role's RSS pool can admit.
   // The real worker count is the lesser of the two — whichever resource
   // is exhausted first on the current VM is the binding constraint.
   //
@@ -315,7 +304,6 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // fills every available CPU core and RAM slot on whatever VM Autoscale
   // provisions.  Only set it when deliberately constraining for debugging.
   const sizing = computeWorkerSizing({
-    memPerWorkerGB,
     envOverrideVar: "CLUSTER_WORKERS",
   });
   const { cpuLimit, memLimit } = sizing;
@@ -344,22 +332,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // while the process looks "alive" but serves nothing. Deriving the cap
   // from `sizing.freeMemGB` keeps the ceiling honest for whatever box this
   // process actually landed on.
-  const HEAP_SAFETY_FRACTION = 0.6; // leave headroom for native overhead (TF.js, sharp, libuv) + primary + OS
-  const MIN_WORKER_HEAP_MB = 512;
-  const memAwareHeapMB = Math.floor(
-    (sizing.freeMemGB * 1024 * HEAP_SAFETY_FRACTION) / workerCount,
-  );
-  const workerHeapMB = Math.max(
-    MIN_WORKER_HEAP_MB,
-    Math.min(workerHeapCeilingMB, memAwareHeapMB),
-  );
-  if (workerHeapMB < workerHeapCeilingMB) {
-    console.warn(
-      `[Cluster] ⚠️  Worker heap capped to ${workerHeapMB} MB (below the ${workerHeapCeilingMB} MB ceiling) — ` +
-        `this VM only has ${sizing.freeMemGB.toFixed(1)} GB free for ${workerCount} worker(s). ` +
-        `Raising CLUSTER_WORKERS or the box size lets workers use more heap.`,
-    );
-  }
+  const workerHeapMB = sizing.workerHeapMB;
 
   const workerScript = path?.join(__dirname, "index.mjs");
 
@@ -372,8 +345,8 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
   console.log(
     `[Cluster] Primary ${process.pid} — forking ${workerCount} workers ` +
-      `(CPUs: ${sizing.numCPUs}, total RAM: ${totalMemGB.toFixed(1)} GB, free: ${sizing.freeMemGB.toFixed(1)} GB, ` +
-      `${memPerWorkerGB} GB/worker, heap/worker: ${workerHeapMB} MB, ` +
+      `(effective CPUs: ${sizing.numCPUs}, host RAM: ${totalMemGB.toFixed(1)} GB, app pool: ${sizing.freeMemGB.toFixed(1)} GB, ` +
+      `${sizing.workerMemoryMB} MiB RSS allocation/worker, heap/worker: ${workerHeapMB} MB, ` +
       `cpu-limit: ${cpuLimit}, mem-limit: ${memLimit})` +
       (isDeployment ? ` [Deployed VM — ${sizing.numCPUs} vCPU]` : ""),
   );

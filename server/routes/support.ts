@@ -9,6 +9,53 @@ import { supportTicketService } from "../services/supportTicketService.js";
 
 const router = Router();
 
+// Customer projection deliberately excludes staff tags, assignment and raw metadata.
+router.get("/my/tickets/:ticketId", requireAuth, async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    if (typeof ticketId !== "string" || !ticketId.trim()) {
+      return res.status(400).json({ error: "A single nonempty ticket ID is required" });
+    }
+    const [ticket] = await db.select().from(supportTickets).where(and(
+      eq(supportTickets.id, ticketId), eq(supportTickets.userId, req.user!.id),
+    )).limit(1);
+    if (!ticket) return res.status(404).json({ error: "Ticket not found" });
+    const messages = await supportTicketService.getTicketMessages(ticket.id);
+    return res.json({
+      id: ticket.id, subject: ticket.subject, description: ticket.description,
+      status: ticket.status, createdAt: ticket.createdAt,
+      messages: messages.map(message => ({
+        id: message.id, message: message.message, isStaffReply: message.isStaffReply, createdAt: message.createdAt,
+      })),
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "Customer ticket read failed");
+    return res.status(500).json({ error: "Unable to load ticket" });
+  }
+});
+
+router.post("/my/tickets/:ticketId/messages", requireAuth, async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    if (typeof ticketId !== "string" || !ticketId.trim()) {
+      return res.status(400).json({ error: "A single nonempty ticket ID is required" });
+    }
+    const message = req.body?.message;
+    if (typeof message !== "string" || !message.trim() || message.length > 10000) {
+      return res.status(400).json({ error: "Message must contain 1–10000 characters" });
+    }
+    const [ticket] = await db.select({ id: supportTickets.id, status: supportTickets.status })
+      .from(supportTickets).where(and(eq(supportTickets.id, ticketId), eq(supportTickets.userId, req.user!.id))).limit(1);
+    if (!ticket) return res.status(404).json({ error: "Ticket not found" });
+    if (ticket.status === "closed") return res.status(409).json({ error: "This ticket is closed" });
+    const saved = await supportTicketService.addMessage(ticket.id, req.user!.id, message.trim(), false);
+    return res.status(201).json({ id: saved.id });
+  } catch (error) {
+    logger.warn({ err: error }, "Customer ticket reply failed");
+    return res.status(500).json({ error: "Unable to send reply; reload the ticket before retrying" });
+  }
+});
+
 // Get user's own tickets
 router.get("/tickets", requireAuth, async (req, res) => {
   try {
@@ -124,7 +171,10 @@ router.get("/stats", requireAuth, requireAdmin, require2FA, async (_req, res) =>
 
 router.get("/tickets/:ticketId", requireAuth, requireAdmin, require2FA, async (req, res) => {
   try {
-    const { ticketId } = req.params as Record<string, string>;
+    const { ticketId } = req.params;
+    if (typeof ticketId !== "string" || !ticketId.trim()) {
+      return res.status(400).json({ error: "A single nonempty ticket ID is required" });
+    }
 
     const ticket = await db
       .select()
@@ -158,7 +208,10 @@ router.post(
   require2FA,
   async (req, res) => {
     try {
-      const { ticketId } = req.params as Record<string, string>;
+      const { ticketId } = req.params;
+      if (typeof ticketId !== "string" || !ticketId.trim()) {
+        return res.status(400).json({ error: "A single nonempty ticket ID is required" });
+      }
       const { message } = req.body;
 
       if (!message || typeof message !== "string" || !message.trim()) {
@@ -199,7 +252,10 @@ router.post(
   require2FA,
   async (req, res) => {
     try {
-      const { ticketId } = req.params as Record<string, string>;
+      const { ticketId } = req.params;
+      if (typeof ticketId !== "string" || !ticketId.trim()) {
+        return res.status(400).json({ error: "A single nonempty ticket ID is required" });
+      }
       const { tags } = req.body;
 
       const tagList = Array.isArray(tags)
@@ -241,7 +297,10 @@ router.delete(
   require2FA,
   async (req, res) => {
     try {
-      const { ticketId, tag } = req.params as Record<string, string>;
+      const { ticketId, tag } = req.params;
+      if (typeof ticketId !== "string" || !ticketId.trim() || typeof tag !== "string" || !tag.trim()) {
+        return res.status(400).json({ error: "A single nonempty ticket ID and tag are required" });
+      }
 
       const existing = await db
         .select({ metadata: supportTickets.metadata })
@@ -252,14 +311,14 @@ router.delete(
         return res.status(404).json({ error: "Ticket not found" });
       }
 
-      const meta = (existing[0].metadata as Record<string, unknown> | null) ?? {};
-      const currentTags = Array.isArray(meta.tags) ? (meta.tags as string[]) : [];
-      const remaining = currentTags.filter((t) => t !== tag);
-
       await db
         .update(supportTickets)
-        .set({ updatedAt: new Date(), metadata: { ...meta, tags: remaining } })
+        .set({
+          updatedAt: new Date(),
+          metadata: sql`jsonb_set(COALESCE(${supportTickets.metadata}, '{}'::jsonb), '{tags}', (SELECT COALESCE(jsonb_agg(value), '[]'::jsonb) FROM jsonb_array_elements(COALESCE(${supportTickets.metadata}->'tags', '[]'::jsonb)) WHERE value <> ${JSON.stringify(tag)}::jsonb))`,
+        })
         .where(eq(supportTickets.id, ticketId));
+      const remaining = (await supportTicketService.getTicketTags(ticketId)).map(item => item.tag);
 
       logger.info(`Admin ${req.user?.email} removed tag "${tag}" from ticket ${ticketId}`);
 
@@ -278,7 +337,10 @@ router.patch(
   require2FA,
   async (req, res) => {
     try {
-      const { ticketId } = req.params as Record<string, string>;
+      const { ticketId } = req.params;
+      if (typeof ticketId !== "string" || !ticketId.trim()) {
+        return res.status(400).json({ error: "A single nonempty ticket ID is required" });
+      }
       const {
         status,
         priority,

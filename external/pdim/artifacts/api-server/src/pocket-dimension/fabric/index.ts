@@ -108,7 +108,9 @@ function buildStore(nodeId: NodeId, meta: NodeBackend | undefined): ChunkStore {
 function chunkStoreFactory(nodeId: NodeId): ChunkStore {
   const cached = chunkStoreCache.get(nodeId);
   if (cached) return cached;
-  const store = buildStore(nodeId, nodeBackendMap.get(nodeId));
+  const backend = nodeBackendMap.get(nodeId);
+  if (!backend) throw new Error(`Fabric node backend is not registered: ${nodeId}`);
+  const store = buildStore(nodeId, backend);
   chunkStoreCache.set(nodeId, store);
   return store;
 }
@@ -176,6 +178,15 @@ export const autoClusterManager = new AutoClusterManager(
 export { nodeRegistry as fabricNodeRegistry };
 
 export async function initializeFabric(): Promise<void> {
+  // Durable outbox survives restarts; no unconfirmed node deletion frees capacity.
+  let cleanupRunning = false;
+  const retryDeletes = async () => {
+    if (cleanupRunning) return;
+    cleanupRunning = true;
+    try { await fabricStorage.retryPendingDeletions(); }
+    catch (err) { logger.error({ err }, "Fabric deletion recovery unavailable"); }
+    finally { cleanupRunning = false; }
+  };
   fabricRebalancer.start();
 
   try {
@@ -275,11 +286,11 @@ export async function initializeFabric(): Promise<void> {
       }
     }
 
-    // Heal accounting on boot: first rebuild chunk reference counts from live
-    // objects (GC'ing orphans and migrating pre-refCount rows), then derive
-    // per-node usage from the surviving chunks so telemetry starts truthful.
-    await fabricStorage.reconcileRefCounts();
-    await fabricStorage.reconcileNodeUsage();
+    // Pending outbox references/bytes are deliberately not in live-object
+    // inventory. Rebuilding from only live rows would reclaim pending work and
+    // undercount unavailable nodes. Preserve committed accounting on restart.
+    await retryDeletes();
+    setInterval(() => void retryDeletes(), 60_000).unref();
 
     autoClusterManager.start();
     logger.info("[PocketFabric] Auto-cluster manager started");

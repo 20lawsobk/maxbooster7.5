@@ -210,6 +210,7 @@ export default function Admin() {
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
   const [showDeleteUserDialog, setShowDeleteUserDialog] = useState(false);
   const [showModerationDialog, setShowModerationDialog] = useState(false);
+  const [moderationRequestId, setModerationRequestId] = useState(() => crypto.randomUUID());
   const [showKillSwitchDialog, setShowKillSwitchDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [selectedReport, setSelectedReport] = useState<ModerationReport | null>(
@@ -433,7 +434,7 @@ export default function Admin() {
       const response = await apiRequest(
         "POST",
         `/api/admin/moderation/reports/${reportId}/review`,
-        { action, notes },
+        { action, notes, idempotencyKey: moderationRequestId },
       );
       return response.json();
     },
@@ -1206,6 +1207,7 @@ export default function Admin() {
                       onClick={() => {
                         setSelectedReport(report);
                         setShowModerationDialog(true);
+                        setModerationRequestId(crypto.randomUUID());
                       }}
                     >
                       Review

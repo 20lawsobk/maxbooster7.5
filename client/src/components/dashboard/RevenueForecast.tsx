@@ -34,11 +34,12 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface ForecastResult {
+  provenance?: { modelVersion: string; assumptions: string[]; sampleCount: number; revenueRate: string };
   period: string;
   months: number;
   projectedStreams: number;
   projectedRevenue: number;
-  projectedRoyalties: number;
+  projectedRoyalties: number | null;
   confidence: number;
   confidenceLow: number;
   confidenceHigh: number;
@@ -51,7 +52,7 @@ interface MonthlyProjection {
   date: string;
   projectedStreams: number;
   projectedRevenue: number;
-  projectedRoyalties: number;
+  projectedRoyalties: number | null;
   confidence: number;
   confidenceLow: number;
   confidenceHigh: number;
@@ -132,10 +133,10 @@ const ForecastCard: React.FC<{
         <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
           <span>{formatNumber(forecast.projectedStreams)} streams</span>
           <span>•</span>
-          <span>{Math.round(forecast.confidence * 100)}% confidence</span>
+          <span>{Math.round(forecast.confidence * 100)}% heuristic score (uncalibrated)</span>
         </div>
         <div className="text-xs text-muted-foreground mt-1">
-          Range: {formatCurrency(forecast.confidenceLow)} -{" "}
+          Scenario range: {formatCurrency(forecast.confidenceLow)} -{" "}
           {formatCurrency(forecast.confidenceHigh)}
         </div>
       </CardContent>
@@ -444,7 +445,7 @@ export default function RevenueForecast() {
                 </div>
                 <div>
                   <p className="text-lg font-medium">
-                    At your current rate, you'll earn{" "}
+                    This heuristic scenario projects{" "}
                     <span className="text-2xl font-bold text-primary">
                       {formatCurrency(selectedForecast.projectedRevenue)}
                     </span>{" "}
@@ -453,9 +454,14 @@ export default function RevenueForecast() {
                   <p className="text-sm text-muted-foreground mt-1">
                     That's approximately{" "}
                     {formatNumber(selectedForecast.projectedStreams)} streams
-                    and {formatCurrency(selectedForecast.projectedRoyalties)} in
-                    royalties
+                    . Royalty entitlement is unavailable until verified rights are attributed.
                   </p>
+                  {selectedForecast.provenance && <div className="text-xs text-muted-foreground mt-3">
+                    <p>{selectedForecast.provenance.modelVersion}: {selectedForecast.provenance.sampleCount} source observations; rate {selectedForecast.provenance.revenueRate}.</p>
+                    <ul className="list-disc pl-4">
+                      {selectedForecast.provenance.assumptions.map(assumption => <li key={assumption}>{assumption}</li>)}
+                    </ul>
+                  </div>}
                 </div>
               </div>
             </CardContent>
@@ -469,7 +475,7 @@ export default function RevenueForecast() {
               </CardTitle>
               <CardDescription>
                 Historical data (solid) and projected earnings (dashed) with
-                confidence intervals
+                heuristic scenario ranges, not calibrated confidence intervals. Currency is unverified; these are not settled earnings.
               </CardDescription>
             </CardHeader>
             <CardContent>

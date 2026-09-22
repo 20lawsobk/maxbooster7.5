@@ -1,5 +1,9 @@
 // @ts-nocheck
 import { storage } from "../storage";
+import { updateCommerceOrder } from "./commerceOrderRepository";
+import { bookMarketplace, snapshotMarketplaceTerms } from "./commerce/settlement";
+import { createMarketplaceCheckout } from "./commerce/marketplaceCheckout";
+import { minorUnits, majorUnits } from "./commerce/contract";
 import { db } from "../db";
 import { randomUUID } from "crypto";
 
@@ -508,17 +512,19 @@ export class MarketplaceService {
 
       // Map service data to database schema
       const dbOrder = {
-        buyerId: data.buyerId,
+        userId: data.buyerId,
         sellerId: beat.userId,
         listingId: data.beatId,
         licenseType: data.licenseType,
-        amountCents: Math.round(license.price * 100), // Convert to cents
+        amount: license.price,
+        metadata: {amountCents:minorUnits(license.price),settlementTerms:await snapshotMarketplaceTerms({
+          listingId:data.beatId,sellerId:beat.userId,amount:license.price,currency:"usd",
+        })},
         status: "pending",
         currency: "usd",
       };
 
-      // Create order in database (UUID generated automatically, payout event created in transaction)
-      const createdOrder = await (storage as any).createOrder(dbOrder);
+      const [createdOrder] = await db.insert(orders).values(dbOrder).returning();
 
       // Convert database order to service order
       return toServiceOrder(createdOrder);
@@ -541,6 +547,10 @@ export class MarketplaceService {
       if (!dbOrder) {
         throw new Error("Order not found");
       }
+      if(["refunded","disputed","refund_pending"].includes(dbOrder.status)) {
+        if(dbOrder.stripePaymentIntentId!==paymentIntentId) throw new Error("Payment does not match order");
+        return toServiceOrder(dbOrder);
+      }
 
       // ── Idempotency guard ─────────────────────────────────────────────────
       // Stripe webhooks and client retries can replay processPayment for the
@@ -552,6 +562,7 @@ export class MarketplaceService {
       // is not yet initialised.  We run _deliverSaleNotifications here so
       // a transient delivery failure on the first attempt can be retried.
       if (dbOrder.status === "completed") {
+        if(dbOrder.stripePaymentIntentId!==paymentIntentId) throw new Error("Payment does not match order");
         logger.info(
           `[Marketplace] processPayment: order ${orderId} already completed — reconciling notifications (idempotent replay)`,
         );
@@ -570,7 +581,7 @@ export class MarketplaceService {
 
       if (paymentIntent.status !== "succeeded") {
         // Handle failed payment - update order status
-        await (storage as any).updateOrder(orderId, {
+        await updateCommerceOrder(orderId, {
           status: "failed",
           metadata: {
             ...((dbOrder.metadata as object) || {}),
@@ -586,50 +597,33 @@ export class MarketplaceService {
         throw new Error(`Payment not successful: ${paymentIntent.status}`);
       }
 
-      // Update order status to completed
-      const updatedDBOrder = await (storage as any).updateOrder(orderId, {
-        status: "completed",
-        stripePaymentIntentId: paymentIntentId,
-      });
-
-      // Trigger INSTANT PAYOUT to seller via Stripe Transfer (T+0)
-      if (dbOrder.sellerId && dbOrder.amountCents) {
-        const totalAmount = dbOrder.amountCents / 100;
-        const platformFeePercentage =
-          Number(process.env.PLATFORM_FEE_PERCENTAGE) || 10;
-
-        logger.info(
-          `Initiating instant payout for order ${orderId}: $${totalAmount} to seller ${dbOrder.sellerId}`,
-        );
-
-        // Create instant transfer to seller's connected account
-        const payoutResult = await instantPayoutService?.createInstantTransfer(
-          dbOrder?.sellerId,
-          totalAmount,
-          orderId,
-          platformFeePercentage,
-        );
-
-        if (payoutResult?.success) {
-          logger.info(
-            `✅ Instant payout successful: $${payoutResult?.amount} transferred to seller ${dbOrder?.sellerId}`,
-          );
-        } else {
-          logger.warn(
-            `⚠️ Instant payout failed for order ${orderId}: ${payoutResult?.error}`,
-          );
-          // Payout failed but order still completes - seller can withdraw manually later
-        }
+      if(!dbOrder.stripePaymentIntentId && paymentIntent.metadata.orderId===dbOrder.id &&
+        paymentIntent.metadata.buyerId===dbOrder.userId &&
+        paymentIntent.metadata.beatId===dbOrder.listingId &&
+        paymentIntent.amount_received===(dbOrder.metadata?.amountCents??minorUnits(Number(dbOrder.amount),dbOrder.currency||"usd")) &&
+        paymentIntent.currency===(dbOrder.currency||"usd").toLowerCase()) {
+        const [bound]=await db.update(orders).set({stripePaymentIntentId:paymentIntentId})
+          .where(sql`${orders.id}=${orderId} AND ${orders.stripePaymentIntentId} IS NULL`).returning();
+        if(!bound) throw new Error("Order payment was concurrently bound");
+        dbOrder.stripePaymentIntentId=paymentIntentId;
+      }
+      if (dbOrder.stripePaymentIntentId !== paymentIntentId ||
+          paymentIntent.metadata.orderId !== dbOrder.id ||
+          paymentIntent.metadata.buyerId !== dbOrder.userId ||
+          paymentIntent.metadata.sellerId !== dbOrder.sellerId ||
+          paymentIntent.metadata.beatId !== dbOrder.listingId ||
+          paymentIntent.metadata.licenseType !== dbOrder.licenseType ||
+          paymentIntent.amount_received !== (dbOrder.metadata?.amountCents ?? minorUnits(Number(dbOrder.amount),dbOrder.currency||"usd")) ||
+          paymentIntent.currency !== (dbOrder.currency || "usd").toLowerCase()) {
+        throw new Error("Payment does not match order");
       }
 
-      // Generate license document
+      // Generate entitlement before atomic ledger booking. Replays regenerate the
+      // same document; a failed booking cannot claim completed fulfillment.
       await this.generateLicense(orderId);
+      await bookMarketplace(dbOrder);
 
-      // Distribute royalty splits if applicable
-      await this.distributeSplits(orderId);
-
-      // Record marketplace revenue event so royaltyEngine aggregates beat sales
-      // in monthly statements.  Non-fatal: sale already succeeded.
+      // Revenue booking must succeed before fulfillment is marked complete.
       try {
         const saleAmount =
           dbOrder.amount ?? (dbOrder.amountCents || 0) / 100;
@@ -644,7 +638,7 @@ export class MarketplaceService {
               source: "marketplace",
               sourceType: "beat_sale",
               amount: saleAmount,
-              currency: "usd",
+              currency: dbOrder.currency || "usd",
               projectId: dbOrder.listingId ?? undefined,
               listingId: dbOrder.listingId ?? undefined,
               orderId,
@@ -658,9 +652,14 @@ export class MarketplaceService {
       } catch (revErr) {
         logger.warn(
           { err: revErr },
-          "[Marketplace] Failed to record revenue event (non-fatal):",
+          "[Marketplace] Failed to record revenue event:",
         );
+        throw revErr;
       }
+
+      // Completion is a fulfillment marker, not merely a provider payment marker.
+      const updatedDBOrder = await storage.getOrder(orderId);
+      if(!updatedDBOrder) throw new Error("Settled order disappeared");
 
       // Notifications are handled by _deliverSaleNotifications — non-fatal.
       await this._deliverSaleNotifications(orderId, updatedDBOrder);
@@ -883,6 +882,11 @@ export class MarketplaceService {
 
       // ── 4. Write royalty_transaction per split + update running totals ───
       await db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`order-splits:${orderId}`}, 0))`);
+        const booked = await tx.select({ id: royaltyTransactions.id })
+          .from(royaltyTransactions)
+          .where(sql`${royaltyTransactions.metadata}->>'orderId' = ${orderId}`).limit(1);
+        if (booked.length) return;
         for (const split of effectiveSplits) {
           const splitAmount = (split.percentage / 100) * amount;
           const recipientId = split.userId ?? sellerId;
@@ -967,12 +971,12 @@ export class MarketplaceService {
         },
         buyer: {
           name: buyer!.username || buyer?.firstName || "Buyer",
-          id: order.buyerId,
+          id: order.userId,
         },
         purchaseDate:
           order?.createdAt?.toISOString() || new Date().toISOString(),
-        amount: (order?.amountCents || 0) / 100,
-        currency: "USD",
+        amount: order.metadata?.amountCents!==undefined?majorUnits(order.metadata.amountCents,order.currency||"usd"):order.amount,
+        currency: order.currency,
         terms: {
           streams: licenseTemplate.streams,
           copies: licenseTemplate.copies,
@@ -989,10 +993,10 @@ export class MarketplaceService {
       };
 
       // Store license document URL
-      const licenseUrl = `/licenses/${orderId}.pdf`;
+      const licenseUrl = `/api/marketplace/orders/${orderId}/license`;
 
       // Update order with license document
-      await (storage as any)?.updateOrder(orderId, {
+      await updateCommerceOrder(orderId, {
         licenseDocumentUrl: licenseUrl,
         metadata: {
           ...((order?.metadata as object) || {}),
@@ -1072,35 +1076,11 @@ export class MarketplaceService {
         throw new Error("Invalid license type");
       }
 
-      const session = await stripe?.checkout.sessions?.create({
-        mode: "payment",
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: `${beat?.title} - ${license?.type} License`,
-                description: license.features.join(", "),
-              },
-              unit_amount: license.price * 100,
-            },
-            quantity: 1,
-          },
-        ],
-        metadata: {
-          beatId: data.beatId,
-          licenseType: data.licenseType,
-          buyerId: data.buyerId,
-        },
-        success_url: data.successUrl,
-        cancel_url: data.cancelUrl,
+      return createMarketplaceCheckout(stripe,{
+        buyerId:data.buyerId,sellerId:beat.userId,beatId:data.beatId,licenseType:data.licenseType,
+        amountCents:minorUnits(license.price),licenseSnapshot:{licenseType:license.type,price:license.price},
+        title:`${beat.title} - ${license.type} License`,successUrl:data.successUrl,cancelUrl:data.cancelUrl,
       });
-
-      return {
-        sessionId: session.id,
-        url: session.url!,
-      };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error creating checkout session:");
       throw new Error("Failed to create checkout session");
@@ -1504,34 +1484,12 @@ export class MarketplaceService {
         };
       }
 
-      const session = await stripe?.checkout.sessions?.create({
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: `${beat?.title} - ${licenseLabel} License`,
-                description: `Beat purchase: ${beat?.title}`,
-              },
-              unit_amount: priceInCents,
-            },
-            quantity: 1,
-          },
-        ],
-        mode: "payment",
-        success_url: `${getBaseUrl()}/marketplace?success=true`,
-        cancel_url: `${getBaseUrl()}/marketplace?canceled=true`,
-        metadata: {
-          buyerId,
-          beatId,
-          licenseType,
-          sellerId: beat.userId,
-          licenseSnapshot: JSON.stringify(licenseSnapshot),
-        },
+      return createMarketplaceCheckout(stripe,{
+        buyerId,sellerId:beat.userId,beatId,licenseType,amountCents:priceInCents,licenseSnapshot,
+        title:`${beat.title} - ${licenseLabel} License`,
+        successUrl:`${getBaseUrl()}/marketplace?success=true`,
+        cancelUrl:`${getBaseUrl()}/marketplace?canceled=true`,
       });
-
-      return { url: session.url };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error initiating purchase:");
       const msg = (error as Error).message;

@@ -183,7 +183,7 @@ class VideoAgentRequest:
     output_resolution: str = ""      # 720p/1080p/4k — resolution override
     composition: str = ""            # close_up/medium_shot/wide_shot/over_the_shoulder/
                                      # pov/aerial/low_angle/high_angle — shot framing
-    reference_images: List[str] = field(default_factory=list)  # ≤3 base64 images —
+    reference_images: List[str] = field(default_factory=list)  # ≤10 ordered images —
                                      # style/character consistency (Veo "ingredients")
     first_frame_b64: str = ""        # base64 image the video should START on
     last_frame_b64: str = ""         # base64 image the video should END on

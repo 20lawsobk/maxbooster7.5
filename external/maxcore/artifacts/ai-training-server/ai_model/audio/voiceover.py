@@ -226,14 +226,27 @@ def voiceover_track(
         vo_wav = out / f"vo_{job_id[:12]}.wav"
         if not synthesize_voiceover(text, str(vo_wav), voice=voice, wpm=wpm):
             return None
-        if music_path and Path(music_path).exists():
+        from ..media_contract import require_audio_stream
+        spoken_duration = require_audio_stream(str(vo_wav))
+        if spoken_duration > duration_sec:
+            raise ValueError("Narration exceeds video duration; shorten the script or extend the video")
+        if music_path:
+            require_audio_stream(music_path)
             mixed = out / f"vomix_{job_id[:12]}.wav"
             if mix_voiceover_over_music(
                 str(vo_wav), str(music_path), str(mixed), duration_sec
             ):
                 return str(mixed)
-            _logger.warning("[voiceover] mix failed — using narration only")
-        return str(vo_wav)
+            raise RuntimeError("Required narration/music mix failed")
+        padded = out / f"vopad_{job_id[:12]}.wav"
+        result = run_ffmpeg([
+            "ffmpeg", "-y", "-i", str(vo_wav), "-af", "apad",
+            "-t", str(float(duration_sec)), str(padded),
+        ], timeout=90)
+        if result.returncode != 0:
+            raise RuntimeError("Narration padding failed")
+        require_audio_stream(str(padded), minimum_duration=duration_sec)
+        return str(padded)
     except Exception as exc:  # noqa: BLE001
         _logger.warning("[voiceover] track build error: %s", exc)
         return None

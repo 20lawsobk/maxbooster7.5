@@ -5,6 +5,7 @@ import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import { packCapsule, packCapsuleMembers } from "./lib/capsulePack.js";
+import { buildPortableNode } from "./lib/portableNode.js";
 import {
   computeRemainingAppMembers,
   BOOTSTRAP_AND_CAPSULE_OWN_PATHS,
@@ -46,6 +47,17 @@ async function main() {
   });
   console.log("   ✅ Cluster bundle → dist/cluster.mjs");
 
+  await esBuild({
+    entryPoints: [path.resolve(root, "server/diffusion-gateway/index.ts")],
+    bundle: true, platform: "node", target: "node22", format: "esm",
+    outfile: path.resolve(root, "dist/gateway.mjs"), packages: "external",
+  });
+  await esBuild({
+    entryPoints: [path.resolve(root, "server/computeSizing.ts")],
+    bundle: true, platform: "node", target: "node22", format: "esm",
+    outfile: path.resolve(root, "dist/compute-sizing.mjs"), packages: "external",
+  });
+
   console.log("\n✅ Build complete.");
 
   // ─── Extract & Boot capsules (Pocket Dimension) ────────────────────────────
@@ -75,19 +87,29 @@ async function main() {
   // dist/pdim-restore.mjs already restores it and start.sh/pythonPath.ts
   // already prefer ./python_runtime/bin/python3.
   if (isDeployBuild) {
+    buildPortableNode(root);
+    // Never ship a checked-in executable in place of the current source.
+    execFileSync("cargo", ["build", "--locked", "--release", "--manifest-path", "boosterstate/Cargo.toml"],
+      { cwd: root, stdio: "inherit" });
+    fs.mkdirSync(path.join(root, "bin"), { recursive: true });
+    fs.copyFileSync(path.join(root, "boosterstate/target/release/boosterstate"), path.join(root, "bin/boosterstate"));
+    fs.chmodSync(path.join(root, "bin/boosterstate"), 0o755);
     const pyDir = path.resolve(root, "python_runtime");
     const pyBin = path.join(pyDir, "bin", "python3");
     const PYVER = "3.12.13";
     const PYDATE = "20260325";
     const PYURL = `https://github.com/astral-sh/python-build-standalone/releases/download/${PYDATE}/cpython-${PYVER}%2B${PYDATE}-x86_64-unknown-linux-gnu-install_only.tar.gz`;
     try {
+      // Rebuild this generated directory, rather than inheriting unrelated
+      // packages or an older interpreter from a workspace cache.
+      fs.rmSync(pyDir, { recursive: true, force: true });
       if (!fs.existsSync(pyBin)) {
         console.log(
           `\n==> Downloading portable Python ${PYVER} (x86_64-linux-gnu)...`,
         );
         fs.mkdirSync(pyDir, { recursive: true });
         execSync(
-          `curl -sL --max-time 180 ${JSON.stringify(PYURL)} | tar xz --strip-components=1 -C ${JSON.stringify(pyDir)} python/`,
+          `set -o pipefail; curl -fsSL --max-time 180 ${JSON.stringify(PYURL)} | tar xz --strip-components=1 -C ${JSON.stringify(pyDir)} python/`,
           { cwd: root, stdio: "inherit", shell: "/bin/bash" },
         );
       }
@@ -95,22 +117,17 @@ async function main() {
       console.log(
         "   Installing Python deps (numpy, pillow, scipy, fastapi, uvicorn, pydantic)...",
       );
-      execSync(
-        `${JSON.stringify(pyBin)} -m pip install --no-cache-dir --quiet numpy pillow "scipy>=1.11.0" "fastapi>=0.100.0" "uvicorn[standard]>=0.23.0" "pydantic>=2.0.0"`,
-        { cwd: root, stdio: "inherit", shell: "/bin/bash" },
-      );
+      const requirements = path.join(pyDir, "requirements.lock");
+      execFileSync(pyBin, [path.join(root, "script/lib/pythonRequirements.py"), path.join(root, "uv.lock"), requirements], { stdio: "inherit" });
+      execFileSync(pyBin, ["-m", "pip", "install", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "-r", requirements], { cwd: root, stdio: "inherit" });
       execSync(
         `${JSON.stringify(pyBin)} -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic"`,
         { stdio: "inherit", shell: "/bin/bash" },
       );
       console.log("   ✅ Portable Python runtime ready → python_runtime/");
     } catch (e) {
-      // Non-fatal: production degrades to "Python features disabled" exactly
-      // as before this step existed. Never fail the publish over it.
-      console.warn(
-        `   WARNING: portable Python runtime build failed (${(e as Error).message}) — video/audio analysis will be disabled in production`,
-      );
       fs.rmSync(pyDir, { recursive: true, force: true });
+      throw new Error("Required portable Python runtime build failed", { cause: e });
     }
   }
 
@@ -229,7 +246,8 @@ async function main() {
       0,
     );
     const nix = getNixClosureSize();
-    const payloadBytes = trackedBytes + distBytes + capsuleBytes;
+    const nodeBytes = requireMeasuredBytes(path.join(root, ".node_bin"), "portable Node bootstrap");
+    const payloadBytes = trackedBytes + distBytes + capsuleBytes + nodeBytes;
     const totalBytes = payloadBytes + nix.totalBytes;
     const totalGiB = totalBytes / 1024 ** 3;
 
@@ -329,6 +347,11 @@ export function getNixClosureSize(): NixClosureMeasurement {
     ),
   ].sort();
   if (discoveredRoots.length === 0) {
+    // A native Linux CI runner has no Nix layer. A Nix-equipped deployment
+    // without discoverable roots is still an error, never a zero estimate.
+    if (!fs.existsSync("/nix/store")) {
+      return { totalBytes: 0, roots: [], coveredRoots: [], largestRootClosures: [] };
+    }
     throw new Error(
       "deploy image pre-flight size check: no Nix roots were discoverable in the build environment",
     );

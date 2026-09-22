@@ -5,10 +5,23 @@ import cron, { type ScheduledTask } from "../../lib/cronScheduler.js";
 import fsPromises from "fs/promises";
 import fs from "fs";
 import { storageService } from "../storageService.js";
-import { env } from "../../config/env.js";
+import { createHash, randomUUID } from "node:crypto";
+import { backupCatalog } from "./backupCatalog.js";
+
+function databaseUrl(): string {
+  const url = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+  if (!url) throw new Error("Database URL not configured");
+  return url;
+}
+function checksum(buffer: Buffer): string {
+  return createHash("sha256").update(buffer).digest("hex");
+}
+function targetIdentity(): string {
+  const target = new URL(databaseUrl());
+  return createHash("sha256").update(`${target.hostname}${target.pathname}`).digest("hex");
+}
 
 const BACKUP_PREFIX = "database-backups";
-const BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index.json`;
 const MAX_BACKUPS = 7;
 const RPO_TARGET = 24;
 const RTO_TARGET = 30;
@@ -20,32 +33,27 @@ interface BackupEntry {
   size: number;
 }
 
-async function loadIndex(): Promise<BackupEntry[]> {
-  try {
-    const buf = await storageService?.downloadFile(BACKUP_INDEX_KEY);
-    return JSON.parse(buf?.toString("utf-8")) as BackupEntry[];
-  } catch {
-    return [];
-  }
+interface ScheduledBackupRun {
+  promise: Promise<void>;
+  heartbeat?: ReturnType<typeof setInterval>;
+  renewals: Set<Promise<void>>;
 }
 
-async function saveIndex(entries: BackupEntry[]): Promise<void> {
-  await storageService?.uploadFile(
-    Buffer?.from(JSON.stringify(entries, null, 2), "utf-8"),
-    BACKUP_INDEX_KEY,
-    "application/json",
-  );
+async function loadIndex(): Promise<BackupEntry[]> {
+  return (await backupCatalog.list()).filter(e => e.state === "verified");
 }
 
 export class DatabaseBackupService {
   private backupSchedule: ScheduledTask | null = null;
   private isInitialized = false;
+  private stopping = false;
+  private readonly activeRuns = new Set<ScheduledBackupRun>();
+  private stopPromise: Promise<void> | null = null;
 
   async initialize() {
-    if (!env?.DATABASE_URL) {
-      logger.warn("⚠️  DATABASE_URL not configured - backup service disabled");
-      return;
-    }
+    if (this.stopping) throw new Error("Backup service is stopping");
+    if (this.isInitialized) return;
+    databaseUrl();
 
     if (
       process.env.NODE_ENV !== "production" &&
@@ -70,36 +78,79 @@ export class DatabaseBackupService {
   }
 
   private scheduleBackups() {
-    this.backupSchedule = cron?.schedule("0 2 * * *", async () => {
+    const run = async (active: ScheduledBackupRun) => {
+      if (new Date().getUTCHours() < 2) return;
+      const day = new Date().toISOString().slice(0, 10);
+      const owner = randomUUID();
+      let leaseError: unknown;
+      let claimed = false;
       logger.info("🔄 Starting scheduled database backup...");
       try {
-        await this.createBackup();
+        if (!await backupCatalog.claimDay(day, owner, targetIdentity())) return;
+        claimed = true;
+        const assertOwnership = async () => {
+          if (leaseError) throw leaseError;
+          await backupCatalog.renewDay(day, owner);
+        };
+        active.heartbeat = setInterval(() => {
+          const renewal = assertOwnership().catch(err => { leaseError = err; });
+          active.renewals.add(renewal);
+          void renewal.finally(() => active.renewals.delete(renewal));
+        }, 60_000);
+        active.heartbeat.unref();
+        await this.createBackup({ assertOwnership, lease: { day, owner } });
+        await assertOwnership();
         await this.cleanOldBackups();
+        await backupCatalog.finishDay(day, owner, "complete");
         logger.info("✅ Scheduled backup completed successfully");
       } catch (error: unknown) {
+        if (claimed) {
+          await backupCatalog.finishDay(day, owner, "failed").catch(err =>
+            logger.error({ err }, "Could not persist backup run failure"));
+        }
         logger.warn({ err: error }, "❌ Scheduled backup failed:");
+      } finally {
+        // Keep renewing while dump/upload/catalog/retention or failure commit
+        // still needs ownership. Drain already-dispatched DB renewals as well.
+        if (active.heartbeat) clearInterval(active.heartbeat);
+        active.heartbeat = undefined;
+        await Promise.allSettled([...active.renewals]);
       }
-    });
+    };
+    const dispatch = (): Promise<void> => {
+      if (this.stopping || this.activeRuns.size > 0) return Promise.resolve();
+      const active: ScheduledBackupRun = { promise: Promise.resolve(), renewals: new Set() };
+      this.activeRuns.add(active);
+      active.promise = Promise.resolve().then(() => run(active)).finally(() => {
+        this.activeRuns.delete(active);
+      });
+      return active.promise;
+    };
+    this.backupSchedule = cron.schedule("*/5 * * * *", dispatch, { timezone: "UTC" });
+    // Catch up today's missed 02:00 slot after a process restart.
+    void dispatch().catch(err => logger.error({ err }, "Backup catch-up failed"));
 
     logger.info("📅 Database backups scheduled (daily at 2 AM UTC)");
   }
 
-  async createBackup(): Promise<string> {
-    if (!env?.DATABASE_URL) {
-      throw new Error("DATABASE_URL not configured");
-    }
+  async createBackup(options?: {
+    assertOwnership: () => Promise<void>;
+    lease: { day: string; owner: string };
+  }): Promise<string> {
+    const sourceUrl = databaseUrl();
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const name = `backup-${timestamp}.sql`;
+    const name = `backup-${timestamp}-${randomUUID()}.sql`;
     const key = `${BACKUP_PREFIX}/${name}`;
 
     const tmpPath = `/tmp/${name}`;
 
     await new Promise<void>((resolve, reject) => {
-      const pgDump = spawn("pg_dump", [env?.DATABASE_URL], {
-        env: process.env,
+      const pgDump = spawn("pg_dump", ["--no-owner", "--no-acl"], {
+        env: { ...process.env, PGDATABASE: sourceUrl },
+        timeout: 45 * 60 * 1000,
       });
-      const writeStream = fs?.createWriteStream(tmpPath);
+      const writeStream = fs?.createWriteStream(tmpPath, { mode: 0o600, flags: "wx" });
       let errorOutput = "";
       let pipelineDone = false;
       let exited = false;
@@ -112,6 +163,7 @@ export class DatabaseBackupService {
         if (settled) return;
         settled = true;
         writeStream?.destroy();
+        pgDump.kill();
         reject(err);
       }
 
@@ -150,6 +202,9 @@ export class DatabaseBackupService {
             new Error(`pg_dump failed (code ${exitCode}): ${errorOutput}`),
           );
       }
+    }).catch(async err => {
+      await fsPromises.unlink(tmpPath).catch(() => undefined);
+      throw err;
     });
 
     // Production-grade: stat the file first, refuse if it would OOM the box,
@@ -182,51 +237,55 @@ export class DatabaseBackupService {
     const sqlBuffer = await fs?.promises.readFile(tmpPath);
     await fs?.promises.unlink(tmpPath).catch(() => undefined);
 
-    await storageService?.uploadFile(sqlBuffer, key, "application/sql");
+    const digest = checksum(sqlBuffer);
+    await options?.assertOwnership();
+    await backupCatalog.pending({
+      name, key, date: new Date().toISOString(), size: sizeBytes,
+      checksum: digest, state: "pending",
+    });
+    await storageService.uploadFileAtKey(sqlBuffer, key, "application/sql");
+    const downloaded = await storageService.downloadFile(key);
+    if (checksum(downloaded) !== digest) throw new Error("Backup read-back checksum mismatch");
+    await options?.assertOwnership();
+    await backupCatalog.verify(key, options?.lease);
 
     logger.info(`✅ Backup stored in Pocket Dimension: ${name} (${sizeMB} MB)`);
-
-    const index = await loadIndex();
-    index?.push({ name, key, date: new Date().toISOString(), size: sizeBytes });
-    await saveIndex(index);
 
     return key;
   }
 
   private async cleanOldBackups(): Promise<void> {
-    try {
-      const index = await loadIndex();
-      const sorted = [...index].sort(
-        (a, b) => new Date(b?.date).getTime() - new Date(a?.date).getTime(),
-      );
-
-      if (sorted?.length > MAX_BACKUPS) {
-        const toDelete = sorted?.slice(MAX_BACKUPS);
-        for (const entry of toDelete) {
-          try {
-            await storageService?.deleteFile(entry?.key);
-            logger.info(`🗑️  Deleted old backup: ${entry?.name}`);
-          } catch {
-            logger.warn(`Could not delete backup ${entry?.name} from storage`);
-          }
-        }
-        await saveIndex(sorted?.slice(0, MAX_BACKUPS));
-        logger.info(`✅ Cleaned ${toDelete?.length} old backup(s)`);
-      }
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error cleaning old backups:");
+    const records = await backupCatalog.list();
+    const expired = records.filter(e => e.state === "verified").slice(MAX_BACKUPS);
+    for (const entry of [...records.filter(e => e.state === "deleting"), ...expired]) {
+      await backupCatalog.state(entry.key, "deleting");
+      await storageService.deleteFile(entry.key);
+      await backupCatalog.remove(entry.key);
     }
   }
 
-  async restoreBackup(key: string): Promise<void> {
-    const tmpPath = `/tmp/restore-${Date?.now()}.sql`;
+  async restoreBackup(key: string, targetUrl: string, validationSql?: string): Promise<void> {
+    const source = new URL(databaseUrl());
+    const target = new URL(targetUrl);
+    if (source.hostname === target.hostname && source.pathname === target.pathname) {
+      throw new Error("Restore requires an isolated target database");
+    }
+    if (!validationSql?.trim()) throw new Error("Restore requires operator-supplied recovery invariants");
+    const record = (await backupCatalog.list()).find(e => e.key === key && e.state === "verified");
+    if (!record) throw new Error("No verified backup catalog record");
+    const tmpPath = `/tmp/restore-${randomUUID()}.sql`;
+    const validationPath = `${tmpPath}.validation.sql`;
     try {
       const buf = await storageService?.downloadFile(key);
-      await fsPromises?.writeFile(tmpPath, buf);
+      if (checksum(buf) !== record.checksum) throw new Error("Backup checksum mismatch");
+      await fsPromises?.writeFile(tmpPath, buf, { mode: 0o600, flag: "wx" });
+      await fsPromises.writeFile(validationPath, validationSql, { mode: 0o600, flag: "wx" });
 
       await new Promise<void>((resolve, reject) => {
-        const psql = spawn("psql", [env?.DATABASE_URL || "", "-f", tmpPath], {
-          env: process.env,
+        const psql = spawn("psql", ["-X", "-v", "ON_ERROR_STOP=1", "--single-transaction",
+          "-c", "DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%' AND c.relkind IN ('r','p','v','m','S','f')) THEN RAISE EXCEPTION 'Restore target is not empty'; END IF; END $$;",
+          "-f", tmpPath, "-f", validationPath], {
+          env: { ...process.env, PGDATABASE: targetUrl },
         });
         let errorOutput = "";
         psql?.stderr.on("data", (d) => {
@@ -245,6 +304,7 @@ export class DatabaseBackupService {
     } finally {
       try {
         await fsPromises?.unlink(tmpPath);
+        await fsPromises.unlink(validationPath);
       } catch {
         /* ignore */
       }
@@ -266,25 +326,62 @@ export class DatabaseBackupService {
         }));
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error listing backups:");
-      return [];
+      throw error;
     }
   }
 
-  getBackupMetrics() {
+  async getBackupMetrics() {
+    const records = await backupCatalog.list();
+    const last = records.find(record => record.state === "verified");
+    const lastVerifiedAt = last ? new Date(last.date).toISOString() : null;
+    const ageHours = last ? (Date.now() - new Date(last.date).getTime()) / 3_600_000 : null;
     return {
       rpo: RPO_TARGET,
       rto: RTO_TARGET,
+      measuredRpo: null,
+      measuredRto: null,
+      lastVerifiedAt,
+      lastVerifiedAgeHours: ageHours,
+      stale: ageHours === null || ageHours > RPO_TARGET,
+      scheduledRuns: await backupCatalog.runs(),
+      targetIdentity: targetIdentity(),
       retentionDays: MAX_BACKUPS,
       schedule: "Daily at 2 AM UTC",
       storageBackend: "Pocket Dimension",
     };
   }
 
-  stop() {
-    if (this.backupSchedule) {
-      this.backupSchedule.stop();
-      logger.info("🛑 Database backup schedule stopped");
+  stop(drainTimeoutMs = 20_000): Promise<void> {
+    if (this.stopPromise) return this.stopPromise;
+    if (!Number.isFinite(drainTimeoutMs) || drainTimeoutMs < 0) {
+      return Promise.reject(new Error("Invalid backup shutdown drain deadline"));
     }
+    // Synchronous barrier prevents both cron callbacks and catch-up dispatch
+    // from adding work after we take the drain snapshot.
+    this.stopping = true;
+    this.backupSchedule?.stop();
+    this.backupSchedule = null;
+    const drain = Promise.all([...this.activeRuns].map(active => active.promise)).then(() => undefined);
+    this.stopPromise = (async () => {
+      let deadline: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          drain,
+          new Promise<never>((_resolve, reject) => {
+            deadline = setTimeout(() => reject(new Error(
+              "Backup shutdown drain timed out; active run remains owned until completion or process exit; incomplete lease is recoverable after expiry",
+            )), drainTimeoutMs);
+          }),
+        ]);
+        logger.info("🛑 Database backup schedule stopped and active runs drained");
+      } finally {
+        if (deadline) clearTimeout(deadline);
+      }
+    })();
+    // On timeout do NOT mark live work complete/failed or stop its heartbeat.
+    // The tracked promise still performs its normal terminal commit + cleanup.
+    // If the process exits first, its uncompleted SQL lease naturally expires.
+    return this.stopPromise;
   }
 }
 

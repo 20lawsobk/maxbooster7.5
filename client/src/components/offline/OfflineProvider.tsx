@@ -11,6 +11,7 @@ import {
 } from "@/lib/offline";
 import { toast } from "@/hooks/use-toast";
 import { OfflineContext, OfflineContextValue } from "@/contexts/OfflineContext";
+import { offlineIdentity, assertOfflineIdentity } from "@/lib/offline/identity";
 
 export type { OfflineContextValue } from "@/contexts/OfflineContext";
 export {
@@ -57,18 +58,32 @@ export function OfflineProvider({
 
   useEffect(() => {
     const init = async () => {
+      const identity = offlineIdentity();
+      if (!offlineIdentity().owner) {
+        syncManager.pause();
+        setIsInitialized(false);
+        setPendingActions(0);
+        setFailedActions(0);
+        setConflictCount(0);
+        return;
+      }
       try {
         await initOfflineSystem();
+        assertOfflineIdentity(identity);
         setIsInitialized(true);
+        if (autoSync) syncManager.resume();
         await loadStats();
       } catch (error) {
         logger.info(
           "[OfflineProvider] Offline features unavailable (IndexedDB not accessible in this environment):",
           error,
         );
+        if (showToasts) toast({ title: "Offline storage unavailable", description: "Edits cannot be saved locally on this device.", variant: "destructive" });
       }
     };
     init();
+    window.addEventListener("offline-identity-change", init);
+    return () => window.removeEventListener("offline-identity-change", init);
   }, []);
 
   const loadStats = useCallback(async () => {
@@ -83,8 +98,6 @@ export function OfflineProvider({
   }, []);
 
   useEffect(() => {
-    if (!isInitialized) return;
-
     const handleOnline = async () => {
       setIsOnline(true);
       setIsReconnecting(true);
@@ -93,11 +106,11 @@ export function OfflineProvider({
       if (showToasts) {
         toast({
           title: "You're back online",
-          description: "Syncing your changes...",
+          description: isInitialized ? "Checking saved pending changes…" : "Connection restored. Local storage is unavailable.",
         });
       }
 
-      if (autoSync) {
+      if (autoSync && isInitialized) {
         await syncManager.sync();
       }
 
@@ -112,7 +125,7 @@ export function OfflineProvider({
         toast({
           title: "You're offline",
           description:
-            "Your changes will be saved locally and synced when you reconnect.",
+            "Only edits explicitly marked saved on this device are available offline. Other actions need a connection.",
           variant: "warning",
         });
       }
@@ -150,13 +163,15 @@ export function OfflineProvider({
       }
     });
 
-    const unsubComplete = syncManager.on("sync-complete", () => {
+    const unsubComplete = syncManager.on("sync-complete", (event) => {
       setLastSyncAt(Date.now());
       loadStats();
-      if (showToasts) {
+      if (showToasts && event.results?.length) {
         toast({
           title: "Sync complete",
-          description: "All your changes have been saved.",
+          description: event.results.every(result => result.success)
+            ? "The submitted changes were confirmed by the server."
+            : "Some changes were not saved. Review pending changes.",
         });
       }
     });

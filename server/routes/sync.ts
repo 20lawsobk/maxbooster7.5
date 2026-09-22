@@ -2,20 +2,22 @@ import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
 import { logger } from "../logger.js";
-import { db } from "../db.js";
-import { projects, studioProjects, studioTracks, users } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { projects, studioProjects, studioTracks, users, projectRoyaltySplits } from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
+import { clientSyncReceipts, type SyncTransaction, type OperationResult } from "../repositories/clientSyncReceipts.js";
 
 const router = Router();
 
 const batchSyncActionSchema = z.object({
-  id: z.string(),
-  type: z.string(),
+  id: z.string().min(1).max(160),
+  type: z.string().min(1).max(80),
   payload: z.unknown(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const batchSyncRequestSchema = z.object({
+  protocolVersion: z.literal(1),
+  ownerId: z.string().min(1),
   actions: z.array(batchSyncActionSchema).min(1).max(50),
 });
 
@@ -98,35 +100,52 @@ function pickAllowed(
   return result;
 }
 
+async function ownsProject(tx: SyncTransaction, projectId: string, userId: string): Promise<boolean> {
+  const [project] = await tx.select({ id: projects.id }).from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.userId, userId))).limit(1);
+  if (project) return true;
+  const [studio] = await tx.select({ id: studioProjects.id }).from(studioProjects)
+    .where(and(eq(studioProjects.id, projectId), eq(studioProjects.userId, userId))).limit(1);
+  return !!studio;
+}
+
 const ACTION_HANDLERS: Record<
   string,
   (
     payload: unknown,
     userId: string,
-  ) => Promise<{ success: boolean; data?: unknown; error?: string }>
+    db: SyncTransaction,
+  ) => Promise<OperationResult>
 > = {
   // ── Projects ─────────────────────────────────────────────────────────────
 
-  "project.update": async (payload, userId) => {
+  "project.update": async (payload, userId, db) => {
     try {
-      const data = payload as {
-        projectId: string;
-        changes: Record<string, unknown>;
-        isStudio?: boolean;
-      };
+      const data = z.object({
+        projectId: z.string().min(1),
+        changes: z.record(z.string(), z.unknown()),
+        isStudio: z.boolean().optional(),
+        expectedUpdatedAt: z.string().datetime().nullable(),
+      }).parse(payload);
       const changes = data?.changes ?? {};
 
       if (data?.isStudio) {
+        const [current] = await db.select().from(studioProjects)
+          .where(and(eq(studioProjects.id, data.projectId), eq(studioProjects.userId, userId))).for("update");
+        if (!current) return { success: false, error: "Project not found" };
+        if ((current.updatedAt?.toISOString() ?? null) !== data.expectedUpdatedAt) {
+          return { success: false, conflict: true, error: "Project changed on the server", data: current };
+        }
         const allowed = pickAllowed(changes, ALLOWED_STUDIO_PROJECT_FIELDS);
         if (Object.keys(allowed).length === 0)
           return {
-            success: true,
+            success: false,
             data: { updated: false, reason: "no allowed fields" },
           };
 
         const [updated] = await db
           .update(studioProjects)
-          .set({ ...allowed, updatedAt: new Date() })
+          .set({ ...allowed, updatedAt: sql`GREATEST(clock_timestamp()::timestamp, COALESCE(${studioProjects.updatedAt}, '-infinity'::timestamp) + interval '1 millisecond')` })
           .where(
             and(
               eq(studioProjects.id, data?.projectId),
@@ -136,28 +155,34 @@ const ACTION_HANDLERS: Record<
           .returning({ id: studioProjects.id });
 
         return {
-          success: true,
+          success: !!updated,
           data: { updated: !!updated, projectId: data.projectId },
         };
       }
 
+      const [current] = await db.select().from(projects)
+        .where(and(eq(projects.id, data.projectId), eq(projects.userId, userId))).for("update");
+      if (!current) return { success: false, error: "Project not found" };
+      if ((current.updatedAt?.toISOString() ?? null) !== data.expectedUpdatedAt) {
+        return { success: false, conflict: true, error: "Project changed on the server", data: current };
+      }
       const allowed = pickAllowed(changes, ALLOWED_PROJECT_FIELDS);
       if (Object.keys(allowed).length === 0)
         return {
-          success: true,
+          success: false,
           data: { updated: false, reason: "no allowed fields" },
         };
 
       const [updated] = await db
         .update(projects)
-        .set({ ...allowed, updatedAt: new Date() })
+        .set({ ...allowed, updatedAt: sql`GREATEST(clock_timestamp()::timestamp, COALESCE(${projects.updatedAt}, '-infinity'::timestamp) + interval '1 millisecond')` })
         .where(
           and(eq(projects.id, data?.projectId), eq(projects.userId, userId)),
         )
         .returning({ id: projects.id });
 
       return {
-        success: true,
+        success: !!updated,
         data: { updated: !!updated, projectId: data.projectId },
       };
     } catch (error) {
@@ -166,7 +191,7 @@ const ACTION_HANDLERS: Record<
     }
   },
 
-  "project.create": async (payload, userId) => {
+  "project.create": async (payload, userId, db) => {
     try {
       const data = payload as {
         name?: string;
@@ -196,15 +221,32 @@ const ACTION_HANDLERS: Record<
     }
   },
 
+  "project.delete": async (payload, userId, db) => {
+    const data = z.object({
+      projectId: z.string().min(1), expectedUpdatedAt: z.string().datetime().nullable(),
+    }).parse(payload);
+    const [current] = await db.select().from(projects)
+      .where(and(eq(projects.id, data.projectId), eq(projects.userId, userId))).for("update");
+    if (!current) return { success: false, error: "Project not found" };
+    if ((current.updatedAt?.toISOString() ?? null) !== data.expectedUpdatedAt) {
+      return { success: false, conflict: true, error: "Project changed before deletion. Review the current project.", data: current };
+    }
+    await db.delete(studioTracks).where(eq(studioTracks.projectId, data.projectId));
+    await db.delete(projectRoyaltySplits).where(eq(projectRoyaltySplits.projectId, data.projectId));
+    await db.delete(projects).where(and(eq(projects.id, data.projectId), eq(projects.userId, userId)));
+    return { success: true, data: { projectId: data.projectId, deleted: true } };
+  },
+
   // ── Tracks ────────────────────────────────────────────────────────────────
 
-  "track.add": async (payload, _userId) => {
+  "track.add": async (payload, userId, db) => {
     try {
       const data = payload as {
         projectId: string;
         trackData: Record<string, unknown>;
       };
       const allowed = pickAllowed(data?.trackData ?? {}, ALLOWED_TRACK_FIELDS);
+      if (!await ownsProject(db, data.projectId, userId)) return { success: false, error: "Project not found" };
       const name = (allowed?.name as string | undefined) ?? "New Track";
 
       const [created] = await db
@@ -219,16 +261,19 @@ const ACTION_HANDLERS: Record<
     }
   },
 
-  "track.update": async (payload, _userId) => {
+  "track.update": async (payload, userId, db) => {
     try {
       const data = payload as {
         trackId: string;
         changes: Record<string, unknown>;
       };
       const allowed = pickAllowed(data?.changes ?? {}, ALLOWED_TRACK_FIELDS);
+      const [track] = await db.select({ projectId: studioTracks.projectId }).from(studioTracks)
+        .where(eq(studioTracks.id, data.trackId)).limit(1);
+      if (!track || !await ownsProject(db, track.projectId, userId)) return { success: false, error: "Track not found" };
       if (Object.keys(allowed).length === 0)
         return {
-          success: true,
+          success: false,
           data: { updated: false, reason: "no allowed fields" },
         };
 
@@ -239,7 +284,7 @@ const ACTION_HANDLERS: Record<
         .returning({ id: studioTracks.id });
 
       return {
-        success: true,
+        success: !!updated,
         data: { updated: !!updated, trackId: data.trackId },
       };
     } catch (error) {
@@ -248,9 +293,12 @@ const ACTION_HANDLERS: Record<
     }
   },
 
-  "track.delete": async (payload, _userId) => {
+  "track.delete": async (payload, userId, db) => {
     try {
       const data = payload as { trackId: string };
+      const [track] = await db.select({ projectId: studioTracks.projectId }).from(studioTracks)
+        .where(eq(studioTracks.id, data.trackId)).limit(1);
+      if (!track || !await ownsProject(db, track.projectId, userId)) return { success: false, error: "Track not found" };
 
       await db.delete(studioTracks).where(eq(studioTracks.id, data?.trackId));
 
@@ -263,27 +311,22 @@ const ACTION_HANDLERS: Record<
 
   // ── Settings ─────────────────────────────────────────────────────────────
 
-  "settings.update": async (payload, userId) => {
+  "settings.update": async (payload, userId, db) => {
     try {
-      const data = payload as { settings: Record<string, unknown> };
-      const settings = data?.settings ?? {};
+      const data = z.object({ settings: z.object({
+        theme: z.enum(["light", "dark", "system"]).optional(),
+        defaultBPM: z.number().int().min(20).max(300).optional(),
+        defaultKey: z.string().max(16).optional(),
+        autoSave: z.boolean().optional(),
+        betaFeatures: z.boolean().optional(),
+      }).strict() }).parse(payload);
+      const settings = data.settings;
 
       // Merge into the user's JSONB preferences column.
       // Raw SQL merge so we don't blow away keys we don't know about.
-      const [existing] = await db
-        .select({ preferences: users.preferences })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-      const merged = {
-        ...((existing?.preferences as Record<string, unknown>) ?? {}),
-        ...settings,
-      };
-
       await db
         .update(users)
-        .set({ preferences: merged })
+        .set({ preferences: sql`COALESCE(${users.preferences}, '{}'::jsonb) || ${JSON.stringify(settings)}::jsonb` })
         .where(eq(users.id, userId));
 
       return { success: true, data: { updated: true } };
@@ -294,29 +337,32 @@ const ACTION_HANDLERS: Record<
   },
 
   // ── Drafts ────────────────────────────────────────────────────────────────
-  // Drafts live in the client-side IndexedDB; the server only needs to ACK.
+  // Device drafts are not server mutations and must never receive applied ACKs.
   "draft.save": async (_payload, _userId) => {
-    return { success: true, data: { saved: true } };
+    return { success: false, error: "Drafts are device-local; this action does not save a server draft" };
   },
 
   // ── Audio ─────────────────────────────────────────────────────────────────
-  // Audio files are uploaded separately via multipart. This action ACKs
-  // pending metadata so the queue item can be cleared.
+  // Audio files require the real multipart upload/confirmation contract.
   "audio.upload": async (_payload, _userId) => {
-    return { success: true, data: { acknowledged: true } };
+    return { success: false, error: "Audio must be uploaded and confirmed through the multipart upload endpoint" };
   },
 
   // ── Fallback ─────────────────────────────────────────────────────────────
   default: async (_payload, userId) => {
     logger.warn({ userId }, "[sync] Unhandled action type");
-    return { success: true, data: { processed: true } };
+    return { success: false, error: "Unsupported sync action type" };
   },
 };
 
 router.post("/batch", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { actions } = batchSyncRequestSchema?.parse(req.body) ?? {};
+    const { actions, ownerId } = batchSyncRequestSchema.parse(req.body);
+    if (ownerId !== String(userId)) return res.status(403).json({ error: "Offline operation owner does not match this session" });
+    if (new Set(actions.map(action => action.id)).size !== actions.length) {
+      return res.status(400).json({ error: "Duplicate operation IDs in batch" });
+    }
 
     logger.info({
       userId,
@@ -330,22 +376,14 @@ router.post("/batch", requireAuth, async (req, res) => {
       try {
         const handler =
           ACTION_HANDLERS[action?.type] ?? ACTION_HANDLERS["default"];
-        const result = await handler(action?.payload, userId);
-
-        results?.push({
-          actionId: action.id,
-          success: result.success,
-          ...(result?.success
-            ? { serverResponse: result.data }
-            : { error: result.error ?? "Unknown error" }),
-        });
+        const receipt = await clientSyncReceipts.apply(String(userId), action,
+          tx => handler(action.payload, userId, tx));
+        results.push(receipt);
       } catch (error: unknown) {
         logger.warn({ actionId: action.id, error }, "Sync action failed");
-        results?.push({
-          actionId: action.id,
-          success: false,
-          error: error instanceof Error ? error?.message : "Processing failed",
-        });
+        // Earlier actions may have committed. Caller reconciles every operation
+        // by ID; an infrastructure error is never an invented terminal receipt.
+        return res.status(503).json({ protocolVersion: 1, error: "Sync operation receipt unavailable; reconcile before retrying", results });
       }
     }
 
@@ -361,6 +399,8 @@ router.post("/batch", requireAuth, async (req, res) => {
     }, "Batch sync completed");
 
     res.json({
+      protocolVersion: 1,
+      ownerId: String(userId),
       results,
       conflicts,
       summary: {
@@ -387,16 +427,39 @@ router.post("/batch", requireAuth, async (req, res) => {
 router.get("/status", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
+    // A missing migration must not advertise a usable durable protocol.
+    await clientSyncReceipts.lookup(String(userId), ["__readiness_probe__"]);
 
     res.json({
       success: true,
       serverTime: Date.now(),
       userId,
       syncEnabled: true,
+      protocolVersion: 1,
+      receipts: true,
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Sync status check failed:");
     res.status(500).json({ error: "Failed to check sync status" });
+  }
+});
+
+router.post("/receipts", requireAuth, async (req, res) => {
+  try {
+    const request = z.object({
+      protocolVersion: z.literal(1),
+      ownerId: z.string().min(1),
+      ids: z.array(z.string().min(1).max(160)).min(1).max(50),
+    }).parse(req.body);
+    if (request.ownerId !== String(req.user!.id)) {
+      return res.status(403).json({ error: "Offline operation owner does not match this session" });
+    }
+    const result = await clientSyncReceipts.lookup(request.ownerId, request.ids);
+    return res.json({ protocolVersion: 1, ownerId: request.ownerId, ...result });
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: "Invalid receipt lookup" });
+    logger.warn({ err: error }, "Sync receipt lookup unavailable");
+    return res.status(503).json({ error: "Authoritative sync receipts unavailable" });
   }
 });
 
@@ -413,11 +476,11 @@ router.post("/resolve-conflict", requireAuth, async (req, res) => {
 
     logger.info({ userId, actionId, resolution }, "Resolving sync conflict");
 
-    res.json({
-      success: true,
-      actionId,
-      resolution,
-      resolved: true,
+    // Conflict receipts are immutable. Resolution is a new operation with a
+    // fresh ID and the reviewed current revision, not an ACK-only mutation.
+    res.status(409).json({
+      error: "Submit a new versioned operation after reviewing the current server revision",
+      actionId, resolution, resolved: false,
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Conflict resolution failed:");

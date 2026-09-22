@@ -6,8 +6,8 @@ import { socialAccounts, systemSettings } from "@shared/schema";
 import { gte, lte, and, eq, isNotNull } from "drizzle-orm";
 import axios from "axios";
 import crypto from "crypto";
+import { decryptSocialCredential, encryptSocialCredential } from "./socialCredentialCodec.js";
 
-const TOKEN_ENCRYPTION_IV_LENGTH = 16;
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 minutes before expiry
 const TOKEN_REFRESH_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 const ENCRYPTION_KEY_SETTING = "social_oauth_encryption_key";
@@ -92,7 +92,7 @@ export class SocialOAuthService {
 
   /**
    * Load or generate a stable token encryption key.
-   * Priority: process.env.TOKEN_ENCRYPTION_KEY > system_settings DB > generate+persist
+   * Legacy decrypt-only priority: environment > existing system_settings key.
    */
   private async initializeEncryptionKey(): Promise<void> {
     if (process.env.TOKEN_ENCRYPTION_KEY) {
@@ -114,29 +114,14 @@ export class SocialOAuthService {
         return;
       }
 
-      // Generate a new key and persist it so restarts reuse the same key
-      const newKey = crypto?.randomBytes(32).toString("hex");
-      await db
-        .insert(systemSettings)
-        .values({
-          key: ENCRYPTION_KEY_SETTING,
-          value: newKey,
-          description:
-            "AES-256-GCM key for social OAuth token encryption — do not delete",
-        })
-        .onConflictDoNothing();
-      this._encryptionKey = newKey;
-      logger.warn(
-        "[SocialOAuth] Generated and persisted new TOKEN_ENCRYPTION_KEY to DB. Set TOKEN_ENCRYPTION_KEY env var for explicit control.",
-      );
+      // Legacy decrypt-only support. New writes use the externally managed v1 codec.
+      // Never generate a key here: that would hide missing legacy key material.
+      logger.warn("[SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect.");
     } catch (e) {
       logger.warn(
-        "[SocialOAuth] DB key load failed, using session-scoped fallback:",
+        "[SocialOAuth] Legacy key load failed; no session-scoped fallback is permitted:",
         (e as Error).message,
       );
-      if (!this._encryptionKey) {
-        this._encryptionKey = crypto?.randomBytes(32).toString("hex");
-      }
     }
   }
 
@@ -150,23 +135,6 @@ export class SocialOAuthService {
     throw new Error(
       "[SocialOAuth] Encryption key not yet initialized — retry in a moment",
     );
-  }
-
-  /**
-   * Encrypt token data using AES-256-GCM
-   */
-  private encryptToken(plainText: string): string {
-    const iv = crypto?.randomBytes(TOKEN_ENCRYPTION_IV_LENGTH);
-    const key = Buffer?.from(
-      this.getEncryptionKey().substring(0, 32).padEnd(32, "0"),
-    );
-    const cipher = crypto?.createCipheriv("aes-256-gcm", key, iv);
-
-    let encrypted = cipher?.update(plainText, "utf8", "hex");
-    encrypted += cipher?.final("hex");
-    const authTag = cipher?.getAuthTag();
-
-    return `${iv?.toString("hex")}:${authTag?.toString("hex")}:${encrypted}`;
   }
 
   /**
@@ -872,16 +840,13 @@ export class SocialOAuthService {
       expiresAt?: Date;
     },
   ): Promise<void> {
-    const tokenData = {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      expiresAt: tokens.expiresAt?.toISOString(),
-      connectedAt: new Date().toISOString(),
-    };
-
     // Encrypt token data before storing
-    const encryptedData = this.encryptToken(JSON.stringify(tokenData));
+    const encryptedData = encryptSocialCredential(tokens.accessToken, `${userId}:${platform}:access`);
     await storage.updateUserSocialToken(userId, platform, encryptedData);
+    await db.update(socialAccounts).set({
+      ...(tokens.refreshToken ? { refreshToken: encryptSocialCredential(tokens.refreshToken, `${userId}:${platform}:refresh`) } : {}),
+      tokenExpiresAt: tokens.expiresAt ?? null,
+    }).where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.platform, platform)));
 
     logger.info(
       `🔐 Encrypted and saved tokens for user ${userId} on ${platform}`,
@@ -916,6 +881,8 @@ export class SocialOAuthService {
       .limit(1);
     const row = rows[0];
     if (!row?.accessToken) return null;
+    row.accessToken = decryptSocialCredential(row.accessToken, `${userId}:${platform}:access`);
+    row.refreshToken = decryptSocialCredential(row.refreshToken, `${userId}:${platform}:refresh`);
 
     const parsed = this.parseStoredTokens(row.accessToken);
     if (parsed && typeof parsed === "object" && (parsed as any).accessToken) {
@@ -927,6 +894,9 @@ export class SocialOAuthService {
           row.tokenExpiresAt?.toISOString?.() ??
           undefined,
       };
+    }
+    if (/^[0-9a-f]+:[0-9a-f]+:[0-9a-f]+$/i.test(row.accessToken)) {
+      throw new Error("Legacy social credential could not be decrypted; migrate or reconnect this account");
     }
 
     return {
@@ -986,7 +956,9 @@ export class SocialOAuthService {
       await db
         .update(socialAccounts)
         .set({
-          accessToken: this.encryptToken(JSON.stringify(updated)),
+          accessToken: encryptSocialCredential(update.accessToken, `${userId}:${platform}:access`),
+          ...(updated.refreshToken ? { refreshToken: encryptSocialCredential(String(updated.refreshToken), `${userId}:${platform}:refresh`) } : {}),
+          tokenExpiresAt: updated.expiresAt ? new Date(String(updated.expiresAt)) : null,
         })
         .where(eq(socialAccounts.id, account[0].id));
       logger.info(`Updated access token for user ${userId} on ${platform}`);
@@ -994,9 +966,9 @@ export class SocialOAuthService {
     }
 
     const updateValues: Record<string, unknown> = {
-      accessToken: update.accessToken,
+      accessToken: encryptSocialCredential(update.accessToken, `${userId}:${platform}:access`),
     };
-    if (update.refreshToken) updateValues.refreshToken = update.refreshToken;
+    if (update.refreshToken) updateValues.refreshToken = encryptSocialCredential(update.refreshToken, `${userId}:${platform}:refresh`);
     if (update.expiresAt) updateValues.tokenExpiresAt = update.expiresAt;
 
     await db

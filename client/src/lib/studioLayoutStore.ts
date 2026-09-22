@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { accountLocalStorage } from "./offline/accountLocalStorage";
 
 export type StudioMode = "arrange" | "mix" | "project" | "launcher";
 export type PanelSection =
@@ -222,6 +223,7 @@ export const useStudioLayoutStore = create<StudioLayoutState>()(
     }),
     {
       name: "studio-layout",
+      storage: createJSONStorage(() => accountLocalStorage),
       partialize: (state) => ({
         mode: state.mode,
         browserPanel: state.browserPanel,

@@ -1,4 +1,5 @@
 import { logger } from "../lib/logger";
+import { offlineIdentity, assertOfflineIdentity } from "@/lib/offline/identity";
 import { useState, useEffect, useCallback } from "react";
 import {
   offlineCache,
@@ -51,8 +52,10 @@ export function useOfflineCache<T = unknown>(
   const [error, setError] = useState<Error | null>(null);
 
   const loadFromCache = useCallback(async (): Promise<T | null> => {
+    const identity = offlineIdentity();
     try {
       const cached = await offlineCache?.getWithMetadata<T>(key);
+      assertOfflineIdentity(identity);
       if (cached) {
         setData(cached?.data);
         setCacheMetadata(cached);
@@ -69,12 +72,15 @@ export function useOfflineCache<T = unknown>(
   }, [key, onCacheHit, onCacheMiss]);
 
   const fetchAndCache = useCallback(async (): Promise<void> => {
+    const identity = offlineIdentity();
     if (!fetcher) return;
 
     try {
       setIsLoading(true);
       const freshData = await fetcher();
+      assertOfflineIdentity(identity);
       await offlineCache?.set(key, freshData, { category, ttlMs });
+      assertOfflineIdentity(identity);
       setData(freshData as T);
       setIsCached(true);
       setError(null);
@@ -124,6 +130,16 @@ export function useOfflineCache<T = unknown>(
     },
     [key, category, ttlMs],
   );
+
+  useEffect(() => {
+    const reset = () => {
+      setData(null);
+      setCacheMetadata(null);
+      setIsCached(false);
+    };
+    window.addEventListener("offline-identity-change", reset);
+    return () => window.removeEventListener("offline-identity-change", reset);
+  }, []);
 
   useEffect(() => {
     if (!fetchOnMount) {

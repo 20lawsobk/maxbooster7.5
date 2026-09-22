@@ -18,12 +18,47 @@ import path from "node:path";
 import fs from "node:fs";
 import { config } from "../config/index.js";
 import { logger } from "../logger.js";
-import { computeWorkerSizing, computeHyperGpuSizing } from "../computeSizing.js";
+import { computeWorkerSizing, computeHyperGpuSizing, type ComputeSizingResult } from "../computeSizing.js";
 import { isDevEnv } from "../lib/envHelpers.js";
 
 const MAXCORE_ROOT = path.resolve(process.cwd(), "external", "maxcore");
 const API_SERVER_DIR = path.join(MAXCORE_ROOT, "artifacts", "api-server");
 const TSX_BIN = path.join(API_SERVER_DIR, "node_modules", ".bin", "tsx");
+
+/** Resource-only contract; applies equally to nested Node and Python children. */
+export function maxcoreResourceEnv(
+  sizing: ComputeSizingResult,
+  inheritedNodeOptions = "",
+): Record<string, string> {
+  // Worker and coordinator are separately reserved by the shared allocator.
+  // Split coordinator heap between TSX launcher and actual cluster primary.
+  const heapMB = Math.floor(sizing.maxcorePrimaryHeapMB / 2);
+  if (!Number.isInteger(heapMB) || heapMB < 1 ||
+      !Number.isInteger(sizing.workerHeapMB) || sizing.workerHeapMB < 1 ||
+      !Number.isInteger(sizing.pythonThreads) || sizing.pythonThreads < 1) {
+    throw new Error("MaxCore Node pool cannot fund its workers and launchers");
+  }
+  const nodeOptions = inheritedNodeOptions.replace(
+    /--max[-_]old[-_]space[-_]size(?:=|\s+)(?:"[^"]*"|'[^']*'|\S+)/g, "",
+  ).trim();
+  const pythonThreads = String(Math.min(1, sizing.pythonThreads));
+  return {
+    NODE_OPTIONS: `${nodeOptions} --max-old-space-size=${heapMB}`.trim(),
+    NODE_CLUSTER_WORKERS: String(sizing.workerCount),
+    MAXCORE_NODE_WORKER_HEAP_MB: String(sizing.workerHeapMB),
+    UVICORN_WORKERS: "1",
+    MAXCORE_NUM_STREAMS: "1",
+    UV_THREADPOOL_SIZE: "1",
+    OMP_NUM_THREADS: pythonThreads,
+    OPENBLAS_NUM_THREADS: pythonThreads,
+    MKL_NUM_THREADS: pythonThreads,
+    NUMEXPR_NUM_THREADS: pythonThreads,
+    VECLIB_MAXIMUM_THREADS: pythonThreads,
+    BLIS_NUM_THREADS: pythonThreads,
+    OMP_THREAD_LIMIT: pythonThreads,
+    OMP_MAX_ACTIVE_LEVELS: "1",
+  };
+}
 
 const INITIAL_BACKOFF_MS = 2_000;
 const MAX_BACKOFF_MS = 60_000;
@@ -225,25 +260,26 @@ async function spawnChild(): Promise<void> {
   // Derived from the same shared compute-sizing source as server/cluster.ts
   // (server/computeSizing.ts) so this process's own Node cluster and
   // MaxCore's Python HyperGPU engine reason about host capacity the same
-  // way the main app does. The node layer is intentionally not pinned to one
-  // worker: the pocket-backed fabric owns elastic logical node lifecycle, and
-  // this process uses all safely available local execution capacity.
+  // way the main app does. Node uses only its assigned worker pool; Python
+  // and native child pools stay within their separately reserved concurrency.
   const nodeSizing = computeWorkerSizing({
     reserveCore: false,
     envOverrideVar: "MAXCORE_LOCAL_CLUSTER_WORKERS",
   });
-  // HyperGPU's modeled lanes/tensor_cores, derived from the same host CPU
-  // capacity (see computeHyperGpuSizing docstring) instead of the 6
+  // HyperGPU's modeled lanes/tensor_cores use the Python allocation, not the
+  // Node worker pool or a second full-host allocation, instead of the 6
   // previously-hardcoded `lanes=512, tensor_cores=8` call sites in
   // server.py. Forwarded to the Python child automatically: this Node
   // process's env is inherited by the api-server child, which in turn
   // spreads `...process.env` into the Python child it spawns.
-  const hyperGpuSizing = computeHyperGpuSizing(nodeSizing.cpuLimit);
+  const hyperGpuSizing = computeHyperGpuSizing(nodeSizing.pythonThreads);
+  const resourceEnv = maxcoreResourceEnv(nodeSizing, process.env.NODE_OPTIONS);
 
   child = spawn(TSX_BIN, ["src/index.ts"], {
     cwd: API_SERVER_DIR,
     env: {
       ...process.env,
+      ...resourceEnv,
       NODE_ENV: "development",
       PORT: String(port),
       // MODEL_API_PORT set ⇒ this instance is the Python owner (see the

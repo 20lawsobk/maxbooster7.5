@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { useOfflineStatus } from "./useOfflineStatus";
+import { useOfflineContext } from "@/contexts/OfflineContext";
 
 export type FeatureCapability = "full" | "limited" | "unavailable";
 
@@ -23,7 +24,7 @@ const OFFLINE_ROUTES: Record<string, FeatureCapability> = {
   "/studio": "limited",
   "/projects": "limited",
   "/dashboard": "limited",
-  "/settings": "full",
+  "/settings": "unavailable",
 };
 
 const ONLINE_ONLY_ROUTES = [
@@ -47,6 +48,7 @@ export function useOfflineCapable(): {
   unavailableFeatures: string[];
 } {
   const { isOffline } = useOfflineStatus();
+  const { isInitialized } = useOfflineContext();
   const [location] = useLocation();
 
   const capabilities = useMemo<OfflineCapabilities>(() => {
@@ -56,7 +58,7 @@ export function useOfflineCapable(): {
         audioPlayback: "full",
         midiEditing: "full",
         mixing: "full",
-        drafts: "full",
+        drafts: isInitialized ? "full" : "unavailable",
         cachedData: "full",
         aiFeatures: "full",
         distribution: "full",
@@ -72,7 +74,7 @@ export function useOfflineCapable(): {
       audioPlayback: "limited",
       midiEditing: "full",
       mixing: "limited",
-      drafts: "full",
+      drafts: isInitialized ? "full" : "unavailable",
       cachedData: "limited",
       aiFeatures: "unavailable",
       distribution: "unavailable",
@@ -81,7 +83,7 @@ export function useOfflineCapable(): {
       analytics: "limited",
       collaboration: "unavailable",
     };
-  }, [isOffline]);
+  }, [isOffline, isInitialized]);
 
   const routeCapability = useMemo<FeatureCapability>(() => {
     if (!isOffline) return "full";

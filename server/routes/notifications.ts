@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, urlencoded } from "express";
 import { storage } from "../storage";
 import { db, dbRead } from "../db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -10,9 +10,13 @@ import crypto from "crypto";
 import { webPushService } from "../services/webPushService.js";
 import { buildSilentPayload } from "../services/pushNotificationTypes.js";
 import { requireUUIDParam } from "../middleware/requestValidation.js";
+import { mergeNotificationPreferences, normalizeNotificationPreferences } from "../services/notificationPreferences.js";
+import { smsStatusCallback, smsIncomingCallback } from "../services/smsNotificationService.js";
 
 const router = Router();
 
+router.post("/sms/status", urlencoded({ extended: false, limit: "16kb" }), smsStatusCallback);
+router.post("/sms/incoming", urlencoded({ extended: false, limit: "16kb" }), smsIncomingCallback);
 router.use(requireAuth);
 
 interface NotificationPreferences {
@@ -281,8 +285,7 @@ router.get("/preferences", async (req: Request, res: Response) => {
 
   try {
     const user = await storage.getUser(req.user.id);
-    const savedPrefs =
-      user?.notificationSettings as NotificationPreferences | null;
+    const savedPrefs = normalizeNotificationPreferences(user?.notificationSettings);
 
     const mergedPrefs = {
       ...defaultPreferences,
@@ -321,7 +324,7 @@ router.get("/preferences", async (req: Request, res: Response) => {
     return res.json(mergedPrefs);
   } catch (error) {
     logger.warn({ err: error }, "Get notification preferences error:");
-    return res.json(defaultPreferences);
+    return res.status(500).json({ error: "Failed to load notification preferences" });
   }
 });
 
@@ -332,9 +335,17 @@ router.put("/preferences", async (req: Request, res: Response) => {
 
   try {
     const newPreferences = req.body as Partial<NotificationPreferences>;
+    if (!newPreferences || typeof newPreferences !== "object" || Array.isArray(newPreferences)) {
+      return res.status(400).json({ error: "Notification preferences must be an object" });
+    }
+    const user = await storage.getUser(req.user.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (newPreferences.sms?.enabled === true && (req.body.sms as any).consentAccepted !== true) {
+      return res.status(400).json({ error: "Explicit SMS alert consent is required; phone verification alone is not consent" });
+    }
 
     await storage.updateUser(req.user.id, {
-      notificationSettings: newPreferences,
+      notificationSettings: mergeNotificationPreferences(user.notificationSettings, newPreferences),
     });
 
     let outcomeType = "preference_saved";
@@ -665,16 +676,16 @@ router.post("/sms/confirm", async (req: Request, res: Response) => {
     });
 
     logger.info(
-      `[SMS] Phone verified for user ${req.user.id} — Max Booster SMS notifications active`,
+      `[SMS] Phone verified for user ${req.user.id}`,
     );
     return res.json({
       success: true,
       message:
-        "Phone number verified — Max Booster SMS notifications are now active.",
+        "Phone number verified. Notification delivery requires a separately enabled, consented SMS channel.",
       outcome: {
         type: "channel_toggled",
         success: true,
-        message: "Max Booster SMS notifications enabled and verified",
+        message: "Phone number verified",
       },
     });
   } catch (error) {

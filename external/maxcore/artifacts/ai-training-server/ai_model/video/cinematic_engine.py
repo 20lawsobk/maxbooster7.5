@@ -10,6 +10,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .scenes import SceneConfig, render_scene, composite_scenes, cleanup_temp, _extract_last_frame_b64
 from ..adaptive_concurrency import RENDER_GATE
+from ..media_contract import require_audio_stream
+from .ffmpeg_util import run_ffmpeg
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "videos")
 
@@ -69,6 +71,19 @@ def render_cinematic_open(
         return CinematicResult(success=False, error="No scenes provided")
 
     dur = max(6.0, min(total_duration, 300.0))
+    if len(scenes) > 1:
+        overlap = max(0.1, min(float(transition_dur), 1.0))
+        # xfade consumes overlap from each boundary. Keep narration and the
+        # requested total duration intact instead of trimming the end.
+        deficit = dur + overlap * (len(scenes) - 1) - sum(s.duration for s in scenes)
+        if deficit > .001:
+            for scene in scenes:
+                scene.duration += deficit / len(scenes)
+    if audio_path:
+        try:
+            require_audio_stream(audio_path)
+        except Exception as exc:
+            return CinematicResult(success=False, error=f"Required audio invalid: {exc}")
 
     # ── Sequential rendering with rolling reference frames (temporal consistency)
     # Scenes are rendered in order; after each render, the last frame is extracted
@@ -145,19 +160,28 @@ def render_cinematic_open(
 
     _t_scenes = time.time() - start_time
 
-    if not scene_paths:
+    if len(scene_paths) != len(scenes):
+        cleanup_temp(scene_paths)
         return CinematicResult(
             success=False,
-            error=f"All scenes failed: {'; '.join(render_errors)}",
+            error=f"Incomplete scene render: {'; '.join(render_errors)}",
         )
 
     filename = f"ai_{uuid.uuid4().hex[:12]}.mp4"
     output_path = os.path.join(OUTPUT_DIR, filename)
 
     if len(scene_paths) == 1:
-        import shutil
-        shutil.copy2(scene_paths[0], output_path)
-        success = True
+        if audio_path:
+            result = run_ffmpeg([
+                "ffmpeg", "-y", "-i", scene_paths[0], "-i", audio_path,
+                "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
+                "-c:a", "aac", "-af", "apad", "-t", str(dur), output_path,
+            ], timeout=120)
+            success = result.returncode == 0
+        else:
+            import shutil
+            shutil.copy2(scene_paths[0], output_path)
+            success = True
     else:
         success = composite_scenes(
             scene_paths=scene_paths,
@@ -178,12 +202,15 @@ def render_cinematic_open(
     )
 
     if not success:
-        if scene_paths and os.path.exists(scene_paths[0]):
-            import shutil
-            shutil.copy2(scene_paths[0], output_path)
-            success = True
-        else:
-            return CinematicResult(success=False, error="Failed to composite scenes")
+        return CinematicResult(success=False, error="Failed to composite scenes")
+
+    if audio_path:
+        try:
+            require_audio_stream(output_path, minimum_duration=dur)
+        except Exception as exc:
+            if os.path.exists(output_path):
+                os.remove(output_path)
+            return CinematicResult(success=False, error=f"Required audio not delivered: {exc}")
 
     render_time = (time.time() - start_time) * 1000
 

@@ -1,12 +1,13 @@
 // @ts-nocheck
 import Stripe from "stripe";
-import crypto from "crypto";
+import { validateCustomerRefund } from "./commercePolicy";
+import { initiateCommerceRefund } from "./commerce/compensation";
 import { storage } from "../storage";
 import { getStripePriceIds } from "./stripeSetup.js";
 import { logger } from "../logger.js";
 import { executeStripeOperation } from "./externalServices.js";
 import { db } from "../db.js";
-import { users, orders, listingStems, refunds, ledgerEntries, notifications, taxForms } from "@shared/schema";
+import { users, orders, refunds, ledgerEntries, notifications, taxForms } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
 import { env } from "../config/env.js";
@@ -106,6 +107,7 @@ export class StripeService {
             metadata: {
               userId,
               tier: "lifetime",
+              planId: "lifetime",
             },
           }),
         );
@@ -120,6 +122,7 @@ export class StripeService {
             customer: customerId,
             items: [{ price: priceId }],
             payment_behavior: "default_incomplete",
+            metadata: { userId, planId: tier },
             expand: ["latest_invoice.payment_intent"],
           }),
         );
@@ -260,9 +263,10 @@ export class StripeService {
         amountCents: paymentIntent.amount,
       });
     } else if (beatId && buyerId && licenseType) {
-      // Beat purchase webhook handler reserved for future beat-specific purchases
-      // Currently marketplace uses stem purchase flow above
-      logger.info({ beatId, buyerId, licenseType }, "Beat purchase completed");
+      if(paymentIntent.metadata?.commerceKind!=="marketplace" || !paymentIntent.metadata.orderId)
+        throw new Error("Historical beat payment lacks a canonical checkout order; reconciliation required");
+      const { marketplaceService }=await import("./marketplaceService");
+      await marketplaceService.processPayment(paymentIntent.metadata.orderId,paymentIntent.id);
     }
   }
 
@@ -274,38 +278,7 @@ export class StripeService {
     stemFileUrl: string;
     amountCents: number;
   }) {
-    // Create order record
-    const [order] = await db
-      .insert(orders)
-      .values({
-        buyerId: data.buyerId,
-        sellerId: data.sellerId,
-        listingId: parseInt(data?.listingId),
-        licenseType: "stem_purchase",
-        amountCents: data.amountCents,
-        currency: "usd",
-        status: "completed",
-        downloadUrl: data.stemFileUrl,
-      })
-      .returning();
-
-    // Generate download token
-    const downloadToken = crypto?.randomBytes(32).toString("hex");
-
-    // stemOrders table not yet in schema — download token stored in order downloadUrl
-    logger.debug(
-      `Stem order token generated for order ${order?.id}: ${downloadToken}`,
-    );
-
-    // Update stem download count
-    await db
-      .update(listingStems)
-      .set({ downloadCount: sql`${listingStems.downloadCount} + 1` })
-      .where(eq(listingStems.id, data?.stemId));
-
-    logger.info(
-      `✅ Stem purchase completed: ${data?.stemId} by ${data?.buyerId}`,
-    );
+    throw new Error("Historical stem payment lacks a frozen canonical order; reconciliation required");
   }
 
   private async handleSubscriptionPayment(invoice: Stripe.Invoice) {
@@ -360,6 +333,17 @@ export class StripeService {
    * Create a refund for an order
    */
   async createRefund(params: {
+    orderId:string;userId:string;sellerId?:string;amountCents?:number;reason?:string;initiatedBy?:string;idempotencyKey?:string;
+  }):Promise<{success:boolean;refundId?:string;stripeRefundId?:string;error?:string}> {
+    try {
+      const [order]=await db.select().from(orders).where(eq(orders.id,params.orderId)).limit(1);
+      if(!order) throw new Error("Order not found");
+      const cents=validateCustomerRefund(order,params.userId,params.amountCents);
+      return await initiateCommerceRefund(params.orderId,params.userId,cents,params.idempotencyKey||"");
+    } catch(error) {return {success:false,error:error instanceof Error?error.message:String(error)};}
+  }
+
+  private async legacyCreateRefund(params: {
     orderId: string;
     userId: string;
     sellerId?: string;
@@ -387,7 +371,9 @@ export class StripeService {
         return { success: false, error: "No payment found for order" };
       }
 
-      const amountCents = params?.amountCents || Math.round(order?.amount * 100);
+      // Enforce ownership at the service boundary, not only the HTTP route.
+      // initiatedBy/sellerId are descriptions, never authorization credentials.
+      const amountCents = validateCustomerRefund(order, params.userId, params.amountCents);
       const refundType =
         params?.amountCents &&
         params?.amountCents < Math.round(order?.amount * 100)
@@ -605,8 +591,10 @@ export class StripeService {
   /**
    * Get refunds for an order
    */
-  async getOrderRefunds(orderId: string) {
+  async getOrderRefunds(orderId: string, actorId: string) {
     try {
+      const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+      if (!order || order.userId !== actorId) throw new Error("Forbidden");
       const orderRefunds = await db
         .select()
         .from(refunds)

@@ -189,5 +189,5 @@ python_runtime/
 python_runtime/**
 services/
 services/**
-.node_bin/
-.node_bin/**
+# .node_bin is the bootstrap executable: it must remain outside capsules
+# and be included in the deployment image.

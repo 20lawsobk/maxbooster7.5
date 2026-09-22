@@ -87,6 +87,7 @@ export interface EvolutionEnhancement {
   active: boolean;
   appliedAt: string;
   deactivatedAt?: string;
+  consumerValidation?: import("./evolutionCanary.js").ConsumerCanaryResult;
 }
 
 interface RegistryState {
@@ -478,6 +479,28 @@ export class EvolutionRegistry {
   }
 
   // ── Consumer getters (read by live subsystems) ──────────────────────────
+
+  getActiveUpgradeEnhancements(upgradeId: string): EvolutionEnhancement[] {
+    return this.enhancements
+      .filter((entry) => entry.active && entry.upgradeId === upgradeId)
+      .map((entry) => ({ ...entry, payload: structuredClone(entry.payload) }));
+  }
+
+  async recordConsumerValidation(
+    upgradeId: string,
+    result: import("./evolutionCanary.js").ConsumerCanaryResult,
+  ): Promise<void> {
+    const entries = this.enhancements.filter((entry) => entry.upgradeId === upgradeId);
+    if (!entries.length) throw new Error(`Unknown upgrade ${upgradeId}`);
+    const before = entries.map((entry) => entry.consumerValidation);
+    for (const entry of entries) entry.consumerValidation = structuredClone(result);
+    try {
+      await this.persist();
+    } catch (error) {
+      entries.forEach((entry, index) => { entry.consumerValidation = before[index]; });
+      throw error;
+    }
+  }
 
   private activeOfCategory(
     category: EnhancementCategory,

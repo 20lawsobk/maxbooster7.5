@@ -5,7 +5,7 @@ import { logger } from "../logger.js";
 
 const router = Router();
 
-// Backup service is initialized manually in server/index?.ts only when DATABASE_URL is valid
+// Boot must await databaseBackupService.initialize() after migration readiness.
 
 // Create manual backup (admin only)
 router.post("/create", requireAdmin, async (_req, res) => {
@@ -32,7 +32,7 @@ router.get("/list", requireAdmin, async (_req, res) => {
 // Get backup metrics (admin only)
 router.get("/metrics", requireAdmin, async (_req, res) => {
   try {
-    const metrics = databaseBackupService?.getBackupMetrics();
+    const metrics = await databaseBackupService.getBackupMetrics();
     res.json(metrics);
   } catch (error) {
     logger.warn({ err: error }, "[Backup] Failed to get backup metrics:");

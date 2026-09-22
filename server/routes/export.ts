@@ -7,8 +7,21 @@ import { z } from "zod";
 import { getBaseUrl } from "../config/defaults.js";
 import { shareLinks as shareLinksTable } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
+import durableExports from "./durableExports";
 
 const router = Router();
+router.use(durableExports);
+// Legacy export families have no renderer yet. Do not dispatch their synthetic
+// timer pipeline or advertise an acknowledgement as a downloadable artifact.
+router.use((req, res, next) => {
+  if ((req.method === "POST" && (
+    ["/batch", "/chart", "/bulk", "/share-links"].includes(req.path) ||
+    req.path.endsWith("/mastered") || req.path.startsWith("/notify/") || req.path.startsWith("/report/")
+  )) || /^\/share\/[^/]+\/download$/.test(req.path)) {
+    return res.status(422).json({ error: "This export family is not implemented by the durable artifact renderer" });
+  }
+  next();
+});
 
 // ============================================================================
 // TYPES & INTERFACES

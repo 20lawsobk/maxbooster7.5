@@ -5645,8 +5645,8 @@ function FanCampaignsContent() {
     onSuccess: (data: Record<string, unknown>) => {
       queryClient.invalidateQueries({ queryKey: ["/api/fan-campaigns"] });
       toast({
-        title: "Campaign Sent!",
-        description: `Delivered to ${data.recipientCount ?? 0} fans.`,
+        title: "Campaign processed",
+        description: `${data.acceptedCount ?? 0} accepted by email provider; ${data.pendingCount ?? 0} pending; ${data.unknownCount ?? 0} need reconciliation. Acceptance is not delivery.`,
       });
     },
     onError: () =>
@@ -5696,14 +5696,14 @@ function FanCampaignsContent() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Campaigns", value: stats?.totalCampaigns || 0 },
-          { label: "Sent", value: stats?.sent || 0, color: "text-green-600" },
+          { label: "Historical sent (unverified)", value: stats?.sent || 0, color: "text-green-600" },
           {
             label: "Total Subscribers",
             value: stats?.totalSubscribers || 0,
             color: "text-blue-600",
           },
           {
-            label: "Avg Open Rate",
+            label: "Historical open rate (unverified)",
             value: `${stats?.avgOpenRate || 0}%`,
             color: "text-purple-600",
           },
@@ -5878,7 +5878,7 @@ function FanCampaignsContent() {
                             <Badge
                               className={`text-xs ${statusColors[c.status] || "bg-gray-100"}`}
                             >
-                              {c.status}
+                              {c.status === "sent" ? "historical — unverified" : c.status}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
                               {c.campaignType?.replace("_", " ")}
@@ -5889,7 +5889,7 @@ function FanCampaignsContent() {
                           </p>
                           {c.status === "sent" && (
                             <div className="flex gap-4 mt-2 text-xs text-gray-500">
-                              <span>📬 {c.recipientCount} sent</span>
+                              <span>📬 {c.recipientCount} historical recipients (unverified)</span>
                               <span>👁 {c.openCount} opens</span>
                               <span>
                                 📈{" "}
@@ -5915,7 +5915,7 @@ function FanCampaignsContent() {
                               ) : (
                                 <Send className="w-3 h-3 mr-1" />
                               )}
-                              {sendingId === c.id ? "Sending…" : "Send"}
+                              {sendingId === c.id ? "Processing…" : "Send / resume"}
                             </Button>
                           )}
                           <Button

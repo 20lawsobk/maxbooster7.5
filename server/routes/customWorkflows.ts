@@ -7,34 +7,17 @@ import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
 import { parsePaginationParams } from "../middleware/pagination.js";
+import { postWebhook, webhookUrl } from "../services/webhookDestination.js";
 
 const router = Router();
 
-const PRIVATE_IP_PATTERNS = [
-  /^127\./,
-  /^10\./,
-  /^172\.(1[6-9]|2\d|3[01])\./,
-  /^192\.168\./,
-  /^169\.254\./,
-  /^::1$/,
-  /^fc00:/i,
-  /^fe80:/i,
-  /^localhost$/i,
-];
-
 function isSafeWebhookUrl(rawUrl: string): boolean {
-  let parsed: URL;
   try {
-    parsed = new URL(rawUrl);
+    webhookUrl(rawUrl);
+    return true;
   } catch {
     return false;
   }
-  if (parsed?.protocol !== "https:") return false;
-  const hostname = parsed?.hostname;
-  for (const pattern of PRIVATE_IP_PATTERNS) {
-    if (pattern?.test(hostname)) return false;
-  }
-  return true;
 }
 
 export const CUSTOM_TRIGGERS = [
@@ -540,22 +523,12 @@ router.post("/:id/test", requireAuth, async (req, res) => {
                 );
               } else {
                 try {
-                  await fetch(webhookUrl, {
-                    method: "POST",
-                    signal: AbortSignal.timeout(10_000), // 10 s hard cap — prevents hanging slots
-                    headers: {
-                      "Content-Type": "application/json",
-                      ...(action?.config?.secret
-                        ? { Authorization: String(action?.config?.secret) }
-                        : {}),
-                    },
-                    body: JSON.stringify({
+                  await postWebhook(webhookUrl, {
                       workflow: workflow.name,
                       trigger: workflow.triggerEvent,
                       timestamp: new Date().toISOString(),
                       test: true,
-                    }),
-                  });
+                    }, action?.config?.secret ? String(action.config.secret) : undefined);
                   actionsRun?.push(`Webhook called: ${webhookUrl}`);
                 } catch {
                   actionsRun?.push(`Webhook failed: ${webhookUrl}`);

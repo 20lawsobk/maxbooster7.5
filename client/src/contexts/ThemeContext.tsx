@@ -1,4 +1,9 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
+
+import { writePreference } from "@/lib/preferenceWrites";
+import { toast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
+import { offlineIdentity, assertOfflineIdentity } from "@/lib/offline/identity";
 
 type Theme = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";
@@ -8,6 +13,8 @@ interface ThemeContextType {
   resolvedTheme: ResolvedTheme;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
+  isSavingTheme: boolean;
+  acceptAccountTheme: (owner: string | null, theme?: string, hydrated?: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -25,7 +32,8 @@ function getSystemTheme(): ResolvedTheme {
 
 function getStoredTheme(): Theme {
   if (typeof window !== "undefined") {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    let stored: string | null = null;
+    try { stored = localStorage.getItem(STORAGE_KEY); } catch { /* Theme still works without persistence. */ }
     if (stored === "light" || stored === "dark" || stored === "system") {
       return stored;
     }
@@ -40,6 +48,9 @@ function applyTheme(resolvedTheme: ResolvedTheme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [account, setAccount] = useState<string | null>(null);
+  const [themeWrites, setThemeWrites] = useState(0);
+  const migrationAttempted = useRef(new Set<string>());
   const [theme, setThemeState] = useState<Theme>(() => getStoredTheme());
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
     const stored = getStoredTheme();
@@ -67,8 +78,44 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
+    if (account) {
+      const identity = offlineIdentity();
+      setThemeWrites(count => count + 1);
+      // Server-authoritative: no success-looking appearance before persistence.
+      void writePreference("theme", newTheme).then(() => {
+        assertOfflineIdentity(identity);
+        setThemeState(newTheme);
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/preferences"] });
+      }).catch(() => toast({
+        title: "Appearance was not saved",
+        description: "Check your connection and try again.",
+        variant: "destructive",
+      })).finally(() => setThemeWrites(count => count - 1));
+      return;
+    }
     setThemeState(newTheme);
-    localStorage.setItem(STORAGE_KEY, newTheme);
+    try { localStorage.setItem(STORAGE_KEY, newTheme); } catch { /* In-memory appearance remains usable. */ }
+  };
+
+  const acceptAccountTheme = (owner: string | null, saved?: string, hydrated = false) => {
+    setAccount(owner);
+    if (!owner) setThemeState(getStoredTheme());
+    else if (saved === "light" || saved === "dark" || saved === "system") setThemeState(saved);
+    else if (hydrated && saved == null && !migrationAttempted.current.has(owner)) {
+      migrationAttempted.current.add(owner);
+      const local = getStoredTheme();
+      const identity = offlineIdentity();
+      setThemeWrites(count => count + 1);
+      void writePreference("theme", local).then(() => {
+        assertOfflineIdentity(identity);
+        setThemeState(local);
+        return queryClient.invalidateQueries({ queryKey: ["/api/auth/preferences"] });
+      }).catch(() => toast({
+        title: "Appearance preference was not saved",
+        description: "Choose your theme again when connected to save it to this account.",
+        variant: "destructive",
+      })).finally(() => setThemeWrites(count => count - 1));
+    }
   };
 
   const toggleTheme = () => {
@@ -79,7 +126,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   return (
     <ThemeContext.Provider
-      value={{ theme, resolvedTheme, setTheme, toggleTheme }}
+      value={{ theme, resolvedTheme, setTheme, toggleTheme, acceptAccountTheme, isSavingTheme: themeWrites > 0 }}
     >
       {children}
     </ThemeContext.Provider>

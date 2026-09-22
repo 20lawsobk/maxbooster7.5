@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { db } from "../db.js";
+import { saveCanonicalStatement } from "./commerce/statements";
 import { royaltyStatements, recoupmentAccounts, splitContracts, dspRates, exchangeRates, revenueEvents, projectRoyaltySplits, platformRoyaltyRates, type RoyaltyStatement, type InsertRoyaltyStatement } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, isNull, or } from "drizzle-orm";
 import { logger } from "../logger.js";
@@ -500,6 +501,9 @@ export class RoyaltyEngine {
       eq(revenueEvents.userId, userId),
       gte(revenueEvents.occurredAt, startDate),
       lte(revenueEvents.occurredAt, endDate),
+      // Commerce is already allocated net-of-fee in its own funded ledger.
+      // Including it in a DSP statement would charge fees and credit it twice.
+      sql`${revenueEvents.source} NOT IN ('marketplace','merchant')`,
     );
     const whereClause = releaseId
       ? and(dateConditions, eq(revenueEvents.projectId, releaseId))
@@ -765,33 +769,7 @@ export class RoyaltyEngine {
   }
 
   async saveStatement(statement: PeriodStatement): Promise<RoyaltyStatement> {
-    const insertData: InsertRoyaltyStatement = {
-      userId: statement.userId,
-      statementPeriod: statement.period,
-      periodStart: statement.periodStart,
-      periodEnd: statement.periodEnd,
-      grossRevenue: String(statement?.grossRevenue),
-      platformFees: String(statement?.platformFees),
-      distributionFees: String(statement?.distributionFees),
-      recoupmentDeductions: String(statement?.recoupmentDeductions),
-      netRevenue: String(statement?.netRevenue),
-      payableAmount: String(statement?.payableAmount),
-      currency: statement.currency,
-      usdEquivalent: String(statement?.usdEquivalent),
-      totalStreams: statement.totalStreams,
-      totalDownloads: statement.totalDownloads,
-      status: statement.status,
-      lineItems: statement.lineItems,
-      territoryBreakdown: statement.territoryBreakdown,
-      dspBreakdown: statement.dspBreakdown,
-    };
-
-    const [result] = await db
-      .insert(royaltyStatements)
-      .values(insertData)
-      .returning();
-
-    return result;
+    return saveCanonicalStatement(statement);
   }
 
   async getStatement(statementId: string): Promise<RoyaltyStatement | null> {

@@ -205,18 +205,20 @@ export default function FanHub() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: { subject: string; body: string }) => {
-      const res = await apiRequest("POST", "/api/fan-hub/message", message);
+      const fingerprint = JSON.stringify(message);
+      const saved = JSON.parse(sessionStorage.getItem("fan-broadcast-command") || "null");
+      const commandKey = saved?.fingerprint === fingerprint ? saved.key : crypto.randomUUID();
+      sessionStorage.setItem("fan-broadcast-command", JSON.stringify({ fingerprint, key: commandKey }));
+      const res = await apiRequest("POST", "/api/fan-hub/message", { ...message, commandKey });
       return res.json();
     },
     onSuccess: (message) => {
       queryClient.invalidateQueries({ queryKey: ["/api/fan-hub/messages"] });
       setIsComposingMessage(false);
       toast({
-        title: message.failedCount ? "Broadcast partially delivered" : "Broadcast sent",
-        description: message.failedCount
-          ? `${message.recipientCount} delivered; ${message.failedCount} could not be delivered.`
-          : `Delivered to ${message.recipientCount} fan${message.recipientCount === 1 ? "" : "s"}.`,
-        variant: message.failedCount ? "destructive" : "default",
+        title: "Broadcast processed",
+        description: `${message.acceptedCount} accepted by provider; ${message.pendingCount} pending; ${message.unknownCount} need reconciliation. Acceptance is not delivery.`,
+        variant: message.unknownCount ? "destructive" : "default",
       });
     },
     onError: (error) =>
@@ -679,7 +681,7 @@ export default function FanHub() {
                 <DialogHeader>
                   <DialogTitle>Send Broadcast Email</DialogTitle>
                   <DialogDescription>
-                    Send a bulk message to all your {subscribers.length} fans.
+                    Send to fans with confirmed email consent. Imported contacts are not automatically subscribed.
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSendMessage} className="space-y-4">
@@ -894,6 +896,15 @@ export default function FanHub() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={async () => {
+                                try {
+                                  const response = await apiRequest("POST", `/api/fan-hub/subscribers/${fan.id}/consent-request`);
+                                  const result = await response.json();
+                                  toast({ title: "Consent invitation", description: `Provider outcome: ${result.status}. Fan must confirm before marketing.` });
+                                } catch (error) {
+                                  toast({ title: "Invitation not sent", description: getErrorMessage(error), variant: "destructive" });
+                                }
+                              }}>Request email consent</DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => setSelectedFan(fan)}
                               >
@@ -1073,17 +1084,25 @@ export default function FanHub() {
                       <div>
                         <h4 className="font-semibold text-lg">{msg.subject}</h4>
                         <p className="text-xs text-muted-foreground">
-                          Sent on{" "}
+                          Recorded on{" "}
                           {format(
                             new Date(msg.sentAt),
                             "MMMM d, yyyy @ h:mm a",
                           )}
                         </p>
                       </div>
-                      <Badge variant="secondary">Sent</Badge>
+                      <Badge variant="secondary">{msg.status ?? "Historical — unverified"}</Badge>
                     </div>
                     <CardContent className="p-6">
-                      <div className="grid grid-cols-3 gap-4 sm:gap-8 mb-6">
+                      {msg.provenance === "recipient-ledger" ? <div className="mb-6 space-y-3">
+                        <p>{msg.acceptedCount} accepted by provider · {msg.pendingCount} pending · {msg.unknownCount} uncertain · {msg.suppressedCount} suppressed. Inbox delivery is not verified.</p>
+                        {msg.pendingCount > 0 && <Button onClick={async () => {
+                          try {
+                            await apiRequest("POST", `/api/fan-hub/deliveries/${msg.id}/resume`);
+                            queryClient.invalidateQueries({ queryKey: ["/api/fan-hub/messages"] });
+                          } catch (error) { toast({ title: "Resume failed", description: getErrorMessage(error), variant: "destructive" }); }
+                        }}>Process next pending recipients</Button>}
+                      </div> : <div className="grid grid-cols-3 gap-4 sm:gap-8 mb-6">
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">
                             Recipients
@@ -1118,7 +1137,7 @@ export default function FanHub() {
                             %
                           </p>
                         </div>
-                      </div>
+                      </div>}
                       <div className="bg-muted/20 p-4 rounded-md text-sm whitespace-pre-wrap border italic text-muted-foreground">
                         {msg.body.length > 200
                           ? msg.body.substring(0, 200) + "..."

@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { EventEmitter } from "events";
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { LuaFactory, LuaEngine } from "wasmoon";
 import {
   encode as msgpackEncode,
@@ -63,8 +63,8 @@ function globToRegex(pattern: string): RegExp {
 // append-only log. Reads, server/info commands, and scripting wrappers
 // (EVAL/EVALSHA) are excluded — Lua mutations are captured as their inner
 // redis.call() effects, which flow through dispatchSync just like direct writes.
-// Stream commands (X*) are intentionally excluded: streams are never persisted
-// in snapshots, so replaying them would resurrect data the snapshot drops.
+// Stream mutations use state-image journal records below to preserve generated
+// IDs and consumer-group timestamps exactly across replay.
 const AOF_MUTATING_COMMANDS = new Set<string>([
   // Strings
   "SET",
@@ -139,8 +139,11 @@ export class RedisStore extends EventEmitter {
   private lastSavedAt: number | null = null;
   private dirty = false;
   private flushTimer: ReturnType<typeof setInterval> | null = null;
+  private flushStartupTimer: ReturnType<typeof setTimeout> | null = null;
   private persistInFlight: Promise<void> | null = null;
   private readonly persistKey = "__snapshot__";
+  private currentSnapshotKey: string | null = null;
+  private previousSnapshotKey: string | null = null;
   // Each instance's durability snapshot is a single fabric object addressed by
   // (ownerId=instanceId, pocket="redis-store", name=persistKey). All Redis
   // persistence flows through the fabric — no direct PocketDimension writes.
@@ -269,22 +272,44 @@ export class RedisStore extends EventEmitter {
   // LIFECYCLE
   // ============================================================================
 
-  async load(): Promise<void> {
+  async load(newInstance = false): Promise<void> {
     try {
+      const manifestBuffer = await fabricStorage.getNamedObject(
+        this.instanceId, this.persistPocket, "__recovery_manifest__",
+      );
+      if (!manifestBuffer && !newInstance) throw new Error("Existing instance has no recovery manifest");
+      if (!manifestBuffer && newInstance) {
+        this.dirty = true;
+        await this.persist();
+        if (this.dirty) throw new Error("Could not establish initial durable generation");
+      }
+      const manifest = this.decodeRecovery(manifestBuffer ?? (await fabricStorage.getNamedObject(
+        this.instanceId, this.persistPocket, "__recovery_manifest__",
+      ))!);
       const buf = await fabricStorage.getNamedObject(
         this.instanceId,
         this.persistPocket,
-        this.persistKey,
+        manifest.snapshotKey,
       );
-      if (!buf) throw new Error("no snapshot");
-      const snapshot: RedisStoreSnapshot = JSON.parse(buf.toString("utf-8"));
+      if (!buf || createHash("sha256").update(buf).digest("hex") !== manifest.snapshotSha256) {
+        throw new Error("Recovery manifest snapshot missing or corrupt");
+      }
+      const snapshot: RedisStoreSnapshot = this.decodeRecovery(buf);
+      if (snapshot.baselineSeq !== manifest.baselineSeq || snapshot.version !== 1 ||
+          !Number.isSafeInteger(snapshot.baselineSeq) || !snapshot.entries ||
+          typeof snapshot.entries !== "object" || Array.isArray(snapshot.entries)) {
+        throw new Error("Invalid recovery generation");
+      }
+      this.currentSnapshotKey = manifest.snapshotKey;
+      this.previousSnapshotKey = manifest.previousSnapshotKey ?? null;
       const now = Date.now();
 
       for (const [key, entry] of Object.entries(snapshot.entries)) {
+        if (!entry || !["string", "list", "hash", "set", "zset", "stream"].includes(entry.type) ||
+            (entry.expiresAt !== undefined && !Number.isFinite(entry.expiresAt))) {
+          throw new Error("Invalid snapshot entry");
+        }
         if (entry.expiresAt && entry.expiresAt <= now) continue;
-        // Streams are not persisted — skip any legacy stream entries from
-        // old snapshots so they don't bloat memory on startup.
-        if (entry.type === "stream") continue;
         if (entry.type === "set") {
           this.data.set(key, { ...entry, value: entry.value });
         } else {
@@ -303,33 +328,65 @@ export class RedisStore extends EventEmitter {
       this.lastSavedAt = snapshot.savedAt;
       this.aofBaselineSeq = snapshot.baselineSeq ?? 0;
       this.aofSeq = this.aofBaselineSeq;
-    } catch {
-      // Fresh store — no prior snapshot
+    } catch (cause) {
+      for (const timer of this.timers.values()) clearTimeout(timer);
+      this.data.clear();
+      this.zsetIndex.clear();
+      throw new Error("PDIM snapshot recovery failed; instance unavailable", { cause });
     }
 
     // Replay the append-only log on top of the snapshot. Only records newer
     // than the snapshot's baseline are applied, so a snapshot plus a not-yet-
     // truncated AOF can never double-apply the same write.
-    await this.replayAof();
+    try {
+      await this.replayAof();
+    } catch (cause) {
+      for (const timer of this.timers.values()) clearTimeout(timer);
+      this.data.clear();
+      this.zsetIndex.clear();
+      throw new Error("PDIM AOF recovery failed; instance unavailable", { cause });
+    }
 
     // Stagger each store's flush timer by a random 0-5 s offset so that
     // two stores don't both serialize + compress at exactly the same moment,
     // which would otherwise double the libuv thread-pool pressure.
     const jitter = Math.random() * 5_000;
-    setTimeout(() => {
+    this.flushStartupTimer = setTimeout(() => {
       this.flushTimer = setInterval(() => {
-        if (this.dirty) void this.persist();
+        if (this.dirty) void this.persist().catch(err => console.error("PDIM snapshot failed", err));
       }, 5_000);
+      this.flushTimer.unref();
     }, jitter);
+    this.flushStartupTimer.unref();
 
     // Flush the AOF more frequently than snapshots so the worst-case data-loss
     // window on an unclean restart is ~1 s rather than a full snapshot interval.
     this.aofTimer = setInterval(() => {
-      if (this.aofDirty) void this.flushAof();
+      if (this.aofDirty) void this.flushAof().catch(err => console.error("PDIM AOF failed", err));
     }, 1_000);
+    this.aofTimer.unref();
   }
 
   // Load and replay the durable AOF after the snapshot has been applied.
+  private decodeRecovery(buffer: Buffer): any {
+    const envelope = JSON.parse(buffer.toString("utf8"));
+    if (envelope.format !== "pdim-checksummed-v2") {
+      throw new Error("Legacy unverified recovery artifact requires explicit offline migration");
+    }
+    if (typeof envelope.payload !== "string" ||
+        createHash("sha256").update(envelope.payload).digest("hex") !== envelope.sha256) {
+      throw new Error("Recovery artifact checksum mismatch");
+    }
+    return JSON.parse(envelope.payload);
+  }
+
+  private encodeRecovery(buffer: Buffer): Buffer {
+    return Buffer.from(JSON.stringify({
+      format: "pdim-checksummed-v2", payload: buffer.toString("utf8"),
+      sha256: createHash("sha256").update(buffer).digest("hex"),
+    }));
+  }
+
   private async replayAof(): Promise<void> {
     let log: RedisAofLog | null = null;
     try {
@@ -338,27 +395,32 @@ export class RedisStore extends EventEmitter {
         this.persistPocket,
         this.persistAofKey,
       );
-      if (buf) log = JSON.parse(buf.toString("utf-8")) as RedisAofLog;
-    } catch {
-      // No AOF or unreadable — nothing to replay.
-      return;
+      if (!buf) throw new Error("Recovery AOF missing");
+      log = this.decodeRecovery(buf) as RedisAofLog;
+    } catch (cause) {
+      throw new Error("Unreadable AOF", { cause });
     }
-    if (!log?.records?.length) return;
+    if (log?.version !== 1 || !Array.isArray(log.records)) throw new Error("Invalid AOF format");
+    if (!log.records.length) return;
 
     let replayed = 0;
     for (const rec of log.records) {
       // Skip anything already folded into the loaded snapshot.
-      if (rec.s <= this.aofBaselineSeq) continue;
-      try {
-        this.dispatchSync(rec.c, rec.a);
-        replayed++;
-      } catch (err) {
-        // A single bad record must not abort recovery of the rest.
-        console.error(
-          `[RedisStore:${this.instanceName}] AOF replay skipped ${rec.c}:`,
-          err,
-        );
+      if (!Number.isSafeInteger(rec.s) || typeof rec.c !== "string" || !Array.isArray(rec.a)) {
+        throw new Error("Invalid AOF record");
       }
+      if (rec.s <= this.aofBaselineSeq) continue;
+      if (rec.s !== this.aofSeq + 1) throw new Error("AOF sequence discontinuity");
+      if (rec.c === "__RESTORE_STREAMS") {
+        const entries = JSON.parse(rec.a[0]!);
+        for (const [key, value] of this.data) {
+          if (value.type === "stream") this.data.delete(key);
+        }
+        for (const [key, value] of Object.entries(entries)) this.data.set(key, value as RedisEntry);
+      } else {
+        this.dispatchSync(rec.c, rec.a);
+      }
+      replayed++;
       if (rec.s > this.aofSeq) this.aofSeq = rec.s;
     }
 
@@ -377,7 +439,14 @@ export class RedisStore extends EventEmitter {
   // it runs on the hot path for every write. The durable flush happens on the
   // 1 s timer (flushAof).
   private recordAof(c: string, args: string[]): void {
-    if (!AOF_MUTATING_COMMANDS.has(c)) return;
+    if (["XADD", "XDEL", "XTRIM", "XGROUP", "XACK", "XREADGROUP", "XCLAIM", "XAUTOCLAIM", "XSETID"].includes(c)) {
+      // Journal actual stream state, not nondeterministic '*' IDs or wall-clock
+      // consumer-group delivery timestamps. Includes pending/consumer metadata.
+      const streams = Object.fromEntries([...this.data].filter(([, value]) => value.type === "stream"));
+      c = "__RESTORE_STREAMS";
+      args = [JSON.stringify(streams)];
+    }
+    if (c !== "__RESTORE_STREAMS" && !AOF_MUTATING_COMMANDS.has(c)) return;
     this.aofSeq++;
     this.aofLog.push({ s: this.aofSeq, c, a: args });
     this.aofDirty = true;
@@ -423,7 +492,7 @@ export class RedisStore extends EventEmitter {
         this.persistPocket,
         this.persistAofKey,
         "application/json",
-        body,
+        this.encodeRecovery(body),
         { policy },
       );
     } catch (err) {
@@ -437,6 +506,7 @@ export class RedisStore extends EventEmitter {
   }
 
   async close(): Promise<void> {
+    if (this.flushStartupTimer) clearTimeout(this.flushStartupTimer);
     if (this.flushTimer) clearInterval(this.flushTimer);
     if (this.aofTimer) clearInterval(this.aofTimer);
     for (const t of this.timers.values()) clearTimeout(t);
@@ -569,7 +639,6 @@ export class RedisStore extends EventEmitter {
     const cutoffSeq = this.aofSeq;
     const parts: Buffer[] = [];
     for (const [key, entry] of this.data) {
-      if (entry.type === "stream") continue;
       const keyBuf = Buffer.from(JSON.stringify(key) + ":", "utf8");
       const valBuf = await this.serializeEntryIncrementally(entry);
       parts.push(Buffer.concat([keyBuf, valBuf]));
@@ -588,10 +657,8 @@ export class RedisStore extends EventEmitter {
     // Consistency: a write landing between yields makes the snapshot "torn" —
     // replaying its AOF record on boot could double-apply non-idempotent ops
     // (INCR, APPEND).  We detect this via snapshotTorn and retry the
-    // incremental build once with a fresh cutoffSeq.  A second tear during
-    // the retry is handled by bumping cutoffSeq past those writes; any
-    // double-apply risk for non-idempotent ops is corrected by the next
-    // persist cycle (5 s later).
+    // incremental build once with a fresh cutoffSeq. A second tear discards the
+    // candidate; no manifest is advanced and no required AOF records are trimmed.
     const savedAt = Date.now();
     this.dirty = false;
     let body: Buffer;
@@ -610,12 +677,10 @@ export class RedisStore extends EventEmitter {
         // snapshot window is short and a second tear is unlikely.
         this.snapshotTorn = false;
         ({ parts, cutoffSeq } = await this.buildSnapshotParts());
-        // If torn again, bump cutoffSeq so the new writes land in the AOF
-        // above the baseline and are replayed on next boot.  Any non-idempotent
-        // ops will be double-applied at most once; the following persist cycle
-        // (5 s) produces a clean snapshot that resets the baseline.
+        // A second tear is not a valid recovery generation.
         if (this.snapshotTorn) {
-          cutoffSeq = this.aofSeq;
+          this.dirty = true;
+          return; // Never publish a torn generation or trim its required AOF.
         }
       }
 
@@ -635,14 +700,36 @@ export class RedisStore extends EventEmitter {
     }
     try {
       const policy = await fabricStorage.recommendedPolicy();
+      const generationKey = `${this.persistKey}:${randomUUID()}`;
+      const encoded = this.encodeRecovery(body);
       await fabricStorage.putNamedObject(
         this.instanceId,
         this.persistPocket,
-        this.persistKey,
+        generationKey,
         "application/json",
-        body,
+        encoded,
         { policy },
       );
+      // Commit pointer only after snapshot and a matching untrimmed AOF exist.
+      await this.flushAof();
+      if (this.aofDirty) throw new Error("Cannot commit snapshot with an unflushed AOF");
+      await fabricStorage.putNamedObject(
+        this.instanceId, this.persistPocket, "__recovery_manifest__", "application/json",
+        this.encodeRecovery(Buffer.from(JSON.stringify({
+          version: 1, snapshotKey: generationKey, baselineSeq: cutoffSeq,
+          previousSnapshotKey: this.currentSnapshotKey,
+          snapshotSha256: createHash("sha256").update(encoded).digest("hex"),
+        }))), { policy },
+      );
+      const retired = this.previousSnapshotKey;
+      this.previousSnapshotKey = this.currentSnapshotKey;
+      this.currentSnapshotKey = generationKey;
+      if (retired) {
+        // Current plus previous generation remain available; failed reclamation
+        // stays in the fabric deletion outbox rather than losing accounting.
+        await fabricStorage.deleteNamedObject(this.instanceId, this.persistPocket, retired)
+          .catch(err => console.error("Retired PDIM generation cleanup pending", err));
+      }
       this.lastSavedAt = savedAt;
       // Snapshot now durably contains everything through cutoffSeq. Drop folded
       // records and re-flush the trimmed tail so the AOF stays small and a

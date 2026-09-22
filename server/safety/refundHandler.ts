@@ -7,6 +7,8 @@
  */
 
 import Stripe from "stripe";
+import { registerCommerceCompensationHandlers, reconcileCharge, initiateCommerceRefund } from "../services/commerce/compensation";
+import { commerceRepository } from "../services/commerce/runtime";
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 import { env } from "../config/env.js";
@@ -66,7 +68,18 @@ function getStripe(): Stripe {
 /**
  * Process a refund request
  */
-export async function processRefund(params: {
+export async function processRefund(params:{chargeId:string;amount?:number;reason:string;userId:string;metadata?:Record<string,any>;idempotencyKey?:string}) {
+  try {
+    const charge=await getStripe().charges.retrieve(params.chargeId);
+    const pi=typeof charge.payment_intent==="string"?charge.payment_intent:charge.payment_intent?.id;
+    if(!pi) throw new Error("Charge has no payment intent");
+    const source=await commerceRepository.sourceByPayment(pi);
+    if(!source) throw new Error("Charge requires legacy financial reconciliation");
+    return await initiateCommerceRefund(source.id,params.userId,params.amount??Number(source.gross_cents)-Number(source.refunded_cents),params.idempotencyKey||"");
+  } catch(error) {return {success:false,error:error instanceof Error?error.message:String(error)};}
+}
+
+async function processLegacyRefund(params: {
   chargeId: string;
   amount?: number; // Optional - full refund if not specified
   reason: "duplicate" | "fraudulent" | "requested_by_customer";
@@ -126,6 +139,11 @@ export async function processRefund(params: {
  * Handle chargeback/dispute
  */
 export async function handleDispute(dispute: Stripe.Dispute): Promise<void> {
+  const chargeId=typeof dispute.charge==="string"?dispute.charge:dispute.charge.id;
+  await reconcileCharge(chargeId,dispute);
+}
+
+async function handleLegacyDispute(dispute:Stripe.Dispute):Promise<void> {
   logger.warn("═══════════════════════════════════════════════════════");
   logger.warn("⚠️ CHARGEBACK/DISPUTE RECEIVED");
   logger.warn(`   Dispute ID: ${dispute.id}`);
@@ -296,6 +314,10 @@ async function persistChargebackRecord(
  * Register Stripe webhook handlers for refunds/disputes
  */
 export function registerRefundWebhookHandlers(): void {
+  registerCommerceCompensationHandlers();
+}
+
+function registerLegacyRefundWebhookHandlers(): void {
   // Handle refund events
   registerWebhookHandler("charge.refunded", async (event) => {
     const charge = event?.data?.object as Stripe.Charge;

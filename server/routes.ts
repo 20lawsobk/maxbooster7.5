@@ -11,15 +11,20 @@ import { analytics, userStorage, userStorageFiles, users, notifications, pushSub
 import { sum, count, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.js";
+import { sessionAuthority } from "./services/sessionAuthority.js";
+import accountErasureRouter from "./routes/accountErasure.js";
+import { mfaLifecycle } from "./services/mfaLifecycle.js";
+import { createMfaChallengeRouter } from "./routes/mfaChallenge.js";
+import { factorRepository } from "./services/factorRepository.js";
+import { getApplicationContainment } from "./services/securityContainment.js";
+import { governanceBoundary } from "./middleware/governanceBoundary.js";
+import { assertRegistrationEnabled } from "./services/governancePolicyService.js";
+import { issueAdminApiToken, revokeAdminApiToken } from "./services/adminApiTokenService.js";
+import { consumeTotp } from "./services/totpReplay.js";
 import { requireUUIDParam } from "./middleware/requestValidation.js";
 import Stripe from "stripe";
 import { getStripePriceIds } from "./services/stripeSetup.js";
 import { getBaseUrl } from "./config/defaults.js";
-import {
-  generateSecret as otpGenerateSecret,
-  verifySync,
-  generateURI,
-} from "otplib";
 import {
   loginRateLimiter,
   registerRateLimiter,
@@ -32,16 +37,8 @@ import {
   invalidateCacheOnMutation,
 } from "./middleware/apiCache.js";
 import { blockDemoWrite } from "./auth.js";
-import { requireAuth, requireAdmin } from "./middleware/auth.js";
+import { requireAuth, requireAdmin, require2FA } from "./middleware/auth.js";
 
-const authenticator = {
-  generateSecret: () => otpGenerateSecret(),
-  keyuri: (account: string, issuer: string, secret: string) =>
-    generateURI({ label: account, issuer, secret, strategy: "totp" }),
-  verify: ({ token, secret }: { token: string; secret: string }) =>
-    verifySync({ token, secret, strategy: "totp", epochTolerance: 1 }),
-};
-import QRCode from "qrcode";
 import { emailService } from "./services/emailService.js";
 import { upload, createHardenedUpload } from "./middleware/uploadHandler.js";
 import { logger } from "./logger.js";
@@ -138,41 +135,6 @@ declare global {
   }
 }
 
-// ── Per-process user object cache (30 s TTL) ─────────────────────────────────
-// Eliminates repeated Neon round-trips for the same user across sequential
-// requests.  Auth state changes (password reset, role change) invalidate via
-// cache expiry within 30 s — acceptable for non-critical reads.
-// The cache is keyed by userId (UUID string) and bounded to 2 000 entries.
-interface _UserCacheEntry {
-  user: import("../shared/schema.js").User;
-  expiresAt: number;
-}
-const _userCache = new Map<string, _UserCacheEntry>();
-const _USER_CACHE_TTL_MS = 30_000; // 30 seconds
-const _USER_CACHE_MAX = 2_000;
-
-function _userCacheGet(
-  userId: string,
-): import("../shared/schema.js").User | undefined {
-  const e = _userCache?.get(userId);
-  if (!e) return undefined;
-  if (Date?.now() > e?.expiresAt) {
-    _userCache?.delete(userId);
-    return undefined;
-  }
-  return e?.user;
-}
-function _userCacheSet(user: import("../shared/schema.js").User): void {
-  if (_userCache?.size >= _USER_CACHE_MAX) {
-    const oldest = _userCache?.keys().next().value;
-    if (oldest) _userCache?.delete(oldest);
-  }
-  _userCache?.set(user?.id, { user, expiresAt: Date.now() + _USER_CACHE_TTL_MS });
-}
-export function userCacheInvalidate(userId: string): void {
-  _userCache?.delete(userId);
-}
-
 // Middleware to attach user to request
 async function attachUser(req: Request, _res: Response, next: NextFunction) {
   const isProduction = isProductionEnv();
@@ -180,21 +142,15 @@ async function attachUser(req: Request, _res: Response, next: NextFunction) {
 
   if (req.session?.userId) {
     try {
-      // L1 process cache: avoids a Neon round-trip on every request for the
-      // same user — critical when background tasks hold DB connections.
-      const cached = _userCacheGet(req.session.userId);
-      if (cached) {
-        req.user = cached;
-      } else {
-        const user = await storage.getUser(req.session.userId);
-        if (user) {
-          req.user = user;
-          _userCacheSet(user);
-        } else if (isProduction && isApiRoute) {
-          logger.info(
-            `[Session] User not found for userId: ${req.session.userId}, path: ${req.path}`,
-          );
-        }
+      // Security state is read authoritatively; cross-pod factor changes must
+      // not be hidden behind a process-local profile cache.
+      const user = await storage.getUser(req.session.userId);
+      if (user) {
+        req.user = user;
+      } else if (isProduction && isApiRoute) {
+        logger.info(
+          `[Session] User not found for userId: ${req.session.userId}, path: ${req.path}`,
+        );
       }
     } catch (error) {
       logger.warn({ err: error }, "Error fetching user for request");
@@ -215,6 +171,10 @@ async function attachUser(req: Request, _res: Response, next: NextFunction) {
   }
 
   // Add isAuthenticated method
+  if (req.user?.twoFactorEnabled &&
+      (req.session as unknown as Record<string, unknown>).twoFactorVerified !== true) {
+    delete req.user;
+  }
   req.isAuthenticated = function (): this is Request & {
     user: import("../shared/schema.js").User;
   } {
@@ -265,6 +225,8 @@ export async function registerRoutes(
 
   // Apply user attachment middleware to all routes
   app.use(attachUser);
+  app.use(getApplicationContainment().guard);
+  app.use(governanceBoundary);
 
   // Demo-account write protection. MUST be mounted after attachUser: it
   // gates on req.user.email, and attachUser is the only middleware in the
@@ -390,6 +352,7 @@ export async function registerRoutes(
         const hashedPassword = await bcrypt.hash(password, 12);
         let user;
         try {
+          await assertRegistrationEnabled();
           user = await storage.createUser({
             email,
             password: hashedPassword,
@@ -421,6 +384,10 @@ export async function registerRoutes(
         try {
           await sessionRegenerate(req);
           req.session.userId = user.id;
+          Object.assign(req.session, {
+            authGeneration: await (await sessionAuthority()).issue(user.id),
+            reauthenticatedAt: Date.now(), reauthenticatedUserId: user.id,
+          });
           await sessionSave(req);
         } catch (sessionErr) {
           logger.warn(
@@ -431,11 +398,6 @@ export async function registerRoutes(
             .status(500)
             .json({ message: "Registration failed - session error" });
         }
-
-        // Pre-warm the per-process user cache so the very next requests (profile,
-        // sessions, login-history) don't need a DB round-trip while background
-        // tasks from register/login still hold Neon connections.
-        _userCacheSet(user as import("../shared/schema.js").User);
 
         emailService
           .sendWelcomeEmail({
@@ -518,6 +480,11 @@ export async function registerRoutes(
         if (!user) {
           user = await storage.getUserByUsername(identifier);
         }
+        const loginAuthority = await sessionAuthority();
+        const loginGeneration = user ? await loginAuthority.issue(user.id) : undefined;
+        // Read credentials after capturing the epoch. A concurrent reset either
+        // changes these credentials or invalidates this captured epoch.
+        if (user) user = await storage.getUser(user.id);
 
         // Always run bcrypt?.compare to prevent timing-based user enumeration.
         // When no user is found we compare against a dummy hash so response time
@@ -538,7 +505,8 @@ export async function registerRoutes(
         }
 
         // Check if 2FA is enabled
-        if (user?.twoFactorEnabled && user?.twoFactorSecret) {
+        if (user?.twoFactorEnabled) {
+          if (!user.twoFactorSecret) return res.status(403).json({ message: "Authenticator recovery required" });
           if (!twoFactorCode) {
             return res.status(200).json({
               requiresTwoFactor: true,
@@ -546,22 +514,23 @@ export async function registerRoutes(
             });
           }
 
-          const { verifySync: otpVerifySync } = await import("otplib");
-          const isCodeValid = otpVerifySync({
-            token: twoFactorCode,
-            secret: user.twoFactorSecret,
-            strategy: "totp",
-            epochTolerance: 1,
-          });
+          const isCodeValid = await consumeTotp(user.id, user.twoFactorSecret, twoFactorCode);
 
           if (!isCodeValid) {
-            return res.status(401).json({ message: "Invalid 2FA code" });
+            return res.status(401).json({ message: "Invalid or already used 2FA code. Wait for a new code." });
           }
         }
 
         try {
+          if (!await loginAuthority.validate(user.id, loginGeneration)) {
+            return res.status(401).json({ message: "Credentials changed. Please sign in again." });
+          }
           await sessionRegenerate(req);
           req.session.userId = user?.id;
+          Object.assign(req.session, {
+            authGeneration: loginGeneration,
+            reauthenticatedAt: Date.now(), reauthenticatedUserId: user.id,
+          });
           // If the user has 2FA enabled and passed the TOTP check above, mark this
           // session as 2FA-verified so require2FA gates on privileged routes pass.
           if (user?.twoFactorEnabled) {
@@ -572,11 +541,6 @@ export async function registerRoutes(
           await sessionSave(req);
 
           logger.info({ userId: user.id }, "[Login] SUCCESS for userId");
-
-          // Pre-warm the per-process user cache so subsequent requests (profile,
-          // sessions, login-history) need zero DB round-trips even while background
-          // tasks are still holding Neon connections.
-          _userCacheSet(user);
 
           // Background tasks — fire-and-forget with 3 s hard timeout so Neon
           // DB connections are released quickly and don't starve foreground requests.
@@ -615,6 +579,8 @@ export async function registerRoutes(
             const tokenPair = await jwtAuthService.issueTokens(
               user.id,
               ((user as Record<string, unknown>).role as string) || "user",
+              (req.session as unknown as Record<string, unknown>).twoFactorVerified === true,
+              (req.session as unknown as { authGeneration: string }).authGeneration,
             );
             sessionToken = tokenPair.accessToken;
           } catch (tokenErr) {
@@ -642,20 +608,18 @@ export async function registerRoutes(
   );
 
   // Auth: Logout
-  app.post("/api/auth/logout", (req: Request, res: Response) => {
-    const userId = req.session.userId;
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Logout failed" });
-      }
-      if (userId) {
-        jwtAuthService
-          .revokeAllUserTokens(userId, "User logout")
-          .catch(() => {});
-      }
+  app.post("/api/auth/logout", async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      if (userId) await jwtAuthService.revokeAllUserTokens(userId, "User logout");
+      await new Promise<void>((resolve, reject) =>
+        req.session.destroy(error => error ? reject(error) : resolve()));
       res.clearCookie("sessionId", { path: "/" });
-      res.json({ message: "Logged out successfully" });
-    });
+      return res.json({ message: "Logged out successfully" });
+    } catch (error) {
+      logger.warn({ err: error }, "Logout failed");
+      return res.status(503).json({ message: "Logout could not be confirmed. Please retry." });
+    }
   });
 
   // Auth: Inactivity heartbeat — called by the frontend whenever the user is active.
@@ -703,6 +667,8 @@ export async function registerRoutes(
         const tokenPair = await jwtAuthService.issueTokens(
           String(userId),
           ((user as Record<string, unknown>).role as string) || "user",
+          (req.session as unknown as Record<string, unknown>).twoFactorVerified === true,
+          (req.session as unknown as { authGeneration: string }).authGeneration,
         );
         sessionToken = tokenPair.accessToken;
       } catch (tokenErr) {
@@ -955,7 +921,6 @@ export async function registerRoutes(
           preferences: sql`coalesce(${users.preferences}, '{}'::jsonb) || ${JSON.stringify(preferenceUpdates)}::jsonb`,
         })
         .where(eq(users.id, req.user.id));
-      userCacheInvalidate(req.user.id);
       return res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Update preferences error");
@@ -1234,7 +1199,6 @@ export async function registerRoutes(
             )`,
           })
           .where(eq(users.id, req.user.id));
-        userCacheInvalidate(req.user.id);
       }
 
       return res.json({ success: true, message: "Privacy settings updated" });
@@ -1266,7 +1230,6 @@ export async function registerRoutes(
             })}::jsonb`,
           })
           .where(eq(users.id, req.user.id));
-        userCacheInvalidate(req.user.id);
 
         return res.json({
           success: true,
@@ -1345,7 +1308,18 @@ export async function registerRoutes(
             .json({ message: "Current password is incorrect" });
         }
         const hashedPassword = await bcrypt.hash(newPassword, 12);
-        await storage.updateUser(req.user.id, { password: hashedPassword });
+        const changedGeneration = await db.transaction(async (tx) => {
+          await tx.update(users).set({ password: hashedPassword }).where(eq(users.id, req.user!.id));
+          const result = await tx.execute<{ generation: string }>(sql`INSERT INTO auth_session_epochs (user_id, generation)
+            VALUES (${req.user!.id}, 2) ON CONFLICT (user_id)
+            DO UPDATE SET generation = auth_session_epochs.generation + 1
+            RETURNING generation::text`);
+          const generation = result.rows[0]?.generation;
+          if (typeof generation !== "string" || !/^[1-9]\d*$/.test(generation)) {
+            throw new Error("Credential mutation did not return a valid session generation");
+          }
+          return generation;
+        });
 
         // SECURITY FIX: Invalidate all OTHER sessions for this user after password change
         const currentSessionId = req.session.id;
@@ -1383,22 +1357,10 @@ export async function registerRoutes(
           .sendPasswordChangedNotification(req.user.id)
           .catch(() => {});
 
-        // SECURITY: Write cross-pod session revocation flag to PDIM so all running
-        // pods reject this user's old sessions within 5 s (L1 bust-key TTL).
-        // This supplements the session enumeration above which only deletes from
-        // the PDIM store — pods whose L1 session caches still hold the old session
-        // will now get a revocation signal on next request.
-        try {
-          const { revokeUserSessions } = await import(
-            "./middleware/sessionConfig.js"
-          );
-          await revokeUserSessions(String(req.user.id));
-        } catch (revokeErr: unknown) {
-          logger.warn(
-            { err: revokeErr },
-            "[Security] Cross-pod session revocation failed after password change — other pods may still serve old sessions for up to 60 s",
-          );
-        }
+        // Credential mutation and durable revocation committed together above.
+        // Retain only this freshly reauthenticated session at the new epoch.
+        (req.session as unknown as Record<string, unknown>).authGeneration = changedGeneration;
+        await sessionSave(req);
 
         return res.json({
           success: true,
@@ -1412,29 +1374,8 @@ export async function registerRoutes(
   );
 
   // Auth: Delete account
-  app.delete("/api/auth/account", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    try {
-      const { password } = req.body;
-      if (!password) {
-        return res
-          .status(400)
-          .json({ message: "Password is required to delete account" });
-      }
-      const isValid = await bcrypt.compare(password, req.user.password);
-      if (!isValid) {
-        return res.status(400).json({ message: "Password is incorrect" });
-      }
-      await storage.deleteUser(req.user.id);
-      req.session.destroy(() => {});
-      return res.json({ success: true });
-    } catch (error) {
-      logger.warn({ err: error }, "Delete account error");
-      return res.status(500).json({ message: "Failed to delete account" });
-    }
-  });
+  app.use("/api/auth", accountErasureRouter);
+  app.use("/api/auth", createMfaChallengeRouter());
 
   // Auth: Upload avatar
   app.post(
@@ -1735,38 +1676,19 @@ export async function registerRoutes(
   });
 
   // Auth: 2FA setup - Generate TOTP secret and QR code
+  const { twoFactorRateLimiter } = await import("./middleware/rateLimiter.js");
+  const factorLifecycle = mfaLifecycle();
   app.post(
     "/api/auth/2fa/setup",
     criticalEndpointLimiter,
+    twoFactorRateLimiter,
     async (req: Request, res: Response) => {
       if (!req.user) {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
       try {
-        const secret = authenticator.generateSecret();
-        const appName = "MaxBooster";
-        const accountName = req.user.email;
-        const otpauthUrl = authenticator.keyuri(accountName, appName, secret);
-
-        await storage.updateUser(req.user.id, { twoFactorSecret: secret });
-        // Invalidate stale user cache so the next request (2fa/verify) sees the new secret
-        userCacheInvalidate(req.user.id);
-
-        const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl, {
-          width: 256,
-          margin: 2,
-          color: {
-            dark: "#000000",
-            light: "#ffffff",
-          },
-        });
-
-        return res.json({
-          secret,
-          qrCode: qrCodeDataUrl,
-          otpauthUrl,
-        });
+        return await factorLifecycle.setup(req, res);
       } catch (error) {
         logger.warn({ err: error }, "2FA setup error");
         return res.status(500).json({ message: "Failed to setup 2FA" });
@@ -1776,7 +1698,6 @@ export async function registerRoutes(
 
   // Auth: 2FA verify - Verify TOTP code and enable 2FA
   // SECURITY: Rate limited to prevent brute-force attacks on 2FA codes
-  const { twoFactorRateLimiter } = await import("./middleware/rateLimiter.js");
   app.post(
     "/api/auth/2fa/verify",
     twoFactorRateLimiter,
@@ -1786,36 +1707,7 @@ export async function registerRoutes(
       }
 
       try {
-        const { code } = req.body;
-
-        if (!code) {
-          return res
-            .status(400)
-            .json({ message: "Verification code is required" });
-        }
-
-        // SECURITY: Validate code format (6 digits)
-        if (!/^\d{6}$/.test(code)) {
-          return res.status(400).json({ message: "Invalid code format" });
-        }
-
-        const secret = req.user.twoFactorSecret;
-        if (!secret) {
-          return res
-            .status(400)
-            .json({ message: "2FA not set up. Please run setup first." });
-        }
-
-        const isValid = authenticator.verify({ token: code, secret });
-
-        if (!isValid) {
-          return res.status(400).json({ message: "Invalid verification code" });
-        }
-
-        await storage.updateUser(req.user.id, { twoFactorEnabled: true });
-        userCacheInvalidate(req.user.id);
-
-        return res.json({ success: true, message: "2FA enabled successfully" });
+        return await factorLifecycle.verify(req, res);
       } catch (error) {
         logger.warn({ err: error }, "2FA verify error");
         return res.status(500).json({ message: "Failed to verify 2FA code" });
@@ -1835,17 +1727,20 @@ export async function registerRoutes(
 
       try {
         const { password, code } = req.body;
-
-        if (!password) {
+        if (req.user.password && !password) {
           return res.status(400).json({ message: "Password is required" });
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          password,
-          req.user.password,
-        );
+        const recentSession = req.session as unknown as {
+          reauthenticatedAt?: number; reauthenticatedUserId?: string;
+        };
+        const recentOAuth = !req.user.password && recentSession.reauthenticatedUserId === req.user.id &&
+          typeof recentSession.reauthenticatedAt === "number" &&
+          recentSession.reauthenticatedAt <= Date.now() &&
+          Date.now() - recentSession.reauthenticatedAt < 5 * 60_000;
+        const isPasswordValid = recentOAuth || (typeof password === "string" &&
+          !!req.user.password && await bcrypt.compare(password, req.user.password));
         if (!isPasswordValid) {
-          return res.status(400).json({ message: "Invalid password" });
+          return res.status(403).json({ message: "Recent authentication required", requiresReauthentication: true });
         }
 
         if (req.user.twoFactorEnabled && req.user.twoFactorSecret) {
@@ -1858,20 +1753,19 @@ export async function registerRoutes(
             return res.status(400).json({ message: "Invalid code format" });
           }
 
-          const isCodeValid = authenticator.verify({
-            token: code,
-            secret: req.user.twoFactorSecret,
-          });
+          const isCodeValid = await consumeTotp(req.user.id, req.user.twoFactorSecret, code);
           if (!isCodeValid) {
             return res.status(400).json({ message: "Invalid 2FA code" });
           }
         }
 
-        await storage.updateUser(req.user.id, {
-          twoFactorEnabled: false,
-          twoFactorSecret: null,
-        });
-        userCacheInvalidate(req.user.id);
+        const factorGeneration = await (await factorRepository()).replace(req.user.id,
+          req.user.twoFactorSecret ?? null, req.user.twoFactorEnabled === true, null, false);
+        const factorSession = req.session as unknown as Record<string, unknown>;
+        delete factorSession.pendingFactor;
+        delete factorSession.twoFactorVerified;
+        factorSession.authGeneration = factorGeneration;
+        await sessionSave(req);
 
         return res.json({
           success: true,
@@ -1897,11 +1791,12 @@ export async function registerRoutes(
   });
 
   // Auth: 2FA validate - Check a TOTP code against the authenticated user's secret
-  // without modifying any state. Useful for step-up auth and re-authentication flows.
+  // Atomically consumes the factor time step to prevent cross-endpoint replay.
   app.post(
     "/api/auth/2fa/validate",
     twoFactorRateLimiter,
     async (req: Request, res: Response) => {
+      try {
       if (!req.user) {
         return res.status(401).json({ message: "Not authenticated" });
       }
@@ -1914,15 +1809,7 @@ export async function registerRoutes(
           .status(400)
           .json({ message: "2FA is not enabled on this account" });
       }
-      const verifyResult = authenticator.verify({
-        token: String(code),
-        secret: req.user.twoFactorSecret,
-      });
-      // authenticator.verify() returns the full verifySync result object — extract the boolean
-      const isValid =
-        typeof verifyResult === "object" && verifyResult !== null
-          ? (verifyResult as { valid: boolean }).valid
-          : !!verifyResult;
+      const isValid = await consumeTotp(req.user.id, req.user.twoFactorSecret, String(code));
       // Mark the session as 2FA-verified so privileged routes (require2FA) allow access.
       if (isValid) {
         (req.session as unknown as Record<string, unknown>).twoFactorVerified =
@@ -1932,6 +1819,10 @@ export async function registerRoutes(
         );
       }
       return res.json({ valid: isValid });
+      } catch (error) {
+        logger.warn({ err: error }, "Factor validation unavailable");
+        return res.status(503).json({ message: "Factor validation unavailable. Please retry with a new code." });
+      }
     },
   );
 
@@ -2033,6 +1924,7 @@ export async function registerRoutes(
     try {
       let demoUser = await storage.getUserByEmail("demo@maxbooster.ai");
       if (!demoUser) {
+        await assertRegistrationEnabled();
         const hashedPassword = await bcrypt.hash(
           crypto.randomBytes(32).toString("hex"),
           12,
@@ -2061,6 +1953,8 @@ export async function registerRoutes(
       try {
         await sessionRegenerate(req);
         req.session.userId = demoUser.id;
+        (req.session as unknown as Record<string, unknown>).authGeneration =
+          await (await sessionAuthority()).issue(demoUser.id);
         await sessionSave(req);
         logger.info({ demoUserId: demoUser.id }, "[Demo] SUCCESS for demoUser");
         const {
@@ -2213,7 +2107,8 @@ export async function registerRoutes(
         // both succeed. Only the request whose UPDATE actually matches a
         // row wins the race, which closes the TOCTOU gap that the
         // check-then-act pattern above would leave open on its own.
-        const [resetUser] = await db
+        const resetUser = await db.transaction(async (tx) => {
+          const [changed] = await tx
           .update(users)
           .set({
             password: hashedPassword,
@@ -2227,6 +2122,13 @@ export async function registerRoutes(
             ),
           )
           .returning({ id: users.id });
+          if (changed) {
+            await tx.execute(sql`INSERT INTO auth_session_epochs (user_id, generation)
+              VALUES (${changed.id}, 2) ON CONFLICT (user_id)
+              DO UPDATE SET generation = auth_session_epochs.generation + 1`);
+          }
+          return changed;
+        });
 
         if (!resetUser) {
           return res
@@ -2234,19 +2136,7 @@ export async function registerRoutes(
             .json({ message: "Invalid or expired reset token" });
         }
 
-        // SECURITY: Revoke all active sessions after password reset so old sessions
-        // are rejected across all pods within ≤5 s (REVOKE_L1_TTL_ACTIVE_MS).
-        try {
-          const { revokeUserSessions } = await import(
-            "./middleware/sessionConfig.js"
-          );
-          await revokeUserSessions(String(resetUser.id));
-        } catch (revokeErr: unknown) {
-          logger.warn(
-            { err: revokeErr },
-            "[Security] Session revocation failed after password reset",
-          );
-        }
+        // Password, reset-token consumption and durable epoch committed together.
 
         return res.json({
           success: true,
@@ -2259,31 +2149,29 @@ export async function registerRoutes(
     },
   );
 
-  // Auth: Token management (admin)
-  // There is no backing store for issued tokens and no auth middleware
-  // that accepts one as a Bearer credential, so a "successfully issued"
-  // token here would be unusable, and a "successfully revoked" token
-  // would not actually revoke anything. Fail explicitly rather than
-  // fabricate a working credential/revocation.
-  app.post("/api/auth/token", async (req: Request, res: Response) => {
-    if (!req.user || req.user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
+  // Compatibility aliases use the same own-account hashed developer-key service
+  // and admin + factor gates as /api/admin/tokens (not session/JWT credentials).
+  app.post("/api/auth/token", requireAdmin, require2FA, async (req: Request, res: Response) => {
+    try {
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(201).json(await issueAdminApiToken(req.user!.id, req.ip || "unknown"));
+    } catch (error) {
+      logger.warn({ err: error }, "Admin API credential issuance failed");
+      return res.status(500).json({ error: "Unable to issue API credential" });
     }
-    return res.status(501).json({
-      error:
-        "API token issuance is not implemented yet. No token store or Bearer-token auth path exists to back it.",
-    });
   });
 
   // Auth: Revoke token (admin)
-  app.post("/api/auth/token/revoke", async (req: Request, res: Response) => {
-    if (!req.user || req.user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
+  app.post("/api/auth/token/revoke", requireAdmin, require2FA, async (req: Request, res: Response) => {
+    if (typeof req.body?.tokenId !== "string" || !req.body.tokenId.trim() || req.body.tokenId.length > 100) {
+      return res.status(400).json({ error: "A credential ID is required" });
     }
-    return res.status(501).json({
-      error:
-        "API token revocation is not implemented yet. No token store exists to revoke against.",
-    });
+    try {
+      return res.json(await revokeAdminApiToken(req.user!.id, req.body.tokenId, req.ip || "unknown"));
+    } catch (error) {
+      logger.warn({ err: error }, "Admin API credential revocation failed");
+      return res.status(400).json({ error: "Unable to revoke credential for current user" });
+    }
   });
 
   // Auth: Google OAuth - Start login flow
@@ -2403,8 +2291,10 @@ export async function registerRoutes(
 
       const googleUser = await userInfoResponse.json();
 
-      if (!googleUser.email) {
-        return res.redirect("/login?error=no_email");
+      if (!userInfoResponse.ok || googleUser.verified_email !== true ||
+          typeof googleUser.email !== "string" || !googleUser.email ||
+          typeof googleUser.id !== "string" || !googleUser.id) {
+        return res.redirect("/login?error=unverified_identity");
       }
 
       // Check if user exists
@@ -2412,6 +2302,7 @@ export async function registerRoutes(
 
       if (!user) {
         // Create new user from Google account
+        await assertRegistrationEnabled();
         user = await storage.createUser({
           email: googleUser.email,
           password: "", // No password for OAuth users
@@ -2420,8 +2311,10 @@ export async function registerRoutes(
           googleId: googleUser.id || null,
         });
 
-        logger.info(`[Google OAuth] Created new user: ${user.email}`);
-      } else if (googleUser.id && user.googleId !== googleUser.id) {
+        logger.info("[Google OAuth] Created new user");
+      } else if (user.googleId && user.googleId !== googleUser.id) {
+        return res.redirect("/login?error=identity_mismatch");
+      } else if (!user.googleId) {
         // Existing account (e.g. originally created via email/password) is
         // completing Google login for the first time - link it so the
         // Settings "Connected Accounts" disconnect flow has something real
@@ -2434,9 +2327,23 @@ export async function registerRoutes(
       // Log the user in using session (regenerate prevents session fixation)
       try {
         await sessionRegenerate(req);
+        const generation = await (await sessionAuthority()).issue(user.id);
+        const currentUser = await storage.getUser(user.id);
+        if (!currentUser) return res.redirect("/login?error=account_unavailable");
+        user = currentUser;
+        if (user.twoFactorEnabled) {
+          if (!user.twoFactorSecret) return res.redirect("/login?error=authenticator_recovery_required");
+          Object.assign(req.session, { pendingMfa: {
+            userId: user.id, generation, expiresAt: Date.now() + 5 * 60_000,
+          } });
+          await sessionSave(req);
+          return res.redirect("/api/auth/2fa/challenge");
+        }
         req.session.userId = user.id;
+        Object.assign(req.session, { authGeneration: generation,
+          reauthenticatedAt: Date.now(), reauthenticatedUserId: user.id });
         await sessionSave(req);
-        logger.info(`[Google OAuth] User logged in: ${user.email}`);
+        logger.info("[Google OAuth] User logged in");
         return res.redirect("/dashboard");
       } catch (sessionErr) {
         logger.warn(
@@ -3032,6 +2939,10 @@ export async function registerRoutes(
       return res.status(500).json({ error: "Failed to determine next action" });
     }
   });
+
+  // Mount the dedicated authenticated router before legacy overlapping handlers.
+  // Its exact provider callbacks verify signatures before any persistence.
+  app.use("/api/notifications", (await import("./routes/notifications.js")).default);
 
   // Notifications: Get all notifications
   app.get("/api/notifications", async (req: Request, res: Response) => {
@@ -6697,12 +6608,16 @@ export async function registerRoutes(
       const validPlans = ["monthly", "yearly", "lifetime"] as const;
 
       let resolvedPriceId: string;
+      let canonicalPlan: typeof validPlans[number];
+      const priceIds = getStripePriceIds();
 
       if (planName && validPlans.includes(planName)) {
         // Look up the real Stripe price ID from server-side cache
-        const priceIds = getStripePriceIds();
-        resolvedPriceId = priceIds[planName as keyof typeof priceIds];
-      } else if (rawPriceId && rawPriceId.startsWith("price_")) {
+        canonicalPlan = planName;
+        resolvedPriceId = priceIds[canonicalPlan];
+      } else if (!planName && typeof rawPriceId === "string" &&
+        validPlans.some(plan => priceIds[plan] === rawPriceId)) {
+        canonicalPlan = validPlans.find(plan => priceIds[plan] === rawPriceId)!;
         resolvedPriceId = rawPriceId;
       } else {
         return res
@@ -6710,6 +6625,9 @@ export async function registerRoutes(
           .json({ message: "planName (monthly/yearly/lifetime) is required" });
       }
 
+      if (typeof resolvedPriceId !== "string" || !resolvedPriceId.startsWith("price_")) {
+        return res.status(503).json({ message: "Selected billing plan is not configured" });
+      }
       const user = req.user!;
 
       // Find or create Stripe customer linked to this user
@@ -6721,28 +6639,20 @@ export async function registerRoutes(
           metadata: { userId: user.id },
         });
         customerId = customer.id;
-        // Persist customer ID (best-effort — billing.ts retry logic handles failures)
-        try {
-          await storage.updateUser(user.id, { stripeCustomerId: customerId });
-        } catch (e) {
-          logger.warn(
-            { err: e },
-            "[create-subscription] Could not persist stripeCustomerId",
-          );
-        }
+        // Never collect payment before the authoritative account linkage commits.
+        await storage.updateUser(user.id, { stripeCustomerId: customerId });
       }
 
       // Lifetime is a one-time payment — use PaymentIntent
       if (
-        planName === "lifetime" ||
-        resolvedPriceId === getStripePriceIds().lifetime
+        canonicalPlan === "lifetime"
       ) {
         const paymentIntent = await stripe.paymentIntents.create({
           amount: 69900, // $699.00 in cents
           currency: "usd",
           customer: customerId,
           automatic_payment_methods: { enabled: true },
-          metadata: { userId: user.id, planName: "lifetime" },
+          metadata: { userId: user.id, planId: "lifetime", planName: "lifetime" },
         });
         return res.json({
           clientSecret: paymentIntent.client_secret,
@@ -6757,7 +6667,7 @@ export async function registerRoutes(
         payment_behavior: "default_incomplete",
         payment_settings: { save_default_payment_method: "on_subscription" },
         expand: ["latest_invoice.payment_intent"],
-        metadata: { userId: user.id, planName: planName || "unknown" },
+        metadata: { userId: user.id, planId: canonicalPlan, planName: canonicalPlan },
       });
 
       const invoice = subscription.latest_invoice as Stripe.Invoice;
@@ -7496,6 +7406,11 @@ export async function registerRoutes(
 
     // Webhooks
     {
+      path: "/api/webhooks/resend",
+      name: "resendWebhook",
+      loader: () => import("./routes/webhooks/resend"),
+    },
+    {
       path: "/webhooks/sendgrid",
       name: "sendgridWebhook",
       loader: () => import("./routes/webhooks/sendgrid"),
@@ -8227,25 +8142,11 @@ export async function registerRoutes(
         // Check if user already exists (prevent duplicate registration)
         const existingUser = await storage.getUserByEmail(email);
         if (existingUser) {
-          // User already exists - log them in (regenerate prevents session fixation)
-          try {
-            await sessionRegenerate(req);
-            req.session.userId = existingUser.id;
-            await sessionSave(req);
-            const { password: _, ...userWithoutPassword } = existingUser;
-            return res.json({
-              user: userWithoutPassword,
-              message: "Account already exists. Logged in.",
-            });
-          } catch (sessionErr) {
-            logger.warn(
-              { err: sessionErr },
-              "[PostPayment] Session operation failed after retries",
-            );
-            return res
-              .status(500)
-              .json({ error: "Login failed - session error" });
-          }
+          // A paid checkout/email is not account authentication or an MFA proof.
+          return res.status(409).json({
+            error: "Account already exists. Please sign in using normal login.",
+            code: "LOGIN_REQUIRED",
+          });
         }
 
         const existingUsername = await storage.getUserByUsername(username);
@@ -8269,6 +8170,8 @@ export async function registerRoutes(
         }
 
         // Create the user account
+        const { assertRegistrationEnabled } = await import("./services/governancePolicyService.js");
+        await assertRegistrationEnabled();
         const user = await storage.createUser({
           email,
           password: hashedPassword,
@@ -8289,10 +8192,17 @@ export async function registerRoutes(
         }
 
         // Log the user in (regenerate prevents session fixation)
-        const { password: _, ...userWithoutPassword } = user;
+        const {
+          password: _, twoFactorSecret: _factor, passwordResetToken: _reset,
+          emailVerificationToken: _verification, ...userWithoutPassword
+        } = user;
         try {
           await sessionRegenerate(req);
           req.session.userId = user.id;
+          Object.assign(req.session, {
+            authGeneration: await (await sessionAuthority()).issue(user.id),
+            reauthenticatedAt: Date.now(), reauthenticatedUserId: user.id,
+          });
           await sessionSave(req);
           return res.json({
             user: userWithoutPassword,

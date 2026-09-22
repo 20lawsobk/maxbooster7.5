@@ -14,6 +14,11 @@ function probe(p: string): boolean {
 }
 
 function resolvePython(): string | null {
+  // Production startup restores and validates this exact interpreter before
+  // importing any consumer. Never silently substitute an unrelated system Python.
+  if (process.env.MAXBOOSTER_PYTHON) {
+    return probe(process.env.MAXBOOSTER_PYTHON) ? process.env.MAXBOOSTER_PYTHON : null;
+  }
   const candidates = [
     path?.join(CWD, "python_runtime", "bin", "python3"),
     path?.join(CWD, "python_runtime", "bin", "python"),
@@ -34,12 +39,12 @@ function resolvePython(): string | null {
 
 const resolved = resolvePython();
 
-export const PYTHON: string = resolved ?? "python3";
+export const PYTHON: string = resolved ?? process.env.MAXBOOSTER_PYTHON ?? "python3";
 export const PYTHON_AVAILABLE: boolean = resolved !== null;
 
 if (!PYTHON_AVAILABLE) {
   process.stdout.write(
-    "[Python] python3 not available — video/audio analysis features disabled (non-fatal, expected in production)\n",
+    "[Python] required interpreter unavailable — Python-backed operations cannot run\n",
   );
 }
 

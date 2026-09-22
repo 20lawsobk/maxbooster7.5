@@ -1769,8 +1769,8 @@ router.post("/jobs/:jobId/cancel", async (req, res) => {
     // Try audio-job delete first, then video-job
     let responded = false;
     for (const delPath of [
-      `/api/video-job/${jobId}`,
-      `/api/audio-job/${jobId}`,
+      `/api/audio-job/${encodeURIComponent(jobId)}`,
+      `/api/video-job/${encodeURIComponent(jobId)}`,
     ]) {
       try {
         const upRes = await undiciRequest(`${MODEL_API_BASE}${delPath}`, {
@@ -1781,6 +1781,7 @@ router.post("/jobs/:jobId/cancel", async (req, res) => {
           bodyTimeout: 5_000,
         });
         const text = await upRes.body.text();
+        if (upRes.statusCode === 404) continue;
         let data: unknown;
         try { data = JSON.parse(text); } catch { data = { detail: text.slice(0, 300) }; }
         res.status(upRes.statusCode).json(data);

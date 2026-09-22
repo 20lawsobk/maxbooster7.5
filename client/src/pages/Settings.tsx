@@ -1,5 +1,7 @@
 // @ts-nocheck
 import { useState, useRef, useEffect } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
+import { writePreference, preferencesPending } from "@/lib/preferenceWrites";
 import { CancellationModal } from "@/components/retention/CancellationModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -40,6 +42,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { PlatformConnections } from "@/components/social/platform-connections";
 import ChangePasswordDialog from "@/components/dialogs/ChangePasswordDialog";
 import TwoFactorSetupDialog from "@/components/dialogs/TwoFactorSetupDialog";
+import TwoFactorDisableDialog from "@/components/dialogs/TwoFactorDisableDialog";
 import PaymentUpdateDialog from "@/components/dialogs/PaymentUpdateDialog";
 import DeleteAccountDialog from "@/components/dialogs/DeleteAccountDialog";
 import { LoginHistory } from "@/components/settings/LoginHistory";
@@ -168,6 +171,9 @@ interface BillingActionError {
 }
 
 export default function Settings() {
+  const { theme: renderedTheme, setTheme, isSavingTheme } = useTheme();
+  const preferenceVersions = useRef<Record<string, number>>({});
+  const confirmedPreferences = useRef<Record<string, unknown>>({});
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -350,7 +356,8 @@ export default function Settings() {
 
   // Update preferences when preferencesData loads
   useEffect(() => {
-    if (preferencesData) {
+    if (preferencesData && !preferencesPending()) {
+      confirmedPreferences.current = { ...preferencesData };
       setPreferences({
         theme: preferencesData.theme || "dark",
         defaultBPM: preferencesData.defaultBPM || 120,
@@ -429,16 +436,23 @@ export default function Settings() {
   };
 
   const handlePreferenceChange = async (key: string, value: unknown) => {
-    const previousPreferences = { ...preferences };
+    if (key === "theme") {
+      setTheme(value as "light" | "dark" | "system");
+      return;
+    }
+    const version = (preferenceVersions.current[key] || 0) + 1;
+    preferenceVersions.current[key] = version;
+    if (!(key in confirmedPreferences.current)) confirmedPreferences.current[key] = preferences[key];
 
     // Optimistic update
     setPreferences((prev) => ({ ...prev, [key]: value }));
 
     try {
-      await apiRequest("PUT", "/api/auth/preferences", { [key]: value });
+      await writePreference(key, value);
+      confirmedPreferences.current[key] = value;
 
       // CRITICAL: Invalidate cache to refetch updated data
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/preferences"] });
+      if (!preferencesPending()) queryClient.invalidateQueries({ queryKey: ["/api/auth/preferences"] });
 
       toast({
         title: "Updated",
@@ -446,7 +460,9 @@ export default function Settings() {
       });
     } catch (error: unknown) {
       // Rollback on failure
-      setPreferences(previousPreferences);
+      if (preferenceVersions.current[key] === version) {
+        setPreferences(prev => ({ ...prev, [key]: confirmedPreferences.current[key] }));
+      }
 
       toast({
         title: "Error",
@@ -1188,6 +1204,10 @@ export default function Settings() {
                         </div>
                       </div>
                       {user?.twoFactorEnabled ? (
+                        <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setTwoFactorOpen(true)}>
+                          Replace authenticator
+                        </Button>
                         <Button
                           variant="outline"
                           onClick={() => setTwoFactorDisableOpen(true)}
@@ -1195,6 +1215,7 @@ export default function Settings() {
                         >
                           Disable 2FA
                         </Button>
+                        </div>
                       ) : (
                         <Button
                           variant="outline"
@@ -1274,7 +1295,8 @@ export default function Settings() {
                         </p>
                       </div>
                       <Select
-                        value={preferences.theme}
+                        value={renderedTheme}
+                        disabled={isSavingTheme}
                         onValueChange={(value) =>
                           handlePreferenceChange("theme", value)
                         }
@@ -2064,6 +2086,8 @@ export default function Settings() {
           <TwoFactorSetupDialog
             open={twoFactorOpen}
             onOpenChange={setTwoFactorOpen}
+            replacing={Boolean(user?.twoFactorEnabled)}
+            onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] })}
           />
 
           <PaymentUpdateDialog
@@ -2139,60 +2163,14 @@ export default function Settings() {
             </AlertDialogContent>
           </AlertDialog>
 
-          <AlertDialog
+          <TwoFactorDisableDialog
             open={twoFactorDisableOpen}
             onOpenChange={setTwoFactorDisableOpen}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
-                  Disable Two-Factor Authentication
-                </AlertDialogTitle>
-                <AlertDialogDescription className="space-y-3">
-                  <p>
-                    Disabling 2FA will make your account less secure. You will
-                    only need your password to log in.
-                  </p>
-                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                    <p className="text-sm text-amber-800 dark:text-amber-300">
-                      <strong>Warning:</strong> Anyone who obtains your password
-                      will be able to access your account without additional
-                      verification.
-                    </p>
-                  </div>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Keep 2FA Enabled</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  onClick={async () => {
-                    try {
-                      await apiRequest("POST", "/api/auth/2fa/disable");
-                      queryClient.invalidateQueries({
-                        queryKey: ["/api/auth/me"],
-                      });
-                      toast({
-                        title: "2FA Disabled",
-                        description:
-                          "Two-factor authentication has been disabled on your account.",
-                      });
-                      setTwoFactorDisableOpen(false);
-                    } catch (error) {
-                      toast({
-                        title: "Error",
-                        description: "Failed to disable 2FA. Please try again.",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                >
-                  Disable 2FA
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+              toast({ title: "2FA disabled", description: "Your other sessions and tokens have been revoked." });
+            }}
+          />
 
           {/* Plan Comparison Dialog */}
           <Dialog

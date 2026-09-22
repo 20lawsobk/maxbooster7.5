@@ -1657,11 +1657,12 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
 function TokenManagementTab() {
   const { toast } = useToast();
   const [revokeTokenId, setRevokeTokenId] = useState("");
+  const [issuedCredential, setIssuedCredential] = useState<{ token: string; tokenId: string; expiresAt: string } | null>(null);
 
   const { mutate: issueToken, isPending: issuingToken } = useMutation({
     mutationFn: async () => {
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch("/api/auth/token", {
+      const response = await fetch("/api/admin/tokens", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1685,9 +1686,10 @@ function TokenManagementTab() {
         });
         return;
       }
+      setIssuedCredential({ token: issuedToken, tokenId: data.tokenId, expiresAt: data.expiresAt });
       toast({
         title: "Token issued",
-        description: `Access: ${issuedToken.substring(0, 20)}...`,
+        description: "Copy the credential now. It will not be shown again.",
       });
     },
     onError: (e: Error) =>
@@ -1701,7 +1703,7 @@ function TokenManagementTab() {
   const { mutate: revokeToken, isPending: revokingToken } = useMutation({
     mutationFn: async (tokenId: string) => {
       const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch("/api/auth/token/revoke", {
+      const response = await fetch("/api/admin/tokens/revoke", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1743,8 +1745,17 @@ function TokenManagementTab() {
         <CardContent>
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Generate JWT access and refresh tokens for API access
+              Generate a developer API credential for your own account, valid for 24 hours.
+              This is not an admin session or refresh token; it grants the existing developer API access.
             </p>
+            {issuedCredential && <div className="space-y-2 rounded border p-3">
+              <p>Credential ID: {issuedCredential.tokenId}</p>
+              <p>Expires: {new Date(issuedCredential.expiresAt).toLocaleString()}</p>
+              <label className="block">Copy this secret now
+                <Input readOnly value={issuedCredential.token} onFocus={event => event.target.select()} />
+              </label>
+              <Button variant="outline" onClick={() => setIssuedCredential(null)}>Dismiss secret</Button>
+            </div>}
             <Button
               onClick={() => issueToken()}
               disabled={issuingToken}

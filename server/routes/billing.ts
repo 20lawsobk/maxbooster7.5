@@ -407,6 +407,9 @@ router.post(
         success_url: `${appUrl}/settings?checkout=success&plan=${planId}`,
         cancel_url: `${appUrl}/pricing?checkout=canceled`,
         metadata: { userId, planId },
+        ...(plan.mode === "subscription"
+          ? { subscription_data: { metadata: { userId, planId } } }
+          : { payment_intent_data: { metadata: { userId, planId } } }),
       };
 
       const session = await stripe?.checkout?.sessions?.create(sessionParams);
@@ -1181,6 +1184,7 @@ router.post(
         amountCents,
         reason,
         initiatedBy: "customer",
+        idempotencyKey: req.get("Idempotency-Key"),
       });
 
       if (!result?.success) {
@@ -1230,10 +1234,13 @@ router.get(
     try {
       const { orderId } = req.params as Record<string, string>;
 
-      const refunds = await stripeService?.getOrderRefunds(orderId);
+      const refunds = await stripeService?.getOrderRefunds(orderId, req.user!.id);
 
       res.json({ refunds });
     } catch (error) {
+      if (error instanceof Error && error.message === "Forbidden") {
+        return res.status(403).json({ error: "Forbidden" });
+      }
       logger.warn({ err: error }, "[Billing] Failed to get order refunds:");
       res.status(500).json({ error: "Failed to get order refunds" });
     }

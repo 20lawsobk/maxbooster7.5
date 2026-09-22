@@ -3,7 +3,7 @@ import { logger } from "../logger.js";
 import { EventEmitter } from "events";
 import { db } from "../db";
 import { projects, studioTracks, audioClips } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import * as fs from "fs";
 import fsPromises from "fs/promises";
 import * as path from "path";
@@ -111,9 +111,11 @@ const POCKET_ID = "offline-mode-cache";
 class OfflineModeService extends EventEmitter {
   private cachedProjects: Map<string, OfflineProject> = new Map();
   private settings: OfflineSettings = DEFAULT_SETTINGS;
+  private userSettings = new Map<string, OfflineSettings>();
+  private userIndexLoads = new Map<string, Promise<void>>();
   private isOnline: boolean = true;
   private syncQueue: string[] = [];
-  private isSyncing: boolean = false;
+  private syncingUsers = new Set<string>();
   private lastOnlineCheck: Date = new Date();
   private pocket: Record<string, unknown> | null = null;
   private pocketReady: Promise<void>;
@@ -167,6 +169,8 @@ class OfflineModeService extends EventEmitter {
         index?.projects || {},
       )) {
         const project = rawProject as Record<string, unknown>;
+        // Unattributable legacy cache entries are quarantined, never exposed.
+        if (typeof project.userId !== "string" || project.projectId !== projectId) continue;
         project.cachedAt = new Date(project?.cachedAt as any);
         project.lastSyncAt = new Date(project?.lastSyncAt as any);
         if (project?.audioFiles) {
@@ -192,8 +196,10 @@ class OfflineModeService extends EventEmitter {
         }
         this.cachedProjects.set(projectId, project as unknown as OfflineProject);
       }
-      if (index?.settings)
-        this.settings = { ...DEFAULT_SETTINGS, ...index?.settings };
+      // Legacy global preferences must never become another user's settings.
+      for (const [userId, settings] of Object.entries(index?.userSettings ?? {})) {
+        this.userSettings.set(userId, { ...DEFAULT_SETTINGS, ...(settings as OfflineSettings) });
+      }
       logger.info(
         `[OfflineCache] Loaded ${this.cachedProjects.size} cached projects from Pocket Dimension`,
       );
@@ -202,21 +208,51 @@ class OfflineModeService extends EventEmitter {
     }
   }
 
-  private saveCacheIndex(): void {
-    if (!this.pocket) return;
+  private async loadUserIndex(userId: string): Promise<void> {
+    if (!userId) throw new Error("User required");
+    await this.pocketReady;
+    if (!this.userIndexLoads.has(userId)) {
+      const load = (async () => {
+        if (!this.pocket) throw new Error("Offline cache storage unavailable");
+        const key = `index/users/${encodeURIComponent(userId)}.json`;
+        // Only a genuine missing key is an empty user cache; provider outages propagate.
+        let raw: Buffer;
+        try { raw = await (this as any).pocket.read(key); }
+        catch (error) {
+          if (/not found|does not exist/i.test((error as Error).message)) return;
+          throw error;
+        }
+        const index = JSON.parse(raw.toString("utf8"));
+        if (index.userId !== userId) throw new Error("Offline cache owner mismatch");
+        this.userSettings.set(userId, { ...DEFAULT_SETTINGS, ...index.settings });
+        for (const rawProject of Object.values(index.projects ?? {})) {
+          const project = rawProject as OfflineProject;
+          if (project.userId !== userId) throw new Error("Offline project owner mismatch");
+          project.cachedAt = new Date(project.cachedAt);
+          project.lastSyncAt = new Date(project.lastSyncAt);
+          this.cachedProjects.set(project.projectId, project);
+        }
+      })();
+      this.userIndexLoads.set(userId, load);
+      load.catch(() => this.userIndexLoads.delete(userId));
+    }
+    await this.userIndexLoads.get(userId);
+  }
+
+  private async saveCacheIndex(userId: string): Promise<void> {
+    await this.pocketReady;
+    if (!this.pocket) throw new Error("Offline cache storage unavailable");
     const index = {
       version: 1,
       updatedAt: new Date().toISOString(),
-      settings: this.settings,
-      projects: Object.fromEntries(this.cachedProjects),
+      userId,
+      settings: this.getSettings(userId),
+      projects: Object.fromEntries([...this.cachedProjects].filter(([, project]) => project.userId === userId)),
     };
-    (this as any).pocket
+    await (this as any).pocket
       .write(
-        "index/cache-index.json",
+        `index/users/${encodeURIComponent(userId)}.json`,
         Buffer?.from(JSON.stringify(index, null, 2)),
-      )
-      .catch((err: Error) =>
-        logger.warn({ err: err }, "[OfflineCache] Failed to save cache index:"),
       );
   }
 
@@ -280,7 +316,9 @@ class OfflineModeService extends EventEmitter {
       if (!wasOnline && this.isOnline) {
         this.emit("online");
         if (this.settings.syncOnReconnect) {
-          await this.syncAll();
+          for (const userId of new Set(Array.from(this.cachedProjects.values()).map((p) => p.userId))) {
+            if (userId && this.getSettings(userId).syncOnReconnect) await this.syncAll(userId);
+          }
         }
       }
     } catch (error) {
@@ -308,10 +346,13 @@ class OfflineModeService extends EventEmitter {
     userId: string,
   ): Promise<OfflineProject> {
     try {
+      await this.pocketReady;
+      await this.loadUserIndex(userId);
+      if (!this.pocket) throw new Error("Offline cache storage unavailable");
       logger.info({ projectId, userId }, "Caching project for offline use:");
 
       const project = await db.query.projects.findFirst({
-        where: eq(projects.id, projectId),
+        where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
       });
 
       if (!project) {
@@ -388,7 +429,7 @@ class OfflineModeService extends EventEmitter {
       };
 
       this.cachedProjects.set(projectId, offlineProject);
-      this.saveCacheIndex();
+      await this.saveCacheIndex(userId);
       this.emit("projectCached", { projectId, size: totalSize });
 
       logger.info({
@@ -406,9 +447,19 @@ class OfflineModeService extends EventEmitter {
     }
   }
 
-  async uncacheProject(projectId: string): Promise<void> {
+  private async authorizeProject(projectId: string, userId: string): Promise<void> {
+    if (!userId || !projectId) throw new Error("Project not found");
+    const project = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+    });
+    if (!project) throw new Error("Project not found");
+    await this.loadUserIndex(userId);
+  }
+
+  async uncacheProject(projectId: string, userId: string): Promise<void> {
+    await this.authorizeProject(projectId, userId);
     const cached = this.cachedProjects.get(projectId);
-    if (!cached) {
+    if (!cached || cached.userId !== userId) {
       throw new Error("Project not cached");
     }
 
@@ -425,28 +476,34 @@ class OfflineModeService extends EventEmitter {
     }
 
     this.cachedProjects.delete(projectId);
-    this.saveCacheIndex();
+    await this.saveCacheIndex(userId);
     this.emit("projectUncached", { projectId });
     logger.info({ projectId }, "Project uncached:");
   }
 
-  getCachedProject(projectId: string): OfflineProject | undefined {
-    return this.cachedProjects.get(projectId);
+  async getCachedProject(projectId: string, userId: string): Promise<OfflineProject | undefined> {
+    await this.authorizeProject(projectId, userId);
+    const cached = this.cachedProjects.get(projectId);
+    return cached?.userId === userId ? cached : undefined;
   }
 
-  getCachedProjects(userId: string): OfflineProject[] {
+  async getCachedProjects(userId: string): Promise<OfflineProject[]> {
+    await this.loadUserIndex(userId);
+    if (!userId) throw new Error("User required");
+    const owned = await db.select({ id: projects.id }).from(projects).where(eq(projects.userId, userId));
+    const allowed = new Set(owned.map((project) => project.id));
     return Array.from(this.cachedProjects.values()).filter(
-      (p) => p?.userId === userId,
+      (p) => p?.userId === userId && allowed.has(p.projectId),
     );
   }
 
-  isProjectCached(projectId: string): boolean {
-    return this.cachedProjects.has(projectId);
+  async isProjectCached(projectId: string, userId: string): Promise<boolean> {
+    return !!(await this.getCachedProject(projectId, userId));
   }
 
-  async syncProject(projectId: string): Promise<SyncResult> {
+  async syncProject(projectId: string, userId: string): Promise<SyncResult> {
     const startTime = Date.now();
-    const cached = this.cachedProjects.get(projectId);
+    const cached = await this.getCachedProject(projectId, userId);
 
     if (!cached) {
       return {
@@ -478,7 +535,7 @@ class OfflineModeService extends EventEmitter {
       cached.status = "syncing";
 
       const serverProject = await db.query.projects.findFirst({
-        where: eq(projects.id, projectId),
+        where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
       });
 
       if (!serverProject) {
@@ -490,7 +547,7 @@ class OfflineModeService extends EventEmitter {
       let filesDownloaded = 0;
 
       if (cached?.localChanges > 0 && cached?.serverChanges > 0) {
-        const resolution = this.settings.conflictResolution;
+        const resolution = this.getSettings(userId).conflictResolution;
         if (resolution === "local") {
           filesUploaded = cached?.localChanges;
         } else if (resolution === "server") {
@@ -544,41 +601,38 @@ class OfflineModeService extends EventEmitter {
     }
   }
 
-  async syncAll(): Promise<{ results: SyncResult[]; totalTime: number }> {
-    if (this.isSyncing) {
+  async syncAll(userId: string): Promise<{ results: SyncResult[]; totalTime: number }> {
+    if (this.syncingUsers.has(userId)) {
       throw new Error("Sync already in progress");
     }
 
-    this.isSyncing = true;
+    this.syncingUsers.add(userId);
     const startTime = Date.now();
     const results: SyncResult[] = [];
 
     try {
-      const projectsToSync = [
-        ...this.syncQueue,
-        ...Array.from(this.cachedProjects.keys()),
-      ];
+      const projectsToSync = (await this.getCachedProjects(userId)).map((p) => p.projectId);
 
       const uniqueProjects = [...new Set(projectsToSync)];
 
       for (const projectId of uniqueProjects) {
-        const result = await this.syncProject(projectId);
+        const result = await this.syncProject(projectId, userId);
         results?.push(result);
       }
 
-      this.syncQueue = [];
+      this.syncQueue = this.syncQueue.filter((id) => !uniqueProjects.includes(id));
 
       return {
         results,
         totalTime: Date.now() - startTime,
       };
     } finally {
-      this.isSyncing = false;
+      this.syncingUsers.delete(userId);
     }
   }
 
-  recordLocalChange(projectId: string): void {
-    const cached = this.cachedProjects.get(projectId);
+  async recordLocalChange(projectId: string, userId: string): Promise<void> {
+    const cached = await this.getCachedProject(projectId, userId);
     if (cached) {
       cached.localChanges++;
       cached.status = "outdated";
@@ -586,8 +640,8 @@ class OfflineModeService extends EventEmitter {
     }
   }
 
-  recordServerChange(projectId: string): void {
-    const cached = this.cachedProjects.get(projectId);
+  async recordServerChange(projectId: string, userId: string): Promise<void> {
+    const cached = await this.getCachedProject(projectId, userId);
     if (cached) {
       cached.serverChanges++;
       cached.status = "outdated";
@@ -595,16 +649,16 @@ class OfflineModeService extends EventEmitter {
     }
   }
 
-  getCacheStats(): CacheStats {
-    const projects = Array.from(this.cachedProjects.values());
+  async getCacheStats(userId: string): Promise<CacheStats> {
+    const projects = await this.getCachedProjects(userId);
     const totalSize = projects.reduce((sum, p) => sum + p?.size, 0);
     const cacheDates = projects.map((p) => p?.cachedAt);
 
     return {
       totalProjects: projects.length,
       totalSize,
-      maxSize: this.settings.maxCacheSize,
-      usedPercentage: (totalSize / this.settings.maxCacheSize) * 100,
+      maxSize: this.getSettings(userId).maxCacheSize,
+      usedPercentage: (totalSize / this.getSettings(userId).maxCacheSize) * 100,
       oldestCache:
         cacheDates?.length > 0
           ? new Date(Math.min(...(cacheDates?.map((d) => d?.getTime()) ?? [])))
@@ -616,34 +670,44 @@ class OfflineModeService extends EventEmitter {
     };
   }
 
-  getSettings(): OfflineSettings {
-    return { ...this.settings };
+  getSettings(userId: string): OfflineSettings {
+    if (!userId) throw new Error("User required");
+    return { ...(this.userSettings.get(userId) ?? DEFAULT_SETTINGS) };
   }
 
-  updateSettings(updates: Partial<OfflineSettings>): OfflineSettings {
-    this.settings = { ...this.settings, ...updates };
-    this.emit("settingsUpdated", this.settings);
-    return this.settings;
+  async readSettings(userId: string): Promise<OfflineSettings> {
+    await this.loadUserIndex(userId);
+    return this.getSettings(userId);
   }
 
-  async clearCache(): Promise<void> {
-    const projectIds = Array.from(this.cachedProjects.keys());
+  async updateSettings(updates: Partial<OfflineSettings>, userId: string): Promise<OfflineSettings> {
+    await this.loadUserIndex(userId);
+    const settings = { ...this.getSettings(userId), ...updates };
+    this.userSettings.set(userId, settings);
+    await this.saveCacheIndex(userId);
+    this.emit("settingsUpdated", { userId, settings });
+    return settings;
+  }
+
+  async clearCache(userId: string): Promise<void> {
+    const projectIds = (await this.getCachedProjects(userId)).map((p) => p.projectId);
     for (const projectId of projectIds) {
-      await this.uncacheProject(projectId);
+      await this.uncacheProject(projectId, userId);
     }
     this.emit("cacheCleared");
     logger.info("Offline cache cleared");
   }
 
   async cleanupOldCache(
+    userId: string,
     maxAge: number = 30 * 24 * 60 * 60 * 1000,
   ): Promise<number> {
     const now = Date.now();
     let cleaned = 0;
 
-    for (const [projectId, project] of this.cachedProjects) {
+    for (const project of await this.getCachedProjects(userId)) {
       if (now - project?.cachedAt?.getTime() > maxAge) {
-        await this.uncacheProject(projectId);
+        await this.uncacheProject(project.projectId, userId);
         cleaned++;
       }
     }
@@ -662,12 +726,13 @@ class OfflineModeService extends EventEmitter {
     return Math.abs(hash).toString(16);
   }
 
-  getSyncQueue(): string[] {
-    return [...this.syncQueue];
+  async getSyncQueue(userId: string): Promise<string[]> {
+    const owned = new Set((await this.getCachedProjects(userId)).map((p) => p.projectId));
+    return this.syncQueue.filter((id) => owned.has(id));
   }
 
-  isSyncInProgress(): boolean {
-    return this.isSyncing;
+  isSyncInProgress(userId: string): boolean {
+    return this.syncingUsers.has(userId);
   }
 
   getLastOnlineCheck(): Date {
@@ -705,6 +770,7 @@ class OfflineModeService extends EventEmitter {
       throw new Error("Invalid offline project data");
     }
 
+    await this.authorizeProject(projectId, userId);
     return projectId;
   }
 }

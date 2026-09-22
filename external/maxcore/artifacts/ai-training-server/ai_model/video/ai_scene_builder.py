@@ -307,7 +307,7 @@ def build_scenes(
     fps: int = 24,                    # output frame rate (8/16/24/30)
     composition: str = "",            # close_up/medium_shot/wide_shot/over_the_shoulder/
                                       # pov/aerial/low_angle/high_angle — shot framing
-    reference_images: Optional[List[str]] = None,  # up to 3 base64 images — style/
+    reference_images: Optional[List[str]] = None,  # up to 10 ordered image assets
                                                    # character consistency conditioning
     first_frame_b64: str = "",        # base64 image the video should START on
     last_frame_b64: str = "",         # base64 image the video should END on
@@ -328,6 +328,16 @@ def build_scenes(
     """
     if not scenes_data:
         return []
+
+    # Preserve every ordered supplied asset. Additional image scenes contain
+    # no invented copy; existing MaxCore-generated scene text is retained.
+    refs = [r for r in (reference_images or []) if r]
+    if len(refs) > 10:
+        raise ValueError("At most ten reference images are supported")
+    if len(refs) > len(scenes_data):
+        scenes_data = list(scenes_data) + [
+            {"type": "body", "text": ""} for _ in range(len(refs) - len(scenes_data))
+        ]
 
     dna = build_dna(idea, genre, tone)
 
@@ -504,7 +514,7 @@ def build_scenes(
         scene_type = scene_info.get("type", "body")
         text = scene_info.get("text", "").strip()
 
-        if not text:
+        if not text and not refs:
             continue
 
         # ── Per-scene bg type ───────────────────────────────────────────
@@ -639,14 +649,14 @@ def build_scenes(
         # First scene anchors on first_frame_b64, final scene on
         # last_frame_b64; middle scenes cycle through reference_images so
         # style/character consistency holds across the whole video.
-        _refs = [r for r in (reference_images or []) if r][:3]
+        _refs = refs
         _init_b64 = ""
-        if idx == 0 and first_frame_b64:
+        if _refs:
+            _init_b64 = _refs[min(len(_refs) - 1, idx * len(_refs) // len(scenes_data))]
+        elif idx == 0 and first_frame_b64:
             _init_b64 = first_frame_b64
         elif idx == len(scenes_data) - 1 and last_frame_b64:
             _init_b64 = last_frame_b64
-        elif _refs:
-            _init_b64 = _refs[idx % len(_refs)]
 
         _has_veo_cond = bool(
             awareness or camera_motion or negative_prompt or lighting
@@ -697,6 +707,7 @@ def build_scenes(
             progress_color=palette.accent,
             brand=artist_name or "",
             diffusion_meta=_diffusion_meta if _diffusion_meta else None,
+            reference_b64=_init_b64 or None,
             # Veo-parity render controls propagated per-scene
             camera_motion=camera_motion or "",
             negative_prompt=negative_prompt or "",

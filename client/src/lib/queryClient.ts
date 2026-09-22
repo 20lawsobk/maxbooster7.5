@@ -366,6 +366,7 @@ export async function apiRequest(
     signal?: AbortSignal;
     retryCount?: number;
     maxRetries?: number;
+    headers?: Record<string, string>;
   },
 ): Promise<Response> {
   const isFormData = data instanceof FormData;
@@ -381,7 +382,7 @@ export async function apiRequest(
       hasData: !!data,
     });
 
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { ...options?.headers };
 
     if (!isFormData && data) {
       headers["Content-Type"] = "application/json";

@@ -28,12 +28,38 @@ import { notificationService } from "../../services/notificationService.js";
 import { dunningService } from "../../services/dunningService.js";
 import { instantPayoutService } from "../../services/instantPayoutService.js";
 import { env } from "../../config/env.js";
+import { subscriptionPlan } from "../../services/commercePolicy";
+import { settleMerchantCheckout } from "../../services/commerce/merchant";
+import { consumeMarketplaceCheckout } from "../../services/commerce/marketplaceCheckout";
+import { handleCommercePayoutEvent } from "../../services/commerce/payouts";
+import { currentSubscription } from "../../services/commerce/entitlements";
+import { majorUnits } from "../../services/commerce/contract";
+import { installStripeMerchPaymentAdapter, handleGrowthMerchCheckout } from "../../services/commerce/growthMerch";
 
 const router = Router();
+installStripeMerchPaymentAdapter();
+registerWebhookHandler("checkout.session.expired",async event=>{
+  const session=event.data.object as Stripe.Checkout.Session;
+  if(session.metadata?.commerceKind==="merch") await handleGrowthMerchCheckout(event.id,session,true);
+  return {success:true,message:"Checkout expiry reconciled"};
+});
 
 // Register webhook handlers for various event types
 registerWebhookHandler("checkout.session.completed", async (event) => {
   const session = event?.data.object as Stripe.Checkout.Session;
+  // Completion may precede payment for asynchronous payment methods.
+  // The async-success event below re-enters this same handler after payment.
+  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
+    return { success: true, message: "Checkout awaiting payment" };
+  }
+  if(session.metadata?.commerceKind==="merchant") {
+    await settleMerchantCheckout(session);
+    return {success:true,message:"Merchant settlement and entitlement booked"};
+  }
+  if(session.metadata?.commerceKind==="merch") {
+    await handleGrowthMerchCheckout(event.id,session);
+    return {success:true,message:"Merchandise settlement and inventory committed"};
+  }
   logger.info(`[Stripe] Checkout completed: ${session?.id}`);
 
   await auditPayment?.charge(
@@ -45,95 +71,10 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
 
   const failures: string[] = [];
 
-  const {
-    beatId,
-    buyerId,
-    sellerId,
-    licenseType,
-    licenseSnapshot: snapshotStr,
-  } = session?.metadata || {};
-  if (beatId && buyerId && sellerId) {
-    try {
-      const paymentRef = (session?.payment_intent as string) || session?.id;
-      const [existing] = await db
-        .select({ id: orders.id })
-        .from(orders)
-        .where(eq(orders.stripePaymentIntentId, paymentRef))
-        .limit(1);
-
-      let parsedSnapshot = null;
-      try {
-        if (snapshotStr) parsedSnapshot = JSON.parse(snapshotStr);
-      } catch {
-        /* intentional: malformed snapshot JSON → parsedSnapshot stays null */
-      }
-
-      let bookedOrderId: string | null = null;
-      if (!existing) {
-        const [createdOrder] = await db
-          .insert(orders)
-          .values({
-            userId: buyerId,
-            sellerId,
-            listingId: beatId,
-            amount: (session?.amount_total || 0) / 100,
-            currency: session.currency || "usd",
-            // NOTE: must NOT be inserted as "completed". marketplaceService
-            // .processPayment() (called immediately below) treats
-            // status==="completed" as an already-booked replay and SKIPS the
-            // instant payout / license generation / royalty split
-            // distribution / revenue event steps — it only re-sends
-            // notifications. Inserting as "pending" (the schema default)
-            // lets the very first processPayment() call take its real
-            // booking path, which sets status to "completed" itself once
-            // earnings are actually credited. A prior version of this code
-            // set "completed" here, which made the FIRST (not just replayed)
-            // webhook delivery silently skip booking the seller's earnings
-            // for every beat sale.
-            status: "pending",
-            licenseType: licenseType || "basic",
-            licenseSnapshot: parsedSnapshot,
-            stripePaymentIntentId: paymentRef,
-            metadata: { licenseType, sessionId: session.id },
-          })
-          .returning({ id: orders.id });
-        bookedOrderId = createdOrder?.id ?? null;
-        logger.info(
-          `[Stripe] Order created for beat ${beatId}, buyer ${buyerId}, seller ${sellerId}, license ${licenseType}`,
-        );
-      } else {
-        bookedOrderId = existing.id;
-        logger.info(
-          `[Stripe] Order already exists for payment ${paymentRef}, skipping duplicate`,
-        );
-      }
-
-      // Book the seller's earnings (revenue event + royalty split distribution
-      // + instant payout) via the same path used by direct-purchase flow.
-      // Without this call, the order row existed but no earnings were ever
-      // credited — the buyer was charged with nothing booked for the seller.
-      // processPayment() is idempotent (guarded on order.status==="completed"),
-      // so replaying this webhook never double-books.
-      if (bookedOrderId) {
-        try {
-          const { marketplaceService } = await import(
-            "../../services/marketplaceService.js"
-          );
-          await marketplaceService.processPayment(bookedOrderId, paymentRef);
-        } catch (bookingError) {
-          logger.warn(
-            bookingError,
-            `[Stripe] Failed to book seller earnings for order ${bookedOrderId} (beat ${beatId}):`,
-          );
-          failures.push(
-            `earnings booking for order ${bookedOrderId} (beat ${beatId}, payment ${session?.id})`,
-          );
-        }
-      }
-    } catch (orderError) {
-      logger.warn(orderError, "[Stripe] Failed to create order record:");
-      failures.push(`order creation for beat ${beatId} (payment ${session?.id})`);
-    }
+  if (session.metadata?.commerceKind==="marketplace" || session.metadata?.beatId) {
+    const { marketplaceService } = await import("../../services/marketplaceService.js");
+    await consumeMarketplaceCheckout(session,(id,payment)=>marketplaceService.processPayment(id,payment));
+    return {success:true,message:"Frozen marketplace order fulfilled"};
   }
 
   const { storefrontId, promotionId } = session?.metadata || {};
@@ -236,7 +177,7 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
   // For subscription-mode checkouts with a planId in metadata, update the user's
   // tier immediately so they get access before customer?.subscription.created fires.
   if (
-    session?.mode === "subscription" &&
+    (session?.mode === "subscription" || session?.metadata?.planId === "lifetime") &&
     session?.customer &&
     session?.metadata?.planId
   ) {
@@ -244,19 +185,23 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
       typeof session?.customer === "string"
         ? session?.customer
         : (session?.customer as { id: string }).id;
-    const planId = session?.metadata.planId;
+    const planId = subscriptionPlan(session.metadata);
     try {
       const updated = await db
         .update(users)
         .set({
           subscriptionTier: planId,
           subscriptionStatus: "active",
+          ...(planId === "lifetime" ? { subscriptionEndsAt: null } : {}),
           stripeSubscriptionId:
             typeof session?.subscription === "string"
               ? session?.subscription
               : null,
         })
-        .where(eq(users.stripeCustomerId, checkoutCusId))
+        .where(and(
+          eq(users.stripeCustomerId, checkoutCusId),
+          planId === "lifetime" ? sql`true` : sql`${users.subscriptionTier} IS DISTINCT FROM 'lifetime'`,
+        ))
         .returning({ id: users.id });
       if (updated?.length > 0) {
         logger.info(
@@ -288,7 +233,8 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
 });
 
 registerWebhookHandler("customer.subscription.created", async (event) => {
-  const subscription = event?.data.object as Stripe.Subscription;
+  const subscription = await currentSubscription(event);
+  if(!subscription) return {success:true,message:"Superseded subscription event"};
   logger.info(
     `[Stripe] Subscription created: ${subscription?.id} - Status: ${subscription?.status}`,
   );
@@ -299,7 +245,7 @@ registerWebhookHandler("customer.subscription.created", async (event) => {
         ? subscription?.customer
         : subscription?.customer.id;
 
-    const tier = subscription?.metadata?.planId || "monthly";
+    const tier = subscriptionPlan(subscription.metadata);
     const endsAt = (subscription as any)?.current_period_end
       ? new Date((subscription as any)?.current_period_end * 1000)
       : null;
@@ -312,7 +258,11 @@ registerWebhookHandler("customer.subscription.created", async (event) => {
         subscriptionEndsAt: endsAt,
         stripeSubscriptionId: subscription.id,
       })
-      .where(eq(users.stripeCustomerId, customerId))
+      .where(and(
+        eq(users.stripeCustomerId, customerId),
+        sql`${users.subscriptionTier} IS DISTINCT FROM 'lifetime'`,
+        sql`(${users.stripeSubscriptionId} IS NULL OR ${users.stripeSubscriptionId} = ${subscription.id})`,
+      ))
       .returning({ id: users.id });
 
     if (updated?.length > 0) {
@@ -329,8 +279,8 @@ registerWebhookHandler("customer.subscription.created", async (event) => {
       // The event is valid and has been fully evaluated. A customer can exist
       // in Stripe before its local account is created, so returning a failure
       // here would make Stripe retry an event that cannot become applicable.
-      success: true,
-      message: `Subscription created event acknowledged; no local user found for Stripe customer ${customerId}`,
+      success: false,
+      message: `Subscription created event did not match current entitlement for customer ${customerId}; reconcile before acknowledging`,
     };
   } catch (err) {
     logger.warn(
@@ -345,7 +295,8 @@ registerWebhookHandler("customer.subscription.created", async (event) => {
 });
 
 registerWebhookHandler("customer.subscription.updated", async (event) => {
-  const subscription = event?.data.object as Stripe.Subscription;
+  const subscription = await currentSubscription(event);
+  if(!subscription) return {success:true,message:"Superseded subscription event"};
   logger.info(
     `[Stripe] Subscription updated: ${subscription?.id} - Status: ${subscription?.status}`,
   );
@@ -356,7 +307,7 @@ registerWebhookHandler("customer.subscription.updated", async (event) => {
         ? subscription?.customer
         : subscription?.customer.id;
 
-    const tier = subscription?.metadata?.planId || "monthly";
+    const tier = subscriptionPlan(subscription.metadata);
     const endsAt = (subscription as any)?.current_period_end
       ? new Date((subscription as any)?.current_period_end * 1000)
       : null;
@@ -369,7 +320,11 @@ registerWebhookHandler("customer.subscription.updated", async (event) => {
         subscriptionEndsAt: endsAt,
         stripeSubscriptionId: subscription.id,
       })
-      .where(eq(users.stripeCustomerId, customerId))
+      .where(and(
+        eq(users.stripeCustomerId, customerId),
+        sql`${users.subscriptionTier} IS DISTINCT FROM 'lifetime'`,
+        sql`(${users.stripeSubscriptionId} IS NULL OR ${users.stripeSubscriptionId} = ${subscription.id})`,
+      ))
       .returning({ id: users.id });
 
     if (updated?.length > 0) {
@@ -415,7 +370,8 @@ registerWebhookHandler("customer.subscription.updated", async (event) => {
 });
 
 registerWebhookHandler("customer.subscription.deleted", async (event) => {
-  const subscription = event?.data.object as Stripe.Subscription;
+  const subscription = await currentSubscription(event);
+  if(!subscription) return {success:true,message:"Superseded subscription event"};
   logger.info(`[Stripe] Subscription canceled: ${subscription?.id}`);
 
   try {
@@ -433,7 +389,11 @@ registerWebhookHandler("customer.subscription.deleted", async (event) => {
           ? new Date(subscription?.ended_at * 1000)
           : new Date(),
       })
-      .where(eq(users.stripeCustomerId, customerId))
+      .where(and(
+        eq(users.stripeCustomerId, customerId),
+        eq(users.stripeSubscriptionId, subscription.id),
+        sql`${users.subscriptionTier} IS DISTINCT FROM 'lifetime'`,
+      ))
       .returning({ id: users.id });
 
     if (updated?.length > 0) {
@@ -592,6 +552,12 @@ registerWebhookHandler("invoice.payment_failed", async (event) => {
 
 registerWebhookHandler("payment_intent.succeeded", async (event) => {
   const paymentIntent = event?.data.object as Stripe.PaymentIntent;
+  if(paymentIntent.metadata?.commerceKind==="marketplace") {
+    if(!paymentIntent.metadata.orderId) throw new Error("Marketplace payment needs canonical-order reconciliation");
+    const { marketplaceService } = await import("../../services/marketplaceService.js");
+    await marketplaceService.processPayment(paymentIntent.metadata.orderId,paymentIntent.id);
+    return {success:true,message:"Canonical marketplace payment fulfilled"};
+  }
   logger.info(
     `[Stripe] Payment intent succeeded: ${paymentIntent?.id} — amount: $${(paymentIntent?.amount / 100).toFixed(2)}`,
   );
@@ -608,6 +574,20 @@ registerWebhookHandler("payment_intent.succeeded", async (event) => {
   }
 
   try {
+    if (paymentIntent.metadata?.planId === "lifetime" || paymentIntent.metadata?.tier === "lifetime" || paymentIntent.metadata?.planName === "lifetime") {
+      const customerId = typeof paymentIntent.customer === "string"
+        ? paymentIntent.customer : paymentIntent.customer?.id;
+      if (!customerId) throw new Error("Lifetime payment has no customer");
+      const updated = await db.update(users).set({
+        subscriptionTier: "lifetime",
+        subscriptionStatus: "active",
+        subscriptionEndsAt: null,
+        stripeSubscriptionId: null,
+      }).where(and(eq(users.id, userId), eq(users.stripeCustomerId, customerId)))
+        .returning({ id: users.id });
+      if (updated.length !== 1) throw new Error("Lifetime payment customer does not match user");
+      return { success: true, message: "Lifetime entitlement granted" };
+    }
     const [existingOrder] = await db
       .select({ id: orders.id })
       .from(orders)
@@ -707,6 +687,7 @@ registerWebhookHandler("account.updated", async (event) => {
 
 registerWebhookHandler("transfer.created", async (event) => {
   const transfer = event?.data.object as Stripe.Transfer;
+  if(transfer.metadata?.commerceOperation) return {success:true,message:"Durable commerce transfer is reconciled by its operation worker"};
   logger.info(
     `[Stripe Connect] Transfer created: ${transfer?.id} - Amount: $${(transfer?.amount / 100).toFixed(2)}`,
   );
@@ -727,6 +708,7 @@ registerWebhookHandler("transfer.created", async (event) => {
 
 registerWebhookHandler("payout.paid", async (event) => {
   const payout = event?.data.object as Stripe.Payout;
+  if(await handleCommercePayoutEvent(event)) return {success:true,message:"Commerce bank payout reconciled"};
   logger.info(
     `[Stripe Connect] Payout completed: ${payout?.id} - Amount: $${(payout?.amount / 100).toFixed(2)}`,
   );
@@ -744,6 +726,7 @@ registerWebhookHandler("payout.paid", async (event) => {
 
 registerWebhookHandler("payout.failed", async (event) => {
   const payout = event?.data.object as Stripe.Payout;
+  if(await handleCommercePayoutEvent(event)) return {success:true,message:"Commerce failed payout reconciled"};
   logger.warn(
     `[Stripe Connect] Payout failed: ${payout?.id} - Reason: ${payout?.failure_message}`,
   );

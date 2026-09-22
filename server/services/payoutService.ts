@@ -1,8 +1,11 @@
 import { db } from "../db.js";
-import { royaltyStatements, systemSettings } from "@shared/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { systemSettings } from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
-import crypto from "crypto";
+import { commerceRepository, commerceEngine } from "./commerce/runtime";
+import { requestCommercePayout, payoutView } from "./commerce/payouts";
+import { majorUnits } from "./commerce/contract";
+import { legacyReconciliation } from "./commerce/readModels";
 
 export type PaymentFrequency =
   | "monthly"
@@ -121,11 +124,6 @@ const PREF_CACHE_MAX = 50_000; // max users cached in-process
 const PREF_CACHE_TTL = 30 * 60 * 1000; // 30 min read-through cache
 
 export class PayoutService {
-  private payoutRequests: Map<string, PayoutRequest> = new Map();
-  private readonly MAX_PAYOUT_REQUESTS = 20_000; // cap in-flight request cache
-  private readonly MAX_RECEIPTS = 50_000; // cap receipt cache
-  private receipts: Map<string, PaymentReceipt> = new Map();
-
   // payment preferences: DB-backed with in-process LRU read-through cache.
   // Key: userId, Value: { prefs, cachedAt }
   private paymentPreferences: Map<
@@ -145,14 +143,6 @@ export class PayoutService {
         while (this.paymentPreferences.size > PREF_CACHE_MAX) {
           const k = this.paymentPreferences.keys().next().value;
           if (k !== undefined) this.paymentPreferences.delete(k);
-        }
-        while (this.payoutRequests.size > this.MAX_PAYOUT_REQUESTS) {
-          const k = this.payoutRequests.keys().next().value;
-          if (k !== undefined) this.payoutRequests.delete(k);
-        }
-        while (this.receipts.size > this.MAX_RECEIPTS) {
-          const k = this.receipts.keys().next().value;
-          if (k !== undefined) this.receipts.delete(k);
         }
       },
       15 * 60 * 1000,
@@ -227,35 +217,14 @@ export class PayoutService {
     pending: number;
     held: number;
     currency: string;
+    reconciliation: Awaited<ReturnType<typeof legacyReconciliation>>;
   }> {
-    const statements = await db
-      .select()
-      .from(royaltyStatements)
-      .where(
-        and(
-          eq(royaltyStatements.userId, userId),
-          eq(royaltyStatements.status, "finalized"),
-        ),
-      );
-
-    const pendingPayouts = Array.from(this.payoutRequests.values()).filter(
-      (p) =>
-        p?.userId === userId &&
-        (p?.status === "pending" || p?.status === "processing"),
-    );
-
-    const available = statements?.reduce(
-      (sum, s) => sum + Number((s as any)?.payableAmount),
-      0,
-    );
-    const pending = pendingPayouts?.reduce((sum, p) => sum + p?.amount, 0);
-
-    return {
-      available: Math.max(0, available - pending),
-      pending,
-      held: 0,
-      currency: "USD",
-    };
+    const preferences=await this.getPaymentPreferences(userId);
+    if(!preferences) throw new Error("Configure payout preferences before viewing scheduled payout balances");
+    const currency=(preferences.currency||"USD").toLowerCase();
+    const balance=await commerceRepository.balance(userId,currency);
+    return {available:majorUnits(Math.max(0,balance.available),currency),pending:majorUnits(balance.reserved,currency),held:majorUnits(Math.max(0,-balance.available),currency),currency:currency.toUpperCase(),
+      reconciliation:await legacyReconciliation(userId)};
   }
 
   calculateTaxWithholding(
@@ -296,227 +265,68 @@ export class PayoutService {
     userId: string,
     amount: number,
     method?: PaymentMethod,
+    idempotencyKey?: string,
   ): Promise<PayoutRequest> {
-    const preferences = await this.getPaymentPreferences(userId);
-    const paymentMethod =
-      method || preferences?.preferredMethod || "bank_transfer";
-    const currency = preferences?.currency || "USD";
-
-    const balance = await this.calculateAvailableBalance(userId);
-    if (amount > balance?.available) {
-      throw new Error(
-        `Requested amount $${amount} exceeds available balance $${balance?.available}`,
-      );
-    }
-
-    const threshold =
-      preferences?.minimumThreshold || this.getMinimumThreshold(currency);
-    if (amount < threshold) {
-      throw new Error(`Amount must be at least ${threshold} ${currency}`);
-    }
-
-    const taxCalc = this.calculateTaxWithholding(amount, "US", true);
-
-    const payoutId = crypto?.randomUUID();
-    const payout: PayoutRequest = {
-      id: payoutId,
-      userId,
-      amount,
-      currency,
-      method: paymentMethod,
-      status: "pending",
-      grossAmount: amount,
-      taxWithheld: taxCalc.withholdingAmount,
-      netAmount: taxCalc.netAmount,
-      createdAt: new Date(),
-    };
-
-    this.payoutRequests.set(payoutId, payout);
-    logger.info(
-      `Created payout request ${payoutId} for user ${userId}, amount: ${amount}`,
-    );
-
-    return payout;
+    const prefs=await this.getPaymentPreferences(userId);
+    if(!prefs) throw new Error("Configure payout preferences before requesting a payout");
+    if(method && !["stripe","bank_transfer"].includes(method)) throw new Error("This payout method is not configured; select Stripe bank transfer");
+    const result=await requestCommercePayout(userId,amount,(prefs.currency||"USD").toLowerCase(),idempotencyKey);
+    return payoutView(await commerceRepository.get(result.payoutId)) as PayoutRequest;
   }
 
   async processPayout(payoutId: string): Promise<PayoutRequest> {
-    const payout = this.payoutRequests.get(payoutId);
-    if (!payout) {
-      throw new Error(`Payout ${payoutId} not found`);
-    }
-
-    if (payout?.status !== "pending") {
-      throw new Error(`Payout ${payoutId} is not in pending status`);
-    }
-
-    payout.status = "processing";
-    payout.processedAt = new Date();
-    this.payoutRequests.set(payoutId, payout);
-
-    logger.info(`Processing payout ${payoutId}`);
-
-    try {
-      await this.executePayment(payout);
-
-      payout.status = "completed";
-      payout.completedAt = new Date();
-      payout.transactionId = `txn_${crypto?.randomUUID().slice(0, 8)}`;
-
-      const receipt = await this.generateReceipt(payout);
-      payout.receiptUrl = `/receipts/${receipt?.receiptId}`;
-
-      this.payoutRequests.set(payoutId, payout);
-      logger.info(
-        `Completed payout ${payoutId}, transaction: ${payout?.transactionId}`,
-      );
-    } catch (error) {
-      payout.status = "failed";
-      payout.failureReason =
-        error instanceof Error ? error?.message : "Unknown error";
-      this.payoutRequests.set(payoutId, payout);
-      logger.warn(`Failed payout ${payoutId}: ${payout?.failureReason}`);
-    }
-
-    return payout;
-  }
-
-  private async executePayment(payout: PayoutRequest): Promise<void> {
-    switch (payout?.method) {
-      case "stripe":
-        logger.info(`Executing Stripe payout for ${payout?.id}`);
-        break;
-      case "paypal":
-        logger.info(`Executing PayPal payout for ${payout?.id}`);
-        break;
-      case "bank_transfer":
-        logger.info(`Executing bank transfer for ${payout?.id}`);
-        break;
-      default:
-        logger.info(`Executing ${payout?.method} payout for ${payout?.id}`);
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await commerceEngine().execute(payoutId);
+    const op=await commerceRepository.get(payoutId);
+    if(!op) throw new Error("Payout not found");
+    return payoutView(op) as PayoutRequest;
   }
 
   async cancelPayout(payoutId: string, reason: string): Promise<PayoutRequest> {
-    const payout = this.payoutRequests.get(payoutId);
-    if (!payout) {
-      throw new Error(`Payout ${payoutId} not found`);
+    if (typeof reason !== "string" || !reason.trim() || reason.length > 500) {
+      throw new Error("A cancellation reason of 1–500 characters is required");
     }
-
-    if (payout?.status !== "pending") {
-      throw new Error(`Cannot cancel payout in ${payout?.status} status`);
-    }
-
-    payout.status = "cancelled";
-    payout.failureReason = reason;
-    this.payoutRequests.set(payoutId, payout);
-
-    logger.info(`Cancelled payout ${payoutId}: ${reason}`);
-    return payout;
+    const op=await commerceRepository.claim(payoutId);
+    if(!op || op.transfer_id || op.payload.bankStarted || (op.attempts||0)>1) throw new Error("Payout already submitted; await provider reconciliation");
+    await commerceRepository.release(op, reason.trim());
+    return payoutView(await commerceRepository.get(payoutId)) as PayoutRequest;
   }
 
   async getPayoutHistory(
     userId: string,
     options?: { limit?: number; status?: PayoutStatus },
   ): Promise<PayoutRequest[]> {
-    let payouts = Array.from(this.payoutRequests.values())
-      .filter((p) => p?.userId === userId)
-      .sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
-
-    if (options?.status) {
-      payouts = payouts?.filter((p) => p?.status === options?.status);
-    }
-
-    if (options?.limit) {
-      payouts = payouts?.slice(0, options?.limit);
-    }
-
-    return payouts;
+    let payouts=(await commerceRepository.history(userId)).map(op=>payoutView(op) as PayoutRequest);
+    if(options?.status) payouts=payouts.filter(p=>p.status===options.status);
+    return payouts.slice(0,options?.limit||100);
   }
 
   async getPayoutSchedule(userId: string): Promise<PayoutSchedule> {
-    const preferences = await this.getPaymentPreferences(userId);
-    const balance = await this.calculateAvailableBalance(userId);
-
-    const frequency = preferences?.frequency || "monthly";
-    const minimumThreshold =
-      preferences?.minimumThreshold || this.getMinimumThreshold("USD");
-
-    const today = new Date();
-    let nextPayoutDate = new Date(today);
-
-    switch (frequency) {
-      case "monthly":
-        nextPayoutDate?.setMonth(nextPayoutDate?.getMonth() + 1);
-        nextPayoutDate?.setDate(1);
-        break;
-      case "quarterly":
-        nextPayoutDate?.setMonth(
-          Math.ceil((nextPayoutDate?.getMonth() + 1) / 3) * 3,
-        );
-        nextPayoutDate?.setDate(1);
-        break;
-      case "semi_annual":
-        nextPayoutDate?.setMonth(
-          Math.ceil((nextPayoutDate?.getMonth() + 1) / 6) * 6,
-        );
-        nextPayoutDate?.setDate(1);
-        break;
-      case "annual":
-        nextPayoutDate?.setFullYear(nextPayoutDate?.getFullYear() + 1);
-        nextPayoutDate?.setMonth(0);
-        nextPayoutDate?.setDate(1);
-        break;
-    }
-
-    const isEligible = balance?.available >= minimumThreshold;
-    let eligibilityReason: string | undefined;
-
-    if (!isEligible) {
-      eligibilityReason = `Balance $${balance?.available.toFixed(2)} is below minimum threshold $${minimumThreshold?.toFixed(2)}`;
-    }
-
-    return {
-      userId,
-      frequency,
-      nextPayoutDate,
-      minimumThreshold,
-      currentBalance: balance.available,
-      isEligible,
-      eligibilityReason,
-    };
+    const prefs=await this.getPaymentPreferences(userId);
+    if(!prefs) throw new Error("Configure payout preferences before scheduling payouts");
+    const balance=await this.calculateAvailableBalance(userId);
+    const months={monthly:1,quarterly:3,semi_annual:6,annual:12}[prefs.frequency]||1;
+    const schedule=await commerceRepository.due(userId,months);
+    const minimum=prefs.minimumThreshold||this.getMinimumThreshold(prefs.currency);
+    return {userId,frequency:prefs.frequency,nextPayoutDate:schedule.next,minimumThreshold:minimum,currentBalance:balance.available,
+      isEligible:schedule.due&&balance.available>=minimum,eligibilityReason:!schedule.due?"Scheduled date has not arrived":balance.available<minimum?"Below threshold":undefined};
   }
 
   async generateReceipt(payout: PayoutRequest): Promise<PaymentReceipt> {
-    const receiptId = crypto?.randomUUID();
-
-    const receipt: PaymentReceipt = {
-      receiptId,
-      payoutId: payout.id,
-      userId: payout.userId,
-      amount: payout.netAmount,
-      currency: payout.currency,
-      method: payout.method,
-      transactionId: payout.transactionId,
-      createdAt: new Date(),
-      statementPeriods: [],
-    };
-
-    this.receipts.set(receiptId, receipt);
-    logger.info(`Generated receipt ${receiptId} for payout ${payout?.id}`);
-
+    const receipt=await this.getReceipt(payout.id);
+    if(!receipt) throw new Error("A receipt requires a confirmed bank payout");
     return receipt;
   }
 
   async getReceipt(receiptId: string): Promise<PaymentReceipt | null> {
-    return this.receipts.get(receiptId) || null;
+    const op=await commerceRepository.get(receiptId);
+    if(!op || op.state!=="completed" || op.kind!=="withdrawal") return null;
+    return {receiptId:op.id,payoutId:op.id,userId:op.user_id,amount:majorUnits(op.amount_cents,op.currency),currency:op.currency,
+      method:"stripe",transactionId:op.provider_id,createdAt:new Date(op.created_at),statementPeriods:[]};
   }
 
   async getReceiptsByUser(userId: string): Promise<PaymentReceipt[]> {
-    return Array.from(this.receipts.values())
-      .filter((r) => r?.userId === userId)
-      .sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
+    const receipts=await Promise.all((await commerceRepository.history(userId)).map(op=>this.getReceipt(op.id)));
+    return receipts.filter((r):r is PaymentReceipt=>r!==null);
   }
 
   /**
@@ -559,51 +369,27 @@ export class PayoutService {
     failed: number;
     skipped: number;
   }> {
-    let processed = 0;
-    let failed = 0;
-    let skipped = 0;
-
-    const allPreferences = await this.getAllPaymentPreferences();
-
-    for (const prefs of allPreferences) {
-      if (!prefs?.autoPayoutEnabled) {
-        skipped++;
-        continue;
-      }
-
+    const { retryCommerceWebhookInbox }=await import("../safety/stripeWebhookSecurity");
+    await retryCommerceWebhookInbox();
+    const drain=await commerceEngine().drain();
+    let processed=drain.processed,failed=drain.failed,skipped=0;
+    for(const prefs of await this.getAllPaymentPreferences()) {
+      if(!prefs.autoPayoutEnabled) {skipped++;continue;}
       try {
-        const schedule = await this.getPayoutSchedule(prefs?.userId);
-
-        if (!schedule?.isEligible) {
-          skipped++;
-          continue;
-        }
-
-        const payout = await this.requestPayout(
-          prefs?.userId,
-          schedule?.currentBalance,
-          prefs?.preferredMethod,
-        );
-
-        await this.processPayout(payout?.id);
+        const months={monthly:1,quarterly:3,semi_annual:6,annual:12}[prefs.frequency]||1;
+        const schedule=await commerceRepository.due(prefs.userId,months);
+        const balance=await this.calculateAvailableBalance(prefs.userId);
+        if(!schedule.due || balance.available<(prefs.minimumThreshold||this.getMinimumThreshold(prefs.currency))) {skipped++;continue;}
+        await this.requestPayout(prefs.userId,balance.available,prefs.preferredMethod,`scheduled:${schedule.next.toISOString()}`);
+        await commerceRepository.advance(prefs.userId,months);
         processed++;
-      } catch (error) {
-        logger.warn(
-          { err: error },
-          `Failed scheduled payout for user ${prefs?.userId}:`,
-        );
-        failed++;
-      }
+      } catch(error) {logger.warn({err:error},"Scheduled commerce payout failed");failed++;}
     }
-
-    logger.info(
-      `Scheduled payouts complete: ${processed} processed, ${failed} failed, ${skipped} skipped`,
-    );
-    return { processed, failed, skipped };
+    return {processed,failed,skipped};
   }
 
   getSupportedPaymentMethods(): PaymentMethod[] {
-    return ["bank_transfer", "paypal", "stripe", "check", "crypto"];
+    return ["bank_transfer", "stripe"];
   }
 
   getSupportedCurrencies(): string[] {

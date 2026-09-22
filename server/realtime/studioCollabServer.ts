@@ -9,6 +9,7 @@ import { yjsService } from "../services/yjsService.js";
 import { presenceManager, type CursorPosition, type SelectionState } from "./presenceManager.js";
 import { jwtAuthService } from "../services/jwtAuthService.js";
 import { storage } from "../storage.js";
+import { getStudioProjectAccess } from "../services/studioProjectAccess.js";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 import { logger } from "../logger.js";
 
@@ -307,25 +308,7 @@ export class StudioCollabServer {
     projectId: string,
   ): Promise<boolean> {
     try {
-      const project = await (storage as any)?.getStudioProject(projectId);
-      if (!project) {
-        return false;
-      }
-
-      if (project?.userId === userId) {
-        return true;
-      }
-
-      const collaborators = await (storage as any)?.getProjectCollaborators?.(projectId);
-      if (collaborators?.some((c: { userId: string }) => c?.userId === userId)) {
-        return true;
-      }
-
-      if ((project as { isPublic?: boolean }).isPublic) {
-        return true;
-      }
-
-      return false;
+      return (await getStudioProjectAccess(userId, projectId)).read;
     } catch (error) {
       logger.warn(
         { err: error },
@@ -341,6 +324,10 @@ export class StudioCollabServer {
     displayName: string,
     projectId: string,
   ): Promise<void> {
+    if (!(await this.checkProjectAccess(userId, projectId))) {
+      ws.close(1008, "Project access revoked");
+      return;
+    }
     let doc = this.documents.get(projectId);
     if (!doc) {
       doc = await yjsService?.loadDocument(projectId);
@@ -415,8 +402,12 @@ export class StudioCollabServer {
       client,
     );
 
-    const updateHandler = (update: Uint8Array, origin: unknown) => {
+    const updateHandler = async (update: Uint8Array, origin: unknown) => {
       if (origin !== client) {
+        if (!(await this.checkProjectAccess(userId, projectId))) {
+          ws.close(1008, "Project access revoked");
+          return;
+        }
         this.sendToClient(ws, {
           type: "yjs:update",
           payload: {
@@ -463,23 +454,23 @@ export class StudioCollabServer {
     message: IncomingCollabMessage,
     doc: Y.Doc,
   ): Promise<void> {
+    if (!(await this.checkProjectAccess(client.userId, client.projectId))) {
+      client.ws.close(1008, "Project access revoked");
+      return;
+    }
     switch (message?.type) {
       case "yjs:update": {
+        // Recheck on each mutation so revocation is not cached for the socket lifetime.
+        if (!(await getStudioProjectAccess(client.userId, client.projectId)).write) {
+          client.ws.close(1008, "Project write access denied");
+          return;
+        }
         const updateMsg = message as YjsUpdateMessage;
         const update = Buffer?.from(updateMsg?.payload.update, "base64");
         Y?.applyUpdate(doc, new Uint8Array(update), client);
 
-        this.broadcastToProject(
-          client?.projectId,
-          {
-            type: "yjs:update",
-            payload: {
-              update: updateMsg.payload.update,
-              origin: client.userId,
-            },
-          },
-          client,
-        );
+        // The document update handler distributes exactly once, after a fresh
+        // authorization decision for each recipient.
         break;
       }
 
@@ -646,7 +637,10 @@ export class StudioCollabServer {
 
     for (const client of projectClients) {
       if (client !== exclude && client?.ws.readyState === WebSocket.OPEN) {
-        client?.ws.send(messageStr);
+        void this.checkProjectAccess(client.userId, projectId).then((allowed) => {
+          if (!allowed) client.ws.close(1008, "Project access revoked");
+          else if (client.ws.readyState === WebSocket.OPEN) client.ws.send(messageStr);
+        });
       }
     }
   }

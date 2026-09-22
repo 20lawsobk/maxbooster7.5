@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { create } from "zustand";
-import { subscribeWithSelector, persist, devtools } from "zustand/middleware";
+import { subscribeWithSelector, persist, devtools, createJSONStorage } from "zustand/middleware";
+import { accountLocalStorage } from "@/lib/offline/accountLocalStorage";
 import type { WaveformPeakCache } from "../lib/daw/AudioWorkletEngine";
 
 export type TrackType =
@@ -1412,6 +1413,7 @@ export const useStudioStore = create<StudioState>()(
         }),
         {
           name: "studio-storage",
+          storage: createJSONStorage(() => accountLocalStorage),
           partialize: (state) => ({
             project: state.project,
             tracks: state.tracks.map((track) => ({

@@ -30,6 +30,7 @@ import {
   type EnhancementCategory,
 } from "./services/evolutionRegistry.js";
 import { isProductionEnv } from "./lib/envHelpers.js";
+import { runEvolutionConsumerCanary } from "./services/evolutionCanary.js";
 
 interface IndustryChange {
   id: string;
@@ -2389,6 +2390,30 @@ export class SelfEvolutionEngine extends EventEmitter {
     // enhancements deployed by an earlier healthy cycle.
     if (appliedUpgradeIds.length === 0) return true;
 
+    // Validate each candidate independently. A healthy server is not evidence
+    // that request construction or scheduling obeys the changed policy.
+    const passingIds: string[] = [];
+    let consumerFailure = false;
+    for (const upgradeId of appliedUpgradeIds) {
+      const result = runEvolutionConsumerCanary(
+        evolutionRegistry, evolutionRegistry.getActiveUpgradeEnhancements(upgradeId),
+      );
+      try {
+        await evolutionRegistry.recordConsumerValidation(upgradeId, result);
+      } catch (error) {
+        // Missing durable evidence cannot authorize promotion.
+        await this.performRollback([upgradeId]);
+        throw error;
+      }
+      if (!result.passed) {
+        consumerFailure = true;
+        await this.performRollback([upgradeId]);
+      } else {
+        passingIds.push(upgradeId);
+      }
+    }
+    if (!passingIds.length) return false;
+
     try {
       const port = process.env.PORT || "5000";
       const start = Date.now();
@@ -2423,12 +2448,12 @@ export class SelfEvolutionEngine extends EventEmitter {
         return !(
           await this.analyzeRollbackNeed(
             { ...metrics, errorRate: 0.02 },
-            appliedUpgradeIds,
+            passingIds,
           )
-        );
+        ) && !consumerFailure;
       } else {
         logger.info(`   💚 Health check passed: ${responseTime}ms`);
-        return true;
+        return !consumerFailure;
       }
     } catch (e) {
       logger.warn(
@@ -2436,7 +2461,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       );
       await this.analyzeRollbackNeed(
         { errorRate: 0.1, responseTime: 9999 },
-        appliedUpgradeIds,
+        passingIds,
       );
       return false;
     }

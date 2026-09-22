@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import MerchCheckout from "@/components/merch/MerchCheckout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -108,6 +109,11 @@ interface MerchStats {
 }
 
 export default function MerchStore() {
+  const artistId = new URLSearchParams(window.location.search).get("artist");
+  return artistId ? <AppLayout><MerchCheckout artistId={artistId} /></AppLayout> : <MerchManagement />;
+}
+
+function MerchManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("products");
@@ -638,7 +644,7 @@ export default function MerchStore() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              label: "Total Revenue",
+              label: "Verified collected, less refunds",
               value: `$${stats?.totalRevenue?.toFixed(2) || "0.00"}`,
               sub: "Lifetime earnings",
               icon: DollarSign,

@@ -219,7 +219,7 @@ export function ExportDialog({
     format: "csv",
     category: "analytics",
     dateRange: null,
-    includeCharts: true,
+    includeCharts: false,
     anonymize: false,
     compress: false,
   });

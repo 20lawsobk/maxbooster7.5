@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { logger } from "../logger";
+import { accountDatabase, offlineIdentity, assertOfflineIdentity, guardDatabase } from "./identity";
 import { openDB, IDBPDatabase, DBSchema } from "idb";
 
 export interface Draft<T = unknown> {
@@ -72,10 +73,12 @@ class DraftStorage {
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   async init(): Promise<void> {
+    const name = accountDatabase(DB_NAME);
+    if (this.db && this.db.name !== name) this.destroy();
     if (this.isInitialized) return;
 
     try {
-      this.db = await openDB<DraftStorageDB>(DB_NAME, DB_VERSION, {
+      this.db = await openDB<DraftStorageDB>(name, DB_VERSION, {
         upgrade(db) {
           if (!db?.objectStoreNames.contains("drafts")) {
             const store = db?.createObjectStore("drafts", { keyPath: "id" });
@@ -98,10 +101,11 @@ class DraftStorage {
   }
 
   private async ensureDb(): Promise<IDBPDatabase<DraftStorageDB>> {
-    if (!this.db) {
-      await this.init();
-    }
-    return this.db!;
+    const identity = offlineIdentity();
+    await this.init();
+    assertOfflineIdentity(identity);
+    if (this.db?.name !== accountDatabase(DB_NAME)) throw new Error("Draft account changed during initialization");
+    return guardDatabase(this.db!, identity);
   }
 
   private emit<T = unknown>(event: DraftEvent<T>): void {
@@ -146,18 +150,21 @@ class DraftStorage {
       metadata?: Record<string, unknown>;
     } = {},
   ): Promise<Draft<T>> {
+    const identity = offlineIdentity();
     const db = await this.ensureDb();
+    assertOfflineIdentity(identity);
     const now = Date?.now();
     const expiresAt = now + (options?.expirationMs ?? DEFAULT_EXPIRATION_MS);
 
     const existingDraft = await this.getDraft<T>(formId);
+    assertOfflineIdentity(identity);
     const version = existingDraft ? existingDraft?.version + 1 : 1;
 
     const draft: Draft<T> = {
       id: `draft-${formId}`,
       formId,
       data,
-      createdAt: existingDraft.createdAt ?? now,
+      createdAt: existingDraft?.createdAt ?? now,
       updatedAt: now,
       expiresAt,
       version,
@@ -165,7 +172,9 @@ class DraftStorage {
       metadata: options.metadata,
     };
 
+    assertOfflineIdentity(identity);
     await db?.put("drafts", draft as Draft);
+    assertOfflineIdentity(identity);
 
     this.emit({ type: "draft-saved", draft: draft as Draft, formId });
 
@@ -173,8 +182,10 @@ class DraftStorage {
   }
 
   async getDraft<T = unknown>(formId: string): Promise<Draft<T> | undefined> {
+    const identity = offlineIdentity();
     const db = await this.ensureDb();
     const draft = await db?.get("drafts", `draft-${formId}`);
+    assertOfflineIdentity(identity);
 
     if (draft && draft?.expiresAt < Date?.now()) {
       await this.deleteDraft(formId);
@@ -384,6 +395,8 @@ class DraftStorage {
   }
 
   destroy(): void {
+    this.db?.close();
+    this.db = null;
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
     }

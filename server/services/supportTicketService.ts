@@ -265,6 +265,13 @@ export class SupportTicketService {
     // Messages are persisted in the ticket's metadata JSONB column (verified
     // present in the live database) under metadata.messages — a dedicated
     // messages table does not exist yet.
+    if (isStaffReply) {
+      const [actor] = await db.select(authUserSelection).from(users).where(eq(users.id, userId)).limit(1);
+      if (!actor?.isAdmin) throw new Error("Staff access required");
+    } else if (ticket[0].userId !== userId) {
+      throw new Error("Ticket not found");
+    }
+    if (!message.trim() || message.length > 10000) throw new Error("Message must contain 1–10000 characters");
     const messageRecord: TicketMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       ticketId,
@@ -276,21 +283,15 @@ export class SupportTicketService {
       user: null,
     };
 
-    const existingMeta =
-      (ticket[0].metadata as Record<string, unknown> | null) ?? {};
-    const existingMessages = Array.isArray(existingMeta.messages)
-      ? (existingMeta.messages as unknown[])
-      : [];
-    await db
+    const saved = await db
       .update(supportTickets)
       .set({
         updatedAt: new Date(),
-        metadata: {
-          ...existingMeta,
-          messages: [...existingMessages, messageRecord],
-        },
+        metadata: sql`jsonb_set(COALESCE(${supportTickets.metadata}, '{}'::jsonb), '{messages}', COALESCE(${supportTickets.metadata}->'messages', '[]'::jsonb) || ${JSON.stringify([messageRecord])}::jsonb)`,
       })
-      .where(eq(supportTickets.id, ticketId));
+      .where(and(eq(supportTickets.id, ticketId), sql`${supportTickets.status} <> 'closed'`))
+      .returning({ id: supportTickets.id });
+    if (!saved.length) throw new Error("Closed tickets cannot receive replies");
 
     if (isStaffReply) {
       // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
@@ -343,14 +344,11 @@ export class SupportTicketService {
       .where(eq(supportTickets.id, ticketId))
       .limit(1);
     if (!ticket?.length) throw new Error("Ticket not found");
-    const meta = (ticket[0].metadata as Record<string, unknown> | null) ?? {};
-    const existing = Array.isArray(meta.tags) ? (meta.tags as string[]) : [];
-    const merged = [...new Set([...existing, ...tags])];
     await db
       .update(supportTickets)
       .set({
         updatedAt: new Date(),
-        metadata: { ...meta, tags: merged },
+        metadata: sql`jsonb_set(COALESCE(${supportTickets.metadata}, '{}'::jsonb), '{tags}', (SELECT COALESCE(jsonb_agg(DISTINCT value), '[]'::jsonb) FROM jsonb_array_elements(COALESCE(${supportTickets.metadata}->'tags', '[]'::jsonb) || ${JSON.stringify(tags)}::jsonb)))`,
       })
       .where(eq(supportTickets.id, ticketId));
   }

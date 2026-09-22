@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 
 interface KYCDocument {
+  reviewRevision: string;
   id: string;
   documentType: string;
   fileName: string;
@@ -49,6 +50,7 @@ interface KYCDocument {
 }
 
 interface KYCVerification {
+  reviewRevision: string;
   id: string;
   userId: string;
   verificationType: "individual" | "business";
@@ -126,11 +128,13 @@ export default function KYCReview() {
       action,
       notes,
       reason,
+      expectedRevision,
     }: {
       verificationId: string;
       action: "approve" | "reject";
       notes?: string;
       reason?: string;
+      expectedRevision: string;
     }) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/kyc/admin/review/${verificationId}`, {
@@ -140,7 +144,7 @@ export default function KYCReview() {
           ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
         },
         credentials: "include",
-        body: JSON.stringify({ action, notes, reason }),
+        body: JSON.stringify({ action, notes, reason, expectedRevision }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -173,10 +177,12 @@ export default function KYCReview() {
       documentId,
       approved,
       reason,
+      expectedRevision,
     }: {
       documentId: string;
       approved: boolean;
       reason?: string;
+      expectedRevision: string;
     }) => {
       const csrfToken = getCsrfTokenFromCookie();
       const res = await fetch(`/api/kyc/admin/documents/${documentId}/review`, {
@@ -186,7 +192,7 @@ export default function KYCReview() {
           ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
         },
         credentials: "include",
-        body: JSON.stringify({ approved, reason }),
+        body: JSON.stringify({ approved, reason, expectedRevision }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -320,6 +326,7 @@ export default function KYCReview() {
 
     reviewMutation.mutate({
       verificationId: selectedVerification.id,
+      expectedRevision: selectedVerification.reviewRevision,
       action: reviewAction,
       notes: reviewNotes || undefined,
       reason: reviewAction === "reject" ? rejectionReason : undefined,
@@ -579,6 +586,7 @@ export default function KYCReview() {
                                           onClick={() =>
                                             documentReviewMutation.mutate({
                                               documentId: doc.id,
+                                              expectedRevision: doc.reviewRevision,
                                               approved: true,
                                             })
                                           }
@@ -809,6 +817,7 @@ export default function KYCReview() {
                 if (!documentToReject) return;
                 documentReviewMutation.mutate({
                   documentId: documentToReject.id,
+                  expectedRevision: documentToReject.reviewRevision,
                   approved: false,
                   reason: documentRejectionReason.trim(),
                 });

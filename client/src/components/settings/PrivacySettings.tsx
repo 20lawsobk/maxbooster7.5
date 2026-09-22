@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import DeleteAccountDialog from "@/components/dialogs/DeleteAccountDialog";
 import { Eye, Download, Trash2, Shield, Globe, Users, Lock, FileText, CheckCircle, AlertTriangle, Loader2, Clock, Info } from "lucide-react";
 
 interface PrivacySettings {
@@ -503,10 +504,10 @@ export function PrivacySettings() {
               <Trash2 className="h-5 w-5 text-destructive mt-0.5" />
               <div className="space-y-1">
                 <p className="font-medium text-destructive">
-                  Delete Your Account
+                  Account erasure requests
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Permanently delete your account and all associated data
+                  Request erasure, check retention-review status, or cancel a queued request
                 </p>
               </div>
             </div>
@@ -514,7 +515,7 @@ export function PrivacySettings() {
               variant="destructive"
               onClick={() => setDeleteAccountOpen(true)}
             >
-              Delete Account
+              Manage erasure request
             </Button>
           </div>
         </CardContent>
@@ -556,44 +557,7 @@ export function PrivacySettings() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-destructive">
-              Delete Account?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              <div className="space-y-3">
-                <p>This action is irreversible. Deleting your account will:</p>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>Permanently delete all your projects and releases</li>
-                  <li>Remove all your analytics and history</li>
-                  <li>Cancel any active subscriptions</li>
-                  <li>Disconnect all linked accounts</li>
-                </ul>
-                <Alert variant="destructive" className="mt-4">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    Your data cannot be recovered after deletion. Consider
-                    exporting your data first.
-                  </AlertDescription>
-                </Alert>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                setDeleteAccountOpen(false);
-              }}
-            >
-              I understand, delete my account
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteAccountDialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen} />
     </div>
   );
 }

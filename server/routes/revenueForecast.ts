@@ -8,7 +8,7 @@ import { z } from "zod";
 const router = Router();
 
 const generateForecastSchema = z.object({
-  months: z.number().min(1).max(24).optional().default(12),
+  months: z.number().int().min(1).max(24).optional().default(12),
 });
 
 router.get(

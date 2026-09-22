@@ -23,6 +23,8 @@ import { createServer } from "http";
 import compression from "compression";
 import { brotliMiddleware } from "./middleware/brotliCompression.js";
 import { logger } from "./logger.js";
+import { assertWorkerSchema, scheduleDrainingWork } from "./lib/readinessWorkerLifecycle.js";
+const readinessWorkerStops: Array<() => void | Promise<void>> = [];
 import { serializeResponseForLog } from "./lib/responseLogSerialization.js";
 import { setupStartupEndpoints, startupProbes } from "./startup-probes.js";
 import { metricsMiddleware } from "./monitoring.js";
@@ -743,6 +745,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   activeSessionStore = await createSessionStore();
   const sessionConfig = getSessionConfig(activeSessionStore);
   app.use(session(sessionConfig));
+  const { validateSessionAuthority } = await import("./middleware/sessionAuthority.js");
+  app.use(validateSessionAuthority);
   logger.info("✅ Session store initialized (PDIM)");
 
   // distributedCache?.connect() is deferred to the setImmediate block below.
@@ -769,19 +773,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // origin validation + SameSite=Lax already block cross-site POST; CSRF
   // double-submit-cookie adds explicit token verification on every state-
   // changing route. Webhooks, login/register, and idempotent reads are exempt
-  // (see CSRF_EXEMPT_PATHS in server/middleware/csrf?.ts).
-  try {
-    const { csrfProtectionWithExemptions, generateCsrfToken } = await import(
-      "./middleware/csrf.js"
-    );
-    app.use(generateCsrfToken);
-    app.use(csrfProtectionWithExemptions);
-    logger.info(
-      "✅ CSRF protection enabled (double-submit cookie, with safe exemptions)",
-    );
-  } catch (e) {
-    logger.warn(`⚠️  CSRF middleware failed to load: ${(e as any)?.message}`);
-  }
+  // (see CSRF_EXEMPT_PATHS in server/middleware/csrf.ts).
+  // This is a required security boundary. Import/initialization failure must
+  // abort startup before authenticated mutation routes can be registered.
+  const { csrfProtectionWithExemptions, generateCsrfToken } = await import(
+    "./middleware/csrf.js"
+  );
+  app.use(generateCsrfToken);
+  app.use(csrfProtectionWithExemptions);
+  logger.info(
+    "✅ CSRF protection enabled (double-submit cookie, with safe exemptions)",
+  );
 
   // Verify read replica once at startup. On failure dbRead is permanently
   // re-pointed to the primary with a loud error — no per-query try/catch needed.
@@ -1075,7 +1077,42 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     },
   );
 
+  // Compose before routes hydrate principals and mount the containment guard.
+  const { configureApplicationContainment } = await import("./services/securityContainment.js");
+  const { selfHealingEngine } = await import("./services/selfHealingSecurityEngine.js");
+  const { revokeUserSessions } = await import("./middleware/sessionConfig.js");
+  configureApplicationContainment(selfHealingEngine, revokeUserSessions);
+
+  // All dependent schemas must exist before any new worker can perform work.
+  // Deployment tooling owns migration approval/application; boot performs no DDL.
+  const backupsEnabled = process.env.NODE_ENV === "production" ||
+    !!process.env.REPLIT_DEPLOYMENT || process.env.ENABLE_BACKUPS === "true";
+  const fanMailEnabled = process.env.ENABLE_FAN_DELIVERY_WORKER === "true";
+  if (fanMailEnabled) {
+    const origin = new URL(process.env.APP_URL || process.env.PUBLIC_APP_URL || "");
+    if (origin.protocol !== "https:" || !process.env.RESEND_API_KEY ||
+      !(process.env.RESEND_FROM_EMAIL || process.env.SENDGRID_FROM_EMAIL)) {
+      throw new Error("Fan delivery worker requires HTTPS APP_URL, Resend credentials and verified sender configuration");
+    }
+  }
+  const { pool: readinessPool } = await import("./db.js");
+  await assertWorkerSchema(sql => readinessPool.query(sql), backupsEnabled, fanMailEnabled);
   await registerRoutes(httpServer, app);
+  if (backupsEnabled) {
+    const { databaseBackupService } = await import("./services/backup/databaseBackupService.js");
+    await databaseBackupService.initialize();
+    readinessWorkerStops.push(() => databaseBackupService.stop());
+  }
+  const { runCatalogDiscoveryJobs } = await import("./services/catalogDiscoveryJobs.js");
+  readinessWorkerStops.push(scheduleDrainingWork(runCatalogDiscoveryJobs, 30_000,
+    error => logger.error({ err: error }, "Catalog discovery worker failed")));
+  if (fanMailEnabled) {
+    const { drainPendingFanDeliveries } = await import("./services/fanDeliveryService.js");
+    readinessWorkerStops.push(scheduleDrainingWork(() => drainPendingFanDeliveries(10), 60_000,
+      error => logger.error({ err: error }, "Fan delivery worker failed")));
+  } else {
+    logger.info("Fan delivery scheduler disabled; enable only after consent schema and mail configuration approval");
+  }
   _routesReady = true;
   const { setRoutesReady: _setRoutesReady } = await import(
     "./lib/bootState.js"
@@ -1883,12 +1920,20 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   }, 25_000);
   hardExit?.unref(); // do not keep the event loop alive just for this timer
 
+  // Stop scheduling immediately and drain claimed catalog/fan work before DB close.
+  const workerDrain = Promise.allSettled(readinessWorkerStops.splice(0).map(stop => Promise.resolve().then(stop)));
+
   try {
     // 1. Stop accepting new HTTP connections so the load balancer re-routes immediately.
     await new Promise<void>((resolve) => httpServer?.close(() => resolve()));
     logger.info("[Shutdown] HTTP server closed");
   } catch (err) {
     logger.warn({ err: err }, "[Shutdown] Error closing HTTP server:");
+  }
+  for (const outcome of await workerDrain) {
+    if (outcome.status === "rejected") {
+      logger.error({ err: outcome.reason }, "[Shutdown] Readiness worker drain failed");
+    }
   }
 
   try {

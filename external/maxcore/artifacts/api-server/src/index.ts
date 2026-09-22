@@ -49,6 +49,22 @@ const NUM_WORKERS =
     : Math.min(os.cpus().length, 4);
 
 if (cluster.isPrimary) {
+  // Resource contract supplied by Max Booster's shared allocation supervisor.
+  // Workers must not inherit the smaller coordinator heap, nor independently
+  // calculate a second host-sized memory pool. No lifecycle behavior changes.
+  const workerHeap = process.env["MAXCORE_NODE_WORKER_HEAP_MB"];
+  if (workerHeap !== undefined) {
+    const heapMB = Number(workerHeap);
+    if (!Number.isInteger(heapMB) || heapMB < 1) {
+      throw new Error("MAXCORE_NODE_WORKER_HEAP_MB must be a positive integer");
+    }
+    cluster.setupPrimary({
+      execArgv: [
+        ...process.execArgv.filter((arg) => !/^--max[-_]old[-_]space[-_]size=/.test(arg)),
+        `--max-old-space-size=${heapMB}`,
+      ],
+    });
+  }
   console.log(
     `[Cluster] Primary ${process.pid} — forking ${NUM_WORKERS} workers on port ${port}`,
   );

@@ -16,6 +16,8 @@ import { env } from "../config/env.js";
 import { require2FA } from "../middleware/auth.js";
 import { systemIntelligence } from "../services/systemIntelligence.js";
 import { labelGridService } from "../services/labelgrid-service.js";
+import { moderate } from "../services/moderationDecisionService.js";
+import { issueAdminApiToken, revokeAdminApiToken } from "../services/adminApiTokenService.js";
 
 const adminRouter = Router();
 
@@ -60,6 +62,27 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
 
 adminRouter?.use(requireAdmin);
 adminRouter?.use(require2FA);
+
+adminRouter.post("/tokens", async (req, res) => {
+  try {
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(201).json(await issueAdminApiToken(req.user.id, req.ip || "unknown"));
+  } catch (error) {
+    logger.warn({ err: error }, "Admin API credential issuance failed");
+    return res.status(500).json({ error: "Unable to issue API credential" });
+  }
+});
+adminRouter.post("/tokens/revoke", async (req, res) => {
+  if (typeof req.body?.tokenId !== "string" || req.body.tokenId.length > 100 || !req.body.tokenId.trim()) {
+    return res.status(400).json({ error: "A credential ID is required" });
+  }
+  try {
+    return res.json(await revokeAdminApiToken(req.user.id, req.body.tokenId, req.ip || "unknown"));
+  } catch (error) {
+    logger.warn({ err: error }, "Admin API credential revocation failed");
+    return res.status(400).json({ error: "Unable to revoke credential for current user" });
+  }
+});
 
 adminRouter?.get("/dashboard", (req, res) => {
   const { password, twoFactorSecret, passwordResetToken, ...safeUser } =
@@ -601,8 +624,8 @@ adminRouter?.get("/moderation/reports", async (req, res) => {
         contentType: "social_post",
         contentId: post.id,
         contentTitle: `${post.platform || "Social"} post`,
-        reportedBy: "Automated moderation",
-        reportedByUsername: "System",
+        reportedBy: "Flagged post queue (report provenance unavailable)",
+        reportedByUsername: "Unknown",
         reason: "flagged_content",
         description: post.content,
         status:
@@ -657,16 +680,11 @@ adminRouter?.post("/moderation/reports/:reportId/review", async (req, res) => {
       .where(eq(posts.id, reportId))
       .limit(1);
     if (!report) return res.status(404).json({ error: "Report not found" });
-    if (action === "ban_user") {
-      const [bannedUser] = await db
-        .update(users)
-        .set({ subscriptionStatus: "banned" })
-        .where(eq(users.id, report.userId))
-        .returning({ id: users.id });
-      if (!bannedUser) return res.status(404).json({ error: "Report owner not found" });
-    }
-    const newStatus = action === "remove_content" ? "removed" : action === "dismiss" ? "dismissed" : "flagged";
-    await db.update(posts).set({ status: newStatus }).where(eq(posts.id, reportId));
+    const { status: newStatus, reviewedAt } = await moderate({
+      actorId: req.user.id, ip: req.ip || "unknown", action,
+      idempotencyKey: req.get("Idempotency-Key") || req.body.idempotencyKey,
+      contentId: reportId, reason: typeof notes === "string" ? notes.slice(0, 4000) : action,
+    });
     logger.info(`Admin ${req.user?.email} reviewed report ${reportId} with action: ${action}. Notes: ${notes || "None"}`);
 
     res.json({
@@ -676,14 +694,14 @@ adminRouter?.post("/moderation/reports/:reportId/review", async (req, res) => {
         id: reportId,
         status: newStatus === "removed" ? "resolved" : newStatus === "dismissed" ? "reviewed" : "pending",
         reviewedBy: req.user?.email,
-        reviewedAt: new Date().toISOString(),
+        reviewedAt,
         action,
         notes,
       },
     });
   } catch (error) {
     logger.warn({ err: error }, "Error reviewing moderation report:");
-    res.status(500).json({ error: "Failed to review moderation report" });
+    res.status(error.statusCode || 500).json({ error: error.statusCode ? error.message : "Failed to review moderation report" });
   }
 });
 
@@ -691,6 +709,14 @@ adminRouter?.post("/moderation/content/:contentId/remove", async (req, res) => {
   try {
     const { contentId } = req.params as Record<string, string>;
     const { reason, notifyUser = true } = req.body;
+    if (typeof reason !== "string" || !reason.trim() || reason.length > 4000 || typeof notifyUser !== "boolean") {
+      return res.status(400).json({ error: "A reason (1–4000 characters) and boolean notifyUser are required" });
+    }
+    const result = await moderate({
+      actorId: req.user.id, ip: req.ip || "unknown", action: "remove_content",
+      idempotencyKey: req.get("Idempotency-Key") || req.body.idempotencyKey,
+      contentId, reason, notify: notifyUser,
+    });
 
     logger.info(
       `Admin ${req.user?.email} removed content ${contentId}. Reason: ${reason}`,
@@ -701,11 +727,11 @@ adminRouter?.post("/moderation/content/:contentId/remove", async (req, res) => {
       message: "Content removed successfully",
       contentId,
       reason,
-      notifiedUser: notifyUser,
+      notifiedUser: result.notifiedUser,
     });
   } catch (error) {
     logger.warn({ err: error }, "Error removing content:");
-    res.status(500).json({ error: "Failed to remove content" });
+    res.status(error.statusCode || 500).json({ error: error.statusCode ? error.message : "Failed to remove content" });
   }
 });
 
@@ -713,6 +739,15 @@ adminRouter?.post("/moderation/users/:userId/warn", async (req, res) => {
   try {
     const { userId } = req.params as Record<string, string>;
     const { reason, severity = "minor" } = req.body;
+    if (typeof severity !== "string" || severity.length > 64) return res.status(400).json({ error: "Invalid severity" });
+    if (typeof reason !== "string" || !reason.trim() || reason.length > 4000) {
+      return res.status(400).json({ error: "A reason (1–4000 characters) is required" });
+    }
+    const decision = await moderate({
+      actorId: req.user.id, ip: req.ip || "unknown", action: "warn_user", userId, reason,
+      severity,
+      idempotencyKey: req.get("Idempotency-Key") || req.body.idempotencyKey,
+    });
 
     logger.info(
       `Admin ${req.user?.email} warned user ${userId}. Severity: ${severity}. Reason: ${reason}`,
@@ -724,11 +759,11 @@ adminRouter?.post("/moderation/users/:userId/warn", async (req, res) => {
       userId,
       severity,
       reason,
-      timestamp: new Date().toISOString(),
+      timestamp: decision.reviewedAt,
     });
   } catch (error) {
     logger.warn({ err: error }, "Error warning user:");
-    res.status(500).json({ error: "Failed to warn user" });
+    res.status(error.statusCode || 500).json({ error: error.statusCode ? error.message : "Failed to warn user" });
   }
 });
 
@@ -741,12 +776,16 @@ adminRouter?.post("/moderation/users/:userId/ban", async (req, res) => {
       return res.status(400).json({ error: "Cannot ban your own account" });
     }
 
-    await db
-      .update(users)
-      .set({
-        subscriptionStatus: "banned",
-      })
-      .where(eq(users.id, userId));
+    if (typeof reason !== "string" || !reason.trim() || reason.length > 4000) {
+      return res.status(400).json({ error: "A reason (1–4000 characters) is required" });
+    }
+    if (duration && duration !== "permanent") {
+      return res.status(400).json({ error: "Only permanent bans are supported; timed suspension requires an expiry enforcement service" });
+    }
+    const decision = await moderate({
+      actorId: req.user.id, ip: req.ip || "unknown", action: "ban_user", userId, reason,
+      idempotencyKey: req.get("Idempotency-Key") || req.body.idempotencyKey,
+    });
 
     logger.info(
       `Admin ${req.user?.email} banned user ${userId}. Duration: ${duration || "permanent"}. Reason: ${reason}`,
@@ -758,11 +797,11 @@ adminRouter?.post("/moderation/users/:userId/ban", async (req, res) => {
       userId,
       duration: duration || "permanent",
       reason,
-      timestamp: new Date().toISOString(),
+      timestamp: decision.reviewedAt,
     });
   } catch (error) {
     logger.warn({ err: error }, "Error banning user:");
-    res.status(500).json({ error: "Failed to ban user" });
+    res.status(error.statusCode || 500).json({ error: error.statusCode ? error.message : "Failed to ban user" });
   }
 });
 
@@ -1039,6 +1078,7 @@ adminRouter?.post("/settings/notifications", async (req, res) => {
 adminRouter?.post("/settings/maintenance", async (req, res) => {
   try {
     const { enabled } = req.body;
+    if (typeof enabled !== "boolean") return res.status(400).json({ error: "enabled must be boolean" });
     await updateSetting("maintenanceMode", enabled);
     res.json({ success: true, enabled });
   } catch (error) {
@@ -1050,6 +1090,7 @@ adminRouter?.post("/settings/maintenance", async (req, res) => {
 adminRouter?.post("/settings/registration", async (req, res) => {
   try {
     const { enabled } = req.body;
+    if (typeof enabled !== "boolean") return res.status(400).json({ error: "enabled must be boolean" });
     await updateSetting("userRegistrationEnabled", enabled);
     res.json({ success: true, enabled });
   } catch (error) {

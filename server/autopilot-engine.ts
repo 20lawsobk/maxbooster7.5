@@ -5,6 +5,7 @@ import { logger } from "./logger.js";
 import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
 import { autopilotLearningService } from "./services/autopilotLearningService.js";
 import { evolutionRegistry } from "./services/evolutionRegistry.js";
+import { evolutionConsumers } from "./services/evolutionConsumers.js";
 import {
   advancedUrlParser,
   type UrlContentBrief,
@@ -265,47 +266,7 @@ export class AutopilotEngine extends EventEmitter {
   private async calculateNextPostTime(platform: string): Promise<Date> {
     const now = new Date();
     const optimalTimes = await this.getOptimalTimesForPlatform(platform);
-
-    // Find next optimal time
-    let nextTime = new Date(now);
-
-    switch (this.config.postingFrequency) {
-      case "hourly":
-        nextTime?.setHours(now?.getHours() + 1, 0, 0, 0);
-        break;
-      case "twice-daily":
-        const morningHour = optimalTimes[0] || 9;
-        const eveningHour = optimalTimes[1] || 17;
-
-        if (now?.getHours() < morningHour) {
-          nextTime?.setHours(morningHour, 0, 0, 0);
-        } else if (now?.getHours() < eveningHour) {
-          nextTime?.setHours(eveningHour, 0, 0, 0);
-        } else {
-          nextTime?.setDate(nextTime?.getDate() + 1);
-          nextTime?.setHours(morningHour, 0, 0, 0);
-        }
-        break;
-      case "daily": {
-        const optimalHour = optimalTimes[0] || 14;
-        // If the optimal hour hasn't passed yet today, schedule for today
-        // (the prior implementation always pushed to tomorrow, wasting up
-        // to a full day's posting window on every reschedule).
-        if (now?.getHours() < optimalHour) {
-          nextTime?.setHours(optimalHour, 0, 0, 0);
-        } else {
-          nextTime?.setDate(nextTime?.getDate() + 1);
-          nextTime?.setHours(optimalHour, 0, 0, 0);
-        }
-        break;
-      }
-      case "weekly":
-        nextTime?.setDate(nextTime?.getDate() + 7);
-        nextTime?.setHours(optimalTimes[0] || 14, 0, 0, 0);
-        break;
-    }
-
-    return nextTime;
+    return evolutionConsumers.nextPostTime(now, this.config.postingFrequency, optimalTimes);
   }
 
   private calculateNextBatchTime(): number {
@@ -681,50 +642,12 @@ export class AutopilotEngine extends EventEmitter {
       // already-supported generator knobs (variantCount, includeEmojis) are
       // touched, so the MaxCore contract is unchanged; absent an override these
       // fall back to the prior defaults.
-      const contentOpt = evolutionRegistry.getContentOptimization(
-        params.platform.toLowerCase(),
+      const {
+        variantCount, includeEmojis, hashtagStrategy, captionLength,
+        callToActionStrength, objective,
+      } = evolutionConsumers.contentRequest(
+        evolutionRegistry, params.platform, this.mapGoalsToObjective(params.businessGoals),
       );
-      const variantCount =
-        typeof contentOpt?.variantCount === "number"
-          ? contentOpt.variantCount
-          : 3;
-      const includeEmojis =
-        typeof contentOpt?.visualPriority === "boolean"
-          ? contentOpt.visualPriority
-          : true;
-      // The remaining content_optimization knobs reshape the hashtags, caption
-      // length, and call-to-action of the generated post. Pass them through only
-      // when present; absent an override they stay undefined and the generator
-      // uses its prior behavior.
-      const hashtagStrategy = contentOpt?.hashtagStrategy as
-        | "trending"
-        | "niche"
-        | "branded"
-        | "balanced"
-        | undefined;
-      const captionLength = contentOpt?.captionLength as
-        | "short"
-        | "optimal"
-        | "long"
-        | undefined;
-      const callToActionStrength = contentOpt?.callToActionStrength as
-        | "low"
-        | "medium"
-        | "high"
-        | undefined;
-
-      // A self-evolution posting_optimization override may call for prioritizing
-      // engagement (from a real detected industry change). When engagementTargeting
-      // is 'high', steer the generator's objective toward engagement-driving
-      // content regardless of the configured business goals; 'standard' (or no
-      // override) keeps the goal-derived objective. Fully reversible.
-      const posting = evolutionRegistry?.getPostingOptimization(
-        params?.platform.toLowerCase(),
-      );
-      let objective = this.mapGoalsToObjective(params?.businessGoals);
-      if (posting?.engagementTargeting === "high") {
-        objective = "engagement";
-      }
 
       // Use Advanced Social AI for GPT-5.2 level content generation
       const advancedResult =

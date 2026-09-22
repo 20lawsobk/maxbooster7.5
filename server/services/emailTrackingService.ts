@@ -5,7 +5,7 @@ import {
   emailEvents,
 } from "@shared/schema";
 import { eq, desc, sql, gte } from "drizzle-orm";
-import nacl from "tweetnacl";
+import { verifySendGridEvent } from "./emailWebhookVerification.js";
 import { logger } from "../logger.js";
 
 // Derive insert types from the table definitions (schema does not export named Insert types)
@@ -146,7 +146,7 @@ export class EmailTrackingService {
    * SendGrid uses Ed25519 digital signatures for webhook verification
    */
   verifySendGridSignature(
-    payload: string,
+    payload: string | Buffer,
     signature: string,
     timestamp: string,
   ): boolean {
@@ -156,26 +156,8 @@ export class EmailTrackingService {
       return false;
     }
 
-    try {
-      const signedPayload = timestamp + payload;
-
-      const publicKeyBytes = Buffer?.from(publicKey, "base64");
-
-      const signatureBytes = Buffer?.from(signature, "base64");
-
-      const messageBytes = Buffer?.from(signedPayload, "utf-8");
-
-      const isValid = nacl?.sign.detached?.verify(
-        messageBytes,
-        signatureBytes,
-        publicKeyBytes,
-      );
-
-      return isValid;
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Ed25519 signature verification failed:");
-      return false;
-    }
+    return verifySendGridEvent(Buffer.isBuffer(payload) ? payload : Buffer.from(payload, "utf8"),
+      signature, timestamp, publicKey);
   }
 }
 

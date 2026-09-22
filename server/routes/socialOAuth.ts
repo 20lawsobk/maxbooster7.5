@@ -9,6 +9,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { syncPlatformData } from "../services/socialSyncService";
 import { socialOAuth as socialOAuthService } from "../services/socialOAuthService";
 import { env } from "../config/env.js";
+import { encryptSocialCredential } from "../services/socialCredentialCodec.js";
 
 // ── Timeout-guarded fetch: adds a 15s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -1045,19 +1046,16 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
       // token. Non-Meta platforms won't have p.accessToken set.
       const effectiveToken = (p as any).accessToken ?? tokenData.access_token;
 
-      // Keep the callback's dedicated token columns in their current
-      // publisher-compatible representation. Several publishing/sync
-      // consumers read social_accounts.access_token directly as a Bearer
-      // token; encrypting these columns here would make newly connected
-      // accounts fail to publish. The existing OAuth service can read this
-      // legacy/plain shape for refresh. A coordinated encryption migration
-      // must update every consumer before changing this write path.
+      const accessToken = encryptSocialCredential(effectiveToken, `${stateData.userId}:${p.name}:access`);
+      const refreshToken = tokenData.refresh_token
+        ? encryptSocialCredential(tokenData.refresh_token, `${stateData.userId}:${p.name}:refresh`)
+        : undefined;
       if (existingConnection.length > 0) {
         await db
           .update(socialAccounts)
           .set({
-            accessToken: effectiveToken,
-            refreshToken: tokenData.refresh_token,
+            accessToken,
+            refreshToken,
             tokenExpiresAt: tokenData.expires_in
               ? new Date(Date.now() + tokenData.expires_in * 1000)
               : null,
@@ -1073,8 +1071,8 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
         await db.insert(socialAccounts).values({
           userId: stateData.userId,
           platform: p.name,
-          accessToken: effectiveToken,
-          refreshToken: tokenData.refresh_token,
+          accessToken,
+          refreshToken,
           tokenExpiresAt: tokenData.expires_in
             ? new Date(Date.now() + tokenData.expires_in * 1000)
             : null,

@@ -14,6 +14,8 @@ const timedFetch = (
 
 // ─── Token refresh helpers ────────────────────────────────────────────────────
 
+import { decryptSocialCredential, encryptSocialCredential } from "./socialCredentialCodec.js";
+
 interface TokenRefreshResult {
   accessToken: string;
   expiresAt: Date | null;
@@ -69,11 +71,16 @@ async function refreshOAuth2Token(
  */
 async function getValidAccessToken(connection: {
   id: string;
+  userId: string;
   platform: string;
   accessToken: string | null;
   refreshToken: string | null;
   tokenExpiresAt: Date | null;
 }): Promise<string | null> {
+  connection = { ...connection,
+    accessToken: decryptSocialCredential(connection.accessToken, `${connection.userId}:${connection.platform}:access`),
+    refreshToken: decryptSocialCredential(connection.refreshToken, `${connection.userId}:${connection.platform}:refresh`),
+  };
   const token = connection?.accessToken;
   if (!token) return null;
 
@@ -241,16 +248,16 @@ async function getValidAccessToken(connection: {
   await db
     .update(socialAccounts)
     .set({
-      accessToken: refreshed.accessToken,
+      accessToken: encryptSocialCredential(refreshed.accessToken, `${connection.userId}:${connection.platform}:access`),
       tokenExpiresAt: refreshed.expiresAt,
       ...(refreshed.refreshToken
-        ? { refreshToken: refreshed.refreshToken }
+        ? { refreshToken: encryptSocialCredential(refreshed.refreshToken, `${connection.userId}:${connection.platform}:refresh`) }
         : {}),
     })
     .where(eq(socialAccounts.id, connection.id));
 
   logger.info(
-    `[TokenRefresh] ${p}: token refreshed successfully, expires ${refreshed.expiresAt!.toISOString() ?? "unknown"}`,
+    `[TokenRefresh] ${p}: token refreshed successfully, expires ${refreshed.expiresAt?.toISOString() ?? "unknown"}`,
   );
   return refreshed.accessToken;
 }

@@ -3,6 +3,7 @@ import { logger } from "../logger.js";
 import { getRedisClient } from "../lib/redisClient.js";
 import { isPdimConfigured } from "../lib/pdimClient.js";
 import { SLIDING_WINDOW_LUA } from "./slidingWindowLua.js";
+import { readGovernancePolicy } from "../services/governancePolicyService.js";
 
 const _passThrough: RequestHandler = (_req, _res, next) => next();
 
@@ -47,6 +48,7 @@ export interface SlidingWindowRedis {
 interface RateLimiterConfig {
   windowMs: number;
   maxRequests: number;
+  resolveMaxRequests?: () => Promise<number>;
   keyGenerator?: (req: Request) => string;
   skip?: (req: Request) => boolean;
   onRateLimit?: (req: Request, res: Response) => void;
@@ -202,6 +204,8 @@ export class DistributedRateLimiter {
   private async syncWithPdim(
     key: string,
     batchCount: number,
+    maxRequests = this.config.maxRequests,
+    requireAtomic = false,
   ): Promise<{ limited: boolean; remaining: number }> {
     const redisKey = `ratelimit:sw:${key}`;
     const now = Date?.now();
@@ -216,7 +220,7 @@ export class DistributedRateLimiter {
         1,
         redisKey,
         String(windowStart),
-        String(this.config.maxRequests),
+        String(maxRequests),
         String(now),
         entryId,
         String(windowExpireSecs),
@@ -224,11 +228,15 @@ export class DistributedRateLimiter {
       );
       // null means PDIM returned 403/unsupported for EVAL — treat as fallback
       if (raw === null) throw new Error("EVAL returned null — using fallback");
-      const result = Array.isArray(raw) ? raw : [];
+      if (!Array.isArray(raw) || raw.length !== 2 || ![0, 1].includes(Number(raw[0])) || !Number.isFinite(Number(raw[1]))) {
+        throw new Error("Invalid distributed rate-limit response");
+      }
+      const result = raw;
       const limited = Number(result[0] ?? 1) === 1;
       const remaining = Number(result[1] ?? 0);
       return { limited, remaining };
-    } catch {
+    } catch (error) {
+      if (requireAtomic) throw error;
       // Fallback: EVAL unsupported or PDIM transient error.  Use ZCOUNT
       // followed by ZADD of `batchCount` unique entries.
       const count = await this.redisClient.zcount(
@@ -236,7 +244,7 @@ export class DistributedRateLimiter {
         windowStart,
         "+inf",
       );
-      if (count + batchCount > this.config.maxRequests)
+      if (count + batchCount > maxRequests)
         return { limited: true, remaining: 0 };
       if (batchCount === 1) {
         await this.redisClient.zadd(redisKey, now, entryId);
@@ -251,7 +259,7 @@ export class DistributedRateLimiter {
       ).catch(() => {});
       return {
         limited: false,
-        remaining: this.config.maxRequests - count - batchCount,
+        remaining: maxRequests - count - batchCount,
       };
     }
   }
@@ -371,9 +379,22 @@ export class DistributedRateLimiter {
       const key = this.config.keyGenerator?.(req) || req.ip || "unknown";
 
       let result: { limited: boolean; remaining: number };
+      let effectiveLimit = this.config.maxRequests;
       try {
-        result = await this.isRateLimited(key);
+        if (this.config.resolveMaxRequests) {
+          effectiveLimit = await this.config.resolveMaxRequests();
+          if (!Number.isInteger(effectiveLimit) || effectiveLimit < 1) throw new Error("Invalid runtime rate limit");
+          // No coalesced/local allowance for mutable governance limits. Keep
+          // the same distributed counter across edits and workers.
+          result = await this.syncWithPdim(key, 1, effectiveLimit, true);
+        } else {
+          result = await this.isRateLimited(key);
+        }
       } catch (err) {
+        if (this.config.resolveMaxRequests) {
+          res.status(503).json({ error: "Distributed rate-limit policy unavailable" });
+          return;
+        }
         // PDIM unavailable — fall back to in-process fixed-window counter so the
         // rate limit is still enforced per worker rather than bypassed entirely.
         const now = Date?.now();
@@ -394,7 +415,7 @@ export class DistributedRateLimiter {
         );
       }
 
-      res.setHeader("X-RateLimit-Limit", this.config.maxRequests);
+      res.setHeader("X-RateLimit-Limit", effectiveLimit);
       res.setHeader("X-RateLimit-Remaining", result?.remaining);
 
       if (result?.limited) {
@@ -418,8 +439,12 @@ function buildDistributedGlobal(
   windowMs: number,
   maxRequests: number,
   keyPrefix = "global",
+  runtimePolicy = false,
 ): RequestHandler {
   if (!isPdimConfigured()) {
+    if (runtimePolicy && isProductionEnv()) return (_req, res) => {
+      res.status(503).json({ error: "Distributed rate-limit backend is not configured" });
+    };
     logger.warn(
       `[RateLimiter] PDIM not configured — ${keyPrefix} rate limiter disabled (dev mode)`,
     );
@@ -431,6 +456,7 @@ function buildDistributedGlobal(
     {
       windowMs,
       maxRequests,
+      ...(runtimePolicy ? { resolveMaxRequests: async () => (await readGovernancePolicy()).apiRateLimit } : {}),
       skip: skipRateLimiting,
       keyGenerator: (req) => {
         const userId = ((req as unknown as Record<string, unknown>).user as any)?.id;
@@ -493,12 +519,14 @@ export const globalScalableRateLimiter = buildDistributedGlobal(
   60000,
   GLOBAL_PER_USER_PER_MIN,
   "global",
+  true,
 );
 
 export const apiRateLimiter = buildDistributedGlobal(
   60000,
   GLOBAL_PER_USER_PER_MIN,
   "api",
+  true,
 );
 
 export const aiRateLimiter = buildDistributedGlobal(

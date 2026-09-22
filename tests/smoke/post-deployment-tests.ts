@@ -92,8 +92,7 @@ class PostDeploymentSmokeTests {
           });
           if (!r.ok) return { ok: false, detail: `HTTP ${r.status}` };
           const data = (await r.json()) as { status?: string; phase?: string };
-          // ready or degraded both indicate the server is functional
-          const okPhases = ["ready", "degraded"];
+          const okPhases = ["ready"];
           return {
             ok: okPhases.includes(data.phase ?? ""),
             detail: `phase=${data.phase}`,

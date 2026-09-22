@@ -20,7 +20,7 @@ export function ThemeToggle({
   size = "icon",
   showLabel = false,
 }: ThemeToggleProps) {
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme, isSavingTheme } = useTheme();
 
   const currentIcon =
     theme === "system" ? (
@@ -41,6 +41,8 @@ export function ThemeToggle({
           variant={variant}
           size={size}
           aria-label={`Theme: ${currentLabel}`}
+          disabled={isSavingTheme}
+          aria-busy={isSavingTheme}
           className="gap-2"
         >
           {currentIcon}

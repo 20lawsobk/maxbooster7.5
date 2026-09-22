@@ -10,6 +10,7 @@ import {
 } from "../services/circuitBreaker";
 import { DISTRIBUTION_PLATFORMS } from "../seed/distributionPlatforms.js";
 import { withCatalogImportLock } from "./catalogImportLock.js";
+import { saveCatalogTransfer, readCatalogTransfer, listCatalogTransfers } from "./catalogTransferRepository.js";
 import {
   normalizeArtistNameForIdentity,
   normalizeReleaseTitleForIdentity,
@@ -617,6 +618,7 @@ class DistributionDataTransferService {
     };
 
     this.jobs.set(jobId, job);
+    await saveCatalogTransfer(job);
     logger.info(
       `[DataTransfer] Created ${type} job ${jobId} for user ${userId} from ${source}`,
     );
@@ -625,19 +627,11 @@ class DistributionDataTransferService {
   }
 
   async getTransferJob(jobId: string): Promise<DataTransferJob | null> {
-    return this.jobs.get(jobId) || null;
+    return readCatalogTransfer(jobId);
   }
 
   async getUserTransferJobs(userId: string): Promise<DataTransferJob[]> {
-    const userJobs: DataTransferJob[] = [];
-    this.jobs.forEach((job) => {
-      if (job.userId === userId) {
-        userJobs.push(job);
-      }
-    });
-    return userJobs.sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
+    return listCatalogTransfers(userId);
   }
 
   async parseDistributorCSV(
@@ -927,6 +921,7 @@ class DistributionDataTransferService {
     try {
       job.status = "processing";
       job.updatedAt = new Date();
+      await saveCatalogTransfer(job);
 
       const releases = await this.parseDistributorCSV(csvContent, distributor);
       job.totalItems = releases.length;
@@ -1074,6 +1069,7 @@ class DistributionDataTransferService {
       );
     }
 
+    await saveCatalogTransfer(job);
     return job;
   }
 
@@ -2856,6 +2852,7 @@ class DistributionDataTransferService {
         if (data?.error) {
           throw new Error("Deezer returned a catalog error");
         }
+        if (!Array.isArray(data.data)) throw new Error("Deezer returned an invalid catalog page");
         for (const item of ((data?.data || []) as any[])) {
           results.push({
             id: `deezer-${item?.id}`,
@@ -2884,7 +2881,7 @@ class DistributionDataTransferService {
         { err: err },
         `[DataTransfer] Deezer album scan failed for ${artistId}:`,
       );
-      return [];
+      throw err;
     }
   }
 
@@ -2957,17 +2954,18 @@ class DistributionDataTransferService {
   private async fetchSoundCloudAlbums(
     permalink: string,
     artistName: string,
-  ): Promise<ScannedRelease[]> {
+  ): Promise<{ releases: ScannedRelease[]; exhausted: boolean }> {
     try {
+      let exhausted = true;
       const clientId = await this.getSoundCloudClientId();
-      if (!clientId) return [];
+      if (!clientId) throw new Error("SoundCloud catalog credentials unavailable");
 
       const userResp = await timedFetch(
         `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`,
       );
-      if (!userResp?.ok) return [];
+      if (!userResp?.ok) throw new Error(`SoundCloud profile lookup failed: ${userResp.status}`);
       const user = (await userResp?.json()) as Record<string, unknown>;
-      if (!user?.id) return [];
+      if (!user?.id) throw new Error("SoundCloud profile lookup returned no artist ID");
 
       const fetchAll = async (initialUrl: string): Promise<any[]> => {
         const collection: any[] = [];
@@ -2981,11 +2979,13 @@ class DistributionDataTransferService {
             );
           }
           const data = (await response.json()) as Record<string, unknown>;
+          if (!Array.isArray(data.collection)) throw new Error("SoundCloud returned an invalid catalog page");
           collection.push(...((data.collection || []) as any[]));
           nextUrl =
             typeof data.next_href === "string" ? data.next_href : null;
           pages++;
         }
+        if (nextUrl) exhausted = false;
         return collection;
       };
 
@@ -3036,13 +3036,13 @@ class DistributionDataTransferService {
         });
       }
 
-      return results;
+      return { releases: results, exhausted };
     } catch (err) {
       logger.warn(
         { err: err },
         `[DataTransfer] SoundCloud album scan failed for ${permalink}:`,
       );
-      return [];
+      throw err;
     }
   }
 
@@ -3247,10 +3247,17 @@ class DistributionDataTransferService {
         };
       }
       case "soundcloud": {
-        const releases = await this.fetchSoundCloudAlbums(artistId, artistName);
+        const scan = await this.fetchSoundCloudAlbums(artistId, artistName);
         return {
-          releases,
-          coverage: this.coverageForScanner("soundcloud", releases.length),
+          releases: scan.releases,
+          coverage: {
+            status: scan.exhausted ? "complete" : "partial",
+            method: "dedicated",
+            complete: scan.exhausted,
+            reason: scan.exhausted
+              ? "SoundCloud playlist and track cursors were exhausted."
+              : "SoundCloud page limit reached with an unconsumed cursor; more releases may exist.",
+          },
         };
       }
       case "bandcamp": {
@@ -3337,7 +3344,16 @@ class DistributionDataTransferService {
     const limit = limits[scannerKey];
     const capped = typeof limit === "number" && count >= limit;
 
-    if (scannerKey === "spotify" || scannerKey === "deezer") {
+    if (scannerKey === "spotify") {
+      return {
+        status: "partial",
+        method: "dedicated",
+        complete: false,
+        reason: "Release discovery may use cross-provider search; track enrichment is bounded. Full Spotify catalog and metadata coverage is not certified.",
+      };
+    }
+
+    if (scannerKey === "deezer") {
       return {
         status: "complete",
         method: "dedicated",
@@ -3369,12 +3385,12 @@ class DistributionDataTransferService {
     }
 
     return {
-      status: capped ? "partial" : "complete",
+      status: "partial",
       method: "dedicated",
-      complete: !capped,
+      complete: false,
       reason: capped
         ? `The provider returned the current scan limit of ${limit}; more releases may exist.`
-        : "The provider returned fewer releases than the current scan limit.",
+        : "A bounded search result does not prove an exhaustive catalog; no exhausted pagination evidence is available.",
       limit,
     };
   }
@@ -3563,6 +3579,7 @@ class DistributionDataTransferService {
     job.status = "processing";
     job.totalItems = uniqueReleases.length;
     job.updatedAt = new Date();
+    await saveCatalogTransfer(job);
 
     let imported = 0;
     let failed = 0;
@@ -3571,6 +3588,7 @@ class DistributionDataTransferService {
     // transaction connection. Calling storage.* after acquiring a lock on a
     // different pooled connection would leave the check-then-insert race
     // unchanged.
+    try {
     await withCatalogImportLock(userId, async (tx) => {
       const knownReleases = await tx
         .select()
@@ -3666,6 +3684,14 @@ class DistributionDataTransferService {
       failed === 0 ? "completed" : imported > 0 ? "partial" : "failed";
     job.completedAt = new Date();
     job.result = { importedReleases: imported };
+    await saveCatalogTransfer(job);
+    } catch (error) {
+      job.status = "failed";
+      job.updatedAt = new Date();
+      job.errors.push({ item: "catalog transaction", error: error instanceof Error ? error.message : "Catalog import failed" });
+      await saveCatalogTransfer(job);
+      throw error;
+    }
 
     logger.info(
       `[DataTransfer] Profile catalog import ${job.id}: ${imported} imported, ${failed} failed`,

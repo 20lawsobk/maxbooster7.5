@@ -18,11 +18,10 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
     const timestamp = req.headers[
       "x-twilio-email-event-webhook-timestamp"
     ] as string;
-    const rawBody = req.body?.toString("utf-8") || "";
+    const rawBody = Buffer.isBuffer(req.rawBody) ? req.rawBody : Buffer.isBuffer(req.body) ? req.body : null;
+    if (!rawBody) return res.status(400).json({ error: "Exact webhook body bytes are required" });
 
     if (
-      (process.env.NODE_ENV === "production" ||
-        !!process.env.REPLIT_DEPLOYMENT) &&
       !process.env.SENDGRID_WEBHOOK_PUBLIC_KEY
     ) {
       logger.warn(
@@ -33,11 +32,7 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
         .json({ error: "Webhook verification not configured" });
     }
 
-    if (
-      process.env.NODE_ENV === "production" ||
-      !!process.env.REPLIT_DEPLOYMENT ||
-      process.env.SENDGRID_WEBHOOK_PUBLIC_KEY
-    ) {
+    {
       if (!signature || !timestamp) {
         logger.warn("⚠️  SendGrid webhook missing required signature headers");
         return res.status(401).json({ error: "Missing signature headers" });
@@ -55,7 +50,9 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
       }
     }
 
-    const payload = JSON.parse(rawBody);
+    let payload;
+    try { payload = JSON.parse(rawBody.toString("utf8")); }
+    catch { return res.status(400).json({ error: "Invalid webhook JSON" }); }
     const events = Array.isArray(payload) ? payload : [payload];
 
     for (const event of events) {
@@ -71,10 +68,13 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
       if (!sg_message_id || !eventType) {
         continue;
       }
+      const mapped = mapSendGridEventType(eventType);
+      if (!mapped) continue;
+      if (!Number.isFinite(Number(eventTimestamp))) return res.status(400).json({ error: "Invalid event timestamp" });
 
       await emailTrackingService?.recordEmailEvent({
         messageId: sg_message_id,
-        eventType: mapSendGridEventType(eventType),
+        eventType: mapped,
         eventAt: new Date(eventTimestamp * 1000),
         smtpResponse: smtp_response,
         reason,
@@ -102,7 +102,8 @@ function mapSendGridEventType(
   | "open"
   | "click"
   | "deferred"
-  | "dropped" {
+  | "dropped"
+  | null {
   const typeMap: Record<string, any> = {
     delivered: "delivered",
     bounce: "bounce",
@@ -114,7 +115,7 @@ function mapSendGridEventType(
     deferred: "deferred",
   };
 
-  return typeMap[eventType] || "delivered";
+  return typeMap[eventType] || null;
 }
 
 export default router;

@@ -77,15 +77,17 @@ export interface LabelGridTrack {
 
 export interface LabelGridReleaseResponse {
   releaseId: string;
-  status: "draft" | "not_submitted" | "processing" | "live" | "failed";
+  status: "unknown" | "draft" | "not_submitted" | "processing" | "live" | "failed";
   submittedAt?: string;
   estimatedLiveDate?: string;
   platforms: LabelGridPlatformStatus[];
+  deliveryEvidence?: { source: "labelgrid"; observedAt: string; available: boolean };
 }
 
 export interface LabelGridPlatformStatus {
   platform: string;
   status:
+    | "unknown"
     | "draft"
     | "not_submitted"
     | "queued"
@@ -103,6 +105,8 @@ export interface LabelGridPlatformStatus {
     | "not_configured"
     | "error";
   liveDate?: string;
+  rawStatus?: string;
+  observedAt?: string;
   errorMessage?: string;
 }
 
@@ -894,7 +898,7 @@ class LabelGridService {
     ];
     return (known as string[]).includes(raw)
       ? (raw as LabelGridReleaseResponse["status"])
-      : "processing";
+      : "unknown";
   }
 
   private static normalizeOutletStatus(
@@ -920,7 +924,7 @@ class LabelGridService {
     ];
     return (known as string[]).includes(raw)
       ? (raw as LabelGridPlatformStatus["status"])
-      : "processing";
+      : "unknown";
   }
 
   /**
@@ -938,11 +942,13 @@ class LabelGridService {
         entry.outlet ?? entry.platform ?? entry.store ?? entry.name ?? "unknown",
       );
       const rawStatus = String(
-        entry.status ?? entry.state ?? "processing",
+        entry.status ?? entry.state ?? "unknown",
       ).toLowerCase();
       return {
         platform,
         status: LabelGridService.normalizeOutletStatus(rawStatus),
+        rawStatus,
+        observedAt: new Date().toISOString(),
         liveDate:
           (entry.live_date as string) || (entry.liveDate as string) || undefined,
         errorMessage:
@@ -1048,6 +1054,7 @@ class LabelGridService {
         name: trimmedName,
         default_email: contactEmail,
       }),
+      0,
     );
     const created = this.unwrap(
       `[LabelGrid] failed to create label "${trimmedName}"`,
@@ -1096,6 +1103,7 @@ class LabelGridService {
       this.client.post<{ id: number }>(ENTITIES.artist.path, {
         artist_name: trimmedName,
       }),
+      0,
     );
     const created = this.unwrap(
       `[LabelGrid] failed to create artist "${trimmedName}"`,
@@ -1180,14 +1188,12 @@ class LabelGridService {
 
   async createRelease(
     releaseData: LabelGridRelease,
+    checkpoint?: (data: Record<string, unknown>) => Promise<void>,
   ): Promise<LabelGridReleaseResponse> {
     await this.loadConfig();
 
     if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated response",
-      );
-      return this.simulateCreateRelease(releaseData);
+      throw new Error("LabelGrid distribution is not configured; no release was submitted.");
     }
 
     // Refuse up front — before creating any LabelGrid label/artist/release —
@@ -1238,6 +1244,7 @@ class LabelGridService {
           ? `℗ ${releaseData.copyrightYear} ${releaseData.copyrightOwner}`
           : undefined,
       }),
+      0, // Do not repeat remote creation after an ambiguous transport failure.
     );
     const createdRelease = this.unwrap(
       "[LabelGrid] createRelease: release create failed",
@@ -1249,6 +1256,7 @@ class LabelGridService {
         "LabelGrid release blocked: release was created but the API returned no id.",
       );
     }
+    await checkpoint?.({ remoteReleaseId: String(releaseId), stage: "created" });
 
     const tempDir = await mkdtemp(join(tmpdir(), "labelgrid-"));
     try {
@@ -1302,6 +1310,7 @@ class LabelGridService {
             contributors: track.contributors,
             recording_country: track.recordingCountry,
           }),
+          0,
         );
         const createdTrack = this.unwrap(
           `[LabelGrid] createRelease: track create failed for "${track.title}"`,
@@ -1313,6 +1322,7 @@ class LabelGridService {
             `LabelGrid release blocked: track "${track.title}" was created but the API returned no id.`,
           );
         }
+        await checkpoint?.({ [`track${idx}`]: { remoteTrackId: String(trackId), stage: "created" } });
 
         if (track.audioFile) {
           const audioPath = await this.downloadToTempFile(
@@ -1351,26 +1361,24 @@ class LabelGridService {
         ),
       );
       if ("error" in validateResult) {
-        this.logApiError(
-          `[LabelGrid] createRelease: validate failed for release ${releaseId} (non-fatal)`,
-          validateResult.error,
-        );
+        throw new Error(`LabelGrid validation failed for remote release ${releaseId}; reconcile before retrying.`);
       } else if (validateResult.data?.errors) {
-        logger.warn(
-          { releaseId, errors: validateResult.data.errors },
-          "[LabelGrid] createRelease: release has unresolved validation issues",
-        );
+        if (Array.isArray(validateResult.data.errors) ? validateResult.data.errors.length > 0 : Object.keys(validateResult.data.errors).length > 0) {
+          throw new Error(`LabelGrid remote release ${releaseId} has unresolved validation issues; distribution was not requested.`);
+        }
       }
 
       const distributeResult = await this.callWithRetry(() =>
         this.client.post<unknown>(
           `${ENTITIES.release.path}/${releaseId}/distribute`,
         ),
+        0,
       );
       this.unwrap(
         `[LabelGrid] createRelease: distribute failed for release ${releaseId}`,
         distributeResult,
       );
+      await checkpoint?.({ remoteReleaseId: String(releaseId), stage: "submitted" });
 
       // Real per-outlet status, not a fabricated "processing" for every
       // requested platform: distribute has no outlet-selection parameter
@@ -1396,12 +1404,13 @@ class LabelGridService {
         releaseId: String(releaseId),
         status: "processing",
         submittedAt: new Date().toISOString(),
+        deliveryEvidence: { source: "labelgrid", observedAt: new Date().toISOString(), available: !("error" in statusResult) },
         platforms:
           realPlatforms.length > 0
             ? realPlatforms
             : releaseData.platforms.map((platform) => ({
                 platform,
-                status: "processing" as const,
+                 status: "unknown" as const,
               })),
       };
     } finally {
@@ -1413,10 +1422,7 @@ class LabelGridService {
     await this.loadConfig();
 
     if (!this.isConfigured) {
-      logger.warn(
-        "⚠️  LabelGrid not configured - returning simulated response",
-      );
-      return this.simulateGetReleaseStatus(releaseId);
+      throw new Error("LabelGrid delivery status is unavailable because the provider is not configured");
     }
 
     const endpoint = this.getEndpoint(
@@ -1437,9 +1443,10 @@ class LabelGridService {
     return {
       releaseId,
       status: LabelGridService.normalizeReleaseStatus(
-        String(obj.status ?? obj.overall_status ?? "processing").toLowerCase(),
+        String(obj.status ?? obj.overall_status ?? "unknown").toLowerCase(),
       ),
       submittedAt: (obj.submitted_at as string) || undefined,
+      deliveryEvidence: { source: "labelgrid", observedAt: new Date().toISOString(), available: true },
       estimatedLiveDate: (obj.estimated_live_date as string) || undefined,
       platforms: LabelGridService.parseDeliveryStatusOutlets(obj),
     };
@@ -1633,7 +1640,7 @@ class LabelGridService {
     return {
       releaseId,
       status: LabelGridService.normalizeReleaseStatus(
-        String(updated?.status ?? "processing").toLowerCase(),
+        String(updated?.status ?? "unknown").toLowerCase(),
       ),
       platforms: [],
     };
@@ -2172,36 +2179,6 @@ class LabelGridService {
     return [];
   }
 
-  private simulateCreateRelease(
-    releaseData: LabelGridRelease,
-  ): LabelGridReleaseResponse {
-    // LabelGrid not configured — release saved as a local draft only, NOT submitted to any DSP.
-    const releaseId = `draft_${Date.now()}`;
-    return {
-      releaseId,
-      status: "draft",
-      submittedAt: new Date().toISOString(),
-      platforms: releaseData.platforms.map((platform) => ({
-        platform,
-        status: "draft",
-      })),
-    };
-  }
-
-  private simulateGetReleaseStatus(
-    releaseId: string,
-  ): LabelGridReleaseResponse {
-    // LabelGrid not configured — if releaseId is a local draft, report it honestly.
-    const isDraft = releaseId.startsWith("draft_");
-    return {
-      releaseId,
-      status: isDraft ? "draft" : "not_submitted",
-      submittedAt: undefined,
-      estimatedLiveDate: undefined,
-      platforms: [],
-    };
-  }
-
   private simulateGetReleaseAnalytics(releaseId: string): LabelGridAnalytics {
     return {
       releaseId,
@@ -2270,8 +2247,8 @@ class LabelGridService {
     _method?: "paypal" | "bank",
   ): never {
     throw new Error(
-      "LabelGrid not configured — payout requests require a connected distributor account with real royalty balances. " +
-        "Set LABELGRID_API_TOKEN to enable payouts.",
+      "LabelGrid payout execution requires the authorized account holder's dashboard workflow. " +
+        "An API token does not enable payout requests; this API has no supported payout execution endpoint.",
     );
   }
 }

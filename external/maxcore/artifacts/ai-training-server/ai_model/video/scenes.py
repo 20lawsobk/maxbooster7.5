@@ -260,9 +260,21 @@ def _pil_bg_frame(scene: SceneConfig, width: int, height: int) -> tuple:
 
     arr: Optional[np.ndarray] = None
 
+    # Explicit uploaded image conditioning is a real deterministic resize/crop,
+    # not an optional model hint that may disappear into a generated gradient.
+    reference = getattr(scene, "reference_b64", None)
+    if reference:
+        from PIL import ImageOps
+        raw = base64.b64decode(reference, validate=True)
+        if len(raw) > 20 * 1024 * 1024:
+            raise ValueError("Reference image exceeds 20 MiB")
+        with Image.open(io.BytesIO(raw)) as image:
+            image = ImageOps.exif_transpose(image).convert("RGB")
+            arr = np.array(ImageOps.fit(image, (width, height)))
+
     # ── Step 1: MaxCore Neural Diffusion background ────────────────────────────
     dmeta = getattr(scene, "diffusion_meta", None)
-    if dmeta is not None:
+    if dmeta is not None and arr is None:
         try:
             from .diffusion.maxcore_diffusion import get_diffusion_frame
             _ref = getattr(scene, "reference_b64", None)
@@ -298,7 +310,7 @@ def _pil_bg_frame(scene: SceneConfig, width: int, height: int) -> tuple:
             arr = _np_gradient(c1, c2, width, height)
 
     # ── Step 3: RCGS retrieval conditioning ───────────────────────────────────
-    if getattr(scene, "retrieval_conditioned", True):
+    if not reference and getattr(scene, "retrieval_conditioned", True):
         try:
             from ai_model.retrieval.rcgs import condition_background
             arr = condition_background(
@@ -307,6 +319,18 @@ def _pil_bg_frame(scene: SceneConfig, width: int, height: int) -> tuple:
             )
         except Exception:
             pass
+
+    logo_b64 = getattr(scene, "logo_b64", None)
+    if logo_b64:
+        from PIL import ImageOps
+        from .media_manifest import decode_asset
+        with Image.open(io.BytesIO(decode_asset(logo_b64))) as logo:
+            logo = ImageOps.exif_transpose(logo).convert("RGBA")
+            logo.thumbnail((max(1, width // 5), max(1, height // 5)))
+            canvas = Image.fromarray(arr)
+            margin = max(8, width // 40)
+            canvas.paste(logo, (width - logo.width - margin, margin), logo)
+            arr = np.array(canvas)
 
     # ── Step 4: RTA VRC colour grade on array (BEFORE save — one I/O round-trip)
     _vrc_applied = False
@@ -370,10 +394,13 @@ def _render_pil_based(
     try:
         bg_png, png_bytes, _vrc_applied = _pil_bg_frame(scene, width, height)
     except Exception:
-        pass
+        if getattr(scene, "reference_b64", None) or getattr(scene, "logo_b64", None):
+            raise
     _t_bg = time.time() - _t0
 
     if not bg_png or not os.path.exists(bg_png):
+        if getattr(scene, "reference_b64", None) or getattr(scene, "logo_b64", None):
+            raise RuntimeError("Required reference image was not rendered")
         return _render_fallback(scene, width, height, dur, out_path)
 
     # Grade timing — grade already applied on array inside _pil_bg_frame
@@ -696,10 +723,12 @@ def _composite_xfade(
 
     cmd = ["ffmpeg", "-y"]
     cmd += inputs
-    cmd += ["-filter_complex", filter_complex, "-map", "[vout]"]
-
     if audio_path and os.path.exists(audio_path):
-        cmd += ["-i", audio_path, "-c:a", "aac", "-b:a", "128k", "-shortest"]
+        cmd += ["-i", audio_path]
+    cmd += ["-filter_complex", filter_complex, "-map", "[vout]"]
+    if audio_path:
+        cmd += ["-map", f"{n}:a:0", "-c:a", "aac", "-b:a", "128k",
+                "-af", "apad", "-t", str(sum(durations) - td * (n - 1))]
 
     cmd += [
         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "20",
@@ -751,6 +780,8 @@ def composite_scenes(
 
     if xfade_ok and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
         return True
+    if transition and transition not in ("auto", "none"):
+        return False  # A requested transition cannot silently become a hard cut.
 
     # ── Concat demuxer fallback ───────────────────────────────────────────────
     concat_list = os.path.join(TEMP_DIR, f"concat_{uuid.uuid4().hex[:8]}.txt")

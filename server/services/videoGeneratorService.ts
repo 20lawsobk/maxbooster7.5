@@ -1437,6 +1437,14 @@ export interface VideoGenOptions {
   first_frame_b64?: string;
   last_frame_b64?: string;
   reference_images?: string[];
+  media_manifest?: {
+    version: 1;
+    voice_b64?: string;
+    logo_b64?: string;
+    beat_sync: boolean;
+    color_grade: string;
+    transition: string;
+  };
   scenes_override?: Array<Record<string, unknown>>;
   camera_motion?: string;
   motion_intensity?: number;
@@ -1444,6 +1452,7 @@ export interface VideoGenOptions {
 
 export interface VideoGenResult {
   success: boolean;
+  resolved_media_manifest?: Record<string, unknown>;
   url?: string;
   thumbnail_url?: string | null;
   filename?: string;

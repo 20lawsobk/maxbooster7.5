@@ -150,23 +150,38 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
 
-      - name: Build web assets
+      - name: Install capsule codec
+        run: sudo apt-get update && sudo apt-get install -y zstd
+
+      - name: Test isolated deployment contracts
+        run: env -i PATH="$PATH" node --test tests/deployment-contracts.cjs
+
+      - name: Build release capsules from source
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
-          SKIP_BOOSTERSTATE: "1"
+          DEPLOY_PACK: "1"
+
+      - name: Restore release capsules with the shipped runtime
+        run: .node_bin/node dist/pdim-restore.mjs all
 
       - name: Verify build output
         run: |
+          set -euo pipefail
+          test -x .node_bin/node
+          test -x bin/boosterstate
+          test -f dist/gateway.mjs
+          test -f dist/compute-sizing.mjs
+          python_runtime/bin/python3 -c 'import numpy, PIL, scipy, fastapi, uvicorn, pydantic'
           echo "=== Build Outputs ==="
           ls -lh dist/public/ 2>/dev/null || echo "No dist/public found"
           ls -lh dist/*.mjs 2>/dev/null || echo "No dist MJS files found"
           echo "=== Checking index.html ==="
-          test -f dist/public/index.html && echo "✅ index.html present" || echo "❌ index.html missing"
+          test -f dist/public/index.html
           echo "=== Checking server bundle ==="
-          test -f dist/index.mjs && echo "✅ Server bundle (index.mjs) present" || echo "❌ Server bundle missing"
+          test -f dist/index.mjs
           echo "=== Checking cluster bundle ==="
-          test -f dist/cluster.mjs && echo "✅ Cluster bundle present" || echo "❌ Cluster bundle missing"
+          test -f dist/cluster.mjs
 
       - name: Upload build artifacts (for inspection)
         uses: actions/upload-artifact@v4
@@ -177,7 +192,7 @@ jobs:
             dist/public/index.html
             dist/index.mjs
             dist/cluster.mjs
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 3
 
   security:
@@ -342,4 +357,5 @@ jobs:
             echo "✅ All checks passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ One or more checks failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
           fi

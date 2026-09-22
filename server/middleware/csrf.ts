@@ -129,8 +129,6 @@ export const refreshCsrfToken: RequestHandler = (
 };
 
 const CSRF_EXEMPT_PATHS = [
-  "/api/webhooks/",
-  "/api/stripe/webhook",
   "/api/auth/register",
   "/api/auth/forgot-password",
   "/api/auth/reset-password",
@@ -139,7 +137,6 @@ const CSRF_EXEMPT_PATHS = [
   "/api/auth/google",
   "/api/csrf-token",
   "/api/errors",
-  "/api/sendgrid/webhook",
   "/api/metrics/web-vitals",
   "/api/dns/query",
   "/api/dev/", // dev-only triggers, never exist in production
@@ -154,6 +151,16 @@ const CSRF_EXEMPT_PATHS = [
   "/api/training/internal/",
 ];
 
+// These exact POST consumers verify provider signatures before any writes.
+// Never exempt a webhook namespace or a lookalike descendant.
+const PROVIDER_POST_PATHS = new Set([
+  "/api/webhooks/stripe",
+  "/webhooks/sendgrid",
+  "/api/webhooks/resend",
+  "/api/notifications/sms/status",
+  "/api/notifications/sms/incoming",
+]);
+
 export const csrfProtectionWithExemptions: RequestHandler = (
   req: Request,
   res: Response,
@@ -162,6 +169,7 @@ export const csrfProtectionWithExemptions: RequestHandler = (
   // Use originalUrl (never rewritten by Express mount logic) so the check is
   // reliable regardless of which router or sub-app this middleware runs inside.
   const urlPath = (req.originalUrl || req.path || "").split("?")[0];
+  if (req.method === "POST" && PROVIDER_POST_PATHS.has(urlPath)) return next();
   const isExempt = CSRF_EXEMPT_PATHS?.some((p) => urlPath?.startsWith(p));
 
   if (isExempt) {

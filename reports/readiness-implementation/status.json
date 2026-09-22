@@ -1,0 +1,499 @@
+{
+  "sourceAudit": "reports/max-booster-production-readiness-audit-2026-09-19.md",
+  "releaseReady": false,
+  "liveVerificationPending": true,
+  "resumeVerification": {
+    "serverTypecheck": "passed",
+    "clientTypecheck": "passed",
+    "isolatedBetaReport": "reports/readiness-implementation/beta-simulation.json",
+    "isolatedMigrationReport": "reports/readiness-implementation/resume-schema.md",
+    "sourceIntegrationReport": "reports/readiness-implementation/resume-integration.md",
+    "commerceReport": "reports/readiness-implementation/resume-commerce.md",
+    "clientAuthReport": "reports/readiness-implementation/resume-client-auth.md",
+    "liveMigrationsApplied": false,
+    "preview": "unavailable: connection refused; application has not been restarted for live cutover",
+    "interpretation": "Finding states below are not completion certifications. Read domain reports for implemented source changes and remaining acceptance gates."
+  },
+  "findings": [
+    {
+      "id": "SEC-01",
+      "domain": "security",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "SEC-02",
+      "domain": "security",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "SEC-03",
+      "domain": "security",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "SEC-04",
+      "domain": "security",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "SEC-05",
+      "domain": "security",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "SEC-06",
+      "domain": "security",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "C1",
+      "domain": "commerce",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "C2",
+      "domain": "commerce",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "C3",
+      "domain": "commerce",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "C4",
+      "domain": "commerce",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "C5",
+      "domain": "commerce",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "C6",
+      "domain": "commerce",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "C7",
+      "domain": "commerce",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "C8",
+      "domain": "commerce",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "C9",
+      "domain": "commerce",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "I1",
+      "domain": "integrations",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "I2",
+      "domain": "integrations",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "I3",
+      "domain": "integrations",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "I4",
+      "domain": "integrations",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "I5",
+      "domain": "integrations",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "I6",
+      "domain": "integrations",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "I7",
+      "domain": "integrations",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "I8",
+      "domain": "integrations",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "I9",
+      "domain": "integrations",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AM-1",
+      "domain": "ai-media",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AM-2",
+      "domain": "ai-media",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AM-3",
+      "domain": "ai-media",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AM-4",
+      "domain": "ai-media",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AM-5",
+      "domain": "ai-media",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AM-6",
+      "domain": "ai-media",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "D1",
+      "domain": "data-runtime",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "D2",
+      "domain": "data-runtime",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "D3",
+      "domain": "data-runtime",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "D4",
+      "domain": "data-runtime",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "D5",
+      "domain": "data-runtime",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "D6",
+      "domain": "data-runtime",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "D7",
+      "domain": "data-runtime",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "D8",
+      "domain": "data-runtime",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "DEP-01",
+      "domain": "deployment",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "DEP-02",
+      "domain": "deployment",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "DEP-03",
+      "domain": "deployment",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "DEP-04",
+      "domain": "deployment",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "DEP-05",
+      "domain": "deployment",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "DEP-06",
+      "domain": "deployment",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "DEP-07",
+      "domain": "deployment",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "PA-1",
+      "domain": "product-autonomous",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "PA-2",
+      "domain": "product-autonomous",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "PA-3",
+      "domain": "product-autonomous",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "PA-4",
+      "domain": "product-autonomous",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "PA-5",
+      "domain": "product-autonomous",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "PA-6",
+      "domain": "product-autonomous",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "SCAN-01",
+      "domain": "scanners",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "SCAN-02",
+      "domain": "scanners",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "SCAN-03",
+      "domain": "scanners",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "SCAN-04",
+      "domain": "scanners",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "SCAN-05",
+      "domain": "scanners",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CG-1",
+      "domain": "coverage-gaps",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CG-2",
+      "domain": "coverage-gaps",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CG-3",
+      "domain": "coverage-gaps",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CG-4",
+      "domain": "coverage-gaps",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CG-5",
+      "domain": "coverage-gaps",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "GR-1",
+      "domain": "growth-rights",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "GR-2",
+      "domain": "growth-rights",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "GR-3",
+      "domain": "growth-rights",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "GR-4",
+      "domain": "growth-rights",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "GR-5",
+      "domain": "growth-rights",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AG-1",
+      "domain": "admin-governance",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AG-2",
+      "domain": "admin-governance",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AG-3",
+      "domain": "admin-governance",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AG-4",
+      "domain": "admin-governance",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AG-5",
+      "domain": "admin-governance",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "AG-6",
+      "domain": "admin-governance",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CO-1",
+      "domain": "client-offline",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CO-2",
+      "domain": "client-offline",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CO-3",
+      "domain": "client-offline",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CO-4",
+      "domain": "client-offline",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CO-5",
+      "domain": "client-offline",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CO-6",
+      "domain": "client-offline",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CO-7",
+      "domain": "client-offline",
+      "state": "implementation-in-progress",
+      "evidence": []
+    },
+    {
+      "id": "CO-8",
+      "domain": "client-offline",
+      "state": "implementation-in-progress",
+      "evidence": []
+    }
+  ]
+}

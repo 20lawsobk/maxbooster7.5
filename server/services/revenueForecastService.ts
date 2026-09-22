@@ -4,11 +4,19 @@ import { eq, and, gte, desc, sql, asc } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 interface ForecastResult {
+  provenance: {
+    modelVersion: string;
+    revenueRate: "observed" | "assumed";
+    sampleCount: number;
+    windowMonths: number;
+    currency: null;
+    assumptions: string[];
+  };
   period: string;
   months: number;
   projectedStreams: number;
   projectedRevenue: number;
-  projectedRoyalties: number;
+  projectedRoyalties: number | null;
   confidence: number;
   confidenceLow: number;
   confidenceHigh: number;
@@ -21,7 +29,7 @@ interface MonthlyProjection {
   date: Date;
   projectedStreams: number;
   projectedRevenue: number;
-  projectedRoyalties: number;
+  projectedRoyalties: number | null;
   confidence: number;
   confidenceLow: number;
   confidenceHigh: number;
@@ -44,8 +52,12 @@ interface RevenueProjections {
 }
 
 interface AccuracyMetrics {
-  overallAccuracy: number;
-  mape: number;
+  overallAccuracy: number | null;
+  mape: number | null;
+  sampleCount: number;
+  excludedZeroActuals: number;
+  status: "measured" | "insufficient_data";
+  meanAbsoluteError: number | null;
   recentForecasts: {
     period: string;
     predicted: number;
@@ -72,13 +84,14 @@ const SEASONALITY_FACTORS: Record<number, number> = {
 
 class RevenueForecastService {
   private readonly AVERAGE_STREAM_RATE = 0.004;
-  private readonly ROYALTY_PERCENTAGE = 0.7;
   private readonly BASE_CONFIDENCE = 0.75;
 
   async generateForecast(
     userId: string,
     months: number,
   ): Promise<ForecastResult> {
+    if (!Number.isInteger(months) || months < 1 || months > 24)
+      throw new Error("Forecast horizon must be an integer between 1 and 24 months");
     logger.info(`Generating ${months}-month forecast for user ${userId}`);
 
     const historicalData = await this.getHistoricalData(userId);
@@ -109,7 +122,6 @@ class RevenueForecastService {
       totalRevenue += monthRevenue;
     }
 
-    const projectedRoyalties = totalRevenue * this.ROYALTY_PERCENTAGE;
     const confidence = this.calculateConfidence(
       months,
       dataConsistency,
@@ -120,11 +132,26 @@ class RevenueForecastService {
     const confidenceRange = totalRevenue * volatility * (1 - confidence);
 
     const result: ForecastResult = {
+      provenance: {
+        modelVersion: "heuristic-scenario-v2",
+        revenueRate: historicalData.some(d => d.streams > 0) ? "observed" : "assumed",
+        sampleCount: historicalData.length,
+        windowMonths: 6,
+        currency: null,
+        assumptions: [
+          "Source analytics currency is not verified; values must not be treated as settled cash.",
+          "Royalty entitlement is unavailable without authoritative rights attribution; projectedRoyalties is null.",
+          "Seasonality and confidence are uncalibrated heuristic assumptions, not measured probabilities.",
+          "Sparse histories assume 5% annual growth; otherwise revenue-half averages are capped at -50% to +100%; a zero baseline uses a flat scenario.",
+          ...(historicalData.length ? [] : ["No analytics observations: scenario assumes 1000 monthly streams."]),
+          ...(historicalData.some(d => d.streams > 0) ? [] : ["No observed streams: scenario rate assumes 0.004 per stream."]),
+        ],
+      },
       period: `${months} months`,
       months,
       projectedStreams: Math.round(totalStreams),
       projectedRevenue: Math.round(totalRevenue * 100) / 100,
-      projectedRoyalties: Math.round(projectedRoyalties * 100) / 100,
+      projectedRoyalties: null,
       confidence: Math.round(confidence * 100) / 100,
       confidenceLow: Math.max(
         0,
@@ -164,7 +191,7 @@ class RevenueForecastService {
     }
 
     const rate = Number(totalRevenue) / Number(totalStreams);
-    return Math.max(0.001, Math.min(0.01, rate || this.AVERAGE_STREAM_RATE));
+    return rate;
   }
 
   async getRevenueProjections(userId: string): Promise<RevenueProjections> {
@@ -182,7 +209,7 @@ class RevenueForecastService {
     const projectedMonthly = twelveMonth?.projectedRevenue / 12;
     let daysToGoal: number | null = null;
 
-    if (projectedMonthly > currentMonthly && projectedMonthly >= goalAmount) {
+    if (currentMonthly > 0 && projectedMonthly > currentMonthly && projectedMonthly >= goalAmount) {
       const monthsToGoal =
         Math.log(goalAmount / currentMonthly) /
         Math.log(projectedMonthly / currentMonthly);
@@ -218,6 +245,7 @@ class RevenueForecastService {
       .where(
         and(
           eq(revenueForecasts.userId, userId),
+          eq(revenueForecasts.methodology, "heuristic-scenario-v2"),
           sql`${revenueForecasts.actualRevenue} IS NOT NULL`,
         ),
       )
@@ -226,8 +254,12 @@ class RevenueForecastService {
 
     if (forecasts?.length === 0) {
       return {
-        overallAccuracy: 85,
-        mape: 15,
+        overallAccuracy: null,
+        mape: null,
+        sampleCount: 0,
+        excludedZeroActuals: 0,
+        status: "insufficient_data",
+        meanAbsoluteError: null,
         recentForecasts: [],
         trend: "stable",
       };
@@ -242,7 +274,7 @@ class RevenueForecastService {
     }[] = [];
 
     forecasts?.forEach((f) => {
-      const predicted = Number(f?.projectedRevenue || f?.predictedRevenue || 0);
+      const predicted = Number(f?.projectedRevenue ?? f?.predictedRevenue ?? 0);
       const actual = Number(f?.actualRevenue || 0);
 
       if (actual > 0) {
@@ -262,8 +294,8 @@ class RevenueForecastService {
     const mape =
       recentForecasts?.length > 0
         ? (totalError / recentForecasts?.length) * 100
-        : 15;
-    const overallAccuracy = Math.max(0, 100 - mape);
+        : null;
+    const overallAccuracy = mape === null ? null : Math.max(0, 100 - mape);
 
     const recentAccuracies = recentForecasts?.slice(0, 6).map((f) => f?.accuracy);
     const olderAccuracies = recentForecasts?.slice(6).map((f) => f?.accuracy);
@@ -282,20 +314,31 @@ class RevenueForecastService {
     else if (recentAvg < olderAvg - 5) trend = "declining";
 
     return {
-      overallAccuracy: Math.round(overallAccuracy * 100) / 100,
-      mape: Math.round(mape * 100) / 100,
+      overallAccuracy: overallAccuracy === null ? null : Math.round(overallAccuracy * 100) / 100,
+      mape: mape === null ? null : Math.round(mape * 100) / 100,
+      sampleCount: recentForecasts.length,
+      excludedZeroActuals: forecasts.filter(f => Number(f.actualRevenue) === 0).length,
+      status: recentForecasts.length ? "measured" : "insufficient_data",
+      // MAE is defined for zero actuals; MAPE deliberately excludes zero denominators.
+      meanAbsoluteError: forecasts.reduce((sum, f) =>
+        sum + Math.abs(Number(f.projectedRevenue ?? f.predictedRevenue ?? 0) - Number(f.actualRevenue)), 0) / forecasts.length,
       recentForecasts,
       trend,
     };
   }
 
   async getStoredForecasts(userId: string, limit = 10) {
-    return db
+    const stored = await db
       .select()
       .from(revenueForecasts)
       .where(eq(revenueForecasts.userId, userId))
       .orderBy(desc(revenueForecasts.createdAt))
       .limit(limit);
+    return stored.map(forecast => ({
+      ...forecast,
+      provenanceStatus: forecast.methodology === "heuristic-scenario-v2"
+        ? "versioned-scenario" : "historical-unverified",
+    }));
   }
 
   private async getHistoricalData(userId: string) {
@@ -330,18 +373,20 @@ class RevenueForecastService {
     const secondHalf = data?.slice(Math.floor(data?.length / 2));
 
     const firstAvg =
-      firstHalf?.reduce((s, d) => s + d?.revenue, 0) / firstHalf?.length || 1;
+      firstHalf.reduce((s, d) => s + d.revenue, 0) / firstHalf.length;
     const secondAvg =
-      secondHalf?.reduce((s, d) => s + d?.revenue, 0) / secondHalf?.length || 1;
+      secondHalf.reduce((s, d) => s + d.revenue, 0) / secondHalf.length;
 
+    if (firstAvg === 0) return 0; // Relative growth from zero is undefined; flat scenario.
     const growthRate = (secondAvg - firstAvg) / firstAvg;
     return Math.max(-0.5, Math.min(1, growthRate));
   }
 
-  private calculateAverageMonthlyStreams(data: { streams: number }[]) {
+  private calculateAverageMonthlyStreams(data: { streams: number; date: Date }[]) {
     if (data?.length === 0) return 1000;
     const total = data?.reduce((s, d) => s + d?.streams, 0);
-    const monthsOfData = Math.max(1, data?.length / 30);
+    const months = data.map(d => d.date.getUTCFullYear() * 12 + d.date.getUTCMonth());
+    const monthsOfData = Math.max(...months) - Math.min(...months) + 1;
     return total / monthsOfData;
   }
 
@@ -427,7 +472,7 @@ class RevenueForecastService {
         date: new Date(monthKey + "-01"),
         projectedStreams: data.streams,
         projectedRevenue: data.revenue,
-        projectedRoyalties: data.revenue * this.ROYALTY_PERCENTAGE,
+        projectedRoyalties: null,
         confidence: 1,
         confidenceLow: data.revenue,
         confidenceHigh: data.revenue,
@@ -460,8 +505,7 @@ class RevenueForecastService {
         date: futureDate,
         projectedStreams: monthStreams,
         projectedRevenue: Math.round(monthRevenue * 100) / 100,
-        projectedRoyalties:
-          Math.round(monthRevenue * this.ROYALTY_PERCENTAGE * 100) / 100,
+        projectedRoyalties: null,
         confidence: Math.round(confidence * 100) / 100,
         confidenceLow: Math.max(
           0,
@@ -554,8 +598,9 @@ class RevenueForecastService {
       confidence: forecast.confidence,
       confidenceLow: forecast.confidenceLow,
       confidenceHigh: forecast.confidenceHigh,
-      methodology: "ml-trend-seasonality",
+      methodology: forecast.provenance.modelVersion,
       factors: {
+        provenance: forecast.provenance,
         growthRate: forecast.growthRate,
         seasonalityFactor: forecast.seasonalityFactor,
         months: forecast.months,

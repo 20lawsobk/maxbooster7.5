@@ -25,6 +25,7 @@ import {
 import { db } from "../db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { notificationAllowed } from "./notificationPreferences.js";
 
 export interface DispatchResult {
   web: { sent: number; failed: number };
@@ -57,6 +58,8 @@ class NotificationDispatcher {
     } = {},
   ): Promise<DispatchResult> {
     const richPayload = buildPushPayload(notificationType, ctx);
+    const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+    if (!user || !notificationAllowed(user.notificationSettings, notificationType, "push")) return ZERO;
 
     if (richPayload?.silent) {
       return this.dispatchSilent(userId, "feed_refresh");

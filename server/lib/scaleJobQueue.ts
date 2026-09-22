@@ -12,11 +12,11 @@
  *   feature-event-flush  — Drain the in-memory feature-event buffer to the DB
  *
  * Concurrency is capped via BULLMQ_CONCURRENCY (default 5) to prevent DB
- * connection pool exhaustion.  Failed jobs are retained for 7 days (up to
- * 100 entries) so they can be inspected and re-queued.
+ * connection pool exhaustion. Failed jobs are retained for explicit review;
+ * startup never discards waiting or active work.
  */
 
-import { Queue, Worker, Job } from "bullmq";
+import { Queue, Worker, Job, UnrecoverableError } from "bullmq";
 import { newBullMQRedisConnection } from "./redisClient.js";
 import { logger } from "../logger.js";
 import { customerHealthScoreService } from "../services/customerHealthScoreService.js";
@@ -35,11 +35,11 @@ const WORKER_CONCURRENCY = parseInt(process.env.BULLMQ_CONCURRENCY ?? "3", 10);
 
 /**
  * Job persistence + retry policy.
- * Completed jobs kept for 24 h (observability). Failed kept for 7 d (100 most recent) so they can be retried.
+ * Completed work is removed. Failed records retain their original payload and reason.
  */
 const JOB_DEFAULTS = {
   removeOnComplete: true,
-  removeOnFail: { count: 10 },
+  removeOnFail: false,
   attempts: 2,
   backoff: { type: "exponential" as const, delay: 10_000 },
 };
@@ -57,136 +57,32 @@ export function getRetentionQueue(): Queue {
   return queue;
 }
 
-/**
- * Purge stale jobs left over from previous server sessions.
- *
- * Critical fix: this must run BEFORE the worker starts processing so that
- * stale jobs are cleaned in bulk (1-2 Lua calls) rather than one-by-one
- * through the PDIM AIMD chain (100 jobs × 1.1 s = 110 s of PDIM saturation).
- *
- * Strategy:
- *   - If there are many (> 10) unnamed stale jobs → drain the entire waiting
- *     queue in ONE Lua call (queue?.drain), then let the scheduler re-add
- *     legitimate named jobs on its next tick.  At startup, all waiting jobs
- *     are holdovers from the previous session; none are freshly scheduled.
- *   - If there are few stale jobs → remove them individually (fast, safe).
- *   - Also scans the active set for jobs that never had a processor pick them
- *     up (stalledCheck re-queues them as waiting; this sweep catches any that
- *     the stalledCheck timer hasn't fired yet).
- */
-async function cleanStalledJobs(attempt = 1): Promise<void> {
-  const MAX_ATTEMPTS = 5;
-  try {
-    const queue = getRetentionQueue();
-
-    // Step 1 — remove stale active jobs left over from the prior session.
-    //
-    // At startup, ALL jobs in 'active' state have expired locks — they were
-    // being processed when the previous server process died.  BullMQ's stalled
-    // check moves them back to 'waiting' after stalledInterval (default 30 s),
-    // which causes a flood of one-by-one job?.remove() calls through the PDIM
-    // AIMD chain.  queue?.clean(0, 500, 'active') evicts them all in a SINGLE
-    // Lua EVALSHA before the stalledCheck fires, eliminating the flood entirely.
-    //
-    // Safety: at t=5 s the new worker has not yet processed any jobs, so no
-    // legitimately-running active jobs exist to be accidentally removed.
-    try {
-      await queue?.clean(0, 500, "active");
-      logger.info(
-        "[Worker] Stale active-state jobs from prior session cleaned (single bulk Lua call)",
-      );
-    } catch {
-      // non-fatal — processor handles any stragglers that slip through
-    }
-
-    // Step 2 — identify and remove stale waiting jobs (belt-and-suspenders).
-    // Use queue?.drain() for large batches (single Lua call) to avoid
-    // saturating the PDIM AIMD chain with N individual job?.remove() calls.
-    try {
-      const waiting = await queue?.getJobs(["waiting"], 0, 500);
-      const stale = waiting?.filter(
-        (j) => !j?.name && !(j?.data as Record<string, unknown>)?.type,
-      );
-      if (stale?.length > 10) {
-        // Bulk drain: removes ALL waiting jobs in a single Lua EVALSHA.
-        // Legitimate named jobs are re-added by the scheduler on its next tick
-        // (cron is typically seconds away at startup, so no jobs are lost).
-        await queue?.drain();
-        logger.info(
-          `[Worker] Bulk-drained ${stale?.length} stale orphan waiting job(s) from prior session (single Lua call — avoids PDIM saturation)`,
-        );
-      } else if (stale?.length > 0) {
-        // Small count — individual removes are fine
-        await Promise?.allSettled(stale?.map((j) => j?.remove()));
-        logger.info(
-          `[Worker] Purged ${stale?.length} stale orphan waiting job(s) from prior session`,
-        );
-      }
-    } catch {
-      // getJobs can timeout under LuaExecutor pressure; processor handles stragglers
-    }
-
-    // Step 3 — clean completed/failed tombstones older than 1 hour.
-    // Use separate try blocks so a timeout on one state doesn't skip the other.
-    try {
-      await queue.clean(3_600_000, 100, "completed");
-    } catch {
-      /* non-fatal */
-    }
-    try {
-      await queue.clean(3_600_000, 100, "failed");
-    } catch {
-      /* non-fatal */
-    }
-
-    logger.info("[Worker] Startup job cleanup complete");
-  } catch (err) {
-    if (attempt < MAX_ATTEMPTS) {
-      const delay = attempt * 30_000; // 30 s, 60 s, 90 s, 120 s (faster retry)
-      logger.warn(
-        `[Worker] Job cleanup attempt ${attempt} failed — retrying in ${delay / 1000}s: ${(err as Error).message}`,
-      );
-      setTimeout(
-        () => cleanStalledJobs(attempt + 1).catch(() => {}),
-        delay,
-      ).unref();
-    } else {
-      logger.warn(
-        `[Worker] Job cleanup permanently skipped after ${MAX_ATTEMPTS} attempts — processor will handle individual stale jobs`,
-      );
-    }
-  }
-}
-
 export function startRetentionWorker(): Worker {
   const connection = newBullMQRedisConnection();
 
-  // Run cleanup at t=5 s — enough time for PDIM to connect, but BEFORE the
-  // worker has processed more than a handful of stale jobs individually.
-  // Previous 60 s delay allowed the worker to process 100+ stale unnamed jobs
-  // one-by-one through the PDIM AIMD chain (each ~1.1 s), saturating PDIM for
-  // 2-3 min and triggering SessionStore timeouts + 100 s dashboard responses.
-  // The new bulk drain strategy (queue.drain for > 10 stale jobs) completes
-  // the same cleanup in a single Lua call instead of 100+ sequential calls.
-  setTimeout(() => cleanStalledJobs().catch(() => {}), 5_000).unref();
+  // No startup sweep: it cannot safely distinguish another replica's work.
+  // The processor owns a job lock, and quarantines malformed work as failed.
 
   const worker = new Worker(
     RETENTION_QUEUE,
     async (job: Job) => {
-      const jobName = job.name ?? (job.data.type as string | undefined);
+      const jobName = job.name || (job.data?.type as string | undefined);
       if (!jobName) {
-        logger.info(
-          `[Worker] Removing stale/unnamed job id=${job.id} — leftover from prior session`,
-        );
-        // Remove the job outright so BullMQ never tries moveToFinished on it.
-        // A bare `return` would still call moveToFinished, which fails when the
-        // LuaExecutor lock has expired and produces a noisy "Missing lock" error.
-        try {
-          await job.remove();
-        } catch {
-          /* job already gone — ignore */
-        }
-        return;
+        // Override legacy per-job auto-removal, preserving payload + failure reason.
+        job.opts.removeOnFail = false;
+        throw new UnrecoverableError("Quarantined: retention job has no name or type");
+      }
+      const data = job.data;
+      const invalid = !data || typeof data !== "object" || Array.isArray(data) ||
+        (jobName === "health-score-batch" &&
+          ((data.cursor !== undefined && !(typeof data.cursor === "string" && data.cursor.length > 0) &&
+            (!Number.isSafeInteger(data.cursor) || data.cursor < 0)) ||
+           (data.batchSize !== undefined && (!Number.isSafeInteger(data.batchSize) || data.batchSize < 1)))) ||
+        (jobName === "dunning-process" &&
+          data.limit !== undefined && (!Number.isSafeInteger(data.limit) || data.limit < 1));
+      if (invalid) {
+        job.opts.removeOnFail = false;
+        throw new UnrecoverableError("Quarantined: invalid retention job payload");
       }
       logger.info(`[Worker] Processing job ${jobName} id=${job.id}`);
 
@@ -244,7 +140,8 @@ export function startRetentionWorker(): Worker {
           }
 
           default:
-            logger.warn(`[Worker] Unknown job name: ${jobName}`);
+            job.opts.removeOnFail = false;
+            throw new UnrecoverableError(`Quarantined: unknown retention job type ${jobName}`);
         }
       } catch (err) {
         logger.warn({ err: err }, `[Worker] Job ${jobName} failed:`);

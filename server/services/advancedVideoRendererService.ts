@@ -311,6 +311,7 @@ async function cacheVideoLocally(
 
 interface MaxCoreVideoStatus {
   status: string;
+  resolved_media_manifest?: Record<string, unknown>;
   url?: string;
   filename?: string;
   width?: number;
@@ -369,6 +370,7 @@ async function pollVideoJob(jobId: string, userId: string): Promise<VideoGenResu
         template: status.template,
         template_name: status.template_name,
         scenes_rendered: status.scenes_rendered,
+        resolved_media_manifest: status.resolved_media_manifest,
         scenes: status.scenes,
         source: "MaxCoreAI",
       };
@@ -702,6 +704,7 @@ export async function generatePosterThumbnail(
 // transport — no local generation, compositing, or re-rendering in between).
 
 interface MaxCoreVideoJobResponse {
+  resolved_media_manifest?: Record<string, unknown>;
   job_id?: string;
   status?: string;
   url?: string;
@@ -733,6 +736,19 @@ export async function renderVideo(
   opts: VideoGenOptions,
 ): Promise<VideoGenResult> {
   const startMs = Date.now();
+  const requireMediaReceipt = (receipt?: Record<string, unknown>) => {
+    const requested = opts.media_manifest;
+    if (!requested) return;
+    if (!receipt || receipt.version !== 1 ||
+        receipt.image_count !== (opts.reference_images?.length || 0) ||
+        receipt.beat_sync !== requested.beat_sync ||
+        receipt.color_grade !== requested.color_grade ||
+        receipt.transition !== requested.transition ||
+        receipt.voice_asset !== !!requested.voice_b64 ||
+        receipt.logo_asset !== !!requested.logo_b64) {
+      throw new Error("MaxCore did not confirm delivery of the requested media manifest");
+    }
+  };
 
   const idea =
     [opts.hook || opts.topic, opts.artist_name, opts.genre]
@@ -780,7 +796,8 @@ export async function renderVideo(
       user_audio_path: maxCoreAudioPath,
       first_frame_b64: opts.first_frame_b64 || undefined,
       last_frame_b64: opts.last_frame_b64 || undefined,
-      reference_images: opts.reference_images?.slice(0, 3),
+      reference_images: opts.reference_images,
+      media_manifest: opts.media_manifest,
       scenes_override: opts.scenes_override,
       camera_motion: opts.camera_motion,
       motion_intensity: opts.motion_intensity,
@@ -799,6 +816,7 @@ export async function renderVideo(
   // Synchronous response — MaxCore rendered immediately
   const syncUrl = jobResp.url || jobResp.video_url;
   if (syncUrl) {
+    requireMediaReceipt(jobResp.resolved_media_manifest);
     const { videoUrl, posterUrl } = await cacheVideoLocally(
       syncUrl,
       opts.userId || "anonymous",
@@ -820,6 +838,7 @@ export async function renderVideo(
       template: jobResp.template,
       template_name: jobResp.template_name,
       scenes_rendered: jobResp.scenes_rendered,
+      resolved_media_manifest: jobResp.resolved_media_manifest,
       hashtags: jobResp.hashtags,
       source: "MaxCoreAI",
       processing_time_ms: Date.now() - startMs,
@@ -838,6 +857,7 @@ export async function renderVideo(
       } as unknown as VideoGenResult;
     }
     if (result) {
+      requireMediaReceipt(result.resolved_media_manifest);
       return {
         ...result,
         hook: result.hook || opts.hook,

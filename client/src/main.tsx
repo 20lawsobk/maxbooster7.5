@@ -1,18 +1,18 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import * as Sentry from "@sentry/react";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineProvider } from "@/components/offline/OfflineProvider";
+import { AccountPersistenceBoundary } from "@/components/offline/AccountPersistenceBoundary";
+import { WorkerUpdatePrompt } from "@/components/offline/WorkerUpdatePrompt";
 import App from "./App";
 import "./index.css";
 import "./i18n/config";
-import { idbStorage, IDB_CACHE_KEY } from "./lib/idbPersister";
 import { reportWebVitals } from "./lib/reportWebVitals";
 
 // Initialize Sentry client-side error tracking.
@@ -44,14 +44,6 @@ if (!rootElement) {
   throw new Error("Failed to find the root element");
 }
 
-const persister = createAsyncStoragePersister({
-  storage: idbStorage,
-  key: IDB_CACHE_KEY,
-  throttleTime: 2000,
-  serialize: JSON.stringify,
-  deserialize: JSON.parse,
-});
-
 const root = ReactDOM.createRoot(rootElement);
 
 // Report Core Web Vitals (CLS / INP / LCP / FCP / TTFB) to /api/metrics/web-vitals.
@@ -65,6 +57,15 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker
       .register("/sw.js", { scope: "/" })
       .then((registration) => {
+        const announce = () => {
+          if (registration.waiting && navigator.serviceWorker.controller) {
+            window.dispatchEvent(new CustomEvent("sw-update-available", { detail: registration.waiting }));
+          }
+        };
+        announce();
+        registration.addEventListener("updatefound", () => {
+          registration.installing?.addEventListener("statechange", announce);
+        });
         // Trigger an update check whenever the page gains focus.
         registration.update().catch(() => {});
       })
@@ -79,45 +80,20 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <ThemeProvider>
+        <WorkerUpdatePrompt />
         {/* OfflineProvider wraps the ENTIRE platform — auth, query cache,
             tooltips, and all of App — so every layer can read isOnline /
             isOffline / pending-sync state via useOffline(). */}
         <OfflineProvider showToasts={true} autoSync={true}>
-          <PersistQueryClientProvider
-            client={queryClient}
-            persistOptions={{
-              persister,
-              maxAge: 24 * 60 * 60 * 1000,
-              buster: "mb-v3",
-              dehydrateOptions: {
-                shouldDehydrateQuery: (query) =>
-                  query.state.status === "success" &&
-                  !query.queryKey.some(
-                    (k) =>
-                      typeof k === "string" &&
-                      (k.includes("payment") ||
-                        k.includes("stripe") ||
-                        k.includes("billing") ||
-                        k.includes("contracts") ||
-                        k.includes("invoices") ||
-                        k.includes("presence") ||
-                        k.includes("heartbeat") ||
-                        // Warp editing state (markers/tempo snapshots) is live,
-                        // frequently-mutated per-clip analysis data. It must always
-                        // be fetched fresh when the Warp dialog opens -- a value
-                        // rehydrated from an IndexedDB cache up to 24h old can show
-                        // a stale marker count/positions before any real fetch runs.
-                        k.includes("warp")),
-                  ),
-              },
-            }}
-          >
+          <QueryClientProvider client={queryClient}>
             <AuthProvider>
-              <TooltipProvider>
-                <App />
-              </TooltipProvider>
+              <AccountPersistenceBoundary>
+                <TooltipProvider>
+                  <App />
+                </TooltipProvider>
+              </AccountPersistenceBoundary>
             </AuthProvider>
-          </PersistQueryClientProvider>
+          </QueryClientProvider>
         </OfflineProvider>
       </ThemeProvider>
     </ErrorBoundary>

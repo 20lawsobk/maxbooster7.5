@@ -11,6 +11,7 @@ import {
 import { db } from "../db";
 import { projects } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import { modulationRouting } from "../services/modulationRoutingRepository";
 
 const router = Router();
 
@@ -602,12 +603,10 @@ const abCompareStates = new Map<
     activeSlot: "A" | "B";
   }
 >();
-const modulationConfigs = new Map<string, any>();
 
 // Both maps are keyed by instanceId/projectId and grow without bound if not capped.
 // Evict oldest entries (insertion order) once the cap is reached.
 const AB_COMPARE_MAX = 5_000;
-const MODULATION_MAX = 10_000;
 function capMap<K, V>(m: Map<K, V>, max: number) {
   while (m?.size > max) m?.delete(m?.keys().next().value as K);
 }
@@ -889,14 +888,13 @@ router.get("/modulation-matrix/:projectId", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Project not found" });
     }
 
-    const key = trackId ? `${projectId}:${trackId}` : projectId;
-    const config = modulationConfigs?.get(key);
+    const routings = await modulationRouting(userId, projectId, trackId ? z.string().parse(trackId) : undefined);
 
     res.json({
       success: true,
       projectId,
       trackId: trackId || null,
-      routings: config.routings || [],
+      routings,
       sources: {
         lfo: [
           { id: "lfo1", name: "LFO 1", rate: 1, shape: "sine" },
@@ -976,13 +974,7 @@ router.post("/modulation-matrix", requireAuth, async (req, res) => {
     const key = data?.trackId
       ? `${data?.projectId}:${data?.trackId}`
       : data?.projectId;
-    modulationConfigs?.set(key, {
-      projectId: data.projectId,
-      trackId: data.trackId,
-      routings: routingsWithIds,
-      updatedAt: new Date().toISOString(),
-    });
-    capMap(modulationConfigs, MODULATION_MAX);
+    await modulationRouting(userId, data.projectId, data.trackId, { replace: routingsWithIds });
 
     logger.info(
       `Modulation matrix updated for ${key}: ${routingsWithIds?.length} routings`,
@@ -1020,16 +1012,7 @@ router.delete(
         return res.status(404).json({ error: "Project not found" });
       }
 
-      const key = trackId ? `${projectId}:${trackId}` : projectId;
-      const config = modulationConfigs?.get(key);
-
-      if (config) {
-        config.routings = config?.routings.filter(
-          (r: Record<string, unknown>) => r?.id !== routingId,
-        );
-        modulationConfigs?.set(key, config);
-        capMap(modulationConfigs, MODULATION_MAX);
-      }
+      await modulationRouting(userId, projectId, trackId ? z.string().parse(trackId) : undefined, { remove: routingId });
 
       res.status(204).send();
     } catch (error: unknown) {

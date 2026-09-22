@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { logger } from "./logger";
+import { decryptSocialCredential } from "./services/socialCredentialCodec.js";
 import { randomBytes } from "crypto";
 import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, artistProfiles, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, systemLogs, toolostConnection, youtubeConnections, youtubeUploads, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot, type ToolostConnection, type InsertToolostConnection, type YoutubeConnection, type InsertYoutubeConnection, type YoutubeUpload, type InsertYoutubeUpload } from "@shared/schema";
 import { db, dbRead } from "./db";
@@ -676,7 +677,7 @@ export class DatabaseStorage implements IStorage {
       scheduledTime: post.scheduledAt,
       viralPrediction: meta.viralPrediction || null,
       createdBy: meta.createdBy || "manual",
-      results: meta._autopilotMeta ? [] : post?.engagement || [],
+      results: Array.isArray(eng.postingResults) ? eng.postingResults : meta._autopilotMeta ? [] : post?.engagement || [],
     };
   }
 
@@ -934,7 +935,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     return {
-      accessToken: rows[0].accessToken,
+      accessToken: decryptSocialCredential(rows[0].accessToken, `${userId}:${platform}:access`)!,
       platformUserId: rows[0].platformUserId ?? null,
     };
   }
@@ -971,7 +972,7 @@ export class DatabaseStorage implements IStorage {
       return null;
     }
 
-    return rows[0].accessToken;
+    return decryptSocialCredential(rows[0].accessToken, `${userId}:${platform}:access`);
   }
 
   async updateUserSocialToken(

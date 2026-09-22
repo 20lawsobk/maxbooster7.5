@@ -59,7 +59,7 @@ class RedisManager {
         );
         continue;
       }
-      await db
+      const inserted = await db
         .insert(redisInstances)
         .values({
           id,
@@ -70,10 +70,16 @@ class RedisManager {
           keyCount: 0,
           isActive: true,
         })
-        .onConflictDoUpdate({
-          target: redisInstances.id,
-          set: { token },
-        });
+        .onConflictDoNothing()
+        .returning();
+      if (inserted.length) {
+        const store = new RedisStore(id, name);
+        await store.load(true);
+        this.stores.set(id, store);
+        this.tokenIndex.set(token, id);
+      } else {
+        await db.update(redisInstances).set({ token }).where(eq(redisInstances.id, id));
+      }
     }
     console.log("[RedisManager] System instances bootstrapped.");
   }
@@ -83,6 +89,7 @@ class RedisManager {
     await Promise.all(
       rows.map(async (row) => {
         if (!row.isActive) return;
+        if (this.stores.has(row.id)) return;
         try {
           const store = new RedisStore(row.id, row.name);
           await store.load();
@@ -129,7 +136,7 @@ class RedisManager {
     if (!row) throw new Error("Failed to create redis instance record");
 
     const store = new RedisStore(id, name);
-    await store.load();
+    await store.load(true);
     this.stores.set(id, store);
     this.tokenIndex.set(token, id);
 

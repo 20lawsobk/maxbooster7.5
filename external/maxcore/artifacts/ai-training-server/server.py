@@ -414,16 +414,16 @@ def _get_gpu_pool():
 # raise 503 with a Retry-After header only if the subsystem truly never came up.
 
 async def _wait_for_model_ready(max_wait: float = 30.0) -> None:
-    """Wait until _model_ready is True, then return.
-
-    Guaranteed-completion policy: parks indefinitely (250 ms poll) until the
-    model finishes initialising — never raises 503.  Warm-up is watchdog-
-    supervised, so readiness always arrives.  ``max_wait`` is retained for
-    signature compatibility and used only as the slow-log threshold."""
+    """Wait a bounded time for compatible checkpoint initialization."""
     if _model_ready:
         return  # fast path — already ready
     _waited = 0.0
     while not _model_ready:
+        if _waited >= max_wait:
+            raise HTTPException(
+                status_code=503, detail="A compatible trained model is not ready",
+                headers={"Retry-After": "30"},
+            )
         await asyncio.sleep(0.25)
         _waited += 0.25
         if _waited and _waited % max(max_wait, 30.0) < 0.25:
@@ -859,13 +859,14 @@ def _init_ai_model():
                         k: v for k, v in clean_sd.items()
                         if k in target_sd and v.shape == target_sd[k].shape
                     }
-                    base_model.load_state_dict(filtered, strict=False)
+                    from ai_model.media_contract import load_complete_checkpoint
+                    load_complete_checkpoint(base_model, state_dict)
                     print(
                         f"[AI Model] Weights loaded into HyperCreativeTransformerLM "
                         f"({len(filtered)}/{len(clean_sd)} tensors matched)"
                     )
                 else:
-                    print("[AI Model] HyperCreativeTransformerLM — random init")
+                    raise ValueError("Inference requires trained checkpoint weights")
             except Exception as hct_err:
                 print(f"[AI Model] HyperCreativeTransformerLM unavailable: {hct_err}")
                 base_model = None
@@ -894,11 +895,12 @@ def _init_ai_model():
                     target_sd = base_model.state_dict()
                     filtered = {k: v for k, v in clean_sd.items()
                                 if k in target_sd and v.shape == target_sd[k].shape}
-                    base_model.load_state_dict(filtered, strict=False)
+                    from ai_model.media_contract import load_complete_checkpoint
+                    load_complete_checkpoint(base_model, state_dict)
                     print(f"[AI Model] Fallback HyperCreativeTransformerLM — "
                           f"{len(filtered)}/{len(clean_sd)} tensors loaded")
                 else:
-                    print("[AI Model] Fallback HyperCreativeTransformerLM — random init")
+                    raise ValueError("Inference requires trained checkpoint weights")
                 backend_name = "Digital GPU fallback (HyperGPU)"
             except Exception as fb_err:
                 # Absolute last resort — should never be reached on this platform.
@@ -911,6 +913,8 @@ def _init_ai_model():
 
         print(f"[AI Model] Backend: {backend_name}")
 
+        if base_model is None:
+            raise RuntimeError("No complete compatible inference checkpoint is available")
         _creative_model      = CreativeModel(base_model, _tokenizer, device=_TORCH_DEVICE)
         _script_agent        = ScriptAgent(_creative_model)
         _visual_spec_agent   = VisualSpecAgent(_creative_model)
@@ -6884,9 +6888,14 @@ def _job_read(job_id: str) -> dict | None:
 
 def _job_update(job_id: str, updates: dict) -> None:
     """Merge updates into an existing job file atomically."""
-    with _api_jobs_lock:
+    import fcntl
+    with _api_jobs_lock, open(os.path.join(_JOBS_DIR, ".updates.lock"), "a") as lockfile:
+        fcntl.flock(lockfile, fcntl.LOCK_EX)
         data = _job_read(job_id)
         if data is None:
+            return
+        terminal = data.get("status")
+        if terminal in ("done", "error", "cancelled") and updates.get("status", terminal) != terminal:
             return
         data.update(updates)
         _job_write(job_id, data)
@@ -6897,7 +6906,9 @@ def _job_add_request_owner(job_id: str) -> None:
     owner = _request_job_owner.get()
     if not owner:
         return
-    with _api_jobs_lock:
+    import fcntl
+    with _api_jobs_lock, open(os.path.join(_JOBS_DIR, ".updates.lock"), "a") as lockfile:
+        fcntl.flock(lockfile, fcntl.LOCK_EX)
         data = _job_read(job_id)
         if data is None:
             return
@@ -7184,6 +7195,7 @@ class SceneOverride(BaseModel):
 
 class ApiGenerateVideoRequest(_AwarenessMixin):
     idea: str
+    media_manifest: Optional[dict] = None
     platform: str = "tiktok"
     genre: Optional[str] = None
     tone: str = "energetic"
@@ -7242,7 +7254,7 @@ class ApiGenerateVideoRequest(_AwarenessMixin):
     composition: Optional[str] = None       # close_up/medium_shot/wide_shot/
                                             # over_the_shoulder/pov/aerial/
                                             # low_angle/high_angle — shot framing
-    reference_images: Optional[List[str]] = None  # up to 3 base64 images — style/
+    reference_images: Optional[List[str]] = None  # up to 10 ordered image assets
                                                   # character consistency ("ingredients")
     first_frame_b64: Optional[str] = None   # base64 image the video should START on
     last_frame_b64: Optional[str] = None    # base64 image the video should END on
@@ -9621,10 +9633,8 @@ def _voiceover_track_path(job_id: str, narration_text: str,
                           voice: Optional[str] = None,
                           wpm: Optional[int] = None) -> Optional[str]:
     """Synthesize a spoken narration track (in-house eSpeak NG) and duck any
-    music soundtrack under it. Returns the audio path to mux, or None when
-    speech synthesis is unavailable — callers keep their existing audio.
-    ``voice``/``wpm`` are normalized downstream (invalid → defaults).
-    Never-raise."""
+    music soundtrack under it. Requested narration failure is terminal.
+    ``voice``/``wpm`` are normalized downstream."""
     try:
         from ai_model.audio.voiceover import (
             voiceover_track, normalize_voice, normalize_wpm,
@@ -9638,14 +9648,13 @@ def _voiceover_track_path(job_id: str, narration_text: str,
             voice=normalize_voice(voice),
             wpm=normalize_wpm(wpm),
         )
-        if path:
+        if path and Path(path).is_file():
             print(f"[VideoJob] voiceover narration rendered for {job_id[:12]}", flush=True)
         else:
-            print(f"[VideoJob] voiceover unavailable for {job_id[:12]} — keeping music/silent track", flush=True)
+            raise RuntimeError("Required narration could not be synthesized")
         return path
-    except Exception as exc:  # noqa: BLE001 - narration must never break renders
-        print(f"[VideoJob] voiceover error ({exc}); keeping music/silent track", flush=True)
-        return None
+    except Exception as exc:
+        raise RuntimeError(f"Required narration failed: {exc}") from exc
 
 
 def _narration_script(production, hook: str = "", body: str = "", cta: str = "") -> str:
@@ -9668,19 +9677,25 @@ def _auto_soundtrack_path(job_id: str, duration_sec: float,
                           genre: str = "") -> Optional[str]:
     """Render a genre/BPM-matched soundtrack for a video (native-audio parity).
 
-    Uses the real-audio dataset renderer so every video ships with sound by
-    default, the way Veo generates audio natively. Returns a local file path,
-    or None when no real-audio dataset is seeded / rendering fails — callers
-    fall back to a silent render (never-raise).
+    Uses the real-audio dataset renderer. Returns a local file path or raises
+    when the requested soundtrack cannot be delivered.
     """
     try:
         _bpm = float(bpm or 0.0)
         if _bpm <= 0:
             _bpm = _GENRE_DEFAULT_BPM.get((genre or "").strip().lower(), 120.0)
-        result = _render_audio_from_dataset(
-            f"vsnd_{job_id[:12]}", bpm=_bpm, key=str(key or ""),
-            duration_sec=max(2.0, float(duration_sec or 10.0)),
-            opts={},
+        from ai_model.isolated_audio import render_isolated
+        result = render_isolated(
+            {
+                "_render_audio_clip": _render_audio_clip,
+                "_render_audio_from_dataset": _render_audio_from_dataset,
+                "_arc_spectral_clean_file": _arc_spectral_clean_file,
+                "_summarize_audio_analysis": _summarize_audio_analysis,
+            },
+            {"job_id": f"vsnd_{job_id[:12]}", "bpm": _bpm, "key": str(key or ""),
+             "duration": max(2.0, float(duration_sec or 10.0)), "opts": {}},
+            _UPLOADS_PATH, deadline=time.monotonic() + 20.0,
+            cancelled=lambda: (_job_read(job_id) or {}).get("status") == "cancelled",
         )
         url = str(result.get("url") or "")
         name = url.rsplit("/", 1)[-1]
@@ -9688,8 +9703,8 @@ def _auto_soundtrack_path(job_id: str, duration_sec: float,
         if name and path.is_relative_to(_UPLOADS_PATH.resolve()) and path.exists():
             return str(path)
     except Exception as exc:
-        print(f"[VideoJob] auto-soundtrack unavailable ({exc}); rendering silent", flush=True)
-    return None
+        raise RuntimeError(f"Required soundtrack failed: {exc}") from exc
+    raise RuntimeError("Required soundtrack renderer produced no audio file")
 
 
 @app.post("/api/generate/audio")
@@ -9758,6 +9773,7 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
         _active_jobs[_adigest] = job_id
     _job_write(job_id, {
         "status":     "pending",
+        "job_type":   "audio",
         "created_at": datetime.utcnow().isoformat() + "Z",
         "url":        None,
         "duration":   req.duration,
@@ -9944,6 +9960,8 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
             while not _hb_stop.wait(30.0):
                 if _hb_stop.is_set():
                     return  # terminal write in progress — never overwrite it
+                if (_job_read(job_id) or {}).get("status") in ("cancelled", "error", "done"):
+                    return
                 _elapsed = time.time() - _render_started
                 try:
                     _job_update(job_id, {"status": "rendering",
@@ -10067,48 +10085,40 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
         # Honor long-form requests: leaseable beats run 2–3 minutes (180 s cap
         # per the delivery contract — a content limit, not a timeout).
         #
-        # Guaranteed-completion policy: retry until success.  The render is
-        # never-raise by design (it already synthesizes in-house via
-        # _render_audio_clip internally, with no hard storage dependency), so
-        # an exception here is exceptional — transient storage/memory
-        # pressure.  Instead of marking the job "error", back off and
-        # re-attempt until a real file exists on disk.
+        # Retry only transient I/O failures, with a finite total budget.
         duration_sec = max(4.0, min(float(req.duration or 30), 180.0))
         render = None
-        _attempt = 0
-        _last_err = ""
-        _same_err_count = 0
-        while render is None:
-            _attempt += 1
-            try:
-                render = _render_audio_from_dataset(job_id, target_bpm, target_key,
-                                                    duration_sec, opts)
-            except Exception as exc:
-                _err = f"{type(exc).__name__}: {exc}"
-                _same_err_count = _same_err_count + 1 if _err == _last_err else 1
-                _last_err = _err
-                print(f"[audio_render] job={job_id[:8]} attempt {_attempt} failed: "
-                      f"{_err} — retrying", flush=True)
-                if _same_err_count == 5:
-                    # Deterministic fault, not transient pressure: escalate to
-                    # the watchdog (which owns subsystem self-healing) instead
-                    # of silently spinning.  The loop keeps waiting — the job
-                    # completes once the watchdog restores the subsystem.
-                    print(f"[audio_render] job={job_id[:8]} ESCALATION: same "
-                          f"error 5x — requesting watchdog attention: {_err}",
-                          flush=True)
-                    try:
-                        from ai_model.watchdog import request_attention  # type: ignore
-                        request_attention("audio_render", _err)
-                    except Exception:
-                        pass  # watchdog hook optional — escalation is best-effort
-                try:
-                    _job_update(job_id, {"status": "rendering",
-                                         "retry_attempt": _attempt,
-                                         "last_error": _err[:200]})
-                except Exception:
-                    pass
-                time.sleep(min(60.0, 2.0 * _attempt))
+        from ai_model.media_contract import render_with_budget, RenderCancelled
+        from ai_model.isolated_audio import render_isolated
+        _render_deadline = time.monotonic() + 120.0
+        _render_cancelled = lambda: (_job_read(job_id) or {}).get("status") == "cancelled"
+        try:
+            render = render_with_budget(
+                lambda: render_isolated(
+                    {
+                        "_render_audio_clip": _render_audio_clip,
+                        "_render_audio_from_dataset": _render_audio_from_dataset,
+                        "_arc_spectral_clean_file": _arc_spectral_clean_file,
+                        "_summarize_audio_analysis": _summarize_audio_analysis,
+                    },
+                    {"job_id": job_id, "bpm": target_bpm, "key": target_key,
+                     "duration": duration_sec, "opts": opts},
+                    _UPLOADS_PATH, deadline=_render_deadline,
+                    cancelled=_render_cancelled,
+                ),
+                on_retry=lambda attempt, error: _job_update(job_id, {
+                    "status": "rendering", "retry_attempt": attempt,
+                    "last_error": error[:200]}),
+                cancelled=_render_cancelled,
+            )
+        except Exception as exc:
+            _hb_stop.set()
+            _hb_thread.join(timeout=5.0)
+            _job_update(job_id, {
+                "status": "cancelled" if isinstance(exc, RenderCancelled) else "error",
+                "error": f"Audio render failed: {exc}",
+            })
+            return
         # Terminal-state handoff: stop the heartbeat and JOIN it before the
         # final write so "done" can never be overwritten by a late heartbeat.
         _hb_stop.set()
@@ -10118,7 +10128,7 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
             "url":              render["url"],
             # Measured sonic summary for downstream content generation
             # (never-raise; None when analysis was not possible).
-            "audio_analysis":   _summarize_audio_analysis(render),
+            "audio_analysis":   render.get("audio_analysis"),
             "duration":         int(duration_sec),
             "bpm":              render.get("bpm", target_bpm),
             "key":              render.get("key", target_key),
@@ -10337,7 +10347,7 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
                 style_reference=req.style_reference or "",
                 output_resolution=req.output_resolution or "",
                 composition=req.composition or "",
-                reference_images=(req.reference_images or [])[:3],
+                reference_images=req.reference_images or [],
                 first_frame_b64=req.first_frame_b64 or "",
                 last_frame_b64=req.last_frame_b64 or "",
             )
@@ -10432,8 +10442,7 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
                 try:
                     _audio_path = _soundtrack_future.result(timeout=25)
                 except Exception as _snd_exc:
-                    print(f"[VideoJob] auto-soundtrack thread error ({_snd_exc}); rendering silent", flush=True)
-                    _audio_path = None
+                    raise RuntimeError(f"Required soundtrack failed: {_snd_exc}") from _snd_exc
                 finally:
                     if _snd_pool is not None:
                         _snd_pool.shutdown(wait=False)
@@ -10456,6 +10465,18 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
                     _audio_path = _vo_path
                     _job_update(job_id, {"voiceover": True})
 
+            _transition_duration = 0.5 if dna.energy > 0.70 else 0.8
+            if req.media_manifest is not None:
+                from ai_model.video.media_manifest import apply_manifest
+                _audio_path, _receipt = apply_manifest(
+                    req.media_manifest, scene_configs, _audio_path,
+                    production.total_duration, _UPLOADS_PATH, job_id,
+                )
+                transition = _receipt["transition"]
+                _transition_duration = _receipt["transition_duration"]
+                _receipt["image_count"] = len(req.reference_images or [])
+                _job_update(job_id, {"resolved_media_manifest": _receipt})
+
             result = render_cinematic_open(
                 scenes=scene_configs,
                 width=width,
@@ -10463,7 +10484,7 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
                 total_duration=production.total_duration,
                 audio_path=_audio_path,
                 transition=transition,
-                transition_dur=0.5 if dna.energy > 0.70 else 0.8,
+                transition_dur=_transition_duration,
                 label=f"ai:{production.genre_detected}:{production.tone_used}",
                 genre=production.genre_detected or getattr(req, "genre", "") or "",
             )
@@ -10506,6 +10527,14 @@ async def api_generate_video(req: ApiGenerateVideoRequest, request: Request, _ke
     the existing PLATFORM_RATIOS / _PLATFORM_SPECS logic in VideoAgent) and
     returns all job_ids in a single response instead of requiring N calls.
     """
+    if len(req.reference_images or []) > 10:
+        raise HTTPException(status_code=422, detail="At most ten reference images are supported")
+    if req.media_manifest is not None:
+        from ai_model.video.media_manifest import validate_manifest
+        try:
+            validate_manifest(req.media_manifest)
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
     await _wait_for_model_ready()
     if req.user_audio_path:
         req.user_audio_path = _resolve_owner_audio_upload(req.user_audio_path, request)
@@ -10855,7 +10884,9 @@ async def api_video_generate_ai(request: Request, _key=Depends(require_scope("ge
     # the richer intent/audience/theme context through `awareness` instead.
     # ── Veo-parity controls (all optional, silently defaulted) ────────────
     _refs_raw = body.get("reference_images") or []
-    _refs = [str(x) for x in _refs_raw if x][:3] if isinstance(_refs_raw, list) else []
+    if not isinstance(_refs_raw, list) or len(_refs_raw) > 10:
+        raise HTTPException(status_code=422, detail="reference_images must contain at most ten images")
+    _refs = [str(x) for x in _refs_raw if x]
     _seed_raw = body.get("seed")
 
     req = VideoAgentRequest(
@@ -11053,6 +11084,7 @@ async def api_poll_video_job(job_id: str, request: Request, _key=Depends(require
             "render_ms":       job.get("render_ms"),
             "technique":       job.get("technique"),
             "voiceover":       bool(job.get("voiceover", False)),
+            "resolved_media_manifest": job.get("resolved_media_manifest"),
         }
     if job["status"] == "error":
         return {"status": "error", "error": job.get("error", "Unknown error")}
@@ -11204,6 +11236,20 @@ async def api_video_job_preview(job_id: str, scene_idx: int, request: Request, _
         raise HTTPException(status_code=500, detail="ffmpeg frame extraction failed")
 
     return Response(content=proc.stdout, media_type="image/jpeg")
+
+
+@app.delete("/api/audio-job/{job_id}")
+async def api_cancel_audio_job(job_id: str, request: Request, _key=Depends(require_scope("generate"))):
+    """Cancel an owned audio render; its isolated worker observes terminal state."""
+    job = _job_read(job_id)
+    if job is None or job.get("job_type") != "audio":
+        raise HTTPException(status_code=404, detail="Audio job not found")
+    _require_job_owner(job, request)
+    if job.get("status") not in ("done", "error", "cancelled"):
+        _job_update(job_id, {"status": "cancelled", "error": "Cancelled by owner"})
+    current = _job_read(job_id) or job
+    return {"ok": True, "job_id": job_id, "status": current.get("status"),
+            "action": "cancelled" if current.get("status") == "cancelled" else "no_op"}
 
 
 @app.get("/api/audio-job/{job_id}")

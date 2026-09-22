@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { validateSplitAllocation } from "../services/splitAgreementValidation";
+import { createSplitAgreement, mutateSplitAgreement, getSplitRevision, SplitAgreementError } from "../services/splitAgreementRepository";
 import { Router, Request, Response } from "express";
 import {
   contractTemplateService,
@@ -1330,35 +1332,24 @@ router.post("/split-sheets/create", async (req: Request, res: Response) => {
         });
     }
 
-    const totalSplit = participants?.reduce(
-      (sum: number, p: SplitParticipant) => sum + p?.splitPercentage,
-      0,
-    );
-    if (Math.abs(totalSplit - 100) > 0.01) {
+    const allocationError = validateSplitAllocation(participants);
+    if (allocationError) {
       return res
         .status(400)
-        .json({ error: "Split percentages must total 100%" });
+        .json({ error: allocationError });
     }
 
-    const signatures = participants?.map((p: SplitParticipant) => ({
-      userId: p.userId,
-    }));
-
-    const [inserted] = await db
-      .insert(splitSheets)
-      .values({
+    const inserted = await createSplitAgreement({
         releaseId,
         creatorId: req.user!.id,
         contractName,
         participants,
-        status: "pending_signature",
         effectiveDate: effectiveDate ? new Date(effectiveDate) : new Date(),
-        signatures,
-      })
-      .returning();
+      });
 
     return res.status(201).json(inserted);
   } catch (error) {
+    if (error instanceof SplitAgreementError) return res.status(error.status).json({ error: error.message });
     logger.warn({ err: error }, "Error creating split sheet:");
     res.status(500).json({ error: "Failed to create split sheet" });
   }
@@ -1381,7 +1372,11 @@ router.get("/split-sheets/:contractId", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Split sheet not found" });
     }
 
-    return res.json(contract);
+    if (contract.creatorId !== req.user!.id &&
+        !(contract.participants as SplitParticipant[]).some(p => p.userId === req.user!.id)) {
+      return res.status(403).json({ error: "Not a participant in this split sheet" });
+    }
+    return res.json({ ...contract, ...await getSplitRevision(contractId) });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching split sheet:");
     res.status(500).json({ error: "Failed to fetch split sheet" });
@@ -1397,60 +1392,14 @@ router.post(
       }
 
       const { contractId } = req.params as Record<string, string>;
-      const { signature } = req.body;
+      const { signature, revision } = req.body;
       const userId = req.user!.id;
-
-      const [contract] = await db
-        .select()
-        .from(splitSheets)
-        .where(eq(splitSheets.id, contractId))
-        .limit(1);
-
-      if (!contract) {
-        return res.status(404).json({ error: "Split sheet not found" });
-      }
-
-      const signatures = contract?.signatures as Array<{
-        userId: string;
-        signedAt?: string;
-        signatureHash?: string;
-      }>;
-      const sigIndex = signatures?.findIndex((s) => s?.userId === userId);
-
-      if (sigIndex === -1) {
-        return res
-          .status(403)
-          .json({ error: "You are not a participant in this split sheet" });
-      }
-
-      const signatureHash = crypto
-        .createHash("sha256")
-        .update(
-          `${signature || "electronic-signature"}-${Date?.now()}-${userId}`,
-        )
-        .digest("hex");
-
-      signatures[sigIndex] = {
-        userId,
-        signedAt: new Date().toISOString(),
-        signatureHash,
-      };
-
-      const allSigned = signatures?.every((s) => s?.signedAt);
-      const newStatus = allSigned ? "active" : contract?.status;
-
-      const [updated] = await db
-        .update(splitSheets)
-        .set({
-          signatures,
-          status: newStatus,
-          updatedAt: new Date(),
-        })
-        .where(eq(splitSheets.id, contractId))
-        .returning();
-
+      if (!Number.isInteger(revision) || typeof signature !== "string")
+        return res.status(400).json({ error: "Reviewed revision and explicit signature are required" });
+      const updated = await mutateSplitAgreement(contractId, userId, { type: "sign", revision, signature });
       return res.json(updated);
     } catch (error) {
+      if (error instanceof SplitAgreementError) return res.status(error.status).json({ error: error.message });
       logger.warn({ err: error }, "Error signing split sheet:");
       res.status(500).json({ error: "Failed to sign split sheet" });
     }
@@ -1503,25 +1452,20 @@ router.post(
           .json({ error: "Only the creator can add participants" });
       }
 
-      const participants = contract?.participants as SplitParticipant[];
-      participants?.push({ userId, name, email, role, splitPercentage });
-
-      const signatures = contract?.signatures as Array<{ userId: string }>;
-      signatures?.push({ userId });
-
-      const [updated] = await db
-        .update(splitSheets)
-        .set({
-          participants,
-          signatures,
-          status: "pending_signature",
-          updatedAt: new Date(),
-        })
-        .where(eq(splitSheets.id, contractId))
-        .returning();
-
+      // Supply the complete replacement allocation when adding a nonzero share.
+      // The repository validates and locks the reviewed revision atomically.
+      const participants = req.body.participants ?? [
+        ...(contract.participants as SplitParticipant[]),
+        { userId, name, email, role, splitPercentage },
+      ];
+      if (!Number.isInteger(req.body.revision))
+        return res.status(400).json({ error: "Reviewed revision is required" });
+      const updated = await mutateSplitAgreement(contractId, req.user!.id, {
+        type: "amend", revision: req.body.revision, participants,
+      });
       return res.json(updated);
     } catch (error) {
+      if (error instanceof SplitAgreementError) return res.status(error.status).json({ error: error.message });
       logger.warn({ err: error }, "Error adding participant:");
       res.status(500).json({ error: "Failed to add participant" });
     }
@@ -1546,14 +1490,15 @@ router.post(
           sum + (p?.splitPercentage || 0),
         0,
       );
-      const isValid = Math.abs(totalSplit - 100) <= 0.01;
+      const allocationError = validateSplitAllocation(participants);
+      const isValid = allocationError === null;
 
       return res.json({
         valid: isValid,
         totalPercentage: totalSplit,
         message: isValid
           ? "Splits are valid"
-          : "Splits must total exactly 100%",
+          : allocationError,
       });
     } catch (error) {
       logger.warn({ err: error }, "Error validating splits:");

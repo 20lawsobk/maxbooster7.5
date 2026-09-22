@@ -7,6 +7,9 @@ import { logger } from "../logger.js";
 import { webPushService } from "./webPushService.js";
 import { buildPushPayload } from "./pushNotificationTypes.js";
 import { env } from "../config/env.js";
+import { notificationAllowed } from "./notificationPreferences.js";
+import { sendSmsNotification } from "./smsNotificationService.js";
+import { randomUUID } from "node:crypto";
 
 interface NotificationOptions {
   userId: string;
@@ -50,6 +53,8 @@ class NotificationService {
     delivered: boolean;
     emailSent: boolean;
     browserSent: boolean;
+    smsAccepted?: boolean;
+    smsState?: string;
     reason?: string;
   }> {
     const { userId, type, title, message, link, metadata } = options;
@@ -64,23 +69,11 @@ class NotificationService {
         return { delivered: false, emailSent: false, browserSent: false, reason: "user not found" };
       }
 
-      const preferences = (user?.notificationSettings as Record<
-        string,
-        unknown
-      >) || {
-        email: true,
-        browser: true,
-        releases: true,
-        earnings: true,
-        sales: true,
-        marketing: true,
-        system: true,
-      };
+      const shouldSendEmail = notificationAllowed(user.notificationSettings, type, "email");
+      const shouldSendBrowser = notificationAllowed(user.notificationSettings, type, "push");
+      const shouldPersist = notificationAllowed(user.notificationSettings, type, "inApp");
 
-      const shouldSendEmail = preferences?.email && preferences[type];
-      const shouldSendBrowser = preferences?.browser && preferences[type];
-
-      const [notification] = await db
+      const [notification] = shouldPersist ? await db
         .insert(notifications)
         .values({
           userId,
@@ -91,7 +84,7 @@ class NotificationService {
           metadata,
           isRead: false,
         })
-        .returning();
+        .returning() : [];
 
       let emailSent = false;
       if (shouldSendEmail) {
@@ -109,9 +102,14 @@ class NotificationService {
           metadata,
         );
       }
+      const sms = await sendSmsNotification({
+        userId, operationKey: `notification:${notification?.id || randomUUID()}`,
+        preferences: user.notificationSettings, type, title, message,
+      });
 
       // Broadcast notification via WebSocket for real-time updates
       if (
+        notification &&
         typeof (global as Record<string, unknown>).broadcastNotification ===
         "function"
       ) {
@@ -125,7 +123,8 @@ class NotificationService {
       // "Delivered" means the in-app notification record was persisted — the
       // one channel that is always attempted. Email/browser pushes are
       // reported separately since they depend on preferences/provider config.
-      return { delivered: !!notification, emailSent, browserSent };
+      return { delivered: !!notification || emailSent || browserSent || sms.accepted,
+        emailSent, browserSent, smsAccepted: sms.accepted, smsState: sms.state };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error sending notification:");
       throw error;
@@ -186,7 +185,7 @@ class NotificationService {
     message: string,
     link?: string,
     type?: string,
-    metadata?: Record<string, unknown>,
+    metadata: Record<string, unknown> = {},
   ): Promise<boolean> {
     try {
       if (!webPushService?.isReady()) {

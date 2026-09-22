@@ -786,7 +786,10 @@ router.get("/admin/documents/:documentId/view", async (req, res) => {
 router.post("/admin/review/:verificationId", async (req, res) => {
   try {
     const { verificationId } = req.params;
-    const { action, notes, reason } = req.body;
+    const { action, notes, reason, expectedRevision } = req.body;
+    if (typeof expectedRevision !== "string" || !/^[a-f0-9]{64}$/.test(expectedRevision)) {
+      return res.status(400).json({ error: "A current review revision is required" });
+    }
 
     if (!["approve", "reject"].includes(action)) {
       return res
@@ -800,6 +803,7 @@ router.post("/admin/review/:verificationId", async (req, res) => {
         verificationId,
         req.user!.id,
         notes,
+        expectedRevision,
       );
     } else {
       if (!reason) {
@@ -809,6 +813,7 @@ router.post("/admin/review/:verificationId", async (req, res) => {
         verificationId,
         req.user!.id,
         reason,
+        expectedRevision,
       );
     }
 
@@ -821,14 +826,17 @@ router.post("/admin/review/:verificationId", async (req, res) => {
     logger.warn({ err: error }, "Error reviewing verification:");
     const message =
       error instanceof Error ? error?.message : "Failed to review verification";
-    res.status(500).json({ error: message });
+    res.status((error as any)?.statusCode === 409 ? 409 : 500).json({ error: message });
   }
 });
 
 router.post("/admin/documents/:documentId/review", async (req, res) => {
   try {
     const { documentId } = req.params;
-    const { approved, reason } = req.body;
+    const { approved, reason, expectedRevision } = req.body;
+    if (typeof expectedRevision !== "string" || !/^[a-f0-9]{64}$/.test(expectedRevision)) {
+      return res.status(400).json({ error: "A current review revision is required" });
+    }
 
     if (typeof approved !== "boolean") {
       return res.status(400).json({ error: "Approved status required" });
@@ -843,6 +851,7 @@ router.post("/admin/documents/:documentId/review", async (req, res) => {
       req.user!.id,
       approved,
       reason,
+      expectedRevision,
     );
 
     res.json({
@@ -854,7 +863,7 @@ router.post("/admin/documents/:documentId/review", async (req, res) => {
     logger.warn({ err: error }, "Error reviewing document:");
     const message =
       error instanceof Error ? error?.message : "Failed to review document";
-    res.status(500).json({ error: message });
+    res.status((error as any)?.statusCode === 409 ? 409 : 500).json({ error: message });
   }
 });
 

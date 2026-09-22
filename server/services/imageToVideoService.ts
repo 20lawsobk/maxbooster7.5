@@ -600,16 +600,19 @@ export async function imageToMusicVideo(
   mkdirSync(OUTPUT_DIR, { recursive: true });
   mkdirSync(TEMP_DIR, { recursive: true });
 
-  const imagePaths = opts.imagePaths.filter((p) => existsSync(p));
-  if (!imagePaths.length) {
+  const imagePaths = opts.imagePaths;
+  if (!imagePaths.length || imagePaths.some((p) => !existsSync(p))) {
     return { success: false, error: "No valid image files found" };
+  }
+  if (imagePaths.length > 10) {
+    return { success: false, error: "At most ten image assets are supported" };
   }
 
   // This is an AI image-to-video request. MaxCore owns scene planning,
   // animation, beat conditioning, and the final render; do not run the former
   // local diffusion model or locally re-plan/re-score its output.
   const encodedImages = await Promise.all(
-    imagePaths.slice(0, 3).map(async (imagePath) =>
+    imagePaths.map(async (imagePath) =>
       (await fsReadFile(imagePath)).toString("base64"),
     ),
   );
@@ -629,6 +632,16 @@ export async function imageToMusicVideo(
     first_frame_b64: encodedImages[0],
     last_frame_b64: encodedImages.at(-1),
     reference_images: encodedImages,
+    media_manifest: {
+      version: 1,
+      voice_b64: opts.voiceSynthPath
+        ? (await fsReadFile(opts.voiceSynthPath)).toString("base64") : undefined,
+      logo_b64: opts.logoPath
+        ? (await fsReadFile(opts.logoPath)).toString("base64") : undefined,
+      beat_sync: opts.beatSync ?? !!opts.audioPath,
+      color_grade: opts.colorGrade || "none",
+      transition: opts.transitionType || "fade",
+    },
     camera_motion: opts.kenBurnsIntensity ? "auto" : undefined,
     motion_intensity:
       opts.kenBurnsIntensity === "dramatic"

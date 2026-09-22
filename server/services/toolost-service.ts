@@ -1270,7 +1270,7 @@ class ToolostService {
    * propagation if Too Lost isn't connected — never fabricates a release ID
    * or success status.
    */
-  async createRelease(releaseData: ToolostRelease): Promise<ToolostReleaseResponse> {
+  async createRelease(releaseData: ToolostRelease, checkpoint?: (data: Record<string, unknown>) => Promise<void>): Promise<ToolostReleaseResponse> {
     this.assertComplianceDataAvailable(releaseData);
 
     this.logApiCall("POST", "/releases", { title: releaseData.title });
@@ -1283,12 +1283,14 @@ class ToolostService {
           ...(releaseData.label ? { label: releaseData.label } : {}),
         },
       }),
+      0, // POST creation has no documented idempotency contract. Never replay an ambiguous timeout.
     );
     const created = this.unwrap("[Too Lost] createRelease: draft creation failed", createResult);
     const releaseId = String(created.id ?? "");
     if (!releaseId) {
       throw new Error("Too Lost release blocked: release was created but the API returned no id.");
     }
+    await checkpoint?.({ remoteReleaseId: releaseId, stage: "created" });
 
     const trackPayloads: Record<string, unknown>[] = [];
     for (const track of releaseData.tracks) {
@@ -1379,8 +1381,10 @@ class ToolostService {
             : {}),
         },
       }),
+      0,
     );
     this.unwrap(`[Too Lost] createRelease: submit failed for release ${releaseId}`, submitResult);
+    await checkpoint?.({ remoteReleaseId: releaseId, stage: "submitted" });
 
     const statusResult = await this.callWithRetry(() =>
       this.raw<Record<string, unknown>>("GET", `/releases/${releaseId}`),

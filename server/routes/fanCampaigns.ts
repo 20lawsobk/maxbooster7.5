@@ -13,6 +13,7 @@ import { z } from "zod";
 import { queryCache, createCacheKey } from "../lib/queryCache.js";
 import { parsePaginationParams } from "../middleware/pagination.js";
 import { requireUUIDParam } from "../middleware/requestValidation.js";
+import { enqueueFanDelivery, processFanDelivery } from "../services/fanDeliveryService";
 
 const router = Router();
 const CACHE_TTL = 60;
@@ -24,7 +25,7 @@ const updateCampaignSchema = z.object({
   campaignType: z
     .enum(["newsletter", "announcement", "promotion", "event"])
     .optional(),
-  status: z.enum(["draft", "scheduled", "sent", "cancelled"]).optional(),
+  status: z.enum(["draft", "cancelled"]).optional(),
   segmentFilter: z.record(z.string(), z.unknown()).optional(),
   scheduledAt: z.string().datetime().nullable().optional(),
 });
@@ -102,6 +103,10 @@ router.post("/", requireAuth, async (req, res) => {
     const data = insertFanCampaignSchema?.parse({
       ...req.body,
       userId: req.user!.id,
+      status: "draft",
+      recipientCount: 0,
+      openCount: 0,
+      sentAt: null,
     });
     const [campaign] = await db.insert(fanCampaigns).values(data).returning();
     await queryCache?.invalidate(
@@ -160,6 +165,10 @@ router.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
     if (existing[0].status === "sent") {
       return res.status(400).json({ error: "Cannot modify a sent campaign" });
     }
+    const commands = await db.execute(sql`SELECT id FROM growth_fan_commands
+      WHERE artist_id=${userId} AND command_key=${`campaign:${id}`}`);
+    if ((commands.rows ?? commands).length)
+      return res.status(409).json({ error: "A queued campaign snapshot is immutable; create a new draft" });
 
     const parsed = updateCampaignSchema?.safeParse(req.body);
     if (!parsed?.success) {
@@ -200,27 +209,16 @@ router.post("/:id/send", requireAuth, async (req, res) => {
     if (existing[0].status === "sent") {
       return res.status(400).json({ error: "Campaign already sent" });
     }
+    if (existing[0].status === "cancelled")
+      return res.status(409).json({ error: "Cancelled campaigns cannot be sent" });
 
-    const [recipientCountRow] = await db
-      .select({ total: count() })
-      .from(fanSubscribers)
-      .where(eq(fanSubscribers.userId, userId))
-      .limit(1);
-    const recipientCount = Number(recipientCountRow?.total);
-
-    const [campaign] = await db
-      .update(fanCampaigns)
-      .set({
-        status: "sent",
-        sentAt: new Date(),
-        recipientCount,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)))
-      .returning();
-
+    const segment = existing[0].segmentFilter;
+    if (segment && Object.keys(segment).length)
+      return res.status(400).json({ error: "Only the all-consented audience is supported" });
+    const commandId = await enqueueFanDelivery(userId, `campaign:${id}`, existing[0].subject, existing[0].body);
+    const delivery = await processFanDelivery(commandId, userId);
     await queryCache?.invalidate(createCacheKey("stats:fanCampaigns", userId));
-    res.json({ success: true, recipientCount, campaign });
+    res.json({ success: true, ...delivery });
   } catch (error) {
     logger.warn({ err: error }, "[FanCampaigns] Failed to send campaign:");
     res.status(500).json({ error: "Failed to send campaign" });
@@ -242,6 +240,10 @@ router.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       return res.status(404).json({ error: "Campaign not found" });
     }
 
+    const commands = await db.execute(sql`SELECT id FROM growth_fan_commands
+      WHERE artist_id=${userId} AND command_key=${`campaign:${id}`}`);
+    if ((commands.rows ?? commands).length)
+      return res.status(409).json({ error: "Campaign has an immutable delivery ledger and cannot be deleted" });
     await db
       .delete(fanCampaigns)
       .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)));

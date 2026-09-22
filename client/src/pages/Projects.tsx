@@ -1,6 +1,11 @@
 // @ts-nocheck
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { draftStorage } from "@/lib/offline/DraftStorage";
+import { offlineQueue, syncManager } from "@/lib/offline";
+import { PendingChangesPanel } from "@/components/offline/PendingChangesPanel";
+import { ConflictResolver } from "@/components/offline/ConflictResolver";
+import { offlineIdentity, assertOfflineIdentity } from "@/lib/offline/identity";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useLocation } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -94,6 +99,8 @@ export default function Projects() {
   );
 
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [draftMessage, setDraftMessage] = useState("");
+  const [reviewConflicts, setReviewConflicts] = useState(false);
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
@@ -103,7 +110,7 @@ export default function Projects() {
   const queryClient = useQueryClient();
   const { invalidateOnProjectChange } = useAnalyticsInvalidation();
 
-  const { data: projectsData, isLoading: projectsLoading } =
+  const { data: projectsData, isLoading: projectsLoading, isError: projectsError, refetch: refetchProjects, isFetching: projectsFetching } =
     useQuery<ProjectsApiResponse>({
       queryKey: ["/api/projects"],
       enabled: !!user,
@@ -113,13 +120,33 @@ export default function Projects() {
 
   const deleteMutation = useMutation({
     mutationFn: async (projectId: string) => {
+      const identity = offlineIdentity();
+      const project = projects.find(project => project.id === projectId);
+      if (!project) throw new Error("Refresh your projects before deleting this item.");
+      let action;
+      try {
+        action = await offlineQueue.enqueue("project.delete", {
+          projectId, expectedUpdatedAt: project.updatedAt ? new Date(project.updatedAt).toISOString() : null,
+        }, { conflictStrategy: "manual" });
+      } catch (error) {
+        assertOfflineIdentity(identity);
+        if (!navigator.onLine) throw new Error("Deletion could not be saved on this device. Reconnect and try again.");
+        toast({ title: "Local queue unavailable", description: "Deletion requires a successful server response." });
+      }
+      assertOfflineIdentity(identity);
+      if (action) {
+        const result = navigator.onLine ? await syncManager.forceSyncAction(action.id) : null;
+        if (result?.outcome === "rejected" || result?.outcome === "conflict") throw new Error(result.error || "Deletion needs review.");
+        return { queued: !result?.success };
+      }
       const response = await apiRequest(
         "DELETE",
         `/api/studio/projects/${projectId}`,
       );
-      return response.json();
+      await response.json();
+      return { queued: false };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
       queryClient.invalidateQueries({
@@ -127,8 +154,8 @@ export default function Projects() {
       });
       invalidateOnProjectChange();
       toast({
-        title: "Project Deleted",
-        description: "The project has been removed successfully.",
+        title: result.queued ? "Deletion pending" : "Project Deleted",
+        description: result.queued ? "Saved on this device. The project remains visible until the server confirms deletion." : "The project has been removed successfully.",
       });
     },
     onError: (error: Error) => {
@@ -181,14 +208,35 @@ export default function Projects() {
       id: string;
       data: Record<string, unknown>;
     }) => {
+      const identity = offlineIdentity();
+      let draftVersion: number | undefined;
+      try {
+        draftVersion = (await draftStorage.saveDraft(`project-edit:${id}`, data)).version;
+      } catch {
+        setDraftMessage("Local storage unavailable. This update requires a successful server response.");
+      }
+      assertOfflineIdentity(identity);
+      if (draftVersion !== undefined) {
+        const action = await offlineQueue.enqueue("project.update", {
+          projectId: id, changes: data, isStudio: false,
+          expectedUpdatedAt: editingProject?.updatedAt ? new Date(editingProject.updatedAt).toISOString() : null,
+        }, { conflictStrategy: "manual", metadata: { formId: `project-edit:${id}`, draftVersion } });
+        assertOfflineIdentity(identity);
+        const result = navigator.onLine ? await syncManager.forceSyncAction(action.id) : null;
+        if (result?.outcome === "rejected" || result?.outcome === "conflict") {
+          throw new Error(result.error || "This project changed on the server. Review pending changes.");
+        }
+        return { queued: !result?.success };
+      }
       const response = await apiRequest(
         "PATCH",
         `/api/studio/projects/${id}`,
         data,
       );
-      return response.json();
+      await response.json();
+      return { queued: false };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
       queryClient.invalidateQueries({
@@ -196,10 +244,15 @@ export default function Projects() {
       });
       invalidateOnProjectChange();
       toast({
-        title: "Project Updated",
-        description: "Your project has been updated successfully.",
+        title: result.queued ? "Project change saved on this device" : "Project Updated",
+        description: result.queued ? "Pending server confirmation. Review its status below; keep the draft until it is applied." : "Your project has been updated successfully.",
       });
       setIsEditOpen(false);
+      if (editingProject && !result.queued) {
+        void draftStorage.deleteDraft(`project-edit:${editingProject.id}`).catch(() => {
+          toast({ title: "Project saved", description: "The old local draft could not be removed. Review it before restoring.", variant: "destructive" });
+        });
+      }
       setEditingProject(null);
     },
     onError: (error: Error) => {
@@ -211,6 +264,18 @@ export default function Projects() {
       });
     },
   });
+
+  useEffect(() => offlineQueue.on("action-updated", event => {
+    const action = event.action;
+    if (!action?.type.startsWith("project.") || action.status !== "completed") return;
+    void queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+    void queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
+    const formId = action.metadata?.formId;
+    if (typeof formId === "string") void (async () => {
+      const saved = await draftStorage.getDraft(formId);
+      if (saved?.version === action.metadata?.draftVersion) await draftStorage.deleteDraft(formId);
+    })().catch(() => setDraftMessage("The server confirmed your change, but its old local draft could not be removed."));
+  }), [queryClient]);
 
   useEffect(() => {
     return () => {
@@ -319,14 +384,26 @@ export default function Projects() {
     }
   };
 
-  const handleEdit = (project: Project) => {
+  const handleEdit = async (project: Project) => {
+    const identity = offlineIdentity();
     setEditingProject(project);
+    setDraftMessage("");
     setEditForm({
       title: project.title || "",
       description: project.description || "",
       genre: project.genre || "",
     });
     setIsEditOpen(true);
+    try {
+      const saved = await draftStorage.getDraft<typeof editForm>(`project-edit:${project.id}`);
+      assertOfflineIdentity(identity);
+      if (saved) {
+        setEditForm(saved.data);
+        setDraftMessage("Recovered a draft saved on this device. Review it before updating.");
+      }
+    } catch (error) {
+      setDraftMessage("Local drafts are unavailable. Keep this form open until your update succeeds.");
+    }
   };
 
   const handleUpdateProject = async (e: React.FormEvent) => {
@@ -529,6 +606,15 @@ export default function Projects() {
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-4">
+                  <Button type="button" variant="outline" onClick={async () => {
+                    if (!editingProject) return;
+                    try {
+                      await draftStorage.saveDraft(`project-edit:${editingProject.id}`, editForm);
+                      setDraftMessage("Saved on this device, not yet sent to the server. Reopen this project to recover it.");
+                    } catch {
+                      setDraftMessage("Draft could not be saved. Keep this form open and retry.");
+                    }
+                  }}>Save draft on device</Button>
                   <Button
                     type="button"
                     variant="outline"
@@ -540,6 +626,7 @@ export default function Projects() {
                     {editMutation.isPending ? "Updating..." : "Update Project"}
                   </Button>
                 </div>
+                {draftMessage && <p role="status" className="text-sm text-muted-foreground">{draftMessage}</p>}
               </form>
             </DialogContent>
           </Dialog>
@@ -583,6 +670,18 @@ export default function Projects() {
           </TabsList>
 
           <TabsContent value="projects" className="space-y-6">
+            <PendingChangesPanel />
+            <Button variant="outline" onClick={() => setReviewConflicts(true)}>Review sync conflicts</Button>
+            <ConflictResolver open={reviewConflicts} onOpenChange={setReviewConflicts}
+              onResolve={() => { void syncManager.sync(); }} />
+            {projectsError && (
+              <div role="alert" className="rounded-lg border border-destructive p-4 space-y-2">
+                <p>{projectsData ? "Projects could not be refreshed. Showing the last loaded list." : "Your projects could not be loaded. Your work has not been removed."}</p>
+                <Button variant="outline" disabled={projectsFetching} onClick={() => refetchProjects()}>
+                  {projectsFetching ? "Retrying…" : "Retry loading projects"}
+                </Button>
+              </div>
+            )}
             {/* Projects Grid */}
             {projectsLoading ? (
               <section
@@ -595,7 +694,7 @@ export default function Projects() {
                   <SkeletonProjectCard key={i} />
                 ))}
               </section>
-            ) : projects.length === 0 ? (
+            ) : projectsError && !projectsData ? null : projects.length === 0 ? (
               <EmptyState
                 icon={Sparkles}
                 title="No projects yet. Create your first masterpiece!"

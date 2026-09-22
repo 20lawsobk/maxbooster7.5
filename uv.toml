@@ -8,3 +8,6 @@ python-preference = "only-system"
 
 # Never auto-download Python interpreters.
 python-downloads = "never"
+
+# Security floors for the root diffusion API's transitive dependencies.
+constraint-dependencies = ["click>=8.3.3,<9"]

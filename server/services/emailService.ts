@@ -4,6 +4,8 @@ import { emailMonitor } from "../monitoring/emailMonitor";
 import { logger } from "../logger.js";
 import { queueForRetry } from "./externalServices.js";
 import { env } from "../config/env.js";
+import { sendEmailOnce, type SendOnceRequest, type SendOnceResult } from "./emailSendOnce.js";
+export type { SendOnceRequest, SendOnceResult } from "./emailSendOnce.js";
 
 interface EmailData {
   to: string | string[];
@@ -52,6 +54,11 @@ interface SubscriptionEmailData {
 class EmailService {
   private isInitialized = false;
   private resend: Resend | null = null;
+
+  /** No retry queue, no boolean conversion, and no delivery claim. */
+  async sendOnce(request: SendOnceRequest): Promise<SendOnceResult> {
+    return sendEmailOnce(this.resend, request);
+  }
 
   constructor() {
     this.initialize();
@@ -811,3 +818,5 @@ If you did not expect this invitation, you can safely ignore this email.
 }
 
 export const emailService = new EmailService();
+export const sendOnce = (request: SendOnceRequest): Promise<SendOnceResult> =>
+  emailService.sendOnce(request);

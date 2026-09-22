@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { enforceAssurance, markVerifiedJwtFactor } from "./middleware/authAssurance.js";
 import { jwtAuthService } from "./services/jwtAuthService";
 import { storage } from "./storage";
 import { logger } from "./logger.js";
@@ -98,8 +99,8 @@ export const verifyJWT = async (
     }
 
     req.user = user;
-
-    next();
+    if (decoded.mfa === true) markVerifiedJwtFactor(req, user.id);
+    if (enforceAssurance(req, res)) next();
   } catch (error: unknown) {
     await recordJwtFailure(rlKey);
     logger.warn({ err: error }, "JWT verification error:");
@@ -113,18 +114,20 @@ export const requireAuthDual = async (
   next: NextFunction,
 ) => {
   // First check for passport?.js session authentication (req.isAuthenticated checks req.user)
-  if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-    return next();
+  if (req.isAuthenticated && req.isAuthenticated() && req.user && !req.headers.authorization) {
+    if (enforceAssurance(req, res)) return next();
+    return;
   }
 
   // Fallback: check for custom session userId
-  if (req.session?.userId) {
+  if (req.session?.userId && !req.headers.authorization) {
     try {
       const user = await storage.getUser(req.session.userId);
 
       if (user) {
         req.user = user;
-        return next();
+        if (enforceAssurance(req, res)) return next();
+        return;
       }
     } catch (error: unknown) {
       logger.warn({ err: error }, "Session auth error:");
@@ -150,7 +153,7 @@ export const requireAdmin = async (
     return res.status(403).json({ message: "Admin access required" });
   }
 
-  next();
+  if (enforceAssurance(req, res)) next();
 };
 
 // Alias for backwards compatibility

@@ -20,6 +20,8 @@ interface LoadTestResult {
   minResponseTime: number;
   maxResponseTime: number;
   requestsPerSecond: number;
+  p95Ms: number;
+  p99Ms: number;
   errors: Array<{ endpoint: string; error: string; count: number }>;
 }
 
@@ -40,6 +42,8 @@ class LoadTester {
       minResponseTime: Infinity,
       maxResponseTime: 0,
       requestsPerSecond: 0,
+      p95Ms: 0,
+      p99Ms: 0,
       errors: [],
     };
   }
@@ -66,13 +70,20 @@ class LoadTester {
         (this.config.rampUpTime * 1000 * i) / this.config.concurrentUsers;
 
       setTimeout(() => {
+        let requestInFlight = false;
         const interval = setInterval(async () => {
           if (Date.now() >= endTime) {
             clearInterval(interval);
             return;
           }
 
-          await this.makeRequest();
+          if (requestInFlight) return;
+          requestInFlight = true;
+          try {
+            await this.makeRequest();
+          } finally {
+            requestInFlight = false;
+          }
         }, 1000);
 
         userIntervals.push(interval);
@@ -102,11 +113,13 @@ class LoadTester {
     const requestStart = Date.now();
 
     try {
-      const response = await fetch(`http://localhost:5000${endpoint.path}`, {
+      const response = await fetch(new URL(endpoint.path, process.env.LOAD_BASE_URL ?? "http://localhost:5000"), {
         method: endpoint.method,
+        signal: AbortSignal.timeout(10_000),
         headers: endpoint.body ? { "Content-Type": "application/json" } : {},
         body: endpoint.body ? JSON.stringify(endpoint.body) : undefined,
       });
+      await response.arrayBuffer();
 
       const responseTime = Date.now() - requestStart;
       this.responseTimes.push(responseTime);
@@ -129,6 +142,10 @@ class LoadTester {
         responseTime,
       );
     } catch (error) {
+      const responseTime = Date.now() - requestStart;
+      this.responseTimes.push(responseTime);
+      this.results.minResponseTime = Math.min(this.results.minResponseTime, responseTime);
+      this.results.maxResponseTime = Math.max(this.results.maxResponseTime, responseTime);
       this.results.totalRequests++;
       this.results.failedRequests++;
       this.recordError(
@@ -178,6 +195,10 @@ class LoadTester {
         : 0;
 
     this.results.requestsPerSecond = this.results.totalRequests / duration;
+    const sorted = [...this.responseTimes].sort((a, b) => a - b);
+    this.results.p95Ms = sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)] ?? Infinity;
+    this.results.p99Ms = sorted[Math.max(0, Math.ceil(sorted.length * 0.99) - 1)] ?? Infinity;
+    logger.info({ p95Ms: this.results.p95Ms, p99Ms: this.results.p99Ms }, "Load-test tail latency");
 
     logger.info(`
 ╔═══════════════════════════════════════════════════════════════╗
@@ -249,7 +270,8 @@ tester
   .then((results) => {
     const successRate =
       (results.successfulRequests / results.totalRequests) * 100;
-    process.exit(successRate >= 95 ? 0 : 1);
+    process.exit(results.totalRequests > 0 && successRate >= 99 &&
+      results.p95Ms <= 500 && results.p99Ms <= 1000 ? 0 : 1);
   })
   .catch((error) => {
     logger.error("Load test failed:", error);

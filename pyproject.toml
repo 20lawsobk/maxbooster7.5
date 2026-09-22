@@ -10,6 +10,7 @@ requires-python = ">=3.12"
 # Keeping this list empty ensures `uv sync` is a true no-op and never tries
 # to write to the read-only Nix store during the deployment build phase.
 dependencies = [
+    "anyio>=4.14.2,<5",
     "fastapi>=0.100.0",
     # Test-only transport required by Starlette TestClient.
     "httpx2>=2.0.0,<3",

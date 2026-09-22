@@ -8,9 +8,43 @@ import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
 import { parsePaginationParams } from "../middleware/pagination.js";
+import { createMerchCheckout, MerchCheckoutError } from "../services/merchCheckoutService";
 
 const router = Router();
 
+router.get("/store/:artistId", requireAuth, async (req, res) => {
+  try {
+    const products = await db.select({
+      id: merchItems.id, name: merchItems.name, description: merchItems.description,
+      price: merchItems.price, salePrice: merchItems.salePrice, imageUrl: merchItems.imageUrl,
+      inventory: merchItems.inventory, variants: merchItems.variants,
+    }).from(merchItems).where(and(eq(merchItems.userId, req.params.artistId),
+      eq(merchItems.isActive, true), eq(merchItems.isDigital, false))).limit(200);
+    res.json(products);
+  } catch { res.status(503).json({ error: "Could not load physical merchandise" }); }
+});
+const checkoutSchema = z.object({
+  commandKey: z.string().uuid(),
+  buyerEmail: z.string().email().max(320),
+  buyerName: z.string().min(1).max(200),
+  shippingAddress: z.object({
+    line1: z.string().min(1).max(200), line2: z.string().max(200).optional(),
+    city: z.string().min(1).max(100), postalCode: z.string().min(1).max(30),
+    state: z.string().min(1).max(100), country: z.string().length(2),
+  }),
+  items: z.array(z.object({ itemId: z.string().uuid(), quantity: z.number().int().min(1).max(100) })).min(1).max(50),
+});
+router.post("/checkout", requireAuth, async (req, res) => {
+  const parsed = checkoutSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid checkout details", details: parsed.error.flatten() });
+  try {
+    res.json(await createMerchCheckout({ ...parsed.data, buyerId: req.user!.id }));
+  } catch (error) {
+    logger.warn({ err: error }, "Merch checkout failed");
+    res.status(error instanceof MerchCheckoutError ? error.status : 503)
+      .json({ error: error instanceof MerchCheckoutError ? error.message : "Checkout unavailable; retry the same order" });
+  }
+});
 const VALID_CATEGORIES = [
   "clothing",
   "accessories",
@@ -292,6 +326,12 @@ router.put(
       const { status, trackingNumber } = parsed?.data ?? {};
       const currentStatus = existing[0].status || "pending";
       const nextStatus = status ?? currentStatus;
+      const paymentResult = await db.execute(sql`SELECT state FROM growth_merch_payments WHERE order_id=${id}`);
+      const payment = (paymentResult.rows ?? paymentResult)[0];
+      if (payment && ((currentStatus === "pending" && nextStatus !== "pending") ||
+          (nextStatus === "cancelled" && payment.state !== "expired"))) {
+        return res.status(409).json({ error: "Payment settlement, expiry or refund must be confirmed by the payment provider first" });
+      }
       const allowedTransitions: Record<string, string[]> = {
         pending: ["pending", "processing", "cancelled"],
         processing: ["processing", "shipped", "cancelled"],
@@ -354,7 +394,8 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
 
     const [orderStats] = await db
       .select({
-        totalRevenue: sql<number>`COALESCE(SUM(CASE WHEN ${merchOrders.status} NOT IN ('cancelled', 'refunded') THEN ${merchOrders.total} ELSE 0 END), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM((SELECT (p.collected_cents-p.refunded_cents)::numeric/100
+          FROM growth_merch_payments p WHERE p.order_id=${merchOrders.id})),0)`,
         totalOrders: sql<number>`COUNT(*)`,
       })
       .from(merchOrders)

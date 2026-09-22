@@ -2,9 +2,10 @@ import type { Request, Response, NextFunction } from "express";
 import { jwtAuthService } from "../services/jwtAuthService.js";
 import { storage } from "../storage.js";
 import { logger } from "../logger.js";
+import { enforceAssurance, markVerifiedJwtFactor } from "./authAssurance.js";
 
 async function resolveJwtUser(req: Request): Promise<void> {
-  if (req.isAuthenticated && req.isAuthenticated()) return;
+  if (req.isAuthenticated && req.isAuthenticated() && !req.headers.authorization) return;
 
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) return;
@@ -16,6 +17,7 @@ async function resolveJwtUser(req: Request): Promise<void> {
       const user = await storage.getUser(decoded?.userId);
       if (user) {
         req.user = user;
+        if (decoded.mfa === true) markVerifiedJwtFactor(req, user.id);
         req.isAuthenticated = (() => true) as typeof req.isAuthenticated;
       }
     }
@@ -37,6 +39,7 @@ export const requireAuth = async (
   }
 
   const user = req.user!;
+  if (!enforceAssurance(req, res)) return;
 
   if (user?.email === "demo@maxbooster.ai") {
     next();
@@ -95,7 +98,7 @@ export const requireAuthOnly = async (
     return;
   }
 
-  next();
+  if (enforceAssurance(req, res)) next();
 };
 
 export const requireAdmin = (
@@ -107,7 +110,8 @@ export const requireAdmin = (
     return res.status(401).json({ error: "Authentication required" });
   }
   if (req.user.role === "admin") {
-    return next();
+    if (enforceAssurance(req, res)) return next();
+    return;
   }
   res.status(403).json({ error: "Admin access required" });
 };
@@ -124,14 +128,5 @@ export const require2FA = (req: Request, res: Response, next: NextFunction) => {
   if (!user) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  if (user?.twoFactorEnabled) {
-    const sess = req.session as unknown as Record<string, unknown>;
-    if (!sess?.twoFactorVerified) {
-      return res.status(403).json({
-        error: "Two-factor authentication required for this action",
-        requiresTwoFactor: true,
-      });
-    }
-  }
-  next();
+  if (enforceAssurance(req, res)) next();
 };

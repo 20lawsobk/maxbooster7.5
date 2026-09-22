@@ -7,6 +7,8 @@ import { logger } from "../logger.js";
 import { sessionTracking } from "./sessionTrackingService.js";
 import { env } from "../config/env.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
+import { sessionAuthority } from "./sessionAuthority.js";
+import { consumeRefreshToken } from "./refreshTokenConsumption.js";
 
 // SESSION_SECRET is REQUIRED in every environment (prod, staging, dev, test).
 // We never fall back to a deterministic value — that would let any attacker
@@ -66,19 +68,20 @@ export class JWTAuthService {
   }
 
   async incrementUserTokenVersion(userId: string): Promise<number> {
-    const currentVersion = await this.getUserTokenVersion(userId);
-    const newVersion = currentVersion + 1;
-    await storage.updateUser(userId, { tokenVersion: newVersion } as Record<
-      string,
-      unknown
-    >);
-    return newVersion;
+    const authority = await sessionAuthority();
+    await authority.revoke(userId);
+    return Number(await authority.issue(userId));
   }
 
-  async issueTokens(userId: string, role: string = "user"): Promise<TokenPair> {
+  async issueTokens(userId: string, role: string = "user", mfaVerified = false, expectedGeneration?: string): Promise<TokenPair> {
+    const user = await storage.getUser(userId);
+    if (!user || (user.twoFactorEnabled && !mfaVerified)) throw new Error("MFA assurance required for token issuance");
+    const authority = await sessionAuthority();
+    const generation = expectedGeneration ?? await authority.issue(userId);
+    if (!await authority.validate(userId, generation)) throw new Error("Token issuance session revoked");
     const accessTokenId = crypto?.randomUUID();
     crypto?.randomUUID();
-    const refreshTokenValue = crypto?.randomBytes(32).toString("hex");
+    const refreshTokenValue = `${generation}.${mfaVerified ? "mfa" : "pwd"}.${crypto.randomBytes(32).toString("hex")}`;
     const tokenVersion = await this.getUserTokenVersion(userId);
 
     const accessTokenExpiresAt = new Date(Date.now() + ACCESS_TOKEN_EXPIRY_MS);
@@ -92,12 +95,15 @@ export class JWTAuthService {
         jti: accessTokenId,
         role,
         ver: tokenVersion,
+        generation,
+        mfa: mfaVerified,
       },
       JWT_SECRET,
       { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: "HS256" },
     );
 
     const jwtTokenData: InsertJWTToken = {
+      id: accessTokenId,
       userId,
       accessToken,
       expiresAt: accessTokenExpiresAt,
@@ -133,6 +139,7 @@ export class JWTAuthService {
     role: string;
     jti: string;
     ver?: number;
+    mfa: boolean;
   } | null> {
     try {
       const decoded = jwt?.verify(token, JWT_SECRET, {
@@ -142,7 +149,12 @@ export class JWTAuthService {
         jti: string;
         role: string;
         ver?: number;
+        generation?: string;
+        mfa?: boolean;
       };
+      if (!await (await sessionAuthority()).validate(decoded.sub, decoded.generation)) return null;
+      const account = await storage.getUser(decoded.sub);
+      if (!account || (account.twoFactorEnabled && decoded.mfa !== true)) return null;
 
       const isValid = await storage.verifyJWTToken(decoded?.jti);
       if (!isValid) {
@@ -164,6 +176,7 @@ export class JWTAuthService {
         role: decoded.role,
         jti: decoded.jti,
         ver: decoded.ver,
+        mfa: decoded.mfa === true,
       };
     } catch (error: unknown) {
       return null;
@@ -188,13 +201,18 @@ export class JWTAuthService {
     if (!user) {
       return null;
     }
+    const generation = refreshTokenValue.split(".")[0];
+    const mfaVerified = refreshTokenValue.split(".")[1] === "mfa";
+    if (!refreshTokenValue.includes(".") ||
+        !await (await sessionAuthority()).validate(user.id, generation)) return null;
+    if (user.twoFactorEnabled && !mfaVerified) return null;
 
-    await storage.revokeRefreshToken((refreshToken as any)?.id, "Token rotation");
+    if (!await consumeRefreshToken((refreshToken as any).id, refreshTokenValue, user.id)) return null;
 
     const tokenVersion = await this.getUserTokenVersion(user?.id);
     const accessTokenId = crypto?.randomUUID();
     crypto?.randomUUID();
-    const newRefreshTokenValue = crypto?.randomBytes(32).toString("hex");
+    const newRefreshTokenValue = `${generation}.${mfaVerified ? "mfa" : "pwd"}.${crypto.randomBytes(32).toString("hex")}`;
     const accessTokenExpiresAt = new Date(Date.now() + ACCESS_TOKEN_EXPIRY_MS);
     const refreshTokenExpiresAt = new Date(
       Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
@@ -206,12 +224,15 @@ export class JWTAuthService {
         jti: accessTokenId,
         role: user.role || "user",
         ver: tokenVersion,
+        generation,
+        mfa: mfaVerified,
       },
       JWT_SECRET,
       { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: "HS256" },
     );
 
     const jwtTokenData: InsertJWTToken = {
+      id: accessTokenId,
       userId: user.id,
       accessToken,
       expiresAt: accessTokenExpiresAt,

@@ -9,6 +9,8 @@ import type { User } from "../../shared/schema.js";
 import { autopilotLearningService } from "./autopilotLearningService.js";
 import { detectHookPattern } from "./postingUtils.js";
 import { notificationService } from "./notificationService.js";
+import { claimSocialPost, checkpointSocialPost, recoverStrandedSocialPosts } from "./socialPostingRepository.js";
+import { socialOAuth } from "./socialOAuthService.js";
 
 // Max posts to dequeue and process concurrently per 2-second tick.
 // Override with AUTO_POST_BATCH_SIZE env var.
@@ -55,12 +57,14 @@ export interface PostResult {
   postUrl?: string;
   error?: string;
   postedAt: Date;
+  outcome?: "started" | "confirmed" | "unknown";
 }
 
 class AutoPostingServiceV2 {
   private postQueue: BoosterQueue;
   private workerInterval: NodeJS.Timeout | null = null;
   private isInitialized: boolean = false;
+  private lastRecoveryAt = 0;
 
   constructor() {
     this.postQueue = new BoosterQueue("scheduled-posts");
@@ -78,6 +82,7 @@ class AutoPostingServiceV2 {
 
   private async reloadPendingJobs() {
     try {
+      await recoverStrandedSocialPosts();
       const pendingPosts = await storage.getScheduledPosts({
         status: "pending",
       });
@@ -86,7 +91,9 @@ class AutoPostingServiceV2 {
       // PDIM write, so firing them in parallel cuts startup time proportionally
       // to the number of pending posts.
       const results = await Promise?.allSettled(
-        pendingPosts?.map((post) => {
+        pendingPosts?.map(async (row) => {
+          const post = await storage.getScheduledPostById(row.id);
+          if (!post) return;
           const delay = new Date(post?.scheduledTime).getTime() - Date?.now();
           return this.postQueue.add("auto-post", post, {
             jobId: post.id,
@@ -115,13 +122,13 @@ class AutoPostingServiceV2 {
       `🚀 Processing auto-post job ${post?.id} for user ${post?.userId}`,
     );
     try {
-      await storage.updateScheduledPost(post?.id, { status: "posting" });
+      const claimed = await claimSocialPost(post.id);
+      if (!claimed) return; // Duplicate queue deliveries must not repeat external side effects.
+      post = await storage.getScheduledPostById(post.id);
       const results = await this.executePost(post);
 
-      await storage.updateScheduledPost(post?.id, {
-        status: results.every((r) => r?.success) ? "completed" : "failed",
-        results,
-      });
+      await checkpointSocialPost(post.id, results,
+        results.length > 0 && results.every((r) => r.success) ? "completed" : "failed");
 
       for (const result of results) {
         if (result?.success) {
@@ -200,6 +207,10 @@ class AutoPostingServiceV2 {
 
   private startWorker() {
     this.workerInterval = setInterval(async () => {
+      if (Date.now() - this.lastRecoveryAt > 60_000) {
+        this.lastRecoveryAt = Date.now();
+        await this.reloadPendingJobs();
+      }
       try {
         const client = await getBoosterStateClient();
 
@@ -311,42 +322,48 @@ class AutoPostingServiceV2 {
     );
 
     const tempPost: ScheduledPost = {
-      id: `immediate_${Date?.now()}`,
+      id: `immediate_${Date.now()}_${randomBytes(8).toString("hex")}`,
       userId,
       platforms,
       content,
       scheduledTime: new Date(),
-      status: "posting",
+      status: "pending",
       createdBy,
     };
 
-    return await this.executePost(tempPost);
+    await storage.createScheduledPost(tempPost);
+    await this.processSinglePost(tempPost);
+    const saved = await storage.getScheduledPostById(tempPost.id);
+    return saved?.engagement?.postingResults || [];
   }
 
   private async executePost(post: ScheduledPost): Promise<PostResult[]> {
     const results: PostResult[] = [];
 
-    const user = await (storage as any)?.getUserById(post?.userId);
+    const user = await storage.getUser(post.userId);
     if (!user) {
       throw new Error("User not found");
     }
 
-    const postPromises = post?.platforms.map(async (platform) => {
+    // Serialize checkpoints: a receipt is durable before another platform is attempted.
+    for (const platform of [...new Set(post.platforms)]) {
+      const pending: PostResult = { platform, success: false, outcome: "started",
+        error: "External action started; reconcile provider receipt before retrying", postedAt: new Date() };
+      results.push(pending);
+      await checkpointSocialPost(post.id, results);
       try {
         const result = await this.postToPlatform(user, platform, post?.content);
-        results?.push(result);
+        if (!result.postId) throw new Error("Provider returned no publication receipt");
+        Object.assign(pending, result, { outcome: "confirmed", error: undefined });
       } catch (error) {
         logger.warn({ err: error }, `Failed to post to ${platform}:`);
-        results?.push({
-          platform,
-          success: false,
+        Object.assign(pending, {
+          outcome: "unknown",
           error: (error as Error).message,
-          postedAt: new Date(),
         });
       }
-    });
-
-    await Promise?.all(postPromises);
+      await checkpointSocialPost(post.id, results);
+    }
 
     logger.info(
       `✅ Posted to ${results?.filter((r) => r?.success).length}/${results?.length} platforms`,
@@ -360,7 +377,8 @@ class AutoPostingServiceV2 {
     platform: string,
     content: PostContent,
   ): Promise<PostResult> {
-    const tokens = await (storage as any)?.getSocialTokens(user?.id);
+    const accessToken = await socialOAuth.getValidAccessToken(user.id, platform);
+    const tokens = { [platform]: accessToken };
 
     switch (platform) {
       case "instagram":
@@ -389,7 +407,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToInstagram(
-    _user: User,
+    user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -397,22 +415,44 @@ class AutoPostingServiceV2 {
       throw new Error("Instagram not connected");
     }
 
+    const account = await storage.getUserSocialAccountDetails(user.id, "instagram");
+    if (!account?.platformUserId) throw new Error("Instagram business account ID is missing; reconnect the account");
+    if (!content.mediaUrl) throw new Error("Instagram requires a public image or video URL");
+    const video = content.mediaType === "video";
     const postData = {
       caption: `${content?.headline ? content?.headline + "\n\n" : ""}${content?.text}${content?.hashtags ? "\n\n" + content?.hashtags.join(" ") : ""}`,
-      media_url: content.mediaUrl,
+      ...(video ? { video_url: content.mediaUrl, media_type: "REELS" } : { image_url: content.mediaUrl }),
     };
 
     const response = await axios?.post(
-      "https://graph.facebook.com/v18.0/me/media",
+      `https://graph.facebook.com/v18.0/${account.platformUserId}/media`,
       postData,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
 
+    const creationId = response.data.id;
+    if (!creationId) throw new Error("Instagram returned no media container ID");
+    if (video) {
+      let ready = false;
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const status = await axios.get(`https://graph.facebook.com/v18.0/${creationId}`, {
+          params: { fields: "status_code" }, headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (status.data.status_code === "FINISHED") { ready = true; break; }
+        if (["ERROR", "EXPIRED"].includes(status.data.status_code)) throw new Error("Instagram media processing failed");
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+      if (!ready) throw new Error("Instagram media processing remains pending; reconcile the container before retrying");
+    }
+    const published = await axios.post(
+      `https://graph.facebook.com/v18.0/${account.platformUserId}/media_publish`,
+      { creation_id: creationId }, { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    if (!published.data.id) throw new Error("Instagram returned no publication receipt");
     return {
       platform: "instagram",
       success: true,
-      postId: response.data.id,
-      postUrl: `https://instagram.com/p/${response.data.id}`,
+      postId: published.data.id,
       postedAt: new Date(),
     };
   }
@@ -640,49 +680,12 @@ class AutoPostingServiceV2 {
       return {
         platform: "youtube",
         success: true,
-        postId: videoId || `youtube_${Date?.now()}`,
+        postId: videoId,
         postUrl: videoId ? `https://youtube.com/watch?v=${videoId}` : undefined,
         postedAt: new Date(),
       };
     } else {
-      const channelResponse = await axios?.get(
-        "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
-        { headers: { Authorization: `Bearer ${accessToken}` } },
-      );
-      const channelId = channelResponse?.data.items?.[0]?.id;
-
-      if (!channelId) {
-        throw new Error("YouTube channel not found");
-      }
-
-      const postResponse = await axios?.post(
-        "https://www.googleapis.com/youtube/v3/activities?part=snippet,contentDetails",
-        {
-          snippet: {
-            channelId: channelId,
-            description: description.slice(0, 5000),
-            type: "bulletin",
-          },
-          contentDetails: {
-            bulletin: {
-              resourceId: { kind: "youtube#channel", channelId: channelId },
-            },
-          },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      return {
-        platform: "youtube",
-        success: true,
-        postId: postResponse.data.id || `youtube_${Date?.now()}`,
-        postedAt: new Date(),
-      };
+      throw new Error("YouTube publishing requires video content; the Data API does not support community text posts");
     }
   }
 
@@ -790,7 +793,7 @@ class AutoPostingServiceV2 {
     return {
       platform: "linkedin",
       success: true,
-      postId: postId || `linkedin_${Date?.now()}`,
+      postId,
       postUrl: postId
         ? `https://www.linkedin.com/feed/update/${postId}`
         : undefined,
@@ -875,7 +878,7 @@ class AutoPostingServiceV2 {
     return {
       platform: "threads",
       success: true,
-      postId: postId || `threads_${Date?.now()}`,
+      postId,
       postUrl: postId
         ? `https://www.threads.net/@${threadsUsername}/post/${postId}`
         : undefined,
@@ -950,7 +953,7 @@ class AutoPostingServiceV2 {
     return {
       platform: "google_business",
       success: true,
-      postId: postId || `google_${Date?.now()}`,
+      postId,
       postUrl: response.data.searchUrl || undefined,
       postedAt: new Date(),
     };

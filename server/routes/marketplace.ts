@@ -38,6 +38,19 @@ import { pythonAIService } from "../services/pythonAIService.js";
 import { absolutizeMaxcoreMediaUrls } from "../services/maxcoreConnector.js";
 
 const router = Router();
+router.get("/orders/:orderId/license",requireAuth,async (req,res)=>{
+  try {
+    const [order]=await db.select().from(orders).where(eq(orders.id,req.params.orderId)).limit(1);
+    if(!order || order.userId!==req.user!.id) return res.status(404).json({error:"License not found"});
+    if(order.status!=="completed") return res.status(403).json({error:"License is not currently active"});
+    const content=(order.metadata as any)?.licenseContent;
+    if(!content) return res.status(409).json({error:"License fulfillment is still pending"});
+    const escaped=JSON.stringify(content,null,2).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]!));
+    res.setHeader("Content-Type","text/html; charset=utf-8");
+    res.setHeader("Content-Security-Policy","default-src 'none'; style-src 'unsafe-inline'");
+    res.send(`<!doctype html><html><head><title>Purchase license</title><style>body{font:16px system-ui;max-width:900px;margin:40px auto;padding:20px}pre{white-space:pre-wrap}</style></head><body><h1>Purchase license</h1><p>Use your browser's print menu to save this license as a PDF.</p><pre>${escaped}</pre></body></html>`);
+  } catch(error) {res.status(500).json({error:"Could not load purchase license"});}
+});
 
 const ALLOWED_AUDIO_MIMES = new Set([
   "audio/mpeg",

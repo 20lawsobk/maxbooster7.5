@@ -241,7 +241,7 @@
     "cookie": "^1.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
-    "csv-parse": "^6.1.0",
+    "csv-parse": "^7.0.2",
     "date-fns": "^4.1.0",
     "dns-packet": "^5.6.1",
     "dns2": "^2.1.0",
@@ -281,7 +281,7 @@
     "memoizee": "^0.4.17",
     "memorystore": "^1.6.7",
     "msgpackr": "^2.0.5",
-    "multer": "^2.2.0",
+    "multer": "^2.4.0",
     "music-metadata": "^11.12.0",
     "nanoid": "^5.1.6",
     "node-cron": "^4.2.1",
@@ -306,7 +306,7 @@
     "recharts": "^3.7.0",
     "resend": "^6.12.3",
     "retry-request": "^8.0.2",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.4",
     "stripe": "^20.4.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
@@ -387,7 +387,7 @@
     "glob": "^11.0.2",
     "esbuild": ">=0.25.12",
     "fast-xml-builder": "^1.2.0",
-    "@xmldom/xmldom": "^0.9.10",
+    "@xmldom/xmldom": "0.9.12",
     "micromatch": ">=0.7.4",
     "base-store": ">=0.7.4",
     "data-store": ">=0.7.4",
@@ -404,10 +404,12 @@
     "native-run": ">=2.0.0",
     "yauzl": ">=3.2.0",
     "node-abi": "^3.89.0",
-    "tar": "file:./stubs/tar",
+    "tar": "7.5.22",
     "adm-zip": "^0.6.0",
     "brace-expansion": "^5.0.9",
-    "fast-uri": "^3.1.5",
+    "fast-uri": "3.1.6",
+    "js-yaml": "4.3.2",
+    "qs": "6.16.0",
     "ip-address": "^10.5.0",
     "postcss": "^8.5.23",
     "undici": "^7.29.0",
@@ -419,6 +421,9 @@
     },
     "exceljs": {
       "uuid": "^11.1.1"
+    },
+    "xcode": {
+      "uuid": "11.1.1"
     }
   },
   "engines": {

@@ -24,6 +24,7 @@ import { storageService } from "../services/storageService";
 import * as codeGenerationService from "../services/distributionCodeGenerationService";
 import { distributionService } from "../services/distributionService";
 import { labelGridService, type LabelGridRelease, type LabelGridTrack } from "../services/labelgrid-service";
+import { submitDistributionOnce, getDistributionSubmissions } from "../services/distributionSubmissionRepository.js";
 import {
   toolostService,
   type ToolostRelease,
@@ -2069,7 +2070,8 @@ router.post(
         { userId, platforms: selectedPlatforms },
         `[Distribution] Submitting release ${id} to Too Lost for ${selectedPlatforms.length} platform(s)`,
       );
-      const toolostResult = await toolost.createRelease(toolostPayload);
+      const toolostResult = await submitDistributionOnce("toolost", userId, id, toolostPayload,
+        checkpoint => toolost.createRelease(toolostPayload, checkpoint));
 
       // Create dispatch records FIRST (in parallel), then mark the release as submitted.
       // This ordering prevents a window where the release is "submitted" but has no dispatch
@@ -8022,6 +8024,17 @@ function buildToolostPayload(
 }
 
 // POST /api/distribution/platform/spotify — Submit release to Spotify via LabelGrid
+router.get("/submission/:releaseId", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const submissions = await getDistributionSubmissions((req.user as AuthenticatedUser).id, req.params.releaseId as string);
+    if (!submissions.length) return res.status(404).json({ error: "Submission not found" });
+    return res.json({ submissions });
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to read distribution submission checkpoints");
+    return res.status(500).json({ error: "Failed to read distribution submission checkpoints" });
+  }
+});
+
 router.post(
   "/platform/spotify",
   requireAuth,
@@ -8044,7 +8057,8 @@ router.post(
         { userId },
         `[Distribution] Submitting release ${releaseId} to Spotify via LabelGrid`,
       );
-      const result = await labelGridService?.createRelease(payload);
+      const result = await submitDistributionOnce("labelgrid", userId, releaseId, payload,
+        checkpoint => labelGridService.createRelease(payload, checkpoint));
 
       const metadata = (release?.metadata as Record<string, unknown>) || {};
       await storage.updateDistroRelease(releaseId, {
@@ -8062,9 +8076,9 @@ router.post(
         labelGridReleaseId: result.releaseId,
         status: result.status,
         message:
-          "Release submitted to Spotify via LabelGrid. Typical delivery time is 24-48 hours.",
+          "LabelGrid accepted the distribution request. Spotify delivery is confirmed only by its outlet status.",
         submissionId: result.releaseId,
-        estimatedDelivery: result.estimatedLiveDate || "24-48 hours",
+        estimatedDelivery: result.estimatedLiveDate || null,
         platforms: result.platforms,
       });
     } catch (error: unknown) {
@@ -8101,7 +8115,8 @@ router.post(
         { userId },
         `[Distribution] Submitting release ${releaseId} to Apple Music via LabelGrid`,
       );
-      const result = await labelGridService?.createRelease(payload);
+      const result = await submitDistributionOnce("labelgrid", userId, releaseId, payload,
+        checkpoint => labelGridService.createRelease(payload, checkpoint));
 
       const metadata = (release?.metadata as Record<string, unknown>) || {};
       await storage.updateDistroRelease(releaseId, {
@@ -8119,9 +8134,9 @@ router.post(
         labelGridReleaseId: result.releaseId,
         status: result.status,
         message:
-          "Release submitted to Apple Music via LabelGrid. Typical delivery time is 24-72 hours.",
+          "LabelGrid accepted the distribution request. Apple Music delivery is confirmed only by its outlet status.",
         submissionId: result.releaseId,
-        estimatedDelivery: result.estimatedLiveDate || "24-72 hours",
+        estimatedDelivery: result.estimatedLiveDate || null,
         platforms: result.platforms,
       });
     } catch (error: unknown) {
@@ -8161,7 +8176,8 @@ router.post(
         { userId },
         `[Distribution] Submitting release ${releaseId} to YouTube Music via LabelGrid`,
       );
-      const result = await labelGridService?.createRelease(payload);
+      const result = await submitDistributionOnce("labelgrid", userId, releaseId, payload,
+        checkpoint => labelGridService.createRelease(payload, checkpoint));
 
       const metadata = (release?.metadata as Record<string, unknown>) || {};
       await storage.updateDistroRelease(releaseId, {
@@ -8179,9 +8195,9 @@ router.post(
         labelGridReleaseId: result.releaseId,
         status: result.status,
         message:
-          "Release submitted to YouTube Music via LabelGrid. Typical delivery time is 1-3 business days.",
+          "LabelGrid accepted the distribution request. YouTube Music delivery is confirmed only by its outlet status.",
         submissionId: result.releaseId,
-        estimatedDelivery: result.estimatedLiveDate || "1-3 business days",
+        estimatedDelivery: result.estimatedLiveDate || null,
         platforms: result.platforms,
       });
     } catch (error: unknown) {

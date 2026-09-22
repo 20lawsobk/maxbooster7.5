@@ -4,7 +4,6 @@ import { instantPayoutService } from "../services/instantPayoutService";
 import {
   requestInstantPayoutSchema,
   users,
-  instantPayouts,
   taxForms,
   royaltyStatements,
   royaltyTransactions,
@@ -14,13 +13,34 @@ import {
 import { z } from "zod";
 import { logger } from "../logger.js";
 import { db } from "../db.js";
-import { eq, and, desc, gte, inArray, lte, sql, sum, count } from "drizzle-orm";
+import { eq, and, desc, gte, inArray, lte, sql, sum } from "drizzle-orm";
 import { getBaseUrl } from "../config/defaults.js";
 import { requireAuth } from "../middleware/auth.js";
 import { payoutsRateLimiter } from "../middleware/rateLimiter.js";
 import { stripeService } from "../services/stripeService.js";
+import { fundRoyaltyStatement } from "../services/commerce/statements";
+import { majorUnits } from "../services/commerce/contract";
+import { commerceRepository } from "../services/commerce/runtime";
+import { legacyReconciliation } from "../services/commerce/readModels";
 
 const router = Router();
+router.get("/settlement-statement",requireAuth,async(req,res)=>{
+  try {
+    const query=z.object({currency:z.string().regex(/^[a-zA-Z]{3}$/).default("usd"),
+      start:z.string().datetime(),end:z.string().datetime()}).parse(req.query);
+    return res.json(await commerceRepository.statement(req.user!.id,query.currency.toLowerCase(),new Date(query.start),new Date(query.end)));
+  } catch(error) {return res.status(400).json({error:error instanceof Error?error.message:String(error)});}
+});
+router.post("/royalty-statements/:statementId/fund", requireAuth, async (req,res) => {
+  try {
+    const [actor]=await db.select({role:users.role}).from(users).where(eq(users.id,req.user!.id)).limit(1);
+    if(actor?.role!=="admin") return res.status(403).json({error:"Administrator required"});
+    const {topupId}=z.object({topupId:z.string().startsWith("tu_")}).parse(req.body);
+    const statementId=z.string().min(1).max(200).parse(req.params.statementId);
+    await fundRoyaltyStatement(statementId,topupId);
+    return res.json({success:true,message:"Verified settled funding allocated to royalty payable"});
+  } catch(error) { return res.status(400).json({error:error instanceof Error?error.message:String(error)}); }
+});
 const disputeIdSchema = z.string().uuid();
 const disputeTypeSchema = z.enum([
   "earnings_mismatch",
@@ -121,7 +141,7 @@ router.get("/balance", async (req, res) => {
 
 /**
  * POST /api/payouts/instant
- * Request instant payout (T+0 settlement)
+ * Request a standard bank payout (legacy URL retained for compatibility)
  */
 router.post("/instant", async (req, res) => {
   try {
@@ -133,13 +153,14 @@ router.post("/instant", async (req, res) => {
     const validatedData = requestInstantPayoutSchema.parse(req.body);
 
     // Convert amountCents to dollars for the service
-    const amountDollars = validatedData.amountCents / 100;
+    const amountDollars = majorUnits(validatedData.amountCents,validatedData.currency);
 
     // Request instant payout
     const result = await instantPayoutService.requestInstantPayout(
       req.user.id,
       amountDollars,
       validatedData.currency,
+      req.get("Idempotency-Key"),
     );
 
     if (!result.success) {
@@ -152,11 +173,13 @@ router.post("/instant", async (req, res) => {
     res.json({
       success: true,
       payoutId: result.payoutId,
+      state: result.state,
+      providerError: result.error,
       amount: result.amount,
       estimatedArrival: result.estimatedArrival,
       riskScore: result.riskScore,
       message:
-        "Payout initiated successfully. Funds will arrive within minutes.",
+        "Standard bank payout requested. Arrival depends on provider processing and your bank; check payout status for completion.",
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error requesting instant payout:");
@@ -194,16 +217,15 @@ router.get("/history", async (req, res) => {
       100_000,
     );
 
-    const [payouts, [{ total }]] = await Promise.all([
+    const [payouts, total, reconciliation] = await Promise.all([
       instantPayoutService.getPayoutHistory(req.user.id, limit, offset),
-      db
-        .select({ total: count() })
-        .from(instantPayouts)
-        .where(eq(instantPayouts.userId, req.user.id)),
+      commerceRepository.countHistory(req.user.id),
+      legacyReconciliation(req.user.id),
     ]);
 
     res.json({
       payouts,
+      reconciliation,
       pagination: {
         limit,
         offset,
@@ -539,6 +561,8 @@ router.post("/split", async (req, res) => {
       totalAmount,
       splits,
       platformFeePercentage,
+      "usd",
+      req.user.id,
     );
 
     if (!result?.success) {
@@ -585,6 +609,8 @@ router.post("/split-enhanced", async (req, res) => {
       totalAmount,
       splits,
       platformFeePercentage || 10,
+      "usd",
+      req.user.id,
     );
 
     if (!result?.success) {
@@ -1347,15 +1373,9 @@ router.get("/instant-fee", async (req, res) => {
         .json({ error: "Valid positive amount is required" });
     }
 
-    const feePercentage = 1.5;
-    const fee = amount * (feePercentage / 100);
-    const netAmount = amount - fee;
-
-    res.json({
-      amount,
-      feePercentage,
-      fee: parseFloat(fee?.toFixed(2)),
-      netAmount: parseFloat(netAmount?.toFixed(2)),
+    res.status(409).json({
+      error: "Instant payouts are not offered by this withdrawal flow. Standard bank payout fees depend on provider and account configuration; no fee quote is available.",
+      method: "standard",
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error calculating instant fee:");

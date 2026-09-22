@@ -1,9 +1,10 @@
 // @ts-nocheck
 import { db } from "../db.js";
 import { kycVerifications, kycDocuments, users, type KYCVerification, type KYCDocument } from "@shared/schema";
-import { eq, desc, or } from "drizzle-orm";
+import { eq, desc, or, and, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { emailService } from "./emailService.js";
+import { reviewRevision, reviewSnapshot, assertReviewRevision } from "./kycReviewRevision.js";
 
 export type KYCType = "individual" | "business";
 export type KYCStatus =
@@ -331,6 +332,9 @@ export class KYCService {
     if (verification?.verificationType !== "individual") {
       throw new Error("Verification type mismatch");
     }
+    if (verification.status !== "pending") {
+      throw new Error("Identity information is locked once submitted for review");
+    }
 
     const existingMetadata =
       (verification?.metadata as Record<string, unknown>) || {};
@@ -339,14 +343,19 @@ export class KYCService {
       individualInfo: info,
     };
 
-    const [updated] = await db
+    const updated = await db.transaction(async tx => {
+    const [updated] = await tx
       .update(kycVerifications)
       .set({
-        metadata: updatedMetadata,
+        metadata: sql`COALESCE(${kycVerifications.metadata}, '{}'::jsonb) || ${JSON.stringify({ individualInfo: info })}::jsonb`,
       })
-      .where(eq(kycVerifications.id, verificationId))
+      .where(and(eq(kycVerifications.id, verificationId), eq(kycVerifications.status, "pending")))
       .returning();
-
+    if (!updated) throw new Error("Verification changed while updating identity");
+    await tx.update(kycDocuments).set({ status: "pending", verifiedAt: null })
+      .where(and(eq(kycDocuments.userId, userId), sql`${kycDocuments.metadata}->>'verificationId' = ${verificationId}`));
+    return updated;
+    });
     logger.info(`Individual info updated for verification ${verificationId}`);
 
     return updated;
@@ -369,6 +378,9 @@ export class KYCService {
     if (verification?.verificationType !== "business") {
       throw new Error("Verification type mismatch");
     }
+    if (verification.status !== "pending") {
+      throw new Error("Identity information is locked once submitted for review");
+    }
 
     const existingMetadata =
       (verification?.metadata as Record<string, unknown>) || {};
@@ -377,14 +389,19 @@ export class KYCService {
       businessInfo: info,
     };
 
-    const [updated] = await db
+    const updated = await db.transaction(async tx => {
+    const [updated] = await tx
       .update(kycVerifications)
       .set({
-        metadata: updatedMetadata,
+        metadata: sql`COALESCE(${kycVerifications.metadata}, '{}'::jsonb) || ${JSON.stringify({ businessInfo: info })}::jsonb`,
       })
-      .where(eq(kycVerifications.id, verificationId))
+      .where(and(eq(kycVerifications.id, verificationId), eq(kycVerifications.status, "pending")))
       .returning();
-
+    if (!updated) throw new Error("Verification changed while updating identity");
+    await tx.update(kycDocuments).set({ status: "pending", verifiedAt: null })
+      .where(and(eq(kycDocuments.userId, userId), sql`${kycDocuments.metadata}->>'verificationId' = ${verificationId}`));
+    return updated;
+    });
     logger.info(`Business info updated for verification ${verificationId}`);
 
     return updated;
@@ -404,7 +421,13 @@ export class KYCService {
       throw new Error("Cannot upload documents for verified accounts");
     }
 
-    const [document] = await db
+    const document = await db.transaction(async tx => {
+      const [current] = await tx.select().from(kycVerifications)
+        .where(eq(kycVerifications.id, request.verificationId)).for("update");
+      if (!current || current.userId !== request.userId || !["pending", "under_review", "rejected"].includes(current.status)) {
+        throw new Error("Verification is not open for document uploads");
+      }
+      const [inserted] = await tx
       .insert(kycDocuments)
       .values({
         userId: request.userId,
@@ -420,6 +443,8 @@ export class KYCService {
         },
       })
       .returning();
+      return inserted;
+    });
 
     logger.info(
       `Document uploaded: ${document?.id} type: ${request?.documentType} for verification ${request?.verificationId}`,
@@ -446,21 +471,15 @@ export class KYCService {
       storagePath: submission.documentPath,
     });
 
-    const existingMetadata = getMetadata(verification);
-    const updatedMetadata = {
-      ...existingMetadata,
-      taxFormType: submission.formType,
-      taxFormSubmitted: true,
-    };
-
     const [updated] = await db
       .update(kycVerifications)
       .set({
-        metadata: updatedMetadata,
+        metadata: sql`COALESCE(${kycVerifications.metadata}, '{}'::jsonb) || ${JSON.stringify({ taxFormType: submission.formType, taxFormSubmitted: true })}::jsonb`,
       })
-      .where(eq(kycVerifications.id, submission?.verificationId))
+      .where(and(eq(kycVerifications.id, submission?.verificationId), or(eq(kycVerifications.status, "pending"), eq(kycVerifications.status, "under_review"), eq(kycVerifications.status, "rejected"))))
       .returning();
 
+    if (!updated) throw new Error("Verification is no longer open for tax form submission");
     logger.info(
       `Tax form ${submission?.formType} submitted for verification ${submission?.verificationId}`,
     );
@@ -473,6 +492,7 @@ export class KYCService {
     reviewerId: string,
     approved: boolean,
     reason?: string,
+    expectedRevision?: string,
   ): Promise<KYCDocument> {
     const existingDoc = await this.getDocument(documentId);
     if (!existingDoc) {
@@ -484,10 +504,18 @@ export class KYCService {
       ...existingMeta,
       reviewedBy: reviewerId,
       reviewedAt: new Date().toISOString(),
+      reviewedRevision: expectedRevision,
       rejectionReason: approved ? null : reason,
     };
 
-    const [document] = await db
+    const document = await db.transaction(async tx => {
+      const [parent] = await tx.select().from(kycVerifications)
+        .where(eq(kycVerifications.id, existingMeta.verificationId)).for("update");
+      if (!parent || parent.status === "verified") throw new Error("Reviewed evidence is locked for verified accounts");
+      const allDocs = await tx.select().from(kycDocuments).where(eq(kycDocuments.userId, parent.userId));
+      const docs = allDocs.filter(doc => (doc.metadata as any)?.verificationId === parent.id);
+      assertReviewRevision(expectedRevision!, parent, docs);
+      const [reviewed] = await tx
       .update(kycDocuments)
       .set({
         status: approved ? "approved" : "rejected",
@@ -496,6 +524,8 @@ export class KYCService {
       })
       .where(eq(kycDocuments.id, documentId))
       .returning();
+      return reviewed;
+    });
 
     logger.info(
       `Document ${documentId} ${approved ? "approved" : "rejected"} by ${reviewerId}`,
@@ -514,10 +544,35 @@ export class KYCService {
     verificationId: string,
     reviewerId: string,
     notes?: string,
+    expectedRevision?: string,
   ): Promise<KYCVerification> {
-    const verification = await this.getVerification(verificationId);
+    const updated = await db.transaction(async tx => {
+    const [verification] = await tx.select().from(kycVerifications)
+      .where(eq(kycVerifications.id, verificationId)).for("update");
     if (!verification) {
       throw new Error("Verification not found");
+    }
+    if (verification.status !== "under_review") {
+      throw new Error("Only submitted verifications can be approved");
+    }
+    const allDocuments = await tx.select().from(kycDocuments)
+      .where(eq(kycDocuments.userId, verification.userId)).orderBy(desc(kycDocuments.createdAt), desc(kycDocuments.id));
+    const documents = allDocuments.filter(doc => (doc.metadata as { verificationId?: string })?.verificationId === verificationId);
+    assertReviewRevision(expectedRevision!, verification, documents);
+    const required = [...DOCUMENT_REQUIREMENTS[getLevel(verification)][verification.verificationType as KYCType]];
+    const metadata = getMetadata(verification);
+    const hasIdentity = verification.verificationType === "individual"
+      ? metadata.individualInfo?.firstName && metadata.individualInfo?.lastName
+      : metadata.businessInfo?.businessName;
+    if (!hasIdentity) throw new Error("Identity information must be supplied before approval");
+    if (this.isTaxFormRequired(verification)) {
+      if (!metadata.taxFormType) throw new Error("Required tax form is missing");
+      required.push(metadata.taxFormType.toLowerCase() as DocumentType);
+    }
+    const evidence = required.map(type => documents.find(doc => doc.documentType === type));
+    if (evidence.some(doc => !doc || doc.status !== "approved" || !doc.verifiedAt ||
+      (doc.expiresAt && doc.expiresAt <= new Date()))) {
+      throw new Error("All current required evidence must be approved and unexpired");
     }
 
     const expiresAt = new Date();
@@ -528,9 +583,12 @@ export class KYCService {
       ...existingMetadata,
       reviewedBy: reviewerId,
       reviewNotes: notes,
+      reviewedEvidence: evidence.map(doc => ({ id: doc!.id, verifiedAt: doc!.verifiedAt })),
+      reviewedRevision: expectedRevision,
+      reviewedSnapshot: reviewSnapshot(verification, documents),
     };
 
-    const [updated] = await db
+    const [updated] = await tx
       .update(kycVerifications)
       .set({
         status: "verified",
@@ -538,9 +596,12 @@ export class KYCService {
         expiresAt,
         metadata: updatedMetadata,
       })
-      .where(eq(kycVerifications.id, verificationId))
+      .where(and(eq(kycVerifications.id, verificationId), eq(kycVerifications.status, "under_review")))
       .returning();
 
+    if (!updated) throw new Error("Verification changed during approval");
+    return updated;
+    });
     logger.info(`Verification ${verificationId} approved by ${reviewerId}`);
 
     await this.notifyVerificationComplete(updated);
@@ -552,11 +613,16 @@ export class KYCService {
     verificationId: string,
     reviewerId: string,
     reason: string,
+    expectedRevision?: string,
   ): Promise<KYCVerification> {
-    const verification = await this.getVerification(verificationId);
+    const updated = await db.transaction(async tx => {
+    const [verification] = await tx.select().from(kycVerifications).where(eq(kycVerifications.id, verificationId)).for("update");
     if (!verification) {
       throw new Error("Verification not found");
     }
+    const allDocs = await tx.select().from(kycDocuments).where(eq(kycDocuments.userId, verification.userId));
+    const documents = allDocs.filter(doc => (doc.metadata as any)?.verificationId === verificationId);
+    assertReviewRevision(expectedRevision!, verification, documents);
 
     const existingMetadata = getMetadata(verification);
     const updatedMetadata = {
@@ -565,7 +631,7 @@ export class KYCService {
       reviewedBy: reviewerId,
     };
 
-    const [updated] = await db
+    const [updated] = await tx
       .update(kycVerifications)
       .set({
         status: "rejected",
@@ -573,6 +639,8 @@ export class KYCService {
       })
       .where(eq(kycVerifications.id, verificationId))
       .returning();
+    return updated;
+    });
 
     logger.info(
       `Verification ${verificationId} rejected by ${reviewerId}: ${reason}`,
@@ -642,7 +710,7 @@ export class KYCService {
           : "not_uploaded",
         fileName: docMeta.fileName,
         rejectionReason: docMeta.rejectionReason,
-        uploadedAt: doc.createdAt,
+        uploadedAt: doc?.createdAt,
       };
     });
 
@@ -843,7 +911,7 @@ export class KYCService {
       .select()
       .from(kycDocuments)
       .where(eq(kycDocuments.userId, verification?.userId))
-      .orderBy(desc(kycDocuments.createdAt));
+      .orderBy(desc(kycDocuments.createdAt), desc(kycDocuments.id));
 
     return allDocs?.filter((doc) => {
       const meta = (doc?.metadata as Record<string, any>) || {};
@@ -909,6 +977,7 @@ export class KYCService {
 
         return {
           id: v.id,
+          reviewRevision: reviewRevision(v, documents),
           userId: v.userId,
           verificationType: v.verificationType,
           status: v.status,
@@ -934,6 +1003,7 @@ export class KYCService {
               (document.metadata as Record<string, unknown>) || {};
             return {
               id: document.id,
+              reviewRevision: reviewRevision(v, documents),
               documentType: document.documentType,
               fileName: documentMetadata.fileName || `Document ${document.id}`,
               status: document.status,
@@ -1080,11 +1150,12 @@ export class KYCService {
       .update(kycVerifications)
       .set({
         status: "under_review",
-        metadata: updatedMetadata,
+        metadata: sql`COALESCE(${kycVerifications.metadata}, '{}'::jsonb) || ${JSON.stringify({ submittedAt: new Date().toISOString() })}::jsonb`,
       })
-      .where(eq(kycVerifications.id, verificationId))
+      .where(and(eq(kycVerifications.id, verificationId), or(eq(kycVerifications.status, "pending"), eq(kycVerifications.status, "rejected"))))
       .returning();
 
+    if (!updated) throw new Error("Verification changed during submission");
     logger.info(
       `Verification ${verificationId} submitted for review by user ${userId}`,
     );
@@ -1122,9 +1193,9 @@ export class KYCService {
         .update(kycVerifications)
         .set({
           status: "under_review",
-          metadata: updatedMetadata,
+          metadata: sql`COALESCE(${kycVerifications.metadata}, '{}'::jsonb) || ${JSON.stringify({ submittedAt: new Date().toISOString() })}::jsonb`,
         })
-        .where(eq(kycVerifications.id, verificationId));
+        .where(and(eq(kycVerifications.id, verificationId), eq(kycVerifications.status, "pending")));
 
       logger.info(`Verification ${verificationId} moved to under_review`);
     }

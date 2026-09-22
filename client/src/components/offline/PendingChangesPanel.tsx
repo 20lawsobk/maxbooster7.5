@@ -26,6 +26,7 @@ import {
 import { offlineQueue, QueuedAction, syncManager } from "@/lib/offline";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { offlineIdentity, assertOfflineIdentity } from "@/lib/offline/identity";
 
 interface PendingChangesPanelProps {
   className?: string;
@@ -79,9 +80,11 @@ export function PendingChangesPanel({
   const [actions, setActions] = useState<QueuedAction[]>([]);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadActions();
+    window.addEventListener("offline-identity-change", loadActions);
 
     const unsubAdded = offlineQueue.on("action-added", loadActions);
     const unsubUpdated = offlineQueue.on("action-updated", loadActions);
@@ -92,6 +95,7 @@ export function PendingChangesPanel({
     });
 
     return () => {
+      window.removeEventListener("offline-identity-change", loadActions);
       unsubAdded();
       unsubUpdated();
       unsubRemoved();
@@ -100,7 +104,11 @@ export function PendingChangesPanel({
   }, []);
 
   const loadActions = async () => {
+    const identity = offlineIdentity();
+    if (!identity.owner) { setActions([]); return; }
+    try {
     const stats = await offlineQueue.getStats();
+    assertOfflineIdentity(identity);
     if (stats.total === 0) {
       setActions([]);
       return;
@@ -109,20 +117,35 @@ export function PendingChangesPanel({
     const pending = await offlineQueue.getAllPending();
     const failed = await offlineQueue.getByStatus("failed");
     const conflicts = await offlineQueue.getByStatus("conflict");
+    const syncing = await offlineQueue.getByStatus("syncing");
+    assertOfflineIdentity(identity);
 
-    const allActions = [...pending, ...failed, ...conflicts]
+    const allActions = [...pending, ...failed, ...conflicts, ...syncing]
       .sort((a, b) => b.updatedAt - a.updatedAt)
       .slice(0, maxItems);
 
     setActions(allActions);
+    setError(null);
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Pending changes could not be loaded");
+    }
   };
 
   const handleRetry = async (actionId: string) => {
+    const action = await offlineQueue.getAction(actionId);
+    if (action?.terminalReceipt) {
+      setError("The server rejected this change. Review the error and submit a corrected edit with a new operation ID.");
+      return;
+    }
+    if (action?.error?.startsWith("Reconciliation required")) {
+      await syncManager.sync();
+      return;
+    }
     await offlineQueue.updateAction(actionId, {
       status: "pending",
       retryCount: 0,
     });
-    syncManager.forceSyncAction(actionId);
+    await syncManager.forceSyncAction(actionId);
   };
 
   const handleDelete = async (actionId: string) => {
@@ -137,6 +160,9 @@ export function PendingChangesPanel({
     await syncManager.retryFailed();
   };
 
+  if (error) {
+    return <div role="alert" className="rounded border p-3">{error}<Button variant="outline" onClick={loadActions}>Refresh pending changes</Button></div>;
+  }
   if (actions.length === 0) {
     return null;
   }

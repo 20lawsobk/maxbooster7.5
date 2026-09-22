@@ -151,7 +151,13 @@ export async function restoreCapsule(capsuleName, manifestName, targetDir, senti
     return true;
   }
 
-  if (existsSync(sentinelPath)) {
+  const manifest = readManifest(manifestPath);
+  if (!/^[a-f0-9]{64}$/i.test(manifest?.sha256 ?? "")) {
+    console.error(`[pdim-restore] ${capsuleName}: missing valid SHA-256 manifest`);
+    return false;
+  }
+  const restoredCurrent = () => existsSync(sentinelPath) && readFileSync(sentinelPath, "utf8").trim() === manifest.sha256;
+  if (restoredCurrent()) {
     console.log(`[pdim-restore] ${targetDir}/ already restored — skipping`);
     return true;
   }
@@ -159,13 +165,12 @@ export async function restoreCapsule(capsuleName, manifestName, targetDir, senti
   const releaseLock = await acquireRestoreLock(targetDir);
   // Another process may have finished the restore while we were waiting on
   // the lock — re-check the sentinel before starting a redundant extraction.
-  if (existsSync(sentinelPath)) {
+  if (restoredCurrent()) {
     releaseLock();
     console.log(`[pdim-restore] ${targetDir}/ restored while waiting on lock — skipping`);
     return true;
   }
 
-  const manifest = readManifest(manifestPath);
   const compression = manifest?.compression || "gzip-9";
   const tarFlags = tarFlagsForCompression(compression);
 
@@ -397,7 +402,7 @@ export async function restoreCapsule(capsuleName, manifestName, targetDir, senti
       // Write the sentinel only after a fully successful extraction+swap so
       // subsequent boots skip re-extraction (idempotent restore).
       try {
-        writeFileSync(sentinelPath, new Date().toISOString());
+        writeFileSync(sentinelPath, manifest.sha256);
       } catch (e) {
         console.error(
           `[pdim-restore] WARN: could not write sentinel ${sentinelPath}: ${e.message}`,
@@ -440,13 +445,19 @@ export async function restoreAppRemainderCapsule(
     console.log(`[pdim-restore] ${capsuleName}: capsule not found — skipping`);
     return true;
   }
-  if (existsSync(sentinelPath)) {
+  const manifest = readManifest(manifestPath);
+  if (!/^[a-f0-9]{64}$/i.test(manifest?.sha256 ?? "")) {
+    console.error(`[pdim-restore] ${capsuleName}: missing valid SHA-256 manifest`);
+    return false;
+  }
+  const restoredCurrent = () => existsSync(sentinelPath) && readFileSync(sentinelPath, "utf8").trim() === manifest.sha256;
+  if (restoredCurrent()) {
     console.log(`[pdim-restore] app remainder already restored — skipping`);
     return true;
   }
 
   const releaseLock = await acquireRestoreLock(lockKey);
-  if (existsSync(sentinelPath)) {
+  if (restoredCurrent()) {
     releaseLock();
     console.log(
       `[pdim-restore] app remainder restored while waiting on lock — skipping`,
@@ -454,7 +465,6 @@ export async function restoreAppRemainderCapsule(
     return true;
   }
 
-  const manifest = readManifest(manifestPath);
   const compression = manifest?.compression || "gzip-9";
   const tarFlags = tarFlagsForCompression(compression);
   const bsdtarBin = resolveBsdtar();
@@ -615,7 +625,7 @@ export async function restoreAppRemainderCapsule(
       }
 
       try {
-        writeFileSync(sentinelPath, new Date().toISOString());
+        writeFileSync(sentinelPath, manifest.sha256);
       } catch (e) {
         console.error(
           `[pdim-restore] WARN: could not write sentinel ${sentinelPath}: ${e.message}`,
@@ -712,27 +722,31 @@ if (isMainModule) {
     // optional legacy AI sidecar source) both block boot: start.sh execs/
     // spawns those files synchronously right after this step, with no wait
     // on the background restore that follows.
-    const [nodeModulesOk, appRemainderOk] = await Promise.all([
+    const [nodeModulesOk, appRemainderOk, pythonOk] = await Promise.all([
       CAPSULES.nodeModules(),
       CAPSULES.appRemainder(),
+      CAPSULES.pythonRuntime(),
     ]);
-    if (!nodeModulesOk || !appRemainderOk) {
+    if (!nodeModulesOk || !appRemainderOk || !pythonOk) {
       console.error(
-        `[pdim-restore] FATAL: critical restore failed (node_modules: ${nodeModulesOk}, app remainder: ${appRemainderOk}) — server will crash`,
+        `[pdim-restore] FATAL: critical restore failed (node_modules: ${nodeModulesOk}, app remainder: ${appRemainderOk}, Python: ${pythonOk})`,
       );
       process.exit(1);
     }
-    console.log("[pdim-restore] Critical capsules (node_modules, app remainder) restored.");
+    console.log("[pdim-restore] Critical capsules (node_modules, app remainder, Python) restored.");
   } else if (mode === "background") {
-    await Promise.all([
-      CAPSULES.pythonRuntime(),
+    const results = await Promise.all([
       CAPSULES.maxcore(),
       CAPSULES.pdim(),
     ]);
+    if (results.some((ok) => !ok)) {
+      console.error("[pdim-restore] Background capsule restoration failed");
+      process.exit(1);
+    }
     console.log("[pdim-restore] Background capsules processed.");
   } else {
     // Legacy/dev path: restore everything up front and block on it.
-    const [nodeModulesOk, , maxcoreOk, , appRemainderOk] = await Promise.all([
+    const [nodeModulesOk, pythonOk, maxcoreOk, pdimOk, appRemainderOk] = await Promise.all([
       CAPSULES.nodeModules(),
       CAPSULES.pythonRuntime(),
       CAPSULES.maxcore(),
@@ -740,7 +754,7 @@ if (isMainModule) {
       CAPSULES.appRemainder(),
     ]);
 
-    let ok = nodeModulesOk && appRemainderOk;
+    let ok = nodeModulesOk && pythonOk && pdimOk && appRemainderOk;
     if (process.env.MAXCORE_LOCAL !== "0") ok = maxcoreOk && ok;
 
     if (!ok) {

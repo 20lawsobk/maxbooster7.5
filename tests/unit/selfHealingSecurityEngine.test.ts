@@ -26,6 +26,7 @@ vi.mock("../../server/logger.js", () => ({
 }));
 
 import { SelfHealingSecurityEngine } from "../../server/services/selfHealingSecurityEngine.js";
+import { SecurityContainment } from "../../server/services/securityContainment.js";
 import { createSelfHealingSecurityMiddleware } from "../../server/middleware/selfHealingMiddleware.js";
 
 const BASE_TIME = new Date("2026-01-15T12:00:00.000Z");
@@ -253,6 +254,50 @@ describe("real self-healing engine detect/respond/recover", () => {
       expect(action.details).not.toHaveProperty("circuitBroken");
       expect(action.details).not.toHaveProperty("featureDisabled");
     }
+    engine.stop();
+  });
+
+  it("dispatches typed controls to real guards and records acknowledgements", async () => {
+    const { engine } = await newEngine();
+    const revoked = vi.fn(async () => ({ confirmed: true as const }));
+    const controls = new SecurityContainment({
+      revokeSessions: revoked,
+      dependencies: [{ prefix: "/api/search", target: "search-provider" }],
+      features: [{ prefix: "/api/search", target: "search" }],
+    });
+    engine.configureContainment(controls);
+    expect((engine as any).determineActions(0.95, "fixture", "/api/search"))
+      .toEqual(expect.arrayContaining(["circuit_break", "feature_disable"]));
+    (engine as any).eventsById.set("confirmed-event", {
+      source: { userId: "artist-1" }, payload: { path: "/api/search" },
+    });
+    for (const type of ["session_kill", "circuit_break", "feature_disable"]) {
+      const action = { type, details: {} as any };
+      await (engine as any).executeAction(action, { eventId: "confirmed-event" });
+      expect(action.details.effect.confirmed).toBe(true);
+    }
+    expect(revoked).toHaveBeenCalledWith("artist-1");
+    const externalCall = vi.fn(async () => "result");
+    await expect(controls.executeDependency("search-provider", externalCall)).rejects.toThrow("containment denies");
+    expect(externalCall).not.toHaveBeenCalled();
+    expect(() => controls.assertFeatureAllowed("search")).toThrow("containment denies");
+    expect(() => engine.configureContainment(controls)).toThrow("already configured");
+    engine.stop();
+  });
+
+  it("rejects unacknowledged adapter effects instead of crediting healing", async () => {
+    const { engine } = await newEngine();
+    engine.configureContainment({
+      revokeSessions: vi.fn(async () => undefined) as any,
+      isolateDependency: vi.fn(),
+      isolateFeature: vi.fn(),
+    });
+    (engine as any).eventsById.set("unconfirmed", { source: { userId: "artist-1" }, payload: {} });
+    const actions = await (engine as any).respondToThreat({
+      id: "assessment-unconfirmed", eventId: "unconfirmed", recommendedActions: ["session_kill"],
+    });
+    expect(actions[0].status).toBe("failed");
+    expect(actions[0].details.error).toContain("did not acknowledge");
     engine.stop();
   });
 

@@ -198,12 +198,16 @@ export function captureSentryMessage(
 // heartbeat below uses it rather than trusting captureMessage() alone.
 let lastSentryHeartbeatOkAt: number | null = null;
 let lastSentryHeartbeatAttemptAt: number | null = null;
+// Boot grace is conservative and explicit: first attempt starts an immutable
+// epoch; repeated failures cannot move the alert deadline.
+let firstSentryHeartbeatAttemptAt: number | null = null;
 let lastSentryHeartbeatFailed = false;
 const SENTRY_SILENCE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 async function sendSentryHeartbeat(): Promise<void> {
   if (!isProduction || !Sentry) return;
   lastSentryHeartbeatAttemptAt = Date.now();
+  firstSentryHeartbeatAttemptAt ??= lastSentryHeartbeatAttemptAt;
   try {
     Sentry.captureMessage("[Heartbeat] Sentry delivery check", {
       level: "info",
@@ -238,10 +242,10 @@ export function getSentryHeartbeatStatus(): {
   isSilent: boolean;
 } {
   const configured = isProduction && !!Sentry && !!dsn;
-  const silentForMs = lastSentryHeartbeatOkAt
+  const silentForMs = lastSentryHeartbeatOkAt !== null
     ? Date.now() - lastSentryHeartbeatOkAt
-    : lastSentryHeartbeatAttemptAt
-      ? Date.now() - lastSentryHeartbeatAttemptAt
+    : firstSentryHeartbeatAttemptAt !== null
+      ? Date.now() - firstSentryHeartbeatAttemptAt
       : null;
   return {
     configured,
@@ -249,7 +253,7 @@ export function getSentryHeartbeatStatus(): {
     lastAttemptAt: lastSentryHeartbeatAttemptAt,
     lastAttemptFailed: lastSentryHeartbeatFailed,
     silentForMs,
-    isSilent: configured && silentForMs !== null && silentForMs > SENTRY_SILENCE_THRESHOLD_MS,
+    isSilent: configured && silentForMs !== null && silentForMs >= SENTRY_SILENCE_THRESHOLD_MS,
   };
 }
 
@@ -290,7 +294,7 @@ export function startSentryHeartbeatMonitor(): void {
     );
     import("./monitoring/alertingService.js")
       .then(({ alertingService }) => {
-        alertingService?.sendAlert({
+        return alertingService.sendAlert({
           severity: "critical",
           title: "Sentry error reporting is silent",
           message: `No confirmed Sentry event delivery in ~${hours}h. Error tracking may be blind — check the DSN, egress to sentry.io, and Sentry project status.`,
