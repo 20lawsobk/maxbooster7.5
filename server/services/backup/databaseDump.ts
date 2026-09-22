@@ -13,6 +13,7 @@ import {
 
 const DUMP_TIMEOUT_MS = 45 * 60 * 1000;
 const MAX_DIAGNOSTIC_BYTES = 16 * 1024;
+const TERMINATION_GRACE_MS = 2_000;
 export const MAX_UNCOMMITTED_DUMP_BYTES = 1024 * 1024 * 1024;
 
 type SpawnLike = typeof nodeSpawn;
@@ -35,6 +36,7 @@ export interface DatabaseDumpDependencies {
   unlink?: typeof fsPromises.unlink;
   tmpDirectory?: string;
   maxBytes?: number;
+  terminationGraceMs?: number;
 }
 
 export function databaseDumpChecksum(buffer: Buffer): string {
@@ -57,8 +59,12 @@ export async function generateUncommittedDatabaseDump(
   const readFile = dependencies.readFile ?? fsPromises.readFile;
   const unlink = dependencies.unlink ?? fsPromises.unlink;
   const maxBytes = dependencies.maxBytes ?? MAX_UNCOMMITTED_DUMP_BYTES;
+  const terminationGraceMs = dependencies.terminationGraceMs ?? TERMINATION_GRACE_MS;
   if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0 || maxBytes > MAX_UNCOMMITTED_DUMP_BYTES) {
     throw new Error("Invalid uncommitted database dump byte limit");
+  }
+  if (!Number.isSafeInteger(terminationGraceMs) || terminationGraceMs <= 0 || terminationGraceMs > 10_000) {
+    throw new Error("Invalid pg_dump termination grace period");
   }
 
   const selection = await selectTool(sourceUrl);
@@ -67,77 +73,153 @@ export async function generateUncommittedDatabaseDump(
     `uncommitted-pg-dump-${randomUUID()}.sql`,
   );
 
+  let result: UncommittedDatabaseDump | undefined;
+  let primaryError: unknown;
   try {
     await new Promise<void>((resolve, reject) => {
-      const pgDump = spawn(selection.tool.path, ["--no-owner", "--no-acl"], {
-        env: { ...process.env, PGDATABASE: sourceUrl },
-        timeout: DUMP_TIMEOUT_MS,
-      });
       const writeStream = createWriteStream(tmpPath, { mode: 0o600, flags: "wx" });
+      let pgDump: ReturnType<SpawnLike> | undefined;
       let errorOutput = "";
       let diagnosticBytes = 0;
       let dumpBytes = 0;
-      let pipelineDone = false;
-      let exited = false;
+      let streamFinished = false;
+      let streamClosed = false;
+      let childClosed = false;
+      let terminationExhausted = false;
       let exitCode: number | null = null;
       let settled = false;
+      let failure: Error | undefined;
+      let termTimer: ReturnType<typeof setTimeout> | undefined;
+      let killTimer: ReturnType<typeof setTimeout> | undefined;
 
-      function fail(error: Error) {
+      function clearTerminationTimers() {
+        if (termTimer) clearTimeout(termTimer);
+        if (killTimer) clearTimeout(killTimer);
+        termTimer = undefined;
+        killTimer = undefined;
+      }
+
+      function check() {
         if (settled) return;
+        if (!failure) {
+          if (!streamClosed || !childClosed) return;
+          if (!streamFinished) {
+            beginFailure(new Error("pg_dump output stream closed before finishing"));
+            return;
+          }
+          if (exitCode !== 0) {
+            beginFailure(new Error(
+              `pg_dump failed (code ${exitCode}): ${safePostgresDiagnostic(errorOutput)}`,
+            ));
+            return;
+          }
+          settled = true;
+          clearTerminationTimers();
+          resolve();
+          return;
+        }
+        if (!streamClosed || (!childClosed && !terminationExhausted)) return;
         settled = true;
-        writeStream.destroy();
-        pgDump.kill();
-        reject(error);
+        clearTerminationTimers();
+        reject(failure);
+      }
+
+      function terminateChild() {
+        if (!pgDump || childClosed) return;
+        try {
+          pgDump.kill("SIGTERM");
+        } catch {
+          // Escalation below still attempts SIGKILL.
+        }
+        termTimer = setTimeout(() => {
+          if (childClosed || !pgDump) return;
+          try {
+            pgDump.kill("SIGKILL");
+          } catch {
+            // The bounded close deadline below reports unconfirmed teardown.
+          }
+          killTimer = setTimeout(() => {
+            if (childClosed) return;
+            terminationExhausted = true;
+            const teardown = new Error("pg_dump did not close after SIGTERM/SIGKILL");
+            failure = new AggregateError(
+              failure ? [failure, teardown] : [teardown],
+              `${failure?.message ?? "pg_dump failed"}; child termination was not confirmed`,
+            );
+            check();
+          }, terminationGraceMs);
+        }, terminationGraceMs);
+      }
+
+      function beginFailure(error: Error) {
+        if (!failure) failure = error;
+        if (!streamClosed) writeStream.destroy();
+        terminateChild();
+        check();
+      }
+
+      writeStream.on("finish", () => {
+        streamFinished = true;
+      });
+      writeStream.on("close", () => {
+        streamClosed = true;
+        if (!streamFinished && !failure) {
+          beginFailure(new Error("pg_dump output stream closed before finishing"));
+          return;
+        }
+        check();
+      });
+      writeStream.on("error", beginFailure);
+
+      try {
+        pgDump = spawn(selection.tool.path, ["--no-owner", "--no-acl"], {
+          env: { ...process.env, PGDATABASE: sourceUrl },
+          timeout: DUMP_TIMEOUT_MS,
+        });
+      } catch (error) {
+        childClosed = true;
+        beginFailure(error instanceof Error ? error : new Error(String(error)));
+        return;
       }
 
       pgDump.stderr?.on("data", chunk => {
         const text = chunk.toString();
         diagnosticBytes += Buffer.byteLength(text);
         if (diagnosticBytes > MAX_DIAGNOSTIC_BYTES) {
-          fail(new Error("pg_dump exceeded diagnostic output limit"));
+          beginFailure(new Error("pg_dump exceeded diagnostic output limit"));
           return;
         }
         errorOutput += text;
       });
-      writeStream.on("finish", () => {
-        pipelineDone = true;
-        check();
-      });
-      writeStream.on("error", fail);
       pgDump.stdout?.on("error", (error: NodeJS.ErrnoException) => {
-        if (error.code !== "EPIPE" && error.code !== "ECONNRESET") fail(error);
+        if (error.code !== "EPIPE" && error.code !== "ECONNRESET") beginFailure(error);
       });
       if (!pgDump.stdout) {
-        fail(new Error("pg_dump did not provide a stdout stream"));
+        beginFailure(new Error("pg_dump did not provide a stdout stream"));
         return;
       }
       pgDump.stdout.on("data", chunk => {
         dumpBytes += Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(String(chunk));
         if (dumpBytes > maxBytes) {
-          fail(new Error(
+          beginFailure(new Error(
             `Uncommitted database dump exceeds the ${maxBytes} byte generation limit`,
           ));
         }
       });
       pgDump.stdout.pipe(writeStream);
       pgDump.on("close", code => {
-        exited = true;
+        childClosed = true;
         exitCode = code;
+        clearTerminationTimers();
+        if (code !== 0 && !failure) {
+          beginFailure(new Error(
+            `pg_dump failed (code ${code}): ${safePostgresDiagnostic(errorOutput)}`,
+          ));
+          return;
+        }
         check();
       });
-      pgDump.on("error", fail);
-
-      function check() {
-        if (settled || !pipelineDone || !exited) return;
-        if (exitCode === 0) {
-          settled = true;
-          resolve();
-        } else {
-          fail(new Error(
-            `pg_dump failed (code ${exitCode}): ${safePostgresDiagnostic(errorOutput)}`,
-          ));
-        }
-      }
+      pgDump.on("error", error => beginFailure(error));
     });
 
     const stats = await stat(tmpPath);
@@ -157,7 +239,7 @@ export async function generateUncommittedDatabaseDump(
         `pg_dump source major ${sourceMajor} did not match queried server major ${selection.serverMajor}`,
       );
     }
-    return {
+    result = {
       bytes,
       checksum: databaseDumpChecksum(bytes),
       size: bytes.length,
@@ -165,7 +247,29 @@ export async function generateUncommittedDatabaseDump(
       sourceVersion,
       durability: "uncommitted",
     };
-  } finally {
-    await unlink(tmpPath).catch(() => undefined);
+  } catch (error) {
+    primaryError = error;
   }
+
+  let cleanupError: unknown;
+  try {
+    await unlink(tmpPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code !== "ENOENT") cleanupError = error;
+  }
+  if (primaryError && cleanupError) {
+    throw new AggregateError(
+      [primaryError, cleanupError],
+      `${primaryError instanceof Error ? primaryError.message : String(primaryError)}; ` +
+        `temporary dump cleanup failed: ${safePostgresDiagnostic(cleanupError)}`,
+    );
+  }
+  if (primaryError) throw primaryError;
+  if (cleanupError) {
+    throw new Error(
+      `Temporary database dump cleanup failed: ${safePostgresDiagnostic(cleanupError)}`,
+      { cause: cleanupError },
+    );
+  }
+  return result!;
 }

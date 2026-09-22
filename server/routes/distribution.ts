@@ -23,13 +23,10 @@ import {
 import { storageService } from "../services/storageService";
 import * as codeGenerationService from "../services/distributionCodeGenerationService";
 import { distributionService } from "../services/distributionService";
-import { labelGridService, type LabelGridRelease, type LabelGridTrack } from "../services/labelgrid-service";
-import { submitDistributionOnce, getDistributionSubmissions } from "../services/distributionSubmissionRepository.js";
-import {
-  toolostService,
-  type ToolostRelease,
-  type ToolostTrack,
-} from "../services/toolost-service";
+import { labelGridService } from "../services/labelgrid-service";
+import { getDistributionSubmissions } from "../services/distributionSubmissionRepository.js";
+import { toolostService } from "../services/toolost-service";
+import { submitToolostRelease } from "./distribution-toolost-submission";
 import { musicCodesService } from "../services/musicCodes";
 import {
   labelCopyLinter,
@@ -2046,32 +2043,21 @@ router.post(
       }
 
       const toolost = await getDistributionToolostService(userId);
-      const liveCatalog = await toolost.getAvailableDSPs();
-      const selectedStores = selectedPlatforms.map((selected) => {
-        const match = liveCatalog.dsps.find(
-          (dsp) =>
-            dsp.slug === selected ||
-            dsp.id === selected ||
-            dsp.name.toLowerCase() === selected.toLowerCase(),
-        );
-        if (!match) {
-          throw new Error(
-            `Too Lost release blocked: selected store "${selected}" is not present in the connected account's live platform catalog.`,
-          );
-        }
-        return match.name;
-      });
-      const toolostPayload = buildToolostPayload(
-        release,
-        tracks,
-        selectedStores,
-      );
       logger.info(
         { userId, platforms: selectedPlatforms },
         `[Distribution] Submitting release ${id} to Too Lost for ${selectedPlatforms.length} platform(s)`,
       );
-      const toolostResult = await submitDistributionOnce("toolost", userId, id, toolostPayload,
-        checkpoint => toolost.createRelease(toolostPayload, checkpoint));
+      const {
+        providerPlatforms: selectedStores,
+        result: toolostResult,
+      } = await submitToolostRelease({
+        client: toolost,
+        userId,
+        releaseId: id,
+        release,
+        tracks,
+        requestedPlatforms: selectedPlatforms,
+      });
 
       // Create dispatch records FIRST (in parallel), then mark the release as submitted.
       // This ordering prevents a window where the release is "submitted" but has no dispatch
@@ -7852,178 +7838,7 @@ router.get(
   },
 );
 
-// ─── Platform-specific submission endpoints (via LabelGrid API) ───────────────
-// Helper: build a LabelGridRelease payload from a DB release + tracks.
-// `platforms` can be a single slug string or an array of slugs.
-async function buildLabelGridPayload(
-  release: Record<string, unknown>,
-  tracks: unknown[],
-  platforms: string | string[],
-): Promise<LabelGridRelease> {
-  const metadata = (release?.metadata as Record<string, unknown>) || {};
-  const platformList = Array.isArray(platforms) ? platforms : [platforms];
-  // LabelGrid requires a real contact email on the label entity it creates —
-  // this is the label's point of contact, not a cosmetic default, so it must
-  // come from the release owner's actual account rather than be fabricated.
-  const artistIdRaw = release?.artistId;
-  const ownerEmail =
-    typeof artistIdRaw === "string" && artistIdRaw
-      ? (await storage.getUser(artistIdRaw))?.email
-      : undefined;
-  return {
-    title: String(release.title || ""),
-    artist: String(
-      release?.artistName ||
-      release?.artist ||
-      metadata?.artistName ||
-      "Unknown Artist"
-    ),
-    releaseDate: release.releaseDate
-      ? new Date(release?.releaseDate as any).toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0],
-    upc: (release as { upc?: string }).upc,
-    artwork: String(metadata.artworkUrl || metadata?.artwork || ""),
-    genre: String(release.genre || metadata?.primaryGenre || "Other"),
-    label: metadata.label ? String(metadata.label) : undefined,
-    labelContactEmail: metadata.labelContactEmail
-      ? String(metadata.labelContactEmail)
-      : ownerEmail,
-    copyrightYear: Number(metadata.copyrightYear) || new Date().getFullYear(),
-    copyrightOwner: metadata.copyrightOwner ? String(metadata.copyrightOwner) : undefined,
-    territoryMode:
-      (metadata?.territoryMode as "worldwide" | "include" | "exclude") ||
-      "worldwide",
-    territories: (metadata.territories as string[]) || [],
-    platforms: platformList,
-    tracks: tracks.map((t, idx) => {
-      const tr = t as Record<string, unknown>;
-      return {
-        title: String(tr.title || ""),
-        artist: String(
-          tr?.artistName ||
-          release?.artistName ||
-          release?.artist ||
-          metadata?.artistName ||
-          "Unknown Artist"
-        ),
-        isrc: tr.isrc ? String(tr.isrc) : undefined,
-        audioFile: String(tr.audioUrl || tr?.fileUrl || ""),
-        duration: Number(tr.duration) || 0,
-        trackNumber: Number(tr.trackNumber) || idx + 1,
-        explicit: Boolean(tr.explicit),
-        lyrics: tr.lyrics ? String(tr.lyrics) : undefined,
-      } satisfies LabelGridTrack;
-    }),
-  };
-}
-
-function buildToolostPayload(
-  release: Record<string, unknown>,
-  tracks: unknown[],
-  platforms: string[],
-): ToolostRelease {
-  const metadata = (release.metadata as Record<string, unknown>) || {};
-  const artworkAiUsage =
-    typeof metadata.artworkAiUsage === "string"
-      ? metadata.artworkAiUsage
-      : undefined;
-  const audioAiUsage =
-    typeof metadata.audioAiUsage === "string"
-      ? metadata.audioAiUsage
-      : undefined;
-  const compositionAiUsage =
-    typeof metadata.compositionAiUsage === "string"
-      ? metadata.compositionAiUsage
-      : undefined;
-
-  if (
-    !["none", "ai-generated"].includes(artworkAiUsage || "") ||
-    !["none", "ai-assisted"].includes(audioAiUsage || "") ||
-    !["none", "ai-assisted"].includes(compositionAiUsage || "")
-  ) {
-    throw new Error(
-      "Too Lost requires valid explicit AI-involvement declarations for the artwork, recording, and composition. Review and save all three declarations before submitting.",
-    );
-  }
-  const validArtworkAiUsage = artworkAiUsage as "none" | "ai-generated";
-
-  const releaseType =
-    metadata.releaseType === "EP"
-      ? "EP"
-      : metadata.releaseType === "album"
-        ? "Album"
-        : "Single";
-  const languageCodes: Record<string, string> = {
-    English: "en",
-    Spanish: "es",
-    French: "fr",
-    German: "de",
-    Italian: "it",
-    Portuguese: "pt",
-    Japanese: "ja",
-    Korean: "ko",
-    Mandarin: "zh",
-  };
-  const language = String(metadata.language || "").trim();
-
-  return {
-    title: String(release.title || ""),
-    artist: String(
-      release.artistName ||
-        release.artist ||
-        metadata.artistName ||
-        "Unknown Artist",
-    ),
-    releaseType,
-    language: languageCodes[language] || language,
-    composerName: String(metadata.composerName || ""),
-    acceptTerms: metadata.acceptTerms === true,
-    confirmRights: metadata.confirmRights === true,
-    confirmYoutubeRights: metadata.confirmYoutubeRights === true,
-    releaseDate: release.releaseDate
-      ? new Date(release.releaseDate as string | Date).toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0],
-    upc: (release as { upc?: string }).upc,
-    artwork: String(release.artworkUrl || metadata.artworkUrl || metadata.artwork || ""),
-    genre: String(release.genre || metadata.primaryGenre || "Other"),
-    platforms,
-    label: metadata.labelName ? String(metadata.labelName) : undefined,
-    copyrightYear: Number(metadata.copyrightYear) || undefined,
-    copyrightOwner: metadata.copyrightOwner
-      ? String(metadata.copyrightOwner)
-      : undefined,
-    territoryMode:
-      (metadata.territoryMode as "worldwide" | "include" | "exclude") ||
-      "worldwide",
-    territories: Array.isArray(metadata.territories)
-      ? (metadata.territories as string[])
-      : [],
-    artworkAiUsage: validArtworkAiUsage,
-    tracks: tracks.map((track, index) => {
-      const value = track as Record<string, unknown>;
-      return {
-        title: String(value.title || ""),
-        artist: String(
-          value.artistName ||
-            release.artistName ||
-            release.artist ||
-            metadata.artistName ||
-            "Unknown Artist",
-        ),
-        isrc: value.isrc ? String(value.isrc) : undefined,
-        audioFile: String(value.audioUrl || value.fileUrl || ""),
-        duration: Number(value.duration) || 0,
-        trackNumber: Number(value.trackNumber) || index + 1,
-        explicit: Boolean(value.explicit),
-        lyrics: value.lyrics ? String(value.lyrics) : undefined,
-        audioAiUsage,
-        compositionAiUsage,
-      } satisfies ToolostTrack;
-    }),
-  };
-}
-
-// POST /api/distribution/platform/spotify — Submit release to Spotify via LabelGrid
+// ─── Platform-specific submission endpoints (via Too Lost API) ────────────────
 router.get("/submission/:releaseId", requireAuth, async (req: Request, res: Response) => {
   try {
     const submissions = await getDistributionSubmissions((req.user as AuthenticatedUser).id, req.params.releaseId as string);
@@ -8035,10 +7850,12 @@ router.get("/submission/:releaseId", requireAuth, async (req: Request, res: Resp
   }
 });
 
-router.post(
-  "/platform/spotify",
-  requireAuth,
-  async (req: Request, res: Response) => {
+function registerToolostPlatformSubmission(
+  route: string,
+  responsePlatform: string,
+  requestedPlatform: string,
+) {
+  router.post(route, requireAuth, async (req: Request, res: Response) => {
     try {
       const userId = (req.user as AuthenticatedUser).id;
       const { releaseId } = req.body;
@@ -8051,163 +7868,61 @@ router.post(
       }
 
       const tracks = await storage.getDistroTracks(releaseId);
-      const payload = await buildLabelGridPayload(release, tracks, "spotify");
-
+      const toolost = await getDistributionToolostService(userId);
       logger.info(
-        { userId },
-        `[Distribution] Submitting release ${releaseId} to Spotify via LabelGrid`,
+        { userId, platform: requestedPlatform },
+        `[Distribution] Submitting release ${releaseId} to Too Lost`,
       );
-      const result = await submitDistributionOnce("labelgrid", userId, releaseId, payload,
-        checkpoint => labelGridService.createRelease(payload, checkpoint));
-
-      const metadata = (release?.metadata as Record<string, unknown>) || {};
-      await storage.updateDistroRelease(releaseId, {
-        metadata: {
-          ...metadata,
-          labelGridReleaseId: result.releaseId,
-          labelGridSpotifySubmittedAt: new Date().toISOString(),
-        },
-      });
-
-      res.json({
-        success: true,
-        platform: "spotify",
+      const { result } = await submitToolostRelease({
+        client: toolost,
+        userId,
         releaseId,
-        labelGridReleaseId: result.releaseId,
-        status: result.status,
-        message:
-          "LabelGrid accepted the distribution request. Spotify delivery is confirmed only by its outlet status.",
-        submissionId: result.releaseId,
-        estimatedDelivery: result.estimatedLiveDate || null,
-        platforms: result.platforms,
-      });
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error submitting to Spotify via LabelGrid:");
-      res.status(500).json({ error: "Failed to submit to Spotify" });
-    }
-  },
-);
-
-// POST /api/distribution/platform/apple — Submit release to Apple Music via LabelGrid
-router.post(
-  "/platform/apple",
-  requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = (req.user as AuthenticatedUser).id;
-      const { releaseId } = req.body;
-      if (!releaseId)
-        return res.status(400).json({ error: "releaseId is required" });
-
-      const release = await storage.getDistroRelease(releaseId);
-      if (!release || release?.artistId !== userId) {
-        return res.status(404).json({ error: "Release not found" });
-      }
-
-      const tracks = await storage.getDistroTracks(releaseId);
-      const payload = await buildLabelGridPayload(
         release,
         tracks,
-        "apple_music",
-      );
-
-      logger.info(
-        { userId },
-        `[Distribution] Submitting release ${releaseId} to Apple Music via LabelGrid`,
-      );
-      const result = await submitDistributionOnce("labelgrid", userId, releaseId, payload,
-        checkpoint => labelGridService.createRelease(payload, checkpoint));
+        requestedPlatforms: [requestedPlatform],
+      });
 
       const metadata = (release?.metadata as Record<string, unknown>) || {};
       await storage.updateDistroRelease(releaseId, {
         metadata: {
           ...metadata,
-          labelGridReleaseId: result.releaseId,
-          labelGridAppleSubmittedAt: new Date().toISOString(),
+          toolostReleaseId: result.releaseId,
+          [`toolost${responsePlatform[0].toUpperCase()}${responsePlatform.slice(1)}SubmittedAt`]:
+            new Date().toISOString(),
         },
       });
 
       res.json({
         success: true,
-        platform: "apple",
+        platform: responsePlatform,
         releaseId,
-        labelGridReleaseId: result.releaseId,
+        toolostReleaseId: result.releaseId,
         status: result.status,
         message:
-          "LabelGrid accepted the distribution request. Apple Music delivery is confirmed only by its outlet status.",
+          `Too Lost accepted the distribution request. ${responsePlatform} delivery is confirmed only by its outlet status.`,
         submissionId: result.releaseId,
         estimatedDelivery: result.estimatedLiveDate || null,
         platforms: result.platforms,
       });
     } catch (error: unknown) {
       logger.warn(
-        { err: error },
-        "Error submitting to Apple Music via LabelGrid:",
+        { err: error, platform: requestedPlatform },
+        "Error submitting platform release via Too Lost:",
       );
-      res.status(500).json({ error: "Failed to submit to Apple Music" });
+      res.status(500).json({
+        error: `Failed to submit to ${responsePlatform}`,
+        message: error instanceof Error ? error.message : undefined,
+      });
     }
-  },
-);
+  });
+}
 
-// POST /api/distribution/platform/youtube — Submit release to YouTube Music via LabelGrid
-router.post(
+registerToolostPlatformSubmission("/platform/spotify", "spotify", "spotify");
+registerToolostPlatformSubmission("/platform/apple", "apple", "apple_music");
+registerToolostPlatformSubmission(
   "/platform/youtube",
-  requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = (req.user as AuthenticatedUser).id;
-      const { releaseId } = req.body;
-      if (!releaseId)
-        return res.status(400).json({ error: "releaseId is required" });
-
-      const release = await storage.getDistroRelease(releaseId);
-      if (!release || release?.artistId !== userId) {
-        return res.status(404).json({ error: "Release not found" });
-      }
-
-      const tracks = await storage.getDistroTracks(releaseId);
-      const payload = await buildLabelGridPayload(
-        release,
-        tracks,
-        "youtube_music",
-      );
-
-      logger.info(
-        { userId },
-        `[Distribution] Submitting release ${releaseId} to YouTube Music via LabelGrid`,
-      );
-      const result = await submitDistributionOnce("labelgrid", userId, releaseId, payload,
-        checkpoint => labelGridService.createRelease(payload, checkpoint));
-
-      const metadata = (release?.metadata as Record<string, unknown>) || {};
-      await storage.updateDistroRelease(releaseId, {
-        metadata: {
-          ...metadata,
-          labelGridReleaseId: result.releaseId,
-          labelGridYoutubeSubmittedAt: new Date().toISOString(),
-        },
-      });
-
-      res.json({
-        success: true,
-        platform: "youtube",
-        releaseId,
-        labelGridReleaseId: result.releaseId,
-        status: result.status,
-        message:
-          "LabelGrid accepted the distribution request. YouTube Music delivery is confirmed only by its outlet status.",
-        submissionId: result.releaseId,
-        estimatedDelivery: result.estimatedLiveDate || null,
-        platforms: result.platforms,
-      });
-    } catch (error: unknown) {
-      logger.warn(
-        { err: error },
-        "Error submitting to YouTube Music via LabelGrid:",
-      );
-      res.status(500).json({ error: "Failed to submit to YouTube Music" });
-    }
-  },
+  "youtube",
+  "youtube_music",
 );
 
 // ── Catalog Migration Export ───────────────────────────────────────────────────

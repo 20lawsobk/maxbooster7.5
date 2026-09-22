@@ -89,6 +89,7 @@ for (const name of ["integrations-readiness", "integration-webhooks"])
   add(name, "integrations", [`tests/${name}.cjs`], [`tests/${name}.cjs`]);
 nodeTests("closure-integrations", "integrations", [
   "tests/closure-integrations.cjs", "tests/closure-integrations-shared.cjs",
+  "tests/scheduled-post-receipt-compatibility.cjs",
 ]);
 vitest("growth-rights", "growth", "tests/growth-rights.vitest.config.ts", []);
 nodeTests("client-contracts", "client", [
@@ -102,7 +103,10 @@ add("data-runtime", "data", ["scripts/test-data-runtime.mjs"], ["scripts/test-da
 add("fabric-deletion", "privacy", ["scripts/test-fabric-deletion.mjs"], ["scripts/test-fabric-deletion.mjs"]);
 nodeTests("closure-erasure-workflow", "privacy", ["server/services/accountErasureWorkflow.test.ts"], ["--import", "tsx"]);
 // Discovered by source inventory; mocks subprocesses and never connects to PG.
-const backupFiles = ["server/services/backup/__tests__/postgresTools.test.ts"];
+const backupFiles = [
+  "server/services/backup/__tests__/postgresTools.test.ts",
+  "server/services/backup/__tests__/databaseDump.test.ts",
+];
 const backupConfig = join(scratch, "backup.config.mjs");
 writeFileSync(backupConfig, `export default ${JSON.stringify({
   root, test: { include: backupFiles, environment: "node", setupFiles: [],
@@ -127,7 +131,7 @@ vitest("exports-sync", "exports/sync", "tests/coverage-gaps.config.ts", ["tests/
 const gaps = {
   security: "No deployed cookies/proxy, browser auth, real session SQL contention, TLS egress or credential rotation acceptance.",
   commerce: "Mocked SQL/provider contracts only; no real charge, refund, payout, settlement or cross-process durable replay.",
-  integrations: "Synthetic signatures/credentials and mocked providers; no actual webhook delivery, catalog scale or provider receipt.",
+  integrations: "Synthetic signatures/credentials, mocked providers and minimal isolated PostgreSQL receipt-merge behavior; no actual webhook delivery, catalog scale, live SQL contention or provider receipt.",
   growth: "Mocked mail/database/payment boundaries; no delivered campaign, production split contention or legal acceptance.",
   client: "Node/source/browser-API fixtures only; no browser, service-worker lifecycle, device or offline end-to-end acceptance.",
   admin: "VM/mocked DB, email and Redis; no deployed admin authorization or moderation/evidence transaction acceptance.",
