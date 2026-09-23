@@ -1,0 +1,51 @@
+{
+  "generatedAt": "2026-09-23T13:51:37.456Z",
+  "startedAt": "2026-09-23T13:51:37.405Z",
+  "decision": "FAIL",
+  "command": "env -i PATH=\"$PATH\" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs --http-load",
+  "artifactLabel": "source application authenticated HTTP simulation; not packed application acceptance",
+  "sourceRevision": "fbe555cf1a910ffdc9ab7d7d6fd696b3b2e3f2dd",
+  "sourceFileDigestsSha256": {
+    "scripts/readiness-assembled-acceptance.mjs": "b8a70611158e7e70f4b006e5dd953b58ee613ea1731839c30bf2f056ee521e56",
+    "scripts/readiness-egress-guard.mjs": "68df9f32a2526a71fc6c62b4603b3a36c2cf14cb29ad812582a10378d1506693",
+    "server/index.ts": "2f59eb145b657d0a181946d689019dac3be1c9e73e8bd6a440eb75aaf924e422",
+    "server/routes.ts": "d0e66c91a44fbdc26a418a996b4555463acb7c28c1d85d03e3d9b2508eb9c734",
+    "server/middleware/csrf.ts": "864ded9733c0edbf700a67a9cc25e457c1c55fa5fd713eb6b23ea5b33c719d2f",
+    "shared/schema.ts": "50864e829a1ed30889968be18e00dd8f0e3f810825b104d2d4afd019ff2aef24"
+  },
+  "safety": {
+    "inheritedSecretNamesRejected": true,
+    "database": "ephemeral local PostgreSQL containing generated synthetic empty schema only",
+    "network": "child preloader permits loopback TCP/Unix sockets only; rejects wrapper and direct-socket external TCP, UDP, and child processes",
+    "pdim": "no real PDIM; no Redis credential or non-loopback endpoint is available",
+    "maxCore": "not started; loopback port 9 is a closed sentinel and no model is loaded",
+    "providerCredentialsPresent": false,
+    "productionDataPresent": false,
+    "disposableWorkingDirectory": true
+  },
+  "evidence": {
+    "schemaGeneration": "not_run",
+    "postgres": "not_run",
+    "appProcess": "not_run",
+    "health": "not_run",
+    "readiness": "not_run",
+    "frontend": "not_run",
+    "authHttp": "not_run",
+    "httpLoad": "not_run",
+    "browser": "not_run",
+    "egressGuard": "not_run",
+    "cleanup": "pass"
+  },
+  "failures": [
+    "HTTP load capacity admission denied before PostgreSQL/application startup: less than 1536 MiB available"
+  ],
+  "observations": [],
+  "untested": [
+    "authenticated browser journeys beyond the completed login/session/logout path",
+    "provider sandbox delivery, OAuth, webhooks, messaging, push, email, social posting, and DSP contracts",
+    "real-money payment, payout, refund, royalty, and financial reconciliation",
+    "production-source restore/upgrade/rollback and durable backup recovery",
+    "local MaxCore inference/model behavior (the only MaxCore implementation; intentionally not started in this bounded non-ML drill)",
+    "Redis/PDIM loss recovery, soak, multi-process clustering, DNS/TLS, browser UI, and packed cold-image startup"
+  ]
+}

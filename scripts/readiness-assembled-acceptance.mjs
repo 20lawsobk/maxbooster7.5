@@ -1,5 +1,7 @@
 // Run ONLY via:
 // env -i PATH="$PATH" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs
+// Explicit HTTP-load-only mode (the only mode that skips Chromium):
+// env -i PATH="$PATH" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs --http-load
 import { spawn, spawnSync } from "node:child_process";
 import {
   createWriteStream,
@@ -18,6 +20,10 @@ import net from "node:net";
 import pg from "pg";
 import WebSocket from "ws";
 
+const httpLoadOnly = process.argv.length === 3 && process.argv[2] === "--http-load";
+if (process.argv.length !== (httpLoadOnly ? 3 : 2)) {
+  throw new Error("Only the optional --http-load argument is supported");
+}
 const forbidden = Object.keys(process.env).filter((key) =>
   /DATABASE|PGHOST|PGPORT|PGUSER|PGPASSWORD|NEON|REDIS|STRIPE|RESEND|SENDGRID|TWILIO|AWS|SENTRY|TOKEN|SECRET|KEY|NODE_OPTIONS/i.test(key),
 );
@@ -41,8 +47,9 @@ async function reserveEphemeralPort() {
 const pgPort = await reserveEphemeralPort();
 const appPort = await reserveEphemeralPort();
 const startedAt = new Date().toISOString();
-const reportJson = join(root, "reports/readiness-implementation/assembled-acceptance-drill.json");
-const reportMd = join(root, "reports/readiness-implementation/assembled-acceptance-drill.md");
+const reportStem = httpLoadOnly ? "assembled-authenticated-http-load" : "assembled-acceptance-drill";
+const reportJson = join(root, `reports/readiness-implementation/${reportStem}.json`);
+const reportMd = join(root, `reports/readiness-implementation/${reportStem}.md`);
 const evidence = {
   schemaGeneration: "not_run",
   postgres: "not_run",
@@ -51,6 +58,7 @@ const evidence = {
   readiness: "not_run",
   frontend: "not_run",
   authHttp: "not_run",
+  httpLoad: httpLoadOnly ? "not_run" : "not_requested",
   browser: "not_run",
   egressGuard: "not_run",
   cleanup: "not_run",
@@ -96,6 +104,10 @@ function run(command, args, env, timeout = 120_000) {
 function request(path, timeout = 10_000, options = {}) {
   return new Promise((resolveRequest, reject) => {
     const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+    if (httpLoadOnly && body && Buffer.byteLength(body) > 1024) {
+      reject(new Error("HTTP load request body exceeds the 1024-byte bound"));
+      return;
+    }
     const headers = {
       Accept: "application/json,text/html",
       "X-Forwarded-Proto": "https",
@@ -511,7 +523,210 @@ function sha256(text) {
   return createHash("sha256").update(text).digest("hex");
 }
 
+function availableMemoryBytes() {
+  const meminfo = readFileSync("/proc/meminfo", "utf8");
+  const availableKiB = Number(meminfo.match(/^MemAvailable:\s+(\d+)\s+kB$/m)?.[1] ?? 0);
+  let available = availableKiB * 1024;
+  try {
+    const limitText = readFileSync("/sys/fs/cgroup/memory.max", "utf8").trim();
+    const current = Number(readFileSync("/sys/fs/cgroup/memory.current", "utf8").trim());
+    if (limitText !== "max") available = Math.min(available, Number(limitText) - current);
+  } catch {}
+  return available;
+}
+
+function nearestRank(values, percentile) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.max(0, Math.ceil(percentile * sorted.length) - 1)];
+}
+
+async function createLoadSession(email, username, password, register) {
+  const jar = new Map();
+  let response = await authRequest(jar, "/api/csrf-token");
+  if (response.status !== 200) throw new Error(`load CSRF bootstrap returned HTTP ${response.status}`);
+  const csrf = jsonBody(response).csrfToken;
+  if (typeof csrf !== "string" || csrf.length > 256 || jar.get("csrf-token") !== csrf) {
+    throw new Error("load CSRF body/cookie binding failed");
+  }
+  response = await authRequest(jar, register ? "/api/auth/register" : "/api/auth/login", {
+    method: "POST",
+    csrf,
+    body: register
+      ? { email, username, password, confirmPassword: password, firstName: "Load", lastName: "User" }
+      : { email, password },
+  });
+  const user = jsonBody(response);
+  if (response.status !== 200 || typeof user.id !== "string") {
+    throw new Error(`${register ? "registration" : "login"} setup returned HTTP ${response.status}`);
+  }
+  return { jar, csrf, userId: user.id };
+}
+
+async function runAuthenticatedHttpLoad() {
+  const minimumAvailable = 1536 * 1024 * 1024;
+  const admittedAvailable = availableMemoryBytes();
+  if (admittedAvailable < minimumAvailable) {
+    throw new Error(`HTTP load capacity admission denied: ${Math.floor(admittedAvailable / 1024 / 1024)} MiB available; 1536 MiB required`);
+  }
+  const accountCount = 10;
+  const sessions = [];
+  for (let index = 0; index < accountCount; index++) {
+    const suffix = randomBytes(8).toString("hex");
+    const email = `load-${suffix}@example.invalid`;
+    const username = `load_${suffix}`;
+    const password = `Load!${randomBytes(12).toString("base64url")}9a`;
+    const primary = await createLoadSession(email, username, password, true);
+    sessions.push(primary);
+    sessions.push(await createLoadSession(email, username, password, false));
+  }
+
+  const invalidCsrf = await authRequest(sessions[0].jar, "/api/auth/heartbeat", { method: "POST" });
+  if (invalidCsrf.status !== 403) {
+    throw new Error(`missing-CSRF mutation was not rejected (HTTP ${invalidCsrf.status})`);
+  }
+
+  const projectProbe = await authRequest(sessions[0].jar, "/api/projects", {
+    method: "POST",
+    csrf: sessions[0].csrf,
+    body: { title: "Disposable load project", description: "isolated acceptance data", metadata: { synthetic: true } },
+  });
+  const projectWritesCompatible = projectProbe.status === 200 && typeof jsonBody(projectProbe).id === "string";
+  const operations = projectWritesCompatible
+    ? ["session-read", "project-read", "session-write", "project-write"]
+    : ["session-read", "session-write"];
+  const phaseSettings = [
+    { name: "steady", workers: 10, durationMs: 20_000 },
+    { name: "spike", workers: 20, durationMs: 10_000 },
+  ];
+  const phases = [];
+  const failureCounts = new Map();
+
+  for (const setting of phaseSettings) {
+    const durations = [];
+    let successful = 0;
+    let failed = 0;
+    const deadline = Date.now() + setting.durationMs;
+    const workers = sessions.slice(0, setting.workers).map(async (session, workerIndex) => {
+      let iteration = 0;
+      while (Date.now() < deadline) {
+        const cycleStarted = Date.now();
+        const operation = operations[(workerIndex + iteration) % operations.length];
+        const requestStarted = process.hrtime.bigint();
+        try {
+          let response;
+          if (operation === "session-read") {
+            response = await authRequest(session.jar, "/api/auth/me");
+          } else if (operation === "project-read") {
+            response = await authRequest(session.jar, "/api/projects");
+          } else if (operation === "session-write") {
+            response = await authRequest(session.jar, "/api/auth/heartbeat", { method: "POST", csrf: session.csrf });
+          } else {
+            response = await authRequest(session.jar, "/api/projects", {
+              method: "POST",
+              csrf: session.csrf,
+              body: { title: `Synthetic ${workerIndex}-${iteration}`, metadata: { synthetic: true } },
+            });
+          }
+          const valid = response.status === 200 &&
+            (operation !== "session-read" || jsonBody(response)?.id === session.userId);
+          if (valid) successful++;
+          else {
+            failed++;
+            const key = `${operation}: HTTP ${response.status}`;
+            failureCounts.set(key, (failureCounts.get(key) ?? 0) + 1);
+          }
+        } catch (error) {
+          failed++;
+          const key = `${operation}: ${String(error?.message ?? error).slice(0, 160)}`;
+          failureCounts.set(key, (failureCounts.get(key) ?? 0) + 1);
+        } finally {
+          durations.push(Number(process.hrtime.bigint() - requestStarted) / 1e6);
+        }
+        iteration++;
+        const waitMs = Math.min(3_000 - (Date.now() - cycleStarted), deadline - Date.now());
+        if (waitMs > 0) await new Promise((resolveWait) => setTimeout(resolveWait, waitMs));
+      }
+    });
+    await Promise.all(workers);
+    const count = successful + failed;
+    phases.push({
+      name: setting.name,
+      workers: setting.workers,
+      configuredDurationSeconds: setting.durationMs / 1000,
+      count,
+      successful,
+      failed,
+      successPercent: count ? (successful / count) * 100 : 0,
+      p95Ms: nearestRank(durations, 0.95),
+      p99Ms: nearestRank(durations, 0.99),
+      durationDefinition: "all completed request durations, including failed requests",
+    });
+  }
+
+  const revokedCookie = cookieHeader(sessions[0].jar);
+  const logout = await authRequest(sessions[0].jar, "/api/auth/logout", {
+    method: "POST",
+    csrf: sessions[0].csrf,
+  });
+  if (logout.status !== 200) throw new Error(`load logout returned HTTP ${logout.status}`);
+  const revoked = await request("/api/projects", 15_000, { cookie: revokedCookie });
+  if (revoked.status !== 401) throw new Error(`revoked logout session was not denied (HTTP ${revoked.status})`);
+
+  const thresholdFailures = [];
+  for (const phase of phases) {
+    if (phase.count === 0) thresholdFailures.push(`${phase.name}: no requests completed`);
+    if (phase.successPercent < 99) thresholdFailures.push(`${phase.name}: success ${phase.successPercent.toFixed(2)}% < 99%`);
+    if (phase.p95Ms === null || phase.p95Ms > 500) thresholdFailures.push(`${phase.name}: p95 ${phase.p95Ms}ms > 500ms`);
+    if (phase.p99Ms === null || phase.p99Ms > 1000) thresholdFailures.push(`${phase.name}: p99 ${phase.p99Ms}ms > 1000ms`);
+  }
+  const result = {
+    label: "source application HTTP simulation; not packed application acceptance",
+    admission: { availableBytes: admittedAvailable, minimumAvailableBytes: minimumAvailable },
+    thresholds: { minimumSuccessPercent: 99, maximumP95Ms: 500, maximumP99Ms: 1000 },
+    settings: {
+      phases: phaseSettings.map(({ name, workers, durationMs }) => ({ name, workers, durationSeconds: durationMs / 1000 })),
+      accounts: accountCount,
+      sessions: sessions.length,
+      pacingMs: 3000,
+      requestTimeoutMs: 15000,
+      maximumRequestBodyBytes: 1024,
+      appMaxOldSpaceMiB: 768,
+      overlappingRequestsPerVirtualUser: false,
+      percentileMethod: "nearest-rank over all completed request durations, including failures",
+    },
+    callbacks: operations.map((name) => ({
+      name,
+      method: name === "session-read" || name === "project-read" ? "GET" : "POST",
+      path: name === "session-read"
+        ? "/api/auth/me"
+        : name === "session-write"
+          ? "/api/auth/heartbeat"
+          : "/api/projects",
+    })),
+    coverage: {
+      actualRegistrationAndLogin: true,
+      sessionRead: true,
+      csrfProtectedSessionWrite: true,
+      projectRead: projectWritesCompatible,
+      projectWrite: projectWritesCompatible,
+      projectWriteProbeStatus: projectProbe.status,
+      missingCsrfRejected: true,
+      logoutSessionRevoked: true,
+      durableLoadGeneratorWorker: false,
+    },
+    phases,
+    failures: [...failureCounts].map(([failure, count]) => ({ failure, count })),
+    thresholdFailures,
+  };
+  if (thresholdFailures.length) throw Object.assign(new Error(`HTTP load thresholds failed: ${thresholdFailures.join("; ")}`), { loadResult: result });
+  return result;
+}
+
 try {
+  if (httpLoadOnly && availableMemoryBytes() < 1536 * 1024 * 1024) {
+    throw new Error("HTTP load capacity admission denied before PostgreSQL/application startup: less than 1536 MiB available");
+  }
   mkdirSync(join(temp, "home"));
   mkdirSync(join(temp, "cwd"));
   mkdirSync(join(temp, "schema"));
@@ -540,7 +755,7 @@ try {
   run("pg_ctl", [
     "-D", join(temp, "pg"),
     "-l", join(temp, "postgres.log"),
-    "-o", `-h 127.0.0.1 -k ${temp} -p ${pgPort}`,
+    "-o", `-h 127.0.0.1 -k ${temp} -p ${pgPort} -c shared_buffers=32MB -c max_connections=30`,
     "-w", "start",
   ], baseEnv);
   postgresStarted = true;
@@ -595,6 +810,7 @@ try {
   appLogPath = join(temp, "app.log");
   const appLog = createWriteStream(appLogPath, { flags: "wx" });
   app = spawn(process.execPath, [
+    "--max-old-space-size=768",
     "--import", join(root, "scripts/readiness-egress-guard.mjs"),
     "--import", "tsx",
     join(root, "server/index.ts"),
@@ -618,46 +834,65 @@ try {
     sha256: sha256(frontend.body),
   };
 
-  const authSuffix = randomBytes(8).toString("hex");
-  const authEmail = `acceptance-${authSuffix}@example.invalid`;
-  const authUsername = `accept_${authSuffix}`;
-  const authPassword = `Acceptance!${randomBytes(12).toString("base64url")}9a`;
-  const authResult = await runHttpAuthJourney(authEmail, authUsername, authPassword);
-  evidence.authHttp = {
-    csrfCookieHeaderBinding: "pass",
-    register: "pass",
-    registrationSession: "pass",
-    login: "pass",
-    sessionPersistence: "pass",
-    logoutInvalidation: "pass",
-    syntheticUserRemovedWithDatabase: true,
-  };
-  try {
-    evidence.browser = await runBrowserJourney(
-      authEmail,
-      authPassword,
-      authResult.userId,
-      baseEnv,
-    );
-  } catch (error) {
-    const browserFailure = String(error?.message ?? error).slice(0, 1200);
-    const loginAsset = readdirSync(join(root, "dist/public/assets"))
-      .find((name) => name.startsWith("Login-") && name.endsWith(".js"));
-    const staleLoginAsset = loginAsset
-      ? !readFileSync(join(root, "dist/public/assets", loginAsset), "utf8").includes("x-csrf-token")
-      : true;
-    const prerequisite = staleLoginAsset
-      ? "Rebuild dist/public from current client source: the assembled Login asset lacks the source login CSRF-header logic."
-      : "Investigate the recorded browser login failure against the current built asset.";
-    evidence.browser = {
-      engine: "Chromium CDP",
-      hydrated: true,
-      screenshot: "reports/readiness-implementation/assembled-acceptance-login.png",
-      formLogin: "fail",
-      failure: browserFailure,
-      prerequisite,
+  if (httpLoadOnly) {
+    evidence.browser = "intentionally skipped only for explicit --http-load mode";
+    try {
+      evidence.httpLoad = await runAuthenticatedHttpLoad();
+      evidence.authHttp = {
+        csrfCookieHeaderBinding: "pass",
+        register: "pass",
+        login: "pass",
+        sessionPersistence: "pass",
+        csrfRejection: "pass",
+        logoutInvalidation: "pass",
+        syntheticUsersRemovedWithDatabase: true,
+      };
+    } catch (error) {
+      if (error?.loadResult) evidence.httpLoad = error.loadResult;
+      throw error;
+    }
+  } else {
+    const authSuffix = randomBytes(8).toString("hex");
+    const authEmail = `acceptance-${authSuffix}@example.invalid`;
+    const authUsername = `accept_${authSuffix}`;
+    const authPassword = `Acceptance!${randomBytes(12).toString("base64url")}9a`;
+    const authResult = await runHttpAuthJourney(authEmail, authUsername, authPassword);
+    evidence.authHttp = {
+      csrfCookieHeaderBinding: "pass",
+      register: "pass",
+      registrationSession: "pass",
+      login: "pass",
+      sessionPersistence: "pass",
+      logoutInvalidation: "pass",
+      syntheticUserRemovedWithDatabase: true,
     };
-    failures.push(`browser login acceptance failed: ${prerequisite}`);
+    try {
+      evidence.browser = await runBrowserJourney(
+        authEmail,
+        authPassword,
+        authResult.userId,
+        baseEnv,
+      );
+    } catch (error) {
+      const browserFailure = String(error?.message ?? error).slice(0, 1200);
+      const loginAsset = readdirSync(join(root, "dist/public/assets"))
+        .find((name) => name.startsWith("Login-") && name.endsWith(".js"));
+      const staleLoginAsset = loginAsset
+        ? !readFileSync(join(root, "dist/public/assets", loginAsset), "utf8").includes("x-csrf-token")
+        : true;
+      const prerequisite = staleLoginAsset
+        ? "Rebuild dist/public from current client source: the assembled Login asset lacks the source login CSRF-header logic."
+        : "Investigate the recorded browser login failure against the current built asset.";
+      evidence.browser = {
+        engine: "Chromium CDP",
+        hydrated: true,
+        screenshot: "reports/readiness-implementation/assembled-acceptance-login.png",
+        formLogin: "fail",
+        failure: browserFailure,
+        prerequisite,
+      };
+      failures.push(`browser login acceptance failed: ${prerequisite}`);
+    }
   }
 
   const ready = await waitFor("/api/ready", (response) => {
@@ -693,7 +928,9 @@ try {
   observations.push("Real application routes and production static frontend were served from the assembled server process.");
   observations.push("Normal registration/login used the real password hashing, CSRF, session store, and logout paths with a synthetic user; no auth bypass was used.");
   observations.push(
-    evidence.browser.formLogin === true
+    httpLoadOnly
+      ? "Explicit load-only mode did not launch Chromium; the default invocation retains its browser flow."
+      : evidence.browser.formLogin === true
       ? "A real headless Chromium page hydrated the login UI, submitted the login form, persisted its cookie session, logged out, and captured a pre-credential screenshot."
       : "A real headless Chromium page hydrated the login UI and captured a pre-credential screenshot, but the assembled browser login failed; HTTP auth evidence remains distinct and the artifact prerequisite is recorded.",
   );
@@ -726,15 +963,39 @@ try {
   rmSync(temp, { recursive: true, force: true });
 }
 
+const revisionResult = spawnSync("git", ["rev-parse", "HEAD"], {
+  cwd: root,
+  env: { PATH: process.env.PATH, HOME: "/tmp", LANG: "C" },
+  encoding: "utf8",
+  timeout: 5_000,
+});
+const sourceFiles = [
+  "scripts/readiness-assembled-acceptance.mjs",
+  "scripts/readiness-egress-guard.mjs",
+  "server/index.ts",
+  "server/routes.ts",
+  "server/middleware/csrf.ts",
+  "shared/schema.ts",
+];
 const result = {
   generatedAt: new Date().toISOString(),
   startedAt,
   decision: failures.length ? "FAIL" : "PASS_WITH_UNTESTED_CATEGORIES",
-  command: 'env -i PATH="$PATH" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs',
+  command: `env -i PATH="$PATH" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs${httpLoadOnly ? " --http-load" : ""}`,
+  artifactLabel: httpLoadOnly
+    ? "source application authenticated HTTP simulation; not packed application acceptance"
+    : "source application assembled acceptance; not packed application acceptance",
+  sourceRevision: revisionResult.status === 0 ? revisionResult.stdout.trim() : "unavailable",
+  sourceFileDigestsSha256: Object.fromEntries(sourceFiles.map((file) => [
+    file,
+    sha256(readFileSync(join(root, file))),
+  ])),
   safety: {
     inheritedSecretNamesRejected: true,
     database: "ephemeral local PostgreSQL containing generated synthetic empty schema only",
     network: "child preloader permits loopback TCP/Unix sockets only; rejects wrapper and direct-socket external TCP, UDP, and child processes",
+    pdim: "no real PDIM; no Redis credential or non-loopback endpoint is available",
+    maxCore: "not started; loopback port 9 is a closed sentinel and no model is loaded",
     providerCredentialsPresent: false,
     productionDataPresent: false,
     disposableWorkingDirectory: true,
@@ -748,13 +1009,17 @@ const result = {
     "real-money payment, payout, refund, royalty, and financial reconciliation",
     "production-source restore/upgrade/rollback and durable backup recovery",
     "local MaxCore inference/model behavior (the only MaxCore implementation; intentionally not started in this bounded non-ML drill)",
-    "Redis/PDIM loss recovery, load/soak, multi-worker clustering, DNS/TLS, and packed cold-image startup",
+    httpLoadOnly
+      ? "Redis/PDIM loss recovery, soak, multi-process clustering, DNS/TLS, browser UI, and packed cold-image startup"
+      : "Redis/PDIM loss recovery, load/soak, multi-worker clustering, DNS/TLS, and packed cold-image startup",
   ],
 };
 writeFileSync(reportJson, JSON.stringify(result, null, 2) + "\n");
-const md = `# Assembled application acceptance drill
+const md = `# ${httpLoadOnly ? "Authenticated HTTP load simulation" : "Assembled application acceptance drill"}
 
 Decision: **${result.decision}**
+
+Artifact label: **${result.artifactLabel}**
 
 ## Replay
 
@@ -769,7 +1034,7 @@ Report generated: ${result.generatedAt}
 - The child receives an allowlisted environment, a generated one-run session secret, an ephemeral local PostgreSQL URL, and no provider credentials.
 - The real application runs from a disposable working directory. PostgreSQL contains only a generated empty schema; no shared/live database or production data is read.
 - A pre-import guard rejects non-loopback TCP/TLS (including direct Socket.connect), all UDP, and child processes. MaxCore local startup, fan delivery, ACME, DNS local startup, and clustering are explicitly off; none is counted as accepted.
-- Chromium is launched headless with external host resolution denied. Screenshot capture is attempted before credentials are entered; its exact result is recorded in the browser evidence.
+- ${httpLoadOnly ? "Chromium is intentionally not launched in explicit load-only mode; the default browser flow is unchanged." : "Chromium is launched headless with external host resolution denied. Screenshot capture is attempted before credentials are entered; its exact result is recorded in the browser evidence."}
 - Temporary database, logs, credentials, and working files are removed after the bounded run.
 
 ## Executed evidence
@@ -785,6 +1050,7 @@ ${observations.length ? observations.map((item) => `- ${item}`).join("\n") : "- 
 - A 200 liveness response alone is not treated as readiness. Frontend acceptance requires a real HTML response after the production static handler is active.
 - \`frontend\` records the raw production HTML response; \`browser\` separately records JavaScript hydration and the real browser form/session journey.
 - This result does not disable a failed critical readiness dependency or relabel degraded provider behavior as a pass.
+- Passing load thresholds proves only this bounded source-app/ephemeral-PostgreSQL run. It does not prove PDIM, MaxCore, a packed artifact, production capacity, or provider acceptance.
 
 ## Still untested
 

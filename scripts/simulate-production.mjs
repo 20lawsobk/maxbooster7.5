@@ -7,8 +7,8 @@
  * Node build and start commands used by the VM deployment there, and records
  * only a redacted result under reports/production-simulation/.
  *
- * DEPLOY_PACK=1 is safe here because the copy is disposable.  The source
- * checkout is never used as the build root and is never mutated by packing.
+ * DEPLOY_PACK=1 is used only inside the disposable copy. It is never exported
+ * in, or run with, the source checkout as cwd.
  *
  * The runner is resumable by stage.  A normal invocation starts a new run;
  * `--resume copy|build|size|restore|startup` (or `--phase=<stage> --resume`)
@@ -17,11 +17,17 @@
  */
 
 import { createHash } from "node:crypto";
-import { copyFileSync, createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, readlinkSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  assessHeavyRun,
+  assertSanitizedEnvironment,
+  inspectProductionProfile,
+  runtimeIsolationPolicy,
+} from "./lib/productionSimulationPolicy.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const reportDir = join(root, "reports", "production-simulation");
@@ -32,6 +38,7 @@ mkdirSync(runsRoot, { recursive: true });
 
 const statePath = join(durableRoot, "state.json");
 const argv = new Set(process.argv.slice(2));
+const runtimeSandboxed = argv.has("--runtime-sandbox");
 const phaseFlag = process.argv.find((arg) => arg.startsWith("--phase="));
 const requestedPhase = phaseFlag ? phaseFlag.slice("--phase=".length) : process.argv.slice(2).find((arg) => !arg.startsWith("-")) || "all";
 const resumeRequested = argv.has("--resume") || requestedPhase !== "all" || argv.has("--cleanup");
@@ -48,7 +55,6 @@ const workspace = stateFromDisk?.runId === runId && existsSync(stateFromDisk.wor
 const copyRoot = join(workspace, "app");
 const transientRoot = join(workspace, "transient");
 const logsRoot = join(workspace, "logs");
-const historicalRoot = join(workspace, "historical-capsules");
 // tsx/esbuild create Unix sockets below TMPDIR; the durable run path is too
 // long for Linux's sockaddr_un limit. This is disposable process scratch,
 // not resumable state.
@@ -69,10 +75,16 @@ const report = {
     sourceRoot: root,
     sourceRootUsedAsBuildCwd: false,
     sourceFilesMutated: false,
-    excluded: [".replit", ".git", "data", "logs", "attached_assets", "external", "*.env secrets", "dns-node/keys"],
+    excluded: [".replit", ".git", "data", "logs", "attached_assets", "*.env secrets", "dns-node/keys"],
     networkCredentialsProvided: false,
     thirdPartyOrLiveDatabaseTargeted: false,
+    runtimeIsolationPolicy,
+    hostNetworkNamespace: readlinkSync("/proc/self/ns/net"),
+    runtimeNetworkNamespace: null,
+    runtimeIsolationEnforced: false,
+    deployPackOnSourceWorkspace: false,
   },
+  resourceProfile: null,
   sourceSnapshot: {
     capturedAt: null,
     note: "All build/start stages use the immutable disposable copy captured at copy stage; source edits after that point are intentionally excluded.",
@@ -87,7 +99,7 @@ const report = {
   build: { exitCode: null, signal: null, durationMs: null, artifacts: {}, outputTail: [], nixPreflight: null },
   pythonCapability: {
     status: "not_evaluated",
-    note: "PIP_NO_INDEX=1 intentionally prevents package-index access in this offline simulation; this is not evidence that production Python dependencies fail.",
+    note: "The production build recreates the pinned portable Python runtime; this has not run yet.",
   },
   capsuleRestore: {
     buildCapsules: {},
@@ -100,7 +112,7 @@ const report = {
   imageSize: null,
   productionReadiness: {
     publishReady: false,
-    reason: "No publish-ready claim: external MaxCore/PDIM capsules are historical compatibility inputs and are not current-source/security evidence.",
+    reason: "Not evaluated yet; a passing run requires current-source MaxCore/PDIM capsules and namespace-isolated runtime evidence.",
   },
   startup: {
     exitCode: null,
@@ -115,6 +127,8 @@ const report = {
 
 let startChild;
 let startLogStream;
+let runtimePgRoot;
+let runtimePgEnv;
 
 const priorReportPath = join(reportDir, `${runId}.json`);
 if (stateFromDisk?.runId === runId && existsSync(priorReportPath)) {
@@ -131,7 +145,7 @@ report.sourceSnapshot ||= {
   capturedAt: null,
   note: "All build/start stages use the immutable disposable copy captured at copy stage; source edits after that point are intentionally excluded.",
 };
-report.sourceSnapshot.capturedAt ||= stateFromDisk?.updatedAt || null;
+if (stateFromDisk?.runId === runId) report.sourceSnapshot.capturedAt ||= stateFromDisk.updatedAt || null;
 report.startup ||= {
   exitCode: null, signal: null,
   liveness: { observed: false, transportOnly: false, realServer: false, jsonObserved: false, startupResponseObserved: false, samples: [] },
@@ -201,6 +215,9 @@ function makePath() {
     commandPath("tar"),
     commandPath("git"),
     commandPath("python3"),
+    commandPath("initdb"),
+    commandPath("pg_ctl"),
+    commandPath("psql"),
     commandPath("bash"),
   ];
   const dirs = new Set(["/usr/local/bin", "/usr/bin", "/bin"]);
@@ -216,7 +233,7 @@ const nodePath = process.execPath;
 if (!npmPath) addFailure("harness", "npm was not discoverable before entering the allowlisted environment");
 
 function buildEnv(extra = {}) {
-  return {
+  const env = {
     PATH: safePath,
     HOME: join(transientRoot, "home"),
     TMPDIR: runtimeTmp,
@@ -227,6 +244,10 @@ function buildEnv(extra = {}) {
     npm_config_cache: join(transientRoot, "npm-cache"),
     ...extra,
   };
+  assertSanitizedEnvironment(Object.fromEntries(Object.entries(env).filter(([key]) =>
+    !["DATABASE_URL", "SESSION_SECRET", "STORAGE_BEARER_TOKEN", "PDIM_BEARER_TOKEN"].includes(key),
+  )));
+  return env;
 }
 
 function runProcess(command, args, options = {}) {
@@ -267,7 +288,9 @@ function runProcess(command, args, options = {}) {
 async function copyFilteredTree() {
   // tar preserves symlinks/modes and lets the exclusion policy be explicit.
   // It never traverses the source .git, data, logs, user media, or external
-  // service trees.  Existing node_modules/python_runtime remain available so
+  // service trees containing user state. Current external/maxcore and
+  // external/pdim source are intentionally included so their capsules are
+  // freshly produced by this run. Existing node_modules/python_runtime remain available so
   // the build needs no package install or network access.
   const excludes = [
     "./.git",
@@ -275,7 +298,6 @@ async function copyFilteredTree() {
     "./data",
     "./logs",
     "./attached_assets",
-    "./external",
     "./archive-capsules",
     "./.cache",
     "./.cache/*",
@@ -340,62 +362,6 @@ async function hashFile(path) {
     stream.on("error", reject);
     stream.on("end", () => resolveResult(hash.digest("hex")));
   });
-}
-
-function historicalCapsuleNames() {
-  return [
-    ["external_maxcore.pdim", "external_maxcore.manifest.json"],
-    ["external_pdim.pdim", "external_pdim.manifest.json"],
-    ["python_runtime.pdim", "python_runtime.manifest.json"],
-  ];
-}
-
-async function copyHistoricalCapsules() {
-  const destination = historicalRoot;
-  mkdirSync(destination, { recursive: true });
-  for (const [capsule, manifest] of historicalCapsuleNames()) {
-    const sourceCapsule = join(root, capsule);
-    const sourceManifest = join(root, manifest);
-    if (!existsSync(sourceCapsule) || !existsSync(sourceManifest)) {
-      addFailure("historical-capsules", `${capsule} and manifest are required for independent compatibility evidence`);
-      continue;
-    }
-    const targetCapsule = join(destination, capsule);
-    const targetManifest = join(destination, manifest);
-    if (!existsSync(targetCapsule)) copyFileSync(sourceCapsule, targetCapsule);
-    if (!existsSync(targetManifest)) copyFileSync(sourceManifest, targetManifest);
-    const metadata = JSON.parse(readFileSync(sourceManifest, "utf8"));
-    const actualHash = await hashFile(targetCapsule);
-    report.capsuleRestore.historicalCompatibility.push({
-      historical: true,
-      capsule,
-      manifest,
-      sourceMtime: statSync(sourceCapsule).mtime.toISOString(),
-      bytes: statSync(targetCapsule).size,
-      manifestSha256: metadata.sha256 || null,
-      actualSha256: actualHash,
-      hashMatchesManifest: metadata.sha256 === actualHash,
-      note: "Historical root capsule retained only for compatibility/background restore evidence; not a current-source build artifact.",
-    });
-    if (metadata.sha256 !== actualHash) {
-      addFailure("historical-capsules", `${manifest} checksum does not match historical ${capsule}`);
-    }
-  }
-  // The historical files are deliberately kept out of the normal build input.
-  // They are installed at the image root only after the fresh build completes.
-}
-
-function installHistoricalBackgroundCapsules() {
-  for (const [capsule, manifest] of historicalCapsuleNames()) {
-    const sourceCapsule = join(historicalRoot, capsule);
-    const sourceManifest = join(historicalRoot, manifest);
-    if (existsSync(sourceCapsule) && !existsSync(join(copyRoot, capsule))) {
-      copyFileSync(sourceCapsule, join(copyRoot, capsule));
-    }
-    if (existsSync(sourceManifest) && !existsSync(join(copyRoot, manifest))) {
-      copyFileSync(sourceManifest, join(copyRoot, manifest));
-    }
-  }
 }
 
 async function freePorts(count) {
@@ -485,11 +451,41 @@ async function main() {
   };
 
   await stage("copy", async () => {
+    report.resourceProfile = inspectProductionProfile(root);
+    // Probe the exact host-level network namespace capability required by the
+    // production rehearsal. Do not silently substitute a user-namespace-only
+    // variant: availability can differ across agent/test environments.
+    const namespaceProbe = spawnSync("unshare", ["--net", "true"], {
+      env: buildEnv(),
+      encoding: "utf8",
+      timeout: 5_000,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    report.safety.networkNamespacePreflight = {
+      available: namespaceProbe.status === 0,
+      exitCode: namespaceProbe.status,
+      signal: namespaceProbe.signal,
+      error: redact(namespaceProbe.stderr || namespaceProbe.error?.message || "").slice(0, 500),
+      classification: namespaceProbe.status === 0
+        ? "supported"
+        : "test-environment blocker; not an application defect",
+    };
+    const sourceBytes = report.safety.networkNamespacePreflight.available
+      ? Number(spawnSync("du", ["-sb", root], { encoding: "utf8" }).stdout.trim().split(/\s+/)[0]) || 0
+      : 0;
+    const admission = assessHeavyRun(report.resourceProfile, sourceBytes * 2, {
+      networkNamespaceAvailable: report.safety.networkNamespacePreflight.available,
+    });
+    report.resourceProfile.admission = admission;
+    if (!admission.safe) {
+      addFailure("resource-admission", admission.reasons.join("; "));
+      report.result = "RESOURCE_ADMISSION_BLOCKED";
+      return;
+    }
     mkdirSync(join(transientRoot, "home"), { recursive: true });
     mkdirSync(join(transientRoot, "tmp"), { recursive: true });
     if (!existsSync(join(copyRoot, "package.json"))) await copyFilteredTree();
     report.sourceSnapshot.capturedAt ||= new Date().toISOString();
-    await copyHistoricalCapsules();
     const integrityPaths = [
       "node_modules/@sentry/core/build/esm/logs/public-api.js",
       "node_modules/vite/package.json",
@@ -498,6 +494,8 @@ async function main() {
       "python_runtime/lib/python3.12/site-packages/pip/_vendor/certifi/cacert.pem",
       "package.json",
       "script/build.ts",
+      "external/maxcore/artifacts/ai-training-server/server.py",
+      "external/pdim/artifacts/api-server/src/index.ts",
     ];
     report.copyIntegrity.checked = [];
     for (const relative of integrityPaths) {
@@ -587,7 +585,7 @@ async function main() {
     const buildStarted = Date.now();
     const buildLog = join(logsRoot, "build.log");
     const buildEnvVars = buildEnv({
-      NODE_ENV: "production", DEPLOY_PACK: "1", PIP_NO_INDEX: "1",
+      NODE_ENV: "production", DEPLOY_PACK: "1",
       PIP_DISABLE_PIP_VERSION_CHECK: "1", GIT_DIR: gitMetadata, GIT_WORK_TREE: copyRoot,
     });
     const buildResult = await runProcess(npmPath || "npm", ["run", "build"], {
@@ -599,10 +597,8 @@ async function main() {
     report.build.outputTail = tail(buildResult.output, 40);
     report.build.nixPreflight = parseNixPreflight(buildResult.output);
     report.pythonCapability = {
-      status: /PIP_NO_INDEX|No matching distribution|pip install/i.test(buildResult.output)
-        ? "not_evaluated_offline"
-        : "not_evaluated",
-      note: "PIP_NO_INDEX=1 intentionally prevents package-index access in this offline simulation; this is not evidence that production Python dependencies fail.",
+      status: buildResult.code === 0 ? "production_build_imports_passed" : "build_failed",
+      note: "The production build recreates the pinned portable Python runtime. No provider credentials are available; package and fixed runtime downloads are build-time only.",
     };
     if (buildResult.error) addFailure("build", buildResult.error.message);
     if (buildResult.code !== 0) addFailure("build", `DEPLOY_PACK=1 npm run build exited ${buildResult.code ?? buildResult.signal}`);
@@ -635,15 +631,12 @@ async function main() {
   if (requestedPhase === "build") return;
 
   await stage("size", async () => {
-    const pythonRuntimeFresh = existsSync(join(copyRoot, "python_runtime.pdim"));
-    installHistoricalBackgroundCapsules();
-    const pythonRuntimeIsHistorical = !pythonRuntimeFresh;
     const manifestTargets = [
       ["node_modules.pdim", "node_modules.manifest.json", false],
       ["app_remainder.pdim", "app_remainder.manifest.json", false],
-      ["python_runtime.pdim", "python_runtime.manifest.json", pythonRuntimeIsHistorical],
-      ["external_maxcore.pdim", "external_maxcore.manifest.json", true],
-      ["external_pdim.pdim", "external_pdim.manifest.json", true],
+      ["python_runtime.pdim", "python_runtime.manifest.json", false],
+      ["external_maxcore.pdim", "external_maxcore.manifest.json", false],
+      ["external_pdim.pdim", "external_pdim.manifest.json", false],
     ];
     report.capsuleRestore.manifestValidation = [];
     for (const [capsule, manifest, historical] of manifestTargets) {
@@ -670,20 +663,21 @@ async function main() {
       totalGiB: totalBytes === null ? null : Number((totalBytes / 1024 ** 3).toFixed(3)),
       nixPreflight: report.build.nixPreflight,
       capsules: Object.fromEntries(manifestTargets.map(([capsule]) => [capsule, artifactStatus(capsule)])),
-      note: "Disposable simulation image footprint only; historical external capsules are labeled separately and are not current-source build output. Nix preflight scope is the sanitized PATH/environment and may differ from the target image.",
+      underHardLimit: totalBytes !== null && totalBytes <= 8 * 1024 ** 3,
+      note: "Disposable simulation image footprint built from the captured current source. Nix preflight scope is the sanitized PATH/environment and may differ from the target image.",
     };
+    if (totalBytes > 8 * 1024 ** 3) addFailure("image-size", "disposable image footprint exceeds the unweakened 8 GiB hard limit");
   });
 
   if (report.failures.some((failure) => failure.stage === "manifests")) return;
   if (requestedPhase === "size") return;
 
   await stage("restore", async () => {
-    installHistoricalBackgroundCapsules();
     rmSync(join(copyRoot, "node_modules"), { recursive: true, force: true });
     rmSync(join(copyRoot, "external"), { recursive: true, force: true });
     rmSync(join(copyRoot, "python_runtime"), { recursive: true, force: true });
     rmSync(join(copyRoot, ".pdim-restored-app-remainder"), { force: true });
-    const restoreEnv = buildEnv({ NODE_ENV: "production", MAXCORE_LOCAL: "0" });
+    const restoreEnv = buildEnv({ NODE_ENV: "production", MAXCORE_LOCAL: "1" });
     const coldCritical = await runProcess(nodePath, ["dist/pdim-restore.mjs", "critical"], {
       cwd: copyRoot, env: restoreEnv, logPath: join(logsRoot, "cold-critical-restore.log"), timeoutMs: 8 * 60_000,
     });
@@ -702,8 +696,8 @@ async function main() {
       maxcoreSentinel: existsSync(join(copyRoot, "external/maxcore", ".pdim-restored-maxcore")),
       pdimSentinel: existsSync(join(copyRoot, "external/pdim", ".pdim-restored-pdim")),
       outputTail: tail(coldBackground.output, 20),
-      historicalInputs: true,
-      securityReadiness: "not assessed; historical pre-security-fix capsules are compatibility-only",
+      historicalInputs: false,
+      securityReadiness: "current captured source restored with manifest verification",
     };
     if (coldCritical.code !== 0 || !report.capsuleRestore.coldCriticalRestore.nodeModulesSentinel || !report.capsuleRestore.coldCriticalRestore.appRemainderSentinel) {
       addFailure("capsule-restore", "critical cold restore did not complete with both production sentinels");
@@ -724,7 +718,31 @@ async function main() {
   if (report.failures.some((failure) => failure.stage === "capsule-restore")) return;
 
   if (requestedPhase === "restore") return;
+  if (!runtimeSandboxed) {
+    const isolated = spawnSync("unshare", [
+      "--user", "--map-root-user", "--net",
+      nodePath, fileURLToPath(import.meta.url),
+      "--resume", "--phase=startup", "--runtime-sandbox",
+    ], {
+      cwd: root,
+      env: buildEnv({ SIMULATION_RUNTIME_SANDBOX: "1" }),
+      stdio: "inherit",
+      timeout: 8 * 60_000,
+    });
+    if (existsSync(priorReportPath)) Object.assign(report, JSON.parse(readFileSync(priorReportPath, "utf8")));
+    if (isolated.status !== 0) addFailure("runtime-isolation", `network namespace child exited ${isolated.status ?? isolated.signal}`);
+    return;
+  }
   await stage("startup", async () => {
+    report.safety.runtimeNetworkNamespace = readlinkSync("/proc/self/ns/net");
+    report.safety.runtimeIsolationEnforced =
+      process.env.SIMULATION_RUNTIME_SANDBOX === "1"
+      && report.safety.runtimeNetworkNamespace !== report.safety.hostNetworkNamespace;
+    if (!report.safety.runtimeIsolationEnforced) {
+      addFailure("runtime-isolation", "startup refused: a distinct Linux network namespace was not proven");
+      report.result = "RUNTIME_ISOLATION_BLOCKED";
+      return;
+    }
     if (report.startup.liveness.samples?.length || report.startup.exitCode !== null) {
       report.startup.attempts.push({
         attempt: report.startup.attempts.length + 1,
@@ -740,16 +758,39 @@ async function main() {
     report.startup.signal = null;
     report.startup.liveness = { observed: false, transportOnly: false, realServer: false, jsonObserved: false, earlyAppResponse: false, startupResponseObserved: false, samples: [] };
     report.startup.readiness = { observed: false, fullReady: false, statusCodes: [], lastBody: null, note: null };
-    const [port, pdimPort, gatewayPort, maxcorePort, boosterPort, modelPort, modelHealthPort, pythonPort] = await freePorts(8);
+    const [port, pdimPort, gatewayPort, maxcorePort, boosterPort, modelPort, modelHealthPort, pythonPort, pgPort] = await freePorts(9);
     const appUrl = `http://127.0.0.1:${port}`;
+    const pgRoot = join(transientRoot, "postgres");
+    rmSync(pgRoot, { recursive: true, force: true });
+    const pgEnv = buildEnv({ LANG: "C", LC_ALL: "C" });
+    const init = await runProcess("initdb", ["-D", pgRoot, "-U", "simulation", "--auth=trust", "--no-locale", "--encoding=UTF8"], {
+      cwd: transientRoot, env: pgEnv, logPath: join(logsRoot, "postgres-init.log"), timeoutMs: 60_000,
+    });
+    if (init.code !== 0) {
+      addFailure("postgres", `isolated PostgreSQL initdb exited ${init.code ?? init.signal}`);
+      report.result = "POSTGRES_FAILED";
+      return;
+    }
+    const pg = await runProcess("pg_ctl", [
+      "-D", pgRoot, "-l", join(logsRoot, "postgres.log"),
+      "-o", `-h 127.0.0.1 -k ${transientRoot} -p ${pgPort}`, "-w", "start",
+    ], { cwd: transientRoot, env: pgEnv, timeoutMs: 60_000 });
+    if (pg.code !== 0) {
+      addFailure("postgres", `isolated PostgreSQL startup exited ${pg.code ?? pg.signal}`);
+      report.result = "POSTGRES_FAILED";
+      return;
+    }
+    runtimePgRoot = pgRoot;
+    runtimePgEnv = pgEnv;
+    report.startup.postgres = { isolated: true, port: pgPort, auth: "trust inside network namespace only" };
     const runtimeEnv = buildEnv({
       NODE_ENV: "production", PORT: String(port), LOCAL_PDIM_PORT: String(pdimPort),
       VIDEO_DIFFUSION_PORT: String(gatewayPort), MAXCORE_LOCAL_PORT: String(maxcorePort),
       BOOSTERSTATE_SIDECAR_PORT: String(boosterPort), MODEL_API_PORT: String(modelPort),
       MODEL_API_HEALTH_PORT: String(modelHealthPort), PYTHON_AI_PORT: String(pythonPort),
       SESSION_SECRET: "production-simulation-session-secret-0123456789",
-      DATABASE_URL: "postgresql://127.0.0.1:9/production_simulation", REDIS_URL: "redis://127.0.0.1:9",
-      MAXCORE_LOCAL: "0", AI_SERVER_URL: "http://127.0.0.1:9", APP_URL: appUrl, BASE_URL: appUrl,
+      DATABASE_URL: `postgresql://simulation@127.0.0.1:${pgPort}/postgres`, REDIS_URL: "redis://127.0.0.1:9",
+      MAXCORE_LOCAL: "1", AI_SERVER_URL: `http://127.0.0.1:${modelPort}`, APP_URL: appUrl, BASE_URL: appUrl,
       DOMAIN: appUrl, BASE_DOMAIN: "127.0.0.1", CORS_ORIGIN: appUrl,
       STORAGE_PROVIDER: "pocket-dimension", STORAGE_HTTP_URL: "http://127.0.0.1:9/mock-storage",
       PDIM_EXEC_URL: "http://127.0.0.1:9/mock-pdim", PDIM_HTTP_EXEC_URL: "http://127.0.0.1:9/mock-pdim",
@@ -833,6 +874,11 @@ async function main() {
       : report.startup.liveness.earlyAppResponse
         ? "STARTUP_BLOCKED_BY_MOCK_DEPENDENCIES"
         : "STARTUP_INCOMPLETE";
+    await runProcess("pg_ctl", ["-D", pgRoot, "-m", "immediate", "-w", "stop"], {
+      cwd: transientRoot, env: pgEnv, timeoutMs: 30_000,
+    });
+    runtimePgRoot = undefined;
+    runtimePgEnv = undefined;
   });
 }
 
@@ -849,6 +895,13 @@ async function finish() {
     await stopStartProcess();
   } catch {}
   startLogStream?.end();
+  if (runtimePgRoot && runtimePgEnv) {
+    await runProcess("pg_ctl", ["-D", runtimePgRoot, "-m", "immediate", "-w", "stop"], {
+      cwd: transientRoot, env: runtimePgEnv, timeoutMs: 30_000,
+    }).catch(() => {});
+    runtimePgRoot = undefined;
+    runtimePgEnv = undefined;
+  }
   report.safety.sourceFilesMutated = false;
   writeReportSnapshot();
   const markdown = [
@@ -858,7 +911,7 @@ async function finish() {
     `- Build: \`${report.commands.build}\` → exit ${report.build.exitCode ?? "not run"}`,
     `- Start: \`${report.commands.start}\` → exit ${report.startup.exitCode ?? "not run"}`,
     `- Liveness: ${report.startup.liveness.jsonObserved ? "initialized app JSON observed (HTTP 200)" : report.startup.liveness.earlyAppResponse ? "early app response only (not initialized health)" : "FAILED"}`,
-    `- Readiness: ${report.startup.readiness.fullReady ? "full-ready" : report.startup.readiness.observed ? "observed but degraded (mock dependencies)" : "not observed; app exited before /api/ready (honest mock dependency failure)"}`,
+    `- Readiness: ${report.startup.readiness.fullReady ? "full-ready" : report.startup.readiness.observed ? "observed but degraded" : report.result === "RESOURCE_ADMISSION_BLOCKED" ? "not attempted; resource admission failed before copying/building" : "not observed"}`,
     `- Capsules: cold restore sentinels ${report.capsuleRestore.coldCriticalRestore?.nodeModulesSentinel && report.capsuleRestore.coldCriticalRestore?.appRemainderSentinel ? "present" : "missing"}; warm idempotence ${report.capsuleRestore.warmIdempotentRestore?.skippedExistingSentinels ? "confirmed" : "not confirmed"}`,
     `- Image size: ${report.imageSize?.totalGiB ?? "not measured"} GiB disposable copy footprint`,
     `- Nix preflight: ${report.build.nixPreflight ? `${report.build.nixPreflight.nixClosureGiB} GiB closure (${report.build.nixPreflight.rootsAccounted}/${report.build.nixPreflight.rootsDiscovered} roots) in sanitized scope only` : "not measured"}`,
@@ -869,7 +922,7 @@ async function finish() {
     "## Actual failures",
     ...(report.failures.length ? report.failures.map((failure) => `- [${failure.stage}] ${failure.message}`) : ["- None"]),
     "",
-    "The source checkout, .replit, .git, data, logs, user media, external service trees, and credentials were not used as runtime inputs. Historical external capsules are labeled compatibility inputs, never current-source build output.",
+    "The source checkout was never a build cwd. .replit, .git, data, logs, user media, root historical capsules, and credentials were excluded. Current external/maxcore and external/pdim source are copied and must produce fresh, manifest-verified capsules.",
     argv.has("--cleanup")
       ? "The disposable copy was removed because --cleanup was requested."
       : "The disposable copy is retained under excluded .local storage for resumable stages; remove it only with --cleanup.",
