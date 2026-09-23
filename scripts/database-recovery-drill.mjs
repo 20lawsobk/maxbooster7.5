@@ -22,7 +22,7 @@ import { safePostgresDiagnostic } from "../server/services/backup/postgresTools.
 
 const RUN_COMMAND =
   process.argv.includes("--retained-app-storage")
-    ? 'env -i PATH="$PATH" HOME=/tmp NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_RECOVERY_BUCKET_ID="$DATABASE_RECOVERY_BUCKET_ID" DATABASE_RECOVERY_APPROVED_RETENTION_SECONDS="$DATABASE_RECOVERY_APPROVED_RETENTION_SECONDS" node --import tsx scripts/database-recovery-drill.mjs --retained-app-storage'
+    ? 'env -i PATH="$PATH" HOME=/tmp NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_RECOVERY_BUCKET_ID="$DATABASE_RECOVERY_BUCKET_ID" node --import tsx scripts/database-recovery-drill.mjs --retained-app-storage'
     : 'env -i PATH="$PATH" HOME=/tmp NEON_DATABASE_URL="$NEON_DATABASE_URL" node --import tsx scripts/database-recovery-drill.mjs';
 const markdownPath = "reports/readiness-implementation/database-recovery-drill.md";
 const jsonPath = "reports/readiness-implementation/database-recovery-drill.json";
@@ -32,7 +32,6 @@ const sourceUrl = process.env.NEON_DATABASE_URL;
 const retainedMode = process.argv.includes("--retained-app-storage");
 const retainedConfiguration = {
   bucketId: process.env.DATABASE_RECOVERY_BUCKET_ID || undefined,
-  approvedRetentionSeconds: process.env.DATABASE_RECOVERY_APPROVED_RETENTION_SECONDS,
 };
 if (!sourceUrl) throw new Error("NEON_DATABASE_URL is required; synthetic proof is forbidden");
 const sourceIdentityParts = (() => {
@@ -346,13 +345,14 @@ try {
     consistentSnapshot: true,
   };
   if (retainedMode) {
-    const { createRecoveryStorage, verifyPrivateRetainedBucket, retainAndReadBackRecoveryDump } =
+    const { createRecoveryStorage, verifyManagedPrivateStorage, retainAndReadBackRecoveryDump } =
       await import("./recovery-private-store.mjs");
     const sourceCode = currentRecoverySource();
     const storage = await createRecoveryStorage({ bucketId: retainedConfiguration.bucketId });
-    const bucketPolicy = await verifyPrivateRetainedBucket(
-      storage.bucket, retainedConfiguration.approvedRetentionSeconds,
-    );
+    const storageContract = await verifyManagedPrivateStorage({
+      bucket: storage.bucket,
+      bucketId: storage.bucketId,
+    });
     const retained = await retainAndReadBackRecoveryDump({
       bucket: storage.bucket,
       dumpPath,
@@ -373,9 +373,7 @@ try {
     result.durableBackupCreated = true;
     result.evidence.retained = {
       bucketId: storage.bucketId,
-      retentionSeconds: bucketPolicy.retentionSeconds,
-      retentionLocked: bucketPolicy.retentionLocked,
-      privacy: bucketPolicy.privacy,
+      storageContract,
       prefix: retained.prefix,
       dumpObject: retained.dumpObject,
       manifestObject: retained.manifestObject,
@@ -384,8 +382,10 @@ try {
       sourceRevision: sourceCode.revision,
       currentSourceHash: sourceCode.currentHash,
     };
-    recordCheck("retained bucket privacy and retention are approved", true,
-      `private policy checks passed; retention=${bucketPolicy.retentionSeconds}s`);
+    recordCheck("managed storage privacy is empirically verified", true,
+      `authenticated canary read matched; anonymous exact-object fetch denied (${storageContract.anonymousStatus}); canary removed`);
+    recordCheck("managed backup retention contract is recorded", true,
+      "retained until explicit deletion; no fixed-duration or locked-retention claim");
     recordCheck("retained generation readback matches dump", true,
       `${retained.readback.bytes} bytes matched CRC32C and SHA-256`);
   }
@@ -525,7 +525,10 @@ try {
       `- Deterministic per-table row-content hashes: ${result.evidence.restore?.exactPerTableContentHashesMatched ? "PASS" : "not reached"}; no row values or per-table hashes are stored in this report.`,
       ...(result.evidence.retained ? [
         `- Private retained prefix: ${result.evidence.retained.prefix}; dump generation: ${result.evidence.retained.dumpObject.generation}; manifest generation: ${result.evidence.retained.manifestObject.generation}.`,
-        `- Retention: ${result.evidence.retained.retentionSeconds} seconds; generation-bound CRC32C and streamed SHA-256 readback: PASS.`,
+        `- Sanitized manifest object path: ${result.evidence.retained.manifestObject.name}; manifest SHA-256: ${result.evidence.retained.manifestObject.sha256}; retained dump CRC32C: ${result.evidence.retained.dumpObject.crc32c}.`,
+        "- Managed-storage contract: private by default and retained until explicit deletion; no fixed-duration or locked-retention claim.",
+        `- Anonymous exact-canary-object privacy probe: ${result.evidence.retained.storageContract.anonymousStatus} (denied); canary removed: ${result.evidence.retained.storageContract.canaryRemoved ? "PASS" : "FAIL"}.`,
+        "- Retained dump generation-bound CRC32C and streamed SHA-256 readback: PASS.",
       ] : []),
     ] : []),
     ...(result.failures.length ? ["", "## Blockers", "", ...result.failures.map(failure => `- ${failure}`)] : []),

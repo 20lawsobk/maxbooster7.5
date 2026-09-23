@@ -1,5 +1,17 @@
 # Live migration preflight — no migrations applied
 
+## Superseding commerce rollout
+
+The historical no-migration status below is superseded for exactly commerce
+migrations 0022/0023. An independent private Replit App Storage dump was retained,
+downloaded by generation, and restored with complete schema/content comparisons.
+The restored-database rehearsal passed seven checks. The two approved migrations
+then committed atomically against the real application database; exact live
+catalog postconditions passed and an external generation-pinned receipt was
+retained. No other pending migration was applied and no historical receipt was
+invented. See `commerce-migration-live-receipt.json` and
+`database-recovery-drill.json` for the operative evidence.
+
 The user authorized reviewed additive migrations **only after backup and rollback checks pass**. That condition has not yet been met.
 
 ## Read-only observations

@@ -2,7 +2,7 @@ import { createReadStream, createWriteStream } from "node:fs";
 import { chmod, stat } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import { Transform } from "node:stream";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { Storage, CRC32C } from "@google-cloud/storage";
 
 const SIDECAR = "http://127.0.0.1:1106";
@@ -44,33 +44,91 @@ export async function createRecoveryStorage({
   return { bucket: client.bucket(selected), bucketId: selected };
 }
 
-export async function verifyPrivateRetainedBucket(bucket, approvedRetentionSeconds) {
-  const approved = Number(approvedRetentionSeconds);
-  if (!Number.isSafeInteger(approved) || approved <= 0) {
-    throw new Error("DATABASE_RECOVERY_APPROVED_RETENTION_SECONDS must be a positive integer");
+export const MANAGED_STORAGE_CONTRACT = Object.freeze({
+  privacy: "private Replit App Storage; authenticated access required",
+  retention: "retained-until-explicit-delete",
+  fixedDurationLocked: false,
+});
+
+const collect = async stream => {
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks);
+};
+
+export async function verifyManagedPrivateStorage({
+  bucket,
+  bucketId,
+  fetchImpl = globalThis.fetch,
+  uuid = randomUUID(),
+  canaryBytes = randomBytes(32),
+}) {
+  if (!bucket || typeof bucket.file !== "function") throw new Error("Managed recovery bucket is unavailable");
+  assertSafeBucketId(bucketId);
+  if (typeof fetchImpl !== "function") throw new Error("Anonymous privacy probe is unavailable");
+  if (!Buffer.isBuffer(canaryBytes) || canaryBytes.length < 16) {
+    throw new Error("Privacy canary must contain at least 16 random non-sensitive bytes");
   }
-  const [[metadata], [policy]] = await Promise.all([
-    bucket.getMetadata(),
-    bucket.iam.getPolicy({ requestedPolicyVersion: 3 }),
-  ]);
-  const iam = metadata?.iamConfiguration;
-  if (iam?.publicAccessPrevention !== "enforced") {
-    throw new Error("Recovery bucket public access prevention is not enforced");
+
+  const name = `private-database-recovery/privacy-canary-${uuid}`;
+  const writable = bucket.file(name);
+  await writable.save(canaryBytes, {
+    resumable: false,
+    validation: "crc32c",
+    preconditionOpts: { ifGenerationMatch: 0 },
+    contentType: "application/octet-stream",
+    metadata: { purpose: "non-sensitive-private-storage-canary" },
+  });
+  const [metadata] = await writable.getMetadata();
+  const generation = generationOf(metadata);
+  const pinned = bucket.file(name, { generation });
+  let probeAttempted = false;
+  let primaryError;
+  let anonymousStatus;
+  try {
+    try {
+      const authenticated = await collect(pinned.createReadStream({ validation: "crc32c" }));
+      if (!authenticated.equals(canaryBytes)) {
+        throw new Error("Authenticated privacy-canary readback mismatch");
+      }
+    } catch (error) {
+      primaryError = error;
+    }
+
+    try {
+      const objectPath = name.split("/").map(encodeURIComponent).join("/");
+      const url = `https://storage.googleapis.com/${bucketId}/${objectPath}?generation=${generation}`;
+      probeAttempted = true;
+      const response = await fetchImpl(url, {
+        method: "GET",
+        redirect: "manual",
+        headers: { "cache-control": "no-cache" },
+      });
+      anonymousStatus = response.status;
+      if (response.redirected === true || ![403, 404].includes(response.status)) {
+        throw new Error(`Anonymous privacy probe returned unexpected status ${response.status}`);
+      }
+    } catch (error) {
+      primaryError ??= error;
+    }
+  } finally {
+    if (probeAttempted) {
+      try {
+        await pinned.delete({ preconditionOpts: { ifGenerationMatch: generation } });
+      } catch (cleanupError) {
+        primaryError ??= new Error(`Privacy canary cleanup failed: ${cleanupError?.message ?? cleanupError}`);
+      }
+    }
   }
-  if (iam?.uniformBucketLevelAccess?.enabled !== true) {
-    throw new Error("Recovery bucket uniform IAM is not enabled");
+  if (!probeAttempted) {
+    throw primaryError ?? new Error("Anonymous privacy probe was not attempted; canary was not removed");
   }
-  const publicMember = (policy?.bindings ?? []).some(binding =>
-    (binding.members ?? []).some(member => member === "allUsers" || member === "allAuthenticatedUsers"));
-  if (publicMember) throw new Error("Recovery bucket IAM contains a public member");
-  const actual = Number(metadata?.retentionPolicy?.retentionPeriod);
-  if (!Number.isSafeInteger(actual) || actual <= 0 || actual !== approved) {
-    throw new Error("Recovery bucket retention does not exactly match the approved duration");
-  }
+  if (primaryError) throw primaryError;
   return {
-    retentionSeconds: actual,
-    retentionLocked: metadata.retentionPolicy?.isLocked === true,
-    privacy: "public access prevention enforced; uniform IAM; no public IAM members",
+    ...MANAGED_STORAGE_CONTRACT,
+    privacyProbe: "authenticated generation-bound read matched; anonymous exact-object fetch denied",
+    anonymousStatus,
+    canaryRemoved: true,
   };
 }
 
@@ -159,6 +217,7 @@ export async function retainAndReadBackRecoveryDump({
       createdAt: now.toISOString(),
       sourceRevision,
       currentSourceHash,
+      storageContract: MANAGED_STORAGE_CONTRACT,
       dump: { ...dumpObject, sha256: dumpSha256, sourceMajor, localBytes: local.size },
       consistentSnapshot: true,
       snapshotEvidence,

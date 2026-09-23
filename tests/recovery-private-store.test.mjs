@@ -11,7 +11,7 @@ import { CRC32C } from "@google-cloud/storage";
 import {
   createRecoveryStorage,
   retainAndReadBackRecoveryDump,
-  verifyPrivateRetainedBucket,
+  verifyManagedPrivateStorage,
 } from "../scripts/recovery-private-store.mjs";
 
 const crc32c = bytes => {
@@ -20,9 +20,10 @@ const crc32c = bytes => {
   return crc.toString();
 };
 
-function fakeSDK({ publicMember = false, retentionPeriod = 86400 } = {}) {
+function fakeSDK() {
   const objects = new Map();
   const writes = [];
+  const deletes = [];
   let generation = 100;
   const metadataFor = (name, bytes) => ({
     name,
@@ -49,25 +50,16 @@ function fakeSDK({ publicMember = false, retentionPeriod = 86400 } = {}) {
         assert.equal(options.generation, stored.metadata.generation);
         return Readable.from(stored.bytes);
       },
+      async delete(deleteOptions) {
+        assert.equal(deleteOptions.preconditionOpts.ifGenerationMatch, options.generation);
+        deletes.push({ name, generation: options.generation });
+        objects.delete(name);
+      },
     };
     files.set(name, api);
     return api;
   };
   const bucket = {
-    iam: {
-      async getPolicy() {
-        return [{ bindings: publicMember ? [{ role: "roles/viewer", members: ["allUsers"] }] : [] }];
-      },
-    },
-    async getMetadata() {
-      return [{
-        iamConfiguration: {
-          publicAccessPrevention: "enforced",
-          uniformBucketLevelAccess: { enabled: true },
-        },
-        retentionPolicy: { retentionPeriod, isLocked: true },
-      }];
-    },
     async upload(path, options) {
       assert.equal(options.preconditionOpts.ifGenerationMatch, 0);
       assert.equal(options.validation, "crc32c");
@@ -81,7 +73,7 @@ function fakeSDK({ publicMember = false, retentionPeriod = 86400 } = {}) {
     },
     file,
   };
-  return { bucket, objects, writes };
+  return { bucket, objects, writes, deletes };
 }
 
 test("fakeSDK: storage uses explicit bucket or validated sidecar default", async () => {
@@ -105,17 +97,56 @@ test("fakeSDK: storage uses explicit bucket or validated sidecar default", async
   assert.equal(selected.bucketId, "verified-default");
 });
 
-test("fakeSDK: policy verification fails closed before any write", async () => {
-  const fake = fakeSDK({ publicMember: true });
-  await assert.rejects(
-    verifyPrivateRetainedBucket(fake.bucket, 86400),
-    /public member/,
-  );
-  assert.equal(fake.writes.length, 0);
-  await assert.rejects(
-    verifyPrivateRetainedBucket(fakeSDK({ retentionPeriod: 3600 }).bucket, 86400),
-    /approved duration/,
-  );
+test("fakeSDK: managed privacy uses a random canary, anonymous denial, then cleanup", async () => {
+  const fake = fakeSDK();
+  const canary = Buffer.from("nonsensitive-random-canary");
+  let probed = false;
+  const result = await verifyManagedPrivateStorage({
+    bucket: fake.bucket,
+    bucketId: "private-recovery-bucket",
+    uuid: "fixed-canary",
+    canaryBytes: canary,
+    fetchImpl: async (url, options) => {
+      probed = true;
+      assert.match(url, /^https:\/\/storage\.googleapis\.com\/private-recovery-bucket\//);
+      assert.equal(options.redirect, "manual");
+      assert.equal(fake.deletes.length, 0);
+      return { status: 403, redirected: false };
+    },
+  });
+  assert.equal(probed, true);
+  assert.equal(result.retention, "retained-until-explicit-delete");
+  assert.equal(result.fixedDurationLocked, false);
+  assert.equal(result.canaryRemoved, true);
+  assert.equal(fake.deletes.length, 1);
+  assert.equal(fake.objects.size, 0);
+});
+
+test("fakeSDK: anonymous success fails privacy verification but canary is removed after probe", async () => {
+  const fake = fakeSDK();
+  await assert.rejects(verifyManagedPrivateStorage({
+    bucket: fake.bucket,
+    bucketId: "private-recovery-bucket",
+    canaryBytes: Buffer.from("nonsensitive-random-canary"),
+    fetchImpl: async () => ({ status: 200, redirected: false }),
+  }), /unexpected status 200/);
+  assert.equal(fake.deletes.length, 1);
+  assert.equal(fake.objects.size, 0);
+});
+
+test("fakeSDK: a failed anonymous request still occurs before canary cleanup", async () => {
+  const fake = fakeSDK();
+  await assert.rejects(verifyManagedPrivateStorage({
+    bucket: fake.bucket,
+    bucketId: "private-recovery-bucket",
+    canaryBytes: Buffer.from("nonsensitive-random-canary"),
+    fetchImpl: async () => {
+      assert.equal(fake.deletes.length, 0);
+      throw new Error("probe transport failed");
+    },
+  }), /probe transport failed/);
+  assert.equal(fake.deletes.length, 1);
+  assert.equal(fake.objects.size, 0);
 });
 
 test("fakeSDK: create-only retained dump is restored from generation readback", async () => {
@@ -127,7 +158,6 @@ test("fakeSDK: create-only retained dump is restored from generation readback", 
     await writeFile(dumpPath, bytes, { mode: 0o600 });
     const sha256 = createHash("sha256").update(bytes).digest("hex");
     const fake = fakeSDK();
-    await verifyPrivateRetainedBucket(fake.bucket, 86400);
     const result = await retainAndReadBackRecoveryDump({
       bucket: fake.bucket,
       dumpPath,
@@ -155,6 +185,8 @@ test("fakeSDK: create-only retained dump is restored from generation readback", 
     assert.equal(manifest.dump.generation, result.dumpObject.generation);
     assert.equal(manifest.consistentSnapshot, true);
     assert.equal(manifest.currentSourceHash, "b".repeat(64));
+    assert.equal(manifest.storageContract.retention, "retained-until-explicit-delete");
+    assert.equal(manifest.storageContract.fixedDurationLocked, false);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

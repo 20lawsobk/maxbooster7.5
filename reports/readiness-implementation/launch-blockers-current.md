@@ -1,5 +1,32 @@
 # Current launch blockers and implemented corrections
 
+## Superseding retained-recovery and commerce rollout result
+
+The owner's explicit Replit App Storage bucket is accessible. Managed App
+Storage does not require access to GCS administrative IAM/PAP APIs: the earlier
+403-based gate was incorrect. Authenticated object access and anonymous denial
+were verified with a non-sensitive canary. Retention is until explicit deletion,
+not WORM or a locked period.
+
+The actual source database was backed up to that independent bucket. Downloading
+the exact retained generation and restoring it into isolated PostgreSQL passed:
+311 table counts/content hashes and 6,702 schema records matched. Backup and
+manifest remain retained. See `database-recovery-drill.json`.
+
+After seven real restored-database rehearsal checks passed, exactly
+`0022_commerce_webhook_receipts.sql` and `0023_commerce_settlement.sql` were
+committed to the actual application database in one transaction. Both live
+catalog postconditions matched the exact expected schemas. The application did
+not start, no provider operation ran, no existing balances were inferred or
+backfilled, and no other migration was applied. A generation-pinned migration
+receipt is retained separately. See `commerce-migration-live-receipt.json`.
+
+This closes the retained **database** backup and exact commerce-schema portion
+of gate 1 below. It does not certify independent PDIM disaster recovery,
+credential rotation, provider acceptance, packed-runtime acceptance or publication.
+The following earlier observations remain historical evidence, not current
+claims that commerce tables are absent.
+
 ## Verified production observations
 
 - Published `/api/health` responded 200; `/api/ready` responded 200 with

@@ -1,16 +1,17 @@
 {
   "reportVersion": 1,
-  "startedAt": "2026-09-23T09:03:25.575Z",
-  "completedAt": "2026-09-23T09:04:17.881Z",
+  "startedAt": "2026-09-23T10:23:46.618Z",
+  "completedAt": "2026-09-23T10:24:35.290Z",
   "status": "pass",
   "liveSource": true,
-  "durableBackupCreated": false,
+  "durableBackupCreated": true,
+  "recoveryMode": "private-retained-app-storage",
   "sourceAccess": "read-only exported snapshot",
-  "runCommand": "env -i PATH=\"$PATH\" HOME=/tmp NEON_DATABASE_URL=\"$NEON_DATABASE_URL\" node --import tsx scripts/database-recovery-drill.mjs",
+  "runCommand": "env -i PATH=\"$PATH\" HOME=/tmp NEON_DATABASE_URL=\"$NEON_DATABASE_URL\" DATABASE_RECOVERY_BUCKET_ID=\"$DATABASE_RECOVERY_BUCKET_ID\" node --import tsx scripts/database-recovery-drill.mjs --retained-app-storage",
   "safety": {
     "sourceMutation": false,
     "appStarted": false,
-    "providerCalls": false,
+    "providerCalls": true,
     "dumpScratchMode": "0600",
     "scratchRemoved": true,
     "targetNetwork": "loopback and private Unix socket only"
@@ -62,16 +63,49 @@
     },
     "dump": {
       "durability": "uncommitted",
-      "bytes": 27353570,
-      "sha256": "fbd84602e7ff30828d3da9671d578206968622d6f2135374020e35b825f59df8",
+      "bytes": 27370757,
+      "sha256": "9c2853a60b10f5fe92fa86efd3195f1c7254717a49a526d55b7864ba6e5b0c6b",
       "sourceVersion": "17.11",
       "consistentSnapshot": true
+    },
+    "retained": {
+      "bucketId": "replit-objstore-06ebdcab-c632-491d-bd64-04e3e146f0e0",
+      "storageContract": {
+        "privacy": "private Replit App Storage; authenticated access required",
+        "retention": "retained-until-explicit-delete",
+        "fixedDurationLocked": false,
+        "privacyProbe": "authenticated generation-bound read matched; anonymous exact-object fetch denied",
+        "anonymousStatus": 403,
+        "canaryRemoved": true
+      },
+      "prefix": "private-database-recovery/2026-09-23T10-24-30-022Z-a98e2377-5121-4c67-bace-58f145bdea3d",
+      "dumpObject": {
+        "name": "private-database-recovery/2026-09-23T10-24-30-022Z-a98e2377-5121-4c67-bace-58f145bdea3d/source.sql",
+        "generation": "1790159070415781",
+        "crc32c": "2JG3qQ==",
+        "size": "27370757"
+      },
+      "manifestObject": {
+        "name": "private-database-recovery/2026-09-23T10-24-30-022Z-a98e2377-5121-4c67-bace-58f145bdea3d/manifest.json",
+        "generation": "1790159070554329",
+        "crc32c": "fQGoMw==",
+        "size": "1168",
+        "sha256": "378b4ae67b8e112c6cba254bdf1ff76b071e97ca37980fb7ae5e80c83a64ba29"
+      },
+      "readback": {
+        "sha256": "9c2853a60b10f5fe92fa86efd3195f1c7254717a49a526d55b7864ba6e5b0c6b",
+        "crc32c": "2JG3qQ==",
+        "bytes": 27370757
+      },
+      "restoreInputWasGenerationBoundReadback": true,
+      "sourceRevision": "126bc69b7cf525cb3d16cd7a641d352b2e14e5c2",
+      "currentSourceHash": "4e3b029be319c834b2dc8fd7fd10a4bbaad4605506f20f115b9a06262358d75f"
     },
     "restore": {
       "targetMajor": 17,
       "schemaDefinitionRecordCount": 6702,
       "tableCount": 311,
-      "aggregateRowCount": "44639",
+      "aggregateRowCount": "44677",
       "exactPerTableCountsMatched": true,
       "exactPerTableContentHashesMatched": true,
       "targetIdentityMatched": true,
@@ -88,6 +122,21 @@
       "name": "dump scratch file is private",
       "status": "pass",
       "detail": "mode=0600"
+    },
+    {
+      "name": "managed storage privacy is empirically verified",
+      "status": "pass",
+      "detail": "authenticated canary read matched; anonymous exact-object fetch denied (403); canary removed"
+    },
+    {
+      "name": "managed backup retention contract is recorded",
+      "status": "pass",
+      "detail": "retained until explicit deletion; no fixed-duration or locked-retention claim"
+    },
+    {
+      "name": "retained generation readback matches dump",
+      "status": "pass",
+      "detail": "27370757 bytes matched CRC32C and SHA-256"
     },
     {
       "name": "restore target identity is exact",

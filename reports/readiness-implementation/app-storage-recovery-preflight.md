@@ -1,5 +1,25 @@
 # App Storage recovery preflight
 
+## Superseding result: retained recovery passed
+
+The explicit owner bucket passed authenticated object access and a non-sensitive
+canary's anonymous-access denial. Official Replit documentation establishes the
+managed private/persist-until-deleted contract; underlying GCS administrative
+IAM/PAP/retention APIs are not required and are not exposed as custom controls.
+The earlier requirement for those permissions was incorrect and is withdrawn.
+
+The real database dump and manifest were retained, read back by exact generation
+with CRC/SHA/size checks, and restored into isolated PostgreSQL. All 311 table
+counts/content hashes and 6,702 schema records matched. Private scratch was
+cleaned; retained backup objects were not deleted. See
+`database-recovery-drill.json`. No locked-duration retention is claimed.
+
+Exactly the two approved commerce migrations subsequently passed rehearsal and
+were committed with exact live postconditions and a retained receipt. See
+`commerce-migration-live-receipt.json`.
+
+The sections below document the earlier investigation and are superseded.
+
 The owner authorized private App Storage recovery copies and, after verification,
 the additive commerce migrations. PDIM and MaxCore remain exclusively local.
 
