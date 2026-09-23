@@ -303,9 +303,9 @@ async function main() {
 
 /** `du -sb` on one path; returns null (never a silent 0) when it can't be measured, so a
  * measurement failure surfaces as an explicit warning instead of masquerading as "small". */
-function duBytesOrNull(target: string): number | null {
+export function duBytesOrNull(target: string): number | null {
   try {
-    const out = execSync(`du -sb -- ${JSON.stringify(target)}`, {
+    const out = execFileSync("du", ["-sb", "--", target], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
     });

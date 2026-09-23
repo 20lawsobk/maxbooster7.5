@@ -26,7 +26,11 @@ import { distributionService } from "../services/distributionService";
 import { labelGridService } from "../services/labelgrid-service";
 import { getDistributionSubmissions } from "../services/distributionSubmissionRepository.js";
 import { toolostService } from "../services/toolost-service";
-import { submitToolostRelease } from "./distribution-toolost-submission";
+import {
+  deriveToolostSubmissionPersistence,
+  mapToolostDispatchStatus,
+  submitToolostRelease,
+} from "./distribution-toolost-submission";
 import { musicCodesService } from "../services/musicCodes";
 import {
   labelCopyLinter,
@@ -1537,26 +1541,28 @@ router.get(
 
       if (providerStatus?.platforms) {
         try {
-            for (const platformStatus of providerStatus.platforms) {
-              const gatewayStatus = platformStatus.status.toLowerCase();
-              const localStatus = [
-                "unsupported",
-                "not_supported",
-                "not_configured",
-              ].includes(gatewayStatus)
+          for (const platformStatus of providerStatus.platforms) {
+            const gatewayStatus = platformStatus.status.toLowerCase();
+            const localStatus = metadata.toolostReleaseId
+              ? mapToolostDispatchStatus(gatewayStatus).status
+              : [
+                    "unsupported",
+                    "not_supported",
+                    "not_configured",
+                  ].includes(gatewayStatus)
                 ? "not_supported"
                 : gatewayStatus === "error"
                   ? "failed"
                   : gatewayStatus;
-              await storage.updateDistroDispatchStatus(id, {
-                platform: platformStatus.platform,
-                status: localStatus,
-                liveAt: platformStatus.liveDate
-                  ? new Date(platformStatus.liveDate)
-                  : undefined,
-                error: platformStatus.errorMessage,
-              });
-            }
+            await storage.updateDistroDispatchStatus(id, {
+              platform: platformStatus.platform,
+              status: localStatus,
+              liveAt: platformStatus.liveDate
+                ? new Date(platformStatus.liveDate)
+                : undefined,
+              error: platformStatus.errorMessage,
+            });
+          }
         } catch (error: unknown) {
           logger.warn({ err: error }, "Error saving distributor status:");
         }
@@ -1631,7 +1637,51 @@ router.post(
       }
 
       try {
-        const statusResult = await distributionService.refreshReleaseStatus(id);
+        const toolostReleaseId =
+          typeof releaseMetadata.toolostReleaseId === "string"
+            ? releaseMetadata.toolostReleaseId
+            : undefined;
+        const statusResult = toolostReleaseId
+          ? await (async () => {
+              const toolost = await getDistributionToolostService(userId);
+              const remote = await toolost.getReleaseStatus(toolostReleaseId);
+              const platforms = remote.platforms.map((platform) => {
+                const outcome = mapToolostDispatchStatus(platform.status);
+                return {
+                  platform: platform.platform,
+                  status: outcome.status,
+                  liveDate: platform.liveDate
+                    ? new Date(platform.liveDate)
+                    : undefined,
+                  indeterminate: outcome.indeterminate,
+                };
+              });
+              for (const platform of platforms) {
+                await storage.updateDistroDispatchStatus(id, {
+                  platform: platform.platform,
+                  status: platform.status,
+                  liveAt: platform.liveDate,
+                });
+              }
+              const remoteReleaseStatus = remote.status.toLowerCase();
+              const status =
+                remoteReleaseStatus === "live"
+                  ? "live"
+                  : remoteReleaseStatus === "failed"
+                    ? "failed"
+                    : mapToolostDispatchStatus(remoteReleaseStatus).status;
+              await storage.updateDistroRelease(id, {
+                status,
+                metadata: {
+                  ...releaseMetadata,
+                  status,
+                  toolostReleaseId,
+                  toolostLastCheckedAt: new Date().toISOString(),
+                },
+              });
+              return { status, platforms, lastChecked: new Date() };
+            })()
+          : await distributionService.refreshReleaseStatus(id);
         res.json({
           success: true,
           status: statusResult.status,
@@ -1670,8 +1720,8 @@ router.post(
         );
         const currentPlatforms =
           (release.metadata as Record<string, unknown>).platforms || [];
-        res.json({
-          success: true,
+        res.status(502).json({
+          success: false,
           status: currentStatus,
           platforms: Array.isArray(currentPlatforms)
             ? currentPlatforms.map((p: Record<string, unknown>) => ({
@@ -1679,7 +1729,10 @@ router.post(
                 status: p.status || "unknown",
               }))
             : [],
-          lastChecked: new Date(),
+          lastChecked:
+            typeof releaseMetadata.toolostLastCheckedAt === "string"
+              ? releaseMetadata.toolostLastCheckedAt
+              : undefined,
           message:
             "Could not reach distribution service. Showing last known status.",
         });
@@ -2074,43 +2127,21 @@ router.post(
               normalizeStore(requestedStore || platformSlug),
           );
           const gatewayStatus = providerPlatformStatus?.status?.toLowerCase();
-          const accepted = [
-            "queued",
-            "pending",
-            "processing",
-            "submitted",
-            "accepted",
-            "success",
-            "delivered",
-            "live",
-          ].includes(
-            gatewayStatus || "",
-          );
-          const status =
-            ["live", "delivered"].includes(gatewayStatus || "")
-              ? "delivered"
-              : accepted
-                ? "processing"
-                : ["unsupported", "not_supported", "not_configured"].includes(
-                      gatewayStatus || "",
-                    )
-                  ? "not_supported"
-                  : gatewayStatus === "rejected"
-                    ? "rejected"
-                    : "failed";
+          const { status, accepted, indeterminate } =
+            mapToolostDispatchStatus(gatewayStatus);
           const errorMessage =
             providerPlatformStatus?.errorMessage ||
-            (!providerPlatformStatus
-              ? "Too Lost did not report acceptance for this platform."
+            (indeterminate
+              ? undefined
               : status === "not_supported"
                 ? "Not supported by distributor."
                 : status === "rejected"
                   ? "Rejected by distributor."
-                   : "Too Lost did not accept this platform submission.");
+                  : "Too Lost did not accept this platform submission.");
           await storage.createDistroDispatch({
             releaseId: id,
             // Keep the gateway's platform slug alongside the local provider
-            // identity. The former is required for later LabelGrid status
+            // identity. The former is required for later Too Lost status
             // updates and lets the UI display a real platform, not a UUID.
             providerId: provider?.id || platformSlug,
             providerName: provider?.name || platformSlug,
@@ -2118,7 +2149,8 @@ router.post(
             status,
             logs: JSON.stringify({
               gatewayStatus: providerPlatformStatus?.status || "not_reported",
-              errorMessage: accepted ? undefined : errorMessage,
+              indeterminate: indeterminate || undefined,
+              errorMessage: accepted || indeterminate ? undefined : errorMessage,
               deliveredAt:
                 ["live", "delivered"].includes(gatewayStatus || "")
                   ? (providerPlatformStatus?.liveDate || new Date().toISOString())
@@ -2126,7 +2158,13 @@ router.post(
               externalId: toolostResult.releaseId,
             }),
           });
-          return { platform: platformSlug, status, accepted, errorMessage };
+          return {
+            platform: platformSlug,
+            status,
+            accepted,
+            indeterminate,
+            errorMessage,
+          };
         }),
       );
       const failedDispatches = dispatchResults.filter(
@@ -2138,15 +2176,33 @@ router.post(
         );
       }
 
-      // Persist the Too Lost release ID only after dispatch records exist.
-      const submissionAccepted = dispatchResults.some(
-        (result) => result.status === "fulfilled" && result.value?.accepted,
+      // Persist the Too Lost release ID after all dispatch-write attempts
+      // settle, including when those local writes failed.
+      const submissionPersistence = deriveToolostSubmissionPersistence(
+        dispatchResults.map((result) =>
+          result.status === "fulfilled"
+            ? {
+                status: "fulfilled" as const,
+                value: {
+                  status: result.value.status,
+                  accepted: result.value.accepted,
+                  indeterminate: result.value.indeterminate,
+                },
+              }
+            : result,
+        ),
+        toolostResult.status,
       );
+      const {
+        accepted: submissionAccepted,
+        indeterminate: submissionIndeterminate,
+        status: persistedSubmissionStatus,
+      } = submissionPersistence;
       await storage.updateDistroRelease(id, {
-        status: submissionAccepted ? "submitted" : "rejected",
+        status: persistedSubmissionStatus,
         metadata: {
           ...metadata,
-          status: submissionAccepted ? "submitted" : "rejected",
+          status: persistedSubmissionStatus,
           toolostReleaseId: toolostResult.releaseId,
           toolostSubmittedAt: new Date().toISOString(),
           toolostEstimatedLiveDate: toolostResult.estimatedLiveDate,
@@ -2170,8 +2226,12 @@ router.post(
       );
 
       res.json({
-        success: submissionAccepted,
-        message: "Release submitted to Too Lost; review each platform's delivery status.",
+        success: submissionAccepted || submissionIndeterminate,
+        message: submissionIndeterminate
+          ? "Too Lost created the remote release, but local/provider status is indeterminate. Reconcile by remote release ID before retrying."
+          : submissionAccepted
+            ? "Release submitted to Too Lost; review each platform's delivery status."
+            : "Too Lost rejected the platform submission.",
         toolostReleaseId: toolostResult.releaseId,
         estimatedLiveDate: toolostResult.estimatedLiveDate,
         acceptedPlatformCount: dispatchResults.filter(
@@ -2183,9 +2243,10 @@ router.post(
             ? result.value
             : {
                 platform: selectedPlatforms[index],
-                status: "failed",
+                status: "pending",
                 accepted: false,
-                errorMessage: "Could not save the platform dispatch status.",
+                indeterminate: true,
+                errorMessage: "The provider accepted the submission, but its local dispatch record could not be saved. Reconcile by remote release ID before retrying.",
               },
         ),
       });
@@ -2446,12 +2507,21 @@ router.get(
 
       const metadata = release.metadata as Record<string, unknown>;
 
-      // Get analytics from LabelGrid if we have an external release ID
-      if (metadata.labelGridReleaseId) {
+      const toolostReleaseId =
+        typeof metadata.toolostReleaseId === "string"
+          ? metadata.toolostReleaseId
+          : undefined;
+      const labelGridReleaseId =
+        typeof metadata.labelGridReleaseId === "string"
+          ? metadata.labelGridReleaseId
+          : undefined;
+      if (toolostReleaseId || labelGridReleaseId) {
         try {
-          const analytics = await labelGridService.getReleaseAnalytics(
-            (metadata.labelGridReleaseId as string),
-          );
+          const analytics = toolostReleaseId
+            ? await (await getDistributionToolostService(userId)).getReleaseAnalytics(
+                toolostReleaseId,
+              )
+            : await labelGridService.getReleaseAnalytics(labelGridReleaseId!);
 
           // Save analytics to database for historical tracking
           await (storage as any).createAnalytics({
@@ -2466,22 +2536,17 @@ router.get(
 
           res.json(analytics);
         } catch (error: unknown) {
-          logger.warn({ err: error }, "Error fetching LabelGrid analytics:");
+          const provider = toolostReleaseId ? "Too Lost" : "LabelGrid";
+          logger.warn({ err: error, provider }, "Error fetching distributor analytics:");
           res.status(500).json({
-            error: "Failed to fetch analytics from LabelGrid",
-            message:
-              "Please try again later or check your LabelGrid connection",
+            error: `Failed to fetch analytics from ${provider}`,
+            message: error instanceof Error ? error.message : undefined,
           });
         }
       } else {
-        // Return empty analytics if no LabelGrid release ID
-        res.json({
-          releaseId: id,
-          totalStreams: 0,
-          totalRevenue: 0,
-          platforms: {},
-          timeline: [],
-          message: "Release not yet distributed to LabelGrid",
+        res.status(409).json({
+          error: "Release has no distributor release ID",
+          message: "Analytics are unavailable until the distributor identifies this release.",
         });
       }
     } catch (error: unknown) {
@@ -2507,15 +2572,24 @@ router.get(
 
       const metadata = release.metadata as Record<string, unknown>;
 
-      // Try LabelGrid first if the release is distributed
-      if (metadata.labelGridReleaseId) {
+      const toolostReleaseId =
+        typeof metadata.toolostReleaseId === "string"
+          ? metadata.toolostReleaseId
+          : undefined;
+      const labelGridReleaseId =
+        typeof metadata.labelGridReleaseId === "string"
+          ? metadata.labelGridReleaseId
+          : undefined;
+      if (toolostReleaseId || labelGridReleaseId) {
         try {
-          const lgAnalytics = await labelGridService.getReleaseAnalytics(
-            (metadata.labelGridReleaseId as string),
-          );
-          const totalRevenue = lgAnalytics.totalRevenue ?? 0;
-          const totalStreams = lgAnalytics.totalStreams ?? 0;
-          const platforms = lgAnalytics.platforms ?? {};
+          const providerAnalytics = toolostReleaseId
+            ? await (await getDistributionToolostService(userId)).getReleaseAnalytics(
+                toolostReleaseId,
+              )
+            : await labelGridService.getReleaseAnalytics(labelGridReleaseId!);
+          const totalRevenue = providerAnalytics.totalRevenue;
+          const totalStreams = providerAnalytics.totalStreams;
+          const platforms = providerAnalytics.platforms;
           const platformList = Object.entries(platforms).map(
             ([name, data]: [string, any]) => ({
               name,
@@ -2533,13 +2607,18 @@ router.get(
             ),
             revenue: totalRevenue,
             platforms: platformList,
-            source: "labelgrid",
+            source: toolostReleaseId ? "toolost" : "labelgrid",
           });
-        } catch (lgErr) {
+        } catch (providerError) {
           logger.warn(
-            { err: lgErr },
-            "[Distribution] LabelGrid analytics fetch failed, falling back to DB:"
+            { err: providerError, provider: toolostReleaseId ? "toolost" : "labelgrid" },
+            "[Distribution] provider analytics fetch failed",
           );
+          return res.status(502).json({
+            error: "Failed to fetch streams and revenue from distributor",
+            message:
+              providerError instanceof Error ? providerError.message : undefined,
+          });
         }
       }
 
@@ -7883,23 +7962,42 @@ function registerToolostPlatformSubmission(
       });
 
       const metadata = (release?.metadata as Record<string, unknown>) || {};
+      const providerPlatform = result.platforms.find((platform) => {
+        const normalize = (value: string) =>
+          value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+        return (
+          normalize(platform.platform) === normalize(requestedPlatform) ||
+          normalize(platform.platform) === normalize(responsePlatform)
+        );
+      });
+      const outcome = mapToolostDispatchStatus(
+        providerPlatform?.status ?? result.status,
+      );
       await storage.updateDistroRelease(releaseId, {
+        status: outcome.indeterminate ? "pending" : release.status,
         metadata: {
           ...metadata,
           toolostReleaseId: result.releaseId,
+          status: outcome.indeterminate ? "pending" : metadata.status,
           [`toolost${responsePlatform[0].toUpperCase()}${responsePlatform.slice(1)}SubmittedAt`]:
             new Date().toISOString(),
         },
       });
 
       res.json({
-        success: true,
+        success: outcome.accepted || outcome.indeterminate,
+        accepted: outcome.accepted,
+        indeterminate: outcome.indeterminate,
         platform: responsePlatform,
         releaseId,
         toolostReleaseId: result.releaseId,
-        status: result.status,
+        status: outcome.status,
         message:
-          `Too Lost accepted the distribution request. ${responsePlatform} delivery is confirmed only by its outlet status.`,
+          outcome.indeterminate
+            ? `Too Lost created the remote release, but ${responsePlatform} acceptance is not yet confirmed. Reconcile by remote release ID before retrying.`
+            : outcome.accepted
+              ? `Too Lost accepted the distribution request. ${responsePlatform} delivery is confirmed only by its outlet status.`
+              : `Too Lost reported ${outcome.status} for the ${responsePlatform} request.`,
         submissionId: result.releaseId,
         estimatedDelivery: result.estimatedLiveDate || null,
         platforms: result.platforms,

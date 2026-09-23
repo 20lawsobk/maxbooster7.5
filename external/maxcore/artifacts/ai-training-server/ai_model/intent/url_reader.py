@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import html as _html
 import re
-import urllib.request as _urllib_request
 from dataclasses import dataclass, field
 from typing import List, Optional
 from urllib.parse import urlparse
+
+from ..native_analysis import safe_http as _safe_http
 
 # ---------------------------------------------------------------------------
 # Platform + goal hint tables
@@ -192,22 +193,24 @@ def read_url(url: str, timeout: float = 5.0) -> UrlContent:
             content.goal_hint = goal
             break
 
-    # HTTP fetch
+    # HTTP fetch.  safe_http validates the scheme and every DNS answer on every
+    # redirect, then connects to the validated address directly (while retaining
+    # the original hostname for Host/SNI).  This prevents redirects and DNS
+    # rebinding from turning an intent URL into an internal-network request.
     try:
-        req = _urllib_request.Request(
+        body, _result = _safe_http.fetch_bytes(
             url,
-            headers={
-                "User-Agent":      "MaxCore/1.0 (+https://maxbooster.ai/bot)",
-                "Accept":          "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
-            },
+            max_bytes=65536,
+            allowed_content_types=("text/html", "application/xhtml+xml"),
+            deadline_seconds=timeout,
+            max_redirects=3,
         )
-        with _urllib_request.urlopen(req, timeout=timeout) as resp:
-            ct = resp.headers.get("content-type", "")
-            if "text/html" not in ct:
-                return content
-            raw = resp.read(65536).decode("utf-8", errors="replace")
+        raw = body.decode("utf-8", errors="replace")
+    except _safe_http.SafeHTTPError:
+        return content
     except Exception:
+        # Preserve this reader's documented best-effort/no-raise contract for
+        # unexpected local transport failures as well as expected rejections.
         return content
 
     # Strip script/style noise before parsing

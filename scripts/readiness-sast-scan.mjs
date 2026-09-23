@@ -30,6 +30,63 @@ export const DEFAULT_CONFIGS = Object.freeze([
     url: "https://semgrep.dev/c/p/security-audit",
   },
 ]);
+const COVERAGE_RULES = `rules:
+- id: readiness.coverage.javascript
+  languages: [javascript, typescript]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: readinessSastCoverageProbe(...)
+- id: readiness.coverage.python
+  languages: [python]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: readiness_sast_coverage_probe(...)
+- id: readiness.coverage.go
+  languages: [go]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: readinessSastCoverageProbe(...)
+- id: readiness.coverage.rust
+  languages: [rust]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: readiness_sast_coverage_probe(...)
+- id: readiness.coverage.c
+  languages: [c]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: readiness_sast_coverage_probe(...)
+- id: readiness.coverage.cpp
+  languages: [cpp]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: readiness_sast_coverage_probe(...)
+- id: readiness.coverage.java
+  languages: [java]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: readinessSastCoverageProbe(...)
+- id: readiness.coverage.ruby
+  languages: [ruby]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: readiness_sast_coverage_probe(...)
+- id: readiness.coverage.swift
+  languages: [swift]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: readinessSastCoverageProbe(...)
+- id: readiness.coverage.terraform
+  languages: [terraform]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: readiness_sast_coverage_probe = true
+- id: readiness.coverage.dockerfile
+  languages: [dockerfile]
+  severity: INFO
+  message: Inventory coverage probe marker found; this is not a security finding.
+  pattern: RUN readiness-sast-coverage-probe
+`;
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -162,17 +219,26 @@ function fetchBytes(url, redirects = 3) {
 
 async function materializeRules(temp, configs, fetcher = fetchBytes) {
   const rules = [];
-  for (let index = 0; index < configs.length; index += 1) {
-    const config = configs[index];
+  const effectiveConfigs = [
+    ...configs,
+    {
+      name: "local/inventory-coverage-probes",
+      bytes: Buffer.from(COVERAGE_RULES),
+    },
+  ];
+  for (let index = 0; index < effectiveConfigs.length; index += 1) {
+    const config = effectiveConfigs[index];
     const fetched = config.file
       ? { bytes: await fsp.readFile(config.file), etag: null, lastModified: null }
-      : await fetcher(config.url);
+      : config.bytes
+        ? { bytes: config.bytes, etag: null, lastModified: null }
+        : await fetcher(config.url);
     const file = path.join(temp, `rules-${index}.yaml`);
     await fsp.writeFile(file, fetched.bytes, { mode: 0o600 });
     const text = fetched.bytes.toString("utf8");
     rules.push({
       name: config.name,
-      source: config.url ?? "local-test-config",
+      source: config.url ?? (config.bytes ? "scanner-built-in" : "local-test-config"),
       sha256: sha256(fetched.bytes),
       etag: fetched.etag,
       lastModified: fetched.lastModified,
@@ -228,8 +294,10 @@ function normalizeStagedPath(value, stage) {
 }
 
 function safeScannerError(error, stage) {
+  const rawType = error?.type;
+  const type = Array.isArray(rawType) ? rawType[0] : rawType;
   return {
-    type: String(error?.type ?? error?.code ?? "scanner-error").slice(0, 120),
+    type: String(type ?? error?.code ?? "scanner-error").slice(0, 120),
     path: normalizeStagedPath(error?.path, stage),
     message: String(error?.message ?? error?.type ?? "scanner error")
       .replaceAll(slash(stage), "<temporary-scan-root>")
@@ -238,7 +306,13 @@ function safeScannerError(error, stage) {
 }
 
 export function sanitizeSemgrep(raw, stage) {
-  const findings = (raw.results ?? []).map((finding) => ({
+  const findingsByFingerprint = new Map();
+  for (const finding of raw.results ?? []) {
+    const fingerprint = sha256([
+      finding.check_id, normalizeStagedPath(finding.path, stage),
+      finding.start?.line, finding.start?.col, finding.end?.line, finding.end?.col,
+    ].join("\0"));
+    findingsByFingerprint.set(fingerprint, {
     ruleId: String(finding.check_id ?? "unknown"),
     severity: String(finding.extra?.severity ?? "UNKNOWN").toUpperCase(),
     path: normalizeStagedPath(finding.path, stage),
@@ -253,11 +327,10 @@ export function sanitizeSemgrep(raw, stage) {
     message: String(finding.extra?.message ?? "").slice(0, 1_000),
     cwe: Array.isArray(finding.extra?.metadata?.cwe) ? finding.extra.metadata.cwe.map(String) : [],
     confidence: finding.extra?.metadata?.confidence ?? null,
-    fingerprint: sha256([
-      finding.check_id, normalizeStagedPath(finding.path, stage),
-      finding.start?.line, finding.start?.col, finding.end?.line, finding.end?.col,
-    ].join("\0")),
-  }));
+      fingerprint,
+    });
+  }
+  const findings = [...findingsByFingerprint.values()];
   findings.sort((a, b) => a.path.localeCompare(b.path)
     || (a.start.line ?? 0) - (b.start.line ?? 0)
     || a.ruleId.localeCompare(b.ruleId));
@@ -304,9 +377,10 @@ function renderMarkdown(report) {
     `- Scanner: Semgrep ${report.scanner.version}`,
     `- Isolation: PYTHONPATH/PYTHONHOME removed only for scanner children; PYTHONNOUSERSITE=1`,
     `- Metrics/version checks: disabled; code upload and autofix: not used`,
-    ...report.rules.map((rule) => `- ${rule.name}: ${rule.ruleCount} rules; SHA-256 \`${rule.sha256}\`; ETag \`${rule.etag ?? "not supplied"}\``),
+    ...report.rules.map((rule) => `- ${rule.name}: ${rule.ruleCount} rules; source ${rule.source}; SHA-256 \`${rule.sha256}\`; ETag \`${rule.etag ?? "not supplied"}\``),
     "",
     "Registry packs do not expose a semantic pack version in their fetched YAML. The byte digest and HTTP ETag above are the exact rule revision identifiers used.",
+    "The built-in, improbable marker coverage probes force Semgrep to parse every supported inventoried language even where registry rules intentionally exclude tests. They add no finding suppression and do not replace the security-audit rules; any coincidental marker match remains visible as an INFO result.",
     "",
     "## Coverage",
     "",
@@ -373,11 +447,14 @@ export async function runScan(options = {}) {
     const scannerVersion = String(scannerVersionOutput).trim().split(/\s+/).at(-1);
     const args = [
       "scan", "--json-output", rawFile, "--metrics", "off", "--disable-version-check",
-      "--no-autofix", "--strict", "--timeout", String(options.ruleTimeoutSeconds ?? 10),
-      "--timeout-threshold", "1", "--max-memory", String(options.maxMemoryMb ?? 4096),
+      "--no-rewrite-rule-ids",
+      "--project-root", stage,
+      "--no-autofix", "--strict", "--timeout", String(options.ruleTimeoutSeconds ?? 30),
+      "--timeout-threshold", String(options.timeoutThreshold ?? 3),
+      "--max-memory", String(options.maxMemoryMb ?? 4096),
       "--max-target-bytes", "0", "--jobs", String(options.jobs ?? 2),
       ...rules.flatMap((rule) => ["--config", rule.file]),
-      stage,
+      ...inventory.files.map((file) => path.join(stage, file.path)),
     ];
     const execution = await runBounded(scanner, args, {
       cwd: root,
@@ -395,7 +472,7 @@ export async function runScan(options = {}) {
     const omitted = [...expected].filter((file) => !sanitized.scanned.includes(file)).sort();
     const unexpected = sanitized.scanned.filter((file) => !expected.has(file));
     const incompleteReasons = [];
-    if (execution.timedOut) incompleteReasons.push("Scanner process exceeded the outer 30-minute bound.");
+    if (execution.timedOut) incompleteReasons.push(`Scanner process exceeded the outer ${(options.timeoutMs ?? 30 * 60_000) / 60_000}-minute bound.`);
     if (execution.code !== 0) incompleteReasons.push(`Scanner exited nonzero (${execution.code ?? execution.signal ?? "unknown"}).`);
     if (sanitized.errors.length) incompleteReasons.push(`${sanitized.errors.length} scanner/parse error(s) were reported.`);
     if (sanitized.skipped.length) incompleteReasons.push(`${sanitized.skipped.length} path(s) were explicitly skipped.`);
@@ -417,10 +494,11 @@ export async function runScan(options = {}) {
           codeUpload: false,
           autofix: false,
           outerTimeoutSeconds: (options.timeoutMs ?? 30 * 60_000) / 1000,
-          perRuleTimeoutSeconds: options.ruleTimeoutSeconds ?? 10,
-          timeoutThreshold: 1,
+          perRuleTimeoutSeconds: options.ruleTimeoutSeconds ?? 30,
+          timeoutThreshold: options.timeoutThreshold ?? 3,
           maxMemoryMb: options.maxMemoryMb ?? 4096,
           jobs: options.jobs ?? 2,
+          targets: "explicit immutable inventory manifest",
         },
       },
       rules: rules.map(({ file, ...rule }) => rule),

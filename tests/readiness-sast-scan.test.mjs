@@ -84,6 +84,29 @@ test("sanitized output retains actionable location but no source snippets or met
   assert.doesNotMatch(JSON.stringify(sanitized), /secretValue/);
 });
 
+test("sanitized output deduplicates exact scanner duplicates without merging locations", () => {
+  const stage = "/private/stage";
+  const finding = {
+    check_id: "example.command-injection",
+    path: `${stage}/server/run.ts`,
+    start: { line: 12, col: 3 },
+    end: { line: 12, col: 20 },
+    extra: { severity: "ERROR", message: "Review process execution", metadata: {} },
+  };
+  const atSecondLocation = {
+    ...finding,
+    start: { line: 20, col: 3 },
+    end: { line: 20, col: 20 },
+  };
+  const sanitized = sanitizeSemgrep({
+    results: [finding, { ...finding }, atSecondLocation],
+    errors: [],
+    paths: { scanned: [`${stage}/server/run.ts`], skipped: [] },
+  }, stage);
+  assert.equal(sanitized.findings.length, 2);
+  assert.deepEqual(sanitized.findings.map((item) => item.start.line), [12, 20]);
+});
+
 test("scanner errors and explicit skips remain visible and temporary roots are masked", () => {
   const stage = "/private/stage";
   const sanitized = sanitizeSemgrep({
@@ -97,4 +120,17 @@ test("scanner errors and explicit skips remain visible and temporary roots are m
     message: "failed under <temporary-scan-root>",
   }]);
   assert.deepEqual(sanitized.skipped, [{ path: "large.ts", reason: "too large" }]);
+});
+
+test("structured scanner error types retain their stable category only", () => {
+  const sanitized = sanitizeSemgrep({
+    results: [],
+    errors: [{
+      type: ["PartialParsing", { path: "/private/stage/bad.tsx" }],
+      path: "/private/stage/bad.tsx",
+      message: "recoverable parser failure",
+    }],
+    paths: { scanned: [], skipped: [] },
+  }, "/private/stage");
+  assert.equal(sanitized.errors[0].type, "PartialParsing");
 });

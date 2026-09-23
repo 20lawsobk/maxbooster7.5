@@ -14,6 +14,79 @@ type TooLostSubmissionClient = {
   ): Promise<ToolostReleaseResponse>;
 };
 
+export type ToolostDispatchOutcome = {
+  status: "processing" | "delivered" | "live" | "not_supported" | "rejected" | "failed" | "pending";
+  accepted: boolean;
+  indeterminate: boolean;
+};
+
+export function mapToolostDispatchStatus(
+  providerStatus?: string,
+): ToolostDispatchOutcome {
+  const status = providerStatus?.trim().toLowerCase();
+  if (status === "live") {
+    return { status: "live", accepted: true, indeterminate: false };
+  }
+  if (status === "delivered") {
+    return { status: "delivered", accepted: true, indeterminate: false };
+  }
+  if (
+    [
+      "queued",
+      "pending",
+      "processing",
+      "submitted",
+      "accepted",
+      "success",
+    ].includes(status || "")
+  ) {
+    return { status: "processing", accepted: true, indeterminate: false };
+  }
+  if (["unsupported", "not_supported", "not_configured"].includes(status || "")) {
+    return { status: "not_supported", accepted: false, indeterminate: false };
+  }
+  if (status === "rejected") {
+    return { status: "rejected", accepted: false, indeterminate: false };
+  }
+  if (status === "failed" || status === "error") {
+    return { status: "failed", accepted: false, indeterminate: false };
+  }
+  // A successful submit followed by absent/new status evidence is not a
+  // rejection. Keep it pending so the remote ID can be reconciled by GET.
+  return { status: "pending", accepted: false, indeterminate: true };
+}
+
+export function deriveToolostSubmissionPersistence(
+  dispatchResults: PromiseSettledResult<ToolostDispatchOutcome>[],
+  providerStatus?: string,
+): {
+  accepted: boolean;
+  indeterminate: boolean;
+  status: "submitted" | "pending" | "rejected";
+} {
+  const accepted = dispatchResults.some(
+    (result) => result.status === "fulfilled" && result.value.accepted,
+  );
+  const hasPersistenceFailure = dispatchResults.some(
+    (result) => result.status === "rejected",
+  );
+  const hasPersistedOutcome = dispatchResults.some(
+    (result) => result.status === "fulfilled",
+  );
+  const indeterminate =
+    hasPersistenceFailure ||
+    dispatchResults.some(
+      (result) => result.status === "fulfilled" && result.value.indeterminate,
+    ) ||
+    (!hasPersistedOutcome &&
+      mapToolostDispatchStatus(providerStatus).indeterminate);
+  return {
+    accepted,
+    indeterminate,
+    status: indeterminate ? "pending" : accepted ? "submitted" : "rejected",
+  };
+}
+
 function platformKey(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
 }

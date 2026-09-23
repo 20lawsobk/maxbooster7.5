@@ -17,6 +17,7 @@ or:
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 import unittest
@@ -31,8 +32,8 @@ sys.path.insert(0, str(_SERVER_DIR))
 
 # ── Config ────────────────────────────────────────────────────────────────────
 BASE      = "http://127.0.0.1:9878"
-API_KEY   = "f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701"
-ADMIN_KEY = "mbs_8a3edbac97ff333dda5068410227267e6d85b14a4c9caee279fbb18ddfb47edc"
+API_KEY   = os.environ.get("MAXCORE_TEST_API_KEY", "")
+ADMIN_KEY = os.environ.get("MAXCORE_TEST_API_KEY", "")
 HEADERS       = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 ADMIN_HEADERS = {"Content-Type": "application/json", "X-Admin-Key": ADMIN_KEY}
 

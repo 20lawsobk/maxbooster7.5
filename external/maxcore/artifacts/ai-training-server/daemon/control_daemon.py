@@ -7,8 +7,7 @@ import time
 
 DATASET_DIR = os.environ.get("D_DRIVE_DATASET_DIR", r"D:\ai_server\datasets")
 LOG_FILE    = os.environ.get("DAEMON_LOG_FILE",    r"D:\ai_server\logs\control.log")
-API_KEY     = os.environ.get("CONTROL_DAEMON_API_KEY",
-                             "0d044c92899b4694d9339e01ea12c7f0862ce6f005aeb9cbbaefdd7d327b07f3")
+API_KEY     = os.environ.get("CONTROL_DAEMON_API_KEY")
 
 app = FastAPI()
 
@@ -25,6 +24,8 @@ def log(msg):
 
 
 def auth(request: Request):
+    if not API_KEY:
+        raise HTTPException(status_code=503, detail="Control daemon authentication is not configured")
     key = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
     if key != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")

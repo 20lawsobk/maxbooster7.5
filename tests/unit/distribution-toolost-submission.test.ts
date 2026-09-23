@@ -173,4 +173,101 @@ describe("shared Too Lost route submission", () => {
       buildToolostPayload(incomplete, tracks, ["Spotify"]),
     ).toThrow("explicit AI-involvement declarations");
   });
+
+  it("keeps absent and unknown post-submit evidence pending for reconciliation", async () => {
+    const { mapToolostDispatchStatus } = await import(
+      "../../server/routes/distribution-toolost-submission"
+    );
+
+    expect(mapToolostDispatchStatus(undefined)).toEqual({
+      status: "pending",
+      accepted: false,
+      indeterminate: true,
+    });
+    expect(mapToolostDispatchStatus("unknown")).toEqual({
+      status: "pending",
+      accepted: false,
+      indeterminate: true,
+    });
+    expect(mapToolostDispatchStatus("rejected")).toEqual({
+      status: "rejected",
+      accepted: false,
+      indeterminate: false,
+    });
+    expect(mapToolostDispatchStatus("live")).toEqual({
+      status: "live",
+      accepted: true,
+      indeterminate: false,
+    });
+  });
+
+  it("keeps an accepted remote submission pending when every local dispatch write fails", async () => {
+    const { deriveToolostSubmissionPersistence } = await import(
+      "../../server/routes/distribution-toolost-submission"
+    );
+    const persistence = deriveToolostSubmissionPersistence(
+      [
+        { status: "rejected", reason: new Error("database unavailable") },
+        { status: "rejected", reason: new Error("database unavailable") },
+      ],
+      "processing",
+    );
+
+    expect(persistence).toEqual({
+      accepted: false,
+      indeterminate: true,
+      status: "pending",
+    });
+  });
+
+  it("keeps the release pending when one accepted dispatch persisted and another write failed", async () => {
+    const { deriveToolostSubmissionPersistence } = await import(
+      "../../server/routes/distribution-toolost-submission"
+    );
+
+    expect(
+      deriveToolostSubmissionPersistence(
+        [
+          {
+            status: "fulfilled",
+            value: {
+              status: "processing",
+              accepted: true,
+              indeterminate: false,
+            },
+          },
+          { status: "rejected", reason: new Error("database unavailable") },
+        ],
+        "processing",
+      ),
+    ).toEqual({
+      accepted: true,
+      indeterminate: true,
+      status: "pending",
+    });
+  });
+
+  it("uses provider rejection only when a real rejected outcome was persisted", async () => {
+    const { deriveToolostSubmissionPersistence } = await import(
+      "../../server/routes/distribution-toolost-submission"
+    );
+
+    expect(
+      deriveToolostSubmissionPersistence(
+        [{
+          status: "fulfilled",
+          value: {
+            status: "rejected",
+            accepted: false,
+            indeterminate: false,
+          },
+        }],
+        "rejected",
+      ),
+    ).toEqual({
+      accepted: false,
+      indeterminate: false,
+      status: "rejected",
+    });
+  });
 });

@@ -39,13 +39,7 @@ from typing import Any
 # ── Config ────────────────────────────────────────────────────────────────────
 
 BASE    = os.environ.get("MAXCORE_TEST_BASE", "http://127.0.0.1:9878")
-# CI and live instances provide the current test credential through the
-# environment. Keep the historical value only for standalone local fixtures
-# that still register it.
-API_KEY = os.environ.get(
-    "MAXCORE_TEST_API_KEY",
-    "f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701",
-)
+API_KEY = os.environ.get("MAXCORE_TEST_API_KEY", "")
 HEADERS = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 
 # ── HTTP helpers ──────────────────────────────────────────────────────────────

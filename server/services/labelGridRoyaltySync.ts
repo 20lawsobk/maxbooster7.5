@@ -3,7 +3,6 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { releases, royaltySplits, royaltyTransactions } from "@shared/schema";
 import { labelGridService } from "./labelgrid-service.js";
-import { schedule } from "../lib/cronScheduler.js";
 import { logger } from "../logger.js";
 
 /**
@@ -39,7 +38,6 @@ import { logger } from "../logger.js";
 const SYNC_PLATFORM = "labelgrid";
 const SYNC_TRANSACTION_TYPE = "streaming";
 const WINDOW_DAYS = 30;
-const INITIAL_RUN_DELAY_MS = 15_000;
 
 export interface LabelGridRoyaltySyncResult {
   releasesConsidered: number;
@@ -247,32 +245,16 @@ class LabelGridRoyaltySyncService {
   start(): void {
     if (this.started) return;
     this.started = true;
-
-    // Daily at 05:00 UTC — distinct from the other registered cron jobs
-    // (*/15 * * * *, 0 2 * * *, 15 3 1 * *, 0 9 * * 1, 0 8 1 * *) and more
-    // than sufficient given getReleaseAnalytics' own window is a rolling
-    // 30 days that barely moves hour to hour.
-    schedule("0 5 * * *", () => {
-      runLabelGridRoyaltySync().catch((error) => {
-        logger.warn(
-          { err: error },
-          "[LabelGridRoyaltySync] Scheduled cycle threw unexpectedly",
-        );
-      });
-    });
-
-    // First cycle shortly after boot, fired via setTimeout (non-blocking)
-    // so it never delays the server's own startup/listen() sequence.
-    setTimeout(() => {
-      runLabelGridRoyaltySync().catch((error) => {
-        logger.warn(
-          { err: error },
-          "[LabelGridRoyaltySync] Initial cycle threw unexpectedly",
-        );
-      });
-    }, INITIAL_RUN_DELAY_MS);
-
-    logger.info("[LabelGridRoyaltySync] Scheduled — daily at 05:00 UTC");
+    // LabelGrid is a historical provider only. Keep the explicit
+    // runLabelGridRoyaltySync export for an operator-authorized historical
+    // reconciliation, but never contact the retired provider automatically at
+    // application startup or on a timer. Too Lost cannot be substituted here:
+    // its current sales response does not establish statement periods,
+    // currencies per reconciled release, or payout receipts required by this
+    // ledger writer.
+    logger.info(
+      "[LabelGridRoyaltySync] Automatic sync disabled — LabelGrid is a legacy provider; historical reconciliation is operator-only",
+    );
   }
 }
 

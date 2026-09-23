@@ -665,11 +665,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     }
   }
 
-  // LabelGrid royalty sync — reflects each LabelGrid-linked release's real
-  // rolling-30-day analytics into the royaltyTransactions ledger that
-  // /api/royalties/* reads from. Worker 0 only, so a multi-worker cluster
-  // never runs the same daily sync (and its splits distribution) more than
-  // once per day.
+  // Historical LabelGrid reconciliation service. Its start method is now an
+  // intentional no-op: retired-provider reads and ledger writes are disabled.
   if (isBgWorker) {
     try {
       const { labelGridRoyaltySync } = await import(

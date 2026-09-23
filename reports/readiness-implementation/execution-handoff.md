@@ -21,7 +21,33 @@ scope or interpret passing isolated checks as assembled production acceptance.
   parity for 31 readiness tables (234 columns, 84 constraints, 57 indexes), and
   real SQL transaction/concurrency checks. Snapshot:
   `migration-rehearsal-2026-09-22T01-57-34-914Z.md`.
-- SAST returned **incomplete=true, results=[]**. This is **not** a clean scan.
+- Latest full local SAST evidence: `sast-resumed-full.json` / `.md`.
+  All **3,224** inventoried paths were scanner-reported, with zero omissions.
+  **71 parser/scanner errors and 58 findings** remain; disposition is
+  **INCOMPLETE**, not a clean scan. The inventory snapshot precedes some later
+  provider edits and is not certification of the final working tree.
+
+## Resumed provider and security repairs
+
+- The interrupted provider-consumer edits survived and were verified with
+  **30 passing focused tests across 3 files**, `npm run check:server`, and
+  `git diff --check`. See `provider-resumption.md`.
+- Too Lost status consumers preserve live versus delivered and pending/unknown
+  evidence; dispatch-write failures do not become provider rejection. Failed
+  refreshes report failure rather than a fresh successful check.
+- Too Lost-linked release analytics routes use Too Lost rather than legacy
+  LabelGrid or an unpopulated royalty ledger. Malformed financial values,
+  unqualified envelopes and mixed currencies fail explicitly.
+- Automatic legacy LabelGrid royalty reads/writes remain disabled; historical
+  operator functionality is preserved. No unsupported Too Lost ledger/payout
+  capability was invented.
+- URL-reader SSRF and build shell-construction repairs have focused evidence in
+  `sast-fixes-resumption.md`. Passing isolated tests do not qualify the provider
+  contract or assembled application.
+- Next source work remains scanner-error/finding triage and the independent
+  backup/recovery boundary. The catalog-free dump primitive alone is not a
+  durable independently recoverable backup. Do not activate the application or
+  apply live migrations on the strength of the isolated checks above.
 
 ## GitHub panel connection repair
 

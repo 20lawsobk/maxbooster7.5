@@ -26,10 +26,7 @@ _SERVER_ROOT = _HERE.parent
 sys.path.insert(0, str(_SERVER_ROOT))
 
 BASE = os.environ.get("AI_SERVER_URL", "http://localhost:9878")
-API_KEY = os.environ.get(
-    "AI_TRAINING_KEY_PROD",
-    "f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701",
-)
+API_KEY = os.environ.get("MAXCORE_TEST_API_KEY", "")
 HEADERS = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 UPLOADS = _SERVER_ROOT / "uploads"
 

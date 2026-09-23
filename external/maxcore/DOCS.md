@@ -150,11 +150,9 @@ is what drives content quality toward the Veo 100/100 standard.
 | `STORAGE_BEARER_TOKEN` | Optional | Auth token for external storage |
 | `STORAGE_INSTANCE` | Optional | Storage namespace / instance identifier |
 
-**Test API key** (hardcoded in `test_w6_90m.py`):
-```
-f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701
-```
-This key is seeded into the database on first startup via `AI_TRAINING_KEY_PROD`.
+**Test API key:** set `MAXCORE_TEST_API_KEY` from the current `ADMIN_KEY`
+credential before running the integration suites. No test credential is stored
+in the repository.
 
 ---
 
@@ -282,9 +280,8 @@ PORT = int(os.environ.get("MODEL_API_PORT", 9878))
 All generation endpoints use `Depends(require_scope("generate"))`.
 Admin endpoints use `Depends(verify_admin)`.
 
-API keys are stored in the `api_keys` PostgreSQL table as SHA-256 hashes.
-The key `f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701`
-is the development/test key seeded on first startup.
+API keys are stored in the `api_keys` PostgreSQL table as SHA-256 hashes. The
+development/test key is supplied through `MAXCORE_TEST_API_KEY`.
 
 ### 6.3 Request Models & the Awareness Mixin
 
@@ -970,7 +967,7 @@ PY_HOST  = "127.0.0.1"
 PY_PORT  = 9878        # direct Python server
 API_HOST = "127.0.0.1"
 API_PORT = 8080        # via Node proxy
-API_KEY  = "f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701"
+API_KEY  = os.environ["MAXCORE_TEST_API_KEY"]
 HEADERS  = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 ```
 
@@ -1157,7 +1154,7 @@ In Replit Secrets, add:
 ```
 DATABASE_URL        = <Replit managed PostgreSQL URL>
 ADMIN_KEY           = <choose a strong random key>
-AI_TRAINING_KEY_PROD = f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701
+AI_TRAINING_KEY_PROD = <choose a strong random key>
 SESSION_SECRET      = <choose a strong random key>
 ```
 
@@ -1186,7 +1183,7 @@ Verify: `curl http://localhost:9878/health` → `{"status":"ok"}`
 ### Step 6: Seed audio dataset
 ```bash
 curl -X POST http://localhost:9878/storage/datasets/audio/seed \
-  -H "X-Api-Key: f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701"
+  -H "X-Api-Key: ${MAXCORE_TEST_API_KEY}"
 ```
 
 ### Step 7: Verify quality

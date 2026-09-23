@@ -93,7 +93,7 @@ export interface ToolostTrack {
 
 export interface ToolostReleaseResponse {
   releaseId: string;
-  status: "draft" | "not_submitted" | "processing" | "live" | "failed";
+  status: "draft" | "not_submitted" | "processing" | "live" | "failed" | "unknown";
   submittedAt?: string;
   estimatedLiveDate?: string;
   platforms: ToolostPlatformStatus[];
@@ -117,7 +117,8 @@ export interface ToolostPlatformStatus {
     | "unsupported"
     | "not_supported"
     | "not_configured"
-    | "error";
+    | "error"
+    | "unknown";
   liveDate?: string;
   errorMessage?: string;
 }
@@ -640,11 +641,16 @@ class ToolostService {
       );
     }
     const json = (await res.json()) as {
-      access_token: string;
+      access_token?: string;
       refresh_token?: string;
       expires_in?: number;
       scope?: string;
     };
+    if (!json.access_token?.trim()) {
+      throw new Error(
+        "Too Lost is not connected: token refresh returned no access_token — this user's connection needs to be re-established via the OAuth connect flow.",
+      );
+    }
     const expiresAt = Date.now() + (json.expires_in ?? 3600) * 1000;
     const refreshToken = json.refresh_token ?? this.connection.refreshToken;
     this.connection = {
@@ -893,6 +899,64 @@ class ToolostService {
     return [];
   }
 
+  private static hasListShape(data: unknown): boolean {
+    if (Array.isArray(data)) return true;
+    if (!data || typeof data !== "object") return false;
+    const obj = data as Record<string, unknown>;
+    for (const key of [
+      "data",
+      "items",
+      "results",
+      "releases",
+      "tracks",
+      "platforms",
+      "channels",
+      "rows",
+    ]) {
+      if (!(key in obj)) continue;
+      const value = obj[key];
+      if (Array.isArray(value)) return true;
+      if (value && typeof value === "object" && ToolostService.hasListShape(value)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static readFiniteNumber(
+    row: Record<string, unknown>,
+    keys: string[],
+    fieldLabel: string,
+    options: { allowNegative: boolean; required?: boolean },
+  ): number {
+    const key = keys.find((candidate) => row[candidate] !== undefined);
+    if (!key) {
+      if (options.required) {
+        throw new Error(
+          `Too Lost ${fieldLabel} response did not contain a supported numeric measure.`,
+        );
+      }
+      return 0;
+    }
+    const raw = row[key];
+    const supported =
+      typeof raw === "number" ||
+      (typeof raw === "string" && raw.trim().length > 0);
+    const value = supported ? Number(raw) : Number.NaN;
+    if (!Number.isFinite(value) || (!options.allowNegative && value < 0)) {
+      throw new Error(
+        `Too Lost ${fieldLabel} returned an invalid ${key} value.`,
+      );
+    }
+    return value;
+  }
+
+  private static normalizedCurrency(value: unknown): string | undefined {
+    if (typeof value !== "string") return undefined;
+    const currency = value.trim().toUpperCase();
+    return currency || undefined;
+  }
+
   private static extractPrimaryArtistName(value: unknown): string {
     const list = ToolostService.extractList<Record<string, unknown>>(value);
     if (list.length === 0) return "";
@@ -943,7 +1007,7 @@ class ToolostService {
     if (raw === "live") return "live";
     if (raw === "takedown_complete") return "failed";
     if (raw === "in_review" || raw === "takedown_pending") return "processing";
-    return "processing";
+    return "unknown";
   }
 
   private static normalizeOutletStatus(raw: string): ToolostPlatformStatus["status"] {
@@ -964,8 +1028,9 @@ class ToolostService {
       "not_supported",
       "not_configured",
       "error",
+      "unknown",
     ];
-    return (known as string[]).includes(raw) ? (raw as ToolostPlatformStatus["status"]) : "processing";
+    return (known as string[]).includes(raw) ? (raw as ToolostPlatformStatus["status"]) : "unknown";
   }
 
   private static parseDeliveryPlatforms(data: unknown): ToolostPlatformStatus[] {
@@ -1119,8 +1184,13 @@ class ToolostService {
       this.raw<unknown>("GET", "/releases", { query: { limit: 200 } }),
     );
     if ("error" in result) {
-      this.logApiError("[Too Lost] getUserCatalog failed (non-fatal)", result.error);
-      return [];
+      this.logApiError("[Too Lost] getUserCatalog failed", result.error);
+      throw new Error(`Too Lost catalog unavailable: ${result.error.message}`);
+    }
+    if (!ToolostService.hasListShape(result.data)) {
+      throw new Error(
+        "Too Lost catalog response was malformed: expected a release list.",
+      );
     }
     const rows = ToolostService.extractList<Record<string, unknown>>(result.data);
     const releases = rows.map((r) => ToolostService.mapCatalogRelease(r));
@@ -1129,16 +1199,13 @@ class ToolostService {
   }
 
   async getReleaseDetail(releaseId: string): Promise<ToolostCatalogRelease | null> {
-    if (!this.isApiConfigured()) {
-      logger.warn("[Too Lost] API not configured — getReleaseDetail unavailable");
-      return null;
-    }
     const endpoint = `/releases/${encodeURIComponent(releaseId)}`;
     this.logApiCall("GET", endpoint);
     const result = await this.callWithRetry(() => this.raw<Record<string, unknown>>("GET", endpoint));
     if ("error" in result) {
       this.logApiError(`[Too Lost] getReleaseDetail failed for ${releaseId}`, result.error);
-      return null;
+      if (result.error.status === 404) return null;
+      throw new Error(`Too Lost release detail unavailable: ${result.error.message}`);
     }
     return ToolostService.mapCatalogRelease(result.data ?? {});
   }
@@ -1390,18 +1457,24 @@ class ToolostService {
       this.raw<Record<string, unknown>>("GET", `/releases/${releaseId}`),
     );
     const statusData = "error" in statusResult ? {} : statusResult.data;
+    if ("error" in statusResult) {
+      this.logApiError(
+        `[Too Lost] createRelease: submitted release ${releaseId} status lookup failed`,
+        statusResult.error,
+      );
+    }
 
     logger.info({ releaseId }, "Too Lost release created and submitted for distribution");
 
     const realPlatforms = ToolostService.parseDeliveryPlatforms(statusData);
     return {
       releaseId,
-      status: ToolostService.normalizeReleaseStatus(String((statusData as any).status ?? "in_review").toLowerCase()),
+      status: ToolostService.normalizeReleaseStatus(String((statusData as any).status ?? "unknown").toLowerCase()),
       submittedAt: new Date().toISOString(),
       platforms:
         realPlatforms.length > 0
           ? realPlatforms
-          : releaseData.platforms.map((platform) => ({ platform, status: "processing" as const })),
+          : releaseData.platforms.map((platform) => ({ platform, status: "unknown" as const })),
     };
   }
 
@@ -1412,7 +1485,7 @@ class ToolostService {
     const data = this.unwrap(`[Too Lost] getReleaseStatus failed for ${releaseId}`, result);
     return {
       releaseId,
-      status: ToolostService.normalizeReleaseStatus(String(data.status ?? "in_review").toLowerCase()),
+      status: ToolostService.normalizeReleaseStatus(String(data.status ?? "unknown").toLowerCase()),
       submittedAt: (data.submittedAt as string) || (data.submitted_at as string) || undefined,
       estimatedLiveDate: (data.estimatedLiveDate as string) || (data.estimated_live_date as string) || undefined,
       platforms: ToolostService.parseDeliveryPlatforms(data),
@@ -1441,26 +1514,92 @@ class ToolostService {
    * best-effort (platform/name/store/channel, streams/plays/count,
    * revenue/earnings/amount, listeners) since there is no live connection
    * yet to confirm the exact response shape against. Non-fatal on an
-   * individual endpoint failure (returns zeroed analytics), matching
-   * LabelGrid's own graceful degradation for its dual-endpoint fetch — a
-   * connected-but-one-endpoint-hiccuped state is different from having no
-   * connection at all, which callers below gate separately.
+   * endpoint failure. Financial reconciliation must distinguish an actual
+   * zero from an unavailable provider response, so failures are never
+   * converted into zero-valued analytics.
    */
   private async fetchToolostAnalytics(endpoint: string): Promise<Omit<ToolostAnalytics, "releaseId">> {
     const result = await this.callWithRetry(() => this.raw<unknown>("GET", endpoint));
     if ("error" in result) {
-      this.logApiError(`[Too Lost] analytics fetch failed (${endpoint}) — returning zeroed analytics`, result.error);
-      return { totalStreams: 0, totalRevenue: 0, platforms: {}, timeline: [] };
+      this.logApiError(`[Too Lost] analytics fetch failed (${endpoint})`, result.error);
+      throw new Error(`Too Lost analytics unavailable: ${result.error.message}`);
+    }
+    if (!ToolostService.hasListShape(result.data)) {
+      throw new Error(
+        "Too Lost analytics response was malformed: expected a channel list.",
+      );
     }
     const rows = ToolostService.extractList<Record<string, unknown>>(result.data);
+    const envelope =
+      result.data && typeof result.data === "object" && !Array.isArray(result.data)
+        ? (result.data as Record<string, unknown>)
+        : {};
+    const nestedEnvelope =
+      envelope.data && typeof envelope.data === "object" && !Array.isArray(envelope.data)
+        ? (envelope.data as Record<string, unknown>)
+        : {};
+    const envelopeCurrency = ToolostService.normalizedCurrency(
+      nestedEnvelope.currency ?? envelope.currency,
+    );
+    const currencies = new Set(
+      [envelopeCurrency, ...rows.map((row) => ToolostService.normalizedCurrency(row.currency))]
+        .filter((currency): currency is string => Boolean(currency)),
+    );
+    if (currencies.size !== 1) {
+      throw new Error(
+        currencies.size === 0
+          ? "Too Lost analytics did not identify a currency; revenue cannot be reconciled safely."
+          : "Too Lost analytics contains multiple currencies; channel revenue cannot be summed without authoritative conversion data.",
+      );
+    }
+    const periodValue =
+      nestedEnvelope.period ??
+      envelope.period ??
+      rows.find((row) => row.period !== undefined)?.period;
+    if (typeof periodValue !== "string" || !periodValue.trim()) {
+      throw new Error(
+        "Too Lost analytics did not identify an accounting period; totals cannot be reconciled safely.",
+      );
+    }
     const platforms: ToolostAnalytics["platforms"] = {};
     let totalStreams = 0;
     let totalRevenue = 0;
     for (const row of rows) {
+      const hasMeasure = [
+        "streams",
+        "plays",
+        "count",
+        "revenue",
+        "earnings",
+        "amount",
+        "listeners",
+        "uniqueListeners",
+      ].some((key) => row[key] !== undefined);
+      if (!hasMeasure) {
+        throw new Error(
+          "Too Lost analytics response did not contain a supported numeric measure.",
+        );
+      }
       const platform = String(row.platform ?? row.name ?? row.store ?? row.channel ?? "unknown");
-      const streams = Number(row.streams ?? row.plays ?? row.count ?? 0) || 0;
-      const revenue = Number(row.revenue ?? row.earnings ?? row.amount ?? 0) || 0;
-      const listeners = Number(row.listeners ?? row.uniqueListeners ?? 0) || 0;
+      const streams = ToolostService.readFiniteNumber(
+        row,
+        ["streams", "plays", "count"],
+        "analytics",
+        { allowNegative: false },
+      );
+      // Revenue corrections and reversals may legitimately be negative.
+      const revenue = ToolostService.readFiniteNumber(
+        row,
+        ["revenue", "earnings", "amount"],
+        "analytics",
+        { allowNegative: true },
+      );
+      const listeners = ToolostService.readFiniteNumber(
+        row,
+        ["listeners", "uniqueListeners"],
+        "analytics",
+        { allowNegative: false },
+      );
       const existing = platforms[platform];
       platforms[platform] = {
         streams: (existing?.streams ?? 0) + streams,
@@ -1474,9 +1613,6 @@ class ToolostService {
   }
 
   async getReleaseAnalytics(releaseId: string): Promise<ToolostAnalytics> {
-    if (!this.isApiConfigured()) {
-      throw new Error("Too Lost is not connected: release analytics require an active platform-level OAuth connection.");
-    }
     const endpoint = `/sales/releases/${encodeURIComponent(releaseId)}/channels`;
     this.logApiCall("GET", endpoint);
     const data = await this.fetchToolostAnalytics(endpoint);
@@ -1556,9 +1692,6 @@ class ToolostService {
    * Lost has nothing to report there.
    */
   async getRoyaltySummary(): Promise<ToolostRoyaltySummary> {
-    if (!this.isApiConfigured()) {
-      throw new Error("Too Lost is not connected: royalty summary requires an active platform-level OAuth connection.");
-    }
     this.logApiCall("GET", "/sales/overview");
     const result = await this.callWithRetry(() => this.raw<unknown>("GET", "/sales/overview"));
     if ("error" in result) {
@@ -1567,12 +1700,54 @@ class ToolostService {
     }
     const rows = ToolostService.extractList<Record<string, unknown>>(result.data);
     const summaryObj = (!Array.isArray(result.data) ? (result.data as Record<string, unknown>) : {}) ?? {};
+    const hasSummaryTotal =
+      summaryObj.totalRevenue !== undefined || summaryObj.total !== undefined;
+    if (!ToolostService.hasListShape(result.data) && !hasSummaryTotal) {
+      throw new Error(
+        "Too Lost royalty summary response was malformed: expected sales rows or an explicit total.",
+      );
+    }
+    const currencies = new Set(
+      [
+        ToolostService.normalizedCurrency(summaryObj.currency),
+        ...rows.map((row) => ToolostService.normalizedCurrency(row.currency)),
+      ]
+        .filter((value): value is string => Boolean(value)),
+    );
+    if (currencies.size !== 1) {
+      throw new Error(
+        currencies.size === 0
+          ? "Too Lost royalty summary did not identify a currency; financial totals cannot be reconciled safely."
+          : "Too Lost royalty summary contains multiple currencies; totals cannot be summed without authoritative conversion data.",
+      );
+    }
     const lifetimeFromRows = rows.reduce(
-      (sum, row) => sum + (Number(row.revenue ?? row.amount ?? row.total ?? 0) || 0),
+      (sum, row) =>
+        sum +
+        ToolostService.readFiniteNumber(
+          row,
+          ["revenue", "amount", "total"],
+          "royalty summary",
+          { allowNegative: true, required: true },
+        ),
       0,
     );
-    const lifetime = lifetimeFromRows || Number(summaryObj.totalRevenue ?? summaryObj.total ?? 0) || 0;
-    return { pending: 0, available: 0, lifetime, currency: String(summaryObj.currency ?? "USD") };
+    const lifetime = rows.length > 0
+      ? lifetimeFromRows
+      : hasSummaryTotal
+        ? ToolostService.readFiniteNumber(
+            summaryObj,
+            ["totalRevenue", "total"],
+            "royalty summary",
+            { allowNegative: true },
+          )
+        : 0;
+    return {
+      pending: 0,
+      available: 0,
+      lifetime,
+      currency: [...currencies][0],
+    };
   }
 
   /**
