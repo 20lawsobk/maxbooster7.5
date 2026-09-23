@@ -1,5 +1,7 @@
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool as NodePostgresPool } from "pg";
+import { drizzle as drizzleNodePostgres } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import ws from "ws";
 import * as schema from "@shared/schema";
@@ -221,13 +223,37 @@ function createInstrumentedPool(
   return pool;
 }
 
+// The Neon serverless pool speaks PostgreSQL over Neon's WebSocket proxy and
+// therefore cannot connect to a private Unix/TCP PostgreSQL rehearsal target.
+// This deliberately narrow switch exists only for the env-isolated assembled
+// acceptance runner. It is rejected unless the runner's second safety marker is
+// also present, preventing an accidental production adapter change.
+const useIsolatedNodePostgres =
+  process.env.READINESS_ISOLATED_PG === "1" &&
+  process.env.READINESS_EGRESS_GUARD === "1";
+if (
+  process.env.READINESS_ISOLATED_PG === "1" &&
+  process.env.READINESS_EGRESS_GUARD !== "1"
+) {
+  throw new Error(
+    "READINESS_ISOLATED_PG requires the readiness egress guard",
+  );
+}
+
 // Configure connection pool for optimal performance and scalability
-export const pool = createInstrumentedPool({
-  connectionString: config.database.url,
-  max: config.database.poolSize,
-  idleTimeoutMillis: config.database.idleTimeout,
-  connectionTimeoutMillis: config.database.connectionTimeout,
-});
+export const pool: any = useIsolatedNodePostgres
+  ? new NodePostgresPool({
+      connectionString: config.database.url,
+      max: config.database.poolSize,
+      idleTimeoutMillis: config.database.idleTimeout,
+      connectionTimeoutMillis: config.database.connectionTimeout,
+    })
+  : createInstrumentedPool({
+      connectionString: config.database.url,
+      max: config.database.poolSize,
+      idleTimeoutMillis: config.database.idleTimeout,
+      connectionTimeoutMillis: config.database.connectionTimeout,
+    });
 
 // Hard cap on individual query execution time — set at session level on every
 // new connection so it survives pool recycling. Prevents runaway background jobs
@@ -250,7 +276,9 @@ pool?.on("error", (err: Error) => {
   logger.warn({ value: err?.message, message: "[DB] Idle client error (pool)" });
 });
 
-export const db = drizzle(pool, { schema });
+export const db: any = useIsolatedNodePostgres
+  ? drizzleNodePostgres(pool, { schema })
+  : drizzle(pool, { schema });
 
 // Read replica routing: production-only read-write split.
 // In production, DATABASE_REPLICA_URLS routes SELECT queries to the Neon read replica.

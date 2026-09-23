@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   dumpedServerMajor,
   parsePostgresClientVersion,
+  postgresConnectionEnvironment,
   safePostgresDiagnostic,
   selectPgDumpForServer,
   selectPsqlForRestore,
@@ -52,7 +53,12 @@ describe("PostgreSQL backup tool selection", () => {
     expect(spawn).toHaveBeenCalledWith(
       "/new/psql",
       expect.arrayContaining(["SHOW server_version_num"]),
-      expect.objectContaining({ env: expect.objectContaining({ PGDATABASE: expect.any(String) }) }),
+      expect.objectContaining({ env: expect.objectContaining({
+        PGHOST: "example.invalid",
+        PGDATABASE: "db",
+        PGUSER: "user",
+        PGPASSWORD: "secret",
+      }) }),
     );
   });
 
@@ -109,5 +115,61 @@ describe("PostgreSQL backup tool selection", () => {
     expect(diagnostic).not.toContain("operator:secret");
     expect(diagnostic).not.toContain("password=secret");
     expect(diagnostic).toContain("[database-url-redacted]");
+  });
+
+  it("maps a URI to discrete libpq environment variables", () => {
+    expect(postgresConnectionEnvironment(
+      "postgresql://user:secret@db.example.invalid:5433/catalog?sslmode=require&channel_binding=require",
+    )).toEqual({
+      PGHOST: "db.example.invalid",
+      PGPORT: "5433",
+      PGUSER: "user",
+      PGPASSWORD: "secret",
+      PGDATABASE: "catalog",
+      PGSSLMODE: "require",
+      PGCHANNELBINDING: "require",
+    });
+  });
+
+  it("preserves percent-encoded libpq identity overrides", () => {
+    expect(postgresConnectionEnvironment(
+      "postgresql://uri-user:uri-pass@original.invalid:5432/original?" +
+      "h%6Fst=override.invalid&hostaddr=192.0.2.10&p%6Frt=6432&db%6Eame=actual&user=query-user",
+    )).toEqual({
+      PGHOST: "override.invalid",
+      PGHOSTADDR: "192.0.2.10",
+      PGPORT: "6432",
+      PGUSER: "query-user",
+      PGPASSWORD: "uri-pass",
+      PGDATABASE: "actual",
+    });
+  });
+
+  it("passes an IPv6 URI host to libpq without URL brackets", () => {
+    expect(postgresConnectionEnvironment(
+      "postgresql://user:secret@[2001:db8::1]:5433/catalog",
+    )).toEqual({
+      PGHOST: "2001:db8::1",
+      PGPORT: "5433",
+      PGUSER: "user",
+      PGPASSWORD: "secret",
+      PGDATABASE: "catalog",
+    });
+  });
+
+  it("rejects unsupported URI parameters instead of changing connection semantics", () => {
+    expect(() => postgresConnectionEnvironment(
+      "postgresql://user:secret@db.example.invalid/catalog?unknown_option=value",
+    )).toThrow("Unsupported PostgreSQL connection parameter: unknown_option");
+  });
+
+  it("uses fallback_application_name only when application_name is absent", () => {
+    expect(postgresConnectionEnvironment(
+      "postgresql://user:secret@db.example.invalid/catalog?" +
+      "application_name=primary&fallback_application_name=fallback",
+    ).PGAPPNAME).toBe("primary");
+    expect(postgresConnectionEnvironment(
+      "postgresql://user:secret@db.example.invalid/catalog?fallback_application_name=fallback",
+    ).PGAPPNAME).toBe("fallback");
   });
 });

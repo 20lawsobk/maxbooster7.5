@@ -1236,26 +1236,146 @@ function exec(cmd: string, args: string[]): unknown {
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 
-function saveStore(): void {
+function saveStore(): boolean {
+  const temporaryFile = `${PERSIST_FILE}.tmp-${process.pid}`;
   try {
     fs.mkdirSync(path.dirname(PERSIST_FILE), { recursive: true });
     const obj: Record<string, StoreEntry> = {};
     for (const [k, v] of store) {
       if (!expired(v)) obj[k] = v;
     }
-    fs.writeFileSync(PERSIST_FILE, JSON.stringify(obj), "utf8");
-  } catch {
-    // best-effort
+    fs.writeFileSync(temporaryFile, JSON.stringify(obj), {
+      encoding: "utf8",
+      mode: 0o600,
+      flush: true,
+    });
+    fs.renameSync(temporaryFile, PERSIST_FILE);
+    // Durably commit the rename itself, not only the temporary file contents.
+    const directory = fs.openSync(path.dirname(PERSIST_FILE), "r");
+    try {
+      fs.fsyncSync(directory);
+    } finally {
+      fs.closeSync(directory);
+    }
+    return true;
+  } catch (err) {
+    try {
+      fs.rmSync(temporaryFile, { force: true });
+    } catch {
+      // Preserve the original persistence error.
+    }
+    logger.error({ err }, `[LocalPDIM] Failed to persist store to ${PERSIST_FILE}`);
+    return false;
   }
 }
 
+function isStringRecord(value: unknown): value is Record<string, string> {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.values(value).every((field) => typeof field === "string")
+  );
+}
+
+function validatePersistedEntry(key: string, value: unknown): StoreEntry {
+  const invalid = (detail: string): never => {
+    throw new Error(
+      `invalid persistence entry for key ${JSON.stringify(key)}: ${detail}`,
+    );
+  };
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return invalid("entry must be an object");
+  }
+  const entry = value as Record<string, unknown>;
+  const entryKeys = Object.keys(entry);
+  if (
+    !entryKeys.includes("type") ||
+    !entryKeys.includes("value") ||
+    entryKeys.some((field) => !["type", "value", "expiresAt"].includes(field))
+  ) {
+    return invalid("entry fields must be exactly type, value, and optional expiresAt");
+  }
+  if (
+    entry.expiresAt !== undefined &&
+    (typeof entry.expiresAt !== "number" ||
+      !Number.isFinite(entry.expiresAt) ||
+      entry.expiresAt <= 0)
+  ) {
+    return invalid("expiresAt must be a positive finite number when present");
+  }
+
+  switch (entry.type) {
+    case "string":
+      if (typeof entry.value !== "string") return invalid("string value must be a string");
+      break;
+    case "hash":
+      if (!isStringRecord(entry.value)) return invalid("hash value must map strings to strings");
+      break;
+    case "set":
+    case "list":
+      if (!Array.isArray(entry.value) || !entry.value.every((item) => typeof item === "string")) {
+        return invalid(`${entry.type} value must be an array of strings`);
+      }
+      break;
+    case "zset":
+      if (
+        !Array.isArray(entry.value) ||
+        !entry.value.every(
+          (item) =>
+            !!item &&
+            typeof item === "object" &&
+            !Array.isArray(item) &&
+            Object.keys(item).length === 2 &&
+            Object.hasOwn(item, "member") &&
+            Object.hasOwn(item, "score") &&
+            typeof (item as Record<string, unknown>).member === "string" &&
+            typeof (item as Record<string, unknown>).score === "number" &&
+            Number.isFinite((item as Record<string, unknown>).score),
+        )
+      ) {
+        return invalid("zset value must contain string members with finite scores");
+      }
+      break;
+    case "stream":
+      if (
+        !Array.isArray(entry.value) ||
+        !entry.value.every(
+          (message) =>
+            !!message &&
+            typeof message === "object" &&
+            !Array.isArray(message) &&
+            Object.keys(message).length === 2 &&
+            Object.hasOwn(message, "id") &&
+            Object.hasOwn(message, "fields") &&
+            typeof (message as Record<string, unknown>).id === "string" &&
+            isStringRecord((message as Record<string, unknown>).fields),
+        )
+      ) {
+        return invalid("stream value must contain string ids and string field maps");
+      }
+      break;
+    default:
+      return invalid("unknown entry type");
+  }
+  return value as StoreEntry;
+}
+
 function loadStore(): void {
+  if (!fs.existsSync(PERSIST_FILE)) return;
   try {
-    if (!fs.existsSync(PERSIST_FILE)) return;
     const raw = fs.readFileSync(PERSIST_FILE, "utf8");
-    const data = JSON.parse(raw) as Record<string, StoreEntry>;
+    const data = JSON.parse(raw) as unknown;
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      throw new Error("persistence root must be a JSON object");
+    }
+    // Validate the complete snapshot before mutating the live map. A corrupt
+    // later entry must never leave a partially restored process.
+    const validated = Object.entries(data).map(
+      ([key, value]) => [key, validatePersistedEntry(key, value)] as const,
+    );
     let loaded = 0;
-    for (const [k, v] of Object.entries(data)) {
+    for (const [k, v] of validated) {
       if (!expired(v)) {
         // Sets: restore as plain arrays (JSON round-trip)
         store.set(k, v);
@@ -1265,14 +1385,18 @@ function loadStore(): void {
     logger.info(
       `[LocalPDIM] Restored ${loaded} entries from ${PERSIST_FILE}`,
     );
-  } catch {
-    // best-effort
+  } catch (err) {
+    throw new Error(
+      `[LocalPDIM] Failed to load local PDIM persistence file ${PERSIST_FILE}; refusing to start to avoid silent data loss`,
+      { cause: err },
+    );
   }
 }
 
 // ── HTTP server ───────────────────────────────────────────────────────────────
 
 let _server: http.Server | null = null;
+let _finalSaveFailed = false;
 
 export function getLocalPdimUrl(): string {
   return `http://127.0.0.1:${LOCAL_PORT}/api/redis/instances/local/exec`;
@@ -1307,7 +1431,7 @@ export function startLocalPdimServer(): Promise<void> {
           const result = exec(cmd, (args as unknown[]).map(String));
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
-        } catch (err) {
+        } catch (_err) {
           res.writeHead(400, { "Content-Type": "text/plain" });
           res.end("Bad Request");
         }
@@ -1323,9 +1447,20 @@ export function startLocalPdimServer(): Promise<void> {
       const t = setInterval(saveStore, PERSIST_INTERVAL_MS);
       t.unref();
 
-      // Save on clean shutdown
-      process.on("SIGTERM", () => {
-        saveStore();
+      // Save on clean shutdown. Mark the process unsuccessful if the final
+      // durability boundary cannot be completed.
+      const saveOnShutdown = () => {
+        if (!saveStore()) {
+          _finalSaveFailed = true;
+          process.exitCode = 1;
+        }
+      };
+      process.on("SIGTERM", saveOnShutdown);
+      process.on("SIGINT", saveOnShutdown);
+      // Preserve the failure even if another shutdown coordinator subsequently
+      // calls process.exit(0).
+      process.on("exit", () => {
+        if (_finalSaveFailed) process.exitCode = 1;
       });
 
       resolve();

@@ -6,10 +6,12 @@ import path from "node:path";
 import {
   dumpedServerMajor,
   dumpedServerVersion,
+  postgresConnectionEnvironment,
   safePostgresDiagnostic,
   selectPgDumpForServer,
   type PostgresToolSelection,
 } from "./postgresTools.js";
+import { restrictedChildEnvironment } from "../subprocessSafety.js";
 
 const DUMP_TIMEOUT_MS = 45 * 60 * 1000;
 const MAX_DIAGNOSTIC_BYTES = 16 * 1024;
@@ -37,6 +39,8 @@ export interface DatabaseDumpDependencies {
   tmpDirectory?: string;
   maxBytes?: number;
   terminationGraceMs?: number;
+  /** PostgreSQL snapshot exported by a caller-held read-only transaction. */
+  snapshotId?: string;
 }
 
 export function databaseDumpChecksum(buffer: Buffer): string {
@@ -65,6 +69,12 @@ export async function generateUncommittedDatabaseDump(
   }
   if (!Number.isSafeInteger(terminationGraceMs) || terminationGraceMs <= 0 || terminationGraceMs > 10_000) {
     throw new Error("Invalid pg_dump termination grace period");
+  }
+  if (
+    dependencies.snapshotId !== undefined &&
+    !/^[0-9A-Fa-f]+(?:-[0-9A-Fa-f]+)+$/.test(dependencies.snapshotId)
+  ) {
+    throw new Error("Invalid exported PostgreSQL snapshot identifier");
   }
 
   const selection = await selectTool(sourceUrl);
@@ -172,8 +182,15 @@ export async function generateUncommittedDatabaseDump(
       writeStream.on("error", beginFailure);
 
       try {
-        pgDump = spawn(selection.tool.path, ["--no-owner", "--no-acl"], {
-          env: { ...process.env, PGDATABASE: sourceUrl },
+        const args = [
+          "--no-owner",
+          "--no-acl",
+          ...(dependencies.snapshotId ? [`--snapshot=${dependencies.snapshotId}`] : []),
+        ];
+        pgDump = spawn(selection.tool.path, args, {
+          shell: false,
+          stdio: ["ignore", "pipe", "pipe"],
+          env: restrictedChildEnvironment(postgresConnectionEnvironment(sourceUrl)),
           timeout: DUMP_TIMEOUT_MS,
         });
       } catch (error) {

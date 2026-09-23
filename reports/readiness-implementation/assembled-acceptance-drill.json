@@ -1,0 +1,86 @@
+{
+  "generatedAt": "2026-09-23T09:25:07.752Z",
+  "startedAt": "2026-09-23T09:24:37.616Z",
+  "decision": "PASS_WITH_UNTESTED_CATEGORIES",
+  "command": "env -i PATH=\"$PATH\" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs",
+  "safety": {
+    "inheritedSecretNamesRejected": true,
+    "database": "ephemeral local PostgreSQL containing generated synthetic empty schema only",
+    "network": "child preloader permits loopback TCP/Unix sockets only; rejects wrapper and direct-socket external TCP, UDP, and child processes",
+    "providerCredentialsPresent": false,
+    "productionDataPresent": false,
+    "disposableWorkingDirectory": true
+  },
+  "evidence": {
+    "schemaGeneration": "pass",
+    "postgres": "pass",
+    "appProcess": "pass",
+    "health": {
+      "status": 200,
+      "contentType": "application/json; charset=utf-8"
+    },
+    "readiness": {
+      "status": 200,
+      "aggregate": "ok",
+      "subsystems": {
+        "database": {
+          "status": "ok"
+        },
+        "redis": {
+          "status": "ok"
+        },
+        "routes": {
+          "status": "ok"
+        },
+        "audit": {
+          "status": "unknown"
+        },
+        "automation": {
+          "status": "ok"
+        },
+        "maxcore": {
+          "status": "unknown"
+        }
+      }
+    },
+    "frontend": {
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 16213,
+      "sha256": "35e7db675e9d9026c8409b3f284b6b19a164b47c333c92ba8bf412372561f49b"
+    },
+    "authHttp": {
+      "csrfCookieHeaderBinding": "pass",
+      "register": "pass",
+      "registrationSession": "pass",
+      "login": "pass",
+      "sessionPersistence": "pass",
+      "logoutInvalidation": "pass",
+      "syntheticUserRemovedWithDatabase": true
+    },
+    "browser": {
+      "engine": "Chromium CDP",
+      "hydrated": true,
+      "formLogin": true,
+      "sessionPersisted": true,
+      "logout": true,
+      "screenshot": "reports/readiness-implementation/assembled-acceptance-login.png"
+    },
+    "egressGuard": "pass (external net.connect, direct Socket.connect, UDP, and child processes denied in preflight)",
+    "cleanup": "pass"
+  },
+  "failures": [],
+  "observations": [
+    "Real application routes and production static frontend were served from the assembled server process.",
+    "Normal registration/login used the real password hashing, CSRF, session store, and logout paths with a synthetic user; no auth bypass was used.",
+    "A real headless Chromium page hydrated the login UI, submitted the login form, persisted its cookie session, logged out, and captured a pre-credential screenshot."
+  ],
+  "untested": [
+    "authenticated browser journeys beyond the completed login/session/logout path",
+    "provider sandbox delivery, OAuth, webhooks, messaging, push, email, social posting, and DSP contracts",
+    "real-money payment, payout, refund, royalty, and financial reconciliation",
+    "production-source restore/upgrade/rollback and durable backup recovery",
+    "local MaxCore inference/model behavior (the only MaxCore implementation; intentionally not started in this bounded non-ML drill)",
+    "Redis/PDIM loss recovery, load/soak, multi-worker clustering, DNS/TLS, and packed cold-image startup"
+  ]
+}

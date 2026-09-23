@@ -73,6 +73,30 @@ connection; the editor panel itself was not driven in a browser.
 
 ## Remaining blockers and next required inputs
 
+### Completed recovery and bounded acceptance checks
+
+- Local PDIM: real cross-process restart and restoration after deletion of
+  disposable backing files passed. All representative data types and TTL
+  survived; 18 malformed snapshot shapes refused startup; failed final save
+  exited nonzero. See `local-pdim-recovery-drill.md`.
+- Database: real source read-only snapshot/dump restored to isolated PostgreSQL.
+  Deterministic row-content hashes across 311 tables and 6,702 canonical schema
+  definition records matched. Private scratch was removed. This proves restore
+  correctness, not durable backup retention. See `database-recovery-drill.md`.
+- Assembled app: isolated real startup, health/readiness, rebuilt production
+  frontend, HTTP registration/login/session/logout, and Chromium
+  login/session/logout passed. The stale frontend CSRF issue was resolved by a
+  frontend-only build. See `assembled-acceptance-drill.md`.
+- Both PDIM and MaxCore are exclusively local. Local MaxCore inference was not
+  exercised in this non-ML drill, not classified as an external outage.
+
+The local PDIM export was a same-machine temporary copy, not independently
+retained recovery storage. Full provider/financial/load/cold-image acceptance
+and rollback remain unverified. Do not generalize the bounded auth pass to all
+production journeys. The earlier full typecheck is historical; a later worker
+reported unrelated server-wide errors, so current full-tree type safety is not
+certified by this pass.
+
 1. **Backup and live rollout:** PDIM is local; the owner confirms no external PDIM
    server exists. Old remote 403 probes and requests for replacement remote
    credentials are not applicable. Verify local PDIM persistence/export/restore

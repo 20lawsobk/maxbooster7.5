@@ -18,6 +18,14 @@ startup and persistence paths. Distinguish restart recovery from recovery
 after losing the instance and its backing files; prove each claimed guarantee
 with restoration evidence rather than assuming local persistence proves both.
 
+### MaxCore authority
+
+The owner confirms MaxCore is exclusively local and no external MaxCore server
+exists. Verify MaxCore through its local supervisor and actual local child
+services. Old external origins and remote credential incidents are historical,
+not current provisioning requirements. If an isolated acceptance run disables
+MaxCore, report it as not exercised, not as evidence of a remote outage.
+
 ### Distribution provider
 
 Too Lost is the current distribution provider. Do not build or restore LabelGrid

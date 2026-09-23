@@ -1,5 +1,8 @@
 /**
- * Max Booster Service Worker v9
+ * Max Booster Service Worker v12
+ *
+ * v12: public-only asset caching, owner-bound receipt-backed handoffs,
+ * account Web Lock coordination and acknowledged waiting-worker activation.
  *
  * Key improvements (v9):
  *  • pushsubscriptionchange handler — automatically re-subscribes when the
@@ -22,7 +25,7 @@
  *  • PRECACHE_APP_CHUNKS handler — after first load in production, the app sends
  *    the hashed JS/CSS chunk URLs for near-instant repeat visits.
  *  • Network-first for app shell — always fetches fresh HTML from server.
- *  • Faster install — skipWaiting() fires unconditionally.
+ *  • Previous releases used immediate takeover; v12 requires explicit approval.
  */
 
 const IS_DEV =
@@ -31,7 +34,7 @@ const IS_DEV =
   self.location.hostname.endsWith(".replit.dev") ||
   self.location.hostname.endsWith(".picard.replit.dev");
 
-const CACHE_VER = "v11";
+const CACHE_VER = "v12";
 const STATIC_CACHE = "max-booster-static-" + CACHE_VER;
 const DYNAMIC_CACHE = "max-booster-dynamic-" + CACHE_VER;
 const API_CACHE = "max-booster-api-" + CACHE_VER;
@@ -71,21 +74,23 @@ const CACHE_TTL = {
 
 const OFFLINE_DRAFT_CACHE = "max-booster-drafts-v1";
 const OFFLINE_MEDIA_CACHE = "max-booster-media-v1";
+const UPDATE_CONTROL_CACHE = "max-booster-update-control-v1";
+const HANDOFF_CACHE = "max-booster-sync-handoffs-v1";
+const ACCOUNT_STATE_CACHE = "max-booster-account-state-v1";
+let updateRequest = null;
 
 // ── Install ──────────────────────────────────────────────────────────────────
-// Skip the waitUntil/addAll bottleneck: pre-cache in background, skipWaiting
-// immediately so the new SW takes control without waiting for a page reload.
+// Verify required public assets before install succeeds; remain waiting.
 self.addEventListener("install", (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch(() => {});
+      return cache.addAll(STATIC_ASSETS);
     }),
   );
 });
 
 // ── Activate ─────────────────────────────────────────────────────────────────
-// Delete ALL old max-booster-* caches to free space and evict stale assets.
+// Purge legacy private response caches; retain static generations and drafts.
 self.addEventListener("activate", (event) => {
   const currentCaches = new Set([
     STATIC_CACHE,
@@ -101,7 +106,7 @@ self.addEventListener("activate", (event) => {
           cacheNames
             .filter(
               (name) =>
-                name.startsWith("max-booster-") && !currentCaches.has(name),
+                /^(max-booster-(api|dynamic|shell)-)/.test(name) && !currentCaches.has(name),
             )
             .map((name) => {
               console.log("[SW] Evicting old cache:", name);
@@ -109,7 +114,14 @@ self.addEventListener("activate", (event) => {
             }),
         );
       })
-      .then(() => self.clients.claim()),
+      .then(async () => {
+        const cache = await caches.open(UPDATE_CONTROL_CACHE);
+        const approval = await cache.match("/approved-app-update");
+        if (approval && (await approval.json()).expiresAt > Date.now()) {
+          await cache.delete("/approved-app-update");
+          await self.clients.claim();
+        }
+      }),
   );
 });
 
@@ -117,6 +129,22 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
+  if (url.origin === self.location.origin && request.method === "POST" && url.pathname === "/api/sync/batch") {
+    event.respondWith(handleVersionedSync(request));
+    return;
+  }
+  // Private responses and writes belong to the account-scoped page repository.
+  const publicAsset = url.origin === self.location.origin &&
+    (STATIC_ASSETS.includes(url.pathname) ||
+      /^\/assets\/[^/]+-[A-Za-z0-9_-]{8,}\.(js|css)$/.test(url.pathname));
+  if (!publicAsset) {
+    if (request.mode === "navigate") {
+      event.respondWith(fetch(request).catch(async () =>
+        (await caches.match("/offline.html")) ||
+        new Response("You are offline. Reconnect to open this page.", { status: 503, headers: { "Content-Type": "text/plain" } })));
+    }
+    return;
+  }
 
   // DEV MODE: transparent pass-through — no caching whatsoever.
   // Prevents stale production-hashed HTML from being served by Vite dev server.
@@ -193,7 +221,7 @@ async function cacheFirst(request, cacheName) {
   if (cached) return cached;
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (response.ok && !/no-store|private/i.test(response.headers.get("cache-control") || "")) {
       const cache = await caches.open(cacheName || STATIC_CACHE);
       cache.put(request, response.clone());
     }
@@ -323,8 +351,83 @@ async function clearBackgroundSyncItem(key) {
 }
 
 self.addEventListener("sync", (event) => {
-  if (event.tag === "offline-sync") event.waitUntil(processBackgroundSync());
+  // Legacy ownerless entries are quarantined, never replayed with current cookies.
+  if (event.tag === "account-sync-v1") event.waitUntil(replayVersionedHandoffs());
 });
+
+async function handleVersionedSync(request) {
+  if (!self.navigator.locks) return fetch(request);
+  return self.navigator.locks.request("max-booster-account-session-v1", { mode: "shared" },
+    () => handleVersionedSyncWithLease(request));
+}
+
+async function handleVersionedSyncWithLease(request) {
+  const body = await request.clone().json();
+  try {
+    return await fetch(request);
+  } catch (error) {
+    if (!self.navigator.locks || !("sync" in self.registration) ||
+        body.protocolVersion !== 1 || typeof body.ownerId !== "string" ||
+        !Array.isArray(body.actions) || !body.actions.length ||
+        body.actions.some(action => typeof action.id !== "string")) throw error;
+    const active = await (await caches.open(ACCOUNT_STATE_CACHE)).match("/active");
+    if (!active || (await active.json()).ownerId !== body.ownerId) throw error;
+    {
+      const handoffId = crypto.randomUUID();
+      const key = new Request(self.location.origin + "/__sync_handoff/" +
+        encodeURIComponent(body.ownerId) + "/" + handoffId);
+      await (await caches.open(HANDOFF_CACHE)).put(key, new Response(JSON.stringify({
+        protocolVersion: 1, ownerId: body.ownerId, handoffId, actions: body.actions, createdAt: Date.now(),
+      })));
+      await self.registration.sync.register("account-sync-v1");
+      return new Response(JSON.stringify({
+        protocolVersion: 1, state: "handed-off", ownerId: body.ownerId, handoffId,
+        actionIds: body.actions.map(action => action.id),
+      }), { status: 202, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+    }
+  }
+}
+
+async function replayVersionedHandoffs() {
+  if (!self.navigator.locks) throw new Error("Account-safe background replay requires Web Locks");
+  await self.navigator.locks.request("max-booster-sync-replay-v1", async () => {
+    const cache = await caches.open(HANDOFF_CACHE);
+    for (const key of await cache.keys()) {
+      const stored = await cache.match(key);
+      if (!stored) continue;
+      const item = await stored.json();
+      await self.navigator.locks.request("max-booster-account-session-v1", { mode: "shared" }, async () => {
+        const csrfResponse = await fetch("/api/csrf-token", { credentials: "include", cache: "no-store" });
+        if (!csrfResponse.ok) throw new Error("Background sync CSRF token unavailable");
+        const csrf = await csrfResponse.json();
+        if (!csrf.csrfToken) throw new Error("Background sync CSRF token missing");
+        const response = await fetch("/api/sync/batch", {
+          method: "POST", credentials: "include",
+          headers: { "Content-Type": "application/json", "x-csrf-token": csrf.csrfToken },
+          body: JSON.stringify({ protocolVersion: 1, ownerId: item.ownerId, actions: item.actions }),
+        });
+        if (!response.ok || response.status === 202) throw new Error("Background sync awaits authoritative receipts");
+        const data = await response.json();
+        if (data.protocolVersion !== 1 || data.ownerId !== item.ownerId ||
+            !Array.isArray(data.results) || data.results.length !== item.actions.length ||
+            item.actions.some(action => data.results.filter(result =>
+              result.actionId === action.id && result.ownerId === item.ownerId &&
+              result.protocolVersion === 1 && result.receipt === true &&
+              ["applied", "rejected", "conflict"].includes(result.outcome) &&
+              typeof result.success === "boolean" && (result.outcome === "applied") === result.success).length !== 1)) {
+          throw new Error("Invalid background sync receipts");
+        }
+        // Rejected/conflicted receipts remain durably queryable on the server;
+        // deleting transport data is not an assertion that mutations applied.
+        await cache.delete(key);
+        const windows = await self.clients.matchAll({ type: "window" });
+        windows.forEach(client => client.postMessage({
+          type: "SYNC_RECEIPTS_AVAILABLE", ownerId: item.ownerId, handoffId: item.handoffId,
+        }));
+      });
+    }
+  });
+}
 
 async function processBackgroundSync() {
   const queue = await getBackgroundSyncQueue();
@@ -618,13 +721,36 @@ self.addEventListener("pushsubscriptionchange", (event) => {
 // ── Message handlers ──────────────────────────────────────────────────────────
 self.addEventListener("message", (event) => {
   if (!event.data) return;
+  if (event.data.type === "VERIFY_ACTIVE_ACCOUNT" && self.navigator.locks) {
+    event.waitUntil(self.navigator.locks.request("max-booster-account-session-v1", { mode: "shared" }, async () => {
+      const response = await fetch("/api/auth/me?account-check=" + crypto.randomUUID(), { credentials: "include", cache: "no-store" });
+      if (!response.ok) return;
+      const user = await response.json();
+      if (String(user.id) !== event.data.ownerId) return;
+      await (await caches.open(ACCOUNT_STATE_CACHE)).put("/active", new Response(JSON.stringify({ ownerId: String(user.id) })));
+    }));
+    return;
+  }
+  if (event.data.type === "APP_UPDATE_ACK") {
+    if (updateRequest?.token === event.data.token && updateRequest.clients.has(event.source?.id)) {
+      updateRequest.acks.set(event.source.id, { ready: event.data.ready === true, build: event.data.build });
+    }
+    return;
+  }
+  if (event.data.type === "REQUEST_APP_UPDATE") {
+    event.waitUntil(coordinateAppUpdate(event));
+    return;
+  }
 
   switch (event.data.type) {
     // Sent by the app after first hydration (see index.html startup script).
     // Caches the hashed vendor/index JS + CSS chunks so the next visit is
     // served entirely from disk — near-instant on mobile.
     case "PRECACHE_APP_CHUNKS": {
-      const chunks = event.data.chunks || [];
+      const chunks = (event.data.chunks || []).filter(value => {
+        const url = new URL(value, self.location.origin);
+        return url.origin === self.location.origin && /^\/assets\/[^/]+-[A-Za-z0-9_-]{8,}\.(js|css)$/.test(url.pathname);
+      });
       if (chunks.length === 0) break;
       caches
         .open(STATIC_CACHE)
@@ -656,7 +782,7 @@ self.addEventListener("message", (event) => {
     }
 
     case "SKIP_WAITING":
-      self.skipWaiting();
+      // Natural activation waits until the old controlled tabs close.
       break;
 
     case "CLEAR_API_CACHE":
@@ -672,18 +798,11 @@ self.addEventListener("message", (event) => {
       break;
 
     case "PREFETCH_CRITICAL":
-      prefetchCriticalData().then(() => {
-        event.source?.postMessage({ type: "PREFETCH_COMPLETE" });
-      });
+      event.source?.postMessage({ type: "CACHE_ERROR", error: "Private caching requires an authenticated account repository" });
       break;
 
     case "CACHE_ENDPOINTS":
-      cacheEndpoints(event.data.endpoints || []).then(() => {
-        event.source?.postMessage({
-          type: "ENDPOINTS_CACHED",
-          count: (event.data.endpoints || []).length,
-        });
-      });
+      event.source?.postMessage({ type: "CACHE_ERROR", error: "Private caching requires an authenticated account repository" });
       break;
 
     case "CLEANUP_CACHE":
@@ -706,6 +825,37 @@ self.addEventListener("message", (event) => {
       break;
   }
 });
+
+async function coordinateAppUpdate(event) {
+  const reply = value => event.ports?.[0]?.postMessage(value);
+  if (updateRequest) return reply({ accepted: false, error: "Another tab is already reviewing this update." });
+  const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  const token = crypto.randomUUID();
+  updateRequest = { token, clients: new Set(windows.map(client => client.id)), acks: new Map() };
+  let activating = false;
+  try {
+    windows.forEach(client => client.postMessage({ type: "PREPARE_APP_UPDATE", token, generation: CACHE_VER }));
+    const deadline = Date.now() + 15000;
+    while (Date.now() < deadline && updateRequest.acks.size < windows.length) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    const current = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    if (current.some(client => !updateRequest.clients.has(client.id)) ||
+        current.some(client => !updateRequest.acks.get(client.id)?.ready)) {
+      return reply({ accepted: false, error: "Every open tab must save its work and approve. Close hidden tabs after saving, then retry." });
+    }
+    await (await caches.open(UPDATE_CONTROL_CACHE)).put("/approved-app-update",
+      new Response(JSON.stringify({ token, expiresAt: Date.now() + 30000 })));
+    reply({ accepted: true });
+    await self.skipWaiting();
+    activating = true;
+  } catch (error) {
+    reply({ accepted: false, error: "Update could not be prepared. Keep this version open and retry." });
+  } finally {
+    if (!activating) windows.forEach(client => client.postMessage({ type: "APP_UPDATE_CANCELLED", token }));
+    updateRequest = null;
+  }
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getCacheTTL(url) {

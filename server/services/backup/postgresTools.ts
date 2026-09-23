@@ -31,6 +31,71 @@ export interface ToolSelectionDependencies {
   env?: NodeJS.ProcessEnv;
 }
 
+/** Convert a PostgreSQL URI to libpq's discrete environment variables. */
+export function postgresConnectionEnvironment(databaseUrl: string): NodeJS.ProcessEnv {
+  const parsed = new URL(databaseUrl);
+  if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+    throw new Error("Database source must be a PostgreSQL URL");
+  }
+  const database = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+  if (!parsed.hostname || !database) throw new Error("PostgreSQL URL must include host and database");
+  const environment: NodeJS.ProcessEnv = {
+    PGHOST: parsed.hostname.replace(/^\[(.*)\]$/, "$1"),
+    PGPORT: parsed.port || "5432",
+    PGUSER: decodeURIComponent(parsed.username),
+    PGDATABASE: database,
+  };
+  if (parsed.password) environment.PGPASSWORD = decodeURIComponent(parsed.password);
+  const supported = new Map<string, string>([
+    ["host", "PGHOST"],
+    ["hostaddr", "PGHOSTADDR"],
+    ["port", "PGPORT"],
+    ["dbname", "PGDATABASE"],
+    ["user", "PGUSER"],
+    ["password", "PGPASSWORD"],
+    ["sslmode", "PGSSLMODE"],
+    ["sslrootcert", "PGSSLROOTCERT"],
+    ["sslcert", "PGSSLCERT"],
+    ["sslkey", "PGSSLKEY"],
+    ["sslcrl", "PGSSLCRL"],
+    ["sslcrldir", "PGSSLCRLDIR"],
+    ["sslpassword", "PGSSLPASSWORD"],
+    ["sslcompression", "PGSSLCOMPRESSION"],
+    ["ssl_min_protocol_version", "PGSSLMINPROTOCOLVERSION"],
+    ["ssl_max_protocol_version", "PGSSLMAXPROTOCOLVERSION"],
+    ["channel_binding", "PGCHANNELBINDING"],
+    ["connect_timeout", "PGCONNECT_TIMEOUT"],
+    ["application_name", "PGAPPNAME"],
+    ["target_session_attrs", "PGTARGETSESSIONATTRS"],
+    ["gssencmode", "PGGSSENCMODE"],
+    ["krbsrvname", "PGKRBSRVNAME"],
+    ["keepalives", "PGKEEPALIVES"],
+    ["keepalives_idle", "PGKEEPALIVESIDLE"],
+    ["keepalives_interval", "PGKEEPALIVESINTERVAL"],
+    ["keepalives_count", "PGKEEPALIVESCOUNT"],
+    ["tcp_user_timeout", "PGTCPUSER_TIMEOUT"],
+    ["load_balance_hosts", "PGLOADBALANCEHOSTS"],
+  ]);
+  let fallbackApplicationName: string | undefined;
+  for (const [parameter, value] of parsed.searchParams) {
+    if (parameter.toLowerCase() === "fallback_application_name") {
+      fallbackApplicationName = value;
+      continue;
+    }
+    const variable = supported.get(parameter.toLowerCase());
+    if (!variable) {
+      throw new Error(`Unsupported PostgreSQL connection parameter: ${parameter}`);
+    }
+    // Preserve URI query override semantics, including percent-decoded keys and
+    // values. Iteration intentionally makes the last repeated setting win.
+    environment[variable] = value;
+  }
+  if (!environment.PGAPPNAME && fallbackApplicationName) {
+    environment.PGAPPNAME = fallbackApplicationName;
+  }
+  return environment;
+}
+
 interface CommandResult {
   code: number | null;
   stdout: string;
@@ -173,7 +238,10 @@ async function queryServerMajor(
   const result = await runBounded(psql.path, [
     "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", "SHOW server_version_num",
   ], {
-    env: { ...(dependencies.env ?? process.env), PGDATABASE: databaseUrl },
+    env: {
+      ...(dependencies.env ?? process.env),
+      ...postgresConnectionEnvironment(databaseUrl),
+    },
     stdio: ["ignore", "pipe", "pipe"],
   }, dependencies.spawn ?? nodeSpawn, QUERY_TIMEOUT_MS);
   if (result.code !== 0) {

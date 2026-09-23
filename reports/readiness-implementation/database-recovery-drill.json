@@ -1,0 +1,124 @@
+{
+  "reportVersion": 1,
+  "startedAt": "2026-09-23T09:03:25.575Z",
+  "completedAt": "2026-09-23T09:04:17.881Z",
+  "status": "pass",
+  "liveSource": true,
+  "durableBackupCreated": false,
+  "sourceAccess": "read-only exported snapshot",
+  "runCommand": "env -i PATH=\"$PATH\" HOME=/tmp NEON_DATABASE_URL=\"$NEON_DATABASE_URL\" node --import tsx scripts/database-recovery-drill.mjs",
+  "safety": {
+    "sourceMutation": false,
+    "appStarted": false,
+    "providerCalls": false,
+    "dumpScratchMode": "0600",
+    "scratchRemoved": true,
+    "targetNetwork": "loopback and private Unix socket only"
+  },
+  "evidence": {
+    "source": {
+      "serverMajor": 17,
+      "tableCount": 311,
+      "schemaDefinitionRecordCount": 6702,
+      "schemaFingerprint": "e73595fefdb782ace008330169408c7c5b2714205c57f21f2c9e532471e18351",
+      "schemaSections": {
+        "relations": {
+          "count": 1001,
+          "fingerprint": "d4a96e5bb55c2f3d3c06401375aa8f62abbcd0b97b41a190e812610ffa5a86b0"
+        },
+        "columns": {
+          "count": 4617,
+          "fingerprint": "9a19dcb4f45cc3bdcd218b951d63d115f5e35afd4ebcc827708eb9fca8b82840"
+        },
+        "types": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "constraints": {
+          "count": 394,
+          "fingerprint": "dbc6e7c988ea00d8eeee73bd7b51601bbfb818848a70b0cf28f480e66aa94338"
+        },
+        "indexes": {
+          "count": 676,
+          "fingerprint": "6b2f669f68eead4b3d59b5f783285d09aee93639441f37e8be9294421af26731"
+        },
+        "functions": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "sequences": {
+          "count": 14,
+          "fingerprint": "26b8c586bcc85f4d5a1580d103c965f2c9f26fb7b545d58328f664b578613709"
+        },
+        "triggers": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "policies": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      }
+    },
+    "dump": {
+      "durability": "uncommitted",
+      "bytes": 27353570,
+      "sha256": "fbd84602e7ff30828d3da9671d578206968622d6f2135374020e35b825f59df8",
+      "sourceVersion": "17.11",
+      "consistentSnapshot": true
+    },
+    "restore": {
+      "targetMajor": 17,
+      "schemaDefinitionRecordCount": 6702,
+      "tableCount": 311,
+      "aggregateRowCount": "44639",
+      "exactPerTableCountsMatched": true,
+      "exactPerTableContentHashesMatched": true,
+      "targetIdentityMatched": true,
+      "targetWasEmpty": true
+    }
+  },
+  "checks": [
+    {
+      "name": "source transaction is read-only",
+      "status": "pass",
+      "detail": "transaction_read_only=on"
+    },
+    {
+      "name": "dump scratch file is private",
+      "status": "pass",
+      "detail": "mode=0600"
+    },
+    {
+      "name": "restore target identity is exact",
+      "status": "pass",
+      "detail": "database, role, data directory, listener, and unique port matched"
+    },
+    {
+      "name": "restore target is empty",
+      "status": "pass",
+      "detail": "zero user relations before restore"
+    },
+    {
+      "name": "restored schema fingerprint matches source snapshot",
+      "status": "pass",
+      "detail": "6702 canonical schema-definition records matched"
+    },
+    {
+      "name": "restored table inventory matches source snapshot",
+      "status": "pass",
+      "detail": "311 table row counts matched exactly"
+    },
+    {
+      "name": "restored row content hashes match source snapshot",
+      "status": "pass",
+      "detail": "311 deterministic per-table content hashes matched"
+    },
+    {
+      "name": "restored database is nonempty",
+      "status": "pass",
+      "detail": "6702 canonical schema-definition records restored"
+    }
+  ],
+  "failures": []
+}

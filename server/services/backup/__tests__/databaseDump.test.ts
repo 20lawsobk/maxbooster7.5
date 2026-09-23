@@ -68,9 +68,19 @@ describe("uncommitted database dump generation", () => {
       ["--no-owner", "--no-acl"],
       expect.objectContaining({
         timeout: 45 * 60 * 1000,
-        env: expect.objectContaining({ PGDATABASE: sourceUrl }),
+        shell: false,
+        stdio: ["ignore", "pipe", "pipe"],
+        env: expect.objectContaining({
+          PGHOST: "source.invalid",
+          PGDATABASE: "catalog",
+          PGUSER: "operator",
+          PGPASSWORD: "secret",
+        }),
       }),
     );
+    const childEnvironment = spawn.mock.calls[0][2].env as NodeJS.ProcessEnv;
+    expect(childEnvironment.NEON_DATABASE_URL).toBeUndefined();
+    expect(childEnvironment.DATABASE_URL).toBeUndefined();
     expect(dump).toEqual({
       bytes: validDump,
       checksum: databaseDumpChecksum(validDump),
@@ -84,7 +94,7 @@ describe("uncommitted database dump generation", () => {
 
   it("removes the temporary file after pg_dump failure", async () => {
     const directory = await temporaryDirectory();
-    await expect(generateUncommittedDatabaseDump("postgresql://fixture/source", {
+    await expect(generateUncommittedDatabaseDump("postgresql://fixture@source.invalid/source", {
       tmpDirectory: directory,
       spawn: spawnWith(validDump, 1, "synthetic failure") as any,
       selectTool: selector(),
@@ -94,7 +104,7 @@ describe("uncommitted database dump generation", () => {
 
   it("enforces the bounded generation/read limit and cleans up", async () => {
     const directory = await temporaryDirectory();
-    await expect(generateUncommittedDatabaseDump("postgresql://fixture/source", {
+    await expect(generateUncommittedDatabaseDump("postgresql://fixture@source.invalid/source", {
       tmpDirectory: directory,
       spawn: spawnWith(validDump) as any,
       selectTool: selector(),
@@ -105,7 +115,7 @@ describe("uncommitted database dump generation", () => {
 
   it("bounds pg_dump diagnostics and cleans up", async () => {
     const directory = await temporaryDirectory();
-    await expect(generateUncommittedDatabaseDump("postgresql://fixture/source", {
+    await expect(generateUncommittedDatabaseDump("postgresql://fixture@source.invalid/source", {
       tmpDirectory: directory,
       spawn: spawnWith(validDump, 1, "x".repeat(17 * 1024)) as any,
       selectTool: selector(),
@@ -115,11 +125,39 @@ describe("uncommitted database dump generation", () => {
 
   it("rejects source-version drift and cleans up", async () => {
     const directory = await temporaryDirectory();
-    await expect(generateUncommittedDatabaseDump("postgresql://fixture/source", {
+    await expect(generateUncommittedDatabaseDump("postgresql://fixture@source.invalid/source", {
       tmpDirectory: directory,
       spawn: spawnWith(validDump) as any,
       selectTool: selector(16),
     })).rejects.toThrow("did not match queried server major");
+    expect(await readdir(directory)).toEqual([]);
+  });
+
+  it("can use a caller-held exported read-only snapshot", async () => {
+    const directory = await temporaryDirectory();
+    const spawn = spawnWith(validDump);
+    await generateUncommittedDatabaseDump("postgresql://fixture@source.invalid/source", {
+      tmpDirectory: directory,
+      spawn: spawn as any,
+      selectTool: selector(),
+      snapshotId: "00000003-0000001B-1",
+    });
+    expect(spawn.mock.calls[0][1]).toEqual([
+      "--no-owner",
+      "--no-acl",
+      "--snapshot=00000003-0000001B-1",
+    ]);
+    expect(await readdir(directory)).toEqual([]);
+  });
+
+  it("rejects unsafe snapshot identifiers before creating scratch files", async () => {
+    const directory = await temporaryDirectory();
+    await expect(generateUncommittedDatabaseDump("postgresql://fixture@source.invalid/source", {
+      tmpDirectory: directory,
+      spawn: spawnWith(validDump) as any,
+      selectTool: selector(),
+      snapshotId: "unsafe value",
+    })).rejects.toThrow("Invalid exported PostgreSQL snapshot identifier");
     expect(await readdir(directory)).toEqual([]);
   });
 });
