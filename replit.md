@@ -42,25 +42,12 @@ configured request path and provider contract before requesting a reconnect.
 
 ### Pre-deployment acceptance
 
-Use isolated production-process simulations to establish release acceptance before
-the owner publishes. Publication, real financial/provider mutations, and recovery of
-actual published user content are not prerequisites for finishing the fixes that
-enable deployment. Exercise real application consumers and label simulated external
-boundaries explicitly. An unrun simulation or real code failure remains unverified;
-post-publication observation is a separate operational check.
-
-The owner's **production Reserved VM is 16 vCPUs / 64 GiB**. The available
-development simulation VM is **4 cgroup CPUs / 8 GiB** (effective physical
-memory can be slightly lower). For the isolated two-app-worker simulation only,
-`APP_WORKER_CPU_SHARE=0.5` opts two logical HTTP workers into time-sharing the
-existing one-CPU app role budget; `CLUSTER_WORKERS=2` must still pass the real
-compute-sizing memory and CPU checks. MaxCore's CPU share, Python/sidecar
-reservations, memory minima and headroom are unchanged. The production default
-share is 1; do not describe the scaled development run as production VM
-throughput or as two dedicated app CPUs. Loaded-model health, three stable
-readiness probes, primary-owned local MaxCore/PDIM, protected cross-worker
-recovery-job lookup, and the unchanged 150-request 99%/500 ms/1000 ms SLO
-remain mandatory for any claimed cluster-packed acceptance.
+The production Reserved VM is 16 vCPUs / 64 GiB; development simulation has
+4 cgroup CPUs / 8 GiB. `APP_WORKER_CPU_SHARE=0.5` is an explicit, simulation-only
+app-sizing allocation for two time-sharing workers, not an enforced CPU quota or
+a production-throughput measurement. It does not alter MaxCore or memory budgets.
+An isolated simulation verifies its exercised paths, not publication or external
+provider effects; report unexercised boundaries separately.
 
 - **Frontend:** React 19, Vite, Tailwind CSS 4, Radix UI, Framer Motion, TanStack Query, Zustand
 - **Backend:** Node.js (Express 5), TypeScript (tsx), Drizzle ORM (PostgreSQL/Neon)

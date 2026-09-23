@@ -22,6 +22,22 @@ simulation checks remain open; post-publication checks are separate.
 
 ## Current authoritative pre-deployment decision
 
+### Build-entrypoint reconciliation after the packed run
+
+Review identified that the legacy `build.sh` separately installed incomplete
+Python dependencies and emitted serial xz/gzip capsules incompatible with the
+current restore contract. It now changes to the project root and executes
+`DEPLOY_PACK=1 npm run build`, using the same canonical builder already tested
+below. Its obsolete fast path, independent installer, and legacy packer were
+removed. Three process-boundary tests verify working directory, environment,
+arguments, and failure-exit propagation; shell syntax also passed.
+
+This wrapper-only correction happened after the retained packed run. That run
+proves the canonical builder and runtime; it is not a claim that the changed
+wrapper was separately rebuilt end to end. The configured Replit Reserved VM
+already uses the canonical command. The unrelated legacy `Dockerfile.prod` is
+not covered by this Replit deployment acceptance.
+
 Preview restoration was separately verified after the scaled simulation: the
 landing page rendered and all six `/api/ready` subsystems reported `ok`, including
 the supervised loaded model. Private sidecar entries explicitly disable
