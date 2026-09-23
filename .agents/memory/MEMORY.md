@@ -154,3 +154,4 @@
 - [Git auth vs local reference health](git-auth-vs-local-reference-health.md) — successful GitHub auth can coexist with broken tracking refs; classify fetch failures before requesting OAuth reconnection.
 - [Semgrep coverage and timeouts](semgrep-coverage-and-timeouts.md) — valid JSX/type syntax can partially parse; measure slow rules and include new untracked helpers in verification.
 - [Drizzle adapter unions](drizzle-driver-union-contextual-types.md) — a cross-driver inferred union can destroy contextual typing; fix the export boundary, not hundreds of callers.
+- [App Storage attachment](app-storage-runtime-attachment.md) — a configured bucket name is not runtime-access/privacy proof; fail before uploading recovery data.
