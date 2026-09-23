@@ -92,4 +92,32 @@ describe("PDIM command argument contract (PdimRedisClient)", () => {
     await expect(call).rejects.toThrow(/nullish command argument/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("surfaces HTTP command errors instead of converting them to null", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: "ERR unknown command 'NOPE'" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+
+    await expect(client.sendCommand(["NOPE"])).rejects.toThrow(
+      /ERR unknown command/,
+    );
+  });
+
+  it("surfaces protocol error envelopes instead of converting them to null", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: "ERR unknown command 'NOPE'" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+
+    await expect(client.sendCommand(["NOPE"])).rejects.toThrow(
+      /ERR unknown command/,
+    );
+  });
 });

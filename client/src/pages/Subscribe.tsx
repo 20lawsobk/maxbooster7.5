@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -371,6 +371,7 @@ export default function Subscribe() {
   const [isLoading, setIsLoading] = useState(true);
   const [setupError, setSetupError] = useState<BillingError | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const checkoutIntentRef = useRef<{ planId: string; key: string } | null>(null);
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -383,8 +384,18 @@ export default function Subscribe() {
     setSetupError(null);
 
     try {
+      if (checkoutIntentRef.current?.planId !== plan.id) {
+        checkoutIntentRef.current = {
+          planId: plan.id,
+          key: crypto.randomUUID(),
+        };
+      }
       const response = await apiRequest("POST", "/api/create-subscription", {
         planName: plan.id,
+      }, {
+        headers: {
+          "Idempotency-Key": checkoutIntentRef.current.key,
+        },
       });
       const data = await response.json();
 
@@ -401,7 +412,7 @@ export default function Subscribe() {
     } catch (error) {
       const errorData = error.body || error;
 
-      if (errorData.code === "STRIPE_NOT_CONFIGURED" || error.status === 503) {
+      if (errorData.code === "STRIPE_NOT_CONFIGURED") {
         setSetupError({
           message:
             "Payment service is temporarily unavailable. Please try again later.",

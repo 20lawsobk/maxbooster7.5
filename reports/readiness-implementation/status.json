@@ -2,11 +2,12 @@
   "sourceAudit": "reports/max-booster-production-readiness-audit-2026-09-19.md",
   "releaseReady": false,
   "liveVerificationPending": true,
+  "currentLaunchBlockerReport": "reports/readiness-implementation/launch-blockers-current.md",
   "latestExecution": {
     "report": "reports/readiness-implementation/execution-handoff.md",
     "isolatedBetaCommandsPassed": 25,
     "isolatedBetaCommandsFailed": 0,
-    "serverAndClientTypecheck": "Earlier SAST pass succeeded; latest recovery worker reports server-wide errors outside its changed file. Not a current clean-tree typecheck claim.",
+    "serverAndClientTypecheck": "passed after database adapter inference and libpq environment typing repairs",
     "recoveryAndAcceptance": {
       "localPdim": "pass: cross-process restart, disposable backing-directory loss/export restore, 18 invalid snapshots rejected, failed final save exits nonzero",
       "localPdimReport": "reports/readiness-implementation/local-pdim-recovery-drill.json",

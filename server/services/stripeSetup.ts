@@ -78,7 +78,16 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
     ): Promise<string> => {
       // Look for existing price with matching metadata
       const existing = existingPrices?.data.find(
-        (p) => p?.metadata?.type === type,
+        (p) =>
+          p.active &&
+          p.currency === "usd" &&
+          p.unit_amount === amount * 100 &&
+          p.metadata?.type === type &&
+          p.metadata?.app === "max-booster" &&
+          (recurring
+            ? p.type === "recurring" &&
+              p.recurring?.interval === recurring.interval
+            : p.type === "one_time" && p.recurring == null),
       );
 
       if (existing) {

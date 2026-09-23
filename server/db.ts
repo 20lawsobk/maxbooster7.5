@@ -1,5 +1,10 @@
-import { Pool, neonConfig } from "@neondatabase/serverless";
+import {
+  Pool,
+  neonConfig,
+  type PoolClient,
+} from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
+import type { NeonDatabase } from "drizzle-orm/neon-serverless";
 import { Pool as NodePostgresPool } from "pg";
 import { drizzle as drizzleNodePostgres } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
@@ -240,14 +245,24 @@ if (
   );
 }
 
-// Configure connection pool for optimal performance and scalability
-export const pool: any = useIsolatedNodePostgres
+// Keep the adapter-specific pool available for constructing its matching
+// Drizzle driver. Both pool implementations expose the node-postgres API used
+// by the rest of the server; the public type remains the Neon Pool type that
+// predates the isolated acceptance adapter.
+const isolatedNodePostgresPool = useIsolatedNodePostgres
   ? new NodePostgresPool({
       connectionString: config.database.url,
       max: config.database.poolSize,
       idleTimeoutMillis: config.database.idleTimeout,
       connectionTimeoutMillis: config.database.connectionTimeout,
     })
+  : null;
+
+// Configure connection pool for optimal performance and scalability.
+// node-postgres and Neon intentionally implement the same Pool contract, but
+// their declarations come from separate packages and are nominally distinct.
+export const pool: Pool = isolatedNodePostgresPool
+  ? (isolatedNodePostgresPool as unknown as Pool)
   : createInstrumentedPool({
       connectionString: config.database.url,
       max: config.database.poolSize,
@@ -261,8 +276,8 @@ export const pool: any = useIsolatedNodePostgres
 // minutes and starving user-facing requests. Using pool.on('connect') rather
 // than the 'options' startup parameter is safer with Neon's WebSocket proxy,
 // which may not forward arbitrary startup options to the backend.
-pool?.on("connect", (client: { query: (sql: string) => Promise<unknown> }) => {
-  (client.query as any)("SET statement_timeout = '30000'").catch((err: Error) => {
+pool.on("connect", (client: PoolClient) => {
+  client.query("SET statement_timeout = '30000'").catch((err: Error) => {
     logger.warn({
       err: err?.message,
       message: "[DB] Failed to set statement_timeout on new connection",
@@ -272,12 +287,20 @@ pool?.on("connect", (client: { query: (sql: string) => Promise<unknown> }) => {
 
 // Pool-level error handler — prevents unhandled 'error' events from idle client
 // disconnects from becoming uncaughtExceptions and crashing the process.
-pool?.on("error", (err: Error) => {
+pool.on("error", (err: Error) => {
   logger.warn({ value: err?.message, message: "[DB] Idle client error (pool)" });
 });
 
-export const db: any = useIsolatedNodePostgres
-  ? drizzleNodePostgres(pool, { schema })
+export type Database = NeonDatabase<typeof schema>;
+
+// The query-builder surface is shared by both PostgreSQL drivers. Publishing a
+// single schema-parameterized type is important: exporting the inferred union
+// makes overloads such as select()/insert()/transaction() incompatible and
+// erases contextual row types throughout the server.
+export const db: Database = isolatedNodePostgresPool
+  ? (drizzleNodePostgres(isolatedNodePostgresPool, {
+      schema,
+    }) as unknown as Database)
   : drizzle(pool, { schema });
 
 // Read replica routing: production-only read-write split.
@@ -318,7 +341,9 @@ if (isProduction && replicaPool) {
   );
 }
 
-export let dbRead = replicaPool ? drizzle(replicaPool, { schema }) : db;
+export let dbRead: Database = replicaPool
+  ? drizzle(replicaPool, { schema })
+  : db;
 
 /**
  * verifyReadReplica — called once at startup.

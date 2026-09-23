@@ -5,6 +5,11 @@ import { and, eq } from "drizzle-orm";
 
 // Adapter to the existing developer API key verifier. These are NOT session,
 // JWT, refresh, or delegated admin credentials. Scope is the developer API.
+// Keep this within the public API-key scope vocabulary. `developer:full` was
+// never a valid scope and would make these credentials unusable as soon as
+// endpoint scope enforcement is applied.
+const ADMIN_API_TOKEN_SCOPES = ["admin"] as const;
+
 export async function issueAdminApiToken(actorId: string, ip: string) {
   const token = `mb_live_${randomBytes(32).toString("hex")}`;
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -12,14 +17,14 @@ export async function issueAdminApiToken(actorId: string, ip: string) {
     const [record] = await tx.insert(apiKeys).values({
       userId: actorId, name: "Admin-issued developer API credential",
       keyHash: createHash("sha256").update(token).digest("hex"),
-      keyPrefix: token.slice(0, 12), scopes: ["developer:full"],
+      keyPrefix: token.slice(0, 12), scopes: [...ADMIN_API_TOKEN_SCOPES],
       isActive: true, rateLimit: 100, expiresAt,
     }).returning({ id: apiKeys.id });
     await tx.insert(auditLogs).values({
       userId: actorId, ip, action: "api_token.issue", resource: "api_keys",
-      result: "success", risk: "high", details: { tokenId: record.id, expiresAt, scope: "developer:full" },
+      result: "success", risk: "high", details: { tokenId: record.id, expiresAt, scopes: ADMIN_API_TOKEN_SCOPES },
     });
-    return { token, tokenId: record.id, expiresAt, scope: "developer:full" };
+    return { token, tokenId: record.id, expiresAt, scopes: ADMIN_API_TOKEN_SCOPES };
   });
 }
 

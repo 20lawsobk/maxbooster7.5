@@ -1229,8 +1229,7 @@ function exec(cmd: string, args: string[]): unknown {
       return "OK";
 
     default:
-      logger.debug(`[LocalPDIM] Unknown command: ${c} ${args.slice(0, 3).join(" ")}`);
-      return null;
+      throw new Error(`ERR unknown command '${c}'`);
   }
 }
 
@@ -1431,9 +1430,13 @@ export function startLocalPdimServer(): Promise<void> {
           const result = exec(cmd, (args as unknown[]).map(String));
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
-        } catch (_err) {
-          res.writeHead(400, { "Content-Type": "text/plain" });
-          res.end("Bad Request");
+        } catch (err) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: err instanceof Error ? err.message : "Bad Request",
+            }),
+          );
         }
       });
     });
@@ -1477,5 +1480,14 @@ export function startLocalPdimServer(): Promise<void> {
         reject(err);
       }
     });
+  });
+}
+
+export async function stopLocalPdimServer(): Promise<void> {
+  const server = _server;
+  _server = null;
+  if (!server) return;
+  await new Promise<void>((resolve, reject) => {
+    server.close((err) => (err ? reject(err) : resolve()));
   });
 }

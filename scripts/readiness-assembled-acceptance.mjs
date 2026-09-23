@@ -284,8 +284,18 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
     const networkStatuses = [];
     let loginRequestId;
     let loginCsrfHeaderLength = 0;
+    let mainFrameId;
+    let mainLoaderId;
+    let documentGeneration = 0;
+    let contextTransitionsRecovered = 0;
+    let transportFailure;
     ws.on("message", (raw) => {
       const message = JSON.parse(String(raw));
+      if (message.method === "Page.frameNavigated" && !message.params?.frame?.parentId) {
+        mainFrameId = message.params.frame.id;
+        mainLoaderId = message.params.frame.loaderId;
+        documentGeneration++;
+      }
       if (message.method === "Network.responseReceived" &&
           String(message.params?.response?.url ?? "").includes("/api/auth/login")) {
         networkStatuses.push(message.params.response.status);
@@ -310,7 +320,22 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
       if (message.error) rejectCommand(new Error(message.error.message));
       else resolveCommand(message.result);
     });
+    const rejectPending = (error) => {
+      transportFailure = error;
+      for (const { rejectCommand } of pending.values()) rejectCommand(error);
+      pending.clear();
+    };
+    ws.once("close", () => rejectPending(new Error("Chromium CDP target closed")));
+    ws.once("error", (error) => rejectPending(new Error(`Chromium CDP transport failed: ${error.message}`)));
     const command = (method, params = {}, timeoutMs = 5_000) => new Promise((resolveCommand, rejectCommand) => {
+      if (transportFailure) {
+        rejectCommand(transportFailure);
+        return;
+      }
+      if (ws.readyState !== WebSocket.OPEN) {
+        rejectCommand(new Error("Chromium CDP target is not open"));
+        return;
+      }
       const commandId = ++id;
       const timer = setTimeout(() => {
         pending.delete(commandId);
@@ -322,10 +347,32 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
       });
       ws.send(JSON.stringify({ id: commandId, method, params }));
     });
-    const evaluate = async (expression) => {
-      const result = await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
-      if (result.exceptionDetails) throw new Error("browser evaluation failed");
-      return result.result?.value;
+    const isContextTransition = (error) =>
+      /Inspected target navigated|Execution context was destroyed|Cannot find context with specified id/i
+        .test(String(error?.message ?? error));
+    const evaluate = async (expression, timeoutMs = 5_000) => {
+      const deadline = Date.now() + timeoutMs;
+      let lastError;
+      do {
+        try {
+          const result = await command("Runtime.evaluate", {
+            expression,
+            awaitPromise: true,
+            returnByValue: true,
+          });
+          if (result.exceptionDetails) throw new Error("browser evaluation failed");
+          return result.result?.value;
+        } catch (error) {
+          if (!isContextTransition(error)) throw error;
+          if (browser.exitCode !== null || transportFailure || ws.readyState !== WebSocket.OPEN) {
+            throw new Error(`Chromium target closed during a document transition: ${error.message}`);
+          }
+          lastError = error;
+          contextTransitionsRecovered++;
+          await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+        }
+      } while (Date.now() < deadline);
+      throw new Error(`Chromium execution context did not stabilize: ${lastError?.message ?? "unknown transition"}`);
     };
     await command("Page.enable");
     await command("Runtime.enable");
@@ -333,10 +380,22 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
     await command("Network.setExtraHTTPHeaders", {
       headers: { "X-Forwarded-Proto": "https" },
     });
-    await command("Page.navigate", { url: `http://localhost:${appPort}/login` });
+    const loginUrl = `http://localhost:${appPort}/login`;
+    const navigation = await command("Page.navigate", { url: loginUrl });
+    if (navigation.errorText) throw new Error(`Chromium login navigation failed: ${navigation.errorText}`);
+    mainFrameId = navigation.frameId;
+    const navigationLoaderId = navigation.loaderId;
     const hydrationDeadline = Date.now() + 30_000;
     while (Date.now() < hydrationDeadline) {
-      if (await evaluate(`Boolean(document.querySelector('[data-testid="button-login-submit"]'))`)) break;
+      const pageState = await evaluate(`({
+        href: location.href,
+        ready: document.readyState,
+        hydrated: Boolean(document.querySelector('[data-testid="button-login-submit"]'))
+      })`, 5_000);
+      const expectedDocument = pageState?.href === loginUrl &&
+        (pageState.ready === "interactive" || pageState.ready === "complete") &&
+        (!navigationLoaderId || !mainLoaderId || mainLoaderId === navigationLoaderId);
+      if (expectedDocument && pageState.hydrated) break;
       await new Promise((resolveWait) => setTimeout(resolveWait, 250));
     }
     const hydrated = await evaluate(`Boolean(document.querySelector('[data-testid="button-login-submit"]'))`);
@@ -409,7 +468,16 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
     if (!logoutResult?.ok) throw new Error(`browser logout did not invalidate the session: ${JSON.stringify(logoutResult)}`);
     ws.close();
     ws = undefined;
-    return { engine: "Chromium CDP", hydrated: true, formLogin: true, sessionPersisted: true, logout: true, screenshot: screenshotEvidence };
+    return {
+      engine: "Chromium CDP",
+      hydrated: true,
+      formLogin: true,
+      sessionPersisted: true,
+      logout: true,
+      documentGeneration,
+      contextTransitionsRecovered,
+      screenshot: screenshotEvidence,
+    };
   } finally {
     ws?.terminate();
     if (browser.exitCode === null) browser.kill("SIGTERM");

@@ -474,6 +474,14 @@ export async function startMaxcoreLocal(): Promise<void> {
  *  /api/health (proxied to Python) and require status "healthy". */
 export async function checkMaxcoreLocalReady(): Promise<boolean> {
   if (!config.maxcoreLocal.enabled) return false;
+  // Readiness belongs to the child this supervisor owns. A stale/orphaned
+  // process answering on the configured port must not make `running:false`
+  // and `ready:true` simultaneously.
+  if (!child) {
+    lastReady = false;
+    lastReadyCheck = 0;
+    return false;
+  }
   const now = Date.now();
   if (now - lastReadyCheck < READY_TTL_MS) return lastReady;
   lastReadyCheck = now;

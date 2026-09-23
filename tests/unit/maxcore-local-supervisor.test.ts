@@ -96,7 +96,7 @@ describe("MaxCore local supervisor", () => {
   });
 
   describe("checkMaxcoreLocalReady (Python-aware readiness)", () => {
-    it("is ready only when the Python-backed /api/health reports healthy", async () => {
+    it("does not claim readiness from an unowned process on the local port", async () => {
       const fetchMock = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ status: "healthy", model_loaded: true }),
@@ -105,31 +105,8 @@ describe("MaxCore local supervisor", () => {
       const { checkMaxcoreLocalReady } = await import(
         "../../server/services/maxcoreLocalSupervisor.js"
       );
-      expect(await checkMaxcoreLocalReady()).toBe(true);
-      expect(String(fetchMock.mock.calls[0][0])).toContain("/api/health");
-    });
-
-    it("is NOT ready when the Node layer answers but Python is down", async () => {
-      // /api/health proxies Python; while Python crash-loops it returns non-healthy.
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: async () => ({ status: "starting" }),
-        }),
-      );
-      const { checkMaxcoreLocalReady } = await import(
-        "../../server/services/maxcoreLocalSupervisor.js"
-      );
       expect(await checkMaxcoreLocalReady()).toBe(false);
-    });
-
-    it("is NOT ready when nothing is listening", async () => {
-      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
-      const { checkMaxcoreLocalReady } = await import(
-        "../../server/services/maxcoreLocalSupervisor.js"
-      );
-      expect(await checkMaxcoreLocalReady()).toBe(false);
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 
@@ -220,7 +197,13 @@ describe("MaxCore local supervisor", () => {
 
     it("still spawns immediately and clears prior error state when the workspace is already installed", async () => {
       const existsSyncMock = vi.fn((p) => String(p) === TSX_BIN);
-      vi.doMock("node:fs", () => ({ default: { existsSync: existsSyncMock } }));
+      vi.doMock("node:fs", async () => {
+        const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+        return {
+          ...actual,
+          default: { ...actual.default, existsSync: existsSyncMock },
+        };
+      });
       vi.doMock("pg", () => ({
         default: {
           Client: class {
@@ -235,8 +218,19 @@ describe("MaxCore local supervisor", () => {
       const spawnMock = vi.fn(() => proc);
       vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
 
-      const { startMaxcoreLocal, getMaxcoreLocalStatus, stopMaxcoreLocal } =
-        await import("../../server/services/maxcoreLocalSupervisor.js");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: true,
+          json: async () => ({ status: "healthy", model_loaded: true }),
+        }),
+      );
+      const {
+        startMaxcoreLocal,
+        checkMaxcoreLocalReady,
+        getMaxcoreLocalStatus,
+        stopMaxcoreLocal,
+      } = await import("../../server/services/maxcoreLocalSupervisor.js");
 
       await startMaxcoreLocal();
 
@@ -245,6 +239,7 @@ describe("MaxCore local supervisor", () => {
       expect(status.running).toBe(true);
       expect(status.pid).toBe(424242);
       expect(spawnMock).toHaveBeenCalledTimes(1);
+      expect(await checkMaxcoreLocalReady()).toBe(true);
 
       stopMaxcoreLocal();
     });

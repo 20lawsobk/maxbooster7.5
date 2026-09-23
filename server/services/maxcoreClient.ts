@@ -189,6 +189,16 @@ export class MaxCoreAIClient {
     MaxCoreAIClient._cbProbing = false;
   }
 
+  /**
+   * A model-info response is a valid recovery signal only after the local
+   * model service has actually finished loading. The API server can answer
+   * during its boot window, so a bare 200 (or generic JSON stub) is not enough
+   * to close the circuit.
+   */
+  static recordHealthyModelInfo(): void {
+    MaxCoreAIClient.cbRecordSuccess();
+  }
+
   private static cbRecordFailure(path: string): void {
     MaxCoreAIClient._cbFailures++;
     MaxCoreAIClient._cbProbing = false;
@@ -334,6 +344,10 @@ export class MaxCoreAIClient {
     // is unreachable, don't queue a 600 s hanging socket — return null now.
     // (null → false means "no info yet" → allow through on first call)
     if (MaxCoreAIClient._remoteAvailable === false) {
+      // cbBlocked() may just have reserved the sole half-open probe. This
+      // request did not make an HTTP round-trip, so release that reservation;
+      // otherwise every later request remains blocked even after cooldown.
+      MaxCoreAIClient.cbAbortProbe();
       logger.debug(`[MaxCoreAI] generate ${path} — health probe says unreachable, skipping`);
       return null;
     }
@@ -457,6 +471,9 @@ export class MaxCoreAIClient {
     // Health-probe fast-fail: avoids queuing a 600 s hanging socket when the
     // lightweight ping already confirmed MaxCore is unreachable.
     if (MaxCoreAIClient._remoteAvailable === false) {
+      // Do not leak the half-open reservation when the cached health result
+      // fast-fails before an HTTP request is attempted.
+      MaxCoreAIClient.cbAbortProbe();
       logger.debug(`[MaxCoreAI] infer ${path} — health probe says unreachable, skipping`);
       return null;
     }
@@ -564,10 +581,25 @@ async function pingMaxCoreHealth(): Promise<boolean> {
       signal: AbortSignal.timeout(10_000),
       redirect: "manual",
     });
-    // r.ok = 2xx status. Also require JSON content-type so a 200 HTML page
-    // (MaxCore's SPA catch-all) doesn't register as a healthy API response.
+    // A 2xx is not sufficient: the Node API has a boot-time stub and an SPA
+    // catch-all. Require the real Python model-info contract and a loaded model
+    // before this response is allowed to release a half-open circuit.
     const ct = r.headers.get("content-type") ?? "";
-    return r.ok && (ct.includes("application/json") || ct.includes("text/json"));
+    if (
+      !r.ok ||
+      (!ct.includes("application/json") && !ct.includes("text/json"))
+    ) {
+      return false;
+    }
+    const info = await r.json() as Record<string, unknown>;
+    return (
+      info !== null &&
+      typeof info === "object" &&
+      info.model_ready === true &&
+      info.model_config !== null &&
+      typeof info.model_config === "object" &&
+      Array.isArray(info.platform_endpoints)
+    );
   } catch (e) {
     const msg = (e as Error)?.message ?? String(e);
     // Distinguish "API endpoint hangs / timed out" (server up, API broken)
@@ -601,6 +633,10 @@ export function startMaxCoreLLMWarmth(): void {
         _consecutiveFailures = 0;
         MaxCoreAIClient._remoteAvailable = true;
         MaxCoreAIClient._lastCheck = Date.now();
+        // This is a real, authenticated model-info response with model_ready
+        // true (not merely a reachable API process), so it is safe to release
+        // a half-open breaker without issuing live inference.
+        MaxCoreAIClient.recordHealthyModelInfo();
         // Notify registered subsystems (e.g. BeatMoneyLoop) so they can
         // reschedule work that was deferred while MaxCore was unreachable.
         if (wasDown && MaxCoreAIClient.onReconnect) {

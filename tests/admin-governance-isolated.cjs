@@ -91,6 +91,10 @@ test("API token issuance stores only its verifier and audit metadata; owner revo
   assert.equal(inserts[0].value.keyHash, crypto.createHash("sha256").update(result.token).digest("hex"));
   assert.equal(JSON.stringify(inserts).includes(result.token), false);
   assert.equal(inserts[0].value.userId, "admin1");
+  assert.deepEqual(Array.from(inserts[0].value.scopes), ["admin"]);
+  assert.deepEqual(Array.from(result.scopes), ["admin"]);
+  assert.equal(inserts[1].value.details.scope, undefined);
+  assert.deepEqual(Array.from(inserts[1].value.details.scopes), ["admin"]);
   assert.ok(result.expiresAt > new Date());
   await service.revokeAdminApiToken("admin1", "key1", "127.0.0.1");
   assert.equal(changes.isActive, false);

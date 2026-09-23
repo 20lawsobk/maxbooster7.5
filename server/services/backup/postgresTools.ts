@@ -32,14 +32,14 @@ export interface ToolSelectionDependencies {
 }
 
 /** Convert a PostgreSQL URI to libpq's discrete environment variables. */
-export function postgresConnectionEnvironment(databaseUrl: string): NodeJS.ProcessEnv {
+export function postgresConnectionEnvironment(databaseUrl: string): Record<string, string> {
   const parsed = new URL(databaseUrl);
   if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
     throw new Error("Database source must be a PostgreSQL URL");
   }
   const database = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
   if (!parsed.hostname || !database) throw new Error("PostgreSQL URL must include host and database");
-  const environment: NodeJS.ProcessEnv = {
+  const environment: Record<string, string> = {
     PGHOST: parsed.hostname.replace(/^\[(.*)\]$/, "$1"),
     PGPORT: parsed.port || "5432",
     PGUSER: decodeURIComponent(parsed.username),

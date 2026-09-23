@@ -6,8 +6,8 @@ Decision: **PASS_WITH_UNTESTED_CATEGORIES**
 
 `env -i PATH="$PATH" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs`
 
-Run started: 2026-09-23T09:24:37.616Z  
-Report generated: 2026-09-23T09:25:07.752Z
+Run started: 2026-09-23T09:54:18.192Z  
+Report generated: 2026-09-23T09:54:53.136Z
 
 ## Safety boundary
 
@@ -57,7 +57,7 @@ Report generated: 2026-09-23T09:25:07.752Z
     "status": 200,
     "contentType": "text/html; charset=utf-8",
     "bytes": 16213,
-    "sha256": "35e7db675e9d9026c8409b3f284b6b19a164b47c333c92ba8bf412372561f49b"
+    "sha256": "ed615b681ce2448b892b13749f3b828d32eb802432420ffc63424f59652ab563"
   },
   "authHttp": {
     "csrfCookieHeaderBinding": "pass",
@@ -74,6 +74,8 @@ Report generated: 2026-09-23T09:25:07.752Z
     "formLogin": true,
     "sessionPersisted": true,
     "logout": true,
+    "documentGeneration": 1,
+    "contextTransitionsRecovered": 0,
     "screenshot": "reports/readiness-implementation/assembled-acceptance-login.png"
   },
   "egressGuard": "pass (external net.connect, direct Socket.connect, UDP, and child processes denied in preflight)",

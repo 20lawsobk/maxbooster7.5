@@ -5,7 +5,7 @@ import { execSync } from "child_process";
 import fs from "fs";
 import { isProductionEnv } from "./lib/envHelpers.js";
 import { storage } from "./storage.js";
-import { db } from "./db.js";
+import { db, pool } from "./db.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements, projects, projectRoyaltySplits } from "../shared/schema.js";
 import { sum, count, inArray } from "drizzle-orm";
@@ -24,6 +24,11 @@ import { consumeTotp } from "./services/totpReplay.js";
 import { requireUUIDParam } from "./middleware/requestValidation.js";
 import Stripe from "stripe";
 import { getStripePriceIds } from "./services/stripeSetup.js";
+import {
+  createSubscriptionCheckout,
+  createSubscriptionCheckoutStore,
+  SubscriptionCheckoutConflictError,
+} from "./services/subscriptionCheckoutService.js";
 import { getBaseUrl } from "./config/defaults.js";
 import {
   loginRateLimiter,
@@ -6629,67 +6634,30 @@ export async function registerRoutes(
         return res.status(503).json({ message: "Selected billing plan is not configured" });
       }
       const user = req.user!;
-
-      // Find or create Stripe customer linked to this user
-      let customerId: string | undefined = user.stripeCustomerId ?? undefined;
-      if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: user.email,
-          name: user.username || user.firstName || user.email,
-          metadata: { userId: user.id },
-        });
-        customerId = customer.id;
-        // Never collect payment before the authoritative account linkage commits.
-        await storage.updateUser(user.id, { stripeCustomerId: customerId });
-      }
-
-      // Lifetime is a one-time payment — use PaymentIntent
-      if (
-        canonicalPlan === "lifetime"
-      ) {
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount: 69900, // $699.00 in cents
-          currency: "usd",
-          customer: customerId,
-          automatic_payment_methods: { enabled: true },
-          metadata: { userId: user.id, planId: "lifetime", planName: "lifetime" },
-        });
-        return res.json({
-          clientSecret: paymentIntent.client_secret,
-          type: "payment_intent",
-        });
-      }
-
-      // Monthly/yearly — create a subscription (incomplete until payment confirmed)
-      const subscription = await stripe.subscriptions.create({
-        customer: customerId,
-        items: [{ price: resolvedPriceId }],
-        payment_behavior: "default_incomplete",
-        payment_settings: { save_default_payment_method: "on_subscription" },
-        expand: ["latest_invoice.payment_intent"],
-        metadata: { userId: user.id, planId: canonicalPlan, planName: canonicalPlan },
+      const result = await createSubscriptionCheckout({
+        stripe,
+        store: createSubscriptionCheckoutStore(pool),
+        user,
+        plan: canonicalPlan,
+        priceId: resolvedPriceId,
+        requestKey: req.get("Idempotency-Key") ?? "",
+        saveCustomerId: (userId, customerId) =>
+          storage.updateUser(userId, { stripeCustomerId: customerId }),
       });
-
-      const invoice = subscription.latest_invoice as Stripe.Invoice;
-      const pi = (invoice as any).payment_intent as Stripe.PaymentIntent | null;
-
-      if (!pi!.client_secret) {
-        logger.warn(
-          { subscriptionId: subscription.id },
-          "[create-subscription] No client_secret in subscription invoice PI",
-        );
-        return res
-          .status(500)
-          .json({ message: "Failed to initialize payment — please try again" });
-      }
-
-      return res.json({
-        clientSecret: pi!.client_secret,
-        subscriptionId: subscription.id,
-        type: "subscription",
-      });
+      return res.json(result);
     } catch (error) {
       logger.warn({ err: error }, "Create subscription error");
+      if (error instanceof SubscriptionCheckoutConflictError) {
+        return res.status(409).json({ message: error.message, code: "IDEMPOTENCY_CONFLICT", retryable: false });
+      }
+      const checkoutError = error as Error & { statusCode?: number; code?: string; retryable?: boolean };
+      if (checkoutError.statusCode) {
+        return res.status(checkoutError.statusCode).json({
+          message: checkoutError.message,
+          code: checkoutError.code,
+          retryable: checkoutError.retryable ?? checkoutError.statusCode >= 500,
+        });
+      }
       return res.status(500).json({ message: "Failed to create subscription" });
     }
   });

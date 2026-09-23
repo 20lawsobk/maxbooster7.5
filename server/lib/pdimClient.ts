@@ -964,19 +964,15 @@ export class PdimRedisClient extends EventEmitter {
             _logExecError(cmd, res.status, errMsg);
             throw new Error(errMsg);
           }
-          // 4xx: PDIM server is responsive (not down) but the command/route was
-          // not found or rejected.  Treat like "ERR unknown command" — mark counted
-          // so the catch block does NOT record a circuit-breaker failure, record
-          // a cbRecordSuccess so any open circuit closes (PDIM IS up), and return
-          // null so callers get a safe empty result instead of an error.
+          // 4xx means the server is responsive, but this operation failed. Keep
+          // the circuit healthy while surfacing the command error to its caller.
           counted = true;
           PdimRedisClient._clearRateLimitIfExpired();
           _pdimAdaptSuccess();
           cbRecordSuccess();
-          logger.warn(
-            `[PDIM] ${String(cmd)} → HTTP ${res.status} (unsupported/not-found) — returning null`,
+          throw new Error(
+            `PDIM HTTP ${res.status} (${String(cmd)}): ${text.slice(0, 200)}`,
           );
-          return null;
         }
 
         // Successful response — opportunistically clear the rate-limit deadline
@@ -999,18 +995,15 @@ export class PdimRedisClient extends EventEmitter {
         }
 
         const data = await res.json();
+        counted = true;
         cbRecordSuccess(); // a successful response resets the counter + closes circuit
 
         if (data !== null && typeof data === "object") {
           if ("result" in data) return data?.result;
           if ("error" in data) {
             const errMsg = String(data?.error);
-            // Unsupported commands: return safe defaults instead of crashing
             if (errMsg?.startsWith("ERR unknown command")) {
-              logger.warn(
-                `[PDIM] Unsupported command [${cmd}] — returning null`,
-              );
-              return null;
+              throw new Error(errMsg);
             }
             throw new Error(errMsg);
           }
@@ -1308,13 +1301,15 @@ export class PdimRedisClient extends EventEmitter {
             counted = true;
             throw new Error(`PDIM HTTP ${res.status} (script ${cmd}): ${text?.slice(0, 200)}`);
           }
-          // 4xx other than 429 — command not supported; record success so circuit stays closed.
+          // The server is alive, but the script operation failed. Do not turn a
+          // command failure into Lua nil: BullMQ must see the explicit error.
           counted = true;
           PdimRedisClient._clearRateLimitIfExpired();
           _pdimAdaptSuccess();
           cbRecordSuccess();
-          logger.warn(`[PDIM] (script) ${String(cmd)} → HTTP ${res.status} (unsupported) — returning null`);
-          return null;
+          throw new Error(
+            `PDIM HTTP ${res.status} (script ${String(cmd)}): ${text.slice(0, 200)}`,
+          );
         }
 
         PdimRedisClient?._clearRateLimitIfExpired();
@@ -1339,10 +1334,7 @@ export class PdimRedisClient extends EventEmitter {
           if ("error" in data) {
             const errMsg = String(data?.error);
             if (errMsg?.startsWith("ERR unknown command")) {
-              logger.warn(
-                `[PDIM] Unsupported command (script) [${cmd}] — returning null`,
-              );
-              return null;
+              throw new Error(errMsg);
             }
             throw new Error(errMsg);
           }
@@ -2001,8 +1993,16 @@ export function isPdimConfigured(): boolean {
 
   // The in-process PDIM server is intentionally loopback-only and has no
   // bearer-auth boundary. Remote PDIM must still provide its credential.
-  const isLocal = execUrl.startsWith(`${loopbackUrl(runtimePorts.localPdim)}/`);
+  const isLocal = isLocalPdimExecUrl(execUrl);
   return isLocal || !!(process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN);
+}
+
+function isLocalPdimExecUrl(execUrl: string): boolean {
+  try {
+    return new URL(execUrl).origin === loopbackUrl(runtimePorts.localPdim);
+  } catch {
+    return false;
+  }
 }
 
 // ── Direct-HTTP circuit-recovery prober ──────────────────────────────────────
@@ -2033,22 +2033,27 @@ export function startPdimDirectProber(): void {
   if (_directProbeTimer) return; // already running
 
   const pdimUrl =
-    process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL || "";
+    process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL || "";
   const pdimToken =
-    process.env.PDIM_BEARER_TOKEN || process.env.PDIM_EXEC_TOKEN || "";
-  if (!pdimUrl || !pdimToken) return; // PDIM not configured — nothing to probe
+    process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN || "";
+  if (!pdimUrl) return;
+  const isLocal = isLocalPdimExecUrl(pdimUrl);
+  // The owned loopback server intentionally has no authentication boundary.
+  // Every remote authority remains fail-closed without its bearer credential.
+  if (!isLocal && !pdimToken) return;
 
   _directProbeTimer = setInterval(async () => {
     const state = cbGetState();
     if (state === "CLOSED") return; // circuit healthy — nothing to do
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (!isLocal) headers.Authorization = `Bearer ${pdimToken}`;
       const res = await fetch(pdimUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${pdimToken}`,
-        },
+        headers,
         body: JSON.stringify({ cmd: "PING", args: [] }),
         signal: AbortSignal.timeout(DIRECT_PROBE_TIMEOUT_MS),
         // Do not follow Replit proxy redirects — a 3xx → 200 HTML response
@@ -2057,15 +2062,24 @@ export function startPdimDirectProber(): void {
         redirect: "manual",
       });
 
-      // Accept any HTTP 200 OK as proof that PDIM is alive — the content-type of
-      // a PING response is irrelevant.  We still reject 3xx (opaque redirect from
-      // Replit proxy when PDIM is sleeping) and 5xx (PDIM error) via !res.ok.
       if (res.ok) {
-        if (cbGetState() !== "CLOSED") {
+        const data = await res.json().catch(() => undefined);
+        const pong =
+          data === "PONG" ||
+          (data !== null &&
+            typeof data === "object" &&
+            "result" in data &&
+            data.result === "PONG");
+        if (pong && cbGetState() !== "CLOSED") {
           logger.info(
             `[PDIM] Direct HTTP probe OK (HTTP ${res.status}) — force-closing circuit breaker`,
           );
           cbForceClose();
+        } else if (!pong) {
+          logger.debug(
+            `[PDIM] Direct probe returned HTTP ${res.status} without PONG ` +
+              `(circuit stays ${cbGetState()})`,
+          );
         }
       } else {
         logger.debug(
