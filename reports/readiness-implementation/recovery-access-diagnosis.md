@@ -1,5 +1,28 @@
 # Recovery access diagnosis
 
+## Superseding authority correction
+
+The owner confirms there is no external PDIM server: PDIM is local and its
+credentials are created by the local server. The remote probes below are
+historical observations against obsolete configuration. They are not a current
+production blocker, and requesting replacement remote credentials was incorrect.
+Do not act on the historical external-token remediation instructions below.
+
+Current startup imports `pdimEnvFix` and calls `startLocalPdimServer` from
+`server/index.ts`. `server/lib/localPdimServer.ts` binds the exec service to
+loopback and checkpoints its map to `data/local-pdim-store.json` every 30 seconds
+and on SIGTERM. This is an actual local bootstrap, not merely a vendored server
+that would need remote provisioning.
+
+Local restart recovery and restoration after loss of the instance/backing files
+are distinct guarantees. The remaining backup gate is to verify the actual
+local PDIM persistence/export/restore path and a database restore to an isolated
+target. Neither obsolete remote 403 responses nor successful local PINGs prove
+or disprove those recovery guarantees. No recovery drill is claimed by this
+correction.
+
+## Historical probe record (superseded as current requirements)
+
 Observed at **2026-09-22T09:15:06Z**. This diagnosis is intentionally
 read-only and sanitized.
 

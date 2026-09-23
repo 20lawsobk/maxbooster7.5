@@ -8,6 +8,16 @@ AI-Powered Music Career Management Platform (v3.0.0) by B-Lawz Music.
 
 ## Stack
 
+### PDIM authority and recovery
+
+PDIM is the local subsystem. The owner confirms that no external PDIM server
+exists and that PDIM credentials are created by the local server. Treat old
+external PDIM URLs/tokens as obsolete configuration, not a current service or
+a request for replacement credentials. Recovery work must follow the local
+startup and persistence paths. Distinguish restart recovery from recovery
+after losing the instance and its backing files; prove each claimed guarantee
+with restoration evidence rather than assuming local persistence proves both.
+
 ### Distribution provider
 
 Too Lost is the current distribution provider. Do not build or restore LabelGrid

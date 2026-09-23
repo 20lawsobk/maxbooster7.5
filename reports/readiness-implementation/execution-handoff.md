@@ -73,9 +73,11 @@ connection; the editor panel itself was not driven in a browser.
 
 ## Remaining blockers and next required inputs
 
-1. **Backup and live rollout:** configured remote recovery probes returned HTTP
-   403; their cause is not established. Need a reachable independently recoverable
-   destination and verified backup/restore before any shared/live DDL. Catalog
+1. **Backup and live rollout:** PDIM is local; the owner confirms no external PDIM
+   server exists. Old remote 403 probes and requests for replacement remote
+   credentials are not applicable. Verify local PDIM persistence/export/restore
+   and database backup restoration into an isolated target before shared/live DDL.
+   Explicitly distinguish restart recovery from loss of the instance/backing files. Catalog
    bootstrap, historical migration provenance and legacy upgrade/rollback remain
    unverified. PostgreSQL tool compatibility is now fixed, not the backup gate.
 2. **Privacy/erasure:** approved retention/hold authority, complete ownership
