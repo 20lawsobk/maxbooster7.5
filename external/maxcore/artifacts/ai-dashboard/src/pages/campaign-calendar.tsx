@@ -427,7 +427,7 @@ export default function CampaignCalendar() {
               ) : (
                 <Save className="w-4 h-4 mr-2" />
               )}
-              Generate & save calendar
+              Generate &amp; save calendar
             </Button>
           </Card>
 

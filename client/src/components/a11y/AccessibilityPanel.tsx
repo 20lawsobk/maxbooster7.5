@@ -100,7 +100,7 @@ function AccessibilityPanelContent() {
           className="flex items-center gap-2 font-medium mb-3"
         >
           <Move className="h-4 w-4" aria-hidden="true" />
-          Motion & Animation
+          Motion &amp; Animation
         </h3>
         <div className="space-y-4 pl-6">
           <div className="flex items-center justify-between">

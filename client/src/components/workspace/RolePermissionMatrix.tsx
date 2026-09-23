@@ -203,7 +203,7 @@ export function RolePermissionMatrix({
           <div>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Roles & Permissions
+              Roles &amp; Permissions
             </CardTitle>
             <CardDescription>
               Manage workspace roles and their permissions

@@ -8,25 +8,23 @@ import io
 import json
 import os
 import sys
-import urllib.error
-import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from trusted_http import request as trusted_request, validated_origin
+
 BASE = "http://127.0.0.1:9878"
+BASE_ORIGIN = validated_origin(BASE, local_only=True)
 API_KEY = os.environ.get("MAXCORE_TEST_API_KEY", "")
 HEADERS = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 
 
 def _post(path: str, payload: dict) -> tuple[int, dict]:
-    rq = urllib.request.Request(
-        BASE + path, data=json.dumps(payload).encode(), headers=HEADERS, method="POST"
+    response = trusted_request(
+        "POST", BASE + path, origin=BASE_ORIGIN,
+        body=json.dumps(payload).encode(), headers=HEADERS, timeout=30,
     )
-    try:
-        with urllib.request.urlopen(rq, timeout=30) as resp:
-            return resp.status, json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read().decode())
+    return response.status, json.loads(response.body.decode())
 
 
 # ── SDEdit init-frame conditioning ─────────────────────────────────────────

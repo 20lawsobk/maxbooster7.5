@@ -2608,7 +2608,7 @@ export default function Analytics() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-semibold">
-                  🔥 Trigger Cities & Regional Hotspots
+                  🔥 Trigger Cities &amp; Regional Hotspots
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   Detect cities where your music is trending and growing fastest
@@ -2742,7 +2742,7 @@ export default function Analytics() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-semibold">
-                  🔔 Alerts & Notifications
+                  🔔 Alerts &amp; Notifications
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   Milestones, playlist changes, and significant events

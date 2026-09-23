@@ -30,6 +30,7 @@ export const DEFAULT_CONFIGS = Object.freeze([
     url: "https://semgrep.dev/c/p/security-audit",
   },
 ]);
+export const DEFAULT_RULE_TIMEOUT_SECONDS = 90;
 const COVERAGE_RULES = `rules:
 - id: readiness.coverage.javascript
   languages: [javascript, typescript]
@@ -449,7 +450,7 @@ export async function runScan(options = {}) {
       "scan", "--json-output", rawFile, "--metrics", "off", "--disable-version-check",
       "--no-rewrite-rule-ids",
       "--project-root", stage,
-      "--no-autofix", "--strict", "--timeout", String(options.ruleTimeoutSeconds ?? 30),
+      "--no-autofix", "--strict", "--timeout", String(options.ruleTimeoutSeconds ?? DEFAULT_RULE_TIMEOUT_SECONDS),
       "--timeout-threshold", String(options.timeoutThreshold ?? 3),
       "--max-memory", String(options.maxMemoryMb ?? 4096),
       "--max-target-bytes", "0", "--jobs", String(options.jobs ?? 2),
@@ -494,7 +495,7 @@ export async function runScan(options = {}) {
           codeUpload: false,
           autofix: false,
           outerTimeoutSeconds: (options.timeoutMs ?? 30 * 60_000) / 1000,
-          perRuleTimeoutSeconds: options.ruleTimeoutSeconds ?? 30,
+          perRuleTimeoutSeconds: options.ruleTimeoutSeconds ?? DEFAULT_RULE_TIMEOUT_SECONDS,
           timeoutThreshold: options.timeoutThreshold ?? 3,
           maxMemoryMb: options.maxMemoryMb ?? 4096,
           jobs: options.jobs ?? 2,

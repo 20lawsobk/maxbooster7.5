@@ -246,7 +246,7 @@ export default function UrlInspector() {
           >
             <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
             <p className="text-muted-foreground animate-pulse">
-              Fetching & parsing URL…
+              Fetching &amp; parsing URL…
             </p>
           </motion.div>
         )}

@@ -346,7 +346,7 @@ export default function PressKit() {
               <div className="space-y-8">
                 <section>
                   <h3 className="text-xl font-semibold mb-4 border-b pb-2">
-                    Booking & Contact
+                    Booking &amp; Contact
                   </h3>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -587,7 +587,7 @@ export default function PressKit() {
               <TabsContent value="links" className="space-y-6 pt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Social Media & Streaming</CardTitle>
+                    <CardTitle>Social Media &amp; Streaming</CardTitle>
                   </CardHeader>
                   <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">

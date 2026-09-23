@@ -967,7 +967,7 @@ export function TransportBar({
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  Project Key - All audio & MIDI will transpose relative to this
+                  Project Key - All audio &amp; MIDI will transpose relative to this
                   key
                 </TooltipContent>
               </Tooltip>

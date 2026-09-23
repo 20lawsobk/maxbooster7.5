@@ -28,9 +28,8 @@ import os
 import time
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.request import urlopen, Request as URLRequest
-from urllib.error import URLError, HTTPError
 from urllib.parse import urlparse
+from secure_http import request
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -93,23 +92,20 @@ def _mc_post(path: str, body: dict):
         return None
     url     = f'{MC_URL}/api{path}'
     payload = json.dumps(body).encode()
-    req     = URLRequest(
-        url,
-        data    = payload,
-        # Bearer ONLY — MaxCore validates X-API-Key/X-Admin-Key schemes first
-        # and 401s the whole request if either is present (see replit.md).
-        headers = {
-            'Content-Type':  'application/json',
-            'Authorization': f'Bearer {MC_KEY}',
-            **(
-                {'X-MaxCore-User-Id': str(body['user_id'])}
-                if body.get('user_id') else {}
-            ),
-        },
-        method = 'POST',
-    )
     try:
-        with urlopen(req, timeout=TIMEOUT) as resp:
+        with request(
+            url, trusted_origin=MC_URL, data=payload,
+            # Bearer ONLY — MaxCore validates X-API-Key/X-Admin-Key schemes first.
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {MC_KEY}',
+                **(
+                    {'X-MaxCore-User-Id': str(body['user_id'])}
+                    if body.get('user_id') else {}
+                ),
+            },
+            method='POST', timeout=TIMEOUT, allow_private=True,
+        ) as resp:
             return json.loads(resp.read().decode())
     except Exception as exc:
         log.debug('MaxCore POST %s: %s', path, exc)
@@ -119,15 +115,12 @@ def _mc_post(path: str, body: dict):
 def _mc_get(path: str):
     if not MC_URL:
         return None
-    req = URLRequest(
-        f'{MC_URL}/api{path}',
-        headers = {
-            'Authorization': f'Bearer {MC_KEY}',
-        },
-        method = 'GET',
-    )
     try:
-        with urlopen(req, timeout=TIMEOUT) as resp:
+        with request(
+            f'{MC_URL}/api{path}', trusted_origin=MC_URL,
+            headers={'Authorization': f'Bearer {MC_KEY}'},
+            method='GET', timeout=TIMEOUT, allow_private=True,
+        ) as resp:
             return json.loads(resp.read().decode())
     except Exception as exc:
         log.debug('MaxCore GET %s: %s', path, exc)

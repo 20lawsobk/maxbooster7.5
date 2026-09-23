@@ -55,6 +55,19 @@ import {
   type PostData,
   type AnalyticsData,
 } from "./autopilotLearningService.js";
+import type {
+  CreativePlannerModel,
+  CreativePlannerOutput,
+} from "../../shared/ml/models/CreativePlannerModel.js";
+import type {
+  BeatAlignmentOutput,
+  BeatSyncAlignmentModel,
+} from "../../shared/ml/models/BeatSyncAlignmentModel.js";
+import type { VideoCreativeScorer } from "../../shared/ml/models/VideoCreativeScorer.js";
+import type {
+  KeyframeSelectorOutput,
+  KeyframeStyleSelector,
+} from "../../shared/ml/models/KeyframeStyleSelector.js";
 
 // ─── MaxCore connection (mirrors multimodalGenerationService pattern) ──────────
 
@@ -353,18 +366,10 @@ async function analyzeMusicStage(
 
 // ─── In-house model singletons (lazy-loaded, shared across requests) ──────────
 
-let planner:
-  | import("../../shared/ml/models/CreativePlannerModel.js").CreativePlannerModel
-  | null = null;
-let _aligner:
-  | import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatSyncAlignmentModel
-  | null = null;
-let scorer:
-  | import("../../shared/ml/models/VideoCreativeScorer.js").VideoCreativeScorer
-  | null = null;
-let _styleSelector:
-  | import("../../shared/ml/models/KeyframeStyleSelector.js").KeyframeStyleSelector
-  | null = null;
+let planner: CreativePlannerModel | null = null;
+let _aligner: BeatSyncAlignmentModel | null = null;
+let scorer: VideoCreativeScorer | null = null;
+let _styleSelector: KeyframeStyleSelector | null = null;
 
 async function getPlanner() {
   if (!planner) {
@@ -411,16 +416,11 @@ async function getStyleSelector() {
 
 interface CreativeContext {
   /** CreativePlannerModel output — structural frame for the whole video */
-  plannerSuggestion:
-    | import("../../shared/ml/models/CreativePlannerModel.js").CreativePlannerOutput
-    | null;
+  plannerSuggestion: CreativePlannerOutput | null;
   /** Per-beat style selections from KeyframeStyleSelector (keyed by beat index) */
-  styleMap: Map<
-    number,
-    import("../../shared/ml/models/KeyframeStyleSelector.js").KeyframeSelectorOutput
-  >;
+  styleMap: Map<number, KeyframeSelectorOutput>;
   /** Per-beat alignment data from BeatSyncAlignmentModel */
-  alignmentMap: import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatAlignmentOutput[];
+  alignmentMap: BeatAlignmentOutput[];
   energyMean: number;
   energyPeak: number;
   energyVariance: number;
@@ -544,17 +544,12 @@ async function precomputeMusicalIntelligence(
     ),
   ]);
 
-  const styleMap = new Map<
-    number,
-    import("../../shared/ml/models/KeyframeStyleSelector.js").KeyframeSelectorOutput
-  >();
+  const styleMap = new Map<number, KeyframeSelectorOutput>();
   styleResults?.forEach((r, i) => {
     if (r) styleMap?.set(i, r);
   });
 
-  const alignmentMap = alignmentResults?.filter(
-    Boolean,
-  ) as import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatAlignmentOutput[];
+  const alignmentMap = alignmentResults?.filter(Boolean) as BeatAlignmentOutput[];
 
   logger?.info("[CreativeModel] Musical intelligence pre-computed", {
     plannerBeatCount: plannerSuggestion.optimalBeatCount,

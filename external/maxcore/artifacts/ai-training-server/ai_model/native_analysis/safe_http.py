@@ -16,7 +16,7 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Mapping
 from urllib.parse import urljoin, urlsplit
 
 
@@ -155,6 +155,8 @@ def fetch_to_file(
     allowed_content_types: Iterable[str],
     deadline_seconds: float = 20.0,
     max_redirects: int = 3,
+    headers: Mapping[str, str] | None = None,
+    append: bool = False,
 ) -> FetchResult:
     """Stream a public URL into ``destination`` under strict limits."""
     allowed = tuple(item.lower().rstrip("/") for item in allowed_content_types)
@@ -174,7 +176,13 @@ def fetch_to_file(
         connection = connection_class(host, port, ip, min(remaining, 10.0))
         try:
             display_host = f"[{host}]" if ":" in host else host
-            host_header = display_host if port in {80, 443} else f"{display_host}:{port}"
+            default_port = 443 if scheme == "https" else 80
+            host_header = (
+                display_host if port == default_port else f"{display_host}:{port}"
+            )
+            extra_headers = dict(headers or {})
+            if any(name.casefold() in {"host", "authorization", "cookie"} for name in extra_headers):
+                raise SafeHTTPError("Sensitive public request headers are not allowed")
             connection.request(
                 "GET",
                 target,
@@ -183,6 +191,7 @@ def fetch_to_file(
                     "User-Agent": "MaxCore-NativeAnalysis/1",
                     "Accept": ", ".join(f"{item}/*" for item in allowed),
                     "Connection": "close",
+                    **extra_headers,
                 },
             )
             response = connection.getresponse()
@@ -212,7 +221,7 @@ def fetch_to_file(
                     raise SafeHTTPError("Remote Content-Length is invalid") from exc
             total = 0
             destination.parent.mkdir(parents=True, exist_ok=True)
-            with destination.open("xb") as output:
+            with destination.open("ab" if append else "xb") as output:
                 while True:
                     remaining = deadline_seconds - (time.monotonic() - started)
                     if remaining <= 0:
@@ -247,6 +256,7 @@ def fetch_bytes(
     allowed_content_types: Iterable[str],
     deadline_seconds: float = 20.0,
     max_redirects: int = 3,
+    headers: Mapping[str, str] | None = None,
 ) -> tuple[bytes, FetchResult]:
     """Fetch bytes without leaving a partial file behind."""
     import tempfile
@@ -263,6 +273,7 @@ def fetch_bytes(
             allowed_content_types=allowed_content_types,
             deadline_seconds=deadline_seconds,
             max_redirects=max_redirects,
+            headers=headers,
         )
         return path.read_bytes(), result
     finally:

@@ -31,13 +31,13 @@ import shutil
 import subprocess
 import sys
 import threading
-import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from pathlib import Path
 from typing import List, Optional
+from ai_model.native_analysis.safe_http import fetch_to_file
 
 # ── Speed tuning (override via CLI: --threads N  --parallel N) ───────────────
 CHUNK_THREADS    = 8   # parallel byte-range streams per file (set 1 to disable)
@@ -227,15 +227,8 @@ def _print(msg: str, end: str = '\n'):
         print(msg, end=end, flush=True)
 
 def _http_head(url: str) -> tuple[int, bool]:
-    """Return (content_length, accepts_ranges) via HEAD request."""
-    try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}, method='HEAD')
-        with urllib.request.urlopen(req, timeout=30) as r:
-            total = int(r.headers.get('Content-Length', 0))
-            ranges = r.headers.get('Accept-Ranges', '').strip().lower() == 'bytes'
-            return total, ranges
-    except Exception:
-        return 0, False
+    """Select the bounded sequential downloader when size is not yet known."""
+    return 0, False
 
 def _http_download_chunk(url: str, start: int, end: int, part_path: Path,
                           counter: list, lock: threading.Lock, total: int):
@@ -252,21 +245,13 @@ def _http_download_chunk(url: str, start: int, end: int, part_path: Path,
         'User-Agent': 'Mozilla/5.0',
         'Range': f'bytes={start + resume}-{end}',
     }
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=180) as resp:
-        mode = 'ab' if resume else 'wb'
-        with open(part_path, mode) as f:
-            buf_size = 8 * 1024 * 1024  # 8 MB read buffer
-            while True:
-                buf = resp.read(buf_size)
-                if not buf:
-                    break
-                f.write(buf)
-                with lock:
-                    counter[0] += len(buf)
-                    done = counter[0]
-                    pct  = done / total * 100
-                _print(f"\r  {done/1e6:.0f} MB / {total/1e6:.0f} MB  ({pct:.1f}%)  [{CHUNK_THREADS} streams]", end='')
+    result = fetch_to_file(
+        url, part_path, max_bytes=expected - resume,
+        allowed_content_types=("application", "audio", "video", "text"),
+        deadline_seconds=180, headers=headers, append=bool(resume),
+    )
+    with lock:
+        counter[0] += result.size
 
 def _http_download_parallel(url: str, dest: Path, fname: str, total: int) -> Path:
     """Split file into CHUNK_THREADS equal byte-range parts, download in parallel, then concatenate."""
@@ -322,31 +307,14 @@ def _http_download_sequential(url: str, dest: Path, fname: str,
         headers['Range'] = f'bytes={resume_pos}-'
         _print(f"  Resuming {fname} from {resume_pos/1e6:.0f} MB...")
 
-    req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=180) as resp:
-            total_raw = int(resp.headers.get('Content-Length', 0))
-            total     = total_raw + resume_pos if resume_pos else (total or total_raw)
-            done      = resume_pos
-            mode      = 'ab' if resume_pos else 'wb'
-            buf_size  = 8 * 1024 * 1024  # 8 MB read buffer
-            with open(tmp, mode) as f:
-                while True:
-                    buf = resp.read(buf_size)
-                    if not buf:
-                        break
-                    f.write(buf)
-                    done += len(buf)
-                    if total:
-                        _print(f"\r  {done/1e6:.0f} MB / {total/1e6:.0f} MB  ({done/total*100:.1f}%)", end='')
+        fetch_to_file(
+            url, tmp,
+            max_bytes=max(1, total - resume_pos) if total else 500 * 1024**3,
+            allowed_content_types=("application", "audio", "video", "text"),
+            deadline_seconds=180, headers=headers, append=bool(resume_pos),
+        )
         _print('')
-    except urllib.error.HTTPError as e:
-        if e.code == 416 and tmp.exists():
-            _print('\n  Already complete (416), finalizing...')
-            tmp.rename(filepath)
-            return filepath
-        _print(f'\n  [WARN] Download interrupted: {e}')
-        raise
     except Exception as e:
         _print(f'\n  [WARN] Download interrupted: {e}')
         raise

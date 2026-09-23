@@ -17,14 +17,17 @@ import json
 import os
 import sys
 import time
-import urllib.request
-import urllib.error
 from dataclasses import dataclass, field
 from typing import Any
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from trusted_http import request as trusted_request, validated_origin
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
 BASE   = "http://127.0.0.1:9878"
+BASE_ORIGIN = validated_origin(BASE, local_only=True)
 API_KEY = os.environ.get("MAXCORE_TEST_API_KEY", "")
 HEADERS = {
     "Content-Type": "application/json",
@@ -36,13 +39,16 @@ HEADERS = {
 def _req(method: str, path: str, body: dict | None = None, timeout: int = 60) -> dict:
     url  = BASE + path
     data = json.dumps(body).encode() if body is not None else None
-    req  = urllib.request.Request(url, data=data, headers=HEADERS, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        raw = e.read().decode(errors="replace")
-        raise AssertionError(f"HTTP {e.code} {method} {path}: {raw[:400]}") from e
+    response = trusted_request(
+        method, url, origin=BASE_ORIGIN, body=data, headers=HEADERS,
+        timeout=timeout,
+    )
+    if response.status >= 400:
+        raw = response.body.decode(errors="replace")
+        raise AssertionError(
+            f"HTTP {response.status} {method} {path}: {raw[:400]}"
+        )
+    return json.loads(response.body)
 
 def GET(path: str) -> dict:
     return _req("GET", path)

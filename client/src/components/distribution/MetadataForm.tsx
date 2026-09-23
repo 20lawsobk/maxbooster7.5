@@ -292,7 +292,7 @@ export function MetadataForm({
         <div className="space-y-4 pt-4 border-t">
           <h3 className="font-medium flex items-center gap-2">
             <Info className="h-4 w-4" />
-            Copyright & Publishing
+            Copyright &amp; Publishing
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

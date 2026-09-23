@@ -168,7 +168,7 @@ async function searchBeats(
 
   conditions.push(eq(beats.isPublished, true));
 
-  let orderBy: import("drizzle-orm").SQL<unknown> = desc(beats.createdAt);
+  let orderBy: SQL<unknown> = desc(beats.createdAt);
   if (filters.sort === "popular") orderBy = desc(beats.plays);
   else if (filters.sort === "price_low") orderBy = asc(beats.price);
   else if (filters.sort === "price_high") orderBy = desc(beats.price);

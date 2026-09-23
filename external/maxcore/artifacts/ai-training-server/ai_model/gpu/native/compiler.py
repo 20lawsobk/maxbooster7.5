@@ -106,7 +106,7 @@ class NativeCompiler:
         try:
             flags = self._flags()
             sig = "|".join([source, self.cc_version, *flags, *link])
-            key = hashlib.sha1(sig.encode()).hexdigest()[:16]
+            key = hashlib.sha256(sig.encode()).hexdigest()[:16]
             so_path = os.path.join(self.cache_dir, f"lib_{key}.so")
 
             if not os.path.exists(so_path):

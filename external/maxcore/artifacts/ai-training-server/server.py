@@ -3862,19 +3862,12 @@ _URL_TITLE_SUFFIXES = re.compile(
 def _fetch_page_title(url_str: str) -> str:
     """Try to fetch a URL and return the best available title string (never raises)."""
     try:
-        req = _urllib_request.Request(
-            url_str,
-            headers={
-                "User-Agent": "MaxCore/1.0 (+https://maxbooster.ai/bot)",
-                "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
-            },
+        from ai_model.native_analysis.safe_http import fetch_bytes
+        raw, _ = fetch_bytes(
+            url_str, max_bytes=32768, allowed_content_types=("text/html",),
+            deadline_seconds=3,
         )
-        with _urllib_request.urlopen(req, timeout=3) as resp:
-            content_type = resp.headers.get("content-type", "")
-            if "text/html" not in content_type:
-                return ""
-            body = resp.read(32768).decode("utf-8", errors="replace")
+        body = raw.decode("utf-8", errors="replace")
 
         # og:title is richest — try both attribute orderings
         og = re.search(

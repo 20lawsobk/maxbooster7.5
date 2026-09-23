@@ -874,7 +874,7 @@ function ShowsContent() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Shows & Tours</h2>
+          <h2 className="text-2xl font-bold">Shows &amp; Tours</h2>
           <p className="text-gray-500">Manage your live performances</p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)}>
@@ -1081,7 +1081,7 @@ function VenueBookingCRM() {
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <MapPin className="w-5 h-5 text-purple-600" />
-          Venue & Booking CRM
+          Venue &amp; Booking CRM
         </CardTitle>
         <div className="flex items-center gap-3">
           <div className="flex gap-4 text-sm text-gray-500">
@@ -1300,7 +1300,7 @@ function SyncLicensingContent() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Sync Licensing</h2>
-          <p className="text-gray-500">Put Your Music in TV, Film & Ads</p>
+          <p className="text-gray-500">Put Your Music in TV, Film &amp; Ads</p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
@@ -2419,7 +2419,7 @@ export default function Distribution() {
                   data-testid="tab-share-embed"
                 >
                   <Share2 className="w-4 h-4 mr-1" />
-                  Share & Embed
+                  Share &amp; Embed
                 </TabsTrigger>
                 <TabsTrigger
                   value="analytics"
@@ -2473,7 +2473,7 @@ export default function Distribution() {
                   data-testid="tab-shows"
                 >
                   <Ticket className="w-4 h-4 mr-1" />
-                  Shows & Tours
+                  Shows &amp; Tours
                 </TabsTrigger>
                 <TabsTrigger
                   value="sync-licensing"
@@ -2489,7 +2489,7 @@ export default function Distribution() {
                   data-testid="tab-a-and-r"
                 >
                   <Briefcase className="w-4 h-4 mr-1" />
-                  A&R Submissions
+                  A&amp;R Submissions
                 </TabsTrigger>
                 <TabsTrigger
                   value="sample-clearance"
@@ -3218,7 +3218,7 @@ export default function Distribution() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Earnings & Royalties
+                    Earnings &amp; Royalties
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400">
                     Track your revenue across all platforms
@@ -3844,7 +3844,7 @@ export default function Distribution() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    ISRC & UPC Code Management
+                    ISRC &amp; UPC Code Management
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400">
                     Generate and manage unique identifiers for your tracks and
@@ -4524,7 +4524,7 @@ export default function Distribution() {
                 {currentStep === 2 && (
                   <div className="space-y-6">
                     <h3 className="text-lg font-semibold">
-                      Upload Audio & Artwork
+                      Upload Audio &amp; Artwork
                     </h3>
 
                     {/* Audio Upload */}
@@ -4806,7 +4806,7 @@ export default function Distribution() {
                 {currentStep === 4 && (
                   <div className="space-y-6">
                     <h3 className="text-lg font-semibold">
-                      Platform Selection & Settings
+                      Platform Selection &amp; Settings
                     </h3>
 
                     <div className="space-y-4">
@@ -5000,7 +5000,7 @@ export default function Distribution() {
 
                 {currentStep === 5 && (
                   <div className="space-y-6">
-                    <h3 className="text-lg font-semibold">Review & Submit</h3>
+                    <h3 className="text-lg font-semibold">Review &amp; Submit</h3>
 
                     <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg space-y-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -5470,7 +5470,7 @@ export default function Distribution() {
                     <SelectContent>
                       <SelectItem value="hip-hop">Hip-Hop/Rap</SelectItem>
                       <SelectItem value="pop">Pop</SelectItem>
-                      <SelectItem value="rnb">R&B/Soul</SelectItem>
+                      <SelectItem value="rnb">R&amp;B/Soul</SelectItem>
                       <SelectItem value="rock">Rock</SelectItem>
                       <SelectItem value="electronic">Electronic</SelectItem>
                       <SelectItem value="country">Country</SelectItem>
@@ -5653,7 +5653,7 @@ function ARSubmissionsContent() {
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>
-              Unable to load A&R submission stats:{" "}
+              Unable to load A&amp;R submission stats:{" "}
               {getDistributionQueryErrorMessage(
                 statsQueryError,
                 "Please try again.",
@@ -5731,7 +5731,7 @@ function ARSubmissionsContent() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-blue-600" />
-              A&R & Label Submissions
+              A&amp;R &amp; Label Submissions
             </CardTitle>
             <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
               <DialogTrigger asChild>
@@ -5744,7 +5744,7 @@ function ARSubmissionsContent() {
                 <DialogHeader>
                   <DialogTitle>Track Label Submission</DialogTitle>
                   <DialogDescription>
-                    Log a music submission to a label or A&R contact
+                    Log a music submission to a label or A&amp;R contact
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3">
@@ -5780,7 +5780,7 @@ function ARSubmissionsContent() {
                     <div>
                       <Label>Contact Name</Label>
                       <Input
-                        placeholder="A&R rep name"
+                        placeholder={"A&R rep name"}
                         value={newSubmission.contactName}
                         onChange={(e) =>
                           setNewSubmission({
@@ -5809,7 +5809,7 @@ function ARSubmissionsContent() {
                     <div>
                       <Label>Role</Label>
                       <Input
-                        placeholder="A&R Director, Manager..."
+                        placeholder={"A&R Director, Manager..."}
                         value={newSubmission.contactRole}
                         onChange={(e) =>
                           setNewSubmission({
@@ -5907,7 +5907,7 @@ function ARSubmissionsContent() {
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>
-                  Unable to load A&R submissions:{" "}
+                  Unable to load A&amp;R submissions:{" "}
                   {getDistributionQueryErrorMessage(
                     submissionsQueryError,
                     "Please try again.",
@@ -5928,7 +5928,7 @@ function ARSubmissionsContent() {
               <Briefcase className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p className="text-gray-500">No submissions tracked yet.</p>
               <p className="text-sm text-gray-400 mt-1">
-                Start tracking your label submissions and A&R outreach.
+                Start tracking your label submissions and A&amp;R outreach.
               </p>
             </div>
           ) : (
@@ -6255,7 +6255,7 @@ function SampleClearanceContent() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="master_and_sync">
-                          Master & Sync (both)
+                          Master &amp; Sync (both)
                         </SelectItem>
                         <SelectItem value="master_only">Master Only</SelectItem>
                         <SelectItem value="sync_only">Sync Only</SelectItem>

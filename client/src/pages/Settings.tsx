@@ -1454,7 +1454,7 @@ export default function Settings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5" />
-                    Billing & Subscription
+                    Billing &amp; Subscription
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -2015,7 +2015,7 @@ export default function Settings() {
                           onClick={() => setPlanComparisonOpen(true)}
                         >
                           <Info className="h-4 w-4 mr-2" />
-                          View Plan Benefits & Compare
+                          View Plan Benefits &amp; Compare
                         </Button>
                       </div>
                     )}

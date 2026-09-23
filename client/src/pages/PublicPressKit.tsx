@@ -214,7 +214,7 @@ export default function PublicPressKit() {
           {/* Sidebar: Contact + Technical */}
           <div className="space-y-8">
             <div className="rounded-2xl border bg-card p-6 space-y-5">
-              <h3 className="text-lg font-semibold">Contact & Booking</h3>
+              <h3 className="text-lg font-semibold">Contact &amp; Booking</h3>
 
               {pressKit.contactEmail && (
                 <div className="space-y-1">

@@ -339,7 +339,14 @@ class RemoteDatasetClient:
     """
 
     def __init__(self, peer_url: str):
+        import sys
+        services = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if services not in sys.path:
+            sys.path.insert(0, services)
+        from secure_http import request as secure_request
+
         self._base    = peer_url.rstrip('/')
+        self._request = secure_request
         self._ok      = True    # set False on repeated failures to stop hammering
         self._fails   = 0
         self._max_fails = 5     # give up after 5 consecutive failures
@@ -348,10 +355,11 @@ class RemoteDatasetClient:
     def _get(self, path: str, timeout: int = 10) -> Optional[bytes]:
         if not self._ok:
             return None
-        import urllib.request as _ur
-        import urllib.error   as _ue
         try:
-            with _ur.urlopen(f'{self._base}{path}', timeout=timeout) as r:
+            with self._request(
+                f'{self._base}{path}', trusted_origin=self._base,
+                timeout=timeout, allow_private=True,
+            ) as r:
                 data = r.read()
             self._fails = 0
             return data

@@ -445,7 +445,7 @@ export function CustomizationPanel({
                       <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
                       <div className="text-sm font-medium">Upload Audio</div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        Drag & drop or click to browse
+                        Drag &amp; drop or click to browse
                       </div>
                       <div className="text-xs text-muted-foreground mt-2">
                         MP3, WAV, AAC up to 50MB

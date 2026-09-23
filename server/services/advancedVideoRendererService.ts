@@ -22,6 +22,10 @@ import {
   getMaxcoreOrigin,
 } from "./maxcoreConnector.js";
 import { ensureMaxCoreAudioAsset } from "./maxcoreAssetTransport.js";
+import {
+  assertSafeSpawnArguments,
+  restrictedChildEnvironment,
+} from "./subprocessSafety.js";
 
 const POLL_INTERVAL_MS = 2_000;
 const POLL_MAX_ATTEMPTS = 150; // 5 min
@@ -557,14 +561,29 @@ export async function generatePosterThumbnail(
 ): Promise<string | null> {
   // Bounded ffmpeg/ffprobe runner — a poster is best-effort and must never
   // stall job completion behind a hung subprocess.
-  const runBounded = (cmd: string, args: string[], timeoutMs: number) =>
+  const runBounded = (
+    tool: "ffmpeg" | "ffprobe",
+    args: string[],
+    timeoutMs: number,
+  ) =>
     new Promise<string>((resolve, reject) => {
-      const proc = spawn(cmd, [...args], { stdio: ["ignore", "pipe", "pipe"] });
+      assertSafeSpawnArguments(args);
+      const spawnOptions = {
+        shell: false,
+        stdio: ["ignore", "pipe", "pipe"] as ["ignore", "pipe", "pipe"],
+        env: restrictedChildEnvironment({}),
+      };
+      // Keep executable selection closed: callers choose one of these two
+      // trusted media tools and can never supply a command name.
+      const proc =
+        tool === "ffmpeg"
+          ? spawn("ffmpeg", args, spawnOptions)
+          : spawn("ffprobe", args, spawnOptions);
       const outChunks: string[] = [];
       const errChunks: string[] = [];
       const killTimer = setTimeout(() => {
         proc.kill("SIGKILL");
-        reject(new Error(`${cmd} poster step timed out after ${timeoutMs}ms`));
+        reject(new Error(`${tool} poster step timed out after ${timeoutMs}ms`));
       }, timeoutMs);
       proc.stdout?.on("data", (d: Buffer) => outChunks.push(d.toString()));
       proc.stderr?.on("data", (d: Buffer) => errChunks.push(d.toString()));
@@ -574,7 +593,7 @@ export async function generatePosterThumbnail(
         else
           reject(
             new Error(
-              `${cmd} exited ${code}: ${errChunks.slice(-3).join("").slice(0, 200)}`,
+              `${tool} exited ${code}: ${errChunks.slice(-3).join("").slice(0, 200)}`,
             ),
           );
       });
@@ -610,7 +629,7 @@ export async function generatePosterThumbnail(
       [
         "-y",
         "-ss", seekSec.toFixed(2),
-        "-i", localMp4Path,
+          "-i", path.resolve(localMp4Path),
         // Pick the most representative frame from a short window instead of
         // whatever frame lands exactly at the seek point.
         "-vf", "thumbnail=30",
@@ -635,7 +654,7 @@ export async function generatePosterThumbnail(
           "-v", "error",
           "-show_entries", "format=duration",
           "-of", "csv=p=0",
-          localMp4Path,
+          path.resolve(localMp4Path),
         ],
         5_000,
       );

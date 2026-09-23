@@ -219,7 +219,7 @@ export default function SyncLicensing() {
               Sync Licensing
             </h1>
             <p className="text-muted-foreground">
-              Put Your Music in TV, Film & Ads
+              Put Your Music in TV, Film &amp; Ads
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

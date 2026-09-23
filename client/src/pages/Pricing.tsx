@@ -222,7 +222,7 @@ export default function Pricing() {
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
             Replace $45,000+/year in tools and labor. Get professional AI
-            studio, autonomous autopilots for social media & advertising,
+            studio, autonomous autopilots for social media &amp; advertising,
             marketplace, analytics, and distribution.
           </p>
           <div className="flex items-center justify-center space-x-4 flex-wrap gap-2">

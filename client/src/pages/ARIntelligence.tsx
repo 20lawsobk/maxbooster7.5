@@ -160,7 +160,7 @@ export default function ARIntelligence() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Brain className="w-6 h-6 text-primary" />
-            A&R Intelligence
+            A&amp;R Intelligence
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
             Live music industry signals for catalog gaps. Trend forecasts and

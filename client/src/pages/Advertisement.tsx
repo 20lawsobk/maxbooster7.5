@@ -3225,7 +3225,7 @@ function PressKitTabContent() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Contact & Booking</CardTitle>
+                <CardTitle>Contact &amp; Booking</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">

@@ -317,7 +317,7 @@ export function PersonalizedDashboard({
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  Widget Order & Visibility
+                  Widget Order &amp; Visibility
                 </label>
                 <p className="text-sm text-muted-foreground">
                   Drag to reorder. Toggle visibility for each widget.

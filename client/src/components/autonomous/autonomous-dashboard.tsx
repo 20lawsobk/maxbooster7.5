@@ -557,13 +557,13 @@ export function AutonomousDashboard() {
                             Professional
                           </SelectItem>
                           <SelectItem value="casual">
-                            Casual & Friendly
+                            Casual &amp; Friendly
                           </SelectItem>
                           <SelectItem value="energetic">
-                            Energetic & Bold
+                            Energetic &amp; Bold
                           </SelectItem>
                           <SelectItem value="informative">
-                            Informative & Educational
+                            Informative &amp; Educational
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -580,7 +580,7 @@ export function AutonomousDashboard() {
                       onChange={(e) =>
                         updateConfig({ targetAudience: e.target.value })
                       }
-                      placeholder="Describe your ideal audience (e.g., Music lovers aged 18-35, interested in hip-hop and R&B, located in major US cities)"
+                      placeholder={"Describe your ideal audience (e.g., Music lovers aged 18-35, interested in hip-hop and R&B, located in major US cities)"}
                       className="min-h-[80px]"
                     />
                     <p className="text-xs text-muted-foreground">
@@ -1026,7 +1026,7 @@ export function AutonomousDashboard() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Activity className="h-5 w-5" />
-                AI Learning & Performance
+                AI Learning &amp; Performance
               </CardTitle>
             </CardHeader>
             <CardContent>

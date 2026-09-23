@@ -2942,7 +2942,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                 </>
               ) : (
                 <>
-                  <Upload className="h-3.5 w-3.5" /> Import & Begin Discovery
+                  <Upload className="h-3.5 w-3.5" /> Import &amp; Begin Discovery
                 </>
               )}
             </Button>

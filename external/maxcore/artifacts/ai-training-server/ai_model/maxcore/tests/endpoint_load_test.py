@@ -34,11 +34,25 @@ import os
 import sys
 import time
 import uuid
-import urllib.error
-import urllib.request
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-BASE = os.environ.get("LOAD_BASE", "http://localhost:9878")
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from trusted_http import request as trusted_request, validated_origin
+from urllib.parse import urlsplit
+
+
+def validated_load_base(value):
+    """Validate the harness destination as one loopback HTTP(S) origin."""
+    parsed = urlsplit(value)
+    if parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
+        raise ValueError("LOAD_BASE must be an origin without a path, query, or fragment")
+    base = value.rstrip("/")
+    return base, validated_origin(base, local_only=True)
+
+
+BASE, BASE_ORIGIN = validated_load_base(
+    os.environ.get("LOAD_BASE", "http://localhost:9878"))
 KEY = os.environ.get("ADMIN_KEY") or os.environ.get("AI_TRAINING_KEY_PROD")
 if not KEY:
     print("FATAL: no ADMIN_KEY / AI_TRAINING_KEY_PROD in env")
@@ -83,24 +97,19 @@ def req(method, path, body=None, timeout=120):
     headers = {"X-Api-Key": KEY}
     if data is not None:
         headers["Content-Type"] = "application/json"
-    r = urllib.request.Request(url, data=data, headers=headers, method=method)
     t0 = time.time()
     try:
-        with urllib.request.urlopen(r, timeout=timeout) as resp:
-            raw = resp.read()
-            dt = time.time() - t0
-            try:
-                j = json.loads(raw)
-            except Exception:
-                j = {"_nonjson": raw[:160].decode("utf-8", "replace")}
-            return {"status": resp.status, "dt": dt, "json": j}
-    except urllib.error.HTTPError as e:
+        resp = trusted_request(
+            method, url, origin=BASE_ORIGIN, body=data, headers=headers,
+            timeout=timeout, max_bytes=64 * 1024 * 1024,
+        )
+        raw = resp.body
         dt = time.time() - t0
         try:
-            j = json.loads(e.read())
+            j = json.loads(raw)
         except Exception:
-            j = {}
-        return {"status": e.code, "dt": dt, "json": j}
+            j = {"_nonjson": raw[:160].decode("utf-8", "replace")}
+        return {"status": resp.status, "dt": dt, "json": j}
     except Exception as e:
         return {"status": -1, "dt": time.time() - t0, "json": {"_err": repr(e)[:160]}}
 

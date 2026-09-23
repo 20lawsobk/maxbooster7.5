@@ -330,7 +330,7 @@ class EpisodicStore:
         Stored as float16 for 2× compression.
         """
         ts       = time.time()
-        entry_id = hashlib.sha1(
+        entry_id = hashlib.sha256(
             f"{scene}:{prompt[:40]}:{step}:{ts:.2f}".encode()
         ).hexdigest()[:16]
 

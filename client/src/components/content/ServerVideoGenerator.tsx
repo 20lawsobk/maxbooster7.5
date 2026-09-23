@@ -1442,7 +1442,7 @@ export function ServerVideoGenerator({
                           Upload artwork or image
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          JPG, PNG, WEBP — colors & mood are extracted
+                          JPG, PNG, WEBP — colors &amp; mood are extracted
                         </span>
                       </div>
                     )}

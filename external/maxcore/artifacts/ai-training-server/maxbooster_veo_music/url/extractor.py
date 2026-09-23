@@ -4,12 +4,7 @@ import json
 import logging
 from typing import Dict, Any, Optional, cast
 from urllib.parse import urlparse
-
-try:
-    import urllib.request
-    HAS_URLLIB = True
-except ImportError:
-    HAS_URLLIB = False
+from ai_model.native_analysis.safe_http import fetch_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -126,15 +121,13 @@ class UrlMetadataExtractor:
         return None
 
     def _fetch_url(self, url: str) -> Optional[str]:
-        if not HAS_URLLIB:
-            return None
         try:
-            req = urllib.request.Request(url, headers={
-                "User-Agent": "MaxBooster/1.0 (Music Campaign Generator)",
-                "Accept": "text/html,application/xhtml+xml,application/json",
-            })
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                return resp.read().decode("utf-8", errors="replace")
+            raw, _ = fetch_bytes(
+                url, max_bytes=2 * 1024 * 1024,
+                allowed_content_types=("text", "application/json"),
+                deadline_seconds=self.timeout,
+            )
+            return raw.decode("utf-8", errors="replace")
         except Exception as e:
             logger.warning(f"Failed to fetch {url}: {e}")
             return None

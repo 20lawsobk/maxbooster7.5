@@ -565,7 +565,7 @@ export function DataTransferWizard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Data Transfer & Profile Sync</h2>
+          <h2 className="text-2xl font-bold">Data Transfer &amp; Profile Sync</h2>
           <p className="text-muted-foreground">
             Link streaming profiles to sync analytics and scan your full release
             catalog

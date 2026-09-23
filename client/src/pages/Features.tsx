@@ -114,7 +114,7 @@ export default function Features() {
           <div className="text-center mb-12">
             <Globe className="h-12 w-12 mx-auto mb-4 text-green-600" />
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Distribution & Royalties
+              Distribution &amp; Royalties
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
               Prepare releases, manage their metadata, and review royalty activity

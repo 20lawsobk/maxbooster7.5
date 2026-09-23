@@ -319,7 +319,7 @@ export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Hash className="h-5 w-5" />
-              ISRC & UPC Manager
+              ISRC &amp; UPC Manager
             </CardTitle>
             <CardDescription>
               Generate, manage, and track ISRC and UPC codes for your releases

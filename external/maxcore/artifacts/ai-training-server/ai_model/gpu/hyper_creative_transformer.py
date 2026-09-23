@@ -21,12 +21,13 @@ KV-cache ``TransformerLM`` for production serving via ``load_state_dict``.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
+import json
 import math
 import threading
 import time
 import zlib
-import pickle
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -62,28 +63,124 @@ def get_gpu_attn_calls() -> int:
     return _gpu_attn_calls
 
 
-# ── Prefix KV cache ───────────────────────────────────────────────────────────
-# Stores the KV state + hidden state at the end of a prompt prefix so that
-# subsequent requests that share the same prefix skip prefill entirely for
-# those tokens.  The payload is zlib-compressed to keep memory footprint small.
+# ── Exact-prompt KV cache ─────────────────────────────────────────────────────
+# Stores the KV state + hidden state for a complete prompt so an identical
+# request can skip prefill. The payload is zlib-compressed to keep memory small.
 #
-# Key: SHA-256 of the token IDs up to min(T, _PREFIX_CACHE_LEN)
+# Key: SHA-256 of all token bytes/metadata, padding mask, and model state token
 # Value: {"h": tensor, "kv": list[(k,v)], "ts": float, "prefix_len": int}
 #
 # Thread-safe: writes use _PREFIX_KV_LOCK; reads are checked under the lock too
 # because dict.get() is only GIL-safe for CPython — this is safer cross-version.
 
-_PREFIX_CACHE_LEN   = 256    # max tokens hashed as the "prefix"
 _PREFIX_CACHE_MAX   = 32     # max entries (KV states are large)
 _PREFIX_CACHE_TTL   = 600.0  # seconds
-_PREFIX_KV_CACHE: dict[str, bytes] = {}   # key → zlib-pickled payload
+_PREFIX_KV_CACHE: dict[str, bytes] = {}   # key → versioned zlib-compressed JSON
 _PREFIX_KV_LOCK  = threading.Lock()
 _PREFIX_KV_STATS = {"hits": 0, "misses": 0, "evictions": 0}
+_PREFIX_CACHE_MAGIC = b"PKV2:"
+_TORCH_DTYPES = {
+    str(dtype): dtype for dtype in (
+        torch.bool, torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64,
+        torch.float16, torch.bfloat16, torch.float32, torch.float64,
+        torch.complex64, torch.complex128,
+    )
+}
 
 
-def _prefix_key(ids: torch.Tensor) -> str:
-    prefix = ids[0, :_PREFIX_CACHE_LEN].tolist()
-    return hashlib.sha256(str(prefix).encode()).hexdigest()
+def _hash_tensor(hasher, tensor: torch.Tensor) -> None:
+    value = tensor.detach().cpu().contiguous()
+    hasher.update(str(value.dtype).encode("ascii"))
+    hasher.update(json.dumps(list(value.shape), separators=(",", ":")).encode("ascii"))
+    hasher.update(value.view(torch.uint8).numpy().tobytes())
+
+
+def _prefix_key(ids: torch.Tensor, model_state: str = "",
+                key_padding_mask: torch.Tensor | None = None) -> str:
+    """Return an exact-prompt key; never permit a shared-prefix cache hit."""
+    hasher = hashlib.sha256()
+    hasher.update(b"exact-prompt-v1\0")
+    hasher.update(model_state.encode("ascii"))
+    _hash_tensor(hasher, ids)
+    if key_padding_mask is None:
+        hasher.update(b"\0no-padding-mask")
+    else:
+        hasher.update(b"\0padding-mask")
+        _hash_tensor(hasher, key_padding_mask)
+    return hasher.hexdigest()
+
+
+def _encode_cache_tensor(tensor: torch.Tensor) -> dict:
+    tensor = tensor.detach().cpu().contiguous()
+    raw = tensor.view(torch.uint8).numpy().tobytes()
+    return {
+        "dtype": str(tensor.dtype),
+        "shape": list(tensor.shape),
+        "data": base64.b64encode(raw).decode("ascii"),
+    }
+
+
+def _decode_cache_tensor(record: dict) -> torch.Tensor:
+    if not isinstance(record, dict) or set(record) != {"dtype", "shape", "data"}:
+        raise ValueError("Invalid prefix cache tensor record")
+    dtype = _TORCH_DTYPES.get(record["dtype"])
+    shape = record["shape"]
+    if dtype is None or not isinstance(shape, list) or any(
+            not isinstance(dim, int) or isinstance(dim, bool) or dim < 0 for dim in shape):
+        raise ValueError("Invalid prefix cache tensor metadata")
+    try:
+        raw = base64.b64decode(record["data"], validate=True)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Invalid prefix cache tensor data") from exc
+    elements = math.prod(shape)
+    if len(raw) != elements * dtype.itemsize:
+        raise ValueError("Prefix cache tensor byte length does not match its shape")
+    # bytearray gives torch owned, writable storage; clone ensures no decoder
+    # buffer is retained by the returned tensor.
+    return torch.frombuffer(bytearray(raw), dtype=torch.uint8).clone().view(dtype).reshape(shape)
+
+
+def _encode_prefix_payload(h: torch.Tensor,
+                           kv: list[tuple[torch.Tensor, torch.Tensor]],
+                           prefix_len: int) -> bytes:
+    payload = {
+        "version": 2,
+        "h": _encode_cache_tensor(h),
+        "kv": [[_encode_cache_tensor(k), _encode_cache_tensor(v)] for k, v in kv],
+        "ts": time.monotonic(),
+        "prefix_len": prefix_len,
+    }
+    encoded = json.dumps(payload, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return _PREFIX_CACHE_MAGIC + zlib.compress(encoded, level=1)
+
+
+def _decode_prefix_payload(raw: bytes) -> dict:
+    if not isinstance(raw, bytes) or not raw.startswith(_PREFIX_CACHE_MAGIC):
+        # Never deserialize the former pickle format. Keeping the entry intact
+        # makes migration failures observable rather than silently losing state.
+        raise ValueError(
+            "Unsafe legacy prefix-cache format cannot be loaded; regenerate this cache entry")
+    try:
+        payload = json.loads(zlib.decompress(raw[len(_PREFIX_CACHE_MAGIC):]))
+    except (json.JSONDecodeError, UnicodeDecodeError, zlib.error) as exc:
+        raise ValueError("Invalid versioned prefix-cache payload") from exc
+    if (not isinstance(payload, dict) or payload.get("version") != 2
+            or not isinstance(payload.get("kv"), list)
+            or not isinstance(payload.get("ts"), (int, float))
+            or isinstance(payload.get("ts"), bool) or not math.isfinite(payload["ts"])
+            or not isinstance(payload.get("prefix_len"), int)
+            or isinstance(payload.get("prefix_len"), bool)
+            or payload["prefix_len"] < 0
+            or any(not isinstance(pair, list) or len(pair) != 2
+                   for pair in payload["kv"])):
+        raise ValueError("Invalid versioned prefix-cache schema")
+    return {
+        "h": _decode_cache_tensor(payload.get("h")),
+        "kv": [(_decode_cache_tensor(pair[0]), _decode_cache_tensor(pair[1]))
+               for pair in payload["kv"]],
+        "ts": payload["ts"],
+        "prefix_len": payload["prefix_len"],
+    }
 
 
 def _prefix_get(key: str) -> Optional[dict]:
@@ -92,7 +189,7 @@ def _prefix_get(key: str) -> Optional[dict]:
         if raw is None:
             _PREFIX_KV_STATS["misses"] += 1
             return None
-        payload = pickle.loads(zlib.decompress(raw))
+        payload = _decode_prefix_payload(raw)
         if time.monotonic() - payload["ts"] > _PREFIX_CACHE_TTL:
             del _PREFIX_KV_CACHE[key]
             _PREFIX_KV_STATS["misses"] += 1
@@ -104,13 +201,7 @@ def _prefix_get(key: str) -> Optional[dict]:
 def _prefix_put(key: str, h: torch.Tensor,
                 kv: list[tuple[torch.Tensor, torch.Tensor]],
                 prefix_len: int) -> None:
-    payload = {
-        "h": h.detach().cpu(),
-        "kv": [(k.detach().cpu(), v.detach().cpu()) for k, v in kv],
-        "ts": time.monotonic(),
-        "prefix_len": prefix_len,
-    }
-    raw = zlib.compress(pickle.dumps(payload, protocol=4), level=1)
+    raw = _encode_prefix_payload(h, kv, prefix_len)
     with _PREFIX_KV_LOCK:
         # Evict oldest entry if at capacity
         if len(_PREFIX_KV_CACHE) >= _PREFIX_CACHE_MAX:
@@ -495,6 +586,14 @@ class HyperCreativeTransformerLM(nn.Module):
         logits = _MixedPrecisionGEMM.apply(h2d, self.token_emb.weight.t().contiguous(), self.gpu)
         return logits.reshape(*shape[:-1], self.token_emb.num_embeddings)
 
+    def _prefix_cache_model_state(self) -> str:
+        """Cheaply invalidate this model's entries after state-dict mutation."""
+        state = [(name, id(value), value._version)
+                 for name, value in self.named_parameters()]
+        state.extend((name, id(value), value._version)
+                     for name, value in self.named_buffers())
+        return hashlib.sha256(repr((id(self), state)).encode("ascii")).hexdigest()
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, T = x.shape
         assert T <= self.max_len, f"Sequence length {T} exceeds max_len {self.max_len}"
@@ -512,50 +611,20 @@ class HyperCreativeTransformerLM(nn.Module):
                 ) -> tuple[torch.Tensor, list]:
         B, T = x.shape
 
-        # ── Prefix KV cache fast-path ─────────────────────────────────────
-        # If the first min(T, _PREFIX_CACHE_LEN) tokens match a cached entry,
-        # restore the KV state and hidden activations from that checkpoint and
-        # only run the forward pass on the remaining suffix tokens.  In eval
-        # mode there is no dropout, so the restored activations are exact.
+        # ── Exact-prompt KV cache fast-path ────────────────────────────────
+        # Partial hits are intentionally forbidden: suffix attention requires
+        # layer-by-layer use of the prefix state and cannot use forward_with_kv,
+        # whose attention covers only the supplied tokens.
+        pk = None
         if not self.training and T > 1:
-            pk = _prefix_key(x)
+            pk = _prefix_key(
+                x, self._prefix_cache_model_state(), key_padding_mask)
             cached = _prefix_get(pk)
-            if cached is not None and cached["prefix_len"] <= T:
-                p_len = cached["prefix_len"]
-                h_pfx = cached["h"].to(x.device)   # [B, p_len, dim]
-                kv_pfx = [(k.to(x.device), v.to(x.device))
-                           for k, v in cached["kv"]]
-                if p_len == T:
-                    # Full prompt already cached — return immediately
-                    h_out = self.ln_final(h_pfx)
-                    return self._head(h_out), kv_pfx
-
-                # Partial prefix — compute suffix only
-                suffix = x[:, p_len:]                   # [B, T-p_len]
-                sfx_len = suffix.shape[1]
-                h_sfx = self.emb_dropout(self.token_emb(suffix))
-                # Build extended h and causal mask for the suffix positions
-                cos_sfx = self.rope_cos[p_len:p_len + sfx_len]
-                sin_sfx = self.rope_sin[p_len:p_len + sfx_len]
-                mask_sfx = self.causal_mask[p_len:p_len + sfx_len, :p_len + sfx_len]
-                kv_full: list[tuple[torch.Tensor, torch.Tensor]] = []
-                h = h_sfx
-                for i, layer in enumerate(self.layers):
-                    past_k, past_v = kv_pfx[i]           # [B, H, p_len, D_h]
-                    # Run forward_with_kv on suffix; KV cache for suffix only
-                    h_out_layer, new_k, new_v = layer.forward_with_kv(
-                        h, cos_sfx, sin_sfx, mask_sfx, key_padding_mask)
-                    # Concatenate prefix and suffix KV along the time axis
-                    full_k = torch.cat([past_k, new_k], dim=2)
-                    full_v = torch.cat([past_v, new_v], dim=2)
-                    kv_full.append((full_k, full_v))
-                    h = h_out_layer
-                # Merge prefix activations with suffix activations
-                h_merged = torch.cat([h_pfx, h], dim=1)  # [B, T, dim]
-                h_final = self.ln_final(h_merged[:, -1:, :])
-                # Cache the full result as a new prefix entry
-                _prefix_put(pk, h_merged, kv_full, T)
-                return self._head(h_final), kv_full
+            if cached is not None and cached["prefix_len"] == T:
+                h = cached["h"].to(x.device)
+                kv = [(k.to(x.device), v.to(x.device))
+                      for k, v in cached["kv"]]
+                return self._head(self.ln_final(h)), kv
 
         # ── Full prefill (no cache hit) ───────────────────────────────────
         h = self.emb_dropout(self.token_emb(x))
@@ -568,10 +637,13 @@ class HyperCreativeTransformerLM(nn.Module):
             kv_cache.append((k, v))
         h_out = self.ln_final(h)
         logits = self._head(h_out)
-        # Store this prompt as a prefix for future requests
+        # Store only the complete prompt. Keep pre-final-norm hidden state so a
+        # cache hit performs exactly the same final norm and output projection.
         if not self.training and T >= 4:
-            pk = _prefix_key(x)
-            _prefix_put(pk, h_out, kv_cache, min(T, _PREFIX_CACHE_LEN))
+            if pk is None:
+                pk = _prefix_key(
+                    x, self._prefix_cache_model_state(), key_padding_mask)
+            _prefix_put(pk, h, kv_cache, T)
         return logits, kv_cache
 
     def decode_one(self, x_new: torch.Tensor,

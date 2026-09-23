@@ -1037,7 +1037,7 @@ export default function Royalties() {
                 data-testid="tab-tax-intelligence"
               >
                 <Calculator className="w-3 h-3 mr-1" />
-                Tax & Revenue
+                Tax &amp; Revenue
               </TabsTrigger>
             </TabsList>
 

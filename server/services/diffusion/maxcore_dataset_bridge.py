@@ -41,6 +41,8 @@ _parent = os.path.dirname(_here)
 if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
+from secure_http import request as secure_request
+
 MC_URL  = os.environ.get('AI_SERVER_URL', '').rstrip('/')
 MC_KEY  = os.environ.get('AI_SERVER_KEY', '')
 
@@ -88,30 +90,23 @@ def _mc_get(path: str) -> Optional[dict]:
     if not MC_URL or not MC_KEY:
         return None
     url = f"{MC_URL}{path if path.startswith('/api/') else f'/api{path}'}"
-    import urllib.request
-    import urllib.error
-
     for attempt in range(MAX_RETRIES):
         try:
-            req = urllib.request.Request(
-                url,
+            with secure_request(
+                url, trusted_origin=MC_URL,
                 headers={'X-API-Key': MC_KEY, 'Authorization': f'Bearer {MC_KEY}'},
-            )
-            with urllib.request.urlopen(
-                req,
                 timeout=(CONNECT_TIMEOUT + GET_READ_TIMEOUT),
+                allow_private=True,
             ) as resp:
                 if resp.status == 200:
                     ct = resp.headers.get('Content-Type', '')
                     if 'json' in ct:
                         return json.loads(resp.read().decode())
                     return None  # non-JSON — don't retry
-        except urllib.error.HTTPError as e:
-            if e.code in (404, 405):
+        except Exception as e:
+            if getattr(e, 'code', None) in (404, 405):
                 log.debug(f'[MCBridge] GET {path} → {e.code} (not retrying)')
                 return None
-            log.debug(f'[MCBridge] GET {path} attempt {attempt+1} HTTP {e.code}')
-        except Exception as e:
             log.debug(f'[MCBridge] GET {path} attempt {attempt+1} failed: {e}')
 
         if attempt < MAX_RETRIES - 1:
@@ -125,37 +120,30 @@ def _mc_post(path: str, body: dict) -> Optional[dict]:
     if not MC_URL or not MC_KEY:
         return None
     url = f"{MC_URL}{path if path.startswith('/api/') else f'/api{path}'}"
-    import urllib.request
-    import urllib.error
-
     data = json.dumps(body).encode()
 
     for attempt in range(MAX_RETRIES):
         try:
-            req = urllib.request.Request(
-                url, data=data,
+            with secure_request(
+                url, trusted_origin=MC_URL, data=data,
                 headers={
                     'Content-Type':  'application/json',
                     'X-API-Key':     MC_KEY,
                     'Authorization': f'Bearer {MC_KEY}',
                 },
                 method='POST',
-            )
-            with urllib.request.urlopen(
-                req,
                 timeout=(CONNECT_TIMEOUT + POST_READ_TIMEOUT),
+                allow_private=True,
             ) as resp:
                 ct  = resp.headers.get('Content-Type', '')
                 raw = resp.read().decode()
                 if 'json' in ct:
                     return json.loads(raw)
                 return None  # non-JSON — don't retry
-        except urllib.error.HTTPError as e:
-            if e.code in (404, 405, 422):
+        except Exception as e:
+            if getattr(e, 'code', None) in (404, 405, 422):
                 log.debug(f'[MCBridge] POST {path} → {e.code} (not retrying)')
                 return None
-            log.debug(f'[MCBridge] POST {path} attempt {attempt+1} HTTP {e.code}')
-        except Exception as e:
             log.debug(f'[MCBridge] POST {path} attempt {attempt+1} failed: {e}')
 
         if attempt < MAX_RETRIES - 1:

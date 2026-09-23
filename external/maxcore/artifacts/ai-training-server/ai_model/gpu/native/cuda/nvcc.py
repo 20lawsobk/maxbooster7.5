@@ -170,7 +170,7 @@ class CUDANvcc:
 
     Compiles .cu source (string or file path) into a ``CUDAModule`` backed
     by digital GPU kernel implementations.  Results are cached by source
-    SHA-1 so compiling the same file twice costs nothing after the first call.
+    SHA-256 so compiling the same file twice costs nothing after the first call.
     """
 
     def __init__(self, gpu=None):
@@ -186,7 +186,7 @@ class CUDANvcc:
     # ------------------------------------------------------------------
     def _cache_key(self, source: str) -> str:
         sig = source + "|" + _REGISTRY_VERSION
-        return hashlib.sha1(sig.encode()).hexdigest()[:16]
+        return hashlib.sha256(sig.encode()).hexdigest()[:16]
 
     # ------------------------------------------------------------------
     def compile(self, source: str) -> CUDAModule:

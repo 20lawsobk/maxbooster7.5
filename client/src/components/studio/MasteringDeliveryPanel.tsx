@@ -387,7 +387,7 @@ export function MasteringDeliveryPanel({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Disc3 className="h-5 w-5" />
-            Mastering & Delivery
+            Mastering &amp; Delivery
             {project && (
               <Badge variant="outline" className="ml-2 font-normal">
                 {project.title}

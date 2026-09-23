@@ -376,7 +376,7 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                       {auditData.overallScore}/100
                     </p>
                     <p className="text-xs text-green-600 mt-1">
-                      Security & Compliance
+                      Security &amp; Compliance
                     </p>
                   </div>
                   <div className={`p-3 rounded-full ${auditHealth.bg}`}>

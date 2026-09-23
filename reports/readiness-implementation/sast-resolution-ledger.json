@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": "reports/readiness-implementation/sast-resumed-full.json",
+  "summary": {
+    "baselineRawFindings": 58,
+    "baselineSafeDispositions": 58,
+    "remediated": 50,
+    "reviewedSafe": 8,
+    "unresolved": 0,
+    "safeCount": 58
+  },
+  "verification": {
+    "finalFullScan": "complete",
+    "reportPattern": "reports/readiness-implementation/sast-final-verified.*",
+    "resultsClaimed": true,
+    "scannedPaths": 3236,
+    "omittedPaths": 0,
+    "scannerErrors": 0,
+    "rawFindings": 9,
+    "interpretation": "8 reviewed-safe baseline operations remain flagged; hardened PostgreSQL argv execution also remains flagged. No suppressions. Not a zero-finding scan."
+  },
+  "snapshot": {
+    "file": "reports/readiness-implementation/sast-remediated-full.json",
+    "generatedAt": "2026-09-23T00:49:55.094Z",
+    "errors": 0,
+    "findings": 12,
+    "label": "Historical pre-current-network/runtime-corrections snapshot; not current verification."
+  },
+  "evidenceProfiles": {
+    "R": {
+      "file": "reports/readiness-implementation/sast-runtime-resolution.md",
+      "trust": "Exact fingerprint remediation or constrained test/worker boundary documented.",
+      "verification": "Focused tests and source review recorded there."
+    },
+    "M": {
+      "file": "reports/readiness-implementation/sast-maxcore-network-resolution.md",
+      "trust": "Mapped by path/line (report indices ignored); bounded origin-constrained transport or sink removal.",
+      "verification": "Offline trusted/safe HTTP tests recorded there."
+    },
+    "C": {
+      "file": "current source",
+      "trust": "Baseline opener replaced by trusted_http at fixed loopback origin.",
+      "verification": "Current diff inspected; no post-change final result claimed."
+    },
+    "N": {
+      "file": "reports/readiness-implementation/sast-node-resolution.md",
+      "trust": "Fixed loopback reviewed safe, or subprocess hardened with closed executable/argv/environment and canonical PostgreSQL target validation.",
+      "verification": "Source review and focused subprocess tests recorded there."
+    },
+    "A": {
+      "file": "sast-app-network-resolution.md",
+      "trust": "Mapped by path/line; secure_http validates and pins origin/address, verifies TLS, rejects redirects, bounds response.",
+      "verification": "Focused unit/compile checks recorded there."
+    }
+  },
+  "findings": [
+    {"baselineIndex":0,"fingerprint":"758ebc077b346ecc6faef92a8d120f91d535f254f5796ded028544ffe47c5b8f","disposition":"remediated","evidenceProfile":"R"},
+    {"baselineIndex":1,"fingerprint":"c906f78c0e19ca377bd03fdbe53a9305b8d99895d21ce747ac5882dea2ac061e","disposition":"remediated","evidenceProfile":"R"},
+    {"baselineIndex":2,"fingerprint":"6f9fbaaef58f0276d372482511544c8293df14cd9e448684d7a63d67d453ed32","disposition":"remediated","evidenceProfile":"R"},
+    {"baselineIndex":3,"fingerprint":"6118a5c4593733d0c876cff988cc90ceb2d7ea0b445c0ece7830c39410e71fa7","disposition":"remediated","evidenceProfile":"R"},
+    {"baselineIndex":4,"fingerprint":"bbf5c00908082752e8188ee6e4392438872435735b55b5a048994b3e48ac5b9a","disposition":"remediated","evidenceProfile":"R"},
+    {"baselineIndex":5,"fingerprint":"8fe7fbed1f2c204124c944ca44ed0248328de5d65e8934998bf00acca149b38d","disposition":"reviewed-safe","evidenceProfile":"R"},
+    {"baselineIndex":6,"fingerprint":"3731c400624f81b666f3a3231a69889aeda7c3f4ab94c03dc2c43356b52d42a3","disposition":"remediated","evidenceProfile":"R"},
+    {"baselineIndex":7,"fingerprint":"158500f85ba95a4e6707def02119e737ae763d5fc42b5c5ea18ad73a4428648c","disposition":"remediated","evidenceProfile":"R"},
+    {"baselineIndex":8,"fingerprint":"d7b7db0a7d1bcf89eafb9344ba15e9a2c45c034e0fb9dd11d85e6d983a99f42e","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":9,"fingerprint":"ac7e9e3ee66e8264c7c85500acac59280813d9806ab61c79507fe0799307abbc","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":10,"fingerprint":"7cc1bec3a2c87221a46ac7bbb53173cc5a2715002e143849778da0bc70f4eff2","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":11,"fingerprint":"fe0bc585b005794358da5b19b513171cf9fb5e7515f1ab98884a1a2e533720f7","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":12,"fingerprint":"7570f8d5241423aa712ebb189757fea13c61dfeabb3d85f60f235676847d9dc9","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":13,"fingerprint":"ad0e467ea57f9485805ebc3d609cc0531b07eff2b8616fd391c9ca3dae54fc1f","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":14,"fingerprint":"3d87af2fc46de29c2a814c751b11cf9e3e0636aab49cf6eb542822b27bc591c7","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":15,"fingerprint":"5e8a428710124a75c61532d3e115b0cdf22d1e55f14a89adf9fcdced4139fab5","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":16,"fingerprint":"57090eb6642717e4c9bf8694eac23bf67b34b6d276291afff71cdd903036e8eb","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":17,"fingerprint":"a2a960f50c3e6804041e0d1c6f53681a1abf70a5c5e5f4b37619ab6712b46fdf","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":18,"fingerprint":"21f770ed67369536fc076df4980207d44f5e3f41bd23d5d4470e166609fe2842","disposition":"remediated","evidenceProfile":"C"},
+    {"baselineIndex":19,"fingerprint":"d9e6443dcaebcf4f51a01c7401ec5d1e0c9dd078f584659ebd7e2a0ef9c05b7f","disposition":"reviewed-safe","evidenceProfile":"R"},
+    {"baselineIndex":20,"fingerprint":"cfd7009daa5c960601eb6d7bd010499c968302fa9016ed6f9c68558d497632f3","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":21,"fingerprint":"b4d7a313dd498255e7617b6012b510e3c619a7e677efb75c6d6665d4beec5e06","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":22,"fingerprint":"216dcacc41f0fd7d9d2e06307f0da5d37ebefd8667925f11d47f554ac1decbd7","disposition":"remediated","evidenceProfile":"C"},
+    {"baselineIndex":23,"fingerprint":"1e7f1a40cb4460ea0a39f9a71804bfc813b64a4d6c85a14b16c67033e1e0ebbc","disposition":"remediated","evidenceProfile":"R"},
+    {"baselineIndex":24,"fingerprint":"43f1bbd7ef703ca6bd797c85479ab1ad8d52832d2ba67346ca517a6541907fe3","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":25,"fingerprint":"46f7dda1dc9038ba8cad377aa3d5618ddf4de0b5952649011f5256ef5a7f8d0f","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":26,"fingerprint":"ec7e7985a451fe9c830db9facbd975e659c539bcdf35334a270e110c06d35783","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":27,"fingerprint":"1ecaafa3227343ea5f1d28c0b1b8be9a46b296502f84fd652aa226bfa97f0d64","disposition":"remediated","evidenceProfile":"M"},
+    {"baselineIndex":28,"fingerprint":"f30118ea3c907689a2bf66902bbf8594d830247227fac3007375337dd1765bc9","disposition":"reviewed-safe","evidenceProfile":"N"},
+    {"baselineIndex":29,"fingerprint":"1fc962991850f41d84156ee7682ba71b3f1fd3ecea732996aa8b6c2ecc7fa0d5","disposition":"reviewed-safe","evidenceProfile":"N"},
+    {"baselineIndex":30,"fingerprint":"79090c49c64525055d857e13cbf62228769ef51f7949307dfa0b3b57fe778f18","disposition":"reviewed-safe","evidenceProfile":"N"},
+    {"baselineIndex":31,"fingerprint":"717cb9d17c18b9ae60b0e614c107d92e2ace9443d60dded5244c64515579f294","disposition":"reviewed-safe","evidenceProfile":"N"},
+    {"baselineIndex":32,"fingerprint":"b63a1593fee8c33fe9ba689bdb8fe471815cf22b48b942042433d6947efd1161","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":33,"fingerprint":"b2b09e9c1ea1a553f16ae40f3e586e97edea0db2f58a67f30c8980faf9536cc1","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":34,"fingerprint":"339dbbe52d14aaf19f55699cfed8be51ec62f1d7bfa0793ff69ce3d016d5958b","disposition":"remediated","evidenceProfile":"N"},
+    {"baselineIndex":35,"fingerprint":"a0d5731ca32d12602ffafffacbc6b7484e53937141c8d39d280e8e02d026ab12","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":36,"fingerprint":"c47a812107ad3893ba9c173cd20e4c2ca2150d9eccf7cfd2d2af10576e44b48b","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":37,"fingerprint":"e733ecac0c6ccffbccfc59c005e0f6bb7701d4d733f714f707b7cd5a0c07fca5","disposition":"remediated","evidenceProfile":"N"},
+    {"baselineIndex":38,"fingerprint":"158ac4a2a699d14b126fb871b6e18b9bedacb58ffb8a78a1cfae6c18ca4b96b8","disposition":"remediated","evidenceProfile":"R"},
+    {"baselineIndex":39,"fingerprint":"15e11d7c3a6df74dbc79aa6ddd0c56d62e5b95c79ed2d47ec9fbc0b2a9db4262","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":40,"fingerprint":"12fe384570e968f69634daed79c7971d191a1b0645c19d119c45e311a9dff61f","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":41,"fingerprint":"a67e43a546bad2ceb75fa58fdbd476c521d9aee80ce9134b932272d69b3b6316","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":42,"fingerprint":"209dd02af50c2f5d686cb381b7b80e9380406971076d2e5f321331f6fdd1f358","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":43,"fingerprint":"8014f80c783adc90b1fbad01cf9cbf73ed7fc4074087e880d890c978a5dd7b8b","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":44,"fingerprint":"a473dda91076645f7ffe7b0eb5881d089514333eccc26ed39efa037219a002a8","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":45,"fingerprint":"41741795206c41c3d608238e18113fd79fb20941f8bc998ba39fc485a40d0204","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":46,"fingerprint":"ba327469e0959cceafd08e4c1659f9a8a60dd34d455a25737c375d3c3144d488","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":47,"fingerprint":"7704ae82bba5f5deeff6f7bede7851d417cd99a70ba8191c7271c7b687e17ea0","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":48,"fingerprint":"9a6de2ff492ebe17a516040ac39bf0994ddcad3e25e475406c867b0ac9629a24","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":49,"fingerprint":"9f0227ce14c2c11dc55d17796e125aaaadcc458fcfba959d6767ebf27dcf3407","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":50,"fingerprint":"c1d1e568dc8273112b2431bb46af3ea86c136383ce8973798a560d0ad541f959","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":51,"fingerprint":"731f980330b8055d162131a3ee7f36b345163c8e4e88e0a94a1236e0944fde7f","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":52,"fingerprint":"4b65f4475f545af24b62fb6fee868cf3e981b36f96d6097846f2262b921b805b","disposition":"reviewed-safe","evidenceProfile":"N"},
+    {"baselineIndex":53,"fingerprint":"941f54dd0628fe09d2c9be936e6b0675b4ec1e6752783d6dda9bba5b2c5deb80","disposition":"reviewed-safe","evidenceProfile":"N"},
+    {"baselineIndex":54,"fingerprint":"5c245f1ab8c901a59a1cf348ee8501ba6b2291b7d96f9546f649415e04ca4fe4","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":55,"fingerprint":"38b5091b8dfd0009094896726bb4a96f4daa02e02a2e0fa8fbdf6f75be668947","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":56,"fingerprint":"99e0c80626e9f9736898c2f5d8b435885fdf9b7a25c3f9bd92db64137b10da4c","disposition":"remediated","evidenceProfile":"A"},
+    {"baselineIndex":57,"fingerprint":"1c7e53e1e9cc64253f71867e0d4f724b7ea696149737f398fa5fbe3de337dc0b","disposition":"remediated","evidenceProfile":"A"}
+  ],
+  "findingMetadata": "Rule, baseline path, and baseline line remain in the immutable baseline and companion Markdown ledger; findings above preserve baseline fingerprint order.",
+  "errorCoverage": {
+    "partialParsing": {
+      "count": 70,
+      "disposition": "remediated",
+      "evidence": "reports/readiness-implementation/sast-parser-resolution.md exact 70-path ledger; focused scan 0 errors; TS parse/transform 0 failures."
+    },
+    "timeout": {
+      "count": 1,
+      "path": "shared/schema.ts",
+      "rule": "javascript.lang.security.audit.unknown-value-with-script-tag.unknown-value-with-script-tag",
+      "disposition": "resolved-runner-and-reviewed-no-finding",
+      "evidence": "reports/readiness-implementation/sast-timeout-resolution.md: matching digests; 60/90/120s complete with 0 findings/errors; runner now 90s."
+    }
+  },
+  "caveats": [
+    "Baseline raw finding count remains 58; 58/58 is the source-evidence safe-disposition count, not a claim that a scanner returned zero findings.",
+    "The final full scan is still running as reports/readiness-implementation/sast-final-verified.*; no final scan result is claimed here.",
+    "No suppression or gate change.",
+    "Mapped by fingerprint/path/line, not report indices."
+  ]
+}

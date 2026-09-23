@@ -1274,7 +1274,7 @@ export default function StorefrontBuilder() {
                     <TabsList className="grid w-full grid-cols-6">
                       <TabsTrigger value="overview">Overview</TabsTrigger>
                       <TabsTrigger value="branding">Branding</TabsTrigger>
-                      <TabsTrigger value="colors">Colors & Fonts</TabsTrigger>
+                      <TabsTrigger value="colors">Colors &amp; Fonts</TabsTrigger>
                       <TabsTrigger value="membership">Memberships</TabsTrigger>
                       <TabsTrigger value="promotions">Promotions</TabsTrigger>
                       <TabsTrigger value="dns">DNS</TabsTrigger>
@@ -2444,7 +2444,7 @@ export default function StorefrontBuilder() {
                         className="w-full"
                       >
                         <Save className="w-4 h-4 mr-2" />
-                        Save Colors & Fonts
+                        Save Colors &amp; Fonts
                       </Button>
                     </TabsContent>
 

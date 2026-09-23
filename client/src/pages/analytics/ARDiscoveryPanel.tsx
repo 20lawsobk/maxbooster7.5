@@ -354,7 +354,7 @@ export default function ARDiscoveryPanel({
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-purple-500" />
-            A&R Discovery Panel
+            A&amp;R Discovery Panel
           </h2>
           <p className="text-muted-foreground mt-1">
             Discover emerging artists with high growth potential

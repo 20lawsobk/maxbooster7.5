@@ -20,6 +20,8 @@ import type {
   RedisAofLog,
   RedisInfoStats,
   ZSetMember,
+  RedisStreamEntry,
+  StreamItem,
 } from "./types.js";
 
 const luaFactory = new LuaFactory();
@@ -3266,7 +3268,7 @@ export class RedisStore extends EventEmitter {
 
   private getOrCreateStream(
     key: string,
-  ): import("./types.js").RedisStreamEntry {
+  ): RedisStreamEntry {
     const existing = this.data.get(key);
     if (existing) {
       if (existing.type !== "stream")
@@ -3275,7 +3277,7 @@ export class RedisStore extends EventEmitter {
         );
       return existing;
     }
-    const entry: import("./types.js").RedisStreamEntry = {
+    const entry: RedisStreamEntry = {
       type: "stream",
       value: [],
       groups: {},
@@ -3285,7 +3287,7 @@ export class RedisStore extends EventEmitter {
   }
 
   private trimStream(
-    stream: import("./types.js").RedisStreamEntry,
+    stream: RedisStreamEntry,
     maxlen: number,
   ): number {
     const excess = stream.value.length - maxlen;
@@ -3295,15 +3297,15 @@ export class RedisStore extends EventEmitter {
   }
 
   private streamIdAfter(
-    entries: import("./types.js").StreamItem[],
+    entries: StreamItem[],
     afterId: string,
-  ): import("./types.js").StreamItem[] {
+  ): StreamItem[] {
     if (afterId === "0" || afterId === "0-0") return entries;
     return entries.filter((e) => this.compareStreamIds(e.id, afterId) > 0);
   }
 
   private formatStreamEntries(
-    entries: import("./types.js").StreamItem[],
+    entries: StreamItem[],
   ): unknown[] {
     return entries.map((e) => [e.id, e.fields]);
   }

@@ -20,7 +20,7 @@ import json
 import logging
 import re
 import time
-import urllib.request
+from ai_model.native_analysis.safe_http import fetch_bytes
 from collections import Counter
 from typing import Any, Dict, List
 
@@ -73,9 +73,12 @@ HN_ADS_URL = (
 
 
 def _fetch(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": _UA})
-    with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
-        return resp.read()
+    data, _ = fetch_bytes(
+        url, max_bytes=8 * 1024 * 1024,
+        allowed_content_types=("application", "text"),
+        deadline_seconds=_TIMEOUT,
+    )
+    return data
 
 
 # ── per-source harvesters (each never-raise; report ok/error) ────────────────

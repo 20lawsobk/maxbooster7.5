@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -30,6 +31,10 @@ logger = logging.getLogger("training_bridge")
 _THIS_DIR    = Path(__file__).parent
 _REPO_ROOT   = _THIS_DIR.parent
 _PROJECT_ROOT = _REPO_ROOT.parent
+_SERVICES = _PROJECT_ROOT / "server" / "services"
+if str(_SERVICES) not in sys.path:
+    sys.path.insert(0, str(_SERVICES))
+from secure_http import request as secure_request
 
 _STATE_CANDIDATES = [
     _PROJECT_ROOT / "server" / "services" / "diffusion" / "training_state.json",
@@ -72,12 +77,10 @@ def _query_v4_live() -> Optional[Dict[str, Any]]:
     Non-blocking — returns None immediately on any failure.
     """
     try:
-        import urllib.request
-        import urllib.error
-
         url     = f"{V4_API_BASE}/train/status"
-        req     = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=2) as resp:
+        with secure_request(
+            url, trusted_origin=V4_API_BASE, timeout=2, require_loopback=True,
+        ) as resp:
             if resp.status == 200:
                 return json.loads(resp.read().decode())
     except Exception:
@@ -90,10 +93,10 @@ def _query_v4_simulator() -> Optional[Dict[str, Any]]:
     Try to fetch the full simulator status (includes total_simulated_years).
     """
     try:
-        import urllib.request
         url = f"{V4_API_BASE}/train/simulator/status"
-        req = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=2) as resp:
+        with secure_request(
+            url, trusted_origin=V4_API_BASE, timeout=2, require_loopback=True,
+        ) as resp:
             if resp.status == 200:
                 return json.loads(resp.read().decode())
     except Exception:

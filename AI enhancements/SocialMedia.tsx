@@ -1680,7 +1680,7 @@ export default function SocialMedia() {
                   Social Media Management
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300 mt-2 text-lg">
-                  AI-Powered Content Creation & Multi-Platform Publishing
+                  AI-Powered Content Creation &amp; Multi-Platform Publishing
                 </p>
                 <div className="flex items-center space-x-4 mt-4">
                   <Badge
@@ -1895,7 +1895,7 @@ export default function SocialMedia() {
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs px-2 py-1.5"
               >
                 <Radio className="w-3 h-3 mr-1 inline" />
-                Radio & Press
+                Radio &amp; Press
               </TabsTrigger>
               <TabsTrigger
                 value="fan-campaigns"
@@ -4352,7 +4352,7 @@ export default function SocialMedia() {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
-                    Trending Topics & Hashtags
+                    Trending Topics &amp; Hashtags
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -4807,7 +4807,7 @@ function PressKitTabContent() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Contact & Booking</CardTitle>
+                <CardTitle>Contact &amp; Booking</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -5047,7 +5047,7 @@ function RadioPitchingContent() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Radio className="w-5 h-5 text-blue-600" />
-              Radio, Blog & Press Outreach
+              Radio, Blog &amp; Press Outreach
             </CardTitle>
             <div className="flex items-center gap-2">
               <div className="flex gap-1 flex-wrap">
@@ -5165,7 +5165,7 @@ function RadioPitchingContent() {
                     <div>
                       <Label>Genre</Label>
                       <Input
-                        placeholder="Hip-Hop, R&B, Pop..."
+                        placeholder={"Hip-Hop, R&B, Pop..."}
                         value={newPitch.genre}
                         onChange={(e) =>
                           setNewPitch({ ...newPitch, genre: e.target.value })

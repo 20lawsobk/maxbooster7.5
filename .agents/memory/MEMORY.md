@@ -7,14 +7,9 @@
 - [Software-GPU "rebuild it" categories](software-gpu-rebuild-categories.md) — which of ZLUDA/vGPU-MIG/from-scratch-silicon are honestly buildable on CPU-only, plus DRR-fairness and job-payload OOM test pitfalls
 - [Deploy boot-stub → primary port gap](deploy-boot-stub-port-gap.md) — anything sync/CPU-blocking before the real server's listen() call reopens the port-unbound window the boot-stub was meant to close
 - [Boot-window 404s](boot-window-404s.md) — registerRoutes takes minutes; mixed some-routes-work/some-404 after restart means registration still in progress, check "[Boot] Routes registered"
-- [PDIM script-chain split](pdim-script-chain.md) — scripts must use a dedicated chain or Workers time out behind the direct-call queue
-- [PDIM startup gap cap](pdim-startup-gap-cap.md) — PermanentFixer restored gap must be capped at 400ms or the startup queue takes 28 min to drain
-- [PDIM worker-count floor](pdim-worker-floor.md) — BASE sits in a window between 429 sawtooth (too low) and chain-starvation stall (too high); direct callers must fast-fail to fallback storage when chain wait exceeds a small bound
+- [PDIM tuning history](pdim-tuning-index.md) — queue separation, startup gap caps, worker floors, coalescing and parallel-lane lessons.
 - [MaxCore reachability distinction](maxcore-reachability-distinction.md) — fetchers must return `{value, reachable}` so callers don't log "unreachable" when MaxCore is up but has no data yet
-- [Rate-limiter coalescing](rate-limiter-coalescing.md) — every high-volume PDIM-direct caller needs an L1 cache; the limiter was the dominant one and had none
-- [PDIM gap lifecycle](pdim-gap-lifecycle.md) — why passive time-based decay is needed, the timeout-vs-429 bug that pinned it at 2000ms forever, and the floor×8 cap needed where fast-fail reads it
 - [Plugin catalog seeding path](plugin-catalog-seeding.md) — two seed paths existed; only `storage.seedPluginCatalog` is wired from init-admin, and Drizzle silently dropped fields written to columns that didn't exist
-- [PDIM direct parallel lanes](pdim-direct-parallel-lanes.md) — when chain pins at fast-fail boundary with gap at floor, the constraint is concurrency; split direct chain into N round-robin lanes
 - [Plugin enrichment rev marker](plugin-enrichment-rev.md) — built-in plugin parameter/preset bumps gate on `presets._rev` and `metadata._rev`; bump `MANIFEST_REV` to force re-upsert across all rows
 - [Admin route gating](admin-route-gating.md) — App.tsx doesn't role-gate routes; every /admin\* page must self-gate with useRequireAdmin, and Sidebar adminOnly only hides links
 - [App DB is NEON_DATABASE_URL](app-db-is-neon-database-url.md) — app uses self-managed NEON_DATABASE_URL (shared dev+prod); executeSql + Publish diff hit a DIFFERENT managed DATABASE_URL, so target NEON_DATABASE_URL for ALL schema/data work & existence checks
@@ -157,3 +152,4 @@
 - [Simulation copy exclusions](production-simulation-copy-exclusions.md) — anchor workspace-only tar exclusions; broad names can remove dependency internals and create false build failures.
 - [Endpoint audit contract boundary](endpoint-audit-contract-boundary.md) — route matches prove topology, not payload/response compatibility or component behavior.
 - [Git auth vs local reference health](git-auth-vs-local-reference-health.md) — successful GitHub auth can coexist with broken tracking refs; classify fetch failures before requesting OAuth reconnection.
+- [Semgrep coverage and timeouts](semgrep-coverage-and-timeouts.md) — valid JSX/type syntax can partially parse; measure slow rules and include new untracked helpers in verification.

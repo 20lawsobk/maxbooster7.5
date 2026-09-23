@@ -598,7 +598,7 @@ export default function Projects() {
                       <SelectItem value="jazz">Jazz</SelectItem>
                       <SelectItem value="classical">Classical</SelectItem>
                       <SelectItem value="country">Country</SelectItem>
-                      <SelectItem value="r&b">R&B</SelectItem>
+                      <SelectItem value={"r&b"}>R&amp;B</SelectItem>
                       <SelectItem value="indie">Indie</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>

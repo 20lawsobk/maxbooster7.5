@@ -35,7 +35,7 @@ void affine_relu_sq(const float* x, float* y, float a, float b,
 
 
 def _compile(src: str) -> ctypes.CDLL:
-    key = hashlib.sha1(src.encode()).hexdigest()[:12]
+    key = hashlib.sha256(src.encode()).hexdigest()[:12]
     d = os.path.join(tempfile.gettempdir(), "digital_gpu_native")
     os.makedirs(d, exist_ok=True)
     cpath = os.path.join(d, f"k_{key}.c")

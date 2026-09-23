@@ -353,7 +353,7 @@ export function PrivacySettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            Data & Privacy (GDPR)
+            Data &amp; Privacy (GDPR)
           </CardTitle>
           <CardDescription>
             Manage your data processing consent and privacy rights
@@ -421,7 +421,7 @@ export function PrivacySettings() {
                     htmlFor="gdprAnalytics"
                     className="text-base font-medium"
                   >
-                    Analytics & Personalization
+                    Analytics &amp; Personalization
                   </Label>
                   <p className="text-sm text-muted-foreground">
                     Help us improve by sharing usage data and enable

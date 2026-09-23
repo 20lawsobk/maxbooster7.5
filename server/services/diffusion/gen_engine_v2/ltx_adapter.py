@@ -27,8 +27,6 @@ import math
 import os
 import sys
 import time
-import urllib.request
-import urllib.error
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -41,6 +39,11 @@ _SVC  = os.path.dirname(os.path.dirname(_HERE))
 for _p in (_SVC,):
     if _p not in sys.path:
         sys.path.insert(0, _p)
+
+from secure_http import ResponseTooLarge, request as secure_request
+
+
+_MAX_FINISHED_VIDEO_BYTES = 512 * 1024 * 1024
 
 try:
     from digitalgpu import get_gpu, gpu_info
@@ -153,11 +156,11 @@ def _maxcore_generate(prompt: str, duration: float, fps: float,
     req_body = json.dumps(payload).encode()
 
     try:
-        req = urllib.request.Request(
-            f'{base_url}/api/generate-video',
-            data=req_body, headers=headers, method='POST'
-        )
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with secure_request(
+            f'{base_url}/api/generate-video', trusted_origin=base_url,
+            data=req_body, headers=headers, method='POST', timeout=30,
+            allow_private=True,
+        ) as resp:
             result = json.loads(resp.read())
     except Exception as exc:
         logger.warning(f"MaxCore /api/generate-video failed: {exc}")
@@ -176,8 +179,10 @@ def _maxcore_generate(prompt: str, duration: float, fps: float,
         while time.time() < deadline:
             for poll_url in poll_urls:
                 try:
-                    req = urllib.request.Request(poll_url, headers=headers)
-                    with urllib.request.urlopen(req, timeout=15) as resp:
+                    with secure_request(
+                        poll_url, trusted_origin=base_url, headers=headers,
+                        timeout=15, allow_private=True,
+                    ) as resp:
                         status_data = json.loads(resp.read())
                     st = status_data.get('status', '')
                     if st == 'done' or st == 'completed':
@@ -210,11 +215,21 @@ def _maxcore_generate(prompt: str, duration: float, fps: float,
             continue
         try:
             full_url = dl_url if dl_url.startswith('http') else f'{base_url}{dl_url}'
-            req = urllib.request.Request(full_url, headers=headers)
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with secure_request(
+                full_url, trusted_origin=base_url, headers=headers,
+                timeout=60, allow_private=True,
+                max_bytes=_MAX_FINISHED_VIDEO_BYTES,
+            ) as resp:
                 video_bytes = resp.read()
             if len(video_bytes) > 1000:
                 break
+        except ResponseTooLarge as exc:
+            logger.warning(
+                "MaxCore finished video exceeds the %d-byte download limit: %s",
+                _MAX_FINISHED_VIDEO_BYTES,
+                exc,
+            )
+            return None
         except Exception as exc:
             logger.debug(f"Download from {dl_url} failed: {exc}")
 

@@ -641,7 +641,7 @@ function AutopilotTab({
                   Social Media Autopilot
                 </p>
                 <p className="text-xs text-purple-700 dark:text-purple-400 leading-snug">
-                  AI posting times, captions & platform targeting
+                  AI posting times, captions &amp; platform targeting
                 </p>
               </div>
               <Button
@@ -668,7 +668,7 @@ function AutopilotTab({
                   Advertisement Autopilot
                 </p>
                 <p className="text-xs text-orange-700 dark:text-orange-400 leading-snug">
-                  Auto-run paid ads & budget optimization for releases
+                  Auto-run paid ads &amp; budget optimization for releases
                 </p>
               </div>
               <Button
@@ -737,7 +737,7 @@ export function EmbedCodeGenerator() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Share & Embed</h2>
+          <h2 className="text-2xl font-bold">Share &amp; Embed</h2>
           <p className="text-muted-foreground text-sm mt-0.5">
             Generate smart links, HTML embed codes, and QR codes for your
             releases

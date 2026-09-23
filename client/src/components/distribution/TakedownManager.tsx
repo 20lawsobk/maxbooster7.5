@@ -248,7 +248,7 @@ export function TakedownManager() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Takedown & Rights Manager
+              Takedown &amp; Rights Manager
             </CardTitle>
             <CardDescription>
               Review DMCA strikes, disputes, and content reinstatement history

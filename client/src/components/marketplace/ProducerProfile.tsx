@@ -756,7 +756,7 @@ export function ProducerProfile({
                       <Card>
                         <CardHeader>
                           <CardTitle className="text-lg">
-                            Equipment & Software
+                            Equipment &amp; Software
                           </CardTitle>
                         </CardHeader>
                         <CardContent>

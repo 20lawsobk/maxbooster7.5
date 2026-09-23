@@ -19,7 +19,14 @@ import random
 import logging
 import threading
 import tempfile
+import sys
 from typing import Optional, Dict, List
+
+_SERVICES = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__)))), "server", "services")
+if _SERVICES not in sys.path:
+    sys.path.insert(0, _SERVICES)
+from secure_http import request as secure_request
 
 log = logging.getLogger("corpus_bridge")
 
@@ -87,31 +94,28 @@ def _mc_post(body: dict) -> Optional[dict]:
     """POST to MaxCore /api/generate/content — the live 9TB corpus endpoint."""
     if not _MC_KEY:
         return None
-    import urllib.request, urllib.error
     url  = f"{_MC_URL}/api/generate/content"
     data = json.dumps(body).encode()
     for attempt in range(MAX_RETRIES):
         try:
-            req = urllib.request.Request(
-                url, data=data,
+            with secure_request(
+                url, trusted_origin=_MC_URL, data=data,
                 headers={
                     "Content-Type":  "application/json",
                     "X-API-Key":     _MC_KEY,
                     "Authorization": f"Bearer {_MC_KEY}",
                 },
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=CONNECT_TIMEOUT + POST_TIMEOUT) as resp:
+                method="POST", timeout=CONNECT_TIMEOUT + POST_TIMEOUT,
+                allow_private=True,
+            ) as resp:
                 ct  = resp.headers.get("Content-Type", "")
                 raw = resp.read().decode()
                 if "json" in ct:
                     return json.loads(raw)
-        except urllib.error.HTTPError as e:
-            if e.code in (404, 405, 422):
+        except Exception as e:
+            if getattr(e, "code", None) in (404, 405, 422):
                 log.debug(f"[CorpusBridge] corpus POST HTTP {e.code} (not retrying)")
                 return None
-            log.debug(f"[CorpusBridge] corpus POST attempt {attempt+1} HTTP {e.code}")
-        except Exception as e:
             log.debug(f"[CorpusBridge] corpus POST attempt {attempt+1}: {e}")
         if attempt < MAX_RETRIES - 1:
             time.sleep(_backoff(attempt))
@@ -121,23 +125,20 @@ def _mc_post(body: dict) -> Optional[dict]:
 def _mc_get(path: str) -> Optional[dict]:
     if not _MC_KEY:
         return None
-    import urllib.request, urllib.error
     url = f"{_MC_URL}{path}"
     for attempt in range(MAX_RETRIES):
         try:
-            req = urllib.request.Request(
-                url,
+            with secure_request(
+                url, trusted_origin=_MC_URL,
                 headers={"X-API-Key": _MC_KEY, "Authorization": f"Bearer {_MC_KEY}"},
-            )
-            with urllib.request.urlopen(req, timeout=CONNECT_TIMEOUT + 10) as resp:
+                timeout=CONNECT_TIMEOUT + 10, allow_private=True,
+            ) as resp:
                 ct = resp.headers.get("Content-Type", "")
                 if "json" in ct:
                     return json.loads(resp.read().decode())
-        except urllib.error.HTTPError as e:
-            if e.code in (404, 405):
+        except Exception as e:
+            if getattr(e, "code", None) in (404, 405):
                 return None
-        except Exception:
-            pass
         if attempt < MAX_RETRIES - 1:
             time.sleep(_backoff(attempt))
     return None

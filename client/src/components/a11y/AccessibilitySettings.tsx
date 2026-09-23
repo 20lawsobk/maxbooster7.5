@@ -181,7 +181,7 @@ export function AccessibilitySettings({
             <AccordionTrigger className="text-base">
               <span className="flex items-center gap-2">
                 <Move className="h-4 w-4" aria-hidden="true" />
-                Motion & Animation
+                Motion &amp; Animation
               </span>
             </AccordionTrigger>
             <AccordionContent className="space-y-4 pt-2">
@@ -302,7 +302,7 @@ export function AccessibilitySettings({
             <AccordionTrigger className="text-base">
               <span className="flex items-center gap-2">
                 <Type className="h-4 w-4" aria-hidden="true" />
-                Typography & Text
+                Typography &amp; Text
               </span>
             </AccordionTrigger>
             <AccordionContent className="space-y-4 pt-2">

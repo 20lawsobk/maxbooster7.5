@@ -71,7 +71,7 @@ export function CompingEditor({ projectId, trackId, clips, open, onOpenChange }:
       <div className="space-y-2">{group?.lanes.map((lane, i) => { const source = clips.find(c => c.id === lane.audioClipId); const selected = group.lanes.flatMap(l => l.segments).filter(s => s.isSelected && s.takeLaneId === lane.id); return <button key={lane.id} onClick={e => choose(lane.id, e)} className="relative h-14 w-full overflow-hidden rounded border border-[#3b3b45] bg-[#202028] text-left hover:border-emerald-400">
         <TakeWaveform source={source} selected={!!selected.length}/><span className="relative z-10 px-2 text-xs font-semibold">{lane.name || `Take ${i + 1}`}</span>{selected.map(s => <span key={s.id} className="absolute bottom-0 top-0 bg-emerald-400/25 border-x border-emerald-300" style={{ left: `${(s.startTime - group.startTime) / ((group.endTime ?? group.startTime + 1) - group.startTime) * 100}%`, width: `${(s.endTime - s.startTime) / ((group.endTime ?? group.startTime + 1) - group.startTime) * 100}%` }}/>)}
       </button>; })}</div>
-      <div className="flex gap-2"><Input value={versionName} onChange={e => setVersionName(e.target.value)} aria-label="Comp version name"/><Button onClick={createVersion}>Save & activate version</Button><Button variant="secondary" onClick={render}>Render comp</Button></div>
+      <div className="flex gap-2"><Input value={versionName} onChange={e => setVersionName(e.target.value)} aria-label="Comp version name"/><Button onClick={createVersion}>Save &amp; activate version</Button><Button variant="secondary" onClick={render}>Render comp</Button></div>
       {renderUrl && <audio className="w-full" controls src={renderUrl}>Rendered comp audio</audio>}
     </>}
   </DialogContent></Dialog>;

@@ -181,7 +181,7 @@ export function QuickStartWizard({
                   <div>
                     <p className="font-medium">8 Tools, 1 Platform</p>
                     <p className="text-sm text-muted-foreground">
-                      Studio, distribution, social, ads, analytics & more
+                      Studio, distribution, social, ads, analytics &amp; more
                     </p>
                   </div>
                 </div>

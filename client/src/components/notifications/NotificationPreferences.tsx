@@ -963,7 +963,7 @@ export function NotificationPreferences() {
                   <div className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <span className="text-sm">Account & Security</span>
+                      <span className="text-sm">Account &amp; Security</span>
                       <p className="text-xs text-muted-foreground">
                         Suspicious activity, login alerts
                       </p>

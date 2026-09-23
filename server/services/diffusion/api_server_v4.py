@@ -60,6 +60,8 @@ _SVC    = os.path.dirname(_HERE)                        # …/server/services
 if _SVC not in sys.path:
     sys.path.insert(0, _SVC)
 
+from secure_http import request as secure_request
+
 # ── DigitalGPU — the compute backend for all training and inference ───────────
 from digitalgpu import get_gpu as _get_gpu_ctx, gpu_info as _gpu_info
 
@@ -529,7 +531,6 @@ def _push_weights_to_maxcore(session_label: str) -> None:
     if not mc_url or not mc_key:
         return
 
-    import urllib.request, urllib.error
     payload = json.dumps({
         'source':        'maxcore_gateway',
         'session_label': session_label,
@@ -537,16 +538,14 @@ def _push_weights_to_maxcore(session_label: str) -> None:
         'pushed_at':     time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
     }).encode()
     try:
-        req = urllib.request.Request(
-            f'{mc_url}/api/train/weights_updated',
-            data=payload,
+        with secure_request(
+            f'{mc_url}/api/train/weights_updated', trusted_origin=mc_url, data=payload,
             headers={
                 'Content-Type': 'application/json',
                 'Authorization': f'Bearer {mc_key}',
             },
-            method='POST',
-        )
-        with urllib.request.urlopen(req, timeout=8) as resp:
+            method='POST', timeout=8, allow_private=True,
+        ) as resp:
             logger.debug(f'[ContinuousTrainer] Weight push → MaxCore: HTTP {resp.status}')
     except Exception as exc:
         logger.debug(f'[ContinuousTrainer] Weight push skipped (MaxCore unreachable): {exc}')
@@ -920,7 +919,6 @@ def _relay_to_maxcore_video(body: dict) -> dict:
     None/null values are stripped so MaxCore's strict Pydantic schema is satisfied
     (mirrors the TypeScript side which omits undefined fields via JSON.stringify).
     """
-    import urllib.request as _urlreq
     import json as _json
     base = os.environ.get('AI_SERVER_URL', 'https://maxbooster.replit.app')
     base = base.rstrip('/').removesuffix('/api')
@@ -933,8 +931,10 @@ def _relay_to_maxcore_video(body: dict) -> dict:
     clean_body = {k: v for k, v in body.items() if v is not None}
     clean_body['source'] = 'MaxCoreAI'
     data = _json.dumps(clean_body).encode()
-    req = _urlreq.Request(api_url, data=data, headers=hdrs, method='POST')
-    with _urlreq.urlopen(req, timeout=60) as resp:
+    with secure_request(
+        api_url, trusted_origin=base, data=data, headers=hdrs, method='POST',
+        timeout=60, allow_private=True,
+    ) as resp:
         return _json.loads(resp.read())
 
 
@@ -1315,7 +1315,6 @@ def sync_weights_to_maxcore(req: SyncRequest):
         }
 
     # ── 4. Push to MaxCore ────────────────────────────────────────────────────
-    import urllib.request as _urlreq
     import base64 as _b64
 
     base_url = _os.environ.get('AI_SERVER_URL', 'https://maxbooster.replit.app')
@@ -1346,8 +1345,10 @@ def sync_weights_to_maxcore(req: SyncRequest):
     sync_at = _time.strftime('%Y-%m-%dT%H:%M:%SZ', _time.gmtime())
     try:
         data = _json2.dumps(payload).encode()
-        _req = _urlreq.Request(sync_url, data=data, headers=hdrs, method='POST')
-        with _urlreq.urlopen(_req, timeout=60) as _resp:
+        with secure_request(
+            sync_url, trusted_origin=base_url, data=data, headers=hdrs,
+            method='POST', timeout=60, allow_private=True,
+        ) as _resp:
             maxcore_reply = _json2.loads(_resp.read())
         sync_ok = True
         error   = None
@@ -1446,7 +1447,6 @@ def _maxcore_proxy(path: str, body: dict, timeout: int = 30) -> dict:
     Falls back to an empty dict with an error key on failure so callers can
     detect the problem without a 5xx propagating up.
     """
-    import urllib.request as _urlreq
     import json as _json
 
     base = os.environ.get('AI_SERVER_URL', 'https://maxbooster.replit.app')
@@ -1461,8 +1461,10 @@ def _maxcore_proxy(path: str, body: dict, timeout: int = 30) -> dict:
     clean: dict = {k: v for k, v in body.items() if v is not None}
     clean.setdefault('source', 'MaxCoreAI')
     data = _json.dumps(clean).encode()
-    req  = _urlreq.Request(url, data=data, headers=hdrs, method='POST')
-    with _urlreq.urlopen(req, timeout=timeout) as resp:
+    with secure_request(
+        url, trusted_origin=base, data=data, headers=hdrs, method='POST',
+        timeout=timeout, allow_private=True,
+    ) as resp:
         return _json.loads(resp.read())
 
 

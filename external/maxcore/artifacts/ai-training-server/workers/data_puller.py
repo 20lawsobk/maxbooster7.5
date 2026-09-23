@@ -17,8 +17,7 @@ import threading
 import hashlib
 from pathlib import Path
 from typing import Optional
-from urllib.request import urlopen, Request
-from urllib.error import URLError
+from ai_model.native_analysis.safe_http import fetch_bytes
 
 logger = logging.getLogger("data_puller")
 
@@ -76,7 +75,7 @@ PUBLIC_SOURCES = [
 
 
 def _fingerprint(text: str) -> str:
-    return hashlib.sha1(text.strip().lower().encode()).hexdigest()[:12]
+    return hashlib.sha256(text.strip().lower().encode()).hexdigest()[:12]
 
 
 def _flatten_record(record) -> Optional[str]:
@@ -498,9 +497,12 @@ class DataPuller:
 
     def _http_get(self, url: str, timeout: int = 10) -> Optional[bytes]:
         try:
-            req = Request(url, headers={"User-Agent": "MaxBooster-AI-DataPuller/1.0"})
-            with urlopen(req, timeout=timeout) as resp:
-                return resp.read()
-        except (URLError, Exception) as e:
+            data, _ = fetch_bytes(
+                url, max_bytes=16 * 1024 * 1024,
+                allowed_content_types=("application", "text"),
+                deadline_seconds=timeout,
+            )
+            return data
+        except Exception as e:
             logger.debug(f"[DataPuller] GET {url} failed: {e}")
             return None

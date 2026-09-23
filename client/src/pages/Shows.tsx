@@ -237,7 +237,7 @@ export default function Shows() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <Ticket className="h-8 w-8 text-primary" />
-              Shows & Tour
+              Shows &amp; Tour
             </h1>
             <p className="text-muted-foreground mt-1">
               Manage your live performances, ticket sales, and setlists.
@@ -314,7 +314,7 @@ export default function Shows() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="date">Date & Time</Label>
+                      <Label htmlFor="date">Date &amp; Time</Label>
                       <Input
                         id="date"
                         type="datetime-local"
@@ -1070,7 +1070,7 @@ export default function Shows() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Date & Time</Label>
+                  <Label>Date &amp; Time</Label>
                   <Input
                     type="datetime-local"
                     value={

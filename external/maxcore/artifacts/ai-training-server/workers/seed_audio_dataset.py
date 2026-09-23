@@ -24,7 +24,7 @@ import logging
 import tempfile
 import threading
 import time
-import urllib.request
+from ai_model.native_analysis.safe_http import fetch_bytes
 from pathlib import Path
 from typing import Any, Optional
 
@@ -138,9 +138,12 @@ def _http_get(url: str, timeout: float = 90.0, retries: int = 3) -> bytes:
     last: Optional[Exception] = None
     for attempt in range(retries):
         try:
-            req = urllib.request.Request(url, headers=_UA)
-            with urllib.request.urlopen(req, timeout=timeout) as r:
-                return r.read()
+            data, _ = fetch_bytes(
+                url, max_bytes=64 * 1024 * 1024,
+                allowed_content_types=("application", "audio"),
+                deadline_seconds=timeout,
+            )
+            return data
         except Exception as exc:  # retry on timeout / transient network error
             last = exc
             logger.warning(
@@ -156,9 +159,12 @@ def _hf_rows_available() -> bool:
     any non-200 response or network error so the caller can skip to fallback."""
     try:
         url = _HF_ROWS.format(offset=0, length=1)
-        req = urllib.request.Request(url, headers=_UA)
-        with urllib.request.urlopen(req, timeout=20) as r:
-            return r.status == 200
+        fetch_bytes(
+            url, max_bytes=1024 * 1024,
+            allowed_content_types=("application/json",),
+            deadline_seconds=20,
+        )
+        return True
     except Exception as exc:
         logger.info("[seed_audio] HF datasets-server probe failed (%s) — will use librosa fallback", exc)
         return False

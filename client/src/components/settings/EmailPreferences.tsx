@@ -292,7 +292,7 @@ export function EmailPreferences() {
                     htmlFor="marketingEmails"
                     className="text-base font-medium"
                   >
-                    Product Updates & Tips
+                    Product Updates &amp; Tips
                   </Label>
                   <p className="text-sm text-muted-foreground">
                     New features, music industry tips, and promotional

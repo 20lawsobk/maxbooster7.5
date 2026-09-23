@@ -12,7 +12,7 @@ Usage:
 If JOB_ID is omitted a new chart-topper audio job is submitted first.
 """
 import sys, os, time, json, base64, threading
-import urllib.request, urllib.error
+from server.services.secure_http import request
 
 BASE   = "https://secure-ai-forge.replit.app"
 KEY    = "mbs_283fb680fcfcfc1f83300442f4185712392c7c7c3d4868bbd925085ace25ec8e"
@@ -41,16 +41,13 @@ _keepalive_thread = None
 
 def _send(method, path, payload=None, timeout=20):
     data = json.dumps(payload).encode() if payload else None
-    req  = urllib.request.Request(
-        f"{BASE}{path}", data=data,
-        headers={"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"},
-        method=method,
-    )
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.status, r.read()
-    except urllib.error.HTTPError as e:
-        return e.code, b""
+        r = request(
+        f"{BASE}{path}", trusted_origin=BASE, data=data,
+        headers={"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"},
+        method=method, timeout=timeout, raise_for_status=False,
+    )
+        return r.status, r.read()
     except Exception:
         return 0, b""
 
@@ -137,9 +134,10 @@ def save_audio(job_data, job_id):
             ext  = "mp3" if ".mp3" in url else "wav"
             path = f"{OUT_DIR}/{safe}_{ts}.{ext}"
             try:
-                req = urllib.request.Request(
-                    url, headers={"Authorization": f"Bearer {KEY}"})
-                with urllib.request.urlopen(req, timeout=60) as r:
+                with request(
+                    url, trusted_origin=BASE,
+                    headers={"Authorization": f"Bearer {KEY}"}, timeout=60,
+                ) as r:
                     with open(path, "wb") as f:
                         f.write(r.read())
                 sz = os.path.getsize(path)

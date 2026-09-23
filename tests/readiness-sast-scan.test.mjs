@@ -5,7 +5,9 @@ import path from "node:path";
 import { test } from "node:test";
 import {
   buildInventory,
+  DEFAULT_RULE_TIMEOUT_SECONDS,
   isolatedScannerEnv,
+  runScan,
   sanitizeSemgrep,
 } from "../scripts/readiness-sast-scan.mjs";
 
@@ -133,4 +135,93 @@ test("structured scanner error types retain their stable category only", () => {
     paths: { scanned: [], skipped: [] },
   }, "/private/stage");
   assert.equal(sanitized.errors[0].type, "PartialParsing");
+});
+
+function fakeScanner(root) {
+  const scanner = path.join(root, "fake-semgrep.mjs");
+  write(root, "fake-semgrep.mjs", `#!/usr/bin/env node
+import fs from "node:fs";
+const args = process.argv.slice(2);
+if (args[0] === "--version") {
+  console.log("1.172.0");
+  process.exit(0);
+}
+const output = args[args.indexOf("--json-output") + 1];
+const target = args.at(-1);
+const finding = {
+  check_id: "fixture.finding",
+  path: target,
+  start: { line: 1, col: 1 },
+  end: { line: 1, col: 2 },
+  extra: { severity: "WARNING", message: "fixture finding", metadata: {} },
+};
+const timedOut = process.env.FAKE_SEMGREP_TIMEOUT === "1";
+fs.writeFileSync(output, JSON.stringify({
+  results: [finding],
+  errors: timedOut ? [{
+    type: "Timeout",
+    path: target,
+    message: "Timeout when running fixture.rule",
+  }] : [],
+  paths: { scanned: [target], skipped: [] },
+}));
+process.exit(timedOut ? 2 : 0);
+`);
+  fs.chmodSync(scanner, 0o755);
+  return scanner;
+}
+
+function localRule(root) {
+  const rule = path.join(root, "rule.yml");
+  write(root, "rule.yml", `rules:
+- id: fixture.rule
+  languages: [typescript]
+  severity: WARNING
+  message: fixture
+  pattern: fixture(...)
+`);
+  return rule;
+}
+
+test("default per-rule bound gives measured complex rules headroom", () => {
+  assert.equal(DEFAULT_RULE_TIMEOUT_SECONDS, 90);
+});
+
+test("nonzero scanner timeout remains incomplete without dropping findings or errors", async (t) => {
+  const root = fixture(t);
+  write(root, "source.ts", "fixture();\n");
+  const report = await runScan({
+    root,
+    filesOverride: ["source.ts"],
+    scanner: fakeScanner(root),
+    configs: [{ name: "fixture", file: localRule(root) }],
+    env: { ...process.env, FAKE_SEMGREP_TIMEOUT: "1" },
+    outputJson: "timeout.json",
+    outputMarkdown: "timeout.md",
+  });
+  assert.equal(report.complete, false);
+  assert.equal(report.scanner.commandPolicy.perRuleTimeoutSeconds, 90);
+  assert.equal(report.findings.length, 1);
+  assert.equal(report.errors.length, 1);
+  assert.equal(report.errors[0].type, "Timeout");
+  assert.match(report.incompleteReasons.join("\n"), /exited nonzero/);
+  assert.match(report.incompleteReasons.join("\n"), /scanner\/parse error/);
+});
+
+test("a completed scanner run reports no fabricated timeout", async (t) => {
+  const root = fixture(t);
+  write(root, "source.ts", "fixture();\n");
+  const report = await runScan({
+    root,
+    filesOverride: ["source.ts"],
+    scanner: fakeScanner(root),
+    configs: [{ name: "fixture", file: localRule(root) }],
+    env: { ...process.env, FAKE_SEMGREP_TIMEOUT: "0" },
+    outputJson: "complete.json",
+    outputMarkdown: "complete.md",
+  });
+  assert.equal(report.complete, true);
+  assert.equal(report.findings.length, 1);
+  assert.deepEqual(report.errors, []);
+  assert.deepEqual(report.incompleteReasons, []);
 });

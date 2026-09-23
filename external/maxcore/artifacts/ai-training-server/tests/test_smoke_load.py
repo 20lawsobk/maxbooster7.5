@@ -33,15 +33,19 @@ import statistics
 import sys
 import threading
 import time
-import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Any
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from trusted_http import request as trusted_request, validated_origin
 
 # ── Connection constants ──────────────────────────────────────────────────────
 HOST      = "127.0.0.1"
 PORT      = 9878
 BASE      = f"http://{HOST}:{PORT}"
+BASE_ORIGIN = validated_origin(BASE, local_only=True)
 API_KEY   = os.environ.get("MAXCORE_TEST_API_KEY", "")
 HEADERS   = {"Content-Type": "application/json", "X-Api-Key": API_KEY}
 
@@ -126,25 +130,25 @@ def _do_request(
     retries = 0
     while True:
         t0  = time.perf_counter()
-        rq  = urllib.request.Request(url, data=data, headers=HEADERS, method=method)
         try:
-            with urllib.request.urlopen(rq, timeout=timeout) as r:
-                raw  = json.loads(r.read())
-                lat  = time.perf_counter() - t0
-                return RequestResult(ok=True, status=r.status, latency=lat,
-                                     retries=retries, body=raw)
-        except urllib.error.HTTPError as e:
+            response = trusted_request(
+                method, url, origin=BASE_ORIGIN, body=data, headers=HEADERS,
+                timeout=timeout,
+            )
             lat = time.perf_counter() - t0
-            if e.code == 503 and retries < max_retries:
+            if response.status == 503 and retries < max_retries:
                 retries += 1
                 time.sleep(0.5 * (2 ** retries))   # 1s, 2s, 4s
                 continue
             raw_body = {}
-            try: raw_body = json.loads(e.read())
+            try: raw_body = json.loads(response.body)
             except Exception: pass
-            return RequestResult(ok=False, status=e.code, latency=lat,
-                                 retries=retries, body=raw_body,
-                                 error=f"HTTP {e.code}")
+            ok = 200 <= response.status < 300
+            return RequestResult(
+                ok=ok, status=response.status, latency=lat,
+                retries=retries, body=raw_body,
+                error="" if ok else f"HTTP {response.status}",
+            )
         except Exception as exc:
             lat = time.perf_counter() - t0
             return RequestResult(ok=False, status=0, latency=lat,

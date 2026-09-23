@@ -817,7 +817,7 @@ export function UnifiedCalendar() {
             Unified Calendar
           </h2>
           <p className="text-muted-foreground mt-1">
-            Manage paid & organic content across all platforms
+            Manage paid &amp; organic content across all platforms
           </p>
         </div>
         <div className="flex items-center gap-2">

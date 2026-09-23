@@ -253,7 +253,7 @@ export function PluginOutcomes({
             <Plug className="w-5 h-5 text-blue-400" />
           </div>
           <div>
-            <h2 className="font-semibold">Plugins & Effects</h2>
+            <h2 className="font-semibold">Plugins &amp; Effects</h2>
             <p className="text-xs text-zinc-500">
               {plugins.length} plugins available
             </p>

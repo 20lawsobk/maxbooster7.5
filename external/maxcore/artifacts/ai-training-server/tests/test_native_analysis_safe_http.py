@@ -102,3 +102,56 @@ def test_redirect_target_is_validated_again(monkeypatch: pytest.MonkeyPatch) -> 
             allowed_content_types=("text/html",),
         )
     assert calls == ["public.example", "private.invalid"]
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("http://example.com:443/file", "example.com:443"),
+        ("https://example.com:80/file", "example.com:80"),
+        ("http://[2001:4860:4860::8888]/file", "[2001:4860:4860::8888]"),
+    ],
+)
+def test_host_header_brackets_ipv6_and_uses_scheme_default_port(
+    url: str, expected: str, tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: dict[str, str] = {}
+
+    class Response:
+        status = 200
+        reads = 0
+
+        def getheader(self, name: str, default=None):
+            return "text/plain" if name == "Content-Type" else default
+
+        def read(self, _size: int) -> bytes:
+            self.reads += 1
+            return b"x" if self.reads == 1 else b""
+
+    class Connection:
+        sock = None
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def request(self, *args, **kwargs):
+            captured.update(kwargs["headers"])
+
+        def getresponse(self):
+            return Response()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(
+        safe_http, "_public_addresses", lambda *args, **kwargs: ["93.184.216.34"]
+    )
+    monkeypatch.setattr(safe_http, "_PinnedHTTPConnection", Connection)
+    monkeypatch.setattr(safe_http, "_PinnedHTTPSConnection", Connection)
+    safe_http.fetch_to_file(
+        url,
+        tmp_path / "response",
+        max_bytes=10,
+        allowed_content_types=("text/plain",),
+    )
+    assert captured["Host"] == expected

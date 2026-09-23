@@ -125,7 +125,7 @@ export function NoMyBeatsState({ onAction, className }: EmptyStateProps) {
             <Upload className="w-8 h-8 mx-auto mb-2 text-purple-600" />
             <h4 className="font-medium text-sm">Easy Upload</h4>
             <p className="text-xs text-muted-foreground mt-1">
-              Drag & drop audio files
+              Drag &amp; drop audio files
             </p>
           </CardContent>
         </Card>
@@ -221,7 +221,7 @@ export function NoStorefrontState({ onAction, className }: EmptyStateProps) {
         </Badge>
         <Badge variant="outline" className="text-sm py-1.5 px-3">
           <Sparkles className="w-4 h-4 mr-2" />
-          Themes & Branding
+          Themes &amp; Branding
         </Badge>
         <Badge variant="outline" className="text-sm py-1.5 px-3">
           <Users className="w-4 h-4 mr-2" />

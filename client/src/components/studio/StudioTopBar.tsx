@@ -343,7 +343,7 @@ export function StudioTopBar({
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                AI Melody Generator - Create melodies, beats & instruments
+                AI Melody Generator - Create melodies, beats &amp; instruments
               </TooltipContent>
             </Tooltip>
 

@@ -826,7 +826,7 @@ export function ExportDialog({
                 {dataOptions.format === "pdf" && (
                   <label className="flex items-center justify-between cursor-pointer">
                     <span className="text-sm text-zinc-300">
-                      Include Charts & Graphs
+                      Include Charts &amp; Graphs
                     </span>
                     <Switch
                       checked={dataOptions.includeCharts}

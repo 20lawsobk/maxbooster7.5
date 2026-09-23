@@ -707,7 +707,7 @@ export default function OutreachCRM() {
                 <Input
                   value={genGenre}
                   onChange={(e) => setGenGenre(e.target.value)}
-                  placeholder="Trap, R&B, …"
+                  placeholder={"Trap, R&B, …"}
                 />
               </div>
               <div className="space-y-1">

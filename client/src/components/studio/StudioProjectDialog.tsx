@@ -599,7 +599,7 @@ export function StudioProjectDialog({
             />
             <Upload className="h-8 w-8 mx-auto mb-2 text-gray-500" />
             <p className="text-sm text-gray-400 mb-1">
-              Drag & drop audio files here, or tap to browse
+              Drag &amp; drop audio files here, or tap to browse
             </p>
             <p className="text-xs text-gray-500">
               WAV, MP3, FLAC, AIFF, OGG — up to 500 MB each — multiple files

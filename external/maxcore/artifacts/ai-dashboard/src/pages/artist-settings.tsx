@@ -484,7 +484,7 @@ export default function ArtistSettings() {
 
             <Card className="glass-panel border-white/10 p-6 space-y-4">
               <h3 className="text-sm font-medium text-white flex items-center gap-2">
-                <Eye className="w-4 h-4 text-primary" /> AI disclosure &
+                <Eye className="w-4 h-4 text-primary" /> AI disclosure &amp;
                 preview
               </h3>
               <FormField

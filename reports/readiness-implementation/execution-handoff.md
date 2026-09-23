@@ -21,11 +21,17 @@ scope or interpret passing isolated checks as assembled production acceptance.
   parity for 31 readiness tables (234 columns, 84 constraints, 57 indexes), and
   real SQL transaction/concurrency checks. Snapshot:
   `migration-rehearsal-2026-09-22T01-57-34-914Z.md`.
-- Latest full local SAST evidence: `sast-resumed-full.json` / `.md`.
-  All **3,224** inventoried paths were scanner-reported, with zero omissions.
-  **71 parser/scanner errors and 58 findings** remain; disposition is
-  **INCOMPLETE**, not a clean scan. The inventory snapshot precedes some later
-  provider edits and is not certification of the final working tree.
+- Latest full local SAST evidence: `sast-final-verified.json` / `.md`.
+  All **3,236** inventoried paths were scanner-reported, with zero omissions
+  and **zero parser/scanner errors**. Scan execution is complete.
+  **Nine raw findings remain visible**, not a zero-finding scan.
+  The original 58 findings have 50 remediated and 8 reviewed-safe dispositions
+  in `sast-resolution-ledger.json` / `.md`. Retained findings are constrained
+  static-code execution, fixed loopback HTTP, and hardened PostgreSQL argv
+  execution; the generic subprocess rule still matches the repaired operation.
+  No rules were suppressed or coverage narrowed.
+  Verification: 34 Python tests plus 6 subtests, 5 subprocess/build tests,
+  9 scanner-runner tests, and both server/client typechecks passed.
 
 ## Resumed provider and security repairs
 

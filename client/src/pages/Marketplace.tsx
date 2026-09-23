@@ -2726,7 +2726,7 @@ export default function Marketplace() {
                 Max Booster Marketplace
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-2 text-lg">
-                Buy & Sell Beats with Escrow Protection & AI Discovery
+                Buy &amp; Sell Beats with Escrow Protection &amp; AI Discovery
               </p>
               <div className="flex items-center flex-wrap gap-2 mt-4">
                 <Badge
@@ -5820,7 +5820,7 @@ export default function Marketplace() {
                   <UploadCloud className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
                   <p className="font-medium">Tap to select audio file</p>
                   <p className="text-sm text-muted-foreground">
-                    or drag & drop on desktop
+                    or drag &amp; drop on desktop
                   </p>
                 </label>
               )}
@@ -5847,7 +5847,7 @@ export default function Marketplace() {
                       AI is analyzing your beat...
                     </p>
                     <p className="text-xs text-blue-500 dark:text-blue-400">
-                      Detecting BPM, key, genre, mood & tags
+                      Detecting BPM, key, genre, mood &amp; tags
                     </p>
                   </div>
                 </div>
@@ -5983,7 +5983,7 @@ export default function Marketplace() {
                         Tap to select cover art
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        or drag & drop on desktop
+                        or drag &amp; drop on desktop
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Square image recommended (3000x3000px)
@@ -6109,7 +6109,7 @@ export default function Marketplace() {
               >
                 <UploadCloud className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
                 <p className="text-lg font-medium mb-1">
-                  Drag & drop audio files here
+                  Drag &amp; drop audio files here
                 </p>
                 <p className="text-sm text-muted-foreground mb-3">
                   Supports MP3, WAV, FLAC, AAC, OGG, M4A, AIFF
@@ -7180,7 +7180,7 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
               />
             </div>
             <div className="space-y-2">
-              <Label>Terms & Details</Label>
+              <Label>Terms &amp; Details</Label>
               <Textarea
                 value={collaborationForm.terms}
                 onChange={(e) =>

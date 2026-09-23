@@ -766,7 +766,7 @@ export default function Collaborations() {
                     <Label htmlFor="project-genre">Genre</Label>
                     <Input
                       id="project-genre"
-                      placeholder="e.g. Hip-Hop, R&B, Afrobeats..."
+                      placeholder={"e.g. Hip-Hop, R&B, Afrobeats..."}
                       value={newProjectGenre}
                       onChange={(e) => setNewProjectGenre(e.target.value)}
                     />

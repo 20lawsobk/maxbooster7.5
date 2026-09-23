@@ -434,7 +434,7 @@ export default function Register() {
                 />
                 <p className="text-xs text-muted-foreground">
                   We'll automatically find your profiles on Spotify, Apple Music
-                  & Deezer.
+                  &amp; Deezer.
                 </p>
               </div>
 

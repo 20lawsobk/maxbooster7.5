@@ -85,7 +85,6 @@ What moving to processes changes, and how this module handles it:
 from __future__ import annotations
 
 import os
-import pickle
 import queue
 import time
 import traceback
@@ -310,19 +309,18 @@ class _LaneAborted(Exception):
 
 
 def _safe_exc(exc: BaseException) -> BaseException:
-    """Best-effort make `exc` safe to pickle across the process boundary.
-    Built-in exceptions round-trip fine; on the rare exception that doesn't
-    (e.g. it wraps something unpicklable), fall back to a plain RuntimeError
-    carrying the original type/message/traceback as text, so the failure is
-    still fully visible to the caller instead of the pickle error silently
-    replacing it (or, worse, hanging the coordinator when the ``_ErrorMsg``
-    itself fails to cross the queue)."""
-    tb_text = traceback.format_exc()
+    """Return a data-only exception safe to send across the process boundary.
+
+    Exception instances can carry attacker-controlled or otherwise unsafe
+    object graphs in ``args`` and custom attributes. Never probe-serialize or
+    forward that graph: preserve only bounded text in a built-in exception.
+    """
+    tb_text = traceback.format_exc()[-16_000:]
     try:
-        pickle.dumps(exc)
-        safe = exc
+        message = str(exc)[:2000]
     except Exception:
-        safe = RuntimeError(f"{type(exc).__name__}: {exc}")
+        message = "<exception message unavailable>"
+    safe = RuntimeError(f"{type(exc).__name__}: {message}")
     try:
         safe.add_note(f"[worker traceback]\n{tb_text}")
     except Exception:

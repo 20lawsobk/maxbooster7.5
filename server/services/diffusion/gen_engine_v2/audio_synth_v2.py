@@ -38,12 +38,17 @@ import logging
 import math
 import os
 import struct
+import sys
 import time
-import urllib.request
 import wave
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+
+_SERVICES = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _SERVICES not in sys.path:
+    sys.path.insert(0, _SERVICES)
+from secure_http import request as secure_request
 
 logger = logging.getLogger('AudioSynthV2')
 
@@ -833,10 +838,11 @@ def _fetch_maxcore_audio(genre: str, bpm: float, mood: str,
     }).encode()
 
     try:
-        req  = urllib.request.Request(f'{base_url}/api/generate/audio',
-                                      data=payload, headers=auth_headers,
-                                      method='POST')
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with secure_request(
+            f'{base_url}/api/generate/audio', trusted_origin=base_url,
+            data=payload, headers=auth_headers, method='POST', timeout=30,
+            allow_private=True,
+        ) as resp:
             init = json.loads(resp.read())
     except Exception as exc:
         logger.error(f'MaxCore audio submit failed: {exc}')
@@ -855,13 +861,15 @@ def _fetch_maxcore_audio(genre: str, bpm: float, mood: str,
         # ── 2. Poll for completion ───────────────────────────────────────────
         poll_url  = f'{base_url}/api/audio-job/{job_id}'
         poll_hdrs = {'Authorization': f'Bearer {api_key}', 'X-API-Key': api_key}
-        poll_req  = urllib.request.Request(poll_url, headers=poll_hdrs)
 
         status_data: Dict = {}
         audio_url = None
         for attempt in range(90):                # up to 90 s
             try:
-                with urllib.request.urlopen(poll_req, timeout=15) as resp:
+                with secure_request(
+                    poll_url, trusted_origin=base_url, headers=poll_hdrs,
+                    timeout=15, allow_private=True,
+                ) as resp:
                     status_data = json.loads(resp.read())
             except Exception as exc:
                 logger.warning(f'MaxCore poll attempt {attempt} error: {exc}')
@@ -896,8 +904,10 @@ def _fetch_maxcore_audio(genre: str, bpm: float, mood: str,
         {},   # public / no-auth path
     ]:
         try:
-            req = urllib.request.Request(dl_url, headers=dl_headers)
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with secure_request(
+                dl_url, trusted_origin=base_url, headers=dl_headers,
+                timeout=60, allow_private=True,
+            ) as resp:
                 body = resp.read()
                 ct   = resp.headers.get('content-type', '')
             # Accept only real audio (MP3/WAV magic bytes or audio content-type)

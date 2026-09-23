@@ -1277,7 +1277,7 @@ export default function Contracts() {
                 }}
                 disabled={!declineReason || declineSignatureMutation.isPending}
               >
-                Decline & Void Contract
+                Decline &amp; Void Contract
               </Button>
             </DialogFooter>
           </DialogContent>

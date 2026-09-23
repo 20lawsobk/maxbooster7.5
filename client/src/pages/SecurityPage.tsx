@@ -33,7 +33,7 @@ export default function SecurityPage() {
         <div className="max-w-7xl mx-auto text-center">
           <Shield className="h-16 w-16 mx-auto mb-6 text-blue-600" />
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-            Security & Trust
+            Security &amp; Trust
             <span className="block bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
               Your Data is Safe with Us
             </span>

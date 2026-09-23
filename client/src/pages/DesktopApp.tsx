@@ -643,7 +643,7 @@ export default function DesktopApp() {
                       <li>Download the .ipa file above</li>
                       <li>Open AltStore and sideload the IPA</li>
                       <li>
-                        Trust the app in Settings → General → VPN & Device
+                        Trust the app in Settings → General → VPN &amp; Device
                         Management
                       </li>
                     </ol>

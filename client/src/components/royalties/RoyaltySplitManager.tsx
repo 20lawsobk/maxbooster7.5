@@ -258,7 +258,7 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5" />
             <CardTitle data-testid="split-manager-title">
-              Collaborators & Royalty Splits
+              Collaborators &amp; Royalty Splits
             </CardTitle>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

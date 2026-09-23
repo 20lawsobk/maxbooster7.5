@@ -276,7 +276,7 @@ export function MixingMasteringPanel({
             <Sliders className="w-5 h-5 text-purple-400" />
           </div>
           <div>
-            <h2 className="font-semibold">AI Mixing & Mastering</h2>
+            <h2 className="font-semibold">AI Mixing &amp; Mastering</h2>
             <p className="text-xs text-zinc-500">
               Professional audio processing
             </p>

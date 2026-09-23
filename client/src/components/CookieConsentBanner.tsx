@@ -43,7 +43,7 @@ export function CookieConsentBanner() {
               id="cookie-banner-title"
               className="text-base font-semibold text-white"
             >
-              Cookie & Privacy Notice
+              Cookie &amp; Privacy Notice
             </h2>
             <p
               id="cookie-banner-description"

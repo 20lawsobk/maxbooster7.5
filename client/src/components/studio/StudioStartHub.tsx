@@ -544,7 +544,7 @@ export function StudioStartHub({
           <div className="p-4 border-t border-gray-800">
             <button className="w-full flex items-center gap-3 p-2.5 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
               <HelpCircle className="h-4 w-4" />
-              <span className="text-sm">Help & Tutorials</span>
+              <span className="text-sm">Help &amp; Tutorials</span>
             </button>
           </div>
         </aside>

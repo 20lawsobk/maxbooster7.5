@@ -362,7 +362,7 @@ export function TrackUploader({
             Tap to upload audio files
           </p>
           <p className="text-xs sm:text-sm text-muted-foreground mb-4 hidden sm:block">
-            or drag & drop • paste with Ctrl+V
+            or drag &amp; drop • paste with Ctrl+V
           </p>
           <p className="text-xs text-muted-foreground mb-4 sm:hidden">
             Tap anywhere in this area

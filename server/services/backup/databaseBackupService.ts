@@ -15,6 +15,12 @@ import {
   databaseDumpChecksum,
   generateUncommittedDatabaseDump,
 } from "./databaseDump.js";
+import {
+  assertSafeSpawnArguments,
+  isSamePostgresDatabase,
+  restrictedChildEnvironment,
+  validatePostgresConnectionUrl,
+} from "../subprocessSafety.js";
 
 function databaseUrl(): string {
   const url = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
@@ -191,9 +197,9 @@ export class DatabaseBackupService {
   }
 
   async restoreBackup(key: string, targetUrl: string, validationSql?: string): Promise<void> {
-    const source = new URL(databaseUrl());
-    const target = new URL(targetUrl);
-    if (source.hostname === target.hostname && source.pathname === target.pathname) {
+    const sourceUrl = databaseUrl();
+    const safeTargetUrl = validatePostgresConnectionUrl(targetUrl);
+    if (isSamePostgresDatabase(sourceUrl, safeTargetUrl)) {
       throw new Error("Restore requires an isolated target database");
     }
     if (!validationSql?.trim()) throw new Error("Restore requires operator-supplied recovery invariants");
@@ -204,15 +210,19 @@ export class DatabaseBackupService {
     try {
       const buf = await storageService?.downloadFile(key);
       if (checksum(buf) !== record.checksum) throw new Error("Backup checksum mismatch");
-      const restoreSelection = await selectPsqlForRestore(targetUrl, dumpedServerMajor(buf));
+      const restoreSelection = await selectPsqlForRestore(safeTargetUrl, dumpedServerMajor(buf));
       await fsPromises?.writeFile(tmpPath, buf, { mode: 0o600, flag: "wx" });
       await fsPromises.writeFile(validationPath, validationSql, { mode: 0o600, flag: "wx" });
 
       await new Promise<void>((resolve, reject) => {
-        const psql = spawn(restoreSelection.tool.path, ["-X", "-v", "ON_ERROR_STOP=1", "--single-transaction",
+        const args = ["-X", "-v", "ON_ERROR_STOP=1", "--single-transaction",
           "-c", "DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%' AND c.relkind IN ('r','p','v','m','S','f')) THEN RAISE EXCEPTION 'Restore target is not empty'; END IF; END $$;",
-          "-f", tmpPath, "-f", validationPath], {
-          env: { ...process.env, PGDATABASE: targetUrl },
+          "-f", tmpPath, "-f", validationPath];
+        assertSafeSpawnArguments(args);
+        const psql = spawn(restoreSelection.tool.path, args, {
+          shell: false,
+          stdio: ["ignore", "ignore", "pipe"],
+          env: restrictedChildEnvironment({ PGDATABASE: safeTargetUrl }),
         });
         let errorOutput = "";
         psql?.stderr.on("data", (d) => {

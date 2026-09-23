@@ -1449,7 +1449,7 @@ export function UICustomizer({
             style={{ background: "var(--studio-accent)" }}
           >
             <Save className="h-4 w-4" />
-            Save & Apply
+            Save &amp; Apply
           </Button>
         </DialogFooter>
 

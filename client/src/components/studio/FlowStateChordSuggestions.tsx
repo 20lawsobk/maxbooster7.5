@@ -340,7 +340,7 @@ export function FlowStateChordSuggestions({
         <div className="w-72 border-r border-zinc-800 p-4 flex flex-col gap-4 overflow-auto">
           {/* Key Selection */}
           <div className="space-y-2">
-            <Label className="text-sm">Key & Scale</Label>
+            <Label className="text-sm">Key &amp; Scale</Label>
             <div className="flex gap-2">
               <Select value={selectedKey} onValueChange={setSelectedKey}>
                 <SelectTrigger className="flex-1 bg-zinc-900 border-zinc-700">

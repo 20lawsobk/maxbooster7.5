@@ -603,7 +603,7 @@ export function VersionHistory({
               }}
               className="bg-amber-600 hover:bg-amber-700"
             >
-              Discard & Restore
+              Discard &amp; Restore
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

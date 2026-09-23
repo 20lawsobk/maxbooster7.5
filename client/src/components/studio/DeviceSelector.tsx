@@ -109,7 +109,7 @@ export function DeviceSelector({
   return (
     <Card className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Audio & MIDI Devices</h3>
+        <h3 className="text-sm font-semibold">Audio &amp; MIDI Devices</h3>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"

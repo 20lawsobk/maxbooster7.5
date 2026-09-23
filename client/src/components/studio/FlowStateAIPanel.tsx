@@ -958,7 +958,7 @@ export function FlowStateAIPanel({
                     {isAIMixing ? "Mixing..." : "AI Mix"}
                   </p>
                   <p className="text-xs text-white/50">
-                    Intelligent track balancing & processing
+                    Intelligent track balancing &amp; processing
                   </p>
                 </div>
               </motion.button>

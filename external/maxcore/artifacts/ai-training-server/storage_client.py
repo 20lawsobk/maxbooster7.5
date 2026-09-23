@@ -16,6 +16,7 @@ import threading
 from pathlib import Path
 from typing import Any, Optional
 from urllib.error import URLError, HTTPError
+from trusted_http import request as trusted_request, validated_origin
 
 try:
     import urllib3
@@ -228,6 +229,7 @@ class StorageClient:
 
     def __init__(self):
         self._url = STORAGE_HTTP_URL
+        self._origin = validated_origin(self._url) if self._url else None
         self._token = STORAGE_BEARER_TOKEN
         self._available: Optional[bool] = None
         self._lock = threading.Lock()
@@ -256,7 +258,11 @@ class StorageClient:
         pool = _get_pool()
         if pool is not None:
             try:
-                resp = pool.request("POST", self._url, body=data, headers=headers)
+                resp = pool.request(
+                    "POST", self._url, body=data, headers=headers, redirect=False
+                )
+                if resp.status in {301, 302, 303, 307, 308}:
+                    raise RuntimeError("storage redirects are not allowed")
                 body = resp.data.decode("utf-8").strip()
                 if not body:
                     return None
@@ -271,20 +277,21 @@ class StorageClient:
                 logger.debug(f"[Storage] exec {cmd} failed: {e}")
                 return None
 
-        from urllib.request import urlopen, Request as _Req
-        req = _Req(self._url, data=data, headers=headers, method="POST")
         try:
-            with urlopen(req, timeout=8) as resp:
-                body = resp.read().decode("utf-8").strip()
-                if not body:
+            resp = trusted_request(
+                "POST", self._url, origin=self._origin, body=data,
+                headers=headers, timeout=8,
+            )
+            body = resp.body.decode("utf-8").strip()
+            if not body:
+                return None
+            parsed = json.loads(body)
+            if isinstance(parsed, dict):
+                if "error" in parsed:
+                    logger.debug(f"[Storage] {cmd} error: {parsed['error']}")
                     return None
-                parsed = json.loads(body)
-                if isinstance(parsed, dict):
-                    if "error" in parsed:
-                        logger.debug(f"[Storage] {cmd} error: {parsed['error']}")
-                        return None
-                    return parsed.get("result")
-                return parsed
+                return parsed.get("result")
+            return parsed
         except (URLError, HTTPError, Exception) as e:
             logger.debug(f"[Storage] exec {cmd} failed: {e}")
             return None
@@ -345,7 +352,11 @@ class StorageClient:
         pool = _get_ping_pool()
         if pool is not None:
             try:
-                resp = pool.request("POST", self._url, body=payload, headers=headers)
+                resp = pool.request(
+                    "POST", self._url, body=payload, headers=headers, redirect=False
+                )
+                if resp.status in {301, 302, 303, 307, 308}:
+                    raise RuntimeError("storage redirects are not allowed")
                 body = resp.data.decode("utf-8").strip()
                 parsed = json.loads(body) if body else {}
                 result = parsed.get("result") if isinstance(parsed, dict) else parsed
@@ -353,15 +364,16 @@ class StorageClient:
             except Exception as e:
                 logger.debug("[Storage] ping (urllib3) failed: %s", e)
                 return False
-        # urllib3 unavailable — fall back to stdlib with same long timeout
-        from urllib.request import urlopen, Request as _Req
-        req = _Req(self._url, data=payload, headers=headers, method="POST")
+        # urllib3 unavailable — use the same-origin stdlib transport.
         try:
-            with urlopen(req, timeout=20) as resp:
-                body = resp.read().decode("utf-8").strip()
-                parsed = json.loads(body) if body else {}
-                result = parsed.get("result") if isinstance(parsed, dict) else parsed
-                return str(result).upper() == "PONG"
+            resp = trusted_request(
+                "POST", self._url, origin=self._origin, body=payload,
+                headers=headers, timeout=20,
+            )
+            body = resp.body.decode("utf-8").strip()
+            parsed = json.loads(body) if body else {}
+            result = parsed.get("result") if isinstance(parsed, dict) else parsed
+            return str(result).upper() == "PONG"
         except Exception as e:
             logger.debug("[Storage] ping (urllib) failed: %s", e)
             return False
