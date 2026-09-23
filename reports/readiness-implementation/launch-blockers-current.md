@@ -76,10 +76,10 @@ claims that commerce tables are absent.
 
 ## Not yet cleared
 
-1. Retained recovery backup and documented live-migration gate, followed by the
-   exact additive commerce migrations 0022/0023 with collision preflight and
-   post-apply verification. The earlier restore drill removed its private scratch
-   and is not a retained backup. No live DDL was performed in this pass.
+1. **Database recovery and commerce schema cleared:** retained App Storage backup,
+   exact restore verification, and authorized atomic commerce migrations 0022/0023
+   passed. See the generation-bound recovery and live migration receipts above.
+   This does not cover independently retained actual PDIM user content.
 2. Credential migration/rotation where tracked configuration holds credentials;
    no values were disclosed or silently removed here.
 3. Publication and verification of the corrected local MaxCore runtime. Existing
@@ -89,5 +89,34 @@ claims that commerce tables are absent.
    and representative cold-image/load acceptance remain unproven. Historical
    optional feature gaps are not automatically treated as launch blockers.
 
-Release decision: **NOT READY**. The code defects above were repaired; absent
-production schema, retained recovery, and deployment evidence are not waived.
+## Credential-free simulation and local subsystem continuation
+
+- Provider-process simulation passed against disposable real PostgreSQL, including
+  accepted-before-response-loss, duplicate callbacks, mismatch rejection and a
+  worker restart. All three committed journals balanced; external acceptance
+  remains simulated, not certified.
+- MaxCore's existing offline suites passed 494 tests with eight dependency skips.
+  This is kernel/contract evidence, not full loaded-model or live HTTP acceptance.
+- The active MaxCore checkpoint is absent. Safe tensor-only loading of the
+  quarantined candidate passed, and all 71 tensor keys/shapes match both training
+  and serving models after repairing the serving model's tied output-head
+  declaration. Actual forward inference and trained-quality provenance remain
+  unverified. Loader, watchdog and terminal readiness fixes have focused
+  regression evidence in `model-readiness-current.md`; no candidate was promoted.
+- Synthetic PDIM content restoration passed through the real hybrid storage and
+  PocketDimension paths, including ownership checks and corrupt-transport
+  rejection. This is not retained recovery of actual user content. See
+  `pdim-content-recovery-drill.json`.
+- Corrupt PocketDimension metadata and hybrid ownership indexes now fail closed
+  rather than initialize empty stores. Eighteen focused tests and the real
+  synthetic content restore drill passed, including corrupt-but-checksummed
+  snapshot rejection without overwriting source records.
+- Packed cold-boot and authenticated-load checks remain unexecuted: host memory
+  admission failed, and native-descendant network namespace isolation is denied
+  in this runner. These are test-environment limits, not reproduced app failures.
+  See `credential-free-simulation-handoff.md` and the latest load report.
+
+Release decision: **NOT READY**. Database schema and retained database recovery
+are no longer blockers. Model serving, independently retained PDIM recovery,
+credential/provider acceptance, runtime/load acceptance and publication evidence
+remain unresolved.

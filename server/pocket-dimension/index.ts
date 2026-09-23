@@ -106,6 +106,109 @@ export interface PocketDimensionConfig {
   storagePath?: string;
 }
 
+function isRecord(value: unknown): value is Record<string, any> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function parsePocketDate(value: unknown, field: string): Date {
+  const date = new Date(value as string);
+  if (
+    (typeof value !== "string" && !(value instanceof Date)) ||
+    !Number.isFinite(date.getTime())
+  ) {
+    throw new Error(`invalid ${field}`);
+  }
+  return date;
+}
+
+function parsePocketMetadata(raw: string, expectedId: string): PocketMetadata {
+  const value: unknown = JSON.parse(raw);
+  if (
+    !isRecord(value) ||
+    value.id !== expectedId ||
+    typeof value.name !== "string" ||
+    typeof value.encrypted !== "boolean" ||
+    !Number.isSafeInteger(value.version) ||
+    value.version < 1 ||
+    !["totalSize", "compressedSize", "chunkCount", "maxDepth"].every(
+      (field) =>
+        typeof value[field] === "number" &&
+        Number.isFinite(value[field]) &&
+        value[field] >= 0,
+    )
+  ) {
+    throw new Error("invalid pocket metadata shape");
+  }
+  return {
+    ...(value as PocketMetadata),
+    createdAt: parsePocketDate(value.createdAt, "metadata.createdAt"),
+    updatedAt: parsePocketDate(value.updatedAt, "metadata.updatedAt"),
+  };
+}
+
+function parsePocketIndex(raw: string): {
+  entries: Map<string, PocketEntry>;
+  chunks: Map<string, PocketChunk>;
+} {
+  const value: unknown = JSON.parse(raw);
+  if (!isRecord(value) || !isRecord(value.entries) || !isRecord(value.chunks)) {
+    throw new Error("invalid pocket index root");
+  }
+
+  const entries = new Map<string, PocketEntry>();
+  for (const [key, candidate] of Object.entries(value.entries)) {
+    if (
+      !isRecord(candidate) ||
+      candidate.path !== key ||
+      !["file", "directory", "dimension"].includes(candidate.type) ||
+      !Array.isArray(candidate.chunks) ||
+      !candidate.chunks.every((id: unknown) => typeof id === "string") ||
+      !isRecord(candidate.metadata) ||
+      !["size", "compressedSize", "version"].every(
+        (field) =>
+          typeof candidate[field] === "number" &&
+          Number.isFinite(candidate[field]) &&
+          candidate[field] >= 0,
+      )
+    ) {
+      throw new Error(`invalid pocket entry ${JSON.stringify(key)}`);
+    }
+    entries.set(key, {
+      ...(candidate as PocketEntry),
+      createdAt: parsePocketDate(candidate.createdAt, `${key}.createdAt`),
+      modifiedAt: parsePocketDate(candidate.modifiedAt, `${key}.modifiedAt`),
+    });
+  }
+
+  const chunks = new Map<string, PocketChunk>();
+  for (const [key, candidate] of Object.entries(value.chunks)) {
+    if (
+      !isRecord(candidate) ||
+      candidate.id !== key ||
+      typeof candidate.encrypted !== "boolean" ||
+      !["size", "compressedSize", "compressionRatio", "accessCount", "depth"].every(
+        (field) =>
+          typeof candidate[field] === "number" &&
+          Number.isFinite(candidate[field]) &&
+          candidate[field] >= 0,
+      )
+    ) {
+      throw new Error(`invalid pocket chunk ${JSON.stringify(key)}`);
+    }
+    chunks.set(key, {
+      ...(candidate as PocketChunk),
+      createdAt: parsePocketDate(candidate.createdAt, `${key}.createdAt`),
+      lastAccessed: parsePocketDate(candidate.lastAccessed, `${key}.lastAccessed`),
+    });
+  }
+  for (const [path, entry] of entries) {
+    if (entry.chunks.some((id) => !chunks.has(id))) {
+      throw new Error(`pocket entry ${JSON.stringify(path)} references a missing chunk`);
+    }
+  }
+  return { entries, chunks };
+}
+
 // ============================================================================
 // POCKET DIMENSION CORE ENGINE
 // ============================================================================
@@ -216,48 +319,61 @@ export class PocketDimension extends EventEmitter {
   async open(): Promise<void> {
     if (this.isOpen) return;
 
-    // Load metadata and index from PDIM
+    // A null GET is the only authoritative "new pocket" signal. Parse and
+    // validate a complete snapshot before mutating any in-memory state; a
+    // network error, malformed record, or half-written metadata/index pair
+    // must fail closed rather than becoming an empty pocket that later
+    // overwrites the recoverable records.
     try {
       const metaRaw = await getPdimClient().get(
         `pdim:meta:${this.id}:metadata`,
       );
-      if (metaRaw) {
-        this.metadata = JSON.parse(metaRaw);
+      const indexRaw = await getPdimClient().get(
+        `pdim:meta:${this.id}:index`,
+      );
+      if (metaRaw === null) {
+        if (indexRaw !== null) {
+          throw new Error("pocket index exists without metadata");
+        }
+      } else {
+        if (indexRaw === null) {
+          throw new Error("pocket metadata exists without index");
+        }
+        const metadata = parsePocketMetadata(metaRaw, this.id);
+        const index = parsePocketIndex(indexRaw);
+        let restoredRawKey: string | null = null;
+        let restoredKey: Buffer | null = this.encryptionKey;
 
-        // Load encryption key if the dimension was encrypted
-        if (this.metadata.encrypted && !this.encryptionKey) {
+        if (metadata.encrypted && !restoredKey) {
           const keyRaw = await getPdimClient().get(
             `pdim:meta:${this.id}:keyfile`,
           );
-          if (!keyRaw) {
-            throw new Error(
-              `Encrypted pocket dimension ${this.id} is missing its keyfile - data cannot be decrypted`,
-            );
+          if (keyRaw === null) {
+            throw new Error("encrypted pocket is missing its keyfile");
           }
-          const keyInfo = JSON.parse(keyRaw);
-          this.rawEncryptionKey = keyInfo?.key;
-          this.encryptionKey = scryptSync(
-            keyInfo?.key,
-            "pocket-dimension-salt",
-            32,
-          );
+          const keyInfo: unknown = JSON.parse(keyRaw);
+          if (
+            !isRecord(keyInfo) ||
+            typeof keyInfo.key !== "string" ||
+            keyInfo.key.length === 0
+          ) {
+            throw new Error("encrypted pocket keyfile is invalid");
+          }
+          restoredRawKey = keyInfo.key;
+          restoredKey = scryptSync(keyInfo.key, "pocket-dimension-salt", 32);
         }
 
-        const indexRaw = await getPdimClient().get(
-          `pdim:meta:${this.id}:index`,
-        );
-        if (indexRaw) {
-          const index = JSON.parse(indexRaw);
-          this.entries = new Map(Object.entries(index?.entries));
-          this.chunks = new Map(Object.entries(index?.chunks));
-        }
+        this.metadata = metadata;
+        this.entries = index.entries;
+        this.chunks = index.chunks;
+        if (restoredRawKey) this.rawEncryptionKey = restoredRawKey;
+        this.encryptionKey = restoredKey;
       }
-      // If no metadata in PDIM, start fresh (new dimension)
     } catch (error) {
-      if ((error as any)?.message?.includes("keyfile")) {
-        throw error;
-      }
-      // New dimension, start fresh
+      throw new Error(
+        `Failed to open pocket dimension ${this.id}: stored metadata/index is unavailable or corrupt`,
+        { cause: error },
+      );
     }
 
     this.isOpen = true;

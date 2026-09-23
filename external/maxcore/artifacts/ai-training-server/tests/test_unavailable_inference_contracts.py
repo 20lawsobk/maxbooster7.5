@@ -72,6 +72,25 @@ def test_text_content_mode_never_returns_template_fallback():
     assert "Cached text result lacks genuine model provenance" in source
 
 
+def test_model_readiness_reports_terminal_initialization_failure():
+    tree = ast.parse(SERVER.read_text(encoding="utf-8"))
+    sync_init = next(
+        node for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "_init_ai_model"
+    )
+    init_source = ast.unparse(sync_init)
+    wait_source = ast.unparse(_function("_wait_for_model_ready"))
+    server_source = SERVER.read_text(encoding="utf-8")
+
+    assert "_model_init_error" in init_source
+    assert "type(e).__name__" in init_source
+    assert "_model_ready = False" in init_source
+    assert "_model_init_error is not None" in wait_source
+    assert 'status_code=503' in wait_source
+    assert '"weights_source": "disk" if weights_path.exists() else "unavailable"' in server_source
+    assert '"random_init"' not in server_source
+
+
 def test_every_job_reader_enforces_durable_owner():
     for name in (
         "api_poll_video_job",

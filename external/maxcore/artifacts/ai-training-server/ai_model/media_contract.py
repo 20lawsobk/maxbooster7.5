@@ -1,10 +1,78 @@
 """Deterministic delivery checks; no model inference or service initialization."""
 import errno
+import hashlib
 import json
+import os
 import subprocess
 import time
+from collections.abc import Mapping
+from datetime import datetime, timezone
 from pathlib import Path
 
+
+def load_checkpoint_archive(path, *, map_location="cpu"):
+    """Load a tensor-only checkpoint without permitting pickle code execution."""
+    import torch
+
+    checkpoint = torch.load(
+        str(path),
+        map_location=map_location,
+        weights_only=True,
+    )
+    if not isinstance(checkpoint, Mapping):
+        raise ValueError("Checkpoint root must be a mapping")
+    state = checkpoint.get("model_state_dict", checkpoint)
+    if not isinstance(state, Mapping) or not state:
+        raise ValueError("Checkpoint has no model state mapping")
+    if not all(isinstance(key, str) for key in state):
+        raise ValueError("Checkpoint model state contains a non-string key")
+    return checkpoint
+
+
+def quarantine_checkpoint(path, reason):
+    """Preserve an invalid checkpoint and record why; never replace an older copy."""
+    source = Path(path)
+    hasher = hashlib.sha256()
+    with source.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    digest = hasher.hexdigest()
+    base = source.with_suffix(".corrupt")
+    candidate = base
+    sequence = 0
+    while True:
+        try:
+            os.link(source, candidate)
+        except FileExistsError:
+            sequence += 1
+            candidate = Path(f"{base}.{sequence}")
+            continue
+
+        record = {
+            "source": source.name,
+            "quarantined_as": candidate.name,
+            "sha256": digest,
+            "reason": str(reason),
+            "quarantined_at": datetime.now(timezone.utc).isoformat(),
+        }
+        record_path = Path(f"{candidate}.json")
+        record_created = False
+        try:
+            with record_path.open("x", encoding="utf-8") as stream:
+                record_created = True
+                json.dump(record, stream, sort_keys=True)
+                stream.write("\n")
+            source.unlink()
+            return candidate, record_path
+        except FileExistsError:
+            candidate.unlink()
+            sequence += 1
+            candidate = Path(f"{base}.{sequence}")
+        except Exception:
+            candidate.unlink(missing_ok=True)
+            if record_created:
+                record_path.unlink(missing_ok=True)
+            raise
 
 def load_complete_checkpoint(model, state):
     """Construction is not trained readiness: require every expected tensor."""

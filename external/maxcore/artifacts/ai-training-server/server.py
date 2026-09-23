@@ -419,6 +419,11 @@ async def _wait_for_model_ready(max_wait: float = 30.0) -> None:
         return  # fast path — already ready
     _waited = 0.0
     while not _model_ready:
+        if _model_init_error is not None:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Model initialization failed: {_model_init_error}",
+            )
         if _waited >= max_wait:
             raise HTTPException(
                 status_code=503, detail="A compatible trained model is not ready",
@@ -703,6 +708,7 @@ threading.Thread(target=_uploads_janitor_loop, name="uploads-janitor",
 # ─── AI Model Globals ────────────────────────────────────────────────────────
 
 _model_ready = False
+_model_init_error = None
 _tokenizer = None
 _creative_model = None
 _script_agent = None
@@ -742,11 +748,13 @@ def _hyper_gpu_sizing() -> tuple[int, int]:
     return hyper_gpu_sizing()
 
 def _init_ai_model():
-    global _model_ready, _tokenizer, _creative_model, _script_agent
+    global _model_ready, _model_init_error, _tokenizer, _creative_model, _script_agent
     global _visual_spec_agent, _distribution_agent, _optimization_agent
     global _repo, _adapter, _render_manager, _model_config, _image_engine
     global _gen_coalescer, _hyper_backend, _digital_gpu_backend
 
+    _model_ready = False
+    _model_init_error = None
     try:
         sys.path.insert(0, str(Path(__file__).parent))
         from ai_model.model.tokenizer import BPETokenizer
@@ -814,7 +822,11 @@ def _init_ai_model():
         state_dict = None
         if weights_path.exists():
             print(f"[AI Model] Loading weights from {weights_path}")
-            checkpoint = torch.load(str(weights_path), map_location=_TORCH_DEVICE)
+            from ai_model.media_contract import load_checkpoint_archive
+            checkpoint = load_checkpoint_archive(
+                weights_path,
+                map_location=_TORCH_DEVICE,
+            )
             if isinstance(checkpoint, dict) and "vocab" in checkpoint:
                 _tokenizer.vocab    = checkpoint["vocab"]
                 _tokenizer.inv_vocab = checkpoint["inv_vocab"]
@@ -960,6 +972,7 @@ def _init_ai_model():
             _model_ready = True
 
     except Exception as e:
+        _model_init_error = f"{type(e).__name__}: {e}"
         print(f"[AI Model] Initialization error: {e}")
         import traceback
         traceback.print_exc()
@@ -2335,7 +2348,7 @@ def _load_checkpoint_from_storage():
         client = get_checkpoint_client()
         history = client.list_checkpoints()
         if not history:
-            print("[Storage] No checkpoints in storage — using local weights or random init")
+            print("[Storage] No checkpoint metadata in storage; local trained weights are still required")
             return
 
         # Use the most recent checkpoint
@@ -4205,7 +4218,12 @@ async def dashboard_stats():
         "total_api_keys": total_keys,
         "active_api_keys": active_keys,
         "total_requests_today": int(total_requests_today),
-        "model_status": "loaded" if _model_ready else "initializing",
+        "model_status": (
+            "loaded" if _model_ready
+            else "failed" if _model_init_error is not None
+            else "initializing"
+        ),
+        "model_error": _model_init_error,
         "training_state": training_state,
         "vocab_size": len(_tokenizer.vocab) if _tokenizer else 0,
         "weights_exist": (Path(__file__).parent / "ai_model" / "weights" / "model.pt").exists(),
@@ -5119,7 +5137,7 @@ async def platform_video_generate(req: PlatformVideoRequest, _key = Depends(requ
 async def platform_model_info(_key = Depends(verify_api_key)):
     """
     Returns the current model state for the main platform UI.
-    Shows whether the model is running on trained storage data or baseline weights.
+    Shows whether a compatible trained checkpoint is available.
     """
     from storage_client import get_storage
     storage = get_storage()
@@ -5131,8 +5149,9 @@ async def platform_model_info(_key = Depends(verify_api_key)):
 
     return {
         "model_ready": _model_ready,
+        "model_error": _model_init_error,
         "model_config": _model_config,
-        "weights_source": "disk" if weights_path.exists() else "random_init",
+        "weights_source": "disk" if weights_path.exists() else "unavailable",
         "weights_exist": weights_path.exists(),
         "last_checkpoint": t_state.get("last_checkpoint"),
         "training": {

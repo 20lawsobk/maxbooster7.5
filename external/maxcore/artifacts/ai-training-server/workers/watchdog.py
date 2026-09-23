@@ -18,6 +18,7 @@ Checks every POLL_INTERVAL seconds:
 
 import gc
 import logging
+import pickle
 import threading
 import time
 from collections import deque
@@ -738,31 +739,40 @@ class Watchdog:
             logger.error("[Watchdog] Could not restart storage health thread: %s", exc)
 
     def _check_checkpoint_integrity(self):
-        """Try loading checkpoint; delete it if corrupted."""
+        """Safely validate a checkpoint and preserve invalid files with provenance."""
         if self.weights_dir is None:
             return
         checkpoint = self.weights_dir / "model.pt"
         if not checkpoint.exists():
             return
         try:
-            import torch
-            ckpt = torch.load(str(checkpoint), map_location="cpu", weights_only=False)
-            if "model_state_dict" not in ckpt:
-                raise ValueError("Missing model_state_dict key")
-        except Exception as e:
+            from ai_model.media_contract import load_checkpoint_archive
+            load_checkpoint_archive(checkpoint, map_location="cpu")
+        except (ValueError, EOFError, pickle.UnpicklingError) as e:
             self._alert(
-                "critical", "checkpoint_corrupted",
-                f"Checkpoint model.pt failed integrity check: {e}",
-                "Deleted corrupted model.pt — will use random init on next restart"
+                "critical", "checkpoint_unusable",
+                f"Checkpoint model.pt is invalid or unusable: {e}",
+                "Quarantined invalid model.pt; inference remains unavailable"
             )
             try:
-                checkpoint.rename(checkpoint.with_suffix(".corrupt"))
-                logger.warning("[Watchdog] Renamed model.pt → model.pt.corrupt")
+                from ai_model.media_contract import quarantine_checkpoint
+                quarantined, record = quarantine_checkpoint(checkpoint, e)
+                logger.warning(
+                    "[Watchdog] Quarantined model.pt as %s (provenance: %s)",
+                    quarantined.name,
+                    record.name,
+                )
                 if self.training_state and self.training_lock:
                     with self.training_lock:
                         self.training_state["weights_exist"] = False
             except Exception as rename_err:
                 logger.error(f"[Watchdog] Could not rename checkpoint: {rename_err}")
+        except Exception as e:
+            self._alert(
+                "warning", "checkpoint_integrity_unverified",
+                f"Checkpoint model.pt could not be verified: {type(e).__name__}: {e}",
+                "No file changed; verification will be retried"
+            )
 
     def _check_memory(self, now: float):
         """Detect memory pressure and free resources before the OS OOM-kills the process."""

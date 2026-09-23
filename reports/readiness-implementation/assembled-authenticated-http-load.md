@@ -8,8 +8,9 @@ Artifact label: **source application authenticated HTTP simulation; not packed a
 
 `env -i PATH="$PATH" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs --http-load`
 
-Run started: 2026-09-23T13:51:37.405Z  
-Report generated: 2026-09-23T13:51:37.456Z
+Run started: 2026-09-23T14:12:17.164Z
+
+Report generated: 2026-09-23T14:12:17.172Z
 
 ## Safety boundary
 
@@ -24,6 +25,25 @@ Report generated: 2026-09-23T13:51:37.456Z
 
 ```json
 {
+  "capacityAdmission": {
+    "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
+    "hostMemAvailableBytes": 724705280,
+    "cgroup": {
+      "currentBytes": 6561001472,
+      "maximumBytes": 8589934592,
+      "headroomBytes": 2028933120,
+      "anonymousBytes": 5148545024,
+      "filePageCacheBytes": 1142087680,
+      "inactiveFileBytes": 953774080,
+      "activeFileBytes": 188125184,
+      "kernelBytes": 268029952,
+      "reclaimableKernelSlabBytes": 0
+    },
+    "effectiveAvailableBytes": 724705280,
+    "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
+    "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
+    "minimumAvailableBytes": 1610612736
+  },
   "schemaGeneration": "not_run",
   "postgres": "not_run",
   "appProcess": "not_run",
@@ -40,7 +60,7 @@ Report generated: 2026-09-23T13:51:37.456Z
 
 ## Sanitized failures
 
-- HTTP load capacity admission denied before PostgreSQL/application startup: less than 1536 MiB available
+- HTTP load capacity admission denied before PostgreSQL/application startup: 691 MiB effective available; 1536 MiB required
 
 ## Interpretation
 

@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from ai_model.media_contract import (
     render_with_budget, RenderCancelled, load_complete_checkpoint, require_audio_stream,
+    load_checkpoint_archive, quarantine_checkpoint,
 )
 from ai_model.video.media_manifest import validate_manifest, audio_cut_times, apply_manifest
 import ai_model.video.scenes as scene_module
@@ -63,6 +64,126 @@ class RetryTests(unittest.TestCase):
 
 
 class CheckpointTests(unittest.TestCase):
+    def test_serving_model_retains_training_checkpoint_head_key(self):
+        model_path = (
+            ROOT / "ai_model" / "gpu" / "hyper_creative_transformer.py"
+        )
+        tree = ast.parse(model_path.read_text(encoding="utf-8"))
+        model_class = next(
+            node for node in tree.body
+            if isinstance(node, ast.ClassDef)
+            and node.name == "HyperCreativeTransformerLM"
+        )
+        init = next(
+            node for node in model_class.body
+            if isinstance(node, ast.FunctionDef) and node.name == "__init__"
+        )
+        source = ast.unparse(init)
+        self.assertIn("self.head = nn.Linear(dim, vocab_size, bias=False)", source)
+        self.assertIn("self.head.weight = self.token_emb.weight", source)
+
+    def test_archive_loader_is_weights_only_and_validates_root(self):
+        tensor = types.SimpleNamespace(shape=(2, 3))
+        with patch("torch.load", return_value={"model_state_dict": {"weight": tensor}}) as loader:
+            checkpoint = load_checkpoint_archive("/not-opened/model.pt")
+        self.assertIn("model_state_dict", checkpoint)
+        loader.assert_called_once_with(
+            "/not-opened/model.pt", map_location="cpu", weights_only=True,
+        )
+
+        for invalid in (None, [], {}, {"model_state_dict": {}},
+                        {"model_state_dict": {1: tensor}}):
+            with patch("torch.load", return_value=invalid):
+                with self.assertRaises(ValueError):
+                    load_checkpoint_archive("/not-opened/model.pt")
+
+    def test_quarantine_preserves_existing_candidate_and_records_provenance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            weights = Path(directory) / "model.pt"
+            previous = Path(directory) / "model.corrupt"
+            weights.write_bytes(b"new invalid checkpoint")
+            previous.write_bytes(b"older quarantine")
+
+            quarantined, record_path = quarantine_checkpoint(weights, "bad archive")
+
+            self.assertEqual(previous.read_bytes(), b"older quarantine")
+            self.assertEqual(quarantined.name, "model.corrupt.1")
+            self.assertFalse(weights.exists())
+            self.assertEqual(quarantined.read_bytes(), b"new invalid checkpoint")
+            record = json.loads(record_path.read_text())
+            self.assertEqual(record["source"], "model.pt")
+            self.assertEqual(record["quarantined_as"], "model.corrupt.1")
+            self.assertEqual(record["reason"], "bad archive")
+            self.assertEqual(
+                record["sha256"],
+                "c3cf25ce8135a67889fd0c7ea5cde33c088c100b159d4e8ff029a15d82519671",
+            )
+
+    def test_quarantine_never_deletes_colliding_provenance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            weights = Path(directory) / "model.pt"
+            colliding_record = Path(directory) / "model.corrupt.json"
+            weights.write_bytes(b"new invalid checkpoint")
+            colliding_record.write_text("prior provenance", encoding="utf-8")
+
+            quarantined, record_path = quarantine_checkpoint(weights, "bad archive")
+
+            self.assertEqual(colliding_record.read_text(), "prior provenance")
+            self.assertEqual(quarantined.name, "model.corrupt.1")
+            self.assertEqual(record_path.name, "model.corrupt.1.json")
+            self.assertFalse(weights.exists())
+
+    def test_watchdog_does_not_quarantine_operational_load_failure_or_raw_state(self):
+        from workers.watchdog import Watchdog
+
+        with tempfile.TemporaryDirectory() as directory:
+            weights = Path(directory) / "model.pt"
+            weights.write_bytes(b"checkpoint")
+            watchdog = Watchdog()
+            watchdog.weights_dir = Path(directory)
+            watchdog._alert = Mock()
+
+            with patch(
+                "ai_model.media_contract.load_checkpoint_archive",
+                side_effect=MemoryError("capacity"),
+            ):
+                watchdog._check_checkpoint_integrity()
+            self.assertTrue(weights.exists())
+            self.assertEqual(
+                watchdog._alert.call_args.args[1],
+                "checkpoint_integrity_unverified",
+            )
+
+            watchdog._alert.reset_mock()
+            with patch(
+                "ai_model.media_contract.load_checkpoint_archive",
+                return_value={"weight": types.SimpleNamespace(shape=(2, 3))},
+            ):
+                watchdog._check_checkpoint_integrity()
+            self.assertTrue(weights.exists())
+            watchdog._alert.assert_not_called()
+
+    def test_watchdog_quarantines_semantically_unusable_checkpoint(self):
+        from workers.watchdog import Watchdog
+
+        with tempfile.TemporaryDirectory() as directory:
+            weights = Path(directory) / "model.pt"
+            weights.write_bytes(b"invalid checkpoint")
+            watchdog = Watchdog()
+            watchdog.weights_dir = Path(directory)
+            watchdog._alert = Mock()
+
+            with patch(
+                "ai_model.media_contract.load_checkpoint_archive",
+                side_effect=ValueError("no model state"),
+            ):
+                watchdog._check_checkpoint_integrity()
+
+            self.assertFalse(weights.exists())
+            self.assertTrue((Path(directory) / "model.corrupt").exists())
+            self.assertTrue((Path(directory) / "model.corrupt.json").exists())
+            self.assertEqual(watchdog._alert.call_args.args[1], "checkpoint_unusable")
+
     def test_complete_and_prefixed(self):
         model = Mock()
         tensor = types.SimpleNamespace(shape=(2, 3))

@@ -1,5 +1,27 @@
 # Current launch evidence matrix
 
+## Superseding continuation
+
+The original dated reconciliation below is historical. Its absent-backup and
+unapplied-commerce claims have been superseded: `database-recovery-drill.json`
+proves retained private App Storage readback/restore; the generation-bound
+`commerce-migration-live-receipt.json` records exact applied 0022/0023 schemas.
+Do not rerun those live migrations or request GCS IAM evidence.
+
+Credential-free provider processes passed with real isolated PostgreSQL, and
+MaxCore's existing offline suite passed 494 tests (eight dependency skips).
+Synthetic PDIM content restore passed through the production storage classes.
+Neither substitutes for actual provider acceptance, full model serving or
+retained recovery of actual user content. Current model loading remains blocked
+on a compatible checkpoint; cold-boot/load acceptance remains blocked by runner
+capacity/isolation. See `launch-blockers-current.md`,
+`model-readiness-current.md`, `pdim-content-recovery-drill.json` and
+`credential-free-simulation-handoff.md` for superseding evidence.
+
+Current release decision remains **NOT READY**; publication has not occurred.
+
+## Historical reconciliation (before retained recovery and live migrations)
+
 **Decision: NOT READY.** This was a read-only reconciliation. No old passing
 test was rerun, no runtime was started, and no database, provider, storage,
 payment, DNS, or deployment call was made. No secret or environment value was

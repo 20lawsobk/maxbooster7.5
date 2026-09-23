@@ -526,6 +526,8 @@ class HyperCreativeTransformerLM(nn.Module):
             for _ in range(n_layers)
         ])
         self.ln_final = HyperLN(dim, self.gpu)
+        self.head = nn.Linear(dim, vocab_size, bias=False)
+        self.head.weight = self.token_emb.weight
 
         # Weight-tied output head (shares token_emb.weight, exactly like TransformerLM).
         rope_cos, rope_sin = precompute_rope_freqs(dim // n_heads, max_len)

@@ -51,6 +51,7 @@ const reportStem = httpLoadOnly ? "assembled-authenticated-http-load" : "assembl
 const reportJson = join(root, `reports/readiness-implementation/${reportStem}.json`);
 const reportMd = join(root, `reports/readiness-implementation/${reportStem}.md`);
 const evidence = {
+  capacityAdmission: "not_run",
   schemaGeneration: "not_run",
   postgres: "not_run",
   appProcess: "not_run",
@@ -523,16 +524,51 @@ function sha256(text) {
   return createHash("sha256").update(text).digest("hex");
 }
 
-function availableMemoryBytes() {
+function memoryAdmissionSnapshot() {
   const meminfo = readFileSync("/proc/meminfo", "utf8");
   const availableKiB = Number(meminfo.match(/^MemAvailable:\s+(\d+)\s+kB$/m)?.[1] ?? 0);
-  let available = availableKiB * 1024;
+  const hostMemAvailableBytes = availableKiB * 1024;
+  let cgroup;
   try {
     const limitText = readFileSync("/sys/fs/cgroup/memory.max", "utf8").trim();
     const current = Number(readFileSync("/sys/fs/cgroup/memory.current", "utf8").trim());
-    if (limitText !== "max") available = Math.min(available, Number(limitText) - current);
+    const stat = Object.fromEntries(
+      readFileSync("/sys/fs/cgroup/memory.stat", "utf8")
+        .trim()
+        .split("\n")
+        .map((line) => {
+          const [name, value] = line.split(/\s+/, 2);
+          return [name, Number(value)];
+        }),
+    );
+    const maximumBytes = limitText === "max" ? null : Number(limitText);
+    cgroup = {
+      currentBytes: current,
+      maximumBytes,
+      headroomBytes: maximumBytes === null ? null : Math.max(0, maximumBytes - current),
+      anonymousBytes: stat.anon ?? null,
+      filePageCacheBytes: stat.file ?? null,
+      inactiveFileBytes: stat.inactive_file ?? null,
+      activeFileBytes: stat.active_file ?? null,
+      kernelBytes: stat.kernel ?? null,
+      reclaimableKernelSlabBytes: stat.slab_reclaimable ?? null,
+    };
   } catch {}
-  return available;
+  const candidates = [
+    hostMemAvailableBytes,
+    ...(cgroup?.headroomBytes === null || cgroup?.headroomBytes === undefined
+      ? []
+      : [cgroup.headroomBytes]),
+  ];
+  return {
+    source: "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
+    hostMemAvailableBytes,
+    cgroup: cgroup ?? "unavailable",
+    effectiveAvailableBytes: Math.min(...candidates),
+    admissionRule: "minimum of host MemAvailable and raw cgroup headroom",
+    reclaimableAccounting:
+      "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
+  };
 }
 
 function nearestRank(values, percentile) {
@@ -565,7 +601,9 @@ async function createLoadSession(email, username, password, register) {
 
 async function runAuthenticatedHttpLoad() {
   const minimumAvailable = 1536 * 1024 * 1024;
-  const admittedAvailable = availableMemoryBytes();
+  const admission = memoryAdmissionSnapshot();
+  const admittedAvailable = admission.effectiveAvailableBytes;
+  evidence.capacityAdmission = { ...admission, minimumAvailableBytes: minimumAvailable };
   if (admittedAvailable < minimumAvailable) {
     throw new Error(`HTTP load capacity admission denied: ${Math.floor(admittedAvailable / 1024 / 1024)} MiB available; 1536 MiB required`);
   }
@@ -682,7 +720,7 @@ async function runAuthenticatedHttpLoad() {
   }
   const result = {
     label: "source application HTTP simulation; not packed application acceptance",
-    admission: { availableBytes: admittedAvailable, minimumAvailableBytes: minimumAvailable },
+    admission: evidence.capacityAdmission,
     thresholds: { minimumSuccessPercent: 99, maximumP95Ms: 500, maximumP99Ms: 1000 },
     settings: {
       phases: phaseSettings.map(({ name, workers, durationMs }) => ({ name, workers, durationSeconds: durationMs / 1000 })),
@@ -724,8 +762,19 @@ async function runAuthenticatedHttpLoad() {
 }
 
 try {
-  if (httpLoadOnly && availableMemoryBytes() < 1536 * 1024 * 1024) {
-    throw new Error("HTTP load capacity admission denied before PostgreSQL/application startup: less than 1536 MiB available");
+  if (httpLoadOnly) {
+    const minimumAvailableBytes = 1536 * 1024 * 1024;
+    evidence.capacityAdmission = {
+      ...memoryAdmissionSnapshot(),
+      minimumAvailableBytes,
+    };
+    if (evidence.capacityAdmission.effectiveAvailableBytes < minimumAvailableBytes) {
+      throw new Error(
+        `HTTP load capacity admission denied before PostgreSQL/application startup: ` +
+        `${Math.floor(evidence.capacityAdmission.effectiveAvailableBytes / 1024 / 1024)} MiB effective available; ` +
+        `1536 MiB required`,
+      );
+    }
   }
   mkdirSync(join(temp, "home"));
   mkdirSync(join(temp, "cwd"));
@@ -1025,7 +1074,8 @@ Artifact label: **${result.artifactLabel}**
 
 \`${result.command}\`
 
-Run started: ${startedAt}  
+Run started: ${startedAt}
+
 Report generated: ${result.generatedAt}
 
 ## Safety boundary

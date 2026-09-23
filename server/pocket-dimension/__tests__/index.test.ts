@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { randomUUID, createHash } from "crypto";
 import { gzipSync } from "zlib";
 import { PocketDimension, type PocketChunk, type PocketEntry, type PocketMetadata } from "../index.js";
@@ -8,20 +8,31 @@ import { PocketDimension, type PocketChunk, type PocketEntry, type PocketMetadat
 // vitest.config.ts, "no running server required"), so we replace it with an
 // in-memory Map that behaves like the subset of the interface PocketDimension
 // actually calls (get/set as raw string values, matching real PDIM semantics).
-const { mockPdimStore } = vi.hoisted(() => ({
+const { mockPdimStore, mockPdimWrites, mockGetFailure } = vi.hoisted(() => ({
   mockPdimStore: new Map<string, string>(),
+  mockPdimWrites: [] as string[],
+  mockGetFailure: { value: null as Error | null },
 }));
 
 vi.mock("../../lib/pdimClient.js", () => ({
   getPdimClient: () => ({
-    get: async (key: string) =>
-      mockPdimStore.has(key) ? (mockPdimStore.get(key) as string) : null,
+    get: async (key: string) => {
+      if (mockGetFailure.value) throw mockGetFailure.value;
+      return mockPdimStore.has(key) ? (mockPdimStore.get(key) as string) : null;
+    },
     set: async (key: string, value: string) => {
+      mockPdimWrites.push(key);
       mockPdimStore.set(key, value);
       return "OK";
     },
   }),
 }));
+
+beforeEach(() => {
+  mockPdimStore.clear();
+  mockPdimWrites.length = 0;
+  mockGetFailure.value = null;
+});
 
 function findChunkBytes(id: string): Buffer {
   const chunkKey = [...mockPdimStore.keys()].find((k) =>
@@ -193,5 +204,63 @@ describe("PocketDimension compression engine (codec-mesh integration)", () => {
 
     const stats = dim.getStats();
     expect(stats.uniqueChunks).toBe(1);
+  });
+});
+
+describe("PocketDimension recovery initialization", () => {
+  it("allows a genuinely new pocket only when metadata and index are both absent", async () => {
+    const id = `test-new-${randomUUID()}`;
+    const dim = new PocketDimension({ id, name: id });
+    await expect(dim.open()).resolves.toBeUndefined();
+    expect(mockPdimWrites).toEqual([]);
+  });
+
+  it.each([
+    ["malformed metadata JSON", "{", null],
+    ["invalid metadata shape", "{}", '{"entries":{},"chunks":{}}'],
+    [
+      "malformed index JSON",
+      JSON.stringify({
+        id: "ID",
+        name: "ID",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        totalSize: 0,
+        compressedSize: 0,
+        chunkCount: 0,
+        maxDepth: 0,
+        encrypted: false,
+        version: 1,
+      }),
+      "{",
+    ],
+    ["orphaned index", null, '{"entries":{},"chunks":{}}'],
+  ])("fails closed for %s without writing", async (_name, metadataFixture, indexFixture) => {
+    const id = metadataFixture?.includes('"ID"')
+      ? "ID"
+      : `test-corrupt-${randomUUID()}`;
+    if (metadataFixture !== null) {
+      mockPdimStore.set(`pdim:meta:${id}:metadata`, metadataFixture);
+    }
+    if (indexFixture !== null) {
+      mockPdimStore.set(`pdim:meta:${id}:index`, indexFixture);
+    }
+    const before = new Map(mockPdimStore);
+    const dim = new PocketDimension({ id, name: id });
+    await expect(dim.open()).rejects.toThrow(/unavailable or corrupt/);
+    expect(mockPdimWrites).toEqual([]);
+    expect(mockPdimStore).toEqual(before);
+  });
+
+  it("propagates PDIM read failures and remains retryable without writes", async () => {
+    const id = `test-network-${randomUUID()}`;
+    const dim = new PocketDimension({ id, name: id });
+    mockGetFailure.value = new Error("synthetic PDIM outage");
+    await expect(dim.open()).rejects.toThrow(/unavailable or corrupt/);
+    expect(mockPdimWrites).toEqual([]);
+
+    mockGetFailure.value = null;
+    await expect(dim.open()).resolves.toBeUndefined();
+    expect(mockPdimWrites).toEqual([]);
   });
 });

@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-09-23T13:51:37.456Z",
-  "startedAt": "2026-09-23T13:51:37.405Z",
+  "generatedAt": "2026-09-23T14:12:17.172Z",
+  "startedAt": "2026-09-23T14:12:17.164Z",
   "decision": "FAIL",
   "command": "env -i PATH=\"$PATH\" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs --http-load",
   "artifactLabel": "source application authenticated HTTP simulation; not packed application acceptance",
-  "sourceRevision": "fbe555cf1a910ffdc9ab7d7d6fd696b3b2e3f2dd",
+  "sourceRevision": "17fb1fcd91bf2c0a836db943052c88a1529afef6",
   "sourceFileDigestsSha256": {
-    "scripts/readiness-assembled-acceptance.mjs": "b8a70611158e7e70f4b006e5dd953b58ee613ea1731839c30bf2f056ee521e56",
+    "scripts/readiness-assembled-acceptance.mjs": "9aa7f8fb208b266b505392cb3944dd9bc100045fd4e2c0ff4e441d53d54753d5",
     "scripts/readiness-egress-guard.mjs": "68df9f32a2526a71fc6c62b4603b3a36c2cf14cb29ad812582a10378d1506693",
     "server/index.ts": "2f59eb145b657d0a181946d689019dac3be1c9e73e8bd6a440eb75aaf924e422",
     "server/routes.ts": "d0e66c91a44fbdc26a418a996b4555463acb7c28c1d85d03e3d9b2508eb9c734",
@@ -24,6 +24,25 @@
     "disposableWorkingDirectory": true
   },
   "evidence": {
+    "capacityAdmission": {
+      "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
+      "hostMemAvailableBytes": 724705280,
+      "cgroup": {
+        "currentBytes": 6561001472,
+        "maximumBytes": 8589934592,
+        "headroomBytes": 2028933120,
+        "anonymousBytes": 5148545024,
+        "filePageCacheBytes": 1142087680,
+        "inactiveFileBytes": 953774080,
+        "activeFileBytes": 188125184,
+        "kernelBytes": 268029952,
+        "reclaimableKernelSlabBytes": 0
+      },
+      "effectiveAvailableBytes": 724705280,
+      "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
+      "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
+      "minimumAvailableBytes": 1610612736
+    },
     "schemaGeneration": "not_run",
     "postgres": "not_run",
     "appProcess": "not_run",
@@ -37,7 +56,7 @@
     "cleanup": "pass"
   },
   "failures": [
-    "HTTP load capacity admission denied before PostgreSQL/application startup: less than 1536 MiB available"
+    "HTTP load capacity admission denied before PostgreSQL/application startup: 691 MiB effective available; 1536 MiB required"
   ],
   "observations": [],
   "untested": [

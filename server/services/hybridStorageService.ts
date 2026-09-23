@@ -160,10 +160,15 @@ export class HybridStorageService {
           "[HybridStorage] Pocket Dimension storage initialized (PDIM-only, 32 MB chunks, level-9 gzip, dedup)",
         );
       } catch (e) {
-        logger.warn(
-          `[HybridStorage] Pocket Dimension unavailable: ${(e as any)?.message}`,
+        logger.error(
+          { err: e },
+          "[HybridStorage] Pocket Dimension unavailable; refusing to initialize PDIM-only storage",
         );
         this.coldPocket = null;
+        throw new Error(
+          "Hybrid storage initialization failed: Pocket Dimension is unavailable or corrupt",
+          { cause: e },
+        );
       }
 
       await this.loadIndex();
@@ -181,34 +186,99 @@ export class HybridStorageService {
   private async loadIndex(): Promise<void> {
     try {
       const raw = await getPdimClient().get("hybrid:storage:index");
-      if (!raw) throw new Error("No index in PDIM");
-      const index = JSON.parse(raw);
+      // Only an authoritative null means this is a legitimate new empty
+      // index. Errors and corrupt records must abort initialization before a
+      // later upload can save an empty index over recoverable ownership data.
+      if (raw === null) {
+        this.fileIndex = new Map();
+        this.contentHashIndex = new Map();
+        this.publicContentHashes = new Map();
+        return;
+      }
+      const index: unknown = JSON.parse(raw);
+      if (
+        !index ||
+        typeof index !== "object" ||
+        Array.isArray(index) ||
+        !(index as any).files ||
+        typeof (index as any).files !== "object" ||
+        Array.isArray((index as any).files) ||
+        !(index as any).contentHashes ||
+        typeof (index as any).contentHashes !== "object" ||
+        Array.isArray((index as any).contentHashes) ||
+        !(index as any).publicHashes ||
+        typeof (index as any).publicHashes !== "object" ||
+        Array.isArray((index as any).publicHashes)
+      ) {
+        throw new Error("invalid hybrid storage index root");
+      }
 
-      this.fileIndex = new Map(
-        Object.entries(index?.files || {}).map(([k, v]: [string, any]) => [
-          k,
-          {
-            ...v,
-            createdAt: new Date(v?.createdAt),
-            lastAccessed: new Date(v?.lastAccessed),
-            location: "pocket-dimension",
-          },
-        ]),
-      );
-      this.contentHashIndex = new Map(
-        Object.entries(index?.contentHashes || {}),
-      );
-      this.publicContentHashes = new Map(
-        Object.entries(index?.publicHashes || {}),
-      );
+      const nextFiles = new Map<string, HybridFileMetadata>();
+      for (const [key, value] of Object.entries((index as any).files)) {
+        const v = value as any;
+        const createdAt = new Date(v?.createdAt);
+        const lastAccessed = new Date(v?.lastAccessed);
+        if (
+          !v ||
+          typeof v !== "object" ||
+          Array.isArray(v) ||
+          v.key !== key ||
+          typeof v.userId !== "string" ||
+          typeof v.originalName !== "string" ||
+          typeof v.mimeType !== "string" ||
+          typeof v.contentHash !== "string" ||
+          typeof v.isPublic !== "boolean" ||
+          typeof v.isDeduplicated !== "boolean" ||
+          !["hot", "cold"].includes(v.tier) ||
+          !["sizeBytes", "compressedSize", "accessCount"].every(
+            (field) =>
+              typeof v[field] === "number" &&
+              Number.isFinite(v[field]) &&
+              v[field] >= 0,
+          ) ||
+          !Number.isFinite(createdAt.getTime()) ||
+          !Number.isFinite(lastAccessed.getTime())
+        ) {
+          throw new Error(`invalid hybrid storage file entry ${JSON.stringify(key)}`);
+        }
+        nextFiles.set(key, {
+          ...v,
+          createdAt,
+          lastAccessed,
+          location: "pocket-dimension",
+        });
+      }
+
+      const nextHashes = new Map<string, string[]>();
+      for (const [hash, keys] of Object.entries((index as any).contentHashes)) {
+        if (
+          !Array.isArray(keys) ||
+          !keys.every((key) => typeof key === "string" && nextFiles.has(key))
+        ) {
+          throw new Error(`invalid hybrid content-hash entry ${JSON.stringify(hash)}`);
+        }
+        nextHashes.set(hash, keys as string[]);
+      }
+      const nextPublic = new Map<string, string>();
+      for (const [hash, key] of Object.entries((index as any).publicHashes)) {
+        if (typeof key !== "string" || !nextFiles.has(key)) {
+          throw new Error(`invalid hybrid public-hash entry ${JSON.stringify(hash)}`);
+        }
+        nextPublic.set(hash, key);
+      }
+
+      this.fileIndex = nextFiles;
+      this.contentHashIndex = nextHashes;
+      this.publicContentHashes = nextPublic;
 
       logger.info(
         `[HybridStorage] Loaded index from PDIM with ${this.fileIndex.size} entries`,
       );
-    } catch {
-      this.fileIndex = new Map();
-      this.contentHashIndex = new Map();
-      this.publicContentHashes = new Map();
+    } catch (error) {
+      throw new Error(
+        "Failed to load hybrid storage ownership index: stored value is unavailable or corrupt",
+        { cause: error },
+      );
     }
   }
 

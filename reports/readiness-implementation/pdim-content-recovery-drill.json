@@ -1,0 +1,51 @@
+{
+  "status": "passed",
+  "command": "node scripts/pdim-content-recovery-drill.mjs",
+  "scope": "synthetic disposable PDIM content recovery",
+  "implementation": "HybridStorageService upload/read using PocketDimension hybrid-cold-storage entries and hybrid:storage:index over the local implementation of the production PDIM HTTP exec contract",
+  "evidence": {
+    "productionDataTouched": false,
+    "contentKeys": [
+      "synthetic-pdim-owner/synthetic-recovery/29207238-recovery-tone.raw",
+      "synthetic-pdim-owner/synthetic-recovery/c98751eb-cover-fragment.bin"
+    ],
+    "contentChecksums": [
+      "dc40db3711bde1a6ffb0d913163184ec8fcbf01f9dd85b74111f67fdce644fc8",
+      "d7ab55e103d55fe20db18f4951f59dbfa1c5d2eb7e6dbe58c8cdfcb0c8ec09a6"
+    ],
+    "snapshotSha256": "7e7867aae708bfba0cecb192bf685e02a6e91076a8ebb7571e67588724c6c461",
+    "snapshotBytes": 4413,
+    "productionPocketId": "hybrid-cold-storage",
+    "productionEntryPrefix": "storage/",
+    "hybridIndexKey": "hybrid:storage:index",
+    "sourceQuiescedAndClosed": true,
+    "sourceDestroyedBeforeRestore": true,
+    "independentProcessVerifiedFiles": 2,
+    "ownershipIndexVerified": true,
+    "unauthorizedReadsRejected": true,
+    "corruptSnapshotRejected": true,
+    "corruptRestoreDestinationNotOverwritten": true,
+    "semanticOwnershipCorruptionsRejected": [
+      "malformedJson",
+      "invalidRoot",
+      "danglingOwnership"
+    ],
+    "semanticCorruptionPreservedRestoredBytes": true,
+    "originalExportPreserved": true
+  },
+  "recoveryGate": {
+    "behavior": "PocketDimension metadata/index and the hybrid ownership index now initialize empty only after authoritative null reads; malformed JSON, invalid shapes, partial records, and PDIM read failures fail explicitly before writes.",
+    "focusedTestCommand": "NODE_OPTIONS=--max-old-space-size=256 npx vitest run server/pocket-dimension/__tests__/index.test.ts tests/unit/hybrid-storage-index-recovery.test.ts --pool=threads --maxWorkers=1",
+    "focusedTestsPassed": 18
+  },
+  "cleanup": {
+    "attempted": true,
+    "failures": []
+  },
+  "failure": null,
+  "gaps": [
+    "Off-instance transport was simulated with a separate local temporary export directory only; no remote backup service or independent machine was used.",
+    "No AppStorage, shared database, production credentials, or actual user data was read, exported, restored, or deleted.",
+    "This proves the real HybridStorageService -> PocketDimension -> PDIM key path for synthetic content, not recovery of retained production user PDIM content; that operational recovery remains a gap."
+  ]
+}
