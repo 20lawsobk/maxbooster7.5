@@ -5,6 +5,25 @@ the additive commerce migrations. PDIM and MaxCore remain exclusively local.
 
 ## Result: blocked before backup or migration
 
+### Explicit owner-provided bucket recheck
+
+The owner supplied a specific bucket. It is now configured separately as
+`DATABASE_RECOVERY_BUCKET_ID`; existing PDIM/application storage configuration
+was not changed. A read-only object listing against that exact bucket succeeded.
+This supersedes the earlier inability to access the configured destination.
+
+Bucket metadata and bucket IAM-policy reads each returned HTTP 403. Thus object
+access is established, but public-access prevention, uniform access, public IAM
+principals, and retention policy cannot yet be independently verified by this
+runtime. The default-bucket attachment result below does not negate explicit
+bucket access. Do not diagnose this as missing storage or ask for another ID.
+
+No sensitive upload or live migration was performed. Next prerequisite is
+bucket privacy/retention evidence or permission to read those controls, plus an
+approved recovery-retention duration—not another bucket identifier.
+
+### Earlier default/configured-bucket observations
+
 - The runtime's default-bucket endpoint returned no usable bucket identifier.
 - A configured bucket environment variable is present, but SDK access using it
   failed. Bucket metadata and IAM checks could not complete.

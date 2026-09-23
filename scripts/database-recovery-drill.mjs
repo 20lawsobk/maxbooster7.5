@@ -9,6 +9,7 @@ import { createHash, randomInt } from "node:crypto";
 import {
   chmodSync,
   mkdtempSync,
+  readFileSync,
   readdirSync,
   rmSync,
   statSync,
@@ -20,12 +21,19 @@ import { generateUncommittedDatabaseDump } from "../server/services/backup/datab
 import { safePostgresDiagnostic } from "../server/services/backup/postgresTools.ts";
 
 const RUN_COMMAND =
-  'env -i PATH="$PATH" HOME=/tmp NEON_DATABASE_URL="$NEON_DATABASE_URL" node --import tsx scripts/database-recovery-drill.mjs';
+  process.argv.includes("--retained-app-storage")
+    ? 'env -i PATH="$PATH" HOME=/tmp NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_RECOVERY_BUCKET_ID="$DATABASE_RECOVERY_BUCKET_ID" DATABASE_RECOVERY_APPROVED_RETENTION_SECONDS="$DATABASE_RECOVERY_APPROVED_RETENTION_SECONDS" node --import tsx scripts/database-recovery-drill.mjs --retained-app-storage'
+    : 'env -i PATH="$PATH" HOME=/tmp NEON_DATABASE_URL="$NEON_DATABASE_URL" node --import tsx scripts/database-recovery-drill.mjs';
 const markdownPath = "reports/readiness-implementation/database-recovery-drill.md";
 const jsonPath = "reports/readiness-implementation/database-recovery-drill.json";
 const startedAt = new Date().toISOString();
 const root = resolve(".");
 const sourceUrl = process.env.NEON_DATABASE_URL;
+const retainedMode = process.argv.includes("--retained-app-storage");
+const retainedConfiguration = {
+  bucketId: process.env.DATABASE_RECOVERY_BUCKET_ID || undefined,
+  approvedRetentionSeconds: process.env.DATABASE_RECOVERY_APPROVED_RETENTION_SECONDS,
+};
 if (!sourceUrl) throw new Error("NEON_DATABASE_URL is required; synthetic proof is forbidden");
 const sourceIdentityParts = (() => {
   const parsed = new URL(sourceUrl);
@@ -82,6 +90,7 @@ process.env.PATH = [...postgresBins, ...inherited.PATH.split(":").filter(Boolean
 const temp = mkdtempSync("/tmp/database-recovery-drill-");
 chmodSync(temp, 0o700);
 const dumpPath = join(temp, "source.sql");
+const retainedReadbackPath = join(temp, "retained-source.sql");
 const dataPath = join(temp, "data");
 const socketPath = join(temp, "socket");
 const logPath = join(temp, "postgres.log");
@@ -92,12 +101,13 @@ const result = {
   status: "blocked",
   liveSource: true,
   durableBackupCreated: false,
+  recoveryMode: retainedMode ? "private-retained-app-storage" : "ephemeral",
   sourceAccess: "read-only exported snapshot",
   runCommand: RUN_COMMAND,
   safety: {
     sourceMutation: false,
     appStarted: false,
-    providerCalls: false,
+    providerCalls: retainedMode,
     dumpScratchMode: "0600",
     scratchRemoved: false,
     targetNetwork: "loopback and private Unix socket only",
@@ -111,8 +121,26 @@ let target;
 let localStarted = false;
 let localBin;
 let port;
+let restoreDumpPath = dumpPath;
 
 const digest = value => createHash("sha256").update(value).digest("hex");
+const currentRecoverySource = () => {
+  const files = [
+    "scripts/database-recovery-drill.mjs",
+    "scripts/recovery-private-store.mjs",
+    "server/services/backup/databaseDump.ts",
+    "server/services/backup/postgresTools.ts",
+  ];
+  const hash = createHash("sha256");
+  for (const file of files) hash.update(file).update("\0").update(readFileSync(file)).update("\0");
+  const revision = spawnSync("git", ["rev-parse", "HEAD"], {
+    cwd: root, env: commandEnv({}), encoding: "utf8", timeout: 5_000,
+  });
+  if (revision.status !== 0 || !/^[a-f0-9]{40,64}$/.test(revision.stdout.trim())) {
+    throw new Error("Could not establish the recovery implementation source revision");
+  }
+  return { revision: revision.stdout.trim(), currentHash: hash.digest("hex") };
+};
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const sanitizeDiagnostic = value => {
   let sanitized = safePostgresDiagnostic(value);
@@ -317,6 +345,50 @@ try {
     sourceVersion: dump.sourceVersion,
     consistentSnapshot: true,
   };
+  if (retainedMode) {
+    const { createRecoveryStorage, verifyPrivateRetainedBucket, retainAndReadBackRecoveryDump } =
+      await import("./recovery-private-store.mjs");
+    const sourceCode = currentRecoverySource();
+    const storage = await createRecoveryStorage({ bucketId: retainedConfiguration.bucketId });
+    const bucketPolicy = await verifyPrivateRetainedBucket(
+      storage.bucket, retainedConfiguration.approvedRetentionSeconds,
+    );
+    const retained = await retainAndReadBackRecoveryDump({
+      bucket: storage.bucket,
+      dumpPath,
+      readbackPath: retainedReadbackPath,
+      dumpSha256: dump.checksum,
+      sourceMajor: dump.sourceMajor,
+      sourceRevision: sourceCode.revision,
+      currentSourceHash: sourceCode.currentHash,
+      snapshotEvidence: {
+        tableCount: sourceInventory.tables.length,
+        rowCountsSha256: digest(JSON.stringify(sourceInventory.counts)),
+        rowContentHashesSha256: digest(JSON.stringify(sourceInventory.contentHashes)),
+        schemaDefinitionRecordCount: sourceSchema.count,
+        schemaFingerprint: sourceSchema.fingerprint,
+      },
+    });
+    restoreDumpPath = retainedReadbackPath;
+    result.durableBackupCreated = true;
+    result.evidence.retained = {
+      bucketId: storage.bucketId,
+      retentionSeconds: bucketPolicy.retentionSeconds,
+      retentionLocked: bucketPolicy.retentionLocked,
+      privacy: bucketPolicy.privacy,
+      prefix: retained.prefix,
+      dumpObject: retained.dumpObject,
+      manifestObject: retained.manifestObject,
+      readback: retained.readback,
+      restoreInputWasGenerationBoundReadback: true,
+      sourceRevision: sourceCode.revision,
+      currentSourceHash: sourceCode.currentHash,
+    };
+    recordCheck("retained bucket privacy and retention are approved", true,
+      `private policy checks passed; retention=${bucketPolicy.retentionSeconds}s`);
+    recordCheck("retained generation readback matches dump", true,
+      `${retained.readback.bytes} bytes matched CRC32C and SHA-256`);
+  }
 
   localBin = postgresBins.find(directory => {
     const version = spawnSync(join(directory, "postgres"), ["--version"], { encoding: "utf8" }).stdout;
@@ -355,7 +427,7 @@ try {
   target = undefined;
 
   run(join(localBin, "psql"), [
-    "-X", "-v", "ON_ERROR_STOP=1", "--single-transaction", "-d", targetUrl, "-f", dumpPath,
+    "-X", "-v", "ON_ERROR_STOP=1", "--single-transaction", "-d", targetUrl, "-f", restoreDumpPath,
   ], { timeout: 45 * 60 * 1000 });
 
   target = new pg.Client({ connectionString: targetUrl });
@@ -391,6 +463,12 @@ try {
   };
   result.status = "pass";
 } catch (error) {
+  if (retainedMode && error && typeof error === "object" && error.retainedArtifacts) {
+    result.evidence.retainedUnverified = {
+      ...error.retainedArtifacts,
+      status: "retained-private-artifacts-not-verified-or-auto-deleted",
+    };
+  }
   result.failures.push(sanitizeDiagnostic(error));
   result.status = "blocked";
 } finally {
@@ -427,10 +505,14 @@ try {
     "## Scope and safety",
     "",
     "- The configured NEON_DATABASE_URL was accessed only by a read-only, repeatable-read transaction and pg_dump using its exported snapshot.",
-    "- No application startup, migration, source DDL/catalog write, storage-provider call, or other network call was performed.",
+    retainedMode
+      ? "- No application startup, migration, or source DDL/catalog write was performed. Provider calls were limited to the verified private retained bucket."
+      : "- No application startup, migration, source DDL/catalog write, storage-provider call, or other network call was performed.",
     "- The target was a new disposable PostgreSQL cluster bound to loopback plus a private Unix socket on a unique port. Exact target identity and emptiness were checked before restore.",
     "- Dump and cluster scratch stayed under a mode-0700 temporary directory; the dump file was mode 0600. Scratch was removed.",
-    "- The dump was ephemeral and uncommitted. This drill makes no durable-backup, retention, or RPO claim.",
+    retainedMode
+      ? "- Restore input was the downloaded, immutable-generation retained copy; retained objects are never automatically deleted, including after a blocked restore."
+      : "- The dump was ephemeral and uncommitted. This drill makes no durable-backup, retention, or RPO claim.",
     "- Schema parity canonicalizes relations/views, columns and types/defaults, user-defined types, constraints, index definitions, function/procedure bodies, sequence definitions/ownership, triggers, and row-security policies.",
     "",
     "## Sanitized evidence",
@@ -441,8 +523,18 @@ try {
       `- Dump bytes: ${result.evidence.dump.bytes}; SHA-256: ${result.evidence.dump.sha256}; source version: ${result.evidence.dump.sourceVersion}.`,
       `- Restored aggregate row count: ${result.evidence.restore?.aggregateRowCount ?? "not reached"}; exact per-table count comparison: ${result.evidence.restore?.exactPerTableCountsMatched ? "PASS" : "not reached"}.`,
       `- Deterministic per-table row-content hashes: ${result.evidence.restore?.exactPerTableContentHashesMatched ? "PASS" : "not reached"}; no row values or per-table hashes are stored in this report.`,
+      ...(result.evidence.retained ? [
+        `- Private retained prefix: ${result.evidence.retained.prefix}; dump generation: ${result.evidence.retained.dumpObject.generation}; manifest generation: ${result.evidence.retained.manifestObject.generation}.`,
+        `- Retention: ${result.evidence.retained.retentionSeconds} seconds; generation-bound CRC32C and streamed SHA-256 readback: PASS.`,
+      ] : []),
     ] : []),
     ...(result.failures.length ? ["", "## Blockers", "", ...result.failures.map(failure => `- ${failure}`)] : []),
+    ...(result.evidence.retainedUnverified ? [
+      "",
+      "## Unverified retained private artifacts",
+      "",
+      `- Prefix: ${result.evidence.retainedUnverified.prefix}; dump generation: ${result.evidence.retainedUnverified.dumpObject.generation}. The private object was intentionally not automatically deleted.`,
+    ] : []),
     "",
     "No row values, connection values, host identity, database name, role name, or temporary port are included in this report.",
   ];
