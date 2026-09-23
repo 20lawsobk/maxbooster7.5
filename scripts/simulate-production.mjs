@@ -16,9 +16,10 @@
  * option that removes that copy.
  */
 
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { copyFileSync, cpSync, createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, readlinkSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
+import http from "node:http";
 import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -290,6 +291,196 @@ function captureClusterTopology(startLogPath, expectedWorkerCount, pdimPort) {
     },
     passed: primaryAlive && workersPassed && maxcoreOwnerPassed && pdimOwnerPassed,
   };
+}
+
+// A keep-alive client socket pins each request to the worker that accepted it.
+// Attribute the server end of that exact TCP connection, not a round-robin
+// guess or an HTTP header supplied by the application.
+function connectedWorkerPid(serverPort, clientPort, workerPids) {
+  const probe = spawnSync("lsof", [
+    "-nP", "-a", `-iTCP:${serverPort}`, "-sTCP:ESTABLISHED", "-Fpn",
+  ], { encoding: "utf8", timeout: 10_000 });
+  if (probe.status !== 0) throw new Error(`worker socket attribution failed (lsof exit ${probe.status ?? probe.error?.code})`);
+  let pid = null;
+  const matches = new Set();
+  for (const line of probe.stdout.split(/\r?\n/)) {
+    if (/^p\d+$/.test(line)) pid = Number(line.slice(1));
+    if (line.startsWith("n")
+      && line.includes(`:${serverPort}->`)
+      && line.endsWith(`:${clientPort}`)
+      && workerPids.includes(pid)) matches.add(pid);
+  }
+  if (matches.size !== 1) throw new Error(`connection ${clientPort} was not uniquely attributable to a live app worker`);
+  return [...matches][0];
+}
+
+function requestOnAgent(port, agent, path, options = {}) {
+  return new Promise((resolveResult, reject) => {
+    let clientPort = null;
+    const req = http.request({
+      hostname: "127.0.0.1", port, path,
+      method: options.method || "GET", headers: options.headers || {},
+      agent,
+    }, (response) => {
+      const chunks = [];
+      response.on("data", (chunk) => chunks.push(chunk));
+      response.on("end", () => resolveResult({
+        status: response.statusCode,
+        body: Buffer.concat(chunks).toString("utf8"),
+        setCookie: response.headers["set-cookie"] || [],
+        clientPort,
+      }));
+    });
+    req.on("socket", (socket) => {
+      if (socket.connecting) socket.once("connect", () => { clientPort = socket.localPort; });
+      else clientPort = socket.localPort;
+    });
+    req.setTimeout(10_000, () => req.destroy(new Error("worker-pinned HTTP request timed out")));
+    req.on("error", reject);
+    req.end(options.body);
+  });
+}
+
+function totpCode(secret) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = 0;
+  let value = 0;
+  const bytes = [];
+  for (const char of secret.toUpperCase().replace(/=+$/, "")) {
+    const digit = alphabet.indexOf(char);
+    if (digit < 0) throw new Error("2FA setup returned an invalid base32 secret");
+    value = (value << 5) | digit;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((value >>> bits) & 255);
+    }
+  }
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30_000)));
+  const digest = createHmac("sha1", Buffer.from(bytes)).update(counter).digest();
+  const offset = digest.at(-1) & 15;
+  return ((digest.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).toString().padStart(6, "0");
+}
+
+async function checkPackedCrossWorkerRecovery({
+  appUrl, port, pgEnv, pgRoot, databaseUrl, workerPids, jobStore,
+}) {
+  const evidence = {
+    scope: "real packed application routes in isolated namespace; synthetic admin and normal session/MFA/CSRF",
+    createPath: "/api/backup/pdim/create",
+    lookupPath: "/api/backup/pdim/jobs/:jobId",
+    externalRecoveryOutcomeIsNotRequired: true,
+    passed: false,
+  };
+  const agents = [];
+  try {
+    const jar = new Map();
+    const absorb = (response) => {
+      for (const header of response.setCookie || []) {
+        const pair = header.split(";", 1)[0];
+        const index = pair.indexOf("=");
+        if (index > 0) jar.set(pair.slice(0, index), pair.slice(index + 1));
+      }
+    };
+    const headers = (write = false) => ({
+      "x-forwarded-proto": "https",
+      cookie: [...jar].map(([key, value]) => `${key}=${value}`).join("; "),
+      "x-csrf-token": csrf,
+      ...(write ? { "content-type": "application/json" } : {}),
+    });
+    const token = await request(`${appUrl}/api/csrf-token`, 10_000, {
+      headers: { "x-forwarded-proto": "https" },
+    });
+    absorb(token);
+    const csrf = parseJson(token.body)?.csrfToken;
+    if (token.status !== 200 || typeof csrf !== "string" || jar.get("csrf-token") !== csrf)
+      throw new Error(`admin CSRF initialization failed: HTTP ${token.status}`);
+    const suffix = `${process.pid.toString(36)}_${Date.now().toString(36)}`;
+    const registration = await request(`${appUrl}/api/auth/register`, 15_000, {
+      method: "POST", headers: headers(true),
+      body: JSON.stringify({
+        email: `packed-recovery-${suffix}@example.invalid`,
+        username: `packed_recovery_${suffix}`,
+        password: "Packed!Simulation9aAcceptance",
+        confirmPassword: "Packed!Simulation9aAcceptance",
+        firstName: "Packed", lastName: "Recovery",
+      }),
+    });
+    absorb(registration);
+    const userId = parseJson(registration.body)?.id;
+    if (registration.status !== 200 || !/^[0-9a-f-]{36}$/i.test(userId))
+      throw new Error(`synthetic account registration failed: HTTP ${registration.status}`);
+    // Only the disposable namespace-local database is touched. Normal HTTP
+    // authentication, session, 2FA and CSRF guards remain fully enforced.
+    const promotion = await runProcess("psql", [
+      "-X", "-v", "ON_ERROR_STOP=1", "-At", databaseUrl,
+      "-c", `UPDATE users SET role = 'admin' WHERE id = '${userId}' RETURNING id`,
+    ], { cwd: pgRoot, env: pgEnv, timeoutMs: 10_000 });
+    if (promotion.code !== 0 || !promotion.output.split(/\r?\n/).includes(userId)
+      || !promotion.output.split(/\r?\n/).includes("UPDATE 1"))
+      throw new Error(`isolated synthetic account role assignment failed: exit ${promotion.code}`);
+    const setup = await request(`${appUrl}/api/auth/2fa/setup`, 15_000, {
+      method: "POST", headers: headers(true), body: "{}",
+    });
+    const secret = parseJson(setup.body)?.secret;
+    if (setup.status !== 200 || typeof secret !== "string")
+      throw new Error(`normal 2FA setup failed: HTTP ${setup.status}`);
+    const verification = await request(`${appUrl}/api/auth/2fa/verify`, 15_000, {
+      method: "POST", headers: headers(true), body: JSON.stringify({ code: totpCode(secret) }),
+    });
+    if (verification.status !== 200 || parseJson(verification.body)?.success !== true)
+      throw new Error(`normal 2FA verification failed: HTTP ${verification.status}`);
+    const pinned = new Map();
+    for (let attempt = 0; attempt < 32 && pinned.size < 2; attempt++) {
+      const agent = new http.Agent({ keepAlive: true, maxSockets: 1 });
+      agents.push(agent);
+      const probe = await requestOnAgent(port, agent, "/api/auth/me", { headers: headers() });
+      const user = parseJson(probe.body);
+      if (probe.status !== 200 || user?.id !== userId || user?.role !== "admin"
+        || user?.twoFactorEnabled !== true || !probe.clientPort)
+        throw new Error(`worker-pinned authenticated admin probe failed: HTTP ${probe.status}`);
+      const pid = connectedWorkerPid(port, probe.clientPort, workerPids);
+      if (!pinned.has(pid)) pinned.set(pid, { agent, clientPort: probe.clientPort });
+      else agent.destroy();
+    }
+    evidence.attributedWorkerPids = [...pinned.keys()];
+    if (pinned.size !== 2) throw new Error("could not pin distinct authenticated connections to both app workers");
+    const [[creatorPid, creator], [readerPid, reader]] = [...pinned.entries()];
+    const created = await requestOnAgent(port, creator.agent, "/api/backup/pdim/create", {
+      method: "POST", headers: headers(true), body: "{}",
+    });
+    evidence.createStatus = created.status;
+    evidence.createWorkerPid = connectedWorkerPid(port, created.clientPort, workerPids);
+    const jobId = parseJson(created.body)?.job?.id;
+    if (created.status !== 202 || !/^[0-9a-f-]{36}$/i.test(jobId)
+      || created.clientPort !== creator.clientPort || evidence.createWorkerPid !== creatorPid)
+      throw new Error(`protected recovery create did not return an attributable queued job: HTTP ${created.status}`);
+    evidence.jobId = jobId;
+    const lookedUp = await requestOnAgent(port, reader.agent, `/api/backup/pdim/jobs/${jobId}`, {
+      headers: headers(),
+    });
+    const job = parseJson(lookedUp.body)?.job;
+    evidence.lookupStatus = lookedUp.status;
+    evidence.lookupWorkerPid = connectedWorkerPid(port, lookedUp.clientPort, workerPids);
+    evidence.lookupState = job?.state ?? null;
+    if (lookedUp.status !== 200 || job?.id !== jobId
+      || !["queued", "running", "blocked", "complete"].includes(job.state)
+      || lookedUp.clientPort !== reader.clientPort || evidence.lookupWorkerPid !== readerPid
+      || creatorPid === readerPid)
+      throw new Error(`protected job lookup did not return the same job from the other worker: HTTP ${lookedUp.status}`);
+    const persisted = JSON.parse(readFileSync(jobStore, "utf8"));
+    evidence.durableJobPresent = persisted.jobs?.some((entry) => entry.id === jobId);
+    evidence.durableStorePrivate = (statSync(jobStore).mode & 0o777) === 0o600;
+    if (!evidence.durableJobPresent || !evidence.durableStorePrivate)
+      throw new Error("cluster primary did not persist the private recovery job receipt");
+    evidence.passed = true;
+  } catch (error) {
+    evidence.error = error instanceof Error ? error.message : String(error);
+  } finally {
+    for (const agent of agents) agent.destroy();
+  }
+  return evidence;
 }
 
 function commandPath(command) {
@@ -610,6 +801,7 @@ async function main() {
     const approvedRuntimeSourcePaths = [
       "scripts/simulate-production.mjs",
       "server/cluster.ts",
+      "server/computeSizing.ts",
       "server/index.ts",
       "server/lib/localPdimServer.ts",
       "server/middleware/csrf.ts",
@@ -623,6 +815,7 @@ async function main() {
       "tests/unit/pdim-recovery-cluster-integration.test.ts",
       "tests/unit/pdim-recovery-operator.test.ts",
       "tests/unit/maxcore-python-launcher.test.ts",
+      "tests/unit/compute-sizing-cpu-share.test.ts",
     ];
     const synchronized = [];
     for (const relative of approvedRuntimeSourcePaths) {
@@ -651,7 +844,7 @@ async function main() {
       logs: join(attemptArchive, "logs"),
       result: report.result,
       canonicalBuildExitCode: report.build.exitCode,
-      note: "Preserved prior canonical build/runtime evidence; it predates the approved Python launcher source refresh and is not current-source acceptance.",
+      note: "Preserved prior canonical build/runtime evidence; it predates the approved runtime and scaled app-worker CPU-share source refresh and is not current-source acceptance.",
     };
     report.historicalAttempts = [...priorHistory, historicalAttempt];
     report.sourceSnapshot.synchronizedAt = new Date().toISOString();
@@ -1031,11 +1224,13 @@ async function main() {
       "scripts/boosterstate-toolchain.nix",
       "scripts/build-boosterstate.sh",
       "server/services/toolostRuntimeConfig.ts",
+      "server/computeSizing.ts",
       "server/middleware/csrf.ts",
       "tests/fixtures/pdim-recovery-cluster-fixture.ts",
       "tests/fixtures/retained-pdim-source-fixture-worker.ts",
       "tests/unit/maxcore-cluster-ownership.test.ts",
       "tests/unit/maxcore-python-launcher.test.ts",
+      "tests/unit/compute-sizing-cpu-share.test.ts",
       "tests/unit/maxcore-readiness-gate.test.ts",
       "tests/unit/pdim-recovery-cluster-integration.test.ts",
       "tests/unit/pdim-recovery-operator.test.ts",
@@ -1263,7 +1458,7 @@ async function main() {
       });
     }
     report.failures = report.failures.filter((failure) =>
-      !["startup", "postgres", "runtime-isolation", "dependency-readiness", "model-readiness", "load"].includes(failure.stage));
+      !["startup", "postgres", "runtime-isolation", "dependency-readiness", "cluster-topology", "cluster-recovery-lookup", "cluster-resource-admission", "model-readiness", "load"].includes(failure.stage));
     report.startup.exitCode = null;
     report.startup.signal = null;
     report.startup.liveness = { observed: false, transportOnly: false, realServer: false, jsonObserved: false, earlyAppResponse: false, startupResponseObserved: false, samples: [] };
@@ -1271,6 +1466,92 @@ async function main() {
     delete report.startup.model;
     delete report.startup.load;
     delete report.startup.cluster;
+    delete report.startup.recoveryLookup;
+    delete report.startup.redis;
+    // Ask the *packaged* sizing policy before starting dependencies. Two
+    // logical app processes time-share their existing one-CPU app role budget
+    // on this measured 4-CPU/8-GiB dev VM. Never claim two dedicated CPUs or
+    // change the MaxCore, Python, sidecar or memory/headroom reservations.
+    const sizingProbe = spawnSync(nodePath, ["--input-type=module", "-e", `
+      import { computeWorkerSizing, effectiveCapacity } from "./dist/compute-sizing.mjs";
+      const capacity = effectiveCapacity();
+      let app, overrideError = null;
+      try { app = computeWorkerSizing({ envOverrideVar: "CLUSTER_WORKERS" }); }
+      catch (error) {
+        overrideError = error.message;
+        app = computeWorkerSizing();
+      }
+      const maxcore = computeWorkerSizing({ envOverrideVar: "MAXCORE_LOCAL_CLUSTER_WORKERS" });
+      console.log(JSON.stringify({
+        capacity, app: { cpuBudget: app.cpuBudget, cpuLimit: app.cpuLimit,
+          memLimit: app.memLimit, workerCount: app.workerCount,
+          workerCpuShare: app.workerCpuShare, reservationsMB: app.reservationsMB,
+          workerMemoryMB: app.workerMemoryMB, workerHeapMB: app.workerHeapMB },
+        maxcore: { cpuLimit: maxcore.cpuLimit, memLimit: maxcore.memLimit,
+          workerCount: maxcore.workerCount, cpuBudget: maxcore.cpuBudget,
+          workerCpuShare: maxcore.workerCpuShare,
+          reservationsMB: maxcore.reservationsMB }, overrideError,
+      }));
+    `], {
+      cwd: copyRoot,
+      env: buildEnv({
+        NODE_ENV: "production", MAXCORE_LOCAL: "1",
+        CLUSTER_WORKERS: "2", APP_WORKER_CPU_SHARE: "0.5",
+      }),
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+    const sizing = sizingProbe.status === 0 ? parseJson(sizingProbe.stdout.trim()) : null;
+    if (!sizing?.app || !sizing?.capacity || !sizing?.maxcore) {
+      report.startup.clusterAdmission = { passed: false, probeExitCode: sizingProbe.status };
+      addFailure("cluster-resource-admission", "packaged shared-compute sizing could not be verified before startup");
+      report.result = "CLUSTER_RESOURCE_ADMISSION_BLOCKED";
+      return;
+    }
+    const requiredCpuQuota = Math.ceil(2 * 0.5 * sizing.capacity.cpus / sizing.app.cpuBudget);
+    report.startup.clusterAdmission = {
+      profile: "scaled development production-process simulation; not production VM throughput",
+      productionReservedVm: { vcpus: 16, memoryGiB: 64, appWorkerCpuShareDefault: 1 },
+      requiredAppWorkers: 2,
+      observedEffectiveCpus: sizing.capacity.cpus,
+      observedMemoryGiB: sizing.capacity.memoryGB,
+      observedCgroupMemoryBytes: report.resourceProfile?.observed?.memoryLimitBytes ?? null,
+      appCpuBudget: sizing.app.cpuBudget,
+      appCpuLimit: sizing.app.cpuLimit,
+      appMemoryLimit: sizing.app.memLimit,
+      appWorkerCpuShare: sizing.app.workerCpuShare,
+      appWorkerMemoryMB: sizing.app.workerMemoryMB,
+      appWorkerHeapMB: sizing.app.workerHeapMB,
+      maxcoreCpuLimit: sizing.maxcore.cpuLimit,
+      maxcoreCpuBudget: sizing.maxcore.cpuBudget,
+      maxcoreMemoryLimit: sizing.maxcore.memLimit,
+      maxcoreWorkerCpuShare: sizing.maxcore.workerCpuShare,
+      roleReservationsMB: sizing.app.reservationsMB,
+      minimumEffectiveCpusForTwoAppWorkersAtCurrentShare: requiredCpuQuota,
+      requiredMemory: "app and MaxCore role reservations and default 20% headroom must also admit the workers",
+      overrideError: sizing.overrideError,
+      passed: !sizing.overrideError
+        && sizing.capacity.cpus === 4
+        && sizing.capacity.memoryGB > 0 && sizing.capacity.memoryGB <= 8
+        && report.resourceProfile?.observed?.memoryLimitBytes === 8 * 1024 ** 3
+        && sizing.app.cpuBudget === 1 && sizing.app.workerCpuShare === 0.5
+        && sizing.app.workerCount === 2 && sizing.app.cpuLimit >= 2
+        && sizing.app.memLimit >= 2 && sizing.app.workerMemoryMB >= 1024
+        && sizing.maxcore.cpuBudget === 1
+        && sizing.maxcore.workerCpuShare === 1 && sizing.maxcore.workerCount >= 1
+        && JSON.stringify(sizing.app.reservationsMB) === JSON.stringify(sizing.maxcore.reservationsMB),
+    };
+    if (!report.startup.clusterAdmission.passed) {
+      addFailure("cluster-resource-admission",
+        `packed compute policy did not admit the exact scaled 4-CPU/8-GiB profile with two app processes sharing one app CPU: ` +
+        `${sizing.overrideError || "capacity/share or unchanged MaxCore/memory reservations mismatched"}; ` +
+        `effective CPUs ${sizing.capacity.cpus}, app budget ${sizing.app.cpuBudget}, ` +
+        `app worker share ${sizing.app.workerCpuShare}, app limit ${sizing.app.cpuLimit}, ` +
+        `memory limit ${sizing.app.memLimit}, MaxCore budget ${sizing.maxcore.cpuBudget}; ` +
+        `minimum ${requiredCpuQuota} effective CPUs at the configured app-worker share`);
+      report.result = "CLUSTER_RESOURCE_ADMISSION_BLOCKED";
+      return;
+    }
     const [port, pdimPort, gatewayPort, maxcorePort, boosterPort, modelPort, modelHealthPort, pythonPort, pgPort, redisPort] = await freePorts(10);
     const appUrl = `http://127.0.0.1:${port}`;
     const pgRoot = join(transientRoot, "postgres");
@@ -1331,9 +1612,16 @@ async function main() {
       PDIM_EXEC_URL: "http://127.0.0.1:9/mock-pdim", PDIM_HTTP_EXEC_URL: "http://127.0.0.1:9/mock-pdim",
       STORAGE_BEARER_TOKEN: "production-simulation-mock-token", PDIM_BEARER_TOKEN: "production-simulation-mock-token",
       ENABLE_LEGACY_AI_SIDECAR: "0", DNS_NODE_LOCAL: "0",
-      ENABLE_CLUSTER: "true", CLUSTER_WORKERS: "2",
+      ENABLE_CLUSTER: "true", CLUSTER_WORKERS: "2", APP_WORKER_CPU_SHARE: "0.5",
+      PDIM_RECOVERY_JOB_STORE_PATH: join(transientRoot, "pdim-recovery-jobs.json"),
       BUILD_ID: "production-simulation", MAX_CONCURRENT_REQUESTS: "10",
     });
+    report.sourceSnapshot.harnessEvidence = {
+      buildSnapshotSha256: report.sourceSnapshot.synchronization?.paths?.find(
+        (item) => item.path === "scripts/simulate-production.mjs")?.sha256 ?? null,
+      executionSha256: await hashFile(fileURLToPath(import.meta.url)),
+      note: "The executing external harness is hashed separately from the controlled refreshed source snapshot; packed app provenance requires its own canonical build and manifest-verified capsules.",
+    };
     const startLog = join(logsRoot, `start-${report.startup.attempts.length + 1}.log`);
     report.startup.currentLogPath = startLog;
     startLogStream = createWriteStream(startLog);
@@ -1357,10 +1645,9 @@ async function main() {
           report.startup.liveness.jsonObserved = true;
           break;
         }
-        // The production server intentionally serves a plain startup response
-        // while DB probes are pending. It is still evidence that real
-        // start.sh reached the app, not the boot stub; readiness remains
-        // degraded if the required mock DB never becomes available.
+        // The boot stub intentionally serves a plain startup response while
+        // start.sh is preparing dependencies. This is not evidence that the
+        // real cluster started, nor proof that a database probe failed.
         if (!body && /starting up/i.test(response.body)) {
           report.startup.liveness.earlyAppResponse = true;
           report.startup.liveness.startupResponseObserved = true;
@@ -1372,7 +1659,7 @@ async function main() {
     if (!report.startup.liveness.jsonObserved && !report.startup.liveness.earlyAppResponse) {
       addFailure("startup", "no liveness response was observed before timeout or process exit");
     } else if (!report.startup.liveness.jsonObserved) {
-      addFailure("startup", "early app response observed, but JSON liveness and /api/ready were not reached before required database startup probes failed");
+      addFailure("startup", "only boot-stub liveness observed; the packed cluster never reached JSON liveness and /api/ready");
     }
     if (report.startup.liveness.jsonObserved) {
       const readinessDeadline = Date.now() + 180_000;
@@ -1686,13 +1973,29 @@ async function main() {
         }
       }
     }
+    if (report.startup.cluster?.passed && report.startup.readiness.stabilization?.passed
+      && report.startup.model?.healthy && report.startup.load?.passed) {
+      report.startup.recoveryLookup = await checkPackedCrossWorkerRecovery({
+        appUrl, port, pgEnv, pgRoot, databaseUrl,
+        workerPids: report.startup.cluster.liveWorkerPids,
+        jobStore: runtimeEnv.PDIM_RECOVERY_JOB_STORE_PATH,
+      });
+      if (!report.startup.recoveryLookup.passed) {
+        addFailure("cluster-recovery-lookup",
+          `protected packed cross-worker recovery create/lookup failed: ${report.startup.recoveryLookup.error}`);
+      }
+    } else {
+      report.startup.recoveryLookup = {
+        passed: false, reason: "prerequisite packed cluster/model/readiness/load gates did not pass",
+      };
+    }
     if (!report.startup.readiness.fullReady) {
       const healthStage = report.startup.liveness.jsonObserved
         ? "JSON liveness was observed"
         : report.startup.liveness.earlyAppResponse
           ? "only the early plain-text startup response was observed; JSON liveness was never reached"
           : "no liveness response was observed";
-      report.startup.readiness.note = `${healthStage}; /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used.`;
+      report.startup.readiness.note = `${healthStage}; /api/ready was not observed before the launcher exited or timed out. PostgreSQL schema and Redis probes are reported separately; unavailable Redis after launcher exit is not proof it caused that exit. No live credentials or shared Neon target was used.`;
       report.startup.dependencyEvidence = {
         database: `isolated PostgreSQL was started on namespace-local port ${pgPort}`,
         redis: report.startup.redis.ready
@@ -1705,8 +2008,9 @@ async function main() {
     const runtimeAcceptancePassed = report.startup.liveness.jsonObserved
       && report.startup.readiness.fullReady
       && report.startup.cluster?.passed
+      && report.startup.recoveryLookup?.passed
       && !report.failures.some((failure) =>
-        ["startup", "dependency-readiness", "cluster-topology", "model-readiness", "load"].includes(failure.stage));
+        ["startup", "dependency-readiness", "cluster-topology", "cluster-recovery-lookup", "model-readiness", "load"].includes(failure.stage));
     report.result = runtimeAcceptancePassed
       ? "PASS"
       : report.startup.liveness.earlyAppResponse
@@ -1715,7 +2019,7 @@ async function main() {
     if (runtimeAcceptancePassed) {
       report.productionReadiness = {
         publishReady: false,
-        reason: "Pre-deployment cluster-enabled packed-runtime simulation passed two-worker topology with primary-owned MaxCore and in-process primary-owned PDIM, isolated dependencies, mandatory loaded-model health, three stable full-readiness probes, and preregistered packed-load SLO gates. The /api/warm/status fields are nonmandatory diagnostics and are not an acceptance gate. This fixed-runtime-VM evidence does not claim cross-replica authority, publication, provider-production, or post-publish lifecycle evidence.",
+        reason: "Scaled 4-CPU/8-GiB pre-deployment production-process simulation passed two app workers time-sharing the existing one-CPU app role budget (APP_WORKER_CPU_SHARE=0.5), primary-owned MaxCore and in-process primary-owned PDIM, protected cross-worker recovery-job create/lookup and private durable receipt, isolated dependencies, mandatory loaded-model health, three stable full-readiness probes, and unchanged preregistered 150-request load SLO gates. This is not production 16-vCPU/64-GiB throughput evidence. A blocked external-provider recovery job proves lookup only, not successful off-VM retention; the separately retained recovery algorithm drill addresses that scope. This fixed-runtime-VM evidence does not claim cross-replica authority, publication, provider-production, or post-publish lifecycle evidence.",
       };
     }
     await runProcess("pg_ctl", ["-D", pgRoot, "-m", "immediate", "-w", "stop"], {

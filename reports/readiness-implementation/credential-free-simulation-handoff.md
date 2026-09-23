@@ -4,24 +4,52 @@ Scope authorized by owner: simulate production processes without provider API
 keys; owner will publish. External providers are explicitly simulated, never
 claimed to have accepted a real transaction or delivery.
 
-## Current handoff — partial pass; cluster acceptance open
+## Current handoff — scaled two-worker simulation PASS
 
 The host-admission and namespace-unsupported observations later in this file are
-**historical and superseded**. Canonical current-source run
-`2026-09-23T18-57-24-314Z` subsequently completed in a distinct unprivileged
-user/network namespace with canonical build exit 0, loaded-model health,
-three stable full-readiness probes, cold and warm capsule acceptance, and
-authenticated load of 150/150 at P95/P99 69.139/77.562 ms. That run used
-`DISABLE_CLUSTER=true`; its model/load result remains valid only for the
-single-process scope. The current decision is **PARTIAL PASS**. Recovery/cluster
-integration and cluster-packed acceptance remain open pending the shared-authority
-and durable-job recovery fix plus an enabled-cluster run with at least two app
-workers and unchanged gates.
+**historical and superseded**. The latest current-source canonical report for
+`2026-09-23T18-57-24-314Z` records **PASS** with `copy`, `build`, `size`,
+`restore`, and `startup` complete, no failures, and source isolation enforced.
+The build exited **0**, five actual capsule SHA-256 hashes matched manifests,
+cold critical/background restores exited **0**, warm restore idempotence
+passed, and the disposable footprint measured **4.729 GiB** under the 8-GiB
+limit. The 17 approved refreshed source path hashes and external harness hash
+match the current checkout and preserved copy. Parallel capsule packing was
+retained.
 
-The retained-PDIM pre-deployment recovery simulation also passed. Its external
-object-store boundary was simulated; publication and actual provider writes,
-charges, settlement, delivery, live-bucket use, and production-user-content
-recovery were not performed or claimed.
+The owner's production Reserved VM is **16 vCPUs / 64 GiB**. This isolated
+development run had **4 effective CPUs / 8-GiB cgroup memory** and explicitly
+used `APP_WORKER_CPU_SHARE=0.5` plus `CLUSTER_WORKERS=2`: two real app HTTP
+processes **time-share the existing one-CPU total app CPU role budget** rather
+than claiming two dedicated cores or production throughput. The packaged
+policy admitted two app workers at 1,219 MiB each, one MaxCore worker, and
+unchanged role reservations/headroom; the production worker CPU share
+defaults to 1. Primary PID **4109** owned the sole MaxCore root (PID **4133**)
+and in-process PDIM listener; real HTTP workers **4126** and **4138** were
+both live and did not own a MaxCore root. The local packaged model reported
+HTTP **200**, `status=healthy`, `model_loaded=true`. Three full-ready HTTP
+**200** `ok` probes were spaced **6,031/6,039 ms**; mandatory authenticated
+warmup passed **20/20**. Packed measured load passed **150/150** at **100%**
+success, aggregate **P95 150.836 ms / P99 179.888 ms**, against unchanged
+**99% / 500 ms / 1,000 ms** thresholds.
+
+Under normal synthetic-admin session/MFA/CSRF protection, job creation
+returned HTTP **202** on worker **4126** and a cross-worker lookup returned
+HTTP **200** on worker **4138** (state `running`), with a job in the
+**private durable store**.
+This verifies the scoped durable lookup and cluster-primary ownership, not
+successful off-VM external backup. Controlled teardown recorded startup exit
+**143** after acceptance; the disposable copy remains retained. The earlier
+`DISABLE_CLUSTER=true` single-process result (**150/150**, P95/P99
+**69.139/77.562 ms**) and the `-attempt-3.json` failed resource-admission
+attempt remain preserved historical evidence, not additional cluster passes.
+
+The separately retained-PDIM pre-deployment recovery simulation also passed.
+Its external object-store boundary was simulated; publication and actual
+provider writes, charges, settlement, delivery, live-bucket use,
+production-user-content recovery, and production 16-vCPU/64-GiB throughput
+were not performed or claimed. Publication remains owner-controlled;
+`productionReadiness.publishReady=false` is retained.
 
 ## Executed pass
 
@@ -75,6 +103,6 @@ MaxCore, or waive thresholds to manufacture a pass.
 At that historical point no deployment was performed or suggested as ready.
 Credential rotation and actual external provider permissions/delivery/settlement
 still cannot be certified by credential-free simulation. The former
-namespace/capacity limitation is superseded, but complete pre-deployment
-acceptance remains open for the cluster gates described above. Publication
-remains owner-controlled.
+namespace/capacity limitation is superseded by the **scaled** cluster gates
+documented above, not by a production-capacity or provider-outcome claim.
+Publication remains owner-controlled.

@@ -39,3 +39,9 @@ must omit `externalPort`, not merely use a different public port.
 **Why:** Preview can acquire sidecar public mappings while the services run, so
 the next strict startup can reject a configuration that previously passed.
 Recheck only the port blocks when this occurs; do not weaken the port contract.
+
+Omitting `externalPort` alone was repeatedly undone by development port detection
+after startup. Explicitly setting `exposeLocalhost = false` on each private
+sidecar entry, as documented by Replit, left zero public sidecar mappings while
+the running preview and loaded-model readiness remained healthy. Preserve this
+setting when maintaining the port table; never remove the startup security gate.

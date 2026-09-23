@@ -64,6 +64,9 @@ export interface ComputeSizingResult {
   pythonThreads: number;
   /** Fractional CPU shares may be time-shared on small quota allocations. */
   cpuBudget: number;
+  /** CPU budget allocated per app worker (not a kernel-enforced per-process quota).
+   * Defaults to 1; MaxCore workers always use 1 regardless of the app setting. */
+  workerCpuShare: number;
   reservationsMB: { headroom: number; primary: number; maxcorePrimary: number; sidecars: number; python: number };
 }
 
@@ -112,7 +115,20 @@ export function computeWorkerSizing(
   // physical CPU. Keep one worker per role at low quotas; larger quotas can
   // admit more within disjoint shares. reserveCore:false never steals a share.
   const cpuBudget = numCPUs * (local ? 0.25 : 0.75);
-  const cpuLimit = Math.max(1, Math.floor(cpuBudget));
+  // Explicitly time-share the *existing* app budget in a scaled dev simulation.
+  // Do not alter the measured host capacity, the MaxCore allocation, or the
+  // production default. This is a sizing budget, NOT an OS-enforced CPU quota.
+  const appCluster = opts.envOverrideVar === "CLUSTER_WORKERS";
+  const workerCpuShare = appCluster
+    ? positiveConfig("APP_WORKER_CPU_SHARE", 1)
+    : 1;
+  if (workerCpuShare > 1) {
+    throw new Error("APP_WORKER_CPU_SHARE must be at most 1");
+  }
+  const cpuLimit = Math.min(
+    os.availableParallelism(),
+    Math.max(1, Math.floor(cpuBudget / workerCpuShare)),
+  );
   const memoryPerWorker = opts.memPerWorkerGB ?? (maxcore && local ? maxcoreMinimumMB : appMinimumMB) / 1024;
   if (!Number.isFinite(memoryPerWorker) || memoryPerWorker <= 0) throw new Error("Invalid per-worker memory budget");
   const memLimit = Math.floor(freeMemGB / memoryPerWorker);
@@ -157,6 +173,7 @@ export function computeWorkerSizing(
     pythonMemoryMB: reservationsMB.python,
     pythonThreads: 1,
     cpuBudget,
+    workerCpuShare,
     reservationsMB,
   };
 }

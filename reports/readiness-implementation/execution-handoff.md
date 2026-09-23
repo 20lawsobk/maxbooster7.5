@@ -1,17 +1,55 @@
 # Latest readiness execution evidence
 
-Decision: **PARTIAL PASS — RECOVERY/CLUSTER AND CLUSTER-PACKED ACCEPTANCE OPEN**.
-Canonical current-source production-simulation run
-`2026-09-23T18-57-24-314Z` supersedes the prior namespace/capacity limitation:
-build exit 0, loaded-model HTTP 200 with `status=healthy` and
-`model_loaded=true`, three stable full-ready HTTP 200 probes, 150/150 measured
-authenticated requests at P95/P99 69.139/77.562 ms, cold/warm manifest-verified
-capsule recovery, and isolated runtime cleanup all passed in single-process mode.
-Because the harness set `DISABLE_CLUSTER=true`, those results do not prove
-cross-worker PDIM/recovery ownership or durable-job behavior. Complete acceptance
-requires the recovery fix and a cluster-enabled packed run with at least two app
-workers, the same owned-model contract, three stable readiness probes, and
-unchanged 150-request SLO thresholds.
+Decision: **PASS — SCALED TWO-WORKER PRE-DEPLOYMENT SIMULATION, NOT PRODUCTION
+THROUGHPUT OR PUBLICATION.** The latest report for preserved run
+`2026-09-23T18-57-24-314Z` records `PASS` and completed copy, canonical
+build, size, restore, and startup stages without failures. The **4 effective
+CPU / 8-GiB-cgroup** development host used `APP_WORKER_CPU_SHARE=0.5` and
+`CLUSTER_WORKERS=2`: two logical app processes time-share the existing
+**one-CPU total app role budget**, while MaxCore retains its own one-CPU role
+share and all memory/headroom reservations remain. The packed-policy admission
+probe passed with two app workers (1,219 MiB per worker; 731 MiB heap), one
+MaxCore worker, and no override error. The owner's **production Reserved VM
+is 16 vCPUs / 64 GiB**, whose app-worker share defaults to 1; this result
+does not pretend the development host has production capacity.
+
+The refreshed canonical build exited **0**. All **five actual packed capsule
+SHA-256 hashes** were rechecked against their manifests; all 17 approved
+source paths match both their current checkout and disposable copy, including
+the packaged compute-sizing change and focused test. Cold critical and
+background restores exited **0**, warm idempotence passed, and the measured
+disposable footprint was **4.729 GiB**, under 8 GiB. Parallel capsule packing
+was retained. The **1.48-GiB** sanitized Nix/payload preflight is not a
+measured production target-image closure. The source checkout was not the build
+working directory; network isolation was enforced. Startup exit **143** was
+controlled owned-process teardown after the acceptance checks, not a failed
+cluster start; the disposable copy and report remain retained for audit.
+
+Cluster topology passed with primary PID **4109**, two live app HTTP workers
+**4126** and **4138**, primary-only MaxCore root PID **4133** (zero
+worker-owned roots), and the PDIM listener in the primary process. The owned
+model returned HTTP **200**, `status=healthy`, `model_loaded=true`; three
+public full-ready HTTP **200** `ok` probes were spaced **6,031/6,039 ms**
+apart, with database, Redis, routes, audit, automation and MaxCore all `ok`.
+Authenticated warmup passed **20/20** and measured packed load **150/150**
+with **100%** success and aggregate **P95 150.836 ms / P99 179.888 ms**,
+against unchanged **99% / 500 ms / 1,000 ms** gates.
+
+Normal protected synthetic-admin session/MFA/CSRF created a PDIM recovery
+job by HTTP **202** on worker **4126**; a lookup on different worker **4138**
+returned HTTP **200** with state `running` and a job present in the
+**private durable store**.
+This proves the scoped protected cross-worker lookup and primary ownership,
+**not** successful external object-store backup, provider acceptance,
+published-user-content recovery, cross-replica authority or real production
+traffic. `productionReadiness.publishReady=false` remains explicit.
+
+The `DISABLE_CLUSTER=true` single-process PASS (P95/P99
+**69.139/77.562 ms**) is historical only. The preserved
+`-attempt-3.json` cluster startup failed packed compute admission under the
+earlier one-CPU-per-worker default on 4 CPUs; it is not rewritten as a pass
+or attributed to Redis/DB/app failure. The latest build incorporates the
+opt-in half-CPU app worker share; the production sizing default is unchanged.
 
 Publication is not this gate and did not occur. No actual provider write, charge,
 settlement, delivery, or production-content restore is claimed.
@@ -19,8 +57,9 @@ settlement, delivery, or production-content restore is claimed.
 ## Historical execution handoff — superseded
 
 Everything below this heading is retained as prior point-in-time evidence. Its
-open-item lists and **NOT READY** implications are superseded except for the
-explicit current recovery/cluster and cluster-packed gates above.
+open-item lists and **NOT READY** implications are superseded by the latest
+scoped scaled-cluster result above, not converted into production/provider
+outcome claims.
 
 ## Completed verification
 

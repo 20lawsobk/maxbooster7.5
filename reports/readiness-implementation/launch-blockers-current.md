@@ -22,12 +22,38 @@ simulation checks remain open; post-publication checks are separate.
 
 ## Current authoritative pre-deployment decision
 
-**PARTIAL PASS — RECOVERY/CLUSTER AND CLUSTER-PACKED ACCEPTANCE OPEN.**
-Production-simulation run `2026-09-23T18-57-24-314Z` remains valid evidence for
-its explicitly single-process scope, but it set `DISABLE_CLUSTER=true`. It
-therefore did not exercise cross-worker PDIM ownership, shared recovery
-authority, or durable recovery-job lookup and cannot establish the complete
-six-gate pre-deployment decision.
+Preview restoration was separately verified after the scaled simulation: the
+landing page rendered and all six `/api/ready` subsystems reported `ok`, including
+the supervised loaded model. Private sidecar entries explicitly disable
+`exposeLocalhost`; zero public sidecar mappings remained after startup.
+
+**PASS — SCALED TWO-WORKER PRE-DEPLOYMENT SIMULATION; NOT PRODUCTION
+THROUGHPUT OR PUBLICATION ACCEPTANCE.** The latest preserved report for
+`2026-09-23T18-57-24-314Z` has result `PASS`, with `copy`, `build`, `size`,
+`restore`, and `startup` complete and no recorded failures. The current-source
+canonical build exited **0**; all five freshly packed capsule hashes match
+their manifests; cold critical/background restores exited **0**, and warm
+restore idempotence passed. The **4-effective-CPU / 8-GiB-cgroup** development
+VM used `CLUSTER_WORKERS=2` with `APP_WORKER_CPU_SHARE=0.5`: two logical app
+workers time-shared the existing **one-CPU total app role budget**, not two
+dedicated CPUs. MaxCore retained its one-CPU role budget and default worker
+share; Python, sidecar, per-worker memory minima and headroom stayed reserved.
+The sizing preflight admitted two app workers with **1,219 MiB** each (731 MiB
+V8 heap), one MaxCore worker, and the unchanged role memory reservations.
+The owner's **production Reserved VM is 16 vCPUs / 64 GiB**; its default
+app-worker CPU share remains **1**. This scaled run does not measure production
+VM throughput or fabricate host capacity.
+
+Historical evidence is retained separately: the prior `DISABLE_CLUSTER=true`
+single-process attempt passed only its own model/readiness/150-request scope.
+The subsequent cluster attempt in `-attempt-3.json` failed at packed
+`dist/compute-sizing.mjs` admission with the former default one-CPU-per-worker
+rule: `floor(4 × 0.25) = 1`, so two workers then required at least 8 effective
+CPUs. Its post-launcher Redis-no-PONG/generic dependency classification was
+not causal; owned Redis had answered PONG and the disposable schema push
+succeeded. The old failed report is preserved, not rewritten. The newly
+packaged **opt-in** 0.5-share policy enables the present scaled simulation
+without weakening the production default or claiming an app/DB/Redis defect.
 
 Publication is owner-controlled and is not a pre-deployment gate. No publication,
 real charge, provider mutation, settlement, message delivery, or write to an
@@ -35,28 +61,31 @@ actual provider was performed or is claimed.
 
 ### Current six-gate status
 
-1. **Model serving — PASS, single-process scope.** The owned packaged Python service returned HTTP 200
-   from `/api/health` with `status=healthy` and `model_loaded=true`; equivalent
-   `/health` evidence matched. The mandatory gate was loaded-model health plus
-   three stable application-readiness probes. The direct `/api/warm/status`
-   diagnostic was explicitly nonmandatory and returned 401; it was not used to
-   waive or satisfy the gate.
-2. **Runtime acceptance — PARTIAL PASS.** The single-process packed runtime completed
-   three HTTP 200 `ok` readiness probes, spaced 6,018 ms and 6,029 ms apart, with
-   every subsystem—including audit and MaxCore—`ok`. Authenticated packed load
-   completed **150/150** measured requests with **100%** success, aggregate
-   **P95 69.139 ms / P99 77.562 ms**, against 99% / 500 ms / 1,000 ms gates.
-   Warmup was 20/20. Canonical build exit was **0**; the recorded startup exit
-   143 is controlled harness teardown after acceptance and owned-process cleanup.
-   **Open:** rerun the same mandatory model, three-probe readiness, and unchanged
-   150-request SLO gates with clustering enabled and at least two app workers.
-3. **PDIM recovery — PARTIAL PASS; cluster recovery open.** The retained-PDIM pre-deployment simulation passed
-   with real HybridStorage, PocketDimension, local PDIM, generation-bound
-   readback, independent bundled restore workers, two owners, cross-owner
-   deduplication, and corrupt-byte rejection. The external object-store boundary
-   was simulated; this is not a production-user-content or live-bucket claim.
-   Cross-worker shared authority and durable recovery-job behavior require the
-   recovery implementation now in progress and cluster-enabled integration.
+1. **Model serving — PASS in the scaled cluster simulation.** The owned packaged
+   Python service returned HTTP 200 from `/api/health` with `status=healthy` and
+   `model_loaded=true`; `/health` matched. The direct `/api/warm/status` diagnostic
+   returned 401 and was nonmandatory, not used to waive a gate.
+2. **Runtime acceptance — PASS in the scaled cluster simulation.** One live
+   cluster primary (PID 4109) and two live app HTTP workers (PIDs 4126 and
+   4138) passed topology; MaxCore's root PID 4133 belonged only to the primary,
+   with no worker-owned root, and the local PDIM listener ran in primary PID
+   4109. Three public `/api/ready` HTTP 200 `ok` probes were spaced **6,031 ms**
+   and **6,039 ms** apart; database, Redis, routes, audit, automation and
+   MaxCore all reported `ok`. Authenticated warmup passed **20/20**. Packed
+   measured load passed **150/150**, 100% success, **P95 150.836 ms /
+   P99 179.888 ms**, against the unchanged **99% / 500 ms / 1,000 ms** gates.
+   This is scaled development-VM throughput, not a production-VM measurement.
+3. **PDIM recovery — PASS for the authorized pre-deployment simulation
+   boundary.** The separately retained-PDIM recovery simulation passed with
+   real HybridStorage, PocketDimension, local PDIM, generation-bound readback,
+   independent bundled restore workers, two owners, cross-owner deduplication,
+   and corrupt-byte rejection; its external object-store boundary was simulated.
+   In the latest real packed app, normal protected admin session/MFA/CSRF
+   created a recovery job with HTTP **202** on worker **4126**; the other
+   worker **4138** returned HTTP **200** for its lookup (job state `running`).
+   The job was present in the private durable store. Primary-owned PDIM was
+   verified. This proves durable cross-worker lookup, **not** successful
+   external backup or recovery of live production-user content.
 4. **Credential handling — PASS for the pre-deployment boundary.** The canonical
    run used an environment allowlist, generated simulation-only secrets,
    namespace-local dependencies, and no source credentials. It did not print,
@@ -67,19 +96,33 @@ actual provider was performed or is claimed.
    provider-process scenarios. External acceptance was simulated; shared/live
    databases and actual-provider writes, charges, payouts, settlement, delivery,
    and financial reconciliation were not performed or claimed.
-6. **Release artifact — PARTIAL PASS.** Build exit 0; cold critical
-   and background capsule restoration passed; warm restore idempotence passed;
-   all five current-source capsule hashes matched their manifests. Build
-   preflight was **1.48 GiB** = **1.17 GiB** payload + **0.31 GiB** deduplicated
-   Nix closure with **10/10** roots accounted for. Separately, the actual
-   disposable simulation footprint was **4.602 GiB**, under the 8 GiB limit.
-   These are different measurements: the sanitized preflight is not a measured
-   target-image closure, and no unmeasured target-image size is claimed.
-   Cluster-packed acceptance remains open until a controlled refreshed snapshot
-   includes the stable recovery fix and passes with at least two app workers.
+6. **Release artifact — PASS for the scoped simulation.** The current-source
+   canonical build exited **0**, all five capsule manifests and hashes matched,
+   and cold critical/background plus warm idempotent restores passed. The build
+   retains parallel packing of four independent capsules. Sanitized build
+   preflight was **1.48 GiB** = **1.17 GiB** payload + **0.31 GiB**
+   deduplicated Nix closure (**10/10** roots); the measured disposable footprint
+   was **4.729 GiB**, under 8 GiB. Preflight is not a measured target-image
+   closure. The build ran in a distinct unprivileged user/network namespace,
+   never in the source checkout. Controlled teardown recorded startup exit
+   **143** after acceptance; the disposable copy remains retained for audit.
 
-The single-process canonical build used a distinct unprivileged user/network namespace and did
-not build in the source checkout. Capsule hashes were: node modules
+The latest five actual capsule SHA-256 values were independently rehashed
+against their manifests: node modules
+`488b3024f671e9cd9de91366ebab9b565d2ceb173386092c5ebf3fb520364f80`,
+app remainder
+`b7987e72a000064ed57908a315c24433290e657c873c3cc54d0bfe5d873433d0`,
+Python runtime
+`30faf249073ff785f24b470f39995753ff1237b95dd4d1dbd184874a351bf49f`,
+MaxCore
+`e28be8e367323d38e45245abf801072d999a2fd1c56d68646d44f55926498ff5`,
+and PDIM
+`3a23d7e017ed2afc1434e10a5cc62f5bee0d40e1241c0be27f0e823d3e18111b`.
+All 17 approved refreshed source paths also match their current checkout hashes
+and the preserved disposable copy (including `server/computeSizing.ts` and its
+focused test); external harness execution hash matches the refreshed snapshot.
+
+Historical **single-process** capsule hashes, not the latest build: node modules
 `54cdaadd1887499b28abb5e2bb2c6e4e4edc0db9387ee1de21952327aa0cff1e`,
 app remainder
 `660f7aeebe29d341cf70fc6e954b6d97b9a24824aaf4ec790239008ec34cee92`,
@@ -90,10 +133,10 @@ MaxCore
 and PDIM
 `5021a6d8bcbc982ecfd536d505c4890bf1e4a4702547dabe5f776fee17e00687`.
 
-After this preserved scoped run, the main preview restart also succeeded
+After the earlier single-process run, the main preview restart also succeeded
 after externally added private-port mappings for 8090, 9878, and 9879 were
-corrected. That preview observation does not satisfy, bypass, or weaken the open
-cluster gates above.
+corrected. That historical preview observation is not the scaled cluster
+acceptance evidence above.
 
 ## Historical continuation: running application and verified model
 
@@ -285,7 +328,6 @@ claims that commerce tables are absent.
   See `credential-free-simulation-handoff.md` and the latest load report.
 
 Historical decision at that point: **NOT READY**. It is retained only as
-point-in-time provenance. The current decision is the **PARTIAL PASS** at the
-top of this document, with recovery/cluster and cluster-packed acceptance open.
-Publication remains an owner-controlled later operation, not a pre-deployment
-acceptance gate.
+point-in-time provenance. The current decision is the scoped scaled-cluster
+**PASS** at the top of this document, not a production throughput or
+publication claim. Publication remains an owner-controlled later operation.

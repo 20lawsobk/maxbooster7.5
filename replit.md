@@ -49,6 +49,19 @@ enable deployment. Exercise real application consumers and label simulated exter
 boundaries explicitly. An unrun simulation or real code failure remains unverified;
 post-publication observation is a separate operational check.
 
+The owner's **production Reserved VM is 16 vCPUs / 64 GiB**. The available
+development simulation VM is **4 cgroup CPUs / 8 GiB** (effective physical
+memory can be slightly lower). For the isolated two-app-worker simulation only,
+`APP_WORKER_CPU_SHARE=0.5` opts two logical HTTP workers into time-sharing the
+existing one-CPU app role budget; `CLUSTER_WORKERS=2` must still pass the real
+compute-sizing memory and CPU checks. MaxCore's CPU share, Python/sidecar
+reservations, memory minima and headroom are unchanged. The production default
+share is 1; do not describe the scaled development run as production VM
+throughput or as two dedicated app CPUs. Loaded-model health, three stable
+readiness probes, primary-owned local MaxCore/PDIM, protected cross-worker
+recovery-job lookup, and the unchanged 150-request 99%/500 ms/1000 ms SLO
+remain mandatory for any claimed cluster-packed acceptance.
+
 - **Frontend:** React 19, Vite, Tailwind CSS 4, Radix UI, Framer Motion, TanStack Query, Zustand
 - **Backend:** Node.js (Express 5), TypeScript (tsx), Drizzle ORM (PostgreSQL/Neon)
 - **Jobs:** BullMQ + Redis
