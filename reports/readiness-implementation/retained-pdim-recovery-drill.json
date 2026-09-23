@@ -1,6 +1,6 @@
 {
   "reportVersion": 1,
-  "status": "blocked",
+  "status": "predeployment-acceptance-pass",
   "command": "env -i PATH=\"$PATH\" HOME=/tmp DATABASE_RECOVERY_BUCKET_ID=\"$DATABASE_RECOVERY_BUCKET_ID\" node --max-old-space-size=192 scripts/retained-pdim-recovery-drill.mjs",
   "scope": "development workspace stopped local PDIM fallback persistence",
   "durableBackupCreated": false,
@@ -34,16 +34,62 @@
       "detail": "2 bytes captured with stable file identity"
     }
   ],
-  "blockers": [
-    "The development fallback snapshot has no HybridStorage index. This does not establish production PDIM content state; production remains unknown until the protected operator workflow runs after publication."
+  "blockers": [],
+  "observations": [
+    "The development fallback snapshot has no HybridStorage index. This is not a predeployment blocker and does not establish production PDIM content state.",
+    "Production PDIM content and the deployed App Storage bucket remain external operational facts; neither is accessed by predeployment acceptance."
   ],
+  "predeploymentAcceptance": {
+    "status": "pass",
+    "command": "NODE_OPTIONS=--max-old-space-size=256 npx vitest run tests/unit/retained-pdim-recovery-simulation.test.ts --pool=threads --maxWorkers=1",
+    "storageBoundary": "simulated generation-enforcing external storage; no live App Storage call",
+    "realConsumers": "HybridStorageService, PocketDimension, local PDIM server, authoritative snapshot primitive, retained-snapshot helper, and independent bundled restore worker",
+    "fixture": {
+      "fileCount": 3,
+      "ownerCount": 2,
+      "physicalFileCount": 2,
+      "includesCrossOwnerDeduplication": true
+    },
+    "proved": [
+      "real consumers created and read isolated PDIM-backed HybridStorage data",
+      "the owned local authority committed and pinned the recovery snapshot",
+      "the simulated external store enforced create-only writes and exact-generation retrieval",
+      "generation readback matched CRC32C, SHA-256, and size",
+      "a separately launched bundled worker restored and verified every file and ownership aggregate",
+      "corrupted retained-generation bytes were rejected by SHA-256 verification"
+    ]
+  },
+  "clusteredOperatorAcceptance": {
+    "status": "pass",
+    "command": "NODE_OPTIONS=--max-old-space-size=256 npx vitest run tests/unit/pdim-recovery-cluster-integration.test.ts --pool=threads --maxWorkers=1",
+    "proved": [
+      "the cluster primary exclusively owned the local PDIM listener and recovery coordinator",
+      "two HTTP worker processes submitted concurrent creates and exactly one durable job was accepted",
+      "the non-creating worker polled the accepted job through primary IPC",
+      "the primary snapshot primitive rejected arbitrary listener ownership by construction",
+      "the job receipt was atomically persisted mode-private outside worker memory",
+      "a killed polling worker was replaced and the replacement read the same completed receipt"
+    ],
+    "providerBoundary": "simulated receipt executor; no live provider write",
+    "actualConsumerBoundary": "real HybridStorageService data was written through the primary-owned local PDIM before authoritative snapshot capture"
+  },
+  "remainingExternalFacts": {
+    "knownRecoveryImplementationDefects": [],
+    "notPredeploymentBlockers": [
+      "live bucket authentication and provider-enforced privacy",
+      "production PDIM content presence",
+      "a protected operator receipt from a later deployed run"
+    ]
+  },
   "productionOperatorWorkflow": {
     "implemented": true,
     "executedAgainstProduction": false,
+    "productionExecutionRequiredForPredeploymentAcceptance": false,
     "createRoute": "POST /api/backup/pdim/create",
     "statusRoute": "GET /api/backup/pdim/jobs/:jobId",
     "protection": "authenticated admin, verified 2FA assurance, and CSRF",
     "sourceAuthority": "owned in-process local PDIM only; configured-backend, listener, port, path, and pinned-inode mismatch fail closed",
-    "runtimePackaging": "deployment build input allowlists the worker/helper sources; production uses required standalone dist/retained-pdim-recovery-worker.mjs; TypeScript/tsx is development-only; private-storage helper is statically included in the server bundle"
+    "runtimePackaging": "deployment build input allowlists the worker/helper sources; production uses required standalone dist/retained-pdim-recovery-worker.mjs; TypeScript/tsx is development-only; private-storage helper is statically included in the server bundle",
+    "clusterAuthority": "workers forward create/status over cluster IPC; the primary owns PDIM, singleton execution lock, and atomically persisted private receipts"
   }
 }

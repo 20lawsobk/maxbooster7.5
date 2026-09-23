@@ -31,15 +31,11 @@ function safeCompare(a: string, b: string): boolean {
   }
 }
 
-export const csrfProtection: RequestHandler = (
+const validateCsrfToken: RequestHandler = (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  if (["GET", "HEAD", "OPTIONS", "TRACE"].includes(req.method)) {
-    return next();
-  }
-
   const cookieToken = req.cookies?.[CSRF_COOKIE];
   const headerToken = (req.headers[CSRF_HEADER] as string) || req.body?._csrf;
 
@@ -79,6 +75,17 @@ export const csrfProtection: RequestHandler = (
 
   next();
 };
+
+export const csrfProtection: RequestHandler = (req, res, next) => {
+  if (["GET", "HEAD", "OPTIONS", "TRACE"].includes(req.method)) {
+    return next();
+  }
+  return validateCsrfToken(req, res, next);
+};
+
+/** Explicit token validation even for a read endpoint whose recovery receipt
+ * should only be observable from the same protected operator session. */
+export const requireCsrfToken: RequestHandler = validateCsrfToken;
 
 export const generateCsrfToken: RequestHandler = (
   req: Request,

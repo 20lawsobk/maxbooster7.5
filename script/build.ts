@@ -118,12 +118,11 @@ async function main() {
   // already prefer ./python_runtime/bin/python3.
   if (isDeployBuild) {
     buildPortableNode(root);
-    // Never ship a checked-in executable in place of the current source.
-    execFileSync("cargo", ["build", "--locked", "--release", "--manifest-path", "boosterstate/Cargo.toml"],
+    // Never ship a checked-in executable in place of the current source. The
+    // helper uses a pinned, build-only nix-shell so Rust is not added to the
+    // persistent replit.nix/runtime closure.
+    execFileSync("bash", ["scripts/build-boosterstate.sh"],
       { cwd: root, stdio: "inherit" });
-    fs.mkdirSync(path.join(root, "bin"), { recursive: true });
-    fs.copyFileSync(path.join(root, "boosterstate/target/release/boosterstate"), path.join(root, "bin/boosterstate"));
-    fs.chmodSync(path.join(root, "bin/boosterstate"), 0o755);
     const pyDir = path.resolve(root, "python_runtime");
     const pyBin = path.join(pyDir, "bin", "python3");
     const PYVER = "3.12.13";
@@ -145,13 +144,17 @@ async function main() {
       }
       execSync(`${JSON.stringify(pyBin)} --version`, { stdio: "inherit" });
       console.log(
-        "   Installing Python deps (numpy, pillow, scipy, fastapi, uvicorn, pydantic)...",
+        "   Installing locked app + MaxCore Python deps (including CPU torch)...",
       );
       const requirements = path.join(pyDir, "requirements.lock");
-      execFileSync(pyBin, [path.join(root, "script/lib/pythonRequirements.py"), path.join(root, "uv.lock"), requirements], { stdio: "inherit" });
+      const maxcoreLock = path.join(
+        root,
+        "external/maxcore/artifacts/ai-training-server/uv.lock",
+      );
+      execFileSync(pyBin, [path.join(root, "script/lib/pythonRequirements.py"), maxcoreLock, requirements], { stdio: "inherit" });
       execFileSync(pyBin, ["-m", "pip", "install", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "-r", requirements], { cwd: root, stdio: "inherit" });
       execSync(
-        `${JSON.stringify(pyBin)} -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic"`,
+        `${JSON.stringify(pyBin)} -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic, psycopg2, librosa, sklearn, soundfile, torch; print(torch.__version__)"`,
         { stdio: "inherit", shell: "/bin/bash" },
       );
       console.log("   ✅ Portable Python runtime ready → python_runtime/");

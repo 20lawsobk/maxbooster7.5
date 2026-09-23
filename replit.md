@@ -35,6 +35,20 @@ catalog, delivery, royalty and payout capabilities against Too Lost's actual
 authorized API contracts; do not rename an incompatible LabelGrid contract and
 assume it works. Preserve historical data and migration records during cleanup.
 
+The owner supplies Too Lost through environment-based, copy-and-paste configuration;
+development and production use the same configuration. Do not invent a separate
+production connection requirement. Diagnose authorization errors against the
+configured request path and provider contract before requesting a reconnect.
+
+### Pre-deployment acceptance
+
+Use isolated production-process simulations to establish release acceptance before
+the owner publishes. Publication, real financial/provider mutations, and recovery of
+actual published user content are not prerequisites for finishing the fixes that
+enable deployment. Exercise real application consumers and label simulated external
+boundaries explicitly. An unrun simulation or real code failure remains unverified;
+post-publication observation is a separate operational check.
+
 - **Frontend:** React 19, Vite, Tailwind CSS 4, Radix UI, Framer Motion, TanStack Query, Zustand
 - **Backend:** Node.js (Express 5), TypeScript (tsx), Drizzle ORM (PostgreSQL/Neon)
 - **Jobs:** BullMQ + Redis

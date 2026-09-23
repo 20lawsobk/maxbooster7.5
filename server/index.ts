@@ -8,7 +8,11 @@ import "./lib/pdimEnvFix.js";
 // Start the internal PDIM subsystem (:5556) BEFORE any client's first call —
 // pdimEnvFix above has already pointed every PDIM/storage URL at it.
 import { startLocalPdimServer } from "./lib/localPdimServer.js";
-await startLocalPdimServer();
+// In clustered deployments the cluster primary is the sole authority and has
+// already started it before forking. Workers are clients of that owned process.
+if (process.env.CLUSTER_WORKER_ID === undefined) {
+  await startLocalPdimServer();
+}
 // Import console error filter FIRST to suppress non-critical localhost Redis errors
 import "./lib/consoleErrorFilter.js";
 // Mandatory observability — must load before anything else can throw
@@ -85,9 +89,10 @@ app.use(securityMiddleware as import("express").RequestHandler);
 
 setupStartupEndpoints(app);
 
-// Start the LOCAL MaxCore subsystem (imported repo, supervised child) before
-// probes run so its readiness is measured against a starting — not absent —
-// process. No-op when MAXCORE_LOCAL=0.
+// Initialize this process's MaxCore role before probes run. Standalone mode
+// owns the supervised child; clustered workers become IPC clients of the
+// cluster-primary owner and can never spawn/probe a competing localhost child.
+// No-op when MAXCORE_LOCAL=0.
 import("./services/maxcoreLocalSupervisor.js")
   .then(({ startMaxcoreLocal }) => startMaxcoreLocal())
   .catch((err) => logger.error({ err }, "[MaxCoreLocal] failed to start supervisor"));

@@ -66,7 +66,7 @@ export function assertSanitizedEnvironment(env) {
 
 export const runtimeIsolationPolicy = Object.freeze({
   required: true,
-  transport: "Linux user+network namespace; only namespace-local loopback is reachable by the app and every native/Python descendant",
+  transport: "Unprivileged Linux user+network namespace; only namespace-local loopback is reachable by the app and every native/Python descendant",
   filesystem: "all build and runtime writes are rooted in the disposable copy; source credentials, data, logs, media, and VCS metadata are excluded",
   credentials: "env-i style allowlist; generated simulation-only secrets; ephemeral local PostgreSQL only",
 });

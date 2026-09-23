@@ -1,7 +1,26 @@
 # Latest readiness execution evidence
 
-Decision: **NOT READY**. Continue the original 80 findings; do not replace their
-scope or interpret passing isolated checks as assembled production acceptance.
+Decision: **PARTIAL PASS — RECOVERY/CLUSTER AND CLUSTER-PACKED ACCEPTANCE OPEN**.
+Canonical current-source production-simulation run
+`2026-09-23T18-57-24-314Z` supersedes the prior namespace/capacity limitation:
+build exit 0, loaded-model HTTP 200 with `status=healthy` and
+`model_loaded=true`, three stable full-ready HTTP 200 probes, 150/150 measured
+authenticated requests at P95/P99 69.139/77.562 ms, cold/warm manifest-verified
+capsule recovery, and isolated runtime cleanup all passed in single-process mode.
+Because the harness set `DISABLE_CLUSTER=true`, those results do not prove
+cross-worker PDIM/recovery ownership or durable-job behavior. Complete acceptance
+requires the recovery fix and a cluster-enabled packed run with at least two app
+workers, the same owned-model contract, three stable readiness probes, and
+unchanged 150-request SLO thresholds.
+
+Publication is not this gate and did not occur. No actual provider write, charge,
+settlement, delivery, or production-content restore is claimed.
+
+## Historical execution handoff — superseded
+
+Everything below this heading is retained as prior point-in-time evidence. Its
+open-item lists and **NOT READY** implications are superseded except for the
+explicit current recovery/cluster and cluster-packed gates above.
 
 ## Completed verification
 

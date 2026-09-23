@@ -1401,6 +1401,17 @@ export function getLocalPdimUrl(): string {
   return `http://127.0.0.1:${LOCAL_PORT}/api/redis/instances/local/exec`;
 }
 
+export function isLocalPdimServerOwnedByThisProcess(): boolean {
+  const address = _server?.address();
+  return (
+    _server?.listening === true &&
+    !!address &&
+    typeof address !== "string" &&
+    address.address === "127.0.0.1" &&
+    address.port === LOCAL_PORT
+  );
+}
+
 export interface LocalPdimSnapshotDescriptor {
   fd: number;
   bytes: number;

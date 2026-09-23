@@ -30,3 +30,12 @@ than retyping, since the file also holds every production secret inline under
 `[userenv.shared]`) and call `verifyAndReplaceDotReplit({ tempFilePath })`.
 Restart the workflow and confirm the `[PortContract] ✅ .replit public mapping
 exposes only the app listener` log line before trusting the fix.
+
+The verified replacement callback requires an absolute temp path **inside the
+workspace**, not `/tmp` and not a relative path. Preserve values without printing
+them; remove the temporary copy after replacement. Internal MaxCore/Redis mappings
+must omit `externalPort`, not merely use a different public port.
+
+**Why:** Preview can acquire sidecar public mappings while the services run, so
+the next strict startup can reject a configuration that previously passed.
+Recheck only the port blocks when this occurs; do not weaken the port contract.

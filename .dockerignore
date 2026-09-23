@@ -111,6 +111,8 @@ scripts/*
 !scripts/
 !scripts/port-contract.sh
 !scripts/redis-supervisor.sh
+!scripts/build-boosterstate.sh
+!scripts/boosterstate-toolchain.nix
 !scripts/boot-stub-server.mjs
 !scripts/check-port-contract.ts
 # Build-time sources for the required standalone retained-PDIM worker and the

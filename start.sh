@@ -189,7 +189,7 @@ if [ "$_PYENV_ACTIVATED" = "0" ]; then
   exit 1
 fi
 export MAXBOOSTER_PYTHON="$_VENV_PY"
-"$_VENV_PY" -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic" || exit 1
+"$_VENV_PY" -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic, psycopg2, librosa, sklearn, soundfile, torch; print('[start.sh] MaxCore Python deps ready (torch ' + torch.__version__ + ')')" || exit 1
 
 # Reject aggregate oversubscription before spawning sidecars or app workers.
 _PRIMARY_HEAP_MB="$("$_NODE_BIN" --input-type=module -e '

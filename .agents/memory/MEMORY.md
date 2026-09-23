@@ -156,3 +156,4 @@
 - [Drizzle adapter unions](drizzle-driver-union-contextual-types.md) — a cross-driver inferred union can destroy contextual typing; fix the export boundary, not hundreds of callers.
 - [App Storage attachment](app-storage-runtime-attachment.md) — a configured bucket name is not runtime-access/privacy proof; fail before uploading recovery data.
 - [Checkpoint validation boundaries](checkpoint-validation-resource-boundaries.md) — quarantine names do not prove corruption; safe loading, meta compatibility and serving inference are separate gates.
+- [Simulation isolation preflight](simulation-isolation-preflight.md) — privileged namespace failure does not rule out unprivileged isolation; test the exact runtime mechanism.

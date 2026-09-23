@@ -236,7 +236,7 @@ class StartupProbeManager {
         return true;
       }
       // The child supervises a Python model server that can take a while to
-      // come up; poll the fast /healthz for up to 60 s before reporting.
+      // come up; poll its model-loaded /api/health gate for up to 60 s.
       const deadline = Date.now() + 60_000;
       for (;;) {
         if (await checkMaxcoreLocalReady()) {

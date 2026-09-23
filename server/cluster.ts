@@ -1,4 +1,5 @@
 import cluster from "cluster";
+import "./lib/pdimEnvFix.js";
 import os from "os";
 import path from "path";
 import http from "http";
@@ -9,6 +10,20 @@ import { createRequire } from "module";
 import { spawnSync, spawn } from "child_process";
 import { computeWorkerSizing } from "./computeSizing";
 import { runtimePorts } from "./config/ports.js";
+import {
+  checkMaxcoreLocalReady,
+  getMaxcoreLocalStatus,
+  startMaxcoreLocal,
+  stopMaxcoreLocal,
+} from "./services/maxcoreLocalSupervisor.js";
+import {
+  isLocalPdimServerOwnedByThisProcess,
+  startLocalPdimServer,
+} from "./lib/localPdimServer.js";
+import {
+  handlePdimRecoveryAuthorityRequest,
+  initializePdimRecoveryAuthority,
+} from "./services/backup/pdimRecoveryBackupService.js";
 
 // ── Boosterstate sidecar startup ──────────────────────────────────────────────
 // Previously handled by start?.sh. Moved here so the run command can be a plain
@@ -343,6 +358,13 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     execArgv: [`--max-old-space-size=${workerHeapMB}`],
   });
 
+  // The cluster primary is the sole owner of the local MaxCore process tree.
+  // Workers query this authority over cluster IPC; they never spawn or trust a
+  // process merely because it happens to answer on the shared loopback port.
+  void startMaxcoreLocal().catch((err) => {
+    console.error("[Cluster] MaxCore authority failed to start:", err);
+  });
+
   console.log(
     `[Cluster] Primary ${process.pid} — forking ${workerCount} workers ` +
       `(effective CPUs: ${sizing.numCPUs}, host RAM: ${totalMemGB.toFixed(1)} GB, app pool: ${sizing.freeMemGB.toFixed(1)} GB, ` +
@@ -408,6 +430,18 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     },
   );
 
+  // This primary is the single owner of both the local PDIM listener and the
+  // retained-recovery coordinator. The health socket is asked to bind first so
+  // loading a large persisted PDIM file cannot create a connection-refused
+  // deployment window. Workers are not forked until ownership is established.
+  await startLocalPdimServer();
+  if (!isLocalPdimServerOwnedByThisProcess()) {
+    throw new Error(
+      "Cluster primary could not establish owned local PDIM authority",
+    );
+  }
+  initializePdimRecoveryAuthority();
+
   // Stagger worker startup by 800 ms per worker.
   // Without a stagger all N workers immediately race to connect to PDIM
   // (session-store ping, distributed-cache connect, BullMQ bzpopmin) which
@@ -421,6 +455,8 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // Track each worker's env so we can preserve CLUSTER_WORKER_ID on respawn.
   // Without this, crash-respawned workers have no ID and all start background jobs.
   const workerEnvMap = new Map<number, Record<string, string>>();
+  const intentionalWorkerExits = new Set<number>();
+  let clusterShuttingDown = false;
 
   for (let i = 0; i < workerCount; i++) {
     setTimeout(() => {
@@ -447,6 +483,13 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     // Retrieve (and remove) the env so the replacement inherits the same CLUSTER_WORKER_ID.
     const savedEnv = workerEnvMap?.get(worker?.id);
     workerEnvMap?.delete(worker?.id);
+    if (clusterShuttingDown) return;
+    if (intentionalWorkerExits.delete(worker.id)) {
+      console.log(
+        `[Cluster] Worker ${worker.process.pid} retired after replacement came online`,
+      );
+      return;
+    }
 
     const spawnReplacement = () => {
       const w = cluster?.fork(savedEnv);
@@ -498,9 +541,14 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // The primary must propagate the signal to all workers and wait for them to drain
   // before exiting. Hard-exits after 25 s (autoscale sends SIGKILL at ~30 s).
   function primaryShutdown(signal: string): void {
+    if (clusterShuttingDown) return;
+    clusterShuttingDown = true;
     console.log(
       `[Cluster] Primary received ${signal} — draining ${Object.keys(cluster?.workers ?? {}).length} worker(s)`,
     );
+    // Stop the primary-owned MaxCore process group exactly once. Worker
+    // shutdown handlers only invalidate their IPC view and cannot kill it.
+    stopMaxcoreLocal();
 
     const hardExit = setTimeout(() => {
       console.error("[Cluster] Primary hard timeout — forcing exit");
@@ -549,6 +597,29 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   cluster?.on("message", (_worker, message: unknown) => {
     if (!message || typeof message !== "object") return;
     const msg = message as Record<string, unknown>;
+    if (msg.type === "PDIM_RECOVERY_REQUEST") {
+      void handlePdimRecoveryAuthorityRequest(message).then((response) => {
+        if (response && _worker.isConnected()) _worker.send(response);
+      });
+      return;
+    }
+    if (msg?.type === "MAXCORE_STATUS_REQUEST") {
+      const requestId =
+        typeof msg.requestId === "number" ? msg.requestId : undefined;
+      void checkMaxcoreLocalReady()
+        .catch(() => false)
+        .then((ready) => {
+          const status = getMaxcoreLocalStatus();
+          if (!_worker.isConnected()) return;
+          _worker.send({
+            type: "MAXCORE_AUTHORITY_STATUS",
+            requestId,
+            ready: ready && status.ready,
+            status,
+          });
+        });
+      return;
+    }
     if (msg?.type !== "SILENT_RELOAD") return;
     if (rollingRestartInProgress) {
       console.log(
@@ -584,11 +655,14 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
       }
 
       // Fork the replacement first so traffic is never fully dropped
-      const replacement = cluster?.fork();
+      const replacementEnv = workerEnvMap.get(target.id);
+      const replacement = cluster?.fork(replacementEnv);
+      if (replacementEnv) workerEnvMap.set(replacement.id, replacementEnv);
       replacement?.once("listening", () => {
         console.log(
           `[Cluster] Replacement worker ${replacement?.process?.pid} ready — retiring old worker ${target?.process?.pid}`,
         );
+        intentionalWorkerExits.add(target.id);
         target?.disconnect();
         // Give old worker 10s to finish in-flight requests then force-kill
         const forceKill = setTimeout(() => target?.kill(), 10_000);

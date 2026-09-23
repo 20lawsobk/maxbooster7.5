@@ -1,4 +1,5 @@
 import { spawn, ChildProcess } from "child_process";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import net from "net";
@@ -41,6 +42,71 @@ const PYTHON_SCRIPT = (() => {
   }
   return path.resolve(process.cwd(), "artifacts/ai-training-server/server.py");
 })();
+
+/** Resolve the interpreter that production startup restored and validated.
+ * Production must never depend on uv (a build-time package manager) or silently
+ * fall back to whatever `python3` happens to be on PATH. */
+export function resolvePythonExecutable(
+  env: NodeJS.ProcessEnv = process.env,
+  cwd = process.cwd(),
+  exists: (candidate: string) => boolean = fs.existsSync,
+): string {
+  const explicit = env.MAXBOOSTER_PYTHON;
+  if (explicit) {
+    if (exists(explicit)) return explicit;
+    throw new Error(
+      `MAXBOOSTER_PYTHON points to a missing interpreter: ${explicit}`,
+    );
+  }
+
+  const portable = path.resolve(cwd, "python_runtime", "bin", "python3");
+  if (exists(portable)) return portable;
+
+  const virtualEnv = env.VIRTUAL_ENV
+    ? path.resolve(env.VIRTUAL_ENV, "bin", "python")
+    : path.resolve(cwd, ".venv", "bin", "python");
+  if (exists(virtualEnv)) return virtualEnv;
+
+  if (env.NODE_ENV === "production") {
+    throw new Error(
+      `packaged Python interpreter is unavailable (expected ${portable})`,
+    );
+  }
+  return "python3";
+}
+
+export function pythonSpawnSpec(
+  env: NodeJS.ProcessEnv = process.env,
+  cwd = process.cwd(),
+  exists: (candidate: string) => boolean = fs.existsSync,
+): { command: string; args: string[] } {
+  return {
+    command: resolvePythonExecutable(env, cwd, exists),
+    args: [PYTHON_SCRIPT],
+  };
+}
+
+export function attachOwnedPythonProcessLifecycle(
+  processHandle: ChildProcess,
+  onTermination: (
+    code: number | null,
+    signal: NodeJS.Signals | null,
+    spawnError?: Error,
+  ) => void | Promise<void>,
+): void {
+  let handled = false;
+  const handle = (
+    code: number | null,
+    signal: NodeJS.Signals | null,
+    spawnError?: Error,
+  ) => {
+    if (handled) return;
+    handled = true;
+    void onTermination(code, signal, spawnError);
+  };
+  processHandle.on("error", (err) => handle(null, null, err));
+  processHandle.on("exit", (code, signal) => handle(code, signal));
+}
 
 // Backoff: starts at 2 s, doubles each crash, caps at 30 s
 const INITIAL_RETRY_MS = 2_000;
@@ -271,26 +337,55 @@ function spawnPython() {
   console.log(`[Python] Starting AI training server (port ${PYTHON_PORT})...`);
   lastStartTime = Date.now();
 
-  pythonProcess = spawn("uv", ["run", "python3", PYTHON_SCRIPT], {
-    env: {
-      ...process.env,
-      MODEL_API_PORT: String(PYTHON_PORT),
-      HEALTHZ_PORT:   String(HEALTHZ_PORT),
-      PYTHONUNBUFFERED: "1",
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  let launch: ReturnType<typeof pythonSpawnSpec>;
+  try {
+    launch = pythonSpawnSpec();
+    pythonProcess = spawn(launch.command, launch.args, {
+      env: {
+        ...process.env,
+        MODEL_API_PORT: String(PYTHON_PORT),
+        HEALTHZ_PORT:   String(HEALTHZ_PORT),
+        PYTHONUNBUFFERED: "1",
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch (err) {
+    consecutiveCrashes++;
+    const delay = backoffMs();
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error(
+      `[Python] Required interpreter launch failed: ${detail}. Restart #${consecutiveCrashes} in ${delay}ms…`,
+    );
+    setPythonRestarting(true);
+    restartScheduled = true;
+    setTimeout(() => {
+      restartScheduled = false;
+      spawnPython();
+    }, delay);
+    return;
+  }
 
   pythonProcess.stdout?.on("data", (d: Buffer) => process.stdout.write(`[Python] ${d}`));
   pythonProcess.stderr?.on("data", (d: Buffer) => process.stderr.write(`[Python] ${d}`));
 
-  pythonProcess.on("exit", async (code, signal) => {
-    pythonProcess = null;
+  const ownedProcess = pythonProcess;
+  const handleTermination = async (
+    code: number | null,
+    signal: NodeJS.Signals | null,
+    spawnError?: Error,
+  ) => {
+    if (pythonProcess === ownedProcess) pythonProcess = null;
     restartScheduled = false;
 
     if (shuttingDown) {
       console.log("[Python] Server shut down gracefully (intentional).");
       return;
+    }
+
+    if (spawnError) {
+      console.error(
+        `[Python] Interpreter process failed to spawn (${spawnError.message}); lifecycle remains owned and will retry.`,
+      );
     }
 
     // If Python exited via SIGTERM or SIGINT it may be a system-wide signal
@@ -327,6 +422,7 @@ function spawnPython() {
 
     restartScheduled = true;
     setTimeout(() => {
+      restartScheduled = false;
       spawnPython();
       // After each crash-restart, re-run the warm-up pass once Python is back.
       // fireWarmPass() calls setPythonRestarting(false) on completion (success or
@@ -340,7 +436,11 @@ function spawnPython() {
         }
       });
     }, delay);
-  });
+  };
+  // ENOENT and other launcher failures emit `error`, often without `exit`.
+  // Handle both through one guarded lifecycle path so the MaxCore Node owner
+  // never crashes from an unhandled ChildProcess error or double-schedules.
+  attachOwnedPythonProcessLifecycle(ownedProcess, handleTermination);
 }
 
 // ─── Health monitor ────────────────────────────────────────────────────────────

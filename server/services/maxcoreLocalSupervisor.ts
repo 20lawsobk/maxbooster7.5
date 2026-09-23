@@ -98,6 +98,111 @@ let startupError: string | null = null;
 let lastReady = false;
 let lastReadyCheck = 0;
 const READY_TTL_MS = 5_000;
+let readyInFlight: Promise<boolean> | null = null;
+
+type MaxcoreAuthorityMessage = {
+  type?: string;
+  requestId?: number;
+  ready?: boolean;
+  status?: MaxcoreLocalStatus;
+};
+
+export function isMaxcoreSupervisorOwner(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return env.CLUSTER_WORKER_ID === undefined;
+}
+
+const isClusterWorker = !isMaxcoreSupervisorOwner();
+let authorityListenerInstalled = false;
+let authorityDisconnected = false;
+let authorityRequestId = 0;
+let authorityStatus: MaxcoreLocalStatus = {
+  enabled: config.maxcoreLocal.enabled,
+  running: false,
+  ready: false,
+  pid: null,
+  restarts: 0,
+  lastExit: null,
+  error: "MaxCore authority has not reported readiness",
+};
+const authorityWaiters = new Map<
+  number,
+  (message: MaxcoreAuthorityMessage) => void
+>();
+
+/** Cluster workers never own or probe the loopback child directly. Only the
+ * cluster primary owns the supervisor; workers trust its IPC response, which
+ * is bound to the primary's process-local child handle. */
+function installAuthorityListener(): void {
+  if (!isClusterWorker || authorityListenerInstalled) return;
+  authorityListenerInstalled = true;
+  process.on("message", (raw: unknown) => {
+    if (!raw || typeof raw !== "object") return;
+    const message = raw as MaxcoreAuthorityMessage;
+    if (message.type !== "MAXCORE_AUTHORITY_STATUS") return;
+    authorityDisconnected = false;
+    if (message.status) {
+      authorityStatus = {
+        ...message.status,
+        ready: message.ready === true && message.status.ready === true,
+      };
+    }
+    if (typeof message.requestId === "number") {
+      authorityWaiters.get(message.requestId)?.(message);
+      authorityWaiters.delete(message.requestId);
+    }
+  });
+  process.on("disconnect", () => {
+    authorityDisconnected = true;
+    authorityStatus = {
+      ...authorityStatus,
+      running: false,
+      ready: false,
+      pid: null,
+      error: "MaxCore authority IPC disconnected",
+    };
+    for (const resolve of authorityWaiters.values()) {
+      resolve({ ready: false, status: authorityStatus });
+    }
+    authorityWaiters.clear();
+  });
+}
+
+async function requestAuthorityReady(): Promise<boolean> {
+  installAuthorityListener();
+  if (
+    authorityDisconnected ||
+    typeof process.send !== "function" ||
+    process.connected === false
+  ) {
+    return false;
+  }
+  const requestId = ++authorityRequestId;
+  return await new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => {
+      authorityWaiters.delete(requestId);
+      authorityStatus = {
+        ...authorityStatus,
+        ready: false,
+        error: "MaxCore authority readiness request timed out",
+      };
+      resolve(false);
+    }, 2_500);
+    timer.unref();
+    authorityWaiters.set(requestId, (message) => {
+      clearTimeout(timer);
+      resolve(message.ready === true && message.status?.ready === true);
+    });
+    try {
+      process.send?.({ type: "MAXCORE_STATUS_REQUEST", requestId });
+    } catch {
+      clearTimeout(timer);
+      authorityWaiters.delete(requestId);
+      resolve(false);
+    }
+  });
+}
 
 // Pre-spawn provisioning state — getting the nested workspace installed
 // before there is even a child to crash-restart. Tracked separately from
@@ -402,6 +507,13 @@ export async function startMaxcoreLocal(): Promise<void> {
     logger.info("[MaxCoreLocal] Local mode disabled (MAXCORE_LOCAL=0) — using remote MaxCore URL.");
     return;
   }
+  if (isClusterWorker) {
+    installAuthorityListener();
+    // Trigger an initial authority snapshot without allowing a worker to own
+    // or probe an arbitrary process already listening on the loopback port.
+    void requestAuthorityReady();
+    return;
+  }
   // Re-entrancy guard: a scheduled retry can fire while an earlier call is
   // still mid-bootstrap (that subprocess alone can take up to 10 minutes).
   // Without this, two overlapping calls could both pass the TSX_BIN check
@@ -471,9 +583,19 @@ export async function startMaxcoreLocal(): Promise<void> {
 
 /** Ready = the Python-backed model service is actually healthy. The Node
  *  layer's /healthz answers even while Python is crash-looping, so probe
- *  /api/health (proxied to Python) and require status "healthy". */
+ *  /api/health (proxied to Python) and require both healthy status and the
+ *  model-loaded flag. Python intentionally reports status=healthy while its
+ *  process is alive but the checkpoint is still loading, so status alone is
+ *  only child liveness, not model readiness. */
+export function isMaxcoreModelHealth(body: unknown): boolean {
+  if (!body || typeof body !== "object") return false;
+  const health = body as { status?: unknown; model_loaded?: unknown };
+  return health.status === "healthy" && health.model_loaded === true;
+}
+
 export async function checkMaxcoreLocalReady(): Promise<boolean> {
   if (!config.maxcoreLocal.enabled) return false;
+  if (isClusterWorker) return await requestAuthorityReady();
   // Readiness belongs to the child this supervisor owns. A stale/orphaned
   // process answering on the configured port must not make `running:false`
   // and `ready:true` simultaneously.
@@ -482,26 +604,38 @@ export async function checkMaxcoreLocalReady(): Promise<boolean> {
     lastReadyCheck = 0;
     return false;
   }
+  if (readyInFlight) return await readyInFlight;
   const now = Date.now();
   if (now - lastReadyCheck < READY_TTL_MS) return lastReady;
   lastReadyCheck = now;
-  try {
-    const r = await fetch(`http://127.0.0.1:${config.maxcoreLocal.port}/api/health`, {
-      signal: AbortSignal.timeout(3_000),
-    });
-    if (!r.ok) {
+  readyInFlight = (async () => {
+    try {
+      const r = await fetch(
+        `http://127.0.0.1:${config.maxcoreLocal.port}/api/health`,
+        {
+          signal: AbortSignal.timeout(3_000),
+        },
+      );
+      if (!r.ok) {
+        lastReady = false;
+      } else {
+        const body = await r.json();
+        lastReady = isMaxcoreModelHealth(body);
+      }
+    } catch {
       lastReady = false;
-    } else {
-      const body = (await r.json()) as { status?: string };
-      lastReady = body?.status === "healthy";
     }
-  } catch {
-    lastReady = false;
+    return lastReady;
+  })();
+  try {
+    return await readyInFlight;
+  } finally {
+    readyInFlight = null;
   }
-  return lastReady;
 }
 
 export function getMaxcoreLocalStatus(): MaxcoreLocalStatus {
+  if (isClusterWorker) return { ...authorityStatus };
   return {
     enabled: config.maxcoreLocal.enabled,
     running: child !== null,
@@ -516,6 +650,17 @@ export function getMaxcoreLocalStatus(): MaxcoreLocalStatus {
 /** Stop the child cleanly. The imported api-server's own SIGTERM handler
  *  stops its Python child and cluster workers. */
 export function stopMaxcoreLocal(): void {
+  if (isClusterWorker) {
+    authorityDisconnected = true;
+    authorityStatus = {
+      ...authorityStatus,
+      running: false,
+      ready: false,
+      pid: null,
+      error: "cluster worker stopped; shared MaxCore authority remains primary-owned",
+    };
+    return;
+  }
   shuttingDown = true;
   // Invalidate the readiness cache immediately — nothing is ready once we
   // begin stopping, and a later re-start must not inherit a stale `true`.

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { databaseBackupService } from "../services/backup/databaseBackupService.js";
 import { pdimRecoveryBackupService } from "../services/backup/pdimRecoveryBackupService.js";
 import { requireAdmin, requireVerified2FA } from "../middleware/auth.js";
-import { csrfProtection } from "../middleware/csrf.js";
+import { csrfProtection, requireCsrfToken } from "../middleware/csrf.js";
 import { logger } from "../logger.js";
 
 const router = Router();
@@ -27,9 +27,9 @@ router.post(
   requireAdmin,
   requireVerified2FA,
   csrfProtection,
-  (_req, res) => {
+  async (_req, res) => {
     try {
-      const job = pdimRecoveryBackupService.start();
+      const job = await pdimRecoveryBackupService.start();
       res.status(202).json({ job });
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
@@ -43,15 +43,27 @@ router.post(
   },
 );
 
-router.get("/pdim/jobs/:jobId", requireAdmin, requireVerified2FA, (req, res) => {
-  const jobId = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
-  const job = pdimRecoveryBackupService.get(jobId);
-  if (!job) {
-    res.status(404).json({ error: "PDIM recovery backup job not found" });
-    return;
-  }
-  res.json({ job });
-});
+router.get(
+  "/pdim/jobs/:jobId",
+  requireAdmin,
+  requireVerified2FA,
+  requireCsrfToken,
+  async (req, res) => {
+    try {
+      const jobId = Array.isArray(req.params.jobId)
+        ? req.params.jobId[0]
+        : req.params.jobId;
+      const job = await pdimRecoveryBackupService.get(jobId);
+      if (!job) {
+        res.status(404).json({ error: "PDIM recovery backup job not found" });
+        return;
+      }
+      res.json({ job });
+    } catch {
+      res.status(503).json({ error: "PDIM recovery authority unavailable" });
+    }
+  },
+);
 
 // List all backups (admin only)
 router.get("/list", requireAdmin, async (_req, res) => {

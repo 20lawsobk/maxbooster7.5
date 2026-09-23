@@ -1,0 +1,377 @@
+{
+  "runId": "2026-09-23T17-02-11-240Z",
+  "workspace": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-02-11-240Z (disposable isolated copy; remove with --cleanup)",
+  "commands": {
+    "build": "DEPLOY_PACK=1 npm run build",
+    "start": "bash start.sh"
+  },
+  "safety": {
+    "sourceRoot": "/home/runner/workspace",
+    "sourceRootUsedAsBuildCwd": false,
+    "sourceFilesMutated": false,
+    "excluded": [
+      ".replit",
+      ".git",
+      "data",
+      "logs",
+      "attached_assets",
+      "*.env secrets",
+      "dns-node/keys"
+    ],
+    "networkCredentialsProvided": false,
+    "thirdPartyOrLiveDatabaseTargeted": false,
+    "runtimeIsolationPolicy": {
+      "required": true,
+      "transport": "Unprivileged Linux user+network namespace; only namespace-local loopback is reachable by the app and every native/Python descendant",
+      "filesystem": "all build and runtime writes are rooted in the disposable copy; source credentials, data, logs, media, and VCS metadata are excluded",
+      "credentials": "env-i style allowlist; generated simulation-only secrets; ephemeral local PostgreSQL only"
+    },
+    "hostNetworkNamespace": "net:[4026532714]",
+    "runtimeNetworkNamespace": null,
+    "runtimeIsolationEnforced": false,
+    "deployPackOnSourceWorkspace": false,
+    "networkNamespacePreflight": {
+      "available": true,
+      "exitCode": 0,
+      "signal": null,
+      "error": "",
+      "classification": "supported unprivileged user+network namespace with namespace-local loopback"
+    }
+  },
+  "resourceProfile": {
+    "configured": {
+      "cpu": 4,
+      "memoryBytes": 8589934592,
+      "imageHardLimitBytes": 8589934592
+    },
+    "observed": {
+      "cpuQuota": 4,
+      "logicalCpuCount": 4,
+      "memoryLimitBytes": 8589934592,
+      "memoryCurrentBytes": 2957340672,
+      "memoryHeadroomBytes": 5632593920,
+      "diskAvailableBytes": 238011293696
+    },
+    "admission": {
+      "safe": true,
+      "reasons": [],
+      "estimatedScratchBytes": 74179322744
+    }
+  },
+  "sourceSnapshot": {
+    "capturedAt": "2026-09-23T17:04:31.055Z",
+    "note": "All build/start stages use the immutable disposable copy captured at copy stage; source edits after that point are intentionally excluded."
+  },
+  "nodeResolution": {
+    "bundledNodePresentInCopy": true,
+    "pathNodeProbe": {
+      "exitCode": 0,
+      "output": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node\nv24.13.0\n",
+      "error": ""
+    },
+    "startScriptEvidence": null
+  },
+  "copyIntegrity": {
+    "checked": [
+      {
+        "path": "node_modules/@sentry/core/build/esm/logs/public-api.js",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 986,
+        "copyBytes": 986,
+        "sourceSha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b",
+        "copySha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b"
+      },
+      {
+        "path": "node_modules/vite/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 5158,
+        "copyBytes": 5158,
+        "sourceSha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0",
+        "copySha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0"
+      },
+      {
+        "path": "node_modules/tsx/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1601,
+        "copyBytes": 1601,
+        "sourceSha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659",
+        "copySha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659"
+      },
+      {
+        "path": "python_runtime/bin/python3.12",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 100186336,
+        "copyBytes": 100186336,
+        "sourceSha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929",
+        "copySha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929"
+      },
+      {
+        "path": "python_runtime/lib/python3.12/site-packages/pip/_vendor/certifi/cacert.pem",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 270954,
+        "copyBytes": 270954,
+        "sourceSha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9",
+        "copySha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
+      },
+      {
+        "path": "package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 14943,
+        "copyBytes": 14943,
+        "sourceSha256": "3b85c61e5b4fd82712c4fb3ee695cae383294cf397f4e13b7a4c0c1c216d3639",
+        "copySha256": "3b85c61e5b4fd82712c4fb3ee695cae383294cf397f4e13b7a4c0c1c216d3639"
+      },
+      {
+        "path": "script/build.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 26118,
+        "copyBytes": 26118,
+        "sourceSha256": "e966c5151931ee7f2ae3a0039eb928fe1f90508bbf542617695caadc9149ae06",
+        "copySha256": "e966c5151931ee7f2ae3a0039eb928fe1f90508bbf542617695caadc9149ae06"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/server.py",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 546965,
+        "copyBytes": 546965,
+        "sourceSha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7",
+        "copySha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 444,
+        "copyBytes": 444,
+        "sourceSha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+        "copySha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 109368185,
+        "copyBytes": 109368185,
+        "sourceSha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+        "copySha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419"
+      },
+      {
+        "path": "external/pdim/artifacts/api-server/src/index.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 11270,
+        "copyBytes": 11270,
+        "sourceSha256": "05ac55ce86c45094b2b4ad3e5d255981c07168179cef170ac93e8cc03017495d",
+        "copySha256": "05ac55ce86c45094b2b4ad3e5d255981c07168179cef170ac93e8cc03017495d"
+      }
+    ],
+    "passed": true
+  },
+  "configValidation": {
+    "checked": [
+      {
+        "path": "package.json",
+        "present": true,
+        "bytes": 14943
+      },
+      {
+        "path": "start.sh",
+        "present": true,
+        "bytes": 16196
+      },
+      {
+        "path": "script/build.ts",
+        "present": true,
+        "bytes": 26118
+      },
+      {
+        "path": "dist/pdim-restore.mjs",
+        "present": true,
+        "bytes": 31525
+      }
+    ],
+    "passed": true
+  },
+  "build": {
+    "exitCode": 1,
+    "signal": null,
+    "durationMs": 46696,
+    "artifacts": {
+      "dist/index.mjs": {
+        "present": true,
+        "bytes": 12401736
+      },
+      "dist/cluster.mjs": {
+        "present": true,
+        "bytes": 19215
+      },
+      "dist/public/index.html": {
+        "present": true,
+        "bytes": 16213
+      },
+      "dist/pdim-restore.mjs": {
+        "present": true,
+        "bytes": 31525
+      },
+      "node_modules.pdim": {
+        "present": false
+      },
+      "node_modules.manifest.json": {
+        "present": false
+      },
+      "app_remainder.pdim": {
+        "present": false
+      },
+      "app_remainder.manifest.json": {
+        "present": false
+      }
+    },
+    "outputTail": [
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mMarketplace-CXO5VtaL.js               \u001b[39m\u001b[1m\u001b[2m315.11 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mjspdf.es.min-2UQLnCAU.js              \u001b[39m\u001b[1m\u001b[2m386.25 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mDistribution-DrhxF8Zh.js              \u001b[39m\u001b[1m\u001b[2m430.86 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mvendor-charts-DFdc7FM3.js             \u001b[39m\u001b[1m\u001b[2m440.45 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mvendor-react-CpM8ef2F.js              \u001b[39m\u001b[1m\u001b[2m601.22 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mstudio-CVEeLneE.js                    \u001b[39m\u001b[1m\u001b[2m646.96 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[32m✓ built in 25.83s\u001b[39m",
+      "   ✅ Vite build complete → dist/public/",
+      "==> Bundling server with esbuild → dist/index.mjs...",
+      "   ✅ Server bundle → dist/index.mjs",
+      "==> Bundling isolated PDIM verifier → dist/retained-pdim-recovery-worker.mjs...",
+      "   ✅ Isolated PDIM verifier bundle ready",
+      "==> Bundling cluster entry with esbuild → dist/cluster.mjs...",
+      "   ✅ Cluster bundle → dist/cluster.mjs",
+      "✅ Build complete.",
+      "Build failed: <ref *1> Error: spawnSync cargo ENOENT",
+      "    at Object.spawnSync (node:internal/child_process:1120:20)",
+      "    at spawnSync (node:child_process:911:24)",
+      "    at execFileSync (node:child_process:954:15)",
+      "    at main (/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-02-11-240Z/app/script/build.ts:122:5)",
+      "    at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {",
+      "  errno: -2,",
+      "  code: 'ENOENT',",
+      "  syscall: 'spawnSync cargo',",
+      "  path: 'cargo',",
+      "  spawnargs: [",
+      "    'build',",
+      "    '--locked',",
+      "    '--release',",
+      "    '--manifest-path',",
+      "    'boosterstate/Cargo.toml'",
+      "  ],",
+      "  error: [Circular *1],",
+      "  status: null,",
+      "  signal: null,",
+      "  output: null,",
+      "  pid: 0,",
+      "  stdout: undefined,",
+      "  stderr: undefined",
+      "}"
+    ],
+    "nixPreflight": null
+  },
+  "pythonCapability": {
+    "status": "build_failed",
+    "note": "The production build recreates the pinned portable Python runtime. No provider credentials are available; package and fixed runtime downloads are build-time only."
+  },
+  "capsuleRestore": {
+    "buildCapsules": {
+      "nodeModules": {
+        "present": false
+      },
+      "appRemainder": {
+        "present": false
+      },
+      "pythonRuntime": {
+        "present": false
+      },
+      "nodeModulesRemovedBeforeColdBoot": false,
+      "freshSourceBuild": true
+    },
+    "manifestValidation": [],
+    "historicalCompatibility": [],
+    "coldCriticalRestore": null,
+    "coldBackgroundRestore": null,
+    "warmIdempotentRestore": null
+  },
+  "imageSize": null,
+  "productionReadiness": {
+    "publishReady": false,
+    "reason": "Not evaluated yet; a passing run requires current-source MaxCore/PDIM capsules and namespace-isolated runtime evidence."
+  },
+  "startup": {
+    "exitCode": null,
+    "signal": null,
+    "liveness": {
+      "observed": false,
+      "transportOnly": false,
+      "realServer": false,
+      "jsonObserved": false,
+      "earlyAppResponse": false,
+      "startupResponseObserved": false,
+      "samples": []
+    },
+    "readiness": {
+      "observed": false,
+      "fullReady": false,
+      "statusCodes": [],
+      "lastBody": null,
+      "note": null
+    },
+    "attempts": []
+  },
+  "failures": [
+    {
+      "stage": "build",
+      "message": "DEPLOY_PACK=1 npm run build exited 1"
+    },
+    {
+      "stage": "build-artifacts",
+      "message": "node_modules.pdim was not produced"
+    },
+    {
+      "stage": "build-artifacts",
+      "message": "node_modules.manifest.json was not produced"
+    },
+    {
+      "stage": "build-artifacts",
+      "message": "app_remainder.pdim was not produced"
+    },
+    {
+      "stage": "build-artifacts",
+      "message": "app_remainder.manifest.json was not produced"
+    },
+    {
+      "stage": "build",
+      "message": "DEPLOY_PACK=1 npm run build exited 1"
+    },
+    {
+      "stage": "build-artifacts",
+      "message": "node_modules.pdim was not produced"
+    },
+    {
+      "stage": "build-artifacts",
+      "message": "node_modules.manifest.json was not produced"
+    },
+    {
+      "stage": "build-artifacts",
+      "message": "app_remainder.pdim was not produced"
+    },
+    {
+      "stage": "build-artifacts",
+      "message": "app_remainder.manifest.json was not produced"
+    }
+  ],
+  "result": "BUILD_FAILED",
+  "completedStages": [
+    "copy"
+  ]
+}

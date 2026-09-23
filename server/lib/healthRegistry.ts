@@ -29,7 +29,15 @@ class HealthRegistry {
 
   async check(name: string): Promise<SubsystemHealth> {
     const cached = this.cache.get(name);
-    if (cached && Date?.now() - cached?.lastChecked < this.cacheTtlMs)
+    // MaxCore is primary-owned in cluster mode. Never serve its cached `ok`
+    // after the primary IPC channel has disconnected; each application
+    // readiness request must re-confirm authority (the primary itself still
+    // coalesces and TTL-caches the underlying Python health fetch).
+    if (
+      name !== "maxcore" &&
+      cached &&
+      Date?.now() - cached?.lastChecked < this.cacheTtlMs
+    )
       return cached;
     const probe = this.probes.get(name);
     if (!probe) {
@@ -116,6 +124,52 @@ class HealthRegistry {
 
 export const healthRegistry = new HealthRegistry();
 
+export async function probeMaxcoreReadiness(): Promise<
+  Omit<SubsystemHealth, "name" | "lastChecked">
+> {
+  const { checkMaxcoreLocalReady, getMaxcoreLocalStatus } = await import(
+    "../services/maxcoreLocalSupervisor.js"
+  );
+  const local = getMaxcoreLocalStatus();
+  if (local.enabled) {
+    const ready = await checkMaxcoreLocalReady();
+    const current = getMaxcoreLocalStatus();
+    return ready
+      ? {
+          status: "ok",
+          detail: "supervised Python model loaded",
+        }
+      : {
+          status: "degraded",
+          detail:
+            current.error ??
+            `supervised Python model not ready (running=${current.running}, restarts=${current.restarts})`,
+        };
+  }
+
+  const { MaxCoreAIClient } = await import("../services/maxcoreClient.js");
+  const cb = MaxCoreAIClient.getCircuitBreakerState();
+  if (!cb.configured) {
+    return { status: "unknown", detail: "MaxCore not configured (no URL/key)" };
+  }
+  if (cb.open) {
+    const retryInSec = cb.openUntil
+      ? Math.max(0, Math.round((cb.openUntil - Date.now()) / 1000))
+      : null;
+    return {
+      status: "down",
+      detail: `circuit breaker OPEN — ${cb.consecutiveFailures} consecutive failures, retry in ~${retryInSec}s`,
+    };
+  }
+  if (cb.halfOpen) {
+    return {
+      status: "degraded",
+      detail: "circuit breaker half-open — probing recovery",
+    };
+  }
+  return { status: "ok", detail: `${cb.consecutiveFailures} consecutive failures` };
+}
+
 export function registerCoreProbes(): void {
   // DB probe
   healthRegistry?.register("database", async () => {
@@ -200,35 +254,14 @@ export function registerCoreProbes(): void {
     }
   });
 
-  // MaxCore circuit-breaker probe — surfaces outages/circuit-open state in
-  // /api/ready without requiring log access. "down" only when the breaker is
-  // actually open (fast-failing real requests); a closed breaker with zero
-  // failures reports "ok" even if MaxCore has never been called yet.
+  // Local MaxCore readiness is the supervised Python model-loaded gate, not
+  // merely the request circuit's lack of observed failures. Remote mode keeps
+  // the circuit-breaker signal because there is no locally owned child.
   healthRegistry?.register("maxcore", async () => {
     try {
-      const { MaxCoreAIClient } = await import("../services/maxcoreClient.js");
-      const cb = MaxCoreAIClient.getCircuitBreakerState();
-      if (!cb.configured) {
-        return { status: "unknown", detail: "MaxCore not configured (no URL/key)" };
-      }
-      if (cb.open) {
-        const retryInSec = cb.openUntil
-          ? Math.max(0, Math.round((cb.openUntil - Date.now()) / 1000))
-          : null;
-        return {
-          status: "down",
-          detail: `circuit breaker OPEN — ${cb.consecutiveFailures} consecutive failures, retry in ~${retryInSec}s`,
-        };
-      }
-      if (cb.halfOpen) {
-        return {
-          status: "degraded",
-          detail: "circuit breaker half-open — probing recovery",
-        };
-      }
-      return { status: "ok", detail: `${cb.consecutiveFailures} consecutive failures` };
+      return await probeMaxcoreReadiness();
     } catch (e) {
-      return { status: "unknown", detail: (e as Error).message };
+      return { status: "down", detail: (e as Error).message };
     }
   });
 

@@ -32,3 +32,19 @@ run_in_background: true
 
 Then arm `Monitor` on the returned task id for a pattern like `EXIT:\d+`.
 This is the only combination that keeps the task trackable end-to-end.
+
+## Delegated long builds
+
+Keep ownership of long canonical build commands with an agent whose shell tool
+actually exposes managed background execution. A delegated worker may have only
+a five-minute foreground interface, even when the main agent supports background
+tasks.
+
+**Why:** A worker's outer shell timeout killed healthy parallel capsule compressors.
+Increasing the build script's internal timeout did not change that outer boundary.
+Bounded recovery proved the artifacts, but did not prove a single successful build
+command exit.
+
+**How to apply:** Let the worker prepare the harness and review evidence; have the
+main agent launch the unchanged long command as one managed background task.
+Preserve expensive simulation artifacts until the main agent accepts the results.

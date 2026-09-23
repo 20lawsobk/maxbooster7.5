@@ -17,7 +17,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { copyFileSync, createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, readlinkSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, readlinkSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
@@ -39,6 +39,8 @@ mkdirSync(runsRoot, { recursive: true });
 const statePath = join(durableRoot, "state.json");
 const argv = new Set(process.argv.slice(2));
 const runtimeSandboxed = argv.has("--runtime-sandbox");
+const syncCurrentSmall = argv.has("--sync-current-small");
+const refreshRuntimeSource = argv.has("--refresh-runtime-source");
 const phaseFlag = process.argv.find((arg) => arg.startsWith("--phase="));
 const requestedPhase = phaseFlag ? phaseFlag.slice("--phase=".length) : process.argv.slice(2).find((arg) => !arg.startsWith("-")) || "all";
 const resumeRequested = argv.has("--resume") || requestedPhase !== "all" || argv.has("--cleanup");
@@ -53,6 +55,8 @@ const workspace = stateFromDisk?.runId === runId && existsSync(stateFromDisk.wor
   ? stateFromDisk.workspace
   : join(runsRoot, runId);
 const copyRoot = join(workspace, "app");
+const copyCompleteSentinel = join(copyRoot, ".simulation-copy-complete");
+const boundedBuildSentinel = join(workspace, "phased-build-complete.json");
 const transientRoot = join(workspace, "transient");
 const logsRoot = join(workspace, "logs");
 // tsx/esbuild create Unix sockets below TMPDIR; the durable run path is too
@@ -198,6 +202,96 @@ function tail(text, count = 30) {
   return redact(text).split(/\r?\n/).filter(Boolean).slice(-count);
 }
 
+function captureClusterTopology(startLogPath, expectedWorkerCount, pdimPort) {
+  const processProbe = spawnSync("ps", ["-eo", "pid=,ppid=,pgid=,args="], {
+    encoding: "utf8",
+    timeout: 10_000,
+  });
+  if (processProbe.error?.code === "ETIMEDOUT" || processProbe.status !== 0) {
+    return {
+      enabled: true,
+      expectedWorkerCount,
+      passed: false,
+      error: processProbe.error?.code === "ETIMEDOUT"
+        ? "bounded process-topology probe timed out"
+        : `process-topology probe exited ${processProbe.status}`,
+    };
+  }
+  const rows = processProbe.stdout.split(/\r?\n/).flatMap((line) => {
+    const match = line.match(/^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/);
+    if (!match) return [];
+    const pid = Number(match[1]);
+    let cwd = null;
+    try { cwd = readlinkSync(`/proc/${pid}/cwd`); } catch {}
+    return [{
+      pid,
+      ppid: Number(match[2]),
+      pgid: Number(match[3]),
+      args: match[4],
+      cwd,
+    }];
+  });
+  const log = existsSync(startLogPath) ? readFileSync(startLogPath, "utf8") : "";
+  const primaryPid = Number(log.match(/\[Cluster\] Primary (\d+) — forking \d+ workers/)?.[1]) || null;
+  const workerPids = [...log.matchAll(/\[Cluster\] Worker (\d+) online/g)]
+    .map((match) => Number(match[1]))
+    .filter((pid, index, all) => all.indexOf(pid) === index)
+    .slice(-expectedWorkerCount);
+  const byPid = new Map(rows.map((row) => [row.pid, row]));
+  const liveWorkers = workerPids.filter((pid) => byPid.get(pid)?.ppid === primaryPid);
+  const maxcoreRoot = join(copyRoot, "external", "maxcore", "artifacts", "api-server");
+  const maxcoreProcesses = rows.filter((row) =>
+    row.cwd === maxcoreRoot || row.cwd?.startsWith(`${maxcoreRoot}/`));
+  const primaryOwnedMaxcoreRoots = maxcoreProcesses.filter((row) =>
+    row.ppid === primaryPid);
+  const workerOwnedMaxcoreRoots = maxcoreProcesses.filter((row) =>
+    workerPids.includes(row.ppid));
+  const primaryAlive = primaryPid !== null && byPid.has(primaryPid);
+  const workersPassed = workerPids.length === expectedWorkerCount
+    && liveWorkers.length === expectedWorkerCount;
+  const maxcoreOwnerPassed = primaryOwnedMaxcoreRoots.length === 1
+    && workerOwnedMaxcoreRoots.length === 0;
+  const pdimListenerProbe = spawnSync(
+    "lsof",
+    ["-nP", "-a", `-iTCP:${pdimPort}`, "-sTCP:LISTEN", "-Fp"],
+    { encoding: "utf8", timeout: 10_000 },
+  );
+  const pdimListenerPids = pdimListenerProbe.status === 0
+    ? [...pdimListenerProbe.stdout.matchAll(/^p(\d+)$/gm)]
+      .map((match) => Number(match[1]))
+      .filter((pid, index, all) => all.indexOf(pid) === index)
+    : [];
+  const pdimOwnerPassed = primaryPid !== null
+    && pdimListenerPids.length === 1
+    && pdimListenerPids[0] === primaryPid;
+  return {
+    enabled: true,
+    expectedWorkerCount,
+    primaryPid,
+    primaryAlive,
+    workerPids,
+    liveWorkerPids: liveWorkers,
+    workersPassed,
+    maxcoreAuthority: {
+      requiredOwner: "cluster-primary",
+      primaryOwnedRootPids: primaryOwnedMaxcoreRoots.map((row) => row.pid),
+      workerOwnedRootPids: workerOwnedMaxcoreRoots.map((row) => row.pid),
+      observedProcessPids: maxcoreProcesses.map((row) => row.pid),
+      passed: maxcoreOwnerPassed,
+    },
+    pdimAuthority: {
+      requiredOwner: "cluster-primary",
+      primaryPid,
+      listenerPort: pdimPort,
+      listenerProcessPids: pdimListenerPids,
+      listenerRunsInPrimaryProcess: pdimOwnerPassed,
+      probeExitCode: pdimListenerProbe.status,
+      passed: pdimOwnerPassed,
+    },
+    passed: primaryAlive && workersPassed && maxcoreOwnerPassed && pdimOwnerPassed,
+  };
+}
+
 function commandPath(command) {
   const found = spawnSync("bash", ["-lc", `command -v ${command}`], {
     encoding: "utf8",
@@ -205,6 +299,17 @@ function commandPath(command) {
   }).stdout.trim();
   return found || null;
 }
+
+function nixToolPath(packageName, command) {
+  const probe = spawnSync("nix-shell", [
+    "--pure",
+    "-I", "nixpkgs=https://github.com/NixOS/nixpkgs/archive/650e572363c091045cdbc5b36b0f4c1f614d3058.tar.gz",
+    "-p", packageName, "--run", `command -v ${command}`,
+  ], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 60_000 });
+  return probe.status === 0 ? probe.stdout.trim() || null : null;
+}
+
+const ipPath = commandPath("ip") || nixToolPath("iproute2", "ip");
 
 function makePath() {
   const candidates = [
@@ -214,10 +319,18 @@ function makePath() {
     commandPath("zstd"),
     commandPath("tar"),
     commandPath("git"),
+    commandPath("nix-shell"),
+    commandPath("cargo"),
+    commandPath("rustc"),
+    commandPath("curl"),
     commandPath("python3"),
     commandPath("initdb"),
     commandPath("pg_ctl"),
     commandPath("psql"),
+    commandPath("redis-server"),
+    commandPath("redis-cli"),
+    commandPath("lsof"),
+    ipPath,
     commandPath("bash"),
   ];
   const dirs = new Set(["/usr/local/bin", "/usr/bin", "/bin"]);
@@ -286,73 +399,43 @@ function runProcess(command, args, options = {}) {
 }
 
 async function copyFilteredTree() {
-  // tar preserves symlinks/modes and lets the exclusion policy be explicit.
-  // It never traverses the source .git, data, logs, user media, or external
-  // service trees containing user state. Current external/maxcore and
-  // external/pdim source are intentionally included so their capsules are
-  // freshly produced by this run. Existing node_modules/python_runtime remain available so
-  // the build needs no package install or network access.
-  const excludes = [
-    "./.git",
-    "./.replit",
-    "./data",
-    "./logs",
-    "./attached_assets",
-    "./archive-capsules",
-    "./.cache",
-    "./.cache/*",
-    "./.local",
-    "./.local/*",
-    "./.auditscratch",
-    "./.audit-wal",
-    "./reports",
-    "./reports/*",
-    "./public/generated-content",
-    "./public/generated-content/*",
-    "./uploads",
-    "./uploads/*",
-    "./AI enhancements",
-    "./AI enhancements/*",
-    "./built-in plugins dsp",
-    "./built-in plugins dsp/*",
-    "./awareness layer",
-    "./awareness layer/*",
-    "./hardware",
-    "./hardware/*",
-    "./VST",
-    "./VST/*",
-    "./VST3",
-    "./VST3/*",
-    "./artifacts",
-    "./artifacts/*",
-    "./*.log",
-    "./*.pdim",
-    "./*.manifest.json",
-    "./external/maxcore/artifacts/ai-training-server/ai_model/weights/*.pt",
-    "./external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
-    "./dns-node/keys",
-    "./dns-node/keys/*",
-    "./.env",
-    "./.env.local",
-    "./.env.development",
-    "./.env.production",
-  ];
-  const tarArgs = ["-C", root, "-cf", "-"];
-  for (const item of excludes) tarArgs.push(`--exclude=${item}`);
-  tarArgs.push(".");
-  const extractArgs = ["-C", copyRoot, "-xf", "-"];
-  const tar = spawn("tar", tarArgs, { env: buildEnv(), stdio: ["ignore", "pipe", "pipe"] });
-  const extract = spawn("tar", extractArgs, { env: buildEnv(), stdio: ["pipe", "ignore", "pipe"] });
-  let errors = "";
-  tar.stderr.on("data", (chunk) => { errors += chunk.toString(); });
-  extract.stderr.on("data", (chunk) => { errors += chunk.toString(); });
-  tar.stdout.pipe(extract.stdin);
-  const [tarResult, extractResult] = await Promise.all([
-    new Promise((resolveResult) => tar.on("close", (code, signal) => resolveResult({ code, signal }))),
-    new Promise((resolveResult) => extract.on("close", (code, signal) => resolveResult({ code, signal }))),
+  // Copy-on-write reflinks preserve symlinks/modes without reading and
+  // rewriting several GiB of immutable dependency/runtime files into page
+  // cache. The allowlist is assembled before cp runs, so credentials, user
+  // data, VCS metadata, reports, and prior simulation state never enter the
+  // disposable tree. Subsequent packed-build writes trigger filesystem COW
+  // and cannot mutate the source checkout.
+  const excludedTopLevel = new Set([
+    ".git", ".replit", "data", "logs", "attached_assets",
+    "archive-capsules", ".cache", ".local", ".auditscratch", ".audit-wal",
+    "reports", "uploads", "AI enhancements", "built-in plugins dsp",
+    "awareness layer", "hardware", "VST", "VST3", "artifacts",
   ]);
-  if (tarResult.code !== 0 || extractResult.code !== 0) {
-    throw new Error(`filtered copy failed (tar=${tarResult.code}, extract=${extractResult.code}): ${errors}`);
+  const sourceEntries = readdirSync(root)
+    .filter((name) =>
+      !excludedTopLevel.has(name) &&
+      !name.endsWith(".log") &&
+      !name.endsWith(".pdim") &&
+      !name.endsWith(".manifest.json") &&
+      ![".env", ".env.local", ".env.development", ".env.production"].includes(name))
+    .map((name) => join(root, name));
+  const copy = await runProcess("cp", [
+    "-a", "--reflink=auto", "--", ...sourceEntries, copyRoot,
+  ], {
+    cwd: root,
+    env: buildEnv(),
+    timeoutMs: 8 * 60_000,
+  });
+  if (copy.code !== 0) {
+    throw new Error(`filtered reflink copy failed (${copy.code ?? copy.signal}): ${copy.output}`);
+  }
+  rmSync(join(copyRoot, "public/generated-content"), { recursive: true, force: true });
+  rmSync(join(copyRoot, "dns-node/keys"), { recursive: true, force: true });
+  const weightsDir = join(copyRoot, "external/maxcore/artifacts/ai-training-server/ai_model/weights");
+  for (const name of existsSync(weightsDir) ? readdirSync(weightsDir) : []) {
+    if (name.endsWith(".pt") || name === "model.corrupt") {
+      rmSync(join(weightsDir, name), { force: true });
+    }
   }
   // Checkpoints are gitignored runtime artifacts. Exclude every .pt file from
   // the broad source copy, then admit only the immutable manifest-bound serving
@@ -418,12 +501,17 @@ async function freePorts(count) {
   return ports;
 }
 
-async function request(url, timeoutMs = 4_000) {
+async function request(url, timeoutMs = 4_000, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(url, { signal: controller.signal });
-    return { status: response.status, body: await response.text() };
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return {
+      status: response.status,
+      body: await response.text(),
+      setCookie: response.headers.getSetCookie?.() || [],
+      cacheControl: response.headers.get("cache-control"),
+    };
   } catch (error) {
     return { status: null, body: "", error: error instanceof Error ? error.message : String(error) };
   } finally {
@@ -478,12 +566,225 @@ function stopStartProcess() {
 }
 
 async function main() {
+  if (refreshRuntimeSource) {
+    if (
+      !resumeRequested
+      || stateFromDisk?.runId !== runId
+      || !existsSync(copyCompleteSentinel)
+      || report.build?.exitCode !== 0
+      || !report.completedStages?.includes("restore")
+    ) {
+      throw new Error("--refresh-runtime-source requires the preserved copy from a completed canonical build and restore attempt");
+    }
+    const ownedProcessProbe = spawnSync("ps", ["-eo", "pid=,args="], {
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+    if (ownedProcessProbe.error?.code === "ETIMEDOUT") {
+      throw new Error("owned runtime process check exceeded the bounded 10-second timeout");
+    }
+    if (ownedProcessProbe.status !== 0) {
+      throw new Error(`owned runtime process check failed: ${redact(ownedProcessProbe.stderr)}`);
+    }
+    const ownedProcesses = ownedProcessProbe.stdout
+      .split(/\r?\n/)
+      .filter((line) => line.includes(copyRoot));
+    if (ownedProcesses.length) {
+      throw new Error(`refusing runtime-source refresh while owned run processes remain: ${ownedProcesses.map((line) => line.trim().split(/\s+/, 1)[0]).join(", ")}`);
+    }
+    let attemptNumber = 1;
+    while (existsSync(join(reportDir, `${runId}-attempt-${attemptNumber}.json`))) {
+      attemptNumber++;
+    }
+    const archivedReport = join(reportDir, `${runId}-attempt-${attemptNumber}.json`);
+    copyFileSync(priorReportPath, archivedReport);
+    const currentMarkdown = join(reportDir, `${runId}.md`);
+    if (existsSync(currentMarkdown)) {
+      copyFileSync(currentMarkdown, join(reportDir, `${runId}-attempt-${attemptNumber}.md`));
+    }
+    const attemptArchive = join(workspace, "attempt-history", `attempt-${attemptNumber}`);
+    mkdirSync(attemptArchive, { recursive: true });
+    if (existsSync(logsRoot)) {
+      cpSync(logsRoot, join(attemptArchive, "logs"), { recursive: true });
+    }
+    const approvedRuntimeSourcePaths = [
+      "scripts/simulate-production.mjs",
+      "server/cluster.ts",
+      "server/index.ts",
+      "server/lib/localPdimServer.ts",
+      "server/middleware/csrf.ts",
+      "server/routes/backup.ts",
+      "server/services/backup/pdimRecoveryBackupService.ts",
+      "external/maxcore/artifacts/api-server/src/python-server.ts",
+      "script/build.ts",
+      "script/lib/pythonRequirements.py",
+      "start.sh",
+      "tests/fixtures/pdim-recovery-cluster-fixture.ts",
+      "tests/unit/pdim-recovery-cluster-integration.test.ts",
+      "tests/unit/pdim-recovery-operator.test.ts",
+      "tests/unit/maxcore-python-launcher.test.ts",
+    ];
+    const synchronized = [];
+    for (const relative of approvedRuntimeSourcePaths) {
+      const source = join(root, relative);
+      const copy = join(copyRoot, relative);
+      if (!existsSync(source)) {
+        throw new Error(`approved runtime-source path is missing from source: ${relative}`);
+      }
+      mkdirSync(dirname(copy), { recursive: true });
+      copyFileSync(source, copy);
+      const sourceSha256 = await hashFile(source);
+      const copySha256 = await hashFile(copy);
+      if (sourceSha256 !== copySha256 || statSync(source).size !== statSync(copy).size) {
+        throw new Error(`approved runtime-source synchronization verification failed: ${relative}`);
+      }
+      synchronized.push({
+        path: relative,
+        bytes: statSync(copy).size,
+        sha256: copySha256,
+      });
+    }
+    const priorHistory = report.historicalAttempts || [];
+    const historicalAttempt = {
+      attempt: attemptNumber,
+      report: archivedReport,
+      logs: join(attemptArchive, "logs"),
+      result: report.result,
+      canonicalBuildExitCode: report.build.exitCode,
+      note: "Preserved prior canonical build/runtime evidence; it predates the approved Python launcher source refresh and is not current-source acceptance.",
+    };
+    report.historicalAttempts = [...priorHistory, historicalAttempt];
+    report.sourceSnapshot.synchronizedAt = new Date().toISOString();
+    report.sourceSnapshot.synchronization = {
+      mode: "explicit cluster-recovery/runtime refresh after owned runtime stopped; no recopy",
+      paths: synchronized,
+    };
+    report.copyIntegrity.checked = [
+      ...(report.copyIntegrity.checked || []).filter(
+        (item) => !approvedRuntimeSourcePaths.includes(item.path),
+      ),
+      ...synchronized.map((item) => ({
+        path: item.path,
+        sourcePresent: true,
+        copyPresent: true,
+        sourceBytes: item.bytes,
+        copyBytes: item.bytes,
+        sourceSha256: item.sha256,
+        copySha256: item.sha256,
+      })),
+    ];
+    report.copyIntegrity.passed = report.copyIntegrity.checked.every(
+      (item) => item.sourcePresent && item.copyPresent
+        && item.sourceBytes === item.copyBytes && item.sourceSha256 === item.copySha256,
+    );
+    if (!report.copyIntegrity.passed) {
+      throw new Error("copy integrity failed after approved runtime-source synchronization");
+    }
+    report.completedStages = ["copy"];
+    report.failures = [];
+    report.result = "NOT_RUN";
+    report.build = { exitCode: null, signal: null, durationMs: null, artifacts: {}, outputTail: [], nixPreflight: null };
+    report.pythonCapability = {
+      status: "not_evaluated",
+      note: "The refreshed production launcher and mandatory locked dependencies require a new canonical build.",
+    };
+    report.capsuleRestore = {
+      buildCapsules: {},
+      manifestValidation: [],
+      historicalCompatibility: report.capsuleRestore?.historicalCompatibility || [],
+      coldCriticalRestore: null,
+      coldBackgroundRestore: null,
+      warmIdempotentRestore: null,
+    };
+    report.imageSize = null;
+    report.startup = {
+      exitCode: null,
+      signal: null,
+      liveness: { observed: false, transportOnly: false, realServer: false, jsonObserved: false, earlyAppResponse: false, startupResponseObserved: false, samples: [] },
+      readiness: { observed: false, fullReady: false, statusCodes: [], lastBody: null, note: null },
+      attempts: [],
+    };
+    report.productionReadiness = {
+      publishReady: false,
+      reason: "Invalidated after approved runtime-source refresh; new build, restore, startup, model, and load evidence required.",
+    };
+    rmSync(boundedBuildSentinel, { force: true });
+    persistState("copy", "complete");
+  }
+  if (syncCurrentSmall) {
+    if (
+      !resumeRequested
+      || stateFromDisk?.runId !== runId
+      || !existsSync(copyCompleteSentinel)
+      || report.completedStages?.some((stageName) => stageName !== "copy")
+    ) {
+      throw new Error("--sync-current-small requires an existing copy-complete run before any later stage completed");
+    }
+    const approvedSmallSyncPaths = [
+      "scripts/simulate-production.mjs",
+      "server/cluster.ts",
+      "server/index.ts",
+      "server/lib/healthRegistry.ts",
+      "server/services/maxcoreLocalSupervisor.ts",
+      "server/startup-probes.ts",
+      "tests/unit/maxcore-cluster-ownership.test.ts",
+      "tests/unit/maxcore-local-supervisor.test.ts",
+      "tests/unit/maxcore-readiness-gate.test.ts",
+    ];
+    const synchronized = [];
+    for (const relative of approvedSmallSyncPaths) {
+      const source = join(root, relative);
+      const copy = join(copyRoot, relative);
+      if (!existsSync(source)) {
+        throw new Error(`approved current-source synchronization path is missing: ${relative}`);
+      }
+      mkdirSync(dirname(copy), { recursive: true });
+      copyFileSync(source, copy);
+      const sourceSha256 = await hashFile(source);
+      const copySha256 = await hashFile(copy);
+      if (sourceSha256 !== copySha256 || statSync(source).size !== statSync(copy).size) {
+        throw new Error(`approved current-source synchronization verification failed: ${relative}`);
+      }
+      synchronized.push({
+        path: relative,
+        bytes: statSync(copy).size,
+        sha256: copySha256,
+      });
+    }
+    report.sourceSnapshot.synchronizedAt = new Date().toISOString();
+    report.sourceSnapshot.synchronization = {
+      mode: "explicit small-path refresh after the owned-MaxCore cluster/readiness fix; no recopy",
+      paths: synchronized,
+    };
+    report.copyIntegrity.checked = [
+      ...(report.copyIntegrity.checked || []).filter(
+        (item) => !approvedSmallSyncPaths.includes(item.path),
+      ),
+      ...synchronized.map((item) => ({
+        path: item.path,
+        sourcePresent: true,
+        copyPresent: true,
+        sourceBytes: item.bytes,
+        copyBytes: item.bytes,
+        sourceSha256: item.sha256,
+        copySha256: item.sha256,
+      })),
+    ];
+    report.copyIntegrity.passed = report.copyIntegrity.checked.every(
+      (item) => item.sourcePresent && item.copyPresent
+        && item.sourceBytes === item.copyBytes && item.sourceSha256 === item.copySha256,
+    );
+    if (!report.copyIntegrity.passed) {
+      throw new Error("copy integrity failed after approved current-source synchronization");
+    }
+  }
   const stage = async (name, fn) => {
     const recoverableBuild = name === "build"
       && report.failures?.some((failure) => failure.stage === "build" || failure.stage === "build-artifacts")
       && existsSync(join(copyRoot, "node_modules.pdim"))
       && existsSync(join(copyRoot, "app_remainder.pdim"));
-    if (report.completedStages?.includes(name) && !argv.has("--force") && !recoverableBuild) return;
+    const retryableStartup = name === "startup" && requestedPhase === "startup";
+    if (report.completedStages?.includes(name) && !argv.has("--force") && !recoverableBuild && !retryableStartup) return;
     persistState(name, "running");
     const failuresBefore = report.failures.length;
     await fn();
@@ -492,10 +793,20 @@ async function main() {
 
   await stage("copy", async () => {
     report.resourceProfile = inspectProductionProfile(root);
-    // Probe the exact host-level network namespace capability required by the
-    // production rehearsal. Do not silently substitute a user-namespace-only
-    // variant: availability can differ across agent/test environments.
-    const namespaceProbe = spawnSync("unshare", ["--net", "true"], {
+    // Probe the exact unprivileged user+network namespace mechanism used by
+    // the startup stage. A direct `unshare --net` requires host CAP_SYS_ADMIN
+    // in this environment, while mapping root inside a disposable user
+    // namespace is the kernel-supported unprivileged path. The nested network
+    // namespace still confines the app and every native/Python descendant to
+    // namespace-local loopback.
+    const namespaceProbe = spawnSync("unshare", [
+      "--user", "--map-current-user", "--keep-caps", "--net",
+      "bash", "-c", `"${ipPath}" link set lo up && exec "$@"`, "namespace-probe",
+      nodePath, "-e",
+      "const net=require('node:net');const s=net.createServer();" +
+      "s.once('error',()=>process.exit(2));" +
+      "s.listen(0,'127.0.0.1',()=>s.close(()=>process.exit(0)));",
+    ], {
       env: buildEnv(),
       encoding: "utf8",
       timeout: 5_000,
@@ -507,7 +818,7 @@ async function main() {
       signal: namespaceProbe.signal,
       error: redact(namespaceProbe.stderr || namespaceProbe.error?.message || "").slice(0, 500),
       classification: namespaceProbe.status === 0
-        ? "supported"
+        ? "supported unprivileged user+network namespace with namespace-local loopback"
         : "test-environment blocker; not an application defect",
     };
     const sourceBytes = report.safety.networkNamespacePreflight.available
@@ -524,7 +835,16 @@ async function main() {
     }
     mkdirSync(join(transientRoot, "home"), { recursive: true });
     mkdirSync(join(transientRoot, "tmp"), { recursive: true });
-    if (!existsSync(join(copyRoot, "package.json"))) await copyFilteredTree();
+    if (!existsSync(copyCompleteSentinel)) {
+      // A tool timeout or killed tar pipeline can leave a plausible-looking
+      // package.json in a partial tree. Never resume from that tree: rebuild
+      // the disposable copy from scratch and mark it complete only after both
+      // sides of the filtered tar pipeline have exited successfully.
+      rmSync(copyRoot, { recursive: true, force: true });
+      mkdirSync(copyRoot, { recursive: true });
+      await copyFilteredTree();
+      writeFileSync(copyCompleteSentinel, `${new Date().toISOString()}\n`, { flag: "wx" });
+    }
     report.sourceSnapshot.capturedAt ||= new Date().toISOString();
     const integrityPaths = [
       "node_modules/@sentry/core/build/esm/logs/public-api.js",
@@ -532,12 +852,23 @@ async function main() {
       "node_modules/tsx/package.json",
       "python_runtime/bin/python3.12",
       "python_runtime/lib/python3.12/site-packages/pip/_vendor/certifi/cacert.pem",
+      ".dockerignore",
+      "build.sh",
       "package.json",
       "script/build.ts",
+      "scripts/boosterstate-toolchain.nix",
+      "scripts/build-boosterstate.sh",
+      "scripts/lib/productionSimulationPolicy.mjs",
+      "scripts/simulate-production.mjs",
+      "server/routes/distribution.ts",
+      "server/services/toolostRuntimeConfig.ts",
       "external/maxcore/artifacts/ai-training-server/server.py",
       "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
       "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
       "external/pdim/artifacts/api-server/src/index.ts",
+      "tests/fixtures/retained-pdim-source-fixture-worker.ts",
+      "tests/unit/retained-pdim-recovery-simulation.test.ts",
+      "tests/unit/toolost-runtime-config.test.ts",
     ];
     report.copyIntegrity.checked = [];
     for (const relative of integrityPaths) {
@@ -584,21 +915,67 @@ async function main() {
   if (!report.copyIntegrity.passed) return;
 
   await stage("build", async () => {
+    report.failures = report.failures.filter(
+      (failure) => failure.stage !== "build" && failure.stage !== "build-artifacts",
+    );
+    const requiredToolchain = ["nix-shell", "curl", "tar", "zstd"];
+    report.build.toolchain = Object.fromEntries(
+      requiredToolchain.map((command) => [command, commandPath(command)]),
+    );
+    const missingToolchain = requiredToolchain.filter(
+      (command) => !report.build.toolchain[command],
+    );
+    if (missingToolchain.length) {
+      addFailure(
+        "build",
+        `production build toolchain unavailable in the supported environment: ${missingToolchain.join(", ")}`,
+      );
+      return;
+    }
     // A prior bounded invocation may have completed build.ts and packed the
     // deploy tree, then been killed while the outer tool was timing out. Do
     // not rebuild from a post-pack tree (node_modules/dist are intentionally
     // gone); recover the durable result instead.
-    const priorBuildComplete = report.build.exitCode === 0
+    let boundedBuildRecovery = null;
+    if (existsSync(boundedBuildSentinel)) {
+      try {
+        const candidate = JSON.parse(readFileSync(boundedBuildSentinel, "utf8"));
+        const entries = Object.entries(candidate.artifacts || {});
+        const passed = candidate.schemaVersion === 1 && entries.length === 5
+          && await Promise.all(entries.map(async ([capsule, expected]) => {
+            const capsulePath = join(copyRoot, capsule);
+            const manifestPath = join(copyRoot, expected.manifest || "");
+            if (!existsSync(capsulePath) || !existsSync(manifestPath)) return false;
+            const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+            return statSync(capsulePath).size === expected.bytes
+              && await hashFile(capsulePath) === expected.sha256
+              && manifest.sha256 === expected.sha256;
+          })).then((results) => results.every(Boolean));
+        if (passed) boundedBuildRecovery = candidate;
+      } catch {}
+    }
+    const priorBuildComplete = (report.build.exitCode === 0
       && existsSync(join(copyRoot, "node_modules.pdim"))
       && existsSync(join(copyRoot, "app_remainder.pdim"))
       && /Build complete|Pre-flight image size check/.test(
         existsSync(join(logsRoot, "build.log")) ? readFileSync(join(logsRoot, "build.log"), "utf8") : "",
-      );
+      )) || boundedBuildRecovery !== null;
     if (priorBuildComplete) {
       report.failures = report.failures.filter(
         (failure) => failure.stage !== "build" && failure.stage !== "build-artifacts",
       );
       report.build.recoveredAfterOuterTimeout = true;
+      report.build.exitCode = null;
+      report.build.signal = null;
+      report.build.acceptanceStatus = "phased-complete";
+      report.build.singleCommandExitObserved = false;
+      if (boundedBuildRecovery) {
+        report.build.boundedCompletion = {
+          method: boundedBuildRecovery.method,
+          artifacts: boundedBuildRecovery.artifacts,
+          note: "The outer five-minute execution boundary killed concurrent zstd children. Each production packCapsule operation was then rerun to completion with four threads, and this recovery is accepted only after re-hashing all five capsules against both the sentinel and their production manifests.",
+        };
+      }
       report.build.nixPreflight = parseNixPreflight(report.build.outputTail.join("\n"));
       report.build.artifacts = {};
       for (const artifact of [
@@ -616,14 +993,103 @@ async function main() {
       return;
     }
     const gitMetadata = join(transientRoot, "git-metadata");
-    if (!existsSync(gitMetadata)) {
-      const gitInit = spawnSync("git", ["init", "--bare", "--quiet", gitMetadata], { env: buildEnv(), encoding: "utf8" });
-      if (gitInit.status !== 0) throw new Error(`temporary git metadata setup failed: ${gitInit.stderr}`);
-    }
-    const stageResult = spawnSync("git", ["--git-dir", gitMetadata, "--work-tree", copyRoot, "add", "-A"], {
-      env: buildEnv(), encoding: "utf8",
+    rmSync(gitMetadata, { recursive: true, force: true });
+    const gitInit = spawnSync("git", ["init", "--bare", "--quiet", gitMetadata], {
+      env: buildEnv(), encoding: "utf8", timeout: 30_000,
     });
-    if (stageResult.status !== 0) throw new Error(`temporary tracked-size index setup failed: ${stageResult.stderr}`);
+    if (gitInit.error?.code === "ETIMEDOUT") {
+      throw new Error("temporary git metadata setup exceeded the bounded 30-second timeout");
+    }
+    if (gitInit.status !== 0) {
+      throw new Error(`temporary git metadata setup failed: ${redact(gitInit.stderr)}`);
+    }
+    const sourceIndexProbe = spawnSync(
+      "git",
+      ["-C", root, "rev-parse", "--git-path", "index"],
+      { env: buildEnv(), encoding: "utf8", timeout: 10_000 },
+    );
+    if (sourceIndexProbe.error?.code === "ETIMEDOUT") {
+      throw new Error("source Git index discovery exceeded the bounded 10-second timeout");
+    }
+    if (sourceIndexProbe.status !== 0 || !sourceIndexProbe.stdout.trim()) {
+      throw new Error(`source Git index discovery failed: ${redact(sourceIndexProbe.stderr)}`);
+    }
+    const sourceIndex = resolve(root, sourceIndexProbe.stdout.trim());
+    if (!existsSync(sourceIndex)) {
+      throw new Error(`source Git index is missing at ${sourceIndexProbe.stdout.trim()}`);
+    }
+    // build.ts uses Git only to enumerate intended deploy source for its size
+    // preflight. Copy the source index verbatim instead of `git add -A` over the
+    // disposable tree: add -A applies LFS filters and scans multi-GiB untracked
+    // fixture/artifact data which is intentionally not deploy-tracked.
+    copyFileSync(sourceIndex, join(gitMetadata, "index"));
+    const requiredIndexAnchors = [
+      ".gitattributes",
+      "script/lib/modelRelease.ts",
+      "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+      "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+      "scripts/boosterstate-toolchain.nix",
+      "scripts/build-boosterstate.sh",
+      "server/services/toolostRuntimeConfig.ts",
+      "server/middleware/csrf.ts",
+      "tests/fixtures/pdim-recovery-cluster-fixture.ts",
+      "tests/fixtures/retained-pdim-source-fixture-worker.ts",
+      "tests/unit/maxcore-cluster-ownership.test.ts",
+      "tests/unit/maxcore-python-launcher.test.ts",
+      "tests/unit/maxcore-readiness-gate.test.ts",
+      "tests/unit/pdim-recovery-cluster-integration.test.ts",
+      "tests/unit/pdim-recovery-operator.test.ts",
+      "tests/unit/retained-pdim-recovery-simulation.test.ts",
+      "tests/unit/toolost-runtime-config.test.ts",
+    ];
+    const missingIndexAnchors = requiredIndexAnchors.filter(
+      (relative) => !existsSync(join(copyRoot, relative)),
+    );
+    if (missingIndexAnchors.length) {
+      throw new Error(`temporary tracked-size index is missing required source anchors: ${missingIndexAnchors.join(", ")}`);
+    }
+    const emptyBlob = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
+    for (const relative of requiredIndexAnchors) {
+      const indexResult = spawnSync(
+        "git",
+        [
+          "--git-dir", gitMetadata,
+          "update-index", "--add", "--info-only",
+          "--cacheinfo", `100644,${emptyBlob},${relative}`,
+        ],
+        { env: buildEnv(), encoding: "utf8", timeout: 10_000 },
+      );
+      if (indexResult.error?.code === "ETIMEDOUT") {
+        throw new Error(`temporary tracked-size index update timed out for ${relative}`);
+      }
+      if (indexResult.status !== 0) {
+        throw new Error(`temporary tracked-size index update failed for ${relative}: ${redact(indexResult.stderr)}`);
+      }
+    }
+    const indexVerification = spawnSync(
+      "git",
+      ["--git-dir", gitMetadata, "ls-files", "-z"],
+      { env: buildEnv(), timeout: 30_000, maxBuffer: 64 * 1024 * 1024 },
+    );
+    if (indexVerification.error?.code === "ETIMEDOUT") {
+      throw new Error("temporary tracked-size index verification exceeded the bounded 30-second timeout");
+    }
+    if (indexVerification.status !== 0) {
+      throw new Error(`temporary tracked-size index verification failed: ${redact(indexVerification.stderr?.toString())}`);
+    }
+    const indexedPaths = indexVerification.stdout.toString("utf8").split("\0").filter(Boolean);
+    const missingIndexedAnchors = requiredIndexAnchors.filter(
+      (relative) => !indexedPaths.includes(relative),
+    );
+    if (missingIndexedAnchors.length) {
+      throw new Error(`temporary tracked-size index omitted required source anchors: ${missingIndexedAnchors.join(", ")}`);
+    }
+    report.build.gitIndexPreparation = {
+      method: "source tracked index copy plus explicit required source anchors; no work-tree add and no LFS filtering",
+      indexedPathCount: indexedPaths.length,
+      requiredIndexAnchors,
+      boundedTimeouts: true,
+    };
     const buildStarted = Date.now();
     const buildLog = join(logsRoot, "build.log");
     const buildEnvVars = buildEnv({
@@ -762,7 +1228,8 @@ async function main() {
   if (requestedPhase === "restore") return;
   if (!runtimeSandboxed) {
     const isolated = spawnSync("unshare", [
-      "--user", "--map-root-user", "--net",
+      "--user", "--map-current-user", "--keep-caps", "--net",
+      "bash", "-c", `"${ipPath}" link set lo up && exec "$@"`, "runtime-sandbox",
       nodePath, fileURLToPath(import.meta.url),
       "--resume", "--phase=startup", "--runtime-sandbox",
     ], {
@@ -795,12 +1262,16 @@ async function main() {
         logPath: report.startup.currentLogPath || "logs/start.log",
       });
     }
-    report.failures = report.failures.filter((failure) => failure.stage !== "startup");
+    report.failures = report.failures.filter((failure) =>
+      !["startup", "postgres", "runtime-isolation", "dependency-readiness", "model-readiness", "load"].includes(failure.stage));
     report.startup.exitCode = null;
     report.startup.signal = null;
     report.startup.liveness = { observed: false, transportOnly: false, realServer: false, jsonObserved: false, earlyAppResponse: false, startupResponseObserved: false, samples: [] };
     report.startup.readiness = { observed: false, fullReady: false, statusCodes: [], lastBody: null, note: null };
-    const [port, pdimPort, gatewayPort, maxcorePort, boosterPort, modelPort, modelHealthPort, pythonPort, pgPort] = await freePorts(9);
+    delete report.startup.model;
+    delete report.startup.load;
+    delete report.startup.cluster;
+    const [port, pdimPort, gatewayPort, maxcorePort, boosterPort, modelPort, modelHealthPort, pythonPort, pgPort, redisPort] = await freePorts(10);
     const appUrl = `http://127.0.0.1:${port}`;
     const pgRoot = join(transientRoot, "postgres");
     rmSync(pgRoot, { recursive: true, force: true });
@@ -825,19 +1296,42 @@ async function main() {
     runtimePgRoot = pgRoot;
     runtimePgEnv = pgEnv;
     report.startup.postgres = { isolated: true, port: pgPort, auth: "trust inside network namespace only" };
+    const databaseUrl = `postgresql://simulation@127.0.0.1:${pgPort}/postgres?sslmode=disable`;
+    const schemaPush = await runProcess(nodePath, ["scripts/db-push.js", "--force"], {
+      cwd: copyRoot,
+      env: buildEnv({ NODE_ENV: "production", DATABASE_URL: databaseUrl }),
+      logPath: join(logsRoot, "postgres-schema.log"),
+      timeoutMs: 90_000,
+    });
+    report.startup.postgres.schema = {
+      command: "node scripts/db-push.js --force",
+      exitCode: schemaPush.code,
+      outputTail: tail(schemaPush.output, 20),
+    };
+    if (schemaPush.code !== 0) {
+      addFailure("postgres", `isolated PostgreSQL schema push exited ${schemaPush.code ?? schemaPush.signal}`);
+      report.result = "POSTGRES_SCHEMA_FAILED";
+      return;
+    }
     const runtimeEnv = buildEnv({
       NODE_ENV: "production", PORT: String(port), LOCAL_PDIM_PORT: String(pdimPort),
       VIDEO_DIFFUSION_PORT: String(gatewayPort), MAXCORE_LOCAL_PORT: String(maxcorePort),
       BOOSTERSTATE_SIDECAR_PORT: String(boosterPort), MODEL_API_PORT: String(modelPort),
       MODEL_API_HEALTH_PORT: String(modelHealthPort), PYTHON_AI_PORT: String(pythonPort),
       SESSION_SECRET: "production-simulation-session-secret-0123456789",
-      DATABASE_URL: `postgresql://simulation@127.0.0.1:${pgPort}/postgres`, REDIS_URL: "redis://127.0.0.1:9",
+      ADMIN_KEY: "production-simulation-maxcore-admin-key-0123456789",
+      DATABASE_URL: databaseUrl,
+      READINESS_ISOLATED_PG: "1", READINESS_EGRESS_GUARD: "1",
+      REDIS_URL: `redis://127.0.0.1:${redisPort}`,
+      REDIS_DATA_DIR: join(transientRoot, "redis"),
+      REDIS_SERVER_BIN: commandPath("redis-server"),
       MAXCORE_LOCAL: "1", AI_SERVER_URL: `http://127.0.0.1:${modelPort}`, APP_URL: appUrl, BASE_URL: appUrl,
       DOMAIN: appUrl, BASE_DOMAIN: "127.0.0.1", CORS_ORIGIN: appUrl,
       STORAGE_PROVIDER: "pocket-dimension", STORAGE_HTTP_URL: "http://127.0.0.1:9/mock-storage",
       PDIM_EXEC_URL: "http://127.0.0.1:9/mock-pdim", PDIM_HTTP_EXEC_URL: "http://127.0.0.1:9/mock-pdim",
       STORAGE_BEARER_TOKEN: "production-simulation-mock-token", PDIM_BEARER_TOKEN: "production-simulation-mock-token",
-      ENABLE_LEGACY_AI_SIDECAR: "0", DNS_NODE_LOCAL: "0", DISABLE_CLUSTER: "true",
+      ENABLE_LEGACY_AI_SIDECAR: "0", DNS_NODE_LOCAL: "0",
+      ENABLE_CLUSTER: "true", CLUSTER_WORKERS: "2",
       BUILD_ID: "production-simulation", MAX_CONCURRENT_REQUESTS: "10",
     });
     const startLog = join(logsRoot, `start-${report.startup.attempts.length + 1}.log`);
@@ -881,7 +1375,7 @@ async function main() {
       addFailure("startup", "early app response observed, but JSON liveness and /api/ready were not reached before required database startup probes failed");
     }
     if (report.startup.liveness.jsonObserved) {
-      const readinessDeadline = Date.now() + 35_000;
+      const readinessDeadline = Date.now() + 180_000;
       while (Date.now() < readinessDeadline) {
         const response = await request(`${appUrl}/api/ready`);
         const body = parseJson(response.body);
@@ -897,6 +1391,301 @@ async function main() {
     }
     report.nodeResolution.startScriptEvidence = tail(readFileSync(startLog, "utf8"), 80)
       .filter((line) => /node \[[a-g]\]|FATAL: cannot locate node|boot-stub|Critical capsules|pdim-restore/i.test(line)).slice(-20);
+    const redisProbe = spawnSync("redis-cli", ["-h", "127.0.0.1", "-p", String(redisPort), "PING"], {
+      cwd: transientRoot, env: runtimeEnv, encoding: "utf8", timeout: 5_000,
+    });
+    report.startup.redis = {
+      isolated: true,
+      port: redisPort,
+      dataDir: join(transientRoot, "redis"),
+      serverBinary: runtimeEnv.REDIS_SERVER_BIN,
+      readinessExitCode: redisProbe.status,
+      readinessResponse: redact(redisProbe.stdout).trim(),
+      ready: redisProbe.status === 0 && redisProbe.stdout.trim() === "PONG",
+    };
+    if (!report.startup.redis.ready) {
+      addFailure("dependency-readiness", "namespace-local owned Redis did not return PONG");
+    }
+    if (report.startup.readiness.fullReady && report.startup.redis.ready) {
+      const modelSamples = [];
+      const modelDeadline = Date.now() + 180_000;
+      let modelReady = false;
+      while (Date.now() < modelDeadline && !modelReady) {
+        const headers = { "x-admin-key": runtimeEnv.ADMIN_KEY };
+        const [healthResponse, equivalentHealthResponse] = await Promise.all([
+          request(`http://127.0.0.1:${modelPort}/api/health`, 15_000, { headers }),
+          request(`http://127.0.0.1:${modelPort}/health`, 15_000, { headers }),
+        ]);
+        const health = parseJson(healthResponse.body);
+        const equivalentHealth = parseJson(equivalentHealthResponse.body);
+        modelReady = healthResponse.status === 200
+          && health?.status === "healthy"
+          && health?.model_loaded === true;
+        const warmResponse = modelReady
+          ? await request(`http://127.0.0.1:${modelPort}/api/warm/status`, 5_000, { headers })
+          : null;
+        const warm = parseJson(warmResponse?.body);
+        modelSamples.push({
+          atMs: Date.now() - startStarted,
+          healthStatus: healthResponse.status,
+          status: health?.status ?? null,
+          modelLoaded: health?.model_loaded ?? null,
+          equivalentHealthStatus: equivalentHealthResponse.status,
+          equivalentStatus: equivalentHealth?.status ?? null,
+          equivalentModelLoaded: equivalentHealth?.model_loaded ?? null,
+          warmStatus: warmResponse?.status ?? null,
+          modelReady: warm?.model_ready ?? null,
+          deepWarmState: warm?.deep_warm?.state ?? null,
+          deepWarmCycles: warm?.deep_warm?.cycles ?? null,
+        });
+        if (!modelReady) {
+          await new Promise((resolveResult) => setTimeout(resolveResult, 500));
+        }
+      }
+      const lastModelSample = modelSamples.at(-1) || null;
+      report.startup.model = {
+        isolated: true,
+        ownedLocalPort: modelPort,
+        mandatoryHealthPath: "/api/health",
+        mandatoryContract: "HTTP 200 with status=healthy and model_loaded=true",
+        equivalentHealthPath: "/health",
+        diagnosticWarmStatusPath: "/api/warm/status",
+        diagnosticFieldsAreMandatory: false,
+        samples: modelSamples,
+        lastSample: lastModelSample,
+        healthy: modelReady,
+      };
+      if (!report.startup.model.healthy) {
+        addFailure("model-readiness", "owned namespace-local MaxCore /api/health did not prove status=healthy and model_loaded=true");
+      } else {
+        const publicReadySamples = [];
+        const publicReadyDeadline = Date.now() + 90_000;
+        let consecutivePublicReady = 0;
+        let previousProbeStartedAt = null;
+        while (Date.now() < publicReadyDeadline && consecutivePublicReady < 3) {
+          const probeStartedAt = Date.now();
+          const response = await request(`${appUrl}/api/ready`, 10_000);
+          const body = parseJson(response.body);
+          const spacingMs = previousProbeStartedAt === null
+            ? null
+            : probeStartedAt - previousProbeStartedAt;
+          const valid = response.status === 200 && body?.status === "ok";
+          consecutivePublicReady = valid ? consecutivePublicReady + 1 : 0;
+          publicReadySamples.push({
+            atMs: probeStartedAt - startStarted,
+            spacingMs,
+            status: response.status,
+            bodyStatus: body?.status ?? null,
+            consecutivePublicReady,
+          });
+          previousProbeStartedAt = probeStartedAt;
+          if (consecutivePublicReady < 3) {
+            const remainingMs = publicReadyDeadline - Date.now();
+            if (remainingMs <= 0) break;
+            await new Promise((resolveResult) =>
+              setTimeout(resolveResult, Math.min(6_000, remainingMs)));
+          }
+        }
+        const spacingValid = publicReadySamples
+          .slice(-3)
+          .every((sample, index) => index === 0 || sample.spacingMs >= 6_000);
+        report.startup.readiness.stabilization = {
+          rule: "three consecutive public /api/ready HTTP 200 status=ok probes with probe starts spaced at least 6 seconds apart",
+          cacheClearIntervalMs: 6_000,
+          samples: publicReadySamples,
+          passed: consecutivePublicReady >= 3 && spacingValid,
+        };
+        if (!report.startup.readiness.stabilization.passed) {
+          addFailure("model-readiness", "public /api/ready did not remain HTTP 200 status=ok for three consecutive cache-clearing probes");
+        }
+      }
+    }
+    report.startup.cluster = captureClusterTopology(startLog, 2, pdimPort);
+    if (!report.startup.cluster.passed) {
+      addFailure(
+        "cluster-topology",
+        "cluster acceptance requires one live primary, two live direct app workers, exactly one primary-owned MaxCore root with no worker-owned MaxCore root, and the PDIM listener owned in-process by the cluster primary",
+      );
+    }
+    if (
+      report.startup.readiness.fullReady
+      && report.startup.redis.ready
+      && report.startup.cluster.passed
+      && report.startup.model?.healthy
+      && report.startup.readiness.stabilization?.passed
+    ) {
+      const absorbCookies = (jar, response) => {
+        for (const header of response.setCookie || []) {
+          const pair = header.split(";", 1)[0];
+          const separator = pair.indexOf("=");
+          if (separator > 0) jar.set(pair.slice(0, separator), pair.slice(separator + 1));
+        }
+      };
+      const cookieHeader = (jar) =>
+        [...jar.entries()].map(([name, value]) => `${name}=${value}`).join("; ");
+      const sessions = [];
+      const setupFailures = [];
+      for (let index = 0; index < 10; index++) {
+        const jar = new Map();
+        const csrfResponse = await request(`${appUrl}/api/csrf-token`, 10_000, {
+          headers: { "x-forwarded-proto": "https" },
+        });
+        absorbCookies(jar, csrfResponse);
+        const csrf = parseJson(csrfResponse.body)?.csrfToken;
+        const csrfBound = csrfResponse.status === 200
+          && typeof csrf === "string"
+          && csrf.length <= 256
+          && jar.get("csrf-token") === csrf
+          && /(?:^|,|\s)no-store(?:,|$)/i.test(csrfResponse.cacheControl || "");
+        if (!csrfBound) {
+          setupFailures.push(`session ${index}: CSRF body/cookie/cache binding failed`);
+          continue;
+        }
+        const suffix = `${runId.slice(-8)}_${process.pid}_${index}`;
+        const usernameSuffix = suffix.replace(/[^a-z0-9_]/gi, "_");
+        const register = await request(`${appUrl}/api/auth/register`, 15_000, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-forwarded-proto": "https",
+            "x-csrf-token": csrf,
+            cookie: cookieHeader(jar),
+          },
+          body: JSON.stringify({
+            email: `packed-load-${suffix}@example.invalid`,
+            username: `packed_load_${usernameSuffix}`,
+            password: "Packed!Simulation9aAcceptance",
+            confirmPassword: "Packed!Simulation9aAcceptance",
+            firstName: "Packed",
+            lastName: "Load",
+          }),
+        });
+        absorbCookies(jar, register);
+        const user = parseJson(register.body);
+        if (register.status !== 200 || !user?.id) {
+          setupFailures.push(`session ${index}: registration HTTP ${register.status}`);
+          continue;
+        }
+        sessions.push({ jar, csrf, userId: user.id });
+      }
+      if (sessions.length !== 10) {
+        addFailure("load", `authenticated load setup created ${sessions.length}/10 sessions: ${setupFailures.join("; ")}`);
+      } else {
+        const executeOperation = async (session, isWrite) => {
+          const started = process.hrtime.bigint();
+          const response = await request(
+            `${appUrl}${isWrite ? "/api/auth/heartbeat" : "/api/auth/me"}`,
+            10_000,
+            {
+              method: isWrite ? "POST" : "GET",
+              headers: {
+                "x-forwarded-proto": "https",
+                cookie: cookieHeader(session.jar),
+                ...(isWrite ? { "x-csrf-token": session.csrf } : {}),
+              },
+            },
+          );
+          const durationMs = Number(process.hrtime.bigint() - started) / 1e6;
+          const body = parseJson(response.body);
+          return {
+            operation: isWrite ? "heartbeat" : "session-read",
+            durationMs,
+            status: response.status,
+            valid: response.status === 200
+              && (isWrite || body?.id === session.userId),
+          };
+        };
+        const warmupResults = (
+          await Promise.all(sessions.map(async (session) => [
+            await executeOperation(session, false),
+            await executeOperation(session, true),
+          ]))
+        ).flat();
+        const total = 150;
+        const concurrency = 10;
+        const measured = (
+          await Promise.all(sessions.map(async (session, workerIndex) => {
+            const results = [];
+            for (let index = workerIndex; index < total; index += concurrency) {
+              results.push(await executeOperation(session, index % 2 === 1));
+            }
+            return results;
+          }))
+        ).flat();
+        const summarize = (results) => {
+          const sorted = results.map((item) => item.durationMs).sort((a, b) => a - b);
+          const percentile = (value) =>
+            sorted[Math.max(0, Math.ceil(value * sorted.length) - 1)] ?? null;
+          const successful = results.filter((item) => item.valid).length;
+          const failures = {};
+          for (const item of results.filter((entry) => !entry.valid)) {
+            const key = `${item.operation}: HTTP ${item.status}`;
+            failures[key] = (failures[key] || 0) + 1;
+          }
+          return {
+            requests: results.length,
+            successful,
+            failed: results.length - successful,
+            successPercent: results.length ? successful / results.length * 100 : 0,
+            p95Ms: percentile(0.95),
+            p99Ms: percentile(0.99),
+            failures,
+          };
+        };
+        const byEndpoint = Object.fromEntries(
+          ["session-read", "heartbeat"].map((operation) => [
+            operation,
+            summarize(measured.filter((item) => item.operation === operation)),
+          ]),
+        );
+        const measuredSummary = summarize(measured);
+        const warmupSummary = summarize(warmupResults);
+        const thresholds = {
+          minimumSuccessPercent: 99,
+          maximumP95Ms: 500,
+          maximumP99Ms: 1000,
+        };
+        const thresholdFailures = [];
+        if (warmupSummary.failed > 0) {
+          thresholdFailures.push(`warmup failures ${warmupSummary.failed}/${warmupSummary.requests}`);
+        }
+        if (measuredSummary.successPercent < thresholds.minimumSuccessPercent) {
+          thresholdFailures.push(`success ${measuredSummary.successPercent.toFixed(2)}% < ${thresholds.minimumSuccessPercent}%`);
+        }
+        if (measuredSummary.p95Ms === null || measuredSummary.p95Ms > thresholds.maximumP95Ms) {
+          thresholdFailures.push(`p95 ${measuredSummary.p95Ms}ms > ${thresholds.maximumP95Ms}ms`);
+        }
+        if (measuredSummary.p99Ms === null || measuredSummary.p99Ms > thresholds.maximumP99Ms) {
+          thresholdFailures.push(`p99 ${measuredSummary.p99Ms}ms > ${thresholds.maximumP99Ms}ms`);
+        }
+        report.startup.load = {
+          label: "packed namespace-isolated authenticated HTTP load",
+          acceptanceMode: "preregistered-slo",
+          thresholds,
+          settings: {
+            measuredRequests: total,
+            concurrency,
+            accounts: 10,
+            sessions: 10,
+            requestsPerSession: 15,
+            requestTimeoutMs: 10_000,
+            pacingMs: 0,
+          },
+          warmup: {
+            rule: "one session read and one heartbeat per session after mandatory loaded-model health and three-probe readiness stabilization; nonmandatory deep-warm diagnostics are not a gate",
+            ...warmupSummary,
+            samples: warmupResults,
+          },
+          measured: { ...measuredSummary, samples: measured },
+          byEndpoint,
+          thresholdFailures,
+          passed: thresholdFailures.length === 0,
+        };
+        if (thresholdFailures.length) {
+          addFailure("load", `packed authenticated load SLO failed: ${thresholdFailures.join("; ")}`);
+        }
+      }
+    }
     if (!report.startup.readiness.fullReady) {
       const healthStage = report.startup.liveness.jsonObserved
         ? "JSON liveness was observed"
@@ -905,17 +1694,30 @@ async function main() {
           : "no liveness response was observed";
       report.startup.readiness.note = `${healthStage}; /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used.`;
       report.startup.dependencyEvidence = {
-        database: "required startup probe failed against postgresql://127.0.0.1:9; Database connection required",
-        redis: "ECONNREFUSED 127.0.0.1:9 with bounded retry exhaustion",
-        maxcore: "MAXCORE_LOCAL=0; no live MaxCore endpoint provided",
+        database: `isolated PostgreSQL was started on namespace-local port ${pgPort}`,
+        redis: report.startup.redis.ready
+          ? `owned Redis returned PONG on namespace-local port ${redisPort}`
+          : `owned Redis did not return PONG on namespace-local port ${redisPort}`,
+        maxcore: "MAXCORE_LOCAL=1; packed current-source MaxCore startup was requested",
         storage: "loopback mock endpoint only; no third-party storage target",
       };
     }
-    report.result = report.startup.liveness.jsonObserved && report.startup.readiness.fullReady
+    const runtimeAcceptancePassed = report.startup.liveness.jsonObserved
+      && report.startup.readiness.fullReady
+      && report.startup.cluster?.passed
+      && !report.failures.some((failure) =>
+        ["startup", "dependency-readiness", "cluster-topology", "model-readiness", "load"].includes(failure.stage));
+    report.result = runtimeAcceptancePassed
       ? "PASS"
       : report.startup.liveness.earlyAppResponse
         ? "STARTUP_BLOCKED_BY_MOCK_DEPENDENCIES"
         : "STARTUP_INCOMPLETE";
+    if (runtimeAcceptancePassed) {
+      report.productionReadiness = {
+        publishReady: false,
+        reason: "Pre-deployment cluster-enabled packed-runtime simulation passed two-worker topology with primary-owned MaxCore and in-process primary-owned PDIM, isolated dependencies, mandatory loaded-model health, three stable full-readiness probes, and preregistered packed-load SLO gates. The /api/warm/status fields are nonmandatory diagnostics and are not an acceptance gate. This fixed-runtime-VM evidence does not claim cross-replica authority, publication, provider-production, or post-publish lifecycle evidence.",
+      };
+    }
     await runProcess("pg_ctl", ["-D", pgRoot, "-m", "immediate", "-w", "stop"], {
       cwd: transientRoot, env: pgEnv, timeoutMs: 30_000,
     });
@@ -994,4 +1796,23 @@ try {
   report.result = "HARNESS_FAILED";
 } finally {
   await finish();
+  const phasePassed = requestedPhase === "all" || requestedPhase === "startup"
+    ? report.result === "PASS"
+    : Boolean(report.completedStages?.includes(requestedPhase)
+      && !report.failures.some((failure) => {
+        if (requestedPhase === "copy") {
+          return ["copy", "copy-integrity", "resource-admission", "node-resolution"].includes(failure.stage);
+        }
+        if (requestedPhase === "build") {
+          return ["build", "build-artifacts", "harness"].includes(failure.stage);
+        }
+        if (requestedPhase === "size") {
+          return ["size", "manifest-validation", "harness"].includes(failure.stage);
+        }
+        if (requestedPhase === "restore") {
+          return ["capsule-restore", "harness"].includes(failure.stage);
+        }
+        return true;
+      }));
+  if (!phasePassed) process.exitCode = 1;
 }

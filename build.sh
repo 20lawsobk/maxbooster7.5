@@ -198,30 +198,9 @@ echo "   TF native libraries preserved (libtensorflow.so will be available in pr
 
 # ─── Rust sidecar ────────────────────────────────────────────────────────────
 echo "==> Rust sidecar: compiling release binary..."
-mkdir -p bin
-_CARGO_OK=0
-if command -v cargo >/dev/null 2>&1; then
-  echo "   cargo found: $(cargo --version 2>/dev/null)"
-  export RUSTFLAGS="-C link-arg=-static-libgcc \
-    -C link-arg=-Wl,--dynamic-linker=/lib64/ld-linux-x86-64.so.2 \
-    -C link-arg=-Wl,-rpath,/lib/x86_64-linux-gnu \
-    -C link-arg=-Wl,-rpath,/lib64"
-  if cargo build --release --manifest-path boosterstate/Cargo.toml 2>&1; then
-    if cp boosterstate/target/release/boosterstate bin/boosterstate 2>/dev/null; then
-      chmod +x bin/boosterstate
-      echo "   ✅ boosterstate compiled → ./bin/boosterstate ($(du -sh bin/boosterstate | cut -f1))"
-      _CARGO_OK=1
-    else
-      echo "   WARNING: binary compiled but cp failed"
-    fi
-  else
-    echo "   WARNING: cargo build --release failed — sidecar unavailable in production"
-  fi
-else
-  echo "   WARNING: cargo not found — sidecar unavailable in production"
-fi
+bash scripts/build-boosterstate.sh
+echo "   ✅ boosterstate compiled → ./bin/boosterstate ($(du -sh bin/boosterstate | cut -f1))"
 rm -rf boosterstate/target/ 2>/dev/null || true
-[ "$_CARGO_OK" = "0" ] && echo "   App will run without boosterstate sidecar (graceful fallback active)."
 
 # ─── node_modules stripping (both paths) ─────────────────────────────────────
 echo "==> Stripping node_modules..."

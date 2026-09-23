@@ -1,8 +1,105 @@
 # Current launch blockers and implemented corrections
 
-## Latest continuation: running application, verified model, remaining external gates
+## Acceptance boundary — owner clarification
 
-This section supersedes conflicting earlier point-in-time observations below.
+Pre-deployment acceptance uses isolated production-process simulations. The owner
+cannot publish until this work is accepted; publishing, real charges or deliveries,
+and restoring actual published user content are therefore not prerequisites for
+closing the implementation work. Published-artifact observation is a later
+operational check, not a circular launch blocker.
+
+Too Lost configuration is environment-based and the owner supplies the same
+configuration in development and production. Do not presume a separate production
+OAuth setup or request a reconnect solely because an acceptance probe returned 403.
+Verify the probe against the actual configured authentication and provider contract.
+Keep any genuine authorization failure explicit rather than treating configuration
+parity as proof that every endpoint is authorized.
+
+Simulation results must identify simulated external boundaries and exercise the real
+application consumers. They do not claim real provider settlement, delivery, or
+credential revocation. Actual implementation failures and unexecuted required
+simulation checks remain open; post-publication checks are separate.
+
+## Current authoritative pre-deployment decision
+
+**PARTIAL PASS — RECOVERY/CLUSTER AND CLUSTER-PACKED ACCEPTANCE OPEN.**
+Production-simulation run `2026-09-23T18-57-24-314Z` remains valid evidence for
+its explicitly single-process scope, but it set `DISABLE_CLUSTER=true`. It
+therefore did not exercise cross-worker PDIM ownership, shared recovery
+authority, or durable recovery-job lookup and cannot establish the complete
+six-gate pre-deployment decision.
+
+Publication is owner-controlled and is not a pre-deployment gate. No publication,
+real charge, provider mutation, settlement, message delivery, or write to an
+actual provider was performed or is claimed.
+
+### Current six-gate status
+
+1. **Model serving — PASS, single-process scope.** The owned packaged Python service returned HTTP 200
+   from `/api/health` with `status=healthy` and `model_loaded=true`; equivalent
+   `/health` evidence matched. The mandatory gate was loaded-model health plus
+   three stable application-readiness probes. The direct `/api/warm/status`
+   diagnostic was explicitly nonmandatory and returned 401; it was not used to
+   waive or satisfy the gate.
+2. **Runtime acceptance — PARTIAL PASS.** The single-process packed runtime completed
+   three HTTP 200 `ok` readiness probes, spaced 6,018 ms and 6,029 ms apart, with
+   every subsystem—including audit and MaxCore—`ok`. Authenticated packed load
+   completed **150/150** measured requests with **100%** success, aggregate
+   **P95 69.139 ms / P99 77.562 ms**, against 99% / 500 ms / 1,000 ms gates.
+   Warmup was 20/20. Canonical build exit was **0**; the recorded startup exit
+   143 is controlled harness teardown after acceptance and owned-process cleanup.
+   **Open:** rerun the same mandatory model, three-probe readiness, and unchanged
+   150-request SLO gates with clustering enabled and at least two app workers.
+3. **PDIM recovery — PARTIAL PASS; cluster recovery open.** The retained-PDIM pre-deployment simulation passed
+   with real HybridStorage, PocketDimension, local PDIM, generation-bound
+   readback, independent bundled restore workers, two owners, cross-owner
+   deduplication, and corrupt-byte rejection. The external object-store boundary
+   was simulated; this is not a production-user-content or live-bucket claim.
+   Cross-worker shared authority and durable recovery-job behavior require the
+   recovery implementation now in progress and cluster-enabled integration.
+4. **Credential handling — PASS for the pre-deployment boundary.** The canonical
+   run used an environment allowlist, generated simulation-only secrets,
+   namespace-local dependencies, and no source credentials. It did not print,
+   replace, revoke, or infer real credentials. Provider-side credential rotation
+   remains an operational/provider fact, not a simulated claim.
+5. **Provider/finance acceptance — PASS for the authorized simulation boundary.**
+   Real application consumers and disposable PostgreSQL exercised the retained
+   provider-process scenarios. External acceptance was simulated; shared/live
+   databases and actual-provider writes, charges, payouts, settlement, delivery,
+   and financial reconciliation were not performed or claimed.
+6. **Release artifact — PARTIAL PASS.** Build exit 0; cold critical
+   and background capsule restoration passed; warm restore idempotence passed;
+   all five current-source capsule hashes matched their manifests. Build
+   preflight was **1.48 GiB** = **1.17 GiB** payload + **0.31 GiB** deduplicated
+   Nix closure with **10/10** roots accounted for. Separately, the actual
+   disposable simulation footprint was **4.602 GiB**, under the 8 GiB limit.
+   These are different measurements: the sanitized preflight is not a measured
+   target-image closure, and no unmeasured target-image size is claimed.
+   Cluster-packed acceptance remains open until a controlled refreshed snapshot
+   includes the stable recovery fix and passes with at least two app workers.
+
+The single-process canonical build used a distinct unprivileged user/network namespace and did
+not build in the source checkout. Capsule hashes were: node modules
+`54cdaadd1887499b28abb5e2bb2c6e4e4edc0db9387ee1de21952327aa0cff1e`,
+app remainder
+`660f7aeebe29d341cf70fc6e954b6d97b9a24824aaf4ec790239008ec34cee92`,
+Python runtime
+`b8f58a15ffbb97d9c22fc3b0f4379ddc72f128e8f7f5122a4ed5c83e5716a515`,
+MaxCore
+`916541e34baffdd3fd9241394c83e4793e45446dc2bda0ab42d9471a192f52d4`,
+and PDIM
+`5021a6d8bcbc982ecfd536d505c4890bf1e4a4702547dabe5f776fee17e00687`.
+
+After this preserved scoped run, the main preview restart also succeeded
+after externally added private-port mappings for 8090, 9878, and 9879 were
+corrected. That preview observation does not satisfy, bypass, or weaken the open
+cluster gates above.
+
+## Historical continuation: running application and verified model
+
+**Historical prior evidence; superseded by the current authoritative
+pre-deployment decision above.** This section formerly superseded still earlier
+point-in-time observations.
 
 - The screenshot's startup failure is fixed: app local port 5000 maps to public
   80; Redis is explicitly private, with no external port. The checker accepts
@@ -31,31 +128,47 @@ This section supersedes conflicting earlier point-in-time observations below.
   providers were excluded from this load harness.
 - Stripe account and catalog read-only acceptance passed. Too Lost account,
   catalog, releases and analytics reads passed; earnings returned a scope 403.
-  OAuth scopes and complete release pagination are corrected in source.
+  OAuth scopes and complete release pagination are corrected in source. Callback
+  selection now follows `TOOLOST_ENVIRONMENT`, not application deployment mode;
+  the shared sandbox configuration therefore selects the same callback in both.
+  The changed Too Lost checks passed 26/26. The isolated sales 403 is not a
+  presumed missing production connection. See `../provider-acceptance-current.md`.
 - Protected admin/verified-2FA/CSRF PDIM recovery jobs now retain private backups,
   read exact generations back and verify through an independent restored worker.
-  Production packaging includes that worker. Actual production-data execution
-  remains pending; the empty development store does not establish production
-  content status.
+  Production packaging includes that worker. A new retained-recovery simulation
+  passed through real storage consumers, two independent verifier processes, two
+  owners, deduplicated content, generation-bound retention/readback, and rejection
+  of corrupted retained bytes. Only the external storage SDK was simulated.
+  This closes pre-deployment recovery acceptance, not a claim about live data.
 
-### Six-gate status
+### Historical six-gate status — superseded
 
-1. **Model serving:** verified locally; production incorporation still needs
-   publication. Full media acceptance and held-out quality are not claimed.
+The open items in this subsection are prior **NOT READY** observations and are
+not the current decision.
+
+1. **Model serving:** verified locally; validate incorporation through packed-runtime
+   simulation, not prior publication. Held-out quality is not claimed.
 2. **Runtime acceptance:** startup and isolated auth/load pass. Full packed
    cold-image/load/soak and controlled sidecar restart acceptance remain open.
-3. **PDIM recovery:** implementation and isolated proof pass; execute the protected
-   retained recovery job against the published authoritative store.
-4. **Credential custody/rotation:** owner action remains; live Stripe and Neon
-   runtime configuration is not confirmed as Replit Secrets. Working credentials
-   were not deleted, exposed or silently replaced.
-5. **Provider/finance acceptance:** reconnect Too Lost with `read:earnings`;
-   real delivery/payment lifecycle and historical financial reconciliation remain
-   separate from the passing simulations/read-only checks.
-6. **Publication:** owner must publish, followed by artifact-bound verification.
+3. **PDIM recovery:** pre-deployment acceptance passed using representative isolated
+   data and the real restore worker. Actual published-user-content recovery is not
+   a prerequisite. See `retained-pdim-recovery-drill.json`.
+4. **Credential handling:** verify environment-driven configuration and fail-closed
+   handling without printing or replacing working credentials. Simulation cannot
+   prove real provider-side revocation; lack of Secret metadata alone does not prove
+   a configured integration is unusable or that source/browser artifacts expose
+   secrets. This provider review demonstrated no such exposure. Separately tracked
+   credential-custody work is not silently declared complete.
+5. **Provider/finance acceptance:** real-consumer lifecycle simulations and shared-env
+   read-only checks are the pre-deployment evidence. Investigate the Too Lost earnings
+   403 was isolated to the unused royalty-summary method; existing account/catalog/
+   release/analytics reads passed. Do not use the unverified sales parser for money
+   backfill. No separate production reconnect is prescribed.
+6. **Release artifact:** packed-build and cold-start simulation are pre-deployment
+   requirements. Publication remains owner-controlled, with observation afterward.
    No publish was performed and no blanket launch-ready claim is made.
 
-## Superseding retained-recovery and commerce rollout result
+## Historical retained-recovery and commerce rollout result — superseded
 
 The owner's explicit Replit App Storage bucket is accessible. Managed App
 Storage does not require access to GCS administrative IAM/PAP APIs: the earlier
@@ -82,7 +195,7 @@ credential rotation, provider acceptance, packed-runtime acceptance or publicati
 The following earlier observations remain historical evidence, not current
 claims that commerce tables are absent.
 
-## Verified production observations
+## Historical production observations — superseded
 
 - Published `/api/health` responded 200; `/api/ready` responded 200 with
   MaxCore degraded/half-open. Other reported subsystems were healthy.
@@ -96,7 +209,7 @@ claims that commerce tables are absent.
   is not proof that the Stripe account is unconfigured. The separate credential
   migration work must preserve working configuration and use secure provisioning.
 
-## Implemented corrections
+## Historical implemented corrections
 
 - Checkout validates canonical Stripe Price amount, currency, type and cadence;
   lifetime no longer constructs its amount independently of the verified Price.
@@ -117,7 +230,7 @@ claims that commerce tables are absent.
 - Repaired database adapter type inference and narrowed libpq environment typing.
 - Browser harness handles bounded document-context transitions correctly.
 
-## Verification
+## Historical verification
 
 - Stripe fake-provider tests: 12 passed; no live charges/provider mutations.
 - Local PDIM/client/supervisor tests: 25 passed.
@@ -129,7 +242,7 @@ claims that commerce tables are absent.
   passed after a tooling navigation race was corrected. Disposable cleanup passed.
 - See `assembled-acceptance-drill.json` for evidence and explicitly untested scope.
 
-## Not yet cleared
+## Historical items formerly not cleared — superseded
 
 1. **Database recovery and commerce schema cleared:** retained App Storage backup,
    exact restore verification, and authorized atomic commerce migrations 0022/0023
@@ -144,7 +257,7 @@ claims that commerce tables are absent.
    and representative cold-image/load acceptance remain unproven. Historical
    optional feature gaps are not automatically treated as launch blockers.
 
-## Credential-free simulation and local subsystem continuation
+## Historical credential-free continuation — superseded
 
 - Provider-process simulation passed against disposable real PostgreSQL, including
   accepted-before-response-loss, duplicate callbacks, mismatch rejection and a
@@ -171,7 +284,8 @@ claims that commerce tables are absent.
   in this runner. These are test-environment limits, not reproduced app failures.
   See `credential-free-simulation-handoff.md` and the latest load report.
 
-Release decision: **NOT READY**. Database schema and retained database recovery
-are no longer blockers. Model serving, independently retained PDIM recovery,
-credential/provider acceptance, runtime/load acceptance and publication evidence
-remain unresolved.
+Historical decision at that point: **NOT READY**. It is retained only as
+point-in-time provenance. The current decision is the **PARTIAL PASS** at the
+top of this document, with recovery/cluster and cluster-packed acceptance open.
+Publication remains an owner-controlled later operation, not a pre-deployment
+acceptance gate.

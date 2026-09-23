@@ -1,0 +1,2400 @@
+{
+  "runId": "2026-09-23T18-57-24-314Z",
+  "workspace": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z (disposable isolated copy; remove with --cleanup)",
+  "commands": {
+    "build": "DEPLOY_PACK=1 npm run build",
+    "start": "bash start.sh"
+  },
+  "safety": {
+    "sourceRoot": "/home/runner/workspace",
+    "sourceRootUsedAsBuildCwd": false,
+    "sourceFilesMutated": false,
+    "excluded": [
+      ".replit",
+      ".git",
+      "data",
+      "logs",
+      "attached_assets",
+      "*.env secrets",
+      "dns-node/keys"
+    ],
+    "networkCredentialsProvided": false,
+    "thirdPartyOrLiveDatabaseTargeted": false,
+    "runtimeIsolationPolicy": {
+      "required": true,
+      "transport": "Unprivileged Linux user+network namespace; only namespace-local loopback is reachable by the app and every native/Python descendant",
+      "filesystem": "all build and runtime writes are rooted in the disposable copy; source credentials, data, logs, media, and VCS metadata are excluded",
+      "credentials": "env-i style allowlist; generated simulation-only secrets; ephemeral local PostgreSQL only"
+    },
+    "hostNetworkNamespace": "net:[4026532714]",
+    "runtimeNetworkNamespace": "net:[4026532864]",
+    "runtimeIsolationEnforced": true,
+    "deployPackOnSourceWorkspace": false,
+    "networkNamespacePreflight": {
+      "available": true,
+      "exitCode": 0,
+      "signal": null,
+      "error": "",
+      "classification": "supported unprivileged user+network namespace with namespace-local loopback"
+    }
+  },
+  "resourceProfile": {
+    "configured": {
+      "cpu": 4,
+      "memoryBytes": 8589934592,
+      "imageHardLimitBytes": 8589934592
+    },
+    "observed": {
+      "cpuQuota": 4,
+      "logicalCpuCount": 4,
+      "memoryLimitBytes": 8589934592,
+      "memoryCurrentBytes": 1203585024,
+      "memoryHeadroomBytes": 7386349568,
+      "diskAvailableBytes": 235445456896
+    },
+    "admission": {
+      "safe": true,
+      "reasons": [],
+      "estimatedScratchBytes": 74526483140
+    }
+  },
+  "sourceSnapshot": {
+    "capturedAt": "2026-09-23T19:00:12.471Z",
+    "note": "All build/start stages use the immutable disposable copy captured at copy stage; source edits after that point are intentionally excluded.",
+    "synchronizedAt": "2026-09-23T19:35:56.653Z",
+    "synchronization": {
+      "mode": "explicit Python launcher/runtime five-path refresh plus simulation harness refresh after owned runtime stopped; no recopy",
+      "paths": [
+        {
+          "path": "scripts/simulate-production.mjs",
+          "bytes": 79984,
+          "sha256": "1179d0a219c7b37c9737109372f95e16541a39495a83a879704314ab0c045bb4"
+        },
+        {
+          "path": "external/maxcore/artifacts/api-server/src/python-server.ts",
+          "bytes": 24309,
+          "sha256": "a961abbe6b254afbb81608e3be9ad08b1386f4a40ef411acf19c22518f3cb52a"
+        },
+        {
+          "path": "script/build.ts",
+          "bytes": 26128,
+          "sha256": "6fc6f8a0a2afd8f1cee85b694e8557044033b5427a525c0580af1f025e74c189"
+        },
+        {
+          "path": "script/lib/pythonRequirements.py",
+          "bytes": 3379,
+          "sha256": "8de48c04393edb190763fa60a86469864d4796ea1a9f8ed6bbccca8fa2adad12"
+        },
+        {
+          "path": "start.sh",
+          "bytes": 16323,
+          "sha256": "b8d744a1ec3e50f071269b0cd559b2b100d6907b27056255a976f5e1f74fc6fb"
+        },
+        {
+          "path": "tests/unit/maxcore-python-launcher.test.ts",
+          "bytes": 2416,
+          "sha256": "28992bfddeacc59d39d092c00e25a41d6dae279ab3ba8e58bebf20f20fffa2e6"
+        }
+      ]
+    }
+  },
+  "nodeResolution": {
+    "bundledNodePresentInCopy": false,
+    "pathNodeProbe": {
+      "exitCode": 0,
+      "output": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node\nv24.13.0\n",
+      "error": ""
+    },
+    "startScriptEvidence": []
+  },
+  "copyIntegrity": {
+    "checked": [
+      {
+        "path": "node_modules/@sentry/core/build/esm/logs/public-api.js",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 986,
+        "copyBytes": 986,
+        "sourceSha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b",
+        "copySha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b"
+      },
+      {
+        "path": "node_modules/vite/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 5158,
+        "copyBytes": 5158,
+        "sourceSha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0",
+        "copySha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0"
+      },
+      {
+        "path": "node_modules/tsx/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1601,
+        "copyBytes": 1601,
+        "sourceSha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659",
+        "copySha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659"
+      },
+      {
+        "path": "python_runtime/bin/python3.12",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 100186336,
+        "copyBytes": 100186336,
+        "sourceSha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929",
+        "copySha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929"
+      },
+      {
+        "path": "python_runtime/lib/python3.12/site-packages/pip/_vendor/certifi/cacert.pem",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 270954,
+        "copyBytes": 270954,
+        "sourceSha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9",
+        "copySha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
+      },
+      {
+        "path": ".dockerignore",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 6086,
+        "copyBytes": 6086,
+        "sourceSha256": "537f917d31f522e7842f57330116264d1c3aa67b799812887d6ef5603d014cf1",
+        "copySha256": "537f917d31f522e7842f57330116264d1c3aa67b799812887d6ef5603d014cf1"
+      },
+      {
+        "path": "build.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 28910,
+        "copyBytes": 28910,
+        "sourceSha256": "709523f38b15e80bb465d5ef637e24abf293f2fdb4a50639e1a5c0c39cb16d9e",
+        "copySha256": "709523f38b15e80bb465d5ef637e24abf293f2fdb4a50639e1a5c0c39cb16d9e"
+      },
+      {
+        "path": "package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 14943,
+        "copyBytes": 14943,
+        "sourceSha256": "3b85c61e5b4fd82712c4fb3ee695cae383294cf397f4e13b7a4c0c1c216d3639",
+        "copySha256": "3b85c61e5b4fd82712c4fb3ee695cae383294cf397f4e13b7a4c0c1c216d3639"
+      },
+      {
+        "path": "scripts/boosterstate-toolchain.nix",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 326,
+        "copyBytes": 326,
+        "sourceSha256": "c29cc29cb89ba60b0fcdcc5451c09eadbb95fa427e20e50a7dacee2d8eecec02",
+        "copySha256": "c29cc29cb89ba60b0fcdcc5451c09eadbb95fa427e20e50a7dacee2d8eecec02"
+      },
+      {
+        "path": "scripts/build-boosterstate.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 2004,
+        "copyBytes": 2004,
+        "sourceSha256": "a888abbd2750adb33435285469e5cd536abe7adb57ee4e19308b449d41983090",
+        "copySha256": "a888abbd2750adb33435285469e5cd536abe7adb57ee4e19308b449d41983090"
+      },
+      {
+        "path": "scripts/lib/productionSimulationPolicy.mjs",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 3107,
+        "copyBytes": 3107,
+        "sourceSha256": "cd422bf4cdb6d6f8eb6241d9653fa79754743508c1ed7145754a4d9442bbdb9a",
+        "copySha256": "cd422bf4cdb6d6f8eb6241d9653fa79754743508c1ed7145754a4d9442bbdb9a"
+      },
+      {
+        "path": "server/routes/distribution.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 271443,
+        "copyBytes": 271443,
+        "sourceSha256": "b6f9d59a3d43bc6417bc7478fcc0f0a542ccd40f6880297bf1365d114a78002e",
+        "copySha256": "b6f9d59a3d43bc6417bc7478fcc0f0a542ccd40f6880297bf1365d114a78002e"
+      },
+      {
+        "path": "server/services/toolostRuntimeConfig.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 688,
+        "copyBytes": 688,
+        "sourceSha256": "977a334254f47c54857ca1a8f8a57eee9245919e754e157ed7abf15d9eb9bcd3",
+        "copySha256": "977a334254f47c54857ca1a8f8a57eee9245919e754e157ed7abf15d9eb9bcd3"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/server.py",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 546965,
+        "copyBytes": 546965,
+        "sourceSha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7",
+        "copySha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 444,
+        "copyBytes": 444,
+        "sourceSha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+        "copySha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 109368185,
+        "copyBytes": 109368185,
+        "sourceSha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+        "copySha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419"
+      },
+      {
+        "path": "external/pdim/artifacts/api-server/src/index.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 11270,
+        "copyBytes": 11270,
+        "sourceSha256": "05ac55ce86c45094b2b4ad3e5d255981c07168179cef170ac93e8cc03017495d",
+        "copySha256": "05ac55ce86c45094b2b4ad3e5d255981c07168179cef170ac93e8cc03017495d"
+      },
+      {
+        "path": "tests/fixtures/retained-pdim-source-fixture-worker.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1207,
+        "copyBytes": 1207,
+        "sourceSha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47",
+        "copySha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47"
+      },
+      {
+        "path": "tests/unit/retained-pdim-recovery-simulation.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 8266,
+        "copyBytes": 8266,
+        "sourceSha256": "c8b050136e588fc1fa4f6815614cf021254b1bc9d206798c6ff6f8823bc7464a",
+        "copySha256": "c8b050136e588fc1fa4f6815614cf021254b1bc9d206798c6ff6f8823bc7464a"
+      },
+      {
+        "path": "tests/unit/toolost-runtime-config.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 910,
+        "copyBytes": 910,
+        "sourceSha256": "074329442e67447953b6962a47bad522dab306542eb10d9a0d7bd80c36f0d6fd",
+        "copySha256": "074329442e67447953b6962a47bad522dab306542eb10d9a0d7bd80c36f0d6fd"
+      },
+      {
+        "path": "server/cluster.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 27457,
+        "copyBytes": 27457,
+        "sourceSha256": "4ddb21d3f4593971612eedc82a8f3000ee4aee5c3877e3d6bd3a36608231f879",
+        "copySha256": "4ddb21d3f4593971612eedc82a8f3000ee4aee5c3877e3d6bd3a36608231f879"
+      },
+      {
+        "path": "server/index.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 83874,
+        "copyBytes": 83874,
+        "sourceSha256": "0e44311f2fe6a01145d88b73a8db567e69e6b955e2b0ca922ecc322e7b51838e",
+        "copySha256": "0e44311f2fe6a01145d88b73a8db567e69e6b955e2b0ca922ecc322e7b51838e"
+      },
+      {
+        "path": "server/lib/healthRegistry.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 9835,
+        "copyBytes": 9835,
+        "sourceSha256": "48556f64b3374fd41ec8e49fcfab86b56457a1b1204a7a4fc7764c5bbb4e15b5",
+        "copySha256": "48556f64b3374fd41ec8e49fcfab86b56457a1b1204a7a4fc7764c5bbb4e15b5"
+      },
+      {
+        "path": "server/services/maxcoreLocalSupervisor.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 27119,
+        "copyBytes": 27119,
+        "sourceSha256": "aa82183fd719f25b0fd1b57f76247bf7d62b07ff76829347c09efcef22136166",
+        "copySha256": "aa82183fd719f25b0fd1b57f76247bf7d62b07ff76829347c09efcef22136166"
+      },
+      {
+        "path": "server/startup-probes.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 18736,
+        "copyBytes": 18736,
+        "sourceSha256": "51a80470165e312402f4cf68b946e3d969a77f91156c3c4588c8972e2bafa263",
+        "copySha256": "51a80470165e312402f4cf68b946e3d969a77f91156c3c4588c8972e2bafa263"
+      },
+      {
+        "path": "tests/unit/maxcore-cluster-ownership.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 4412,
+        "copyBytes": 4412,
+        "sourceSha256": "db5d20fcb9d727264284377ce943a2c95fb18dd41dea1f42992ca1e54ce11086",
+        "copySha256": "db5d20fcb9d727264284377ce943a2c95fb18dd41dea1f42992ca1e54ce11086"
+      },
+      {
+        "path": "tests/unit/maxcore-local-supervisor.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 10049,
+        "copyBytes": 10049,
+        "sourceSha256": "b6ed9de4c12e9588ffa11734885ae5d1ae22df26d71cc97f883a6e40c47ae8e6",
+        "copySha256": "b6ed9de4c12e9588ffa11734885ae5d1ae22df26d71cc97f883a6e40c47ae8e6"
+      },
+      {
+        "path": "tests/unit/maxcore-readiness-gate.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 2118,
+        "copyBytes": 2118,
+        "sourceSha256": "656c2facb8636c20428335e09da5c22036e3301b1b55197d77f87fcac6bb8fea",
+        "copySha256": "656c2facb8636c20428335e09da5c22036e3301b1b55197d77f87fcac6bb8fea"
+      },
+      {
+        "path": "scripts/simulate-production.mjs",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 79984,
+        "copyBytes": 79984,
+        "sourceSha256": "1179d0a219c7b37c9737109372f95e16541a39495a83a879704314ab0c045bb4",
+        "copySha256": "1179d0a219c7b37c9737109372f95e16541a39495a83a879704314ab0c045bb4"
+      },
+      {
+        "path": "external/maxcore/artifacts/api-server/src/python-server.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 24309,
+        "copyBytes": 24309,
+        "sourceSha256": "a961abbe6b254afbb81608e3be9ad08b1386f4a40ef411acf19c22518f3cb52a",
+        "copySha256": "a961abbe6b254afbb81608e3be9ad08b1386f4a40ef411acf19c22518f3cb52a"
+      },
+      {
+        "path": "script/build.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 26128,
+        "copyBytes": 26128,
+        "sourceSha256": "6fc6f8a0a2afd8f1cee85b694e8557044033b5427a525c0580af1f025e74c189",
+        "copySha256": "6fc6f8a0a2afd8f1cee85b694e8557044033b5427a525c0580af1f025e74c189"
+      },
+      {
+        "path": "script/lib/pythonRequirements.py",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 3379,
+        "copyBytes": 3379,
+        "sourceSha256": "8de48c04393edb190763fa60a86469864d4796ea1a9f8ed6bbccca8fa2adad12",
+        "copySha256": "8de48c04393edb190763fa60a86469864d4796ea1a9f8ed6bbccca8fa2adad12"
+      },
+      {
+        "path": "start.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 16323,
+        "copyBytes": 16323,
+        "sourceSha256": "b8d744a1ec3e50f071269b0cd559b2b100d6907b27056255a976f5e1f74fc6fb",
+        "copySha256": "b8d744a1ec3e50f071269b0cd559b2b100d6907b27056255a976f5e1f74fc6fb"
+      },
+      {
+        "path": "tests/unit/maxcore-python-launcher.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 2416,
+        "copyBytes": 2416,
+        "sourceSha256": "28992bfddeacc59d39d092c00e25a41d6dae279ab3ba8e58bebf20f20fffa2e6",
+        "copySha256": "28992bfddeacc59d39d092c00e25a41d6dae279ab3ba8e58bebf20f20fffa2e6"
+      }
+    ],
+    "passed": true
+  },
+  "configValidation": {
+    "checked": [
+      {
+        "path": "package.json",
+        "present": true,
+        "bytes": 14943
+      },
+      {
+        "path": "start.sh",
+        "present": true,
+        "bytes": 16196
+      },
+      {
+        "path": "script/build.ts",
+        "present": true,
+        "bytes": 25954
+      },
+      {
+        "path": "dist/pdim-restore.mjs",
+        "present": true,
+        "bytes": 31525
+      }
+    ],
+    "passed": true
+  },
+  "build": {
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 1049976,
+    "artifacts": {
+      "dist/index.mjs": {
+        "present": false,
+        "packedIntoAppRemainder": true
+      },
+      "dist/cluster.mjs": {
+        "present": false,
+        "packedIntoAppRemainder": true
+      },
+      "dist/public/index.html": {
+        "present": false,
+        "packedIntoAppRemainder": true
+      },
+      "dist/pdim-restore.mjs": {
+        "present": true,
+        "bytes": 31525
+      },
+      "node_modules.pdim": {
+        "present": true,
+        "bytes": 153672863
+      },
+      "node_modules.manifest.json": {
+        "present": true,
+        "bytes": 160
+      },
+      "app_remainder.pdim": {
+        "present": true,
+        "bytes": 7465774
+      },
+      "app_remainder.manifest.json": {
+        "present": true,
+        "bytes": 156
+      }
+    },
+    "outputTail": [
+      "Collecting soundfile==0.14.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 40))",
+      "  Downloading soundfile-0.14.0-py2.py3-none-manylinux_2_28_x86_64.whl (1.3 MB)",
+      "     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 143.3 MB/s  0:00:00",
+      "Collecting soxr==1.1.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 41))",
+      "  Downloading soxr-1.1.0-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (240 kB)",
+      "Collecting starlette==1.3.1 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 42))",
+      "  Downloading starlette-1.3.1-py3-none-any.whl (73 kB)",
+      "Collecting sympy==1.14.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 43))",
+      "  Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)",
+      "     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 135.4 MB/s  0:00:00",
+      "Collecting threadpoolctl==3.6.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 44))",
+      "  Downloading threadpoolctl-3.6.0-py3-none-any.whl (18 kB)",
+      "Collecting torch==2.13.0+cpu (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 45))",
+      "  Downloading https://download-r2.pytorch.org/whl/cpu/torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)",
+      "     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 191.8/191.8 MB 141.0 MB/s  0:00:01",
+      "Collecting typing-extensions==4.15.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 46))",
+      "  Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)",
+      "Collecting typing-inspection==0.4.2 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 47))",
+      "  Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)",
+      "Collecting urllib3==2.7.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 48))",
+      "  Downloading urllib3-2.7.0-py3-none-any.whl (131 kB)",
+      "Collecting uvicorn==0.49.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 49))",
+      "  Downloading uvicorn-0.49.0-py3-none-any.whl (71 kB)",
+      "Installing collected packages: mpmath, urllib3, typing-extensions, threadpoolctl, sympy, setuptools, pycparser, psycopg2-binary, platformdirs, pillow, packaging, numpy, networkx, narwhals, msgpack, markupsafe, llvmlite, joblib, idna, h11, fsspec, filelock, decorator, click, charset-normalizer, certifi, audioread, annotated-types, annotated-doc, uvicorn, typing-inspection, soxr, scipy, requests, pydantic-core, numba, lazy-loader, jinja2, cffi, anyio, torch, starlette, soundfile, scikit-learn, pydantic, pooch, librosa, fastapi",
+      "Successfully installed annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.14.2 audioread-3.1.0 certifi-2026.5.20 cffi-2.0.0 charset-normalizer-3.4.7 click-8.4.1 decorator-5.3.1 fastapi-0.136.3 filelock-3.29.3 fsspec-2026.4.0 h11-0.16.0 idna-3.18 jinja2-3.1.6 joblib-1.5.3 lazy-loader-0.5 librosa-0.11.0 llvmlite-0.47.0 markupsafe-3.0.3 mpmath-1.3.0 msgpack-1.2.1 narwhals-2.22.1 networkx-3.6.1 numba-0.65.1 numpy-2.4.6 packaging-26.2 pillow-12.3.0 platformdirs-4.10.0 pooch-1.9.0 psycopg2-binary-2.9.12 pycparser-3.0 pydantic-2.13.4 pydantic-core-2.46.4 requests-2.34.2 scikit-learn-1.9.0 scipy-1.17.1 setuptools-83.0.0 soundfile-0.14.0 soxr-1.1.0 starlette-1.3.1 sympy-1.14.0 threadpoolctl-3.6.0 torch-2.13.0+cpu typing-extensions-4.15.0 typing-inspection-0.4.2 urllib3-2.7.0 uvicorn-0.49.0",
+      "2.13.0+cpu",
+      "   ✅ Portable Python runtime ready → python_runtime/",
+      "==> Packing 4 capsule(s) concurrently across 4 CPU(s) → 1 zstd thread(s) each",
+      "==> Packing python_runtime/ → python_runtime.pdim (zstd-19, -T1, Extract & Boot)...",
+      "==> Packing node_modules/ → node_modules.pdim (zstd-19, -T1, Extract & Boot)...",
+      "==> Packing external/maxcore/ → external_maxcore.pdim (zstd-19, -T1, Extract & Boot)...",
+      "==> Packing external/pdim/ → external_pdim.pdim (zstd-19, -T1, Extract & Boot)...",
+      "   ✅ external/pdim/ packed (40MB) and removed from image",
+      "   ✅ external/maxcore/ packed (546MB) and removed from image",
+      "   ✅ node_modules/ packed (147MB) and removed from image",
+      "   ✅ python_runtime/ packed (308MB) and removed from image",
+      "==> Scanned .dockerignore-survivor payload: 2135 file(s) remaining outside the four existing capsules and the boot bootstrap set (start.sh, .node_bin, scripts/boot-stub-server.mjs, scripts/port-contract.sh, scripts/check-port-contract.ts, dist/pdim-restore.mjs, dist/.db-indexes-ok, .replit, .git, node_modules, python_runtime, external/maxcore, external/pdim, node_modules.pdim, node_modules.manifest.json, python_runtime.pdim, python_runtime.manifest.json, external_maxcore.pdim, external_maxcore.manifest.json, external_pdim.pdim, external_pdim.manifest.json)",
+      "==> Packing 2135 remaining app files → app_remainder.pdim (zstd-19, -T4, Extract & Boot)...",
+      "   ✅ 2135 files packed (7MB) and removed from image",
+      "==> Pre-flight image size check: 1.48 GiB (1.17 GiB Repl payload + 0.31 GiB deduplicated Nix closure; 10/10 Nix roots accounted for; safety budget 7.5 GiB, hard limit 8 GiB)"
+    ],
+    "nixPreflight": {
+      "totalGiB": 1.48,
+      "payloadGiB": 1.17,
+      "nixClosureGiB": 0.31,
+      "rootsAccounted": 10,
+      "rootsDiscovered": 10,
+      "scope": "sanitized simulation PATH/environment only; not a target image closure claim"
+    },
+    "toolchain": {
+      "nix-shell": "/nix/store/s39027q39rd1qzi2m6cmf455kljn6l7p-replit-runtime-path/bin/nix-shell",
+      "curl": "/nix/store/s39027q39rd1qzi2m6cmf455kljn6l7p-replit-runtime-path/bin/curl",
+      "tar": "/nix/store/7nilh5hvnfbsx3vn020pkjkgx9rgsizb-gnutar-1.35/bin/tar",
+      "zstd": "/nix/store/ddap6dm3fjdm0zmw4m3rls73a0gml3xd-zstd-1.5.7-bin/bin/zstd"
+    },
+    "gitIndexPreparation": {
+      "method": "source tracked index copy plus explicit required source anchors; no work-tree add and no LFS filtering",
+      "indexedPathCount": 6000,
+      "requiredIndexAnchors": [
+        ".gitattributes",
+        "script/lib/modelRelease.ts",
+        "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+        "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+        "scripts/boosterstate-toolchain.nix",
+        "scripts/build-boosterstate.sh",
+        "server/services/toolostRuntimeConfig.ts",
+        "tests/fixtures/retained-pdim-source-fixture-worker.ts",
+        "tests/unit/maxcore-cluster-ownership.test.ts",
+        "tests/unit/maxcore-python-launcher.test.ts",
+        "tests/unit/maxcore-readiness-gate.test.ts",
+        "tests/unit/retained-pdim-recovery-simulation.test.ts",
+        "tests/unit/toolost-runtime-config.test.ts"
+      ],
+      "boundedTimeouts": true
+    }
+  },
+  "pythonCapability": {
+    "status": "production_build_imports_passed",
+    "note": "The production build recreates the pinned portable Python runtime. No provider credentials are available; package and fixed runtime downloads are build-time only."
+  },
+  "capsuleRestore": {
+    "buildCapsules": {
+      "nodeModules": {
+        "present": true,
+        "bytes": 153672863
+      },
+      "appRemainder": {
+        "present": true,
+        "bytes": 7465774
+      },
+      "pythonRuntime": {
+        "present": true,
+        "bytes": 322617834
+      },
+      "nodeModulesRemovedBeforeColdBoot": true,
+      "freshSourceBuild": true
+    },
+    "manifestValidation": [
+      {
+        "capsule": "node_modules.pdim",
+        "manifest": "node_modules.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "54cdaadd1887499b28abb5e2bb2c6e4e4edc0db9387ee1de21952327aa0cff1e",
+        "actualSha256": "54cdaadd1887499b28abb5e2bb2c6e4e4edc0db9387ee1de21952327aa0cff1e",
+        "bytes": 153672863,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "app_remainder.pdim",
+        "manifest": "app_remainder.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "660f7aeebe29d341cf70fc6e954b6d97b9a24824aaf4ec790239008ec34cee92",
+        "actualSha256": "660f7aeebe29d341cf70fc6e954b6d97b9a24824aaf4ec790239008ec34cee92",
+        "bytes": 7465774,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "python_runtime.pdim",
+        "manifest": "python_runtime.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "b8f58a15ffbb97d9c22fc3b0f4379ddc72f128e8f7f5122a4ed5c83e5716a515",
+        "actualSha256": "b8f58a15ffbb97d9c22fc3b0f4379ddc72f128e8f7f5122a4ed5c83e5716a515",
+        "bytes": 322617834,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "external_maxcore.pdim",
+        "manifest": "external_maxcore.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "916541e34baffdd3fd9241394c83e4793e45446dc2bda0ab42d9471a192f52d4",
+        "actualSha256": "916541e34baffdd3fd9241394c83e4793e45446dc2bda0ab42d9471a192f52d4",
+        "bytes": 572903632,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "external_pdim.pdim",
+        "manifest": "external_pdim.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "5021a6d8bcbc982ecfd536d505c4890bf1e4a4702547dabe5f776fee17e00687",
+        "actualSha256": "5021a6d8bcbc982ecfd536d505c4890bf1e4a4702547dabe5f776fee17e00687",
+        "bytes": 41985096,
+        "provenance": "current-source build artifact"
+      }
+    ],
+    "historicalCompatibility": [],
+    "coldCriticalRestore": {
+      "exitCode": 0,
+      "nodeModulesSentinel": true,
+      "appRemainderSentinel": true,
+      "appEntryPointsPresentAfterRestore": true,
+      "outputTail": [
+        "[pdim-restore] Extracting node_modules.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/.pdim-scratch-node_modules-16498/ (staging for node_modules/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for node_modules.pdim",
+        "[pdim-restore] Extracting app_remainder.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/.pdim-scratch-__app_remainder__-16498/ (staging app remainder) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for app_remainder.pdim",
+        "[pdim-restore] Extracting python_runtime.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/.pdim-scratch-python_runtime-16498/ (staging for python_runtime/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for python_runtime.pdim",
+        "[pdim-restore] ✅ app remainder restored from app_remainder.pdim (88 top-level entries)",
+        "[pdim-restore] ✅ python_runtime/ restored from python_runtime.pdim",
+        "[pdim-restore] ✅ node_modules/ restored from node_modules.pdim",
+        "[pdim-restore] Critical capsules (node_modules, app remainder, Python) restored."
+      ]
+    },
+    "coldBackgroundRestore": {
+      "exitCode": 0,
+      "maxcoreSentinel": true,
+      "pdimSentinel": true,
+      "outputTail": [
+        "[pdim-restore] Extracting external_maxcore.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/.pdim-scratch-external_maxcore-16525/ (staging for external/maxcore/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for external_maxcore.pdim",
+        "[pdim-restore] Extracting external_pdim.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/.pdim-scratch-external_pdim-16525/ (staging for external/pdim/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for external_pdim.pdim",
+        "[pdim-restore] ✅ external/pdim/ restored from external_pdim.pdim",
+        "[pdim-restore] ✅ external/maxcore/ restored from external_maxcore.pdim",
+        "[pdim-restore] Background capsules processed."
+      ],
+      "historicalInputs": false,
+      "securityReadiness": "current captured source restored with manifest verification"
+    },
+    "warmIdempotentRestore": {
+      "exitCode": 0,
+      "outputTail": [
+        "[pdim-restore] node_modules/ already restored — skipping",
+        "[pdim-restore] python_runtime/ already restored — skipping",
+        "[pdim-restore] external/maxcore/ already restored — skipping",
+        "[pdim-restore] external/pdim/ already restored — skipping",
+        "[pdim-restore] app remainder already restored — skipping",
+        "[pdim-restore] All capsules processed."
+      ],
+      "skippedExistingSentinels": true
+    }
+  },
+  "imageSize": {
+    "totalBytes": 4941719322,
+    "totalGiB": 4.602,
+    "nixPreflight": {
+      "totalGiB": 1.48,
+      "payloadGiB": 1.17,
+      "nixClosureGiB": 0.31,
+      "rootsAccounted": 10,
+      "rootsDiscovered": 10,
+      "scope": "sanitized simulation PATH/environment only; not a target image closure claim"
+    },
+    "capsules": {
+      "node_modules.pdim": {
+        "present": true,
+        "bytes": 153672863
+      },
+      "app_remainder.pdim": {
+        "present": true,
+        "bytes": 7465774
+      },
+      "python_runtime.pdim": {
+        "present": true,
+        "bytes": 322617834
+      },
+      "external_maxcore.pdim": {
+        "present": true,
+        "bytes": 572903632
+      },
+      "external_pdim.pdim": {
+        "present": true,
+        "bytes": 41985096
+      }
+    },
+    "underHardLimit": true,
+    "note": "Disposable simulation image footprint built from the captured current source. Nix preflight scope is the sanitized PATH/environment and may differ from the target image."
+  },
+  "productionReadiness": {
+    "publishReady": false,
+    "reason": "Single-process packed-runtime scope passed isolated dependencies, mandatory loaded-model health, three stable full-readiness probes, and preregistered packed-load SLO gates. This run set DISABLE_CLUSTER=true, so recovery/cluster and cluster-packed acceptance remain open. The /api/warm/status fields were nonmandatory diagnostics and returned HTTP 401; they were not an acceptance gate. This is not publication, provider-production, or post-publish lifecycle evidence."
+  },
+  "startup": {
+    "exitCode": 143,
+    "signal": null,
+    "liveness": {
+      "observed": true,
+      "transportOnly": true,
+      "realServer": true,
+      "jsonObserved": true,
+      "earlyAppResponse": true,
+      "startupResponseObserved": true,
+      "samples": [
+        {
+          "atMs": 49,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 302,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 554,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 809,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 1062,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 1316,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 1569,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 1821,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 2179,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 2434,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 2687,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 2941,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 3194,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 3446,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 3698,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 3954,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 4206,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 4463,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 4715,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 4967,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 5219,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 5472,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 5726,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 5981,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 6233,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 6485,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 6736,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 6988,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 7239,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 7491,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 7743,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 7995,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 8248,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 8501,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 8753,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 9005,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 9257,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 9510,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 9761,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 10013,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 10266,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 10518,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 10769,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 11021,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 11272,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 11524,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 11776,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 12028,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 12280,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 12532,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 12784,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 13038,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 13289,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 13542,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 13794,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 14045,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 14297,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 14549,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 14800,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 15052,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 15303,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 15554,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 15806,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 16057,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 16308,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 16559,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 16810,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 17062,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 17313,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 17576,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 17829,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 18080,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 18331,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 18582,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 18835,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 19087,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 19339,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 20582,
+          "status": 200,
+          "body": {
+            "status": "ok",
+            "buildId": "production-simulation"
+          }
+        }
+      ]
+    },
+    "readiness": {
+      "observed": true,
+      "fullReady": true,
+      "statusCodes": [
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        200
+      ],
+      "lastBody": {
+        "status": "ok",
+        "subsystemStatuses": [
+          {
+            "name": "database",
+            "status": "ok"
+          },
+          {
+            "name": "redis",
+            "status": "ok"
+          },
+          {
+            "name": "routes",
+            "status": "ok"
+          },
+          {
+            "name": "audit",
+            "status": "ok"
+          },
+          {
+            "name": "automation",
+            "status": "ok"
+          },
+          {
+            "name": "maxcore",
+            "status": "ok"
+          }
+        ]
+      },
+      "note": null,
+      "stabilization": {
+        "rule": "three consecutive public /api/ready HTTP 200 status=ok probes with probe starts spaced at least 6 seconds apart",
+        "cacheClearIntervalMs": 6000,
+        "samples": [
+          {
+            "atMs": 41879,
+            "spacingMs": null,
+            "status": 200,
+            "bodyStatus": "ok",
+            "consecutivePublicReady": 1
+          },
+          {
+            "atMs": 47897,
+            "spacingMs": 6018,
+            "status": 200,
+            "bodyStatus": "ok",
+            "consecutivePublicReady": 2
+          },
+          {
+            "atMs": 53926,
+            "spacingMs": 6029,
+            "status": 200,
+            "bodyStatus": "ok",
+            "consecutivePublicReady": 3
+          }
+        ],
+        "passed": true
+      }
+    },
+    "attempts": [],
+    "postgres": {
+      "isolated": true,
+      "port": 39681,
+      "auth": "trust inside network namespace only",
+      "schema": {
+        "command": "node scripts/db-push.js --force",
+        "exitCode": 0,
+        "outputTail": [
+          "No config path provided, using default 'drizzle.config.ts'",
+          "Reading config file '/home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/drizzle.config.ts'",
+          "Using 'pg' driver for database querying",
+          "[⣷] Pulling schema from database...",
+          "\u001b[2K\u001b[1G[✓] Pulling schema from database...",
+          "[✓] Changes applied"
+        ]
+      }
+    },
+    "currentLogPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/logs/start-1.log",
+    "redis": {
+      "isolated": true,
+      "port": 37829,
+      "dataDir": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/transient/redis",
+      "serverBinary": "/nix/store/pnc74r60iz1g5bpqv4qh76a8cc3g0n97-redis-7.2.10/bin/redis-server",
+      "readinessExitCode": 0,
+      "readinessResponse": "PONG",
+      "ready": true
+    },
+    "model": {
+      "isolated": true,
+      "ownedLocalPort": 36749,
+      "mandatoryHealthPath": "/api/health",
+      "mandatoryContract": "HTTP 200 with status=healthy and model_loaded=true",
+      "equivalentHealthPath": "/health",
+      "diagnosticWarmStatusPath": "/api/warm/status",
+      "diagnosticFieldsAreMandatory": false,
+      "samples": [
+        {
+          "atMs": 41879,
+          "healthStatus": 200,
+          "status": "healthy",
+          "modelLoaded": true,
+          "equivalentHealthStatus": 200,
+          "equivalentStatus": "healthy",
+          "equivalentModelLoaded": true,
+          "warmStatus": 401,
+          "modelReady": null,
+          "deepWarmState": null,
+          "deepWarmCycles": null
+        }
+      ],
+      "lastSample": {
+        "atMs": 41879,
+        "healthStatus": 200,
+        "status": "healthy",
+        "modelLoaded": true,
+        "equivalentHealthStatus": 200,
+        "equivalentStatus": "healthy",
+        "equivalentModelLoaded": true,
+        "warmStatus": 401,
+        "modelReady": null,
+        "deepWarmState": null,
+        "deepWarmCycles": null
+      },
+      "healthy": true
+    },
+    "load": {
+      "label": "packed namespace-isolated authenticated HTTP load",
+      "acceptanceMode": "preregistered-slo",
+      "thresholds": {
+        "minimumSuccessPercent": 99,
+        "maximumP95Ms": 500,
+        "maximumP99Ms": 1000
+      },
+      "settings": {
+        "measuredRequests": 150,
+        "concurrency": 10,
+        "accounts": 10,
+        "sessions": 10,
+        "requestsPerSession": 15,
+        "requestTimeoutMs": 10000,
+        "pacingMs": 0
+      },
+      "warmup": {
+        "rule": "one session read and one heartbeat per session after mandatory loaded-model health and three-probe readiness stabilization; nonmandatory deep-warm diagnostics were not an acceptance gate",
+        "requests": 20,
+        "successful": 20,
+        "failed": 0,
+        "successPercent": 100,
+        "p95Ms": 82.730939,
+        "p99Ms": 84.131564,
+        "failures": {},
+        "samples": [
+          {
+            "operation": "session-read",
+            "durationMs": 52.89309,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 53.093331,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 84.131564,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 57.821306,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 63.683156,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 56.193678,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 58.239954,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 64.886615,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 76.463617,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 69.480777,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 62.74051,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 47.709705,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 81.14402,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 59.464172,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 64.376466,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 58.851814,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 82.730939,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 60.001449,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 79.0086,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 58.771665,
+            "status": 200,
+            "valid": true
+          }
+        ]
+      },
+      "measured": {
+        "requests": 150,
+        "successful": 150,
+        "failed": 0,
+        "successPercent": 100,
+        "p95Ms": 69.138946,
+        "p99Ms": 77.561955,
+        "failures": {},
+        "samples": [
+          {
+            "operation": "session-read",
+            "durationMs": 54.820654,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 49.448626,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 47.804683,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 40.2392,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 51.911452,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 63.102059,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 75.318871,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 50.064779,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 50.569869,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 42.295465,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 37.208177,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 33.934568,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 36.315326,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 22.26405,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 19.167333,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 50.143797,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 46.726537,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 42.759799,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 33.713312,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 41.663136,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 55.219895,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 69.594055,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 36.031144,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 43.264029,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 45.110356,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 29.832158,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 36.132366,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 34.629964,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 33.176231,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 31.742048,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 64.390103,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 60.497696,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 44.389724,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 59.069283,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 64.581533,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 75.513219,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 48.074614,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 54.847604,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 50.456996,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 33.937459,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 36.261888,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 36.207293,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 31.288723,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 21.711512,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 10.906776,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 54.090367,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 40.659116,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 45.64174,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 31.601818,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 39.07364,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 52.000011,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 60.60342,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 55.299461,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 43.043707,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 44.233805,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 29.981653,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 29.522539,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 34.476094,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 25.942955,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 26.563925,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 59.324765,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 69.420597,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 41.740349,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 60.669077,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 61.903723,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 79.743043,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 47.945586,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 55.785696,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 42.786292,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 38.699241,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 33.501157,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 35.53903,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 24.718666,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 17.068363,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 18.331317,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 47.60071,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 42.344758,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 45.053598,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 34.419286,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 41.199887,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 47.24238,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 60.879369,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 49.175069,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 35.229859,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 45.111424,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 42.843323,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 38.189253,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 34.65015,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 28.424641,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 32.886073,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 53.097017,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 57.686528,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 42.439342,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 47.584866,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 66.422481,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 61.07425,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 60.275528,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 49.060847,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 54.917453,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 41.825517,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 39.65932,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 30.110014,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 40.09752,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 19.176,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 24.510252,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 56.634661,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 42.5294,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 45.010303,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 33.429098,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 35.714015,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 49.136411,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 56.281323,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 57.424506,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 41.446299,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 42.000721,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 36.621626,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 37.322988,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 32.564311,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 32.431342,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 30.991171,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 68.142017,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 60.313478,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 46.781121,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 51.661015,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 77.561955,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 69.138946,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 51.848165,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 51.249697,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 45.886511,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 38.461442,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 32.586658,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 46.354083,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 20.224883,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 17.139575,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "session-read",
+            "durationMs": 13.915847,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 60.273569,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 40.007828,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 45.83493,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 34.750597,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 37.932698,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 42.95022,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 76.188904,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 55.01717,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 41.988623,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 50.916079,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 34.767357,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 33.563086,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 25.544612,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 27.938155,
+            "status": 200,
+            "valid": true
+          },
+          {
+            "operation": "heartbeat",
+            "durationMs": 31.265478,
+            "status": 200,
+            "valid": true
+          }
+        ]
+      },
+      "byEndpoint": {
+        "session-read": {
+          "requests": 75,
+          "successful": 75,
+          "failed": 0,
+          "successPercent": 100,
+          "p95Ms": 75.318871,
+          "p99Ms": 79.743043,
+          "failures": {}
+        },
+        "heartbeat": {
+          "requests": 75,
+          "successful": 75,
+          "failed": 0,
+          "successPercent": 100,
+          "p95Ms": 60.60342,
+          "p99Ms": 76.188904,
+          "failures": {}
+        }
+      },
+      "thresholdFailures": [],
+      "passed": true
+    }
+  },
+  "failures": [],
+  "result": "PASS",
+  "completedStages": [
+    "copy",
+    "build",
+    "size",
+    "restore",
+    "startup"
+  ],
+  "historicalAttempts": [
+    {
+      "attempt": 1,
+      "report": "/home/runner/workspace/reports/production-simulation/2026-09-23T18-57-24-314Z-attempt-1.json",
+      "logs": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/attempt-history/attempt-1/logs",
+      "result": "STARTUP_BLOCKED_BY_MOCK_DEPENDENCIES",
+      "canonicalBuildExitCode": 0,
+      "note": "Preserved prior canonical build/runtime evidence; it predates the approved Python launcher source refresh and is not current-source acceptance."
+    }
+  ]
+}

@@ -96,6 +96,16 @@ describe("MaxCore local supervisor", () => {
   });
 
   describe("checkMaxcoreLocalReady (Python-aware readiness)", () => {
+    it("requires model_loaded=true, not merely a healthy child process", async () => {
+      const { isMaxcoreModelHealth } = await import(
+        "../../server/services/maxcoreLocalSupervisor.js"
+      );
+      expect(isMaxcoreModelHealth({ status: "healthy", model_loaded: true })).toBe(true);
+      expect(isMaxcoreModelHealth({ status: "healthy", model_loaded: false })).toBe(false);
+      expect(isMaxcoreModelHealth({ status: "healthy" })).toBe(false);
+      expect(isMaxcoreModelHealth({ status: "degraded", model_loaded: true })).toBe(false);
+    });
+
     it("does not claim readiness from an unowned process on the local port", async () => {
       const fetchMock = vi.fn().mockResolvedValue({
         ok: true,
@@ -242,6 +252,7 @@ describe("MaxCore local supervisor", () => {
       expect(await checkMaxcoreLocalReady()).toBe(true);
 
       stopMaxcoreLocal();
+      expect(proc.kill).toHaveBeenCalledWith("SIGTERM");
     });
   });
 });

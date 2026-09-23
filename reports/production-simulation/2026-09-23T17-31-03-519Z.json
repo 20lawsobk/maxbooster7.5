@@ -1,0 +1,4746 @@
+{
+  "runId": "2026-09-23T17-31-03-519Z",
+  "workspace": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z (disposable isolated copy; remove with --cleanup)",
+  "commands": {
+    "build": "DEPLOY_PACK=1 npm run build",
+    "start": "bash start.sh"
+  },
+  "safety": {
+    "sourceRoot": "/home/runner/workspace",
+    "sourceRootUsedAsBuildCwd": false,
+    "sourceFilesMutated": false,
+    "excluded": [
+      ".replit",
+      ".git",
+      "data",
+      "logs",
+      "attached_assets",
+      "*.env secrets",
+      "dns-node/keys"
+    ],
+    "networkCredentialsProvided": false,
+    "thirdPartyOrLiveDatabaseTargeted": false,
+    "runtimeIsolationPolicy": {
+      "required": true,
+      "transport": "Unprivileged Linux user+network namespace; only namespace-local loopback is reachable by the app and every native/Python descendant",
+      "filesystem": "all build and runtime writes are rooted in the disposable copy; source credentials, data, logs, media, and VCS metadata are excluded",
+      "credentials": "env-i style allowlist; generated simulation-only secrets; ephemeral local PostgreSQL only"
+    },
+    "hostNetworkNamespace": "net:[4026532714]",
+    "runtimeNetworkNamespace": "net:[4026532864]",
+    "runtimeIsolationEnforced": true,
+    "deployPackOnSourceWorkspace": false,
+    "networkNamespacePreflight": {
+      "available": true,
+      "exitCode": 0,
+      "signal": null,
+      "error": "",
+      "classification": "supported unprivileged user+network namespace with namespace-local loopback"
+    }
+  },
+  "resourceProfile": {
+    "configured": {
+      "cpu": 4,
+      "memoryBytes": 8589934592,
+      "imageHardLimitBytes": 8589934592
+    },
+    "observed": {
+      "cpuQuota": 4,
+      "logicalCpuCount": 4,
+      "memoryLimitBytes": 8589934592,
+      "memoryCurrentBytes": 1542791168,
+      "memoryHeadroomBytes": 7047143424,
+      "diskAvailableBytes": 235409059840
+    },
+    "admission": {
+      "safe": true,
+      "reasons": [],
+      "estimatedScratchBytes": 74526188848
+    }
+  },
+  "sourceSnapshot": {
+    "capturedAt": "2026-09-23T17:34:29.579Z",
+    "note": "All build/start stages use the immutable disposable copy captured at copy stage; source edits after that point are intentionally excluded."
+  },
+  "nodeResolution": {
+    "bundledNodePresentInCopy": false,
+    "pathNodeProbe": {
+      "exitCode": 0,
+      "output": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node\nv24.13.0\n",
+      "error": ""
+    },
+    "startScriptEvidence": []
+  },
+  "copyIntegrity": {
+    "checked": [
+      {
+        "path": "node_modules/@sentry/core/build/esm/logs/public-api.js",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 986,
+        "copyBytes": 986,
+        "sourceSha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b",
+        "copySha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b"
+      },
+      {
+        "path": "node_modules/vite/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 5158,
+        "copyBytes": 5158,
+        "sourceSha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0",
+        "copySha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0"
+      },
+      {
+        "path": "node_modules/tsx/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1601,
+        "copyBytes": 1601,
+        "sourceSha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659",
+        "copySha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659"
+      },
+      {
+        "path": "python_runtime/bin/python3.12",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 100186336,
+        "copyBytes": 100186336,
+        "sourceSha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929",
+        "copySha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929"
+      },
+      {
+        "path": "python_runtime/lib/python3.12/site-packages/pip/_vendor/certifi/cacert.pem",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 270954,
+        "copyBytes": 270954,
+        "sourceSha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9",
+        "copySha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
+      },
+      {
+        "path": ".dockerignore",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 6086,
+        "copyBytes": 6086,
+        "sourceSha256": "537f917d31f522e7842f57330116264d1c3aa67b799812887d6ef5603d014cf1",
+        "copySha256": "537f917d31f522e7842f57330116264d1c3aa67b799812887d6ef5603d014cf1"
+      },
+      {
+        "path": "build.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 28910,
+        "copyBytes": 28910,
+        "sourceSha256": "709523f38b15e80bb465d5ef637e24abf293f2fdb4a50639e1a5c0c39cb16d9e",
+        "copySha256": "709523f38b15e80bb465d5ef637e24abf293f2fdb4a50639e1a5c0c39cb16d9e"
+      },
+      {
+        "path": "package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 14943,
+        "copyBytes": 14943,
+        "sourceSha256": "3b85c61e5b4fd82712c4fb3ee695cae383294cf397f4e13b7a4c0c1c216d3639",
+        "copySha256": "3b85c61e5b4fd82712c4fb3ee695cae383294cf397f4e13b7a4c0c1c216d3639"
+      },
+      {
+        "path": "script/build.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 25954,
+        "copyBytes": 25954,
+        "sourceSha256": "bebd77f7f8959d90a23887573208f31cea7b47c72f8e1e8cfd9efe746a31a1d9",
+        "copySha256": "bebd77f7f8959d90a23887573208f31cea7b47c72f8e1e8cfd9efe746a31a1d9"
+      },
+      {
+        "path": "scripts/boosterstate-toolchain.nix",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 326,
+        "copyBytes": 326,
+        "sourceSha256": "c29cc29cb89ba60b0fcdcc5451c09eadbb95fa427e20e50a7dacee2d8eecec02",
+        "copySha256": "c29cc29cb89ba60b0fcdcc5451c09eadbb95fa427e20e50a7dacee2d8eecec02"
+      },
+      {
+        "path": "scripts/build-boosterstate.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 2004,
+        "copyBytes": 2004,
+        "sourceSha256": "a888abbd2750adb33435285469e5cd536abe7adb57ee4e19308b449d41983090",
+        "copySha256": "a888abbd2750adb33435285469e5cd536abe7adb57ee4e19308b449d41983090"
+      },
+      {
+        "path": "scripts/lib/productionSimulationPolicy.mjs",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 3107,
+        "copyBytes": 3107,
+        "sourceSha256": "cd422bf4cdb6d6f8eb6241d9653fa79754743508c1ed7145754a4d9442bbdb9a",
+        "copySha256": "cd422bf4cdb6d6f8eb6241d9653fa79754743508c1ed7145754a4d9442bbdb9a"
+      },
+      {
+        "path": "scripts/simulate-production.mjs",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 49093,
+        "copyBytes": 49093,
+        "sourceSha256": "609a1a9e0c128a1cfeaa97940d25044fed6411e9144407e382cb238e122c36d9",
+        "copySha256": "609a1a9e0c128a1cfeaa97940d25044fed6411e9144407e382cb238e122c36d9"
+      },
+      {
+        "path": "server/routes/distribution.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 271443,
+        "copyBytes": 271443,
+        "sourceSha256": "b6f9d59a3d43bc6417bc7478fcc0f0a542ccd40f6880297bf1365d114a78002e",
+        "copySha256": "b6f9d59a3d43bc6417bc7478fcc0f0a542ccd40f6880297bf1365d114a78002e"
+      },
+      {
+        "path": "server/services/toolostRuntimeConfig.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 688,
+        "copyBytes": 688,
+        "sourceSha256": "977a334254f47c54857ca1a8f8a57eee9245919e754e157ed7abf15d9eb9bcd3",
+        "copySha256": "977a334254f47c54857ca1a8f8a57eee9245919e754e157ed7abf15d9eb9bcd3"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/server.py",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 546965,
+        "copyBytes": 546965,
+        "sourceSha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7",
+        "copySha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 444,
+        "copyBytes": 444,
+        "sourceSha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+        "copySha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 109368185,
+        "copyBytes": 109368185,
+        "sourceSha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+        "copySha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419"
+      },
+      {
+        "path": "external/pdim/artifacts/api-server/src/index.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 11270,
+        "copyBytes": 11270,
+        "sourceSha256": "05ac55ce86c45094b2b4ad3e5d255981c07168179cef170ac93e8cc03017495d",
+        "copySha256": "05ac55ce86c45094b2b4ad3e5d255981c07168179cef170ac93e8cc03017495d"
+      },
+      {
+        "path": "tests/fixtures/retained-pdim-source-fixture-worker.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1207,
+        "copyBytes": 1207,
+        "sourceSha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47",
+        "copySha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47"
+      },
+      {
+        "path": "tests/unit/retained-pdim-recovery-simulation.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 8266,
+        "copyBytes": 8266,
+        "sourceSha256": "c8b050136e588fc1fa4f6815614cf021254b1bc9d206798c6ff6f8823bc7464a",
+        "copySha256": "c8b050136e588fc1fa4f6815614cf021254b1bc9d206798c6ff6f8823bc7464a"
+      },
+      {
+        "path": "tests/unit/toolost-runtime-config.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 910,
+        "copyBytes": 910,
+        "sourceSha256": "074329442e67447953b6962a47bad522dab306542eb10d9a0d7bd80c36f0d6fd",
+        "copySha256": "074329442e67447953b6962a47bad522dab306542eb10d9a0d7bd80c36f0d6fd"
+      }
+    ],
+    "passed": true
+  },
+  "configValidation": {
+    "checked": [
+      {
+        "path": "package.json",
+        "present": true,
+        "bytes": 14943
+      },
+      {
+        "path": "start.sh",
+        "present": true,
+        "bytes": 16196
+      },
+      {
+        "path": "script/build.ts",
+        "present": true,
+        "bytes": 25954
+      },
+      {
+        "path": "dist/pdim-restore.mjs",
+        "present": true,
+        "bytes": 31525
+      }
+    ],
+    "passed": true
+  },
+  "build": {
+    "exitCode": null,
+    "signal": null,
+    "durationMs": 7945,
+    "artifacts": {
+      "dist/index.mjs": {
+        "present": false
+      },
+      "dist/cluster.mjs": {
+        "present": false
+      },
+      "dist/public/index.html": {
+        "present": false
+      },
+      "dist/pdim-restore.mjs": {
+        "present": true,
+        "bytes": 31525
+      },
+      "node_modules.pdim": {
+        "present": true,
+        "bytes": 153672593
+      },
+      "node_modules.manifest.json": {
+        "present": true,
+        "bytes": 160
+      },
+      "app_remainder.pdim": {
+        "present": true,
+        "bytes": 7463557
+      },
+      "app_remainder.manifest.json": {
+        "present": true,
+        "bytes": 156
+      }
+    },
+    "outputTail": [
+      "      \"version\": \"0.28.2\",",
+      "      \"path\": \"dns-os/node_modules/esbuild/package.json\"",
+      "    },",
+      "    {",
+      "      \"consumer\": \"dns-os/services/dns-api\",",
+      "      \"package\": \"@esbuild/linux-x64\",",
+      "      \"version\": \"0.28.2\",",
+      "      \"path\": \"dns-os/node_modules/@esbuild/linux-x64/package.json\"",
+      "    },",
+      "    {",
+      "      \"consumer\": \"tls-proxy\",",
+      "      \"package\": \"esbuild\",",
+      "      \"version\": \"0.28.2\",",
+      "      \"path\": \"tls-proxy/node_modules/esbuild/package.json\"",
+      "    },",
+      "    {",
+      "      \"consumer\": \"tls-proxy\",",
+      "      \"package\": \"@esbuild/linux-x64\",",
+      "      \"version\": \"0.28.2\",",
+      "      \"path\": \"tls-proxy/node_modules/@esbuild/linux-x64/package.json\"",
+      "    }",
+      "  ]",
+      "}",
+      "Build failed: Error: Command failed: /nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node scripts/verify-runtime-artifacts.mjs dependencies /home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/app",
+      "    at genericNodeError (node:internal/errors:985:15)",
+      "    at wrappedFn (node:internal/errors:539:14)",
+      "    at checkExecSyncError (node:child_process:925:11)",
+      "    at execFileSync (node:child_process:961:15)",
+      "    at main (/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/app/script/build.ts:24:5)",
+      "    at <anonymous> (/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/app/script/build.ts:577:3)",
+      "    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)",
+      "    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)",
+      "    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {",
+      "  status: 1,",
+      "  signal: null,",
+      "  output: [ null, null, null ],",
+      "  pid: 6839,",
+      "  stdout: null,",
+      "  stderr: null",
+      "}"
+    ],
+    "nixPreflight": {
+      "nixClosureBytes": 330118228,
+      "nixClosureGiB": 0.307,
+      "rootsAccounted": 10,
+      "rootsDiscovered": 10,
+      "scope": "post-bounded sanitized PATH measurement using production getNixClosureSize()",
+      "allRootsAccounted": true
+    },
+    "toolchain": {
+      "nix-shell": "/nix/store/s39027q39rd1qzi2m6cmf455kljn6l7p-replit-runtime-path/bin/nix-shell",
+      "curl": "/nix/store/s39027q39rd1qzi2m6cmf455kljn6l7p-replit-runtime-path/bin/curl",
+      "tar": "/nix/store/7nilh5hvnfbsx3vn020pkjkgx9rgsizb-gnutar-1.35/bin/tar",
+      "zstd": "/nix/store/ddap6dm3fjdm0zmw4m3rls73a0gml3xd-zstd-1.5.7-bin/bin/zstd"
+    },
+    "recoveredAfterOuterTimeout": true,
+    "boundedCompletion": {
+      "method": "bounded invocations of production packCapsule/packCapsuleMembers after full compile, pinned Rust build, and clean portable-Python build",
+      "artifacts": {
+        "node_modules.pdim": {
+          "bytes": 153672593,
+          "sha256": "b1654280c876a8d84a5912ed712132846436b0ed5931781e53fc4941d481e81e",
+          "manifest": "node_modules.manifest.json",
+          "compression": "zstd-19",
+          "dir": "node_modules",
+          "memberCount": null,
+          "requiredMembers": []
+        },
+        "python_runtime.pdim": {
+          "bytes": 117181722,
+          "sha256": "67ca1887369b59f19cea7601d6015550e0c7c8ea59b48612d48c013a213f5f5b",
+          "manifest": "python_runtime.manifest.json",
+          "compression": "zstd-19",
+          "dir": "python_runtime",
+          "memberCount": null,
+          "requiredMembers": []
+        },
+        "external_maxcore.pdim": {
+          "bytes": 572905734,
+          "sha256": "5d254135ee8e951b310832f4ec154d328abf1a08808b3a22cb5ce76bc6eecab3",
+          "manifest": "external_maxcore.manifest.json",
+          "compression": "zstd-19",
+          "dir": "external/maxcore",
+          "memberCount": null,
+          "requiredMembers": [
+            {
+              "path": "artifacts/ai-training-server/ai_model/weights/model.pt",
+              "bytes": 109368185,
+              "sha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419"
+            }
+          ]
+        },
+        "external_pdim.pdim": {
+          "bytes": 41985915,
+          "sha256": "4a4b6193e594b3385013aad231b764d6c7e6561ede13b542d7b54264e7fa5296",
+          "manifest": "external_pdim.manifest.json",
+          "compression": "zstd-19",
+          "dir": "external/pdim",
+          "memberCount": null,
+          "requiredMembers": []
+        },
+        "app_remainder.pdim": {
+          "bytes": 7463557,
+          "sha256": "a3b6d789d1370f865cfb88fbbb4c452466bcfc547ac678f26c4918a6657911c8",
+          "manifest": "app_remainder.manifest.json",
+          "compression": "zstd-19",
+          "dir": "<multiple>",
+          "memberCount": 2134,
+          "requiredMembers": []
+        }
+      },
+      "note": "The outer five-minute execution boundary killed concurrent zstd children. Each production packCapsule operation was then rerun to completion with four threads, and this recovery is accepted only after re-hashing all five capsules against both the sentinel and their production manifests."
+    },
+    "acceptanceStatus": "phased-complete",
+    "singleCommandExitObserved": false,
+    "singleCommandEvidence": {
+      "command": "DEPLOY_PACK=1 npm run build",
+      "successfulExitObserved": false,
+      "lastRecordedExitCodeBeforeBoundedCompletion": 1,
+      "interruption": "Multiple single-command attempts were terminated by the outer five-minute execution boundary during zstd packing.",
+      "note": "The final acceptance was assembled through bounded production packCapsule/packCapsuleMembers phases and manifest re-hashing. It must not be represented as an observed exit 0 from one DEPLOY_PACK=1 npm run build process."
+    }
+  },
+  "pythonCapability": {
+    "status": "build_failed",
+    "note": "The production build recreates the pinned portable Python runtime. No provider credentials are available; package and fixed runtime downloads are build-time only."
+  },
+  "capsuleRestore": {
+    "buildCapsules": {
+      "nodeModules": {
+        "present": true,
+        "bytes": 153672593
+      },
+      "appRemainder": {
+        "present": true,
+        "bytes": 7463557
+      },
+      "pythonRuntime": {
+        "present": true,
+        "bytes": 117181722
+      },
+      "nodeModulesRemovedBeforeColdBoot": true,
+      "freshSourceBuild": true,
+      "recoveredAfterOuterTimeout": true
+    },
+    "manifestValidation": [
+      {
+        "capsule": "node_modules.pdim",
+        "manifest": "node_modules.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "b1654280c876a8d84a5912ed712132846436b0ed5931781e53fc4941d481e81e",
+        "actualSha256": "b1654280c876a8d84a5912ed712132846436b0ed5931781e53fc4941d481e81e",
+        "bytes": 153672593,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "app_remainder.pdim",
+        "manifest": "app_remainder.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "a3b6d789d1370f865cfb88fbbb4c452466bcfc547ac678f26c4918a6657911c8",
+        "actualSha256": "a3b6d789d1370f865cfb88fbbb4c452466bcfc547ac678f26c4918a6657911c8",
+        "bytes": 7463557,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "python_runtime.pdim",
+        "manifest": "python_runtime.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "67ca1887369b59f19cea7601d6015550e0c7c8ea59b48612d48c013a213f5f5b",
+        "actualSha256": "67ca1887369b59f19cea7601d6015550e0c7c8ea59b48612d48c013a213f5f5b",
+        "bytes": 117181722,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "external_maxcore.pdim",
+        "manifest": "external_maxcore.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "5d254135ee8e951b310832f4ec154d328abf1a08808b3a22cb5ce76bc6eecab3",
+        "actualSha256": "5d254135ee8e951b310832f4ec154d328abf1a08808b3a22cb5ce76bc6eecab3",
+        "bytes": 572905734,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "external_pdim.pdim",
+        "manifest": "external_pdim.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "4a4b6193e594b3385013aad231b764d6c7e6561ede13b542d7b54264e7fa5296",
+        "actualSha256": "4a4b6193e594b3385013aad231b764d6c7e6561ede13b542d7b54264e7fa5296",
+        "bytes": 41985915,
+        "provenance": "current-source build artifact"
+      }
+    ],
+    "historicalCompatibility": [],
+    "coldCriticalRestore": {
+      "exitCode": 0,
+      "nodeModulesSentinel": true,
+      "appRemainderSentinel": true,
+      "appEntryPointsPresentAfterRestore": true,
+      "outputTail": [
+        "[pdim-restore] Extracting node_modules.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/app/.pdim-scratch-node_modules-7815/ (staging for node_modules/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for node_modules.pdim",
+        "[pdim-restore] Extracting app_remainder.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/app/.pdim-scratch-__app_remainder__-7815/ (staging app remainder) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for app_remainder.pdim",
+        "[pdim-restore] Extracting python_runtime.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/app/.pdim-scratch-python_runtime-7815/ (staging for python_runtime/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for python_runtime.pdim",
+        "[pdim-restore] ✅ app remainder restored from app_remainder.pdim (87 top-level entries)",
+        "[pdim-restore] ✅ python_runtime/ restored from python_runtime.pdim",
+        "[pdim-restore] ✅ node_modules/ restored from node_modules.pdim",
+        "[pdim-restore] Critical capsules (node_modules, app remainder, Python) restored."
+      ]
+    },
+    "coldBackgroundRestore": {
+      "exitCode": 0,
+      "maxcoreSentinel": true,
+      "pdimSentinel": true,
+      "outputTail": [
+        "[pdim-restore] Extracting external_maxcore.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/app/.pdim-scratch-external_maxcore-7846/ (staging for external/maxcore/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for external_maxcore.pdim",
+        "[pdim-restore] Extracting external_pdim.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/app/.pdim-scratch-external_pdim-7846/ (staging for external/pdim/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for external_pdim.pdim",
+        "[pdim-restore] ✅ external/pdim/ restored from external_pdim.pdim",
+        "[pdim-restore] ✅ external/maxcore/ restored from external_maxcore.pdim",
+        "[pdim-restore] Background capsules processed."
+      ],
+      "historicalInputs": false,
+      "securityReadiness": "current captured source restored with manifest verification"
+    },
+    "warmIdempotentRestore": {
+      "exitCode": 0,
+      "outputTail": [
+        "[pdim-restore] node_modules/ already restored — skipping",
+        "[pdim-restore] python_runtime/ already restored — skipping",
+        "[pdim-restore] external/maxcore/ already restored — skipping",
+        "[pdim-restore] external/pdim/ already restored — skipping",
+        "[pdim-restore] app remainder already restored — skipping",
+        "[pdim-restore] All capsules processed."
+      ],
+      "skippedExistingSentinels": true
+    }
+  },
+  "imageSize": {
+    "totalBytes": 4736119492,
+    "totalGiB": 4.411,
+    "nixPreflight": null,
+    "capsules": {
+      "node_modules.pdim": {
+        "present": true,
+        "bytes": 153672593
+      },
+      "app_remainder.pdim": {
+        "present": true,
+        "bytes": 7463557
+      },
+      "python_runtime.pdim": {
+        "present": true,
+        "bytes": 117181722
+      },
+      "external_maxcore.pdim": {
+        "present": true,
+        "bytes": 572905734
+      },
+      "external_pdim.pdim": {
+        "present": true,
+        "bytes": 41985915
+      }
+    },
+    "underHardLimit": true,
+    "note": "Packed disposable image footprint plus a deduplicated, fully-accounted sanitized-PATH Nix closure; both remain below the unchanged 8 GiB hard limit.",
+    "withNixClosureBytes": 5066237720,
+    "withNixClosureGiB": 4.718,
+    "underHardLimitIncludingNix": true
+  },
+  "productionReadiness": {
+    "publishReady": false,
+    "reason": "Pre-deployment packed-runtime functional simulation passed against isolated disposable dependencies. No packed-load SLO threshold was preregistered; the result is not an SLO pass, publication, provider-production, model-loaded proof, or post-publish lifecycle evidence."
+  },
+  "startup": {
+    "exitCode": 143,
+    "signal": null,
+    "liveness": {
+      "observed": true,
+      "transportOnly": true,
+      "realServer": true,
+      "jsonObserved": true,
+      "earlyAppResponse": true,
+      "startupResponseObserved": true,
+      "samples": [
+        {
+          "atMs": 27,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 300,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 552,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 805,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 1057,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 1313,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 1566,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 1819,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 2071,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 2324,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 2576,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 2827,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3080,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3331,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3583,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3835,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 4087,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 4341,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 4593,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 4845,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 5098,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 5349,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 6310,
+          "status": 200,
+          "body": {
+            "status": "ok",
+            "buildId": "production-simulation"
+          }
+        }
+      ]
+    },
+    "readiness": {
+      "observed": true,
+      "fullReady": true,
+      "statusCodes": [
+        200
+      ],
+      "lastBody": {
+        "status": "ok",
+        "subsystemStatuses": [
+          {
+            "name": "database",
+            "status": "ok"
+          },
+          {
+            "name": "redis",
+            "status": "ok"
+          },
+          {
+            "name": "routes",
+            "status": "ok"
+          },
+          {
+            "name": "audit",
+            "status": "unknown"
+          },
+          {
+            "name": "automation",
+            "status": "ok"
+          },
+          {
+            "name": "maxcore",
+            "status": "ok"
+          }
+        ]
+      },
+      "note": null
+    },
+    "attempts": [
+      {
+        "attempt": 1,
+        "exitCode": null,
+        "signal": null,
+        "liveness": {
+          "observed": false,
+          "transportOnly": false,
+          "realServer": false,
+          "jsonObserved": false,
+          "earlyAppResponse": false,
+          "startupResponseObserved": false,
+          "samples": [
+            {
+              "atMs": 37,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 290,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 542,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 794,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1046,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1297,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1549,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1801,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2054,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2306,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2557,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2809,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3060,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3312,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3563,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3815,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4066,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4317,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4568,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4819,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5071,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5323,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5574,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5826,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 6077,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 6329,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 6583,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 6836,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 7088,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 7339,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 7590,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 7842,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 8093,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 8344,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 8596,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 8848,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9099,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9351,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9602,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9855,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10107,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10359,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10609,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10861,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11113,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11364,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11615,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11867,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12118,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12370,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12621,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12873,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13124,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13375,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13626,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13878,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14130,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14381,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14633,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14884,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15136,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15388,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15643,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15894,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16145,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16396,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16647,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16899,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17151,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17402,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17653,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17904,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18158,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18410,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18661,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18912,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19163,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19415,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19666,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19917,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20168,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20419,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20671,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20922,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21173,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21424,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21675,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21926,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22177,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22428,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22679,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22930,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 23181,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 23432,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 23684,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 23935,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 24187,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 24438,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 24689,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 24941,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 25192,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 25444,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 25697,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 25949,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 26245,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 26496,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 26747,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 26999,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 27250,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 27502,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 27753,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 28005,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 28255,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 28507,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 28759,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 29011,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 29262,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 29513,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 29765,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 30017,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 30268,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 30519,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 30771,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 31023,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 31274,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 31526,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 31777,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 32029,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 32280,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 32533,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 32784,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 33035,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 33286,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 33538,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 33789,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 34040,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 34291,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 34543,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 34795,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 35046,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 35297,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 35549,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 35799,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 36051,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 36302,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 36554,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 36805,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 37057,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 37308,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 37560,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 37811,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 38063,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 38313,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 38565,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 38816,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 39067,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 39318,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 39572,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 39824,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 40075,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 40326,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 40578,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 40829,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 41080,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 41332,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 41584,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 41835,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 42087,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 42339,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 42590,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 42841,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 43094,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 43345,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 43596,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 43847,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 44098,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 44350,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 44603,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 44854,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 45105,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 45356,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 45609,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 45860,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 46112,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 46362,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 46614,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 46866,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 47118,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 47370,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 47622,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 47873,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 48125,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 48376,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 48628,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 48879,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 49130,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 49381,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 49632,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 49884,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 50135,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 50387,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 50639,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 50891,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 51142,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 51393,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 51645,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 51896,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 52147,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 52405,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 52657,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 52908,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 53160,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 53411,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 53662,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 53913,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 54164,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 54415,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 54667,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 54918,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 55170,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 55421,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 55672,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 55923,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 56178,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 56432,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 56684,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 56935,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 57187,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 57438,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 57690,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 57941,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 58193,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 58444,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 58698,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 58949,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 59201,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 59452,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 59704,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 59956,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 60208,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 60459,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 60710,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 60961,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 61213,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 61464,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 61715,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 61968,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 62220,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 62471,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 62723,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 62977,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 63228,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 63480,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 63732,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 63983,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 64236,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 64487,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 64738,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 64989,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 65240,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 65491,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 65742,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 65993,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 66244,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 66495,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 66746,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 66997,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 67249,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 67500,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 67753,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 68003,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 68255,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 68506,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 68758,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 69009,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 69261,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 69512,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 69764,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 70015,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 70266,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 70517,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 70768,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 71019,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 71271,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 71522,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 71773,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 72024,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 72276,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 72528,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 72780,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 73031,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 73283,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 73534,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 73785,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 74036,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 74287,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 74537,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 74789,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 75041,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 75292,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 75544,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 75795,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 76047,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 76299,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 76550,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 76801,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 77052,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 77303,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 77554,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 77806,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 78056,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 78308,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 78559,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 78810,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 79061,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 79313,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 79564,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 79816,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 80067,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 80318,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 80569,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 80821,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 81075,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 81326,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 81577,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 81867,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 82118,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 82370,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 82620,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 82872,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 83123,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 83374,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 83625,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 83895,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 84152,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 84403,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 84654,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 84906,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 85159,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 85410,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 85661,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 85913,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 86164,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 86415,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 86668,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 86919,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 87169,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 87421,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 87673,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 87925,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 88177,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 88429,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 88680,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 88931,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 89183,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 89434,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 89686,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 89938,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 90190,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 90442,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 90693,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 90945,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 91196,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 91447,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 91698,
+              "status": null,
+              "body": ""
+            }
+          ]
+        },
+        "readiness": {
+          "observed": false,
+          "fullReady": false,
+          "statusCodes": [],
+          "lastBody": null,
+          "note": "no liveness response was observed; /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used."
+        },
+        "logPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/logs/start-1.log"
+      },
+      {
+        "attempt": 2,
+        "exitCode": null,
+        "signal": null,
+        "liveness": {
+          "observed": false,
+          "transportOnly": false,
+          "realServer": false,
+          "jsonObserved": false,
+          "earlyAppResponse": false,
+          "startupResponseObserved": false,
+          "samples": [
+            {
+              "atMs": 32,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 285,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 536,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 789,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1041,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1292,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1544,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1796,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2048,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2300,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2552,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2803,
+              "status": null,
+              "body": ""
+            }
+          ]
+        },
+        "readiness": {
+          "observed": false,
+          "fullReady": false,
+          "statusCodes": [],
+          "lastBody": null,
+          "note": "no liveness response was observed; /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used."
+        },
+        "logPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/logs/start-2.log"
+      },
+      {
+        "attempt": 3,
+        "exitCode": null,
+        "signal": null,
+        "liveness": {
+          "observed": false,
+          "transportOnly": false,
+          "realServer": false,
+          "jsonObserved": false,
+          "earlyAppResponse": false,
+          "startupResponseObserved": false,
+          "samples": [
+            {
+              "atMs": 26,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 278,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 529,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 781,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1032,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1284,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1535,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1786,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2038,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2290,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2541,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2793,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3044,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3295,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3546,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3798,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4050,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4301,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4552,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4803,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5053,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5305,
+              "status": null,
+              "body": ""
+            }
+          ]
+        },
+        "readiness": {
+          "observed": false,
+          "fullReady": false,
+          "statusCodes": [],
+          "lastBody": null,
+          "note": "no liveness response was observed; /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used."
+        },
+        "logPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/logs/start-3.log"
+      },
+      {
+        "attempt": 4,
+        "exitCode": null,
+        "signal": null,
+        "liveness": {
+          "observed": true,
+          "transportOnly": true,
+          "realServer": false,
+          "jsonObserved": false,
+          "earlyAppResponse": true,
+          "startupResponseObserved": true,
+          "samples": [
+            {
+              "atMs": 26,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 278,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 530,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 782,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1651,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1905,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2158,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2411,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2663,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2915,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3166,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3418,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3669,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3922,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4174,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4426,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4677,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4929,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5181,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5433,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5684,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5936,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6187,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6439,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6690,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6942,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 7193,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 7444,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 7696,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 7948,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 8200,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 8451,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 8702,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 8953,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 9205,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 9458,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 9709,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9960,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10211,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10463,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10714,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10966,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11217,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11468,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11720,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11971,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12222,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12474,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12725,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12977,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13228,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13479,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13729,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13981,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14231,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14483,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14734,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14985,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15236,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15488,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15740,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15991,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16243,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16494,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16747,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16998,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17250,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17501,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17753,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18005,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18256,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18508,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18761,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19013,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19264,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19515,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19766,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20017,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20268,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20519,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20772,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21024,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21275,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21527,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21778,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22035,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22285,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22537,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22790,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 23042,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 23292,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 23544,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 23794,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 24046,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 24297,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 24549,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 24801,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 25052,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 25304,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 25555,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 25806,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 26057,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 26312,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 26564,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 26815,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 27066,
+              "status": null,
+              "body": ""
+            }
+          ]
+        },
+        "readiness": {
+          "observed": false,
+          "fullReady": false,
+          "statusCodes": [],
+          "lastBody": null,
+          "note": "only the early plain-text startup response was observed; JSON liveness was never reached; /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used."
+        },
+        "logPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/logs/start-4.log"
+      },
+      {
+        "attempt": 5,
+        "exitCode": null,
+        "signal": null,
+        "liveness": {
+          "observed": true,
+          "transportOnly": true,
+          "realServer": false,
+          "jsonObserved": false,
+          "earlyAppResponse": true,
+          "startupResponseObserved": true,
+          "samples": [
+            {
+              "atMs": 24,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 275,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 526,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 779,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1257,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1511,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1763,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2015,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2267,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2520,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2773,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3024,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3277,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3530,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3781,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4033,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4284,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4535,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4786,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5038,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5289,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5541,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5793,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6049,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6302,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6553,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6805,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 7057,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 7309,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 7561,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 7812,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 8063,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 8315,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 8567,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 8819,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9072,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9323,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9575,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9826,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10077,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10329,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10581,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10833,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11085,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11337,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11589,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11840,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12091,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12346,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12598,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12849,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13101,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13352,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13603,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13855,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14106,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14358,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14609,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14861,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15113,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15367,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15618,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15870,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16121,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16373,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16627,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16878,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17130,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17381,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17636,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17887,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18138,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18390,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18641,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18902,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19153,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19405,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19656,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19908,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20159,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20411,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20662,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20913,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21164,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21417,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21668,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 21920,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22173,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22424,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22710,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 22961,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 23213,
+              "status": null,
+              "body": ""
+            }
+          ]
+        },
+        "readiness": {
+          "observed": false,
+          "fullReady": false,
+          "statusCodes": [],
+          "lastBody": null,
+          "note": "only the early plain-text startup response was observed; JSON liveness was never reached; /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used."
+        },
+        "logPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/logs/start-5.log"
+      },
+      {
+        "attempt": 6,
+        "exitCode": null,
+        "signal": null,
+        "liveness": {
+          "observed": true,
+          "transportOnly": true,
+          "realServer": false,
+          "jsonObserved": false,
+          "earlyAppResponse": true,
+          "startupResponseObserved": true,
+          "samples": [
+            {
+              "atMs": 31,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 296,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 549,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 801,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1053,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1306,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1563,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1817,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2071,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2323,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2575,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2827,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3078,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3331,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3582,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3833,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4085,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4337,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4588,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4841,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5092,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5343,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5595,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5849,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 6100,
+              "status": null,
+              "body": ""
+            }
+          ]
+        },
+        "readiness": {
+          "observed": false,
+          "fullReady": false,
+          "statusCodes": [],
+          "lastBody": null,
+          "note": "only the early plain-text startup response was observed; JSON liveness was never reached; /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used."
+        },
+        "logPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/logs/start-6.log"
+      },
+      {
+        "attempt": 7,
+        "exitCode": 143,
+        "signal": null,
+        "liveness": {
+          "observed": true,
+          "transportOnly": true,
+          "realServer": true,
+          "jsonObserved": true,
+          "earlyAppResponse": true,
+          "startupResponseObserved": true,
+          "samples": [
+            {
+              "atMs": 24,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 276,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 529,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 780,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 1314,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1567,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1823,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2076,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2330,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2582,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2837,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3089,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3344,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3595,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 3848,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4099,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4352,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4604,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 4856,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5108,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5361,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5612,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 5865,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6116,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6368,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 6619,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 6871,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 7122,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 7374,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 7626,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 7878,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 8130,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 8381,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 8633,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 8885,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9135,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9387,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9640,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 9892,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10142,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10394,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10645,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 10897,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11149,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11401,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11652,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 11904,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12156,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12410,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12661,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 12916,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13168,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13420,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13672,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 13925,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14176,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14427,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14679,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14932,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15183,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15435,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15687,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 15939,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16191,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16443,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16695,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 16948,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17199,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17451,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17703,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 17957,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18211,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18463,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 18718,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 20548,
+              "status": 200,
+              "body": {
+                "status": "ok",
+                "buildId": "production-simulation"
+              }
+            }
+          ]
+        },
+        "readiness": {
+          "observed": true,
+          "fullReady": true,
+          "statusCodes": [
+            200
+          ],
+          "lastBody": {
+            "status": "ok",
+            "subsystemStatuses": [
+              {
+                "name": "database",
+                "status": "ok"
+              },
+              {
+                "name": "redis",
+                "status": "ok"
+              },
+              {
+                "name": "routes",
+                "status": "ok"
+              },
+              {
+                "name": "audit",
+                "status": "unknown"
+              },
+              {
+                "name": "automation",
+                "status": "ok"
+              },
+              {
+                "name": "maxcore",
+                "status": "ok"
+              }
+            ]
+          },
+          "note": null
+        },
+        "logPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/logs/start-7.log"
+      },
+      {
+        "attempt": 8,
+        "exitCode": 143,
+        "signal": null,
+        "liveness": {
+          "observed": true,
+          "transportOnly": true,
+          "realServer": true,
+          "jsonObserved": true,
+          "earlyAppResponse": true,
+          "startupResponseObserved": true,
+          "samples": [
+            {
+              "atMs": 27,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 293,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 548,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 804,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1059,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1312,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1564,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1817,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2071,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2325,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2578,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2831,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3083,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3336,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3587,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3840,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4091,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4343,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4598,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4849,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5101,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5351,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5602,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5974,
+              "status": 404,
+              "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/"
+            },
+            {
+              "atMs": 7074,
+              "status": 200,
+              "body": {
+                "status": "ok",
+                "buildId": "production-simulation"
+              }
+            }
+          ]
+        },
+        "readiness": {
+          "observed": true,
+          "fullReady": true,
+          "statusCodes": [
+            200
+          ],
+          "lastBody": {
+            "status": "ok",
+            "subsystemStatuses": [
+              {
+                "name": "database",
+                "status": "ok"
+              },
+              {
+                "name": "redis",
+                "status": "ok"
+              },
+              {
+                "name": "routes",
+                "status": "ok"
+              },
+              {
+                "name": "audit",
+                "status": "unknown"
+              },
+              {
+                "name": "automation",
+                "status": "ok"
+              },
+              {
+                "name": "maxcore",
+                "status": "ok"
+              }
+            ]
+          },
+          "note": null
+        },
+        "logPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/logs/start-8.log"
+      }
+    ],
+    "postgres": {
+      "isolated": true,
+      "port": 45011,
+      "auth": "trust inside network namespace only",
+      "schema": {
+        "command": "node scripts/db-push.js --force",
+        "exitCode": 0,
+        "outputTail": [
+          "No config path provided, using default 'drizzle.config.ts'",
+          "Reading config file '/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/app/drizzle.config.ts'",
+          "Using 'pg' driver for database querying",
+          "[⣷] Pulling schema from database...",
+          "\u001b[2K\u001b[1G[✓] Pulling schema from database...",
+          "[✓] Changes applied"
+        ]
+      }
+    },
+    "currentLogPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/logs/start-9.log",
+    "dependencyEvidence": {
+      "database": "isolated PostgreSQL was started on namespace-local port 38199",
+      "redis": "owned Redis did not return PONG on namespace-local port 45853",
+      "maxcore": "MAXCORE_LOCAL=1; packed current-source MaxCore startup was requested",
+      "storage": "loopback mock endpoint only; no third-party storage target"
+    },
+    "redis": {
+      "isolated": true,
+      "port": 34119,
+      "dataDir": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T17-31-03-519Z/transient/redis",
+      "serverBinary": "/nix/store/pnc74r60iz1g5bpqv4qh76a8cc3g0n97-redis-7.2.10/bin/redis-server",
+      "readinessExitCode": 0,
+      "readinessResponse": "PONG",
+      "ready": true
+    },
+    "load": {
+      "label": "packed namespace-isolated authenticated HTTP load",
+      "requests": 150,
+      "concurrency": 10,
+      "successful": 150,
+      "failed": 0,
+      "successPercent": 100,
+      "p95Ms": 730.588145,
+      "p99Ms": 780.885278,
+      "operations": [
+        "GET /api/auth/me",
+        "POST /api/auth/heartbeat"
+      ],
+      "csrfBodyCookieBound": true,
+      "csrfCacheControl": "private, no-store, no-cache, max-age=0, must-revalidate",
+      "failures": {},
+      "acceptanceMode": "functional-only",
+      "preregisteredPackedThresholds": null,
+      "sloEvaluation": {
+        "status": "NOT_EVALUATED_NO_PREREGISTERED_PACKED_THRESHOLD",
+        "comparisonOnly": {
+          "sourceAssembledThresholds": {
+            "minimumSuccessPercent": 99,
+            "maximumP95Ms": 500,
+            "maximumP99Ms": 1000
+          },
+          "outcome": "The packed result would miss the source-assembled p95 threshold (730.6ms > 500ms) while meeting success and p99 thresholds. Those source thresholds were not silently adopted or relaxed for this packed run."
+        }
+      }
+    },
+    "modelLoadVerification": {
+      "status": "UNVERIFIED",
+      "recordedEvidence": {
+        "appReadinessMaxCoreStatus": "ok"
+      },
+      "modelChildHealth": null,
+      "modelLoaded": null,
+      "note": "The retained report records only application readiness maxcore=ok. It does not record the model child health payload or model_loaded=true, so model checkpoint loading is not inferred."
+    }
+  },
+  "failures": [],
+  "result": "FUNCTIONAL_PASS_SLO_NOT_EVALUATED",
+  "completedStages": [
+    "copy",
+    "build",
+    "size",
+    "restore",
+    "startup"
+  ],
+  "harnessRevision": {
+    "simulationScriptSha256": "28e21e58d6bc61236378438623d41106c56aaa9f9d8f088c9e1242f2a9a4b950",
+    "policySha256": "cd422bf4cdb6d6f8eb6241d9653fa79754743508c1ed7145754a4d9442bbdb9a",
+    "note": "Harness-only fixes after immutable application snapshot: bounded capsule recovery verification, mapped-current-user namespace with loopback enabled through pinned iproute2, isolated PostgreSQL schema/bootstrap adapter, owned Redis port/PONG evidence, and packed authenticated load. No packed application source or capsule was rebuilt after these harness-only fixes."
+  },
+  "cleanup": {
+    "completed": true,
+    "disposableWorkspaceRemoved": true,
+    "stateRemoved": true
+  }
+}

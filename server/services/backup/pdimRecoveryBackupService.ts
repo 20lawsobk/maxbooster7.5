@@ -1,10 +1,10 @@
 // @ts-nocheck
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { createReadStream, createWriteStream } from "node:fs";
+import fs, { createReadStream, createWriteStream } from "node:fs";
 import { chmod, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:net";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import {
@@ -28,7 +28,7 @@ type VerificationEvidence = {
   everyFileReadByActualClasses: true;
 };
 
-type PublicJob = {
+export type PublicPdimRecoveryJob = {
   id: string;
   state: "queued" | "running" | "complete" | "blocked";
   createdAt: string;
@@ -55,9 +55,6 @@ type PublicJob = {
     intentionallyNotDeleted: true;
   };
 };
-
-const jobs = new Map<string, PublicJob>();
-let activeJobId: string | null = null;
 
 const freePort = async (): Promise<number> => {
   const server = createServer();
@@ -174,7 +171,7 @@ function implementationIdentity(): { revision: string; currentHash: string } {
   return { revision: currentHash.slice(0, 40), currentHash };
 }
 
-async function execute(job: PublicJob): Promise<void> {
+async function execute(job: PublicPdimRecoveryJob): Promise<void> {
   job.state = "running";
   let scratch: string | null = null;
   let retainedReceipt: { prefix: string; snapshotGeneration: string } | null = null;
@@ -271,28 +268,261 @@ async function execute(job: PublicJob): Promise<void> {
   } finally {
     if (scratch) await rm(scratch, { recursive: true, force: true }).catch(() => {});
     job.completedAt = new Date().toISOString();
-    activeJobId = null;
   }
 }
 
-export const pdimRecoveryBackupService = {
-  start(): PublicJob {
-    if (activeJobId) throw new Error("A PDIM recovery backup is already running");
-    const job: PublicJob = {
+type JobExecutor = (job: PublicPdimRecoveryJob) => Promise<void>;
+
+export class PdimRecoveryAuthority {
+  private readonly jobs = new Map<string, PublicPdimRecoveryJob>();
+  private activeJobId: string | null = null;
+
+  constructor(
+    private readonly storePath = resolve(
+      process.env.PDIM_RECOVERY_JOB_STORE_PATH ??
+        "./data/pdim-recovery-jobs.json",
+    ),
+    private readonly executor: JobExecutor = execute,
+  ) {
+    this.load();
+  }
+
+  private load(): void {
+    if (!fs.existsSync(this.storePath)) return;
+    const parsed = JSON.parse(fs.readFileSync(this.storePath, "utf8"));
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      parsed.version !== 1 ||
+      !Array.isArray(parsed.jobs)
+    ) {
+      throw new Error("PDIM recovery job store is invalid");
+    }
+    for (const candidate of parsed.jobs) {
+      if (
+        !candidate ||
+        typeof candidate !== "object" ||
+        typeof candidate.id !== "string" ||
+        !/^[0-9a-f-]{36}$/i.test(candidate.id) ||
+        !["queued", "running", "complete", "blocked"].includes(candidate.state)
+      ) {
+        throw new Error("PDIM recovery job store contains an invalid receipt");
+      }
+      const job = candidate as PublicPdimRecoveryJob;
+      if (job.state === "queued" || job.state === "running") {
+        job.state = "blocked";
+        job.blocker =
+          "PDIM recovery authority restarted before the job completed";
+        job.completedAt = new Date().toISOString();
+      }
+      this.jobs.set(job.id, job);
+    }
+    this.persist();
+  }
+
+  private persist(): void {
+    fs.mkdirSync(dirname(this.storePath), { recursive: true, mode: 0o700 });
+    const temporary = `${this.storePath}.tmp-${process.pid}`;
+    const jobs = [...this.jobs.values()].slice(-100);
+    fs.writeFileSync(
+      temporary,
+      `${JSON.stringify({ version: 1, jobs }, null, 2)}\n`,
+      { encoding: "utf8", mode: 0o600, flush: true },
+    );
+    fs.chmodSync(temporary, 0o600);
+    fs.renameSync(temporary, this.storePath);
+    const directory = fs.openSync(dirname(this.storePath), "r");
+    try {
+      fs.fsyncSync(directory);
+    } finally {
+      fs.closeSync(directory);
+    }
+  }
+
+  private async run(job: PublicPdimRecoveryJob): Promise<void> {
+    job.state = "running";
+    this.persist();
+    try {
+      await this.executor(job);
+    } catch {
+      job.state = "blocked";
+      job.blocker = "PDIM recovery authority execution failed";
+      job.completedAt = new Date().toISOString();
+    } finally {
+      this.activeJobId = null;
+      this.persist();
+    }
+  }
+
+  start(): PublicPdimRecoveryJob {
+    if (this.activeJobId) {
+      throw new Error("A PDIM recovery backup is already running");
+    }
+    const job: PublicPdimRecoveryJob = {
       id: randomUUID(),
       state: "queued",
       createdAt: new Date().toISOString(),
       completedAt: null,
     };
-    activeJobId = job.id;
-    jobs.set(job.id, job);
-    while (jobs.size > 50) jobs.delete(jobs.keys().next().value);
-    setImmediate(() => void execute(job));
+    this.activeJobId = job.id;
+    this.jobs.set(job.id, job);
+    while (this.jobs.size > 100) {
+      this.jobs.delete(this.jobs.keys().next().value);
+    }
+    this.persist();
+    setImmediate(() => void this.run(job));
     return structuredClone(job);
-  },
-  get(id: string): PublicJob | null {
+  }
+
+  get(id: string): PublicPdimRecoveryJob | null {
     if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-    const job = jobs.get(id);
+    const job = this.jobs.get(id);
     return job ? structuredClone(job) : null;
+  }
+}
+
+let authority: PdimRecoveryAuthority | null = null;
+
+export function initializePdimRecoveryAuthority(
+  storePath?: string,
+  executor?: JobExecutor,
+): PdimRecoveryAuthority {
+  authority ??= new PdimRecoveryAuthority(storePath, executor);
+  return authority;
+}
+
+type RecoveryIpcRequest = {
+  type: "PDIM_RECOVERY_REQUEST";
+  requestId: string;
+  operation: "start" | "get";
+  jobId?: string;
+};
+
+type RecoveryIpcResponse = {
+  type: "PDIM_RECOVERY_RESPONSE";
+  requestId: string;
+  ok: boolean;
+  job?: PublicPdimRecoveryJob | null;
+  error?: "conflict" | "invalid-request" | "authority-error";
+};
+
+export async function handlePdimRecoveryAuthorityRequest(
+  message: unknown,
+): Promise<RecoveryIpcResponse | null> {
+  if (!message || typeof message !== "object") return null;
+  const request = message as Partial<RecoveryIpcRequest>;
+  if (
+    request.type !== "PDIM_RECOVERY_REQUEST" ||
+    typeof request.requestId !== "string"
+  ) {
+    return null;
+  }
+  try {
+    const owner = initializePdimRecoveryAuthority();
+    if (request.operation === "start") {
+      return {
+        type: "PDIM_RECOVERY_RESPONSE",
+        requestId: request.requestId,
+        ok: true,
+        job: owner.start(),
+      };
+    }
+    if (request.operation === "get" && typeof request.jobId === "string") {
+      return {
+        type: "PDIM_RECOVERY_RESPONSE",
+        requestId: request.requestId,
+        ok: true,
+        job: owner.get(request.jobId),
+      };
+    }
+    return {
+      type: "PDIM_RECOVERY_RESPONSE",
+      requestId: request.requestId,
+      ok: false,
+      error: "invalid-request",
+    };
+  } catch (error) {
+    return {
+      type: "PDIM_RECOVERY_RESPONSE",
+      requestId: request.requestId,
+      ok: false,
+      error:
+        error instanceof Error &&
+        error.message === "A PDIM recovery backup is already running"
+          ? "conflict"
+          : "authority-error",
+    };
+  }
+}
+
+const pending = new Map<string, {
+  resolve: (response: RecoveryIpcResponse) => void;
+  reject: (error: Error) => void;
+  timeout: NodeJS.Timeout;
+}>();
+
+const isClusterWorker =
+  process.env.CLUSTER_WORKER_ID !== undefined &&
+  typeof process.send === "function";
+
+if (isClusterWorker) {
+  process.on("message", (message: unknown) => {
+    if (!message || typeof message !== "object") return;
+    const response = message as Partial<RecoveryIpcResponse>;
+    if (
+      response.type !== "PDIM_RECOVERY_RESPONSE" ||
+      typeof response.requestId !== "string"
+    ) {
+      return;
+    }
+    const request = pending.get(response.requestId);
+    if (!request) return;
+    pending.delete(response.requestId);
+    clearTimeout(request.timeout);
+    request.resolve(response as RecoveryIpcResponse);
+  });
+}
+
+async function requestAuthority(
+  operation: "start" | "get",
+  jobId?: string,
+): Promise<PublicPdimRecoveryJob | null> {
+  if (!isClusterWorker) {
+    const owner = initializePdimRecoveryAuthority();
+    return operation === "start" ? owner.start() : owner.get(jobId ?? "");
+  }
+  const requestId = randomUUID();
+  const response = await new Promise<RecoveryIpcResponse>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pending.delete(requestId);
+      reject(new Error("PDIM recovery authority did not respond"));
+    }, 10_000);
+    timeout.unref();
+    pending.set(requestId, { resolve, reject, timeout });
+    process.send!({
+      type: "PDIM_RECOVERY_REQUEST",
+      requestId,
+      operation,
+      ...(jobId ? { jobId } : {}),
+    } satisfies RecoveryIpcRequest);
+  });
+  if (!response.ok) {
+    if (response.error === "conflict") {
+      throw new Error("A PDIM recovery backup is already running");
+    }
+    throw new Error("PDIM recovery authority request failed");
+  }
+  return response.job ?? null;
+}
+
+export const pdimRecoveryBackupService = {
+  async start(): Promise<PublicPdimRecoveryJob> {
+    const job = await requestAuthority("start");
+    if (!job) throw new Error("PDIM recovery authority returned no job");
+    return job;
+  },
+  async get(id: string): Promise<PublicPdimRecoveryJob | null> {
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+    return requestAuthority("get", id);
   },
 };

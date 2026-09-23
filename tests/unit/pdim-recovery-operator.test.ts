@@ -39,7 +39,11 @@ describe("retained PDIM operator recovery boundary", () => {
       /router\.post\(\s*"\/pdim\/create",\s*requireAdmin,\s*requireVerified2FA,\s*csrfProtection,/,
     );
     expect(routeSource).toMatch(
-      /router\.get\("\/pdim\/jobs\/:jobId", requireAdmin, requireVerified2FA,/,
+      /"\/pdim\/jobs\/:jobId",\s*requireAdmin,\s*requireVerified2FA,\s*requireCsrfToken,/,
+    );
+    const csrfSource = readFileSync("server/middleware/csrf.ts", "utf8");
+    expect(csrfSource).toMatch(
+      /export const requireCsrfToken: RequestHandler = validateCsrfToken/,
     );
   });
 

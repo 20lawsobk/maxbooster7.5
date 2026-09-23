@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { getToolostRedirectUri } from "../services/toolostRuntimeConfig";
 import { randomBytes } from "crypto";
 import { requireAuth } from "../middleware/auth.js";
 import type { Request, Response } from "express";
@@ -121,24 +122,6 @@ interface HyperFollowPage {
 
 
 const router = Router();
-
-function getToolostRedirectUri(): string {
-  const configured = (
-    process.env.REPLIT_DEPLOYMENT === "1" ||
-    process.env.NODE_ENV === "production"
-      ? process.env.TOOLOST_REDIRECT_URI
-      : process.env.TOOLOST_SANDBOX_REDIRECT_URI
-  )?.trim();
-  // OAuth providers require an exact redirect_uri match. Too Lost's sandbox
-  // app is registered with the configured root-style callback, including its
-  // presentation query value, so preserve it byte-for-byte here. The root
-  // callback alias in server/routes.ts forwards the returned code/state to
-  // the authenticated Distribution callback.
-  if (configured) return configured;
-  throw new Error(
-    "Too Lost OAuth callback URL is not configured for this environment.",
-  );
-}
 
 async function getCatalogToolostConnection(userId: string): Promise<{
   connection: Awaited<ReturnType<typeof storage.getToolostConnection>>;
