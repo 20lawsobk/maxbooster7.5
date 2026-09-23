@@ -8,6 +8,15 @@ export const CSRF_HEADER = "x-csrf-token";
 
 const isProduction = isProductionEnv();
 
+function setCsrfNoStoreHeaders(res: Response): void {
+  res.set({
+    "Cache-Control": "private, no-store, no-cache, max-age=0, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  });
+  res.vary("Cookie");
+}
+
 function safeCompare(a: string, b: string): boolean {
   if (typeof a !== "string" || typeof b !== "string") {
     return false;
@@ -78,6 +87,7 @@ export const generateCsrfToken: RequestHandler = (
 ) => {
   if (!req.cookies?.[CSRF_COOKIE]) {
     const token = randomBytes(32).toString("hex");
+    setCsrfNoStoreHeaders(res);
     res.cookie(CSRF_COOKIE, token, {
       httpOnly: false,
       secure: isProduction,
@@ -109,6 +119,7 @@ export const getCsrfToken: RequestHandler = (req: Request, res: Response) => {
     (req as unknown as { csrfToken?: string }).csrfToken ??
     req.cookies?.[CSRF_COOKIE];
 
+  setCsrfNoStoreHeaders(res);
   res.json({ csrfToken: token });
 };
 
@@ -117,6 +128,7 @@ export const refreshCsrfToken: RequestHandler = (
   res: Response,
 ) => {
   const token = randomBytes(32).toString("hex");
+  setCsrfNoStoreHeaders(res);
   res.cookie(CSRF_COOKIE, token, {
     httpOnly: false,
     secure: isProduction,

@@ -11,6 +11,7 @@ import { CRC32C } from "@google-cloud/storage";
 import {
   createRecoveryStorage,
   retainAndReadBackRecoveryDump,
+  retainAndReadBackPdimSnapshot,
   verifyManagedPrivateStorage,
 } from "../scripts/recovery-private-store.mjs";
 
@@ -185,6 +186,47 @@ test("fakeSDK: create-only retained dump is restored from generation readback", 
     assert.equal(manifest.dump.generation, result.dumpObject.generation);
     assert.equal(manifest.consistentSnapshot, true);
     assert.equal(manifest.currentSourceHash, "b".repeat(64));
+    assert.equal(manifest.storageContract.retention, "retained-until-explicit-delete");
+    assert.equal(manifest.storageContract.fixedDurationLocked, false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("fakeSDK: create-only retained PDIM snapshot is generation-bound", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "recovery-private-store-test-"));
+  try {
+    const snapshotPath = join(directory, "local-pdim-store.json");
+    const readbackPath = join(directory, "readback.json");
+    const bytes = Buffer.from('{"hybrid:storage:index":{"type":"string","value":"opaque"}}');
+    await writeFile(snapshotPath, bytes, { mode: 0o600 });
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const fake = fakeSDK();
+    const result = await retainAndReadBackPdimSnapshot({
+      bucket: fake.bucket,
+      snapshotPath,
+      readbackPath,
+      snapshotSha256: sha256,
+      sourceRevision: "a".repeat(40),
+      currentSourceHash: "b".repeat(64),
+      snapshotEvidence: {
+        fileCount: 2,
+        ownerCount: 1,
+        fileContentEvidenceSha256: "c".repeat(64),
+        ownershipCountsSha256: "d".repeat(64),
+      },
+      now: new Date("2026-01-02T03:04:05.000Z"),
+      uuid: "fixed-pdim-id",
+    });
+    assert.deepEqual(await readFile(readbackPath), bytes);
+    assert.equal(result.readback.sha256, sha256);
+    assert.match(result.snapshotObject.name, /^private-pdim-recovery\//);
+    assert.equal(fake.writes.length, 2);
+    assert.ok(fake.writes.every(write =>
+      write.options.preconditionOpts.ifGenerationMatch === 0));
+    const manifest = JSON.parse(fake.objects.get(result.manifestObject.name).bytes);
+    assert.equal(manifest.snapshot.generation, result.snapshotObject.generation);
+    assert.equal(manifest.consistentStoppedSourceSnapshot, true);
     assert.equal(manifest.storageContract.retention, "retained-until-explicit-delete");
     assert.equal(manifest.storageContract.fixedDurationLocked, false);
   } finally {

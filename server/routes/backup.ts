@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { databaseBackupService } from "../services/backup/databaseBackupService.js";
-import { requireAdmin } from "../middleware/auth.js";
+import { pdimRecoveryBackupService } from "../services/backup/pdimRecoveryBackupService.js";
+import { requireAdmin, requireVerified2FA } from "../middleware/auth.js";
+import { csrfProtection } from "../middleware/csrf.js";
 import { logger } from "../logger.js";
 
 const router = Router();
@@ -16,6 +18,39 @@ router.post("/create", requireAdmin, async (_req, res) => {
     logger.warn({ err: error }, "[Backup] Failed to create backup:");
     res.status(500).json({ error: "Failed to create backup" });
   }
+});
+
+// Start a retained, private PDIM snapshot + independent restore-verification job.
+// Snapshot bytes are never returned over HTTP.
+router.post(
+  "/pdim/create",
+  requireAdmin,
+  requireVerified2FA,
+  csrfProtection,
+  (_req, res) => {
+    try {
+      const job = pdimRecoveryBackupService.start();
+      res.status(202).json({ job });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (message === "A PDIM recovery backup is already running") {
+        res.status(409).json({ error: message });
+        return;
+      }
+      logger.warn("[PDIM Recovery] Could not start operator backup");
+      res.status(500).json({ error: "Could not start PDIM recovery backup" });
+    }
+  },
+);
+
+router.get("/pdim/jobs/:jobId", requireAdmin, requireVerified2FA, (req, res) => {
+  const jobId = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
+  const job = pdimRecoveryBackupService.get(jobId);
+  if (!job) {
+    res.status(404).json({ error: "PDIM recovery backup job not found" });
+    return;
+  }
+  res.json({ job });
 });
 
 // List all backups (admin only)

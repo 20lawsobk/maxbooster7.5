@@ -1401,6 +1401,96 @@ export function getLocalPdimUrl(): string {
   return `http://127.0.0.1:${LOCAL_PORT}/api/redis/instances/local/exec`;
 }
 
+export interface LocalPdimSnapshotDescriptor {
+  fd: number;
+  bytes: number;
+  device: number;
+  inode: number;
+  sourcePath: string;
+  recoveryPoint: "synchronous-event-loop-linearized";
+}
+
+export function assertLocalPdimSnapshotAuthority(input: {
+  configuredExecUrl: string;
+  expectedExecUrl: string;
+  serverListening: boolean;
+  serverAddress: ReturnType<http.Server["address"]>;
+  sourcePath: string;
+  expectedSourcePath: string;
+}): void {
+  let configured: URL;
+  let expected: URL;
+  try {
+    configured = new URL(input.configuredExecUrl);
+    expected = new URL(input.expectedExecUrl);
+  } catch {
+    throw new Error("PDIM snapshot authority is not a valid configured URL");
+  }
+  const address = input.serverAddress;
+  if (
+    !input.serverListening ||
+    !address ||
+    typeof address === "string" ||
+    address.address !== "127.0.0.1" ||
+    String(address.port) !== expected.port ||
+    configured.origin !== expected.origin ||
+    configured.pathname !== expected.pathname ||
+    path.resolve(input.sourcePath) !== path.resolve(input.expectedSourcePath)
+  ) {
+    throw new Error(
+      "PDIM snapshot authority mismatch: configured backend is not this owned local store",
+    );
+  }
+}
+
+/**
+ * Linearizes a recovery point in the same event-loop turn as the local command
+ * executor, durably commits it, and pins the committed inode before yielding.
+ * The caller owns and must close the returned read-only descriptor.
+ */
+export function openConsistentLocalPdimSnapshot(): LocalPdimSnapshotDescriptor {
+  const configuredExecUrl =
+    process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL || "";
+  assertLocalPdimSnapshotAuthority({
+    configuredExecUrl,
+    expectedExecUrl: getLocalPdimUrl(),
+    serverListening: _server?.listening === true,
+    serverAddress: _server?.address() ?? null,
+    sourcePath: PERSIST_FILE,
+    expectedSourcePath: path.resolve("./data/local-pdim-store.json"),
+  });
+  if (!saveStore()) throw new Error("Could not commit the local PDIM recovery point");
+
+  const link = fs.lstatSync(PERSIST_FILE);
+  if (!link.isFile() || link.isSymbolicLink()) {
+    throw new Error("Committed local PDIM snapshot is not a regular owned file");
+  }
+  const fd = fs.openSync(PERSIST_FILE, fs.constants.O_RDONLY);
+  try {
+    const pinned = fs.fstatSync(fd);
+    const current = fs.statSync(PERSIST_FILE);
+    if (
+      !pinned.isFile() ||
+      pinned.dev !== current.dev ||
+      pinned.ino !== current.ino ||
+      pinned.size !== current.size
+    ) {
+      throw new Error("Committed local PDIM snapshot inode could not be pinned");
+    }
+    return {
+      fd,
+      bytes: pinned.size,
+      device: pinned.dev,
+      inode: pinned.ino,
+      sourcePath: PERSIST_FILE,
+      recoveryPoint: "synchronous-event-loop-linearized",
+    };
+  } catch (error) {
+    fs.closeSync(fd);
+    throw error;
+  }
+}
+
 export function startLocalPdimServer(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (_server) {

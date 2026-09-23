@@ -130,3 +130,21 @@ export const require2FA = (req: Request, res: Response, next: NextFunction) => {
   }
   if (enforceAssurance(req, res)) next();
 };
+
+/** Privileged recovery operations require 2FA to be enabled, not merely
+ * conditionally verified when an account happens to have enabled it. */
+export const requireVerified2FA = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const user = req.user;
+  if (!user) return res.status(401).json({ error: "Authentication required" });
+  if (!user.twoFactorEnabled) {
+    return res.status(403).json({
+      error: "Two-factor authentication must be enabled for this operation",
+      requiresTwoFactor: true,
+    });
+  }
+  if (enforceAssurance(req, res)) next();
+};

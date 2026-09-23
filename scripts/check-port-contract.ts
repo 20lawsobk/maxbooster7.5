@@ -18,9 +18,8 @@
  *   3. `.replit`'s [[ports]] table maps exactly one `localPort` to the
  *      Replit-default external port (80) — the app's public HTTP port — and
  *      that mapping points at `runtimePorts.app`, not an internal service.
- *   4. No internal service port is ALSO mapped to external port 80 in
- *      `.replit` (which would make it publicly reachable as if it were the
- *      app).
+ *   4. No internal service port has any `externalPort`. A `[[ports]]` entry
+ *      with only `localPort` is explicitly private and is permitted.
  *   5. `.replit`'s [[ports]] table itself has no duplicate `localPort` or
  *      duplicate `externalPort` entries.
  *
@@ -77,7 +76,7 @@ const replitText = readFileSync(replitPath, "utf8");
 // `[[ports]]` blocks and pulling the two integer keys out of each.
 interface PortMapping {
   localPort: number;
-  externalPort: number;
+  externalPort?: number;
   line: number;
 }
 
@@ -102,9 +101,9 @@ for (let i = 0; i < lines.length; i++) {
     if (externalMatch) externalPort = Number(externalMatch[1]);
   }
 
-  if (localPort === undefined || externalPort === undefined) {
+  if (localPort === undefined) {
     fail(
-      `.replit [[ports]] block starting at line ${i + 1} is missing localPort or externalPort`,
+      `.replit [[ports]] block starting at line ${i + 1} is missing localPort`,
     );
   }
   mappings.push({ localPort, externalPort, line: i + 1 });
@@ -130,6 +129,7 @@ for (const m of mappings) {
 // 5b. No duplicate externalPort entries.
 const externalOwners = new Map<number, number>();
 for (const m of mappings) {
+  if (m.externalPort === undefined) continue;
   const existingLine = externalOwners.get(m.externalPort);
   if (existingLine !== undefined) {
     fail(
@@ -176,16 +176,35 @@ const internalPortSet = new Set(
     .filter(([name]) => name !== "app")
     .map(([, port]) => port),
 );
+// Redis/BullMQ is also an internal-only dependency even though it is selected
+// by URL rather than server/config/ports.ts. Protect both its conventional
+// local port and the effective configured loopback port from being moved to a
+// different public externalPort.
+internalPortSet.add(6379);
+const nativeRedisUrl =
+  process.env.REDIS_URL || process.env.NATIVE_REDIS_URL || "";
+try {
+  const redisUrl = new URL(nativeRedisUrl);
+  const redisHost = redisUrl.hostname.toLowerCase();
+  if (
+    (redisUrl.protocol === "redis:" || redisUrl.protocol === "rediss:") &&
+    ["127.0.0.1", "localhost", "::1"].includes(redisHost)
+  ) {
+    internalPortSet.add(Number(redisUrl.port || 6379));
+  }
+} catch {
+  // URL validation belongs to the Redis client; a malformed URL cannot define
+  // a trustworthy local port for this source-config check.
+}
 const leakedInternal = mappings.find(
   (m) =>
-    m.externalPort === REPLIT_DEFAULT_EXTERNAL_PORT &&
-    internalPortSet.has(m.localPort),
+    m.externalPort !== undefined && internalPortSet.has(m.localPort),
 );
 if (leakedInternal) {
   fail(
-    `.replit exposes internal-only localPort ${leakedInternal.localPort} on the public default ` +
-      `port ${REPLIT_DEFAULT_EXTERNAL_PORT} (line ${leakedInternal.line}); internal services must ` +
-      "never be reachable there",
+    `.replit exposes internal-only localPort ${leakedInternal.localPort} on externalPort ` +
+      `${leakedInternal.externalPort} (line ${leakedInternal.line}); internal services must ` +
+      "remain private and omit externalPort",
   );
 }
 
@@ -194,6 +213,7 @@ console.log(
     `(localPort ${publicMapping.localPort} → externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT})`,
 );
 console.log(
-  `[PortContract] ✅ .replit [[ports]] table has ${mappings.length} entries with no duplicate local/external ports`,
+  `[PortContract] ✅ .replit [[ports]] table has ${mappings.length} entries with no duplicate local/external ports; ` +
+    `${mappings.filter((m) => m.externalPort === undefined).length} private`,
 );
 console.log("[PortContract] port contract OK");

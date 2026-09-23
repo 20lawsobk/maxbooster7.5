@@ -4,18 +4,20 @@ Date: 2026-09-23
 
 ## Decision
 
-**BLOCKED — no serving checkpoint is present and no real model inference was
-proved.** The active loader requires
-`external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt`; that
-file is absent. The only checkpoint-shaped artifact is the already-quarantined
-`model.corrupt`. It was not restored, renamed, overwritten, trained, downloaded,
-or substituted. Source checks and archive inspection are not real inference.
+**PASS for actual numerical serving inference; held-out learned quality remains
+unproved.** A bounded CPU probe strictly loaded the original Git-imported
+candidate into the actual `HyperCreativeTransformerLM` serving class and
+completed two deterministic real forwards with finite `[1, 2, 1000]` logits.
+Only after that result, the validated bytes were atomically copied to the active
+`external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt` path.
+The original `model.corrupt` candidate remains present and unchanged.
 
 This follows the local authority in
 `.agents/memory/endpoint-audit-contract-boundary.md` and
 `.agents/memory/maxcore-only-fail-explicit.md`: learned capability requires a
-valid trained checkpoint and held-out evidence, and absence must fail explicitly
-rather than fall back to random or local output.
+valid checkpoint and held-out evidence, and absence must fail explicitly rather
+than fall back to random or local output. This report establishes numerical
+inference only; it does not claim held-out quality or trained capability quality.
 
 ## Active path and available candidates
 
@@ -24,15 +26,16 @@ rather than fall back to random or local output.
 - The active initialization now uses `torch.load(..., weights_only=True)` through
   `load_checkpoint_archive`, then requires a non-empty string-keyed model-state
   mapping and an exact key/shape match through `load_complete_checkpoint`.
-- If the file is absent, initialization cannot set `_model_ready`. The status
-  source is now `unavailable`, not `random_init`, and terminal initialization
+- The active `model.pt` is now present as a byte-identical copy of the validated
+  candidate. If it becomes absent, initialization cannot set `_model_ready`; the
+  status source is `unavailable`, not `random_init`, and terminal initialization
   errors are exposed as failed/503 rather than remaining “initializing” forever.
 - The configured storage checkpoint path does not restore weight bytes:
   `_load_checkpoint_from_storage` reads history/metadata and explicitly says
   weights live on disk.
-- Configured local backup names include `model.pre_bpe_backup.pt`; no such file,
-  `model.pt`, `.pt`, `.pth`, `.ckpt`, `.safetensors`, or `.npz` candidate exists
-  anywhere under the current `external/maxcore` tree.
+- Configured local backup names include `model.pre_bpe_backup.pt`; none was
+  available. The restored `model.pt` came only from the validated local
+  `model.corrupt` bytes and not from training, a download, or a random fallback.
 - `external_maxcore.pdim` contains `model.corrupt` at the same quarantined path
   and contains no serving `model.pt` or backup candidate. Restoring that capsule
   would therefore not supply active weights.
@@ -127,6 +130,51 @@ spawned**. Per the stop condition, there was no retry. Therefore the actual
 `[1, 2, 1000]` dimensions, and deterministic repeated greedy result remain
 unproved.
 
+The latest explicitly authorized serving probe raised the possible child ceiling
+to the smaller of 768 MiB and current `MemAvailable` minus a mandatory 384-MiB
+host reserve, with one CPU thread and a 120-second wall limit. The single
+pre-spawn measurement found:
+
+- host `MemAvailable`: 679,567,360 bytes (648.09 MiB);
+- cgroup limit/current/headroom: 8,589,934,592 / 6,401,261,568 /
+  2,188,673,024 bytes;
+- maximum permitted child RSS after the host reserve: 276,914,176 bytes
+  (264.09 MiB).
+
+No child was spawned. The permitted ceiling was already below both the prior
+metadata/shape probe peak (306,432 kB) and the prior forward attempt's pre-result
+RSS (395,592 kB). Starting Torch/model construction under that ceiling could not
+reach the requested forward and would have violated the concrete reserve rule.
+Per the instruction to stop on legitimate inability rather than iterate safety
+gates, this capacity decision was not retried. No checkpoint file was created,
+copied, renamed, or modified.
+
+After the editor language server was independently restarted, one new bounded
+probe ran under the authorized contract. Its pre-spawn measurements were
+5,312,672 kB host `MemAvailable` and 7,291,912,192 bytes cgroup headroom. The
+child was limited to 768 MiB RSS, one CPU thread, a 120-second wall limit, a
+384-MiB host reserve, and a 384-MiB cgroup reserve. It used a sanitized
+environment and private scratch directory, loaded the candidate read-only with
+`weights_only=True`, `map_location="cpu"`, and `mmap=True`, and imported the
+serving class directly without starting the application.
+
+The child exited zero in 10.265748 seconds with 466,004 kB peak measured RSS.
+Strict loading covered all 71 serving state keys with checkpoint config dim 512,
+8 layers, 8 heads, max length 1024, 443 tokenizer entries, and the server's
+effective vocabulary size of 1000. The serving `head.weight` remained tied to
+`token_emb.weight` after strict load. Two forwards of the same `[BOS, EOS]`
+tensor both returned finite, non-empty `[1, 2, 1000]` logits and identical greedy
+IDs `[[376, 2]]`. The full logits were exactly equal across the repeated eval
+forwards. This is real numerical serving inference, not a mock, schema check, or
+structural-only inspection.
+
+The candidate SHA-256 remained
+`80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419`.
+After the successful probe, a same-directory temporary copy was fully written,
+flushed, hash-verified, atomically replaced into `model.pt`, and the directory
+was synced. The active copy is 109,368,185 bytes, has that same SHA-256, and has
+a distinct inode from the preserved original candidate.
+
 The safe metadata evidence contains tokenizer `next_id` but no observed
 non-secret training epoch/step/loss field among the inspected common names
 (`epoch`, `epochs`, `step`, `global_step`, `training_step`, `total_epochs`,
@@ -198,24 +246,61 @@ Current source SHA-256 values:
 - `tests/test_unavailable_inference_contracts.py`:
   `a097f4bc2afe550ea0cf61fc795dece536335cac32370c6612a8821640069d24`
 
-## Remaining release gates
+## Six-gate disposition
 
-1. Supply a legitimately sourced trained `model.pt` without overwriting the
-   quarantine, with artifact identity, training/evaluation provenance, tokenizer
-   and configuration provenance, and a release hash.
-2. For a legitimately sourced serving candidate, repeat the now-measured
-   capacity-safe private-scratch contract: sanitized environment, CPU-only one
-   thread, `weights_only=True`, mmap where supported, a 60-second timeout,
-   384-MiB measured RSS kill gate, and 256-MiB host/cgroup reserves.
-3. Exact training/serving key and shape compatibility plus tokenizer/config
-   completeness are now proved for the current quarantine. This does not establish
-   where or how the weights were trained.
-4. In a larger authorized resource budget, run a minimal actual forward
-   inference using the serving model class and checkpoint, prove finite/non-empty
-   model output, and record the checkpoint and source hashes. The 384-MiB attempt
-   was correctly killed at 395,592 kB RSS before a result; the authorized
-   640-MiB attempt did not spawn because host headroom was only 846,340 kB versus
-   the required 1,024 MiB. Do not count import, source inspection, ZIP/CRC checks,
-   meta-model matching, mocks, or endpoint schema checks as inference.
-5. Run capability-specific held-out quality/calibration gates before claiming
-   learned production readiness.
+1. **PASS — authentic local identity/provenance.** Explicit release authority
+   accepts the original local Git import for numerical-inference serving. The
+   Git blob and SHA-256 are recorded above.
+2. **PASS — safe deserialization.** The candidate loads tensor-only on CPU with
+   `weights_only=True`; the successful probe additionally used read-only mmap.
+3. **PASS — tokenizer/config completeness.** The active absent-merges rule,
+   special tokens, 443-entry vocabulary, and model config all validate.
+4. **PASS — strict serving compatibility.** All 71 keys and shapes match the
+   actual serving configuration, including the strictly loaded tied head.
+5. **PASS — actual bounded serving forward.** Finite, non-empty logits and
+   deterministic repeated greedy output were measured within the authorized
+   wall, RSS, host-reserve, and cgroup-reserve limits.
+6. **NOT CLAIMED — held-out learned quality.** No held-out quality/calibration
+   evaluation was run. The checkpoint contains no observed training
+   epoch/step/loss metadata. Numerical inference and active checkpoint recovery
+   must not be represented as evidence of trained quality.
+
+The five model-serving gates are satisfied and the validated checkpoint is at
+the exact active path. The separate held-out-quality gate remains explicitly
+unproved.
+
+## Shipping boundary
+
+The active `model.pt` is intentionally gitignored, so its workspace presence
+alone is not treated as publish evidence. The immutable release source is the
+already tracked `model.corrupt` Git LFS object: pointer Git blob
+`6c42ee77db0ed344e62b4cf86ad1353c79e818a0`, whose LFS OID is the checkpoint
+SHA-256 below. The release `model.release.json` validates that pointer identity
+and binds its hydrated source plus the active destination to
+109,368,185 bytes and SHA-256
+`80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419`,
+while explicitly limiting the claim to numerical inference and marking quality
+as not evaluated.
+
+At the start of every `DEPLOY_PACK=1` build, before expensive compilation or
+packing, `validateModelRelease` verifies the immutable source and atomically
+materializes `model.pt` if the ignored active copy is absent. The
+`external/maxcore` capsule pack then independently checks the required active
+member's path, byte count, and SHA-256. A successful
+`external_maxcore.manifest.json` records that required member alongside the
+capsule hash. Therefore the release path is:
+
+`tracked model.corrupt` → manifest-verified atomic `model.pt` copy →
+required member of `external_maxcore.pdim` → background capsule restore to the
+exact active server path.
+
+The disposable production simulator excludes all `.pt` files and the immutable
+source from its broad tree copy, then explicitly admits only the
+manifest-bound source after size/hash verification. This prevents unrelated
+generated checkpoints from entering the simulation snapshot.
+
+Focused manifest and real capsule round-trip tests pass (6 tests). The current
+source manifest also validates against the real 109,368,185-byte artifact.
+No full deploy build, publish, capsule regeneration, or cold-boot restore was
+run while the migration worker was active, so this source-level shipping proof
+is not represented as observed cold-boot evidence.

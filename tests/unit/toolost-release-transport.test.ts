@@ -31,6 +31,26 @@ describe("Too Lost release transport", () => {
     });
   });
 
+  it("requests only Too Lost's published OAuth scopes", async () => {
+    const { toolostService } = await import(
+      "../../server/services/toolost-service"
+    );
+    const authorizationUrl = new URL(
+      toolostService.getOAuthAuthorizationUrl(
+        "https://example.com/callback",
+        "state",
+      ),
+    );
+
+    expect(authorizationUrl.searchParams.get("scope")?.split(" ")).toEqual([
+      "read:profile",
+      "read:catalog",
+      "read:analytics",
+      "read:earnings",
+      "write:releases",
+    ]);
+  });
+
   it("sends explicit compliance declarations through the real Too Lost choreography", async () => {
     const requests: Array<{ url: string; method: string; body?: string }> = [];
     vi.stubGlobal(
@@ -308,6 +328,49 @@ describe("Too Lost release transport", () => {
     await expect(
       toolostService.forUser("user-1").getUserCatalog(),
     ).rejects.toThrow("response was malformed");
+  });
+
+  it("walks every page using Too Lost's documented page and perPage contract", async () => {
+    const requestedUrls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL) => {
+        const url = String(input);
+        requestedUrls.push(url);
+        const page = new URL(url).searchParams.get("page");
+        if (page === "1") {
+          return Response.json({
+            currentPage: 1,
+            perPage: 100,
+            totalItems: 2,
+            totalPages: 2,
+            data: [{ id: "release-1", title: "First", type: "single" }],
+          });
+        }
+        return Response.json({
+          currentPage: 2,
+          perPage: 100,
+          totalItems: 2,
+          totalPages: 2,
+          data: [{ id: "release-2", title: "Second", type: "single" }],
+        });
+      }),
+    );
+    const { toolostService } = await import(
+      "../../server/services/toolost-service"
+    );
+
+    const catalog = await toolostService.forUser("user-1").getUserCatalog();
+
+    expect(catalog.map((release) => release.id)).toEqual([
+      "release-1",
+      "release-2",
+    ]);
+    expect(requestedUrls).toHaveLength(2);
+    expect(requestedUrls[0]).toContain("page=1");
+    expect(requestedUrls[0]).toContain("perPage=100");
+    expect(requestedUrls[0]).not.toContain("limit=");
+    expect(requestedUrls[1]).toContain("page=2");
   });
 
   it("loads the durable connection for detail reads instead of trusting the advisory cache", async () => {

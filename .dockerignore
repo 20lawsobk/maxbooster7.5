@@ -110,8 +110,14 @@ public/generated-content/
 scripts/*
 !scripts/
 !scripts/port-contract.sh
+!scripts/redis-supervisor.sh
 !scripts/boot-stub-server.mjs
 !scripts/check-port-contract.ts
+# Build-time sources for the required standalone retained-PDIM worker and the
+# server-bundled private-storage helper. Production executes only dist/*.mjs,
+# but both deployment build paths must be able to regenerate those artifacts.
+!scripts/retained-pdim-recovery-worker.ts
+!scripts/recovery-private-store.mjs
 .agents/
 attached_assets/
 

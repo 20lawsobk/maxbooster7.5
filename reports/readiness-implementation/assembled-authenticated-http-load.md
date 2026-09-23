@@ -1,6 +1,6 @@
 # Authenticated HTTP load simulation
 
-Decision: **FAIL**
+Decision: **PASS_WITH_UNTESTED_CATEGORIES**
 
 Artifact label: **source application authenticated HTTP simulation; not packed application acceptance**
 
@@ -8,9 +8,9 @@ Artifact label: **source application authenticated HTTP simulation; not packed a
 
 `env -i PATH="$PATH" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs --http-load`
 
-Run started: 2026-09-23T14:12:17.164Z
+Run started: 2026-09-23T15:08:39.019Z
 
-Report generated: 2026-09-23T14:12:17.172Z
+Report generated: 2026-09-23T15:09:38.710Z
 
 ## Safety boundary
 
@@ -27,44 +27,195 @@ Report generated: 2026-09-23T14:12:17.172Z
 {
   "capacityAdmission": {
     "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
-    "hostMemAvailableBytes": 724705280,
+    "hostMemAvailableBytes": 4746096640,
     "cgroup": {
-      "currentBytes": 6561001472,
+      "currentBytes": 2129342464,
       "maximumBytes": 8589934592,
-      "headroomBytes": 2028933120,
-      "anonymousBytes": 5148545024,
-      "filePageCacheBytes": 1142087680,
-      "inactiveFileBytes": 953774080,
-      "activeFileBytes": 188125184,
-      "kernelBytes": 268029952,
+      "headroomBytes": 6460592128,
+      "anonymousBytes": 1172770816,
+      "filePageCacheBytes": 874819584,
+      "inactiveFileBytes": 252100608,
+      "activeFileBytes": 609972224,
+      "kernelBytes": 80171008,
       "reclaimableKernelSlabBytes": 0
     },
-    "effectiveAvailableBytes": 724705280,
+    "effectiveAvailableBytes": 4746096640,
     "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
     "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
     "minimumAvailableBytes": 1610612736
   },
-  "schemaGeneration": "not_run",
-  "postgres": "not_run",
-  "appProcess": "not_run",
-  "health": "not_run",
-  "readiness": "not_run",
-  "frontend": "not_run",
-  "authHttp": "not_run",
-  "httpLoad": "not_run",
-  "browser": "not_run",
-  "egressGuard": "not_run",
+  "schemaGeneration": "pass",
+  "postgres": "pass",
+  "appProcess": "pass",
+  "health": {
+    "status": 200,
+    "contentType": "application/json; charset=utf-8"
+  },
+  "readiness": {
+    "status": 200,
+    "aggregate": "ok",
+    "subsystems": {
+      "database": {
+        "status": "ok"
+      },
+      "redis": {
+        "status": "ok"
+      },
+      "routes": {
+        "status": "ok",
+        "detail": "all route sections registered"
+      },
+      "audit": {
+        "status": "unknown",
+        "detail": "initializing"
+      },
+      "automation": {
+        "status": "ok",
+        "detail": "workflows=0"
+      },
+      "maxcore": {
+        "status": "unknown",
+        "detail": "MaxCore not configured (no URL/key)"
+      }
+    }
+  },
+  "frontend": {
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "bytes": 16213,
+    "sha256": "ed615b681ce2448b892b13749f3b828d32eb802432420ffc63424f59652ab563"
+  },
+  "authHttp": {
+    "csrfCookieHeaderBinding": "pass",
+    "register": "pass",
+    "login": "pass",
+    "sessionPersistence": "pass",
+    "csrfRejection": "pass",
+    "logoutInvalidation": "pass",
+    "syntheticUsersRemovedWithDatabase": true
+  },
+  "httpLoad": {
+    "label": "source application HTTP simulation; not packed application acceptance",
+    "admission": {
+      "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
+      "hostMemAvailableBytes": 4746096640,
+      "cgroup": {
+        "currentBytes": 2129342464,
+        "maximumBytes": 8589934592,
+        "headroomBytes": 6460592128,
+        "anonymousBytes": 1172770816,
+        "filePageCacheBytes": 874819584,
+        "inactiveFileBytes": 252100608,
+        "activeFileBytes": 609972224,
+        "kernelBytes": 80171008,
+        "reclaimableKernelSlabBytes": 0
+      },
+      "effectiveAvailableBytes": 4746096640,
+      "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
+      "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
+      "minimumAvailableBytes": 1610612736
+    },
+    "thresholds": {
+      "minimumSuccessPercent": 99,
+      "maximumP95Ms": 500,
+      "maximumP99Ms": 1000
+    },
+    "settings": {
+      "phases": [
+        {
+          "name": "steady",
+          "workers": 10,
+          "durationSeconds": 20
+        },
+        {
+          "name": "spike",
+          "workers": 20,
+          "durationSeconds": 10
+        }
+      ],
+      "accounts": 10,
+      "sessions": 20,
+      "pacingMs": 3000,
+      "requestTimeoutMs": 15000,
+      "maximumRequestBodyBytes": 1024,
+      "appMaxOldSpaceMiB": 768,
+      "overlappingRequestsPerVirtualUser": false,
+      "percentileMethod": "nearest-rank over all completed request durations, including failures"
+    },
+    "callbacks": [
+      {
+        "name": "session-read",
+        "method": "GET",
+        "path": "/api/auth/me"
+      },
+      {
+        "name": "project-read",
+        "method": "GET",
+        "path": "/api/projects"
+      },
+      {
+        "name": "session-write",
+        "method": "POST",
+        "path": "/api/auth/heartbeat"
+      },
+      {
+        "name": "project-write",
+        "method": "POST",
+        "path": "/api/projects"
+      }
+    ],
+    "coverage": {
+      "actualRegistrationAndLogin": true,
+      "sessionRead": true,
+      "csrfProtectedSessionWrite": true,
+      "projectRead": true,
+      "projectWrite": true,
+      "projectWriteProbeStatus": 200,
+      "missingCsrfRejected": true,
+      "logoutSessionRevoked": true,
+      "durableLoadGeneratorWorker": false
+    },
+    "phases": [
+      {
+        "name": "steady",
+        "workers": 10,
+        "configuredDurationSeconds": 20,
+        "count": 70,
+        "successful": 70,
+        "failed": 0,
+        "successPercent": 100,
+        "p95Ms": 273.864519,
+        "p99Ms": 329.542474,
+        "durationDefinition": "all completed request durations, including failed requests"
+      },
+      {
+        "name": "spike",
+        "workers": 20,
+        "configuredDurationSeconds": 10,
+        "count": 80,
+        "successful": 80,
+        "failed": 0,
+        "successPercent": 100,
+        "p95Ms": 396.740921,
+        "p99Ms": 492.552765,
+        "durationDefinition": "all completed request durations, including failed requests"
+      }
+    ],
+    "failures": [],
+    "thresholdFailures": []
+  },
+  "browser": "intentionally skipped only for explicit --http-load mode",
+  "egressGuard": "pass (external net.connect, direct Socket.connect, UDP, and child processes denied in preflight)",
   "cleanup": "pass"
 }
 ```
 
-## Sanitized failures
-
-- HTTP load capacity admission denied before PostgreSQL/application startup: 691 MiB effective available; 1536 MiB required
 
 ## Interpretation
 
-- The assembled startup did not reach sufficient evidence for an acceptance observation.
+- Real application routes and production static frontend were served from the assembled server process.
+- Normal registration/login used the real password hashing, CSRF, session store, and logout paths with a synthetic user; no auth bypass was used.
+- Explicit load-only mode did not launch Chromium; the default invocation retains its browser flow.
 - A 200 liveness response alone is not treated as readiness. Frontend acceptance requires a real HTML response after the production static handler is active.
 - `frontend` records the raw production HTML response; `browser` separately records JavaScript hydration and the real browser form/session journey.
 - This result does not disable a failed critical readiness dependency or relabel degraded provider behavior as a pass.

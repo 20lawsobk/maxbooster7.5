@@ -1,6 +1,7 @@
 import { storage } from "../storage";
 import { logger } from "../logger.js";
 import { CircuitBreaker } from "../infrastructure/circuitBreaker";
+import { collectToolostPages } from "./toolostPagination";
 
 /**
  * Too Lost's confirmed failure envelope is `{status:false, error:"..."}`;
@@ -491,11 +492,10 @@ class ToolostService {
       "scope",
       [
         "read:profile",
-        "read:releases",
-        "write:releases",
         "read:catalog",
         "read:analytics",
         "read:earnings",
+        "write:releases",
       ].join(" "),
     );
     return url.toString();
@@ -757,7 +757,11 @@ class ToolostService {
   private async raw<T>(
     method: string,
     path: string,
-    opts?: { query?: Record<string, unknown>; body?: unknown },
+    opts?: {
+      query?: Record<string, unknown>;
+      body?: unknown;
+      preserveEnvelope?: boolean;
+    },
   ): Promise<ToolostApiResult<T>> {
     let accessToken: string;
     try {
@@ -823,7 +827,9 @@ class ToolostService {
           },
         };
       }
-      return { data: (json?.data ?? json) as T };
+      return {
+        data: (opts?.preserveEnvelope ? json : (json?.data ?? json)) as T,
+      };
     } catch (error) {
       const isAbort = error instanceof Error && error.name === "AbortError";
       return {
@@ -1180,19 +1186,23 @@ class ToolostService {
       );
     }
     this.logApiCall("GET", "/releases");
-    const result = await this.callWithRetry(() =>
-      this.raw<unknown>("GET", "/releases", { query: { limit: 200 } }),
+    const rows = await collectToolostPages<Record<string, unknown>>(
+      async (page) => {
+        const result = await this.callWithRetry(() =>
+          this.raw<unknown>("GET", "/releases", {
+            query: { page, perPage: 100 },
+            preserveEnvelope: true,
+          }),
+        );
+        if ("error" in result) {
+          this.logApiError("[Too Lost] getUserCatalog failed", result.error);
+          throw new Error(
+            `Too Lost catalog unavailable: ${result.error.message}`,
+          );
+        }
+        return result.data;
+      },
     );
-    if ("error" in result) {
-      this.logApiError("[Too Lost] getUserCatalog failed", result.error);
-      throw new Error(`Too Lost catalog unavailable: ${result.error.message}`);
-    }
-    if (!ToolostService.hasListShape(result.data)) {
-      throw new Error(
-        "Too Lost catalog response was malformed: expected a release list.",
-      );
-    }
-    const rows = ToolostService.extractList<Record<string, unknown>>(result.data);
     const releases = rows.map((r) => ToolostService.mapCatalogRelease(r));
     logger.info(`[Too Lost] getUserCatalog: ${releases.length} release(s) returned`);
     return releases;

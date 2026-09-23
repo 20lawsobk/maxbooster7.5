@@ -15,3 +15,12 @@ the same socket, producing `EADDRINUSE` and an unavailable preview.
 the runtime contract and startup validation, keep it out of the external Replit
 port map, and ensure every shell/Node client consumes that named setting rather
 than a numeric literal or `PORT`.
+
+Redis is also internal-only. A local-only `[[ports]]` entry may declare
+`localPort = 6379` without `externalPort`, but Redis must never be moved to
+another public port. The port-contract check protects both the conventional
+6379 port and an effective loopback `REDIS_URL`/`NATIVE_REDIS_URL` override.
+
+When validating a corrected callback file, use an absolute workspace path such
+as `/home/runner/workspace/.local/tmp/replit-ports-corrected.toml`; do not rely
+on a callback's working directory.

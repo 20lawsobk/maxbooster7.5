@@ -1,7 +1,7 @@
 import { describe, it, expect, afterAll } from "vitest";
 import fs from "fs/promises";
 import path from "path";
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import {
   packCapsule,
   packCapsuleMembers,
@@ -108,6 +108,12 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
     await fs.cp(srcAbs, referenceAbs, { recursive: true });
     const expected = await collectFiles(referenceAbs);
     expect(expected.size).toBeGreaterThan(0);
+    const requiredContent = expected.get("a.txt")!;
+    const requiredMember = {
+      path: "a.txt",
+      bytes: requiredContent.length,
+      sha256: createHash("sha256").update(requiredContent).digest("hex"),
+    };
 
     // Real codec id must look like "zstd-<level>", not a placeholder —
     // guards against CAPSULE_COMPRESSION_ID silently regressing to
@@ -119,6 +125,7 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
       root: projectRoot,
       dir: dirRelative,
       capsule: capsuleRelative,
+      requiredMembers: [requiredMember],
     });
     expect(packResult).not.toBeNull();
     expect(packResult!.compression).toBe(CAPSULE_COMPRESSION_ID);
@@ -135,6 +142,7 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
     );
     expect(manifestOnDisk.compression).toBe(CAPSULE_COMPRESSION_ID);
     expect(manifestOnDisk.sha256).toBe(packResult!.sha256);
+    expect(manifestOnDisk.requiredMembers).toEqual([requiredMember]);
 
     const restored = await restoreCapsule(
       capsuleRelative,

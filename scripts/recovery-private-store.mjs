@@ -253,6 +253,92 @@ export async function retainAndReadBackRecoveryDump({
   }
 }
 
+export async function retainAndReadBackPdimSnapshot({
+  bucket,
+  snapshotPath,
+  readbackPath,
+  snapshotSha256,
+  sourceRevision,
+  currentSourceHash,
+  snapshotEvidence,
+  now = new Date(),
+  uuid = randomUUID(),
+  crcFactory,
+}) {
+  if (!/^[a-f0-9]{64}$/.test(snapshotSha256) || !/^[a-f0-9]{64}$/.test(currentSourceHash)) {
+    throw new Error("PDIM recovery manifest hashes must be lowercase SHA-256 values");
+  }
+  if (!/^[a-f0-9]{40,64}$/.test(sourceRevision)) {
+    throw new Error("PDIM recovery source revision is invalid");
+  }
+  const local = await stat(snapshotPath);
+  const prefix = `private-pdim-recovery/${now.toISOString().replaceAll(/[:.]/g, "-")}-${uuid}`;
+  const snapshotObject = await uploadCreateOnly(
+    bucket,
+    snapshotPath,
+    `${prefix}/local-pdim-store.json`,
+    {
+      purpose: "private-pdim-recovery",
+      sha256: snapshotSha256,
+      sourceRevision,
+      currentSourceHash,
+    },
+  );
+  let manifestObject;
+  try {
+    const manifest = {
+      manifestVersion: 1,
+      createdAt: now.toISOString(),
+      sourceRevision,
+      currentSourceHash,
+      storageContract: MANAGED_STORAGE_CONTRACT,
+      snapshot: {
+        ...snapshotObject,
+        sha256: snapshotSha256,
+        localBytes: local.size,
+      },
+      consistentStoppedSourceSnapshot: true,
+      snapshotEvidence,
+    };
+    const manifestBytes = Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`);
+    const manifestSha256 = createHash("sha256").update(manifestBytes).digest("hex");
+    const manifestObjectName = `${prefix}/manifest.json`;
+    const manifestFile = bucket.file(manifestObjectName);
+    await manifestFile.save(manifestBytes, {
+      resumable: false,
+      validation: "crc32c",
+      preconditionOpts: { ifGenerationMatch: 0 },
+      contentType: "application/json",
+      metadata: { purpose: "private-pdim-recovery-manifest", sha256: manifestSha256 },
+    });
+    const [manifestMetadata] = await manifestFile.getMetadata();
+    manifestObject = {
+      name: manifestObjectName,
+      generation: generationOf(manifestMetadata),
+      crc32c: manifestMetadata.crc32c,
+      size: String(manifestMetadata.size),
+      sha256: manifestSha256,
+    };
+    const readback = await downloadAndVerify(
+      bucket,
+      snapshotObject,
+      readbackPath,
+      snapshotSha256,
+      crcFactory,
+    );
+    return { prefix, snapshotObject, manifestObject, readback };
+  } catch (error) {
+    if (error && typeof error === "object") {
+      error.retainedArtifacts = {
+        prefix,
+        snapshotObject,
+        ...(manifestObject ? { manifestObject } : {}),
+      };
+    }
+    throw error;
+  }
+}
+
 export const recoveryPrivateStoreInternals = {
   DEFAULT_BUCKET_URL,
   REPLIT_ADC,

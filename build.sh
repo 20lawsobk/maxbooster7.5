@@ -58,6 +58,7 @@ echo "==> Build env: node $(node --version 2>/dev/null || echo n/a)  npm $(npm -
 #   • dist/public/index.html  — Vite frontend bundle (~17 MB)
 #   • dist/index.mjs          — esbuild server bundle (~5 MB)
 #   • dist/cluster.mjs        — esbuild cluster entry (~1 MB)
+#   • dist/retained-pdim-recovery-worker.mjs — isolated operator recovery verifier
 #
 #   Compile step is skipped entirely.  Only production deps are installed
 #   (`npm ci --omit=dev`), then security patches are applied to node_modules,
@@ -93,8 +94,10 @@ fi
 PREBUILT_FRONTEND="dist/public/index.html"
 PREBUILT_SERVER="dist/index.mjs"
 PREBUILT_CLUSTER="dist/cluster.mjs"
+PREBUILT_PDIM_RECOVERY_WORKER="dist/retained-pdim-recovery-worker.mjs"
 
-if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_CLUSTER" ]; then
+if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && \
+   [ -f "$PREBUILT_CLUSTER" ] && [ -f "$PREBUILT_PDIM_RECOVERY_WORKER" ]; then
   echo "==> FAST PATH: all pre-built artifacts present"
   echo "   dist/public/, dist/index.mjs, dist/cluster.mjs ready."
 
@@ -146,6 +149,8 @@ else
   [ ! -f "$PREBUILT_FRONTEND" ] && echo "   missing: $PREBUILT_FRONTEND"
   [ ! -f "$PREBUILT_SERVER"   ] && echo "   missing: $PREBUILT_SERVER"
   [ ! -f "$PREBUILT_CLUSTER"  ] && echo "   missing: $PREBUILT_CLUSTER"
+  [ ! -f "$PREBUILT_PDIM_RECOVERY_WORKER" ] && \
+    echo "   missing: $PREBUILT_PDIM_RECOVERY_WORKER"
 
   if [ ! -d "client" ] || [ ! -d "server" ]; then
     echo "ERROR: Source directories (client/, server/) are required for the SLOW PATH"
@@ -175,6 +180,12 @@ else
 
   FAST_PATH=0
 fi
+
+if [ ! -s "$PREBUILT_PDIM_RECOVERY_WORKER" ]; then
+  echo "ERROR: required isolated PDIM recovery worker is missing or empty: $PREBUILT_PDIM_RECOVERY_WORKER"
+  exit 1
+fi
+echo "   ✅ Required runtime helper preserved: $PREBUILT_PDIM_RECOVERY_WORKER"
 
 # ─── TF native binaries (preserved for production LD_LIBRARY_PATH) ───────────
 echo "==> Keeping TF native libraries from tfjs-node postinstall..."
@@ -486,7 +497,11 @@ _pdim_pack "python_runtime" "python_runtime.pdim" "Portable Python 3.12 runtime"
 # runs entirely from pre-compiled dist/ artifacts.
 echo "   Packing source tree → source.pdim [${_PDIM_FORMAT}]..."
 _SOURCE_DIRS=""
-for _d in client server shared script scripts electron attached_assets docs migrations boosterstate; do
+# `scripts/` is intentionally not packed/deleted: .dockerignore admits only the
+# small launch helpers required directly by start.sh, including the Redis
+# supervisor. They must remain as ordinary files in the final runtime image;
+# source.pdim is not restored automatically.
+for _d in client server shared script electron attached_assets docs migrations boosterstate; do
   [ -d "$_d" ] && _SOURCE_DIRS="$_SOURCE_DIRS $_d"
 done
 _SOURCE_CONFIGS=""

@@ -3,6 +3,7 @@ set -euo pipefail
 
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${_SCRIPT_DIR}/port-contract.sh"
+source "${_SCRIPT_DIR}/redis-supervisor.sh"
 
 # Cross-check the shell/runtime port contract above against .replit's own
 # [[ports]] table, catching drift between the two before the app boots.
@@ -12,13 +13,24 @@ if ! npx tsx "${_SCRIPT_DIR}/check-port-contract.ts"; then
 fi
 
 _BOOSTER_PID=""
+_APP_PID=""
 cleanup() {
+  if [ -n "$_APP_PID" ] && kill -0 "$_APP_PID" 2>/dev/null; then
+    kill -TERM "$_APP_PID" 2>/dev/null || true
+    wait "$_APP_PID" 2>/dev/null || true
+  fi
   if [ -n "$_BOOSTER_PID" ] && kill -0 "$_BOOSTER_PID" 2>/dev/null; then
     kill -TERM "$_BOOSTER_PID" 2>/dev/null || true
     wait "$_BOOSTER_PID" 2>/dev/null || true
   fi
+  redis_supervisor_cleanup
 }
 trap cleanup EXIT INT TERM
+
+if ! redis_supervisor_start "$(command -v node)" "$(cd "${_SCRIPT_DIR}/.." && pwd)"; then
+  echo "[start-dev] FATAL: configured loopback Redis is unavailable" >&2
+  exit 1
+fi
 
 # Prefer the prebuilt binary (produced by build.sh; present even without a
 # Rust toolchain in this environment), same order start.sh uses in

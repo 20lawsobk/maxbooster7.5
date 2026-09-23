@@ -70,17 +70,24 @@ let postgresStarted = false;
 let app;
 let client;
 let appLogPath;
+let appLogTail = "";
 
 function sanitizedLogTail() {
-  if (!appLogPath) return "";
+  if (!appLogPath && !appLogTail) return "";
   try {
-    return readFileSync(appLogPath, "utf8")
-      .slice(-8000)
+    const persisted = appLogPath ? readFileSync(appLogPath, "utf8") : "";
+    const source = appLogTail.length >= persisted.length ? appLogTail : persisted;
+    return source
+      .slice(-16_000)
       .replace(/postgres(?:ql)?:\/\/[^\s"']+/gi, "postgresql://[redacted]")
       .replace(/(authorization|token|secret|password)["' :=]+[^\s,"'}]+/gi, "$1=[redacted]")
-      .slice(-3000);
+      .slice(-12_000);
   } catch {
-    return "";
+    return appLogTail
+      .slice(-16_000)
+      .replace(/postgres(?:ql)?:\/\/[^\s"']+/gi, "postgresql://[redacted]")
+      .replace(/(authorization|token|secret|password)["' :=]+[^\s,"'}]+/gi, "$1=[redacted]")
+      .slice(-12_000);
   }
 }
 
@@ -583,7 +590,12 @@ async function createLoadSession(email, username, password, register) {
   if (response.status !== 200) throw new Error(`load CSRF bootstrap returned HTTP ${response.status}`);
   const csrf = jsonBody(response).csrfToken;
   if (typeof csrf !== "string" || csrf.length > 256 || jar.get("csrf-token") !== csrf) {
-    throw new Error("load CSRF body/cookie binding failed");
+    throw new Error(
+      "load CSRF body/cookie binding failed: " +
+      `bodyType=${typeof csrf}, bodyLength=${typeof csrf === "string" ? csrf.length : "n/a"}, ` +
+      `cookieLength=${jar.get("csrf-token")?.length ?? "missing"}, ` +
+      `setCookieNames=${response.setCookie.map((value) => value.split("=", 1)[0]).join(",") || "none"}`,
+    );
   }
   response = await authRequest(jar, register ? "/api/auth/register" : "/api/auth/login", {
     method: "POST",
@@ -864,6 +876,11 @@ try {
     "--import", "tsx",
     join(root, "server/index.ts"),
   ], { cwd: join(temp, "cwd"), env: appEnv, stdio: ["ignore", "pipe", "pipe"] });
+  const retainAppLogTail = (chunk) => {
+    appLogTail = (appLogTail + chunk.toString("utf8")).slice(-64 * 1024);
+  };
+  app.stdout.on("data", retainAppLogTail);
+  app.stderr.on("data", retainAppLogTail);
   app.stdout.pipe(appLog);
   app.stderr.pipe(appLog);
   evidence.appProcess = "started";
@@ -957,13 +974,19 @@ try {
   const subsystemStatuses = Array.isArray(readyBody.subsystems)
     ? Object.fromEntries(readyBody.subsystems.map((value, index) => [
         String(value?.name ?? index),
-        { status: value?.status ?? "unknown" },
+        {
+          status: value?.status ?? "unknown",
+          ...(typeof value?.detail === "string" ? { detail: value.detail } : {}),
+        },
       ]))
     : Object.fromEntries(
         Object.entries(readyBody.subsystems ?? {}).map(([name, value]) => [
           name,
           value && typeof value === "object"
-            ? { status: value.status ?? "unknown" }
+            ? {
+                status: value.status ?? "unknown",
+                ...(typeof value.detail === "string" ? { detail: value.detail } : {}),
+              }
             : { status: String(value) },
         ]),
       );

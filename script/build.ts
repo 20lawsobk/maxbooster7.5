@@ -10,11 +10,15 @@ import {
   computeRemainingAppMembers,
   BOOTSTRAP_AND_CAPSULE_OWN_PATHS,
 } from "./lib/dockerignoreScan.js";
+import { validateModelRelease } from "./lib/modelRelease.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
+  const modelRelease = process.env.DEPLOY_PACK === "1" || process.env.REPLIT_DEPLOYMENT_ID
+    ? validateModelRelease(root)
+    : null;
   if (process.env.DEPLOY_PACK === "1" || process.env.REPLIT_DEPLOYMENT_ID) {
     // Reject stale nested/hoisted installs before expensive work or destructive packing.
     execFileSync(process.execPath, ["scripts/verify-runtime-artifacts.mjs", "dependencies", root],
@@ -37,6 +41,27 @@ async function main() {
     minify: false,
   });
   console.log("   ✅ Server bundle → dist/index.mjs");
+
+  console.log("==> Bundling isolated PDIM verifier → dist/retained-pdim-recovery-worker.mjs...");
+  await esBuild({
+    entryPoints: [
+      path.resolve(root, "scripts/retained-pdim-recovery-worker.ts"),
+    ],
+    bundle: true,
+    platform: "node",
+    target: "node22",
+    format: "esm",
+    outfile: path.resolve(root, "dist/retained-pdim-recovery-worker.mjs"),
+    packages: "external",
+    sourcemap: false,
+    minify: false,
+  });
+  if (!fs.statSync(
+    path.resolve(root, "dist/retained-pdim-recovery-worker.mjs"),
+  ).isFile()) {
+    throw new Error("Required retained PDIM recovery worker artifact was not built");
+  }
+  console.log("   ✅ Isolated PDIM verifier bundle ready");
 
   console.log("==> Bundling cluster entry with esbuild → dist/cluster.mjs...");
   await esBuild({
@@ -137,10 +162,18 @@ async function main() {
   }
 
   if (isDeployBuild) {
-    const capsuleTargets: Array<{ dir: string; capsule: string }> = [
+    const capsuleTargets: Array<{
+      dir: string;
+      capsule: string;
+      requiredMembers?: Array<{ path: string; bytes: number; sha256: string }>;
+    }> = [
       { dir: "python_runtime", capsule: "python_runtime.pdim" },
       { dir: "node_modules", capsule: "node_modules.pdim" },
-      { dir: "external/maxcore", capsule: "external_maxcore.pdim" },
+      {
+        dir: "external/maxcore",
+        capsule: "external_maxcore.pdim",
+        requiredMembers: modelRelease ? [modelRelease] : [],
+      },
       // 2026-08-14: user directive — the ENTIRE project must ship in the
       // deployment (external/pdim included), so it is packed as a capsule
       // rather than deleted from the image.
@@ -180,8 +213,8 @@ async function main() {
       `==> Packing ${existingTargets.length} capsule(s) concurrently across ${cpuCount} CPU(s) → ${perJobThreads} zstd thread(s) each`,
     );
     capsuleResults = await Promise.all(
-      capsuleTargets.map(({ dir, capsule }) =>
-        packCapsule({ root, dir, capsule, threads: perJobThreads }),
+      capsuleTargets.map(({ dir, capsule, requiredMembers }) =>
+        packCapsule({ root, dir, capsule, threads: perJobThreads, requiredMembers }),
       ),
     );
   }
@@ -213,6 +246,12 @@ async function main() {
     null;
   if (isDeployBuild) {
     const remainingMembers = computeRemainingAppMembers(root);
+    const requiredPdimWorker = "dist/retained-pdim-recovery-worker.mjs";
+    if (!remainingMembers.includes(requiredPdimWorker)) {
+      throw new Error(
+        `Required runtime artifact is absent from the app capsule payload: ${requiredPdimWorker}`,
+      );
+    }
     console.log(
       `==> Scanned .dockerignore-survivor payload: ${remainingMembers.length} file(s) remaining outside the four existing capsules and the boot bootstrap set (${BOOTSTRAP_AND_CAPSULE_OWN_PATHS.join(", ")})`,
     );

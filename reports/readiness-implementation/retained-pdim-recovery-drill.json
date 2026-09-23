@@ -1,0 +1,49 @@
+{
+  "reportVersion": 1,
+  "status": "blocked",
+  "command": "env -i PATH=\"$PATH\" HOME=/tmp DATABASE_RECOVERY_BUCKET_ID=\"$DATABASE_RECOVERY_BUCKET_ID\" node --max-old-space-size=192 scripts/retained-pdim-recovery-drill.mjs",
+  "scope": "development workspace stopped local PDIM fallback persistence",
+  "durableBackupCreated": false,
+  "captureComplete": true,
+  "safety": {
+    "liveSourceWrites": false,
+    "applicationStarted": false,
+    "databaseOrSharedProviderCalls": false,
+    "backupStoreCalls": false,
+    "scratchDirectoryMode": "0700",
+    "scratchFileMode": "0600",
+    "productionRestoreOverwrite": false,
+    "scratchRemoved": true
+  },
+  "evidence": {
+    "capture": {
+      "bytes": 2,
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "sourceStableAcrossCapture": true,
+      "exactFileIncludesAllPersistedKeysChunksAndIndexes": true
+    },
+    "sourcePresence": {
+      "developmentFallbackHybridContentPresent": false,
+      "productionPdimContentPresence": "unknown-not-accessible-from-development"
+    }
+  },
+  "checks": [
+    {
+      "name": "stopped source captured without mutation",
+      "status": "pass",
+      "detail": "2 bytes captured with stable file identity"
+    }
+  ],
+  "blockers": [
+    "The development fallback snapshot has no HybridStorage index. This does not establish production PDIM content state; production remains unknown until the protected operator workflow runs after publication."
+  ],
+  "productionOperatorWorkflow": {
+    "implemented": true,
+    "executedAgainstProduction": false,
+    "createRoute": "POST /api/backup/pdim/create",
+    "statusRoute": "GET /api/backup/pdim/jobs/:jobId",
+    "protection": "authenticated admin, verified 2FA assurance, and CSRF",
+    "sourceAuthority": "owned in-process local PDIM only; configured-backend, listener, port, path, and pinned-inode mismatch fail closed",
+    "runtimePackaging": "deployment build input allowlists the worker/helper sources; production uses required standalone dist/retained-pdim-recovery-worker.mjs; TypeScript/tsx is development-only; private-storage helper is statically included in the server bundle"
+  }
+}

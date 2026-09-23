@@ -44,6 +44,22 @@ import path from "path";
 export const CAPSULE_COMPRESSION_LEVEL = 19;
 export const CAPSULE_COMPRESSION_ID = `zstd-${CAPSULE_COMPRESSION_LEVEL}`;
 
+function sha256FileSync(file: string): string {
+  const hash = createHash("sha256");
+  const buffer = Buffer.allocUnsafe(1024 * 1024);
+  const descriptor = fs.openSync(file, "r");
+  try {
+    for (;;) {
+      const bytesRead = fs.readSync(descriptor, buffer, 0, buffer.length, null);
+      if (bytesRead === 0) break;
+      hash.update(buffer.subarray(0, bytesRead));
+    }
+  } finally {
+    fs.closeSync(descriptor);
+  }
+  return hash.digest("hex");
+}
+
 function zstdCompressArgs(threads: number): string[] {
   // `-T0` tells zstd to claim every core on the machine for ITS OWN
   // compression. That is correct when only one capsule packs at a time, but
@@ -72,6 +88,8 @@ export interface PackCapsuleOptions {
    * machine's cores instead of leaving every job to claim all of them.
    */
   threads?: number;
+  /** Files that must be hash-verified inside `dir` and recorded in the capsule manifest. */
+  requiredMembers?: Array<{ path: string; bytes: number; sha256: string }>;
 }
 
 export interface PackCapsuleResult {
@@ -108,10 +126,33 @@ export function packCapsule({
   dir,
   capsule,
   threads = 0,
+  requiredMembers = [],
 }: PackCapsuleOptions): Promise<PackCapsuleResult | null> {
   return new Promise((resolveOne, rejectOne) => {
     const abs = path.resolve(root, dir);
     if (!fs.existsSync(abs)) return resolveOne(null);
+
+    for (const member of requiredMembers) {
+      const memberPath = path.resolve(abs, member.path);
+      if (
+        memberPath !== abs &&
+        !memberPath.startsWith(`${abs}${path.sep}`)
+      ) {
+        return rejectOne(new Error(`required capsule member escapes ${dir}: ${member.path}`));
+      }
+      const stat = fs.statSync(memberPath, { throwIfNoEntry: false });
+      if (!stat?.isFile() || stat.size !== member.bytes) {
+        return rejectOne(
+          new Error(`required capsule member missing or wrong size: ${dir}/${member.path}`),
+        );
+      }
+      const actualSha256 = sha256FileSync(memberPath);
+      if (actualSha256 !== member.sha256) {
+        return rejectOne(
+          new Error(`required capsule member SHA-256 mismatch: ${dir}/${member.path}`),
+        );
+      }
+    }
 
     const capsulePath = path.resolve(root, capsule);
     console.log(
@@ -165,7 +206,12 @@ export function packCapsule({
       fs.writeFileSync(
         manifestPath,
         JSON.stringify(
-          { compression: CAPSULE_COMPRESSION_ID, sha256, dir },
+          {
+            compression: CAPSULE_COMPRESSION_ID,
+            sha256,
+            dir,
+            requiredMembers,
+          },
           null,
           2,
         ),

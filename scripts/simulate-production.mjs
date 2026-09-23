@@ -17,7 +17,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, readlinkSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, readlinkSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
@@ -328,6 +328,8 @@ async function copyFilteredTree() {
     "./*.log",
     "./*.pdim",
     "./*.manifest.json",
+    "./external/maxcore/artifacts/ai-training-server/ai_model/weights/*.pt",
+    "./external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
     "./dns-node/keys",
     "./dns-node/keys/*",
     "./.env",
@@ -351,6 +353,44 @@ async function copyFilteredTree() {
   ]);
   if (tarResult.code !== 0 || extractResult.code !== 0) {
     throw new Error(`filtered copy failed (tar=${tarResult.code}, extract=${extractResult.code}): ${errors}`);
+  }
+  // Checkpoints are gitignored runtime artifacts. Exclude every .pt file from
+  // the broad source copy, then admit only the immutable manifest-bound serving
+  // checkpoint so unrelated generated weights or secrets cannot hitchhike.
+  const releaseManifestRelative =
+    "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json";
+  const releaseManifest = JSON.parse(readFileSync(join(root, releaseManifestRelative), "utf8"));
+  const requiredModelRelative =
+    "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt";
+  const releaseSourceRelative =
+    "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt";
+  if (
+    releaseManifest.schemaVersion !== 1 ||
+    releaseManifest.sourcePath !== releaseSourceRelative ||
+    releaseManifest.sourceGitBlob !== "6c42ee77db0ed344e62b4cf86ad1353c79e818a0" ||
+    releaseManifest.path !== requiredModelRelative ||
+    releaseManifest.capability !== "numerical-inference" ||
+    releaseManifest.qualityClaim !== "not-evaluated" ||
+    !Number.isSafeInteger(releaseManifest.bytes) ||
+    !/^[0-9a-f]{64}$/.test(releaseManifest.sha256 || "")
+  ) {
+    throw new Error("filtered copy refused an invalid model release manifest");
+  }
+  const sourceModel = join(root, releaseSourceRelative);
+  const copiedModel = join(copyRoot, releaseSourceRelative);
+  if (!existsSync(sourceModel) || statSync(sourceModel).size !== releaseManifest.bytes) {
+    throw new Error("filtered copy is missing the manifest-bound immutable model source");
+  }
+  if (await hashFile(sourceModel) !== releaseManifest.sha256) {
+    throw new Error("filtered copy source model does not match its release manifest");
+  }
+  mkdirSync(dirname(copiedModel), { recursive: true });
+  copyFileSync(sourceModel, copiedModel);
+  if (
+    statSync(copiedModel).size !== releaseManifest.bytes ||
+    await hashFile(copiedModel) !== releaseManifest.sha256
+  ) {
+    throw new Error("filtered copy model checkpoint changed during explicit copy");
   }
 }
 
@@ -495,6 +535,8 @@ async function main() {
       "package.json",
       "script/build.ts",
       "external/maxcore/artifacts/ai-training-server/server.py",
+      "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+      "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
       "external/pdim/artifacts/api-server/src/index.ts",
     ];
     report.copyIntegrity.checked = [];

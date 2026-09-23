@@ -613,6 +613,16 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       return;
     }
 
+    // Session/auth bootstrap responses are request-specific even before a user
+    // identity exists. In particular, /api/csrf-token binds a freshly generated
+    // response body to a Set-Cookie value. Caching it under the shared "anon"
+    // key can pair one client's cached body with another client's new cookie.
+    // Keep the whole auth namespace out of this general response cache.
+    if (req.path === "/api/csrf-token" || req.path.startsWith("/api/auth/")) {
+      next();
+      return;
+    }
+
     // A kit can be unpublished at any moment. Its public endpoint is
     // anonymous, so a per-user write invalidation cannot reliably evict an
     // already-cached anonymous response on every worker. Never cache this
@@ -680,7 +690,11 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     // typeof res.json resolves to Express's `(body?: any) => Response`, so the
     // override is fully type-safe without suppressing lint rules.
     const jsonOverride: typeof res.json = function cachedJson(body) {
-      if (res.statusCode >= 200 && res.statusCode < 300) {
+      // Cookie-setting responses are inherently client/session-specific and
+      // must never enter either cache tier, regardless of which route emitted
+      // them. This also protects future CSRF bootstrap aliases.
+      const setsCookie = res.getHeader("Set-Cookie") !== undefined;
+      if (res.statusCode >= 200 && res.statusCode < 300 && !setsCookie) {
         const etag = generateETag(body);
         apiCache?.set(
           cacheKey,

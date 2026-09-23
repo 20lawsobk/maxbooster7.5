@@ -1,7 +1,7 @@
 {
   "reportVersion": 1,
-  "startedAt": "2026-09-23T10:23:46.618Z",
-  "completedAt": "2026-09-23T10:24:35.290Z",
+  "startedAt": "2026-09-23T15:15:36.128Z",
+  "completedAt": "2026-09-23T15:19:20.522Z",
   "status": "pass",
   "liveSource": true,
   "durableBackupCreated": true,
@@ -19,41 +19,41 @@
   "evidence": {
     "source": {
       "serverMajor": 17,
-      "tableCount": 311,
-      "schemaDefinitionRecordCount": 6702,
-      "schemaFingerprint": "e73595fefdb782ace008330169408c7c5b2714205c57f21f2c9e532471e18351",
+      "tableCount": 321,
+      "schemaDefinitionRecordCount": 6864,
+      "schemaFingerprint": "3ff3148f2b151dfb74684463507bed43979505b66207b068373625333f7f63dd",
       "schemaSections": {
         "relations": {
-          "count": 1001,
-          "fingerprint": "d4a96e5bb55c2f3d3c06401375aa8f62abbcd0b97b41a190e812610ffa5a86b0"
+          "count": 1026,
+          "fingerprint": "78a147e20af2010ea2f297c7596368c71f3df605eaf6a8db8fe409b1f8e28e83"
         },
         "columns": {
-          "count": 4617,
-          "fingerprint": "9a19dcb4f45cc3bdcd218b951d63d115f5e35afd4ebcc827708eb9fca8b82840"
+          "count": 4709,
+          "fingerprint": "11b82bcba71d1b1211e9d3ede461d27b51faf8952763995eb650a2bc185afd79"
         },
         "types": {
           "count": 0,
           "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
         },
         "constraints": {
-          "count": 394,
-          "fingerprint": "dbc6e7c988ea00d8eeee73bd7b51601bbfb818848a70b0cf28f480e66aa94338"
+          "count": 419,
+          "fingerprint": "a90fd8605021e5481ef10bd65d88857029b585977505afced43dbd3023c1c7e6"
         },
         "indexes": {
-          "count": 676,
-          "fingerprint": "6b2f669f68eead4b3d59b5f783285d09aee93639441f37e8be9294421af26731"
+          "count": 691,
+          "fingerprint": "9d1a749eb2587efc0934c5351c648011f67b6f614bda04bb93ff0682a68fdc76"
         },
         "functions": {
-          "count": 0,
-          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          "count": 2,
+          "fingerprint": "da9abec49ba1fe1fc4d13da1241e12de7c7e6bdc0d44991cf9599d9cc08f0c62"
         },
         "sequences": {
           "count": 14,
           "fingerprint": "26b8c586bcc85f4d5a1580d103c965f2c9f26fb7b545d58328f664b578613709"
         },
         "triggers": {
-          "count": 0,
-          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          "count": 3,
+          "fingerprint": "9b154857aeb2f23c860a2ed1e57cb23c8a00cd8d2c1d9b31ecfdca8563ecca6b"
         },
         "policies": {
           "count": 0,
@@ -63,8 +63,8 @@
     },
     "dump": {
       "durability": "uncommitted",
-      "bytes": 27370757,
-      "sha256": "9c2853a60b10f5fe92fa86efd3195f1c7254717a49a526d55b7864ba6e5b0c6b",
+      "bytes": 27469691,
+      "sha256": "ed904938c6c661132fcbe45bf6af13133eb732c9b4c6c851d1a9f8acea31c4f6",
       "sourceVersion": "17.11",
       "consistentSnapshot": true
     },
@@ -78,34 +78,34 @@
         "anonymousStatus": 403,
         "canaryRemoved": true
       },
-      "prefix": "private-database-recovery/2026-09-23T10-24-30-022Z-a98e2377-5121-4c67-bace-58f145bdea3d",
+      "prefix": "private-database-recovery/2026-09-23T15-19-12-586Z-b2b51cdf-567c-467b-8d81-49fa71d92c3f",
       "dumpObject": {
-        "name": "private-database-recovery/2026-09-23T10-24-30-022Z-a98e2377-5121-4c67-bace-58f145bdea3d/source.sql",
-        "generation": "1790159070415781",
-        "crc32c": "2JG3qQ==",
-        "size": "27370757"
+        "name": "private-database-recovery/2026-09-23T15-19-12-586Z-b2b51cdf-567c-467b-8d81-49fa71d92c3f/source.sql",
+        "generation": "1790176753074258",
+        "crc32c": "877KIQ==",
+        "size": "27469691"
       },
       "manifestObject": {
-        "name": "private-database-recovery/2026-09-23T10-24-30-022Z-a98e2377-5121-4c67-bace-58f145bdea3d/manifest.json",
-        "generation": "1790159070554329",
-        "crc32c": "fQGoMw==",
+        "name": "private-database-recovery/2026-09-23T15-19-12-586Z-b2b51cdf-567c-467b-8d81-49fa71d92c3f/manifest.json",
+        "generation": "1790176753238982",
+        "crc32c": "dTv1zg==",
         "size": "1168",
-        "sha256": "378b4ae67b8e112c6cba254bdf1ff76b071e97ca37980fb7ae5e80c83a64ba29"
+        "sha256": "8abe49bce6afc4f7f4272baef2fe97f9ca89ac225d4cb82ab9b0f47f2701a20b"
       },
       "readback": {
-        "sha256": "9c2853a60b10f5fe92fa86efd3195f1c7254717a49a526d55b7864ba6e5b0c6b",
-        "crc32c": "2JG3qQ==",
-        "bytes": 27370757
+        "sha256": "ed904938c6c661132fcbe45bf6af13133eb732c9b4c6c851d1a9f8acea31c4f6",
+        "crc32c": "877KIQ==",
+        "bytes": 27469691
       },
       "restoreInputWasGenerationBoundReadback": true,
-      "sourceRevision": "126bc69b7cf525cb3d16cd7a641d352b2e14e5c2",
-      "currentSourceHash": "4e3b029be319c834b2dc8fd7fd10a4bbaad4605506f20f115b9a06262358d75f"
+      "sourceRevision": "7c3ffa434314c22fcfd7aee39502444bc3bff5df",
+      "currentSourceHash": "617750ea33753f39254bb0c3ac70e3f9ef1fe6f23172364512d9896842c34c06"
     },
     "restore": {
       "targetMajor": 17,
-      "schemaDefinitionRecordCount": 6702,
-      "tableCount": 311,
-      "aggregateRowCount": "44677",
+      "schemaDefinitionRecordCount": 6864,
+      "tableCount": 321,
+      "aggregateRowCount": "44868",
       "exactPerTableCountsMatched": true,
       "exactPerTableContentHashesMatched": true,
       "targetIdentityMatched": true,
@@ -136,7 +136,7 @@
     {
       "name": "retained generation readback matches dump",
       "status": "pass",
-      "detail": "27370757 bytes matched CRC32C and SHA-256"
+      "detail": "27469691 bytes matched CRC32C and SHA-256"
     },
     {
       "name": "restore target identity is exact",
@@ -151,22 +151,22 @@
     {
       "name": "restored schema fingerprint matches source snapshot",
       "status": "pass",
-      "detail": "6702 canonical schema-definition records matched"
+      "detail": "6864 canonical schema-definition records matched"
     },
     {
       "name": "restored table inventory matches source snapshot",
       "status": "pass",
-      "detail": "311 table row counts matched exactly"
+      "detail": "321 table row counts matched exactly"
     },
     {
       "name": "restored row content hashes match source snapshot",
       "status": "pass",
-      "detail": "311 deterministic per-table content hashes matched"
+      "detail": "321 deterministic per-table content hashes matched"
     },
     {
       "name": "restored database is nonempty",
       "status": "pass",
-      "detail": "6702 canonical schema-definition records restored"
+      "detail": "6864 canonical schema-definition records restored"
     }
   ],
   "failures": []

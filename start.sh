@@ -152,6 +152,20 @@ else
   echo "[start.sh] dist/pdim-restore.mjs not found — skipping PDIM restore"
 fi
 
+# A configured loopback REDIS_URL is an owned BullMQ dependency. External Redis
+# remains operator-managed. Start only the local instance, require PONG before
+# workers can boot, and retain its append-only/RDB state under data/redis.
+source "$_SCRIPT_DIR/scripts/redis-supervisor.sh"
+if ! redis_supervisor_start "$_NODE_BIN" "$_SCRIPT_DIR"; then
+  echo "[start.sh] FATAL: configured loopback Redis is unavailable" >&2
+  exit 1
+fi
+# Redis is already live while the remaining prerequisites are checked. Ensure
+# any later startup failure stops only the process this launcher owns.
+trap redis_supervisor_cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 # ── 3. Activate Python virtual environment ────────────────────────────────────
 # Check ./python_runtime/ first (build artifact created by build.sh, not in
 # .dockerignore), then fall back to .venv/ (dev environment).
@@ -304,7 +318,24 @@ export NODE_ENV="production"
 # Prefer cluster entry (multi-worker); fall back to single-process server
 if [ -f "dist/cluster.mjs" ]; then
   echo "[start.sh] starting node dist/cluster.mjs"
-  exec "$_NODE_BIN" --max-old-space-size="$_PRIMARY_HEAP_MB" dist/cluster.mjs
+  _APP_PID=""
+  _shutdown_runtime() {
+    if [ -n "$_APP_PID" ] && kill -0 "$_APP_PID" 2>/dev/null; then
+      kill -TERM "$_APP_PID" 2>/dev/null || true
+      wait "$_APP_PID" 2>/dev/null || true
+    fi
+    redis_supervisor_cleanup
+  }
+  trap _shutdown_runtime EXIT
+  trap '_shutdown_runtime; exit 130' INT
+  trap '_shutdown_runtime; exit 143' TERM
+  "$_NODE_BIN" --max-old-space-size="$_PRIMARY_HEAP_MB" dist/cluster.mjs &
+  _APP_PID=$!
+  set +e
+  wait "$_APP_PID"
+  _APP_STATUS=$?
+  set -e
+  exit "$_APP_STATUS"
 else
   echo "[start.sh] FATAL: required dist/cluster.mjs missing — run npm run build first" >&2
   exit 1

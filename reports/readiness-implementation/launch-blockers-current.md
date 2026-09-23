@@ -1,5 +1,60 @@
 # Current launch blockers and implemented corrections
 
+## Latest continuation: running application, verified model, remaining external gates
+
+This section supersedes conflicting earlier point-in-time observations below.
+
+- The screenshot's startup failure is fixed: app local port 5000 maps to public
+  80; Redis is explicitly private, with no external port. The checker accepts
+  legitimate private entries and rejects internal services on any public port.
+- Redis now has an owned loopback lifecycle in development and production,
+  requires PONG before consumers start, persists its queue data, and shuts down
+  only its owned child. Runtime shell helpers survive deployment packaging.
+- After a fresh retained backup and restored-copy rehearsal, the exact three
+  worker migrations and nine additional readiness migrations were applied
+  atomically in their respective approved batches. All 31 readiness tables and
+  234 columns exist. Existing commerce and session schemas were preserved.
+  See `worker-schema-migration-live-receipt.json` and
+  `readiness-nine-migration-live-receipt.json` for pinned hashes and external
+  immutable-generation receipts.
+- Application startup succeeded, the landing page rendered, health returned
+  200, and readiness reported database/Redis/routes/MaxCore `ok` (audit was
+  still `unknown: initializing` at capture). The owned Python model health
+  returned `model_loaded: true`. This is development, not published evidence.
+- The original checkpoint passed safe strict loading and two actual serving
+  forwards with finite identical logits. Its active copy is restored and the
+  original preserved. A release manifest and required capsule member bind
+  checkpoint bytes to the production build. Held-out quality is not claimed.
+- The real CSRF cache collision is fixed in production middleware; no test
+  cache-buster remains. Isolated authenticated load passed 150/150 requests:
+  steady P95/P99 273.86/329.54ms, spike 396.74/492.55ms. MaxCore and real
+  providers were excluded from this load harness.
+- Stripe account and catalog read-only acceptance passed. Too Lost account,
+  catalog, releases and analytics reads passed; earnings returned a scope 403.
+  OAuth scopes and complete release pagination are corrected in source.
+- Protected admin/verified-2FA/CSRF PDIM recovery jobs now retain private backups,
+  read exact generations back and verify through an independent restored worker.
+  Production packaging includes that worker. Actual production-data execution
+  remains pending; the empty development store does not establish production
+  content status.
+
+### Six-gate status
+
+1. **Model serving:** verified locally; production incorporation still needs
+   publication. Full media acceptance and held-out quality are not claimed.
+2. **Runtime acceptance:** startup and isolated auth/load pass. Full packed
+   cold-image/load/soak and controlled sidecar restart acceptance remain open.
+3. **PDIM recovery:** implementation and isolated proof pass; execute the protected
+   retained recovery job against the published authoritative store.
+4. **Credential custody/rotation:** owner action remains; live Stripe and Neon
+   runtime configuration is not confirmed as Replit Secrets. Working credentials
+   were not deleted, exposed or silently replaced.
+5. **Provider/finance acceptance:** reconnect Too Lost with `read:earnings`;
+   real delivery/payment lifecycle and historical financial reconciliation remain
+   separate from the passing simulations/read-only checks.
+6. **Publication:** owner must publish, followed by artifact-bound verification.
+   No publish was performed and no blanket launch-ready claim is made.
+
 ## Superseding retained-recovery and commerce rollout result
 
 The owner's explicit Replit App Storage bucket is accessible. Managed App
