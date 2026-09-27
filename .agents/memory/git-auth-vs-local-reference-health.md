@@ -22,6 +22,10 @@ current tree as an API-created commit collapses local history and requires
 explicit user approval. Never accept an unverified SSH host key to bypass a
 failed PAT-backed push.
 
+GitHub push protection checks every outgoing commit, so removing a detected
+secret only from the current tree is insufficient. Scrub flagged material from
+the pushed history; do not use one-off secret-unblock links.
+
 **Why:** A connected GitHub API could read the target repo while the local
 credential-backed transport was rejected or routed through an unverified SSH
 host.
