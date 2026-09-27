@@ -718,8 +718,13 @@ class HyperGPU:
     def _model(self, kind: str, flops: float, kv_size: float = 0.0,
                bytes_moved: float = 0.0, precision: str = "fp16") -> None:
         if self.silicon is not None:
-            self.silicon.model_op(kind, flops, kv_size=kv_size,
-                                  bytes_moved=bytes_moved, precision=precision)
+            try:
+                self.silicon.model_op(kind, flops, kv_size=kv_size,
+                                     bytes_moved=bytes_moved, precision=precision)
+            except Exception:
+                # Architectural estimates must never abort real execution.
+                import logging
+                logging.getLogger(__name__).exception("Silicon telemetry failed")
 
     def silicon_report(self):
         return self.silicon.report() if self.silicon is not None else None

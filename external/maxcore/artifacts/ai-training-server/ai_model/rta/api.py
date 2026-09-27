@@ -53,12 +53,18 @@ def _get_compute() -> RTACompute:
 # ── IMAGE (IRC) ────────────────────────────────────────────────────────────
 def render_image(color_scheme: str = "dark_neon", mood: str = "cinematic",
                  width: int = 256, height: int = 256, samples: int = 4,
-                 max_bounces: int = 2, seed: int = 0) -> np.ndarray:
-    """Path-trace a hero image. Returns an ``HxWx3`` uint8 array (sRGB)."""
+                  max_bounces: int = 2, seed: int = 0,
+                  prompt: str = "") -> np.ndarray:
+    """Path-trace only scenes representable by the tracer; never claim a
+    palette-derived sphere study depicts an unrelated requested subject.
+    """
+    if not prompt.strip():
+        raise ValueError("RTA image scene requires the original subject prompt; mood and seed cannot encode it")
     aspect = width / float(height) if height else 1.0
     graph = NodeGraph(id="irc", nodes=[
         Node(id="scene", type="IRC_SCENE_BUILD",
-             params={"color_scheme": color_scheme, "mood": mood, "seed": seed, "aspect": aspect}),
+              params={"color_scheme": color_scheme, "mood": mood, "seed": seed,
+                      "aspect": aspect, "prompt": prompt}),
         Node(id="trace", type="IRC_PATH_TRACE", inputs=["scene"],
              params={"width": width, "height": height, "samples": samples,
                      "max_bounces": max_bounces, "seed": seed}),
@@ -105,7 +111,8 @@ def spectral_clean_audio(samples: np.ndarray, sample_rate: int,
 def self_test() -> dict:
     """Fast smoke test proving every path really runs on the Digital GPU."""
     before = global_op_counts().get("gemm", 0)
-    img = render_image(width=48, height=48, samples=1, max_bounces=1, seed=1)
+    img = render_image(width=48, height=48, samples=1, max_bounces=1,
+                       seed=1, prompt="abstract spheres")
     frame = np.full((16, 16, 3), 120, dtype=np.uint8)
     graded = grade_video_frame(frame, grade="neon")
     tone = 0.05 * np.sin(2 * np.pi * 220 * np.arange(4096) / 8000.0)

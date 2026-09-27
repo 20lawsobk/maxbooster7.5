@@ -151,7 +151,9 @@ def render_video(req: VideoRequest) -> VideoResult:
         bs = int(bs * s)
         cs = int(cs * s)
 
-    dur = max(5.0, min(req.duration, 30.0))
+    dur = min(req.duration, 30.0)
+    if dur <= 0:
+        return VideoResult(success=False, error="Video duration must be positive")
     hook_end = dur * 0.45
     body_start = dur * 0.25
     body_end = dur * 0.75

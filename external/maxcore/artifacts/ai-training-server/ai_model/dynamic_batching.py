@@ -46,6 +46,7 @@ import queue
 import threading
 import time
 from typing import Callable
+from .adaptive_concurrency import INFERENCE_GATE
 
 # available_memory_bytes import removed: the Digital GPU backend is independent
 # of Replit's host environment — host RAM is not a valid batch-size signal.
@@ -241,12 +242,15 @@ class GenerateCoalescer:
             return self._batch_fn(rows)
 
         try:
-            if self._gpu_pool is not None:
-                self.stats["gpu_lives"] += 1
-                with self._gpu_pool.spawn_sync(f"batch-{self.stats['batches']}") as _glife:
+            # Submitters do not hold slots or idle GPU lives while waiting.
+            # Admit the executing batch first, then allocate exactly one life.
+            with INFERENCE_GATE.slot():
+                if self._gpu_pool is not None:
+                    self.stats["gpu_lives"] += 1
+                    with self._gpu_pool.spawn_sync(f"batch-{self.stats['batches']}"):
+                        outs = _forward()
+                else:
                     outs = _forward()
-            else:
-                outs = _forward()
 
             if not isinstance(outs, list) or len(outs) != len(batch):
                 raise RuntimeError(
@@ -257,20 +261,12 @@ class GenerateCoalescer:
                 r.result = o
                 r.event.set()
 
-        except Exception:
-            # One bad batch must never fail every caller — fall back to
-            # individual single-sequence generate for each row.
+        except Exception as exc:
+            # A failed scoped batch must not silently rerun inference outside
+            # its gate/lifecycle (or disguise a canonical PDIM failure).
             for r in batch:
-                if r.abandoned:
-                    r.event.set()
-                    continue
-                self.stats["fallbacks"] += 1
-                try:
-                    r.result = self._fallback_fn(r.row)
-                except BaseException as exc:
-                    r.error = exc
-                finally:
-                    r.event.set()
+                r.error = exc
+                r.event.set()
 
     def _execute_loop(self) -> None:
         """Continuously pull batches from the staging queue and run them.
@@ -293,19 +289,24 @@ def install(creative_model, gpu_pool=None) -> "GenerateCoalescer | None":
     """Wrap ``creative_model.generate`` to route through the pipelined coalescer.
 
     Returns the coalescer (started) when enabled, else None (model untouched).
-    The wrapper signature mirrors ``CreativeModel.generate`` exactly so existing
-    call sites behave identically.  On any coalescer error the wrapper falls
-    back to the original generate so generation can never break.
+    The wrapper signature mirrors ``CreativeModel.generate``. Execution errors
+    propagate; they never trigger an unscoped second inference.
 
     Args:
         creative_model: the model whose ``.generate`` will be wrapped.
         gpu_pool: optional ``PocketGPUPool`` — when supplied each batched
                   forward gets its own GPU life (born → working → dead).
     """
-    if not is_enabled():
-        return None
-
     original_generate = creative_model.generate
+    if not is_enabled():
+        def unbatched_generate(*args, **kwargs):
+            with INFERENCE_GATE.slot():
+                if gpu_pool is not None:
+                    with gpu_pool.spawn_sync("unbatched-checkpoint"):
+                        return original_generate(*args, **kwargs)
+                return original_generate(*args, **kwargs)
+        creative_model.generate = unbatched_generate
+        return None
 
     def _fallback(row: dict) -> str:
         params = {k: v for k, v in row.items() if k != "prompt"}
@@ -336,18 +337,7 @@ def install(creative_model, gpu_pool=None) -> "GenerateCoalescer | None":
             "repetition_penalty": repetition_penalty,
             "min_length":         min_length,
         }
-        try:
-            return coalescer.submit(row)
-        except Exception:
-            return original_generate(
-                prompt,
-                max_new_tokens=max_new_tokens,
-                temperature=temperature,
-                top_p=top_p,
-                top_k=top_k,
-                repetition_penalty=repetition_penalty,
-                min_length=min_length,
-            )
+        return coalescer.submit(row)
 
     creative_model.generate = wrapped_generate
     return coalescer

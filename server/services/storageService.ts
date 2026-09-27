@@ -9,8 +9,11 @@
  * error) instead of silently reading or writing local files.
  */
 
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 import { logger } from "../logger.js";
+import { db } from "../db.js";
+import { userStorage, userStorageFiles } from "../../shared/schema.js";
+import { eq } from "drizzle-orm";
 
 // Throttle noisy PDIM-unavailable warnings to once per 30 s per operation type
 // so a storage-server outage doesn't flood the log on every upload/delete.
@@ -48,39 +51,56 @@ export interface StorageProvider {
  */
 class PocketDimensionStorageProvider implements StorageProvider {
   private pocket: Record<string, unknown> | null = null;
-  private initPromise: Promise<void>;
-
-  constructor() {
-    this.initPromise = this.init();
-  }
+  private initPromise: Promise<void> | null = null;
 
   private async init(): Promise<void> {
-    try {
-      const { PocketDimensionManager } = await import(
-        "../pocket-dimension/index.js"
-      );
-      const manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
-      this.pocket = await manager?.openPocket("application-storage", {
-        compressionLevel: 9,
-        enableDeduplication: true,
-        enableVersioning: false,
-        chunkSize: 32 * 1024 * 1024,
-      });
-      logger.info(
-        "📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)",
-      );
-    } catch (err) {
-      logger.warn(
-        { err: err },
-        "[Storage] Failed to initialize Pocket Dimension provider:",
-      );
+    // This runs on first I/O, never while the ESM import graph is evaluating.
+    // index.ts/cluster.ts must finish starting the canonical local owner before
+    // handlers can use storage. Eager constructor I/O ran before that await,
+    // swallowed the connection error, and permanently poisoned the singleton.
+    const { PocketDimensionManager } = await import("../pocket-dimension/index.js");
+    const { PdimRedisClient } = await import("../lib/pdimClient.js");
+    const { runtimePorts, loopbackUrl } = await import("../config/ports.js");
+    const local = process.env.PDIM_FORCE_REMOTE !== "1";
+    const execUrl = local
+      ? `${loopbackUrl(runtimePorts.localPdim)}/api/redis/instances/local/exec`
+      : process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL;
+    const token = local
+      ? process.env.PDIM_LOCAL_CHANNEL_TOKEN
+      : process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN;
+    if (!execUrl || !token) {
+      throw new Error(local
+        ? "Canonical local PDIM endpoint requires the inherited private channel token"
+        : "Remote PDIM requires an explicitly configured endpoint and credential");
     }
+    // Bind endpoint and credential together. Do not reuse a singleton that
+    // may have captured stale external env vars before pdimEnvFix ran.
+    const storage = new PdimRedisClient(execUrl, token);
+    const manager = PocketDimensionManager.getInstance("./pocket-dimensions");
+    this.pocket = await manager.openPocket("application-storage", {
+      storage,
+      compressionLevel: 9,
+      enableDeduplication: true,
+      enableVersioning: false,
+      chunkSize: 32 * 1024 * 1024,
+    });
+    logger.info(
+      "📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)",
+    );
   }
 
   private async ensure(): Promise<void> {
-    await this.initPromise;
-    if (!this.pocket)
-      throw new Error("Pocket Dimension storage provider not initialized");
+    if (this.pocket) return;
+    // Single-flight initialization; failures stay visible to this operation.
+    // A later explicit operation may initialize again, but there is no timer,
+    // automatic retry, alternate store, or empty-pocket fallback.
+    const pending = this.initPromise ??= this.init();
+    try {
+      await pending;
+    } catch (error) {
+      if (this.initPromise === pending) this.initPromise = null;
+      throw error;
+    }
   }
 
   async uploadFile(
@@ -113,6 +133,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
       }
       throw new Error(
         `Storage upload failed for key=${key}: ${(err as Error)?.message ?? String(err)}`,
+        { cause: err },
       );
     }
   }
@@ -186,6 +207,56 @@ class PocketDimensionStorageProvider implements StorageProvider {
  */
 class StorageService {
   private provider: StorageProvider;
+  private generatedCommits = new Map<string, Promise<unknown>>();
+
+  /** A stable owner/job/content key makes a lost HTTP acknowledgement retryable.
+   * Completion requires BOTH ownership bookkeeping and a digest-verified read. */
+  async commitGeneratedArtifact(file: Buffer, owner: string, jobId: string,
+    filename: string, contentType: string, metadata: Record<string, unknown>) {
+    if (!owner || !jobId || !file.length) throw new Error("Artifact identity and bytes required");
+    const digest = createHash("sha256").update(file).digest("hex");
+    const identity = createHash("sha256").update(`${owner}\0${jobId}`).digest("hex");
+    const key = `users/${owner}/generated/${identity}/${digest}/${filename}`;
+    const pending = this.generatedCommits.get(key);
+    if (pending) return pending;
+    const commit = (async () => {
+      const [existing] = await db.select().from(userStorageFiles)
+        .where(eq(userStorageFiles.fileKey, key)).limit(1);
+      if (existing && existing.userId !== owner) throw new Error("Artifact ownership mismatch");
+      if (existing?.deletedAt) throw new Error("Generated artifact has been deleted");
+      if (!existing) {
+        await this.provider.uploadFile(file, key, contentType);
+        let [row] = await db.select({ id: userStorage.id }).from(userStorage)
+          .where(eq(userStorage.userId, owner)).limit(1);
+        if (!row) {
+          await db.insert(userStorage).values({ userId: owner, storagePrefix: `users/${owner}` })
+            .onConflictDoNothing();
+          [row] = await db.select({ id: userStorage.id }).from(userStorage)
+            .where(eq(userStorage.userId, owner)).limit(1);
+        }
+        if (!row) throw new Error("Artifact owner storage unavailable");
+        // Keep the deterministic object on bookkeeping failure: a retry repairs it.
+        await db.insert(userStorageFiles).values({
+          userId: owner, storageId: row.id, fileName: filename, fileKey: key,
+          mimeType: contentType, sizeBytes: file.length, folder: "generated",
+          metadata: { ...metadata, sha256: digest, jobId, uploadedVia: "generated-media" },
+        }).onConflictDoNothing();
+      }
+      const [tracked] = await db.select().from(userStorageFiles)
+        .where(eq(userStorageFiles.fileKey, key)).limit(1);
+      if (!tracked || tracked.userId !== owner || tracked.deletedAt) throw new Error("Artifact ownership was not committed");
+      const retrieved = await this.downloadFile(key);
+      if (retrieved.length !== file.length ||
+          createHash("sha256").update(retrieved).digest("hex") !== digest) {
+        throw new Error("PDIM artifact read-back digest mismatch");
+      }
+      return { ...metadata, url: await this.getDownloadUrl(key), storage_key: key,
+        owner_id: owner, job_id: jobId, sha256: digest, size_bytes: file.length,
+        durable: true, retrievable: true };
+    })();
+    this.generatedCommits.set(key, commit);
+    try { return await commit; } finally { this.generatedCommits.delete(key); }
+  }
 
   constructor() {
     logger.info(
@@ -203,6 +274,51 @@ class StorageService {
     const key = `${category}/${randomUUID()}/${filename}`;
     await this.provider.uploadFile(file, key, contentType);
     return key;
+  }
+
+  /** Generated user media is subject to the same quota/deletion tracking as
+   * /api/storage/upload. Roll back the PDIM object if bookkeeping fails. */
+  async uploadGeneratedFile(
+    file: Buffer,
+    userId: string,
+    category: string,
+    filename: string,
+    contentType: string,
+  ): Promise<string> {
+    if (!userId) throw new Error("Generated media owner is required");
+    const key = await this.uploadFile(file, `users/${userId}/${category}`, filename, contentType);
+    try {
+      let [row] = await db.select({ id: userStorage.id })
+        .from(userStorage).where(eq(userStorage.userId, userId)).limit(1);
+      if (!row) {
+        [row] = await db.insert(userStorage)
+          .values({ userId, storagePrefix: `users/${userId}` })
+          .onConflictDoNothing().returning({ id: userStorage.id });
+        if (!row) {
+          [row] = await db.select({ id: userStorage.id })
+            .from(userStorage).where(eq(userStorage.userId, userId)).limit(1);
+        }
+      }
+      if (!row) throw new Error("User storage tracking row could not be created");
+      await db.insert(userStorageFiles).values({
+        userId,
+        storageId: row.id,
+        fileName: filename,
+        fileKey: key,
+        mimeType: contentType,
+        sizeBytes: file.length,
+        folder: category,
+        metadata: { category, uploadedVia: "generated-media" },
+      });
+      return key;
+    } catch (error) {
+      try {
+        await this.deleteFile(key);
+      } catch (cleanupError) {
+        logger.error({ err: cleanupError, key }, "[Storage] Generated media rollback failed");
+      }
+      throw error;
+    }
   }
 
   async uploadFileAtKey(

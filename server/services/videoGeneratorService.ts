@@ -1521,10 +1521,7 @@ export async function generateVideo(
   const scenePromptBase =
     opts.scene_prompt!.trim() ||
     (opts.topic ? `${opts.topic} ${genre} music` : undefined);
-  const scenePrompt =
-    scenePromptBase && awareness?.trendingMoods?.length
-      ? `${scenePromptBase}, ${awareness.trendingMoods.slice(0, 2).join(", ")}`
-      : scenePromptBase;
+  const scenePrompt = scenePromptBase;
 
   // ── AI content generation via Advanced Content Pipeline ──────────────────
   let hook = opts.hook || "";
@@ -1535,14 +1532,11 @@ export async function generateVideo(
   if (!hook && !body && !cta && opts.topic) {
     try {
       const userId = opts.userId || "anonymous";
-      const trendHint = awareness?.contextString
-        ? ` Trend context: ${awareness.contextString.slice(0, 300)}`
-        : "";
       const pipelineResult =
         await contentQualityPipeline.generateWithAdvancedAI(
           userId,
           {
-            topic: `${opts.topic}${trendHint}`,
+            topic: opts.topic,
             platform,
             genre: genre !== "default" ? genre : undefined,
             artistName: opts.artist_name || "",
@@ -1570,11 +1564,8 @@ export async function generateVideo(
       // because MaxCore is unavailable, surface that — never silently render
       // generic placeholder copy in its place.
       const { AIUnavailableError } = await import("../lib/aiSource.js");
-      if (e instanceof AIUnavailableError) throw e;
-      logger.warn(
-        { err: e },
-        "[VideoGen] Pipeline content generation failed, using defaults:",
-      );
+      if (e instanceof AIUnavailableError || (e as { status?: number })?.status === 503) throw e;
+      throw e;
     }
   }
 

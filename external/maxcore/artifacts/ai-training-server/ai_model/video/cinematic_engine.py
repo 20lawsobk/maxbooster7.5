@@ -4,11 +4,13 @@ import sys
 import uuid
 import time
 import threading
+import math
 from dataclasses import dataclass
 from typing import Optional, List, Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextvars import copy_context
 
-from .scenes import SceneConfig, render_scene, composite_scenes, cleanup_temp, _extract_last_frame_b64
+from .scenes import SceneConfig, render_scene, composite_scenes, cleanup_temp, _extract_last_frame_b64, _get_clip_duration
 from ..adaptive_concurrency import RENDER_GATE
 from ..media_contract import require_audio_stream
 from .ffmpeg_util import run_ffmpeg
@@ -70,15 +72,34 @@ def render_cinematic_open(
     if not scenes:
         return CinematicResult(success=False, error="No scenes provided")
 
-    dur = max(6.0, min(total_duration, 300.0))
+    dur = float(total_duration)
+    if not math.isfinite(dur) or dur <= 0 or dur > 300:
+        return CinematicResult(success=False, error="Video duration must be positive and at most 300 seconds")
+    fps = scenes[0].fps
+    if fps <= 0 or any(scene.fps != fps for scene in scenes):
+        return CinematicResult(success=False, error="Scenes must use the same positive frame rate")
+    frame_count = round(dur * fps)
+    if frame_count < len(scenes):
+        return CinematicResult(success=False, error="Video duration too short for scene count")
+    dur = frame_count / fps
     if len(scenes) > 1:
-        overlap = max(0.1, min(float(transition_dur), 1.0))
-        # xfade consumes overlap from each boundary. Keep narration and the
-        # requested total duration intact instead of trimming the end.
-        deficit = dur + overlap * (len(scenes) - 1) - sum(s.duration for s in scenes)
-        if deficit > .001:
-            for scene in scenes:
-                scene.duration += deficit / len(scenes)
+        overlap = max(1 / fps, min(float(transition_dur), 1.0, dur / (2 * len(scenes))))
+        # Allocate integral frames: each overlap is consumed once by xfade.
+        overlap_frames = max(1, round(overlap * fps))
+        available = frame_count + overlap_frames * (len(scenes) - 1)
+        weights = [max(0.0, s.duration) for s in scenes]
+        if not sum(weights):
+            return CinematicResult(success=False, error="Scene durations must be positive")
+        extra = available - len(scenes) * (overlap_frames + 1)
+        if extra < 0:
+            return CinematicResult(success=False, error="Video duration too short for transitions")
+        frames = [overlap_frames + 1 + int(extra * w / sum(weights)) for w in weights]
+        frames[-1] += available - sum(frames)
+        for scene, count in zip(scenes, frames):
+            scene.duration = count / fps
+        transition_dur = overlap_frames / fps
+    else:
+        scenes[0].duration = dur
     if audio_path:
         try:
             require_audio_stream(audio_path)
@@ -140,7 +161,11 @@ def render_cinematic_open(
         workers = max(1, min(RENDER_GATE.capacity, len(scenes)))
         results_map = {}
         with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(_render_one, (i, s)): i for i, s in enumerate(scenes)}
+            # Each joined worker inherits the job's scoped backend; otherwise
+            # kernels silently execute on the default GPU and the job snapshot
+            # records an unused life. The executor drains before scope exit.
+            futures = {executor.submit(copy_context().run, _render_one, (i, s)): i
+                       for i, s in enumerate(scenes)}
             for future in as_completed(futures):
                 scene_idx = futures[future]
                 try:
@@ -175,13 +200,17 @@ def render_cinematic_open(
             result = run_ffmpeg([
                 "ffmpeg", "-y", "-i", scene_paths[0], "-i", audio_path,
                 "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
+                "-video_track_timescale", str(fps * 1000),
                 "-c:a", "aac", "-af", "apad", "-t", str(dur), output_path,
             ], timeout=120)
             success = result.returncode == 0
         else:
-            import shutil
-            shutil.copy2(scene_paths[0], output_path)
-            success = True
+            result = run_ffmpeg([
+                "ffmpeg", "-y", "-i", scene_paths[0], "-map", "0:v:0",
+                "-c:v", "copy", "-video_track_timescale", str(fps * 1000),
+                output_path,
+            ], timeout=120)
+            success = result.returncode == 0
     else:
         success = composite_scenes(
             scene_paths=scene_paths,
@@ -190,6 +219,8 @@ def render_cinematic_open(
             transition_dur=transition_dur,
             audio_path=audio_path,
             genre=genre,
+            target_duration=dur,
+            target_fps=fps,
         )
 
     cleanup_temp(scene_paths)
@@ -203,6 +234,11 @@ def render_cinematic_open(
 
     if not success:
         return CinematicResult(success=False, error="Failed to composite scenes")
+
+    actual = _get_clip_duration(output_path)
+    if abs(actual - dur) > 0.002:
+        os.remove(output_path)
+        return CinematicResult(success=False, error=f"Video duration mismatch: requested {dur:.3f}s, encoded {actual:.3f}s")
 
     if audio_path:
         try:
@@ -218,7 +254,7 @@ def render_cinematic_open(
         success=True,
         file_path=output_path,
         filename=filename,
-        duration=dur,
+        duration=actual,
         width=width,
         height=height,
         template_name=label or "ai_generated",

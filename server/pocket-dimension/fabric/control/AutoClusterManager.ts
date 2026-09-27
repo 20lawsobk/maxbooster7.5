@@ -6,6 +6,7 @@ import type { ChunkStore } from "../storage/ChunkStore.js";
 import type { NodeId, FabricStorageNode } from "../types.js";
 import { Rebalancer } from "./Rebalancer.js";
 import { logger } from "../../../logger.js";
+import { randomUUID } from "node:crypto";
 
 export interface ClusterRules {
   minNodes: number;
@@ -88,12 +89,13 @@ export class AutoClusterManager {
 
   private emaVelocity = 0;
   private emaInitialized = false;
+  private evaluation: ReturnType<AutoClusterManager["evaluateOnce"]> | null = null;
 
   constructor(
     private nodeRegistry: NodeRegistry,
-    _chunkIndex: ChunkIndex,
-    _placement: PlacementStrategy,
-    _chunkStoreFactory: (nodeId: NodeId) => ChunkStore,
+    private chunkIndex: ChunkIndex,
+    private placement: PlacementStrategy,
+    private chunkStoreFactory: (nodeId: NodeId) => ChunkStore,
     private onNodeSpawned: (
       nodeId: NodeId,
       pocketName: string,
@@ -110,6 +112,7 @@ export class AutoClusterManager {
   }
 
   start(): void {
+    if (process.env.CLUSTER_WORKER_ID !== undefined && process.env.CLUSTER_WORKER_ID !== "0") return;
     if (this.running) return;
     this.running = true;
     this.intervalId = setInterval(
@@ -146,9 +149,19 @@ export class AutoClusterManager {
     reasons: string[];
     smoothedVelocityBytesPerMs: number;
   }> {
+    if (process.env.CLUSTER_WORKER_ID !== undefined && process.env.CLUSTER_WORKER_ID !== "0") {
+      throw new Error("Only the background worker may mutate PocketFabric topology");
+    }
+    if (this.evaluation) return this.evaluation;
+    this.evaluation = this.evaluateOnce().finally(() => { this.evaluation = null; });
+    return this.evaluation;
+  }
+
+  private async evaluateOnce() {
     const allNodes = await this.nodeRegistry.listAllNodes();
     const pdNodes = allNodes?.filter(
-      (n) => n?.backendType === "pocket-dimension",
+      (n) => n?.backendType === "pocket-dimension" &&
+        !(n.backendConfig as Record<string, unknown>).retired,
     );
     const healthyNodes = pdNodes?.filter((n) => this.isNodeHealthy(n));
 
@@ -217,7 +230,7 @@ export class AutoClusterManager {
       for (let i = 0; i < count; i++) {
         if (!this.canSpawn(pdNodes?.length + totalSpawned + i)) break;
 
-        const pocketName = this.nextPocketName(pdNodes, totalSpawned + i);
+        const pocketName = `fabric-cluster-auto-${randomUUID()}`;
         const region = this.pickRegion(pdNodes, totalSpawned + i);
 
         const node = await this.nodeRegistry.registerNode({
@@ -373,7 +386,24 @@ export class AutoClusterManager {
         `— draining ${pocketName} (${util}% used, ${this.formatBytes(candidate?.usedBytes)})`,
     );
 
-    await this.nodeRegistry.updateNode(candidate?.id, { healthy: false });
+    // Copy and verify every chunk before retiring its source. A partial drain
+    // must remain live, never merely mark a data-bearing node unhealthy.
+    await this.nodeRegistry.updateNode(candidate.id, { healthy: false });
+    let drain: { moved: number; errors: number };
+    try {
+      drain = await this.rebalancer.drainNode(candidate.id);
+    } catch (error) {
+      await this.nodeRegistry.updateNode(candidate.id, { healthy: true });
+      throw error;
+    }
+    if (drain.errors > 0) {
+      await this.nodeRegistry.updateNode(candidate.id, { healthy: true });
+      return [];
+    }
+    await this.nodeRegistry.updateNode(candidate.id, {
+      healthy: false,
+      backendConfig: { ...candidate.backendConfig, retired: true },
+    });
 
     this.pushHistory({
       direction: "down",

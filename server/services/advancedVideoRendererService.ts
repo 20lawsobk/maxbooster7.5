@@ -22,6 +22,7 @@ import {
   getMaxcoreOrigin,
 } from "./maxcoreConnector.js";
 import { ensureMaxCoreAudioAsset } from "./maxcoreAssetTransport.js";
+import { trustedMaxcoreOwner } from "../lib/maxcoreOwnerContext.js";
 import {
   assertSafeSpawnArguments,
   restrictedChildEnvironment,
@@ -39,6 +40,8 @@ async function maxCoreOwnedRequest<T>(
   userId: string,
   init: RequestInit,
 ): Promise<T> {
+  const owner = trustedMaxcoreOwner(userId);
+  if (!owner) throw new AIUnavailableError("video generation requires authenticated ownership");
   if (!MAXCORE_ORIGIN || !MC_AI_KEY) {
     throw new AIUnavailableError("video generation");
   }
@@ -47,10 +50,10 @@ async function maxCoreOwnedRequest<T>(
     response = await fetch(`${MAXCORE_ORIGIN}/api${pathName}`, {
       ...init,
       headers: {
-        Authorization: `Bearer ${MC_AI_KEY}`,
-        "X-MaxCore-User-Id": userId,
-        ...(init.body ? { "Content-Type": "application/json" } : {}),
         ...(init.headers ?? {}),
+        Authorization: `Bearer ${MC_AI_KEY}`,
+        "X-MaxCore-User-Id": owner,
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
       },
       signal: AbortSignal.timeout(45_000),
     });
@@ -95,6 +98,7 @@ function maxcoreAuthHeaders(): Record<string, string> {
   // and 401s the whole request if they're present (see replit.md).
   return {
     Authorization: `Bearer ${MC_AI_KEY}`,
+    ...(trustedMaxcoreOwner() ? { "X-MaxCore-User-Id": trustedMaxcoreOwner()! } : {}),
   };
 }
 
@@ -499,7 +503,7 @@ export async function fetchPhotorealisticImage(
   const imgResp = await fetch(imageUrl, {
     // Bearer ONLY — MaxCore validates X-Admin-Key/X-API-Key schemes first
     // and 401s the whole request if they're present (see replit.md).
-    headers: { Authorization: `Bearer ${MC_AI_KEY}` },
+    headers: maxcoreAuthHeaders(),
     signal: AbortSignal.timeout(30_000),
   });
   if (!imgResp.ok) {

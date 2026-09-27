@@ -55,6 +55,15 @@ export class ChunkIndex {
     await db.delete(fabricChunks).where(eq(fabricChunks.id, chunkId));
   }
 
+  async getChunksByNode(nodeId: NodeId): Promise<FabricChunkLocation[]> {
+    // nodeIds is JSONB; read only this node's locations, not the entire catalog.
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.select().from(fabricChunks).where(
+      sql`${fabricChunks.nodeIds} @> ${JSON.stringify([nodeId])}::jsonb`,
+    );
+    return rows.map(this.rowToChunk);
+  }
+
   async getChunksByObject(objectId: ObjectId): Promise<FabricChunkLocation[]> {
     const rows = await db
       .select()

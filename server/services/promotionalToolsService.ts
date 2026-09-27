@@ -271,6 +271,7 @@ class PromotionalToolsService {
           caption?: string;
           cta?: string;
         }>("/api/generate/content", {
+          ...promoAwareness,
           topic: `Promo card for "${release.title}"`,
           platform: "instagram",
           tone: "promotional",
@@ -280,14 +281,11 @@ class PromotionalToolsService {
             (release?.metadata as Record<string, unknown>)?.artistName ||
             "Unknown Artist",
           release_date: release.releaseDate?.toLocaleDateString(),
-          ...(promoAwareness?.contextString
-            ? { extra_context: promoAwareness.contextString.slice(0, 400) }
-            : {}),
         });
         aiGeneratedText =
           mcCopy?.headline ?? mcCopy?.caption ?? mcCopy?.body ?? null;
-      } catch {
-        /* best-effort — card is created with or without AI copy */
+      } catch (error) {
+        throw error;
       }
     }
 

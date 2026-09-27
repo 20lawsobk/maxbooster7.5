@@ -268,6 +268,9 @@ declare module "express-session" {
 // memory-exhaustion DoS from crafted large request bodies.  Routes that
 // genuinely need larger bodies (studio project auto-save, AI file ingest)
 // register their own express?.json({ limit: '10mb' }) middleware inline.
+// Dedicated peer-authenticated artifact ingress must authenticate BEFORE its
+// larger parser. Browser sessions/public generation keys cannot authorize it.
+app.use((await import("./routes/maxcoreProxy.js")).generatedArtifactRouter);
 app.use(
   express?.json({
     limit: "1mb",
@@ -1103,6 +1106,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   await readinessPool.query(
     "SELECT id,user_id,type,title,message,link,frequency,due_at,state,owner,provider_id,error,updated_at FROM integration_notification_digest LIMIT 0",
   );
+  app.use((await import("./lib/maxcoreOwnerContext.js")).maxcoreOwnerContext);
   await registerRoutes(httpServer, app);
   if (backupsEnabled) {
     const { databaseBackupService } = await import("./services/backup/databaseBackupService.js");

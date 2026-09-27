@@ -19,6 +19,7 @@ import json
 from typing import Any, Dict, List, Optional
 
 from .technique import TechniqueProfile, extract_technique
+from .plan import GenerationPlan, active_plan
 
 
 def _as_text(v: Any) -> str:
@@ -53,6 +54,8 @@ def merge_awareness(req: Any) -> str:
     prompt-engineering instructions the awareness parser would quote verbatim).
     Returns ``""`` when there is no real context. Never raises.
     """
+    from .awareness import require_context
+    internal = require_context(getattr(req, "platform", "general"))
     raw_platform = _as_text(getattr(req, "platform", None))
     platform_awareness = ""
     if raw_platform and raw_platform.lower() not in {"general", "music", "songwriting"}:
@@ -101,17 +104,15 @@ def merge_awareness(req: Any) -> str:
             direction_parts.append(ri.awareness_from_direction(extra_context))
 
         return "\n".join(p for p in (
+            internal,
             f"[CONTROL_INTENT] {envelope_intent}" if envelope_intent else "",
             *direction_parts,
             f"[CONTROL_CONTEXT] {envelope_context}" if envelope_context else "",
             _coerce_aw(getattr(req, "awareness", "")),
             platform_awareness,
         ) if p)
-    except Exception:
-        _aw_raw = getattr(req, "awareness", "")
-        if isinstance(_aw_raw, dict):
-            return (_aw_raw.get("contextString", "") or "").strip()
-        return (_aw_raw or "").strip()
+    except Exception as exc:
+        raise ValueError("Cannot preserve request awareness") from exc
 
 
 @dataclass
@@ -129,6 +130,7 @@ class GenerationContext:
     awareness: str
     technique: Optional[TechniqueProfile] = None
     seed: int = 0
+    plan: Optional[GenerationPlan] = None
 
     # -- renderer mappings ----------------------------------------------------
     def diffusion_meta(self, idea: str, tone: str, brand: str = "",
@@ -172,6 +174,8 @@ class GenerationContext:
     def to_meta(self) -> Dict[str, Any]:
         """Compact, transparent view for API response metadata."""
         out: Dict[str, Any] = {}
+        if self.plan is not None:
+            out["generation_plan"] = self.plan.to_dict()
         try:
             out["brief"] = self.brief.to_dict()
         except Exception:
@@ -210,7 +214,7 @@ def build_context(
     with_audio: bool = False,
     **brief_kwargs: Any,
 ) -> GenerationContext:
-    """Build the unified generation context for one request. Never raises.
+    """Build the unified generation context for one request.
 
     ``brief_kwargs`` are forwarded verbatim to ``request_intelligence.build_brief``
     (each modality supplies its own inherent inputs — topic, goal, tone, themes,
@@ -220,29 +224,18 @@ def build_context(
     """
     from ai_model import request_intelligence as ri
 
-    # Brief construction must never take an endpoint down — content/text now
-    # depend on this path with no local fallback of their own. Degrade to a
-    # minimal brief if the intelligence layer errors. `platform` and `topic` are
-    # REQUIRED by build_brief, so the fallback must supply them (a bare
-    # `build_brief(modality=...)` would itself raise TypeError). As an absolute
-    # last resort, hand back a stub brief with every required field defaulted so
-    # this function keeps its never-raise contract no matter what.
-    _plat = brief_kwargs.get("platform") or "general"
+    # A failed stage must not be replaced by a generic brief that discards
+    # caller context. There is no corrected input to justify an automatic retry.
     try:
         brief = ri.build_brief(modality=modality, **brief_kwargs)
-    except Exception:
-        try:
-            brief = ri.build_brief(
-                modality=modality, platform=_plat,
-                topic=brief_kwargs.get("topic") or "",
-            )
-        except Exception:
-            brief = _stub_brief(modality, _plat)
+    except Exception as exc:
+        raise RuntimeError("Generation brief construction failed") from exc
 
     try:
         awareness = merge_awareness(req)
     except Exception:
         awareness = ""
+    plan = active_plan.get() or GenerationPlan.from_request(req, modality)
 
     technique: Optional[TechniqueProfile] = None
     if with_technique:
@@ -271,4 +264,5 @@ def build_context(
         awareness=awareness,
         technique=technique,
         seed=seed,
+        plan=plan,
     )

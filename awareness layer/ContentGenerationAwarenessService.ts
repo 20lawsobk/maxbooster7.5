@@ -26,6 +26,7 @@
 
 import { XMLParser } from "fast-xml-parser";
 import crypto from "crypto";
+import { getAwarenessContext } from "../server/services/awarenessContext.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -121,6 +122,7 @@ export interface ContentGenerationHints {
 
 /** Full awareness context returned to any generation service */
 export interface ContentAwarenessContext {
+  snapshot_id?: string;
   trendingGenres: string[];
   trendingMoods: string[];
   productionStyles: string[];
@@ -1177,12 +1179,7 @@ class ContentGenerationAwarenessService {
    * Never throws — returns an empty zero-confidence context on any error.
    */
   async getContextForMode(mode: ContentGenerationMode): Promise<ContentAwarenessContext> {
-    try {
-      const base = await this.getOrBuild();
-      return this.builder.applyMode(base, mode);
-    } catch {
-      return this.builder.empty();
-    }
+    return await getAwarenessContext(mode) as unknown as ContentAwarenessContext;
   }
 
   // ── Sync getters (read warm cache only — zero latency) ─────────────────────
@@ -1227,13 +1224,7 @@ class ContentGenerationAwarenessService {
   // ── Internal ───────────────────────────────────────────────────────────────
 
   private async getOrBuild(): Promise<ContentAwarenessContext> {
-    if (this.cache && Date.now() - this.cache.builtAt < CACHE_TTL_MS) {
-      return this.cache.ctx;
-    }
-    const signals = await this.monitor.fetchLiveSignals();
-    const ctx = this.builder.build(signals);
-    this.cache = { ctx, builtAt: Date.now() };
-    return ctx;
+    return this.getContextForMode("content");
   }
 }
 

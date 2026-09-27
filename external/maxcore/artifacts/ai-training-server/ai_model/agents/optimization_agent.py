@@ -24,7 +24,12 @@ class OptimizationAgent:
     def __init__(self, model: CreativeModel):
         self.model = model
 
+    from ai_model.generation.awareness import generation_guard
+
+    @generation_guard
     def run(self, req: OptimizationRequest) -> OptimizationResponse:
+        from ai_model.generation.awareness import require_context, sampling_seed, snapshot_hash
+        awareness = require_context(req.platform, "text")
         platform_token = f"<PLATFORM_{req.platform.upper()}>"
         goal_token = f"<GOAL_{req.goal.upper()}>"
 
@@ -35,7 +40,8 @@ class OptimizationAgent:
             f"Blocks: {req.sheet.blocks}\n"
             f"Suggest optimized revisions.\n"
         )
-        suggestion = self.model.generate(prompt)
+        suggestion = self.model.generate(awareness + "\n" + prompt, seed=sampling_seed(),
+                                         snapshot_hash=snapshot_hash())
         req.sheet.add_agent_note(suggestion)
         req.sheet.add_history("OptimizationAgent applied suggestions")
         return OptimizationResponse(

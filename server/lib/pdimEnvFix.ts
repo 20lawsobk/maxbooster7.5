@@ -15,6 +15,7 @@
 
 import { logger } from "../logger.js";
 import { loopbackUrl, runtimePorts } from "../config/ports.js";
+import { randomBytes } from "node:crypto";
 
 // ── Local PDIM repoint ────────────────────────────────────────────────────────
 // PDIM is an internal subsystem now (server/lib/localPdimServer.ts on :5556).
@@ -28,6 +29,14 @@ if (process.env.PDIM_FORCE_REMOTE !== "1") {
   process.env.STORAGE_HTTP_URL = LOCAL_EXEC_URL;
   process.env.PDIM_EXEC_URL = LOCAL_EXEC_URL;
   process.env.PDIM_HTTP_EXEC_URL = LOCAL_EXEC_URL;
+  // Private loopback transport is not the public PDIM API. No user key is
+  // required, and stale external credentials must not gate the Python client.
+  const channelToken = process.env.PDIM_LOCAL_CHANNEL_TOKEN || randomBytes(32).toString("hex");
+  process.env.PDIM_LOCAL_CHANNEL_TOKEN = channelToken;
+  process.env.STORAGE_BEARER_TOKEN = channelToken;
+  process.env.PDIM_EXEC_TOKEN = channelToken;
+  process.env.PDIM_BEARER_TOKEN = channelToken;
+  process.env.POCKET_DIMENSION_KEY = channelToken;
   if (prev && prev !== LOCAL_EXEC_URL) {
     logger.info(
       `[PDIM] Repointed storage config to the internal PDIM subsystem (${LOCAL_EXEC_URL})`,

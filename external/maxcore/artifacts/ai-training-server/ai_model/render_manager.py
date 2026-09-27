@@ -21,6 +21,9 @@ from datetime import datetime, timezone
 from typing import Dict, Any, Optional, Tuple
 
 from .boostsheets.boostsheet import BoostSheet
+from .media_contract import commit_artifact, RenderCancelled
+from pathlib import Path
+import mimetypes
 
 
 # Jobs older than this (seconds) that have finished are evicted from memory.
@@ -49,7 +52,10 @@ class RenderManager:
 
     _MAX_WORKERS = 2
 
-    def __init__(self):
+    def __init__(self, gpu_pool=None, artifact_committer=None, persist_job=None):
+        self._gpu_pool = gpu_pool
+        self._artifact_committer = artifact_committer or commit_artifact
+        self._persist_job = persist_job
         self._jobs:   Dict[str, Dict[str, Any]] = {}
         self._active: Dict[Tuple[str, str], str] = {}   # (sheet_id, type) -> job_id
         self._lock    = threading.Lock()
@@ -110,12 +116,13 @@ class RenderManager:
         self,
         sheet: BoostSheet,
         image_engine=None,
+        owner_id=None,
     ) -> Dict[str, Any]:
-        key = (sheet.sheet_id, "thumbnail")
+        key = (str(owner_id) + ":" + sheet.sheet_id, "thumbnail")
         with self._lock:
             # Coalesce: if an identical job is already in flight, return it.
             existing = self._active.get(key)
-            if existing and self._jobs.get(existing, {}).get("status") in ("queued", "running"):
+            if existing and self._jobs.get(existing, {}).get("status") in ("queued", "running", "committing"):
                 return {
                     "status":   "coalesced",
                     "job_id":   existing,
@@ -133,10 +140,14 @@ class RenderManager:
                 }
             job_id = str(uuid.uuid4())
             self._set_job_locked(job_id, "thumbnail", sheet.sheet_id, "queued")
+            self._jobs[job_id]["owner_id"] = owner_id
+            if self._persist_job:
+                self._persist_job(dict(self._jobs[job_id]))
             self._active[key] = job_id
 
         sheet.add_history(f"Thumbnail render queued — job {job_id}")
-        self._executor.submit(self._run_thumbnail, job_id, key, sheet, image_engine)
+        self._executor.submit(self._run_with_gpu, self._run_thumbnail,
+                              job_id, key, sheet, image_engine)
         return {"status": "queued", "job_id": job_id, "sheet_id": sheet.sheet_id, "type": "thumbnail"}
 
     def render_video(
@@ -144,12 +155,13 @@ class RenderManager:
         sheet: BoostSheet,
         video_agent=None,
         video_agent_request=None,
+        owner_id=None,
     ) -> Dict[str, Any]:
-        key = (sheet.sheet_id, "video")
+        key = (str(owner_id) + ":" + sheet.sheet_id, "video")
         with self._lock:
             # Coalesce: identical in-flight job → return existing.
             existing = self._active.get(key)
-            if existing and self._jobs.get(existing, {}).get("status") in ("queued", "running"):
+            if existing and self._jobs.get(existing, {}).get("status") in ("queued", "running", "committing"):
                 return {
                     "status":   "coalesced",
                     "job_id":   existing,
@@ -167,11 +179,15 @@ class RenderManager:
                 }
             job_id = str(uuid.uuid4())
             self._set_job_locked(job_id, "video", sheet.sheet_id, "queued")
+            self._jobs[job_id]["owner_id"] = owner_id
+            if self._persist_job:
+                self._persist_job(dict(self._jobs[job_id]))
             self._active[key] = job_id
 
         sheet.add_history(f"Video render queued — job {job_id}")
         self._executor.submit(
-            self._run_video, job_id, key, sheet, video_agent, video_agent_request
+            self._run_with_gpu, self._run_video,
+            job_id, key, sheet, video_agent, video_agent_request
         )
         return {"status": "queued", "job_id": job_id, "sheet_id": sheet.sheet_id, "type": "video"}
 
@@ -206,13 +222,100 @@ class RenderManager:
     def shutdown(self, wait: bool = False):
         self._executor.shutdown(wait=wait)
 
+    def cancel(self, job_id: str, owner_id: str):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if not job or job.get("owner_id") != owner_id:
+                return {"status": "not_found", "job_id": job_id}
+            if job["status"] not in ("done", "error", "cancelled"):
+                job.update(status="cancelled", finished_at=_now_iso())
+                if self._persist_job:
+                    self._persist_job(dict(job))
+            return dict(job)
+
+    def _deliver(self, job_id, path, kind, metadata):
+        job = self.get_job_status(job_id)
+        if job["status"] == "cancelled":
+            if path:
+                Path(path).unlink(missing_ok=True)
+            raise RenderCancelled("Render cancelled")
+        if not self._persist_job:
+            raise RuntimeError("Durable render job persistence is not configured")
+        if not job.get("owner_id"):
+            raise ValueError("Render job requires an authenticated owner")
+        if not path:
+            raise ValueError("Renderer produced no encoded artifact")
+        self._update_job(job_id, status="committing", scratch_path=str(path),
+                         delivery_metadata=metadata)
+        try:
+            receipt = self._artifact_committer(
+                path, kind=kind, owner_id=job["owner_id"], job_id=job_id,
+                content_type=mimetypes.guess_type(str(path))[0] or f"{kind}/octet-stream",
+                metadata=metadata,
+                cancelled=lambda: self.get_job_status(job_id)["status"] == "cancelled")
+        except RenderCancelled:
+            Path(path).unlink(missing_ok=True)
+            raise
+        if not receipt.get("durable") or not receipt.get("retrievable"):
+            raise ValueError("Renderer returned an uncommitted artifact")
+        self._update_job(job_id, status="done", finished_at=_now_iso(), result=receipt)
+        # Only after the durable terminal record is saved may scratch disappear.
+        Path(path).unlink(missing_ok=True)
+        return receipt
+
+    def recover_jobs(self, records):
+        """Restore journal records; delivery retries never invoke model inference."""
+        for record in records:
+            job = dict(record)
+            job_id = job["job_id"]
+            with self._lock:
+                if job_id in self._jobs:
+                    continue
+                self._jobs[job_id] = job
+            if job["status"] == "committing" or (job["status"] == "error" and job.get("scratch_path")):
+                self._executor.submit(self._recover_delivery, job)
+            elif job["status"] in ("queued", "running"):
+                self._update_job(job_id, status="error", finished_at=_now_iso(),
+                                 error="Render interrupted before durable artifact commit; resubmit explicitly")
+            elif job["status"] in ("done", "cancelled") and job.get("scratch_path"):
+                Path(job["scratch_path"]).unlink(missing_ok=True)
+
+    def _recover_delivery(self, job):
+        try:
+            self._deliver(job["job_id"], job["scratch_path"],
+                          "image" if job["type"] == "thumbnail" else "video",
+                          job.get("delivery_metadata", {}))
+        except Exception as exc:
+            self._update_job(job["job_id"], status="error", error=str(exc),
+                             finished_at=_now_iso())
+
     # ── Internal runners ────────────────────────────────────────────────────
+
+    def _run_with_gpu(self, worker, job_id, key, *args):
+        # Spawn in the executing thread. A queued job must never inherit a
+        # request GPU that retires when the enqueueing HTTP call returns.
+        try:
+            if self.get_job_status(job_id)["status"] == "cancelled":
+                self._release_active(key, job_id)
+                return
+            with self._lock:
+                if self._gpu_pool is None:
+                    from .gpu.pocket_pool import PocketGPUPool
+                    self._gpu_pool = PocketGPUPool()
+                pool = self._gpu_pool
+            with pool.spawn_sync(f"render:{job_id}"):
+                worker(job_id, key, *args)
+        except Exception as exc:
+            self._update_job(job_id, status="error", error=str(exc),
+                             finished_at=_now_iso())
+            self._release_active(key, job_id)
 
     def _run_thumbnail(self, job_id: str, key: Tuple[str, str],
                        sheet: BoostSheet, image_engine):
         self._update_job(job_id, status="running", started_at=_now_iso())
         try:
             result_path = None
+            render_result = None
             if image_engine is not None:
                 try:
                     from .agents.visual_spec_agent import VisualSpecRequest
@@ -229,11 +332,12 @@ class RenderManager:
                     self._release_active(key, job_id)
                     return
 
+            self._deliver(job_id, result_path, "image", {
+                "sheet_id": sheet.sheet_id,
+                "provenance": getattr(render_result, "provenance", None),
+                "quality": getattr(render_result, "quality", None),
+            })
             sheet.add_history(f"Thumbnail render complete — job {job_id}")
-            self._update_job(
-                job_id, status="done", finished_at=_now_iso(),
-                result={"file_path": result_path, "sheet_id": sheet.sheet_id},
-            )
         except Exception as exc:
             self._update_job(job_id, status="error", error=str(exc),
                              finished_at=_now_iso())
@@ -250,18 +354,17 @@ class RenderManager:
                     sheet.add_history(
                         f"Video render complete — job {job_id}: {render_result.filename}"
                     )
-                    self._update_job(
-                        job_id, status="done", finished_at=_now_iso(),
-                        result={
-                            "file_path":       render_result.file_path,
+                    self._deliver(
+                        job_id, render_result.file_path, "video", {
                             "filename":        render_result.filename,
-                            "url":             f"/uploads/videos/{render_result.filename}",
-                            "duration":        render_result.duration,
                             "width":           render_result.width,
                             "height":          render_result.height,
                             "template":        render_result.template_name,
                             "scenes_rendered": render_result.scenes_rendered,
                             "render_ms":       render_result.render_time_ms,
+                            "provenance":      getattr(render_result, "provenance", None),
+                            "quality":         getattr(render_result, "quality", None),
+                            "capabilities":    getattr(render_result, "capabilities", None),
                         },
                     )
                 else:
@@ -314,7 +417,7 @@ class RenderManager:
         """Count queued+running jobs. Must be called with _lock held."""
         return sum(
             1 for j in self._jobs.values()
-            if j["status"] in ("queued", "running")
+            if j["status"] in ("queued", "running", "committing")
         )
 
     def _release_active(self, key: Tuple[str, str], job_id: str) -> None:
@@ -341,4 +444,9 @@ class RenderManager:
     def _update_job(self, job_id: str, **kwargs) -> None:
         with self._lock:
             if job_id in self._jobs:
-                self._jobs[job_id].update(kwargs)
+                if self._jobs[job_id]["status"] == "cancelled":
+                    return
+                updated = {**self._jobs[job_id], **kwargs}
+                if self._persist_job:
+                    self._persist_job(updated)
+                self._jobs[job_id] = updated

@@ -1,0 +1,29 @@
+{
+  "evaluation": "BLOCKED_BEFORE_GENERATION",
+  "quality": "NOT_ESTABLISHED",
+  "veo_comparison": "NOT_ESTABLISHED",
+  "readiness_http_status": 503,
+  "generation_requests": 0,
+  "model": {
+    "loaded": true,
+    "checkpoint_sha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "release_manifest_sha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "awareness": {
+    "ready": false,
+    "snapshot_id": null,
+    "ingest_owner": true,
+    "last_error": "refresh_or_storage_unavailable",
+    "configured_sources": 28,
+    "successful_sources_by_domain": {
+      "music": 10,
+      "social": 3,
+      "advertising": 3,
+      "culture": 2
+    }
+  },
+  "evaluation_cases": "evaluations/maxcore-fused/cases.json",
+  "case_count": 7,
+  "case_hashes_and_results": "reports/maxcore-fused/live-1790384453971/report.json",
+  "reason": "The serving checkpoint loaded, but MaxCore had no valid complete canonical awareness snapshot. The runner correctly refused generation; no output or quality score was fabricated. Each case remains unevaluated."
+}

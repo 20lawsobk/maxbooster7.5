@@ -33,14 +33,14 @@ process.on("uncaughtException", (err: Error) => {
 });
 
 // ── Port validation ───────────────────────────────────────────────────────────
-const rawPort = process.env["PORT"];
+const rawPort = process.env["LOCAL_PDIM_PORT"] ?? "5556";
 if (!rawPort)
   throw new Error(
-    "PORT environment variable is required but was not provided.",
+    "LOCAL_PDIM_PORT environment variable is required but was not provided.",
   );
 const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0)
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
+  throw new Error(`Invalid LOCAL_PDIM_PORT value: "${rawPort}"`);
 
 // ── Cluster configuration ─────────────────────────────────────────────────────
 // Set CLUSTER_WORKERS=8 (or any N) to enable cluster mode.
@@ -239,7 +239,7 @@ if (isClusterMode && cluster.isPrimary) {
   server.headersTimeout = 66_000;
   server.timeout = 60_000;
 
-  server.listen(port, () => {
+  server.listen(port, "127.0.0.1", () => {
     logger.info(
       `[Cluster] Worker ${cluster.worker?.id} listening on port ${port}`,
     );
@@ -272,7 +272,7 @@ if (isClusterMode && cluster.isPrimary) {
       server.headersTimeout = 66_000;
       server.timeout = 60_000;
 
-      server.listen(port, () => {
+      server.listen(port, "127.0.0.1", () => {
         logger.info(`Server listening on port ${port}`);
         stayAliveService.start(port);
       });

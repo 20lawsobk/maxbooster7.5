@@ -59,6 +59,8 @@ interface PlatformAssetSpec {
 }
 
 interface GenerationRequest {
+  awareness?: unknown;
+  extra_context?: unknown;
   id: string;
   userId: string;
   artistProfileId?: string;
@@ -100,6 +102,7 @@ interface TaskPlan {
 }
 
 interface MultimodalPackage {
+  awareness_receipts: Record<string, WorkerAwareness>;
   requestId: string;
   assets: GeneratedAsset[];
   plan: TaskPlan;
@@ -391,7 +394,7 @@ async function maxcorePost(path: string, body: unknown): Promise<unknown> {
   });
   if (!res.ok) {
     const err = await res.text().catch(() => res.statusText);
-    throw new Error(`maxcore ${path} → ${res.status}: ${err}`);
+    throw Object.assign(new Error(`maxcore ${path} → ${res.status}: ${err}`), { status: res.status });
   }
   return res.json();
 }
@@ -404,7 +407,7 @@ async function maxcoreGet(path: string): Promise<unknown> {
   });
   if (!res.ok) {
     const err = await res.text().catch(() => res.statusText);
-    throw new Error(`maxcore GET ${path} → ${res.status}: ${err}`);
+    throw Object.assign(new Error(`maxcore GET ${path} → ${res.status}: ${err}`), { status: res.status });
   }
   return res.json();
 }
@@ -419,14 +422,14 @@ async function maxcoreGet(path: string): Promise<unknown> {
 async function renderAudioJob(
   genre: string,
   duration: number,
-  awareness?: unknown,
+  awareness?: WorkerAwareness,
   timeoutMs = 120_000,
 ): Promise<string | null> {
   type JobResp = Record<string, unknown>;
   const submit = (await maxcorePost("/api/generate/audio", {
     genre,
     duration,
-    ...(awareness ? { awareness } : {}),
+    ...(awareness ?? {}),
   })) as JobResp;
 
   // Fast-path: cache hit — url is included in the POST response itself.
@@ -450,8 +453,9 @@ async function renderAudioJob(
       if (job["status"] === "error" || job["status"] === "cancelled") {
         return null;
       }
-    } catch {
-      // transient poll error — keep waiting
+    } catch (error) {
+      if ((error as { status?: number }).status === 503) throw error;
+      // Non-dependency transient polling errors may be retried.
     }
   }
   return null; // timed out
@@ -469,9 +473,8 @@ async function normalizeInput(
     artistProfileId: req.artistProfileId,
     platforms: req.platforms,
     intent: req.intent,
-    ...(enrichment.awarenessBlock
-      ? { awareness: enrichment.awarenessBlock }
-      : {}),
+    ...(req.awareness !== undefined ? { awareness: req.awareness } : {}),
+    ...(req.extra_context !== undefined ? { extra_context: req.extra_context } : {}),
   });
 }
 
@@ -494,8 +497,8 @@ async function planTasks(
 
   const plan = validateTaskPlan(raw, req.id);
 
-  if (plan.steps.length === 0 && packSpec) {
-    return buildFallbackPlan(req.id, normalized, req, packSpec);
+  if (plan.steps.length === 0) {
+    throw Object.assign(new Error("MaxCore did not return a generation plan"), { status: 503 });
   }
   return plan;
 }
@@ -541,7 +544,7 @@ function buildFallbackPlan(
 // ─── Workers ──────────────────────────────────────────────────────────────────
 
 // The final awareness string sent to MaxCore (enrichment block + live signals).
-type WorkerAwareness = string | null;
+type WorkerAwareness = Record<string, unknown> | null;
 
 const textWorker = {
   async run(
@@ -553,7 +556,7 @@ const textWorker = {
       mode: "content",
       step,
       inputs,
-      ...(awareness ? { awareness } : {}),
+      ...(awareness ?? {}),
     })) as {
       outputs: Array<{
         text: string;
@@ -569,7 +572,7 @@ const textWorker = {
       payload: o.text,
       platform: o.platform,
       slotId: o.slotId,
-      metadata: o.meta ?? {},
+      metadata: { ...o.meta, awareness_receipt: awareness, ...("snapshot_id" in result ? { snapshot_id: result.snapshot_id } : {}) },
     }));
   },
 };
@@ -583,7 +586,7 @@ const imageWorker = {
     const result = (await maxcorePost("/generate/image", {
       step,
       inputs,
-      ...(awareness ? { awareness } : {}),
+      ...(awareness ?? {}),
     })) as {
       outputs: Array<{
         url: string;
@@ -599,7 +602,7 @@ const imageWorker = {
       payload: o.url,
       platform: o.platform,
       slotId: o.slotId,
-      metadata: o.meta ?? {},
+      metadata: { ...o.meta, awareness_receipt: awareness, ...("snapshot_id" in result ? { snapshot_id: result.snapshot_id } : {}) },
     }));
   },
 };
@@ -705,7 +708,7 @@ const videoWorker = {
     const result = (await maxcorePost("/generate/video", {
       step,
       inputs,
-      ...(awareness ? { awareness } : {}),
+      ...(awareness ?? {}),
     })) as {
       outputs: Array<{
         url: string;
@@ -721,7 +724,7 @@ const videoWorker = {
       payload: o.url,
       platform: o.platform,
       slotId: o.slotId,
-      metadata: o.meta ?? {},
+      metadata: { ...o.meta, awareness_receipt: awareness, ...("snapshot_id" in result ? { snapshot_id: result.snapshot_id } : {}) },
     }));
   },
 };
@@ -754,41 +757,18 @@ async function handleGeneration(
     userId: req.userId,
     artistProfileId: req.artistProfileId,
     platforms: req.platforms,
-  }).catch<GenerationEnrichment>(() => ({
-    awarenessBlock: "",
-    hasData: false,
-  }));
+  });
 
   const normalized = await normalizeInput(req, enrichment);
   const plan = await planTasks(normalized, req);
 
-  // Fetch per-modality awareness contexts in parallel, racing against a 3 s
-  // guard so a cold-cache RSS fetch never delays the generation pipeline.
-  const AWARENESS_TIMEOUT_MS = 3_000;
-  const awarenessRace = <T>(p: Promise<T>): Promise<T | null> =>
-    Promise.race([
-      p,
-      new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), AWARENESS_TIMEOUT_MS),
-      ),
-    ]);
-
+  // Core supplies required snapshot receipts; failures must abort generation.
   const [textAwareness, imageAwareness, audioAwareness, videoAwareness] =
     await Promise.all([
-      awarenessRace(
-        contentAwarenessService.getContextForMode("social").catch(() => null),
-      ),
-      awarenessRace(
-        contentAwarenessService.getContextForMode("content").catch(() => null),
-      ),
-      awarenessRace(
-        contentAwarenessService.getContextForMode("music").catch(() => null),
-      ),
-      awarenessRace(
-        contentAwarenessService
-          .getContextForMode("video_script")
-          .catch(() => null),
-      ),
+      contentAwarenessService.getContextForMode("social"),
+      contentAwarenessService.getContextForMode("content"),
+      contentAwarenessService.getContextForMode("music"),
+      contentAwarenessService.getContextForMode("video_script"),
     ]);
 
   // Merge the enrichment block with live per-modality awareness into a single
@@ -797,11 +777,14 @@ async function handleGeneration(
   const mergeAwareness = (
     ctx: ContentAwarenessContext | null,
   ): WorkerAwareness => {
-    const ctxStr = ctx?.confidence ? ctx.contextString : "";
-    const merged = [enrichment.awarenessBlock, ctxStr]
-      .filter(Boolean)
-      .join("\n\n");
-    return merged || null;
+    if (!ctx?.snapshot_id) {
+      throw Object.assign(new Error("Required awareness receipt missing"), { status: 503 });
+    }
+    return {
+      ...ctx,
+      ...(req.awareness !== undefined ? { awareness: req.awareness } : {}),
+      ...(req.extra_context !== undefined ? { extra_context: req.extra_context } : {}),
+    };
   };
 
   const awarenessMap: Record<string, WorkerAwareness> = {
@@ -875,6 +858,7 @@ async function handleGeneration(
   return {
     requestId: req.id,
     assets: Array.from(stepOutputs.values()).flat(),
+    awareness_receipts: awarenessMap,
     plan,
   };
 }
@@ -979,12 +963,9 @@ router.post("/multimodal/generate", async (req: Request, res: Response) => {
     return;
   }
 
-  const curriculumTags = await fetchCurriculumStyleTags(
-    body.userId,
-    body.platforms,
-  );
-
   const genReq: GenerationRequest = {
+    awareness: body.awareness,
+    extra_context: body.extra_context,
     id: body.id,
     userId: body.userId,
     artistProfileId: body.artistProfileId,
@@ -996,12 +977,7 @@ router.post("/multimodal/generate", async (req: Request, res: Response) => {
     platforms: body.platforms,
     packId: body.packId,
     intent: body.intent,
-    constraints: {
-      ...body.constraints,
-      styleTags: [
-        ...new Set([...(body.constraints?.styleTags ?? []), ...curriculumTags]),
-      ],
-    },
+    constraints: body.constraints,
   };
 
   try {
@@ -1010,7 +986,7 @@ router.post("/multimodal/generate", async (req: Request, res: Response) => {
     res.json(pkg);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    res.status(500).json({ error: "Generation failed", detail: message });
+    res.status((err as { status?: number }).status === 503 ? 503 : 500).json({ error: "Generation failed", detail: message });
   }
 });
 

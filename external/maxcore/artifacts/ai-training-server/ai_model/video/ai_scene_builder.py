@@ -14,6 +14,7 @@ The system produces an infinite palette space rather than 23 fixed choices.
 from __future__ import annotations
 import hashlib
 import colorsys
+import math
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 
@@ -218,16 +219,17 @@ _SCENE_WEIGHT: Dict[str, float] = {
 _MIN_SCENE_DUR = 2.5
 
 def allocate_durations(scene_types: List[str], total: float) -> List[float]:
-    """Distribute total duration across scenes by weight, enforcing a minimum per scene."""
+    """Distribute exactly the requested duration; short videos may have short scenes."""
     n = len(scene_types)
     if n == 0:
         return []
-    # Reserve enough headroom for minimums so we never go below _MIN_SCENE_DUR
-    min_total = _MIN_SCENE_DUR * n
-    effective_total = max(total, min_total)
+    if not math.isfinite(total) or total <= 0:
+        raise ValueError("Video duration must be positive and finite")
     weights = [_SCENE_WEIGHT.get(st, 1.0) for st in scene_types]
     total_w = sum(weights)
-    return [max(_MIN_SCENE_DUR, effective_total * w / total_w) for w in weights]
+    durations = [total * w / total_w for w in weights]
+    durations[-1] = total - sum(durations[:-1])
+    return durations
 
 
 # ── Per-scene font / layout decisions ────────────────────────────────────────

@@ -6,12 +6,11 @@
 import { EventEmitter } from "events";
 import { createHash, randomUUID } from "crypto";
 import { LuaFactory, LuaEngine } from "wasmoon";
-import {
-  encode as msgpackEncode,
-  decode as msgpackDecode,
-} from "@msgpack/msgpack";
-import { fabricStorage } from "../pocket-dimension/fabric/index.js";
+import { createRequire } from "node:module";
+import path from "node:path";
+import { availableParallelism } from "node:os";
 import { luaPool } from "../workers/lua-pool.js";
+import type { PocketStorageService } from "../pocket-dimension/fabric/PocketStorageService.js";
 import type {
   RedisEntry,
   RedisCommandResult,
@@ -25,6 +24,23 @@ import type {
 } from "./types.js";
 
 const luaFactory = new LuaFactory();
+// The embedded ESM bundle lives at the app root, while the retained PDIM
+// dependency tree lives in its own capsule. Resolve it only when Lua needs it;
+// isolated snapshot-verification workers must not boot external services.
+let msgpack: typeof import("@msgpack/msgpack") | undefined;
+function msgpackCodec(): typeof import("@msgpack/msgpack") {
+  if (msgpack) return msgpack;
+  const require = createRequire(import.meta.url);
+  try {
+    msgpack = require("@msgpack/msgpack");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "MODULE_NOT_FOUND") throw error;
+    msgpack = createRequire(path.resolve("external/pdim/artifacts/api-server/package.json"))("@msgpack/msgpack");
+  }
+  return msgpack!;
+}
+const msgpackEncode = (...args: Parameters<typeof import("@msgpack/msgpack").encode>) => msgpackCodec().encode(...args);
+const msgpackDecode = (...args: Parameters<typeof import("@msgpack/msgpack").decode>) => msgpackCodec().decode(...args);
 
 // ── Lua concurrency limiter ──────────────────────────────────────────────────
 // Each runLua() call allocates a full WebAssembly Lua engine instance.
@@ -32,7 +48,7 @@ const luaFactory = new LuaFactory();
 // instances exhausts the process heap very quickly.
 // This semaphore caps simultaneous EVAL executions; excess callers get an
 // ERR response immediately rather than piling up in memory.
-const LUA_MAX_CONCURRENCY = 8;
+const LUA_MAX_CONCURRENCY = Math.max(1, Math.min(8, availableParallelism()));
 
 // How many records to serialize per event-loop tick during AOF persistence.
 const AOF_YIELD_EVERY = 2_000;
@@ -181,7 +197,7 @@ export class RedisStore extends EventEmitter {
   private readonly MAX_KEYS_BEFORE_EVICT: number;
   private readonly EVICT_BATCH_RATIO = 0.1; // evict 10% of keys per cycle
 
-  constructor(instanceId: string, instanceName: string) {
+  constructor(instanceId: string, instanceName: string, private persistence?: PocketStorageService) {
     super();
     this.instanceId = instanceId;
     this.instanceName = instanceName;
@@ -189,6 +205,41 @@ export class RedisStore extends EventEmitter {
     this.MAX_KEYS_BEFORE_EVICT = Number(
       process.env["MAX_KEYS_PER_STORE"] ?? 5_000_000,
     );
+  }
+
+  private getPersistence(): PocketStorageService {
+    if (!this.persistence) throw new Error("PDIM fabric persistence was not supplied by the owner");
+    return this.persistence;
+  }
+
+  // Embedded owner supplies the durability boundary. Reuse the canonical
+  // command engine without booting a second fabric/database or losing sessions.
+  private embedded = false;
+
+  attachEmbeddedSnapshot(entries: Map<string, RedisEntry>): void {
+    this.embedded = true;
+    this.data = entries;
+    this.zsetIndex.clear();
+    for (const [key, entry] of entries) {
+      if (entry.type === "zset") {
+        this.zsetIndex.set(key, new Map(entry.value.map((member) => [member.member, member])));
+      }
+    }
+  }
+
+  closeEmbedded(): void {
+    this.emit("owner-close");
+    for (const timer of this.timers.values()) clearTimeout(timer);
+    this.timers.clear();
+  }
+
+  /** Atomic publication of a durably committed embedded capsule transaction. */
+  publishEmbeddedStrings(changes: Record<string, string | null>): void {
+    if (!this.embedded) throw new Error("Capsule publication requires the embedded owner");
+    for (const [key, value] of Object.entries(changes)) {
+      if (value === null) this.data.delete(key);
+      else this.data.set(key, { type: "string", value });
+    }
   }
 
   // ── LRU helpers ──────────────────────────────────────────────────────────────
@@ -275,6 +326,7 @@ export class RedisStore extends EventEmitter {
   // ============================================================================
 
   async load(newInstance = false): Promise<void> {
+    const fabricStorage = this.getPersistence();
     try {
       const manifestBuffer = await fabricStorage.getNamedObject(
         this.instanceId, this.persistPocket, "__recovery_manifest__",
@@ -390,6 +442,7 @@ export class RedisStore extends EventEmitter {
   }
 
   private async replayAof(): Promise<void> {
+    const fabricStorage = this.getPersistence();
     let log: RedisAofLog | null = null;
     try {
       const buf = await fabricStorage.getNamedObject(
@@ -441,6 +494,7 @@ export class RedisStore extends EventEmitter {
   // it runs on the hot path for every write. The durable flush happens on the
   // 1 s timer (flushAof).
   private recordAof(c: string, args: string[]): void {
+    if (this.embedded) return; // the owner snapshots the shared map atomically
     if (["XADD", "XDEL", "XTRIM", "XGROUP", "XACK", "XREADGROUP", "XCLAIM", "XAUTOCLAIM", "XSETID"].includes(c)) {
       // Journal actual stream state, not nondeterministic '*' IDs or wall-clock
       // consumer-group delivery timestamps. Includes pending/consumer metadata.
@@ -475,6 +529,7 @@ export class RedisStore extends EventEmitter {
   }
 
   private async doFlushAof(): Promise<void> {
+    const fabricStorage = this.getPersistence();
     // Capture the tail synchronously (records are immutable once appended),
     // then serialize incrementally so a long AOF can't stall the event loop.
     const records = this.aofLog.slice();
@@ -652,6 +707,7 @@ export class RedisStore extends EventEmitter {
   }
 
   private async doPersist(): Promise<void> {
+    const fabricStorage = this.getPersistence();
     // Serialize entries INCREMENTALLY with per-entry and per-member yields so
     // that large sorted-sets (e.g. 1.6 M ZSet members ≈ 80 MB of JSON) never
     // block the event loop for more than a few ms at a time.
@@ -802,6 +858,8 @@ export class RedisStore extends EventEmitter {
     // Capture the mutation only after it succeeds (a throwing dispatch never
     // reaches here). This path also carries Lua redis.call() writes.
     this.recordAof(c, args);
+    if (AOF_MUTATING_COMMANDS.has(c) && result !== null &&
+        (!Array.isArray(result) || result.length > 0)) queueMicrotask(() => this.emit("mutation"));
     return result;
   }
 
@@ -816,6 +874,15 @@ export class RedisStore extends EventEmitter {
         return this.cmdDbSize();
       case "INFO":
         return this.cmdInfo();
+      case "TIME": {
+        if (args.length !== 0) {
+          throw new Error("ERR wrong number of arguments for 'TIME' command");
+        }
+        const nowMs = Date.now();
+        const seconds = Math.floor(nowMs / 1000);
+        const microseconds = (nowMs % 1000) * 1000;
+        return [String(seconds), String(microseconds)];
+      }
       // Strings
       case "SET":
         return this.cmdSet(args);
@@ -1032,6 +1099,8 @@ export class RedisStore extends EventEmitter {
         return this.cmdXRange(args, true);
       case "XREAD":
         return this.cmdXRead(args) as unknown as RedisCommandResult;
+      case "XREADGROUP":
+        return this.cmdXReadGroup(args);
       case "XDEL":
         return this.cmdXDel(args);
       case "XACK":
@@ -1067,6 +1136,26 @@ export class RedisStore extends EventEmitter {
 
     let result: RedisCommandResult;
     switch (c) {
+      case "BLPOP":
+      case "BRPOP":
+      case "BZPOPMIN":
+      case "BZPOPMAX": {
+        const seconds = Number(args.at(-1));
+        if (args.length < 2 || !Number.isFinite(seconds) || seconds < 0) {
+          throw new Error("ERR invalid blocking pop timeout");
+        }
+        const pop = c === "BLPOP" ? "LPOP" : c === "BRPOP" ? "RPOP" :
+          c === "BZPOPMIN" ? "ZPOPMIN" : "ZPOPMAX";
+        return this.waitForResult(() => {
+          for (const key of args.slice(0, -1)) {
+            const value = this.execSync(pop, [key]);
+            if (value !== null && (!Array.isArray(value) || value.length)) {
+              return [key, ...(Array.isArray(value) ? value : [value])];
+            }
+          }
+          return null;
+        }, seconds * 1000);
+      }
       // Lua scripting (async — must go through exec, not dispatchSync)
       case "EVAL":
         result = await this.cmdEval(args);
@@ -1080,6 +1169,7 @@ export class RedisStore extends EventEmitter {
         // EVALSHA are intentionally not logged here — their writes are captured
         // as inner redis.call() effects via execSync.
         this.recordAof(c, args);
+        if (AOF_MUTATING_COMMANDS.has(c)) queueMicrotask(() => this.emit("mutation"));
     }
 
     // After any write that could have added keys, check if we've exceeded the
@@ -1088,6 +1178,29 @@ export class RedisStore extends EventEmitter {
     this.maybeEvict();
 
     return result;
+  }
+
+  private waitForResult(read: () => RedisCommandResult, timeoutMs: number): Promise<RedisCommandResult> {
+    const first = read();
+    if (first !== null) return Promise.resolve(first);
+    return new Promise((resolve, reject) => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const cleanup = () => {
+        if (timer) clearTimeout(timer);
+        this.off("mutation", check);
+        this.off("owner-close", close);
+      };
+      const close = () => { cleanup(); reject(new Error("PDIM owner closed")); };
+      const check = () => {
+        try {
+          const value = read();
+          if (value !== null) { cleanup(); resolve(value); }
+        } catch (error) { cleanup(); reject(error); }
+      };
+      this.on("mutation", check);
+      this.once("owner-close", close);
+      if (timeoutMs > 0) timer = setTimeout(() => { cleanup(); resolve(null); }, timeoutMs);
+    });
   }
 
   // ============================================================================
@@ -3469,6 +3582,46 @@ export class RedisStore extends EventEmitter {
     return result.length > 0 ? result : null;
   }
 
+  private cmdXReadGroup(args: string[]): RedisCommandResult {
+    const groupIndex = args.findIndex((a) => a.toUpperCase() === "GROUP");
+    const streamsIndex = args.findIndex((a) => a.toUpperCase() === "STREAMS");
+    const countIndex = args.findIndex((a) => a.toUpperCase() === "COUNT");
+    if (groupIndex !== 0 || streamsIndex < 3) throw new Error("ERR invalid XREADGROUP arguments");
+    const groupName = args[1]!;
+    const consumer = args[2]!;
+    const rest = args.slice(streamsIndex + 1);
+    if (!rest.length || rest.length % 2) throw new Error("ERR unbalanced streams and IDs");
+    const half = rest.length / 2;
+    const count = countIndex < 0 ? Infinity : Number(args[countIndex + 1]);
+    if (!(count > 0)) throw new Error("ERR invalid COUNT");
+    const noack = args.slice(3, streamsIndex).some((a) => a.toUpperCase() === "NOACK");
+    const result: unknown[] = [];
+    for (let i = 0; i < half; i++) {
+      const key = rest[i]!;
+      const id = rest[i + half]!;
+      const entry = this.isExpired(key) ? undefined : this.data.get(key);
+      if (entry && entry.type !== "stream") throw new Error("WRONGTYPE expected stream");
+      const group = entry?.groups[groupName];
+      if (!entry || !group) throw new Error(`NOGROUP ${groupName} for ${key}`);
+      const messages = id === ">"
+        ? this.streamIdAfter(entry.value, group.lastDeliveredId).slice(0, count)
+        : this.streamIdAfter(entry.value, id).filter((message) =>
+          group.pending.some((p) => p.id === message.id && p.consumer === consumer)).slice(0, count);
+      if (!messages.length) continue;
+      const now = Date.now();
+      group.consumers[consumer] = { name: consumer, lastSeenAt: now };
+      for (const message of messages) {
+        const pending = group.pending.find((p) => p.id === message.id);
+        if (pending) { pending.deliveredAt = now; pending.count++; }
+        else if (!noack) group.pending.push({ id: message.id, consumer, deliveredAt: now, count: 1 });
+      }
+      if (id === ">") group.lastDeliveredId = messages.at(-1)!.id;
+      this.dirty = true;
+      result.push([key, this.formatStreamEntries(messages)]);
+    }
+    return result.length ? result : null;
+  }
+
   private cmdXDel(args: string[]): number {
     const [key, ...ids] = args;
     if (!key || ids.length === 0)
@@ -3529,7 +3682,7 @@ export class RedisStore extends EventEmitter {
           "WRONGTYPE Operation against a key holding the wrong kind of value",
         );
       entry.groups[group] = {
-        lastDeliveredId: id ?? "$",
+        lastDeliveredId: id === "$" ? (entry.value.at(-1)?.id ?? "0-0") : (id ?? "0-0"),
         pending: [],
         consumers: {},
       };

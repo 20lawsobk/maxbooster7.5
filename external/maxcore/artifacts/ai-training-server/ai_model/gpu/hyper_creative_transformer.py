@@ -40,6 +40,7 @@ from ai_model.gpu.hyper_backend import (
     _HyperSiLU,
 )
 from ai_model.gpu.sizing import hyper_gpu_sizing
+from ai_model.gpu.pocket_pool import RequestScopedGPU, current_gpu_instance
 from typing import Optional
 
 from ai_model.model.transformer import (
@@ -100,6 +101,9 @@ def _prefix_key(ids: torch.Tensor, model_state: str = "",
     """Return an exact-prompt key; never permit a shared-prefix cache hit."""
     hasher = hashlib.sha256()
     hasher.update(b"exact-prompt-v1\0")
+    from ai_model.model.sampling_context import sampling_context
+    seed, snapshot_hash = sampling_context(default_seed=0)
+    hasher.update(json.dumps([seed, snapshot_hash], separators=(",", ":")).encode("utf-8"))
     hasher.update(model_state.encode("ascii"))
     _hash_tensor(hasher, ids)
     if key_padding_mask is None:
@@ -184,6 +188,23 @@ def _decode_prefix_payload(raw: bytes) -> dict:
 
 
 def _prefix_get(key: str) -> Optional[dict]:
+    life = current_gpu_instance()
+    if life is not None:
+        # Remote state, not the process cache, is authoritative in a pool life.
+        record = life.store.get(f"gpu:prefix:{key}")
+        if record is None:
+            with _PREFIX_KV_LOCK:
+                _PREFIX_KV_STATS["misses"] += 1
+            return None
+        raw = base64.b64decode(record["payload"], validate=True)
+        payload = _decode_prefix_payload(raw)
+        if time.time() - record["saved_at"] > _PREFIX_CACHE_TTL:
+            with _PREFIX_KV_LOCK:
+                _PREFIX_KV_STATS["misses"] += 1
+            return None
+        with _PREFIX_KV_LOCK:
+            _PREFIX_KV_STATS["hits"] += 1
+        return payload
     with _PREFIX_KV_LOCK:
         raw = _PREFIX_KV_CACHE.get(key)
         if raw is None:
@@ -202,6 +223,13 @@ def _prefix_put(key: str, h: torch.Tensor,
                 kv: list[tuple[torch.Tensor, torch.Tensor]],
                 prefix_len: int) -> None:
     raw = _encode_prefix_payload(h, kv, prefix_len)
+    life = current_gpu_instance()
+    if life is not None:
+        if not life.store.set(f"gpu:prefix:{key}", {
+            "payload": base64.b64encode(raw).decode("ascii"),
+            "saved_at": time.time(),
+        }):
+            raise RuntimeError("PDIM rejected prefix KV state")
     with _PREFIX_KV_LOCK:
         # Evict oldest entry if at capacity
         if len(_PREFIX_KV_CACHE) >= _PREFIX_CACHE_MAX:
@@ -221,6 +249,14 @@ def get_prefix_kv_stats() -> dict:
     s["max_entries"] = _PREFIX_CACHE_MAX
     s["ttl_seconds"] = _PREFIX_CACHE_TTL
     return s
+
+
+def _capture_pocket_kv(hidden, kv):
+    life = current_gpu_instance()
+    if life is not None:
+        pairs = [kv[i] for i in range(len(kv))]
+        prefix_len = pairs[0][0].shape[2] if pairs else 0
+        life.capture_kv(hidden, pairs, prefix_len)
 
 
 # ─── nn.Linear-compatible linear routed through the Digital GPU ────────────────
@@ -329,50 +365,39 @@ class HyperRoPESelfAttention(nn.Module):
         k = k.transpose(1, 2)
         v = v.transpose(1, 2)
 
-        # ── Scores: q @ k.T  — routed through Digital GPU ───────────────
-        # gpu.matmul expects 2D inputs; reshape BH×T×D_h to (BH*T)×D_h then
-        # back to BH×T×T.  Fall back to plain torch if gpu.matmul raises.
+        # ── Scores: per-head 2D GEMM on the Digital GPU ──────────────────
+        # q/k/v are [B, H, T, D]; flatten only B and H for the 2D GEMMs.
         global _gpu_attn_calls
-        BH, T2, D_h = q.shape
-        try:
-            import numpy as _np
-            _q_np = q.reshape(BH * T2, D_h).detach().float().numpy()
-            _kt_np = k.transpose(-2, -1).contiguous().reshape(D_h, BH * T2).detach().float().numpy()
-            # matmul: (BH*T, D_h) @ (D_h, BH*T) won't work — need per-head batching.
-            # Use gemm on the 2D slices: for each head, (T, D_h) @ (D_h, T)
-            _scores_list = []
-            for _h in range(BH):
-                _qh = q[_h].detach().float().numpy()          # (T, D_h)
-                _kh = k[_h].transpose(0, 1).detach().float().numpy()  # (D_h, T)
-                _s = self.gpu.gemm(_qh, _kh)                  # (T, T)
-                _scores_list.append(torch.from_numpy(_s))
-            attn = torch.stack(_scores_list, dim=0) * self.scale  # (BH, T, T)
-            _gpu_attn_calls += 1
-        except Exception as _e:
-            _hct_logger.warning("[gpu-attn] forward_with_kv scores fallback: %s", _e)
-            attn = (q @ k.transpose(-2, -1)) * self.scale
+        heads = B * self.n_heads
+        q_flat = q.reshape(heads, T, self.head_dim)
+        k_flat = k.reshape(heads, T, self.head_dim)
+        v_flat = v.reshape(heads, T, self.head_dim)
+        attn = torch.stack([
+            torch.from_numpy(self.gpu.gemm(
+                q_flat[i].detach().float().numpy(),
+                k_flat[i].transpose(0, 1).contiguous().detach().float().numpy(),
+            )) for i in range(heads)
+        ]).reshape(B, self.n_heads, T, T) * self.scale
+        _gpu_attn_calls += 1
 
         if mask is not None:
             attn = attn + mask.unsqueeze(0).unsqueeze(0)
         if key_padding_mask is not None:
             attn = attn.masked_fill(key_padding_mask[:, None, None, :], -1e9)
-        attn = F.softmax(attn, dim=-1)
+        attn = torch.from_numpy(self.gpu.softmax(
+            attn.detach().float().numpy(), axis=-1
+        )).to(attn.dtype)
         attn = self.attn_drop(attn)
 
         # ── Context: attn @ v  — routed through Digital GPU ─────────────
-        try:
-            _ctx_list = []
-            for _h in range(BH):
-                _ah = attn[_h].detach().float().numpy()   # (T, T)
-                _vh = v[_h].detach().float().numpy()       # (T, D_h)
-                _c = self.gpu.gemm(_ah, _vh)              # (T, D_h)
-                _ctx_list.append(torch.from_numpy(_c))
-            out = torch.stack(_ctx_list, dim=0).to(q.dtype)  # (BH, T, D_h)
-            _gpu_attn_calls += 1
-        except Exception as _e:
-            _hct_logger.warning("[gpu-attn] forward_with_kv context fallback: %s", _e)
-            out = attn @ v
-
+        attn_flat = attn.reshape(heads, T, T)
+        out = torch.stack([
+            torch.from_numpy(self.gpu.gemm(
+                attn_flat[i].detach().float().numpy(),
+                v_flat[i].detach().float().numpy(),
+            )) for i in range(heads)
+        ]).reshape(B, self.n_heads, T, self.head_dim).to(q.dtype)
+        _gpu_attn_calls += 1
         out = out.transpose(1, 2).contiguous().reshape(B, T, C)
         return self.out(out), k, v
 
@@ -409,39 +434,34 @@ class HyperRoPESelfAttention(nn.Module):
 
         # ── Scores: q @ k_cat.T  — routed through Digital GPU ───────────
         global _gpu_attn_calls
-        BH_d = q.shape[0]   # B * n_heads
+        BH_d = B * self.n_heads
         T_kv = k_cat.shape[2]
-        try:
-            _scores_list = []
-            for _h in range(BH_d):
-                _qh = q[_h].detach().float().numpy()                        # (1, D_h)
-                _kh = k_cat[_h].transpose(0, 1).detach().float().numpy()   # (D_h, T_kv)
-                _s = self.gpu.gemm(_qh, _kh)                                # (1, T_kv)
-                _scores_list.append(torch.from_numpy(_s))
-            attn = torch.stack(_scores_list, dim=0) * self.scale  # (BH, 1, T_kv)
-            _gpu_attn_calls += 1
-        except Exception as _e:
-            _hct_logger.warning("[gpu-attn] decode_one scores fallback: %s", _e)
-            attn = (q @ k_cat.transpose(-2, -1)) * self.scale
+        q_flat = q.reshape(BH_d, 1, self.head_dim)
+        k_flat = k_cat.reshape(BH_d, T_kv, self.head_dim)
+        v_flat = v_cat.reshape(BH_d, T_kv, self.head_dim)
+        attn = torch.stack([
+            torch.from_numpy(self.gpu.gemm(
+                q_flat[i].detach().float().numpy(),
+                k_flat[i].transpose(0, 1).contiguous().detach().float().numpy(),
+            )) for i in range(BH_d)
+        ]).reshape(B, self.n_heads, 1, T_kv) * self.scale
+        _gpu_attn_calls += 1
 
         if key_padding_mask is not None:
             attn = attn.masked_fill(key_padding_mask[:, None, None, :], -1e9)
-        attn = F.softmax(attn, dim=-1)
+        attn = torch.from_numpy(self.gpu.softmax(
+            attn.detach().float().numpy(), axis=-1
+        )).to(attn.dtype)
 
         # ── Context: attn @ v_cat  — routed through Digital GPU ─────────
-        try:
-            _ctx_list = []
-            for _h in range(BH_d):
-                _ah = attn[_h].detach().float().numpy()      # (1, T_kv)
-                _vh = v_cat[_h].detach().float().numpy()     # (T_kv, D_h)
-                _c = self.gpu.gemm(_ah, _vh)                 # (1, D_h)
-                _ctx_list.append(torch.from_numpy(_c))
-            out = torch.stack(_ctx_list, dim=0).to(q.dtype)  # (BH, 1, D_h)
-            _gpu_attn_calls += 1
-        except Exception as _e:
-            _hct_logger.warning("[gpu-attn] decode_one context fallback: %s", _e)
-            out = attn @ v_cat
-
+        attn_flat = attn.reshape(BH_d, 1, T_kv)
+        out = torch.stack([
+            torch.from_numpy(self.gpu.gemm(
+                attn_flat[i].detach().float().numpy(),
+                v_flat[i].detach().float().numpy(),
+            )) for i in range(BH_d)
+        ]).reshape(B, self.n_heads, 1, self.head_dim).to(q.dtype)
+        _gpu_attn_calls += 1
         out = out.transpose(1, 2).contiguous().reshape(B, T, C)
         return self.out(out), k_cat, v_cat
 
@@ -517,6 +537,7 @@ class HyperCreativeTransformerLM(nn.Module):
             _lanes, _tensor_cores = hyper_gpu_sizing()
             self.gpu = HyperGPU(
                 lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED)
+        self.gpu = RequestScopedGPU(self.gpu)
 
         self.token_emb = nn.Embedding(vocab_size, dim)
         self.emb_dropout = nn.Dropout(dropout)
@@ -626,6 +647,7 @@ class HyperCreativeTransformerLM(nn.Module):
                 h = cached["h"].to(x.device)
                 kv = [(k.to(x.device), v.to(x.device))
                       for k, v in cached["kv"]]
+                _capture_pocket_kv(h, kv)
                 return self._head(self.ln_final(h)), kv
 
         # ── Full prefill (no cache hit) ───────────────────────────────────
@@ -646,6 +668,7 @@ class HyperCreativeTransformerLM(nn.Module):
                 pk = _prefix_key(
                     x, self._prefix_cache_model_state(), key_padding_mask)
             _prefix_put(pk, h, kv_cache, T)
+        _capture_pocket_kv(h, kv_cache)
         return logits, kv_cache
 
     def decode_one(self, x_new: torch.Tensor,
@@ -666,6 +689,7 @@ class HyperCreativeTransformerLM(nn.Module):
                     _write_pos=write_pos,
                 )
             kv_cache._len += 1
+            _capture_pocket_kv(h, kv_cache)
             h = self.ln_final(h)
             return self._head(h), kv_cache
 
@@ -676,6 +700,7 @@ class HyperCreativeTransformerLM(nn.Module):
             h, new_k, new_v = layer.decode_one(
                 h, self.rope_cos, self.rope_sin, past_k, past_v, key_padding_mask)
             new_cache.append((new_k, new_v))
+        _capture_pocket_kv(h, new_cache)
         h = self.ln_final(h)
         return self._head(h), new_cache
 

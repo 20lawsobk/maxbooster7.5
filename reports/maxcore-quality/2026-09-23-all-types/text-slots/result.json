@@ -1,0 +1,261 @@
+{
+  "id": "text-slots",
+  "case": {
+    "id": "text-slots",
+    "handler": "maxcore_generate_text",
+    "request_class": "MaxcoreTextRequest",
+    "kind": "text",
+    "body": {
+      "mode": "content",
+      "inputs": {
+        "normalized": {
+          "semantic": {
+            "topic": "Paper Lantern Harbor",
+            "intent": "engagement"
+          }
+        }
+      },
+      "step": {
+        "params": {
+          "slots": [
+            {
+              "id": "caption",
+              "platform": "instagram",
+              "purpose": "release caption"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "returned",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 5,
+    "ai_model/request_intelligence.py:<module>": 1,
+    "ai_model/request_intelligence.py:GenerationBrief": 1,
+    "ai_model/generation/orchestrator.py:<genexpr>": 3,
+    "ai_model/generation/orchestrator.py:_safe_envelope_text": 3,
+    "ai_model/generation/orchestrator.py:_coerce_aw": 1,
+    "ai_model/quality_awareness.py:<module>": 1,
+    "ai_model/quality_awareness.py:platform_awareness_string": 1,
+    "ai_model/quality_awareness.py:self_sufficiency": 2,
+    "ai_model/quality_awareness.py:_own_corpus_size": 2,
+    "ai_model/quality_awareness.py:_store": 2,
+    "ai_model/quality_awareness.py:_modality_retire_threshold": 2,
+    "ai_model/quality_awareness.py:retire_threshold": 2,
+    "ai_model/quality_awareness.py:get_doc": 1,
+    "ai_model/quality_awareness.py:_doc_age_seconds": 1,
+    "ai_model/quality_awareness.py:_max_age_seconds": 1,
+    "ai_model/agents/distribution_agent.py:run": 1,
+    "ai_model/gpu/hyper_creative_transformer.py:prefill": 1,
+    "ai_model/gpu/hyper_creative_transformer.py:_prefix_cache_model_state": 1,
+    "ai_model/gpu/hyper_creative_transformer.py:<genexpr>": 4,
+    "ai_model/gpu/hyper_creative_transformer.py:_prefix_key": 1,
+    "ai_model/gpu/hyper_creative_transformer.py:_hash_tensor": 1,
+    "ai_model/gpu/hyper_creative_transformer.py:_prefix_get": 1,
+    "ai_model/gpu/hyper_creative_transformer.py:forward_with_kv": 2,
+    "ai_model/gpu/hyper_creative_transformer.py:forward": 2,
+    "ai_model/gpu/hyper_backend.py:forward": 2,
+    "ai_model/gpu/hyper_core.py:layer_norm": 2,
+    "ai_model/gpu/native/kernels.py:layernorm_rows": 1,
+    "ai_model/gpu/native/kernels.py:_f32": 3,
+    "ai_model/gpu/native/kernels.py:_use_native": 1,
+    "ai_model/gpu/native/kernels.py:<genexpr>": 4,
+    "ai_model/gpu/native/kernels.py:_ptr": 4,
+    "ai_model/gpu/hyper_core.py:_model": 2,
+    "ai_model/gpu/hyper_core.py:mixed_gemm": 1,
+    "ai_model/gpu/hyper_core.py:_pocket": 1,
+    "ai_model/agents/distribution_agent.py:<genexpr>": 8,
+    "ai_model/agents/distribution_agent.py:_parse_hashtags_from_awareness": 1,
+    "ai_model/agents/distribution_agent.py:_pdim_hashtags": 1,
+    "ai_model/agents/distribution_agent.py:_parse_timing_from_awareness": 1,
+    "ai_model/agents/distribution_agent.py:_store_hashtags_to_pdim": 1,
+    "ai_model/gpu/hyper_backend.py:status": 1,
+    "ai_model/gpu/hyper_core.py:status": 12,
+    "ai_model/gpu/hyper_core.py:<genexpr>": 10,
+    "ai_model/gpu/hyper_core.py:used_bytes": 1,
+    "ai_model/gpu/hyper_core.py:silicon_report": 1
+  },
+  "exceptions": [
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    }
+  ],
+  "agent_outputs": [],
+  "awareness": [
+    {
+      "function": "get_doc",
+      "nonempty": true
+    }
+  ],
+  "files": [],
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 1.1,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 8,
+      "total_tensor_core_tflops": 0.001762,
+      "total_compute_ms": 41.66,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 1.7,
+      "silicon": null
+    }
+  },
+  "request": {
+    "mode": "content",
+    "inputs": {
+      "normalized": {
+        "semantic": {
+          "topic": "Paper Lantern Harbor",
+          "intent": "engagement"
+        }
+      }
+    },
+    "step": {
+      "params": {
+        "slots": [
+          {
+            "id": "caption",
+            "platform": "instagram",
+            "purpose": "release caption"
+          }
+        ]
+      }
+    },
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "validated_request": {
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+    "description": "",
+    "prompt_url": "",
+    "instruction": null,
+    "extra_context": null,
+    "content_themes": null,
+    "intent": null,
+    "direction": null,
+    "context": null,
+    "mode": "content",
+    "system": null,
+    "input": {},
+    "step": {
+      "params": {
+        "slots": [
+          {
+            "id": "caption",
+            "platform": "instagram",
+            "purpose": "release caption"
+          }
+        ]
+      }
+    },
+    "inputs": {
+      "normalized": {
+        "semantic": {
+          "topic": "Paper Lantern Harbor",
+          "intent": "engagement"
+        }
+      }
+    }
+  },
+  "elapsed_seconds": 3.675462230999983,
+  "response": {
+    "outputs": [
+      {
+        "text": "Trending everywhere for one reason: Paper Lantern Harbor is genuinely different! \ud83d\udd25\nPaper Lantern Harbor (#reels, #newmusic, #explore trending).\n\nFicti\n#reels #newmusic #explore #behindthescenes #ExtravagantSongsOrPoems #MeerMittwoch #MusicWomenWednesday #SeaWednesday",
+        "platform": "instagram",
+        "slotId": "caption",
+        "meta": {
+          "purpose": "release caption",
+          "tone": "aesthetic",
+          "length": 267,
+          "hook": "Trending everywhere for one reason: Paper Lantern Harbor is genuinely different! \ud83d\udd25",
+          "body": "Paper Lantern Harbor (#reels, #newmusic, #explore trending).\n\nFictional evaluation release.\n\nReels finally reward fire content \u2014 full-watch rate and.",
+          "cta": "Save this and tag someone who needs it \ud83c\udfa7 \u2014 follow for more drops!",
+          "posting_time": "2026-09-23T18:00:00Z",
+          "hashtags": [
+            "#reels",
+            "#newmusic",
+            "#explore",
+            "#behindthescenes",
+            "#ExtravagantSongsOrPoems",
+            "#MeerMittwoch",
+            "#MusicWomenWednesday",
+            "#SeaWednesday"
+          ],
+          "source": "awareness"
+        }
+      }
+    ],
+    "processing_time_ms": 540.1
+  },
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

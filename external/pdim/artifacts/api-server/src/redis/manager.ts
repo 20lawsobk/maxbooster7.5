@@ -7,6 +7,7 @@ import { randomBytes } from "crypto";
 import { db, redisInstances } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { RedisStore } from "./store.js";
+import { fabricStorage } from "../pocket-dimension/fabric/index.js";
 
 // System instances that must always exist (IDs and tokens come from env)
 const SYSTEM_INSTANCES = [
@@ -35,7 +36,7 @@ function generateToken(): string {
 // on a public host again.
 const PRODUCTION_HOST =
   process.env["PDIM_PUBLIC_HOST"] ??
-  `127.0.0.1:${process.env["PORT"] ?? "5556"}`;
+  `127.0.0.1:${process.env["LOCAL_PDIM_PORT"] ?? "5556"}`;
 const HTTP_SCHEME = PRODUCTION_HOST.startsWith("127.0.0.1") ? "http" : "https";
 
 export function buildConnectionUrl(token: string, instanceId: string): string {
@@ -73,7 +74,7 @@ class RedisManager {
         .onConflictDoNothing()
         .returning();
       if (inserted.length) {
-        const store = new RedisStore(id, name);
+        const store = new RedisStore(id, name, fabricStorage);
         await store.load(true);
         this.stores.set(id, store);
         this.tokenIndex.set(token, id);
@@ -91,7 +92,7 @@ class RedisManager {
         if (!row.isActive) return;
         if (this.stores.has(row.id)) return;
         try {
-          const store = new RedisStore(row.id, row.name);
+          const store = new RedisStore(row.id, row.name, fabricStorage);
           await store.load();
           this.stores.set(row.id, store);
           this.tokenIndex.set(row.token, row.id);
@@ -135,7 +136,7 @@ class RedisManager {
 
     if (!row) throw new Error("Failed to create redis instance record");
 
-    const store = new RedisStore(id, name);
+    const store = new RedisStore(id, name, fabricStorage);
     await store.load(true);
     this.stores.set(id, store);
     this.tokenIndex.set(token, id);
@@ -170,7 +171,7 @@ class RedisManager {
 
       if (!row || !row.isActive) return null;
 
-      const store = new RedisStore(instanceId, row.name);
+      const store = new RedisStore(instanceId, row.name, fabricStorage);
       await store.load();
       this.stores.set(instanceId, store);
       this.tokenIndex.set(row.token, instanceId);

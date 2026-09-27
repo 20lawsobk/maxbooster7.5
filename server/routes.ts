@@ -7746,6 +7746,9 @@ export async function registerRoutes(
         healthRegistry.checkAll(),
         Promise.resolve(responseTimeTracker.getStats()),
       ]);
+      // Readiness only: never add an external fetch to the liveness endpoint.
+      const { getUnifiedAwarenessStatus } = await import("./services/awarenessContext.js");
+      const unifiedAwareness = await getUnifiedAwarenessStatus();
       const { endpointLatencyRegistry } = await import("./services/monitoringService.js");
       const slowestEndpoints = endpointLatencyRegistry
         .getSlowestEndpoints(10)
@@ -7756,12 +7759,14 @@ export async function registerRoutes(
           p99Ms: Math.round(e.p99),
           samples: e.count,
         }));
-      const code = result.status === "ok" ? 200 : 503;
+      const awarenessReady = unifiedAwareness.ready === true;
+      const code = result.status === "ok" && awarenessReady ? 200 : 503;
       res.status(code).json({
-        status: result.status,
+        status: awarenessReady ? result.status : "degraded",
         timestamp: new Date().toISOString(),
         buildId: BUILD_ID,
         subsystems: result.subsystems,
+        unifiedAwareness,
         latency: {
           avgMs:   Math.round(rtStats.avg),
           p95Ms:   Math.round(rtStats.p95),

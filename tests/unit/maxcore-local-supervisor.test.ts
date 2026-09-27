@@ -228,13 +228,14 @@ describe("MaxCore local supervisor", () => {
       const spawnMock = vi.fn(() => proc);
       vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
 
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: async () => ({ status: "healthy", model_loaded: true }),
-        }),
-      );
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ status: "healthy", model_loaded: true }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      vi.doMock("../../server/services/maxcoreConnector.js", () => ({
+        getMaxcoreGenerationHeaders: () => ({ Authorization: "Bearer test-generation-key" }),
+      }));
       const {
         startMaxcoreLocal,
         checkMaxcoreLocalReady,
@@ -250,6 +251,12 @@ describe("MaxCore local supervisor", () => {
       expect(status.pid).toBe(424242);
       expect(spawnMock).toHaveBeenCalledTimes(1);
       expect(await checkMaxcoreLocalReady()).toBe(true);
+      expect(fetchMock).toHaveBeenCalledWith(
+        "http://127.0.0.1:8090/api/health",
+        expect.objectContaining({
+          headers: { Authorization: "Bearer test-generation-key" },
+        }),
+      );
 
       stopMaxcoreLocal();
       expect(proc.kill).toHaveBeenCalledWith("SIGTERM");

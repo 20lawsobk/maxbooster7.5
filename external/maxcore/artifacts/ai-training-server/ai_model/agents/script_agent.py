@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 from ..model.creative_model import CreativeModel
+from ai_model.generation.awareness import generation_guard
 
 logger = logging.getLogger("script_agent")
 
@@ -237,6 +238,7 @@ def _direction_required_phrases(awareness: str) -> List[str]:
 
 def _apply_direction(awareness: str, response: ScriptResponse) -> ScriptResponse:
     """Apply explicit opening and literal-inclusion constraints in composition."""
+    original = (response.hook, response.body, response.cta)
     opening = _direction_opening(awareness)
     if opening and not response.hook.casefold().startswith(opening.casefold()):
         response.hook = f"{opening} — {response.hook}"
@@ -246,6 +248,8 @@ def _apply_direction(awareness: str, response: ScriptResponse) -> ScriptResponse
             punctuation = "" if phrase.endswith((".", "!", "?")) else "."
             response.body = f"{response.body.rstrip()}\n\n{phrase}{punctuation}".strip()
             visible = f"{visible} {phrase.casefold()}"
+    if original != (response.hook, response.body, response.cta) and response.source == "ai_model":
+        response.source = "model_composed"
     return response
 
 
@@ -576,8 +580,8 @@ _PLATFORM_CTAS: Dict[str, List[str]] = {
 def _format_awareness_prefix(awareness: str) -> str:
     """
     Extract top 3 signal lines from awareness and format as a short conditioning
-    prefix (max 60 chars) that can be prepended to the model prompt without eating
-    the token budget.
+    prefix (bounded to 320 chars) that can be prepended to the model prompt
+    without serializing the full awareness transport payload.
 
     Returns e.g. "Context: drill | dark | high | 140bpm"
     or "Context: trap | hype | energetic" depending on what signals are found.
@@ -622,20 +626,14 @@ def _format_awareness_prefix(awareness: str) -> str:
 
         prefix_parts = []
         if intent_values:
-            prefix_parts.append(
-                f"<CREATIVE_INTENT>{'; '.join(intent_values)[:80]}</CREATIVE_INTENT>"
-            )
+            prefix_parts.append(f"Intent: {'; '.join(intent_values)[:80]}")
         if direction_values:
             # Values provide natural-language conditioning. Object keys, JSON
             # punctuation, and control labels never enter the model prompt.
             guidance = "; ".join(direction_values)[:100]
-            prefix_parts.append(
-                f"<CREATIVE_DIRECTION>{guidance}</CREATIVE_DIRECTION>"
-            )
+            prefix_parts.append(f"Direction: {guidance}")
         if context_values:
-            prefix_parts.append(
-                f"<BACKGROUND_CONTEXT>{'; '.join(context_values)[:80]}</BACKGROUND_CONTEXT>"
-            )
+            prefix_parts.append(f"Background: {'; '.join(context_values)[:80]}")
         if tokens:
             prefix_parts.append("Context: " + " | ".join(tokens))
         if not prefix_parts:
@@ -934,40 +932,55 @@ def _build_awareness_body(
 
 # ── Agent ──────────────────────────────────────────────────────────────────────
 
+def _script_prompt(req: ScriptRequest) -> str:
+    """Faithful word-checkpoint prompt, without serializer-created OOV words.
+
+    The released corpus uses bare text and ``Target:`` / ``Genre:`` fields.
+    Preserve caller spelling/punctuation; do not lowercase, strip unknown words,
+    invent token aliases, or append punctuation to whole-word token values.
+    Default text/optimal/medium are this agent's native output contract, not
+    extra learned control tags. Non-default controls remain explicit.
+    """
+    parts = [
+        f"<PLATFORM_{req.platform.upper()}>",
+        f"<GOAL_{req.goal.upper()}>",
+        f"<TONE_{req.tone.upper()}>",
+        req.idea,
+    ]
+    if req.genre:
+        parts.append(f"Genre: {req.genre}")
+    if req.target_audience.strip():
+        parts.append(f"Target: {req.target_audience.strip()}")
+    if req.output_format != "text":
+        parts.append(f"Format: {req.output_format}")
+    if req.caption_length != "optimal":
+        parts.append(f"Length: {req.caption_length}")
+    if req.cta_strength != "medium":
+        parts.append(f"CTA: {req.cta_strength}")
+    parts.append("<STAGE_HOOK>")
+    base = " ".join(parts)
+    prefix = _format_awareness_prefix(req.awareness or "")
+    return f"{prefix}\n\n{base}" if prefix else base
+
+
 class ScriptAgent:
     def __init__(self, model: CreativeModel):
         self.model = model
         self._garble_probe_done = False
 
+    @generation_guard
     def run(self, req: ScriptRequest) -> ScriptResponse:
-        # Build the model prompt — awareness prefix conditions the model when
-        # present, rather than bypassing it.  The LLM always runs; awareness
-        # becomes a fallback only when the model output fails the garble check.
-        platform_token = f"<PLATFORM_{req.platform.upper()}>"
-        goal_token = f"<GOAL_{req.goal.upper()}>"
-        tone_token = f"<TONE_{req.tone.upper()}>"
-        format_token = f"<FORMAT_{req.output_format.upper()}>"
-        length_token = f"<LENGTH_{req.caption_length.upper()}>"
-        cta_token = f"<CTA_{req.cta_strength.upper()}>"
-        audience = (
-            f" Target audience: {req.target_audience.strip()}."
-            if req.target_audience.strip()
-            else ""
-        )
-        base_prompt = (
-            f"{platform_token} {goal_token} {tone_token} {format_token} "
-            f"{length_token} {cta_token}{audience} <STAGE_HOOK>"
-        )
-
-        if req.awareness:
-            # Prepend a short awareness prefix to steer the model, not replace it.
-            awareness_prefix = _format_awareness_prefix(req.awareness)
-            prompt = (awareness_prefix + "\n\n" + base_prompt) if awareness_prefix else base_prompt
-        else:
-            prompt = base_prompt
+        from dataclasses import replace
+        from ai_model.generation.awareness import ensure_context_once, sampling_seed, snapshot_hash
+        req = replace(req, awareness=ensure_context_once(req.awareness, req.platform, "text"))
+        # The checkpoint supplies prose; composition applies literal caller
+        # direction afterwards. Neither awareness nor template pools substitute
+        # for a failed model. Those failures remain explicit.
+        prompt = _script_prompt(req)
 
         try:
-            output = self.model.generate(prompt, max_new_tokens=80, temperature=0.8, top_p=0.92)
+            output = self.model.generate(prompt, max_new_tokens=80, temperature=0.8, top_p=0.92,
+                                         seed=sampling_seed(), snapshot_hash=snapshot_hash())
 
             # Garble check — the live model run IS the probe; no separate probe needed.
             _garble_detected = False
@@ -991,22 +1004,21 @@ class ScriptAgent:
                     _garble_detected = True
                     _reason = garble_reason(output or "", whitelist=_wl)
                     logger.warning(
-                        "[garble-guard] model output garbled, falling back to awareness "
+                        "[garble-guard] rejecting unreadable checkpoint output "
                         "reason=%s platform=%s", _reason, req.platform,
                     )
                 elif _contains_metadata_leak(output or "", req.awareness or ""):
                     _garble_detected = True
                     logger.warning(
                         "[garble-guard] model output copied awareness metadata; "
-                        "using native awareness composition platform=%s",
+                        "rejecting candidate platform=%s",
                         req.platform,
                     )
-            except Exception:
-                pass  # garble check is never allowed to break generation
+            except Exception as exc:
+                raise RuntimeError("Script readability validation failed") from exc
 
-            # If garbled and we have awareness, use awareness compose as fallback.
-            if _garble_detected and req.awareness:
-                return self._awareness_compose(req)
+            if _garble_detected:
+                raise ValueError("Checkpoint output failed script readability check")
 
             hook = ""
             body = ""
@@ -1039,19 +1051,22 @@ class ScriptAgent:
 
             if self._is_meaningful(hook) and self._is_meaningful(body):
                 if not cta or not self._is_meaningful(cta):
-                    cta = PLATFORM_CTAS.get(req.platform.lower(), "Let me know what you think!")
-                return _apply_direction(
+                    raise ValueError("Checkpoint did not generate a usable CTA")
+                response = _apply_direction(
                     req.awareness,
                     ScriptResponse(hook=hook, body=body, cta=cta, source="ai_model"),
                 )
+                # Literal composition is still subject to the same content
+                # safety layer as checkpoint output.
+                from ai_model.safety import enforce
+                response.hook = enforce(response.hook)
+                response.body = enforce(response.body)
+                response.cta = enforce(response.cta)
+                return response
         except Exception:
-            pass
-
-        # Model failed or output not meaningful — use awareness if available, else template.
-        if req.awareness:
-            return self._awareness_compose(req)
-
-        return self._template_fallback(req)
+            logger.exception("ScriptAgent checkpoint generation failed")
+            raise
+        raise ValueError("Checkpoint did not generate a meaningful script")
 
     def _is_meaningful(self, text: str) -> bool:
         if not text or len(text) < 10:
@@ -1068,44 +1083,7 @@ class ScriptAgent:
         return True
 
     def _awareness_compose(self, req: ScriptRequest) -> ScriptResponse:
-        """Primary generation path — composes content directly from live industry
-        signals (trending genres, moods, viral hooks, platform-specific CTAs).
-
-        This is the standard production path whenever awareness context is
-        present.  It does not call model.generate(): the awareness data IS the
-        generation signal.  variant_idx drives pool rotation for variety.
-        """
-        platform = req.platform.lower().replace(" ", "_")
-        awareness = req.awareness or ""
-        genre = getattr(req, "genre", "") or ""
-
-        hook = _parse_hook_from_awareness(
-            awareness, platform, req.idea, signal_offset=req.variant_idx
-        )
-        body = _build_awareness_body(
-            awareness, platform, req.idea, req.tone,
-            genre=genre, signal_offset=req.variant_idx
-        )
-        cta = _parse_cta_from_awareness(awareness, platform, idea=req.idea)
-        if not cta:
-            cta = PLATFORM_CTAS.get(platform, "Let me know what you think!")
-        return _apply_direction(
-            awareness,
-            ScriptResponse(hook=hook, body=body, cta=cta, source="awareness"),
-        )
+        raise RuntimeError("Awareness/template composition cannot substitute for model generation")
 
     def _template_fallback(self, req: ScriptRequest) -> ScriptResponse:
-        """True last resort — used only when both awareness and model.generate()
-        are unavailable.  Returns a deterministic template-based response."""
-        platform = req.platform.lower().replace(" ", "_")
-        genre = getattr(req, "genre", "") or ""
-        hook = PLATFORM_HOOKS.get(platform, "Check this out 🔥")
-        tone_pool = _TONE_BODIES.get(req.tone, [])
-        if tone_pool:
-            body = tone_pool[req.variant_idx % len(tone_pool)].format(
-                idea=req.idea, genre=genre or "music", tone=req.tone, artist="the artist"
-            )
-        else:
-            body = f"{req.idea} — made for this moment."
-        cta = PLATFORM_CTAS.get(platform, "Let me know what you think!")
-        return ScriptResponse(hook=hook, body=body, cta=cta, source="template")
+        raise RuntimeError("Template fallback generation is disabled")

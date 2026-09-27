@@ -77,6 +77,7 @@ const replitText = readFileSync(replitPath, "utf8");
 interface PortMapping {
   localPort: number;
   externalPort?: number;
+  exposeLocalhost?: boolean;
   line: number;
 }
 
@@ -85,28 +86,35 @@ const lines = replitText.split("\n");
 for (let i = 0; i < lines.length; i++) {
   if (lines[i].trim() !== "[[ports]]") continue;
 
+  const blockLine = i + 1;
   let localPort: number | undefined;
   let externalPort: number | undefined;
+  let exposeLocalhost: boolean | undefined;
   for (let j = i + 1; j < lines.length; j++) {
     const line = lines[j].trim();
-    if (line === "" || line.startsWith("[[ports]]")) {
-      if (line.startsWith("[[ports]]")) i = j - 1; // let outer loop re-check this line
+    if (line.startsWith("[[ports]]")) {
+      i = j - 1; // let outer loop re-check this line
       break;
     }
+    if (line === "" || line.startsWith("#")) continue;
     if (line.startsWith("[") && !line.startsWith("[[ports]]")) break;
 
-    const localMatch = line.match(/^localPort\s*=\s*(\d+)/);
-    const externalMatch = line.match(/^externalPort\s*=\s*(\d+)/);
+    const localMatch = line.match(/^localPort\s*=\s*(\d+)\s*(?:#.*)?$/);
+    const externalMatch = line.match(/^externalPort\s*=\s*(\d+)\s*(?:#.*)?$/);
+    const exposeMatch = line.match(/^exposeLocalhost\s*=\s*(true|false)\s*(?:#.*)?$/);
+    if (line.startsWith("externalPort") && !externalMatch) fail(`Invalid externalPort at line ${j + 1}`);
+    if (line.startsWith("exposeLocalhost") && !exposeMatch) fail(`Invalid exposeLocalhost at line ${j + 1}`);
     if (localMatch) localPort = Number(localMatch[1]);
     if (externalMatch) externalPort = Number(externalMatch[1]);
+    if (exposeMatch) exposeLocalhost = exposeMatch[1] === "true";
   }
 
   if (localPort === undefined) {
     fail(
-      `.replit [[ports]] block starting at line ${i + 1} is missing localPort`,
+      `.replit [[ports]] block starting at line ${blockLine} is missing localPort`,
     );
   }
-  mappings.push({ localPort, externalPort, line: i + 1 });
+  mappings.push({ localPort, externalPort, exposeLocalhost, line: blockLine });
 }
 
 if (mappings.length === 0) {
@@ -206,6 +214,12 @@ if (leakedInternal) {
       `${leakedInternal.externalPort} (line ${leakedInternal.line}); internal services must ` +
       "remain private and omit externalPort",
   );
+}
+const discoverableInternal = mappings.find(
+  (m) => internalPortSet.has(m.localPort) && m.exposeLocalhost === true,
+);
+if (discoverableInternal) {
+  fail(`.replit enables exposeLocalhost for internal-only localPort ${discoverableInternal.localPort}; set exposeLocalhost = false`);
 }
 
 console.log(

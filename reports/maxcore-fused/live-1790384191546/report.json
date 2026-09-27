@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "execution": "BLOCKED",
+  "quality": "NOT_ESTABLISHED",
+  "veoComparison": "NOT_ESTABLISHED",
+  "cases": [],
+  "readinessHttpStatus": 503,
+  "error": "AUTH_READINESS_SNAPSHOT_OR_REQUEST_FAILED_NO_FALLBACK",
+  "httpRequests": 4
+}

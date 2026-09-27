@@ -3,9 +3,9 @@ import fs from "fs";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Agent, request as undiciRequest } from "undici";
 import rateLimit from "express-rate-limit";
-import { contentAwarenessService } from "../services/contentAwarenessService.js";
 import { isPythonRestarting } from "../server-state.js";
 import { runActivation, getKeepaliveStatus } from "../keepalive.js";
+import { modelAuthHeaders, modelOwnedBody } from "../config/model-auth.js";
 import {
   recordLatency,
   recordRequest,
@@ -19,15 +19,8 @@ const router: IRouter = Router();
 const MODEL_API_PORT = process.env.MODEL_API_PORT || "9878";
 const MODEL_API_BASE = `http://localhost:${MODEL_API_PORT}`;
 
-// Server-side key injected when the browser hasn't provided one.
-// The Node proxy runs on localhost behind Vite's /api proxy — it is a
-// trusted gateway, so injecting the env key here is safe. External
-// callers never reach this server directly in dev.
-const _SERVER_FALLBACK_KEY =
-  process.env.AI_SERVER_KEY ||
-  process.env.AI_TRAINING_KEY_PROD ||
-  process.env.ADMIN_KEY ||
-  "";
+// Application-authorized callers supply an explicit service credential.
+// Never substitute server/admin credentials for unauthenticated requests.
 
 // ─── Keep-alive connection pool ─────────────────────────────────────────────
 // Reuse TCP connections to the Python server — eliminates per-request TCP
@@ -342,20 +335,18 @@ async function proxyRequest(
   res: Response,
   path: string,
 ): Promise<void> {
+  const authHeaders = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  if (!authHeaders) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
+  // Credential validation happens in Python. A path-only cache cannot safely
+  // return a prior authorized response to an unvalidated credential.
   const isGet = req.method === "GET" || req.method === "HEAD";
   const startTime = Date.now();
   // Track per-route and total request counts
   recordRequest(req.path ?? path);
 
-  // Serve from cache for cacheable GETs
-  if (isGet) {
-    const cached = getCached(path);
-    if (cached) {
-      res.setHeader("X-Cache", "HIT");
-      res.status(cached.status).json(cached.data);
-      return;
-    }
-  }
 
   // Hold the request while Python is restarting rather than immediately 503-ing.
   // waitForRecovery polls every 300 ms until both the circuit breaker is closed
@@ -371,42 +362,23 @@ async function proxyRequest(
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      ...authHeaders,
     };
-    if (req.headers["x-admin-key"]) {
-      headers["X-Admin-Key"] = req.headers["x-admin-key"] as string;
-    } else if (req.headers["x-api-key"]) {
-      headers["X-Api-Key"] = req.headers["x-api-key"] as string;
-    } else if (_SERVER_FALLBACK_KEY) {
-      // Browser hasn't sent an auth header (e.g. admin key not entered yet).
-      // Inject the server-side key so generate endpoints don't 401.
-      headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
-    }
-    if (req.headers["x-maxcore-user-id"]) {
-      headers["X-MaxCore-User-Id"] = req.headers["x-maxcore-user-id"] as string;
-    }
-
     const upstreamRes = await _upstreamRequest(url, {
       method: req.method as any,
       dispatcher: _keepAlivePool,
       headers,
-      body: !isGet && req.body ? JSON.stringify(req.body) : undefined,
+      body: !isGet && req.body ? JSON.stringify(modelOwnedBody(req.body, authHeaders)) : undefined,
       headersTimeout: 0,
       bodyTimeout: 0,
     });
 
     const data = await parseBodyText(upstreamRes.body);
 
-    // Treat 5xx upstream responses as failures for the circuit breaker
-    if (upstreamRes.statusCode >= 500) {
-      _cbRecordFailure();
-    } else {
-      _cbRecordSuccess();
-    }
+    // Any HTTP response proves connectivity. Core dependency/awareness failures
+    // retain their 503 response but must not trip the transport breaker.
+    _cbRecordSuccess();
 
-    // Populate cache for successful GET responses
-    if (isGet && upstreamRes.statusCode < 300) {
-      setCached(path, upstreamRes.statusCode, data);
-    }
 
     recordLatency(Date.now() - startTime);
     res.setHeader("X-Cache", "MISS");
@@ -432,7 +404,8 @@ async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
     res.status(413).json({ error: "Audio upload exceeds size limit" });
     return;
   }
-  const userId = req.headers["x-maxcore-user-id"];
+  const auth = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  const userId = auth?.["X-MaxCore-User-Id"];
   if (!userId || Array.isArray(userId)) {
     res.status(401).json({ error: "Authenticated MaxCore user identity is required" });
     return;
@@ -441,8 +414,11 @@ async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
     "Content-Type": contentType,
     "X-MaxCore-User-Id": userId,
   };
-  if (req.headers["x-api-key"]) headers["X-Api-Key"] = String(req.headers["x-api-key"]);
-  else if (_SERVER_FALLBACK_KEY) headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
+  if (!auth) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
+  Object.assign(headers, auth);
   try {
     // Raw request streams are not replayable; never run this upload through the
     // transient retry loop (which could otherwise create a truncated duplicate).
@@ -462,7 +438,8 @@ async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
 }
 
 function analysisHeaders(req: Request, contentType: string): Record<string, string> | null {
-  const owner = req.headers["x-maxcore-user-id"];
+  const auth = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  const owner = auth?.["X-MaxCore-User-Id"];
   if (
     !owner ||
     Array.isArray(owner) ||
@@ -472,18 +449,10 @@ function analysisHeaders(req: Request, contentType: string): Record<string, stri
   ) {
     return null;
   }
-  const incoming = String(req.headers.authorization || "");
-  const incomingBearer = incoming.toLowerCase().startsWith("bearer ")
-    ? incoming.slice(7).trim()
-    : "";
-  // This localhost hop must use the model server's generation credential.
-  // Prefer the configured gateway key: a browser/session bearer is not an AI
-  // generation key and must not shadow it.
-  const bearer = _SERVER_FALLBACK_KEY || incomingBearer;
-  if (!bearer) return null;
+  if (!auth || !auth.Authorization) return null;
   return {
     "Content-Type": contentType,
-    "Authorization": `Bearer ${bearer}`,
+    ...auth,
     "X-MaxCore-User-Id": owner.trim(),
   };
 }
@@ -503,7 +472,7 @@ async function proxyAnalysisJson(
       method: "POST",
       dispatcher: _keepAlivePool,
       headers,
-      body: JSON.stringify(req.body ?? {}),
+      body: JSON.stringify(modelOwnedBody(req.body ?? {}, headers)),
       headersTimeout: 30_000,
       bodyTimeout: 120_000,
     });
@@ -583,16 +552,10 @@ async function proxyBinary(
   try {
     const url = `${MODEL_API_BASE}${path}`;
 
-    const headers: Record<string, string> = {};
-    if (req.headers["x-admin-key"]) {
-      headers["X-Admin-Key"] = req.headers["x-admin-key"] as string;
-    } else if (req.headers["x-api-key"]) {
-      headers["X-Api-Key"] = req.headers["x-api-key"] as string;
-    } else if (_SERVER_FALLBACK_KEY) {
-      headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
-    }
-    if (req.headers["x-maxcore-user-id"]) {
-      headers["X-MaxCore-User-Id"] = req.headers["x-maxcore-user-id"] as string;
+    const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+    if (!headers) {
+      res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+      return;
     }
 
     const upstreamRes = await _upstreamRequest(url, {
@@ -652,16 +615,10 @@ async function proxyBinaryStream(
   try {
     const url = `${MODEL_API_BASE}${path}`;
 
-    const headers: Record<string, string> = {};
-    if (req.headers["x-admin-key"]) {
-      headers["X-Admin-Key"] = req.headers["x-admin-key"] as string;
-    } else if (req.headers["x-api-key"]) {
-      headers["X-Api-Key"] = req.headers["x-api-key"] as string;
-    } else if (_SERVER_FALLBACK_KEY) {
-      headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
-    }
-    if (req.headers["x-maxcore-user-id"]) {
-      headers["X-MaxCore-User-Id"] = req.headers["x-maxcore-user-id"] as string;
+    const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+    if (!headers) {
+      res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+      return;
     }
 
     const upstreamRes = await _upstreamRequest(url, {
@@ -1165,27 +1122,14 @@ router.get("/awareness/quality/status", async (req, res) => {
 // Returns live signal counts + source breakdown so the dashboard can show
 // how many Tavily / Exa / RSS signals are currently enriching generation.
 
-router.get("/awareness/status", async (_req, res) => {
-  try {
-    const ctx = await contentAwarenessService.getContextForMode("content");
-    const tavilyEnabled = !!process.env.TAVILY_API_KEY;
-    const exaEnabled = !!process.env.EXA_API_KEY;
-    res.json({
-      signalCount: ctx.signalCount,
-      confidence: ctx.confidence,
-      freshness: ctx.freshness,
-      sources: {
-        tavily: tavilyEnabled,
-        exa: exaEnabled,
-        rss: true,
-      },
-      trendingGenres: ctx.trendingGenres.slice(0, 5),
-      trendingTopics: ctx.trendingTopics.slice(0, 5),
-      platformSignals: ctx.platformSignals.slice(0, 5),
-    });
-  } catch (err) {
-    res.status(500).json({ error: "Awareness status unavailable", detail: String(err) });
-  }
+router.get("/awareness/status", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/status");
+});
+router.get("/awareness/unified/status", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/status");
+});
+router.post("/awareness/unified/context", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/context");
 });
 
 // Pocket accelerator — Digital GPU GEMM dedup cache stats
@@ -1607,6 +1551,10 @@ router.get("/models/advertising/state", async (req, res) => {
   await proxyRequest(req, res, "/api/models/advertising/state");
 });
 
+router.get("/generation/capabilities", async (req, res) => {
+  await proxyRequest(req, res, "/api/generation/capabilities");
+});
+
 router.get("/models/content/state", async (req, res) => {
   await proxyRequest(req, res, "/api/models/content/state");
 });
@@ -1669,16 +1617,11 @@ router.get("/jobs/:jobId/progress", async (req, res) => {
     if (closed) return;
     try {
       // Try audio-job first, then video-job
-      const headers: Record<string, string> = {};
-      if (req.headers["x-admin-key"]) {
-        headers["X-Admin-Key"] = req.headers["x-admin-key"] as string;
-      } else if (req.headers["x-api-key"]) {
-        headers["X-Api-Key"] = req.headers["x-api-key"] as string;
-      } else if (_SERVER_FALLBACK_KEY) {
-        headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
-      }
-      if (req.headers["x-maxcore-user-id"]) {
-        headers["X-MaxCore-User-Id"] = req.headers["x-maxcore-user-id"] as string;
+      const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+      if (!headers) {
+        res.write(`data: ${JSON.stringify({ status: "error", error: "Unauthorized job stream" })}\n\n`);
+        cleanup();
+        return;
       }
 
       // Try /api/audio-job/:jobId first (covers audio), then /api/video-job/:jobId
@@ -1755,16 +1698,10 @@ router.get("/jobs/:jobId/progress", async (req, res) => {
 router.post("/jobs/:jobId/cancel", async (req, res) => {
   const { jobId } = req.params;
   try {
-    const headers: Record<string, string> = {};
-    if (req.headers["x-admin-key"]) {
-      headers["X-Admin-Key"] = req.headers["x-admin-key"] as string;
-    } else if (req.headers["x-api-key"]) {
-      headers["X-Api-Key"] = req.headers["x-api-key"] as string;
-    } else if (_SERVER_FALLBACK_KEY) {
-      headers["X-Api-Key"] = _SERVER_FALLBACK_KEY;
-    }
-    if (req.headers["x-maxcore-user-id"]) {
-      headers["X-MaxCore-User-Id"] = req.headers["x-maxcore-user-id"] as string;
+    const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+    if (!headers) {
+      res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+      return;
     }
     // Try audio-job delete first, then video-job
     let responded = false;

@@ -32,10 +32,11 @@ export class NodeRegistry {
   async updateNode(
     id: NodeId,
     patch: Partial<
-      Pick<FabricStorageNode, "usedBytes" | "healthy" | "lastHeartbeat">
+      Pick<FabricStorageNode, "usedBytes" | "healthy" | "lastHeartbeat" | "backendConfig">
     >,
   ): Promise<void> {
     const values: Record<string, any> = {};
+    if (patch.backendConfig !== undefined) values.backendConfig = patch.backendConfig;
     if (patch?.usedBytes !== undefined)
       values.usedBytes = String(patch?.usedBytes);
     if (patch?.healthy !== undefined) values.healthy = patch?.healthy;

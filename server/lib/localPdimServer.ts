@@ -1,10 +1,9 @@
 /**
  * Local PDIM Exec Server
  *
- * When the remote Pocket Dimension instance (pocketdimensionstorage.replit.app)
- * is unreachable, this module spins up a lightweight in-process HTTP server on
- * localhost:5556 that speaks the same JSON-over-HTTP exec protocol the PDIM
- * client expects.
+ * Single shared local owner of the imported canonical RedisStore. The cluster
+ * primary starts it before forking; workers and MaxCore use its private HTTP
+ * transport. It is not a fallback store and never attaches to an unknown owner.
  *
  * Protocol: POST /api/redis/instances/:id/exec
  *   Body:    { "cmd": "COMMAND", "args": ["arg1", "arg2", ...] }
@@ -13,11 +12,9 @@
  * Backed by an in-memory Map (with TTL) and persisted to
  * ./data/local-pdim-store.json every 30 s so data survives server restarts.
  *
- * Supports the full command surface used by this app:
- *   Strings, Hashes, Sets, Sorted Sets, Lists, Streams (BullMQ-compatible),
- *   plus PING, DEL, EXISTS, EXPIRE, KEYS, FLUSHDB, and native EVAL implementations
- *   for the three known Lua scripts (sliding-window rate limiter, distributed lock
- *   release, feature event buffer flush). Unknown scripts throw so callers fall back.
+ * Requests execute through the canonical engine (including real Lua, blocking
+ * pops and consumer groups), not the historical pattern-matched shim below.
+ * The existing synchronous snapshot boundary is retained for recovery tooling.
  */
 
 import http from "http";
@@ -25,10 +22,17 @@ import fs from "fs";
 import path from "path";
 import { logger } from "../logger.js";
 import { runtimePorts } from "../config/ports.js";
+import cluster from "node:cluster";
+import { RedisStore } from "../../external/pdim/artifacts/api-server/src/redis/store.js";
+import type { RedisEntry, StreamGroup } from "../../external/pdim/artifacts/api-server/src/redis/types.js";
+import { LocalPdimCapsules } from "./localPdimCapsules.js";
+import { LocalPdimCapsuleJournal } from "./localPdimCapsuleJournal.js";
 
 const LOCAL_PORT = runtimePorts.localPdim;
 const PERSIST_FILE = path.resolve("./data/local-pdim-store.json");
 const PERSIST_INTERVAL_MS = 30_000;
+const CAPSULE_WATERMARK = "__local_pdim_capsule_journal_watermark__";
+const capsuleJournal = new LocalPdimCapsuleJournal(`${PERSIST_FILE}.capsules.jsonl`);
 
 // ── Store types ───────────────────────────────────────────────────────────────
 
@@ -50,6 +54,7 @@ type StreamEntry = {
   type: "stream";
   value: StreamMsg[];
   expiresAt?: number;
+  groups?: Record<string, StreamGroup>;
 };
 
 type StoreEntry =
@@ -61,6 +66,9 @@ type StoreEntry =
   | StreamEntry;
 
 const store = new Map<string, StoreEntry>();
+const canonicalStore = new RedisStore("local", "Max Booster shared local owner");
+const capsuleStore = new LocalPdimCapsules(canonicalStore,
+  (changes, publish) => capsuleJournal.commit(changes, publish));
 
 // ── TTL helpers ───────────────────────────────────────────────────────────────
 
@@ -1235,6 +1243,59 @@ function exec(cmd: string, args: string[]): unknown {
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 
+// Recovery exports still use the synchronous linearization boundary below.
+// Periodic snapshots must not block all loopback reads on disk fsync.
+// Capsule commits use their scoped delta journal, never this whole-map path.
+// A successful synchronous publication supersedes an in-flight async snapshot.
+let snapshotPublication = 0;
+let asyncSnapshotSequence = 0;
+let snapshotTail: Promise<unknown> = Promise.resolve();
+
+function saveStoreAsync(): Promise<boolean> {
+  const operation = snapshotTail.then(async () => {
+    const publication = snapshotPublication;
+    const capsuleBaseline = capsuleJournal.publishedSeq;
+    const temporaryFile = `${PERSIST_FILE}.async-${process.pid}-${++asyncSnapshotSequence}`;
+    try {
+      const obj: Record<string, StoreEntry> = {};
+      for (const [key, value] of store) {
+        if (!expired(value)) obj[key] = value;
+      }
+      obj[CAPSULE_WATERMARK] = { type: "string", value: String(capsuleBaseline) };
+      // Serialize before yielding: mutations during disk IO must not change
+      // the checkpoint whose durable acknowledgement the caller awaits.
+      const serialized = JSON.stringify(obj);
+      await fs.promises.mkdir(path.dirname(PERSIST_FILE), { recursive: true });
+      const file = await fs.promises.open(temporaryFile, "wx", 0o600);
+      try {
+        await file.writeFile(serialized, "utf8");
+        await file.sync();
+      } finally {
+        await file.close();
+      }
+      if (snapshotPublication !== publication) {
+        // A newer synchronous checkpoint already durably covers this state.
+        await fs.promises.rm(temporaryFile, { force: true });
+        return true;
+      }
+      // No await between version check and rename: never replace a newer
+      // recovery checkpoint with an older in-flight snapshot.
+      fs.renameSync(temporaryFile, PERSIST_FILE);
+      const directory = await fs.promises.open(path.dirname(PERSIST_FILE), "r");
+      try { await directory.sync(); } finally { await directory.close(); }
+      snapshotPublication++;
+      await capsuleJournal.compact(capsuleBaseline);
+      return true;
+    } catch (err) {
+      await fs.promises.rm(temporaryFile, { force: true }).catch(() => {});
+      logger.error({ err }, `[LocalPDIM] Failed to persist store to ${PERSIST_FILE}`);
+      return false;
+    }
+  });
+  snapshotTail = operation;
+  return operation;
+}
+
 function saveStore(): boolean {
   const temporaryFile = `${PERSIST_FILE}.tmp-${process.pid}`;
   try {
@@ -1243,6 +1304,7 @@ function saveStore(): boolean {
     for (const [k, v] of store) {
       if (!expired(v)) obj[k] = v;
     }
+    obj[CAPSULE_WATERMARK] = { type: "string", value: String(capsuleJournal.publishedSeq) };
     fs.writeFileSync(temporaryFile, JSON.stringify(obj), {
       encoding: "utf8",
       mode: 0o600,
@@ -1256,6 +1318,7 @@ function saveStore(): boolean {
     } finally {
       fs.closeSync(directory);
     }
+    snapshotPublication++;
     return true;
   } catch (err) {
     try {
@@ -1291,7 +1354,7 @@ function validatePersistedEntry(key: string, value: unknown): StoreEntry {
   if (
     !entryKeys.includes("type") ||
     !entryKeys.includes("value") ||
-    entryKeys.some((field) => !["type", "value", "expiresAt"].includes(field))
+    entryKeys.some((field) => !["type", "value", "expiresAt", ...(entry.type === "stream" ? ["groups"] : [])].includes(field))
   ) {
     return invalid("entry fields must be exactly type, value, and optional expiresAt");
   }
@@ -1348,10 +1411,28 @@ function validatePersistedEntry(key: string, value: unknown): StoreEntry {
             Object.hasOwn(message, "id") &&
             Object.hasOwn(message, "fields") &&
             typeof (message as Record<string, unknown>).id === "string" &&
-            isStringRecord((message as Record<string, unknown>).fields),
+            (isStringRecord((message as Record<string, unknown>).fields) ||
+              (Array.isArray(message.fields) && message.fields.length % 2 === 0 &&
+                message.fields.every((field: unknown) => typeof field === "string"))),
         )
       ) {
         return invalid("stream value must contain string ids and string field maps");
+      }
+      if (entry.groups !== undefined) {
+        if (!entry.groups || typeof entry.groups !== "object" || Array.isArray(entry.groups)) {
+          return invalid("stream groups must be an object");
+        }
+        for (const group of Object.values(entry.groups) as StreamGroup[]) {
+          if (!group || typeof group.lastDeliveredId !== "string" ||
+              !Array.isArray(group.pending) || !group.pending.every((p) =>
+                p && typeof p.id === "string" && typeof p.consumer === "string" &&
+                Number.isFinite(p.deliveredAt) && Number.isFinite(p.count)) ||
+              !group.consumers || typeof group.consumers !== "object" ||
+              Array.isArray(group.consumers) || !Object.values(group.consumers).every((c) =>
+                c && typeof c.name === "string" && Number.isFinite(c.lastSeenAt))) {
+            return invalid("invalid stream consumer group");
+          }
+        }
       }
       break;
     default:
@@ -1396,6 +1477,9 @@ function loadStore(): void {
 
 let _server: http.Server | null = null;
 let _finalSaveFailed = false;
+let _persistTimer: ReturnType<typeof setInterval> | null = null;
+let _saveOnShutdown: (() => void) | null = null;
+let _starting: Promise<void> | null = null;
 
 export function getLocalPdimUrl(): string {
   return `http://127.0.0.1:${LOCAL_PORT}/api/redis/instances/local/exec`;
@@ -1503,15 +1587,56 @@ export function openConsistentLocalPdimSnapshot(): LocalPdimSnapshotDescriptor {
 }
 
 export function startLocalPdimServer(): Promise<void> {
-  return new Promise((resolve, reject) => {
+  if (cluster.isWorker || process.env.CLUSTER_WORKER_ID !== undefined) {
+    return Promise.reject(new Error("Only the cluster primary may own local PDIM"));
+  }
+  if (_starting) return _starting;
+  _starting = new Promise<void>((resolve, reject) => {
     if (_server) {
       resolve();
       return;
     }
 
     loadStore();
+    const watermark = store.get(CAPSULE_WATERMARK);
+    const capsuleBaseline = watermark?.type === "string" ? Number(watermark.value) : 0;
+    if (!Number.isSafeInteger(capsuleBaseline) || capsuleBaseline < 0) {
+      throw new Error("Invalid capsule journal snapshot watermark");
+    }
+    store.delete(CAPSULE_WATERMARK);
+    capsuleJournal.recover(capsuleBaseline, changes => {
+      for (const [key, value] of Object.entries(changes)) {
+        if (value === null) store.delete(key);
+        else store.set(key, { type: "string", value });
+      }
+    });
+    // Older snapshots used field maps and had no consumer groups. Preserve
+    // their data while adopting the canonical engine's stream representation.
+    for (const entry of store.values()) {
+      if (entry.type === "stream") {
+        const stream = entry as unknown as Extract<RedisEntry, { type: "stream" }>;
+        stream.value = stream.value.map((message) => ({
+          id: message.id,
+          fields: Array.isArray(message.fields) ? message.fields : Object.entries(message.fields).flat(),
+        }));
+        stream.groups ??= {};
+      }
+    }
+    canonicalStore.attachEmbeddedSnapshot(store as unknown as Map<string, RedisEntry>);
 
     _server = http.createServer((req, res) => {
+      // Loopback-only listener; never mounted on Express/public routes, and
+      // never accepts forwarded identity headers as authentication.
+      const token = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
+      if (token && req.headers.authorization !== `Bearer ${token}`) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Unauthorized private PDIM channel" }));
+        return;
+      }
+      if (req.url !== "/api/redis/instances/local/exec") {
+        res.writeHead(404).end();
+        return;
+      }
       if (req.method !== "POST") {
         res.writeHead(405, { "Content-Type": "text/plain" });
         res.end("Method Not Allowed");
@@ -1519,16 +1644,29 @@ export function startLocalPdimServer(): Promise<void> {
       }
 
       let body = "";
+      let bytes = 0;
       req.on("data", (chunk) => {
+        bytes += chunk.length;
+        if (bytes > 50 * 1024 * 1024) {
+          res.writeHead(413).end();
+          req.destroy();
+          return;
+        }
         body += chunk;
       });
-      req.on("end", () => {
+      req.on("end", async () => {
         try {
           const { cmd, args = [] } = JSON.parse(body) as {
             cmd: string;
             args?: unknown[];
           };
-          const result = exec(cmd, (args as unknown[]).map(String));
+          if (typeof cmd !== "string" || !Array.isArray(args) ||
+              args.some((arg) => arg === null || arg === undefined || typeof arg === "object")) {
+            throw new TypeError("PDIM requires a command and non-null scalar arguments");
+          }
+          const result = cmd.toUpperCase().startsWith("CAPSULE.")
+            ? await capsuleStore.exec(cmd, args.map(String))
+            : await canonicalStore.exec(cmd, args.map(String));
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err) {
@@ -1548,8 +1686,13 @@ export function startLocalPdimServer(): Promise<void> {
       );
 
       // Periodic persistence (unref so it doesn't block exit)
-      const t = setInterval(saveStore, PERSIST_INTERVAL_MS);
-      t.unref();
+      let periodicSavePending = false;
+      _persistTimer = setInterval(() => {
+        if (periodicSavePending) return;
+        periodicSavePending = true;
+        void saveStoreAsync().finally(() => { periodicSavePending = false; });
+      }, PERSIST_INTERVAL_MS);
+      _persistTimer.unref();
 
       // Save on clean shutdown. Mark the process unsuccessful if the final
       // durability boundary cannot be completed.
@@ -1559,6 +1702,7 @@ export function startLocalPdimServer(): Promise<void> {
           process.exitCode = 1;
         }
       };
+      _saveOnShutdown = saveOnShutdown;
       process.on("SIGTERM", saveOnShutdown);
       process.on("SIGINT", saveOnShutdown);
       // Preserve the failure even if another shutdown coordinator subsequently
@@ -1571,24 +1715,27 @@ export function startLocalPdimServer(): Promise<void> {
     });
 
     _server.on("error", (err: NodeJS.ErrnoException) => {
-      if (err.code === "EADDRINUSE") {
-        // Another process already has the port — treat as "already running"
-        logger.info(
-          `[LocalPDIM] Port ${LOCAL_PORT} already in use — assuming local PDIM already running`,
-        );
-        resolve();
-      } else {
-        reject(err);
-      }
+      _server = null;
+      reject(err); // An occupied port is not proof of a shared, trusted owner.
     });
-  });
+  }).finally(() => { _starting = null; });
+  return _starting;
 }
 
 export async function stopLocalPdimServer(): Promise<void> {
   const server = _server;
   _server = null;
   if (!server) return;
+  if (_persistTimer) clearInterval(_persistTimer);
+  _persistTimer = null;
+  if (_saveOnShutdown) {
+    process.off("SIGTERM", _saveOnShutdown);
+    process.off("SIGINT", _saveOnShutdown);
+    _saveOnShutdown = null;
+  }
+  canonicalStore.closeEmbedded();
   await new Promise<void>((resolve, reject) => {
     server.close((err) => (err ? reject(err) : resolve()));
   });
+  await snapshotTail;
 }

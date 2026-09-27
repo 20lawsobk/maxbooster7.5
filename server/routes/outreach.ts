@@ -357,9 +357,6 @@ router.post("/generate-pitch", async (req, res) => {
       trackMood ? `Mood: ${trackMood}` : "",
       artistName ? `Artist: ${artistName}` : "",
       artistBio ? `Bio: ${artistBio}` : "",
-      awareness?.contextString
-        ? `Current industry context (use naturally, do not quote verbatim): ${awareness.contextString.slice(0, 400)}`
-        : "",
       "Keep it under 200 words. Professional, warm, specific. No generic filler.",
     ]
       .filter(Boolean)
@@ -369,7 +366,7 @@ router.post("/generate-pitch", async (req, res) => {
       text?: string;
       content?: string;
       output?: string;
-    }>("/generate/text", { prompt, maxTokens: 300 });
+    }>("/generate/text", { ...awareness, prompt, maxTokens: 300 });
     const pitchBody =
       generated?.text ?? generated?.content ?? generated?.output ?? "";
 
@@ -384,7 +381,7 @@ router.post("/generate-pitch", async (req, res) => {
     res.json({ pitchBody, trendContextUsed: !!awareness?.contextString });
   } catch (err) {
     logger.warn({ err }, "[Outreach] POST /generate-pitch failed");
-    res.status(500).json({ error: "Failed to generate pitch" });
+    res.status((err as { status?: number }).status === 503 ? 503 : 500).json({ error: "Failed to generate pitch" });
   }
 });
 

@@ -45,3 +45,15 @@ after startup. Explicitly setting `exposeLocalhost = false` on each private
 sidecar entry, as documented by Replit, left zero public sidecar mappings while
 the running preview and loaded-model readiness remained healthy. Preserve this
 setting when maintaining the port table; never remove the startup security gate.
+
+A later workspace restart restored public sidecar mappings even after verified
+replacement and a successful startup with private mappings.
+
+**Why:** A browser evaluation lost its running session when the workspace
+restarted; the next boot failed the same port contract and direct inspection
+confirmed the mappings had reverted. A successful replacement is not durable
+evidence across a workspace restart.
+
+**How to apply:** Recheck the actual port blocks after a restart before retrying
+browser tests. Do not infer that `exposeLocalhost=false` is still present, and
+do not weaken the internal-port security gate to make acceptance tests run.

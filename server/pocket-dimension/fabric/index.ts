@@ -40,8 +40,27 @@ function chunkStoreFactory(nodeId: NodeId): ChunkStore {
   const cached = chunkStoreCache?.get(nodeId);
   if (cached) return cached;
 
-  const pocketName =
-    nodePocketMap?.get(nodeId) ?? `fabric-cluster-auto-${nodeId?.slice(0, 8)}`;
+  const pocketName = nodePocketMap.get(nodeId);
+  if (!pocketName) {
+    // Workers initialized before an autoscale event must resolve the actual
+    // persisted pocket, never invent a name from a node-id prefix.
+    const resolve = async (): Promise<ChunkStore> => {
+      const node = await nodeRegistry.getNode(nodeId);
+      const name = node?.backendConfig?.pocketName;
+      if (typeof name !== "string") throw new Error(`Missing pocket backing for node ${nodeId}`);
+      nodePocketMap.set(nodeId, name);
+      chunkStoreCache.delete(nodeId);
+      return chunkStoreFactory(nodeId);
+    };
+    const lazy: ChunkStore = {
+      putChunk: async (id, data) => (await resolve()).putChunk(id, data),
+      getChunk: async (id) => (await resolve()).getChunk(id),
+      deleteChunk: async (id) => (await resolve()).deleteChunk(id),
+      hasChunk: async (id) => (await resolve()).hasChunk(id),
+    };
+    chunkStoreCache.set(nodeId, lazy);
+    return lazy;
+  }
   const store = new PocketDimensionChunkStore(pocketName);
   chunkStoreCache?.set(nodeId, store);
   return store;
@@ -96,13 +115,27 @@ export const autoClusterManager = new AutoClusterManager(
 
 export { nodeRegistry as fabricNodeRegistry };
 
+let initialization: Promise<void> | null = null;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+const ownsControlPlane = () => process.env.CLUSTER_WORKER_ID === undefined ||
+  process.env.CLUSTER_WORKER_ID === "0";
+
 export async function initializeFabric(): Promise<void> {
-  fabricRebalancer?.start();
+  if (initialization) return initialization;
+  initialization = initializeFabricOnce().catch((error) => {
+    initialization = null;
+    throw error;
+  });
+  return initialization;
+}
+
+async function initializeFabricOnce(): Promise<void> {
 
   try {
     const existingNodes = await nodeRegistry?.listAllNodes();
     const pdNodes = existingNodes?.filter(
-      (n) => n?.backendType === "pocket-dimension",
+      (n) => n?.backendType === "pocket-dimension" &&
+        !(n.backendConfig as Record<string, unknown>).retired,
     );
 
     if (pdNodes?.length >= SEED_CLUSTER_SIZE) {
@@ -120,7 +153,7 @@ export async function initializeFabric(): Promise<void> {
       logger.info(
         `[PocketFabric] Fabric initialized — ${pdNodes?.length} node(s) active`,
       );
-    } else {
+    } else if (ownsControlPlane()) {
       for (let i = 0; i < SEED_CLUSTER_SIZE; i++) {
         const pocketName = `fabric-cluster-${i}`;
         const alreadyRegistered = pdNodes?.find(
@@ -163,9 +196,28 @@ export async function initializeFabric(): Promise<void> {
       );
     }
 
-    autoClusterManager?.start();
-    logger.info("[PocketFabric] Auto-cluster manager started");
+    if (ownsControlPlane()) {
+      // Local pockets share this host, not fictional remote regional machines.
+      // Heartbeat only active pockets so a drained node is not resurrected.
+      const heartbeat = async () => {
+        for (const node of await nodeRegistry.listAllNodes()) {
+          if (node.backendType === "pocket-dimension" && node.healthy &&
+              !(node.backendConfig as Record<string, unknown>).retired) {
+            await nodeRegistry.heartbeat(node.id, node.usedBytes);
+          }
+        }
+      };
+      await heartbeat();
+      heartbeatTimer ??= setInterval(() => {
+        heartbeat().catch((err) => logger.warn({ err }, "[PocketFabric] Heartbeat failed"));
+      }, 60_000);
+      heartbeatTimer.unref();
+      fabricRebalancer.start();
+      autoClusterManager.start();
+      logger.info("[PocketFabric] Single-owner auto-cluster manager started");
+    }
   } catch (err) {
     logger.warn({ err: err }, "[PocketFabric] Failed to initialize fabric:");
+    throw err;
   }
 }

@@ -44,6 +44,46 @@ afterEach(() => {
 });
 
 describe("Replit public port contract", () => {
+  it("does not let blank lines hide a public sidecar mapping", () => {
+    const result = checkPortConfig(`
+[[ports]]
+localPort = 5000
+externalPort = 80
+[[ports]]
+localPort = 8090
+
+# Blank lines do not terminate a TOML table.
+externalPort = 3002
+`);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("exposes internal-only localPort 8090");
+  });
+
+  it("rejects explicitly enabling localhost exposure for private services", () => {
+    const result = checkPortConfig(`
+[[ports]]
+localPort = 5000
+externalPort = 80
+[[ports]]
+localPort = 6379
+exposeLocalhost = true
+`);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("set exposeLocalhost = false");
+  });
+
+  it("accepts explicit private mappings with whitespace and comments", () => {
+    const result = checkPortConfig(`
+[[ports]]
+localPort = 5000
+externalPort = 80
+[[ports]]
+localPort = 9878
+
+exposeLocalhost = false # model API is loopback-only
+`);
+    expect(result.status).toBe(0);
+  });
   it("accepts the application mapped from local 5000 to public 80", () => {
     const result = checkPortConfig(`
 [[ports]]

@@ -1,0 +1,19 @@
+{
+  "caseId": "social-facebook",
+  "httpStatus": 503,
+  "responseHash": "0fc0f1e64ae3dc2dab231f597c0f0c25cd11586fb0247f4c78de2280c728de1d",
+  "errorLabel": "MAXCORE_TEXT_GENERATION_MODEL_FAILED",
+  "reasonClass": "ValueError",
+  "detailKeys": [
+    "error",
+    "reason"
+  ],
+  "reasonMarkers": [
+    "token",
+    "generation",
+    "checkpoint",
+    "valueerror"
+  ],
+  "matchedOriginalAttempt": true,
+  "quality": "NOT_ESTABLISHED"
+}

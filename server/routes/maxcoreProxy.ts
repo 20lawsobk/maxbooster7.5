@@ -18,11 +18,14 @@
 
 import {
   Router,
+  json,
   type Request,
   type Response as ExpressResponse,
 } from "express";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { timingSafeEqual } from "node:crypto";
+import { validateGeneratedArtifact } from "../services/generatedArtifactValidation.js";
 import { requireAdmin, requireAuthOnly } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import {
@@ -34,6 +37,66 @@ import {
 } from "../services/maxcoreConnector.js";
 
 const router = Router();
+
+// Existing application authorization and transport credentials remain unchanged.
+router.get("/api/awareness/unified/status", requireAuthOnly, proxyToMaxCore);
+router.post("/api/awareness/unified/context", requireAuthOnly, proxyToMaxCore);
+
+export function isPrivateArtifactPeer(req: Request): boolean {
+  const secret = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
+  const supplied = req.get("authorization") || "";
+  const expected = secret ? `Bearer ${secret}` : "";
+  return !!expected && Buffer.byteLength(supplied) === Buffer.byteLength(expected) &&
+    timingSafeEqual(Buffer.from(supplied), Buffer.from(expected));
+}
+
+// Only the inherited private peer credential can assert an originating owner.
+// Session authentication and public generation/admin keys are NOT accepted.
+export async function commitGeneratedArtifactHandler(req: Request, res: ExpressResponse) {
+  if (!isPrivateArtifactPeer(req)) {
+    res.status(401).json({ error: "Private peer authentication required" });
+    return;
+  }
+  try {
+    const { owner_id, job_id, filename, content_type, kind, data_base64, metadata = {} } = req.body;
+    if (![owner_id, job_id, filename, content_type, data_base64].every(v => typeof v === "string" && v) ||
+        !/^[a-zA-Z0-9._-]+$/.test(filename) || filename === "." || filename === ".." ||
+        !/^[a-zA-Z0-9_-]+$/.test(owner_id) ||
+        data_base64.length > 140 * 1024 * 1024 ||
+        !/^[A-Za-z0-9+/]*={0,2}$/.test(data_base64) ||
+        !metadata || typeof metadata !== "object" || Array.isArray(metadata) ||
+        !content_type.startsWith(`${kind}/`)) {
+      res.status(400).json({ error: "Invalid generated artifact payload" });
+      return;
+    }
+    const bytes = Buffer.from(data_base64, "base64");
+    if (bytes.length > 100 * 1024 * 1024) {
+      res.status(413).json({ error: "Generated artifact exceeds 100 MB" });
+      return;
+    }
+    const actual = await validateGeneratedArtifact(bytes, kind);
+    const { storageService } = await import("../services/storageService.js");
+    const result = await storageService.commitGeneratedArtifact(
+      bytes, owner_id, job_id, filename, content_type, { ...metadata, ...actual, kind });
+    res.json(result);
+  } catch (error) {
+    res.status(502).json({ error: error instanceof Error ? error.message : "Artifact commit failed" });
+  }
+}
+router.post("/api/internal/generated-artifacts/commit", commitGeneratedArtifactHandler);
+
+// Mount BEFORE the global 1 MB JSON parser and browser-session CSRF middleware.
+// Peer authentication runs before accepting a large body; this is not a session
+// auth exemption and cannot be authorized by any public user/admin credential.
+export const generatedArtifactRouter = Router();
+generatedArtifactRouter.post("/api/internal/generated-artifacts/commit",
+  (req, res, next) => {
+    if (!isPrivateArtifactPeer(req)) {
+      res.status(401).json({ error: "Private peer authentication required" });
+      return;
+    }
+    next();
+  }, json({ limit: "140mb" }), commitGeneratedArtifactHandler);
 
 // Imported MaxCore source documents this as an administrative API-key scope.
 // It is routed separately below so application-level admin authorization is
@@ -172,12 +235,14 @@ async function proxyToMaxCore(
   let body: string | undefined;
   if (hasBody) {
     headers["Content-Type"] = "application/json";
-    // Inject the authenticated user id (MaxCore requires user_id on several
-    // generation routes) without clobbering anything the caller already sent.
+    // Remove all reserved caller-supplied identity fields before binding the
+    // session owner. Incoming public headers are never copied to upstream.
     const src =
       req.body && typeof req.body === "object" && !Array.isArray(req.body)
         ? { ...req.body }
         : {};
+    for (const key of ["owner_id", "ownerId", "user_id", "userId", "trusted_owner",
+      "trustedOwner", "_owner", "_auth", "auth_context"]) delete src[key];
     if (authUser?.id) {
       src.user_id = authUser.id;
       src.userId = authUser.id;
@@ -323,8 +388,8 @@ async function proxyAudioUpload(
  * directly (and http:// loopback URLs are CSP-blocked); see
  * absolutizeMaxcoreMediaUrls in maxcoreConnector.ts, which rewrites MaxCore's
  * relative media paths to `/api/maxcore-media${path}` for the browser to hit.
- * Publicly readable (no auth) since this only ever serves already-public
- * generated media (cover art, previews) — never a path outside `RELATIVE_MEDIA`.
+ * Authenticated, owner-forwarding compatibility proxy for scratch previews.
+ * Durable completed artifacts use /api/storage/file instead.
  */
 async function proxyMaxcoreMedia(
   req: Request,
@@ -341,7 +406,7 @@ async function proxyMaxcoreMedia(
 
   // Only ever forward the same media-prefixed, traversal-free paths
   // absolutizeMaxcoreMediaUrls itself rewrites to this proxy — this is a
-  // PUBLIC unauthenticated route, so it must never become an open relay for
+  // compatibility route, so it must never become an open relay for
   // MaxCore's full GET surface.
   if (!isAllowedMaxcoreMediaPath(subPath)) {
     res.status(404).json({ error: "Not found" });
@@ -353,7 +418,8 @@ async function proxyMaxcoreMedia(
   try {
     const upstream = await fetch(targetUrl, {
       method: "GET",
-      headers: { Accept: "*/*" },
+      headers: { ...getMaxcoreGenerationHeaders(), Accept: "*/*",
+        "X-MaxCore-User-Id": String((req.user as { id?: string })?.id || "") },
       redirect: "manual",
       signal: abort.signal,
     });
@@ -369,8 +435,8 @@ async function proxyMaxcoreMedia(
     if (contentType) res.setHeader("Content-Type", contentType);
     const len = upstream.headers.get("content-length");
     if (len) res.setHeader("Content-Length", len);
-    // Generated media is immutable-by-name (random ids), safe to cache.
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    // Owner-scoped media must not be cached by shared intermediaries.
+    res.setHeader("Cache-Control", "private, no-store");
     await pipeUpstreamBody(upstream, res);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -389,7 +455,7 @@ async function proxyMaxcoreMedia(
 
 /* ── Route registration (full paths; router mounted at "/") ───────────────── */
 
-router.get("/api/maxcore-media/*mediaPath", proxyMaxcoreMedia);
+router.get("/api/maxcore-media/*mediaPath", requireAuthOnly, proxyMaxcoreMedia);
 router.post("/api/audio/upload", requireAuthOnly, proxyAudioUpload);
 
 // Content & media generation
@@ -484,6 +550,7 @@ router.get(
   proxyToMaxCore,
 );
 router.get("/api/platform/model/info", requireAuthOnly, proxyToMaxCore);
+router.get("/api/generation/capabilities", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/social/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/advertising/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/content/state", requireAuthOnly, proxyToMaxCore);

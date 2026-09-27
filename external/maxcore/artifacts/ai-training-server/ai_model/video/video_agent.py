@@ -300,7 +300,7 @@ class VideoAgent:
 
         specs = _PLATFORM_SPECS.get(platform, _PLATFORM_SPECS["tiktok"])
         if req.duration and req.duration > 0:
-            dur = max(6.0, min(req.duration, specs["max_dur"]))
+            dur = min(req.duration, specs["max_dur"])
         else:
             dur = specs["duration"]
         ratio = specs["ratio"]

@@ -1,0 +1,460 @@
+{
+  "id": "audio-wav",
+  "case": {
+    "id": "audio-wav",
+    "handler": "api_generate_audio",
+    "request_class": "ApiGenerateAudioRequest",
+    "kind": "audio",
+    "body": {
+      "prompt": "Mellow piano instrumental with soft drums",
+      "genre": "hip-hop",
+      "mood": "calm",
+      "duration": 4,
+      "format": "wav",
+      "stems": false,
+      "arrange": false,
+      "seed": 23103
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "returned",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 5,
+    "ai_model/request_intelligence.py:<module>": 1,
+    "ai_model/request_intelligence.py:GenerationBrief": 1,
+    "ai_model/generation/orchestrator.py:<genexpr>": 3,
+    "ai_model/generation/orchestrator.py:_safe_envelope_text": 3,
+    "ai_model/generation/orchestrator.py:_coerce_aw": 1,
+    "ai_model/quality_awareness.py:<module>": 1,
+    "ai_model/quality_awareness.py:platform_awareness_string": 1,
+    "ai_model/quality_awareness.py:self_sufficiency": 4,
+    "ai_model/quality_awareness.py:_own_corpus_size": 4,
+    "ai_model/quality_awareness.py:_store": 2,
+    "ai_model/quality_awareness.py:_modality_retire_threshold": 4,
+    "ai_model/quality_awareness.py:retire_threshold": 4,
+    "ai_model/quality_awareness.py:get_doc": 3,
+    "ai_model/quality_awareness.py:_doc_age_seconds": 1,
+    "ai_model/quality_awareness.py:_max_age_seconds": 1,
+    "ai_model/request_intelligence.py:build_brief": 1,
+    "ai_model/request_intelligence.py:_norm": 21,
+    "ai_model/request_intelligence.py:_narrative_clause": 1,
+    "ai_model/request_intelligence.py:load_brand_voice": 1,
+    "ai_model/request_intelligence.py:_profile_for": 1,
+    "ai_model/request_intelligence.py:classify_intent": 1,
+    "ai_model/request_intelligence.py:<lambda>": 8,
+    "ai_model/request_intelligence.py:extract_keywords": 1,
+    "ai_model/request_intelligence.py:infer_audience": 1,
+    "ai_model/request_intelligence.py:_resolve_tone": 1,
+    "ai_model/request_intelligence.py:_producer_energy": 1,
+    "ai_model/request_intelligence.py:_build_directives": 1,
+    "ai_model/quality_awareness.py:brief_enrichment": 1,
+    "ai_model/generation/technique.py:extract_technique": 1,
+    "ai_model/generation/technique.py:_prior_dna": 1,
+    "ai_model/generation/technique.py:_clamp": 3,
+    "ai_model/generation/technique.py:_real_descriptors": 1,
+    "ai_model/generation/technique.py:_query_swatch": 1,
+    "ai_model/generation/technique.py:_D": 1,
+    "ai_model/generation/technique.py:_hex": 3,
+    "ai_model/gpu/torch_backend.py:__init__": 1,
+    "ai_model/gpu/digital_gpu.py:__init__": 8,
+    "ai_model/gpu/digital_gpu.py:gemm": 1,
+    "ai_model/gpu/digital_gpu.py:alloc": 3,
+    "ai_model/gpu/digital_gpu.py:h_gemm": 1,
+    "ai_model/gpu/digital_gpu.py:get": 5,
+    "ai_model/gpu/digital_gpu.py:add": 1,
+    "ai_model/gpu/digital_gpu.py:run": 1,
+    "ai_model/gpu/digital_gpu.py:_validate_handles": 1,
+    "ai_model/gpu/digital_gpu.py:meta": 3,
+    "ai_model/gpu/digital_gpu.py:gemm_tiled": 1,
+    "ai_model/gpu/digital_gpu.py:_check_matmul_shapes": 1,
+    "ai_model/gpu/digital_gpu.py:_model": 1,
+    "ai_model/generation/technique.py:_real_sonic": 1,
+    "ai_model/agents/script_agent.py:run": 1,
+    "ai_model/agents/script_agent.py:_format_awareness_prefix": 1,
+    "ai_model/agents/script_agent.py:_control_payloads": 1,
+    "ai_model/agents/script_agent.py:_control_values": 3,
+    "ai_model/gpu/pocket_pool.py:spawn_sync": 2,
+    "ai_model/gpu/pocket_pool.py:__init__": 1,
+    "ai_model/gpu/sizing.py:hyper_gpu_sizing": 1,
+    "ai_model/gpu/hyper_backend.py:__init__": 1,
+    "ai_model/gpu/hyper_core.py:__init__": 3,
+    "ai_model/gpu/native/kernels.py:get_native_kernels": 1,
+    "ai_model/gpu/pocket_pool.py:_register_birth": 1,
+    "ai_model/gpu/pocket_pool.py:begin_work": 1,
+    "ai_model/gpu/pocket_pool.py:_register_death": 1,
+    "ai_model/gpu/pocket_pool.py:die": 1,
+    "ai_model/gpu/hyper_backend.py:flush_vram": 1,
+    "ai_model/gpu/hyper_core.py:flush_vram": 1,
+    "ai_model/gpu/hyper_core.py:flush": 1,
+    "ai_model/request_intelligence.py:to_dict": 2,
+    "ai_model/generation/technique.py:to_dict": 1,
+    "ai_model/generation/technique.py:color_scheme": 1,
+    "ai_model/generation/technique.py:mood": 1,
+    "ai_model/generation/technique.py:color_grade": 1,
+    "ai_model/quality_awareness.py:music_targets": 1,
+    "ai_model/quality_awareness.py:_match": 2,
+    "ai_model/gpu/hyper_backend.py:status": 1,
+    "ai_model/gpu/hyper_core.py:status": 12,
+    "ai_model/gpu/hyper_core.py:<genexpr>": 10,
+    "ai_model/gpu/hyper_core.py:used_bytes": 1,
+    "ai_model/gpu/hyper_core.py:silicon_report": 1
+  },
+  "exceptions": [
+    {
+      "file": "ai_model/gpu/pocket_pool.py",
+      "function": "spawn_sync",
+      "error": "ValueError: Prompt loses over 40% of its tokens to checkpoint <UNK>"
+    }
+  ],
+  "agent_outputs": [],
+  "awareness": [
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    }
+  ],
+  "files": [
+    {
+      "path": "reports/maxcore-quality/2026-09-24-post-fix/audio-wav/media/audio_5b7c5912-a4ce-45cb-870a-e447f79c042c.wav",
+      "bytes": 1058502,
+      "sha256": "94dbb42e6a4e84e565c15a37517df60f465a74c267f0d25a12640c16f451c77a"
+    }
+  ],
+  "runner_sha256": "7ac76463d05f22bffe337775bcf270ccd73434701a7add75cd15afe80b078d8c",
+  "server_sha256": "fb248859f23d75ab93c44764db3bc0dcfb7991046cd7419b24a7496dba8f82a8",
+  "job_storage": "evaluation-local job metadata; not PDIM/client durability",
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 0.9,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 12.0,
+      "silicon": null
+    }
+  },
+  "request": {
+    "prompt": "Mellow piano instrumental with soft drums",
+    "genre": "hip-hop",
+    "mood": "calm",
+    "duration": 4,
+    "format": "wav",
+    "stems": false,
+    "arrange": false,
+    "seed": 23103,
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "validated_request": {
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+    "description": "",
+    "prompt_url": "",
+    "instruction": null,
+    "extra_context": null,
+    "content_themes": null,
+    "intent": null,
+    "direction": null,
+    "context": null,
+    "style_fingerprint": null,
+    "notes": null,
+    "duration": 4.0,
+    "instrument": null,
+    "genre": "hip-hop",
+    "step": null,
+    "inputs": null,
+    "constraints": null,
+    "artistProfileId": null,
+    "platformRules": null,
+    "mood": "calm",
+    "prompt": "Mellow piano instrumental with soft drums",
+    "target_bpm": null,
+    "target_key": null,
+    "bpm": null,
+    "key": null,
+    "seed": 23103,
+    "format": "wav",
+    "sample_rate": null,
+    "bit_depth": null,
+    "loudness_lufs": null,
+    "loudness_preset": null,
+    "stems": false,
+    "arrange": false
+  },
+  "elapsed_seconds": 15.931957683999826,
+  "response": {
+    "job_id": "5b7c5912-a4ce-45cb-870a-e447f79c042c",
+    "status": "processing",
+    "intelligence": {
+      "modality": "audio",
+      "platform": "general",
+      "intent": "drive_engagement",
+      "intent_label": "Drive engagement",
+      "intent_confidence": 0.4,
+      "audience": "hip-hop listeners \u2014 engaged music fans (18-34)",
+      "tone": "playful",
+      "keywords": [
+        "hip",
+        "hop",
+        "clip"
+      ],
+      "strategy": {
+        "aspect_ratio": "1:1",
+        "layout": "square_1_1",
+        "hook_style": "pattern_interrupt",
+        "cta_style": "act_now",
+        "word_count_target": [
+          20,
+          55
+        ],
+        "hashtags_target": 4,
+        "tempo": "fast",
+        "candidate_count": 1,
+        "temperature": 0.9
+      },
+      "directives": [
+        "Optimise for: Drive engagement",
+        "Open with a pattern interrupt hook within the first line",
+        "Keep copy fast and roughly 20-55 words",
+        "Close with a act now call-to-action",
+        "Work in keywords: hip, hop, clip",
+        "Land the full hook inside the first 125 characters \u2014 that is all viewers see before the fold",
+        "Aim for high-arousal emotion (awe, excitement, joy) \u2014 arousal level drives shares more than emotion type",
+        "Structure as Hook \u2192 Value \u2192 CTA \u2014 this three-part shape earns 23% more engagement",
+        "Use identity language ('this is for the ones who...') to create belonging before the ask",
+        "Close with a one-tap ask (emoji reaction or tag-a-friend) \u2014 low friction wins comments",
+        "Style-match current chart leaders: Hip-Hop/Rap, hip hop (live quality buffer, weight 1.0)",
+        "Align with live chart signals: Top-shared social posts right now run ~46 words; 62% speak first-person and 0% open a question \u2014 personal voice is outperforming broadcast copy. \u00b7 live cross-platform tags gaining now: #ExtravagantSongsOrPoems #MeerMittwoch #MusicWomenWednesday #SeaWednesday #WhiskersWednesday #maricarmen."
+      ],
+      "suggested_cta": "Drop a \ud83d\udd25 if this hits \u2014 tell me in the comments",
+      "notes": [
+        "quality buffer active \u2014 60 studied exemplars from 2026-09-23T20:06:34Z, self-sufficiency 0/500"
+      ],
+      "producer_metadata": {
+        "mood": "",
+        "bpm": null,
+        "key": "",
+        "energy": 0.8
+      },
+      "ai_disclosure": false
+    }
+  },
+  "polls": [
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "pending"
+    },
+    {
+      "status": "done",
+      "url": "/uploads/audio_5b7c5912-a4ce-45cb-870a-e447f79c042c.wav",
+      "audio_url": "/uploads/audio_5b7c5912-a4ce-45cb-870a-e447f79c042c.wav",
+      "duration": 4,
+      "bpm": 126.9,
+      "key": "G major",
+      "format": "wav",
+      "sample_rate": 44100,
+      "bit_depth": 24,
+      "loudness_lufs": null,
+      "requested_bpm": 126.9,
+      "requested_key": "G major",
+      "requested_loudness_lufs": null,
+      "loudness_target_applied": false,
+      "measured_bpm": null,
+      "measured_key": null,
+      "measured_loudness_lufs": null,
+      "waveform_source": "digital_gpu_synthesis",
+      "audio_analysis": {
+        "loudness_db": -8.5,
+        "rms_dbfs": -8.5,
+        "energy": 1.0,
+        "spectral_brightness": "dark",
+        "bass_weight": "heavy"
+      },
+      "stems": {},
+      "arrangement": null,
+      "seed": 23103,
+      "concept": null,
+      "style_hook": null,
+      "source": "heuristic",
+      "technique": {
+        "energy": 0.9,
+        "darkness": 0.57,
+        "warmth": 0.35,
+        "saturation": 0.82,
+        "contrast": 0.71,
+        "grain": 0.2,
+        "tempo": null,
+        "key": null,
+        "brightness_tilt": 0.8,
+        "color_scheme": "high_contrast",
+        "mood": "vibrant",
+        "color_grade": "cool",
+        "source": "prior",
+        "asset_ref": null,
+        "real_weight": 0.0,
+        "notes": [
+          "no real reference asset available \u2014 genre/tone prior"
+        ]
+      },
+      "awareness_genres": [
+        "hip-hop"
+      ],
+      "awareness_mood": "calm",
+      "awareness_source": "intent",
+      "selection_warning": null,
+      "source_sample": {
+        "idx": 22,
+        "bpm": 95.7,
+        "key": "G major",
+        "dataset_source": null,
+        "role": "metadata_reference"
+      }
+    }
+  ],
+  "terminal": {
+    "status": "done",
+    "url": "/uploads/audio_5b7c5912-a4ce-45cb-870a-e447f79c042c.wav",
+    "audio_url": "/uploads/audio_5b7c5912-a4ce-45cb-870a-e447f79c042c.wav",
+    "duration": 4,
+    "bpm": 126.9,
+    "key": "G major",
+    "format": "wav",
+    "sample_rate": 44100,
+    "bit_depth": 24,
+    "loudness_lufs": null,
+    "requested_bpm": 126.9,
+    "requested_key": "G major",
+    "requested_loudness_lufs": null,
+    "loudness_target_applied": false,
+    "measured_bpm": null,
+    "measured_key": null,
+    "measured_loudness_lufs": null,
+    "waveform_source": "digital_gpu_synthesis",
+    "audio_analysis": {
+      "loudness_db": -8.5,
+      "rms_dbfs": -8.5,
+      "energy": 1.0,
+      "spectral_brightness": "dark",
+      "bass_weight": "heavy"
+    },
+    "stems": {},
+    "arrangement": null,
+    "seed": 23103,
+    "concept": null,
+    "style_hook": null,
+    "source": "heuristic",
+    "technique": {
+      "energy": 0.9,
+      "darkness": 0.57,
+      "warmth": 0.35,
+      "saturation": 0.82,
+      "contrast": 0.71,
+      "grain": 0.2,
+      "tempo": null,
+      "key": null,
+      "brightness_tilt": 0.8,
+      "color_scheme": "high_contrast",
+      "mood": "vibrant",
+      "color_grade": "cool",
+      "source": "prior",
+      "asset_ref": null,
+      "real_weight": 0.0,
+      "notes": [
+        "no real reference asset available \u2014 genre/tone prior"
+      ]
+    },
+    "awareness_genres": [
+      "hip-hop"
+    ],
+    "awareness_mood": "calm",
+    "awareness_source": "intent",
+    "selection_warning": null,
+    "source_sample": {
+      "idx": 22,
+      "bpm": 95.7,
+      "key": "G major",
+      "dataset_source": null,
+      "role": "metadata_reference"
+    }
+  },
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

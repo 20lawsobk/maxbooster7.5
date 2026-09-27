@@ -1,6 +1,7 @@
 from __future__ import annotations
 import gc
 import hashlib
+import json
 import threading
 import time
 import numpy as np
@@ -9,6 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Union
 from .tokenizer import SimpleTokenizer, BPETokenizer
+from .sampling_context import sampling_context
 
 # ── Digital GPU core singleton ────────────────────────────────────────────────
 # All softmax / log-softmax calls route through HyperSIMDCore so they execute
@@ -23,15 +25,12 @@ def _get_hyper_core():
         return _hyper_core
     with _hyper_core_lock:
         if _hyper_core is None:
-            try:
-                from ai_model.gpu.hyper_core import HyperSIMDCore, PrecisionMode
-                from ai_model.gpu.sizing import hyper_gpu_sizing
-                _lanes, _tensor_cores = hyper_gpu_sizing()
-                _hyper_core = HyperSIMDCore(
-                    lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED
-                )
-            except Exception:
-                pass
+            from ai_model.gpu.hyper_core import HyperSIMDCore, PrecisionMode
+            from ai_model.gpu.sizing import hyper_gpu_sizing
+            _lanes, _tensor_cores = hyper_gpu_sizing()
+            _hyper_core = HyperSIMDCore(
+                lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED
+            )
     return _hyper_core
 
 
@@ -43,16 +42,13 @@ def _np_softmax(x: np.ndarray) -> np.ndarray:
 
 
 def _gpu_softmax(t: torch.Tensor, dim: int = -1) -> torch.Tensor:
-    """Softmax via HyperSIMDCore. Falls back to F.softmax (never raises)."""
+    """Softmax via HyperSIMDCore; fail closed when the backend is unavailable."""
     core = _get_hyper_core()
     if core is None:
-        return F.softmax(t, dim=dim)
-    try:
-        arr = t.detach().float().numpy()
-        out = core.softmax(arr, axis=dim)
-        return torch.from_numpy(out)
-    except Exception:
-        return F.softmax(t, dim=dim)
+        raise RuntimeError("HyperSIMDCore is required for checkpoint inference")
+    arr = t.detach().float().numpy()
+    out = core.softmax(arr, axis=dim)
+    return torch.from_numpy(out)
 
 
 def _gpu_log_softmax(t: torch.Tensor, dim: int = -1) -> torch.Tensor:
@@ -91,8 +87,11 @@ def _gen_cache_key(
     top_p: float,
     top_k: int,
     repetition_penalty: float,
+    *, min_length=10, seed=None, snapshot_hash="", checkpoint_identity="",
 ) -> str:
-    raw = f"{prompt}|{max_new_tokens}|{temperature:.4f}|{top_p:.4f}|{top_k}|{repetition_penalty:.4f}"
+    raw = json.dumps([prompt, max_new_tokens, temperature, top_p, top_k,
+                      repetition_penalty, min_length, seed, snapshot_hash,
+                      checkpoint_identity], separators=(",", ":"), allow_nan=False)
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
@@ -151,6 +150,33 @@ class CreativeModel:
         self.device = device
         self.tokenizer.freeze()
         self.model.eval()
+        vocab = self.tokenizer.vocab
+        if (not all(token in vocab for token in ("<PAD>", "<BOS>", "<EOS>", "<UNK>"))
+                or len(set(vocab.values())) != len(vocab)
+                or min(vocab.values()) < 0
+                or max(vocab.values()) >= self.model.token_emb.num_embeddings
+                or any(self.tokenizer.token_to_id(token) == vocab["<UNK>"]
+                       for token in ("<PAD>", "<BOS>", "<EOS>"))):
+            raise ValueError("Checkpoint tokenizer IDs do not match model embeddings")
+        # The released head has 1,000 rows but only 443 named token IDs.
+        # Sampling an unnamed row used to decode it as "<UNK>" even though the
+        # literal <UNK> ID was masked. Never present such an ID as model text.
+        self._unnamed_token_ids = np.array(
+            sorted(set(range(self.model.token_emb.num_embeddings)) - set(vocab.values())),
+            dtype=np.int64,
+        )
+
+    def _encode_prompt(self, prompt: str) -> list[int]:
+        ids = self.tokenizer.encode(prompt).ids
+        unk = self.tokenizer.token_to_id("<UNK>")
+        unknown_count = sum(token == unk for token in ids)
+        if ids and unknown_count / len(ids) > 0.4:
+            raise ValueError(
+                "Prompt loses over 40% of its tokens to checkpoint <UNK> "
+                f"({unknown_count}/{len(ids)} tokens); checkpoint vocabulary "
+                "cannot represent this conditioning. No inference or fallback ran."
+            )
+        return ids
 
     def resize_embeddings(self):
         new_vocab = self.tokenizer.vocab_size
@@ -200,6 +226,7 @@ class CreativeModel:
         temperature: float,
         top_p: float,
         top_k: int,
+        rng=None,
     ) -> int:
         """
         Pure-numpy nucleus sampling — zero tensor↔numpy roundtrips.
@@ -210,7 +237,10 @@ class CreativeModel:
         single decode step.  Returns the sampled token id as a plain int.
         """
         core = _get_hyper_core()
+        if core is None:
+            raise RuntimeError("HyperSIMDCore is required for checkpoint sampling")
         row = logits_np[0]                      # view, no copy
+        row[self._unnamed_token_ids] = -np.inf
 
         # Stage 8: mask hard-blocked tokens
         bad_ids = self._safety_bad_ids()
@@ -230,13 +260,7 @@ class CreativeModel:
         if 0.0 < top_p < 1.0:
             order = np.argsort(-row)            # descending indices, O(V log V)
             sorted_row = row[order]
-            if core is not None:
-                try:
-                    probs_s = core.softmax(sorted_row[None], axis=-1)[0]
-                except Exception:
-                    probs_s = _np_softmax(sorted_row[None])[0]
-            else:
-                probs_s = _np_softmax(sorted_row[None])[0]
+            probs_s = core.softmax(sorted_row[None], axis=-1)[0]
             cumulative = np.cumsum(probs_s)
             # mask tokens whose cumulative prob exceeds top_p (keep the first)
             mask = (cumulative - probs_s) > top_p
@@ -244,22 +268,17 @@ class CreativeModel:
             row[order] = sorted_row             # write back in-place
 
         # Final softmax → sample
-        if core is not None:
-            try:
-                probs = core.softmax(logits_np, axis=-1)[0]
-            except Exception:
-                probs = _np_softmax(logits_np)[0]
-        else:
-            probs = _np_softmax(logits_np)[0]
+        probs = core.softmax(logits_np, axis=-1)[0]
 
         probs = np.maximum(probs, 0.0)
         total = probs.sum()
         if total <= 0.0 or not np.isfinite(total):
-            probs = np.ones(len(probs), dtype=np.float32) / len(probs)
-        else:
-            probs /= total
+            raise ValueError("Checkpoint sampling produced no valid probabilities")
+        probs /= total
 
-        return int(np.random.choice(len(probs), p=probs))
+        if rng is None:
+            rng = np.random.default_rng(sampling_context()[0])
+        return int(rng.choice(len(probs), p=probs))
 
     def _sample_next(
         self,
@@ -267,11 +286,12 @@ class CreativeModel:
         temperature: float,
         top_p: float,
         top_k: int,
+        rng=None,
     ) -> torch.Tensor:
         """Tensor-in / tensor-out wrapper kept for external callers (beam search etc.)."""
         token_id = self._sample_next_np(
             logits.detach().float().numpy().copy(),
-            temperature, top_p, top_k,
+            temperature, top_p, top_k, rng=rng,
         )
         return torch.tensor([[token_id]], dtype=torch.long)
 
@@ -286,6 +306,8 @@ class CreativeModel:
         top_k: int = 50,
         repetition_penalty: float = 1.15,
         min_length: int = 10,
+        seed: int | None = None,
+        snapshot_hash: str | None = None,
     ) -> str:
         """
         Unlimited autoregressive generation with KV-cache.
@@ -296,14 +318,25 @@ class CreativeModel:
         served from the in-process L1 cache in microseconds (sub-ms).
         """
         # ── L1 generation cache: sub-ms hit path ──────────────────────────────
+        seed, snapshot_hash = sampling_context(seed, snapshot_hash)
+        rng = np.random.default_rng(seed)
+        # Version counters invalidate entries after checkpoint loads/in-place updates.
+        # Instance identity also separates independently loaded models/tokenizers.
+        state = [(name, id(value), value._version)
+                 for name, value in self.model.named_parameters()]
+        state.extend((name, id(value), value._version)
+                     for name, value in self.model.named_buffers())
+        identity = repr((id(self), id(self.model), state, self.tokenizer.vocab))
         cache_key = _gen_cache_key(
-            prompt, max_new_tokens, temperature, top_p, top_k, repetition_penalty
+            prompt, max_new_tokens, temperature, top_p, top_k, repetition_penalty,
+            min_length=min_length, seed=seed, snapshot_hash=snapshot_hash,
+            checkpoint_identity=identity,
         )
         cached = _gen_cache_get(cache_key)
         if cached is not None:
             return cached
 
-        ids = self.tokenizer.encode(prompt).ids
+        ids = self._encode_prompt(prompt)
         if not ids:
             ids = [self.tokenizer.token_to_id("<BOS>")]
 
@@ -347,12 +380,11 @@ class CreativeModel:
 
                 # Pure-numpy nucleus sampling — zero roundtrips inside
                 token_id = self._sample_next_np(
-                    next_logits_np.copy(), temperature, top_p, top_k
+                    next_logits_np.copy(), temperature, top_p, top_k, rng=rng
                 )
-                generated_ids.append(token_id)
-
                 if token_id == eos_id:
                     break
+                generated_ids.append(token_id)
 
                 # Context window guard
                 ctx_used = len(ids) + len(generated_ids)
@@ -365,7 +397,9 @@ class CreativeModel:
                 logits_new, kv_cache = self.model.decode_one(next_id_t, kv_cache)
                 next_logits_np = logits_new[:, 0, :].float().numpy().copy()
 
-        result = self.tokenizer.decode(ids + generated_ids)
+        # Return only tokens emitted by the checkpoint, never the conditioning
+        # prompt (which can look like a convincing but entirely ungenerated answer).
+        result = self.tokenizer.decode(generated_ids)
 
         # Store in L1 cache for future sub-ms hits
         _gen_cache_put(cache_key, result)
@@ -383,6 +417,8 @@ class CreativeModel:
         repetition_penalty: float = 1.15,
         min_length: int = 5,
         chunk_size: int = 4,
+        seed: int | None = None,
+        snapshot_hash: str | None = None,
     ) -> list[str]:
         """
         Batched autoregressive generation with memory-safe micro-batching.
@@ -401,6 +437,7 @@ class CreativeModel:
         if not prompts:
             return []
 
+        seed, snapshot_hash = sampling_context(seed, snapshot_hash)
         results: list[str] = []
         for i in range(0, len(prompts), chunk_size):
             chunk = prompts[i : i + chunk_size]
@@ -412,6 +449,7 @@ class CreativeModel:
                 top_k=top_k,
                 repetition_penalty=repetition_penalty,
                 min_length=min_length,
+                seeds=[(seed + index) % 2**64 for index in range(i, i + len(chunk))],
             )
             results.extend(chunk_out)
             gc.collect()
@@ -426,6 +464,7 @@ class CreativeModel:
         top_k: int = 50,
         repetition_penalty: float = 1.15,
         min_length: int = 5,
+        seeds: list[int] | None = None,
     ) -> list[str]:
         """
         Core batched inference for a single micro-batch.
@@ -437,6 +476,10 @@ class CreativeModel:
         For B=4, tokens=42: ≈ 55 MB — well within the 1.3 GB headroom.
         """
         B = len(prompts)
+        if seeds is None:
+            base_seed, _ = sampling_context()
+            seeds = [(base_seed + index) % 2**64 for index in range(B)]
+        rngs = [np.random.default_rng(value) for value in seeds]
         eos_id      = self.tokenizer.token_to_id("<EOS>")
         pad_id      = self.tokenizer.token_to_id("<PAD>")
         bos_id      = self.tokenizer.token_to_id("<BOS>")
@@ -444,17 +487,23 @@ class CreativeModel:
         special_ids = (pad_id, unk_id, eos_id)
         max_ctx     = getattr(self.model, "max_len", 1024)
 
-        # Tokenize and right-pad to uniform length
+        # Left-pad so every row's final prefill logit belongs to its last
+        # actual prompt token; mask padding keys during prefill and decoding.
         prompt_ids_list: list[list[int]] = []
         for p in prompts:
-            ids = self.tokenizer.encode(p).ids or [bos_id]
+            ids = self._encode_prompt(p) or [bos_id]
             if len(ids) > max_ctx:
                 ids = ids[-max_ctx:]
             prompt_ids_list.append(ids)
 
         max_plen = max(len(ids) for ids in prompt_ids_list)
-        padded   = [ids + [pad_id] * (max_plen - len(ids))
-                    for ids in prompt_ids_list]
+        pad_counts = [max_plen - len(ids) for ids in prompt_ids_list]
+        padded = [[pad_id] * count + ids
+                  for count, ids in zip(pad_counts, prompt_ids_list)]
+        kpm = (torch.tensor(
+            [[True] * count + [False] * (max_plen - count)
+             for count in pad_counts], device=self.device, dtype=torch.bool
+        ) if any(pad_counts) else None)
 
         generated: list[list[int]] = [[] for _ in range(B)]
         done = [False] * B
@@ -462,7 +511,7 @@ class CreativeModel:
         _autocast = torch.autocast("cpu", dtype=torch.bfloat16, enabled=True)
         with torch.no_grad(), _autocast:
             x = torch.tensor(padded, device=self.device)  # [B, max_plen]
-            logits_all, kv_cache = self.model.prefill(x)
+            logits_all, kv_cache = self.model.prefill(x, key_padding_mask=kpm)
             next_logits = logits_all[:, -1, :].float().clone()  # [B, vocab]
 
             for step in range(max_new_tokens):
@@ -481,7 +530,8 @@ class CreativeModel:
                         lb = self._apply_repetition_penalty(
                             lb, generated[b][-64:], repetition_penalty, special_ids
                         )
-                    nid = int(self._sample_next(lb, temperature, top_p, top_k).item())
+                    nid = int(self._sample_next(lb, temperature, top_p, top_k,
+                                                rng=rngs[b]).item())
                     next_tokens.append(nid)
                     if nid == eos_id:
                         done[b] = True
@@ -496,13 +546,22 @@ class CreativeModel:
                     kv_cache = [
                         (k[:, :, 1:, :], v[:, :, 1:, :]) for k, v in kv_cache
                     ]
+                    if kpm is not None:
+                        kpm = kpm[:, 1:]
 
                 nt = torch.tensor([[t] for t in next_tokens], device=self.device)
-                logits_new, kv_cache = self.model.decode_one(nt, kv_cache)
+                if kpm is not None:
+                    kpm = torch.cat(
+                        [kpm, torch.zeros(B, 1, dtype=torch.bool, device=self.device)],
+                        dim=1,
+                    )
+                logits_new, kv_cache = self.model.decode_one(
+                    nt, kv_cache, key_padding_mask=kpm
+                )
                 next_logits = logits_new[:, 0, :].float().clone()  # [B, vocab]
 
         return [
-            self.tokenizer.decode(prompt_ids_list[b] + generated[b])
+            self.tokenizer.decode(generated[b])
             for b in range(B)
         ]
 
@@ -527,6 +586,8 @@ class CreativeModel:
         if not rows:
             return []
         B = len(rows)
+        rngs = [np.random.default_rng(sampling_context(
+            r.get("seed"), r.get("snapshot_hash"))[0]) for r in rows]
 
         eos_id = self.tokenizer.token_to_id("<EOS>")
         pad_id = self.tokenizer.token_to_id("<PAD>")
@@ -544,7 +605,7 @@ class CreativeModel:
 
         prompt_ids_list: list[list[int]] = []
         for r in rows:
-            ids = self.tokenizer.encode(r["prompt"]).ids or [bos_id]
+            ids = self._encode_prompt(r["prompt"]) or [bos_id]
             if len(ids) > max_ctx:
                 ids = ids[-max_ctx:]
             prompt_ids_list.append(ids)
@@ -591,13 +652,14 @@ class CreativeModel:
                             lb, generated[b][-64:], r_rep[b], special_ids
                         )
                     nid = int(
-                        self._sample_next(lb, r_temp[b], r_top_p[b], r_top_k[b]).item()
+                        self._sample_next(lb, r_temp[b], r_top_p[b], r_top_k[b],
+                                          rng=rngs[b]).item()
                     )
-                    generated[b].append(nid)
                     if nid == eos_id:
                         done[b] = True
                         next_tokens.append(pad_id)
                     else:
+                        generated[b].append(nid)
                         next_tokens.append(nid)
 
                 if all(done):
@@ -622,7 +684,7 @@ class CreativeModel:
                 next_logits = logits_new[:, 0, :].float().clone()  # [B, vocab]
 
         return [
-            self.tokenizer.decode(prompt_ids_list[b] + generated[b])
+            self.tokenizer.decode(generated[b])
             for b in range(B)
         ]
 
@@ -639,7 +701,7 @@ class CreativeModel:
         temperature: float = 1.0,
     ) -> str:
         """Beam search with length penalty."""
-        ids = self.tokenizer.encode(prompt).ids
+        ids = self._encode_prompt(prompt)
         if not ids:
             ids = [self.tokenizer.token_to_id("<BOS>")]
 
@@ -671,6 +733,8 @@ class CreativeModel:
 
                     next_logits[0, pad_id] = float('-inf')
                     next_logits[0, unk_id] = float('-inf')
+                    if self._unnamed_token_ids.size:
+                        next_logits[0, self._unnamed_token_ids] = float('-inf')
                     # Stage 8 constraint enforcement — mask hard-blocked tokens.
                     bad_ids = self._safety_bad_ids()
                     if bad_ids:
@@ -708,7 +772,9 @@ class CreativeModel:
             return prompt
 
         best = max(completed, key=lambda c: c[0] / max(1, len(c[1])) ** length_penalty)
-        return self.tokenizer.decode(best[1])
+        return self.tokenizer.decode(
+            [tid for tid in best[1][len(ids):] if tid != eos_id]
+        )
 
     # ── Contrastive decoding (delegates to generate with stronger rep penalty) ─
 

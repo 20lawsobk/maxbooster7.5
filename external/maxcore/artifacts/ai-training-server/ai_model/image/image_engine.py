@@ -14,7 +14,6 @@ import os
 import re
 import threading
 import uuid
-import textwrap
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Optional, Tuple
@@ -89,6 +88,8 @@ class ImageRequest:
     # as literal typography. Accent bars/dividers are also skipped so the
     # output is pure artwork.
     suppress_text: bool = False
+    width: Optional[int] = None
+    height: Optional[int] = None
 
 
 @dataclass
@@ -102,6 +103,7 @@ class ImageResult:
     layout: str
     prompt_used: str
     error: str = ""
+    renderer: str = ""
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -116,19 +118,15 @@ def _load_font(size: int, bold: bool = False) -> "ImageFont.FreeTypeFont":
 
 def _gradient_array(w: int, h: int, top: tuple, bottom: tuple) -> np.ndarray:
     """Create a vertical gradient as an H×W×3 uint8 array."""
-    arr: np.ndarray = np.zeros((h, w, 3), dtype=np.uint8)
-    for i, (a, b) in enumerate(zip(top, bottom)):
-        col = np.linspace(a, b, h, dtype=np.float32)
-        arr[:, :, i] = col[:, np.newaxis]
-    return arr
+    from ai_model.gpu.media_kernels import media_gpu
+    return media_gpu().media("gradient_rgb", w, h, top, bottom)
 
 
 def _add_noise_texture(arr: np.ndarray, strength: int = 12,
                        rng: Optional["np.random.RandomState"] = None) -> np.ndarray:
     """Light grain overlay for a film/cinematic feel."""
-    gen = rng if rng is not None else np.random
-    noise = gen.randint(-strength, strength + 1, arr.shape, dtype=np.int16)
-    return np.clip(arr.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+    from ai_model.gpu.media_kernels import media_gpu
+    return media_gpu().media("grain_rgb", arr, strength, rng)
 
 
 def _draw_gradient_bar(draw: "ImageDraw.Draw", x0: int, y0: int, x1: int, y1: int,
@@ -145,7 +143,35 @@ def _draw_gradient_bar(draw: "ImageDraw.Draw", x0: int, y0: int, x1: int, y1: in
 
 
 def _wrap_text(text: str, max_chars: int) -> list[str]:
+    # Retained for callers outside the renderer; canvas layout uses measured pixels.
+    import textwrap
     return textwrap.wrap(text, width=max_chars)
+
+
+def _fit_lines(draw, text: str, width: int, max_lines: int, largest: int,
+               smallest: int, bold: bool = True):
+    """Wrap at word boundaries using actual glyph widths, never cropping text."""
+    for size in range(largest, smallest - 1, -1):
+        font = _load_font(size, bold=bold)
+        lines = []
+        line = ""
+        for word in text.split():
+            if draw.textlength(word, font=font) > width:
+                lines = []
+                line = ""
+                break
+            candidate = f"{line} {word}".strip()
+            if draw.textlength(candidate, font=font) <= width:
+                line = candidate
+            else:
+                if line:
+                    lines.append(line)
+                line = word
+        if line:
+            lines.append(line)
+        if lines and len(lines) <= max_lines:
+            return lines, font, size
+    return [], _load_font(smallest, bold=bold), smallest
 
 
 # Engineering-brief artifacts that must never reach an on-image headline —
@@ -265,7 +291,8 @@ class ImageEngine:
         key = "|".join([
             req.prompt, req.color_scheme, req.layout, req.platform,
             req.artist_name, req.intent, ",".join(req.style_tags), str(req.seed),
-            _ext,
+            _ext, req.headline, str(req.suppress_text),
+            str(req.width), str(req.height),
         ])
         return f"seed_{hashlib.blake2b(key.encode(), digest_size=12).hexdigest()}.{_ext}"
 
@@ -278,10 +305,36 @@ class ImageEngine:
             )
 
         w, h = PLATFORM_DIMS.get(req.layout, (1080, 1080))
+        if req.width is not None or req.height is not None:
+            from ai_model.capabilities import dimensions
+            try:
+                w, h = dimensions(req.width, req.height)
+            except ValueError as exc:
+                return ImageResult(
+                    success=False, filename="", url="", width=0, height=0,
+                    color_scheme=req.color_scheme, layout=req.layout,
+                    prompt_used=req.prompt, error=str(exc))
+        if req.suppress_text and req.background is None:
+            return ImageResult(
+                success=False, filename="", url="", width=w, height=h,
+                color_scheme=req.color_scheme, layout=req.layout,
+                prompt_used=req.prompt,
+                error="Artwork-only rendering requires a subject-rendered background; PIL poster renderer cannot depict the requested subject",
+            )
 
         # Seeded renders are deterministic: reuse the existing output if present,
         # and serialize concurrent identical seeds on a per-key lock so the same
         # pixels are never rendered twice in parallel. Unseeded renders are unique.
+        try:
+            return self._render_checked(req, w, h)
+        except (ValueError, OSError) as exc:
+            return ImageResult(
+                success=False, filename="", url="", width=w, height=h,
+                color_scheme=req.color_scheme, layout=req.layout,
+                prompt_used=req.prompt, error=str(exc),
+            )
+
+    def _render_checked(self, req: ImageRequest, w: int, h: int) -> ImageResult:
         if req.seed is not None:
             fname = self._seeded_fname(req)
             out_path = _UPLOADS_DIR / fname
@@ -306,10 +359,20 @@ class ImageEngine:
             color_scheme=req.color_scheme,
             layout=req.layout,
             prompt_used=req.prompt,
+            renderer=("pil-composite-supplied-background-v1" if req.background is not None
+                      else "pil-typographic-poster-v1"),
         )
 
     def _render_to_path(self, req: ImageRequest, w: int, h: int, out_path: Path) -> None:
         """Render the full composition for ``req`` at (w, h) and save it to ``out_path``."""
+        output_size = (w, h)
+        if not req.suppress_text:
+            # Typography has a minimum useful layout canvas. Render the entire
+            # composition at a proportional integer scale, then downsample
+            # once; never just shrink the background or report fake dimensions.
+            # Tiny exports are thumbnails, not a promise of readable small text.
+            scale = max(1, (320 + w - 1) // w, (240 + h - 1) // h)
+            w, h = w * scale, h * scale
         grad_top, grad_bot, accent, text_col = _scheme_for(req.color_scheme)
         is_portrait = h > w
 
@@ -329,44 +392,51 @@ class ImageEngine:
 
         # ── Top accent bar ─────────────────────────────────────────────────────
         bar_h = max(6, h // 90)
-        _draw_gradient_bar(draw, 0, 0, w, bar_h, accent, grad_top)
-
-        # ── Bottom accent bar ──────────────────────────────────────────────────
-        _draw_gradient_bar(draw, 0, h - bar_h, w, h, grad_bot, accent)
-
-        # ── Corner brackets ────────────────────────────────────────────────────
         pad   = max(20, w // 40)
         span  = max(40, w // 18)
         thick = max(3, w // 270)
-        for (cx, cy, dx, dy) in [
-            (pad, pad,             +1, +1),
-            (w - pad, pad,         -1, +1),
-            (pad, h - pad,         +1, -1),
-            (w - pad, h - pad,     -1, -1),
-        ]:
-            # PIL needs [x0, y0, x1, y1] with x0 ≤ x1, y0 ≤ y1
-            ax0, ax1 = sorted([cx, cx + dx * span])
-            ay0, ay1 = sorted([cy, cy + dy * thick])
-            draw.rectangle([ax0, ay0, ax1, ay1], fill=accent)
-            bx0, bx1 = sorted([cx, cx + dx * thick])
-            by0, by1 = sorted([cy, cy + dy * span])
-            draw.rectangle([bx0, by0, bx1, by1], fill=accent)
+        if not req.suppress_text:
+            # ── Bottom accent bar + corner brackets ───────────────────────────
+            _draw_gradient_bar(draw, 0, 0, w, bar_h, accent, grad_top)
+            _draw_gradient_bar(draw, 0, h - bar_h, w, h, grad_bot, accent)
+            for (cx, cy, dx, dy) in [
+                (pad, pad,             +1, +1),
+                (w - pad, pad,         -1, +1),
+                (pad, h - pad,         +1, -1),
+                (w - pad, h - pad,     -1, -1),
+            ]:
+                # PIL needs [x0, y0, x1, y1] with x0 ≤ x1, y0 ≤ y1
+                ax0, ax1 = sorted([cx, cx + dx * span])
+                ay0, ay1 = sorted([cy, cy + dy * thick])
+                draw.rectangle([ax0, ay0, ax1, ay1], fill=accent)
+                bx0, bx1 = sorted([cx, cx + dx * thick])
+                by0, by1 = sorted([cy, cy + dy * span])
+                draw.rectangle([bx0, by0, bx1, by1], fill=accent)
 
         # ── Platform label (top-right) + artist badge (top-left) ──────────────
         if not req.suppress_text:
             plat_font_sz  = max(18, w // 52)
-            plat_font     = _load_font(plat_font_sz, bold=False)
             plat_label    = req.platform.upper()
-            plat_x        = w - pad - len(plat_label) * (plat_font_sz // 1.7)
             plat_y        = pad + bar_h + 8
+            label_width = max(20, (w - 3 * pad) // 2)
+            plat_lines, plat_font, _ = _fit_lines(draw, plat_label, label_width, 1,
+                                                  plat_font_sz, 10, False)
+            if not plat_lines:
+                raise ValueError("Platform label cannot fit without clipping")
+            plat_label = plat_lines[0]
+            plat_x = w - pad - draw.textlength(plat_label, font=plat_font)
             # Shadow
             draw.text((plat_x + 2, plat_y + 2), plat_label, font=plat_font,
                       fill=(0, 0, 0, 120))
             draw.text((plat_x, plat_y), plat_label, font=plat_font, fill=accent)
 
             badge_font_sz = max(16, w // 56)
-            badge_font    = _load_font(badge_font_sz, bold=True)
             badge_label   = req.artist_name.upper()
+            badge_lines, badge_font, _ = _fit_lines(draw, badge_label, label_width, 1,
+                                                     badge_font_sz, 10)
+            if not badge_lines:
+                raise ValueError("Artist label cannot fit without clipping")
+            badge_label = badge_lines[0]
             draw.text((pad + 4, plat_y + 2), badge_label, font=badge_font,
                       fill=(0, 0, 0, 120))
             draw.text((pad, plat_y), badge_label, font=badge_font, fill=text_col)
@@ -385,21 +455,26 @@ class ImageEngine:
 
         # ── Main headline text (above divider) ────────────────────────────────
         headline_font_sz = max(32, w // (22 if is_portrait else 28))
-        headline_font    = _load_font(headline_font_sz, bold=True)
-        max_chars        = max(12, w // (headline_font_sz // 2))
         # Always sanitize before drawing — `prompt` is a generation/style
         # description that may carry brief scaffolding (goal/audience/ids);
         # only the cleaned, short headline is ever rendered on-canvas.
         headline_text    = ("" if req.suppress_text
                             else _clean_headline(req.headline or req.prompt))
-        lines            = _wrap_text(headline_text, max_chars)[:4]  # cap 4 lines
+        left = pad + int(w * 0.05)
+        lines, headline_font, headline_font_sz = _fit_lines(
+            draw, headline_text, w - left - pad, 4, headline_font_sz, 12)
+        if headline_text and not lines:
+            raise ValueError("Headline cannot fit within the image without clipping")
 
         line_gap  = int(headline_font_sz * 1.25)
         block_h   = len(lines) * line_gap
-        text_y    = centre_y - bar_h * 2 - block_h - int(h * 0.04)
+        text_y    = max(pad + bar_h + int(h * .07),
+                        centre_y - bar_h * 2 - block_h - int(h * 0.04))
+        if headline_text and text_y + block_h >= centre_y - bar_h * 2:
+            raise ValueError("Headline cannot fit above divider without clipping")
 
         for i, line in enumerate(lines):
-            lx = pad + int(w * 0.05)
+            lx = left
             ly = text_y + i * line_gap
             # Drop shadow
             draw.text((lx + 3, ly + 3), line, font=headline_font,
@@ -409,8 +484,12 @@ class ImageEngine:
         # ── Sub-label (below divider) — intent tag ────────────────────────────
         if not req.suppress_text:
             sub_font_sz = max(20, w // 44)
-            sub_font    = _load_font(sub_font_sz, bold=False)
             sub_label   = f"#{req.intent.upper()} • {' • '.join(t.upper() for t in req.style_tags[:3])}"
+            sub_lines, sub_font, sub_font_sz = _fit_lines(
+                draw, sub_label, w - left - pad, 1, sub_font_sz, 10, False)
+            if not sub_lines:
+                raise ValueError("Style label cannot fit without clipping")
+            sub_label = sub_lines[0]
             sub_y       = centre_y + int(h * 0.04)
             draw.text((pad + int(w * 0.05) + 2, sub_y + 2), sub_label, font=sub_font,
                       fill=(0, 0, 0, 140))
@@ -428,6 +507,8 @@ class ImageEngine:
 
         # ── Save (atomic: write to a temp sibling, then rename into place so a
         # concurrent reader or a crash never observes a partial/zero-byte file) ──
+        if img.size != output_size:
+            img = img.resize(output_size, Image.Resampling.LANCZOS)
         pil_fmt, _ext, save_kwargs = _img_format_spec(req.img_format)
         tmp_path = out_path.with_name(f".{out_path.stem}.{uuid.uuid4().hex[:8]}.tmp")
         try:

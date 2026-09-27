@@ -6510,6 +6510,7 @@ function MusicVideosContent() {
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const pollErrorNotifiedRef = useRef(false);
 
   const { data: voiceProfiles = [] } = useQuery<any[]>({
     queryKey: ["/api/social/voice-profiles"],
@@ -6532,10 +6533,21 @@ function MusicVideosContent() {
           `/api/social/music-video-job/${jobId}`,
         );
         const data = await res.json();
+        pollErrorNotifiedRef.current = false;
         setJobStatus(data);
         if (data.status === "completed") {
+          const videoUrl = data.videoUrl || data.result?.url;
+          if (!videoUrl) {
+            setJobStatus({ status: "failed", error: "Render completed without a playable video URL" });
+            toast({
+              title: "Generation Failed",
+              description: "Render completed without a playable video URL",
+              variant: "destructive",
+            });
+            return;
+          }
           setCompletedVideoUrl(
-            data.videoUrl || data.result?.url || data.outputPath || null,
+            videoUrl,
           );
           setCompletedPosterUrl(
             data.thumbnailUrl || data.result?.thumbnail_url || null,
@@ -6551,7 +6563,16 @@ function MusicVideosContent() {
             variant: "destructive",
           });
         }
-      } catch {}
+      } catch (error) {
+        if (!pollErrorNotifiedRef.current) {
+          pollErrorNotifiedRef.current = true;
+          toast({
+            title: "Unable to check video status",
+            description: error instanceof Error ? error.message : "Retrying automatically.",
+            variant: "destructive",
+          });
+        }
+      }
     }, 3000);
     return () => clearInterval(interval);
   }, [jobId, jobStatus?.status, toast]);
@@ -6585,6 +6606,7 @@ function MusicVideosContent() {
     }
     setIsSubmitting(true);
     setJobId(null);
+    pollErrorNotifiedRef.current = false;
     setJobStatus(null);
     setCompletedVideoUrl(null);
     setCompletedPosterUrl(null);
@@ -6636,7 +6658,7 @@ function MusicVideosContent() {
         headers: csrfToken2 ? { "x-csrf-token": csrfToken2 } : {},
       });
       const data = await res.json();
-      if (data.jobId) {
+      if (res.ok && data.jobId) {
         setJobId(data.jobId);
         setJobStatus({ status: "processing", progress: 0 });
       } else {

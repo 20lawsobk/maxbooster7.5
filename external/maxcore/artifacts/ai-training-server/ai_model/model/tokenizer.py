@@ -233,9 +233,25 @@ class BPETokenizer:
             symbols = list(self._apply_merge(tuple(symbols), pair))
         return symbols
 
+    def _legacy_word_vocab(self) -> bool:
+        """Recognize the released word-token checkpoint, not a trained BPE.
+
+        The historical checkpoint stores ``vocab``/``next_id`` but no merges;
+        its lexical IDs denote whole whitespace-delimited words. Treating
+        those IDs as BPE character pieces loses virtually every prompt token.
+        A fresh or trained BPE vocab has explicit end-of-word symbols.
+        """
+        return (not self._merge_ranks
+                and len(self.vocab) > len(self.special_tokens)
+                and not any(token.endswith(_END_OF_WORD) for token in self.vocab))
+
     def encode(self, text: str):
         ids: List[int] = []
         unk_id = self.vocab["<UNK>"]
+        if self._legacy_word_vocab():
+            return type("Enc", (), {"ids": [
+                self.vocab.get(word, unk_id) for word in self._pretokenize(text)
+            ]})
         for raw_word in self._pretokenize(text):
             if raw_word in self.vocab and raw_word in self._control_set:
                 ids.append(self.vocab[raw_word])
@@ -245,6 +261,8 @@ class BPETokenizer:
         return type("Enc", (), {"ids": ids})
 
     def decode(self, ids: List[int]) -> str:
+        if self._legacy_word_vocab():
+            return " ".join(self.inv_vocab.get(i, "<UNK>") for i in ids)
         words: List[str] = []
         current = ""
         for i in ids:

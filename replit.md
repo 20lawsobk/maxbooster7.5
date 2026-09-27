@@ -20,6 +20,13 @@ with restoration evidence rather than assuming local persistence proves both.
 
 ### MaxCore authority
 
+MaxCore requires exclusive use of its digital GPU system for supported inference.
+Retests must also exercise its real awareness layers and systems applicable to
+the generation route; a direct model call alone does not test the full product.
+Do not substitute a CPU model or CPU fallback. Quality acceptance must verify
+the real digital-GPU serving path; isolated diagnostic paths without verified
+exclusive digital-GPU execution are not evidence of supported serving quality.
+
 The owner confirms MaxCore is exclusively local and no external MaxCore server
 exists. Verify MaxCore through its local supervisor and actual local child
 services. Old external origins and remote credential incidents are historical,

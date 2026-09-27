@@ -1,7 +1,8 @@
 """
 MaxBooster Storage Client
 Connects to the storage server via its Redis-like HTTP exec API.
-Falls back gracefully if the storage server is unreachable.
+Inherited private local PDIM is canonical and fails explicitly on outage.
+Legacy remote mode retains its disk fallback.
 
 API format: POST /exec  body: {"cmd": "SET", "args": ["key", "value"]}
 """
@@ -25,6 +26,10 @@ except ImportError:
     _HAS_URLLIB3 = False
 
 logger = logging.getLogger("storage_client")
+
+class StorageUnavailable(RuntimeError):
+    """Canonical storage failed; no alternate source of truth was used."""
+
 
 STORAGE_HTTP_URL = os.getenv("STORAGE_HTTP_URL", "")
 STORAGE_BEARER_TOKEN = os.getenv("STORAGE_BEARER_TOKEN", "")
@@ -88,7 +93,8 @@ class _DiskStore:
     check_same_thread=False + WAL mode.
     """
 
-    _DB_PATH = Path(__file__).parent / "data" / "local_kv.db"
+    _DB_PATH = Path(os.environ.get(
+        "MAXCORE_PRIVATE_STATE_DIR", str(Path.home() / ".local" / "state" / "maxcore"))) / "local_kv.db"
 
     def __init__(self) -> None:
         self._path = self._DB_PATH
@@ -104,13 +110,15 @@ class _DiskStore:
         # safe and strictly faster.
         self._con: Optional[sqlite3.Connection] = None
         try:
-            self._path.parent.mkdir(parents=True, exist_ok=True)
+            self._path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            os.chmod(self._path.parent, 0o700)
             con = self._conn()
             con.execute(
                 "CREATE TABLE IF NOT EXISTS kv "
                 "(key TEXT PRIMARY KEY, value TEXT NOT NULL)"
             )
             con.commit()
+            os.chmod(self._path, 0o600)
             self._con = con
             self._ok = True
         except Exception as exc:
@@ -223,18 +231,24 @@ class StorageClient:
     """
     Redis-like storage client for the MaxBooster storage server.
     Uses HTTP exec API: {"cmd": "SET", "args": ["key", "value"]}
-    Falls back to a disk-backed SQLite store (durable) and then an
-    in-process dict when the remote pdim storage is unreachable.
+    Local canonical mode never opens SQLite or replays local cache values.
+    Legacy remote mode retains the disk-backed fallback.
     """
 
     def __init__(self):
         self._url = STORAGE_HTTP_URL
-        self._origin = validated_origin(self._url) if self._url else None
-        self._token = STORAGE_BEARER_TOKEN
+        self._local_canonical = bool(os.environ.get("PDIM_LOCAL_CHANNEL_TOKEN")) and os.environ.get("PDIM_FORCE_REMOTE") != "1"
+        self._origin = validated_origin(self._url, local_only=self._local_canonical) if self._url else None
+        self._token = (os.environ.get("PDIM_LOCAL_CHANNEL_TOKEN")
+                       if self._local_canonical else STORAGE_BEARER_TOKEN)
+        if self._local_canonical and not self._origin:
+            raise StorageUnavailable("Local PDIM requires inherited loopback STORAGE_HTTP_URL")
         self._available: Optional[bool] = None
         self._lock = threading.Lock()
         self._fallback: dict[str, Any] = {}
-        self._disk = _DiskStore()
+        # Never open/replay a repository SQLite database into canonical local
+        # PDIM. Redis owns values and TTLs, including authoritative misses.
+        self._disk = None if self._local_canonical else _DiskStore()
         self._check_thread = threading.Thread(
             target=self._periodic_health_check, daemon=True
         )
@@ -242,6 +256,39 @@ class StorageClient:
 
     def _exec(self, cmd: str, *args) -> Any:
         """Execute a Redis command via HTTP exec API."""
+        if self._local_canonical:
+            started = time.monotonic()
+            try:
+                response = trusted_request(
+                    "POST", self._url, origin=self._origin,
+                    body=json.dumps({"cmd": cmd, "args": [str(a) for a in args]}).encode(),
+                    headers={"Authorization": f"Bearer {self._token}",
+                             "Content-Type": "application/json"}, timeout=8,
+                    # Canonical storage holds base64 media, not just small
+                    # API documents. Match the local exec owner's 50 MiB
+                    # bounded record budget instead of the generic 8 MiB cap.
+                    max_bytes=50 * 1024 * 1024,
+                )
+                if response.status != 200:
+                    raise StorageUnavailable(f"Local PDIM returned HTTP {response.status}")
+                parsed = json.loads(response.body)
+                if isinstance(parsed, dict) and "error" in parsed:
+                    raise StorageUnavailable("Local PDIM returned a command error")
+                self._available = True
+                # The canonical local owner returns the raw Redis JSON value:
+                # "PONG", "OK", numbers, null, lists and HGETALL objects.
+                # Retain compatibility with explicitly enveloped exec peers.
+                if isinstance(parsed, dict) and set(parsed) == {"result"} and cmd.upper() != "HGETALL":
+                    return parsed["result"]
+                return parsed
+            except Exception as exc:
+                self._available = False
+                cause = type(exc.__cause__).__name__ if exc.__cause__ else type(exc).__name__
+                elapsed = time.monotonic() - started
+                raise StorageUnavailable(
+                    f"Canonical local PDIM {cmd} failed after {elapsed:.2f}s "
+                    f"({cause}: {exc}); no fallback used"
+                ) from exc
         if not self._url or not self._token:
             return None
 
@@ -305,6 +352,10 @@ class StorageClient:
         """
         if not keys:
             return []
+        if self._local_canonical:
+            # Propagate failure to the caller rather than lose worker-thread
+            # exceptions and misreport a failed read as a list of misses.
+            return [self.get(key) for key in keys]
         ns_keys = [self._ns(k) for k in keys]
         if not self.is_available or len(keys) <= 3:
             return [self.get(k) for k in keys]
@@ -342,6 +393,11 @@ class StorageClient:
         starve the health check, and (b) the 20 s read timeout lets us survive
         pdim cold-wake latency (5–15 s) without false negatives.
         """
+        if self._local_canonical:
+            try:
+                return self._exec("PING") == "PONG"
+            except StorageUnavailable:
+                return False
         if not self._url or not self._token:
             return False
         payload = json.dumps({"cmd": "PING"}).encode("utf-8")
@@ -399,6 +455,8 @@ class StorageClient:
 
     def _flush_fallback_to_storage(self) -> None:
         """Re-sync in-memory and disk fallback data to pdim after reconnect."""
+        if self._local_canonical:
+            return
         with self._lock:
             snapshot = dict(self._fallback)
         # Also include any keys that are only on disk (survived restarts)
@@ -425,6 +483,12 @@ class StorageClient:
 
     @property
     def is_available(self) -> bool:
+        if self._local_canonical:
+            # A command must attempt the canonical service, even after a
+            # previous failure. Raising here prevents every legacy fallback.
+            if self._available is not True and not self.ping():
+                raise StorageUnavailable("Canonical local PDIM is unavailable; no fallback used")
+            return True
         if self._available is None:
             self._available = self.ping()
         return bool(self._available)
@@ -436,7 +500,7 @@ class StorageClient:
         Callers that need a durable (restart-safe) store but can tolerate
         pdim being offline should check ``is_available or disk_store_available``.
         """
-        return self._disk.available
+        return bool(self._disk and self._disk.available)
 
     def set(self, key: str, value: Any, ex: Optional[int] = None) -> bool:
         serialized = json.dumps(value) if not isinstance(value, str) else value
@@ -447,12 +511,16 @@ class StorageClient:
             else:
                 result = self._exec("SET", ns_key, serialized)
             if result is not None:
+                if self._local_canonical:
+                    return True
                 # Write-through: mirror to disk + fallback so a transient GET
                 # failure can still be served locally (common under heavy load).
                 self._disk.set(ns_key, value)
                 with self._lock:
                     self._fallback[ns_key] = value
                 return True
+        if self._local_canonical:
+            raise StorageUnavailable("Canonical local PDIM did not acknowledge SET")
         # pdim unavailable — write to durable disk store + in-memory fallback
         self._disk.set(ns_key, value)
         with self._lock:
@@ -468,6 +536,8 @@ class StorageClient:
                     return json.loads(result) if isinstance(result, str) else result
                 except (json.JSONDecodeError, TypeError):
                     return result
+        if self._local_canonical:
+            return None
         # Try in-memory first (fast path), then disk store
         with self._lock:
             if ns_key in self._fallback:
@@ -611,7 +681,8 @@ class StorageClient:
         return {
             "instance": STORAGE_INSTANCE,
             "url_configured": bool(self._url),
-            "available": self.is_available,
+            "available": self.ping() if self._local_canonical else self.is_available,
+            "source_of_truth": "local_pdim" if self._local_canonical else "remote_with_legacy_fallback",
             "disk_store_available": self.disk_store_available,
             "fallback_keys": len(self._fallback),
         }

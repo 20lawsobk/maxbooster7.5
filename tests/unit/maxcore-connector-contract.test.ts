@@ -24,6 +24,36 @@ describe("MaxCore connector contract", () => {
     expect(connector.getMaxcoreGenerationHeaders()).not.toHaveProperty("X-Admin-Key");
   });
 
+  it("generates one inherited local channel key without external service credentials", async () => {
+    process.env.MAXCORE_LOCAL = "1";
+    delete process.env.AI_SERVER_KEY;
+    delete process.env.MAXCORE_ADMIN_KEY;
+    delete process.env.PDIM_LOCAL_CHANNEL_TOKEN;
+    const connector = await import("../../server/services/maxcoreConnector.js");
+    const token = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
+    expect(token).toMatch(/^[a-f0-9]{64}$/);
+    expect(connector.getMaxcoreGenerationHeaders()).toEqual({ Authorization: `Bearer ${token}` });
+    expect(connector.getMaxcoreAdminHeaders()).not.toHaveProperty("Authorization");
+    expect(Object.values(connector.getMaxcoreAdminHeaders())).not.toContain(token);
+    vi.resetModules();
+    const inherited = await import("../../server/services/maxcoreConnector.js");
+    expect(inherited.getMaxcoreGenerationKey()).toBe(token);
+  });
+
+  it("uses inherited local scope rather than stale external/admin credentials", async () => {
+    process.env.MAXCORE_LOCAL = "1";
+    process.env.PDIM_LOCAL_CHANNEL_TOKEN = "inherited-private-key";
+    const connector = await import("../../server/services/maxcoreConnector.js");
+    expect(connector.getMaxcoreGenerationHeaders()).toEqual({ Authorization: "Bearer inherited-private-key" });
+    expect(connector.getMaxcoreAdminHeaders()).toEqual({ "X-Admin-Key": "admin-key" });
+  });
+
+  it("never leaks the private channel to remote MaxCore", async () => {
+    process.env.PDIM_LOCAL_CHANNEL_TOKEN = "private-only";
+    const connector = await import("../../server/services/maxcoreConnector.js");
+    expect(connector.getMaxcoreGenerationHeaders()).toEqual({ Authorization: "Bearer generation-key" });
+  });
+
   it("uses only the documented admin header for administrative operations", async () => {
     const connector = await import("../../server/services/maxcoreConnector.js");
 

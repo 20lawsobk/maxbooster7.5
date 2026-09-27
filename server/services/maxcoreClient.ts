@@ -20,7 +20,9 @@
 
 import { logger } from "../logger.js";
 import { config } from "../config/index.js";
+import { trustedMaxcoreOwner, bindMaxcoreOwner } from "../lib/maxcoreOwnerContext.js";
 import { getMaxcoreOrigin } from "./maxcoreConnector.js";
+import { MaxCoreControlError } from "./maxcoreControlTransport.js";
 
 // Resolved through the shared connector — the single MaxCore contract boundary.
 const MC_AI_URL = getMaxcoreOrigin();
@@ -69,6 +71,7 @@ export class MaxCoreAIClient {
   }
 
   private static authHeaders(userId?: unknown): Record<string, string> {
+    userId = trustedMaxcoreOwner(typeof userId === "string" ? userId : undefined);
     // MaxCore validates X-API-Key / X-Admin-Key BEFORE Authorization and rejects
     // the generation credential on those header schemes with 401 "Invalid or
     // inactive API key". Sending them alongside the (valid) Bearer token makes
@@ -285,13 +288,13 @@ export class MaxCoreAIClient {
    * Use for video-job/<jobId> and any other unique-path polling loops.
    * Returns null on any network/HTTP error so the caller can simply continue.
    */
-  static async poll<T = any>(endpoint: string): Promise<T | null> {
+  static async poll<T = any>(endpoint: string, ownerId?: string): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
     const path = endpoint.startsWith("/api/") ? endpoint : `/api${endpoint}`;
     try {
       const r = await fetch(`${MC_AI_URL}${path}`, {
         method: "GET",
-        headers: MaxCoreAIClient.authHeaders(),
+        headers: MaxCoreAIClient.authHeaders(ownerId),
         signal: AbortSignal.timeout(30_000),
         redirect: "manual",
       });
@@ -322,8 +325,11 @@ export class MaxCoreAIClient {
   static async generate<T = any>(
     endpoint: string,
     body: Record<string, unknown>,
+    ownerId?: string,
   ): Promise<T | null> {
-    if (!MC_AI_URL || !MC_AI_KEY) return null;
+    const owner = trustedMaxcoreOwner(ownerId);
+    body = bindMaxcoreOwner(body, owner);
+    if (!MC_AI_URL || !MC_AI_KEY) throw new MaxCoreControlError("MaxCore generation is not configured", 503);
 
     const path = endpoint?.startsWith("/api/") ? endpoint : `/api${endpoint}`;
 
@@ -331,13 +337,13 @@ export class MaxCoreAIClient {
       logger.debug(
         `[MaxCoreAI] generate ${path} — skipping (endpoint suppressed)`,
       );
-      return null;
+      throw new MaxCoreControlError("MaxCore generation endpoint unavailable", 503);
     }
 
     // Circuit breaker: fail fast while MaxCore is known-down.
     if (MaxCoreAIClient.cbBlocked()) {
       logger.debug(`[MaxCoreAI] generate ${path} — circuit open, failing fast`);
-      return null;
+      throw new MaxCoreControlError("MaxCore generation circuit open", 503);
     }
 
     // Health-probe fast-fail: if the lightweight ping already confirmed MaxCore
@@ -349,7 +355,7 @@ export class MaxCoreAIClient {
       // otherwise every later request remains blocked even after cooldown.
       MaxCoreAIClient.cbAbortProbe();
       logger.debug(`[MaxCoreAI] generate ${path} — health probe says unreachable, skipping`);
-      return null;
+      throw new MaxCoreControlError("MaxCore generation unavailable", 503);
     }
 
     // Transport preserves caller input. MaxCore owns awareness and inference;
@@ -360,7 +366,7 @@ export class MaxCoreAIClient {
       // Not a MaxCore failure — free the half-open probe slot if we held it.
       MaxCoreAIClient.cbAbortProbe();
       logger.warn(`[MaxCoreAI] generate ${path} — bulkhead full (30 s wait), failing fast`);
-      return null;
+      throw new MaxCoreControlError("MaxCore generation capacity unavailable", 503);
     }
 
     try {
@@ -370,7 +376,7 @@ export class MaxCoreAIClient {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              ...MaxCoreAIClient.authHeaders(body.user_id ?? body.userId),
+              ...MaxCoreAIClient.authHeaders(owner),
             },
             body: JSON.stringify(body),
             signal: AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
@@ -389,7 +395,7 @@ export class MaxCoreAIClient {
       let result = await attempt();
 
       // Retry once on 503 circuit-breaker — wait the suggested cooldown then try again
-      if (result && result.r.status === 503) {
+      if (result && result.r.status === 503 && /circuit breaker open/i.test(result.text)) {
         const retryMs = parseCbRetryMs(result.text);
         logger.debug(
           `[MaxCoreAI] generate ${path} — 503 circuit-breaker, retrying in ${retryMs}ms`,
@@ -400,13 +406,16 @@ export class MaxCoreAIClient {
 
       if (!result) {
         MaxCoreAIClient.cbRecordFailure(path);
-        return null;
+        throw new MaxCoreControlError("MaxCore generation transport unavailable", 503);
       }
 
       // Any completed HTTP response (even non-2xx) proves MaxCore is reachable.
       MaxCoreAIClient.cbRecordSuccess();
 
       const { r, text } = result;
+      if (r.status === 503) {
+        throw new MaxCoreControlError("MaxCore generation dependency unavailable", 503);
+      }
 
       if (r.ok && MaxCoreAIClient.isJson(r)) {
         try {
@@ -417,7 +426,7 @@ export class MaxCoreAIClient {
           logger.debug(`[MaxCoreAI] generate ${path} → success`);
           return data as T;
         } catch {
-          return null;
+          throw new MaxCoreControlError("Invalid MaxCore generation response", 503);
         }
       }
 
@@ -432,7 +441,7 @@ export class MaxCoreAIClient {
         );
       }
       // HTTP error responses mean MaxCore is up (responding) — not a CB event.
-      return null;
+      throw new MaxCoreControlError("MaxCore generation failed", r.status >= 400 ? r.status : 503);
     } finally {
       MaxCoreAIClient.releaseSlot();
     }
@@ -450,8 +459,11 @@ export class MaxCoreAIClient {
   static async infer<T = any>(
     endpoint: string,
     body: Record<string, unknown>,
+    ownerId?: string,
   ): Promise<T | null> {
-    if (!MC_AI_URL || !MC_AI_KEY) return null;
+    const owner = trustedMaxcoreOwner(ownerId);
+    body = bindMaxcoreOwner(body, owner);
+    if (!MC_AI_URL || !MC_AI_KEY) throw new MaxCoreControlError("MaxCore inference is not configured", 503);
 
     const path = endpoint.startsWith("/api/") ? endpoint : `/api${endpoint}`;
 
@@ -459,13 +471,13 @@ export class MaxCoreAIClient {
       logger.debug(
         `[MaxCoreAI] infer ${path} — skipping (endpoint suppressed, using fallback)`,
       );
-      return null;
+      throw new MaxCoreControlError("MaxCore inference endpoint unavailable", 503);
     }
 
     // Circuit breaker: fail fast while MaxCore is known-down.
     if (MaxCoreAIClient.cbBlocked()) {
       logger.debug(`[MaxCoreAI] infer ${path} — circuit open, failing fast`);
-      return null;
+      throw new MaxCoreControlError("MaxCore inference circuit open", 503);
     }
 
     // Health-probe fast-fail: avoids queuing a 600 s hanging socket when the
@@ -475,7 +487,7 @@ export class MaxCoreAIClient {
       // fast-fails before an HTTP request is attempted.
       MaxCoreAIClient.cbAbortProbe();
       logger.debug(`[MaxCoreAI] infer ${path} — health probe says unreachable, skipping`);
-      return null;
+      throw new MaxCoreControlError("MaxCore inference unavailable", 503);
     }
 
     // Preserve caller-supplied context without injecting local AI decisions.
@@ -485,7 +497,7 @@ export class MaxCoreAIClient {
       // Not a MaxCore failure — free the half-open probe slot if we held it.
       MaxCoreAIClient.cbAbortProbe();
       logger.warn(`[MaxCoreAI] infer ${path} — bulkhead full (30 s wait), failing fast`);
-      return null;
+      throw new MaxCoreControlError("MaxCore inference capacity unavailable", 503);
     }
 
     try {
@@ -495,7 +507,7 @@ export class MaxCoreAIClient {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              ...MaxCoreAIClient.authHeaders(body.user_id ?? body.userId),
+              ...MaxCoreAIClient.authHeaders(owner),
             },
             body: JSON.stringify(body),
             signal: AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
@@ -514,7 +526,7 @@ export class MaxCoreAIClient {
       let result = await attempt();
 
       // Retry once on 503 circuit-breaker — wait the suggested cooldown then try again
-      if (result && result.r.status === 503) {
+      if (result && result.r.status === 503 && /circuit breaker open/i.test(result.text)) {
         const retryMs = parseCbRetryMs(result.text);
         logger.debug(
           `[MaxCoreAI] infer ${path} — 503 circuit-breaker, retrying in ${retryMs}ms`,
@@ -525,13 +537,16 @@ export class MaxCoreAIClient {
 
       if (!result) {
         MaxCoreAIClient.cbRecordFailure(path);
-        return null;
+        throw new MaxCoreControlError("MaxCore inference transport unavailable", 503);
       }
 
       // Any completed HTTP response (even non-2xx) proves MaxCore is reachable.
       MaxCoreAIClient.cbRecordSuccess();
 
       const { r, text } = result;
+      if (r.status === 503) {
+        throw new MaxCoreControlError("MaxCore inference dependency unavailable", 503);
+      }
 
       if (r.ok && MaxCoreAIClient.isJson(r)) {
         try {
@@ -541,7 +556,7 @@ export class MaxCoreAIClient {
           MaxCoreAIClient._endpointSuppressed.delete(path);
           return data as T;
         } catch {
-          return null;
+          throw new MaxCoreControlError("Invalid MaxCore inference response", 503);
         }
       }
 
@@ -556,7 +571,7 @@ export class MaxCoreAIClient {
         );
       }
       // HTTP error responses mean MaxCore is up — not a CB event.
-      return null;
+      throw new MaxCoreControlError("MaxCore inference failed", r.status >= 400 ? r.status : 503);
     } finally {
       MaxCoreAIClient.releaseSlot();
     }

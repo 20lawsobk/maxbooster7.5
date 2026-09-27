@@ -61,6 +61,7 @@ import {
 } from "../lib/contentPostProcessor.js";
 import { MaxCoreAIClient } from "./unifiedAIController.js";
 import { getAwarenessContext, buildMaxCoreAwarenessPayload } from "./awarenessContext.js";
+import { beatAudioInputs, beatAudioObservation, type BeatAudioContext } from "./beatAudioContext.js";
 import { isRecentlyUsed, recordGeneration } from "./adaptiveGenerationEngine.js";
 import { autonomousService } from "./autonomousService.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
@@ -497,14 +498,14 @@ class BeatMoneyLoopService {
 
     try {
       // 1. SCAN
-      const ctx = await musicIndustryContextFilter.getContextForMode("music");
-      const scan = await this._distillScan(ctx, overrides);
+      // No awareness-to-production planner: Core audio chooses unspecified fields.
+      const scan = beatAudioInputs(overrides);
       await db
         .update(beatMoneyLoopCycles)
         .set({ status: "generating", scanContext: scan })
         .where(eq(beatMoneyLoopCycles.id, cycleId));
       logger.info(
-        `[BeatMoneyLoop] ${cycleId} scan: genre=${scan.genre} mood=${scan.mood} tempo=${scan.tempo} conf=${scan.confidence.toFixed(2)}`,
+        `[BeatMoneyLoop] ${cycleId} forwarding explicit audio preferences to MaxCore`,
       );
 
       // 2a. MaxCore pre-warm — if MaxCore is sleeping, wait up to 90 s for it
@@ -538,6 +539,7 @@ class BeatMoneyLoopService {
 
       // 2b. GENERATE
       const generated = await this._generateBeat(scan);
+      Object.assign(scan, generated.observation);
       const {
         audioAbsPath,
         previewAbsPath,
@@ -552,6 +554,7 @@ class BeatMoneyLoopService {
           status: "uploading",
           audioGenBackend,
           beatTitle: title,
+          scanContext: scan,
         })
         .where(eq(beatMoneyLoopCycles.id, cycleId));
 
@@ -751,6 +754,23 @@ class BeatMoneyLoopService {
     productionStyles: string[];
     requestedKey?: string;
   }> {
+    // Core alone decides the production brief. No local weighted genre pools,
+    // tempo jitter, cached awareness hints, or synthetic confidence fallback.
+    // This legacy loop requires a structured production brief. Do not parse
+    // observational prose into decisions or run a second prompt-planner here.
+    const brief = (ctx as unknown as { production_brief?: any }).production_brief;
+    if (!brief || typeof brief.genre !== "string" || typeof brief.mood !== "string" ||
+        !Number.isFinite(brief.tempo) || !Number.isFinite(brief.confidence) ||
+        !Array.isArray(brief.hooks) || !Array.isArray(brief.productionStyles)) {
+      throw Object.assign(new Error("Invalid MaxCore production brief"), { status: 503 });
+    }
+    return {
+      ...brief,
+      ...(overrides?.genre !== undefined ? { genre: overrides.genre } : {}),
+      ...(overrides?.mood !== undefined ? { mood: overrides.mood } : {}),
+      ...(overrides?.key !== undefined ? { requestedKey: overrides.key } : {}),
+    };
+
     // Short-circuit: if both genre AND mood are overridden, skip pool entirely.
     if (overrides?.genre && overrides?.mood) {
       const baseTemp = 120;
@@ -880,17 +900,11 @@ class BeatMoneyLoopService {
    * Returns decoded WAV bytes + optional musical metadata from MaxCore.
    */
   private async _maxcoreAudio(
-    scan: {
-      genre: string;
-      mood: string;
-      tempo: number;
-      productionStyles: string[];
-      hooks: string[];
-      requestedKey?: string;
-    },
+    scan: BeatAudioContext,
     mode: "C" | "B",
   ): Promise<{
     wavBytes: Buffer;
+    observation: Partial<BeatAudioContext>;
     mcKey?: string;
     mcBpm?: number;
     mcMusicalKey?: string;
@@ -916,9 +930,9 @@ class BeatMoneyLoopService {
       Math.max(10, Number(process.env.BEAT_DURATION_SECONDS) || 180),
     );
     const body: Record<string, unknown> = {
-      genre: scan.genre,
-      bpm: scan.tempo,
-      mood: scan.mood,
+      ...(scan.genre !== undefined ? { genre: scan.genre } : {}),
+      ...(scan.tempo !== undefined ? { bpm: scan.tempo } : {}),
+      ...(scan.mood !== undefined ? { mood: scan.mood } : {}),
       duration: durationSec,
       energy: 1.0,           // peak energy / presence
       quality: "professional", // industry-grade output request
@@ -938,15 +952,8 @@ class BeatMoneyLoopService {
     // This call bypasses MaxCoreAIClient via a raw fetch below, so it must
     // build its own awareness payload rather than relying on the shared
     // transport-layer injection. Best-effort: never blocks generation.
-    try {
-      const awarenessPayload = await buildMaxCoreAwarenessPayload("music");
-      if (awarenessPayload?.awareness) body.awareness = awarenessPayload.awareness;
-      if (awarenessPayload?.extraContext) body.extra_context = awarenessPayload.extraContext;
-    } catch (awarenessErr) {
-      logger.debug(
-        `[BeatMoneyLoop] _maxcoreAudio awareness lookup failed (non-fatal): ${(awarenessErr as Error).message}`,
-      );
-    }
+    const awarenessPayload = await buildMaxCoreAwarenessPayload("music");
+    Object.assign(body, awarenessPayload);
 
     // Bearer ONLY — MaxCore 401s the whole request when X-API-Key/X-Admin-Key
     // are present (see replit.md / maxcore-auth-header memory).
@@ -989,9 +996,9 @@ class BeatMoneyLoopService {
     );
     if (!res!.ok) {
       const text = await res!.text().catch(() => "");
-      throw new Error(
+      throw Object.assign(new Error(
         `MaxCore /generate/audio HTTP ${res!.status}: ${text.slice(0, 200)}`,
-      );
+      ), { status: res!.status });
     }
     const data = (await res!.json()) as {
       wav_b64?: string;
@@ -1039,6 +1046,7 @@ class BeatMoneyLoopService {
     };
     const finish = async (d: typeof data): Promise<{
       wavBytes: Buffer;
+      observation: Partial<BeatAudioContext>;
       mcKey?: string;
       mcBpm?: number;
       mcMusicalKey?: string;
@@ -1051,6 +1059,11 @@ class BeatMoneyLoopService {
       // which is the requested BPM echoed back. Key is only in the new field.
       const mcBpm = d.bpm ?? d.mc_bpm;
       const extras = {
+        observation: beatAudioObservation(d as unknown as Record<string, unknown>, {
+          ...awarenessPayload,
+          ...(data as unknown as Record<string, unknown>).snapshot_id !== undefined
+            ? { snapshot_id: (data as unknown as Record<string, unknown>).snapshot_id } : {},
+        }),
         mcKey: d.mc_key,
         mcBpm,
         mcMusicalKey: d.key,
@@ -1160,7 +1173,7 @@ class BeatMoneyLoopService {
           job.audio_url
         ) {
           logger.info(`[BeatMoneyLoop] mode=${mode} job ${data.job_id} ✅ complete`);
-          return finish(job);
+          return finish({ ...data, ...job });
         }
       }
       throw new Error(
@@ -1192,20 +1205,14 @@ class BeatMoneyLoopService {
     "Bb Major", "Bb Minor", "B Major", "B Minor",
   ];
 
-  private async _generateBeat(scan: {
-    genre: string;
-    mood: string;
-    tempo: number;
-    productionStyles: string[];
-    hooks: string[];
-    requestedKey?: string;
-  }): Promise<{
+  private async _generateBeat(scan: BeatAudioContext): Promise<{
     audioAbsPath: string;
     previewAbsPath: string;
     scratchDir: string;
     title: string;
     audioGenBackend: string;
-    musicalKey: string;
+    musicalKey?: string;
+    observation: Partial<BeatAudioContext>;
   }> {
     // MaxCore bytes are persisted to PDIM later in the pipeline.  A private
     // system temp directory is only an ffmpeg staging area; it is never served
@@ -1218,15 +1225,12 @@ class BeatMoneyLoopService {
     // IMPORTANT: MaxCore's audio endpoint always returns C Minor regardless of
     // what is requested — we must use OUR requestedKey as the canonical key and
     // not let the mc.mcMusicalKey / mc.mcKey field override it.
-    const keys = BeatMoneyLoopService.MUSICAL_KEYS;
-    const requestedKey =
-      scan.requestedKey || keys[Math.floor(Math.random() * keys.length)];
-    const scanWithKey = { ...scan, requestedKey };
+    const scanWithKey = scan;
 
     const titleAdj =
-      scan.mood.charAt(0).toUpperCase() + scan.mood.slice(1);
+      scan.mood ? scan.mood.charAt(0).toUpperCase() + scan.mood.slice(1) : "";
     const titleGenre =
-      scan.genre.charAt(0).toUpperCase() + scan.genre.slice(1);
+      scan.genre ? scan.genre.charAt(0).toUpperCase() + scan.genre.slice(1) : "";
     const stamp = new Date().toISOString().slice(5, 10).replace("-", "/");
 
     // ── MaxCore ONLY (Mode C, then Mode B) — no local fallback ──────────────
@@ -1262,10 +1266,10 @@ class BeatMoneyLoopService {
 
         // Use requestedKey as canonical — MaxCore always returns "C Minor" for
         // mcMusicalKey/mcKey, so accepting its value would lock every beat.
-        const realBpm = mc.mcBpm ?? scan.tempo;
-        const musicalKey = requestedKey;
+        const realBpm = mc.observation.tempo;
+        const musicalKey = mc.observation.musicalKey;
         const keyStr = musicalKey ? ` (${musicalKey})` : "";
-        const bpmStr = ` ${realBpm} BPM`;
+        const bpmStr = realBpm !== undefined ? ` ${realBpm} BPM` : "";
 
         // Use MaxCore's concept name when available — more evocative and
         // searchable than the generic "Dark Trap Type Beat" format.
@@ -1325,6 +1329,7 @@ class BeatMoneyLoopService {
           `[BeatMoneyLoop] Beat generated via MaxCore mode ${mode} (backend=${mc.backend}, key=${musicalKey}) → "${title}"`,
         );
         return {
+          observation: mc.observation,
           audioAbsPath,
           previewAbsPath,
           scratchDir: outputDir,
@@ -2133,6 +2138,7 @@ class BeatMoneyLoopService {
       hashtags?: string[];
       variants?: Array<{ hook?: string; body?: string; cta?: string; hashtags?: string[] }>;
     }>("/api/generate/content", {
+      ...awareness,
       platform: "instagram",
       content_type: "post",
       // SHORT topic = beat title only. When the full "145BPM $29 non-exclusive…"

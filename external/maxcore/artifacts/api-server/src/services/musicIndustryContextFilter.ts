@@ -275,16 +275,8 @@ class MusicIndustryContextFilterService {
    * Never throws — returns an empty zero-confidence context on any error.
    */
   async getContextForMode(mode: GenerationMode): Promise<MusicIndustryContext> {
-    try {
-      const base = await this?.getOrBuild();
-      return this?.applyMode(base, mode);
-    } catch (err) {
-      logger?.warn(
-        "[IndustryFilter] Context unavailable — returning empty context:",
-        (err as Error).message,
-      );
-      return this?.empty();
-    }
+    const { contentAwarenessService } = await import("./contentAwarenessService.js");
+    return await contentAwarenessService.getContextForMode(mode) as unknown as MusicIndustryContext;
   }
 
   // ── Sync API (for services that cannot await, reads warm cache only) ───────

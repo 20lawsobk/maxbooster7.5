@@ -26,7 +26,7 @@ import logging
 from contextvars import ContextVar
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Dict
 from urllib.parse import urlparse
 import html as _html
 import urllib.request as _urllib_request
@@ -179,10 +179,13 @@ def init_db():
                VALUES (%s, %s, %s, %s, TRUE)""",
             ("Default Admin Key", key_hash, prefix, ["read", "write", "train", "admin", "generate"])
         )
-        # Print admin key once to stdout — do not persist to disk
-        print("[Server] *** DEFAULT ADMIN KEY (copy now — not stored) ***")
-        print(f"[Server] {admin_key}")
-        print(f"[Server] Admin key prefix: {prefix}...")
+        # Bootstrap state is private, never a credential in public logs.
+        key_path = _PRIVATE_STATE_DIR / "bootstrap-admin.key"
+        flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0)
+        with os.fdopen(os.open(key_path, flags, 0o600), "w") as key_file:
+            os.fchmod(key_file.fileno(), 0o600)
+            key_file.write(admin_key)
+        print("[Server] Bootstrap administrator credential stored in private state directory")
 
     # Ensure AI_TRAINING_KEY_PROD is registered (idempotent — upsert by hash)
     _prod_key = os.environ.get("AI_TRAINING_KEY_PROD")
@@ -282,7 +285,16 @@ _request_job_owner: ContextVar[Optional[str]] = ContextVar(
 
 @app.middleware("http")
 async def bind_job_owner_middleware(request: Request, call_next):
-    owner = (request.headers.get("x-maxcore-user-id") or "").strip() or None
+    from ai_model.generation.owner import verify_owner
+    from fastapi.responses import JSONResponse
+    try:
+        owner = verify_owner(
+            request.headers, path=request.url.path,
+            peer=request.client.host if request.client else "",
+            secret=os.environ.get("PDIM_LOCAL_CHANNEL_TOKEN", ""),
+        )
+    except ValueError as exc:
+        return JSONResponse(status_code=403, content={"detail": str(exc)})
     token = _request_job_owner.set(owner)
     try:
         return await call_next(request)
@@ -367,7 +379,24 @@ async def progressive_timeout_middleware(request, call_next):
 async def _in_thread(fn):
     """Run a synchronous callable in the default thread-pool executor so that
     Digital GPU / blocking agent inference does not stall uvicorn's event loop."""
-    return await asyncio.get_event_loop().run_in_executor(None, fn)
+    from contextvars import copy_context
+    context = copy_context()
+    future = asyncio.get_running_loop().run_in_executor(None, context.run, fn)
+    try:
+        return await asyncio.shield(future)
+    except asyncio.CancelledError:
+        # Cancelling the HTTP waiter does not stop its executor thread. Keep
+        # request GPU contexts alive until that worker actually exits.
+        while not future.done():
+            try:
+                await asyncio.shield(future)
+            except asyncio.CancelledError:
+                continue
+            except Exception:
+                break
+        if not future.cancelled():
+            future.exception()  # retrieve a worker error before propagating cancellation
+        raise
 
 
 from ai_model.adaptive_concurrency import INFERENCE_GATE, RENDER_GATE, GateBusy  # noqa: E402
@@ -476,6 +505,8 @@ def _get_storage_mode() -> str:
     try:
         from storage_client import get_storage
         s = get_storage()
+        if getattr(s, "_local_canonical", False):
+            return "live" if s.ping() else "offline"
         if s.is_available:
             return "live"
         return "local_fallback" if s.disk_store_available else "offline"
@@ -723,6 +754,10 @@ _hyper_backend = None
 _digital_gpu_backend = None
 _silicon_simt_backend = None
 _model_config: dict[str, Any] = {}
+_serving_release_status: dict[str, Any] = {
+    "requested": "legacy", "active": None, "candidate_quality": "not_selected",
+    "backend_exclusive": "not_verified",
+}
 
 _model_lock = threading.Lock()
 
@@ -748,6 +783,61 @@ def _hyper_gpu_sizing() -> tuple[int, int]:
     return hyper_gpu_sizing()
 
 def _init_ai_model():
+    global _serving_release_status, _model_ready, _model_init_error
+    global _creative_model, _tokenizer, _script_agent, _visual_spec_agent
+    global _distribution_agent, _optimization_agent, _repo, _adapter, _render_manager
+    global _image_engine, _model_config
+    from ai_model.generation.release import load_selected_release
+    mode = os.environ.get("MAXCORE_SERVING_RELEASE", "legacy")
+    _model_ready = False
+    try:
+        selected, status = load_selected_release(mode)
+        _serving_release_status = status
+        if selected is None:
+            if mode != "legacy":
+                raise RuntimeError("Requested reviewed release is unavailable; legacy substitution is forbidden")
+            _init_legacy_ai_model()
+            if _model_ready:
+                weights = Path(__file__).parent / "ai_model" / "weights" / "model.pt"
+                _serving_release_status = {
+                    **status, "active": "legacy-explicit-release",
+                    "checkpoint_sha256": hashlib.sha256(weights.read_bytes()).hexdigest(),
+                }
+            return
+        # The selected serving object is passed directly to the existing agents;
+        # its generate/generate_batch reject unsupported sampling, never remap it.
+        from ai_model.agents.script_agent import ScriptAgent
+        from ai_model.agents.visual_spec_agent import VisualSpecAgent
+        from ai_model.agents.distribution_agent import DistributionAgent
+        from ai_model.agents.optimization_agent import OptimizationAgent
+        from ai_model.boostsheets.repository import BoostSheetRepository
+        from ai_model.adapters.url_adapter import UrlToBoostSheetAdapter
+        from ai_model.render_manager import RenderManager
+        from ai_model.image.image_engine import ImageEngine
+        _creative_model, _tokenizer = selected, selected.tokenizer
+        _script_agent = ScriptAgent(selected)
+        _visual_spec_agent = VisualSpecAgent(selected)
+        _distribution_agent = DistributionAgent(selected)
+        _optimization_agent = OptimizationAgent(selected)
+        _repo = BoostSheetRepository(path="boostsheets_db")
+        _adapter = UrlToBoostSheetAdapter(_repo)
+        if _render_manager is None:
+            _render_manager = _create_durable_render_manager(RenderManager)
+        _image_engine = ImageEngine()
+        _model_config = {"release": "reviewed-candidate", "sampling": status["supported_sampling"]}
+        _model_init_error = None
+        _model_ready = True
+    except Exception as exc:
+        # A selected candidate failure cannot enter legacy checkpoint fallback.
+        _model_ready = False
+        _model_init_error = f"{type(exc).__name__}: {exc}"
+        _serving_release_status = {
+            "requested": mode, "active": None, "candidate_quality": "blocked",
+            "backend_exclusive": "not_verified", "error": _model_init_error,
+        }
+
+
+def _init_legacy_ai_model():
     global _model_ready, _model_init_error, _tokenizer, _creative_model, _script_agent
     global _visual_spec_agent, _distribution_agent, _optimization_agent
     global _repo, _adapter, _render_manager, _model_config, _image_engine
@@ -934,7 +1024,8 @@ def _init_ai_model():
         _optimization_agent  = OptimizationAgent(_creative_model)
         _repo                = BoostSheetRepository(path="boostsheets_db")
         _adapter             = UrlToBoostSheetAdapter(_repo)
-        _render_manager      = RenderManager()
+        if _render_manager is None:
+            _render_manager = _create_durable_render_manager(RenderManager)
 
         from ai_model.image.image_engine import ImageEngine
         _image_engine = ImageEngine()
@@ -945,7 +1036,7 @@ def _init_ai_model():
         # Each batch gets its own pocket GPU life (born → working → dead).
         # Disable with AI_DYNAMIC_BATCHING=0.
         try:
-            from ai_model.dynamic_batching import install as _install_coalescer
+            from ai_model.generation.batching import install as _install_coalescer
             _gen_coalescer = _install_coalescer(
                 _creative_model,
                 gpu_pool=_get_gpu_pool(),
@@ -960,7 +1051,7 @@ def _init_ai_model():
             else:
                 print("[AI Model] Dynamic batching disabled (AI_DYNAMIC_BATCHING=0)")
         except Exception as be:
-            print(f"[AI Model] Dynamic batching not installed: {be}")
+            raise RuntimeError("Scoped checkpoint execution could not be installed") from be
 
         _model_config = {"dim": dim, "layers": n_layers, "heads": n_heads, "max_len": max_len}
         _training_state["weights_exist"] = weights_path.exists()
@@ -987,7 +1078,7 @@ AI_SERVER_KEY          = os.environ.get("AI_SERVER_KEY")
 _ENV_BYPASS_KEYS: set = {k for k in [ADMIN_KEY_ENV, AI_TRAINING_KEY_PROD, AI_SERVER_KEY] if k}
 
 def verify_api_key(x_api_key: str = Header(None), x_admin_key: str = Header(None),
-                   authorization: str = Header(None)):
+                   authorization: str = Header(None), request: Request = None):
     """Verify API key from X-Api-Key, X-Admin-Key, or Authorization: Bearer."""
     bearer = None
     if authorization and authorization.lower().startswith("bearer "):
@@ -995,6 +1086,20 @@ def verify_api_key(x_api_key: str = Header(None), x_admin_key: str = Header(None
     raw_key = x_api_key or x_admin_key or bearer
     if not raw_key:
         raise HTTPException(status_code=401, detail="API key required")
+
+    # The inherited channel secret is private machine authentication, not a
+    # public no-key bypass. Never trust forwarded headers for the peer address.
+    local_key = os.environ.get("PDIM_LOCAL_CHANNEL_TOKEN", "")
+    if local_key and secrets.compare_digest(raw_key, local_key):
+        import ipaddress
+        peer = request.client.host if request is not None and request.client else ""
+        try:
+            loopback = ipaddress.ip_address(peer).is_loopback
+        except ValueError:
+            loopback = False
+        if not loopback:
+            raise HTTPException(status_code=403, detail="Private channel requires loopback peer")
+        return {"id": "local-supervisor", "scopes": ["read", "write", "generate"]}
 
     # Allow env-based admin override for ADMIN_KEY and AI_TRAINING_KEY_PROD
     if raw_key in _ENV_BYPASS_KEYS:
@@ -1299,7 +1404,10 @@ class _AwarenessMixin(BaseModel):
     Python's object repr.
     """
 
+    model_config = {"extra": "allow"}
+    seed: Optional[int] = Field(default=None, strict=True, ge=0, lt=2**32)
     awareness:    str = ""
+    awareness_provenance: Any = None
     description:  str = ""   # free-text description of what to generate
     prompt_url:   str = ""   # URL to analyse for intent (Spotify, TikTok, etc.)
     instruction: Optional[str] = None
@@ -1308,13 +1416,27 @@ class _AwarenessMixin(BaseModel):
     intent: Any = None
     direction: Any = None
     context: Any = None
+    facts: Any = None
+    artist_context: Any = None
+    provenance: Any = None
+    constraints: Any = None
+    modalities: Optional[List[str]] = None
+    dedicated_controls: Optional[Dict[str, Any]] = None
+    topic: Optional[str] = None
+    artist: Any = None
+    subject: Any = None
+    reference: Any = None
 
     @model_validator(mode="before")
     @classmethod
     def _normalise_awareness(cls, data: Any) -> Any:
+        if isinstance(data, dict) and data.get("seed") is not None:
+            if type(data["seed"]) is not int or not 0 <= data["seed"] < 2**32:
+                raise ValueError("seed must be an integer in [0, 2**32)")
         if isinstance(data, dict) and isinstance(data.get("awareness"), dict):
             data = dict(data)
-            data["awareness"] = data["awareness"].get("contextString", "") or ""
+            data["awareness_provenance"] = dict(data["awareness"])
+            data["awareness"] = json.dumps(data["awareness"], ensure_ascii=False, sort_keys=True)
         return data
 
 
@@ -1337,6 +1459,7 @@ def _platform_optimization_awareness(req: Any) -> str:
         with registry_path.open("r", encoding="utf-8") as handle:
             _SOCIAL_PLATFORM_REGISTRY = json.load(handle)
     aliases = {
+        "meta": "facebook",  # Meta Ads Manager is not a social-feed profile.
         "google business": "google_business",
         "googlebusiness": "google_business",
         "google-business": "google_business",
@@ -1374,6 +1497,22 @@ def _platform_optimization_awareness(req: Any) -> str:
 
 
 def _merged_awareness_for(req: Any) -> str:
+    # The immutable plan remains attached to the request/job for provenance.
+    # It is structured transport metadata, not model-conditioning prose.
+    return _merged_awareness_legacy(req)
+
+
+def _generation_plan_hash():
+    from ai_model.generation.plan import active_plan
+    from ai_model.awareness import bound_snapshot, AwarenessUnavailable
+    bound_snapshot()
+    plan = active_plan.get()
+    if plan is None:
+        raise AwarenessUnavailable("Generation cache requires an immutable request plan")
+    return plan.plan_hash
+
+
+def _merged_awareness_legacy(req: Any) -> str:
     """Build one endpoint's awareness-bridge input, now with intent detection.
 
     Cascade (highest priority first):
@@ -1602,7 +1741,7 @@ def _start_healthz_server() -> None:
             pass  # silence access logs
 
     try:
-        srv = _http.HTTPServer(("0.0.0.0", _HEALTHZ_PORT), _HealthzHandler)
+        srv = _http.HTTPServer(("127.0.0.1", _HEALTHZ_PORT), _HealthzHandler)
         t = threading.Thread(target=srv.serve_forever, name="healthz-server", daemon=True)
         t.start()
         print(f"[Server] Healthz liveness server on port {_HEALTHZ_PORT} (event-loop-independent)", flush=True)
@@ -1612,6 +1751,8 @@ def _start_healthz_server() -> None:
 
 @app.on_event("startup")
 async def on_startup():
+    from ai_model.awareness import get_engine
+    get_engine().start()
     # ── Thread pool: 512 workers for async I/O routing ───────────────────────
     # This pool dispatches HTTP handlers and waits on GPU-backend results — it
     # is I/O-bound, not CPU-bound. 512 workers keeps hundreds of concurrent
@@ -1654,42 +1795,10 @@ async def on_startup():
     thread.start()
     storage_thread = threading.Thread(target=_init_storage, daemon=True)
     storage_thread.start()
-    # Proactive awareness refresh: keep the live industry beacon fresh on a
-    # fixed cadence (default 6 h) instead of only when a request notices the
-    # 24 h staleness cliff. Never-raise, idempotent daemon.
-    try:
-        from ai_model.quality_awareness import start_scheduler as _aw_sched
-        _aw_sched()
-    except Exception as _aw_exc:  # noqa: BLE001
-        print(f"[Server] awareness scheduler not started: {_aw_exc}")
-    # Audio seeding watchdog — keeps the audio dataset seeded from live
-    # awareness signals (trending genres + Deezer BPM targets) while the
-    # admin's own flywheel corpus is not yet self-sufficient.  Once the own
-    # corpus retires the buffer (buffer_weight → 0), the watchdog stops
-    # external seeding and audio generation draws from admin-built tracks only.
-    try:
-        from ai_model.quality_awareness import start_audio_seeding_watchdog as _aw_dog
-        _aw_dog()
-    except Exception as _aw_dog_exc:  # noqa: BLE001
-        print(f"[Server] audio seeding watchdog not started: {_aw_dog_exc}")
-    # Autonomous admin content loop — periodically generates scripts, social
-    # posts, and DAW content under the admin identity and injects them into the
-    # flywheel.  This grows MaxBooster's own phrase corpus so the awareness
-    # bridge retires naturally (buffer_weight → 0) once the admin's content
-    # matches the live industry signal. Never-raise, idempotent daemon.
-    try:
-        from workers.admin_content_loop import start as _loop_start
-        _loop_start(
-            get_script_agent_fn=lambda: _script_agent,
-            get_distribution_agent_fn=lambda: _distribution_agent,
-        )
-    except Exception as _loop_exc:  # noqa: BLE001
-        print(f"[Server] admin content loop not started: {_loop_exc}")
-    warm_thread = threading.Thread(target=_warm_content_cache, daemon=True)
-    warm_thread.start()
-    audio_warm_thread = threading.Thread(target=_warm_audio_pool, daemon=True,
-                                         name="audio-pool-warmer")
-    audio_warm_thread.start()
+    # The unified engine owns its single scheduler. No competing harvest,
+    # autonomous generation, or serving-checkpoint writers start here.
+    # Content/audio warmers used anonymous unpinned cache identities. Do not
+    # autonomously generate content; only resource initialisation runs at boot.
     subsys_thread = threading.Thread(target=_warm_start_subsystems, daemon=True)
     subsys_thread.start()
 
@@ -1815,6 +1924,7 @@ def _warm_start_subsystems() -> None:
 
 
 def _warm_content_cache() -> None:
+    raise RuntimeError("Anonymous generation cache prewarming is disabled")
     """
     Pre-warm the PDIM dedup cache with the top platform/topic combos so the
     first real user request hits the cache instead of waiting ~3 s for compute.
@@ -1879,6 +1989,7 @@ def _warm_content_cache() -> None:
 
 
 def _warm_audio_pool() -> None:
+    raise RuntimeError("Anonymous audio pool generation is disabled")
     """Pre-generate audio for common genre/BPM combos so L1 cache is hot
     before the first user request arrives.  Runs in a daemon thread after
     warm-start completes; never raises; never blocks the main server.
@@ -2053,7 +2164,7 @@ def _init_storage():
     if ok:
         _storage_mode = "live"
         print("[Storage] Connected to MaxBooster storage server")
-        _load_checkpoint_from_storage()
+        # Startup cannot replace the selected serving release from storage.
     else:
         _storage_mode = "local_fallback" if storage.disk_store_available else "offline"
         print(f"[Storage] Storage server offline after 4 attempts — using in-process fallback (mode={_storage_mode})")
@@ -2113,7 +2224,7 @@ def _init_storage():
     def _reinstall_coalescer():
         global _gen_coalescer
         try:
-            from ai_model.dynamic_batching import install as _install_coalescer  # noqa
+            from ai_model.generation.batching import install as _install_coalescer  # noqa
             # Restore the unwrapped generate before wrapping again.
             orig = _original_generate_ref[0]
             if orig is not None and _creative_model is not None:
@@ -2212,7 +2323,8 @@ def _init_storage():
 
         probes = [_probe_script, _probe_image, _probe_audio]
         with _cf.ThreadPoolExecutor(max_workers=len(probes), thread_name_prefix="ka-probe") as pool:
-            futures = [pool.submit(p) for p in probes]
+            from contextvars import copy_context
+            futures = [pool.submit(copy_context().run, p) for p in probes]
             for fut in _cf.as_completed(futures, timeout=30):
                 try:
                     name, ok = fut.result()
@@ -2228,7 +2340,8 @@ def _init_storage():
     _watchdog.keepalive_fn        = _keepalive_fn
     # ──────────────────────────────────────────────────────────────────
 
-    _watchdog.start()
+    # Watchdog recovery can train/save serving weights. Explicit release
+    # promotion, never an autonomous writer, owns production checkpoints.
 
     print("[Workers] DataPuller, ContinuousTrainer, and Watchdog initialized and running")
 
@@ -2285,6 +2398,7 @@ def _init_storage():
 
 def _training_bridge(texts: list, epochs: int, phase_label: str,
                      loss_target: float = None) -> dict:
+    _reject_serving_write()
     """
     Called by ContinuousTrainer to run a training pass.
     Writes data to a temp file, builds dataset, runs the trainer, returns loss.
@@ -2339,6 +2453,7 @@ def _training_bridge(texts: list, epochs: int, phase_label: str,
 
 
 def _load_checkpoint_from_storage():
+    _reject_serving_write()
     """
     After training, checkpoints are saved to storage. On every boot, we check
     storage for the latest weights so the platform always runs on trained data.
@@ -2379,16 +2494,59 @@ def _load_checkpoint_from_storage():
 
 # ─── Health ───────────────────────────────────────────────────────────────────
 
+@app.on_event("shutdown")
+async def stop_awareness():
+    from ai_model.awareness import get_engine
+    get_engine().stop()
+
+
+@app.get("/api/awareness/unified/status")
+async def unified_awareness_status(_key=Depends(require_scope("generate"))):
+    from ai_model.awareness import get_engine
+    return get_engine().status()
+
+
+@app.post("/api/awareness/unified/context")
+async def unified_awareness_context(request: Request, _key=Depends(require_scope("generate"))):
+    from ai_model.awareness import get_engine, conditioning, AwarenessUnavailable
+    data = await request.json()
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=422, detail="Context request must be an object")
+    try:
+        snapshot = get_engine().require_snapshot()
+        context = conditioning(snapshot, data.get("platform", "general"), data.get("modality", "text"))
+        return {"snapshot_id": snapshot.id, "expires_at": snapshot.expires_at,
+                "awareness": context, "context": context}
+    except AwarenessUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/ready")
+@app.get("/api/ready")
+async def generation_readiness():
+    from ai_model.awareness import get_engine
+    from fastapi.responses import JSONResponse
+    awareness = get_engine().status()
+    ready = bool(_model_ready and awareness.get("ready"))
+    return JSONResponse(status_code=200 if ready else 503, content={
+        "ready": ready, "model_loaded": _model_ready, "awareness": awareness})
+
+
 @app.get("/health")
 async def health():
-    return {
+    blocked = _serving_release_status.get("candidate_quality") == "blocked"
+    payload = {
         "status": "healthy",
+        "model_blocked": blocked,
+        "readiness_endpoint": "/ready",
         "model_loaded": _model_ready,
+        "serving_release": _serving_release_status,
         "uptime_seconds": time.time() - _start_time,
         "version": "1.0.0",
         "warm_start": _warm_status,
         "storage_mode": _get_storage_mode(),
     }
+    return payload
 
 _start_time = time.time()
 
@@ -2510,9 +2668,11 @@ async def rotate_api_key(key_id: str, _admin = Depends(verify_admin)):
 @app.get("/model/status")
 async def model_status():
     weights_path = Path(__file__).parent / "ai_model" / "weights" / "model.pt"
-    vocab_size = len(_tokenizer.vocab) if _tokenizer else 0
+    vocab_size = (getattr(_tokenizer, "vocab_size", None)
+                  or len(getattr(_tokenizer, "vocab", {}))) if _tokenizer else 0
     return {
         "model_loaded": _model_ready,
+        "serving_release": _serving_release_status,
         "vocab_size": vocab_size,
         "device": "digital_gpu",
         "dim": _model_config.get("dim", 512),
@@ -2573,16 +2733,20 @@ async def hyper_gpu_status():
             from ai_model.gpu.hyper_core import PrecisionMode
             _hyper_backend = HyperGPUBackend(lanes=_lanes, tensor_cores=_tensor_cores, precision=PrecisionMode.MIXED)
         s = _hyper_backend.status()
+        pool = _get_gpu_pool().stats()
         return {
             "available": True,
             "engine": s.get("engine", "HyperGPU"),
-            "role": "primary — all model inference/training compute routes through this backend",
+            "role": "request-scoped model inference compute",
             "lanes": s.get("lanes", _lanes),
             "tensor_cores": s.get("tensor_cores", _tensor_cores),
             "precision": str(s.get("precision", "MIXED")),
-            "total_ops": s.get("total_ops", 0),
-            "total_tensor_core_tflops": s.get("total_tensor_core_tflops", 0.0),
-            "total_compute_ms": s.get("total_compute_ms", 0.0),
+            "total_ops": pool["pool_total_kernel_ops"],
+            "total_compute_ms": pool["pool_total_compute_ms"],
+            "compute_counter_scope": pool["pool_compute_counter_scope"],
+            "compute_counter_source": "request_scoped_hypergpu_pool",
+            "default_backend": s,
+            "pool": pool,
             "uptime_s": s.get("uptime_s", 0.0),
         }
     except Exception as e:
@@ -2712,9 +2876,15 @@ async def get_training_status():
     state["training_time"] = state.get("elapsed_seconds", 0)
     return state
 
+def _reject_serving_write():
+    raise HTTPException(status_code=503, detail=(
+        "Serving checkpoints are immutable; train an isolated candidate and use reviewed release promotion"))
+
+
 @app.post("/training/start")
 async def start_training(req: StartTrainingRequest, background_tasks: BackgroundTasks,
                          _key = Depends(require_scope("train"))):
+    _reject_serving_write()
     job_id = str(uuid.uuid4())[:8]
     with _training_lock:
         # Guard both "running" and "starting" to prevent double-start race
@@ -2738,6 +2908,7 @@ async def start_training(req: StartTrainingRequest, background_tasks: Background
     return {"success": True, "message": f"Training job {job_id} started", "job_id": job_id}
 
 def _run_training(req: StartTrainingRequest, job_id: str):
+    _reject_serving_write()
     """Background training task."""
     import math
     with _training_lock:
@@ -2845,6 +3016,7 @@ def _run_training(req: StartTrainingRequest, job_id: str):
 @app.post("/admin/train-bpe-scaleup")
 async def train_bpe_scaleup(req: BPEScaleUpRequest, background_tasks: BackgroundTasks,
                              _key = Depends(require_scope("train"))):
+    _reject_serving_write()
     """One-shot pipeline: build combined real+synthetic corpus, train a fresh
     BPE tokenizer on it, train a TransformerLM from scratch on that vocab, and
     hot-swap the live global model/tokenizer in this process when done.
@@ -2871,6 +3043,7 @@ async def train_bpe_scaleup(req: BPEScaleUpRequest, background_tasks: Background
     return {"success": True, "message": f"BPE scale-up training job {job_id} started", "job_id": job_id}
 
 def _run_bpe_scaleup(req: BPEScaleUpRequest, job_id: str):
+    _reject_serving_write()
     """Background task: full corpus build + BPE train + model train from scratch."""
     global _tokenizer, _creative_model, _model_config
     import math
@@ -3039,6 +3212,7 @@ def _run_bpe_scaleup(req: BPEScaleUpRequest, job_id: str):
 @app.post("/admin/train-hyper-scaleup")
 async def train_hyper_scaleup(req: HyperScaleUpRequest, background_tasks: BackgroundTasks,
                               _key = Depends(require_scope("train"))):
+    _reject_serving_write()
     """Train a fresh model with real forward+backward compute routed through the
     in-house Digital GPU (HyperGPU) tensor-core kernels, then transfer the trained
     weights into the fast KV-cache serving model and hot-swap it live."""
@@ -3191,6 +3365,7 @@ async def api_quality_awareness_status(key: dict = Depends(verify_api_key)):
     return {"success": True, **qa_status()}
 
 def _run_hyper_scaleup(req: HyperScaleUpRequest, job_id: str):
+    _reject_serving_write()
     """Background task: build corpus + BPE train + train a model whose real
     compute runs on the Digital GPU, then transfer weights to the serving model."""
     global _tokenizer, _creative_model, _model_config
@@ -3491,6 +3666,7 @@ class ScheduleRequest(BaseModel):
 @app.post("/training/schedule")
 async def schedule_training(req: ScheduleRequest, background_tasks: BackgroundTasks,
                             _key = Depends(require_scope("train"))):
+    _reject_serving_write()
     with _training_lock:
         if _training_state["state"] == "running":
             return {"success": False, "message": "Training already in progress"}
@@ -3523,6 +3699,7 @@ async def schedule_training(req: ScheduleRequest, background_tasks: BackgroundTa
 
 
 def _run_curriculum(phases: list, req: ScheduleRequest, job_id: str):
+    _reject_serving_write()
     from ai_model.training.synthetic import generate_synthetic_samples
     from ai_model.training.dataset import CreativeDataset
     from ai_model.training.trainer import train as run_train
@@ -3647,6 +3824,7 @@ async def continuous_status(_key = Depends(require_scope("read"))):
 
 @app.post("/training/continuous/start")
 async def continuous_start(req: ContinuousStartRequest, _key = Depends(require_scope("train"))):
+    _reject_serving_write()
     with _workers_lock:
         ct = _continuous_trainer
         dp = _data_puller
@@ -3982,18 +4160,8 @@ def _effective_awareness(platform: str, raw_awareness: str) -> str:
     arousal-rich [HIGH] signals available. When the caller sends no awareness,
     only platform signals are used. Never-raise.
     """
-    if "[PLATFORM_OPTIMIZATION platform=" in (raw_awareness or ""):
-        return raw_awareness
-    try:
-        from ai_model.quality_awareness import platform_awareness_string
-        platform_awareness = platform_awareness_string(platform)
-    except Exception:  # noqa: BLE001
-        platform_awareness = ""
-    if not raw_awareness:
-        return platform_awareness
-    # Caller-provided awareness leads: request-specific signals synchronize
-    # with (rather than get drowned out by) the generic platform buffer.
-    return f"{raw_awareness}\n{platform_awareness}" if platform_awareness else raw_awareness
+    from ai_model.generation.awareness import ensure_context_once
+    return ensure_context_once(raw_awareness, platform)
 
 
 @app.get("/api/url-parser/content")
@@ -4022,9 +4190,7 @@ async def url_parser_content(url: str = "", platform: str = "",
     except Exception as import_err:
         raise HTTPException(status_code=500, detail=f"URL parser unavailable: {import_err}")
 
-    return await asyncio.get_event_loop().run_in_executor(
-        None, lambda: _get_content(url.strip(), platform=platform.strip())
-    )
+    return await _in_thread(lambda: _get_content(url.strip(), platform=platform.strip()))
 
 
 @app.get("/api/url-parser/inspect")
@@ -4046,9 +4212,7 @@ async def url_parser_inspect(url: str = "", _key = Depends(require_scope("genera
         raise HTTPException(status_code=500, detail=f"URL parser unavailable: {import_err}")
 
     try:
-        parsed = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: _parse_url_core(url.strip())
-        )
+        parsed = await _in_thread(lambda: _parse_url_core(url.strip()))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Parse error: {exc}")
 
@@ -4085,7 +4249,189 @@ async def url_parser_inspect(url: str = "", _key = Depends(require_scope("genera
     }
 
 
+def _planned_generation(modality, *, specification=False):
+    """Apply the same immutable contract to direct and HTTP handler calls."""
+    import functools
+    import inspect
+    from ai_model.generation.plan import GenerationPlan, active_plan, validate_output
+
+    def decorate(handler):
+        signature = inspect.signature(handler, eval_str=True)
+        @functools.wraps(handler)
+        async def wrapped(*args, **kwargs):
+            from ai_model.awareness import get_engine, bind, bound_snapshot, AwarenessUnavailable
+            from contextlib import ExitStack
+            scope = ExitStack()
+            bound = signature.bind(*args, **kwargs)
+            req = bound.arguments.get("req", bound.arguments.get("body", bound.arguments.get("request")))
+            try:
+                plan_input = (await req.json() if isinstance(req, Request) else
+                              {"operation": handler.__name__} if req is None else req)
+                snapshot = bound_snapshot() if active_plan.get() else get_engine().require_snapshot()
+                scope.enter_context(bind(snapshot))
+                if not _model_ready:
+                    raise HTTPException(status_code=503, detail="Selected model unavailable")
+                plan = GenerationPlan.from_request(plan_input, modality,
+                    checkpoint=_serving_release_status.get("checkpoint_sha256", ""))
+            except AwarenessUnavailable as exc:
+                scope.close()
+                raise HTTPException(status_code=503, detail=str(exc)) from exc
+            except (TypeError, ValueError) as exc:
+                scope.close()
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+            except BaseException:
+                scope.close()
+                raise
+            token = active_plan.set(plan)
+            from ai_model.generation.release import candidate_errors
+            previous_failures = candidate_errors.get()
+            failure_token = candidate_errors.set(previous_failures if previous_failures is not None else [])
+            try:
+                controls = (plan_input.get("dedicated_controls") if isinstance(plan_input, dict)
+                            else getattr(req, "dedicated_controls", None))
+                if controls is not None:
+                    if specification:
+                        raise HTTPException(status_code=422, detail="Specification routes cannot render dedicated media")
+                    if not isinstance(controls, dict):
+                        raise HTTPException(status_code=422, detail="dedicated_controls must be an object")
+                    # Never drop unsupported semantic controls simply because
+                    # the caller put them outside the dedicated control object.
+                    controls = dict(controls)
+                    request_data = plan.to_dict()["request"]
+                    for name in ("subject", "reference", "style"):
+                        value = request_data.get(name)
+                        if value is not None:
+                            if name in controls and controls[name] != value:
+                                raise HTTPException(status_code=422, detail=f"Conflicting {name} controls")
+                            controls[name] = value
+                    from ai_model.generation.dedicated import render
+                    owner_id = _request_job_owner.get()
+                    if not owner_id:
+                        raise HTTPException(status_code=403, detail="Authenticated private owner required for durable media")
+                    from uuid import uuid4
+                    delivery_job_id = uuid4().hex
+                    try:
+                        result = await _in_thread(lambda: render(
+                            modality, controls, _UPLOADS_PATH, owner_id=owner_id,
+                            persist_job=_persist_generation_job, read_job=_job_read,
+                            job_id=delivery_job_id))
+                    except ValueError as exc:
+                        if (_job_read(delivery_job_id) or {}).get("status") == "committing":
+                            raise HTTPException(status_code=503, detail={
+                                "error": str(exc), "job_id": delivery_job_id,
+                                "status": "committing", "retry_stage": "delivery_only"}) from exc
+                        raise HTTPException(status_code=422, detail=str(exc)) from exc
+                    except Exception as exc:
+                        raise HTTPException(status_code=503, detail={
+                            "error": str(exc), "job_id": delivery_job_id,
+                            "status": (_job_read(delivery_job_id) or {}).get("status", "failed"),
+                        }) from exc
+                else:
+                    try:
+                        request_data = plan.to_dict()["request"]
+                        if (modality in {"image", "video", "audio"} and not specification
+                                and request_data.get("render_engine") not in {"procedural", "rta", "pathtraced", "raytraced"}):
+                            raise HTTPException(status_code=503, detail=(
+                                "Learned media generation unavailable on this legacy route; "
+                                "select explicit procedural dedicated_controls"))
+                        result = await handler(*args, **kwargs)
+                    except AwarenessUnavailable as exc:
+                        raise HTTPException(status_code=503, detail=str(exc)) from exc
+                    except RuntimeError as exc:
+                        raise HTTPException(status_code=503, detail=str(exc)) from exc
+                    except HTTPException:
+                        raise
+                    except Exception as exc:
+                        if candidate_errors.get():
+                            failure = candidate_errors.get()[0]
+                            raise HTTPException(
+                                status_code=422 if isinstance(failure, (ValueError, TypeError, NotImplementedError)) else 503,
+                                detail=str(failure),
+                            )
+                        raise HTTPException(
+                            status_code=422 if isinstance(exc, (ValueError, TypeError, NotImplementedError)) else 503,
+                            detail=str(exc)) from exc
+                    if candidate_errors.get():
+                        failure = candidate_errors.get()[0]
+                        raise HTTPException(
+                            status_code=422 if isinstance(failure, (ValueError, TypeError, NotImplementedError)) else 503,
+                            detail=str(failure),
+                        )
+                from starlette.responses import StreamingResponse, Response
+                if isinstance(result, StreamingResponse):
+                    # Validate generation before committing HTTP headers. This
+                    # deliberately buffers streams so expiry/model failures
+                    # remain real HTTP errors rather than a truncated 200.
+                    chunks = []
+                    size = 0
+                    try:
+                        async for chunk in result.body_iterator:
+                            bound_snapshot()
+                            chunk = chunk.encode(result.charset) if isinstance(chunk, str) else bytes(chunk)
+                            size += len(chunk)
+                            if size > 16 * 1024 * 1024:
+                                raise ValueError("Generation stream exceeds 16 MiB delivery limit")
+                            chunks.append(chunk)
+                        if candidate_errors.get():
+                            raise candidate_errors.get()[0]
+                    except Exception as exc:
+                        raise HTTPException(
+                            status_code=422 if isinstance(exc, (ValueError, TypeError)) else 503,
+                            detail=str(exc)) from exc
+                    finally:
+                        if hasattr(result.body_iterator, "aclose"):
+                            await result.body_iterator.aclose()
+                    headers = {k: v for k, v in result.headers.items()
+                               if k.lower() not in {"content-length", "transfer-encoding"}}
+                    headers.update({"x-awareness-snapshot-id": snapshot.id,
+                                    "x-generation-plan-hash": plan.plan_hash})
+                    return Response(content=b"".join(chunks), status_code=result.status_code,
+                                    headers=headers, media_type=result.media_type,
+                                    background=result.background)
+                if not isinstance(result, dict):
+                    raise HTTPException(status_code=503, detail="Generation returned an unsupported response")
+                if isinstance(result, dict):
+                    if result.get("success") is False or result.get("status") in {"failed", "error"}:
+                        raise HTTPException(status_code=503, detail=result.get("error", "Generation failed"))
+                    is_spec = specification or getattr(req, "mode", None) == "planner"
+                    try:
+                        validation = (result["validation"] if controls is not None
+                                      else validate_output(plan, result, specification=is_spec))
+                    except ValueError as exc:
+                        raise HTTPException(status_code=503, detail=str(exc)) from exc
+                    result = dict(result)
+                    result["generation_plan"] = plan.to_dict()
+                    result["snapshot_id"] = snapshot.id
+                    result["seed"] = plan.seed
+                    result["validation"] = validation
+                    result["capability_status"] = {
+                        "runtime": "executed" if controls is not None else "handler_returned",
+                        "quality": "not_evaluated",
+                        "digital_gpu_exclusive": "not_verified",
+                    }
+                    if is_spec:
+                        result["kind"] = "specification"
+                return result
+            finally:
+                candidate_errors.reset(failure_token)
+                active_plan.reset(token)
+                scope.close()
+        wrapped.__signature__ = signature
+        return wrapped
+    return decorate
+
+
+@app.get("/api/generation/capabilities")
+async def generation_capabilities():
+    from ai_model.capabilities import capabilities
+    return {"renderers": capabilities(), "quality": "not_evaluated",
+            "serving_release": _serving_release_status,
+            "runtime": "not_probed", "digital_gpu_exclusive": "not_verified",
+            "plan_version": "generation-plan-v2"}
+
+
 @app.post("/content/generate")
+@_planned_generation("content")
 async def generate_content(req: ContentRequest, _key = Depends(require_scope("generate"))):
     start = time.time()
     platform = normalize_platform(req.platform)
@@ -4116,28 +4462,18 @@ async def generate_content(req: ContentRequest, _key = Depends(require_scope("ge
             tone=req.tone, awareness=effective_awareness,
         ))
 
-        # Belt-and-suspenders garble check: if the ScriptAgent's internal
-        # garble detection missed a truncated model output (e.g. trailing-
-        # newline edge case), catch it here before storing in the PDIM cache.
-        # Only retry when we have awareness to compose from.
-        try:
-            from ai_model.request_intelligence import looks_garbled
-            _cap_preview = f"{sr.hook}\n{sr.body}".strip()
-            if effective_awareness and looks_garbled(_cap_preview):
-                sr = _script_agent._awareness_compose(ScriptRequest(
-                    idea=topic, platform=platform, goal=req.goal,
-                    tone=req.tone, awareness=effective_awareness,
-                ))
-        except Exception:
-            pass  # never let the guard break generation
+        _require_model_script(sr)
+        from ai_model.request_intelligence import looks_garbled
+        if looks_garbled(f"{sr.hook}\n{sr.body}"):
+            raise HTTPException(status_code=503, detail="Model returned garbled content")
 
         full_script = f"{sr.hook}\n{sr.body}\n{sr.cta}"
         dr = _distribution_agent.run(DistributionRequest(
             script=full_script, platform=platform,
             goal=req.goal, awareness=effective_awareness,
         ))
-        if not any([sr.hook.strip(), sr.body.strip(), sr.cta.strip()]):
-            raise ValueError("empty generatedContent — model warming up, please retry")
+        if not isinstance(dr.caption, str) or not dr.caption.strip():
+            raise HTTPException(status_code=503, detail="Distribution returned empty caption")
         return {
             "success": True,
             "platform": platform,
@@ -4146,18 +4482,24 @@ async def generate_content(req: ContentRequest, _key = Depends(require_scope("ge
             "body": sr.body,
             "cta": sr.cta,
             "hashtags": dr.hashtags if req.include_hashtags else [],
-            "source": getattr(sr, "source", "template"),
+            **_script_provenance(sr),
+            "generation_contract": _GENERATION_CONTRACT,
         }
 
     try:
         # ── Dedup + single-flight via PDIM orchestrator ───────────────────────
         # Identical concurrent requests collapse to one compute; all share result.
         _orch = _get_pdim_orchestrator()
-        _cache_key = {"platform": platform, "topic": topic, "tone": req.tone,
+        _cache_key = {"generation_contract": _GENERATION_CONTRACT,
+                      "plan_hash": _generation_plan_hash(),
+                      "platform": platform, "topic": topic, "tone": req.tone,
                       "goal": req.goal, "awareness": effective_awareness,
                       "platform_optimization": _platform_optimization_awareness(req)}
-        _out = await _in_thread(lambda: _orch.compute(_cache_key, _build_result, namespace="api_content_v6"))
+        _out = await _in_thread(lambda: _orch.compute(_cache_key, _build_result, namespace="api_content_model_v2"))
         _result = dict(_out["result"])
+        if (_result.get("source") not in {"ai_model", "model", "model_composed"}
+                or _result.get("generation_contract") != _GENERATION_CONTRACT):
+            raise HTTPException(status_code=503, detail="Cached content lacks model provenance")
         if _out.get("source") in ("cache", "coalesced"):
             _result["cached"] = True
         _result["processing_time_ms"] = round((time.time() - start) * 1000, 1)
@@ -4170,9 +4512,9 @@ async def generate_content(req: ContentRequest, _key = Depends(require_scope("ge
         raise
     except ValueError as e:
         _srv_logger.warning("[generate-from-url] %s topic=%r platform=%s", e, topic, platform)
-        raise HTTPException(status_code=500, detail=f"Generation returned empty output: {e}")
+        raise HTTPException(status_code=503, detail=f"Generation returned empty output: {e}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=503, detail=f"Content generation unavailable: {e}")
 
 # ─── BoostSheets ─────────────────────────────────────────────────────────────
 
@@ -4482,6 +4824,7 @@ async def seed_audio_dataset(
 
 @app.post("/storage/checkpoint/save")
 async def save_checkpoint(payload: CheckpointSave, _admin = Depends(verify_admin)):
+    _reject_serving_write()
     from storage_client import get_checkpoint_client
     ok = get_checkpoint_client().save_checkpoint(
         model_id=payload.model_id,
@@ -4618,6 +4961,7 @@ def _build_personalized_tone(user_id: str, platform: str, base_tone: str) -> str
 
 
 @app.post("/platform/social/generate")
+@_planned_generation("content")
 async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(require_scope("generate"))):
     """
     Main platform social media content generation.
@@ -4625,12 +4969,24 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
     """
     start = time.time()
     platform = normalize_platform(req.platform)
-    # Universal URL Parser: URL requests must be safely fetched and resolved
-    # inside MaxCore. Never generate plausible copy about an unresolved URL.
+    # Content URLs must be safely fetched. A public profile URL may instead
+    # supply a literal handle; that is disclosed as unverified caller input,
+    # never as fetched biography, release metadata, or proof of an account.
     _url_awareness = ""
+    _input_resolution = {"source": "caller_text"}
     try:
-        from ai_model.url_parser.core import is_url as _is_url, parse_url as _parse_url
-        if _is_url(req.topic):
+        from ai_model.url_parser.core import (
+            is_url as _is_url, parse_url as _parse_url, supplied_profile_identity,
+        )
+        _profile_identity = supplied_profile_identity(req.topic)
+        if _profile_identity:
+            _social_topic = _profile_identity
+            _input_resolution = {
+                "source": "caller_supplied_profile_handle",
+                "fetch_ok": False,
+                "account_verified": False,
+            }
+        elif _is_url(req.topic):
             _parsed_url = _parse_url(req.topic)
             if not _parsed_url.fetch_ok:
                 raise HTTPException(
@@ -4644,6 +5000,7 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
                     detail="URL did not contain analyzable social content",
                 )
             _url_awareness = _parsed_url.awareness_text or ""
+            _input_resolution = {"source": "fetched_url", "fetch_ok": True}
         else:
             _social_topic = req.topic.strip()
     except HTTPException:
@@ -4690,6 +5047,7 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
                      cta_strength=req.call_to_action_strength or "medium",
                      genre=req.genre or "",
                 )))
+                _require_model_script(s)
                 d = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
                     script=f"{s.hook}\n{s.body}\n{s.cta}",
                     platform=platform, goal=req.goal,
@@ -4698,11 +5056,6 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
                 return s, d
 
             script, dist = await _run_variant()
-            if not any([script.hook.strip(), script.body.strip(), script.cta.strip()]):
-                raise HTTPException(
-                    status_code=503,
-                    detail="empty generatedContent — model warming up, please retry",
-                )
             controlled = apply_social_controls(
                 hook=script.hook,
                 body=script.body,
@@ -4725,7 +5078,8 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=503,
+                                detail=f"Social model generation unavailable: {e}") from e
         variant["variant"] = i + 1
         variants.append(variant)
 
@@ -4734,6 +5088,7 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
         "user_id": req.user_id,
         "platform": platform,
         "topic": _social_topic,
+        "input_resolution": _input_resolution,
         "personalized_tone": personalized_tone,
         "variants": variants,
         "model_ready": _model_ready,
@@ -4747,6 +5102,7 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
 
 
 @app.post("/platform/social/autopilot")
+@_planned_generation("content")
 async def platform_social_autopilot(req: PlatformAutopilotRequest, _key = Depends(require_scope("generate"))):
     """
     Autopilot endpoint: analyses a user's recent post performance and recommends
@@ -4833,6 +5189,7 @@ async def platform_social_autopilot(req: PlatformAutopilotRequest, _key = Depend
 
 
 @app.post("/platform/daw/generate")
+@_planned_generation("text")
 async def platform_daw_generate(req: PlatformDAWRequest, _key = Depends(require_scope("generate"))):
     """
     DAW / Studio AI generation endpoint.
@@ -4879,6 +5236,7 @@ async def platform_daw_generate(req: PlatformDAWRequest, _key = Depends(require_
             idea=topic, platform="youtube", goal=goal, tone=tone,
             awareness=_daw_aw,
         )))
+        _require_model_script(script)
         visual = await _in_thread(lambda: _visual_spec_agent.run(VisualSpecRequest(
             idea=topic, platform="youtube", tone=tone, awareness=_daw_aw,
         )))
@@ -4908,11 +5266,15 @@ async def platform_daw_generate(req: PlatformDAWRequest, _key = Depends(require_
             "context_prompt": context_prompt,
         })
         return _result
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=503,
+                            detail=f"DAW model generation unavailable: {e}") from e
 
 
 @app.post("/platform/distribution/plan")
+@_planned_generation("content", specification=True)
 async def platform_distribution_plan(req: PlatformDistributionRequest, _key = Depends(require_scope("generate"))):
     """
     Music distribution planning endpoint.
@@ -5010,6 +5372,7 @@ async def platform_video_generate_schema():
 
 
 @app.post("/platform/video/generate")
+@_planned_generation("video", specification=True)
 async def platform_video_generate(req: PlatformVideoRequest, _key = Depends(require_scope("generate"))):
     """
     Main platform video generation endpoint.
@@ -5129,6 +5492,11 @@ async def platform_video_generate(req: PlatformVideoRequest, _key = Depends(requ
             "duration_seconds": req.duration_seconds,
         })
         return _result
+    except HTTPException:
+        raise
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=503,
+                            detail=f"Video generation unavailable: {exc}") from exc
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -5181,6 +5549,7 @@ async def platform_model_info(_key = Depends(verify_api_key)):
 
 @app.post("/platform/model/reload")
 async def platform_model_reload(_admin = Depends(verify_admin)):
+    _reject_serving_write()
     """
     Hot-reload: pull the latest checkpoint from storage and update model state.
     Call this from the main platform after a new training run completes.
@@ -5239,6 +5608,7 @@ class MaxcoreMediaRequest(_AwarenessMixin):
 
 
 @app.post("/analyze")
+@_planned_generation("content", specification=True)
 async def maxcore_analyze(req: MaxcoreAnalyzeRequest, _key = Depends(require_scope("generate"))):
     """
     Normalize any input modality (text, URL, image, audio, video) into a unified
@@ -5294,6 +5664,7 @@ async def maxcore_analyze(req: MaxcoreAnalyzeRequest, _key = Depends(require_sco
 
 
 @app.post("/generate/text")
+@_planned_generation("text")
 async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_scope("generate"))):
     """
     Dual-mode text endpoint:
@@ -5307,10 +5678,17 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
         normalized = data.get("normalized", {})
         request_data = data.get("request", {})
         pack_spec = data.get("packSpec") or []
+        if (not isinstance(normalized, dict) or not isinstance(request_data, dict)
+                or not isinstance(pack_spec, list)):
+            raise HTTPException(status_code=422, detail="Planner requires request object and packSpec list")
 
         modality_slots: dict = {}
         for slot in pack_spec:
+            if not isinstance(slot, dict):
+                raise HTTPException(status_code=422, detail="Planner slots must be objects")
             m = slot.get("modality", "text")
+            if m not in {"text", "image", "audio", "video"}:
+                raise HTTPException(status_code=422, detail=f"Unsupported planner modality: {m}")
             modality_slots.setdefault(m, []).append(slot)
 
         steps = [{
@@ -5318,7 +5696,11 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
             "type": "analyze",
             "worker": "text",
             "inputFrom": "normalizedInput",
-            "params": {"intent": normalized.get("intent", "engagement")},
+            "params": {
+                **normalized,
+                "intent": normalized.get("intent", "engagement"),
+                "awareness": _merged_awareness_for(req),
+            },
         }]
 
         for modality, slots in modality_slots.items():
@@ -5331,12 +5713,20 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
                     "slots": slots,
                     "platforms": [s.get("platform") for s in slots],
                     "constraints": request_data.get("constraints", {}),
+                    "instruction": request_data.get("instruction"),
+                    "content_themes": request_data.get("content_themes"),
+                    "awareness": _merged_awareness_for(req),
                 },
             })
 
         return {
             "requestId": request_data.get("id", str(uuid.uuid4())),
             "steps": steps,
+            "normalizedInput": normalized,
+            "request": request_data,
+            "source": "deterministic_planner",
+            "checkpoint_inference": False,
+            "generation_contract": _GENERATION_CONTRACT,
             "processing_time_ms": round((time.time() - start) * 1000, 1),
         }
 
@@ -5344,12 +5734,14 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
     step = req.step or data.get("step", {})
     inputs = req.inputs or data.get("inputs", {})
     slots = step.get("params", {}).get("slots", [])
+    if not slots:
+        raise HTTPException(status_code=422, detail="Text generation requires at least one slot")
     normalized = inputs.get("normalized", {}) if isinstance(inputs, dict) else {}
     topic = (normalized.get("semantic") or {}).get("topic") or normalized.get("payload_summary", "content")
     intent = (normalized.get("semantic") or {}).get("intent", "engagement")
-    hook = (normalized.get("semantic") or {}).get("hook", "")
-
     outputs = []
+    if not (_model_ready and _script_agent and _distribution_agent):
+        raise HTTPException(status_code=503, detail="Text model or distribution agent unavailable")
     for slot in slots:
         platform = normalize_platform(slot.get("platform", "general"))
         effective_awareness = _effective_awareness(
@@ -5363,38 +5755,32 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
         max_hashtags = rules.get("hashtags", {}).get("max", 0)
         hashtags_allowed = rules.get("hashtags", {}).get("allowed", False)
 
-        text = hook or f"{topic} — {purpose}"
         tags: list = []
-
-        hook_line = ""
-        body_line = ""
-        cta_line = ""
-        posting_time = ""
-        source = "template"
-
-        if _model_ready and _script_agent and _distribution_agent:
-            try:
-                from ai_model.agents.script_agent import ScriptRequest
-                from ai_model.agents.distribution_agent import DistributionRequest
-                script = await _in_thread(lambda: _script_agent.run(ScriptRequest(
-                    idea=topic, platform=platform, goal=intent, tone=tone,
-                    awareness=effective_awareness,
-                )))
-                hook_line = getattr(script, "hook", "") or ""
-                body_line = getattr(script, "body", "") or ""
-                cta_line = getattr(script, "cta", "") or ""
-                source = getattr(script, "source", "template")
-                full_script = f"{hook_line}\n{body_line}\n{cta_line}".strip()
-                dist = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
-                    script=full_script, platform=platform, goal=intent,
-                    awareness=effective_awareness,
-                )))
-                text = dist.caption
-                posting_time = getattr(dist, "posting_time", "") or ""
-                if hashtags_allowed:
-                    tags = getattr(dist, "hashtags", [])[:max_hashtags]
-            except Exception:
-                pass
+        from ai_model.agents.script_agent import ScriptRequest
+        from ai_model.agents.distribution_agent import DistributionRequest
+        try:
+            script = await _in_thread(lambda: _script_agent.run(ScriptRequest(
+                idea=topic, platform=platform, goal=intent, tone=tone,
+                awareness=effective_awareness,
+            )))
+            _require_model_script(script)
+            hook_line, body_line, cta_line = script.hook, script.body, script.cta
+            full_script = f"{hook_line}\n{body_line}\n{cta_line}".strip()
+            dist = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
+                script=full_script, platform=platform, goal=intent,
+                awareness=effective_awareness,
+            )))
+            text = dist.caption
+            if not isinstance(text, str) or not text.strip():
+                raise HTTPException(status_code=503, detail="Distribution returned empty caption")
+            posting_time = getattr(dist, "posting_time", "") or ""
+            if hashtags_allowed:
+                tags = getattr(dist, "hashtags", [])[:max_hashtags]
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=503,
+                                detail=f"Text slot generation unavailable: {exc}") from exc
 
         if max_len:
             text = text[:max_len]
@@ -5414,7 +5800,7 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
                 "cta": cta_line,
                 "posting_time": posting_time,
                 "hashtags": tags,
-                "source": source,
+                **_script_provenance(script),
             },
         })
 
@@ -5425,6 +5811,7 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
 
 
 @app.post("/generate/image")
+@_planned_generation("image", specification=True)
 async def maxcore_generate_image(req: MaxcoreMediaRequest, _key = Depends(require_scope("generate"))):
     """
     Generate image asset specs (concept + aspect ratio + style guidance) per slot.
@@ -5468,6 +5855,7 @@ async def maxcore_generate_image(req: MaxcoreMediaRequest, _key = Depends(requir
 
         outputs.append({
             "url": f"asset://{slot_id}/{aspect_ratio.replace(':', 'x')}.png",
+            "asset_status": "spec_only",
             "platform": platform,
             "slotId": slot_id,
             "meta": {
@@ -5475,16 +5863,19 @@ async def maxcore_generate_image(req: MaxcoreMediaRequest, _key = Depends(requir
                 "style_tags": style_tags,
                 "concept": concept,
                 "format": "png",
+                "source": "concept_spec",
             },
         })
 
     return {
         "outputs": outputs,
+        "kind": "specification",
         "processing_time_ms": round((time.time() - start) * 1000, 1),
     }
 
 
 @app.post("/generate/audio")
+@_planned_generation("audio", specification=True)
 async def maxcore_generate_audio(req: MaxcoreMediaRequest, _key = Depends(require_scope("generate"))):
     """
     Generate audio asset specs (voiceover script + duration + style) per slot.
@@ -5530,6 +5921,7 @@ async def maxcore_generate_audio(req: MaxcoreMediaRequest, _key = Depends(requir
 
         outputs.append({
             "url": f"asset://{slot_id}/voiceover.mp3",
+            "asset_status": "spec_only",
             "platform": platform,
             "slotId": slot_id,
             "meta": {
@@ -5538,16 +5930,19 @@ async def maxcore_generate_audio(req: MaxcoreMediaRequest, _key = Depends(requir
                 "style": style,
                 "sample_rate": 44100,
                 "format": "mp3",
+                "source": "voiceover_spec",
             },
         })
 
     return {
         "outputs": outputs,
+        "kind": "specification",
         "processing_time_ms": round((time.time() - start) * 1000, 1),
     }
 
 
 @app.post("/generate/video")
+@_planned_generation("video", specification=True)
 async def maxcore_generate_video(req: MaxcoreMediaRequest, _key = Depends(require_scope("generate"))):
     """
     Generate video asset packs per slot.
@@ -5609,6 +6004,7 @@ async def maxcore_generate_video(req: MaxcoreMediaRequest, _key = Depends(requir
         script_full = f"{hook_line}\n{body_line}\n{cta_line}".strip()
         outputs.append({
             "url": render_url,
+            "asset_status": "spec_only",
             "platform": platform,
             "slotId": slot_id,
             "meta": {
@@ -5629,6 +6025,7 @@ async def maxcore_generate_video(req: MaxcoreMediaRequest, _key = Depends(requir
 
     return {
         "outputs": outputs,
+        "kind": "specification",
         "processing_time_ms": round((time.time() - start) * 1000, 1),
     }
 
@@ -5818,6 +6215,16 @@ class AdGenerateRequest(_AwarenessMixin):
     content_themes: Optional[List[str]] = None
 
 
+def _ad_social_platform(platform: str) -> str:
+    """Map an ad-network name to a real social profile for awareness/scripts.
+
+    Keep the original ad-network identifier for ads storage, placements and
+    performance queries; only the social conditioning path needs this mapping.
+    """
+    name = (platform or "").strip().lower()
+    return {"meta": "facebook", "google": "general"}.get(name, normalize_platform(name))
+
+
 class AdAutopilotRequest(_AwarenessMixin):
     user_id: str
     platform: Optional[str] = None
@@ -5876,146 +6283,48 @@ async def _generate_ad_creative(
     content_themes: Optional[List[str]] = None,
 ) -> dict:
     """
-    Generate one ad creative for a specific content-type subtype.
+    Generate an ad-copy creative and placement specification for one subtype.
 
     ad_type must be one of: video | audio | text | image.
-    Each subtype produces a distinct copy style, creative_brief shape, and
-    AI-conditioning tone so the campaign has genuine format variety.
+    Each subtype produces a distinct creative_brief shape and agent tone.
+    Image/audio/video briefs do not represent rendered media.
 
-    Awareness, instruction, and content_themes flow into ScriptRequest so
-    the awareness bridge can push quality toward the 100/100 standard.
+    Awareness is fed into ScriptRequest as conditioning, not as substitute copy.
     """
     plat_key   = platform.lower().replace("facebook", "meta").replace("instagram", "meta")
     sub        = ad_type.lower() if ad_type.lower() in AD_SPECS_BY_TYPE else "video"
     type_spec  = AD_SPECS_BY_TYPE[sub]
-    cta_pool   = AD_CTAS_BY_GOAL.get(goal, ["Learn More", "Discover More"])
     artist     = artist_name or "the artist"
-    genre_tag  = f" #{genre}" if genre else ""
 
-    # ── Base hook selection ───────────────────────────────────────────────────
-    # Audio / text / image have their own type-specific hook pools that match
-    # the distinct writing style expected for each placement format.
-    # Video falls through to the platform-specific pool.
-    if sub in AD_HOOKS_BY_TYPE:
-        type_hooks = AD_HOOKS_BY_TYPE[sub]
-        if peak_formula and peak_formula.get("top_hooks"):
-            base_hook = peak_formula["top_hooks"][variant_idx % len(peak_formula["top_hooks"])]
-            base_cta  = (peak_formula.get("top_ctas") or cta_pool)[0]
-            source    = "peak_replicated"
-        else:
-            base_hook = type_hooks[variant_idx % len(type_hooks)]
-            base_cta  = cta_pool[variant_idx % len(cta_pool)]
-            source    = "template"
-    else:  # video — platform-specific pool
-        hook_pool = AD_HOOKS_BY_PLATFORM.get(plat_key, AD_HOOKS_BY_PLATFORM["meta"])
-        if peak_formula and peak_formula.get("top_hooks"):
-            base_hook = peak_formula["top_hooks"][variant_idx % len(peak_formula["top_hooks"])]
-            base_cta  = (peak_formula.get("top_ctas") or cta_pool)[0]
-            source    = "peak_replicated"
-        else:
-            base_hook = hook_pool[variant_idx % len(hook_pool)]
-            base_cta  = cta_pool[variant_idx % len(cta_pool)]
-            source    = "template"
-
-    # ── Awareness composition (primary) ──────────────────────────────────────
-    # When awareness context is present (normal production path), the
-    # awareness-composed script IS the ad copy — hook, body, and CTA all come
-    # from live industry signals via ScriptAgent._awareness_compose.  The
-    # static template pools above only serve peak-formula replication or the
-    # no-awareness edge case.
-    hook     = base_hook
-    body     = ""
-    headline = ""
+    # Run the dedicated script agent, not its awareness-only internal composer.
+    # An awareness-composed fallback is not a model-generated ad.
+    from ai_model.agents.script_agent import ScriptRequest
+    if not (_model_ready and _script_agent):
+        raise HTTPException(status_code=503, detail="Ad script model is unavailable")
+    _sreq = ScriptRequest(
+        idea=f"{product} by {artist}", genre=genre or "",
+        platform=_ad_social_platform(platform), goal=goal,
+        tone=type_spec["copy_tone"], awareness=awareness,
+        variant_idx=variant_idx,
+    )
     try:
-        import asyncio as _asyncio
-        from ai_model.agents.script_agent import ScriptAgent as _SA, ScriptRequest
-        _sreq = ScriptRequest(
-            # Natural theme only — never instruction-style text ("video
-            # ad for X"), which leaks verbatim into user-facing copy.
-            idea=f"{product} by {artist}",
-            genre=genre or "",
-            platform=platform,
-            goal=goal,
-            tone=type_spec["copy_tone"],
-            awareness=awareness or "",
-            variant_idx=variant_idx,
+        script = await _in_thread(lambda: _script_agent.run(_sreq))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Ad script generation failed: {exc}") from exc
+    if not script or not all(isinstance(getattr(script, part, None), str) and
+                             getattr(script, part).strip() for part in ("hook", "body", "cta")):
+        raise HTTPException(status_code=503, detail="Ad script generation returned incomplete copy")
+    if str(getattr(script, "source", "")).lower() not in ("model", "ai_model", "model_composed"):
+        raise HTTPException(
+            status_code=503,
+            detail=f"Ad script did not produce model output (source={getattr(script, 'source', 'unknown')})",
         )
-        script = None
-        if awareness:
-            # Awareness composition is deterministic pure-Python (no model
-            # call) — run it regardless of model readiness so ad copy is
-            # NEVER templated while awareness signals exist.
-            _agent = _script_agent if _script_agent is not None else _SA.__new__(_SA)
-            # No timeout — guaranteed-completion policy: composition is
-            # deterministic pure-Python and always returns.
-            script = await _in_thread(lambda: _agent._awareness_compose(_sreq))
-        elif _model_ready and _script_agent:
-            script = await _in_thread(lambda: _script_agent.run(_sreq))
-        if script is not None:
-            _script_source = getattr(script, "source", "")
-            if _script_source == "awareness" and script.hook and len(script.hook) > 5:
-                # Awareness-composed copy is authoritative — no score gate.
-                # Peak-formula hooks are the one exception: they replicate a
-                # proven top performer from THIS account's own ad history,
-                # which outranks a fresh composition.
-                if source != "peak_replicated":
-                    hook   = script.hook
-                    source = "awareness"
-                body     = script.body
-                headline = script.cta[:50] if script.cta else base_cta
-                if script.cta:
-                    # Awareness CTA is authoritative too. Button-style slots
-                    # (cta_button) have hard platform char limits, so only a
-                    # short awareness CTA replaces the pool button label.
-                    if len(script.cta) <= 30:
-                        base_cta = script.cta
-                    elif source != "peak_replicated":
-                        base_cta = script.cta[:60]
-            elif script.hook and len(script.hook) > 5:
-                # Model-generated (awareness was absent): keep the score gate
-                # so weak model phrasing can't regress below the pool hook.
-                if _ad_hook_score(script.hook) > _ad_hook_score(base_hook):
-                    hook   = script.hook
-                    source = "model_enhanced"
-                body     = script.body
-                headline = script.cta[:50] if script.cta else base_cta
-    except Exception:
-        # Last resort with awareness present: derive copy from the raw
-        # awareness signals themselves rather than shipping pool templates.
-        if awareness:
-            _sig = next(
-                (ln.replace("[HIGH]", "").strip(" •-") .strip()
-                 for ln in awareness.splitlines() if ln.strip()),
-                "",
-            )
-            if _sig:
-                hook   = f"{_sig[:80]} — {product} by {artist}"
-                body   = f"{product} by {artist} is live now.{genre_tag}"
-                source = "awareness"
+    hook, body, base_cta = script.hook, script.body, script.cta
+    headline = script.cta[:50]
+    source = str(getattr(script, "source", "") or "unknown")
 
     # ── Subtype-specific copy defaults ───────────────────────────────────────
-    if not body:
-        if sub == "audio":
-            body = (
-                f"[INTRO 2s: play opening bars of {product}] "
-                f"Hey — {artist} just dropped something you've never heard before. "
-                f"{product} is live now. {base_cta}.{genre_tag}"
-            )
-        elif sub == "text":
-            body = f"{product} by {artist} — stream free now.{genre_tag}"
-        elif sub == "image":
-            body = (
-                f"{artist} — {product}. "
-                f"Exclusive new release.{genre_tag} Stream now."
-            )
-        else:  # video
-            body = (
-                f"🎵 {artist} drops something you've never heard before. "
-                f"{product} is live now.{genre_tag}"
-            )
-
-    if not headline:
-        headline = f"{product} — {''.join(w.capitalize() + ' ' for w in goal.split()).strip()}"
+    # Creative briefs below are specifications, never rendered media.
 
     # ── Subtype-specific creative_brief ──────────────────────────────────────
     brief_extras = type_spec["brief_extras"].copy()
@@ -6068,6 +6377,11 @@ async def _generate_ad_creative(
         "cta":           base_cta,
         "creative_brief": creative_brief,
         "source":        source,
+        "provenance":    _script_provenance(script),
+        "hook_assessment": {"metric": "power_punctuation_emoji",
+                            "score": _ad_hook_score(hook),
+                            "kind": "heuristic_not_engagement_prediction"},
+        "asset_status":  "spec_only",
     }
 
 
@@ -6094,15 +6408,13 @@ async def ads_record_run(req: AdRecordRequest, _key = Depends(require_scope("wri
 
 
 @app.post("/platform/ads/generate")
+@_planned_generation("content", specification=True)
 async def ads_generate(req: AdGenerateRequest, _key = Depends(require_scope("generate"))):
     """
-    Generate a full ad creative set using peak performer replication.
+    Generate model-written ad copy with subtype-specific placement briefs.
 
-    How it works:
-    1. Pull the user's peak performer formula for this platform/ad_type from storage
-    2. Extract the winning hook patterns, CTA formulas, audience signals
-    3. Use the AI model to vary and enhance those patterns into new creatives
-    4. Return N ready-to-launch ad creatives + audience targeting + budget split
+    Account performance history informs targeting, but is not asserted as
+    replicated creative. Media briefs are specifications, not rendered assets.
     """
     start = time.time()
     from storage_client import get_ads_client, get_curriculum_client
@@ -6111,7 +6423,7 @@ async def ads_generate(req: AdGenerateRequest, _key = Depends(require_scope("gen
     plat     = req.platform.lower()
     ad_type  = req.ad_type.lower()
 
-    # Pull peak formula (user-specific, then global fallback)
+    # Pull account-specific performance history for targeting.
     peak_formula = None
     if req.replicate_peak:
         peak_formula = ads.get_winning_formula(req.user_id, plat, ad_type)
@@ -6154,10 +6466,12 @@ async def ads_generate(req: AdGenerateRequest, _key = Depends(require_scope("gen
         _resolved_cycle = [ad_type]
         _selection_mode = "fixed"
 
-    # Guarantee non-empty awareness: caller/request signals lead, live platform
-    # buffer always appended — so ScriptAgent's awareness composition (never
-    # templates) is the path every ad creative takes.
-    _merged_aw = _effective_awareness(plat, _merged_awareness_for(req))
+    # Meta/Google identify ad networks, not social-feed optimization profiles.
+    # Retain the network name for ad history/placement while conditioning the
+    # dedicated script generator on a supported social profile.
+    _social_plat = _ad_social_platform(plat)
+    _social_req = req.model_copy(update={"platform": _social_plat})
+    _merged_aw = _effective_awareness(_social_plat, _merged_awareness_for(_social_req))
 
     # Generate N creatives — each slot picks its subtype from the resolved cycle
     creatives = []
@@ -6213,15 +6527,6 @@ async def ads_generate(req: AdGenerateRequest, _key = Depends(require_scope("gen
             "phase": "scale (set after 3-day test)",
         })
 
-    # Performance benchmarks for this platform
-    benchmarks = {
-        "tiktok":    {"avg_ctr": "1.5-3%",  "avg_cpc": "$0.50-1.20",  "good_roas": "3-6x"},
-        "meta":      {"avg_ctr": "0.9-2%",  "avg_cpc": "$0.80-2.50",  "good_roas": "2-5x"},
-        "youtube":   {"avg_ctr": "0.4-1%",  "avg_cpc": "$0.10-0.30",  "good_roas": "2-4x"},
-        "google":    {"avg_ctr": "2-6%",    "avg_cpc": "$0.50-3.00",  "good_roas": "4-8x"},
-        "instagram": {"avg_ctr": "0.8-1.5%","avg_cpc": "$1.00-3.00",  "good_roas": "2-4x"},
-    }.get(plat, {"avg_ctr": "1-2%", "avg_cpc": "$1.00", "good_roas": "2-4x"})
-
     return {
         "success": True,
         "user_id": req.user_id,
@@ -6232,6 +6537,7 @@ async def ads_generate(req: AdGenerateRequest, _key = Depends(require_scope("gen
         "peak_replication": {
             "enabled": req.replicate_peak,
             "formula_found": peak_formula is not None,
+            "applied": False,  # History is inspected; no unverified replication claim.
             "avg_roas_of_peaks": peak_formula.get("avg_roas") if peak_formula else None,
             "avg_ctr_of_peaks": peak_formula.get("avg_ctr") if peak_formula else None,
         },
@@ -6251,7 +6557,6 @@ async def ads_generate(req: AdGenerateRequest, _key = Depends(require_scope("gen
         "creatives": creatives,
         "targeting": targeting,
         "budget_split": budget_split if budget_split else None,
-        "platform_benchmarks": benchmarks,
         "launch_checklist": [
             "Upload creative assets in the correct format for " + plat + " (MP4 for video, PNG/JPG for image)",
             "Set campaign objective to match goal: " + req.goal,
@@ -6265,6 +6570,7 @@ async def ads_generate(req: AdGenerateRequest, _key = Depends(require_scope("gen
 
 
 @app.post("/platform/ads/autopilot")
+@_planned_generation("content", specification=True)
 async def ads_autopilot(req: AdAutopilotRequest, _key = Depends(require_scope("generate"))):
     """
     Full ad autopilot.
@@ -6394,6 +6700,7 @@ async def ads_autopilot(req: AdAutopilotRequest, _key = Depends(require_scope("g
 
 
 @app.post("/platform/ads/audience")
+@_planned_generation("content", specification=True)
 async def ads_audience(req: AdAudienceRequest, _key = Depends(require_scope("generate"))):
     """
     AI-generated audience targeting for paid ads.
@@ -6501,6 +6808,7 @@ async def ads_performance(user_id: str, platform: Optional[str] = None,
 
 
 @app.post("/platform/ads/optimize")
+@_planned_generation("content", specification=True)
 async def ads_optimize(
     body: dict,
     _key = Depends(require_scope("generate")),
@@ -6628,6 +6936,7 @@ class StorageTrainRequest(BaseModel):
 
 
 def _run_storage_training(req: StorageTrainRequest, job_id: str):
+    _reject_serving_write()
     """Background task: pull batches from the 7TB storage server and train the model."""
     import math
     from storage_client import get_pipeline, get_checkpoint_client
@@ -6757,6 +7066,7 @@ async def start_training_from_storage(
     background_tasks: BackgroundTasks,
     _admin = Depends(verify_admin),
 ):
+    _reject_serving_write()
     """
     Start a training run that pulls data directly from the 7TB storage server.
     Streams batches from the storage session and trains the main MaxBooster model.
@@ -6803,8 +7113,13 @@ async def start_training_from_storage(
 # own in-process threading.Lock for the brief read-modify-write window; POSIX
 # os.replace() gives us atomic final writes, so cross-worker reads are safe.
 
-_JOBS_DIR = "/tmp/maxbooster_jobs"
-os.makedirs(_JOBS_DIR, exist_ok=True)
+_PRIVATE_STATE_DIR = Path(os.environ.get(
+    "MAXCORE_PRIVATE_STATE_DIR", str(Path.home() / ".local" / "state" / "maxcore")))
+_PRIVATE_STATE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+os.chmod(_PRIVATE_STATE_DIR, 0o700)
+_JOBS_DIR = str(_PRIVATE_STATE_DIR / "jobs")
+os.makedirs(_JOBS_DIR, exist_ok=True, mode=0o700)
+os.chmod(_JOBS_DIR, 0o700)
 _api_jobs_lock = threading.Lock()   # kept for legacy; file ops are the real store
 
 # ── File-based job lifecycle: coalescing + TTL eviction ──────────────────────
@@ -6820,6 +7135,9 @@ _active_jobs_lock = threading.Lock()
 
 def _job_digest(fields: dict) -> str:
     """Deterministic dedup key for identical concurrent job submissions."""
+    from ai_model.generation.plan import active_plan
+    plan = active_plan.get()
+    fields = {**fields, "plan_hash": plan.plan_hash if plan else None}
     payload = json.dumps(fields, sort_keys=True, default=str).encode()
     return hashlib.blake2b(payload, digest_size=16).hexdigest()
 
@@ -6839,7 +7157,7 @@ def _job_gc() -> int:
                     continue
                 with open(fpath) as _f:
                     status = json.load(_f).get("status", "")
-                if status in ("done", "error", "cancelled"):
+                if status in ("done", "error", "failed", "cancelled"):
                     os.unlink(fpath)
                     evicted += 1
             except Exception:
@@ -6851,7 +7169,7 @@ def _job_gc() -> int:
     with _active_jobs_lock:
         for digest, jid in list(_active_jobs.items()):
             j = _job_read(jid)
-            if j is None or j.get("status") in ("done", "error", "cancelled"):
+            if j is None or j.get("status") in ("done", "error", "failed", "cancelled"):
                 stale.append(digest)
         for k in stale:
             _active_jobs.pop(k, None)
@@ -6877,13 +7195,46 @@ def _job_path(job_id: str) -> str:
 
 def _job_write(job_id: str, data: dict) -> None:
     """Write job data atomically (create or overwrite)."""
+    from ai_model.generation.plan import active_plan
+    plan = active_plan.get()
+    if plan:
+        data = {**data, "snapshot_id": plan.to_dict()["snapshot_id"],
+                "generation_plan": plan.to_dict(),
+                "snapshot_expiry_policy": "fail_before_work_if_expired"}
     owner = _request_job_owner.get()
     if owner and not data.get("owner_ids"):
         data = {**data, "owner_ids": [owner]}
     tmp = _job_path(job_id) + ".tmp"
-    with open(tmp, "w") as f:
+    with os.fdopen(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
         json.dump(data, f)
+        f.flush()
+        os.fsync(f.fileno())
     os.replace(tmp, _job_path(job_id))
+    directory_fd = os.open(_JOBS_DIR, os.O_RDONLY)
+    try:
+        os.fsync(directory_fd)
+    finally:
+        os.close(directory_fd)
+
+
+def _run_gpu_job(job_id: str, worker) -> None:
+    """Own a render GPU in the worker, never in the submitting HTTP lifetime."""
+    try:
+        from ai_model.awareness import Snapshot, bind
+        from ai_model.generation.plan import active_plan, GenerationPlan
+        saved = (_job_read(job_id) or {}).get("generation_plan")
+        if not saved:
+            raise RuntimeError("Job has no pinned generation plan")
+        snapshot = Snapshot.parse(saved["snapshot"])
+        with bind(snapshot), _get_gpu_pool().spawn_sync(f"render:{job_id}"):
+            plan = GenerationPlan.from_request(saved["request"], saved["modality"], saved["checkpoint"])
+            token = active_plan.set(plan)
+            try:
+                worker()
+            finally:
+                active_plan.reset(token)
+    except Exception as exc:
+        _job_update(job_id, {"status": "error", "error": str(exc)})
 
 
 def _job_read(job_id: str) -> dict | None:
@@ -6907,7 +7258,7 @@ def _job_update(job_id: str, updates: dict) -> None:
         if data is None:
             return
         terminal = data.get("status")
-        if terminal in ("done", "error", "cancelled") and updates.get("status", terminal) != terminal:
+        if terminal in ("done", "error", "failed", "cancelled") and updates.get("status", terminal) != terminal:
             return
         data.update(updates)
         _job_write(job_id, data)
@@ -6936,9 +7287,74 @@ def _require_job_owner(job: dict, request: Request) -> None:
     owners = list(job.get("owner_ids") or [])
     if not owners:
         return
-    requester = (request.headers.get("x-maxcore-user-id") or "").strip()
+    requester = _request_job_owner.get()
     if not requester or requester not in owners:
         raise HTTPException(status_code=403, detail="Cannot access another user's MaxCore job")
+
+
+def _journal_records():
+    for path in Path(_JOBS_DIR).glob("*.json"):
+        # Corrupt journals are explicit errors, not invitations to re-render.
+        with path.open() as handle:
+            yield json.load(handle)
+
+
+def _persist_generation_job(job_id, record):
+    import fcntl
+    from ai_model.media_contract import RenderCancelled
+    with _api_jobs_lock, open(os.path.join(_JOBS_DIR, ".updates.lock"), "a") as lockfile:
+        fcntl.flock(lockfile, fcntl.LOCK_EX)
+        current = _job_read(job_id)
+        if current and current.get("status") == "cancelled" and record.get("status") != "cancelled":
+            raise RenderCancelled("Job cancelled before publication")
+        _job_write(job_id, record)
+
+
+def _create_durable_render_manager(manager_class):
+    class OwnedRenderManager(manager_class):
+        def render_thumbnail(self, sheet, image_engine=None, owner_id=None):
+            owner = _request_job_owner.get()
+            if not owner or (owner_id is not None and owner_id != owner):
+                raise HTTPException(status_code=403, detail="Authenticated private owner required")
+            return super().render_thumbnail(sheet, image_engine=image_engine, owner_id=owner)
+
+        def render_video(self, sheet, video_agent=None, video_agent_request=None, owner_id=None):
+            owner = _request_job_owner.get()
+            if not owner or (owner_id is not None and owner_id != owner):
+                raise HTTPException(status_code=403, detail="Authenticated private owner required")
+            return super().render_video(sheet, video_agent=video_agent,
+                                        video_agent_request=video_agent_request, owner_id=owner)
+    def persist(record):
+        _job_write(record["job_id"], {**record, "render_manager": True,
+                                     "owner_ids": [record["owner_id"]] if record.get("owner_id") else []})
+    manager = OwnedRenderManager(persist_job=persist)
+    manager.recover_jobs([r for r in _journal_records() if r.get("render_manager")])
+    return manager
+
+
+@app.on_event("startup")
+async def recover_dedicated_delivery():
+    global _render_manager
+    # Durable delivery recovery does not depend on a trained inference model.
+    if _render_manager is None:
+        from ai_model.render_manager import RenderManager
+        _render_manager = _create_durable_render_manager(RenderManager)
+    from ai_model.generation.dedicated import deliver, interrupt_render
+    for record in _journal_records():
+        if not record.get("dedicated"):
+            continue
+        if record.get("status") == "committing":
+            try:
+                await asyncio.to_thread(deliver, record, persist_job=_persist_generation_job, read_job=_job_read)
+            except Exception as exc:
+                # Retain committing state and original bytes for delivery-only retry.
+                if (_job_read(record["job_id"]) or {}).get("status") != "cancelled":
+                    _persist_generation_job(record["job_id"], {**record, "delivery_error": str(exc)})
+        elif record.get("status") == "running":
+            interrupt_render(record, persist_job=_persist_generation_job)
+        elif record.get("status") == "done" and record.get("result", {}).get("durable") is True:
+            if record.get("scratch_path"):
+                Path(record["scratch_path"]).unlink(missing_ok=True)
 
 # -- Request models ------------------------------------------------------------
 
@@ -7133,9 +7549,9 @@ class ApiGenerateImageRequest(_AwarenessMixin):
     video_style: Optional[str] = None
     style_confidence: Optional[float] = None
     # Opt into the RTA-1 IRC path tracer for the hero background: "pathtraced"
-    # (aliases "rta"/"raytraced") renders real lit geometry via the Digital GPU,
-    # then composites the poster typography on top. Any other/absent value keeps
-    # the fast procedural PIL background. Env RTA_IMAGE_ENGINE sets the default.
+    # (aliases "rta"/"raytraced") renders supported real lit geometry via the
+    # Digital GPU, then composites optional poster typography. Unsupported
+    # subjects fail explicitly; the PIL default is typography, not subject art.
     render_engine: Optional[str] = None
     # When False, no text is composited onto the image (no headline, no intent
     # tag) — pure artwork for cover art. Default True keeps the poster layout.
@@ -7154,6 +7570,10 @@ class ApiGenerateImageRequest(_AwarenessMixin):
 
 class ApiGenerateAudioRequest(_AwarenessMixin):
     style_fingerprint: Optional[List[float]] = None
+    # Select actual dataset bytes only when the caller explicitly requests a
+    # reference sample, rather than substituting a genre-nearest pool track for
+    # a bespoke instrumental prompt.
+    reference_sample_idx: Optional[int] = None
     notes: Optional[List[Any]] = None
     duration: Optional[float] = 30
     instrument: Optional[str] = None
@@ -7423,6 +7843,69 @@ def _api_heuristic_score(text: str, platform: str) -> float:
     return round(min(100.0, (length_score * 0.8 + cta_bonus + plat_bonus) * 110), 1)
 
 
+_GENERATION_CONTRACT = "documented-stack-v3"
+
+
+def _require_model_script(script: Any) -> None:
+    """Require real checkpoint prose, allowing disclosed caller composition."""
+    source = str(getattr(script, "source", "") or "unknown").lower()
+    if source not in {"model", "ai_model", "model_composed"} or not all(
+        isinstance(getattr(script, field, None), str)
+        and getattr(script, field).strip() for field in ("hook", "body", "cta")
+    ):
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "MaxCore model generation unavailable",
+                    "source": source},
+        )
+
+
+def _script_provenance(script: Any) -> dict:
+    """Composition is not raw checkpoint output or a measured quality claim."""
+    source = str(getattr(script, "source", "") or "unknown")
+    return {
+        "source": source,
+        "checkpoint_inference": source in {"model", "ai_model", "model_composed"},
+        "composition": "caller_direction" if source == "model_composed" else None,
+    }
+
+
+def _planner_inputs(req: Any) -> dict:
+    """Accept both the documented topic shorthand and normalized worker input."""
+    if req.inputs is not None and not isinstance(req.inputs, dict):
+        raise HTTPException(status_code=422, detail="Planner inputs must be an object")
+    data = dict(req.inputs or {})
+    for field in ("normalized", "request"):
+        if data.get(field) is not None and not isinstance(data[field], dict):
+            raise HTTPException(status_code=422, detail=f"Planner {field} must be an object")
+    normalized = dict(data.get("normalized") or {})
+    request_data = dict(data.get("request") or {})
+    for key, value in req.model_dump(exclude={"inputs"}).items():
+        if value is not None:
+            request_data.setdefault(key, value)
+    topic = req.topic or req.prompt
+    if topic:
+        normalized.setdefault("payload_summary", topic)
+        if normalized.get("semantic") is not None and not isinstance(normalized["semantic"], dict):
+            raise HTTPException(status_code=422, detail="Planner semantic input must be an object")
+        semantic = dict(normalized.get("semantic") or {})
+        semantic.setdefault("topic", topic)
+        normalized["semantic"] = semantic
+    if req.intent:
+        normalized.setdefault("intent", req.intent)
+    if "packSpec" not in data:
+        slots = req.slots
+        if slots is None:
+            modality = req.format if req.format in {"text", "image", "audio", "video"} else "text"
+            slots = [{"id": f"{modality}_1", "modality": modality,
+                      "platform": req.platform or "general",
+                      "purpose": req.intent or "content"}]
+        if not isinstance(slots, list):
+            raise HTTPException(status_code=422, detail="Planner slots must be a list")
+        data["packSpec"] = slots
+    return {**data, "normalized": normalized, "request": request_data}
+
+
 def _api_hashtags(topic: str, genre: Optional[str], platform: str) -> List[str]:
     tags = [f"#{topic.replace(' ', '')}", f"#{platform}"]
     if genre:
@@ -7465,6 +7948,7 @@ def _api_model_state(domain: str) -> dict:
 # -- Content Generation --------------------------------------------------------
 
 @app.post("/api/generate/content")
+@_planned_generation("content")
 async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(require_scope("generate"))):
     """Captions, hooks, CTAs for social posts with artist context."""
     start    = time.time()
@@ -7519,18 +8003,9 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
         )
         brief = _ctx.brief
 
-        hook = f"🎵 {artist} just dropped something you need to hear — {topic}"
-        body = (f"Bringing {req.genre or 'music'} vibes that hit different. "
-                f"{req.brand_voice or 'Authentic, raw, and real.'} "
-                f"Crafted for {req.target_audience or brief.audience}.")
-        cta  = brief.suggested_cta
-
         # ── Awareness bridge input ─────────────────────────────────────────
-        # The awareness channel is the designed bridge spanning the gap between
-        # external generative capability and the (still-training) in-house
-        # model: it feeds BOTH the model's conditioning prefix AND, on
-        # garble/failure, the awareness-composed fallback. Two sources are
-        # merged, user direction FIRST so it outranks generic trend context:
+        # Condition real model inference with caller direction and live signals.
+        # A deterministic awareness response is not model-generated copy.
         #   1. the caller's creative direction for THIS post (instruction /
         #      extra_context / themes), serialised into signal lines by
         #      `awareness_from_direction` — the narrative is lead-in-stripped
@@ -7545,52 +8020,23 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
         # prompt-engineering instructions the parser would quote verbatim.
         _merged_awareness = _effective_awareness(_plat, _ctx.awareness)
 
-        if _model_ready and _script_agent:
-            from ai_model.agents.script_agent import ScriptRequest
-            from ai_model.agents.distribution_agent import DistributionRequest
-
-            def _infer():
-                # `idea` stays a clean topic string — it is templated raw into
-                # hook/body text, so richer context must NOT be concatenated
-                # here. All of it flows through `_merged_awareness` (built
-                # above): the user's own creative direction plus external trend
-                # data, both driving the model's conditioning and the
-                # awareness-composed fallback. This mirrors the video path.
-                #
-                # Distribution telemetry is not called on the hot path —
-                # the result is never used and adding it floods the batcher
-                # with extra submissions that degrade unique-request throughput.
-                # It is collected offline via the training pipeline instead.
-                return _script_agent.run(ScriptRequest(
-                    idea=topic, platform=_plat, goal=goal, tone=brief.tone,
-                    awareness=_merged_awareness,
-                ))
-
+        if not (_model_ready and _script_agent):
+            raise HTTPException(status_code=503, detail="Content model unavailable")
+        from ai_model.agents.script_agent import ScriptRequest
+        _variants_want = min(10, max(1, int(req.variants or 1)))
+        scripts = []
+        for idx in range(_variants_want):
             try:
-                # No per-request GPU spawn needed here — the batcher owns GPU
-                # lifecycle (one pocket life per batched forward pass).
-                # Identical requests are already collapsed by the async
-                # coalescer above and never reach this branch.
-                sr = _infer()
-            except Exception:
-                sr = None
-            if sr is not None:
-                hook = sr.hook or hook
-                body = sr.body or body
-                cta  = sr.cta  or cta
-
-        # ── Intelligence-driven composition ────────────────────────────────
-        # The composer consumes the brief (keywords, audience, strategy) to
-        # build the body/CTA instead of echoing the raw topic back, ranks
-        # the agent's parts against brief-composed candidates, and scores
-        # every complete caption (structure-aware) to pick the winner.
-        _variants_want = max(1, int(req.variants)) if req.variants else 1
-        composed = ri.compose_caption(
-            topic, artist, brief,
-            genre=req.genre, brand_voice=req.brand_voice,
-            agent_hook=hook, agent_body=body, agent_cta=cta,
-            variants=_variants_want,
-        )
+                sr = _script_agent.run(ScriptRequest(
+                    idea=topic, platform=_plat, goal=goal, tone=brief.tone,
+                    awareness=_merged_awareness, variant_idx=idx,
+                    genre=req.genre or "", target_audience=req.target_audience or "",
+                ))
+            except Exception as exc:
+                raise HTTPException(status_code=503,
+                                    detail=f"Content model inference failed: {exc}") from exc
+            _require_model_script(sr)
+            scripts.append(sr)
 
         # ── Creator controls: CTA toggle → rebuild caption without the CTA line;
         # char budget → trim on a word boundary. Applied to every variant so the
@@ -7618,14 +8064,21 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
             return {**v, "hook": hook_v, "body": body_v, "cta": cta_v,
                     "caption": cap, "char_count": len(cap)}
 
-        variant_objs = [_apply_controls(v) for v in composed.get("variants", [])]
-        # Guarantee at least one variant even if the composer returned none.
-        if not variant_objs:
-            variant_objs = [_apply_controls({
-                "caption": composed["caption"], "hook": composed["hook"],
-                "body": composed["body"], "cta": composed["cta"],
-                "score": composed["caption_score"],
-            })]
+        variant_objs = [_apply_controls({
+            "caption": "\n\n".join((sr.hook, sr.body, sr.cta)),
+            "hook": sr.hook, "body": sr.body, "cta": sr.cta,
+            **_script_provenance(sr),
+        }) for sr in scripts]
+        # Rank actual generated candidates, never manufacture a pool winner.
+        # This is an editorial heuristic, not a calibrated quality/confidence
+        # or engagement prediction.
+        variant_objs.sort(key=lambda v: _ad_hook_score(v["hook"]), reverse=True)
+        for variant in variant_objs:
+            variant["hook_assessment"] = {
+                "metric": "power_punctuation_emoji",
+                "score": _ad_hook_score(variant["hook"]),
+                "kind": "heuristic_not_engagement_prediction",
+            }
         # Disclosure is opt-in (Brand Voice profile). Applied after trimming,
         # then re-checked against max_chars: if appending the label would blow
         # the caller's explicit character budget, the label is dropped rather
@@ -7639,8 +8092,6 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
         if req.include_hashtags is False:
             hashtags = []
             hashtag_cap = 0
-        quality  = composed["caption_score"]
-        score    = _api_heuristic_score(caption, _plat)
         return {
             "caption":    caption,
             "char_count": len(caption),
@@ -7649,19 +8100,16 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
             "body":       variant_objs[0]["body"],
             "cta":        variant_objs[0]["cta"] if req.include_cta is not False else "",
             "hashtags":   list(dict.fromkeys(hashtags))[:hashtag_cap] if hashtag_cap else [],
-            "confidence": round(max(quality, score) / 100, 3),
-            "quality_score": quality,
+            "source": variant_objs[0]["source"],
+            "provenance": {
+                "script": {k: variant_objs[0][k] for k in
+                           ("source", "checkpoint_inference", "composition")},
+                "postprocessing": ["platform_constraints", "caption_budget", "disclosure"],
+            },
+            "generation_contract": _GENERATION_CONTRACT,
             "ai_disclosure": brief.ai_disclosure,
             "platform": _plat,
-            "intelligence": {
-                **brief.to_dict(),
-                "hook_score": composed["hook_score"],
-                "candidates_considered": composed["hooks_considered"],
-                "composer": {
-                    "bodies_considered": composed["bodies_considered"],
-                    "ctas_considered": composed["ctas_considered"],
-                },
-            },
+            "intelligence": brief.to_dict(),
         }
 
     # ── Cross-platform generation: one call → one adapted variant per
@@ -7707,6 +8155,8 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
         # into one leader's result (identical hooks, untrimmed captions).
         _awareness_key = _effective_awareness(platform, _merged_awareness_for(req))
         _key = {
+            "generation_contract": _GENERATION_CONTRACT,
+            "plan_hash": _generation_plan_hash(),
             "platform": platform,
             "topic":    topic,
             "tone":     req.tone or "",
@@ -7729,15 +8179,18 @@ async def api_generate_content(req: ApiGenerateContentRequest, _key=Depends(requ
             "preferred_hashtags": req.preferred_hashtags or [],
         }
         async def _coalesced_content():
-            # Leader spawns ONE GPU life from the pocket for this unique request.
-            # Followers share the result via the coalescer — zero extra spawns.
+            # Admission/lifecycle belongs to actual model execution (one batch
+            # or unbatched forward), not cache reads or waiting submitters.
             _orch = _get_pdim_orchestrator()
-            async with _get_gpu_pool().spawn(_digest_str(_key)) as _glife:
-                return await _in_thread(
-                    lambda: _orch.compute(req, _build, namespace="api_content_v6")
-                )
+            return await _in_thread(
+                lambda: _orch.compute(_key, _build, namespace="api_content_stack_v3")
+            )
         _out = await _get_async_coalescer().compute(_key, _coalesced_content)
         result = dict(_out["result"])
+        if (result.get("source") not in {"ai_model", "model", "model_composed"}
+                or result.get("generation_contract") != _GENERATION_CONTRACT
+                or "quality_score" in result or "confidence" in result):
+            raise HTTPException(status_code=503, detail="Cached content lacks current model provenance")
         if _out.get("source") in ("cache", "coalesced"):
             result["cached"] = True
     else:
@@ -7765,6 +8218,7 @@ _CAMPAIGN_LAYOUT_BY_PLATFORM: dict[str, str] = {
 
 
 @app.post("/api/generate/campaign")
+@_planned_generation("campaign")
 async def api_generate_campaign(req: ApiGenerateCampaignRequest, _key=Depends(require_scope("generate"))):
     """Turn one release into a full rollout campaign.
 
@@ -7774,7 +8228,8 @@ async def api_generate_campaign(req: ApiGenerateCampaignRequest, _key=Depends(re
     sustain — with ready-to-post copy per post plus shared visual art direction,
     so one song becomes a whole campaign. Composes the same brief + caption
     engine as ``/api/generate/content`` and the unified Visual-DNA technique
-    engine. Never fails: any slot that can't generate degrades to a template.
+    engine. The calendar builder returns planned copy and optional asset jobs;
+    a queued teaser is not a completed video.
     """
     start = time.time()
     from ai_model.generation import build_campaign
@@ -7867,6 +8322,8 @@ async def api_generate_campaign(req: ApiGenerateCampaignRequest, _key=Depends(re
 
     # Compute campaign awareness once — shared across all posts for consistency.
     _campaign_awareness = _merged_awareness_for(req)
+    _campaign_platform = normalize_platform(
+        next((p for p in (req.platforms or []) if p), "instagram"))
 
     def _build():
         return build_campaign(
@@ -7888,7 +8345,7 @@ async def api_generate_campaign(req: ApiGenerateCampaignRequest, _key=Depends(re
             teaser_fn=teaser_fn,
             seed=abs(hash(f"{artist}|{req.title}")) % 100000,
             awareness=_effective_awareness(
-                normalize_platform(platform), _campaign_awareness),
+                _campaign_platform, _campaign_awareness),
         )
 
     # Asset generation renders images inline (blocking PIL work), so run the
@@ -7898,6 +8355,7 @@ async def api_generate_campaign(req: ApiGenerateCampaignRequest, _key=Depends(re
         plan = await _in_thread(_build)
     else:
         plan = _build()
+    plan["source"] = "campaign_composer"
     plan["processing_time_ms"] = round((time.time() - start) * 1000, 1)
     return plan
 
@@ -8044,18 +8502,21 @@ async def api_campaign_schedule(campaign_id: str, req: CampaignScheduleRequest,
 
 
 @app.post("/api/generate/text")
+@_planned_generation("text")
 async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_scope("generate"))):
     """Two-mode text generation — planner or content."""
     start = time.time()
 
     if req.mode == "planner":
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "error": "MaxCore creative planning inference unavailable",
-                "required_capability": "trained structured creative planner",
-            },
+        # The documented planner is a modality router, not a learned planning
+        # model. Expose that actual implementation with explicit provenance.
+        return await maxcore_generate_text(
+            MaxcoreTextRequest(mode="planner", input=_planner_inputs(req),
+                               awareness=_merged_awareness_for(req)),
+            _key=_key,
         )
+    if req.mode != "content":
+        raise HTTPException(status_code=422, detail="mode must be planner or content")
 
     # mode == "content"
     intent   = req.intent or "create content"
@@ -8094,32 +8555,25 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
             idea=idea, platform=platform, goal=intent, tone=brief.tone,
             awareness=_effective_awareness(platform, _ctx.awareness),
         ))
-        source = str(getattr(sr, "source", "") or "").lower()
-        if source not in {"model", "ai_model"}:
-            raise RuntimeError(f"ScriptAgent did not produce model output (source={source or 'unknown'})")
+        _require_model_script(sr)
         model_text = "\n".join(
             part for part in (sr.hook, sr.body, sr.cta) if isinstance(part, str) and part.strip()
         ).strip()
         if not model_text:
             raise RuntimeError("ScriptAgent returned empty model output")
         candidates.append(model_text)
-        # Hook ranking is only applied to an actual model result.
-        alt_hook, _, _ = ri.best_hook(idea, "the artist", sr.hook, brief)
-        if alt_hook and alt_hook != sr.hook:
-            candidates.append(f"{alt_hook}\n{sr.body}\n{sr.cta}")
+        # Do not replace checkpoint text with an unlabelled hook-pool template.
+        # Editorial ranking is distinct from a model/engagement quality score.
 
         ranked  = ri.rank_candidates(candidates, brief)
         if not ranked:
             raise RuntimeError("Model output could not be ranked")
         content = ranked[0][0]
-        quality = ranked[0][1]
-
         outputs = [{
             "type":    "text",
             "content": content,
             "text":    content,
             "slot":    req.slots,
-            "score":   max(quality, _api_heuristic_score(content, platform)),
         }]
         # Top-level aliases the MaxBooster client reads (text/content/script/caption)
         return {
@@ -8128,8 +8582,13 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
             "content":            content,
             "script":             content,
             "caption":            content,
-            "quality_score":      quality,
-            "source":             "ai_model",
+            **_script_provenance(sr),
+            "hook_assessment": {
+                "metric": "power_punctuation_emoji",
+                "score": _ad_hook_score(sr.hook),
+                "kind": "heuristic_not_engagement_prediction",
+            },
+            "generation_contract": _GENERATION_CONTRACT,
             "intelligence": {
                 **brief.to_dict(),
                 "candidates_considered": len(ranked),
@@ -8140,6 +8599,8 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
     # Async coalescer first (coroutine-level), then pdim orchestrator (thread-level).
     try:
         _key = {
+            "generation_contract": _GENERATION_CONTRACT,
+            "plan_hash": _generation_plan_hash(),
             "platform": getattr(req, "platform", ""),
             "topic":    getattr(req, "topic", "") or getattr(req, "idea", ""),
             "tone":     getattr(req, "tone", "") or "",
@@ -8149,16 +8610,16 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
             "platform_optimization": _platform_optimization_awareness(req),
         }
         async def _coalesced_social():
-            # Leader spawns ONE GPU life from the pocket for this unique request.
-            # Followers share the result via the coalescer — zero extra spawns.
+            # Actual batch/unbatched execution owns its admission and GPU.
             _orch = _get_pdim_orchestrator()
-            async with _get_gpu_pool().spawn(_digest_str(_key)) as _glife:
-                return await _in_thread(
-                    lambda: _orch.compute(req, _build, namespace="api_text")
-                )
+            return await _in_thread(
+                lambda: _orch.compute(_key, _build, namespace="api_text_stack_v3")
+            )
         _out = await _get_async_coalescer().compute(_key, _coalesced_social)
         result = dict(_out["result"])
-        if result.get("source") != "ai_model":
+        if (result.get("source") not in {"ai_model", "model", "model_composed"}
+                or result.get("generation_contract") != _GENERATION_CONTRACT
+                or "quality_score" in result):
             raise RuntimeError("Cached text result lacks genuine model provenance")
         if _out.get("source") in ("cache", "coalesced"):
             result["cached"] = True
@@ -8183,6 +8644,7 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
 
 
 @app.post("/api/content/score")
+@_planned_generation("content", specification=True)
 async def api_content_score(req: ApiContentScoreRequest, _key=Depends(require_scope("generate"))):
     """Score a piece of content 0–100 using the AI model + heuristic blend."""
     local   = _api_heuristic_score(req.text, req.platform)
@@ -8230,6 +8692,7 @@ async def api_content_score(req: ApiContentScoreRequest, _key=Depends(require_sc
 # -- Analysis ------------------------------------------------------------------
 
 @app.post("/api/analyze")
+@_planned_generation("content", specification=True)
 async def api_analyze(req: ApiAnalyzeRequest, _key=Depends(require_scope("generate"))):
     """Classify and normalise multimodal input before generation."""
     start = time.time()
@@ -8276,6 +8739,7 @@ async def api_analyze(req: ApiAnalyzeRequest, _key=Depends(require_scope("genera
 
 
 @app.post("/api/analyze/sentiment")
+@_planned_generation("content", specification=True)
 async def api_analyze_sentiment(req: ApiSentimentRequest, _key=Depends(require_scope("generate"))):
     """Sentiment, emotions, and toxicity on any text — AI model augmented."""
     text      = req.text.lower()
@@ -8482,6 +8946,7 @@ async def api_analyze_audio(req: ApiAnalyzeAudioRequest, request: Request, _key=
 # -- Advertising & Engagement --------------------------------------------------
 
 @app.post("/api/optimize/ad")
+@_planned_generation("content", specification=True)
 async def api_optimize_ad(req: ApiOptimizeAdRequest, _key=Depends(require_scope("generate"))):
     """Campaign scoring, budget allocation, creative prediction, ROI forecasting — AI model powered."""
     import numpy as _np
@@ -8591,6 +9056,7 @@ async def api_optimize_ad(req: ApiOptimizeAdRequest, _key=Depends(require_scope(
 
 
 @app.post("/api/predict/engagement")
+@_planned_generation("content", specification=True)
 async def api_predict_engagement(req: ApiPredictEngagementRequest, _key=Depends(require_scope("generate"))):
     """Best post times, viral scoring, schedule optimisation — AI model powered."""
     raise HTTPException(
@@ -8728,6 +9194,7 @@ async def api_predict_engagement(req: ApiPredictEngagementRequest, _key=Depends(
 # -- Media Generation ----------------------------------------------------------
 
 @app.post("/api/generate/image")
+@_planned_generation("image")
 async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_scope("generate"))):
     """
     Generate platform-sized images rendered in-house via PIL.
@@ -8902,7 +9369,7 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
         except Exception:
             pass
 
-        # ── RTA-1 IRC path-traced background (opt-in, explicit fallback) ──────
+        # ── RTA-1 IRC path-traced background (opt-in, fail explicitly) ───────
         _rta_bg = None
         _engine_choice = (req.render_engine or os.environ.get("RTA_IMAGE_ENGINE") or "").lower()
         if _engine_choice in ("pathtraced", "rta", "raytraced", "path-traced"):
@@ -8923,10 +9390,13 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
                 _rta_bg = await _in_thread(lambda: _rta.api.render_image(
                     color_scheme=color_scheme, mood=_mood,
                     width=_bw, height=_bh, samples=6, max_bounces=3, seed=_seed,
+                    prompt=str(topic),
                 ))
             except Exception as _rta_err:
-                print(f"[RTA] path-trace bg failed, falling back to PIL: {_rta_err}")
-                _rta_bg = None
+                raise HTTPException(
+                    status_code=422 if isinstance(_rta_err, ValueError) else 503,
+                    detail=f"Pathtraced image could not represent/render requested subject: {_rta_err}",
+                ) from _rta_err
 
         # ── Render via PIL ImageEngine ─────────────────────────────────────────
         result = None
@@ -8947,7 +9417,13 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
                 )
                 result = await _in_thread(lambda r=_req: _image_engine.render(r))
             except Exception as _img_err:
+                if _engine_choice in ("pathtraced", "rta", "raytraced", "path-traced"):
+                    raise HTTPException(status_code=503,
+                                        detail=f"Pathtraced image composition failed: {_img_err}") from _img_err
                 print(f"[ImageEngine] render error: {_img_err}")
+
+        if _engine_choice in ("pathtraced", "rta", "raytraced", "path-traced") and not (result and result.success):
+            raise HTTPException(status_code=503, detail="Pathtraced image produced no rendered file")
 
         if result and result.success:
             # Fold this produced image back into the retrieval index (non-blocking,
@@ -8979,6 +9455,8 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
                     "style_tags":   slot_style_tags,
                     "engine":       ("rta-irc-pathtraced-v1" if _rta_bg is not None
                                      else "maxbooster-pil-v1"),
+                    "render_scope": ("pathtraced_supported_geometry" if _rta_bg is not None
+                                     else "procedural_typography_poster"),
                     "ai_disclosure": brief.ai_disclosure,
                     "technique":    _tech.to_dict() if _tech else None,
                 },
@@ -9024,7 +9502,9 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
 
 def _render_audio_clip(job_id: str, bpm: float, key: str,
                        duration_sec: float, sample_rate: int = 44100,
-                       genre: str = "", mood: str = "") -> str:
+                       genre: str = "", mood: str = "",
+                       prompt: str = "", instrument: str = "") -> str:
+    _generation_plan_hash()
     """Synthesize a musical audio clip — 100% on the Digital GPU stack.
 
     All waveform math routes through the self-contained Digital GPU engine
@@ -9032,8 +9512,8 @@ def _render_audio_clip(job_id: str, bpm: float, key: str,
     librosa, or soundfile — the system is fully independent of Replit's base
     environment for synthesis.
 
-    Genre and mood come from the live ContentAwarenessService music-mode
-    context (trending genres/moods from RSS + Deezer chart signals).
+    Caller genre, mood, instrument and prompt take precedence over optional
+    live-awareness genres/moods; the latter are only defaults.
 
     Returns the served relative URL.  Raises on encode failure so the job
     reports an explicit error instead of claiming success with a missing file.
@@ -9042,13 +9522,20 @@ def _render_audio_clip(job_id: str, bpm: float, key: str,
     from ai_model.audio.digital_gpu_synth import write_wav as _dg_write_wav
     from ai_model.video.ffmpeg_util import run_ffmpeg
 
+    # The Digital GPU synth accepts genre/mood conditioning, not a separate
+    # prompt kwarg. Include the actual instrument and creative brief in its
+    # mood channel so piano/soft-drum routing sees the request, not a label
+    # inferred solely from genre or a trending signal.
+    synth_direction = " ".join(
+        part for part in (mood, instrument, prompt) if part
+    ).strip()
     stereo_f32 = _dg_render(
         job_id=job_id,
         bpm=float(bpm),
         key=(key or "C major"),
         duration_sec=float(duration_sec),
         genre=(genre or ""),
-        mood=(mood or ""),
+        mood=synth_direction,
         sample_rate=int(sample_rate),
     )
 
@@ -9116,31 +9603,24 @@ def _extract_awareness_moods(awareness: str) -> list:
 def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
                                duration_sec: float,
                                opts: Optional[dict] = None) -> dict:
-    """Render an awareness-primary audio clip, applying full producer controls.
+    _generation_plan_hash()
+    """Render selected dataset audio bytes or synthesize when bytes are absent.
 
-    The live ContentAwarenessService music-mode context (trending genres, moods,
-    BPM, key from RSS + chart signals) is ALWAYS the audio source.  When a
-    real-track dataset is available in storage, its metadata is consulted to
-    sharpen synthesis parameters (confirm genre affinity, refine BPM/key
-    targets) — but the dataset audio bytes are never used as the source.
-
-    This makes awareness the primary signal at all dataset sizes.  Industry
-    data from live charts is not a fallback; it's the generation engine.
+    Awareness conditions track selection and synthesis; it is not the waveform
+    source when dataset bytes are selected. Dataset BPM/key are source metadata,
+    not measurements of the finished audio.
 
     Producer controls applied to every render regardless of dataset state:
 
     * **Loop / trim** to the requested duration with musical fades.
-    * **Awareness-driven arrangement** — structured intro/verse/hook/outro
-      conditioned by live-trending genres (gated on the borrowed-knowledge
-      retirement contract); plain loop as the never-raise fallback.
+    * **Arrangement** — structured intro/verse/hook/outro conditioned by the
+      caller's genre/mood before live-awareness defaults; plain loop otherwise.
     * **ARC spectral cleanup** (opt-in via env).
     * **Master & export** — optional EBU-R128 loudness target, WAV/MP3 at a
       chosen sample-rate / bit-depth.
     * **Stems** — optional drums/bass/melody split for remixing.
 
-    Returns a dict describing the produced asset(s): ``url``, applied
-    ``bpm``/``key``, ``format``, ``loudness_lufs``, ``stems``, and
-    ``arrangement``.
+    Returns source metadata, requested targets and completed assets separately.
     """
     from storage_client import get_storage
     from ai_model.video.ffmpeg_util import run_ffmpeg
@@ -9159,9 +9639,21 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
         if g and str(g).strip()
     ]
     _preferred_mood = str(opts.get("preferred_mood") or "").strip()
+    if not _preferred_mood:
+        _intent_text = str(opts.get("intent") or "").lower()
+        _preferred_mood = next(
+            (word for word in ("calm", "mellow", "quiet", "dark",
+                               "energetic", "cinematic", "chill", "uplifting")
+             if word in _intent_text), "")
     _synth_genre = _preferred_genres[0] if _preferred_genres else (
         str(opts.get("genre") or "").lower().strip()
     )
+    # A genre-matched pool file has no guarantee of the requested instrument,
+    # mood, tempo or key. Never serve unrelated bytes as a custom composition.
+    _requires_custom_render = bool(
+        opts.get("prompt") or opts.get("instrument") or opts.get("explicit_mood")
+        or opts.get("explicit_targets")
+    ) and opts.get("reference_sample_idx") is None
 
     # No explicit BPM → take the MEASURED chart target for this genre from the
     # live industry beacon (Deezer per-genre charts, previews analyzed with the
@@ -9203,7 +9695,7 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
         meta = storage.get("mb:dataset:audio:meta")
 
         # Brief seeder wait only when dataset is empty and seeder just started.
-        if not (meta and int(meta.get("num_chunks", 0)) > 0):
+        if not _requires_custom_render and not (meta and int(meta.get("num_chunks", 0)) > 0):
             from workers.seed_audio_dataset import is_seeding as _is_seeding_render
             _wait_deadline = time.time() + 2.0
             while _is_seeding_render() and time.time() < _wait_deadline:
@@ -9212,27 +9704,37 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
                 if meta and int(meta.get("num_chunks", 0)) > 0:
                     break
 
-        if meta and int(meta.get("num_chunks", 0)) > 0:
+        if not _requires_custom_render and meta and int(meta.get("num_chunks", 0)) > 0:
             index = meta.get("index") or [
                 {"idx": i} for i in range(int(meta["num_chunks"]))
             ]
             from ai_model.audio.track_selector import select_audio_sample as _select
-            _best, _key_matched = _select(
-                index,
-                str(target_key or "").strip().lower(),
-                float(target_bpm or 0.0),
-                _preferred_genres,
-                _preferred_mood,
-            )
+            if opts.get("reference_sample_idx") is not None:
+                _best = next(
+                    (entry for entry in index
+                     if int(entry["idx"]) == int(opts["reference_sample_idx"])),
+                    None,
+                )
+                if _best is None:
+                    raise ValueError("Requested dataset reference sample not found")
+            else:
+                _best, _key_matched = _select(
+                    index,
+                    str(target_key or "").strip().lower(),
+                    float(target_bpm or 0.0),
+                    _preferred_genres,
+                    _preferred_mood,
+                )
             _ref_sample = _best
 
             # ── Layer 1: In-process file cache (0 ms) ─────────────────────
-            # Key on the SELECTED chunk index — all requests that resolve to
-            # the same chunk + duration + format share one cached file, even
-            # when they requested different BPM/key values.
+            # Never reuse a cached response with different requested targets.
             _fmt_l1  = str(opts.get("format") or "mp3").lower()
             _l1_key  = (
-                int(_best["idx"]), _dur_bucket, _fmt_l1,
+                _generation_plan_hash(),
+                int(_best["idx"]), float(duration_sec), _fmt_l1,
+                float(target_bpm), str(target_key).lower(),
+                tuple(_preferred_genres), _preferred_mood,
                 opts.get("loudness_lufs"), bool(opts.get("stems")),
             )
             with _AUDIO_RENDER_CACHE_LOCK:
@@ -9258,53 +9760,8 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
                     _pool_key    = str(chunk.get("key") or target_key or "C major")
                     _pool_source = str(chunk.get("source") or "")
 
-                    # ── Flywheel fast-serve (0-copy direct return) ────────────
-                    # Flywheel chunks are FINAL produced MP3 output (already
-                    # through loop / LUFS / master). Write bytes straight to
-                    # out_path and return — no ffmpeg pipeline needed at all.
-                    if _pool_source == "flywheel" and (opts.get("format") or "mp3").lower() == "mp3" and not opts.get("stems"):
-                        _fw_fmt  = str(chunk.get("format") or "mp3").lower()
-                        _fw_ext  = "wav" if _fw_fmt == "wav" else "mp3"
-                        _fw_out  = _UPLOADS_PATH / f"audio_{job_id}.{_fw_ext}"
-                        _fw_out.write_bytes(_raw)
-                        _fw_result = {
-                            "url":           f"/uploads/{_fw_out.name}",
-                            "bpm":           _pool_bpm,
-                            "key":           _pool_key,
-                            "format":        _fw_fmt,
-                            "sample_rate":   int(chunk.get("sample_rate") or 44100),
-                            "bit_depth":     None,
-                            "loudness_lufs": opts.get("loudness_lufs"),
-                            "stems":         {},
-                            "arrangement":   None,
-                            "source_sample": {
-                                "idx": _best.get("idx"), "bpm": _pool_bpm,
-                                "key": _pool_key, "role": "flywheel_direct",
-                            },
-                            "selection_warning": None,
-                        }
-                        with _AUDIO_RENDER_CACHE_LOCK:
-                            _AUDIO_RENDER_CACHE[_l1_key] = _fw_result
-                            # Genre key: immune to dataset growth — the fast-path
-                            # probe checks this without any dataset lookup.
-                            _fmt_l1g = str(opts.get("format") or "mp3").lower()
-                            _dur_l1g = _dur_bucket
-                            for _gl1g in (_preferred_genres or [_synth_genre or ""]):
-                                if _gl1g:
-                                    _AUDIO_RENDER_CACHE[
-                                        ("genre", str(_gl1g).lower(), _dur_l1g, _fmt_l1g,
-                                         opts.get("loudness_lufs"), bool(opts.get("stems")))
-                                    ] = _fw_result
-                            if len(_AUDIO_RENDER_CACHE) > 256:
-                                _AUDIO_RENDER_CACHE.pop(next(iter(_AUDIO_RENDER_CACHE)))
-                        print(
-                            f"[audio_pool] flywheel direct: idx={_best['idx']} "
-                            f"bpm={_pool_bpm} key={_pool_key!r} job={job_id[:8]}",
-                            flush=True,
-                        )
-                        return _fw_result
-
-                    # ── Non-flywheel pool: write as src, ffmpeg pipeline below ─
+                    # Flywheel assets also go through the duration/format/master
+                    # pipeline; direct reuse can return the wrong requested clip.
                     src_path.write_bytes(_raw)
                     _src_from_pool = True
                     if not _synth_genre and _pool_genres:
@@ -9318,6 +9775,8 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
                         flush=True,
                     )
             else:
+                if opts.get("reference_sample_idx") is not None:
+                    raise ValueError("Requested dataset reference has no audio bytes")
                 # Chunk index entry exists but bytes missing — use metadata only.
                 _ref_genres = _best.get("genres") or []
                 if not _synth_genre and _ref_genres:
@@ -9326,6 +9785,8 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
                     target_bpm = float(_best.get("bpm"))
                     applied_bpm = target_bpm
     except Exception as _pool_err:
+        if opts.get("reference_sample_idx") is not None:
+            raise RuntimeError(f"Dataset reference unavailable: {_pool_err}") from _pool_err
         print(f"[audio_pool] pool serve skipped: {_pool_err}", flush=True)
 
     # ── Layer 3: Synthesis fallback (only when pool empty / bytes missing) ─────
@@ -9342,6 +9803,8 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
             duration_sec=_synth_duration,
             genre=_synth_genre,
             mood=_preferred_mood,
+            prompt=str(opts.get("prompt") or ""),
+            instrument=str(opts.get("instrument") or ""),
         )
     src_wav = _UPLOADS_PATH / f"audio_srcwav_{job_id}.wav"
     looped_wav = _UPLOADS_PATH / f"audio_loop_{job_id}.wav"
@@ -9486,17 +9949,35 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
         "format": fmt,
         "sample_rate": sample_rate,
         "bit_depth": bit_depth if fmt == "wav" else None,
-        "loudness_lufs": loudness_lufs,
+        # A mastering target is not a measured integrated loudness value.
+        "loudness_lufs": None,
+        "requested_bpm": float(target_bpm),
+        "requested_key": target_key,
+        "requested_loudness_lufs": opts.get("loudness_lufs"),
+        "loudness_target_applied": loudness_lufs is not None,
+        "measured_bpm": None,
+        "measured_key": None,
+        "measured_loudness_lufs": None,
+        "waveform_source": "dataset_chunk_bytes" if _src_from_pool else "digital_gpu_synthesis",
         "stems": stem_urls,
         "arrangement": arrangement_plan,
         # Provenance: pool serve (bytes from dataset) or synthesis.
         "source_sample": (
             {"idx": _ref_sample.get("idx"), "bpm": _ref_sample.get("bpm"),
              "key": _ref_sample.get("key"),
+             "dataset_source": _pool_source if _src_from_pool else None,
              "role": "pool" if _src_from_pool else "metadata_reference"}
             if _ref_sample else None
         ),
-        "selection_warning": None,
+        "selection_warning": (
+            f"Selected dataset audio metadata ({applied_bpm} BPM, {applied_key}) "
+            f"differs from requested ({target_bpm} BPM, {target_key}); "
+            "tempo/key were not transformed or measured"
+            if _src_from_pool and (
+                abs(applied_bpm - float(target_bpm)) > 0.5
+                or applied_key.lower() != target_key.lower())
+            else None
+        ),
     }
     # ── Write to L1 in-process cache ─────────────────────────────────────────
     # For synthesis fallback (no pool chunk selected), key by genre+params so
@@ -9504,20 +9985,15 @@ def _render_audio_from_dataset(job_id: str, bpm: float, key: str,
     if _l1_key is None:
         _bpm_bucket_fb = round(float(applied_bpm) / 5) * 5
         _l1_key = (
+            _generation_plan_hash(),
             "synth", str(_synth_genre or ""), _bpm_bucket_fb,
-            str(applied_key or "").lower(), _dur_bucket,
+            str(applied_key or "").lower(), float(duration_sec),
             str(fmt).lower(), loudness_lufs, bool(opts.get("stems")),
+            str(opts.get("prompt") or ""), str(opts.get("instrument") or ""),
+            _preferred_mood, float(applied_bpm),
         )
     with _AUDIO_RENDER_CACHE_LOCK:
         _AUDIO_RENDER_CACHE[_l1_key] = _result
-        # Genre key: fast-path probe checks this without any dataset lookup.
-        _fmt_cache = str(opts.get("format") or "mp3").lower()
-        for _g_cache in (_preferred_genres or [_synth_genre or ""]):
-            if _g_cache:
-                _AUDIO_RENDER_CACHE[
-                    ("genre", str(_g_cache).lower(), _dur_bucket, _fmt_cache,
-                     opts.get("loudness_lufs"), bool(opts.get("stems")))
-                ] = _result
         if len(_AUDIO_RENDER_CACHE) > 256:
             _AUDIO_RENDER_CACHE.pop(next(iter(_AUDIO_RENDER_CACHE)))
     return _result
@@ -9545,15 +10021,14 @@ def _summarize_audio_analysis(render: dict) -> Optional[dict]:
         if y is None or y.size == 0:
             return None
         rms = float(_np.sqrt(_np.mean(y ** 2)) + 1e-12)
-        loudness_db = render.get("loudness_lufs")
-        if loudness_db is None:
-            loudness_db = round(20.0 * float(_np.log10(rms)), 1)
+        rms_dbfs = round(20.0 * float(_np.log10(rms)), 1)
         centroid = float(_np.mean(librosa.feature.spectral_centroid(y=y, sr=sr)))
         S = _np.abs(librosa.stft(y, n_fft=2048))
         freqs = librosa.fft_frequencies(sr=sr, n_fft=2048)
         low_ratio = float(S[freqs < 150.0].sum() / (S.sum() + 1e-9))
         out: dict = {
-            "loudness_db": loudness_db,
+            "loudness_db": rms_dbfs,  # compatibility: RMS dBFS, never LUFS
+            "rms_dbfs": rms_dbfs,
             # RMS mapped to 0–1; 0.35 RMS ≈ a loud, dense master.
             "energy": round(max(0.0, min(1.0, rms / 0.35)), 2),
             "spectral_brightness": ("dark" if centroid < 1500.0 else
@@ -9639,6 +10114,16 @@ _GENRE_DEFAULT_BPM: dict[str, float] = {
 }
 
 
+def _soundtrack_timeout(duration_sec: float) -> float:
+    """Bound a native soundtrack render relative to its requested duration.
+
+    The isolated renderer includes admission to a single shared audio slot,
+    worker startup, dataset rendering and artifact promotion. The former 20s
+    deadline timed out even a six-second Studio soundtrack under load.
+    """
+    return max(90.0, min(300.0, float(duration_sec or 10.0) * 10.0))
+
+
 def _voiceover_track_path(job_id: str, narration_text: str,
                           duration_sec: float,
                           music_path: Optional[str] = None,
@@ -9686,7 +10171,8 @@ def _narration_script(production, hook: str = "", body: str = "", cta: str = "")
 def _auto_soundtrack_path(job_id: str, duration_sec: float,
                           bpm: Optional[float] = None,
                           key: Optional[str] = None,
-                          genre: str = "") -> Optional[str]:
+                          genre: str = "", mood: str = "",
+                          intent: str = "") -> Optional[str]:
     """Render a genre/BPM-matched soundtrack for a video (native-audio parity).
 
     Uses the real-audio dataset renderer. Returns a local file path or raises
@@ -9705,8 +10191,11 @@ def _auto_soundtrack_path(job_id: str, duration_sec: float,
                 "_summarize_audio_analysis": _summarize_audio_analysis,
             },
             {"job_id": f"vsnd_{job_id[:12]}", "bpm": _bpm, "key": str(key or ""),
-             "duration": max(2.0, float(duration_sec or 10.0)), "opts": {}},
-            _UPLOADS_PATH, deadline=time.monotonic() + 20.0,
+             "duration": max(2.0, float(duration_sec or 10.0)),
+             "opts": {"genre": genre, "preferred_genres": [genre] if genre else [],
+                      "preferred_mood": mood, "intent": intent}},
+            _UPLOADS_PATH,
+            deadline=time.monotonic() + _soundtrack_timeout(duration_sec),
             cancelled=lambda: (_job_read(job_id) or {}).get("status") == "cancelled",
         )
         url = str(result.get("url") or "")
@@ -9720,8 +10209,35 @@ def _auto_soundtrack_path(job_id: str, duration_sec: float,
 
 
 @app.post("/api/generate/audio")
+@_planned_generation("audio")
 async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_scope("generate"))):
     """Async audio generation — style-conditioned via AI model for concept, BPM/key, creative direction."""
+    _creative_prompt = (req.prompt or req.instruction or "").strip()
+    _prompt_raw = _creative_prompt.lower()
+    _PROMPT_MOOD_KEYWORDS = (
+        "calm", "mellow", "soft", "quiet", "gentle", "relaxed", "laid-back",
+        "dark", "cinematic", "drill", "heavy", "aggressive", "hard",
+        "melancholic", "sad", "hype", "energetic", "euphoric", "chill",
+        "lo-fi", "lofí", "vibrant", "moody", "atmospheric", "epic",
+        "intense", "raw", "gritty", "smooth", "emotional", "ethereal",
+    )
+    _prompt_moods = [
+        word for word in _PROMPT_MOOD_KEYWORDS
+        if re.search(r"(?<!\w)" + re.escape(word) + r"(?!\w)", _prompt_raw)
+    ]
+    _caller_mood = (req.mood or "").strip() or (
+        _prompt_moods[0] if _prompt_moods else "")
+    _soft_direction = _caller_mood.lower() in {
+        "calm", "mellow", "soft", "quiet", "gentle", "relaxed", "laid-back",
+    }
+    _has_explicit_targets = any(
+        value is not None for value in (req.target_bpm, req.bpm, req.target_key, req.key)
+    )
+    if req.reference_sample_idx is not None and (
+            _creative_prompt or req.instrument or _caller_mood or _has_explicit_targets):
+        raise HTTPException(status_code=422, detail=(
+            "A dataset reference cannot guarantee a custom instrument, mood, BPM or key; "
+            "omit reference_sample_idx to synthesize the requested audio"))
     # Coalesce: identical concurrent submissions (same genre/intent/bpm/key/duration)
     # share one job rather than spawning 90M separate audio renders.
     _effective_audio_awareness = _effective_awareness(
@@ -9730,8 +10246,23 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
         "type":       "audio",
         "genre":      req.genre or "",
         "intent":     req.intent or "",
+        "prompt":     _creative_prompt,
+        "instrument": req.instrument or "",
+        "mood":       req.mood or "",
+        "bpm":        req.bpm,
+        "key":        req.key or "",
         "target_bpm": req.target_bpm,
         "target_key": req.target_key or "",
+        "format":     req.format or "mp3",
+        "seed":       req.seed,
+        "sample_rate": req.sample_rate,
+        "bit_depth": req.bit_depth,
+        "stems":      req.stems,
+        "loudness_lufs": req.loudness_lufs,
+        "loudness_preset": req.loudness_preset or "",
+        "arrange":    req.arrange,
+        "style_fingerprint": req.style_fingerprint,
+        "reference_sample_idx": req.reference_sample_idx,
         "duration":   req.duration,
         "awareness":  _effective_audio_awareness,
     })
@@ -9805,8 +10336,11 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
     _merged_aw_handler = _effective_audio_awareness
     brief = ri.build_brief(
         modality="audio", platform="general",
-        topic=f"{genre_hint} {req.intent or req.instrument or 'music clip'}",
-        goal=req.intent, tone=None, genre=req.genre,
+        topic=f"{genre_hint} {_creative_prompt or req.intent or req.instrument or 'music clip'}",
+        goal=req.intent, tone=_caller_mood or None, genre=req.genre,
+        mood=_caller_mood or None,
+        bpm=req.target_bpm if req.target_bpm is not None else req.bpm,
+        key=req.target_key or req.key,
         awareness=_merged_aw_handler,
     )
 
@@ -9837,18 +10371,6 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
     # the caller didn't set req.mood explicitly.  These slot in between the live
     # buffer and brief.tone in the precedence chain so they don't override an
     # intentional caller mood but always win over the generic brief fallback.
-    _PROMPT_MOOD_KEYWORDS = [
-        "dark", "cinematic", "drill", "heavy", "aggressive", "hard",
-        "melancholic", "sad", "hype", "energetic", "euphoric", "chill",
-        "lo-fi", "lofí", "vibrant", "moody", "atmospheric", "epic",
-        "intense", "raw", "gritty", "smooth", "emotional", "ethereal",
-    ]
-    _prompt_raw = (
-        (getattr(req, "prompt", None) or "")
-        or (getattr(req, "instruction", None) or "")
-    ).lower()
-    _prompt_moods = [kw for kw in _PROMPT_MOOD_KEYWORDS if kw in _prompt_raw]
-
     # Mood precedence: explicit req.mood → prompt creative brief keywords →
     # live awareness buffer → brief.mood (generic last resort).
     # Prompt keywords rank above the live buffer because they represent the
@@ -9856,8 +10378,7 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
     # which must not be overridden by a generic trending mood ("chill", "playful")
     # that reflects broad industry trends rather than this specific brief.
     _preferred_mood_handler = (
-        (getattr(req, "mood", None) or "").strip()
-        or (_prompt_moods[0] if _prompt_moods else "")
+        _caller_mood
         or (_aw_moods_handler[0].strip() if _aw_moods_handler else "")
         or (brief.mood or "").strip()
     )
@@ -9875,8 +10396,9 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
     try:
         from ai_model.generation import extract_technique as _extract_tech
         _audio_tech = _extract_tech(
-            idea=genre_hint, genre=req.genre, tone=brief.tone,
-            mood=req.intent, seed=(req.seed or 0), with_audio=True,
+            idea=_creative_prompt or genre_hint, genre=req.genre,
+            tone=_caller_mood or brief.tone,
+            mood=_caller_mood or req.intent, seed=(req.seed or 0), with_audio=True,
         )
     except Exception:
         _audio_tech = None
@@ -10003,7 +10525,8 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
             _bands = {"fast": (126.0, 140.0), "punchy": (118.0, 130.0),
                       "medium": (100.0, 116.0), "steady": (84.0, 98.0),
                       "slow": (76.0, 90.0)}
-            _lo, _hi = _bands.get((brief.tempo or "").lower(), (96.0, 120.0))
+            _tempo_band = "slow" if _soft_direction else (brief.tempo or "").lower()
+            _lo, _hi = _bands.get(_tempo_band, (96.0, 120.0))
             # Live chart beacon: when the market's MEASURED tempo for this
             # genre is known, center the seeded jitter on it (±6 BPM) instead
             # of the generic band, clamped inside the intent band so tempo
@@ -10036,7 +10559,7 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
             key  = keys_list[int(rng2.integers(0, len(keys_list)))]
         # Real-asset sonic technique (opt-in) grounds tempo/key when the caller
         # gave neither a style fingerprint nor an explicit target.
-        if _audio_tech is not None:
+        if _audio_tech is not None and not _soft_direction:
             if not (fp and len(fp) >= 4) and (req.target_bpm is None and req.bpm is None) and _audio_tech.tempo:
                 bpm = round(float(_audio_tech.tempo), 1)
             if not (fp and len(fp) >= 8) and (req.target_key is None and req.key is None) and _audio_tech.key:
@@ -10086,9 +10609,15 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
             # so the sample selector can prefer genre-aligned tracks.
             "preferred_genres": _preferred_genres,
             "preferred_mood":   _preferred_mood,
+            "explicit_mood":    bool(_caller_mood),
+            "explicit_targets": _has_explicit_targets,
+            "prompt":           _creative_prompt,
+            "instrument":       req.instrument or "",
+            "reference_sample_idx": req.reference_sample_idx,
             # Arrangement controls: genre + seed condition the section plan;
             # arrange=False opts out (plain loop).
             "genre":            req.genre,
+            "intent":           _creative_prompt or req.intent or "",
             "seed":             req.seed,
             "arrange":          req.arrange,
         }
@@ -10148,6 +10677,14 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
             "sample_rate":      render.get("sample_rate"),
             "bit_depth":        render.get("bit_depth"),
             "loudness_lufs":    render.get("loudness_lufs"),
+            "requested_bpm":    render.get("requested_bpm"),
+            "requested_key":    render.get("requested_key"),
+            "requested_loudness_lufs": render.get("requested_loudness_lufs"),
+            "loudness_target_applied": render.get("loudness_target_applied"),
+            "measured_bpm":     render.get("measured_bpm"),
+            "measured_key":     render.get("measured_key"),
+            "measured_loudness_lufs": render.get("measured_loudness_lufs"),
+            "waveform_source":  render.get("waveform_source"),
             "stems":            render.get("stems") or {},
             # Section plan actually rendered (None = plain loop) — the
             # awareness-driven arrangement provenance producers see in poll.
@@ -10192,8 +10729,14 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
             except Exception as _stem_save_err:
                 print(f"[stems] save failed (non-fatal): {_stem_save_err}", flush=True)
 
-    _job_update(job_id, {"intelligence": brief.to_dict()})
-    if _audio_tech is not None:
+    _audio_intelligence = brief.to_dict()
+    if _caller_mood:
+        _audio_intelligence["producer_metadata"]["mood"] = _caller_mood
+    if _soft_direction:
+        # Prior-derived energy is not a measurement of the synthesized file.
+        _audio_intelligence["producer_metadata"]["energy"] = None
+    _job_update(job_id, {"intelligence": _audio_intelligence})
+    if _audio_tech is not None and not _soft_direction:
         _job_update(job_id, {"technique": _audio_tech.to_dict()})
 
     # ── Fast-path: genre-key L1 cache probe (zero I/O, pure dict lookup) ─────
@@ -10207,11 +10750,13 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
         _fmt_probe   = (req.format or "mp3").lower()
         _lufs_probe  = None   # fast-path only for default loudness
         _stems_probe = bool(req.stems)
-        if _lufs_probe is None:
+        if (_lufs_probe is None and not (
+                _creative_prompt or req.instrument or _caller_mood or _has_explicit_targets
+                or req.reference_sample_idx is not None)):
             with _AUDIO_RENDER_CACHE_LOCK:
                 _fp_hit: "dict | None" = None
                 for _fp_g in _preferred_genres_handler:
-                    _fp_key = ("genre", str(_fp_g).lower(), _dur_probe,
+                    _fp_key = (_generation_plan_hash(), "genre", str(_fp_g).lower(), _dur_probe,
                                _fmt_probe, _lufs_probe, _stems_probe)
                     _fp_candidate = _AUDIO_RENDER_CACHE.get(_fp_key)
                     if _fp_candidate is not None:
@@ -10253,7 +10798,7 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
                     return {
                         "job_id":       job_id,
                         "status":       "done",
-                        "intelligence": brief.to_dict(),
+                        "intelligence": _audio_intelligence,
                         # Full audio result included inline — callers can use
                         # the URL directly without a follow-up poll.
                         "url":          _fp_hit.get("url"),
@@ -10271,8 +10816,9 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
     except Exception:
         pass  # never block on fast-path failure
 
-    threading.Thread(target=_process, daemon=True, name=f"ApiAudioJob-{job_id}").start()
-    return {"job_id": job_id, "status": "processing", "intelligence": brief.to_dict()}
+    threading.Thread(target=lambda: _run_gpu_job(job_id, _process),
+                     daemon=True, name=f"ApiAudioJob-{job_id}").start()
+    return {"job_id": job_id, "status": "processing", "intelligence": _audio_intelligence}
 
 
 def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, Any]:
@@ -10435,11 +10981,14 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
             if not _audio_path and getattr(req, "generate_audio", True):
                 _snd_pool = _cf.ThreadPoolExecutor(max_workers=1,
                                                    thread_name_prefix="Soundtrack")
+                from contextvars import copy_context
                 _soundtrack_future = _snd_pool.submit(
-                    _auto_soundtrack_path,
+                    copy_context().run, _auto_soundtrack_path,
                     job_id, production.total_duration,
                     bpm=req.bpm, key=req.key,
                     genre=production.genre_detected or (req.genre or ""),
+                    mood=req.mood or production.tone_used or "",
+                    intent=req.goal or "",
                 )
 
             scene_configs = agent.build_open_scenes(
@@ -10452,12 +11001,15 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
             # Collect soundtrack result (thread was running during scene build).
             if _soundtrack_future is not None:
                 try:
-                    _audio_path = _soundtrack_future.result(timeout=25)
+                    _audio_path = _soundtrack_future.result(
+                        timeout=_soundtrack_timeout(production.total_duration) + 5.0)
                 except Exception as _snd_exc:
                     raise RuntimeError(f"Required soundtrack failed: {_snd_exc}") from _snd_exc
                 finally:
                     if _snd_pool is not None:
-                        _snd_pool.shutdown(wait=False)
+                        # The soundtrack worker shares this render's GPU.
+                        # Even on timeout, do not retire it under a live worker.
+                        _snd_pool.shutdown(wait=True)
 
             # Voice-over: synthesize REAL spoken narration (eSpeak NG) from the
             # script and duck the soundtrack under it. Previously this flag was
@@ -10522,11 +11074,13 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
                 "error":  f"{type(exc).__name__}: {exc}",
             })
 
-    threading.Thread(target=_plan_and_render, daemon=True, name=f"ApiVideoJob-{job_id}").start()
+    threading.Thread(target=lambda: _run_gpu_job(job_id, _plan_and_render),
+                     daemon=True, name=f"ApiVideoJob-{job_id}").start()
     return job_id, brief
 
 
 @app.post("/api/generate-video")
+@_planned_generation("video")
 async def api_generate_video(req: ApiGenerateVideoRequest, request: Request, _key=Depends(require_scope("generate"))):
     """
     Kick off a fully AI-driven async video render job.
@@ -10624,6 +11178,7 @@ def _ffmpeg_media_duration(path: str) -> float:
 
 
 @app.post("/api/video/extend")
+@_planned_generation("video")
 async def api_video_extend(req: ApiVideoExtendRequest, request: Request, _key=Depends(require_scope("generate"))):
     """Extend a previously generated video (Veo-parity scene extension).
 
@@ -10757,6 +11312,7 @@ async def api_video_extend(req: ApiVideoExtendRequest, request: Request, _key=De
                 snd = _auto_soundtrack_path(
                     job_id, total_dur,
                     genre=production.genre_detected or (req.genre or ""),
+                    mood=req.mood or production.tone_used or "",
                 )
                 if snd:
                     muxed = videos_dir / f"extended_{job_id[:8]}_audio.mp4"
@@ -10788,7 +11344,8 @@ async def api_video_extend(req: ApiVideoExtendRequest, request: Request, _key=De
             print(f"[VideoExtend] Error for job {job_id}: {_tb.format_exc()}")
             _job_update(job_id, {"status": "error", "error": f"{type(exc).__name__}: {exc}"})
 
-    threading.Thread(target=_extend_and_render, daemon=True, name=f"VideoExtend-{job_id}").start()
+    threading.Thread(target=lambda: _run_gpu_job(job_id, _extend_and_render),
+                     daemon=True, name=f"VideoExtend-{job_id}").start()
     return {
         "job_id":         job_id,
         "status":         "processing",
@@ -10801,6 +11358,7 @@ async def api_video_extend(req: ApiVideoExtendRequest, request: Request, _key=De
 # ── AI-driven video generation ─────────────────────────────────────────────────
 
 @app.post("/api/video/generate-ai")
+@_planned_generation("video")
 async def api_video_generate_ai(request: Request, _key=Depends(require_scope("generate"))):
     """
     Generate a video where ALL text content is produced by the trained model.
@@ -10999,6 +11557,7 @@ async def api_video_generate_ai(request: Request, _key=Depends(require_scope("ge
                 _audio_path = _auto_soundtrack_path(
                     job_id, _production.total_duration,
                     genre=_production.genre_detected or _req.genre,
+                    mood=_production.tone_used or "",
                 )
             print(
                 f"[VideoRender][Timing] build_scenes={_t_build:.1f}s "
@@ -11051,7 +11610,8 @@ async def api_video_generate_ai(request: Request, _key=Depends(require_scope("ge
                 "error":  str(exc),
             })
 
-    threading.Thread(target=_render_only, daemon=True, name=f"AIVideoJob-{job_id}").start()
+    threading.Thread(target=lambda: _run_gpu_job(job_id, _render_only),
+                     daemon=True, name=f"AIVideoJob-{job_id}").start()
 
     return {
         "job_id":         job_id,
@@ -11283,6 +11843,14 @@ async def api_poll_audio_job(job_id: str, request: Request, _key=Depends(require
             "sample_rate":   job.get("sample_rate"),
             "bit_depth":     job.get("bit_depth"),
             "loudness_lufs": job.get("loudness_lufs"),
+            "requested_bpm": job.get("requested_bpm"),
+            "requested_key": job.get("requested_key"),
+            "requested_loudness_lufs": job.get("requested_loudness_lufs"),
+            "loudness_target_applied": job.get("loudness_target_applied"),
+            "measured_bpm": job.get("measured_bpm"),
+            "measured_key": job.get("measured_key"),
+            "measured_loudness_lufs": job.get("measured_loudness_lufs"),
+            "waveform_source": job.get("waveform_source"),
             # Measured sonic facts (loudness/energy/brightness/bass/stems) —
             # forwarded by clients into /api/generate/content beat_context.
             "audio_analysis": job.get("audio_analysis"),
@@ -11583,6 +12151,7 @@ _deep_warm_status: dict[str, Any] = {
 
 
 @app.post("/api/warm")
+@_planned_generation("content", specification=True)
 async def api_warm(_admin=Depends(verify_admin)):
     """
     Production warm-up pass — exercises the Digital GPU inference chains so the
@@ -12103,7 +12672,7 @@ if __name__ == "__main__":
     try:
         uvicorn.run(
             "server:app",
-            host="0.0.0.0",
+            host="127.0.0.1",
             port=port,
             log_level="info",
             workers=worker_count,

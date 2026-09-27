@@ -1,0 +1,148 @@
+{
+  "id": "campaign",
+  "case": {
+    "id": "campaign",
+    "handler": "api_generate_campaign",
+    "request_class": "ApiGenerateCampaignRequest",
+    "kind": "campaign",
+    "body": {
+      "title": "Paper Lantern Harbor",
+      "artist_name": "Fictional Harbor Artist",
+      "platforms": [
+        "instagram"
+      ],
+      "weeks": 2,
+      "generate_images": false,
+      "generate_teasers": false
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "error",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 5,
+    "ai_model/request_intelligence.py:<module>": 1,
+    "ai_model/request_intelligence.py:GenerationBrief": 1,
+    "ai_model/generation/orchestrator.py:<genexpr>": 3,
+    "ai_model/generation/orchestrator.py:_safe_envelope_text": 3,
+    "ai_model/generation/orchestrator.py:_coerce_aw": 1
+  },
+  "exceptions": [],
+  "agent_outputs": [],
+  "awareness": [],
+  "files": [],
+  "runner_sha256": "f84bfc05e475481d9a29208cbfad49b2572139db4ad445efcf6c0fe0ce1aae2e",
+  "server_sha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7",
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 1.2,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 1.3,
+      "silicon": null
+    }
+  },
+  "request": {
+    "title": "Paper Lantern Harbor",
+    "artist_name": "Fictional Harbor Artist",
+    "platforms": [
+      "instagram"
+    ],
+    "weeks": 2,
+    "generate_images": false,
+    "generate_teasers": false,
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "validated_request": {
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+    "description": "",
+    "prompt_url": "",
+    "instruction": null,
+    "extra_context": null,
+    "content_themes": null,
+    "intent": null,
+    "direction": null,
+    "context": null,
+    "title": "Paper Lantern Harbor",
+    "artist_name": "Fictional Harbor Artist",
+    "artist": null,
+    "genre": null,
+    "tone": null,
+    "brand_voice": null,
+    "target_audience": null,
+    "platforms": [
+      "instagram"
+    ],
+    "weeks": 2,
+    "release_date": null,
+    "mood": null,
+    "bpm": null,
+    "key": null,
+    "artistProfileId": null,
+    "generate_images": false,
+    "generate_teasers": false
+  },
+  "elapsed_seconds": 3.4859390730002815,
+  "error": "NameError: name 'platform' is not defined",
+  "detail": null,
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/workspace/scripts/evaluate-maxcore-types.py\", line 139, in child\n    response = await asyncio.wait_for(func(**kwargs), 100)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/asyncio/tasks.py\", line 520, in wait_for\n    return await fut\n           ^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py\", line 7900, in api_generate_campaign\n    plan = _build()\n           ^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py\", line 7891, in _build\n    normalize_platform(platform), _campaign_awareness),\n                       ^^^^^^^^\nNameError: name 'platform' is not defined. Did you forget to import 'platform'\n",
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

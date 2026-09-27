@@ -5345,13 +5345,17 @@ interface MusicVideoJob {
   createdAt: number;
 }
 const musicVideoJobs = new Map<string, MusicVideoJob>();
+const musicVideoJobOwners = new Map<string, string>();
 
 // Prune jobs older than 15 minutes
 setInterval(
   () => {
     const cutoff = Date.now() - 15 * 60 * 1000;
     for (const [id, job] of musicVideoJobs.entries()) {
-      if (job.createdAt < cutoff) musicVideoJobs.delete(id);
+      if (job.createdAt < cutoff) {
+        musicVideoJobs.delete(id);
+        musicVideoJobOwners.delete(id);
+      }
     }
   },
   3 * 60 * 1000,
@@ -5384,6 +5388,7 @@ router.post(
   ),
   async (req: AuthenticatedRequest, res: Response) => {
     const jobId = `mvjob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    musicVideoJobOwners.set(jobId, req.user!.id);
     musicVideoJobs.set(jobId, { status: "processing", createdAt: Date.now() });
 
     // Respond immediately
@@ -5400,7 +5405,7 @@ router.post(
         const files = req.files as
           | Record<string, Express.Multer.File[]>
           | undefined;
-        const imageFiles = files!.images || [];
+        const imageFiles = files?.images || [];
         const audioFile = files?.audio?.[0];
         const voiceRef = files?.reference_voice?.[0];
 
@@ -5653,7 +5658,7 @@ router.get(
     const { jobId } = req.params as Record<string, string>;
     const job = musicVideoJobs?.get(jobId);
 
-    if (!job) {
+    if (!job || musicVideoJobOwners.get(jobId) !== req.user!.id) {
       return res
         .status(404)
         .json({ success: false, error: "Job not found or expired" });

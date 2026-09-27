@@ -6,6 +6,7 @@ energy. Deterministic given the same (color_scheme, mood, seed).
 from __future__ import annotations
 
 import hashlib
+import re
 from typing import Optional, Tuple
 
 import numpy as np
@@ -38,26 +39,26 @@ def _hex_to_rgb01(h: str) -> Tuple[float, float, float]:
 
 def _palette_for(color_scheme: str) -> list:
     """Pull an RGB palette from the ImageEngine's COLOR_SCHEMES when available."""
-    try:
-        from ai_model.image.image_engine import COLOR_SCHEMES
-        scheme = COLOR_SCHEMES.get(color_scheme) or COLOR_SCHEMES.get("dark_neon") or {}
-        cols = []
-        for key in ("primary", "secondary", "accent", "highlight", "bg", "background"):
-            val = scheme.get(key) if isinstance(scheme, dict) else None
-            if isinstance(val, str) and val.startswith("#"):
-                cols.append(_hex_to_rgb01(val))
-            elif isinstance(val, (tuple, list)) and len(val) >= 3:
-                cols.append((val[0] / 255.0, val[1] / 255.0, val[2] / 255.0))
-        if cols:
-            return cols
-    except Exception:
-        pass
-    # Fallback palette (still real colour, just not scheme-derived)
-    return [(0.85, 0.25, 0.35), (0.2, 0.5, 0.9), (0.95, 0.8, 0.25), (0.3, 0.8, 0.6)]
+    from ai_model.image.image_engine import COLOR_SCHEMES
+    if color_scheme not in COLOR_SCHEMES:
+        raise ValueError(f"Unknown image color scheme: {color_scheme}")
+    return [tuple(channel / 255.0 for channel in color)
+            for color in COLOR_SCHEMES[color_scheme]]
 
 
 def build_scene(color_scheme: str = "dark_neon", mood: str = "cinematic",
-                seed: int = 0, aspect: float = 1.0) -> Scene:
+                seed: int = 0, aspect: float = 1.0, prompt: str = "") -> Scene:
+    # Current tracer only has spheres and a horizontal plane. Sphere/plane studies
+    # are valid when explicitly requested; they cannot represent arbitrary
+    # objects, water, landscape or typography. Fail instead of faking fidelity.
+    words = set(re.findall(r"[a-z]+", prompt.lower()))
+    has_spheres = bool(words & {"sphere", "spheres", "orb", "orbs"})
+    has_plane = bool(words & {"plane", "floor", "ground"})
+    if not (has_spheres or has_plane):
+        raise ValueError("RTA tracer supports only abstract sphere/plane scenes; requested subject cannot be represented")
+    if words & {"lantern", "lanterns", "harbor", "harbour", "water", "boat",
+                "person", "portrait", "city", "tree", "text"}:
+        raise ValueError("RTA tracer cannot represent the requested subject with sphere/plane geometry")
     rng = np.random.default_rng(stable_seed(color_scheme, mood, seed))
     palette = _palette_for(color_scheme)
 
@@ -89,7 +90,7 @@ def build_scene(color_scheme: str = "dark_neon", mood: str = "cinematic",
 
     # Hero spheres from the palette (matte, colour-bleeding).
     spheres = []
-    n_hero = 3
+    n_hero = 3 if has_spheres else 0
     xs = np.linspace(-1.5, 1.5, n_hero)
     for i in range(n_hero):
         col = palette[i % len(palette)]

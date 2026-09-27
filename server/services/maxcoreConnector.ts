@@ -6,6 +6,7 @@
  * and response media locations before higher-level callers consume them.
  */
 import { config } from "../config/index.js";
+import { trustedMaxcoreOwner } from "../lib/maxcoreOwnerContext.js";
 
 // MaxCore responses use both conventional URL names (artworkUrl, preview_url)
 // and marketplace display aliases (coverArt, coverUrl).  Keep this allowlist
@@ -39,8 +40,10 @@ export function getMaxcoreGenerationKey(): string {
 }
 
 export function getMaxcoreGenerationHeaders(): Record<string, string> {
-  const key = config.maxcoreGenerationKey;
-  return key ? { Authorization: `Bearer ${key}` } : {};
+  const key = getMaxcoreGenerationKey();
+  const owner = trustedMaxcoreOwner();
+  return key ? { Authorization: `Bearer ${key}`,
+    ...(owner ? { "X-MaxCore-User-Id": owner } : {}) } : {};
 }
 
 export function getMaxcoreAdminHeaders(): Record<string, string> {

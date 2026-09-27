@@ -37,6 +37,32 @@ from .models import ParsedUrl
 
 # ── URL detection ─────────────────────────────────────────────────────────────
 
+def supplied_profile_identity(url: str) -> str | None:
+    """Read a caller-supplied public profile handle, not remote page content.
+
+    Profile URLs identify a subject even when platforms block unauthenticated
+    fetching. This does not verify account existence or manufacture a title,
+    biography, audience, or release metadata. Opaque post/video IDs are excluded.
+    """
+    try:
+        parsed = urlparse(url.strip())
+        if (parsed.scheme not in {"http", "https"} or parsed.username is not None
+                or parsed.password is not None or parsed.port not in {None, 80, 443}):
+            return None
+        host = (parsed.hostname or "").lower()
+        path = parsed.path.strip("/")
+        if host in {"youtube.com", "www.youtube.com", "m.youtube.com"}:
+            return path[1:] if re.fullmatch(r"@[A-Za-z0-9_.-]{1,64}", path) else None
+        if host in {"instagram.com", "www.instagram.com"}:
+            if path.lower() in {"p", "reel", "reels", "stories", "explore", "accounts",
+                                "direct", "about", "privacy", "terms"}:
+                return None
+            return path if re.fullmatch(r"[A-Za-z0-9_.]{1,30}", path) else None
+    except (TypeError, ValueError, AttributeError):
+        return None
+    return None
+
+
 _HTTP_RE     = re.compile(r"^https?://\S+$",                            re.IGNORECASE)
 _BARE_URL_RE = re.compile(r"^(www\.[\w.-]+|[\w-]+\.[\w-]{2,})\S*$",    re.IGNORECASE)
 _SPO_URI_RE  = re.compile(r"^spotify:(track|album|playlist|artist):",   re.IGNORECASE)

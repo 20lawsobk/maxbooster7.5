@@ -1411,39 +1411,27 @@ router.post(
       // previously these calls sent bare {platform, content} with nothing
       // for MaxCore's model to condition on.
       const predictionAwareness = await getAwarenessContext("social");
-      let predictionPlatformOptimization: string | null = null;
-      try {
-        predictionPlatformOptimization = platformAwarenessOptimization(
-          normalizeSocialAwarenessPlatform(resolvedPlatform),
-        );
-      } catch {
-        // outside the closed platform set — proceed without it
-      }
-      const awarenessPayload = {
-        genre,
-        contextString: predictionAwareness?.contextString,
-        trendingGenres: predictionAwareness?.trendingGenres,
-        trendingMoods: predictionAwareness?.trendingMoods,
-        platformAlgorithmNotes: predictionAwareness?.platformAlgorithmNotes,
-        platformOptimization: predictionPlatformOptimization,
-      };
+      const awarenessPayload = predictionAwareness;
 
       const [mcViral, mcEngagement, mcBestTime] = await Promise.allSettled([
         MaxCoreAIClient.infer<{ viralScore?: number; score?: number }>(
           "/api/predict/engagement",
-          { action: "viral_potential", platform: resolvedPlatform, content: caption, awareness: awarenessPayload },
+          { ...awarenessPayload, action: "viral_potential", platform: resolvedPlatform, content: caption },
         ),
         MaxCoreAIClient.infer<{ engagementRate?: number; predicted_engagement?: number }>(
           "/api/predict/engagement",
-          { action: "predict_engagement", platform: resolvedPlatform, content: caption, postsPerWeek: 4, awareness: awarenessPayload },
+          { ...awarenessPayload, action: "predict_engagement", platform: resolvedPlatform, content: caption, postsPerWeek: 4 },
         ),
         MaxCoreAIClient.infer<{ bestTime?: string }>(
           "/api/predict/engagement",
-          { action: "best_time", platform: resolvedPlatform, awareness: awarenessPayload },
+          { ...awarenessPayload, action: "best_time", platform: resolvedPlatform },
         ),
       ]);
 
       // Keep only actual MaxCore prediction values. The local benchmark helpers
+      for (const prediction of [mcViral, mcEngagement, mcBestTime]) {
+        if (prediction.status === "rejected" && prediction.reason?.status === 503) throw prediction.reason;
+      }
       // are content guidelines, not observed or model-predicted measurements.
       const mcViralVal = mcViral.status === "fulfilled" && mcViral.value
         ? (mcViral.value.viralScore ?? mcViral.value.score ?? null)

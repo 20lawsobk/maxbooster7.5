@@ -1,0 +1,293 @@
+{
+  "scope": "single live-backend short-prompt numerical KV probe; not held-out quality",
+  "before_sha256": {
+    "checkpoint": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "release": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "manifest": {
+    "schemaVersion": 1,
+    "sourcePath": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+    "sourceGitBlob": "6c42ee77db0ed344e62b4cf86ad1353c79e818a0",
+    "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt",
+    "bytes": 109368185,
+    "sha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "capability": "numerical-inference",
+    "qualityClaim": "not-evaluated"
+  },
+  "generation": {
+    "max_new_tokens": 4,
+    "temperature": 0.8,
+    "top_p": 0.92,
+    "top_k": 50,
+    "seed": 1049
+  },
+  "limitations": [
+    "One representable short prompt cannot establish publishable output, held-out quality, long-context stability, or end-to-end client/storage behavior.",
+    "GPU operation counters establish execution on HyperGPU attention/core, not exclusivity of every host-side tensor operation.",
+    "The frozen quality and dedicated-type evaluations remain historical evidence."
+  ],
+  "previous_probe": {
+    "status": "numerical_kv_executed",
+    "coverage": [
+      {
+        "text": "music",
+        "tokens": 1,
+        "unknown": 0,
+        "unknown_fraction": 0.0,
+        "roundtrip": "music"
+      },
+      {
+        "text": "the",
+        "tokens": 1,
+        "unknown": 0,
+        "unknown_fraction": 0.0,
+        "roundtrip": "the"
+      },
+      {
+        "text": "melody",
+        "tokens": 1,
+        "unknown": 1,
+        "unknown_fraction": 1.0,
+        "roundtrip": "<UNK>"
+      },
+      {
+        "text": "harbor",
+        "tokens": 1,
+        "unknown": 1,
+        "unknown_fraction": 1.0,
+        "roundtrip": "<UNK>"
+      },
+      {
+        "text": "Paper Lantern Harbor",
+        "tokens": 3,
+        "unknown": 3,
+        "unknown_fraction": 1.0,
+        "roundtrip": "<UNK> <UNK> <UNK>"
+      },
+      {
+        "text": "A mellow piano instrumental by the harbor.",
+        "tokens": 7,
+        "unknown": 5,
+        "unknown_fraction": 0.7142857142857143,
+        "roundtrip": "A <UNK> <UNK> <UNK> <UNK> the <UNK>"
+      },
+      {
+        "text": "<PLATFORM_INSTAGRAM> <STAGE_HOOK>",
+        "tokens": 2,
+        "unknown": 0,
+        "unknown_fraction": 0.0,
+        "roundtrip": "<PLATFORM_INSTAGRAM> <STAGE_HOOK>"
+      },
+      {
+        "text": "<PLATFORM_INSTAGRAM> <GOAL_STREAMS> <TONE_CHILL> Idea: Paper Lantern Harbor. Format: text. <STAGE_HOOK>",
+        "tokens": 10,
+        "unknown": 8,
+        "unknown_fraction": 0.8,
+        "roundtrip": "<PLATFORM_INSTAGRAM> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <STAGE_HOOK>"
+      }
+    ],
+    "inference": {
+      "prompt": "music",
+      "prompt_ids": [
+        155
+      ],
+      "output": "<UNK> <UNK> <UNK> <UNK>",
+      "duration_seconds": 0.626,
+      "model_class": "HyperCreativeTransformerLM",
+      "gpu_class": "HyperGPU",
+      "backend_class": "HyperGPUBackend",
+      "gpu_attention_gemm_calls_delta": 80,
+      "gpu_core_ops_delta": 970,
+      "gpu_compute_ms_delta": 140.50889015197754
+    },
+    "before_sha256": {
+      "checkpoint": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+      "release": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+    },
+    "after_sha256": {
+      "checkpoint": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+      "release": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+    },
+    "previous_probe": {
+      "status": "numerical_kv_executed",
+      "coverage": [
+        {
+          "text": "music",
+          "tokens": 6,
+          "unknown": 6,
+          "unknown_fraction": 1.0,
+          "roundtrip": "<UNK> <UNK> <UNK> <UNK> <UNK> <UNK>"
+        },
+        {
+          "text": "the",
+          "tokens": 4,
+          "unknown": 4,
+          "unknown_fraction": 1.0,
+          "roundtrip": "<UNK> <UNK> <UNK> <UNK>"
+        },
+        {
+          "text": "melody",
+          "tokens": 7,
+          "unknown": 7,
+          "unknown_fraction": 1.0,
+          "roundtrip": "<UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK>"
+        },
+        {
+          "text": "harbor",
+          "tokens": 7,
+          "unknown": 7,
+          "unknown_fraction": 1.0,
+          "roundtrip": "<UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK>"
+        },
+        {
+          "text": "Paper Lantern Harbor",
+          "tokens": 21,
+          "unknown": 21,
+          "unknown_fraction": 1.0,
+          "roundtrip": "<UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK>"
+        },
+        {
+          "text": "A mellow piano instrumental by the harbor.",
+          "tokens": 43,
+          "unknown": 42,
+          "unknown_fraction": 0.9767441860465116,
+          "roundtrip": "A <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK>"
+        },
+        {
+          "text": "<PLATFORM_INSTAGRAM> <STAGE_HOOK>",
+          "tokens": 2,
+          "unknown": 0,
+          "unknown_fraction": 0.0,
+          "roundtrip": "<PLATFORM_INSTAGRAM> <STAGE_HOOK>"
+        },
+        {
+          "text": "<PLATFORM_INSTAGRAM> <GOAL_STREAMS> <TONE_CHILL> Idea: Paper Lantern Harbor. Format: text. <STAGE_HOOK>",
+          "tokens": 72,
+          "unknown": 64,
+          "unknown_fraction": 0.8888888888888888,
+          "roundtrip": "<PLATFORM_INSTAGRAM> <UNK> G <UNK> A <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> A <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> C <UNK> I <UNK> <UNK> <UNK> <UNK> I <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <STAGE_HOOK>"
+        }
+      ],
+      "inference": {
+        "prompt": "<STAGE_HOOK>",
+        "prompt_ids": [
+          15
+        ],
+        "output": "<UNK> <UNK> <UNK> <UNK>",
+        "duration_seconds": 0.382,
+        "model_class": "HyperCreativeTransformerLM",
+        "gpu_class": "HyperGPU",
+        "backend_class": "HyperGPUBackend",
+        "gpu_attention_gemm_calls_delta": 80,
+        "gpu_core_ops_delta": 970,
+        "gpu_compute_ms_delta": 106.90927505493164
+      },
+      "before_sha256": {
+        "checkpoint": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+        "release": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+      },
+      "after_sha256": {
+        "checkpoint": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+        "release": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+      }
+    }
+  },
+  "checkpoint_tokenizer": {
+    "vocab_count": 443,
+    "min_id": 0,
+    "max_id": 442,
+    "embedding_rows": 1000,
+    "merge_count": 0,
+    "legacy_word_vocab_detected": true,
+    "id_holes": 557,
+    "unnamed_head_rows_masked": 557,
+    "control_tokens": {
+      "<PAD>": 0,
+      "<BOS>": 1,
+      "<EOS>": 2,
+      "<UNK>": 3,
+      "<PLATFORM_INSTAGRAM>": 5,
+      "<STAGE_HOOK>": 15
+    }
+  },
+  "coverage": [
+    {
+      "text": "music",
+      "tokens": 1,
+      "unknown": 0,
+      "unknown_fraction": 0.0,
+      "roundtrip": "music"
+    },
+    {
+      "text": "the",
+      "tokens": 1,
+      "unknown": 0,
+      "unknown_fraction": 0.0,
+      "roundtrip": "the"
+    },
+    {
+      "text": "melody",
+      "tokens": 1,
+      "unknown": 1,
+      "unknown_fraction": 1.0,
+      "roundtrip": "<UNK>"
+    },
+    {
+      "text": "harbor",
+      "tokens": 1,
+      "unknown": 1,
+      "unknown_fraction": 1.0,
+      "roundtrip": "<UNK>"
+    },
+    {
+      "text": "Paper Lantern Harbor",
+      "tokens": 3,
+      "unknown": 3,
+      "unknown_fraction": 1.0,
+      "roundtrip": "<UNK> <UNK> <UNK>"
+    },
+    {
+      "text": "A mellow piano instrumental by the harbor.",
+      "tokens": 7,
+      "unknown": 5,
+      "unknown_fraction": 0.7142857142857143,
+      "roundtrip": "A <UNK> <UNK> <UNK> <UNK> the <UNK>"
+    },
+    {
+      "text": "<PLATFORM_INSTAGRAM> <STAGE_HOOK>",
+      "tokens": 2,
+      "unknown": 0,
+      "unknown_fraction": 0.0,
+      "roundtrip": "<PLATFORM_INSTAGRAM> <STAGE_HOOK>"
+    },
+    {
+      "text": "<PLATFORM_INSTAGRAM> <GOAL_STREAMS> <TONE_CHILL> Idea: Paper Lantern Harbor. Format: text. <STAGE_HOOK>",
+      "tokens": 10,
+      "unknown": 8,
+      "unknown_fraction": 0.8,
+      "roundtrip": "<PLATFORM_INSTAGRAM> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <STAGE_HOOK>"
+    }
+  ],
+  "tokenizer_analysis": "The checkpoint stores vocab/inv_vocab/next_id, no merges, and whole-word lexical IDs. Server instantiates BPETokenizer; the original BPE encoding split each word into mostly unknown characters. BPETokenizer now detects the released word-level vocab and uses its original whitespace token ID scheme. Unknown words remain unknown; new lexical IDs or remapping without training cannot give embeddings learned meanings. Sampling excludes unnamed head rows, which otherwise decode as <UNK>.",
+  "inference": {
+    "prompt": "music",
+    "prompt_ids": [
+      155
+    ],
+    "output": "viral 60 2 know",
+    "duration_seconds": 0.426,
+    "model_class": "HyperCreativeTransformerLM",
+    "gpu_class": "HyperGPU",
+    "backend_class": "HyperGPUBackend",
+    "gpu_attention_gemm_calls_delta": 80,
+    "gpu_core_ops_delta": 970,
+    "gpu_compute_ms_delta": 118.48282814025879
+  },
+  "status": "numerical_kv_executed",
+  "total_duration_seconds": 4.753,
+  "after_sha256": {
+    "checkpoint": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "release": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true
+}

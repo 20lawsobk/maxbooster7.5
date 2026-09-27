@@ -68,6 +68,23 @@ function responseDouble() {
 }
 
 describe("MaxCore public proxy contract", () => {
+  it("does not let public caller identities authorize private artifact commits", async () => {
+    const previous = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
+    process.env.PDIM_LOCAL_CHANNEL_TOKEN = "private-test-peer-token";
+    try {
+      for (const token of ["", "Bearer service", "Bearer admin"]) {
+        const res = responseDouble();
+        await routeHandler("post", "/api/internal/generated-artifacts/commit")({
+          get: () => token, user: { id: "public-owner" },
+          body: { owner_id: "victim" },
+        }, res);
+        expect(res.statusCode).toBe(401);
+      }
+    } finally {
+      if (previous === undefined) delete process.env.PDIM_LOCAL_CHANNEL_TOKEN;
+      else process.env.PDIM_LOCAL_CHANNEL_TOKEN = previous;
+    }
+  });
   beforeEach(() => {
     connector.origin = "http://maxcore.internal";
     vi.restoreAllMocks();
@@ -101,6 +118,12 @@ describe("MaxCore public proxy contract", () => {
       path: "/api/optimize/ad",
       params: {},
       body: {
+        owner_id: "victim",
+        ownerId: "victim",
+        user_id: "victim",
+        userId: "victim",
+        trusted_owner: "victim",
+        auth_context: { owner_id: "victim" },
         platform: "meta",
         campaign: { ctr: 0.02 },
         intent: "improve-retention",
@@ -109,6 +132,7 @@ describe("MaxCore public proxy contract", () => {
         awareness: { fatigue: "high" },
       },
       user: { id: "user-7", role: "artist" },
+      headers: { "x-maxcore-user-id": "victim", authorization: "Bearer attacker" },
     };
     const res = responseDouble();
 

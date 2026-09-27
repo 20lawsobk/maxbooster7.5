@@ -22,6 +22,7 @@ def _scene_build(node: Node, state: MediaState, ctx) -> MediaState:
         mood=p.get("mood", "cinematic"),
         seed=int(p.get("seed", 0)),
         aspect=float(p.get("aspect", 1.0)),
+        prompt=p.get("prompt", ""),
     )
     state.metadata["scene"] = scene
     return state

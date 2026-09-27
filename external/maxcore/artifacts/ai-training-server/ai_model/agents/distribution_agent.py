@@ -247,77 +247,21 @@ class DistributionAgent:
         self.model = model
         self._garble_probe_done = False
 
+    from ai_model.generation.awareness import generation_guard
+
+    @generation_guard
     def run(self, req: DistributionRequest) -> DistributionResponse:
-        # Awareness is always primary.  The script already carries live industry
-        # signals (it came from ScriptAgent._awareness_compose), so it IS the
-        # awareness-driven caption.  We use it directly rather than feeding it
-        # as a hint to model.generate() — which may ignore or dilute those
-        # signals.  Hashtags and posting time come from awareness parsers, which
-        # guarantee non-empty results whenever awareness is present.
-        platform_key = req.platform.lower().replace(" ", "_")
-        awareness = req.awareness or ""
-
-        # Model-health probe (observability trail): sample one small caption
-        # draft from the model and run the garble diagnostic on it.  The
-        # awareness-composed script stays authoritative either way — but a
-        # garbled/echoing model caption must never be suppressed *silently*.
-        # Gated to once per agent instance (agents are process singletons)
-        # so the probe cost never lands on hot-path request latency.
-        if awareness and not self._garble_probe_done:
-            self._garble_probe_done = True
-            try:
-                from ..request_intelligence import garble_reason
-                _draft = self.model.generate(
-                    f"<PLATFORM_{req.platform.upper()}> <STAGE_CAPTION>",
-                    max_new_tokens=48, temperature=0.8, top_p=0.92,
-                )
-                _wl = f"{req.script} {awareness}"
-                _reason = garble_reason(_draft or "", whitelist=_wl)
-                if _reason:
-                    logger.warning(
-                        "[garble-guard] suppressed model caption "
-                        "reason=%s platform=%s", _reason, platform_key,
-                    )
-            except Exception:
-                pass  # probe is never allowed to break generation
-
-        # ── Caption: script is already awareness-composed ─────────────────────
-        # Append a platform CTA if the script doesn't already carry one.
-        script_lower = req.script.lower()
-        if any(kw in script_lower for kw in _CTA_KEYWORDS):
-            caption = req.script
-        else:
-            plat_cta = _FALLBACK_CTAS.get(platform_key, "Follow for more content!")
-            caption = f"{req.script}\n\n{plat_cta}"
-
-        # ── Hashtags & timing from awareness ─────────────────────────────────
-        if awareness:
-            hashtags = _parse_hashtags_from_awareness(awareness, platform_key)
-
-            # Supplement with pdim-stored tags from prior awareness cycles.
-            pdim_tags = _pdim_hashtags(platform_key)
-            seen: set = set(hashtags)
-            for t in pdim_tags:
-                if t not in seen and len(hashtags) < 8:
-                    hashtags.append(t)
-                    seen.add(t)
-
-            posting_time = _parse_timing_from_awareness(awareness, platform_key)
-
-            # Persist newly discovered tags back to pdim for future requests.
-            _store_hashtags_to_pdim(platform_key, hashtags)
-        else:
-            # True last resort: awareness absent (should not occur in production).
-            hashtags = _pdim_hashtags(platform_key) or DEFAULT_HASHTAGS.get(platform_key, ["#maxbooster"])
-            today = datetime.date.today()
-            posting_time = f"{today}{BEST_POSTING_TIMES.get(platform_key, 'T12:00:00Z')}"
-
+        from ai_model.generation.awareness import require_context, sampling_seed, snapshot_hash
+        awareness = require_context(req.platform, "text") + "\n" + (req.awareness or "")
+        caption = self.model.generate(
+            awareness + "\n" + f"Platform: {req.platform}\nCaption for:\n{req.script}",
+            seed=sampling_seed(), snapshot_hash=snapshot_hash())
+        if not self._is_meaningful(caption):
+            raise ValueError("Model returned no meaningful distribution caption")
         return DistributionResponse(
             caption=caption,
-            hashtags=hashtags[:8],
-            posting_time=posting_time,
-        )
-
+            hashtags=_parse_hashtags_from_awareness(awareness, req.platform),
+            posting_time=_parse_timing_from_awareness(awareness, req.platform))
     def _is_meaningful(self, text: str) -> bool:
         if not text or len(text) < 10:
             return False

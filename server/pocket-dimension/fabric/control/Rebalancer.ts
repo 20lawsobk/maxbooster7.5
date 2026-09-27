@@ -6,6 +6,10 @@ import type { PlacementStrategy } from "./PlacementStrategy.js";
 import type { NodeId, ChunkId } from "../types.js";
 import { logger } from "../../../logger.js";
 
+// All fabric controllers in the owning process share one physical migration
+// lane. More logical nodes must not mean concurrent destructive chunk moves.
+let migrationTail: Promise<void> = Promise.resolve();
+
 export class Rebalancer {
   private running = false;
   private intervalId: NodeJS.Timeout | null = null;
@@ -59,9 +63,6 @@ export class Rebalancer {
         if (candidateCold?.length === 0) continue;
 
         const targetNode = candidateCold[0];
-        this.chunkStoreFactory(hotNode?.id);
-        this.chunkStoreFactory(targetNode?.id);
-
         const allNodes = await this.nodeRegistry.listAllNodes();
         const hotNodeRow = allNodes?.find((n) => n?.id === hotNode?.id);
         if (!hotNodeRow) continue;
@@ -70,7 +71,16 @@ export class Rebalancer {
           `[FabricRebalancer] Moving chunks from ${hotNode?.id} (${((hotNode?.usedBytes / hotNode?.capacityBytes) * 100).toFixed(1)}% full) to ${targetNode?.id}`,
         );
 
-        break;
+        const chunks = await this.chunkIndex.getChunksByNode(hotNode.id);
+        for (const chunk of chunks) {
+          if (chunk.nodeIds.includes(targetNode.id)) continue;
+          const target = await this.nodeRegistry.getNode(targetNode.id);
+          if (!target || target.capacityBytes - target.usedBytes < chunk.sizeBytes) continue;
+          await this.migrateChunk(chunk.id, hotNode.id, targetNode.id);
+          moved++;
+          _migratedBytes += chunk.sizeBytes;
+          if ((hotNodeRow.usedBytes - _migratedBytes) / hotNodeRow.capacityBytes <= this.HIGH_WATERMARK) break;
+        }
       }
     } catch (err) {
       logger.warn({ err: err }, "[FabricRebalancer] Rebalance error:");
@@ -88,13 +98,30 @@ export class Rebalancer {
     fromNodeId: NodeId,
     toNodeId: NodeId,
   ): Promise<void> {
+    const operation = migrationTail.then(() => this.migrateChunkOnce(chunkId, fromNodeId, toNodeId));
+    migrationTail = operation.catch(() => {});
+    return operation;
+  }
+
+  private async migrateChunkOnce(
+    chunkId: ChunkId,
+    fromNodeId: NodeId,
+    toNodeId: NodeId,
+  ): Promise<void> {
     const fromStore = this.chunkStoreFactory(fromNodeId);
     const toStore = this.chunkStoreFactory(toNodeId);
 
+    const loc = await this.chunkIndex.getChunkLocation(chunkId);
+    if (!loc || !loc.nodeIds.includes(fromNodeId)) {
+      throw new Error(`Cannot migrate unindexed source chunk ${chunkId}`);
+    }
+    if (loc.nodeIds.includes(toNodeId)) {
+      throw new Error(`Migration would reduce replica count for ${chunkId}`);
+    }
     const data = await fromStore?.getChunk(chunkId);
     await toStore?.putChunk(chunkId, data);
-
-    const loc = await this.chunkIndex.getChunkLocation(chunkId);
+    const verified = await toStore.getChunk(chunkId);
+    if (!verified.equals(data)) throw new Error(`Migration verification failed: ${chunkId}`);
     if (loc) {
       const newNodeIds = [
         ...(loc?.nodeIds?.filter((id) => id !== fromNodeId) ?? []),
@@ -116,5 +143,27 @@ export class Rebalancer {
         (await this.nodeRegistry.getNode(toNodeId))!.usedBytes +
         (loc?.sizeBytes ?? 0),
     });
+  }
+
+  async drainNode(nodeId: NodeId): Promise<{ moved: number; errors: number }> {
+    let moved = 0;
+    let errors = 0;
+    const chunks = await this.chunkIndex.getChunksByNode(nodeId);
+    // Sequential physical I/O; logical node count does not create host capacity.
+    for (const chunk of chunks) {
+      try {
+        const targets = await this.nodeRegistry.listHealthyNodes();
+        const target = targets.find((node) => node.id !== nodeId &&
+          !chunk.nodeIds.includes(node.id) &&
+          node.capacityBytes - node.usedBytes >= chunk.sizeBytes);
+        if (!target) throw new Error(`No safe drain destination for ${chunk.id}`);
+        await this.migrateChunk(chunk.id, nodeId, target.id);
+        moved++;
+      } catch (err) {
+        errors++;
+        logger.warn({ err }, "[FabricRebalancer] Drain incomplete; source retained");
+      }
+    }
+    return { moved, errors };
   }
 }

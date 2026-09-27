@@ -484,6 +484,13 @@ export function ServerVideoGenerator({
         } catch {
           throw new Error("Unexpected response from server");
         }
+        if (!resp.ok) throw new Error(data.error || `Job polling failed (${resp.status})`);
+        if (["error", "failed", "cancelled", "not_found"].includes(data.status || "")) {
+          activeJobIdRef.current = null;
+          const failure = new Error(data.error || `Video generation ${data.status}`);
+          failure.name = "TerminalJobError";
+          throw failure;
+        }
         consecutiveErrors = 0;
 
         // Server returns status='completed' with video_url — normalise to the
@@ -500,7 +507,7 @@ export function ServerVideoGenerator({
         setGeneratingStage(`Rendering… (${Math.round((i + 1) * 2)}s)`);
       } catch (err) {
         const msg = errMessage(err);
-        if (msg === "Cancelled" || msg === "Video generation failed") throw err;
+        if (errName(err) === "TerminalJobError" || msg === "Cancelled" || msg === "Video generation failed") throw err;
         // Network/parse error — retry up to 5 times before giving up
         consecutiveErrors++;
         if (consecutiveErrors >= 5)
@@ -585,7 +592,7 @@ export function ServerVideoGenerator({
           data?.message || data?.error || "Video generation failed",
         );
 
-      if (data.job_id && data.status === "processing") {
+      if (data.job_id && ["processing", "queued", "running", "committing", "coalesced"].includes(data.status || "")) {
         setGeneratingStage("Rendering frames…");
         data = await pollJobUntilDone(data.job_id);
       }

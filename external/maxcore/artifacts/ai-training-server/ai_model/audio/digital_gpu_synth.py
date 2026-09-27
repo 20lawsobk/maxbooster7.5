@@ -1,14 +1,18 @@
-"""Digital GPU professional audio synthesis engine.
+"""Parametric audio synthesis with explicit DigitalGPU software media kernels.
 
-Every compute path routes through the Digital GPU stack:
+Core dispatched paths:
   • Waveform generation → NativeKernels.saw_wave (polyBLEP bandlimited)
   • Filter            → NativeKernels.biquad (RBJ biquad IIR)
   • Envelopes         → NativeKernels.adsr
   • Saturation        → NativeKernels.soft_sat
   • Limiter           → NativeKernels.soft_limit
   • Compressor gain   → NativeKernels.compress_gain
-  • STFT / iSTFT      → HyperGPU.gemm on DFT matrices
-  • HPSS              → DFT-domain median filter
+  • Master DSP       → MediaDigitalGPU operation dispatch
+
+This is CPU SIMD/NumPy software execution, not hardware GPU acceleration.
+Dedicated synthesis signal arithmetic executes in operation kernels. Scheduling,
+note/velocity metadata, buffer allocation/layout and WAV codec operations remain
+host support. Legacy analysis/STFT/MIDI utilities are outside that claim.
 
 Output quality targets:
   - No aliasing: polyBLEP sawtooth oscillators
@@ -28,7 +32,13 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from ai_model.gpu.native.kernels import NativeKernels, get_native_kernels
+from ai_model.gpu.native.kernels import NativeKernels
+from ai_model.gpu.media_kernels import MediaKernelError, media_gpu
+
+
+def get_native_kernels():
+    """Compatibility name: instruments now dispatch explicit facade kernels."""
+    return media_gpu()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DFT matrix cache (for STFT / stem separation)
@@ -515,6 +525,27 @@ def _genre_key(genre: str) -> str:
     return "default"
 
 
+def _mellow_piano_requested(genre: str, mood: str) -> bool:
+    """Route a piano-like physical approximation only for matching intent."""
+    words = f"{genre} {mood}".lower().replace("-", " ")
+    return ("piano" in words or
+            any(word in words for word in ("calm", "mellow", "chill", "soft"))
+            and any(word in words for word in ("hip hop", "lofi", "lo fi", "jazz", "rnb")))
+
+
+def _render_genre(genre: str, mood: str) -> str:
+    style = _genre_key(genre)
+    return "lofi" if style == "default" and _mellow_piano_requested(genre, mood) else style
+
+
+def _drum_mix_gain(genre: str, mood: str) -> float:
+    if _mellow_piano_requested(genre, mood) or any(
+        word in str(mood or "").lower() for word in ("calm", "mellow", "soft", "chill")
+    ):
+        return 0.55
+    return 1.0
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Sound synthesis classes
 # ─────────────────────────────────────────────────────────────────────────────
@@ -523,7 +554,8 @@ class SynthVoice:
     """Detuned polyBLEP saw + biquad LPF + ADSR envelope.
 
     ``render_note`` returns a float32 mono buffer of exactly ``n`` samples.
-    All heavy lifting goes through NativeKernels; numpy used only for shaping.
+    Signal arithmetic dispatches through MediaDigitalGPU; host code schedules
+    note/chunk metadata and allocates buffers.
     """
 
     def __init__(self, kern: NativeKernels, sample_rate: int = 44100):
@@ -551,17 +583,8 @@ class SynthVoice:
             return np.zeros(max(n, 0), dtype=np.float32)
 
         n_osc = max(1, int(n_unison))
-        if n_osc == 1:
-            detune_factors = np.array([1.0], dtype=np.float32)
-        else:
-            cents = np.linspace(-detune_cents, detune_cents, n_osc, dtype=np.float32)
-            detune_factors = (2.0 ** (cents / 1200.0)).astype(np.float32)
-
-        freqs_arr = (np.float32(freq) * detune_factors).astype(np.float32)
-        # Taper amplitude: centre osc loudest, outer oscs softer
-        taper = np.hanning(n_osc + 2)[1:-1].astype(np.float32) + 0.15
-        taper /= taper.sum()
-        amps_arr = (taper * float(amp)).astype(np.float32)
+        detune_factors, freqs_arr, amps_arr = media_gpu().media(
+            "unison_parameters", freq, detune_cents, n_osc, float(amp))
 
         # ── Portamento glide (optional) ──────────────────────────────────────
         # Render in 64-sample chunks with linearly interpolating freq, threading
@@ -576,7 +599,7 @@ class SynthVoice:
                 sz   = cend - ci
                 t    = ci / max(glide_n - 1, 1)
                 f_i  = glide_from_freq + (freq - glide_from_freq) * t
-                f_arr = (np.float32(f_i) * detune_factors).astype(np.float32)
+                f_arr = media_gpu().media("scale", detune_factors, np.float32(f_i))
                 seg, phases = self.k.saw_wave(f_arr, amps_arr, float(self.sr), sz, phases)
                 out[ci:cend] = seg
             # body — remaining samples at target freq with phase continuity
@@ -595,6 +618,38 @@ class SynthVoice:
         env    = self.k.adsr(attack, decay, sustain, release, gate_s, float(self.sr), n)
         self.k.inplace_mul(out, env)
         return out
+
+
+class PianoVoice:
+    """Struck-string approximation: additive inharmonic partials, each decaying
+    at its own rate, with a hammer attack and damped key-release. No samples
+    or trained acoustic-piano model are involved.
+    """
+
+    def __init__(self, kern: NativeKernels, sample_rate: int = 44100):
+        self.k = kern
+        self.sr = sample_rate
+
+    def render_note(self, freq: float, gate_s: float, n: int,
+                    amp: float = 1.0) -> np.ndarray:
+        if n <= 0 or freq <= 0:
+            return np.zeros(max(n, 0), dtype=np.float32)
+        out = np.zeros(n, dtype=np.float32)
+        # Slight stiffness increases overtone pitch; high partials die sooner.
+        stiffness = 0.00008
+        for harmonic, strength in enumerate((1.0, .38, .20, .12, .07, .035), 1):
+            partial_freq = freq * harmonic * (1 + stiffness * harmonic * harmonic)
+            if partial_freq >= self.sr * .45:
+                break
+            partial = np.zeros(n, dtype=np.float32)
+            self.k.additive_synth(
+                np.array([partial_freq], dtype=np.float32),
+                np.array([strength], dtype=np.float32),
+                float(self.sr), partial)
+            envelope = media_gpu().media("decay_envelope", n, self.sr, 1.4 + .7 * harmonic)
+            partial = media_gpu().media("multiply", partial, envelope)
+            out = media_gpu().media("add", out, partial)
+        return media_gpu().media("piano_damp", out, self.sr, gate_s, amp)
 
 
 class DrumKit:
@@ -617,7 +672,7 @@ class DrumKit:
         body_len = min(n, int(0.06 * self.sr))
         body_buf = np.zeros(body_len, dtype=np.float32)
         body_freqs = np.array([90.0, 180.0], dtype=np.float32)
-        body_amps  = np.array([0.6,  0.3 ], dtype=np.float32) * float(punch)
+        body_amps = media_gpu().media("scale", np.array([.6, .3], dtype=np.float32), float(punch))
         self.k.additive_synth(body_freqs, body_amps, float(self.sr), body_buf)
         body_env = self.k.exp_decay(25.0 / self.sr, body_len / self.sr, body_len)
         self.k.inplace_mul(body_buf, body_env)
@@ -630,15 +685,14 @@ class DrumKit:
         # HP filter the click to remove muddiness
         hpf = self.k.hpf_coeffs(1000.0, 0.7, float(self.sr))
         st  = np.zeros(2, np.float32)
-        click = self.k.biquad(hpf, click, st) * 0.3 * float(punch)
+        click = media_gpu().media("scale", self.k.biquad(hpf, click, st), .3, float(punch))
 
         out = sub.copy()
-        out[:body_len] += body_buf
-        out[:click_len] += click[:len(out[:click_len])]
+        out[:body_len] = media_gpu().media("add", out[:body_len], body_buf)
+        out[:click_len] = media_gpu().media("add", out[:click_len], click[:len(out[:click_len])])
         # Saturate for punch
         out = self.k.soft_sat(out, drive=2.2)
-        out *= 0.85
-        return out
+        return media_gpu().media("scale", out, .85)
 
     # ── 808 sub bass ─────────────────────────────────────────────────────────
     def bass_808(self, root_freq: float, gate_s: float,
@@ -647,8 +701,7 @@ class DrumKit:
         if slide_from and slide_from != root_freq:
             # Pitch glide from slide_from → root_freq over 60ms
             glide_len = min(n, int(0.06 * self.sr))
-            glide = np.linspace(float(slide_from), float(root_freq),
-                                glide_len, dtype=np.float32)
+            glide = media_gpu().media("linear_envelope", float(slide_from), float(root_freq), glide_len)
             normal = np.full(n - glide_len, float(root_freq), dtype=np.float32)
             freqs_t = np.concatenate([glide, normal])
         else:
@@ -671,7 +724,7 @@ class DrumKit:
         lpf = self.k.lpf_coeffs(200.0, 0.7, float(self.sr))
         st  = np.zeros(2, np.float32)
         out = self.k.biquad(lpf, out, st)
-        return out * 0.9
+        return media_gpu().media("scale", out, .9)
 
     # ── Snare ─────────────────────────────────────────────────────────────────
     def snare(self, vel: float = 1.0, snappy: float = 0.6) -> np.ndarray:
@@ -680,7 +733,7 @@ class DrumKit:
         tone_buf = np.zeros(n, dtype=np.float32)
         self.k.additive_synth(
             np.array([200.0, 280.0], dtype=np.float32),
-            np.array([0.5, 0.3], dtype=np.float32) * float(vel),
+            media_gpu().media("scale", np.array([0.5, 0.3], dtype=np.float32), float(vel)),
             float(self.sr), tone_buf)
         tone_env = self.k.exp_decay(18.0 / self.sr, 0.20, n)
         self.k.inplace_mul(tone_buf, tone_env)
@@ -697,9 +750,9 @@ class DrumKit:
         st2 = np.zeros(2, np.float32)
         noise = self.k.biquad(lp, noise, st2)
 
-        out = tone_buf + noise * float(snappy) * float(vel)
+        out = media_gpu().media("add", tone_buf, media_gpu().media("scale", noise, float(snappy), float(vel)))
         out = self.k.soft_sat(out, drive=1.8)
-        return out * 0.75
+        return media_gpu().media("scale", out, .75)
 
     # ── Clap ─────────────────────────────────────────────────────────────────
     def clap(self, vel: float = 1.0) -> np.ndarray:
@@ -712,12 +765,12 @@ class DrumKit:
             burst_env = self.k.exp_decay(80.0 / self.sr, burst_len/self.sr, burst_len)
             self.k.inplace_mul(burst, burst_env)
             end = min(offset + burst_len, n)
-            out[offset:end] += burst[:end-offset]
+            out[offset:end] = media_gpu().media("add", out[offset:end], burst[:end-offset])
         # Band-pass 700Hz–10kHz
         hp = self.k.hpf_coeffs(700.0, 0.8, float(self.sr))
         st = np.zeros(2, np.float32)
         out = self.k.biquad(hp, out, st)
-        return out * float(vel) * 0.6
+        return media_gpu().media("scale", out, float(vel), .6)
 
     # ── Hi-hats ───────────────────────────────────────────────────────────────
     def hat_closed(self, vel: float = 1.0) -> np.ndarray:
@@ -728,7 +781,7 @@ class DrumKit:
         hp = self.k.hpf_coeffs(6000.0, 0.7, float(self.sr))
         st = np.zeros(2, np.float32)
         noise = self.k.biquad(hp, noise, st)
-        return noise * float(vel) * 0.80
+        return media_gpu().media("scale", noise, float(vel), .80)
 
     def hat_open(self, vel: float = 1.0, decay_s: float = 0.18) -> np.ndarray:
         n = int(decay_s * self.sr)
@@ -738,7 +791,7 @@ class DrumKit:
         hp = self.k.hpf_coeffs(6000.0, 0.6, float(self.sr))
         st = np.zeros(2, np.float32)
         noise = self.k.biquad(hp, noise, st)
-        return noise * float(vel) * 0.85
+        return media_gpu().media("scale", noise, float(vel), .85)
 
     # ── Crash cymbal ─────────────────────────────────────────────────────────
     def crash(self, vel: float = 1.0) -> np.ndarray:
@@ -757,13 +810,13 @@ class DrumKit:
         body_buf = np.zeros(n, dtype=np.float32)
         self.k.additive_synth(
             np.array([200.0, 400.0, 600.0], dtype=np.float32),
-            np.array([0.3, 0.15, 0.05], dtype=np.float32) * float(vel),
+            media_gpu().media("scale", np.array([0.3, 0.15, 0.05], dtype=np.float32), float(vel)),
             float(self.sr), body_buf)
         body_env = self.k.exp_decay(3.0 / self.sr, 1.5, n)
         self.k.inplace_mul(body_buf, body_env)
 
-        out = noise * float(vel) * 0.7 + body_buf
-        return out * 0.65
+        out = media_gpu().media("add", media_gpu().media("scale", noise, float(vel), .7), body_buf)
+        return media_gpu().media("scale", out, .65)
 
 
 class BassVoice:
@@ -784,16 +837,16 @@ class BassVoice:
         sub_buf = np.zeros(n, dtype=np.float32)
         self.k.additive_synth(
             np.array([freq, freq*2.0], dtype=np.float32),
-            np.array([0.70, 0.20], dtype=np.float32) * float(amp),
+            media_gpu().media("scale", np.array([0.70, 0.20], dtype=np.float32), float(amp)),
             float(self.sr), sub_buf)
 
         # Mid layer: polyBLEP saw, an octave up, filtered
         mid, _ = self.k.saw_wave(
             np.array([freq*2.0, freq*2.0*1.002], dtype=np.float32),
-            np.array([0.3, 0.3], dtype=np.float32) * float(amp),
+            media_gpu().media("scale", np.array([0.3, 0.3], dtype=np.float32), float(amp)),
             float(self.sr), n)
 
-        out = sub_buf + mid
+        out = media_gpu().media("add", sub_buf, mid)
 
         # Drive / saturation for mid-bass growl
         out = self.k.soft_sat(out, drive=float(drive))
@@ -810,7 +863,7 @@ class BassVoice:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Effects (reverb, compression, M/S widening) — all never-raise
+# Effects (reverb, compression, M/S widening); numerical kernel failures propagate
 # ─────────────────────────────────────────────────────────────────────────────
 
 def apply_reverb(x: np.ndarray, kern: NativeKernels, sr: int,
@@ -819,28 +872,21 @@ def apply_reverb(x: np.ndarray, kern: NativeKernels, sr: int,
     """FFT convolution reverb with a synthetic exponential noise IR.
 
     The IR is built from kern.white_noise + kern.exp_decay — no scipy.
-    Convolution uses numpy FFT (zero-padded, O(N log N)).
+    Impulse preparation and zero-padded FFT convolution execute in media kernels.
     """
     try:
         ir_len = int(sr * room_size * 2.5)
         ir     = kern.white_noise(seed, ir_len).astype(np.float64)
         env    = kern.exp_decay(5.5 / max(room_size, 0.01) / sr,
                                 room_size * 2.5, ir_len).astype(np.float64)
-        ir    *= env
-        # Pre-delay (8ms) and stereo diffusion
-        pre   = int(0.008 * sr)
-        if pre > 0:
-            ir[:pre] *= 0.0
-        peak = float(np.max(np.abs(ir)))
-        if peak < 1e-9:
+        ir = media_gpu().media("prepare_ir", ir, env, int(.008 * sr))
+        if ir is None:
             return x
-        ir /= peak
 
-        n_fft  = 1 << int(np.ceil(np.log2(len(x) + ir_len)))
-        X      = np.fft.rfft(x.astype(np.float64), n=n_fft)
-        IR     = np.fft.rfft(ir, n=n_fft)
-        wet_s  = np.fft.irfft(X * IR)[:len(x)].astype(np.float32)
+        wet_s = media_gpu().media("convolve_reverb", x, ir)
         return kern.mix2(x, 1.0 - wet, wet_s, wet)
+    except MediaKernelError:
+        raise
     except Exception:
         return x   # never-raise
 
@@ -850,28 +896,7 @@ def apply_glitch_transition(
     boundary_samples: List[int], bar_len: int,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Micro-glitch stutter at section boundaries — futuristic transition flair."""
-    try:
-        n       = len(mix_L)
-        slice_n = max(1, bar_len // 8)
-        for pos in boundary_samples:
-            src_s = pos - slice_n
-            if src_s < 0 or pos + slice_n * 3 >= n:
-                continue
-            src_L = mix_L[src_s:pos].copy()
-            src_R = mix_R[src_s:pos].copy()
-            for rep in range(3):
-                dst_s = pos + rep * slice_n
-                dst_e = dst_s + slice_n
-                if dst_e > n:
-                    break
-                blend = float(0.55 - rep * 0.13)
-                mix_L[dst_s:dst_e] = (mix_L[dst_s:dst_e] * (1.0 - blend)
-                                      + src_L * blend)
-                mix_R[dst_s:dst_e] = (mix_R[dst_s:dst_e] * (1.0 - blend)
-                                      + src_R * blend)
-    except Exception:
-        pass
-    return mix_L, mix_R
+    return media_gpu().media("glitch", mix_L, mix_R, boundary_samples, bar_len)
 
 
 def apply_compressor(x: np.ndarray, kern: NativeKernels, sr: int,
@@ -883,11 +908,11 @@ def apply_compressor(x: np.ndarray, kern: NativeKernels, sr: int,
         makeup = float(10 ** (makeup_db / 20.0))
         thr    = float(10 ** (threshold_db / 20.0))
         win    = max(1, int(0.008 * sr))
-        rms_sq = np.convolve(x.astype(np.float64)**2,
-                             np.ones(win, np.float64)/win, mode='same')
-        rms    = np.sqrt(np.abs(rms_sq)).astype(np.float32)
+        rms = media_gpu().media("rms_envelope", x, win)
         gain   = kern.compress_gain(rms, thr, ratio, attack_ms, release_ms, float(sr))
-        return x * gain * makeup
+        return media_gpu().media("scale", x, gain, makeup)
+    except MediaKernelError:
+        raise
     except Exception:
         return x   # never-raise
 
@@ -895,10 +920,7 @@ def apply_compressor(x: np.ndarray, kern: NativeKernels, sr: int,
 def apply_ms_width(L: np.ndarray, R: np.ndarray,
                    width: float = 1.4) -> Tuple[np.ndarray, np.ndarray]:
     """M/S stereo widening — widens the stereo image without phase issues."""
-    mid  = (L + R) * 0.5
-    side = (L - R) * 0.5
-    side *= width
-    return (mid + side), (mid - side)
+    return media_gpu().media("stereo_width", L, R, width)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -908,38 +930,9 @@ def apply_ms_width(L: np.ndarray, R: np.ndarray,
 def apply_sidechain(bus: np.ndarray, trigger: np.ndarray, sr: int,
                     attack_ms: float = 2.0, release_ms: float = 80.0,
                     ratio: float = 4.0, threshold: float = 0.3) -> np.ndarray:
-    """Duck bus signal when kick trigger exceeds threshold.
-
-    Never-raise. Uses only numpy.
-    """
-    try:
-        bus = np.asarray(bus, dtype=np.float32)
-        trigger = np.asarray(trigger, dtype=np.float32)
-        n = len(bus)
-        if n == 0:
-            return bus
-
-        attack_coef  = np.float32(np.exp(-1.0 / max(1, attack_ms  * sr / 1000.0)))
-        release_coef = np.float32(np.exp(-1.0 / max(1, release_ms * sr / 1000.0)))
-        depth = np.float32(1.0 / ratio)
-
-        gain_env = np.ones(n, dtype=np.float32)
-        g = np.float32(1.0)
-        tlen = len(trigger)
-        for i in range(n):
-            trig_val = abs(float(trigger[i])) if i < tlen else 0.0
-            if trig_val > threshold:
-                target = depth
-                coef   = attack_coef
-            else:
-                target = np.float32(1.0)
-                coef   = release_coef
-            g = coef * g + (np.float32(1.0) - coef) * target
-            gain_env[i] = g
-
-        return bus * gain_env
-    except Exception:
-        return bus
+    """Duck bus signal through the explicit software media kernel."""
+    return media_gpu().media("sidechain", bus, trigger, sr, attack_ms,
+                             release_ms, ratio, threshold)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -949,146 +942,27 @@ def apply_sidechain(bus: np.ndarray, trigger: np.ndarray, sr: int,
 def apply_delay(x: np.ndarray, sr: int, delay_ms: float,
                 feedback: float = 0.35, mix: float = 0.25,
                 ping_pong: bool = True) -> np.ndarray:
-    """Ping-pong delay. x must be stereo-interleaved [L,R,L,R,...] or mono.
-
-    Never-raise. Uses only numpy. Max 6 repeats.
-    """
-    try:
-        x = np.asarray(x, dtype=np.float32)
-        if x.size == 0:
-            return x
-        delay_samples = max(1, int(delay_ms * sr / 1000.0))
-        is_stereo = (x.ndim == 1 and x.size % 2 == 0)
-        # Work on mono representation, then handle stereo ping-pong
-        if x.ndim == 1 and x.size % 2 == 0:
-            # Interleaved stereo
-            L = x[0::2].copy()
-            R = x[1::2].copy()
-        else:
-            L = x.copy()
-            R = x.copy()
-
-        n = len(L)
-        out_L = L.copy()
-        out_R = R.copy()
-
-        fb_sig = (L + R) * 0.5  # mono sum for feedback chain
-        cur_fb = fb_sig.copy()
-        for rep in range(1, 7):  # max 6 repeats
-            offset = delay_samples * rep
-            if offset >= n:
-                break
-            level = (feedback ** rep) * mix
-            if ping_pong:
-                if rep % 2 == 1:
-                    # Odd repeats go to right
-                    out_R[offset:] += cur_fb[:n - offset] * level
-                else:
-                    # Even repeats go to left
-                    out_L[offset:] += cur_fb[:n - offset] * level
-            else:
-                out_L[offset:] += cur_fb[:n - offset] * level
-                out_R[offset:] += cur_fb[:n - offset] * level
-
-        # Rebuild interleaved
-        if x.ndim == 1 and x.size % 2 == 0:
-            result = np.empty(x.size, dtype=np.float32)
-            result[0::2] = out_L
-            result[1::2] = out_R
-            return result
-        else:
-            return (out_L + out_R) * 0.5
-    except Exception:
-        return x
+    """Dispatch a bounded six-repeat ping-pong delay signal kernel."""
+    return media_gpu().media("delay", x, sr, delay_ms, feedback, mix, ping_pong)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# E. Parametric EQ (RBJ biquad — numpy only)
+# E. Parametric EQ (RBJ coefficients and biquad via media kernels)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _rbj_biquad_coeffs(band: dict, sr: int) -> Optional[Tuple[float,float,float,float,float]]:
-    """Compute biquad coefficients from an RBJ-style band dict.
-
-    Returns (b0, b1, b2, a1, a2) normalised by a0, or None on error.
-    """
-    try:
-        btype  = band.get("type", "peak")
-        freq   = float(band.get("freq", 1000.0))
-        gain_db= float(band.get("gain_db", 0.0))
-        q      = float(band.get("q", 1.0))
-        q      = max(0.01, q)
-        freq   = max(1.0, min(freq, sr * 0.499))
-
-        w0     = 2.0 * np.pi * freq / sr
-        cos_w0 = np.cos(w0)
-        sin_w0 = np.sin(w0)
-        alpha  = sin_w0 / (2.0 * q)
-        A      = 10.0 ** (gain_db / 40.0)  # sqrt of linear gain
-
-        if btype == "hp":
-            b0 =  (1.0 + cos_w0) / 2.0
-            b1 = -(1.0 + cos_w0)
-            b2 =  (1.0 + cos_w0) / 2.0
-            a0 =   1.0 + alpha
-            a1 =  -2.0 * cos_w0
-            a2 =   1.0 - alpha
-        elif btype == "lp":
-            b0 =  (1.0 - cos_w0) / 2.0
-            b1 =   1.0 - cos_w0
-            b2 =  (1.0 - cos_w0) / 2.0
-            a0 =   1.0 + alpha
-            a1 =  -2.0 * cos_w0
-            a2 =   1.0 - alpha
-        elif btype == "peak":
-            b0 =  1.0 + alpha * A
-            b1 = -2.0 * cos_w0
-            b2 =  1.0 - alpha * A
-            a0 =  1.0 + alpha / A
-            a1 = -2.0 * cos_w0
-            a2 =  1.0 - alpha / A
-        elif btype == "shelf_hi":
-            sqA   = np.sqrt(A)
-            alpha2= sin_w0 / 2.0 * np.sqrt((A + 1.0/A) * (1.0/q - 1.0) + 2.0)
-            b0 =  A * ((A+1) + (A-1)*cos_w0 + 2*sqA*alpha2)
-            b1 = -2*A* ((A-1) + (A+1)*cos_w0)
-            b2 =  A * ((A+1) + (A-1)*cos_w0 - 2*sqA*alpha2)
-            a0 =       (A+1) - (A-1)*cos_w0 + 2*sqA*alpha2
-            a1 =  2  * ((A-1) - (A+1)*cos_w0)
-            a2 =       (A+1) - (A-1)*cos_w0 - 2*sqA*alpha2
-        elif btype == "shelf_lo":
-            sqA   = np.sqrt(A)
-            alpha2= sin_w0 / 2.0 * np.sqrt((A + 1.0/A) * (1.0/q - 1.0) + 2.0)
-            b0 =  A * ((A+1) - (A-1)*cos_w0 + 2*sqA*alpha2)
-            b1 =  2*A*((A-1) - (A+1)*cos_w0)
-            b2 =  A * ((A+1) - (A-1)*cos_w0 - 2*sqA*alpha2)
-            a0 =       (A+1) + (A-1)*cos_w0 + 2*sqA*alpha2
-            a1 = -2  * ((A-1) + (A+1)*cos_w0)
-            a2 =       (A+1) + (A-1)*cos_w0 - 2*sqA*alpha2
-        else:
-            return None
-
-        inv_a0 = 1.0 / a0
-        return (b0*inv_a0, b1*inv_a0, b2*inv_a0, a1*inv_a0, a2*inv_a0)
-    except Exception:
-        return None
+    """Dispatch RBJ coefficient generation, including scalar transcendental math."""
+    return media_gpu().media("rbj_coefficients", band, sr)
 
 
 def _apply_biquad_np(x: np.ndarray, b0: float, b1: float, b2: float,
                      a1: float, a2: float) -> np.ndarray:
-    """Transposed-form II biquad filter, numpy fallback."""
-    x = np.asarray(x, dtype=np.float64)
-    y = np.empty_like(x)
-    s1, s2 = 0.0, 0.0
-    for i in range(len(x)):
-        v  = b0 * x[i] + s1
-        s1 = b1 * x[i] - a1 * v + s2
-        s2 = b2 * x[i] - a2 * v
-        y[i] = v
-    return y.astype(np.float32)
+    """Transposed-form II biquad dispatched to the software media backend."""
+    return media_gpu().media("biquad_df2", x, b0, b1, b2, a1, a2)
 
 
 def apply_eq(x: np.ndarray, sr: int, bands: list) -> np.ndarray:
-    """Apply a parametric EQ chain. Never-raise. numpy only.
+    """Apply a parametric EQ chain through explicit coefficient/filter kernels.
 
     Each band dict: {type: hp/lp/peak/shelf_hi/shelf_lo, freq, gain_db, q}
     """
@@ -1102,6 +976,8 @@ def apply_eq(x: np.ndarray, sr: int, bands: list) -> np.ndarray:
             b0, b1, b2, a1, a2 = coeffs
             out = _apply_biquad_np(out, b0, b1, b2, a1, a2)
         return out
+    except MediaKernelError:
+        raise
     except Exception:
         return x
 
@@ -1112,38 +988,16 @@ def apply_eq(x: np.ndarray, sr: int, bands: list) -> np.ndarray:
 
 def _rms_compress_np(x: np.ndarray, sr: int, threshold: float, ratio: float,
                      attack_ms: float, release_ms: float) -> np.ndarray:
-    """Simple RMS compressor, numpy only, returns gain-applied signal."""
-    try:
-        win = max(1, int(0.008 * sr))
-        rms_sq = np.convolve(x.astype(np.float64)**2,
-                             np.ones(win) / win, mode='same')
-        rms = np.sqrt(np.abs(rms_sq)).astype(np.float32)
-        n = len(x)
-        attack_coef  = float(np.exp(-1.0 / max(1, attack_ms  * sr / 1000.0)))
-        release_coef = float(np.exp(-1.0 / max(1, release_ms * sr / 1000.0)))
-        gain = np.ones(n, dtype=np.float32)
-        g = 1.0
-        ratio_inv = 1.0 / ratio
-        for i in range(n):
-            r = float(rms[i])
-            if r > threshold and r > 1e-10:
-                # Gain reduction
-                target = (threshold / r) * (1.0 - ratio_inv) + ratio_inv
-            else:
-                target = 1.0
-            coef = attack_coef if target < g else release_coef
-            g = coef * g + (1.0 - coef) * target
-            gain[i] = max(0.0, min(1.0, g))
-        return x * gain
-    except Exception:
-        return x
+    """RMS envelope and compressor arithmetic execute in the media kernel."""
+    return media_gpu().media("rms_compress", x, sr, threshold, ratio,
+                             attack_ms, release_ms)
 
 
 def apply_multiband_compressor(L: np.ndarray, R: np.ndarray,
                                 sr: int) -> Tuple[np.ndarray, np.ndarray]:
     """3-band compressor: sub (<120Hz), mid (120Hz–5kHz), hi (>5kHz).
 
-    Uses biquad LPF/HPF crossover (numpy biquad). Never-raise.
+    Crossover coefficients, filters, splits, compression and sums are dispatched.
     Returns (L_out, R_out).
     """
     try:
@@ -1165,7 +1019,7 @@ def apply_multiband_compressor(L: np.ndarray, R: np.ndarray,
             # Split into 3 bands
             sub = _lpf(ch, 120.0)
             hi  = _hpf(ch, 5000.0)
-            mid_raw = ch - sub - hi  # mid by subtraction (complementary)
+            mid_raw = media_gpu().media("subtract", media_gpu().media("subtract", ch, sub), hi)
 
             # Compress each band independently
             sub_c = _rms_compress_np(sub,     sr, threshold=0.25, ratio=3.0,
@@ -1175,9 +1029,11 @@ def apply_multiband_compressor(L: np.ndarray, R: np.ndarray,
             hi_c  = _rms_compress_np(hi,      sr, threshold=0.35, ratio=1.5,
                                      attack_ms=2.0,  release_ms=50.0)
 
-            results.append((sub_c + mid_c + hi_c).astype(np.float32))
+            results.append(media_gpu().media("mix_buses", sub_c, mid_c, hi_c).astype(np.float32))
 
         return results[0], results[1]
+    except MediaKernelError:
+        raise
     except Exception:
         return L, R
 
@@ -1191,16 +1047,7 @@ def apply_dither(x: np.ndarray, bit_depth: int = 16) -> np.ndarray:
 
     Two uniform random values in ±0.5 LSB, summed → triangular distribution.
     """
-    try:
-        x = np.asarray(x, dtype=np.float32)
-        lsb = 1.0 / (2 ** bit_depth)
-        # Two independent uniform random draws in [-0.5 LSB, +0.5 LSB]
-        rng = np.random.default_rng(0xD17E4)
-        u1 = rng.uniform(-0.5 * lsb, 0.5 * lsb, size=x.shape).astype(np.float32)
-        u2 = rng.uniform(-0.5 * lsb, 0.5 * lsb, size=x.shape).astype(np.float32)
-        return x + u1 + u2
-    except Exception:
-        return x
+    return media_gpu().media("tpdf_dither", x, bit_depth)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1225,8 +1072,15 @@ def _sections_for(genre_key: str, duration_sec: float,
                   bpm: float) -> List[Tuple[str, int, str, float, float]]:
     """Return sections scaled so total bars fit in duration_sec."""
     secs_per_bar = 60.0 / bpm * 4.0
-    target_bars  = int(duration_sec / secs_per_bar)
+    target_bars  = max(1, int(duration_sec / secs_per_bar))
     template     = _SECTIONS.get(genre_key, _SECTIONS["default"])
+    if target_bars < len(template) * 2:
+        # A short clip should be an excerpt of the actual ensemble, not an
+        # intro-only kick/hat loop (the first section of every long-form arc).
+        core = next((s for s in template if s[0] == "verse"),
+                    next((s for s in template if "C" in s[2] and
+                          ("S" in s[2] or genre_key == "orchestral")), template[0]))
+        return [(core[0], target_bars, core[2], core[3], core[4])]
     total_template = sum(s[1] for s in template)
     scale_factor   = target_bars / max(total_template, 1)
     result = []
@@ -1248,12 +1102,27 @@ def render_stems(
     genre: str = "",
     mood: str = "",
     sample_rate: int = 44100,
+    *,
+    instrument: str = "ensemble",
+    arrangement: str = "structured",
 ) -> Dict[str, np.ndarray]:
     """Render all buses separately and return them as a dict.
 
     Keys: "drums", "bass", "pads", "lead", "fx"
     Each value is a stereo-interleaved float32 array (not normalised yet).
     """
+    from ai_model.capabilities import capabilities, finite_number
+    supported = capabilities("audio")
+    if instrument not in supported["instruments"]:
+        raise ValueError(f"Unsupported instrument: {instrument}")
+    if arrangement not in supported["arrangements"]:
+        raise ValueError(f"Unsupported arrangement: {arrangement}")
+    duration_sec = finite_number(duration_sec, "duration_sec", 0.05, 300)
+    bpm = finite_number(bpm, "bpm", 60, 200)
+    sample_rate_value = finite_number(sample_rate, "sample_rate", 8000, 96000)
+    if not sample_rate_value.is_integer():
+        raise ValueError("sample_rate must be an integer")
+    sample_rate = int(sample_rate_value)
     kern = get_native_kernels()
     rng  = np.random.default_rng(
         int(hashlib.sha256(job_id.encode()).hexdigest()[:8], 16))
@@ -1264,15 +1133,18 @@ def render_stems(
     is_minor  = len(parts) > 1 and parts[1].lower().startswith("min")
     root_freq = 220.0 * (2.0 ** (_NOTE_SEMI.get(root_name, 0) / 12.0))
     scale     = MINOR_SCALE if is_minor else MAJOR_SCALE
-    _genre    = _genre_key(genre)
-    _mood     = (mood or "").lower()
-
+    piano_style = instrument == "piano" or (
+        instrument == "ensemble" and _mellow_piano_requested(genre, mood))
+    _genre    = _render_genre(genre, mood)
     bpm_f     = max(60.0, min(float(bpm), 200.0))
     step_sec  = 60.0 / bpm_f / 4.0
     step_len  = int(step_sec * sample_rate)
     bar_len   = step_len * 16
     n_total   = int(duration_sec * sample_rate)
-    n_total   = max(n_total, bar_len * 8)
+    # Render only the requested samples. Eight minimum bars used to turn a
+    # four-second soundtrack into a much longer full mastering pass.
+    if n_total <= 0:
+        raise ValueError("Audio duration must be positive")
 
     # Swing: compute swing offset per step
     swing = _SWING_DEFAULTS.get(_genre, 0.0)
@@ -1292,11 +1164,24 @@ def render_stems(
 
     # ── Arrangement sections ─────────────────────────────────────────────────
     sections = _sections_for(_genre, duration_sec, bpm_f)
+    if arrangement == "loop" or instrument != "ensemble":
+        # The selected voice must sound immediately, rather than remain muted
+        # through the genre's intro. No unsupported voice substitution.
+        elements = {"ensemble": "KSHBCLR", "piano": "C", "synth": "C",
+                    "bass": "B", "drums": "KSH"}[instrument]
+        if arrangement == "loop":
+            sections = [("loop", max(1, (n_total + bar_len - 1) // bar_len),
+                         elements, 0.8, 0.8)]
+        else:
+            sections = [(name, bars, elements, filt, energy)
+                        for name, bars, _, filt, energy in sections]
 
     # ── Instrument constructors ──────────────────────────────────────────────
     drums  = DrumKit(kern, sample_rate)
     bass_v = BassVoice(kern, sample_rate)
     synth  = SynthVoice(kern, sample_rate)
+    piano = PianoVoice(kern, sample_rate) if piano_style else None
+    drum_gain = _drum_mix_gain(genre, mood)
 
     # ── Pre-render drum one-shots ─────────────────────────────────────────────
     if _genre == "cinematic_trap":
@@ -1346,12 +1231,7 @@ def render_stems(
 
     def _stamp_bus(bus_L, bus_R, buf: np.ndarray,
                    pos: int, gain_L: float, gain_R: float) -> None:
-        if pos >= n_total or buf is None or buf.size == 0:
-            return
-        end = min(pos + len(buf), n_total)
-        sz  = end - pos
-        bus_L[pos:end] += buf[:sz] * gain_L
-        bus_R[pos:end] += buf[:sz] * gain_R
+        media_gpu().media("stamp_stereo", bus_L, bus_R, buf, pos, gain_L, gain_R)
 
     # ── Build section schedule ────────────────────────────────────────────────
     schedule = []
@@ -1424,16 +1304,18 @@ def render_stems(
             hat_vel   = float(vel_rng_hat.uniform(0.82, 1.0))
 
             if has_kick and active_dp["kick"][step]:
-                gain = energy * 0.85 * kick_vel
+                gain = energy * 0.85 * kick_vel * drum_gain
                 _stamp_bus(drum_L, drum_R, kick_buf, step_pos, gain, gain)
                 # Record kick mono for sidechain
                 if step_pos < n_total:
                     end_k = min(step_pos + len(kick_buf), n_total)
                     sz_k  = end_k - step_pos
-                    kick_mono[step_pos:end_k] += kick_buf[:sz_k] * gain
+                    kick_mono[step_pos:end_k] = media_gpu().media(
+                        "add", kick_mono[step_pos:end_k],
+                        media_gpu().media("scale", kick_buf[:sz_k], gain))
 
             if has_snare and active_dp["snare"][step]:
-                gain = energy * snare_vel * 0.75
+                gain = energy * snare_vel * 0.75 * drum_gain
                 _stamp_bus(drum_L, drum_R, snare_buf, step_pos,
                            gain * 0.95, gain * 0.75)
                 if step in (4, 12):
@@ -1443,10 +1325,10 @@ def render_stems(
 
             if has_hat:
                 if active_dp["hat_o"][step]:
-                    gain = energy * hat_vel * 0.55
+                    gain = energy * hat_vel * 0.55 * drum_gain
                     _stamp_bus(drum_L, drum_R, hat_o_buf, step_pos, gain, gain)
                 elif active_dp["hat_c"][step]:
-                    gain = energy * hat_vel * 0.45
+                    gain = energy * hat_vel * 0.45 * drum_gain
                     _stamp_bus(drum_L, drum_R, hat_c_buf, step_pos,
                                gain * 0.7, gain)
 
@@ -1454,7 +1336,7 @@ def render_stems(
             if use_fill and step == 0 and has_kick:
                 next_bar_pos = (bar + 1) * bar_len
                 if next_bar_pos < n_total:
-                    crash_gain = energy * 0.7
+                    crash_gain = energy * 0.7 * drum_gain
                     _stamp_bus(drum_L, drum_R, crash_buf, next_bar_pos,
                                crash_gain, crash_gain * 0.9)
 
@@ -1463,7 +1345,7 @@ def render_stems(
                 tri_step = int(step_len * 4 / 3)
                 for tri in (1, 2):
                     tri_pos = step_pos + tri * tri_step
-                    tri_vel = energy * (0.38 + rng.random() * 0.15)
+                    tri_vel = energy * (0.38 + rng.random() * 0.15) * drum_gain
                     pan = 0.55 + (tri % 2) * 0.35
                     _stamp_bus(drum_L, drum_R, hat_c_buf, tri_pos,
                                tri_vel * hat_vel * (1.0 - pan * 0.3),
@@ -1513,13 +1395,17 @@ def render_stems(
             pad_buf = np.zeros(note_n, dtype=np.float32)
             for v_idx, freq in enumerate(c_freqs):
                 oct_off = 0 if v_idx < 2 else 1
-                v_buf = synth.render_note(
-                    freq * (2**oct_off), gate_s, note_n,
-                    cutoff=pad_cut, resonance=0.65,
-                    detune_cents=12.0, n_unison=n_uni,
-                    attack=0.08, decay=0.3, sustain=0.6, release=0.4,
-                    drive=1.3, amp=0.28)
-                pad_buf += v_buf
+                if piano is not None:
+                    v_buf = piano.render_note(
+                        freq * (2**oct_off), gate_s, note_n, amp=0.35)
+                else:
+                    v_buf = synth.render_note(
+                        freq * (2**oct_off), gate_s, note_n,
+                        cutoff=pad_cut, resonance=0.65,
+                        detune_cents=12.0, n_unison=n_uni,
+                        attack=0.08, decay=0.3, sustain=0.6, release=0.4,
+                        drive=1.3, amp=0.28)
+                pad_buf = media_gpu().media("add", pad_buf, v_buf)
 
             lp_ch = kern.lpf_coeffs(pad_cut * 0.7, 0.7, float(sample_rate))
             st_ch = np.zeros(2, np.float32)
@@ -1548,13 +1434,16 @@ def render_stems(
                 freq_l  = arp_freqs[n_i % len(arp_freqs)]
                 gate_s  = note_dur * 0.85
                 note_n  = int((note_dur + 0.12) * sample_rate)
-                lead_buf = synth.render_note(
-                    freq_l, gate_s, note_n,
-                    cutoff=min(cutoff_hz * 1.2, 12000.0), resonance=0.9,
-                    detune_cents=5.0, n_unison=3,
-                    attack=0.004, decay=0.08, sustain=0.45, release=0.12,
-                    drive=1.8, amp=0.4,
-                    glide_from_freq=prev_lead_freq)
+                if piano is not None:
+                    lead_buf = piano.render_note(freq_l, gate_s, note_n, amp=0.4)
+                else:
+                    lead_buf = synth.render_note(
+                        freq_l, gate_s, note_n,
+                        cutoff=min(cutoff_hz * 1.2, 12000.0), resonance=0.9,
+                        detune_cents=5.0, n_unison=3,
+                        attack=0.004, decay=0.08, sustain=0.45, release=0.12,
+                        drive=1.8, amp=0.4,
+                        glide_from_freq=prev_lead_freq)
                 prev_lead_freq = freq_l
                 lpos = bar_pos + int(n_i * step_len * 2)
                 pan_l = 0.9 if n_i % 2 == 0 else 0.6
@@ -1583,7 +1472,7 @@ def render_stems(
         if has_riser:
             riser_n   = bar_len
             rise_noise = kern.white_noise(0xBEAD ^ bar, riser_n)
-            rise_env   = np.linspace(0.0, 1.0, riser_n, dtype=np.float32)
+            rise_env = media_gpu().media("linear_envelope", 0., 1., riser_n)
             kern.inplace_mul(rise_noise, rise_env)
             n_chunks = 8
             chunk_sz = riser_n // n_chunks
@@ -1644,6 +1533,9 @@ def _render_stems_internal(
     genre: str = "",
     mood: str = "",
     sample_rate: int = 44100,
+    *,
+    instrument: str = "ensemble",
+    arrangement: str = "structured",
 ) -> Dict[str, Any]:
     """Internal variant of render_stems that also returns scheduler metadata.
 
@@ -1659,12 +1551,13 @@ def _render_stems_internal(
     is_minor  = len(parts) > 1 and parts[1].lower().startswith("min")
     root_freq = 220.0 * (2.0 ** (_NOTE_SEMI.get(root_name, 0) / 12.0))
     scale     = MINOR_SCALE if is_minor else MAJOR_SCALE
-    _genre    = _genre_key(genre)
+    _genre    = _render_genre(genre, mood)
 
     # Delegate to the full render_stems implementation via a shim that
     # re-exposes internal scheduler data we stripped from the public API.
     # We re-call the internal render loop directly here to avoid code dup.
-    stems = render_stems(job_id, bpm, key, duration_sec, genre, mood, sample_rate)
+    stems = render_stems(job_id, bpm, key, duration_sec, genre, mood, sample_rate,
+                         instrument=instrument, arrangement=arrangement)
 
     # Re-derive scheduler constants (fast, no audio math)
     bpm_f    = max(60.0, min(float(bpm), 200.0))
@@ -1673,7 +1566,7 @@ def _render_stems_internal(
     bar_len  = step_len * 16
     sections = _sections_for(_genre, duration_sec, bpm_f)
     # IMPORTANT: n_total must match what render_stems actually produced.
-    # render_stems uses max(int(duration_sec * sample_rate), bar_len * 8).
+    # render_stems uses exactly int(duration_sec * sample_rate).
     # Re-deriving from sections yields a DIFFERENT value at low BPMs, causing
     # a broadcast error in render_full_track when it tries to write mix_L
     # (stems-length) into a stereo buffer sized from this mismatched n_total.
@@ -1714,8 +1607,11 @@ def render_full_track(
     genre: str = "",
     mood: str = "",
     sample_rate: int = 44100,
+    *,
+    instrument: str = "ensemble",
+    arrangement: str = "structured",
 ) -> np.ndarray:
-    """Render a full professional stereo track — every compute path on Digital GPU.
+    """Render a stereo track with dispatched synthesis/master DSP operations.
 
     Returns float32 stereo-interleaved array [L0,R0,L1,R1,...] normalised to
     [-1, 1], ready for direct conversion to 16-bit PCM.
@@ -1723,7 +1619,8 @@ def render_full_track(
     kern = get_native_kernels()
 
     # Render individual buses via internal variant (includes scheduler metadata)
-    stems = _render_stems_internal(job_id, bpm, key, duration_sec, genre, mood, sample_rate)
+    stems = _render_stems_internal(job_id, bpm, key, duration_sec, genre, mood, sample_rate,
+                                  instrument=instrument, arrangement=arrangement)
 
     boundary_samples = stems["_boundary_samples"]
     bar_len          = stems["_bar_len"]
@@ -1731,13 +1628,9 @@ def render_full_track(
     n_total          = stems["_n_total"]
 
     # Sum all stems
-    mix_interleaved = (
-        stems["drums"] +
-        stems["bass"]  +
-        stems["pads"]  +
-        stems["lead"]  +
-        stems["fx"]
-    )
+    mix_interleaved = media_gpu().media(
+        "mix_buses", stems["drums"], stems["bass"], stems["pads"],
+        stems["lead"], stems["fx"])
 
     mix_L = mix_interleaved[0::2].copy()
     mix_R = mix_interleaved[1::2].copy()
@@ -1769,25 +1662,14 @@ def render_full_track(
         mix_L, mix_R = apply_glitch_transition(mix_L, mix_R, boundary_samples, bar_len)
 
     # ── Fade-in / fade-out ────────────────────────────────────────────────────
-    fade_in  = int(0.5 * sample_rate)
-    fade_out = int(2.0 * sample_rate)
-    if fade_in > 0:
-        fi = np.linspace(0, 1, fade_in, dtype=np.float32)
-        mix_L[:fade_in] *= fi
-        mix_R[:fade_in] *= fi
-    if fade_out > 0 and fade_out < n_total:
-        fo = np.linspace(1, 0, fade_out, dtype=np.float32)
-        mix_L[-fade_out:] *= fo
-        mix_R[-fade_out:] *= fo
+    mix_L, mix_R = media_gpu().media("fade_stereo", mix_L, mix_R, sample_rate)
 
     # ── Soft limiter ─────────────────────────────────────────────────────────
     mix_L = kern.soft_limit(mix_L)
     mix_R = kern.soft_limit(mix_R)
 
     # ── Normalise ─────────────────────────────────────────────────────────────
-    peak = max(float(np.max(np.abs(mix_L))), float(np.max(np.abs(mix_R))), 1e-8)
-    mix_L = (mix_L / peak * 0.92).astype(np.float32)
-    mix_R = (mix_R / peak * 0.92).astype(np.float32)
+    mix_L, mix_R = media_gpu().media("normalize_stereo", mix_L, mix_R, .92)
 
     # Interleave stereo
     stereo = np.empty(n_total * 2, dtype=np.float32)
@@ -1809,8 +1691,8 @@ def render_audio_clip(job_id: str, bpm: float, key: str = "C minor",
 
 def write_wav(path: Path, stereo_f32: np.ndarray, sample_rate: int = 44100) -> None:
     """Write float32 stereo-interleaved array to WAV (stdlib wave — no soundfile)."""
-    dithered = apply_dither(np.clip(stereo_f32, -1.0, 1.0), bit_depth=16)
-    pcm = (np.clip(dithered, -1.0, 1.0) * 32767.0).astype(np.int16)
+    dithered = apply_dither(media_gpu().media("clip", stereo_f32, -1., 1.), bit_depth=16)
+    pcm = media_gpu().media("pcm16", dithered)
     with _wave.open(str(path), "wb") as wf:
         wf.setnchannels(2)
         wf.setsampwidth(2)

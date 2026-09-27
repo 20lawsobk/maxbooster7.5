@@ -17,6 +17,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
 import { config } from "../config/index.js";
+import { runtimePorts, loopbackUrl } from "../config/ports.js";
 import { logger } from "../logger.js";
 import { computeWorkerSizing, computeHyperGpuSizing, type ComputeSizingResult } from "../computeSizing.js";
 import { isDevEnv } from "../lib/envHelpers.js";
@@ -394,10 +395,12 @@ async function spawnChild(): Promise<void> {
       HYPER_GPU_LANES: String(hyperGpuSizing.lanes),
       HYPER_GPU_TENSOR_CORES: String(hyperGpuSizing.tensorCores),
       SESSION_SECRET: process.env.SESSION_SECRET ?? "",
-      // Credentials — the Python service env-bypasses these exact values, so
-      // the same keys the connector sends are accepted upstream.
+      // Keep the restricted channel out of legacy service-key bypasses.
+      // Python grants it loopback generation/read/write only, never admin/train.
+      PDIM_LOCAL_CHANNEL_TOKEN: process.env.PDIM_LOCAL_CHANNEL_TOKEN,
+      MAXBOOSTER_ARTIFACT_COMMIT_URL: `${loopbackUrl(runtimePorts.app)}/api/internal/generated-artifacts/commit`,
       ADMIN_KEY: config.maxcoreAdminKey,
-      AI_SERVER_KEY: config.maxcoreGenerationKey,
+      AI_SERVER_KEY: process.env.AI_SERVER_KEY ?? "",
       // The Python service persists API keys / training state in Postgres.
       // It shares the app database but is confined to its own `maxcore`
       // schema via search_path — its DDL (e.g. api_keys with varchar ids)
@@ -610,9 +613,20 @@ export async function checkMaxcoreLocalReady(): Promise<boolean> {
   lastReadyCheck = now;
   readyInFlight = (async () => {
     try {
+      // The supervised API server requires an explicit MaxCore service
+      // credential even for its proxied health endpoint. Reuse the normal
+      // generation authorization; never probe it anonymously or weaken its
+      // auth middleware just to satisfy the application's readiness gate.
+      const { getMaxcoreGenerationHeaders } = await import("./maxcoreConnector.js");
+      const headers = getMaxcoreGenerationHeaders();
+      if (!headers.Authorization) {
+        lastReady = false;
+        return lastReady;
+      }
       const r = await fetch(
         `http://127.0.0.1:${config.maxcoreLocal.port}/api/health`,
         {
+          headers,
           signal: AbortSignal.timeout(3_000),
         },
       );

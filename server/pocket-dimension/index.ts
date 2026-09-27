@@ -95,6 +95,11 @@ export interface PocketStats {
 }
 
 export interface PocketDimensionConfig {
+  /** Embedded owners inject direct storage to avoid HTTP recursion. */
+  storage?: {
+    get(key: string): Promise<string | null>;
+    set(key: string, value: string): Promise<unknown>;
+  };
   id: string;
   name: string;
   encryptionKey?: string;
@@ -237,6 +242,7 @@ export class PocketDimension extends EventEmitter {
 
   constructor(config: PocketDimensionConfig) {
     super();
+    this.storage = config.storage;
 
     this.id = config?.id;
     this.name = config?.name;
@@ -268,6 +274,11 @@ export class PocketDimension extends EventEmitter {
       encrypted: !!this.encryptionKey,
       version: 1,
     };
+  }
+
+  private readonly storage?: PocketDimensionConfig["storage"];
+  private get backingStore() {
+    return this.storage ?? getPdimClient();
   }
 
   // ============================================================================
@@ -325,10 +336,10 @@ export class PocketDimension extends EventEmitter {
     // must fail closed rather than becoming an empty pocket that later
     // overwrites the recoverable records.
     try {
-      const metaRaw = await getPdimClient().get(
+      const metaRaw = await this.backingStore.get(
         `pdim:meta:${this.id}:metadata`,
       );
-      const indexRaw = await getPdimClient().get(
+      const indexRaw = await this.backingStore.get(
         `pdim:meta:${this.id}:index`,
       );
       if (metaRaw === null) {
@@ -345,7 +356,7 @@ export class PocketDimension extends EventEmitter {
         let restoredKey: Buffer | null = this.encryptionKey;
 
         if (metadata.encrypted && !restoredKey) {
-          const keyRaw = await getPdimClient().get(
+          const keyRaw = await this.backingStore.get(
             `pdim:meta:${this.id}:keyfile`,
           );
           if (keyRaw === null) {
@@ -396,12 +407,12 @@ export class PocketDimension extends EventEmitter {
   }
 
   private async persistMetadata(): Promise<void> {
-    await getPdimClient().set(
+    await this.backingStore.set(
       `pdim:meta:${this.id}:metadata`,
       JSON.stringify(this.metadata),
     );
 
-    await getPdimClient().set(
+    await this.backingStore.set(
       `pdim:meta:${this.id}:index`,
       JSON.stringify({
         entries: Object.fromEntries(this.entries),
@@ -411,7 +422,7 @@ export class PocketDimension extends EventEmitter {
 
     // Persist encryption key if encrypted
     if (this.rawEncryptionKey) {
-      await getPdimClient().set(
+    await this.backingStore.set(
         `pdim:meta:${this.id}:keyfile`,
         JSON.stringify({
           key: this.rawEncryptionKey,
@@ -530,7 +541,7 @@ export class PocketDimension extends EventEmitter {
 
   private async persistChunk(id: string, data: Buffer): Promise<void> {
     const key = `pdim:chunk:${this.id}:${id}`;
-    await getPdimClient().set(key, data?.toString("base64"));
+    await this.backingStore.set(key, data?.toString("base64"));
   }
 
   // ============================================================================
@@ -563,7 +574,7 @@ export class PocketDimension extends EventEmitter {
 
     if (!data) {
       const key = `pdim:chunk:${this.id}:${id}`;
-      const encoded = await getPdimClient().get(key);
+      const encoded = await this.backingStore.get(key);
       if (!encoded) {
         throw new Error(`Chunk not found in PDIM: ${id}`);
       }
@@ -609,6 +620,7 @@ export class PocketDimension extends EventEmitter {
     }
 
     const nested = new PocketDimension({
+      storage: this.storage,
       id: `${this.id}/${dimensionPath}`,
       name: dimensionPath,
       encryptionKey: config?.encryptionKey ?? this.rawEncryptionKey ?? undefined,
@@ -926,6 +938,7 @@ export class PocketDimensionManager {
 
     const dimension = new PocketDimension({
       id,
+      storage: config?.storage,
       name: config?.name || id,
       encryptionKey: config?.encryptionKey,
       chunkSize: config?.chunkSize,

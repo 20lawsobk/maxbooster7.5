@@ -166,12 +166,11 @@ describe("retained PDIM operator recovery boundary", () => {
     expect(buildSource).toContain(
       'const requiredPdimWorker = "dist/retained-pdim-recovery-worker.mjs"',
     );
-    expect(legacyBuildSource).toContain(
-      'PREBUILT_PDIM_RECOVERY_WORKER="dist/retained-pdim-recovery-worker.mjs"',
-    );
-    expect(legacyBuildSource).toContain(
-      'if [ ! -s "$PREBUILT_PDIM_RECOVERY_WORKER" ]',
-    );
+    expect(legacyBuildSource).toContain("export DEPLOY_PACK=1");
+    expect(legacyBuildSource).toContain("exec npm run build");
+    expect(buildSource).toContain('if (!remainingMembers.includes(requiredPdimWorker))');
+    expect(buildSource).toContain("Required runtime artifact is absent from the app capsule payload:");
+    expect(JSON.parse(readFileSync("package.json", "utf8")).scripts.build).toContain("script/build.ts");
     expect(dockerignore).toContain("!scripts/retained-pdim-recovery-worker.ts");
     expect(dockerignore).toContain("!scripts/recovery-private-store.mjs");
     expect(serviceSource).toMatch(

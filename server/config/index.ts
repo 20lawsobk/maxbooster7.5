@@ -33,7 +33,12 @@ const _maxcoreLocalPort = runtimePorts.maxcoreApi;
 // when no explicit MaxCore key is configured in local mode. Never used for a
 // remote MaxCore (remote mode without keys keeps keys empty → callers fail
 // explicit, as before).
-import { createHmac } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
+// Generated before child/worker forks; all local transports inherit one owner
+// secret. It is not an admin or training credential.
+if (_maxcoreLocalEnabled && !p.PDIM_LOCAL_CHANNEL_TOKEN) {
+  p.PDIM_LOCAL_CHANNEL_TOKEN = randomBytes(32).toString("hex");
+}
 function _maxcoreDerivedKey(scope: "gen" | "admin"): string {
   if (!_maxcoreLocalEnabled || !p.SESSION_SECRET) return "";
   return (
@@ -82,11 +87,11 @@ export const config = {
   // Keep generation and administrative credentials distinct. A missing
   // generation key may fall back to the admin key for backwards-compatible
   // deployments, but an admin request must never inherit the generation key.
-  // In local mode, when no key is configured, a deterministic key is derived
-  // from SESSION_SECRET so both sides of the loopback link share it without
-  // requiring extra secrets.
-  maxcoreGenerationKey:
-    p.AI_SERVER_KEY || p.MAXCORE_ADMIN_KEY || _maxcoreDerivedKey("gen"),
+  // Local generation exclusively uses the inherited private channel token;
+  // administrative credentials remain separate.
+  maxcoreGenerationKey: _maxcoreLocalEnabled
+    ? p.PDIM_LOCAL_CHANNEL_TOKEN!
+    : p.AI_SERVER_KEY || p.MAXCORE_ADMIN_KEY || "",
   maxcoreAdminKey: p.MAXCORE_ADMIN_KEY || _maxcoreDerivedKey("admin"),
   aiTrainingUrl: p.MBS_AI_TRAINING_URL || p.PEER_TRAINING_NODE || "",
   aiTrainingKey: p.MBS_AI_TRAINING_KEY || p.AI_Training_Server || "",

@@ -129,51 +129,16 @@ def _build_thumbnail_prompt_alt(req: VisualSpecRequest) -> str:
     return f"Bold {descriptor} cover art for {req.idea}, high-contrast and share-ready"
 
 
-def _score_visual_prompt(prompt: str, awareness: str = "") -> float:
-    """Brief-aware quality score (0-100) for an image thumbnail prompt.
-    100 = Google Veo quality standard.
-
-    Rewards: sensible length, alignment with live awareness genre/mood
-    signals, and concrete visual descriptors. Penalises the bare generic
-    fallback phrasing so an awareness-enriched or model candidate wins
-    whenever one is available and coherent.
-    """
-    text = (prompt or "").strip()
-    if not text:
-        return 0.0
-    words = text.split()
-    n = len(words)
-    length_score = 1.0 if 6 <= n <= 24 else max(0.0, 1.0 - abs(n - 15) / 20.0)
-
-    low = text.lower()
-    awareness_tokens = _extract_genre_mood(awareness) if awareness else []
-    if awareness_tokens:
-        hits = sum(1 for t in awareness_tokens if t in low)
-        awareness_score = min(1.0, hits / max(1, len(awareness_tokens)))
-    else:
-        awareness_score = 0.5  # neutral when there's no live signal to match
-
-    generic_penalty = 0.3 if low.startswith("eye-catching") and "thumbnail for" in low else 0.0
-
-    descriptive_score = 1.0 if any(w in low for w in (
-        "neon", "cinematic", "moody", "vibrant", "raw", "gritty", "glow",
-        "dramatic", "warm", "cold", "high-contrast", "textured", "bold",
-    )) else 0.3
-
-    blended = (
-        length_score * 0.25
-        + awareness_score * 0.35
-        + descriptive_score * 0.25
-        - generic_penalty
-    )
-    return round(max(0.0, min(100.0, blended * 100)), 1)
-
-
 class VisualSpecAgent:
     def __init__(self, model: CreativeModel):
         self.model = model
 
+    from ai_model.generation.awareness import generation_guard
+
+    @generation_guard
     def run(self, req: VisualSpecRequest) -> VisualSpecResponse:
+        from ai_model.generation.awareness import require_context, sampling_seed, snapshot_hash
+        internal = require_context(req.platform, "image")
         platform_token = f"<PLATFORM_{req.platform.upper()}>"
         tone_token = f"<TONE_{req.tone.upper()}>"
 
@@ -195,25 +160,11 @@ class VisualSpecAgent:
             f"Generate thumbnail spec for: {req.idea}\n"
         )
 
-        candidates: list[str] = []
-        try:
-            output = self.model.generate(prompt)
-            if self._is_meaningful(output):
-                candidates.append(output)
-        except Exception:
-            pass
-
-        # Two differently-phrased deterministic variants always compete
-        # alongside the model output — mirrors the text pipeline's best-of-N
-        # ranking pattern so a weak/undertrained model candidate can't win
-        # by default. Guarantees a non-generic floor.
-        candidates.append(_build_thumbnail_prompt(req))
-        candidates.append(_build_thumbnail_prompt_alt(req))
-
-        scored = {c: _score_visual_prompt(c, req.awareness) for c in candidates if c}
-        thumbnail_prompt = max(scored, key=lambda c: scored[c]) if scored else (
-            f"Eye-catching {req.tone} thumbnail for: {req.idea}"
-        )
+        thumbnail_prompt = self.model.generate(
+            internal + "\n" + (req.awareness or "") + "\n" + prompt,
+            seed=sampling_seed(), snapshot_hash=snapshot_hash())
+        if not self._is_meaningful(thumbnail_prompt):
+            raise ValueError("Model returned no meaningful visual specification")
 
         platform_key = req.platform.lower().replace(" ", "_")
         color_scheme = _pick_color_from_awareness(req.awareness, req.tone)

@@ -1,0 +1,404 @@
+{
+  "id": "social-variants",
+  "case": {
+    "id": "social-variants",
+    "handler": "platform_social_generate",
+    "request_class": "PlatformSocialRequest",
+    "kind": "text",
+    "body": {
+      "user_id": "quality-eval-fictional",
+      "topic": "Paper Lantern Harbor mellow instrumental release",
+      "platform": "instagram",
+      "num_variants": 2
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "returned",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/generation/social_controls.py:control_awareness": 1,
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 5,
+    "ai_model/request_intelligence.py:<module>": 1,
+    "ai_model/request_intelligence.py:GenerationBrief": 1,
+    "ai_model/generation/orchestrator.py:<genexpr>": 4,
+    "ai_model/generation/orchestrator.py:_safe_envelope_text": 3,
+    "ai_model/generation/orchestrator.py:_coerce_aw": 1,
+    "ai_model/agents/script_agent.py:run": 2,
+    "ai_model/agents/script_agent.py:_format_awareness_prefix": 2,
+    "ai_model/agents/script_agent.py:_control_payloads": 8,
+    "ai_model/agents/script_agent.py:_control_values": 10,
+    "ai_model/gpu/pocket_pool.py:spawn_sync": 6,
+    "ai_model/gpu/pocket_pool.py:__init__": 3,
+    "ai_model/gpu/sizing.py:hyper_gpu_sizing": 3,
+    "ai_model/gpu/hyper_backend.py:__init__": 3,
+    "ai_model/gpu/hyper_core.py:__init__": 9,
+    "ai_model/gpu/digital_gpu.py:__init__": 6,
+    "ai_model/gpu/native/kernels.py:get_native_kernels": 3,
+    "ai_model/gpu/pocket_pool.py:_register_birth": 3,
+    "ai_model/gpu/pocket_pool.py:begin_work": 3,
+    "ai_model/gpu/hyper_creative_transformer.py:prefill": 9,
+    "ai_model/gpu/hyper_creative_transformer.py:_prefix_cache_model_state": 9,
+    "ai_model/gpu/hyper_creative_transformer.py:<genexpr>": 36,
+    "ai_model/gpu/hyper_creative_transformer.py:_prefix_key": 9,
+    "ai_model/gpu/hyper_creative_transformer.py:_hash_tensor": 9,
+    "ai_model/gpu/hyper_creative_transformer.py:_prefix_get": 9,
+    "ai_model/gpu/hyper_creative_transformer.py:forward_with_kv": 18,
+    "ai_model/gpu/hyper_creative_transformer.py:forward": 18,
+    "ai_model/gpu/hyper_backend.py:forward": 18,
+    "ai_model/gpu/hyper_core.py:layer_norm": 18,
+    "ai_model/gpu/native/kernels.py:layernorm_rows": 9,
+    "ai_model/gpu/native/kernels.py:_f32": 27,
+    "ai_model/gpu/native/kernels.py:_use_native": 9,
+    "ai_model/gpu/native/kernels.py:<genexpr>": 36,
+    "ai_model/gpu/native/kernels.py:_ptr": 36,
+    "ai_model/gpu/hyper_core.py:_model": 18,
+    "ai_model/gpu/hyper_core.py:mixed_gemm": 9,
+    "ai_model/gpu/hyper_core.py:_pocket": 9,
+    "ai_model/gpu/hyper_core.py:<lambda>": 18,
+    "ai_model/gpu/hyper_core.py:mixed_precision_gemm": 2,
+    "ai_model/gpu/hyper_core.py:_select_tensor_core": 2,
+    "ai_model/gpu/hyper_core.py:mixed_precision_matmul": 2,
+    "ai_model/gpu/pocket_pool.py:_register_death": 3,
+    "ai_model/gpu/pocket_pool.py:die": 3,
+    "ai_model/gpu/hyper_backend.py:flush_vram": 3,
+    "ai_model/gpu/hyper_core.py:flush_vram": 3,
+    "ai_model/gpu/hyper_core.py:flush": 3,
+    "ai_model/agents/script_agent.py:_awareness_compose": 2,
+    "ai_model/agents/script_agent.py:_parse_hook_from_awareness": 2,
+    "ai_model/agents/script_agent.py:_parse_signals_for_platform": 4,
+    "ai_model/agents/script_agent.py:_awareness_without_controls": 8,
+    "ai_model/agents/script_agent.py:<genexpr>": 530,
+    "ai_model/agents/script_agent.py:_is_content_signal": 32,
+    "ai_model/agents/script_agent.py:_build_awareness_body": 2,
+    "ai_model/agents/script_agent.py:_detect_genre_from_awareness": 2,
+    "ai_model/agents/script_agent.py:_norm": 4,
+    "ai_model/agents/script_agent.py:_parse_cta_from_awareness": 2,
+    "ai_model/agents/script_agent.py:_is_coaching_line": 40,
+    "ai_model/agents/script_agent.py:_apply_direction": 2,
+    "ai_model/agents/script_agent.py:_direction_opening": 2,
+    "ai_model/agents/script_agent.py:_direction_required_phrases": 2,
+    "ai_model/agents/script_agent.py:visit": 2,
+    "ai_model/agents/distribution_agent.py:run": 2,
+    "ai_model/agents/distribution_agent.py:<genexpr>": 10,
+    "ai_model/agents/distribution_agent.py:_parse_hashtags_from_awareness": 2,
+    "ai_model/agents/distribution_agent.py:_pdim_hashtags": 2,
+    "ai_model/agents/distribution_agent.py:_parse_timing_from_awareness": 2,
+    "ai_model/agents/distribution_agent.py:_store_hashtags_to_pdim": 2,
+    "ai_model/generation/social_controls.py:apply_social_controls": 2,
+    "ai_model/generation/social_controls.py:_clip_words": 2,
+    "ai_model/generation/social_controls.py:<genexpr>": 12,
+    "ai_model/gpu/hyper_backend.py:status": 1,
+    "ai_model/gpu/hyper_core.py:status": 12,
+    "ai_model/gpu/hyper_core.py:<genexpr>": 10,
+    "ai_model/gpu/hyper_core.py:used_bytes": 1,
+    "ai_model/gpu/hyper_core.py:silicon_report": 1
+  },
+  "exceptions": [
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/pocket_pool.py",
+      "function": "spawn_sync",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/pocket_pool.py",
+      "function": "spawn_sync",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/pocket_pool.py",
+      "function": "spawn_sync",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    }
+  ],
+  "agent_outputs": [
+    {
+      "source": "awareness",
+      "hook": "Trending everywhere for one reason: Paper Lantern Harbor mellow instrumental release is genuinely different! \ud83d\udd25",
+      "body": "Paper Lantern Harbor mellow instrumental release.\n\nFictional evaluation release.\n\nContent shape.",
+      "cta": "Save this and tag someone who needs it \ud83c\udfa7 \u2014 follow for more drops!"
+    },
+    {
+      "source": "awareness",
+      "hook": "Reels are everywhere right now \u2014 Paper Lantern Harbor mellow instrumental release is finally here for the moment! \ud83c\udfac",
+      "body": "Paper Lantern Harbor mellow instrumental release.\n\nContent shape.\n\nLength.",
+      "cta": "Save this and tag someone who needs it \ud83c\udfa7 \u2014 follow for more drops!"
+    }
+  ],
+  "awareness": [],
+  "files": [],
+  "runner_sha256": "7ac76463d05f22bffe337775bcf270ccd73434701a7add75cd15afe80b078d8c",
+  "server_sha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7",
+  "job_storage": "evaluation-local job metadata; not PDIM/client durability",
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 1.1,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 11,
+      "total_tensor_core_tflops": 0.001548,
+      "total_compute_ms": 161.29,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 2.7,
+      "silicon": null
+    }
+  },
+  "request": {
+    "user_id": "quality-eval-fictional",
+    "topic": "Paper Lantern Harbor mellow instrumental release",
+    "platform": "instagram",
+    "num_variants": 2,
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "validated_request": {
+    "output_format": "text",
+    "target_audience": null,
+    "hashtag_strategy": null,
+    "caption_length": null,
+    "call_to_action_strength": null,
+    "genre": null,
+    "content_type": null,
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+    "description": "",
+    "prompt_url": "",
+    "instruction": null,
+    "extra_context": null,
+    "content_themes": null,
+    "intent": null,
+    "direction": null,
+    "context": null,
+    "user_id": "quality-eval-fictional",
+    "platform": "instagram",
+    "topic": "Paper Lantern Harbor mellow instrumental release",
+    "tone": "authentic",
+    "goal": "growth",
+    "style_tags": [],
+    "include_hashtags": true,
+    "num_variants": 2
+  },
+  "elapsed_seconds": 4.752697147999697,
+  "response": {
+    "success": true,
+    "user_id": "quality-eval-fictional",
+    "platform": "instagram",
+    "topic": "Paper Lantern Harbor mellow instrumental release",
+    "personalized_tone": "authentic",
+    "variants": [
+      {
+        "hook": "Trending everywhere for one reason: Paper Lantern Harbor mellow instrumental release is genuinely different! \ud83d\udd25",
+        "body": "Paper Lantern Harbor mellow instrumental release. Fictional evaluation release. Content shape.",
+        "cta": "Save this and tag someone who needs it \ud83c\udfa7 \u2014 follow for more drops!",
+        "caption": "Trending everywhere for one reason: Paper Lantern Harbor mellow instrumental release is genuinely different! \ud83d\udd25\n\nPaper Lantern Harbor mellow instrumental release. Fictional evaluation release. Content shape.\n\nSave this and tag someone who needs it \ud83c\udfa7 \u2014 follow for more drops!",
+        "hashtags": [
+          "#instagram"
+        ],
+        "source": "awareness",
+        "output_format": "text",
+        "variant": 1
+      },
+      {
+        "hook": "Reels are everywhere right now \u2014 Paper Lantern Harbor mellow instrumental release is finally here for the moment! \ud83c\udfac",
+        "body": "Paper Lantern Harbor mellow instrumental release. Content shape. Length.",
+        "cta": "Save this and tag someone who needs it \ud83c\udfa7 \u2014 follow for more drops!",
+        "caption": "Reels are everywhere right now \u2014 Paper Lantern Harbor mellow instrumental release is finally here for the moment! \ud83c\udfac\n\nPaper Lantern Harbor mellow instrumental release. Content shape. Length.\n\nSave this and tag someone who needs it \ud83c\udfa7 \u2014 follow for more drops!",
+        "hashtags": [
+          "#instagram"
+        ],
+        "source": "awareness",
+        "output_format": "text",
+        "variant": 2
+      }
+    ],
+    "model_ready": true,
+    "processing_time_ms": 1581.6
+  },
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

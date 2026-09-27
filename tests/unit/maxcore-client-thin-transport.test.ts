@@ -23,7 +23,7 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
   it.each(["generate", "infer"] as const)(
     "%s forwards explicit context and returns the unmodified MaxCore output",
     async (method) => {
-      const output = { text: "MaxCore output", score: 0.417, variants: ["A", "B"] };
+      const output = { text: "MaxCore output", score: 0.417, variants: ["A", "B"], snapshot_id: "core-receipt" };
       const fetchMock = vi.fn().mockResolvedValue(
         new Response(JSON.stringify(output), {
           headers: { "content-type": "application/json" },
@@ -38,13 +38,15 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
         extra_context: "Keep this exact context",
       };
       const original = structuredClone(input);
-      const result = await MaxCoreAIClient[method]("/platform/social/generate", input);
+      const result = await MaxCoreAIClient[method]("/platform/social/generate", input, "authenticated-caller");
       expect(result).toEqual(output);
       expect(input).toEqual(original);
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const [url, request] = fetchMock.mock.calls[0];
       expect(url).toBe("https://maxcore.example.test/api/platform/social/generate");
-      expect(JSON.parse(request.body)).toEqual(original);
+      expect(JSON.parse(request.body)).toEqual({
+        ...original, owner_id: "authenticated-caller", userId: "authenticated-caller",
+      });
       expect(request.headers.Authorization).toBe("Bearer test-generation-key");
       expect(request.headers["X-MaxCore-User-Id"]).toBe("authenticated-caller");
     },
@@ -54,11 +56,27 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
     "../../server/services/maxcoreClient.js"
   ).MaxCoreAIClient, fetchMock: ReturnType<typeof vi.fn>) {
     fetchMock.mockRejectedValue(new Error("ECONNREFUSED"));
-    await MaxCoreAIClient.infer("/platform/social/generate", {});
-    await MaxCoreAIClient.infer("/platform/social/generate", {});
-    await MaxCoreAIClient.infer("/platform/social/generate", {});
+    for (let i = 0; i < 3; i++) {
+      await expect(MaxCoreAIClient.infer("/platform/social/generate", {})).rejects.toMatchObject({ status: 503 });
+    }
     expect(MaxCoreAIClient.getCircuitBreakerState().open).toBe(true);
   }
+
+  it.each(["generate", "infer"] as const)(
+    "%s propagates required awareness 503 without tripping connectivity breaker",
+    async (method) => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(
+        JSON.stringify({ detail: "awareness_snapshot_unavailable" }),
+        { status: 503, headers: { "content-type": "application/json" } },
+      ));
+      vi.stubGlobal("fetch", fetchMock);
+      const { MaxCoreAIClient } = await import("../../server/services/maxcoreClient.js");
+      await expect(MaxCoreAIClient[method]("/platform/social/generate", {}))
+        .rejects.toMatchObject({ status: 503 });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(MaxCoreAIClient.getCircuitBreakerState().consecutiveFailures).toBe(0);
+    },
+  );
 
   it("closes a half-open circuit after authenticated model info proves the local model is ready", async () => {
     vi.useFakeTimers();
@@ -107,7 +125,7 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
     // probe, then cached health rejects the call before it reaches fetch.
     (MaxCoreAIClient as any)._remoteAvailable = false;
     fetchMock.mockReset();
-    await MaxCoreAIClient.infer("/platform/social/generate", {});
+    await expect(MaxCoreAIClient.infer("/platform/social/generate", {})).rejects.toMatchObject({ status: 503 });
     expect(fetchMock).not.toHaveBeenCalled();
 
     // Once health recovers, the next request must still own a probe slot.

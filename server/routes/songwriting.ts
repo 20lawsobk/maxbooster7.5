@@ -299,8 +299,7 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
     // MaxCore understands what lyrical themes and genres are culturally resonant now.
     // Falls back gracefully to undefined (no behaviour change) if filter is unavailable.
     const _swCtx = await musicIndustryContextFilter
-      .getContextForMode("songwriting")
-      .catch(() => null);
+      .getContextForMode("songwriting");
     const _swExtraContext = _swCtx?.contextString || undefined;
 
     const [lyricResult, rhymeResult] = await Promise.allSettled([
@@ -354,13 +353,14 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
             w?.length > 2 && w?.length < 16 && w !== prompt?.toLowerCase(),
         )
         .slice(0, 8);
-      rhymes = extracted?.length > 0 ? extracted : getRhymes(prompt);
+      if (!extracted.length) throw Object.assign(new Error("MaxCore returned no rhymes"), { status: 503 });
+      rhymes = extracted;
     } else {
-      rhymes = getRhymes(prompt);
+      throw Object.assign(new Error("MaxCore rhyme generation unavailable"), { status: 503 });
     }
 
     if (suggestions?.length === 0) {
-      suggestions = getDefaultSuggestions(prompt, genreNorm, moodNorm);
+      throw Object.assign(new Error("MaxCore lyric generation unavailable"), { status: 503 });
     }
 
     const chordProgression = await getChordSuggestion(
@@ -377,7 +377,7 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "[Songwriting] AI assist error:");
-    res.status(500).json({ error: "Failed to generate suggestions" });
+    res.status((error as { status?: number })?.status === 503 ? 503 : 500).json({ error: "Failed to generate suggestions" });
   }
 });
 

@@ -112,7 +112,8 @@ if (cluster.isPrimary) {
   process.on("SIGINT", shutdown);
 } else {
   // Worker — just runs Express; Python lifecycle managed by primary
-  const server = app.listen(port, () => {
+  // This imported subsystem is private; only the parent app exposes HTTP.
+  const server = app.listen(port, "127.0.0.1", () => {
     console.log(`[Cluster] Worker ${process.pid} listening on port ${port}`);
   });
 

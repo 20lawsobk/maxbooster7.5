@@ -203,7 +203,9 @@ def build_plan(duration_sec: float, bpm: float, *,
         plan: List[Section] = []
         t = 0.0
         for (kind, _), bars in zip(grammar, alloc):
-            length = bars * bar
+            if t >= duration_sec:
+                break
+            length = min(bars * bar, duration_sec - t)
             plan.append(Section(
                 kind=kind, start=round(t, 3), length=round(length, 3),
                 energy=_SECTION_ENERGY.get(kind, 0.6),

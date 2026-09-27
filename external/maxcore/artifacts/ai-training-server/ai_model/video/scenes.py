@@ -198,12 +198,8 @@ def _parse_hex_color(h: str) -> tuple:
 
 
 def _np_gradient(c1: tuple, c2: tuple, w: int, h: int):
-    import numpy as np
-    t = np.linspace(0.0, 1.0, h, dtype=np.float32).reshape(-1, 1)
-    ch0 = np.broadcast_to(np.clip(c1[0] + (c2[0] - c1[0]) * t, 0, 255).astype(np.uint8), (h, w)).copy()
-    ch1 = np.broadcast_to(np.clip(c1[1] + (c2[1] - c1[1]) * t, 0, 255).astype(np.uint8), (h, w)).copy()
-    ch2 = np.broadcast_to(np.clip(c1[2] + (c2[2] - c1[2]) * t, 0, 255).astype(np.uint8), (h, w)).copy()
-    return np.stack([ch0, ch1, ch2], axis=2)
+    from ai_model.gpu.media_kernels import media_gpu
+    return media_gpu().media("gradient_rgb", w, h, c1, c2)
 
 
 def _np_radial(c1: tuple, c2: tuple, w: int, h: int):
@@ -275,23 +271,19 @@ def _pil_bg_frame(scene: SceneConfig, width: int, height: int) -> tuple:
     # ── Step 1: MaxCore Neural Diffusion background ────────────────────────────
     dmeta = getattr(scene, "diffusion_meta", None)
     if dmeta is not None and arr is None:
-        try:
-            from .diffusion.maxcore_diffusion import get_diffusion_frame
-            _ref = getattr(scene, "reference_b64", None)
-            diff_frame = get_diffusion_frame(
-                idea=dmeta.get("idea", ""),
-                platform=dmeta.get("platform", "tiktok"),
-                tone=dmeta.get("tone", "hype"),
-                awareness=dmeta.get("awareness", ""),
-                width=width,
-                height=height,
-                context=dmeta,
-                reference_b64=_ref,
-            )
-            if diff_frame is not None and diff_frame.shape == (height, width, 3):
-                arr = diff_frame
-        except Exception:
-            pass
+        from .diffusion.maxcore_diffusion import get_diffusion_frame
+        diff_frame = get_diffusion_frame(
+            idea=dmeta.get("idea", ""),
+            platform=dmeta.get("platform", "tiktok"),
+            tone=dmeta.get("tone", "hype"),
+            awareness=dmeta.get("awareness", ""),
+            width=width,
+            height=height,
+            context=dmeta,
+        )
+        if diff_frame is None or diff_frame.shape != (height, width, 3):
+            raise RuntimeError("Requested diffusion background did not produce a valid frame")
+        arr = diff_frame
 
     # ── Step 2: Procedural fallback ────────────────────────────────────────────
     if arr is None:
@@ -302,7 +294,9 @@ def _pil_bg_frame(scene: SceneConfig, width: int, height: int) -> tuple:
             c1, c2 = (26, 26, 46), (22, 33, 62)
 
         bg_type = getattr(scene, "bg_type", "gradient")
-        if bg_type == "radial":
+        if bg_type == "solid":
+            arr = _np_gradient(c1, c1, width, height)
+        elif bg_type == "radial":
             arr = _np_radial(c1, c2, width, height)
         elif bg_type in ("plasma", "aurora"):
             arr = _np_plasma(c1, c2, width, height, bg_type)
@@ -394,12 +388,14 @@ def _render_pil_based(
     try:
         bg_png, png_bytes, _vrc_applied = _pil_bg_frame(scene, width, height)
     except Exception:
-        if getattr(scene, "reference_b64", None) or getattr(scene, "logo_b64", None):
+        if (getattr(scene, "reference_b64", None) or getattr(scene, "logo_b64", None)
+                or getattr(scene, "diffusion_meta", None) is not None):
             raise
     _t_bg = time.time() - _t0
 
     if not bg_png or not os.path.exists(bg_png):
-        if getattr(scene, "reference_b64", None) or getattr(scene, "logo_b64", None):
+        if (getattr(scene, "reference_b64", None) or getattr(scene, "logo_b64", None)
+                or getattr(scene, "diffusion_meta", None) is not None):
             raise RuntimeError("Required reference image was not rendered")
         return _render_fallback(scene, width, height, dur, out_path)
 
@@ -512,10 +508,14 @@ def _render_pil_based(
                     file=sys.stderr,
                 )
                 _safe_remove(bg_png)
+                if getattr(scene, "diffusion_meta", None) is not None:
+                    raise RuntimeError(f"Required diffusion scene encode failed: {result.stderr[-500:]}")
                 return _render_fallback(scene, width, height, dur, out_path)
         except Exception as exc:
             print(f"[VideoRender][ERROR] _render_pil_based exception: {exc}", file=sys.stderr)
             _safe_remove(bg_png)
+            if getattr(scene, "diffusion_meta", None) is not None:
+                raise
             return _render_fallback(scene, width, height, dur, out_path)
 
     print(
@@ -611,12 +611,12 @@ def _extract_last_frame_b64(clip_path: str) -> Optional[str]:
 # ── Scene compositing ─────────────────────────────────────────────────────────
 
 def _get_clip_duration(clip_path: str) -> float:
-    """Get the duration of a video clip via ffprobe. Returns 0.0 on failure."""
+    """Measure the VIDEO stream, not container (audio can hide a short video)."""
     try:
         proc = subprocess.run(
             [
-                "ffprobe", "-v", "error",
-                "-show_entries", "format=duration",
+                "ffprobe", "-v", "error", "-select_streams", "v:0",
+                "-show_entries", "stream=duration",
                 "-of", "default=noprint_wrappers=1:nokey=1",
                 clip_path,
             ],
@@ -665,6 +665,8 @@ def _composite_xfade(
     transition_dur: float,
     audio_path: Optional[str],
     genre: str,
+    target_duration: Optional[float] = None,
+    target_fps: int = 24,
 ) -> bool:
     """
     Build an N-clip xfade chain using filter_complex.
@@ -719,20 +721,37 @@ def _composite_xfade(
         )
         prev_label = out_label
 
+    if target_duration is not None:
+        frames = round(target_duration * target_fps)
+        # Explicit frame budget after overlap; encoded duration cannot inherit
+        # rounded-up scene lengths or encoder/container padding.
+        filter_parts.append(
+            f"[vout]fps={target_fps},trim=end_frame={frames},setpts=PTS-STARTPTS[vfinal]"
+        )
     filter_complex = ";".join(filter_parts)
 
     cmd = ["ffmpeg", "-y"]
     cmd += inputs
     if audio_path and os.path.exists(audio_path):
         cmd += ["-i", audio_path]
-    cmd += ["-filter_complex", filter_complex, "-map", "[vout]"]
+    cmd += ["-filter_complex", filter_complex,
+            "-map", "[vfinal]" if target_duration is not None else "[vout]"]
     if audio_path:
         cmd += ["-map", f"{n}:a:0", "-c:a", "aac", "-b:a", "128k",
-                "-af", "apad", "-t", str(sum(durations) - td * (n - 1))]
+                "-af", f"apad,atrim=duration={target_duration:.6f}" if target_duration is not None else "apad",
+                "-t", str(target_duration if target_duration is not None else sum(durations) - td * (n - 1))]
 
     cmd += [
         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "20",
-        "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+        "-pix_fmt", "yuv420p",
+    ]
+    if target_duration is not None:
+        cmd += [
+            "-r", str(target_fps), "-fps_mode:v", "cfr",
+            "-video_track_timescale", str(target_fps * 1000),
+        ]
+    cmd += [
+        "-movflags", "+faststart",
         output_path,
     ]
 
@@ -750,6 +769,8 @@ def composite_scenes(
     transition_dur: float = 0.5,
     audio_path: Optional[str] = None,
     genre: str = "",
+    target_duration: Optional[float] = None,
+    target_fps: int = 24,
 ) -> bool:
     """
     Concatenate rendered scene clips into one MP4.
@@ -773,7 +794,8 @@ def composite_scenes(
     xfade_ok = False
     try:
         xfade_ok = _composite_xfade(
-            scene_paths, output_path, transition, transition_dur, audio_path, genre
+            scene_paths, output_path, transition, transition_dur, audio_path, genre,
+            target_duration, target_fps,
         )
     except Exception:
         xfade_ok = False

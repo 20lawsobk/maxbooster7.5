@@ -563,6 +563,7 @@ export class UnifiedAIController {
       }
     } catch (error) {
       logger.warn({ err: error }, "[UnifiedAI] generateContent error:");
+      if ((error as { status?: number })?.status === 503) throw error;
       // Re-throw AIUnavailableError so the route handler can return HTTP 503
       // instead of collapsing it into a success:false / HTTP 500 response.
       if (error instanceof AIUnavailableError) throw error;

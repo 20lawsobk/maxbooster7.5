@@ -1,18 +1,12 @@
 """
-Quality Harvester — the "robots that explore the world".
+Quality harvester source configuration and historical study helpers.
 
-Fetches the *best-performing real content* from live public sources (music
-charts, top music channels, high-engagement stories), studies it — never
-copies it — and distils the patterns into a quality buffer stored in pdim
-(`mb:awareness:quality:doc`).
-
-The buffer is a TEMPORARY dataset: generation endpoints blend it in only
-while MaxBooster's own pdim corpus is still small.  As the garden grows its
-own seeds, the buffer's weight decays to zero and the robots retire
-(see ai_model/quality_awareness.py).
-
-No fake data: if every source fails, harvest() raises explicitly — an empty
-world-scan is never silently stored as knowledge.
+The mandatory awareness engine reuses these public-source URLs and the bounded
+safe HTTP transport. ``harvest`` is now its lifecycle facade, not a competing
+publisher. Existing audio measurement/study helpers and the legacy PDIM document
+are retained; legacy inferred platform-performance claims are NOT imported as
+current knowledge. Fresh measured audio fields and learned phrases can be
+carried into immutable snapshots as secondary evidence.
 """
 from __future__ import annotations
 
@@ -604,7 +598,7 @@ def _derive_templates(stats: Dict[str, Any]) -> Dict[str, List[str]]:
 
 # ── main entry point ─────────────────────────────────────────────────────────
 
-def harvest(replace: bool = True) -> Dict[str, Any]:
+def _legacy_harvest_reference(replace: bool = True) -> Dict[str, Any]:
     """Scan the world, study the winners, store the quality buffer in pdim.
 
     Raises RuntimeError when EVERY source fails — no fake knowledge.
@@ -656,10 +650,8 @@ def harvest(replace: bool = True) -> Dict[str, Any]:
         "social_ad_patterns": social_ad_patterns,
     }
 
-    from storage_client import get_storage
-    store = get_storage()
-    if replace or not store.exists(DOC_KEY):
-        store.set(DOC_KEY, doc)
+    # Historical study retained for reference and individual measured-feature
+    # adapters. It must never publish a second authority or overwrite knowledge.
 
     logger.info(
         "quality harvest: %d exemplars, %d hook templates, sources ok: %s",
@@ -673,3 +665,15 @@ def harvest(replace: bool = True) -> Dict[str, Any]:
         "sources": sources,
         "harvest_seconds": doc["harvest_seconds"],
     }
+
+
+def harvest(replace: bool = True) -> Dict[str, Any]:
+    """Compatibility entry: single engine owns ingestion and publication.
+
+    Starts bounded background refresh, returns status, never blocks an HTTP
+    request on harvesting and never writes the legacy quality document.
+    """
+    from ai_model.awareness import get_engine
+    engine = get_engine()
+    engine.start()
+    return engine.status()

@@ -50,6 +50,11 @@ async function maxcorePost(
   timeoutMs = 90_000,
   trustedUserId?: string,
 ): Promise<unknown> {
+  const { trustedMaxcoreOwner, bindMaxcoreOwner } = await import("../lib/maxcoreOwnerContext.js");
+  trustedUserId = trustedMaxcoreOwner(trustedUserId);
+  if (body && typeof body === "object" && !Array.isArray(body)) {
+    body = bindMaxcoreOwner(body as Record<string, unknown>, trustedUserId);
+  }
   const res = await fetch(`${MAXCORE_URL}${path}`, {
     method: "POST",
     headers: {
@@ -83,8 +88,7 @@ async function maxcorePost(
 // ---------------------------------------------------------------------------
 // Remote media mirroring — MaxCore returns relative /uploads/... URLs that our
 // server cannot serve.  Absolute-ize them against the MaxCore origin and
-// best-effort mirror the bytes into public/generated-content/<kind>/ so the
-// asset survives MaxCore restarts and downloads work same-origin.
+// persist the validated bytes in PDIM so assets survive MaxCore restarts.
 // ---------------------------------------------------------------------------
 
 const MEDIA_MAGIC: Record<string, (b: Buffer) => boolean> = {
@@ -93,15 +97,20 @@ const MEDIA_MAGIC: Record<string, (b: Buffer) => boolean> = {
       b[0] === 0x89 &&
       b[1] === 0x50 &&
       b[2] === 0x4e &&
-      b[3] === 0x47) || // PNG
+      b[3] === 0x47 &&
+      b[4] === 0x0d &&
+      b[5] === 0x0a &&
+      b[6] === 0x1a &&
+      b[7] === 0x0a) || // PNG
     (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) || // JPEG
-    (b.length > 12 && b.slice(8, 12).toString("ascii") === "WEBP") || // WebP
-    (b.length > 6 && b.slice(0, 4).toString("ascii") === "GIF8"), // GIF
+    (b.length > 12 && b.toString("ascii", 0, 4) === "RIFF" && b.toString("ascii", 8, 12) === "WEBP") || // WebP
+    (b.length > 6 && (b.toString("ascii", 0, 6) === "GIF87a" || b.toString("ascii", 0, 6) === "GIF89a")), // GIF
   audio: (b) =>
     (b.length > 3 && b.slice(0, 3).toString("ascii") === "ID3") || // MP3 w/ ID3
     (b.length > 2 && b[0] === 0xff && (b[1] & 0xe0) === 0xe0) || // MP3 frame
-    (b.length > 12 && b.slice(0, 4).toString("ascii") === "RIFF") || // WAV
+    (b.length > 12 && b.toString("ascii", 0, 4) === "RIFF" && b.toString("ascii", 8, 12) === "WAVE") || // WAV
     (b.length > 4 && b.slice(0, 4).toString("ascii") === "OggS") || // OGG
+    (b.length > 4 && b.toString("ascii", 0, 4) === "fLaC") || // FLAC
     (b.length > 12 && b.slice(4, 8).toString("ascii") === "ftyp"), // M4A/MP4
 };
 
@@ -120,6 +129,7 @@ function sniffContentType(kind: "images" | "audio", b: Buffer): string {
   if (b.length > 2 && b[0] === 0xff && (b[1] & 0xe0) === 0xe0) return "audio/mpeg";
   if (b.length > 12 && b.slice(0, 4).toString("ascii") === "RIFF") return "audio/wav";
   if (b.length > 4 && b.slice(0, 4).toString("ascii") === "OggS") return "audio/ogg";
+  if (b.length > 4 && b.toString("ascii", 0, 4) === "fLaC") return "audio/flac";
   if (b.length > 12 && b.slice(4, 8).toString("ascii") === "ftyp") return "audio/mp4";
   return "audio/wav";
 }
@@ -145,6 +155,13 @@ async function mirrorRemoteAssetLocally(
   kind: "images" | "audio",
   userId: string,
 ): Promise<string> {
+  if (rawUrl.startsWith("/api/storage/file/")) {
+    const key = decodeURIComponent(rawUrl.slice("/api/storage/file/".length));
+    if (!userId || !key.startsWith(`users/${userId}/`)) {
+      throw new AIUnavailableError("Generated media ownership mismatch");
+    }
+    return rawUrl;
+  }
   const absolute = absolutizeMaxCoreUrl(rawUrl);
   if (!absolute) return "";
   // SECURITY: only fetch (and only ever send the Bearer key to) the MaxCore
@@ -162,30 +179,31 @@ async function mirrorRemoteAssetLocally(
         : undefined,
       signal: AbortSignal.timeout(30_000),
     });
-    if (!res.ok) return absolute;
+    if (!res.ok) throw new Error(`MaxCore media download failed (${res.status})`);
     const buffer = Buffer.from(await res.arrayBuffer());
     // MaxCore's SPA answers unknown paths with HTML 200 — magic bytes are the
     // only trustworthy validation.
-    if (buffer.length < 128 || !MEDIA_MAGIC[kind](buffer)) return absolute;
+    if (buffer.length < 128 || buffer.length > (kind === "images" ? 20 : 100) * 1024 * 1024 || !MEDIA_MAGIC[kind](buffer)) {
+      throw new Error("MaxCore media response did not contain valid media bytes");
+    }
 
     const baseName = path
       .basename(absolute.split("?")[0])
       .replace(/[^A-Za-z0-9._-]/g, "_");
     const filename = `mc_${baseName || randomUUID()}`;
     // PDIM-backed storage is the only durable/servable copy — no local mirror.
-    const storageKey = await storageService.uploadFile(
+    const storageKey = await storageService.uploadGeneratedFile(
       buffer,
-      kind,
+      userId,
+      `generated-${kind}`,
       filename,
       sniffContentType(kind, buffer),
     );
     return await storageService.getDownloadUrl(storageKey);
   } catch (err) {
-    logger.warn(
-      { err },
-      `[MultimodalGen] Failed to mirror ${kind} asset locally — using remote URL: ${err instanceof Error ? err.message : String(err)}`,
+    throw new AIUnavailableError(
+      `multimodal ${kind} persistence: ${err instanceof Error ? err.message : String(err)}`,
     );
-    return absolute;
   }
 }
 
@@ -3288,6 +3306,9 @@ const audioWorker = {
 
       if (outputs.length > 0) {
         // Mirror remote (possibly relative) URLs locally so they serve same-origin.
+        if (outputs.some((o: Record<string, unknown>) => !o.url)) {
+          throw new AIUnavailableError("multimodal audio generation returned an output without a URL");
+        }
         return await Promise.all(
           outputs.map(async (o: Record<string, unknown>) => ({
             id: randomUUID(),
@@ -3301,7 +3322,7 @@ const audioWorker = {
             slotId: o.slotId,
             metadata: {
               ...(o.meta ?? {}),
-              maxDurationSec: audioRules!.maxDurationSec,
+              maxDurationSec: audioRules?.maxDurationSec,
               platformRules: audioRules,
             },
           })),

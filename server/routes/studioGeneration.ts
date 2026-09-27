@@ -508,6 +508,7 @@ router.post(
 
       const result = await generateFromReference({
         audioBuffer: req.file.buffer,
+        userId: req.user!.id,
         targetType: validatedData.targetType || "drums",
         text: validatedData.text,
         bars: validatedData.bars,
