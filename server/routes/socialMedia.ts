@@ -194,6 +194,7 @@ const router = Router();
 
 interface FFmpegJob {
   status: "processing" | "done" | "error";
+  userId: string;
   result?: Record<string, unknown>;
   error?: string;
   createdAt: number;
@@ -1239,9 +1240,16 @@ router.get(
       );
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        return res.status(503).json({ success: false, code: error.code, error: error.message });
+        return res.status(503).json({
+          success: false,
+          code: error.code,
+          error: "Trending hashtag generation is temporarily unavailable",
+        });
       }
-      logger.warn({ err: error }, "Failed to get trending hashtags:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to get trending hashtags",
+      );
       res.status(500).json({ error: "Failed to get trending hashtags" });
     }
   },
@@ -2384,12 +2392,19 @@ router.post(
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Authentication required" });
+      }
       const {
-        platforms = ["instagram"],
+        platform: singlePlatform,
+        platforms: requestedPlatforms,
         contentType = "post",
-        topic = "new music",
+        topic,
         tone = "energetic",
-      } = req.body;
+      } = req.body ?? {};
 
       const validPlatforms = [
         "instagram",
@@ -2436,26 +2451,82 @@ router.post(
         quote: "engagement",
       };
 
+      let platforms: unknown[];
+      if (requestedPlatforms !== undefined) {
+        if (!Array.isArray(requestedPlatforms)) {
+          return res.status(400).json({
+            success: false,
+            message: "platforms must be an array of supported platforms",
+          });
+        }
+        platforms = requestedPlatforms;
+      } else if (singlePlatform !== undefined) {
+        platforms = [singlePlatform];
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "At least one target platform is required",
+        });
+      }
+
+      if (
+        platforms.length < 1 ||
+        platforms.length > 8 ||
+        platforms.some(
+          (platform) =>
+            typeof platform !== "string" ||
+            !validPlatforms.includes(platform),
+        ) ||
+        new Set(platforms).size !== platforms.length
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Each target platform must be supported and unique",
+        });
+      }
+
+      if (typeof topic !== "string" || !topic.trim() || topic.length > 4000) {
+        return res.status(400).json({
+          success: false,
+          message: "A non-empty topic of at most 4000 characters is required",
+        });
+      }
+      if (typeof tone !== "string" || !validTones.includes(tone)) {
+        return res.status(400).json({
+          success: false,
+          message: "A supported content tone is required",
+        });
+      }
+      if (
+        typeof contentType !== "string" ||
+        !Object.prototype.hasOwnProperty.call(contentTypeMap, contentType)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "A supported content type is required",
+        });
+      }
+
+      const normalizedTopic = topic.trim();
+      const targetPlatforms = platforms as string[];
       const generatedContent: Record<string, unknown>[] = [];
       const failedPlatforms: { platform: string; error: string }[] = [];
 
       // MaxCore AI is the only source — all platforms in parallel
       const mcResults = await Promise.allSettled(
-        platforms
-          .filter((p: string) => validPlatforms?.includes(p))
-          .map(async (platform: string) => {
-            const ai = await getUnifiedAI();
-            const result = await ai?.generateContent({
-              tone: (validTones.includes(tone) ? tone : "energetic") as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
-              platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
-              topic: topic || "music",
-              contentType: (contentTypeMap[contentType] || "engagement") as import("../../shared/ml/nlp/ContentGenerator.js").GenerationOptions["contentType"],
-              userId: req.user?.id,
-              includeHashtags: true,
-              includeEmojis: true,
-            });
-            return { platform, result };
-          }),
+        targetPlatforms.map(async (platform) => {
+          const ai = await getUnifiedAI();
+          const result = await ai?.generateContent({
+            tone: tone as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
+            platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
+            topic: normalizedTopic,
+            contentType: contentTypeMap[contentType] as import("../../shared/ml/nlp/ContentGenerator.js").GenerationOptions["contentType"],
+            userId,
+            includeHashtags: true,
+            includeEmojis: true,
+          });
+          return { platform, result };
+        }),
       );
 
       for (const settled of mcResults) {
@@ -2467,11 +2538,15 @@ router.post(
           continue;
         }
         const { platform, result } = settled?.value ?? {};
-        if (result?.success && result?.data) {
+        const caption =
+          typeof result?.data?.caption === "string"
+            ? result.data.caption.trim()
+            : "";
+        if (result?.success && caption) {
           generatedContent?.push({
             platform,
-            caption: result.data.caption,
-            content: result.data.caption,
+            caption,
+            content: caption,
             hashtags: result.data.hashtags,
             hook: result.data.hook,
             body: result.data.body,
@@ -2491,6 +2566,9 @@ router.post(
         (c) => c?.hashtags && c?.hashtags?.length > 0,
       );
       const optimalTime = generatedContent[0]?.optimalPostTime || null;
+      const completeSuccess =
+        generatedContent.length === targetPlatforms.length &&
+        failedPlatforms.length === 0;
 
       // MaxCore-only fail-explicit contract: if every platform failed,
       // surface 503 instead of a 200 with success:false.
@@ -2505,26 +2583,30 @@ router.post(
       }
 
       res.json({
-        success: generatedContent.length > 0,
+        success: completeSuccess,
         generatedContent,
         platforms,
         contentType,
         failedPlatforms,
         outcome: {
           status:
-            generatedContent?.length > 0
-              ? failedPlatforms?.length > 0
+            completeSuccess
+              ? "success"
+              : generatedContent.length > 0
                 ? "partial"
-                : "success"
-              : "error",
+                : "error",
           category: "content",
           title:
-            generatedContent?.length > 0
+            completeSuccess
               ? "Content Generated"
-              : "Generation Failed",
+              : generatedContent.length > 0
+                ? "Partial Content Generation"
+                : "Generation Failed",
           message:
-            generatedContent?.length > 0
-              ? `Generated ${generatedContent?.length} content variation${generatedContent?.length > 1 ? "s" : ""}.${hasHashtags ? " Hashtag suggestions included." : ""}${optimalTime ? ` Best posting time: ${optimalTime}.` : ""}`
+            completeSuccess
+              ? `Generated ${generatedContent.length} content variation${generatedContent.length > 1 ? "s" : ""}.${hasHashtags ? " Hashtag suggestions included." : ""}${optimalTime ? ` Best posting time: ${optimalTime}.` : ""}`
+              : generatedContent.length > 0
+                ? `Generated ${generatedContent.length} of ${targetPlatforms.length} requested variations; some platforms failed.`
               : "Failed to generate content. Please try again.",
           variationsCount: generatedContent.length,
           hasHashtags,
@@ -2560,9 +2642,16 @@ router.post(
       }
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        return res.status(503).json({ success: false, code: error.code, error: error.message });
+        return res.status(503).json({
+          success: false,
+          code: error.code,
+          error: "Social content generation is temporarily unavailable",
+        });
       }
-      logger.warn({ err: error }, "Failed to generate social content:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to generate social content",
+      );
       res.status(500).json({
         success: false,
         message: "Failed to generate content",
@@ -2573,7 +2662,6 @@ router.post(
           message:
             "AI content generation service is temporarily unavailable. Please try again or use a template.",
           retryable: true,
-          fallbackAvailable: true,
         },
       });
     }
@@ -2857,9 +2945,16 @@ router.post(
       });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        return res.status(503).json({ success: false, code: error.code, error: error.message });
+        return res.status(503).json({
+          success: false,
+          code: error.code,
+          error: "URL-based content generation is temporarily unavailable",
+        });
       }
-      logger.warn({ err: error }, "Failed to generate content from URL:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to generate content from URL",
+      );
       res.status(500).json({ error: "Failed to generate content from URL" });
     }
   },
@@ -3217,26 +3312,68 @@ router.post(
         genre,
         user_audio_path,
         voiceover,
-      } = req.body;
+      } = req.body ?? {};
 
       const userId = req.user?.id;
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Authentication required" });
+      }
 
-      // ── Validate: at least one content source must be provided ───────────────
-      if (!topic && !rawHook && !rawBody) {
+      if (
+        [rawHook, rawBody, rawCta, topic].some(
+          (value) => value != null && typeof value !== "string",
+        )
+      ) {
         return res.status(400).json({
           success: false,
-          message: "topic or hook is required to generate a video",
+          message: "topic, hook, body, and cta must be text",
         });
       }
 
+      // ── Validate: at least one content source must be provided ───────────────
+      const topicText = typeof topic === "string" ? topic.trim() : "";
+      const hookText = typeof rawHook === "string" ? rawHook.trim() : "";
+      const bodyText = typeof rawBody === "string" ? rawBody.trim() : "";
+      const ctaText = typeof rawCta === "string" ? rawCta.trim() : "";
+      if (!topicText && !hookText && !bodyText) {
+        return res.status(400).json({
+          success: false,
+          message: "topic, hook, or body is required to generate a video",
+        });
+      }
+      if (
+        typeof platform !== "string" ||
+        !VALID_PLATFORMS.some((candidate) => candidate === platform.trim())
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "A supported platform is required",
+        });
+      }
+      if (/^https?:\/\//i.test(topicText)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "URL topics are not supported here; use the URL analysis workflow or provide a text topic",
+        });
+      }
+      const resolvedTopic = topicText || hookText || bodyText;
+      const selectedPlatform = platform.trim();
+
       // ── Always respond immediately — client polls via /video-job/:id ─────────
       // Holding the HTTP connection open during generation (2–5 min) triggers
-      // proxy timeouts that the client misreads as auth failures.  All paths
-      // (Python AI and FFmpeg) now run in a background job and store their
-      // result in the ffmpegJobs map so the polling endpoint can serve it.
+      // proxy timeouts that the client misreads as auth failures. MaxCore
+      // rendering runs in a background job and the polling endpoint serves the
+      // validated result.
       const jobId = `video_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       pruneStaleFFmpegJobs();
-      ffmpegJobs?.set(jobId, { status: "processing", createdAt: Date.now() });
+      ffmpegJobs?.set(jobId, {
+        status: "processing",
+        userId,
+        createdAt: Date.now(),
+      });
 
       // ── Background job: MaxCore video render ──────────────────────────────────
       (async () => {
@@ -3245,38 +3382,14 @@ router.post(
           // optional hints. No pre-generation happens here — the MaxCore
           // /api/generate-video job generates its own script, renders, and
           // serves the file itself (no local or intermediate AI calls).
-          const hook = rawHook || "";
-          const body = rawBody || "";
-          const cta = rawCta || "";
-
-          // If the topic is a bare URL, convert it to a descriptive topic so MaxCore
-          // can generate meaningful content instead of just printing the raw URL.
-          // URL  →  platform/product promo  (e?.g. "MaxBooster music career platform")
-          // Text →  artist / music content  (no change)
-          let resolvedTopic = topic || "";
-          if (topic && /^https?:\/\//.test(topic?.trim())) {
-            try {
-              const urlDomain = new URL(topic?.trim()).hostname?.replace(
-                /^www\./,
-                "",
-              );
-              // Convert domain to a readable product/platform name:
-              //   "maxbooster.replit.app" → "MaxBooster"
-              //   "my-beats.com"          → "My Beats"
-              const platformName = urlDomain
-                .split(".")[0]
-                .replace(/-/g, " ")
-                .replace(/\b\w/g, (c: string) => c?.toUpperCase());
-              resolvedTopic = `${platformName} music platform promotional video — features, benefits, and why artists should join`;
-            } catch {
-              resolvedTopic = topic;
-            }
-          }
+          const hook = hookText;
+          const body = bodyText;
+          const cta = ctaText;
 
           // Shared render params for all video renderers.
           const videoParams = {
-            topic: resolvedTopic || hook || body || "new music",
-            platform: platform || "tiktok",
+            topic: resolvedTopic,
+            platform: selectedPlatform,
             template: template || undefined,
             aspect_ratio,
             duration: duration || 10,
@@ -3312,33 +3425,33 @@ router.post(
           if (result?.success) {
             ffmpegJobs?.set(jobId, {
               status: "done",
+              userId,
               result: result as unknown as Record<string, unknown>,
               createdAt: Date.now(),
             });
-            logger.info(
-              `[VideoGen] Job ${jobId} done via ${result.source || "renderer"} — url=${result?.url}`,
-            );
+            logger.info(`[VideoGen] Job ${jobId} completed`);
           } else {
-            const errMsg =
-              result?.error || "Video generation failed (no error message)";
             ffmpegJobs?.set(jobId, {
               status: "error",
-              error: errMsg,
+              userId,
+              error: "Video generation failed",
               createdAt: Date.now(),
             });
-            logger.warn(`[VideoGen] Job ${jobId} FAILED — ${errMsg}`);
+            logger.warn({ jobId }, "[VideoGen] Background render failed");
           }
         } catch (err) {
           ffmpegJobs?.set(jobId, {
             status: "error",
-            error:
-              (err instanceof Error ? err?.message : undefined) ||
-              "Video generation failed",
+            userId,
+            error: "Video generation failed",
             createdAt: Date.now(),
           });
           logger.warn(
-            { err: err },
-            `[VideoGen] Background job ${jobId} threw:`,
+            {
+              jobId,
+              errorType: err instanceof Error ? err.name : typeof err,
+            },
+            "[VideoGen] Background job failed",
           );
         }
       })();
@@ -3346,7 +3459,10 @@ router.post(
       logger.info(`[VideoGen] Job ${jobId} queued — responding immediately`);
       return res.json({ success: true, job_id: jobId, status: "processing" });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to start video generation:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to start video generation",
+      );
       res
         .status(500)
         .json({ success: false, message: "Video generation failed" });
@@ -3361,10 +3477,16 @@ router.get(
     try {
       const { jobId } = req.params as Record<string, string>;
 
-      // Check the local FFmpeg job map first (jobs created by the async generate-video route).
-      // FFmpeg job IDs are prefixed with "ffmpeg_" so they never collide with Python AI job IDs.
+      // Check the authenticated MaxCore render job map first.
       const ffmpegJob = ffmpegJobs?.get(jobId);
       if (ffmpegJob) {
+        if (ffmpegJob.userId !== req.user?.id) {
+          return res.status(404).json({
+            success: false,
+            status: "error",
+            message: "Job not found. Please generate a new video.",
+          });
+        }
         if (ffmpegJob?.status === "processing") {
           return res.json({ status: "processing", progress: 50 });
         }
@@ -3391,7 +3513,7 @@ router.get(
         }
         // error or unknown state — use `error` (the field the client reads),
         // keep `message` for any older consumers.
-        const jobErr = ffmpegJob.error ?? "Video generation failed";
+        const jobErr = "Video generation failed";
         return res.status(500).json({
           status: "error",
           error: jobErr,
@@ -3399,9 +3521,8 @@ router.get(
         });
       }
 
-      // video_* jobs are always FFmpeg-backed.  If they're not in the map the
-      // server must have restarted and the job is gone — tell the client clearly
-      // so it can show a retry prompt instead of hanging forever.
+      // video_* jobs are MaxCore-backed. If they are absent, the server restarted
+      // and the in-memory job is gone; return a clear retryable failure.
       if (jobId.startsWith("video_")) {
         return res.status(410).json({
           status: "error",
@@ -3418,7 +3539,10 @@ router.get(
         message: "Job not found. Please generate a new video.",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to poll video job:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to poll video job",
+      );
       res
         .status(500)
         .json({
@@ -3905,13 +4029,16 @@ router.post(
       if (!result?.success) {
         return res.status(500).json({
           success: false,
-          message: result.error || "Video campaign generation failed",
+          message: "Video campaign generation failed",
         });
       }
 
       res.json(result);
     } catch (error) {
-      logger.warn({ err: error }, "Failed to generate Veo campaign:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to generate video campaign",
+      );
       res
         .status(500)
         .json({ success: false, message: "Video campaign generation failed" });
@@ -3955,7 +4082,10 @@ router.post(
 
       res.json({ success: true, asset });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to generate single Veo video:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to generate single video",
+      );
       res
         .status(500)
         .json({ success: false, message: "Video generation failed" });
@@ -4107,7 +4237,10 @@ router.post(
       }
       res.json(result);
     } catch (error) {
-      logger.warn({ err: error }, "Failed to generate campaign from URL:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to generate campaign from URL",
+      );
       res
         .status(500)
         .json({
@@ -4365,7 +4498,7 @@ router.post(
           .status(500)
           .json({
             success: false,
-            message: result.error || "Campaign generation failed",
+            message: "Campaign generation failed",
           });
       }
 
@@ -4380,7 +4513,10 @@ router.post(
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to promote storefront:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to promote storefront",
+      );
       res
         .status(500)
         .json({
@@ -4494,7 +4630,7 @@ router.post(
           .status(500)
           .json({
             success: false,
-            message: result.error || "Campaign generation failed",
+            message: "Campaign generation failed",
           });
       }
 
@@ -4509,7 +4645,10 @@ router.post(
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to promote listing:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to promote listing",
+      );
       res
         .status(500)
         .json({ success: false, message: "Listing promotion campaign failed" });
@@ -4563,11 +4702,21 @@ router.post(
       if (description && description !== topic) contextParts.push(description);
       const enrichedTopic = contextParts.filter(Boolean).join(" — ");
 
-      const resolvedPlatform = (
-        CONTENT_ALL_PLATFORMS.includes(platform as ContentSupportedPlatform)
-          ? platform
-          : "instagram"
-      ) as ContentSupportedPlatform;
+      const requestedPlatform =
+        typeof platform === "string" && platform.trim()
+          ? platform.trim()
+          : "instagram";
+      if (
+        !CONTENT_ALL_PLATFORMS.includes(
+          requestedPlatform as ContentSupportedPlatform,
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Unsupported platform for image generation",
+        });
+      }
+      const resolvedPlatform = requestedPlatform as ContentSupportedPlatform;
 
       const resolvedTone = String(tone || "energetic").toLowerCase();
 
@@ -4634,9 +4783,16 @@ router.post(
       });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        return res.status(503).json({ success: false, code: error.code, error: error.message });
+        return res.status(503).json({
+          success: false,
+          code: error.code,
+          error: "Social image generation is temporarily unavailable",
+        });
       }
-      logger.warn({ err: error }, "Failed to generate social image:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to generate social image",
+      );
       res
         .status(500)
         .json({ success: false, message: "Image generation failed" });
@@ -4882,9 +5038,16 @@ router.post(
       });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        return res.status(503).json({ success: false, code: error.code, error: error.message });
+        return res.status(503).json({
+          success: false,
+          code: error.code,
+          error: "URL analysis is temporarily unavailable",
+        });
       }
-      logger.warn({ err: error }, "analyze-url failed:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "URL analysis failed",
+      );
       res.status(500).json({ success: false, message: "URL analysis failed" });
     }
   },
@@ -4958,9 +5121,16 @@ router.post(
       });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        return res.status(503).json({ success: false, code: error.code, error: error.message });
+        return res.status(503).json({
+          success: false,
+          code: error.code,
+          error: "Audio analysis is temporarily unavailable",
+        });
       }
-      logger.warn({ err: error }, "analyze-audio failed:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Audio analysis failed",
+      );
       res
         .status(500)
         .json({ success: false, message: "Audio analysis failed" });
@@ -5035,9 +5205,16 @@ router.post(
       });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        return res.status(503).json({ success: false, code: error.code, error: error.message });
+        return res.status(503).json({
+          success: false,
+          code: error.code,
+          error: "Image analysis is temporarily unavailable",
+        });
       }
-      logger.warn({ err: error }, "analyze-image failed:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Image analysis failed",
+      );
       res
         .status(500)
         .json({ success: false, message: "Image analysis failed" });
@@ -5387,8 +5564,63 @@ router.post(
     ]),
   ),
   async (req: AuthenticatedRequest, res: Response) => {
+    const authenticatedUserId = req.user?.id;
+    if (!authenticatedUserId) {
+      return res
+        .status(401)
+        .json({ success: false, error: "Authentication required" });
+    }
+    const requestBody = (req.body ?? {}) as Record<string, unknown>;
+    const requestFiles = req.files as
+      | Record<string, Express.Multer.File[]>
+      | undefined;
+    if (requestBody.ai_generate_scenes === "true") {
+      const hasExplicitDirection = [
+        requestBody.topic,
+        requestBody.hook,
+        requestBody.body,
+      ].some((value) => typeof value === "string" && value.trim().length > 0);
+      const hasUrlDirection = [
+        requestBody.topic,
+        requestBody.hook,
+        requestBody.body,
+      ].some(
+        (value) =>
+          typeof value === "string" && /^https?:\/\//i.test(value.trim()),
+      );
+      const targetPlatform =
+        typeof requestBody.platform === "string"
+          ? requestBody.platform.trim()
+          : "";
+      if (!hasExplicitDirection) {
+        return res.status(400).json({
+          success: false,
+          error: "A video topic, hook, or body is required",
+        });
+      }
+      if (hasUrlDirection) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "URL topics are not supported here; use the URL analysis workflow",
+        });
+      }
+      if (!VALID_PLATFORMS.includes(targetPlatform)) {
+        return res.status(400).json({
+          success: false,
+          error: "A supported platform is required for video generation",
+        });
+      }
+      if (!requestFiles?.audio?.[0]) {
+        return res.status(400).json({
+          success: false,
+          error: "An audio file is required for music video generation",
+        });
+      }
+    }
+
     const jobId = `mvjob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    musicVideoJobOwners.set(jobId, req.user!.id);
+    musicVideoJobOwners.set(jobId, authenticatedUserId);
     musicVideoJobs.set(jobId, { status: "processing", createdAt: Date.now() });
 
     // Respond immediately
@@ -5424,13 +5656,12 @@ router.post(
             });
             return;
           }
-          const legacyUser = req.user as UserWithLegacyId | undefined;
-          const userId = legacyUser?.id?.toString() || legacyUser?.userId?.toString() || "anon";
+          const userId = authenticatedUserId;
           const studioSvc = await getMusicVideoStudioService();
           const studioResult = await studioSvc.generateFullMusicVideo({
             audioPath: audioFile.path,
             userId,
-            genre: body.genre || "hip-hop",
+            genre: body.genre,
             artistName: body.artist_name || body.artistName,
             artistStyle: body.artist_style,
             hook: body.hook,
@@ -5440,7 +5671,7 @@ router.post(
             direction: body.direction,
             context: body.context,
             awareness: body.awareness,
-            platform: body.platform || "instagram",
+            platform: body.platform,
             aspectRatio: body.aspect_ratio || "9:16",
             colorGrade: (body.color_grade as "cinematic") || "cinematic",
             kenBurnsIntensity: (body.intensity as "moderate") || "moderate",
@@ -5453,7 +5684,7 @@ router.post(
           if (!studioResult.success) {
             musicVideoJobs.set(jobId, {
               status: "error",
-              error: studioResult.error || "AI music video generation failed",
+              error: "Music video generation failed",
               createdAt: Date.now(),
             });
             return;
@@ -5477,7 +5708,7 @@ router.post(
             result: studioResult as unknown as Record<string, unknown>,
             createdAt: Date.now(),
           });
-          logger.info(`[MusicVideo/Studio] Job ${jobId} done — viral score: ${studioResult.viralScore ?? "n/a"}`);
+          logger.info({ jobId }, "[MusicVideo/Studio] Generation completed");
           return;
         }
 
@@ -5555,7 +5786,7 @@ router.post(
         if (!result.success) {
           musicVideoJobs.set(jobId, {
             status: "error",
-            error: result.error || "Render failed",
+            error: "Music video generation failed",
             createdAt: Date.now(),
           });
           return;
@@ -5569,9 +5800,7 @@ router.post(
           result: result as unknown as Record<string, unknown>,
           createdAt: Date.now(),
         });
-        logger.info(
-          `[MusicVideo] Job ${jobId} complete — durable MaxCore/PDIM asset ${result.url}`,
-        );
+        logger.info({ jobId }, "[MusicVideo] Generation completed");
         return;
 
         // ── Persist rendered video to PDIM as primary storage ────────────────
@@ -5604,7 +5833,7 @@ router.post(
         } catch (e) {
           musicVideoJobs.set(jobId, {
             status: "error",
-            error: `PDIM video storage failed: ${(e as Error).message}`,
+            error: "Video storage failed",
             createdAt: Date.now(),
           });
           return;
@@ -5618,13 +5847,17 @@ router.post(
           createdAt: Date.now(),
         });
         logger.info(
-          `[MusicVideo] Job ${jobId} complete — ${result.filename} | PDIM: ${pdimVideoMeta?.pdimKey ?? "skipped"}`,
+          { jobId },
+          "[MusicVideo] Generation completed",
         );
       } catch (e) {
-        logger.warn(`[MusicVideo] Job ${jobId} failed: ${(e as Error).message}`);
+        logger.warn(
+          { jobId, errorType: e instanceof Error ? e.name : typeof e },
+          "[MusicVideo] Generation failed",
+        );
         musicVideoJobs.set(jobId, {
           status: "error",
-          error: (e as Error).message || "Music video generation failed",
+          error: "Music video generation failed",
           createdAt: Date.now(),
         });
       } finally {

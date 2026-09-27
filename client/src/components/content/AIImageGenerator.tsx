@@ -209,9 +209,10 @@ export function AIImageGenerator({
           "google_business",
           "linkedin",
         ];
-        const resolvedPlatform = validPlatforms.includes(mmPlatform)
-          ? mmPlatform
-          : "instagram";
+        if (!validPlatforms.includes(mmPlatform)) {
+          throw new Error(`Image generation is not supported for ${platform}.`);
+        }
+        const resolvedPlatform = mmPlatform;
         const response = await apiRequest("POST", apiEndpoint, {
           input: {
             modality: "text",
@@ -225,10 +226,16 @@ export function AIImageGenerator({
         const imageAsset = (mmData.assets || []).find(
           (a: Record<string, unknown>) => a.modality === "image",
         );
-        if (!imageAsset) throw new Error("No image asset returned");
+        if (
+          !imageAsset ||
+          typeof imageAsset.payload !== "string" ||
+          !imageAsset.payload.trim()
+        ) {
+          throw new Error("No image file was returned.");
+        }
         data = {
           success: true,
-          url: imageAsset.payload || null,
+          url: imageAsset.payload,
           width: 1080,
           height: 1080,
           format: "png",
@@ -258,6 +265,9 @@ export function AIImageGenerator({
           );
       }
 
+      if (typeof data.url !== "string" || !data.url.trim()) {
+        throw new Error("Image generation did not return an image file.");
+      }
       setResult(data);
 
       if (data.url && onImageGenerated) {
@@ -266,9 +276,7 @@ export function AIImageGenerator({
 
       toast({
         title: "Image Creative Ready",
-        description: data.url
-          ? "Your AI-generated image is ready."
-          : "Visual spec generated — use the prompt with your image tool.",
+        description: "Your AI-generated image file is ready.",
       });
     } catch (error: unknown) {
       const msg =

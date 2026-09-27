@@ -314,12 +314,26 @@ export async function generateFullMusicVideo(
 ): Promise<MusicVideoStudioResult> {
   const startMs = Date.now();
 
-  const genre = (opts.genre || "hip-hop").toLowerCase();
-  const artistName = opts.artistName || "Artist";
-  const artistStyle = opts.artistStyle || "";
-  const platform = opts.platform || "instagram";
+  const genre = typeof opts.genre === "string" ? opts.genre.trim().toLowerCase() : "";
+  const artistName =
+    typeof opts.artistName === "string" ? opts.artistName.trim() : "";
+  const artistStyle =
+    typeof opts.artistStyle === "string" ? opts.artistStyle.trim() : "";
+  const platform =
+    typeof opts.platform === "string" ? opts.platform.trim() : "";
   const aspectRatio = opts.aspectRatio || "9:16";
-  const hook = opts.hook || "";
+  const hook = typeof opts.hook === "string" ? opts.hook.trim() : "";
+  const bodyText =
+    typeof opts.bodyText === "string" ? opts.bodyText.trim() : "";
+  if (!hook && !bodyText) {
+    throw new Error("A video topic, hook, or body is required");
+  }
+  if (!platform) {
+    throw new Error("A target platform is required for video generation");
+  }
+  if (typeof opts.userId !== "string" || !opts.userId.trim()) {
+    throw new Error("Authenticated ownership is required for video generation");
+  }
   // Undefined = no cap; MaxCore handles scene generation for every detected section.
   const maxScenes = opts.maxScenes;
 
@@ -368,17 +382,27 @@ export async function generateFullMusicVideo(
   // MaxCore owns the complete music-video plan and render. The measured beat
   // analysis above is retained for the established UI/metering response only;
   // it is not used to locally generate scenes or re-score MaxCore's output.
-  const { renderVideo } = await import("./advancedVideoRendererService.js");
+  const [
+    { renderVideo },
+    { ensureMaxCoreMediaTempUpload },
+  ] = await Promise.all([
+    import("./advancedVideoRendererService.js"),
+    import("./maxcoreAssetTransport.js"),
+  ]);
+  const maxCoreAudioPath = await ensureMaxCoreMediaTempUpload(
+    opts.audioPath,
+    opts.userId.trim(),
+  );
   const maxCoreRender = await renderVideo({
-    topic: opts.bodyText || hook || `${artistName} music video`,
+    topic: bodyText || hook,
     hook,
-    body: opts.bodyText,
+    body: bodyText || undefined,
     cta: opts.cta,
     platform,
     aspect_ratio: aspectRatio,
     genre,
-    artist_name: artistName,
-    user_audio_path: opts.audioPath,
+    artist_name: artistName || undefined,
+    user_audio_path: maxCoreAudioPath,
     duration: Math.round(beatAnalysis.durationSeconds),
     tone: artistStyle || "energetic",
     userId: opts.userId,

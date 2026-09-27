@@ -1,5 +1,5 @@
 import path from "path";
-import { readFile, stat } from "fs/promises";
+import { readFile, realpath, stat } from "fs/promises";
 import { AIUnavailableError } from "../lib/aiSource.js";
 import {
   getMaxcoreGenerationKey,
@@ -56,6 +56,59 @@ export async function ensureMaxCoreAudioAsset(
       `MaxCore audio transfer: ${(error as Error).message}`,
     );
   });
+  return uploadResolvedAudio(resolved, userId);
+}
+
+/**
+ * Transfer a Multer-owned audio upload from the private temporary upload
+ * directory. This accepts only a direct, real file created under
+ * uploads/media_temp; arbitrary server filesystem paths are rejected.
+ */
+export async function ensureMaxCoreMediaTempUpload(
+  localPath: string,
+  userId: string,
+): Promise<string> {
+  if (!localPath) throw new AIUnavailableError("MaxCore audio transfer (source required)");
+  if (!userId) throw new AIUnavailableError("MaxCore audio transfer (owner required)");
+
+  let trustedRoot: string;
+  let trustedFile: string;
+  try {
+    [trustedRoot, trustedFile] = await Promise.all([
+      realpath(path.resolve(process.cwd(), "uploads", "media_temp")),
+      realpath(localPath),
+    ]);
+  } catch {
+    throw new AIUnavailableError("MaxCore audio transfer (temporary upload unavailable)");
+  }
+
+  const relativePath = path.relative(trustedRoot, trustedFile);
+  if (
+    !relativePath ||
+    relativePath === ".." ||
+    relativePath.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativePath) ||
+    relativePath.includes(path.sep) ||
+    !/^media_[a-f0-9]{16}\.[a-z0-9]+$/i.test(relativePath)
+  ) {
+    throw new AIUnavailableError("MaxCore audio transfer (invalid temporary upload)");
+  }
+
+  const fileStat = await stat(trustedFile).catch(() => null);
+  if (!fileStat?.isFile()) {
+    throw new AIUnavailableError("MaxCore audio transfer (temporary upload unavailable)");
+  }
+
+  return uploadResolvedAudio(
+    { localPath: trustedFile, cleanup: async () => {} },
+    userId,
+  );
+}
+
+async function uploadResolvedAudio(
+  resolved: { localPath: string; cleanup: () => Promise<void> },
+  userId: string,
+): Promise<string> {
   try {
     const size = (await stat(resolved.localPath)).size;
     if (size === 0) throw new AIUnavailableError("MaxCore audio transfer (empty source)");

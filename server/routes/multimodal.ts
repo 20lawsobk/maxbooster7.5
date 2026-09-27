@@ -27,6 +27,8 @@ const VALID_PLATFORMS = new Set<Platform>([
 ]);
 
 const VALID_PACKS = new Set<PackId>(Object.keys(PACK_DEFINITIONS) as PackId[]);
+const VALID_INPUT_MODALITIES = new Set(["text", "url", "image", "audio", "video"]);
+const VALID_OUTPUT_MODALITIES = new Set(["text", "image", "audio", "video"]);
 
 const SPOTIFY_URI_RE =
   /^spotify:(?:track|album|artist|playlist):[A-Za-z0-9]+$/i;
@@ -53,6 +55,42 @@ router.post(
         !body.input.payload.trim()
       ) {
         return res.status(400).json({ error: "input.payload is required" });
+      }
+      if (
+        typeof body.input.modality !== "string" ||
+        !VALID_INPUT_MODALITIES.has(body.input.modality)
+      ) {
+        return res.status(400).json({
+          error: "input.modality must be one of text, url, image, audio, or video",
+        });
+      }
+      if (
+        body.id !== undefined &&
+        (typeof body.id !== "string" ||
+          !/^[A-Za-z0-9._:-]{1,128}$/.test(body.id))
+      ) {
+        return res.status(400).json({
+          error: "id must be a 1–128 character request identifier",
+        });
+      }
+      if (
+        body.constraints !== undefined &&
+        (!body.constraints ||
+          typeof body.constraints !== "object" ||
+          Array.isArray(body.constraints))
+      ) {
+        return res.status(400).json({ error: "constraints must be an object" });
+      }
+      const requestedOutputModality = body.constraints?.outputModality;
+      if (
+        requestedOutputModality !== undefined &&
+        (typeof requestedOutputModality !== "string" ||
+          !VALID_OUTPUT_MODALITIES.has(requestedOutputModality))
+      ) {
+        return res.status(400).json({
+          error:
+            "constraints.outputModality must be one of text, image, audio, or video",
+        });
       }
       if (!Array.isArray(body?.platforms) || body?.platforms.length === 0) {
         return res
@@ -99,17 +137,21 @@ router.post(
         }
       }
 
-      const packId =
-        body?.packId && VALID_PACKS?.has(body?.packId as PackId)
-          ? (body?.packId as PackId)
-          : undefined;
+      if (
+        body.packId !== undefined &&
+        (typeof body.packId !== "string" ||
+          !VALID_PACKS.has(body.packId as PackId))
+      ) {
+        return res.status(400).json({ error: "packId is not supported" });
+      }
+      const packId = body.packId as PackId | undefined;
 
       const genRequest: GenerationRequest = {
-        id: body.id || randomUUID(),
+        id: body.id ?? randomUUID(),
         userId,
         artistProfileId: body.artistProfileId,
         input: {
-          modality: body.input.modality || "text",
+          modality: body.input.modality as GenerationRequest["input"]["modality"],
           payload: inputPayload,
           metadata: body.input.metadata,
         },
@@ -123,15 +165,23 @@ router.post(
       };
 
       const pkg = await handleGeneration(genRequest);
+      if (!pkg || !Array.isArray(pkg.assets) || pkg.assets.length === 0) {
+        throw new AIUnavailableError(
+          "multimodal generation returned no validated assets",
+        );
+      }
       return res.json(pkg);
     } catch (err) {
-      logger.warn({ err: err }, "[POST /multimodal/generate]");
+      logger.warn(
+        { errorType: err instanceof Error ? err.name : typeof err },
+        "[POST /multimodal/generate]",
+      );
       if (err instanceof AIUnavailableError) {
-        return res.status(503).json({ error: err.message });
+        return res
+          .status(503)
+          .json({ error: "AI generation is temporarily unavailable" });
       }
-      return res
-        .status(500)
-        .json({ error: (err as Error).message || "Generation failed" });
+      return res.status(500).json({ error: "Generation failed" });
     }
   },
 );

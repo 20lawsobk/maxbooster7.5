@@ -159,3 +159,114 @@ describe("mounted Social Media URL UI wiring", () => {
     expect(handler).not.toContain("getUnifiedAI()");
   });
 });
+
+describe("authenticated async video generation contract", () => {
+  it("requires an explicit topic and supported platform without synthesizing copy", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile("server/routes/socialMedia.ts", "utf8"),
+    );
+    const start = source.indexOf('"/generate-video"');
+    const pollStart = source.indexOf('"/video-job/:jobId"', start);
+    const handler = source.slice(start, pollStart);
+
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(pollStart).toBeGreaterThan(start);
+    expect(handler).toContain("A supported platform is required");
+    expect(handler).toContain(
+      "URL topics are not supported here; use the URL analysis workflow",
+    );
+    expect(handler).toContain(
+      "const resolvedTopic = topicText || hookText || bodyText",
+    );
+    expect(handler).not.toContain('"new music"');
+    expect(handler).not.toContain('platform || "tiktok"');
+    expect(handler).not.toContain("music platform promotional video");
+    expect(handler).not.toContain("url=${result");
+    expect(handler).toContain("userId,");
+  });
+
+  it("keeps async video errors private and polling bound to the session owner", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile("server/routes/socialMedia.ts", "utf8"),
+    );
+    const pollStart = source.indexOf('"/video-job/:jobId"');
+    const pollEnd = source.indexOf('"/video-templates"', pollStart);
+    const handler = source.slice(pollStart, pollEnd);
+
+    expect(pollStart).toBeGreaterThanOrEqual(0);
+    expect(pollEnd).toBeGreaterThan(pollStart);
+    expect(handler).toContain("ffmpegJob.userId !== req.user?.id");
+    expect(handler).toContain('const jobErr = "Video generation failed"');
+    expect(handler).not.toContain("ffmpegJob.error ??");
+  });
+});
+
+describe("explicit social generation inputs and private failures", () => {
+  it("rejects missing or unsupported social-generation inputs and incomplete output", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile("server/routes/socialMedia.ts", "utf8"),
+    );
+    const start = source.indexOf('"/generate-content"');
+    const end = source.indexOf("function getOptimalPostTime", start);
+    const handler = source.slice(start, end);
+
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    expect(handler).toContain("At least one target platform is required");
+    expect(handler).toContain("Each target platform must be supported and unique");
+    expect(handler).toContain("A non-empty topic of at most 4000 characters is required");
+    expect(handler).toContain("typeof result?.data?.caption === \"string\"");
+    expect(handler).toContain("success: completeSuccess");
+    expect(handler).toContain('"partial"');
+    expect(handler).not.toContain('topic = "new music"');
+    expect(handler).not.toContain('topic: topic || "music"');
+    expect(handler).not.toContain(".filter((p: string)");
+  });
+
+  it("requires explicit direction in music-video studio and redacts its failures", async () => {
+    const [route, service, client] = await Promise.all([
+      import("node:fs/promises").then((fs) =>
+        fs.readFile("server/routes/socialMedia.ts", "utf8"),
+      ),
+      import("node:fs/promises").then((fs) =>
+        fs.readFile("server/services/musicVideoStudioService.ts", "utf8"),
+      ),
+      import("node:fs/promises").then((fs) =>
+        fs.readFile("client/src/components/content/ServerVideoGenerator.tsx", "utf8"),
+      ),
+    ]);
+    const start = route.indexOf('"/generate-music-video"');
+    const end = route.indexOf('"/music-video-job/:jobId"', start);
+    const handler = route.slice(start, end);
+
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    expect(handler).toContain("hasExplicitDirection");
+    expect(handler).toContain("hasUrlDirection");
+    expect(handler).toContain(
+      "URL topics are not supported here; use the URL analysis workflow",
+    );
+    expect(handler).toContain("musicVideoJobOwners.set(jobId, authenticatedUserId)");
+    expect(handler).toContain('error: "Music video generation failed"');
+    expect(handler).not.toContain("error: studioResult.error");
+    expect(handler).not.toContain("error: result.error");
+    expect(handler).not.toContain("complete — durable MaxCore/PDIM asset ${result.url}");
+    expect(service).toContain("topic: bodyText || hook");
+    expect(service).not.toContain("`${artistName} music video`");
+    expect(client).toContain("Enter a hook or topic so MaxCore has explicit direction");
+    expect(client).toContain("(required)</span>");
+  });
+
+  it("does not return or log MaxCore video diagnostics on failed renders", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile("server/services/advancedVideoRendererService.ts", "utf8"),
+    );
+
+    expect(source).toContain('error: "Video generation failed"');
+    expect(source).not.toContain("video generation returned HTTP");
+    expect(source).not.toContain("video generation returned non-JSON");
+    expect(source).not.toContain("still ${status.status}");
+    expect(source).not.toContain("Job ${jobId} timed out");
+    expect(source).not.toContain("error: status.error");
+  });
+});

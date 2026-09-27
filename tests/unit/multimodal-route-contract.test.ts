@@ -9,6 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import express from "express";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { AIUnavailableError } from "../../server/lib/aiSource.js";
 
 const { handleGeneration } = vi.hoisted(() => ({
   handleGeneration: vi.fn(),
@@ -52,8 +53,27 @@ describe("multimodal route request contract", () => {
     handleGeneration.mockReset();
     handleGeneration.mockResolvedValue({
       requestId: "request-1",
-      assets: [],
-      plan: { requestId: "request-1", steps: [] },
+      assets: [
+        {
+          id: "asset-1",
+          modality: "text",
+          payload: "Generated post copy",
+          platform: "instagram",
+          slotId: "instagram_post",
+        },
+      ],
+      plan: {
+        requestId: "request-1",
+        steps: [
+          {
+            id: "step_text_instagram",
+            type: "generate",
+            worker: "text",
+            inputFrom: "normalizedInput",
+            params: { platform: "instagram" },
+          },
+        ],
+      },
       generatedAt: "2026-01-01T00:00:00.000Z",
     });
   });
@@ -134,6 +154,85 @@ describe("multimodal route request contract", () => {
 
     expect(response.status).toBe(400);
     expect(handleGeneration).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unsupported input modality instead of defaulting to text", async () => {
+    const response = await post({
+      input: { modality: "diagram", payload: "announce the single" },
+      platforms: ["instagram"],
+    });
+
+    expect(response.status).toBe(400);
+    expect(handleGeneration).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unsupported output modality instead of defaulting to text", async () => {
+    const response = await post({
+      input: { modality: "text", payload: "announce the single" },
+      platforms: ["instagram"],
+      constraints: { outputModality: "animation" },
+    });
+
+    expect(response.status).toBe(400);
+    expect(handleGeneration).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unsupported pack instead of silently generating a default plan", async () => {
+    const response = await post({
+      input: { modality: "text", payload: "announce the single" },
+      platforms: ["instagram"],
+      packId: "not-a-pack",
+    });
+
+    expect(response.status).toBe(400);
+    expect(handleGeneration).not.toHaveBeenCalled();
+  });
+
+  it("does not return success when the service returns no assets", async () => {
+    handleGeneration.mockResolvedValueOnce({
+      requestId: "request-1",
+      assets: [],
+      plan: { requestId: "request-1", steps: [] },
+      generatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const response = await post({
+      input: { modality: "text", payload: "announce the single" },
+      platforms: ["instagram"],
+    });
+
+    expect(response.status).toBe(503);
+  });
+
+  it("does not expose MaxCore diagnostics in generation error responses", async () => {
+    const diagnostic = "private prompt https://internal.example/output?token=sentinel";
+    handleGeneration.mockRejectedValueOnce(new Error(diagnostic));
+
+    const response = await post({
+      input: { modality: "text", payload: "announce the single" },
+      platforms: ["instagram"],
+    });
+    const body = await response.text();
+
+    expect(response.status).toBe(500);
+    expect(body).not.toContain(diagnostic);
+    expect(body).not.toContain("sentinel");
+    expect(body).toContain("Generation failed");
+  });
+
+  it("does not expose AI-unavailable feature details in generation responses", async () => {
+    const diagnostic = "private prompt and media URL";
+    handleGeneration.mockRejectedValueOnce(new AIUnavailableError(diagnostic));
+
+    const response = await post({
+      input: { modality: "text", payload: "announce the single" },
+      platforms: ["instagram"],
+    });
+    const body = await response.text();
+
+    expect(response.status).toBe(503);
+    expect(body).not.toContain(diagnostic);
+    expect(body).toContain("temporarily unavailable");
   });
 
   it("passes a public URL as a URL input without substituting body identity", async () => {

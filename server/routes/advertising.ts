@@ -106,6 +106,13 @@ export function buildAdGenerationRequest(
   };
 }
 
+export class AdvertisingRequestValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AdvertisingRequestValidationError";
+  }
+}
+
 export function buildImageGenerationRequest(input: {
   prompt: string;
   slots?: unknown;
@@ -138,13 +145,15 @@ export function buildImageGenerationRequest(input: {
     "linkedin",
   ]);
   const rawPlatform = String(input.platform || "").trim().toLowerCase();
-  const normalizedPlatform =
-    platformAliases[rawPlatform] ||
-    rawPlatform.replace(/\s+/g, "_") ||
-    "instagram";
-  const platform = supportedPlatforms.has(normalizedPlatform)
-    ? normalizedPlatform
+  const normalizedPlatform = rawPlatform
+    ? platformAliases[rawPlatform] || rawPlatform.replace(/\s+/g, "_")
     : "instagram";
+  if (!supportedPlatforms.has(normalizedPlatform)) {
+    throw new AdvertisingRequestValidationError(
+      `Unsupported platform for image generation: ${rawPlatform}`,
+    );
+  }
+  const platform = normalizedPlatform;
   const purpose =
     input.intent?.trim() || input.goal?.trim() || "promotional";
   const slots =
@@ -1927,8 +1936,8 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
           );
         } catch (err) {
           logger.warn(
-            { err: err },
-            "Ad campaign optimized notification error:",
+            { errorType: err instanceof Error ? err.name : typeof err },
+            "Ad campaign optimized notification error",
           );
         }
     });
@@ -1937,10 +1946,13 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
       return res.status(error.statusCode).json({
         success: false,
         code: error.code,
-        error: error.message,
+        error: "Advertising campaign optimization is temporarily unavailable",
       });
     }
-    logger.warn({ err: error }, "Failed to optimize campaign:");
+    logger.warn(
+      { errorType: error instanceof Error ? error.name : typeof error },
+      "Failed to optimize campaign",
+    );
     res.status(500).json({ error: "Failed to optimize campaign" });
   }
 });
@@ -1972,10 +1984,17 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
     ];
     const validTones = ["professional", "casual", "energetic", "promotional"];
 
-    const resolvedPlatform = validPlatforms.includes(platform)
-      ? platform
-      : "instagram";
-    const resolvedTone = validTones.includes(tone) ? tone : "energetic";
+    if (!validPlatforms.includes(platform)) {
+      return res.status(400).json({ error: "Unsupported advertising platform" });
+    }
+    if (!validTones.includes(tone)) {
+      return res.status(400).json({ error: "Unsupported advertising tone" });
+    }
+    if (typeof topic !== "string" || !topic.trim()) {
+      return res.status(400).json({ error: "A non-empty topic is required" });
+    }
+    const resolvedPlatform = platform;
+    const resolvedTone = tone;
     const audienceContext =
       typeof targetAudience === "string"
         ? targetAudience.trim()
@@ -1990,7 +2009,7 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
       await MaxCoreAIClient.infer<Record<string, unknown>>(
         "/api/generate/content",
         {
-          topic: topic || "new music",
+          topic: topic.trim(),
           platform: resolvedPlatform,
           tone: resolvedTone,
           content_type: contentType === "ad_copy" ? "promotional" : contentType,
@@ -2020,9 +2039,16 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof AIUnavailableError) {
-      return res.status(error.statusCode).json({ success: false, code: error.code, error: error.message });
+      return res.status(error.statusCode).json({
+        success: false,
+        code: error.code,
+        error: "Advertising content generation is temporarily unavailable",
+      });
     }
-    logger.warn({ err: error }, "Failed to generate ad content:");
+    logger.warn(
+      { errorType: error instanceof Error ? error.name : typeof error },
+      "Failed to generate ad content",
+    );
     res.status(500).json({ error: "Failed to generate content" });
   }
 });
@@ -2146,10 +2172,13 @@ router.post(
         return res.status(error.statusCode).json({
           success: false,
           code: error.code,
-          error: error.message,
+          error: "Advertising campaign generation is temporarily unavailable",
         });
       }
-      logger.warn({ err: error }, "Failed to generate ad campaign:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to generate ad campaign",
+      );
       return res
         .status(500)
         .json({ success: false, error: "Campaign generation failed" });
@@ -2205,9 +2234,7 @@ router.post(
       });
 
       if (!result?.success) {
-        throw new AIUnavailableError(
-          result?.error || "advertising video generation",
-        );
+        throw new AIUnavailableError("advertising video generation");
       }
 
       logger.info(
@@ -2215,14 +2242,22 @@ router.post(
       );
       res.json(result);
     } catch (error) {
+      if (error instanceof AdvertisingRequestValidationError) {
+        return res
+          .status(400)
+          .json({ success: false, message: error.message });
+      }
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({
           success: false,
           code: error.code,
-          error: error.message,
+          error: "Advertising video generation is temporarily unavailable",
         });
       }
-      logger.warn({ err: error }, "Failed to generate ad video:");
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to generate ad video",
+      );
       res
         .status(500)
         .json({ success: false, message: "Video generation failed" });
@@ -2321,10 +2356,22 @@ router.post(
         "advertising image generation returned no image",
       );
     } catch (error) {
-      if (error instanceof AIUnavailableError) {
-        return res.status(error.statusCode).json({ success: false, code: error.code, error: error.message });
+      if (error instanceof AdvertisingRequestValidationError) {
+        return res
+          .status(400)
+          .json({ success: false, message: error.message });
       }
-      logger.warn({ err: error }, "Failed to generate ad image:");
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          code: error.code,
+          error: "Advertising image generation is temporarily unavailable",
+        });
+      }
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to generate ad image",
+      );
       res
         .status(500)
         .json({ success: false, message: "Image generation failed" });

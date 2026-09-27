@@ -4,7 +4,11 @@ import path from "path";
 import { promises as fsPromises } from "fs";
 import { logger } from "../logger.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
-import { normalizeHashtags, stripLeakedDirectives, isBrokenHashtag } from "../lib/contentPostProcessor.js";
+import {
+  validatePlanAssets,
+  validateStepAssets,
+} from "./multimodalGenerationContract.js";
+import { stripLeakedDirectives, isBrokenHashtag } from "../lib/contentPostProcessor.js";
 import {
   getMaxcoreGenerationKey,
   getMaxcoreOriginOrDefault,
@@ -34,6 +38,10 @@ import {
   applyCaptionLengthPure,
   applyCtaStrengthPure,
 } from "./advancedSocialAIService.js";
+
+function safeErrorType(err: unknown): string {
+  return err instanceof Error ? err.name : typeof err;
+}
 
 // Resolved through the shared connector (single MaxCore contract boundary);
 // the connector normalizes root-vs-/api URL forms.
@@ -70,17 +78,14 @@ async function maxcorePost(
     signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(
-      `MaxCore ${path} → HTTP ${res.status}: ${text?.slice(0, 200)}`,
-    );
+    const status = res.status;
+    await res.body?.cancel().catch(() => undefined);
+    throw new Error(`MaxCore request failed (${status})`);
   }
   const ct = res.headers.get("content-type") ?? "";
   if (!ct?.includes("application/json")) {
-    const text = await res.text().catch(() => "");
-    throw new Error(
-      `MaxCore ${path} returned non-JSON (${ct || "no content-type"}): ${text?.slice(0, 200)}`,
-    );
+    await res.body?.cancel().catch(() => undefined);
+    throw new Error("MaxCore returned a non-JSON response");
   }
   return res.json();
 }
@@ -201,9 +206,7 @@ async function mirrorRemoteAssetLocally(
     );
     return await storageService.getDownloadUrl(storageKey);
   } catch (err) {
-    throw new AIUnavailableError(
-      `multimodal ${kind} persistence: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    throw new AIUnavailableError(`multimodal ${kind} persistence`);
   }
 }
 
@@ -311,8 +314,8 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
     return data;
   } catch (err) {
     logger.warn(
-      { err },
-      `[MultimodalGen] fetchUserContext DB error (non-fatal): ${(err as Error)?.message ?? String(err)}`,
+      { errorType: safeErrorType(err) },
+      "[MultimodalGen] fetchUserContext DB error (non-fatal)",
     );
     return emptyUserContext();
   }
@@ -2024,9 +2027,7 @@ async function _localAnalyzeUrl(
     [title, desc.slice(0, 120)].filter(Boolean).join(" — ") ||
     `${ctx.category === "event" ? "Upcoming event" : "New content"} on ${siteName || url}`;
 
-  logger.info(
-    `[MultimodalGen] URL analyzed: category=${ctx.category} title="${title || "(none)"}" platform=${siteName || ctx.platform}`,
-  );
+  logger.info(`[MultimodalGen] URL analyzed: category=${ctx.category}`);
 
   return {
     summary,
@@ -2145,7 +2146,7 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
       };
     } catch (err) {
       logger.warn(
-        { err },
+          { errorType: safeErrorType(err) },
         "[MultimodalGen] MaxCore audio conductor analysis unavailable",
       );
       throw new AIUnavailableError("multimodal audio analysis");
@@ -2159,10 +2160,12 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
       const ctx = classifyUrl(payload);
       prefetchedMeta = await fetchUrlMetadata(payload, ctx);
       logger.debug(
-        `[MultimodalGen] Pre-fetched URL metadata: title="${prefetchedMeta.title ?? ""}" siteName="${prefetchedMeta.siteName ?? ""}"`,
+        "[MultimodalGen] Pre-fetched URL metadata",
       );
     } catch (fetchErr) {
-      logger.debug({ err: fetchErr instanceof Error ? fetchErr.message : String(fetchErr) }, "[MultimodalGen] URL pre-fetch failed (non-fatal):",
+      logger.debug(
+        { errorType: safeErrorType(fetchErr) },
+        "[MultimodalGen] URL pre-fetch failed (non-fatal)",
       );
     }
   }
@@ -2197,8 +2200,8 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
     };
   } catch (err) {
     logger.warn(
-      { err },
-      `[MultimodalGen] MaxCore native analysis unavailable: ${err instanceof Error ? err.message : String(err)}`,
+      { errorType: safeErrorType(err) },
+      "[MultimodalGen] MaxCore native analysis unavailable",
     );
     throw new AIUnavailableError("multimodal content analysis");
   }
@@ -2257,6 +2260,9 @@ async function planTasks(
 
 function buildDefaultPlan(req: GenerationRequest): TaskPlan {
   const packSpec = req.packId ? (PACK_DEFINITIONS[req.packId] ?? null) : null;
+  if (req.packId && !packSpec) {
+    throw new AIUnavailableError("multimodal generation request");
+  }
   const steps: TaskStep[] = [];
 
   if (packSpec) {
@@ -2335,15 +2341,17 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
       });
     }
   } else {
-    const rawModality = ((req.constraints as any)?.outputModality as string) || "text";
-    const outputModality: "text" | "image" | "audio" | "video" = [
+    const rawModality = req.constraints?.outputModality ?? "text";
+    const validOutputModalities = [
       "text",
       "image",
       "audio",
       "video",
-    ].includes(rawModality)
-      ? (rawModality as "text" | "image" | "audio" | "video")
-      : "text";
+    ];
+    if (!validOutputModalities.includes(rawModality)) {
+      throw new AIUnavailableError("multimodal generation request");
+    }
+    const outputModality = rawModality as OutputModality;
 
     if (outputModality === "image") {
       // Always include a text step so the URL-extracted topic/hook is returned
@@ -2436,16 +2444,7 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
   }
 
   if (steps.length === 0) {
-    steps.push({
-      id: "step_text_default",
-      type: "generate",
-      worker: "text",
-      inputFrom: "normalizedInput",
-      params: buildStepParamsForPlatform(
-        req.platforms[0] ?? "instagram",
-        "text",
-      ),
-    });
+    throw new AIUnavailableError("multimodal generation plan");
   }
 
   return { requestId: req.id, steps };
@@ -2511,7 +2510,7 @@ const textWorker = {
             relParts.push(`released ${matchedRelease.releaseDate}`);
           if (userCtx.artistName) relParts.push(`by ${userCtx.artistName}`);
           topic = relParts.join(" ");
-          logger.debug(`[MultimodalGen] URL matched user release: "${topic}"`);
+          logger.debug("[MultimodalGen] URL matched user release");
         } else {
           const meta = ((normalized as any).metadata ?? {}) as Record<string, string>;
           const urlTitle = (normalized as any).title ?? meta.title ?? "";
@@ -2603,7 +2602,7 @@ const textWorker = {
           }
         }
         logger.debug(
-          `[MultimodalGen] URL topic built: "${topic.slice(0, 120)}"`,
+          "[MultimodalGen] URL topic built",
         );
       } else {
         topic =
@@ -2731,27 +2730,19 @@ const textWorker = {
             // press link, etc.) forcing #hiphop-style tags in makes them
             // irrelevant to the post; just drop the broken ones and keep
             // whatever real tags MaxCore/the category library provided.
-            let sanitizedHashtags: string[];
-            if (resolvedGenre) {
-              sanitizedHashtags = normalizeHashtags(rawHashtags, resolvedGenre, platform);
-            } else {
-              const cleanTags = [
-                ...new Set(
-                  rawHashtags.filter((t) => typeof t === "string" && !isBrokenHashtag(t)),
-                ),
-              ];
-              sanitizedHashtags = cleanTags.length
-                ? cleanTags.slice(0, 8)
-                : getHashtagsForPlatform(
-                    (normalized as any).urlCategory ?? "social_post",
-                    platform,
-                    5,
-                    resolvedArtistName,
+            const maxTags = rules.text.hashtags?.allowed
+              ? (rules.text.hashtags.max ?? 5)
+              : 0;
+            const sanitizedHashtags = [
+              ...new Set(
+                rawHashtags
+                  .filter(
+                    (tag) => typeof tag === "string" && !isBrokenHashtag(tag),
                   )
-                    .replace(/^\n\n/, "")
-                    .split(" ")
-                    .filter(Boolean);
-            }
+                  .map((tag) => tag.trim())
+                  .filter(Boolean),
+              ),
+            ].slice(0, maxTags);
             caption = sanitizedHashtags.length
               ? `${captionNoTags}\n\n${sanitizedHashtags.join(" ")}`
               : captionNoTags;
@@ -2821,12 +2812,11 @@ const textWorker = {
       const firstFailure = perSlotResults.find(
         (r): r is PromiseRejectedResult => r.status === "rejected",
       );
-      const reason =
-        firstFailure?.reason instanceof Error
-          ? firstFailure.reason.message
-          : String(firstFailure?.reason ?? "unknown");
       logger.warn(
-        { reason },
+        {
+          errorType: safeErrorType(firstFailure?.reason),
+          failedSlotCount: perSlotResults.length - successful.length,
+        },
         "[MultimodalGen] All /generate/content slot calls failed — failing explicitly (no local fallback)",
       );
       if (firstFailure?.reason instanceof AIUnavailableError)
@@ -2835,8 +2825,8 @@ const textWorker = {
     } catch (err) {
       if (err instanceof AIUnavailableError) throw err;
       logger.warn(
-        { err },
-        `[MultimodalGen] /generate/content text worker error: ${err instanceof Error ? err.message : String(err)}`,
+        { errorType: safeErrorType(err) },
+        "[MultimodalGen] /generate/content text worker error",
       );
       throw new AIUnavailableError("multimodal text generation");
     }
@@ -3137,21 +3127,38 @@ const imageWorker = {
     }));
 
     const mapOutputs = (outputs: unknown[]) =>
-      (outputs as Record<string, unknown>[]).map((o) => ({
-        id: randomUUID(),
-        modality: "image" as OutputModality,
-        payload: o.url || o.src || "",
-        platform: o.platform as Platform | undefined,
-        slotId: o.slotId,
-        purpose: o.purpose,
-        metadata: {
-          ...(o.meta ?? {}),
-          aspectRatio: o.aspectRatio ?? step.params!.recommendedAspectRatio,
-          platformRules: o.platform
-            ? getRules(o.platform as Platform).image
-            : null,
-        },
-      }));
+      (outputs as Record<string, unknown>[]).map((o) => {
+        const slotId =
+          typeof o.slotId === "string"
+            ? o.slotId
+            : slotsWithRules.length === 1 &&
+                typeof slotsWithRules[0].id === "string"
+              ? slotsWithRules[0].id
+              : undefined;
+        const expectedSlot = slotsWithRules.find(
+          (slot: Record<string, unknown>) => slot.id === slotId,
+        );
+        const platform =
+          typeof o.platform === "string"
+            ? (o.platform as Platform)
+            : (expectedSlot?.platform as Platform | undefined);
+        return {
+          id: randomUUID(),
+          modality: "image" as OutputModality,
+          payload: o.url || o.src || "",
+          platform,
+          slotId,
+          purpose:
+            typeof o.purpose === "string"
+              ? o.purpose
+              : expectedSlot?.purpose,
+          metadata: {
+            ...(o.meta ?? {}),
+            aspectRatio: o.aspectRatio ?? step.params!.recommendedAspectRatio,
+            platformRules: platform ? getRules(platform).image : null,
+          },
+        };
+      });
 
     try {
       const result = await maxcorePost("/generate/image", {
@@ -3189,8 +3196,8 @@ const imageWorker = {
       if (outputs.length > 0) return mapOutputs(outputs);
     } catch (err) {
       logger.warn(
-        { err },
-        `[MultimodalGen] MaxCore /generate/image unavailable; no local fallback: ${err instanceof Error ? err.message : String(err)}`,
+        { errorType: safeErrorType(err) },
+        "[MultimodalGen] MaxCore /generate/image unavailable; no local fallback",
       );
     }
 
@@ -3319,7 +3326,11 @@ const audioWorker = {
               req.userId,
             ),
             platform: (o.platform as Platform | undefined) ?? platform,
-            slotId: o.slotId,
+            slotId:
+              (typeof o.slotId === "string" ? o.slotId : undefined) ??
+              (typeof step.params?.slotId === "string"
+                ? step.params.slotId
+                : undefined),
             metadata: {
               ...(o.meta ?? {}),
               maxDurationSec: audioRules?.maxDurationSec,
@@ -3330,8 +3341,8 @@ const audioWorker = {
       }
     } catch (err) {
       logger.warn(
-        { err },
-        `[MultimodalGen] MaxCore /generate/audio unavailable; no local AI/media fallback: ${err instanceof Error ? err.message : String(err)}`,
+        { errorType: safeErrorType(err) },
+        "[MultimodalGen] MaxCore /generate/audio unavailable; no local AI/media fallback",
       );
     }
 
@@ -3356,16 +3367,29 @@ const videoWorker = {
         : req.input.modality === "audio"
           ? req.input.payload
           : undefined;
+    const topicCandidate =
+      params.topic ??
+      normalized.summary ??
+      normalized.title ??
+      normalized.payload_summary ??
+      (req.input.modality === "text" ? req.input.payload : undefined) ??
+      req.intent;
+    if (
+      typeof topicCandidate !== "string" ||
+      !topicCandidate.trim()
+    ) {
+      throw new AIUnavailableError("multimodal video generation input");
+    }
+    const platformCandidate = params.platform ?? req.platforms[0];
+    if (
+      typeof platformCandidate !== "string" ||
+      !platformCandidate.trim()
+    ) {
+      throw new AIUnavailableError("multimodal video generation platform");
+    }
     const result = await renderVideo({
-      topic:
-        String(
-          params.topic ??
-            normalized.summary ??
-            normalized.title ??
-            req.intent ??
-            "creative video",
-        ),
-      platform: String(params.platform ?? req.platforms[0] ?? "tiktok"),
+      topic: topicCandidate.trim(),
+      platform: platformCandidate,
       aspect_ratio:
         typeof params.aspectRatio === "string" ? params.aspectRatio : undefined,
       duration:
@@ -3383,17 +3407,15 @@ const videoWorker = {
       awareness: req.awareness,
     });
     if (!result.success || !result.url) {
-      throw new AIUnavailableError(
-        `multimodal video generation${result.error ? `: ${result.error}` : ""}`,
-      );
+      throw new AIUnavailableError("multimodal video generation");
     }
     return [
       {
         id: randomUUID(),
         modality: "video",
         payload: result.url,
-        platform: (params.platform as Platform | undefined) ?? req.platforms[0],
-        slotId: step.slotId,
+        platform: platformCandidate as Platform,
+        slotId: typeof params.slotId === "string" ? params.slotId : undefined,
         metadata: {
           maxcoreJobCompleted: true,
           duration: result.duration,
@@ -3423,6 +3445,9 @@ export async function handleGeneration(
 
   const normalized = await normalizeInput(req) as Record<string, unknown>;
   const plan = await planTasks(normalized, req);
+  if (!Array.isArray(plan.steps) || plan.steps.length === 0) {
+    throw new AIUnavailableError("multimodal generation plan");
+  }
 
   const stepOutputs = new Map<string, GeneratedAsset[]>();
 
@@ -3435,50 +3460,57 @@ export async function handleGeneration(
     (s) => s.inputFrom && s.inputFrom !== "normalizedInput",
   );
 
-  // Run all independent steps concurrently.
-  // Each step is wrapped in try/catch so a failing video/audio render
-  // doesn't abort the entire pipeline — the client handles empty assets
-  // by showing appropriate fallback UI (e?.g. ServerVideoGenerator).
+  // Run all independent steps concurrently, but do not turn worker failures
+  // into empty assets. A package is successful only when every planned step
+  // returns its complete, validated output.
   if (independentSteps?.length > 0) {
     const settled = await Promise.allSettled(
       independentSteps?.map(async (step) => {
         const worker = workers[step?.worker];
         if (!worker) {
-          logger.warn(`[MultimodalGen] Unknown worker: ${step?.worker}`);
-          stepOutputs?.set(step?.id, []);
-          return;
+          throw new AIUnavailableError("multimodal generation worker");
         }
-        try {
-          const assets = await worker?.run(step, { normalized }, req);
-          stepOutputs?.set(step?.id, assets);
-          logger.info(
-            `[MultimodalGen] Step ${step?.id} (${step?.worker}) → ${assets?.length} asset(s) [parallel]`,
-          );
-        } catch (err) {
-          if (err instanceof AIUnavailableError) throw err;
-          logger.warn(
-            { err },
-            `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets: ${err instanceof Error ? err?.message : String(err)}`,
-          );
-          stepOutputs?.set(step?.id, []);
-        }
+        const assets = validateStepAssets(
+          step,
+          await worker.run(step, { normalized }, req),
+        );
+        stepOutputs.set(step.id, assets);
+        logger.info(
+          `[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} validated asset(s) [parallel]`,
+        );
       }),
     );
-    // MaxCore-only contract: an AIUnavailableError thrown inside a settled
-    // promise must propagate, not be silently discarded.
-    const aiFailure = settled.find(
-      (r): r is PromiseRejectedResult =>
-        r.status === "rejected" && r.reason instanceof AIUnavailableError,
+    const failures = settled.filter(
+      (result): result is PromiseRejectedResult => result.status === "rejected",
     );
-    if (aiFailure) throw aiFailure.reason;
+    if (failures.length > 0) {
+      const aiFailure = failures.find(
+        (result) => result.reason instanceof AIUnavailableError,
+      );
+      if (aiFailure) throw aiFailure.reason;
+      logger.warn(
+        { requestId: req.id, failedSteps: failures.length },
+        "[MultimodalGen] Independent generation step failed; rejecting the package",
+      );
+      throw new AIUnavailableError("multimodal generation");
+    }
   }
 
   // Run dependent steps serially, each resolving its upstream outputs
   for (const step of dependentSteps) {
     const worker = workers[step?.worker];
     if (!worker) {
-      logger.warn(`[MultimodalGen] Unknown worker: ${step?.worker}`);
-      continue;
+      throw new AIUnavailableError("multimodal generation worker");
+    }
+    const dependencyIds = Array.isArray(step.inputFrom)
+      ? step.inputFrom
+      : [step.inputFrom];
+    if (
+      dependencyIds.some(
+        (dependencyId) => !stepOutputs.get(dependencyId)?.length,
+      )
+    ) {
+      throw new AIUnavailableError("multimodal generation dependency");
     }
     const inputs = {
       normalized,
@@ -3487,23 +3519,17 @@ export async function handleGeneration(
         : [step?.inputFrom]
       ).flatMap((id: string) => stepOutputs?.get(id) ?? []),
     };
-    try {
-      const assets = await worker?.run(step, inputs, req);
-      stepOutputs?.set(step?.id, assets);
-      logger.info(
-        `[MultimodalGen] Step ${step?.id} (${step?.worker}) → ${assets?.length} asset(s) [sequential]`,
-      );
-    } catch (err) {
-      if (err instanceof AIUnavailableError) throw err;
-      logger.warn(
-        { err },
-        `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets: ${err instanceof Error ? err?.message : String(err)}`,
-      );
-      stepOutputs?.set(step?.id, []);
-    }
+    const assets = validateStepAssets(
+      step,
+      await worker.run(step, inputs, req),
+    );
+    stepOutputs.set(step.id, assets);
+    logger.info(
+      `[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} validated asset(s) [sequential]`,
+    );
   }
 
-  const allAssets = Array.from(stepOutputs?.values()).flat();
+  const allAssets = validatePlanAssets(plan, stepOutputs);
 
   logger.info(
     `[MultimodalGen] Done: id=${req.id}, total_assets=${allAssets?.length}`,

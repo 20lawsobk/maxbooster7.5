@@ -57,21 +57,22 @@ async function maxCoreOwnedRequest<T>(
       },
       signal: AbortSignal.timeout(45_000),
     });
-  } catch (error) {
-    throw new AIUnavailableError(
-      `video generation: ${(error as Error).message}`,
-    );
+  } catch {
+    throw new AIUnavailableError("video generation request failed");
   }
   if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new AIUnavailableError(
-      `video generation returned HTTP ${response.status}${detail ? `: ${detail.slice(0, 200)}` : ""}`,
-    );
+    await response.body?.cancel().catch(() => undefined);
+    throw new AIUnavailableError("video generation");
   }
   if (!(response.headers.get("content-type") ?? "").includes("application/json")) {
-    throw new AIUnavailableError("video generation returned non-JSON");
+    await response.body?.cancel().catch(() => undefined);
+    throw new AIUnavailableError("video generation");
   }
-  return (await response.json()) as T;
+  try {
+    return (await response.json()) as T;
+  } catch {
+    throw new AIUnavailableError("video generation");
+  }
 }
 
 // ── MaxCore video URL cache ───────────────────────────────────────────────────
@@ -220,11 +221,6 @@ async function cacheVideoLocally(
 ): Promise<{ videoUrl: string; posterUrl: string | null }> {
   const filename = path?.basename(rawUrl?.split("?")[0]);
 
-  // Log the exact URL MaxCore returned so we can diagnose retrieval issues.
-  logger.info(
-    `[AdvancedVideoRenderer] cacheVideoLocally — rawUrl from MaxCore: "${rawUrl}"`,
-  );
-
   // Retain the source URL for diagnostics only; it is never served to clients.
   const absoluteForProxy = rawUrl?.startsWith("http")
     ? rawUrl
@@ -245,7 +241,8 @@ async function cacheVideoLocally(
         const cl = response?.headers.get("content-length") ?? "unknown";
         if (!response?.ok) {
           logger.info(
-            `[AdvancedVideoRenderer] Candidate ${url} → HTTP ${response.status} ct="${ct}"`,
+            { status: response.status, contentType: ct },
+            "[AdvancedVideoRenderer] MaxCore video candidate unavailable",
           );
           continue;
         }
@@ -256,12 +253,13 @@ async function cacheVideoLocally(
         const buffer = Buffer.from(await response.arrayBuffer());
 
         if (!looksLikeRealVideo(buffer)) {
-          const head = buffer
-            .slice(0, 60)
-            .toString("utf8")
-            .replace(/[\r\n]/g, " ");
           logger.info(
-            `[AdvancedVideoRenderer] Candidate ${url} → NOT video (HTTP 200, ct="${ct}", len=${cl}, head="${head}")`,
+            {
+              contentType: ct,
+              contentLength: cl,
+              actualLength: buffer.length,
+            },
+            "[AdvancedVideoRenderer] MaxCore candidate did not contain video bytes",
           );
           continue;
         }
@@ -275,7 +273,8 @@ async function cacheVideoLocally(
         );
         const pdimUrl = await hybridStorageService.getDownloadUrl(userId, upload.key);
         logger.info(
-          `[AdvancedVideoRenderer] Video stored in PDIM from ${url} — ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`,
+          { byteLength: buffer.length },
+          "[AdvancedVideoRenderer] Video stored in authenticated storage",
         );
         urlStoreSet(filename, url);
 
@@ -289,7 +288,11 @@ async function cacheVideoLocally(
           posterUrl = await generateAndStorePosterThumbnail(scratchPath, userId);
         } catch (posterErr) {
           logger.info(
-            `[AdvancedVideoRenderer] Poster scratch step skipped: ${posterErr instanceof Error ? posterErr.message : String(posterErr)}`,
+            {
+              errorType:
+                posterErr instanceof Error ? posterErr.name : typeof posterErr,
+            },
+            "[AdvancedVideoRenderer] Poster scratch step skipped",
           );
         } finally {
           await fsPromises.unlink(scratchPath).catch(() => {});
@@ -298,21 +301,28 @@ async function cacheVideoLocally(
         return { videoUrl: pdimUrl, posterUrl };
       } catch (err) {
         logger.info(
-          `[AdvancedVideoRenderer] Candidate ${url} fetch error: ${err instanceof Error ? err.message : String(err)}`,
+          {
+            errorType: err instanceof Error ? err.name : typeof err,
+          },
+          "[AdvancedVideoRenderer] MaxCore video candidate fetch failed",
         );
       }
     }
 
     logger.warn(
-      `[AdvancedVideoRenderer] All ${candidates.length} candidates failed for "${filename}" — cannot persist to PDIM`,
+      { candidateCount: candidates.length },
+      "[AdvancedVideoRenderer] Could not persist the MaxCore video",
     );
   } catch (err) {
     logger.warn(
-      `[AdvancedVideoRenderer] PDIM video retrieval setup failed: ${err instanceof Error ? err.message : String(err)}`,
+      {
+        errorType: err instanceof Error ? err.name : typeof err,
+      },
+      "[AdvancedVideoRenderer] Video persistence setup failed",
     );
   }
 
-  throw new Error(`Unable to download MaxCore video ${filename} for PDIM storage`);
+  throw new Error("Unable to persist the MaxCore video");
 }
 
 // ── MaxCore video job status type ─────────────────────────────────────────────
@@ -345,7 +355,8 @@ interface MaxCoreVideoStatus {
  */
 async function pollVideoJob(jobId: string, userId: string): Promise<VideoGenResult | null> {
   logger.info(
-    `[AdvancedVideoRenderer] Polling MaxCore job ${jobId} (max ${POLL_MAX_ATTEMPTS} × ${POLL_INTERVAL_MS / 1000}s)`,
+    { maxAttempts: POLL_MAX_ATTEMPTS, intervalSeconds: POLL_INTERVAL_MS / 1000 },
+    "[AdvancedVideoRenderer] Polling MaxCore video job",
   );
 
   for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
@@ -362,7 +373,8 @@ async function pollVideoJob(jobId: string, userId: string): Promise<VideoGenResu
       const { videoUrl, posterUrl } = await cacheVideoLocally(status.url, userId);
 
       logger.info(
-        `[AdvancedVideoRenderer] Job ${jobId} done after ${attempt + 1} poll(s) — serving: ${videoUrl}`,
+        { polls: attempt + 1 },
+        "[AdvancedVideoRenderer] MaxCore video job completed",
       );
       return {
         success: true,
@@ -386,26 +398,27 @@ async function pollVideoJob(jobId: string, userId: string): Promise<VideoGenResu
 
     if (status.status === "error") {
       logger.warn(
-        `[AdvancedVideoRenderer] MaxCore job ${jobId} errored: ${status.error}`,
+        { polls: attempt + 1 },
+        "[AdvancedVideoRenderer] MaxCore video job returned failure",
       );
-      // Preserve MaxCore's own error text — do NOT collapse into the
-      // generic timeout message the caller uses for a null return.
       return {
         success: false,
-        error: status.error || "MaxCore video job failed",
+        error: "Video generation failed",
         source: "MaxCoreAI",
       };
     }
 
     if (attempt % 15 === 14) {
       logger.info(
-        `[AdvancedVideoRenderer] Job ${jobId} still ${status.status ?? "processing"} (${attempt + 1} polls)`,
+        { polls: attempt + 1 },
+        "[AdvancedVideoRenderer] MaxCore video job is still processing",
       );
     }
   }
 
   logger.warn(
-    `[AdvancedVideoRenderer] Job ${jobId} timed out after ${POLL_MAX_ATTEMPTS} poll attempts`,
+    { maxAttempts: POLL_MAX_ATTEMPTS },
+    "[AdvancedVideoRenderer] MaxCore video job timed out",
   );
   return null;
 }
@@ -773,21 +786,33 @@ export async function renderVideo(
     }
   };
 
-  const idea =
-    [opts.hook || opts.topic, opts.artist_name, opts.genre]
-      .filter(Boolean)
-      .join(" — ") || "music promo video";
-
-  logger.info(
-    `[AdvancedVideoRenderer] Submitting MaxCore video job — idea: "${idea.slice(0, 80)}"`,
-  );
-
-  const ownerId = opts.userId || "anonymous";
-  if (opts.user_audio_path && !opts.userId) {
+  const topic = typeof opts.topic === "string" ? opts.topic.trim() : "";
+  const hook = typeof opts.hook === "string" ? opts.hook.trim() : "";
+  const body = typeof opts.body === "string" ? opts.body.trim() : "";
+  const explicitContent = hook || topic || body;
+  if (!explicitContent) {
+    throw new Error("A video topic, hook, or body is required");
+  }
+  const platform =
+    typeof opts.platform === "string" ? opts.platform.trim() : "";
+  if (!platform) {
+    throw new Error("A target platform is required for video generation");
+  }
+  if (typeof opts.userId !== "string" || !opts.userId.trim()) {
     throw new AIUnavailableError(
-      "video generation with user audio (owner identity required)",
+      "video generation requires authenticated ownership",
     );
   }
+  const ownerId = opts.userId.trim();
+  const idea = [explicitContent, opts.artist_name, opts.genre]
+    .filter(Boolean)
+    .join(" — ");
+
+  logger.info(
+    { platform, hasTopic: !!topic, hasHook: !!hook, hasBody: !!body },
+    "[AdvancedVideoRenderer] Submitting MaxCore video job",
+  );
+
   const maxCoreAudioPath = opts.user_audio_path
     ? await ensureMaxCoreAudioAsset(opts.user_audio_path, ownerId)
     : undefined;
@@ -798,11 +823,11 @@ export async function renderVideo(
       method: "POST",
       body: JSON.stringify({
       idea,
-      topic: opts.topic || undefined,
-      hook: opts.hook || undefined,
-      body: opts.body || undefined,
+      topic: topic || undefined,
+      hook: hook || undefined,
+      body: body || undefined,
       cta: opts.cta || undefined,
-      platform: opts.platform || "tiktok",
+      platform,
       aspect_ratio: opts.aspect_ratio || "9:16",
       template: opts.template || undefined,
       duration: opts.duration || 10,
@@ -840,10 +865,7 @@ export async function renderVideo(
   const syncUrl = jobResp.url || jobResp.video_url;
   if (syncUrl) {
     requireMediaReceipt(jobResp.resolved_media_manifest);
-    const { videoUrl, posterUrl } = await cacheVideoLocally(
-      syncUrl,
-      opts.userId || "anonymous",
-    );
+    const { videoUrl, posterUrl } = await cacheVideoLocally(syncUrl, ownerId);
     logger.info(
       `[AdvancedVideoRenderer] Synchronous MaxCore render complete in ${Date.now() - startMs}ms`,
     );
@@ -873,9 +895,10 @@ export async function renderVideo(
   if (jobResp.job_id) {
     const result = await pollVideoJob(jobResp.job_id, ownerId);
     if (result && !result.success) {
-      // Explicit MaxCore job error — surface its own error text.
       return {
-        ...result,
+        success: false,
+        error: "Video generation failed",
+        source: "MaxCoreAI",
         processing_time_ms: Date.now() - startMs,
       } as unknown as VideoGenResult;
     }
@@ -892,7 +915,7 @@ export async function renderVideo(
     }
     return {
       success: false,
-      error: `MaxCore job ${jobResp.job_id} did not complete within the polling window`,
+      error: "Video generation did not complete within the polling window",
       source: "MaxCoreAI",
       processing_time_ms: Date.now() - startMs,
     };

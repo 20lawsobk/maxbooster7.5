@@ -24,6 +24,10 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Download, Sparkles, Clock, Layout, Film, Zap, Layers, Mic, Image, FileText, Upload, CheckCircle, ChevronDown, ChevronUp, Camera, Music, BarChart2 } from "lucide-react";
+import {
+  pollVideoJobUntilDone,
+  TerminalJobError,
+} from "@/lib/videoJobPolling";
 
 interface ServerVideoGeneratorProps {
   platform: string;
@@ -468,57 +472,20 @@ export function ServerVideoGenerator({
     // outlast that worst case or it abandons a render the server is still
     // legitimately completing. 210 × 2s = 7 min covers 5 min render + 60s
     // caching + margin for network jitter.
-    const maxAttempts = 210; // 7 min budget (210 × 2s)
-    let consecutiveErrors = 0;
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise((r) => setTimeout(r, 2000));
-      if (userCancelledRef.current) throw new Error("Cancelled");
-      try {
-        const resp = await fetch(`/api/social/video-job/${jobId}`, {
-          credentials: "include",
-        });
-        const text = await resp.text();
-        let data: VideoJobData;
-        try {
-          data = JSON.parse(text) as VideoJobData;
-        } catch {
-          throw new Error("Unexpected response from server");
-        }
-        if (!resp.ok) throw new Error(data.error || `Job polling failed (${resp.status})`);
-        if (["error", "failed", "cancelled", "not_found"].includes(data.status || "")) {
-          activeJobIdRef.current = null;
-          const failure = new Error(data.error || `Video generation ${data.status}`);
-          failure.name = "TerminalJobError";
-          throw failure;
-        }
-        consecutiveErrors = 0;
-
-        // Server returns status='completed' with video_url — normalise to the
-        // shape callGenerateVideo expects: {success:true, url, ...rest}
-        const videoUrl = data.url || data.video_url;
-        const isDone =
-          (data.status === "done" || data.status === "completed") && videoUrl;
-        if (isDone) {
-          activeJobIdRef.current = null;
-          return { ...data, success: true, url: videoUrl };
-        }
-        if (data.status === "error")
-          throw new Error(data.error || "Video generation failed");
-        setGeneratingStage(`Rendering… (${Math.round((i + 1) * 2)}s)`);
-      } catch (err) {
-        const msg = errMessage(err);
-        if (errName(err) === "TerminalJobError" || msg === "Cancelled" || msg === "Video generation failed") throw err;
-        // Network/parse error — retry up to 5 times before giving up
-        consecutiveErrors++;
-        if (consecutiveErrors >= 5)
-          throw new Error(
-            "Network error during video generation. Please check your connection.",
-          );
-        // Back off briefly on error then retry
-        await new Promise((r) => setTimeout(r, 1000 * consecutiveErrors));
+    try {
+      return await pollVideoJobUntilDone<VideoJobData>(jobId, {
+        fetchStatus: (id) =>
+          fetch(`/api/social/video-job/${id}`, { credentials: "include" }),
+        isCancelled: () => userCancelledRef.current,
+        onProgress: (elapsedSeconds) =>
+          setGeneratingStage(`Rendering… (${elapsedSeconds}s)`),
+      });
+    } catch (error) {
+      if (error instanceof TerminalJobError) {
+        activeJobIdRef.current = null;
       }
+      throw error;
     }
-    throw new Error("Video generation timed out. Please try again.");
   };
 
   const callGenerateVideo = async (payload: Record<string, unknown>) => {
@@ -786,11 +753,23 @@ export function ServerVideoGenerator({
       return;
     }
     const vc: VideoConfig = audioAnalysis.video_config || {};
+    const explicitTopic = [topicProp, vc.topic, audioAnalysis.seed?.topic].find(
+      (value) => typeof value === "string" && value.trim(),
+    )?.trim();
+    if (!explicitTopic) {
+      toast({
+        title: "No video topic available",
+        description:
+          "The audio analysis did not provide a topic. Add one in the topic field or analyze a different file.",
+        variant: "destructive",
+      });
+      return;
+    }
     // Real uploaded audio already anchors the video to real content — use a
     // photorealistic visual base to match. No script field in this mode, so
     // there's nothing to narrate: the uploaded track is the audio track.
     await callGenerateVideo({
-      topic: vc.topic || audioAnalysis.seed?.topic || "music",
+      topic: explicitTopic,
       tone: vc.tone || tone,
       bg_color: vc.bg,
       accent_color: vc.ac,
@@ -854,11 +833,23 @@ export function ServerVideoGenerator({
       return;
     }
     const vc: VideoConfig = imageAnalysis.video_config || {};
+    const explicitTopic = [topicProp, vc.topic, imageAnalysis.seed?.topic].find(
+      (value) => typeof value === "string" && value.trim(),
+    )?.trim();
+    if (!explicitTopic) {
+      toast({
+        title: "No video topic available",
+        description:
+          "The image analysis did not provide a topic. Add one in the topic field or analyze a different image.",
+        variant: "destructive",
+      });
+      return;
+    }
     // Real uploaded image already anchors the video to a real photo — use a
     // photorealistic visual base to match. No script field in this mode, so
     // there's nothing to narrate.
     await callGenerateVideo({
-      topic: vc.topic || imageAnalysis.seed?.topic || "music aesthetic",
+      topic: explicitTopic,
       tone: vc.tone || tone,
       bg_color: vc.bg,
       accent_color: vc.ac,
@@ -901,6 +892,14 @@ export function ServerVideoGenerator({
 
   const handleGenerateMusicVideo = async () => {
     if (!studioAudioFile) return;
+    if (!studioHook.trim()) {
+      toast({
+        title: "Add a video hook",
+        description: "Enter a hook or topic so MaxCore has explicit direction for the video.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsGenerating(true);
     setGeneratingStage("Analyzing beats…");
     setRenderProgress(0);
@@ -1653,11 +1652,11 @@ export function ServerVideoGenerator({
 
                   {/* Hook text */}
                   <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">Hook / Lyric <span className="opacity-50">(optional overlay)</span></Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Hook / Topic <span className="opacity-50">(required)</span></Label>
                     <Input
                       value={studioHook}
                       onChange={(e) => setStudioHook(e.target.value)}
-                      placeholder="Your hook or lyric here…"
+                    placeholder="Enter a hook or topic for this video…"
                       className="h-8 text-xs"
                     />
                   </div>

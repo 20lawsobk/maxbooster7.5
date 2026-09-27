@@ -871,13 +871,19 @@ export default function SocialMedia() {
         ...new Set(data.platforms.flatMap(expandPlatform)),
       ].filter((p) => MULTIMODAL_PLATFORMS.has(p));
       const outputModality = data.format || "text";
+      if (mappedPlatforms.length === 0) {
+        throw new Error("Select at least one supported platform.");
+      }
+      if (!["text", "image", "audio", "video"].includes(outputModality)) {
+        throw new Error("Select a supported output format.");
+      }
       const response = await apiRequest("POST", "/api/multimodal/generate", {
         input: {
           modality: "text",
           payload:
             data.topic?.trim() || `Generate ${data.tone} social media content`,
         },
-        platforms: mappedPlatforms.length > 0 ? mappedPlatforms : ["instagram"],
+        platforms: mappedPlatforms,
         intent: data.tone,
         direction: data.direction,
         context: data.context,
@@ -923,9 +929,10 @@ export default function SocialMedia() {
       );
       setIsGeneratingContent(false);
     },
-    onError: () => {
+    onError: (error: Error) => {
       handleContentGenerationFailed(
-        "Failed to generate content. The AI service may be temporarily unavailable.",
+        error.message ||
+          "Failed to generate content. The AI service may be temporarily unavailable.",
       );
       setIsGeneratingContent(false);
     },

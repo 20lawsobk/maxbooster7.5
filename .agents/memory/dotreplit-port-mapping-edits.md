@@ -46,14 +46,18 @@ sidecar entry, as documented by Replit, left zero public sidecar mappings while
 the running preview and loaded-model readiness remained healthy. Preserve this
 setting when maintaining the port table; never remove the startup security gate.
 
-A later workspace restart restored public sidecar mappings even after verified
-replacement and a successful startup with private mappings.
+A later workspace restart or a test process binding an internal port restored
+public sidecar mappings even after verified replacement and successful startup
+with private mappings.
 
 **Why:** A browser evaluation lost its running session when the workspace
 restarted; the next boot failed the same port contract and direct inspection
-confirmed the mappings had reverted. A successful replacement is not durable
-evidence across a workspace restart.
+confirmed the mappings had reverted. A later unit-test run also coincided with
+port 6379 being exposed again. A successful replacement is not durable evidence
+after workspace restart or later process/port discovery.
 
-**How to apply:** Recheck the actual port blocks after a restart before retrying
-browser tests. Do not infer that `exposeLocalhost=false` is still present, and
-do not weaken the internal-port security gate to make acceptance tests run.
+**How to apply:** Recheck the actual port blocks after startup and after any
+test/process run that may bind internal ports. Restore private mappings only
+after the last such process has started. Do not infer that
+`exposeLocalhost=false` is still present, and do not weaken the internal-port
+security gate to make checks pass.

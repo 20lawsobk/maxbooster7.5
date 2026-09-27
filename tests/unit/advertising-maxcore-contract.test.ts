@@ -92,6 +92,15 @@ describe("advertising MaxCore contracts", () => {
     });
   });
 
+  it("rejects an unsupported platform instead of silently targeting Instagram", () => {
+    expect(() =>
+      buildImageGenerationRequest({
+        prompt: "new music release",
+        platform: "not-a-platform",
+      }),
+    ).toThrow(/unsupported platform/i);
+  });
+
   it("mirrors a mocked /uploads/images response into PDIM", async () => {
     const bytes = Buffer.alloc(16);
     bytes.set([0x89, 0x50, 0x4e, 0x47], 0);

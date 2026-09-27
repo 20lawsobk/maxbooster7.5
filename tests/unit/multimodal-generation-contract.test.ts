@@ -8,6 +8,15 @@ import {
   normalizeMaxcoreAnalyzeResponse,
   normalizeMultimodalUrl,
 } from "../../server/services/multimodalGenerationService.js";
+import {
+  validatePlanAssets,
+  validateStepAssets,
+} from "../../server/services/multimodalGenerationContract.js";
+import type {
+  GeneratedAsset,
+  TaskPlan,
+  TaskStep,
+} from "@shared/types/multimodalGeneration.js";
 
 describe("multimodal generation URL contract", () => {
   it("normalizes URL paths while preserving Spotify URI inputs", () => {
@@ -54,5 +63,99 @@ describe("MaxCore /analyze response contract", () => {
     expect(() => normalizeMaxcoreAnalyzeResponse([])).toThrow(
       /invalid response/i,
     );
+  });
+});
+
+const twoSlotStep: TaskStep = {
+  id: "step_text",
+  type: "generate",
+  worker: "text",
+  inputFrom: "normalizedInput",
+  params: {
+    slots: [
+      { id: "instagram_post", platform: "instagram" },
+      { id: "tiktok_post", platform: "tiktok" },
+    ],
+  },
+};
+
+function generatedText(
+  id: string,
+  slotId: string,
+  platform: string,
+  payload = "Generated copy",
+): GeneratedAsset {
+  return {
+    id,
+    modality: "text",
+    payload,
+    slotId,
+    platform: platform as GeneratedAsset["platform"],
+  };
+}
+
+describe("multimodal generation output contract", () => {
+  it("accepts one complete asset for every planned slot", () => {
+    const validated = validateStepAssets(twoSlotStep, [
+      generatedText("asset-1", "instagram_post", "instagram"),
+      generatedText("asset-2", "tiktok_post", "tiktok"),
+    ]);
+
+    expect(validated).toHaveLength(2);
+  });
+
+  it("rejects partial slot output", () => {
+    expect(() =>
+      validateStepAssets(twoSlotStep, [
+        generatedText("asset-1", "instagram_post", "instagram"),
+      ]),
+    ).toThrow();
+  });
+
+  it("rejects an asset assigned to the wrong platform", () => {
+    expect(() =>
+      validateStepAssets(twoSlotStep, [
+        generatedText("asset-1", "instagram_post", "tiktok"),
+        generatedText("asset-2", "tiktok_post", "tiktok"),
+      ]),
+    ).toThrow();
+  });
+
+  it("rejects empty payloads and modality mismatches", () => {
+    expect(() =>
+      validateStepAssets(twoSlotStep, [
+        generatedText("asset-1", "instagram_post", "instagram", " "),
+        generatedText("asset-2", "tiktok_post", "tiktok"),
+      ]),
+    ).toThrow();
+    expect(() =>
+      validateStepAssets(twoSlotStep, [
+        {
+          ...generatedText("asset-1", "instagram_post", "instagram"),
+          modality: "image",
+        },
+        generatedText("asset-2", "tiktok_post", "tiktok"),
+      ]),
+    ).toThrow();
+  });
+
+  it("rejects a plan if any planned step has no output", () => {
+    const imageStep: TaskStep = {
+      ...twoSlotStep,
+      id: "step_image",
+      worker: "image",
+    };
+    const plan: TaskPlan = {
+      requestId: "request-1",
+      steps: [twoSlotStep, imageStep],
+    };
+    const textAssets = [
+      generatedText("asset-1", "instagram_post", "instagram"),
+      generatedText("asset-2", "tiktok_post", "tiktok"),
+    ];
+
+    expect(() =>
+      validatePlanAssets(plan, new Map([["step_text", textAssets]])),
+    ).toThrow();
   });
 });

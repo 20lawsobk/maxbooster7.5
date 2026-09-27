@@ -206,6 +206,7 @@ export interface GenerationRequest {
   awareness?: unknown;
 
   constraints?: {
+    outputModality?: OutputModality;
     length?: "short" | "medium" | "long";
     styleTags?: string[];
     language?: string;
