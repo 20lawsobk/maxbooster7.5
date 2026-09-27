@@ -155,3 +155,4 @@
 - [Checkpoint validation boundaries](checkpoint-validation-resource-boundaries.md) — quarantine names do not prove corruption; safe loading, meta compatibility and serving inference are separate gates.
 - [Simulation isolation preflight](simulation-isolation-preflight.md) — privileged namespace failure does not rule out unprivileged isolation; test the exact runtime mechanism.
 - [Training corpus rights](training-corpus-rights.md) — a dataset/package license alone does not clear underlying text; verify source-level rights before model training.
+- [Path-scoped Git history scrubbing](git-filter-repo-path-scrub.md) — use filename-aware filtering; preserve prior rewrite mappings and inspect other refs before assuming a scrub covers them.
