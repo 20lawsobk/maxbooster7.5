@@ -84,6 +84,7 @@
 - [Shared compute-sizing source](shared-compute-sizing.md) — server/computeSizing.ts is the ONE place that reads os.cpus()/freemem() for worker/lane sizing; cluster.ts, maxcoreLocalSupervisor.ts, and HyperGPU (via env) all derive from it
 - [Pocket-backed elastic compute](pocket-elastic-compute.md) — PocketFabric node lifecycles and MaxCore GPU lives are uncapped logical resources backed by compressed pocket state
 - [Awareness conditioning contract](awareness-conditioning-contract.md) — every model seam uses the shared cascade, and media coalescing identities include effective awareness
+- [MaxCore warm-up isolation](maxcore-warmup-isolation.md) — outer generation wrappers can re-promote guarded errors caught by warm steps; probes need a real snapshot and checkpoint-valid prompt
 - [Honest-placeholder control checklist](honest-placeholder-controls.md) — a "fixed" placeholder endpoint isn't done until: static routes registered before conflicting :id routes, user input actually persisted (not discarded), status only flips to a terminal value on real success, and the GET/list DTO echoes back what was saved so a reload doesn't lose it
 - [Port contract boundaries](port-contract-boundaries.md) — PORT is public-only; every sidecar needs a validated named loopback port and no external mapping
 - [Cluster worker heap vs real RAM](cluster-worker-heap-vs-real-ram.md) — flat per-tier --max-old-space-size can 2x-overcommit a small VM's RAM, causing a multi-minute event-loop stall (same symptom class as the PDIM gap stall, different cause)

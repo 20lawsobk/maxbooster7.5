@@ -44,6 +44,7 @@ def main() -> None:
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
     os.environ["MKL_NUM_THREADS"] = "1"
     sys.path.insert(0, str(SERVER_DIR))
+    from ai_model.model.creative_model import select_representable_probe_prompt
 
     before = {"checkpoint": digest(CHECKPOINT), "release": digest(MANIFEST)}
     report = {
@@ -129,13 +130,8 @@ def main() -> None:
             "excludes unnamed head rows, which otherwise decode as <UNK>."
         )
 
-        # A short meaningful word if encoded fully; otherwise use a known
-        # checkpoint control token. No forced bypass of the prompt-loss guard.
-        choices = ("music", "the", "<STAGE_HOOK>")
-        prompt = next((p for p in choices if tok.token_to_id("<UNK>") not in
-                       tok.encode(p).ids), None)
-        if prompt is None:
-            raise RuntimeError("Checkpoint tokenizer cannot encode any probe prompt")
+        # Use the exact vocabulary-aware selection used by the production warm-up.
+        prompt = select_representable_probe_prompt(tok)
         attention_before = get_gpu_attn_calls()
         ops_before = gpu.core._total_ops
         gemm_before = gpu._total_compute_ms

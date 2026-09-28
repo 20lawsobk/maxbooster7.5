@@ -8,7 +8,10 @@ from torch import nn
 
 from ai_model.agents.script_agent import ScriptAgent, ScriptRequest
 from ai_model.gpu.hyper_creative_transformer import HyperRoPESelfAttention
-from ai_model.model.creative_model import CreativeModel
+from ai_model.model.creative_model import (
+    CreativeModel,
+    select_representable_probe_prompt,
+)
 from ai_model.model.tokenizer import BPETokenizer, SimpleTokenizer
 from ai_model.model.transformer import precompute_rope_freqs
 
@@ -25,6 +28,41 @@ class TinyGPU:
         self.calls += 1
         e = np.exp(x - x.max(axis=axis, keepdims=True))
         return e / e.sum(axis=axis, keepdims=True)
+
+
+def valid_awareness_snapshot():
+    import time
+    from hashlib import sha256
+    from ai_model.awareness import Snapshot
+    from ai_model.awareness.engine import DOMAINS, canonical
+
+    now = time.time()
+    domains, health = {}, {}
+    for domain in DOMAINS:
+        source = domain + "-fixture"
+        text = domain + " observed chart test"
+        citation = "https://example.org/" + domain
+        row = {
+            "source": source, "text": text, "citation": citation,
+            "observed_at": now, "value": 10, "score": 0.5, "metric": "rank",
+        }
+        row["id"] = sha256(canonical([source, citation, text]).encode()).hexdigest()
+        domains[domain] = [row]
+        health[source] = {"ok": True, "domain": domain, "observed_at": now}
+    doc = {
+        "schema": 1,
+        "created_at": now,
+        "expires_at": now + 600,
+        "domains": domains,
+        "source_health": health,
+        "ranking": "digital_gpu_awareness_software:v1;stable-id-ties;seed=0",
+        "secondary": {
+            "features_observed_at": now,
+            "music_features": {"global": {"bpm_median": 98, "measured_previews": 3}},
+        },
+    }
+    doc["id"] = sha256(canonical(doc).encode()).hexdigest()
+    return Snapshot.parse(doc, now=now)
 
 
 class AttentionShapeTests(unittest.TestCase):
@@ -127,6 +165,38 @@ class GenerationContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "tokenizer IDs"):
             CreativeModel(TinyModel(), tok)
 
+    def test_warmup_prompt_selection_uses_only_checkpoint_tokens(self):
+        tok = SimpleTokenizer()
+        tok.encode("the")
+        tok.freeze()
+
+        self.assertEqual(
+            select_representable_probe_prompt(tok, ("unseenwarmword", "the")),
+            "the",
+        )
+        with self.assertRaisesRegex(ValueError, "warm-up prompt"):
+            select_representable_probe_prompt(tok, ("unseenwarmword", "anotherunknown"))
+
+    def test_prompt_loss_guard_accepts_exactly_40_percent_and_rejects_more(self):
+        tok = SimpleTokenizer()
+        tok.encode("alpha beta gamma delta epsilon zeta eta")
+        tok.freeze()
+
+        class TinyModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.token_emb = nn.Embedding(tok.vocab_size, 2)
+
+        creative = CreativeModel(TinyModel(), tok)
+        self.assertEqual(
+            len(creative._encode_prompt("alpha beta gamma absentone absenttwo")),
+            5,
+        )
+        with self.assertRaisesRegex(ValueError, "loses over 40%"):
+            creative._encode_prompt(
+                "alpha beta gamma delta absentone absenttwo absentthree"
+            )
+
     def test_unnamed_checkpoint_head_rows_cannot_decode_as_unknown(self):
         tok = SimpleTokenizer()
         tok.encode("music")
@@ -172,10 +242,20 @@ class GenerationContractTests(unittest.TestCase):
         self.assertEqual(text, "completion")
 
     def test_script_failure_does_not_claim_awareness_as_model_output(self):
+        from ai_model.awareness import bind
+        from ai_model.generation.plan import GenerationPlan, active_plan
+
         class BrokenModel:
             def generate(self, *args, **kwargs):
                 raise RuntimeError("model unavailable")
+
         req = ScriptRequest(platform="instagram", goal="growth", tone="chill",
                             idea="Lanterns over the harbor", awareness="mood=calm")
-        with self.assertRaisesRegex(RuntimeError, "model unavailable"):
-            ScriptAgent(BrokenModel()).run(req)
+        with bind(valid_awareness_snapshot()):
+            plan = GenerationPlan.from_request(vars(req), "text")
+            token = active_plan.set(plan)
+            try:
+                with self.assertRaisesRegex(RuntimeError, "model unavailable"):
+                    ScriptAgent(BrokenModel()).run(req)
+            finally:
+                active_plan.reset(token)

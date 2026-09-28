@@ -1867,8 +1867,11 @@ def _warm_start_subsystems() -> None:
 
     def _warm_awareness():
         # Primes the platform quality-awareness buffer read path.
+        from ai_model.awareness import bind, get_engine
         from ai_model import quality_awareness
-        quality_awareness.platform_awareness_string("tiktok")
+        snapshot = get_engine().require_snapshot()
+        with bind(snapshot):
+            quality_awareness.platform_awareness_string("tiktok")
 
     def _warm_request_intelligence():
         from ai_model import request_intelligence as ri
@@ -12158,8 +12161,8 @@ async def api_warm(_admin=Depends(verify_admin)):
     reserved VM is fully hot before (or between) real user requests.
 
     Runs one inference pass through:
-      • transformer / KV-cache  (ScriptAgent 1-token generation)
-      • content scorer          (DistributionAgent caption ranking)
+      • transformer / KV-cache  (short prompt selected from checkpoint vocabulary)
+      • distribution agent      (binding check; shares the warmed transformer)
       • pocket GEMM dedup cache (stats probe confirms cache is active)
       • quality awareness       (platform buffer re-prime)
       • RTA Digital GPU         (global GEMM op-count probe)
@@ -12185,26 +12188,40 @@ async def api_warm(_admin=Depends(verify_admin)):
             overall_ok = False
 
     # ── 1. Transformer / KV-cache ─────────────────────────────────────────────
-    # ScriptAgent.run() drives the full transformer forward pass including
-    # flash-attention and pocket-GEMM dedup — warms KV-cache and GEMM entries.
+    # Use a prompt the loaded checkpoint can encode. A synthetic creative brief
+    # would add awareness/request words that may not exist in its frozen vocab.
+    # This still runs CreativeModel.generate and its unchanged prompt-loss guard.
     def _warm_transformer():
-        if not _model_ready or _script_agent is None:
+        if not _model_ready or _creative_model is None or _tokenizer is None:
             return "skipped (model not ready)"
-        from ai_model.agents.script_agent import ScriptRequest
-        sr = _script_agent.run(ScriptRequest(
-            idea="warm", platform="tiktok", goal="growth", tone="energetic",
-        ))
-        return f"hook={sr.hook[:40]!r}"
+        from ai_model.generation.plan import active_plan
+        from ai_model.model.creative_model import select_representable_probe_prompt
+        plan = active_plan.get()
+        if plan is None:
+            raise RuntimeError("Warm-up inference requires an active generation plan")
+        prompt = select_representable_probe_prompt(_tokenizer)
+        output = _creative_model.generate(
+            prompt,
+            max_new_tokens=4,
+            temperature=0.8,
+            top_p=0.92,
+            top_k=50,
+            min_length=4,
+            seed=plan.seed,
+            snapshot_hash=plan.snapshot_hash,
+        )
+        return f"prompt_tokens={len(_tokenizer.encode(prompt).ids)} generated_chars={len(output)}"
 
-    # ── 2. Content scorer / DistributionAgent ─────────────────────────────────
-    def _warm_scorer():
+    # ── 2. DistributionAgent binding ──────────────────────────────────────────
+    # DistributionAgent shares the same model; it is not an independent scorer.
+    # Do not synthesize a caption request here: that would invent conditioning
+    # rather than verify a distinct inference subsystem.
+    def _warm_distribution_agent():
         if not _model_ready or _distribution_agent is None:
-            return "skipped (model not ready)"
-        from ai_model.agents.distribution_agent import DistributionRequest
-        dr = _distribution_agent.run(DistributionRequest(
-            script="warm start probe", platform="tiktok", goal="growth",
-        ))
-        return f"caption_len={len(dr.caption)}"
+            return "skipped (distribution agent not ready)"
+        if _distribution_agent.model is not _creative_model:
+            raise RuntimeError("DistributionAgent is not bound to the serving checkpoint")
+        return "bound to the serving checkpoint"
 
     # ── 3. Pocket GEMM dedup cache ────────────────────────────────────────────
     def _warm_pocket():
@@ -12227,7 +12244,7 @@ async def api_warm(_admin=Depends(verify_admin)):
         return f"total_ops={total}"
 
     await _in_thread(lambda: _step("transformer",  _warm_transformer))
-    await _in_thread(lambda: _step("scorer",       _warm_scorer))
+    await _in_thread(lambda: _step("distribution_agent", _warm_distribution_agent))
     await _in_thread(lambda: _step("pocket_gemm",  _warm_pocket))
     await _in_thread(lambda: _step("awareness",    _warm_awareness))
     await _in_thread(lambda: _step("rta",          _warm_rta))

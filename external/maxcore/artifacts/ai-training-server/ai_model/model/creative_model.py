@@ -12,6 +12,28 @@ from typing import Union
 from .tokenizer import SimpleTokenizer, BPETokenizer
 from .sampling_context import sampling_context
 
+
+def select_representable_probe_prompt(
+    tokenizer: Union[SimpleTokenizer, BPETokenizer],
+    candidates: tuple[str, ...] = ("music", "the", "<STAGE_HOOK>"),
+) -> str:
+    """Choose a warm-up prompt represented by this checkpoint's vocabulary.
+
+    Warm-up must exercise the real inference path without inventing vocabulary
+    entries or weakening the model's prompt-loss guard. Unknown candidates are
+    skipped; if the checkpoint cannot represent any candidate, fail explicitly.
+    """
+    unknown_id = tokenizer.token_to_id("<UNK>")
+    for prompt in candidates:
+        encoded = tokenizer.encode(prompt)
+        ids = encoded.ids if hasattr(encoded, "ids") else encoded
+        if ids and all(token_id != unknown_id for token_id in ids):
+            return prompt
+    raise ValueError(
+        "Checkpoint vocabulary cannot encode any approved inference warm-up prompt"
+    )
+
+
 # ── Digital GPU core singleton ────────────────────────────────────────────────
 # All softmax / log-softmax calls route through HyperSIMDCore so they execute
 # on the self-contained MaxCore stack.  Singleton is created lazily once.
