@@ -104,6 +104,57 @@ describe("local PDIM real HTTP protocol", () => {
     }
   });
 
+  it("probes BullMQ-shaped BZPOPMIN consumption and timeout over the PDIM HTTP adapter", async () => {
+    const key = `test:local-pdim:bullmq-zset:${process.pid}`;
+    try {
+      await client.scriptExec(["ZADD", key, "2", "later", "1", "first"]);
+      await expect(client.bzpopmin(key, 1)).resolves.toEqual([key, "first", "1"]);
+      await expect(client.bzpopmin(key, 1)).resolves.toEqual([key, "later", "2"]);
+      await expect(client.bzpopmin(key, 0.01)).resolves.toBeNull();
+    } finally {
+      await client.del(key);
+    }
+  });
+
+  it("probes stream-group delivery and acknowledgement over the PDIM HTTP adapter", async () => {
+    const key = `test:local-pdim:stream:${process.pid}`;
+    try {
+      await client.scriptExec(["XGROUP", "CREATE", key, "workers", "0", "MKSTREAM"]);
+      const id = await client.scriptExec(["XADD", key, "*", "payload", "work"]);
+      await expect(client.scriptExec([
+        "XREADGROUP", "GROUP", "workers", "consumer-1", "STREAMS", key, ">",
+      ])).resolves.toEqual([[key, [[id, ["payload", "work"]]]]]);
+      await expect(client.scriptExec(["XACK", key, "workers", String(id)])).resolves.toBe(1);
+      await expect(client.scriptExec([
+        "XREADGROUP", "GROUP", "workers", "consumer-2", "STREAMS", key, ">",
+      ])).resolves.toBeNull();
+    } finally {
+      await client.del(key);
+    }
+  });
+
+  it("probes concurrent multi-key Lua execution over the PDIM HTTP adapter", async () => {
+    const firstKey = `test:local-pdim:lua:first:${process.pid}`;
+    const secondKey = `test:local-pdim:lua:second:${process.pid}`;
+    const script = [
+      "local first = redis.call('INCR', KEYS[1])",
+      "local second = redis.call('INCR', KEYS[2])",
+      "return {first, second}",
+    ].join("\n");
+    try {
+      const results = await Promise.all(
+        Array.from({ length: 8 }, () => client.eval(script, 2, firstKey, secondKey)),
+      );
+      expect(results.every((result) =>
+        Array.isArray(result) && result[0] === result[1],
+      )).toBe(true);
+      await expect(client.get(firstKey)).resolves.toBe("8");
+      await expect(client.get(secondKey)).resolves.toBe("8");
+    } finally {
+      await client.del(firstKey, secondKey);
+    }
+  });
+
   it("returns an explicit protocol error for unknown commands", async () => {
     await expect(client.scriptExec(["NOT_A_REDIS_COMMAND"])).rejects.toThrow(
       /ERR unknown command/,
